@@ -1406,7 +1406,7 @@ final class RuntimeTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(n, 770)
+        XCTAssertEqual(n, 795)
         XCTAssertEqual(scenes.count, n)
         XCTAssertEqual(windows.count, n)
     }

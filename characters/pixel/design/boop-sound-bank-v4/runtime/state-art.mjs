@@ -34,7 +34,7 @@ export function statePlan(asset){
  const add=(u,pose,effect=null,gain=.7)=>steps.push({at:n(u*asset.seconds),pose,effect,gain});
  add(0,'home');
  switch(asset.action){
-  case 'start-card':case 'ready-card':case 'continue-card':
+  case 'start-card':case 'ready-card':case 'continue-card':case 'compact-card':
    add(.09,'lift','paper');add(.19,'reveal','latch');add(.48,'hold');add(.58,'fold','fold');add(.70,'unfold','ratchet');add(.79,'type','key');add(.85,'release','release',.4);add(.92,'home');break;
   case 'step-route':
    add(.08,'pick','paper');add(.19,'step1','wood',.55);add(.31,'step2','wood',.55);add(.43,'step3','wood',.60);add(.57,'reconsider','slide',.45);add(.68,'reorder','paper',.55);add(.80,'route','latch',.48);add(.91,'gather','paper',.4);add(.96,'home');break;
@@ -90,8 +90,8 @@ function backgroundDetail(asset,pose){
 }
 function props(a,pose){
  const m=a.mood,A=a.action,hot=m==='grumpy',home=pose==='home';let s='';
- if(A.endsWith('-card')&&['start-card','ready-card','continue-card'].includes(A)){
-  const text={ 'start-card':'NEW TASK','ready-card':'READY','continue-card':'CONTINUE'}[A];
+ if(A.endsWith('-card')&&['start-card','ready-card','continue-card','compact-card'].includes(A)){
+  const text={ 'start-card':'NEW TASK','ready-card':'READY','continue-card':'CONTINUE','compact-card':'COMPACTED'}[A];
   if(['lift','reveal','hold','fold'].includes(pose)){s+=held(text,pose==='lift'?166:pose==='fold'?176:150,P.amber);if(pose==='reveal')s+=burst(54,166,0,P.amber,4)+burst(262,166,0,P.amber,4);}
   else if(['unfold','type','release'].includes(pose)){s+=board(164,pose==='type'?7:-1)+pad(72,pose==='type'?155:147)+pad(220,pose==='type'?155:147);s+=centered(text,22,2,P.amber);}
   else s+=slab(115,160,90,24,P.dim)+rect(145,155,30,5,P.prop);return s;

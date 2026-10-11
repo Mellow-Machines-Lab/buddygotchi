@@ -222,7 +222,7 @@ function chooseVariation(pair,{previousId=null,random=Math.random,hostContext={}
   let state=pair.state;
   if(state==='task_complete'&&!hostContext.completionOutcome)state='reply_ready';
   if(pair.state==='task_complete'&&hostContext.completionOutcome&&!['success','failure'].includes(hostContext.completionOutcome))throw new Error('Invalid task completion outcome');
-  if(state==='starting'&&hostContext.startContext&&!['new_task','session','continuation'].includes(hostContext.startContext))throw new Error('Invalid start context');
+  if(state==='starting'&&hostContext.startContext&&!['new_task','session','continuation','compacted'].includes(hostContext.startContext))throw new Error('Invalid start context');
   const list=catalog.filter(a=>a.mood===pair.mood&&a.state===state&&
     (state!=='task_complete'||a.outcome===hostContext.completionOutcome)&&
     (state!=='starting'||a.startContext===(hostContext.startContext||'session')));
@@ -447,7 +447,7 @@ function props(a,step){
   return at(active?-s%3*3:0,0,path('M251 127h12v-12h12v-12h19v63h-19v-12h-12v-12h-12Z',P.amber)+rect(235,131,20,10,P.prop));
  }
  if(a.state==='starting'){
-  const label={new_task:'NEW TASK',session:'READY',continuation:'CONTINUE'}[a.startContext];
+  const label={new_task:'NEW TASK',session:'READY',continuation:'CONTINUE',compacted:'COMPACTED'}[a.startContext];
   if(k==='placard')return(s>1&&s<7?held(label,147,P.blue):board())+(s===1?pad(80,165)+pad(213,165):'');
   if(k==='ticket')return slab(63,146,62,42,P.dim)+rect(69,150,50,9,P.black)+(active?card(label,148,P.prop)+pad(220,159):'');
   return rect(59,137,202,49,P.dim)+rect(67,142,186,39,P.black)+(active?centered(label,156,2,P.blue):'')+[0,1,2].map(i=>rect(64,139+i*11,192,7,s>i+1&&s<7?P.black:P.prop)).join('');
@@ -641,7 +641,7 @@ const definitions={
 const failure=[['fallen-tower','The work did not hold','A work tower splits into pieces; hold FAILED, no celebration.'],['torn-result','A broken result','A result sheet tears into two halves; present FAILED.'],['empty-podium','No trophy this time','An empty result stand lowers; a large FAILED card replaces it.']];
 const durations={working:[5.4,6.2,5.8,6.7,5.6],starting:[5.4,6.2,5.8],needs_you:[5.6,6.2,6.7],task_complete:[6.4,6.8,7.2],terminal:[5.4,6.2,6.6],asleep:[9,10,12],no_app:[9,10,12],idle:[8,10,9],waiting:[7,8,9]};
 const moodAdditions=newMoods.flatMap(mood=>Object.entries(definitions).flatMap(([state,defs])=>{
- const entries=state==='starting'?['new_task','session','continuation'].flatMap(startContext=>defs.map(d=>({d,startContext}))):state==='task_complete'?[...defs.map(d=>({d,outcome:'success'})),...failure.map(d=>({d,outcome:'failure'}))]:defs.map(d=>({d}));
+ const entries=state==='starting'?['new_task','session','continuation','compacted'].flatMap(startContext=>defs.map(d=>({d,startContext}))):state==='task_complete'?[...defs.map(d=>({d,outcome:'success'})),...failure.map(d=>({d,outcome:'failure'}))]:defs.map(d=>({d}));
  return entries.map(({d,startContext,outcome},i)=>make(mood,state,d,i+1,{...(startContext?{startContext}:{}),...(outcome?{outcome}:{})}));
 }).concat(workActions[mood].map((d,i)=>make(mood,'working',d,i+1))));
 function make(mood,state,[action,name,caption],variation,extra={}){
@@ -1316,7 +1316,7 @@ function statePlan(asset){
  const add=(u,pose,effect=null,gain=.7)=>steps.push({at:n(u*asset.seconds),pose,effect,gain});
  add(0,'home');
  switch(asset.action){
-  case 'start-card':case 'ready-card':case 'continue-card':
+  case 'start-card':case 'ready-card':case 'continue-card':case 'compact-card':
    add(.09,'lift','paper');add(.19,'reveal','latch');add(.48,'hold');add(.58,'fold','fold');add(.70,'unfold','ratchet');add(.79,'type','key');add(.85,'release','release',.4);add(.92,'home');break;
   case 'step-route':
    add(.08,'pick','paper');add(.19,'step1','wood',.55);add(.31,'step2','wood',.55);add(.43,'step3','wood',.60);add(.57,'reconsider','slide',.45);add(.68,'reorder','paper',.55);add(.80,'route','latch',.48);add(.91,'gather','paper',.4);add(.96,'home');break;
@@ -1372,8 +1372,8 @@ function backgroundDetail(asset,pose){
 }
 function props(a,pose){
  const m=a.mood,A=a.action,hot=m==='grumpy',home=pose==='home';let s='';
- if(A.endsWith('-card')&&['start-card','ready-card','continue-card'].includes(A)){
-  const text={ 'start-card':'NEW TASK','ready-card':'READY','continue-card':'CONTINUE'}[A];
+ if(A.endsWith('-card')&&['start-card','ready-card','continue-card','compact-card'].includes(A)){
+  const text={ 'start-card':'NEW TASK','ready-card':'READY','continue-card':'CONTINUE','compact-card':'COMPACTED'}[A];
   if(['lift','reveal','hold','fold'].includes(pose)){s+=held(text,pose==='lift'?166:pose==='fold'?176:150,P.amber);if(pose==='reveal')s+=burst(54,166,0,P.amber,4)+burst(262,166,0,P.amber,4);}
   else if(['unfold','type','release'].includes(pose)){s+=board(164,pose==='type'?7:-1)+pad(72,pose==='type'?155:147)+pad(220,pose==='type'?155:147);s+=centered(text,22,2,P.amber);}
   else s+=slab(115,160,90,24,P.dim)+rect(145,155,30,5,P.prop);return s;
@@ -1574,6 +1574,7 @@ const definitions=[
  ['starting',1,'start-card','New task, coming through','Flip NEW TASK, then unfold the keyboard.',3.8,{startContext:'new_task'}],
  ['starting',2,'ready-card','Ready at the desk','READY is a connection greeting, not a new task.',3.8,{startContext:'session'}],
  ['starting',3,'continue-card','Back to it','CONTINUE; reopen the workstation.',3.8,{startContext:'continuation'}],
+ ['starting',4,'compact-card','Squeezed and back','COMPACTED is the context made smaller; the work goes on.',3.8,{startContext:'compacted'}],
  ['planning',1,'step-route','A plan in three blocks','Lay out numbered steps, reconsider the middle card, then restore the stack.',4.8],
  ['terminal',1,'spy-console','Tiny terminal operator','Rhythmic mechanical typing, green toy code and chunky binary rain.',3.8],
  ['tool_use',1,'socket-toolbox','The right tool for the job','Unlatch the toolbox, seat a plug and work the chunky lever.',4.4],

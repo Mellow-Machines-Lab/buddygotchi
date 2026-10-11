@@ -7,7 +7,7 @@
     ]},
     {"label": "Starting", "states": [
       {"id": "listening", "about": "You are holding the button to talk to it."},
-      {"id": "starting", "about": "An agent has just started a task, a session or a continuation."}
+      {"id": "starting", "about": "An agent has just started a task, a session or a continuation, or had its context compacted."}
     ]},
     {"label": "Working", "states": [
       {"id": "planning", "about": "The agent is planning."},
@@ -43,7 +43,8 @@
     "starting": {"name": "context", "label": "Start context", "options": [
       {"id": "new_task", "label": "New task"},
       {"id": "session", "label": "New session"},
-      {"id": "continuation", "label": "Continuing"}
+      {"id": "continuation", "label": "Continuing"},
+      {"id": "compacted", "label": "Compacted"}
     ]}
   }
 }

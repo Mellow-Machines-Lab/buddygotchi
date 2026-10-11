@@ -16,6 +16,7 @@ const definitions=[
  ['starting',1,'start-card','New task, coming through','Flip NEW TASK, then unfold the keyboard.',3.8,{startContext:'new_task'}],
  ['starting',2,'ready-card','Ready at the desk','READY is a connection greeting, not a new task.',3.8,{startContext:'session'}],
  ['starting',3,'continue-card','Back to it','CONTINUE; reopen the workstation.',3.8,{startContext:'continuation'}],
+ ['starting',4,'compact-card','Squeezed and back','COMPACTED is the context made smaller; the work goes on.',3.8,{startContext:'compacted'}],
  ['planning',1,'step-route','A plan in three blocks','Lay out numbered steps, reconsider the middle card, then restore the stack.',4.8],
  ['terminal',1,'spy-console','Tiny terminal operator','Rhythmic mechanical typing, green toy code and chunky binary rain.',3.8],
  ['tool_use',1,'socket-toolbox','The right tool for the job','Unlatch the toolbox, seat a plug and work the chunky lever.',4.4],

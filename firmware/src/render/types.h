@@ -73,9 +73,9 @@ SceneState animState(Anim a);
 // outcome and starting's context. kNone on a design
 // is for any; as a filter, it takes any.
 enum class Outcome : uint8_t { kNone, kSuccess, kFailure };
-enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation };
+enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation, kCompacted };
 Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone otherwise
-StartCtx ctxFromName(const char* name);     // "new_task", "session" or "continuation"; kNone otherwise
+StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
 
 struct SceneShow {
   Mood mood = Mood::kHappy;

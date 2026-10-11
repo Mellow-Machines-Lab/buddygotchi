@@ -16,7 +16,7 @@ namespace render {
 // Each mood has its own variations of each state's design, 1 to kMaxVariants
 // of them; a variation is 0..variants(m, s) - 1 here, and 1..variants(m, s)
 // on the wire. One out of range draws the first.
-constexpr int kMaxVariants = 9;  // faces.h checks it
+constexpr int kMaxVariants = 12;  // faces.h checks it
 int variants(Mood m, SceneState s);
 
 // The moods the designs draw, by name (faces.h's), whatever the character

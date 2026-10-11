@@ -37,6 +37,13 @@
 {"clock":15000}
 {"t":"do","name":"starting","play":"now","args":{"variant":1,"ctx":"continuation"}}
 {"expect":{"moment":{"anim":"starting","variant":3}}}
+// A context compacted mid-work: its own design, again whatever
+// variation the Mac named.
+{"clock":16000}
+{"t":"do","name":"starting","play":"now","args":{"variant":1,"ctx":"compacted"}}
+{"expect":{"moment":{"anim":"starting","variant":4}}}
+{"clock":17000}
+{"shot":"starting-compacted"}
 // Stopped, engaged, idle: the Mac's second variation.
 {"clock":20000}
 {"t":"state","base":"idle","mood":"engaged"}

@@ -8,7 +8,7 @@ struct FacegenFrame {
   uint8_t mood, state, variant;
   uint32_t t, crc;
 };
-static const FacegenFrame kFacegenFrames[7970] = {
+static const FacegenFrame kFacegenFrames[8256] = {
   {0, 0, 0, 0, 0x311ff377u},  // happy idle 1
   {0, 0, 0, 150, 0x311ff377u},  // happy idle 1
   {0, 0, 0, 420, 0x311ff377u},  // happy idle 1
@@ -331,6 +331,17 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {0, 7, 2, 4200, 0x3bf79e4eu},  // happy starting 3
   {0, 7, 2, 5500, 0x0026e2ebu},  // happy starting 3
   {0, 7, 2, 9900, 0xb01b0825u},  // happy starting 3
+  {0, 7, 3, 0, 0x92680caau},  // happy starting 4
+  {0, 7, 3, 150, 0x92680caau},  // happy starting 4
+  {0, 7, 3, 420, 0x99e1845du},  // happy starting 4
+  {0, 7, 3, 700, 0xe43f6c8au},  // happy starting 4
+  {0, 7, 3, 1100, 0x5a2ee887u},  // happy starting 4
+  {0, 7, 3, 1650, 0xe43f9ebfu},  // happy starting 4
+  {0, 7, 3, 2300, 0xc70720ffu},  // happy starting 4
+  {0, 7, 3, 3100, 0xa673359bu},  // happy starting 4
+  {0, 7, 3, 4200, 0x99e1845du},  // happy starting 4
+  {0, 7, 3, 5500, 0xe43f9ebfu},  // happy starting 4
+  {0, 7, 3, 9900, 0xc70720ffu},  // happy starting 4
   {0, 8, 0, 0, 0x6b6e1574u},  // happy planning 1
   {0, 8, 0, 150, 0x6b6e1574u},  // happy planning 1
   {0, 8, 0, 420, 0xfc3b4c53u},  // happy planning 1
@@ -751,6 +762,18 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {1, 7, 2, 5500, 0xa55e52d1u},  // excited starting 3
   {1, 7, 2, 7300, 0xbce9f47du},  // excited starting 3
   {1, 7, 2, 9900, 0xbce9f47du},  // excited starting 3
+  {1, 7, 3, 0, 0x2c651142u},  // excited starting 4
+  {1, 7, 3, 150, 0x2c651142u},  // excited starting 4
+  {1, 7, 3, 420, 0x27ec99b5u},  // excited starting 4
+  {1, 7, 3, 700, 0x58f08829u},  // excited starting 4
+  {1, 7, 3, 1100, 0x58f08829u},  // excited starting 4
+  {1, 7, 3, 1650, 0x373dc87fu},  // excited starting 4
+  {1, 7, 3, 2300, 0xef6cbf76u},  // excited starting 4
+  {1, 7, 3, 3100, 0x2c651142u},  // excited starting 4
+  {1, 7, 3, 4200, 0x58f08829u},  // excited starting 4
+  {1, 7, 3, 5500, 0xef6cbf76u},  // excited starting 4
+  {1, 7, 3, 7300, 0x58f08829u},  // excited starting 4
+  {1, 7, 3, 9900, 0x58f08829u},  // excited starting 4
   {1, 8, 0, 0, 0xd563089cu},  // excited planning 1
   {1, 8, 0, 150, 0xd563089cu},  // excited planning 1
   {1, 8, 0, 420, 0x423651bbu},  // excited planning 1
@@ -1194,6 +1217,18 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {2, 7, 2, 5500, 0x91706fe9u},  // proud starting 3
   {2, 7, 2, 7300, 0x649c6204u},  // proud starting 3
   {2, 7, 2, 9900, 0x91706fe9u},  // proud starting 3
+  {2, 7, 3, 0, 0x3bac6886u},  // proud starting 4
+  {2, 7, 3, 150, 0x3bac6886u},  // proud starting 4
+  {2, 7, 3, 420, 0x6899240eu},  // proud starting 4
+  {2, 7, 3, 700, 0x6899240eu},  // proud starting 4
+  {2, 7, 3, 1100, 0x756913bdu},  // proud starting 4
+  {2, 7, 3, 1650, 0x756913bdu},  // proud starting 4
+  {2, 7, 3, 2300, 0xf6fff8aau},  // proud starting 4
+  {2, 7, 3, 3100, 0x2eae8fa3u},  // proud starting 4
+  {2, 7, 3, 4200, 0x62159fafu},  // proud starting 4
+  {2, 7, 3, 5500, 0x756913bdu},  // proud starting 4
+  {2, 7, 3, 7300, 0x2eae8fa3u},  // proud starting 4
+  {2, 7, 3, 9900, 0x756913bdu},  // proud starting 4
   {2, 8, 0, 0, 0xc2aa7158u},  // proud planning 1
   {2, 8, 0, 150, 0xc2aa7158u},  // proud planning 1
   {2, 8, 0, 420, 0xc2aa7158u},  // proud planning 1
@@ -1633,6 +1668,18 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {3, 7, 2, 5500, 0x2e36cba4u},  // curious starting 3
   {3, 7, 2, 7300, 0xce81ebfbu},  // curious starting 3
   {3, 7, 2, 9900, 0x2e36cba4u},  // curious starting 3
+  {3, 7, 3, 0, 0xc1df8719u},  // curious starting 4
+  {3, 7, 3, 150, 0xc1df8719u},  // curious starting 4
+  {3, 7, 3, 420, 0xca560feeu},  // curious starting 4
+  {3, 7, 3, 700, 0xca560feeu},  // curious starting 4
+  {3, 7, 3, 1100, 0xca2fb7f0u},  // curious starting 4
+  {3, 7, 3, 1650, 0xca2fb7f0u},  // curious starting 4
+  {3, 7, 3, 2300, 0x508f2321u},  // curious starting 4
+  {3, 7, 3, 3100, 0x84b3065cu},  // curious starting 4
+  {3, 7, 3, 4200, 0xc1df8719u},  // curious starting 4
+  {3, 7, 3, 5500, 0xca2fb7f0u},  // curious starting 4
+  {3, 7, 3, 7300, 0x84b3065cu},  // curious starting 4
+  {3, 7, 3, 9900, 0xca2fb7f0u},  // curious starting 4
   {3, 8, 0, 0, 0x38d99ec7u},  // curious planning 1
   {3, 8, 0, 150, 0x38d99ec7u},  // curious planning 1
   {3, 8, 0, 420, 0xaf8cc7e0u},  // curious planning 1
@@ -2072,6 +2119,18 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {4, 7, 2, 5500, 0x83c466dfu},  // determined starting 3
   {4, 7, 2, 7300, 0x7c85c3b6u},  // determined starting 3
   {4, 7, 2, 9900, 0xf69eff1au},  // determined starting 3
+  {4, 7, 3, 0, 0x7c85c3b6u},  // determined starting 4
+  {4, 7, 3, 150, 0x7c85c3b6u},  // determined starting 4
+  {4, 7, 3, 420, 0x770c4b41u},  // determined starting 4
+  {4, 7, 3, 700, 0xcf31040eu},  // determined starting 4
+  {4, 7, 3, 1100, 0xcf31040eu},  // determined starting 4
+  {4, 7, 3, 1650, 0xcf31040eu},  // determined starting 4
+  {4, 7, 3, 2300, 0x29eaefe3u},  // determined starting 4
+  {4, 7, 3, 3100, 0xbf8c6d82u},  // determined starting 4
+  {4, 7, 3, 4200, 0xcf31040eu},  // determined starting 4
+  {4, 7, 3, 5500, 0x67dd1a8bu},  // determined starting 4
+  {4, 7, 3, 7300, 0x7c85c3b6u},  // determined starting 4
+  {4, 7, 3, 9900, 0xbcac12bdu},  // determined starting 4
   {4, 8, 0, 0, 0x8583da68u},  // determined planning 1
   {4, 8, 0, 150, 0x8583da68u},  // determined planning 1
   {4, 8, 0, 420, 0x12d6834fu},  // determined planning 1
@@ -2504,6 +2563,18 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {5, 7, 2, 5500, 0x40d6098cu},  // grumpy starting 3
   {5, 7, 2, 7300, 0x6029066eu},  // grumpy starting 3
   {5, 7, 2, 9900, 0x3e6d145cu},  // grumpy starting 3
+  {5, 7, 3, 0, 0xc9ed4a1fu},  // grumpy starting 4
+  {5, 7, 3, 150, 0xc9ed4a1fu},  // grumpy starting 4
+  {5, 7, 3, 420, 0xc264c2e8u},  // grumpy starting 4
+  {5, 7, 3, 700, 0xcff6a7f9u},  // grumpy starting 4
+  {5, 7, 3, 1100, 0xbf1300edu},  // grumpy starting 4
+  {5, 7, 3, 1650, 0xd2b59322u},  // grumpy starting 4
+  {5, 7, 3, 2300, 0x09c49b14u},  // grumpy starting 4
+  {5, 7, 3, 3100, 0xc9ed4a1fu},  // grumpy starting 4
+  {5, 7, 3, 4200, 0xda746808u},  // grumpy starting 4
+  {5, 7, 3, 5500, 0x0ae4e42bu},  // grumpy starting 4
+  {5, 7, 3, 7300, 0x84307a3au},  // grumpy starting 4
+  {5, 7, 3, 9900, 0xda746808u},  // grumpy starting 4
   {5, 8, 0, 0, 0x30eb53c1u},  // grumpy planning 1
   {5, 8, 0, 150, 0x30eb53c1u},  // grumpy planning 1
   {5, 8, 0, 420, 0xa7be0ae6u},  // grumpy planning 1
@@ -2863,6 +2934,8 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {6, 7, 1, 420, 0x20140a89u},  // sad starting 2
   {6, 7, 2, 0, 0xef9aacedu},  // sad starting 3
   {6, 7, 2, 420, 0x20140a89u},  // sad starting 3
+  {6, 7, 3, 0, 0xef9aacedu},  // sad starting 4
+  {6, 7, 3, 420, 0x20140a89u},  // sad starting 4
   {6, 8, 0, 0, 0x169cb533u},  // sad planning 1
   {6, 9, 0, 0, 0x1b76c9a7u},  // sad terminal 1
   {6, 9, 0, 420, 0xc88f97feu},  // sad terminal 1
@@ -3324,6 +3397,42 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {7, 7, 8, 5500, 0xf21337b7u},  // calm starting 9
   {7, 7, 8, 7300, 0x41fdedcau},  // calm starting 9
   {7, 7, 8, 9900, 0xa4c3eac0u},  // calm starting 9
+  {7, 7, 9, 0, 0xda6bd968u},  // calm starting 10
+  {7, 7, 9, 150, 0xda6bd968u},  // calm starting 10
+  {7, 7, 9, 420, 0xda6bd968u},  // calm starting 10
+  {7, 7, 9, 700, 0xda6bd968u},  // calm starting 10
+  {7, 7, 9, 1100, 0xdcf2e02eu},  // calm starting 10
+  {7, 7, 9, 1650, 0xdcf2e02eu},  // calm starting 10
+  {7, 7, 9, 2300, 0x066536dbu},  // calm starting 10
+  {7, 7, 9, 3100, 0x8f1392acu},  // calm starting 10
+  {7, 7, 9, 4200, 0xf691a525u},  // calm starting 10
+  {7, 7, 9, 5500, 0x929664e8u},  // calm starting 10
+  {7, 7, 9, 7300, 0xda6bd968u},  // calm starting 10
+  {7, 7, 9, 9900, 0x8f1392acu},  // calm starting 10
+  {7, 7, 10, 0, 0x90fed14fu},  // calm starting 11
+  {7, 7, 10, 150, 0x90fed14fu},  // calm starting 11
+  {7, 7, 10, 420, 0x90fed14fu},  // calm starting 11
+  {7, 7, 10, 700, 0x90fed14fu},  // calm starting 11
+  {7, 7, 10, 1100, 0x20b5568cu},  // calm starting 11
+  {7, 7, 10, 1650, 0x20b5568cu},  // calm starting 11
+  {7, 7, 10, 2300, 0x78ea025du},  // calm starting 11
+  {7, 7, 10, 3100, 0xb70af954u},  // calm starting 11
+  {7, 7, 10, 4200, 0x881e91a3u},  // calm starting 11
+  {7, 7, 10, 5500, 0x0ffc4a16u},  // calm starting 11
+  {7, 7, 10, 7300, 0xde6d2c98u},  // calm starting 11
+  {7, 7, 10, 9900, 0x78ea025du},  // calm starting 11
+  {7, 7, 11, 0, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 150, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 420, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 700, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 1100, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 1650, 0xcd9ea0f7u},  // calm starting 12
+  {7, 7, 11, 2300, 0x796ce5a3u},  // calm starting 12
+  {7, 7, 11, 3100, 0x8003522bu},  // calm starting 12
+  {7, 7, 11, 4200, 0x513154e9u},  // calm starting 12
+  {7, 7, 11, 5500, 0xd6d38f5cu},  // calm starting 12
+  {7, 7, 11, 7300, 0x41fdedcau},  // calm starting 12
+  {7, 7, 11, 9900, 0x8003522bu},  // calm starting 12
   {7, 8, 0, 0, 0xb02db001u},  // calm planning 1
   {7, 8, 0, 150, 0xb02db001u},  // calm planning 1
   {7, 8, 0, 420, 0xb02db001u},  // calm planning 1
@@ -4147,6 +4256,42 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {8, 7, 8, 5500, 0x580c8020u},  // engaged starting 9
   {8, 7, 8, 7300, 0xb0d59817u},  // engaged starting 9
   {8, 7, 8, 9900, 0x78910123u},  // engaged starting 9
+  {8, 7, 9, 0, 0xc39ab482u},  // engaged starting 10
+  {8, 7, 9, 150, 0xc39ab482u},  // engaged starting 10
+  {8, 7, 9, 420, 0xc39ab482u},  // engaged starting 10
+  {8, 7, 9, 700, 0xd6c70c32u},  // engaged starting 10
+  {8, 7, 9, 1100, 0xe4ae3ee7u},  // engaged starting 10
+  {8, 7, 9, 1650, 0xdd93bf05u},  // engaged starting 10
+  {8, 7, 9, 2300, 0x241fad64u},  // engaged starting 10
+  {8, 7, 9, 3100, 0x43ce061eu},  // engaged starting 10
+  {8, 7, 9, 4200, 0xa48e0b92u},  // engaged starting 10
+  {8, 7, 9, 5500, 0xc39ab482u},  // engaged starting 10
+  {8, 7, 9, 7300, 0x241fad64u},  // engaged starting 10
+  {8, 7, 9, 9900, 0x94f824bfu},  // engaged starting 10
+  {8, 7, 10, 0, 0x890fbca5u},  // engaged starting 11
+  {8, 7, 10, 150, 0x890fbca5u},  // engaged starting 11
+  {8, 7, 10, 420, 0x890fbca5u},  // engaged starting 11
+  {8, 7, 10, 700, 0x2a80ba90u},  // engaged starting 11
+  {8, 7, 10, 1100, 0x9a210a61u},  // engaged starting 11
+  {8, 7, 10, 1650, 0xa31c8b83u},  // engaged starting 11
+  {8, 7, 10, 2300, 0x5a9099e2u},  // engaged starting 11
+  {8, 7, 10, 3100, 0x3d413298u},  // engaged starting 11
+  {8, 7, 10, 4200, 0xb17a4fb3u},  // engaged starting 11
+  {8, 7, 10, 5500, 0xde6d2c98u},  // engaged starting 11
+  {8, 7, 10, 7300, 0x9a210a61u},  // engaged starting 11
+  {8, 7, 10, 9900, 0xb17a4fb3u},  // engaged starting 11
+  {8, 7, 11, 0, 0x580c8020u},  // engaged starting 12
+  {8, 7, 11, 150, 0x580c8020u},  // engaged starting 12
+  {8, 7, 11, 420, 0x580c8020u},  // engaged starting 12
+  {8, 7, 11, 700, 0xc7ab4cebu},  // engaged starting 12
+  {8, 7, 11, 1100, 0x9ba7ed9fu},  // engaged starting 12
+  {8, 7, 11, 1650, 0x941520fcu},  // engaged starting 12
+  {8, 7, 11, 2300, 0x83bf5ca8u},  // engaged starting 12
+  {8, 7, 11, 3100, 0xe46ef7d2u},  // engaged starting 12
+  {8, 7, 11, 4200, 0x5c51b9c8u},  // engaged starting 12
+  {8, 7, 11, 5500, 0x580c8020u},  // engaged starting 12
+  {8, 7, 11, 7300, 0x941520fcu},  // engaged starting 12
+  {8, 7, 11, 9900, 0x5c51b9c8u},  // engaged starting 12
   {8, 8, 0, 0, 0xa9dcddebu},  // engaged planning 1
   {8, 8, 0, 150, 0xa9dcddebu},  // engaged planning 1
   {8, 8, 0, 420, 0xa9dcddebu},  // engaged planning 1
@@ -4996,6 +5141,42 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {9, 7, 8, 5500, 0x03e79352u},  // annoyed starting 9
   {9, 7, 8, 7300, 0x03e79352u},  // annoyed starting 9
   {9, 7, 8, 9900, 0x732cee16u},  // annoyed starting 9
+  {9, 7, 9, 0, 0x8b3a9fc5u},  // annoyed starting 10
+  {9, 7, 9, 150, 0x8b3a9fc5u},  // annoyed starting 10
+  {9, 7, 9, 420, 0x8b3a9fc5u},  // annoyed starting 10
+  {9, 7, 9, 700, 0x364b6b60u},  // annoyed starting 10
+  {9, 7, 9, 1100, 0x619951ffu},  // annoyed starting 10
+  {9, 7, 9, 1650, 0x619951ffu},  // annoyed starting 10
+  {9, 7, 9, 2300, 0x619951ffu},  // annoyed starting 10
+  {9, 7, 9, 3100, 0xf04ca731u},  // annoyed starting 10
+  {9, 7, 9, 4200, 0x83fceb3fu},  // annoyed starting 10
+  {9, 7, 9, 5500, 0xdff899e3u},  // annoyed starting 10
+  {9, 7, 9, 7300, 0x619951ffu},  // annoyed starting 10
+  {9, 7, 9, 9900, 0x83fceb3fu},  // annoyed starting 10
+  {9, 7, 10, 0, 0xc1af97e2u},  // annoyed starting 11
+  {9, 7, 10, 150, 0xc1af97e2u},  // annoyed starting 11
+  {9, 7, 10, 420, 0xc1af97e2u},  // annoyed starting 11
+  {9, 7, 10, 700, 0xca0cddc2u},  // annoyed starting 11
+  {9, 7, 10, 1100, 0xca0cddc2u},  // annoyed starting 11
+  {9, 7, 10, 1650, 0x1f166579u},  // annoyed starting 11
+  {9, 7, 10, 2300, 0x1f166579u},  // annoyed starting 11
+  {9, 7, 10, 3100, 0x8ec393b7u},  // annoyed starting 11
+  {9, 7, 10, 4200, 0xfd73dfb9u},  // annoyed starting 11
+  {9, 7, 10, 5500, 0xca0cddc2u},  // annoyed starting 11
+  {9, 7, 10, 7300, 0xc1af97e2u},  // annoyed starting 11
+  {9, 7, 10, 9900, 0x8ec393b7u},  // annoyed starting 11
+  {9, 7, 11, 0, 0x10acab67u},  // annoyed starting 12
+  {9, 7, 11, 150, 0x10acab67u},  // annoyed starting 12
+  {9, 7, 11, 420, 0x10acab67u},  // annoyed starting 12
+  {9, 7, 11, 700, 0x10acab67u},  // annoyed starting 12
+  {9, 7, 11, 1100, 0x1e908287u},  // annoyed starting 12
+  {9, 7, 11, 1650, 0x1e908287u},  // annoyed starting 12
+  {9, 7, 11, 2300, 0x281fce06u},  // annoyed starting 12
+  {9, 7, 11, 3100, 0x57ec56fdu},  // annoyed starting 12
+  {9, 7, 11, 4200, 0x245c1af3u},  // annoyed starting 12
+  {9, 7, 11, 5500, 0x27272bb9u},  // annoyed starting 12
+  {9, 7, 11, 7300, 0x27272bb9u},  // annoyed starting 12
+  {9, 7, 11, 9900, 0x57ec56fdu},  // annoyed starting 12
   {9, 8, 0, 0, 0xe17cf6acu},  // annoyed planning 1
   {9, 8, 0, 150, 0xe17cf6acu},  // annoyed planning 1
   {9, 8, 0, 420, 0xe17cf6acu},  // annoyed planning 1
@@ -5830,6 +6011,39 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {10, 7, 8, 4200, 0x3382383eu},  // irritated starting 9
   {10, 7, 8, 5500, 0x1948c303u},  // irritated starting 9
   {10, 7, 8, 9900, 0x268a5332u},  // irritated starting 9
+  {10, 7, 9, 0, 0xbd1c6790u},  // irritated starting 10
+  {10, 7, 9, 150, 0xbd1c6790u},  // irritated starting 10
+  {10, 7, 9, 420, 0x1b96d66au},  // irritated starting 10
+  {10, 7, 9, 700, 0x4281a890u},  // irritated starting 10
+  {10, 7, 9, 1100, 0xd9a6c4f7u},  // irritated starting 10
+  {10, 7, 9, 1650, 0x6c3402dau},  // irritated starting 10
+  {10, 7, 9, 2300, 0xb3140f7fu},  // irritated starting 10
+  {10, 7, 9, 3100, 0xef9d328fu},  // irritated starting 10
+  {10, 7, 9, 4200, 0x94f824bfu},  // irritated starting 10
+  {10, 7, 9, 5500, 0x4281a890u},  // irritated starting 10
+  {10, 7, 9, 7300, 0x188ad9d8u},  // irritated starting 10
+  {10, 7, 9, 9900, 0x4281a890u},  // irritated starting 10
+  {10, 7, 10, 0, 0xf7896fb7u},  // irritated starting 11
+  {10, 7, 10, 150, 0xf7896fb7u},  // irritated starting 11
+  {10, 7, 10, 420, 0xe7d160c8u},  // irritated starting 11
+  {10, 7, 10, 700, 0x3c0e9c16u},  // irritated starting 11
+  {10, 7, 10, 1650, 0x12bb365cu},  // irritated starting 11
+  {10, 7, 10, 2300, 0xcd9b3bf9u},  // irritated starting 11
+  {10, 7, 10, 3100, 0x6605ed5eu},  // irritated starting 11
+  {10, 7, 10, 4200, 0xfa6976aeu},  // irritated starting 11
+  {10, 7, 10, 5500, 0xe7d160c8u},  // irritated starting 11
+  {10, 7, 10, 7300, 0xcd9b3bf9u},  // irritated starting 11
+  {10, 7, 10, 9900, 0xde6d2c98u},  // irritated starting 11
+  {10, 7, 11, 0, 0x268a5332u},  // irritated starting 12
+  {10, 7, 11, 150, 0x268a5332u},  // irritated starting 12
+  {10, 7, 11, 700, 0x3d887be8u},  // irritated starting 12
+  {10, 7, 11, 1100, 0x3d887be8u},  // irritated starting 12
+  {10, 7, 11, 1650, 0xcb94f316u},  // irritated starting 12
+  {10, 7, 11, 2300, 0x14b4feb3u},  // irritated starting 12
+  {10, 7, 11, 3100, 0xbf2a2814u},  // irritated starting 12
+  {10, 7, 11, 4200, 0x174280d5u},  // irritated starting 12
+  {10, 7, 11, 5500, 0x3d887be8u},  // irritated starting 12
+  {10, 7, 11, 9900, 0x268a5332u},  // irritated starting 12
   {10, 8, 0, 0, 0xd75a0ef9u},  // irritated planning 1
   {10, 8, 0, 150, 0xd75a0ef9u},  // irritated planning 1
   {10, 8, 0, 420, 0x98634d80u},  // irritated planning 1
@@ -6665,6 +6879,42 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {11, 7, 8, 5500, 0xc8efa7f4u},  // whiny starting 9
   {11, 7, 8, 7300, 0xbdcc2509u},  // whiny starting 9
   {11, 7, 8, 9900, 0xbdd14d77u},  // whiny starting 9
+  {11, 7, 9, 0, 0xd60f57d8u},  // whiny starting 10
+  {11, 7, 9, 150, 0xd60f57d8u},  // whiny starting 10
+  {11, 7, 9, 420, 0xd60f57d8u},  // whiny starting 10
+  {11, 7, 9, 700, 0xd60f57d8u},  // whiny starting 10
+  {11, 7, 9, 1100, 0x62fa7c4eu},  // whiny starting 10
+  {11, 7, 9, 1650, 0x45daed05u},  // whiny starting 10
+  {11, 7, 9, 2300, 0x10c032a9u},  // whiny starting 10
+  {11, 7, 9, 3100, 0x2f160621u},  // whiny starting 10
+  {11, 7, 9, 4200, 0x8cfb04efu},  // whiny starting 10
+  {11, 7, 9, 5500, 0x293ee218u},  // whiny starting 10
+  {11, 7, 9, 7300, 0x62fa7c4eu},  // whiny starting 10
+  {11, 7, 9, 9900, 0x2f160621u},  // whiny starting 10
+  {11, 7, 10, 0, 0x9c9a5fffu},  // whiny starting 11
+  {11, 7, 10, 150, 0x9c9a5fffu},  // whiny starting 11
+  {11, 7, 10, 420, 0x9c9a5fffu},  // whiny starting 11
+  {11, 7, 10, 700, 0x9c9a5fffu},  // whiny starting 11
+  {11, 7, 10, 1100, 0xd0956889u},  // whiny starting 11
+  {11, 7, 10, 1650, 0xcaddfb32u},  // whiny starting 11
+  {11, 7, 10, 2300, 0xcaddfb32u},  // whiny starting 11
+  {11, 7, 10, 3100, 0x65743503u},  // whiny starting 11
+  {11, 7, 10, 4200, 0xd791bf98u},  // whiny starting 11
+  {11, 7, 10, 5500, 0xa15a8cf3u},  // whiny starting 11
+  {11, 7, 10, 7300, 0x9c9a5fffu},  // whiny starting 11
+  {11, 7, 10, 9900, 0x47476b37u},  // whiny starting 11
+  {11, 7, 11, 0, 0xbdcc2509u},  // whiny starting 12
+  {11, 7, 11, 150, 0xbdcc2509u},  // whiny starting 12
+  {11, 7, 11, 420, 0xbdcc2509u},  // whiny starting 12
+  {11, 7, 11, 700, 0xbdcc2509u},  // whiny starting 12
+  {11, 7, 11, 1100, 0x7b9e72a1u},  // whiny starting 12
+  {11, 7, 11, 1650, 0x2f05e327u},  // whiny starting 12
+  {11, 7, 11, 2300, 0x2f05e327u},  // whiny starting 12
+  {11, 7, 11, 3100, 0x9911f59cu},  // whiny starting 12
+  {11, 7, 11, 4200, 0x8bbedcd3u},  // whiny starting 12
+  {11, 7, 11, 5500, 0xec2f1f1fu},  // whiny starting 12
+  {11, 7, 11, 7300, 0xbdcc2509u},  // whiny starting 12
+  {11, 7, 11, 9900, 0x9911f59cu},  // whiny starting 12
   {11, 8, 0, 0, 0xbc493eb1u},  // whiny planning 1
   {11, 8, 0, 150, 0xbc493eb1u},  // whiny planning 1
   {11, 8, 0, 420, 0xbc493eb1u},  // whiny planning 1
@@ -7500,6 +7750,42 @@ static const FacegenFrame kFacegenFrames[7970] = {
   {12, 7, 8, 5500, 0xb78daabbu},  // wounded starting 9
   {12, 7, 8, 7300, 0x0f6e101du},  // wounded starting 9
   {12, 7, 8, 9900, 0xb5962bd2u},  // wounded starting 9
+  {12, 7, 9, 0, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 150, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 420, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 700, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 1100, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 1650, 0xee5f4041u},  // wounded starting 10
+  {12, 7, 9, 2300, 0xee5f4041u},  // wounded starting 10
+  {12, 7, 9, 3100, 0xe5803e8du},  // wounded starting 10
+  {12, 7, 9, 4200, 0xef26015bu},  // wounded starting 10
+  {12, 7, 9, 5500, 0x34ede39cu},  // wounded starting 10
+  {12, 7, 9, 7300, 0x7a1bcf35u},  // wounded starting 10
+  {12, 7, 9, 9900, 0xe5803e8du},  // wounded starting 10
+  {12, 7, 10, 0, 0x308ec712u},  // wounded starting 11
+  {12, 7, 10, 150, 0x308ec712u},  // wounded starting 11
+  {12, 7, 10, 420, 0x308ec712u},  // wounded starting 11
+  {12, 7, 10, 700, 0x308ec712u},  // wounded starting 11
+  {12, 7, 10, 1100, 0x308ec712u},  // wounded starting 11
+  {12, 7, 10, 1650, 0x6afe472bu},  // wounded starting 11
+  {12, 7, 10, 2300, 0x90d074c7u},  // wounded starting 11
+  {12, 7, 10, 3100, 0x9b0f0a0bu},  // wounded starting 11
+  {12, 7, 10, 4200, 0x91a935ddu},  // wounded starting 11
+  {12, 7, 10, 5500, 0x4a62d71au},  // wounded starting 11
+  {12, 7, 10, 7300, 0x78630743u},  // wounded starting 11
+  {12, 7, 10, 9900, 0x90d074c7u},  // wounded starting 11
+  {12, 7, 11, 0, 0xe18dfb97u},  // wounded starting 12
+  {12, 7, 11, 150, 0xe18dfb97u},  // wounded starting 12
+  {12, 7, 11, 420, 0xe18dfb97u},  // wounded starting 12
+  {12, 7, 11, 700, 0xe18dfb97u},  // wounded starting 12
+  {12, 7, 11, 1100, 0xe18dfb97u},  // wounded starting 12
+  {12, 7, 11, 1650, 0x91569339u},  // wounded starting 12
+  {12, 7, 11, 2300, 0x91569339u},  // wounded starting 12
+  {12, 7, 11, 3100, 0xac06a174u},  // wounded starting 12
+  {12, 7, 11, 4200, 0x4886f097u},  // wounded starting 12
+  {12, 7, 11, 5500, 0x934d1250u},  // wounded starting 12
+  {12, 7, 11, 7300, 0x0f6e101du},  // wounded starting 12
+  {12, 7, 11, 9900, 0x91569339u},  // wounded starting 12
   {12, 8, 0, 0, 0x105da65cu},  // wounded planning 1
   {12, 8, 0, 150, 0x105da65cu},  // wounded planning 1
   {12, 8, 0, 420, 0x105da65cu},  // wounded planning 1
