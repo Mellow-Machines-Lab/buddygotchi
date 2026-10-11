@@ -214,7 +214,7 @@ void test_a_card_failing_mid_line_ends_it() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: run make -C internal voice\n");
+  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
   RUN_TEST(test_the_pack_finds_takes_by_id);
   RUN_TEST(test_a_take_plays_whole_at_its_pitch);
   RUN_TEST(test_a_line_of_two_takes);

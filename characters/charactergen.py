@@ -108,13 +108,9 @@ def load(pack: Path) -> dict:
     return json.loads((pack / "character.json").read_text())
 
 
-def previews(pack: Path, character: dict) -> list[dict]:
-    """The pack's studio entries (§12), each with its `id`: one entry is
-    the pack's own, named after it; a list names each."""
-    studio = character.get("studio")
-    if studio is None:
-        return []
-    return [dict(e) for e in studio] if isinstance(studio, list) else [{"id": pack.name, **studio}]
+def previews(character: dict) -> list[dict]:
+    """The pack's studio entries (§12), one for each preview it brings."""
+    return [dict(e) for e in character.get("studio", [])]
 
 
 def states(studio: Path = STUDIO) -> dict:
@@ -166,7 +162,7 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         problems.append(f"{studio / 'states.json'} doesn't list the board's states (missing {missing}, extra {extra})")
     for pack in packs:
         character = load(pack)
-        entries = previews(pack, character)
+        entries = previews(character)
         names = [e.get("id") for e in entries]
         if None in names or len(names) != len(set(names)):
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
@@ -195,7 +191,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
     data = {"chosen": chosen_pack.name, "states": states(studio), "packs": {}}
     for pack in packs:
         character = load(pack)
-        entries = previews(pack, character)
+        entries = previews(character)
         for entry in entries:
             covered = coverage(pack, entry)
             here = lambda name: Path(os.path.relpath(pack / name, studio)).as_posix()

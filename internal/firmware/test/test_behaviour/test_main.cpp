@@ -2314,7 +2314,7 @@ static void test_a_long_touch_during_needs_you_is_a_tap() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: run make -C internal voice\n");
+  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_request_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

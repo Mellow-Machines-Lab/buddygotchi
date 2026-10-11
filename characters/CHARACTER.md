@@ -408,30 +408,32 @@ Without Boop's pack, the public repository builds and tests as Pixel:
   and moods) skip, saying so (`requireBoopsPack()`).
 - The tests that play takes run, on Pixel's voice. With a pack that has
   none they skip (`NEEDS_VOICE_PACK()` in the firmware's).
-- `make -C internal voice` says the voice files are as checked in: only
-  a checkout with the recordings can rebuild them.
 
 ## 12. The studio (optional)
 
 The [Character Studio](studio/README.md), `characters/studio/`, is one
 page for any pack: its moods and the engine's states, and a preview of
-each pair when the pack brings one. A pack opts in with a `studio` entry
-in `character.json`. Pixel's:
+each pair when the pack brings one. A pack opts in with `studio` in
+`character.json`, a list with an entry for each preview it brings.
+Pixel's:
 
 ```json
-"studio": {
-  "label": "Pixel Boop",
-  "about": "CYD board",
-  "icon": "studio/icon.svg",
-  "scripts": [
-    "design/boop-sound-bank-v4/dist/boop-runtime.js",
-    "studio/adapter.js"
-  ],
-  "styles": [
-    "studio/adapter.css"
-  ],
-  "coverage": "design/boop-sound-bank-v4/coverage.json"
-}
+"studio": [
+  {
+    "id": "pixel",
+    "label": "Pixel Boop",
+    "about": "CYD board",
+    "icon": "studio/icon.svg",
+    "scripts": [
+      "design/boop-sound-bank-v4/dist/boop-runtime.js",
+      "studio/adapter.js"
+    ],
+    "styles": [
+      "studio/adapter.css"
+    ],
+    "coverage": "design/boop-sound-bank-v4/coverage.json"
+  }
+]
 ```
 
 - `scripts` and `styles`: files the page loads, in order. One script
@@ -439,7 +441,7 @@ in `character.json`. Pixel's:
   Writing an adapter). The adapter's own files go in the pack's
   `studio/` folder, which the app doesn't bundle.
 - `id`: the name the adapter registers under and the preview's card
-  goes by. One entry needs none: it's the pack's `id`.
+  goes by, its own among the pack's entries.
 - `coverage`: optional, a JSON file whose `perPair` table gives, for
   each mood, how many variations each state has. Without it, the preview
   plays every pair.
@@ -450,8 +452,7 @@ in `character.json`. Pixel's:
 - `captures`: optional, a JSON file of `{"cases": [{"id": ...}]}`, the
   only clip names the studio's server will save for the pack.
 
-A pack with more than one preview gives `studio` a list of entries,
-each with an `id` of its own. Boop's has two: `boop`, its gel slime, and
+Boop's pack has two entries: `boop`, its gel slime, and
 `pixel`, its copy of the pixel face, whose `coverage` names the 13 moods
 it draws; the rest of Boop's moods play their `fallback`.
 `charactergen.py` writes the page's data (`characters/studio/packs.js`)

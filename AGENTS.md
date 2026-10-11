@@ -49,7 +49,7 @@ Delete code that nothing uses; git keeps it.
 The everyday entry points are in [README.md](README.md), which stays a
 short overview. The root `Makefile` has only what the owner uses: `build`,
 `app`, `run`, `debug`, `dash`, `day`, `flash`, `eval` and `clean`. The development targets
-(`test`, `tools-test`, `voice`, `fw`, `fw-test`, `sim`, `e2e`, `faces`, `tools`)
+(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `e2e`, `faces`, `tools`)
 are in `internal/Makefile`; run them from the repo root as
 `make -C internal <target>`. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its

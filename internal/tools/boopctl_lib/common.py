@@ -3,8 +3,8 @@ animations and moods, the messages to and from the board, the board's voice
 takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
-import importlib.util
 import json
+import os
 import socket
 import struct
 from dataclasses import dataclass
@@ -99,12 +99,13 @@ def ended(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def chosen_pack() -> Path:
-    """The chosen character pack's folder, as the builds choose it
-    (characters/charactergen.py, characters/CHARACTER.md §2)."""
-    spec = importlib.util.spec_from_file_location("charactergen", REPO / "characters" / "charactergen.py")
-    gen = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(gen)
-    return gen.chosen()
+    """The character pack in use, as the Swift tests and the simulator
+    take it: `BOOP_CHARACTER`'s, else the one last staged
+    (.character-build/pack, characters/CHARACTER.md §2), else Pixel."""
+    if os.environ.get("BOOP_CHARACTER"):
+        return Path(os.environ["BOOP_CHARACTER"])
+    staged = REPO / ".character-build" / "pack"
+    return Path(staged.read_text().strip()) if staged.exists() else REPO / "characters" / "pixel"
 
 
 # The chosen pack's voice, the file a board's card has as boop/voice.bin

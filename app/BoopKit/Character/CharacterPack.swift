@@ -93,13 +93,6 @@ extension CharacterPack {
         try self.init(json: json, from: file.path, directory: directory)
     }
 
-    /// One of the pack's files, by its path in the pack; nil when it has
-    /// none.
-    public func file(_ path: String) -> URL? {
-        let url = directory.appendingPathComponent(path)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-
     init(json: [String: Any], from source: String, directory: URL = URL(fileURLWithPath: "/")) throws {
         self.directory = directory
         func string(_ key: String) throws -> String {

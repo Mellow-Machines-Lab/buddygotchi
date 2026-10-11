@@ -464,7 +464,7 @@ static void test_an_unchanged_lane_isnt_sent_again() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: run make -C internal voice\n");
+  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
   RUN_TEST(test_bands_turn_the_surface_a_quarter);
   RUN_TEST(test_a_frame_sends_what_either_frame_wrote);
   RUN_TEST(test_random_frames_always_reach_the_panel);

@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools voice faces fw fw-test sim e2e tools-test
+.PHONY: test tools faces fw fw-test sim e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -29,23 +29,6 @@ test:
 	    echo "$$pkg: the TestingMacros flake; trying again"; \
 	  done; \
 	done
-
-# The voice, each character pack's voice/voice.bin and mac/takes.tsv, is
-# checked in, so nothing here builds it. The recordings and the tool that
-# turns them into those two files are in Boop's private pack; with it in
-# this checkout, `voice` rebuilds both packs' copies when the bank or the
-# tool changed.
-VOICEGEN := $(ROOT)/characters/boop/tools/voicegen/voicegen.py
-ifneq ($(wildcard $(VOICEGEN)),)
-BANK := $(ROOT)/characters/boop/design/assets/boop-voice-v1
-voice: $(ROOT)/characters/boop/voice/voice.bin
-
-$(ROOT)/characters/boop/voice/voice.bin: $(BANK)/manifest.json $(BANK)/dictionary.json $(VOICEGEN)
-	cd $(ROOT) && python3 characters/boop/tools/voicegen/voicegen.py
-else
-voice:
-	@echo "voice: the packs' voice files are as checked in (the recordings aren't in this checkout)"
-endif
 
 # internal/tools/.venv with pyserial, Pillow and Textual, for boopctl.
 # internal/tools/boopctl makes it through this when it's missing; this also

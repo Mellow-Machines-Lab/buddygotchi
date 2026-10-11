@@ -39,8 +39,7 @@ public enum FaceLoops {
     /// The face's table, read the first time it's used; empty for a pack
     /// with no pixel face.
     private static let table: Table = {
-        guard let file = CharacterPack.active.file("mac/faces.json"),
-              let data = try? Data(contentsOf: file),
+        guard let data = try? Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("mac/faces.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return Table() }
         var t = Table()
         t.moods = json["moods"] as? [String] ?? []

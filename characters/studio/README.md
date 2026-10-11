@@ -72,7 +72,7 @@ The other forms only warn. The rules' tests are in
 
 A pack's `scripts` load in order as plain scripts, so they work from
 `file://`. One of them registers the entry's adapter under the entry's
-`id`, which is the pack's id unless the pack declares several previews:
+`id`:
 
 ```js
 Studio.register('pixel', {

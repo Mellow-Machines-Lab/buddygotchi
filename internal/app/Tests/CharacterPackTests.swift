@@ -62,9 +62,8 @@ final class CharacterPackTests: XCTestCase {
     }
 
     /// CHARACTER.md §3: a pack stands alone. Boop's and Pixel's each have
-    /// every file the engine reads in their own folder (the pixel face's
-    /// mac/faces.json, the voice's table and its pack), and nothing is
-    /// looked for anywhere else.
+    /// every file the engine reads in their own folder: the pixel face's
+    /// mac/faces.json, the voice's table and its pack.
     func testEachPackStandsAlone() throws {
         try requireBoopsPack()
         let boop = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/boop"))
@@ -73,9 +72,8 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(pixel.startupMood, "happy")
         for pack in [boop, pixel] {
             for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
-                XCTAssertEqual(pack.file(path)?.path, pack.directory.appendingPathComponent(path).path, "\(pack.id) \(path)")
+                XCTAssertTrue(FileManager.default.fileExists(atPath: pack.directory.appendingPathComponent(path).path), "\(pack.id) \(path)")
             }
-            XCTAssertNil(pack.file("no/such/file"))
         }
         XCTAssertEqual(FaceLoops.moods, pixel.moods.map(\.id))
         // The graph Pixel keeps is v2's.
@@ -99,10 +97,10 @@ final class CharacterPackTests: XCTestCase {
             let budget = path == "guide" ? Steering.Budget.guide : path.hasPrefix("personality/") ? Steering.Budget.personality : Steering.Budget.mood
             XCTAssertLessThanOrEqual(Steering.tokens(text), budget, path)
         }
-        let table = try String(contentsOf: XCTUnwrap(pixel.file("mac/takes.tsv")), encoding: .utf8)
+        let table = try String(contentsOf: folder.appendingPathComponent("mac/takes.tsv"), encoding: .utf8)
         let version = try XCTUnwrap(table.split(separator: "\n").first { !$0.hasPrefix("#") })
-        let pack = try Data(contentsOf: XCTUnwrap(pixel.file("voice/voice.bin")))
-        XCTAssertEqual(String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self), String(version))
+        let pack = try Data(contentsOf: folder.appendingPathComponent("voice/voice.bin"))
+        XCTAssertEqual(voicePackVersion(pack), String(version))
     }
 
     /// CHARACTER.md §4: a pack that leads to a mood it doesn't have is refused.

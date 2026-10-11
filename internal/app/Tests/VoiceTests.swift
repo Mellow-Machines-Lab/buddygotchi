@@ -7,6 +7,12 @@ extension Take {
     static func named(_ id: String) -> Take { Take.all.first { $0.id == id }! }
 }
 
+/// The version in a voice pack's header: its 16 bytes after the magic,
+/// NUL-padded.
+func voicePackVersion(_ pack: Data) -> String {
+    String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
+}
+
 extension DeviceMoment.Say {
     /// Excited's "Go" (new.d02): a real take for tests.
     static let go = DeviceMoment.Say(takes: [.named("new.d02")])
@@ -70,10 +76,9 @@ final class VoiceTests: XCTestCase {
     /// The takes the board plays are the Mac's: voicegen writes both, and
     /// the board reports the pack's version.
     func testThePackHasEveryTake() throws {
-        let pack = try Data(contentsOf: XCTUnwrap(CharacterPack.active.file("voice/voice.bin")))
+        let pack = try Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("voice/voice.bin"))
         XCTAssertEqual(pack.prefix(8), Data("BOOPVOX1".utf8))
-        let version = String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
-        XCTAssertEqual(version, Take.packVersion, "rerun voicegen")
+        XCTAssertEqual(voicePackVersion(pack), Take.packVersion, "rerun voicegen")
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }

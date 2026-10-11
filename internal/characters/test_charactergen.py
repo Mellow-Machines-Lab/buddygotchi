@@ -61,15 +61,15 @@ class StudioRuleTests(unittest.TestCase):
         self.assertIn("missing ['asleep']", problem)
 
     def test_declared_files_must_exist(self):
-        pack = self.pack("art", [{"id": "calm"}], {"scripts": ["studio/adapter.js"]})
+        pack = self.pack("art", [{"id": "calm"}], [{"id": "art", "scripts": ["studio/adapter.js"]}])
         self.assertEqual(self.problems(pack), ["art: studio file studio/adapter.js doesn't exist"])
 
     def test_every_mood_and_state_needs_a_preview(self):
         """Every pair a pack's coverage leaves out fails, unless the mood's fallback covers it."""
         coverage = {"perPair": {"calm": {"idle": 2, "working": 1}, "sad": {"idle": 1, "working": 0}}}
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], {"coverage": "cover.json"}, files=[("cover.json", coverage)])
+        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "coverage": "cover.json"}], files=[("cover.json", coverage)])
         self.assertEqual(self.problems(pack), ["art: art's preview can't play sad in working"])
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad", "fallback": "calm"}], {"coverage": "cover.json"}, files=[("cover.json", coverage)])
+        pack = self.pack("art", [{"id": "calm"}, {"id": "sad", "fallback": "calm"}], [{"id": "art", "coverage": "cover.json"}], files=[("cover.json", coverage)])
         self.assertEqual(self.problems(pack), [])
 
     def test_each_of_a_packs_previews_plays_its_moods_through_fallbacks(self):
@@ -85,9 +85,9 @@ class StudioRuleTests(unittest.TestCase):
 
     def test_data_has_paths_from_the_page(self):
         coverage = {"perPair": {"calm": {"idle": 1, "working": 1}}}
-        art = self.pack("art", [{"id": "calm", "meaning": "Settled."}], {"scripts": ["studio/a.js"], "coverage": "c.json"},
+        art = self.pack("art", [{"id": "calm", "meaning": "Settled."}], [{"id": "art", "scripts": ["studio/a.js"], "coverage": "c.json"}],
                         files=[("studio/a.js", ""), ("c.json", coverage)])
-        plain = self.pack("plain", [{"id": "calm", "family": "settled"}], None)
+        plain = self.pack("plain", [{"id": "calm", "family": "settled"}])
         data = gen.studio_data([art, plain], plain, self.studio)
         self.assertEqual(data["chosen"], "plain")
         self.assertEqual(data["packs"]["art"]["studio"],
