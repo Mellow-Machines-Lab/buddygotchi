@@ -93,6 +93,7 @@ Then tap the screen or press BOOT to poke it.
 | Flash the firmware (over USB) | `make flash` |
 | Run Boop in the menu bar | `make run` |
 | See what it did today, and why | `make day` |
+| Try Boop with no board, in a browser | `make simulator` ([simulator/README.md](simulator/README.md)) |
 
 Start `make run` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's

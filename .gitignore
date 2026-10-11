@@ -66,3 +66,6 @@ internal/app/Tests/GeneratedTestRunner.swift
 
 # The studio page's data, which characters/charactergen.py writes for the packs here
 characters/studio/packs.js
+
+# The simulator, built for a browser (simulator/web/build.sh)
+simulator/web/dist/

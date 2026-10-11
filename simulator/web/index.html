@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boop Simulator</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #121212; }
+</style>
+<!-- The local page (make simulator): one board with its controls. ?face=gel for Boop's own face;
+     ?demo=pixel or ?demo=gel plays that face's recorded demo (simulator/tools/record-demo.sh). -->
+<script type="module">
+  import './boop-simulator.js';
+  const board = document.createElement('boop-simulator');
+  const ask = new URLSearchParams(location.search);
+  board.setAttribute('face', ask.get('face') || 'pixel');
+  if (ask.get('zoom')) board.setAttribute('zoom', ask.get('zoom'));
+  if (ask.get('demo')) {
+    // A recording is its own app: no cable, and the small voice it was cut with.
+    board.setAttribute('demo', `demo/${ask.get('demo')}.json`);
+    board.setAttribute('voice', `demo/${ask.get('demo')}-voice.bin`);
+  } else {
+    board.setAttribute('voice', 'voice.bin');
+    board.setAttribute('usb', `ws://${location.host}/usb`);
+  }
+  board.setAttribute('controls', '');
+  document.body.append(board);
+  window.simulator = board;
+</script>

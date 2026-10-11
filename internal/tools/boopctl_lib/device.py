@@ -245,6 +245,10 @@ class Device(Link):
             # auto-reset circuit and reboots it.
             ser = serial.Serial()
             ser.port, ser.baudrate, ser.timeout = self.port, BAUD, 0
+            # The simulator's port (simulator/README.md) is a pseudo-terminal,
+            # which has no rate and refuses the board's: any standard one opens it.
+            if os.path.realpath(self.port).startswith(("/dev/ttys", "/dev/pts/")):
+                ser.baudrate = 115200
             ser.open()
             self._ser = ser
         except serial.SerialException as exc:

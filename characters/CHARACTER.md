@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-07. **Draft.** This is the contract a character pack
+Updated 2026-10-11. **Draft.** This is the contract a character pack
 meets so that any character can be dropped into the engine. The
 split plan moves Boop's
 character behind this spec phase by phase. Each phase updates this page
@@ -278,6 +278,7 @@ base:
 | Mood wording | A mood entry with only `id` and some text overrides that text and keeps the base's art and graph |
 | `steering/` | File by file: this pack's file wins, the base's fills the gaps |
 | `mac/` | File by file, as `steering/` |
+| `demo/` | The pack's own alone (§13): a pack on a base brings its own demo, or has none |
 | `firmware/`, `voice/` | Folder by folder: this pack's if it has one, else the base's |
 
 A base can't itself have a base.
@@ -439,7 +440,65 @@ mood's `fallback`. `charactergen.py` writes the page's data
 a declared file is missing or a preview can't play one of a pack's moods
 in some state.
 
-## 13. Making your own
+## 13. A demo (optional)
+
+A pack can carry a demo: a scripted stretch of work for its creature to
+live through, `demo/demo.jsonl`. The engine plays it as if it were
+happening (`Runtime.play`, `app/BoopKit/Demo/`), through the same doors
+as real work, so the rules do what they always do; and the script says
+how the creature reacts, in the pack's own moods and words. That's why
+it's the pack's: the engine has the player, and the character has the
+story. The app bundles the folder.
+
+One JSON object a line, each a beat: `at`, the seconds since the start,
+and one thing that happens then. A line starting `//` is a comment.
+From Pixel's:
+
+```json
+{"at": 2, "agent": "claude", "hook": "UserPromptSubmit", "session": "demo", "cwd": "/demo/shortcuts", "prompt": "Add keyboard shortcuts", "answer": {"react.mood": "curious"}}
+{"at": 17, "tap": true}
+{"at": 30, "agent": "claude", "hook": "PreToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t2", "note": "You approve it"}
+{"at": 42, "talk": "how's it going?", "answer": {"react.mood": "determined"}, "after": 2.2}
+{"at": 60, "advance": 300}
+{"at": 72, "mood": "proud", "note": "A good day's work"}
+```
+
+| A beat with | Is |
+| --- | --- |
+| `hook` | An agent's hook, in the form `agent-hook` sends ([agent-hooks](../agent-hooks/README.md)): `agent`, `hook`, `session`, and whichever of `cwd`, `tool`, `topic`, `tool_use_id`, `tool_error`, `prompt`, `message`, `error`, `kind` that hook carries |
+| `tap` | A tap on the creature |
+| `talk` | Push-to-talk: the button held for `hold` seconds (1.5), then those words heard |
+| `mood` | The mood, set |
+| `advance` | The clock moved on that many seconds, so a long turn needn't be waited out. Only where the clock can be moved: headless |
+
+Any beat may also carry:
+
+- **`answer`:** how the creature reacts, as the brain's answers to its
+  questions, given `after` seconds later (0.3, about as long as the brain
+  takes): `react.mood` (a mood's face, or `none`), `react.animation`
+  (`success`, `failure` or `reply`, for a turn that finished),
+  `react.loops`, and for a pack with a voice `say.feeling`, `say.about`
+  and `say.kind` (§8). A demo plays with no brain, so a beat with no
+  answer gets what the rules do and nothing more.
+- **`note`:** what happened, in words for whoever is watching, in place
+  of the words the engine finds for the beat (`You ask Claude: “…”`,
+  `Claude ran the tests`, `You poke Pixel`).
+
+`DemoTests` holds the chosen pack's demo to its pack: every answer is to
+a question the brain is asked, with a choice it's offered, and every
+mood is one the pack has.
+
+```sh
+.build/debug/Boop --headless --state-dir /tmp/boop-demo --demo pack                     # play it, with no device
+simulator/tools/record-demo.sh pixel                                                    # record it for the simulator's page
+```
+
+The second plays it on the simulator's board and keeps every line the
+board was sent, with when and what was happening
+([simulator/README.md](../simulator/README.md), Demos): the page plays
+that back into the firmware itself, with no app behind it.
+
+## 14. Making your own
 
 1. Copy `characters/pixel/` to `characters/<yours>/` and set `id` and
    `name` in `character.json`. To keep it in a repository of its own,
@@ -450,5 +509,6 @@ in some state.
 4. Change the faces, or keep Pixel's by setting `"base": "pixel"` and
    leaving out `firmware/` and `mac/`.
 5. `make build CHARACTER=<yours>`, then flash with the same.
-6. Optionally, give it a studio entry (§12) and look at every mood and
+6. Optionally, write it a demo (§13).
+7. Optionally, give it a studio entry (§12) and look at every mood and
    state in `characters/studio/index.html`.

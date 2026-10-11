@@ -1,0 +1,18 @@
+// Pixel's demo (DemoScript, characters/CHARACTER.md §13): a task from start
+// to finish in a little over a minute, with a poke, an approval, a failed
+// deploy and a question on the way. Pixel has no voice, so its answers are
+// faces alone.
+{"at": 0, "agent": "claude", "hook": "SessionStart", "session": "demo", "cwd": "/demo/shortcuts", "source": "startup"}
+{"at": 2, "agent": "claude", "hook": "UserPromptSubmit", "session": "demo", "cwd": "/demo/shortcuts", "prompt": "Add keyboard shortcuts", "answer": {"react.mood": "curious"}}
+{"at": 6, "agent": "claude", "hook": "PreToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "tests", "tool_use_id": "t1"}
+{"at": 11, "agent": "claude", "hook": "PostToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "tests", "tool_use_id": "t1", "answer": {"react.mood": "happy"}}
+{"at": 17, "tap": true}
+{"at": 23, "agent": "claude", "hook": "PermissionRequest", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "tool_use_id": "p1"}
+{"at": 30, "agent": "claude", "hook": "PreToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t2", "note": "You approve it"}
+{"at": 35, "agent": "claude", "hook": "PostToolUseFailure", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t2", "tool_error": "exit_code", "answer": {"react.mood": "annoyed"}}
+{"at": 42, "talk": "how's it going?", "answer": {"react.mood": "determined"}, "after": 2.2}
+{"at": 50, "agent": "claude", "hook": "PreToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t3"}
+{"at": 55, "agent": "claude", "hook": "PostToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t3", "answer": {"react.mood": "happy"}}
+{"at": 60, "advance": 300}
+{"at": 62, "agent": "claude", "hook": "Stop", "session": "demo", "cwd": "/demo/shortcuts", "message": "Shortcuts are in, and the deploy went through.", "answer": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice"}}
+{"at": 72, "mood": "proud", "note": "A good day's work"}

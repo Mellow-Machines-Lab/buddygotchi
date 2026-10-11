@@ -18,7 +18,6 @@ tests, evals, dev tools and skills.
 | `app/Tests/` | Boop's Swift unit tests (`BoopTests`) and their fixtures. The packages' tests are in each package, under `swift test` (`agent-hooks/Tests/`, `mellowharness/Tests/`, `linkkit/Tests/`); the hook fixtures are agent-hooks' (`agent-hooks/Tests/AgentHooksTests/Fixtures/`), and only the pipeline check's are here (`Fixtures/hooks/e2e/`) |
 | `app/TestSupport/XCTestShim/` | A stand-in XCTest for Command Line Tools, which has none |
 | `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make build` runs it) |
-| `firmware/sim/` | The simulator's `main` (`boop-sim`), built with the firmware's pure C++ and LinkKit's device library in PlatformIO's `native` env |
 | `firmware/test/` | The firmware's unit tests, the simulator scenarios and their golden pictures. LinkKit's device library tests in its own project (`linkkit/device/test/`) |
 | `firmware/pack_file.h` | The voice pack read from `.build/voice/voice.bin`, for the simulator and the tests, which have no SD card |
 | `tools/` | `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `export` (lays out the public repository without private character packs, and checks it for leaks, [characters/CHARACTER.md](../characters/CHARACTER.md) §11), and the `webcam/` recorder. The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
@@ -53,8 +52,8 @@ tests, evals, dev tools and skills.
   ([linkkit/SPEC.md](../linkkit/SPEC.md), with Boop's vocabulary in
   `app/BoopKit/DeviceLink/BoopDevice.swift`).
 - **Firmware.** `firmware/platformio.ini` points its `test_dir` here, and
-  the `native` env's `build_src_filter` adds `internal/firmware/sim/`
-  (the filter is relative to `firmware/src/`). Both envs link LinkKit's
+  the `native` env's `build_src_filter` adds the simulator's core,
+  `simulator/core/` (the filter is relative to `firmware/src/`). Both envs link LinkKit's
   device library, `linkkit/device/`, through `lib_deps`
   (`symlink://../linkkit/device`), so the tests and the simulator run the
   same kit as the board. The library's own tests are in its folder, with

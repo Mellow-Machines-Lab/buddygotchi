@@ -146,7 +146,7 @@ public final class Runtime: @unchecked Sendable {
     /// The newest snapshot sent to the device.
     public private(set) var latest: StateSnapshot?
     /// Boop's name, from `long-term.md`.
-    let name: String
+    public let name: String
     public private(set) var settings: AppSettings
     public let moodGraph: MoodGraph.Version
     /// The personality running now, touched only on `home`. Starts as the
@@ -188,6 +188,16 @@ public final class Runtime: @unchecked Sendable {
     /// and whether the XP changed since the last status.
     let growth: GrowthStore
     var grew = false
+
+    /// Every line sent to the device, as it's sent, for whoever records
+    /// them (`DemoRecorder`).
+    public final class DeviceLines: @unchecked Sendable {
+        private let lock = NSLock()
+        private var hear: (@Sendable (String) -> Void)?
+        public func listen(_ hear: (@Sendable (String) -> Void)?) { lock.withLock { self.hear = hear } }
+        func heard(_ line: String) { lock.withLock { hear }?(line) }
+    }
+    public let deviceLines = DeviceLines()
 
     /// After every change the menu bar might show. Called on `home`.
     public var onChange: ((Status) -> Void)?
@@ -267,7 +277,9 @@ public final class Runtime: @unchecked Sendable {
         // boop.log leaves out a `state` sent again unchanged (the keepalive,
         // a reply to `hello`), which debug.jsonl keeps.
         var lastState: String?
+        let sent = deviceLines
         link.onSend = { line, sender in
+            sent.heard(line)
             emit(DebugLog.sent(line, by: sender, at: clock()))
             guard debugLog != nil, line != lastState else { return }
             if line.hasPrefix(#"{"t":"state""#) { lastState = line }
@@ -555,8 +567,10 @@ public final class Runtime: @unchecked Sendable {
             tick()
         case "answer":
             // A forced pass: the actions keep their own rules.
+            // `by` is who forced it, for the log: the dashboard, or a demo.
             guard let choices = object["answers"] as? [String: String] else { return }
-            options.log("dev: forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: Runtime.forcedBy)))
+            let by = object["by"] as? String ?? Runtime.forcedBy
+            options.log("dev: forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: by)))
             changed()
         case "mood":
             // The mood action's own change, which tells the device too.
