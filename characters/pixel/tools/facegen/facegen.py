@@ -70,7 +70,7 @@ STATES = ["idle", "working", "needs_you", "task_complete", "asleep", "no_app", "
 # The host fact a design is for, as faces.h numbers it (render::Outcome,
 # render::StartCtx): task_complete's outcome and starting's context; none for any.
 OUTCOMES = [None, "success", "failure"]
-CTXS = [None, "new_task", "session", "continuation"]
+CTXS = [None, "new_task", "session", "continuation", "compacted"]
 # The group that holds a design's animation, by dialect; the still copy
 # beside it is the reduced-motion picture, which the device never shows.
 MOTION = ("boop-motion", "alert-motion", "state-motion", "motion")
@@ -933,8 +933,8 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "// A design: a mood and state's variation, the scene it draws, and the host",
         "// fact it's for, if any, as render::Outcome and",
         "// render::StartCtx number them: task_complete's outcome, 1 success or",
-        "// 2 failure, and starting's context, 1 new_task, 2 session or",
-        "// 3 continuation; 0 when it's for any.",
+        "// 2 failure, and starting's context, 1 new_task, 2 session,",
+        "// 3 continuation or 4 compacted; 0 when it's for any.",
         "struct Design {",
         "  uint16_t scene;",
         "  uint8_t outcome, ctx;",
@@ -1175,9 +1175,10 @@ def export() -> list[dict]:
     # The older moods' designs were captured before the new moods came
     # (the bank's qa/v3-fingerprints.json): the first pack's (V2), which the
     # device drew before, and the newer states' (V3). Each must come out
-    # byte for byte as it was.
+    # byte for byte as it was. A design of theirs with no fingerprint came
+    # after the capture.
     prints = json.loads((BANK / "qa" / "v3-fingerprints.json").read_text())["hashes"]
-    older = [a for a in designs if a["dialect"] != "v4"]
+    older = [a for a in designs if a["id"] in prints]
     changed = [a["id"] for a in older
                if hashlib.sha256((BUILD / a["svg"]).read_bytes()).hexdigest() != prints.get(a["id"], {}).get("svg")]
     if changed or len(older) != len(prints):

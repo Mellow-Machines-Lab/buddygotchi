@@ -7,7 +7,7 @@ constexpr const char* kStateNames[22] = {
     "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing", "delegating", "helper_return",
     "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam"};
 const char* const kOutcomes[] = {"", "success", "failure"};
-const char* const kCtxs[] = {"", "new_task", "session", "continuation"};
+const char* const kCtxs[] = {"", "new_task", "session", "continuation", "compacted"};
 }  // namespace
 Anim animFromName(const char* name) {
   if (!name) return Anim::kNone;

@@ -46,7 +46,7 @@ FINISHES = {"task_complete", "reply_ready"}
 FINISHES |= {old for old, anim in OLD_ANIMS.items() if anim in FINISHES}
 # The facts that pick an animation's variations.
 OUTCOMES = ["success", "failure"]
-CTXS = ["new_task", "session", "continuation"]
+CTXS = ["new_task", "session", "continuation", "compacted"]
 # How long the Mac lets a `next` wait for its turn (the kit's default,
 # linkkit/SPEC.md §3).
 TTL_MS = 5000

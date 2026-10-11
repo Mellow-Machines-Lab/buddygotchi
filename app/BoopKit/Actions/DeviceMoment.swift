@@ -70,8 +70,8 @@ public struct DeviceMoment: Equatable, Sendable {
     /// With task_complete, the turn's outcome: `success` or `failure`;
     /// the device plays a variation for it. Nil sends none.
     public var outcome: String?
-    /// With starting, what started: `new_task`, `session` or
-    /// `continuation`. Nil sends none.
+    /// With starting, what started: `new_task`, `session`,
+    /// `continuation` or `compacted`. Nil sends none.
     public var ctx: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,

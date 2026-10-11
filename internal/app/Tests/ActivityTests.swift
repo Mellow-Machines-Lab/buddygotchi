@@ -330,12 +330,12 @@ final class CoreActivityTests: XCTestCase {
 
 final class CoreOneShotTests: XCTestCase {
     /// A session starting plays starting, fresh (startup,
-    /// clear) or carrying on (resume, compact), and a prompt plays it for a
-    /// new task: a one-shot of the rules', with no face of the brain's,
+    /// clear), carrying on (resume) or with its context compacted
+    /// (compact), and a prompt plays it for a new task: a one-shot of the rules', with no face of the brain's,
     /// which plays only if the device's turn is free.
     func testStartsPlayStarting() {
         for (source, ctx) in [("startup", "session"), ("clear", "session"), ("resume", "continuation"),
-                              ("compact", "continuation"), (nil, "session")] {
+                              ("compact", "compacted"), (nil, "session")] {
             let rig = CoreRig()
             let fx = rig.send(.sessionStart, source: source)
             XCTAssertEqual(shots(fx), ["starting \(ctx)"], source ?? "no source")
@@ -353,6 +353,7 @@ final class CoreOneShotTests: XCTestCase {
                        #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"variant":"# + "\(variant)" + #","ctx":"new_task"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
         XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
+        XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
         XCTAssertEqual(shots(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
     }
 

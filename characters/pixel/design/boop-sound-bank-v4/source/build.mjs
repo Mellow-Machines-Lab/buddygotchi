@@ -8,7 +8,7 @@ import {moodAdditions,newMoods} from '../runtime/mood-catalog.mjs';
 import {stateOrder} from '../runtime/state-catalog.mjs';
 import {makeScene} from '../runtime/bank.mjs';
 import {voiceWindows} from '../runtime/mood-art.mjs';
-if(process.argv.includes('--help')){console.log('Usage: node characters/pixel/design/boop-sound-bank-v4/source/build.mjs [--svg]\nBuilds the portable runtime and manifests (the studio, ../../studio/, plays the runtime). --svg also exports all 770 SVG selections; sound remains code-based. No network or API calls.');process.exit(0);}
+if(process.argv.includes('--help')){console.log('Usage: node characters/pixel/design/boop-sound-bank-v4/source/build.mjs [--svg]\nBuilds the portable runtime and manifests (the studio, ../../studio/, plays the runtime). --svg also exports all 795 SVG selections; sound remains code-based. No network or API calls.');process.exit(0);}
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 for(const d of ['dist','qa'])fs.mkdirSync(path.join(root,d),{recursive:true});
 const walk=p=>fs.readdirSync(p,{withFileTypes:true}).flatMap(x=>x.isDirectory()?walk(path.join(p,x.name)):[path.join(p,x.name)]);
