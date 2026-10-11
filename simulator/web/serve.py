@@ -94,7 +94,12 @@ class Cable:
         server.listen(8)
 
         def client(conn: socket.socket) -> None:
-            conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, struct.pack("ll", 0, int(SEND_TIMEOUT_S * 1e6)))
+            try:
+                conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, struct.pack("ll", 0, int(SEND_TIMEOUT_S * 1e6)))
+            except OSError:
+                # macOS refuses it (EINVAL) once the client has hung up: one gone before it's heard.
+                conn.close()
+                return
             with self.lock:
                 self.clients.add(conn)
             buf = b""

@@ -77,7 +77,7 @@ local page, in `web/dist/`:
 | Attribute | What |
 | --- | --- |
 | `face` | `pixel` (the default) or `gel` |
-| `zoom` | How many times as big the screen is drawn (2 for the pixel face, 1 for a native one) |
+| `zoom` | How many times as big the screen is drawn (2 for the pixel face, 1 for a native one), shrunk to fit a narrower page |
 | `native` | A native face's panel, `WxH` |
 | `voice` | A voice pack to fetch for the card |
 | `usb` | A WebSocket that is the board's USB cable, one line a message each way |
