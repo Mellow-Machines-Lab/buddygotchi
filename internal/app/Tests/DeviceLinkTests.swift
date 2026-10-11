@@ -284,12 +284,115 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)
     }
 
+    /// The simulator is a body to choose only while it runs
+    /// (`DeviceChooser`): chosen, the board is let go and its lines are no
+    /// longer heard; when the simulator stops, Boop is back on its board.
+    func testASimulatorIsADeviceToChooseWhileItRuns() throws {
+        let path = "/tmp/boop-test-sim-\(getpid()).sock"
+        let board = FakeTransport()
+        let chooser = DeviceChooser(board: board, simulatorSocket: path)
+        let heard = Heard()
+        chooser.start(onLine: { line in heard.lock.withLock { heard.lines.append(line) } },
+                      onConnection: { up in heard.lock.withLock { heard.ups.append(up) } })
+        XCTAssertEqual(chooser.choice, .board)
+        XCTAssertFalse(chooser.simulatorIsThere(), "nothing is running")
+        board.onConnection?(true)
+        board.onLine?("from the board")
+        XCTAssertEqual(heard.lines, ["from the board"])
+
+        let simulator = try XCTUnwrap(EchoSocket(path))
+        defer { simulator.stop() }
+        XCTAssertTrue(chooser.simulatorIsThere())
+        XCTAssertEqual(chooser.choice, .board, "being there doesn't choose it")
+        chooser.choose(.simulator)
+        XCTAssertEqual(chooser.choice, .simulator)
+        XCTAssertEqual(chooser.name, "simulator")
+        heard.wait("the board's link dropped, then the simulator's came up") { heard.ups == [true, false, true] }
+        board.onLine?("from the board, late")
+        chooser.send("to the simulator")
+        heard.wait("the simulator's line, and not the board's") { heard.lines == ["from the board", "to the simulator"] }
+        XCTAssertFalse(board.lines.contains("to the simulator"))
+
+        simulator.stop()
+        heard.wait("the simulator's link dropped") { heard.ups.last == false }
+        XCTAssertFalse(chooser.simulatorIsThere())
+        XCTAssertEqual(chooser.choice, .board, "back on its board when the simulator stops")
+        chooser.send("to the board")
+        XCTAssertTrue(board.lines.contains("to the board"))
+        chooser.stop()
+    }
+
+    func testASocketThatIsNotThereIsNoSimulator() {
+        XCTAssertFalse(DeviceChooser.answers("/tmp/boop-test-no-such-\(getpid()).sock"))
+        // A plain file of that name isn't one either.
+        let file = "/tmp/boop-test-file-\(getpid()).sock"
+        FileManager.default.createFile(atPath: file, contents: Data())
+        defer { unlink(file) }
+        XCTAssertFalse(DeviceChooser.answers(file))
+    }
+
     func testLinkSettings() {
         XCTAssertEqual(LinkSetting("usb:/tmp/x.sock"), .usb("/tmp/x.sock"))
         XCTAssertEqual(LinkSetting("ble"), .bluetooth)
         XCTAssertEqual(LinkSetting("none"), LinkSetting.none)
         XCTAssertNil(LinkSetting("usb:"))
         XCTAssertNil(LinkSetting("wifi"))
+    }
+}
+
+/// A simulator's cable for a test: a Unix socket that takes one
+/// client and sends back whatever it's sent.
+final class EchoSocket: @unchecked Sendable {
+    let path: String
+    let fd: Int32
+    let lock = NSLock()
+    var clients: [Int32] = []
+
+    init?(_ path: String) {
+        self.path = path
+        unlink(path)
+        fd = socket(AF_UNIX, SOCK_STREAM, 0)
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: Array(path.utf8)) }
+        let bound = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
+        }
+        guard bound == 0, listen(fd, 4) == 0 else { return nil }
+        let fd = fd
+        Thread.detachNewThread {
+            while true {
+                let client = accept(fd, nil, nil)
+                guard client >= 0 else { return }
+                self.lock.withLock { self.clients.append(client) }
+                Thread.detachNewThread {
+                    var buffer = [UInt8](repeating: 0, count: 4096)
+                    while true {
+                        let n = read(client, &buffer, buffer.count)
+                        guard n > 0 else { break }
+                        _ = write(client, buffer, n)
+                    }
+                    close(client)
+                }
+            }
+        }
+    }
+
+    /// The simulator stops: its cable goes, and whoever was on it is dropped.
+    func stop() {
+        close(fd)
+        unlink(path)
+        lock.withLock { clients }.forEach { shutdown($0, SHUT_RDWR) }
+    }
+}
+
+final class Heard: @unchecked Sendable {
+    let lock = NSLock()
+    var lines: [String] = []
+    var ups: [Bool] = []
+    func wait(_ what: String, _ done: () -> Bool) {
+        for _ in 0..<300 where !lock.withLock(done) { usleep(10_000) }
+        XCTAssertTrue(lock.withLock(done), what)
     }
 }
 

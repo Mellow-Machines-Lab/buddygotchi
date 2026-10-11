@@ -129,12 +129,26 @@ struct SettingsPane: View {
     private var device: some View {
         let device = model.device
         return Card(padding: 0) {
-            SettingRow(icon: "rectangle.inset.filled", title: "\(model.name)'s body", detail: device.detail,
-                       detailTone: device.trouble ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft) {
-                // Reconnecting can't help while Boop isn't running or Bluetooth is off.
-                if model.link != .none, let status = model.status, status.linkTrouble == nil {
-                    Button("Reconnect") { model.runtime?.reconnectDevice() }.buttonStyle(.row).fixedSize()
-                        .help("Drop the connection and look for \(model.name)'s body again now")
+            VStack(spacing: 0) {
+                SettingRow(icon: "rectangle.inset.filled", title: "\(model.name)'s body", detail: device.detail,
+                           detailTone: device.trouble ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft) {
+                    // Reconnecting can't help while Boop isn't running or Bluetooth is off.
+                    if model.link != .none, let status = model.status, status.linkTrouble == nil {
+                        Button("Reconnect") { model.runtime?.reconnectDevice() }.buttonStyle(.row).fixedSize()
+                            .help("Drop the connection and look for \(model.name)'s body again now")
+                    }
+                }
+                // A simulator running on this Mac is a body to choose, while it runs.
+                if model.simulatorThere || model.usingSimulator {
+                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    SettingRow(icon: "macwindow", title: "Simulator",
+                               detail: model.usingSimulator ? "\(model.name) is using the simulator in your browser, not its board."
+                                   : "A simulated board is running on this Mac.") {
+                        Button(model.usingSimulator ? "Use the board" : "Use it") {
+                            model.use(model.usingSimulator ? .board : .simulator)
+                        }.buttonStyle(.row).fixedSize()
+                            .help(model.usingSimulator ? "Go back to \(model.name)'s board" : "Use the simulator as \(model.name)'s body until it stops")
+                    }
                 }
             }
         }

@@ -82,6 +82,14 @@ enum Snapshots {
                 shot("settings-not-running", stopped, pane: .settings)
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))),
                      pane: .settings)
+                // A simulator running on this Mac: a body to choose, and chosen.
+                let offered = model(installer, status: status())
+                offered.simulatorThere = true
+                shot("settings-simulator-there", offered, pane: .settings)
+                let simulated = model(installer, status: status())
+                simulated.simulatorThere = true
+                simulated.usingSimulator = true
+                shot("settings-simulator-used", simulated, pane: .settings)
                 // A card with another pack than the app's, and no card or pack: no voice.
                 shot("settings-old-voice", model(installer, status: status(voice: "0123456789abcdef")), pane: .settings)
                 shot("settings-no-voice", model(installer, status: status(voice: "none")), pane: .settings)

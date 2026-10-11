@@ -69,7 +69,10 @@ func bundledSteering() -> Steering {
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile) -> Runtime.Options {
     let transport: Transport? = switch link {
-    case .bluetooth: BLETransport(prefix: BoopDevice.blePrefix, log: { log.write($0) })
+    // The board over Bluetooth, or a simulator running on this Mac, when
+    // Settings is told to use it.
+    case .bluetooth: DeviceChooser(board: BLETransport(prefix: BoopDevice.blePrefix, log: { log.write($0) }),
+                                   log: { log.write($0) })
     case .usb(let path): SocketTransport(path: path)
     case .none: nil
     }
