@@ -38,8 +38,6 @@ public struct CharacterPack: Sendable {
 
     /// The pack's folder: its steering, and what the app reads at run time.
     public let directory: URL
-    /// Its base's folder, when it builds on one (CHARACTER.md §6).
-    public let baseDirectory: URL?
     public let id: String
     public let name: String
     public let version: String
@@ -90,53 +88,22 @@ public struct CharacterPackError: Error, CustomStringConvertible {
 }
 
 extension CharacterPack {
-    /// Reads `character.json` from a pack's folder, on top of its base's
-    /// when it names one (CHARACTER.md §6: key by key, `"moods": "inherit"`
-    /// taking the base's), and throws if it isn't a pack: a key missing, a
-    /// base that isn't beside it or has a base of its own, a move, fallback
-    /// or outcome to a mood that isn't one, or a default mood that isn't one.
+    /// Reads `character.json` from a pack's folder, and throws if it isn't
+    /// a pack: a key missing, a move, fallback or outcome to a mood that
+    /// isn't one, or a default mood that isn't one. A pack stands alone:
+    /// everything it has is in its own folder.
     public init(directory: URL) throws {
-        var json = try Self.json(in: directory)
-        var baseDirectory: URL?
-        if let base = json["base"] as? String {
-            let folder = directory.deletingLastPathComponent().appendingPathComponent(base)
-            var under = try Self.json(in: folder)
-            guard under["base"] == nil else {
-                throw CharacterPackError("\(folder.path): a base can't have a base of its own")
-            }
-            if json["moods"] as? String == "inherit" { json["moods"] = nil }
-            under.merge(json) { _, own in own }
-            json = under
-            baseDirectory = folder
-        }
-        try self.init(json: json, from: directory.appendingPathComponent("character.json").path,
-                      directory: directory, baseDirectory: baseDirectory)
-    }
-
-    static func json(in directory: URL) throws -> [String: Any] {
         let file = directory.appendingPathComponent("character.json")
         let data: Data
         do { data = try Data(contentsOf: file) } catch { throw CharacterPackError("\(file.path) can't be read: \(error)") }
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw CharacterPackError("\(file.path) isn't a JSON object")
         }
-        return json
+        try self.init(json: json, from: file.path, directory: directory)
     }
 
-    /// One of the pack's files, by its path in the pack: the pack's own,
-    /// else its base's (CHARACTER.md §6); nil when neither has it.
-    public func file(_ path: String) -> URL? {
-        for folder in [directory, baseDirectory].compactMap({ $0 }) {
-            let url = folder.appendingPathComponent(path)
-            if FileManager.default.fileExists(atPath: url.path) { return url }
-        }
-        return nil
-    }
-
-    init(json: [String: Any], from source: String, directory: URL = URL(fileURLWithPath: "/"),
-         baseDirectory: URL? = nil) throws {
+    init(json: [String: Any], from source: String, directory: URL = URL(fileURLWithPath: "/")) throws {
         self.directory = directory
-        self.baseDirectory = baseDirectory
         func string(_ key: String) throws -> String {
             guard let s = json[key] as? String, !s.isEmpty else { throw CharacterPackError("\(source): \(key) is missing") }
             return s

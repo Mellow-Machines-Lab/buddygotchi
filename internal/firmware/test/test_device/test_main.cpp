@@ -2031,7 +2031,7 @@ static void test_dbg_latency_times_inputs_and_messages() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: run make -C internal voice\n");
+  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);

@@ -31,7 +31,8 @@ mkdir -p "$OUT"
 .build/debug/Boop --headless --state-dir "$DIR/state" --link "usb:$DIR/usb.sock" --socket "$DIR/boop.sock" \
     --no-open --demo pack --record "$OUT/$FACE.json" 2>&1 | grep "demo:" || true
 [ -s "$OUT/$FACE.json" ] || { echo "record-demo: nothing was recorded" >&2; exit 1; }
-if [ -f .build/voice/voice.bin ]; then
+# The staged pack's voice, if it has one (characters/CHARACTER.md §8).
+if [ -f "$(cat .character-build/pack)/voice/voice.bin" ]; then
     python3 simulator/tools/voice_subset.py "$OUT/$FACE.json" --out "$OUT/$FACE-voice.bin"
 fi
 echo "record-demo: $OUT/$FACE.json"

@@ -253,17 +253,20 @@
       }
     }
   ],
-  "studio": {
-    "label": "Pixel Boop",
-    "about": "CYD board",
-    "icon": "studio/icon.svg",
-    "scripts": [
-      "design/boop-sound-bank-v4/dist/boop-runtime.js",
-      "studio/adapter.js"
-    ],
-    "styles": [
-      "studio/adapter.css"
-    ],
-    "coverage": "design/boop-sound-bank-v4/coverage.json"
-  }
+  "studio": [
+    {
+      "id": "pixel",
+      "label": "Pixel Boop",
+      "about": "CYD board",
+      "icon": "studio/icon.svg",
+      "scripts": [
+        "design/boop-sound-bank-v4/dist/boop-runtime.js",
+        "studio/adapter.js"
+      ],
+      "styles": [
+        "studio/adapter.css"
+      ],
+      "coverage": "design/boop-sound-bank-v4/coverage.json"
+    }
+  ]
 }

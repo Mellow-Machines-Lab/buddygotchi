@@ -478,7 +478,7 @@ class PerfTests(unittest.TestCase):
 
 class TakesTests(unittest.TestCase):
     """The takes boopctl plays are the board's, from the voice pack on its
-    card (.build/voice/voice.bin)."""
+    card (the chosen character pack's voice/voice.bin)."""
 
     def test_the_takes_are_the_boards(self):
         takes = cli.takes()

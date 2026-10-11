@@ -19,7 +19,7 @@ tests, evals, dev tools and skills.
 | `app/TestSupport/XCTestShim/` | A stand-in XCTest for Command Line Tools, which has none |
 | `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make build` runs it) |
 | `firmware/test/` | The firmware's unit tests, the simulator scenarios and their golden pictures. LinkKit's device library tests in its own project (`linkkit/device/test/`) |
-| `firmware/pack_file.h` | The voice pack read from `.build/voice/voice.bin`, for the firmware's tests, which have no SD card |
+| `firmware/pack_file.h` | The voice pack read from the chosen character pack's `voice/voice.bin`, for the firmware's tests, which have no SD card |
 | `tools/` | `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `export` (lays out the public repository without private character packs, and checks it for leaks, [characters/CHARACTER.md](../characters/CHARACTER.md) §11), and the `webcam/` recorder. The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
 | `characters/` | The tests of `characters/charactergen.py`'s studio rules (`make -C internal tools-test`) |
 | `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/`, `.codex/skills/` and `.cursor/skills/` |

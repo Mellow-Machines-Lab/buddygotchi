@@ -6,7 +6,7 @@ import Foundation
 /// blinking, for the popover's tile: the device's own shapes, without
 /// the props. They're the face's `mac/faces.json`
 /// (characters/CHARACTER.md §9), which facegen writes into the Pixel
-/// pack: the character pack's own, else its base's.
+/// pack.
 enum FaceDesigns {
     /// Where the faces sit in the designs' 320×240 screen.
     static var box: CGRect { table.box }
@@ -27,8 +27,7 @@ enum FaceDesigns {
     /// The face's designs, read the first time they're used; none for a
     /// pack with no pixel face.
     nonisolated(unsafe) private static let table: Table = {
-        guard let file = CharacterPack.active.file("mac/faces.json"),
-              let data = try? Data(contentsOf: file),
+        guard let data = try? Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("mac/faces.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return Table() }
         var t = Table()
         if let b = json["box"] as? [Int], b.count == 4 { t.box = CGRect(x: b[0], y: b[1], width: b[2], height: b[3]) }

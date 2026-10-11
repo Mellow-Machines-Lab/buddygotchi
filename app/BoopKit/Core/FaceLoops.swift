@@ -7,7 +7,7 @@ import Foundation
 /// window, when a line over its animation starts, as the device's sfx.h has
 /// it. They're the face's `mac/faces.json`
 /// (characters/CHARACTER.md §9), which facegen writes into the Pixel
-/// pack: the character pack's own, else its base's.
+/// pack.
 public enum FaceLoops {
     /// The moods the pixel designs draw, in faces.h's order.
     public static var moods: [String] { table.moods }
@@ -39,8 +39,7 @@ public enum FaceLoops {
     /// The face's table, read the first time it's used; empty for a pack
     /// with no pixel face.
     private static let table: Table = {
-        guard let file = CharacterPack.active.file("mac/faces.json"),
-              let data = try? Data(contentsOf: file),
+        guard let data = try? Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("mac/faces.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return Table() }
         var t = Table()
         t.moods = json["moods"] as? [String] ?? []

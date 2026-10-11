@@ -1,10 +1,12 @@
 // The card as files on the Mac: BOOP_SIM_CARD names a folder for it, where
 // a pack copied on with dbg.card goes to <folder>/boop/voice.bin, as on the
-// board, and is played from there. Without it the card holds the repo's own
-// pack (.build/voice/voice.bin), when that's been built, and takes no copy.
+// board, and is played from there. Without it the card holds the chosen
+// character pack's voice (its voice/voice.bin, characters/CHARACTER.md §8),
+// if it has one, and takes no copy.
 #pragma once
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <string>
 #include <sys/stat.h>
 
@@ -25,9 +27,14 @@ struct FileCard : Card {
   File pack, copy;
   std::string path(const char* name) const {
     if (!dir.empty()) return dir + "/boop/" + name;
-    // The repo's own pack, found from this file's path: <repo>/simulator/core/file_card.h.
+    // The chosen pack's folder is the one staging names in
+    // .character-build/pack, found from this file's own path:
+    // <repo>/simulator/core/file_card.h.
     const std::string here = __FILE__;
-    return here.substr(0, here.rfind("/simulator/core/")) + "/.build/voice/" + name;
+    std::string pack;
+    std::ifstream chosen(here.substr(0, here.rfind("/simulator/core/")) + "/.character-build/pack");
+    std::getline(chosen, pack);
+    return pack + "/voice/" + name;
   }
 
   bool open() override {

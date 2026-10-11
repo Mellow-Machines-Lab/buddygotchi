@@ -46,8 +46,7 @@ let usage = """
     """
 
 /// The character pack bundled with the app: the one `make build` staged
-/// (characters/CHARACTER.md §2), which the bundle's `packs/chosen` names,
-/// with its base beside it.
+/// (characters/CHARACTER.md §2), which the bundle's `packs/chosen` names.
 func bundledCharacter() -> CharacterPack {
     guard let packs = Bundle.module.url(forResource: "packs", withExtension: nil),
           let chosen = try? String(contentsOf: packs.appendingPathComponent("chosen"), encoding: .utf8) else {

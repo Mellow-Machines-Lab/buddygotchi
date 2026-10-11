@@ -4,7 +4,7 @@ with the whole file's size and CRC-32, which the board checks by reading the
 file back before it swaps it in.
 
 It's slow, hours for the whole pack, so a
-card reader (`voicegen.py --card`) comes first. A few `put`s are in flight
+card reader comes first (copy the file to the card's boop/voice.bin). A few `put`s are in flight
 at once. Every reply says how much the card holds, so a line lost on the
 way (the CH340 drops a run of bytes now and then) costs a resync, not the
 copy; and a copy that was cut off goes on where it stopped."""
@@ -101,7 +101,7 @@ def copy(link: Link, pack: Path = PACK, force: bool = False, fresh: bool = False
          say: Callable[[str], None] = print) -> int:
     """`boopctl card`: copies the pack unless the board already has it."""
     if not pack.exists():
-        raise DeviceError(f"no voice pack at {pack}: run make -C internal voice")
+        raise DeviceError(f"no voice pack at {pack}: the chosen character pack has no voice")
     data = pack.read_bytes()
     want = pack_version(data)
     ping = link.request({"t": "dbg.ping"})

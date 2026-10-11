@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools voice faces fw fw-test sim sim-test demo e2e tools-test
+.PHONY: test tools faces fw fw-test sim sim-test demo e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -17,7 +17,7 @@ PIO := firmware/tools/pio.sh
 # (it has failed five times running for one package).
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
-test: voice
+test:
 	$(MAKE) -C $(ROOT) build
 	cd $(ROOT) && .build/debug/BoopTests
 	for pkg in $(SWIFT_PACKAGES); do \
@@ -29,23 +29,6 @@ test: voice
 	    echo "$$pkg: the TestingMacros flake; trying again"; \
 	  done; \
 	done
-
-# The voice pack, .build/voice/voice.bin, which the board plays from its SD
-# card and the simulator and tests read from here, and
-# the Mac's take table, characters/boop/mac/takes.tsv, from the recorded voice bank. Rebuilt when
-# the bank or voicegen changes. `voicegen.py --card /Volumes/CARD` also
-# copies it onto a card. Without Boop's private pack (the public repository)
-# there's no voice to build, and the tests that read it say so and go on.
-VOICEGEN := $(ROOT)/characters/boop/tools/voicegen/voicegen.py
-ifneq ($(wildcard $(VOICEGEN)),)
-voice: $(ROOT)/.build/voice/voice.bin
-else
-voice:
-	@echo "voice: no voice bank here (Boop's pack isn't in this checkout)"
-endif
-
-$(ROOT)/.build/voice/voice.bin: $(ROOT)/characters/boop/design/assets/boop-voice-v1/manifest.json $(ROOT)/characters/boop/design/assets/boop-voice-v1/dictionary.json $(ROOT)/characters/boop/tools/voicegen/voicegen.py
-	cd $(ROOT) && python3 characters/boop/tools/voicegen/voicegen.py
 
 # internal/tools/.venv with pyserial, Pillow and Textual, for boopctl.
 # internal/tools/boopctl makes it through this when it's missing; this also
@@ -77,7 +60,7 @@ fw:
 # Firmware unit tests on the Mac: that the character pack's moods.h is
 # fresh (characters/CHARACTER.md §9), Boop's, then LinkKit's device
 # library's own (linkkit/device/platformio.ini).
-fw-test: voice
+fw-test:
 	cd $(ROOT) && python3 characters/charactergen.py --check
 	cd $(ROOT) && $(PIO) test -e native
 	cd $(ROOT) && $(PIO) test -d $(ROOT)/linkkit/device -e native
@@ -86,7 +69,7 @@ fw-test: voice
 # pixel face's, then the gel face's (characters/boop/tests/golden-gel/). The
 # PNGs land in /tmp/boop-sim/<face>/<scenario>/; internal/tools/boopctl sim NAME
 # [--face gel] runs one.
-sim: voice
+sim:
 	cd $(ROOT) && internal/tools/boopctl sim
 	cd $(ROOT) && internal/tools/boopctl sim --face gel
 
@@ -94,7 +77,7 @@ sim: voice
 # the test as its front end and at its serial port; then the same core as
 # the browser runs it, built to WebAssembly (it needs Emscripten: brew
 # install emscripten), and the page's USB cable.
-sim-test: voice
+sim-test:
 	cd $(ROOT) && $(PIO) run -e native
 	cd $(ROOT) && python3 -m unittest discover -s simulator/tests
 	cd $(ROOT) && simulator/web/build.sh
@@ -103,7 +86,7 @@ sim-test: voice
 # Records the staged character pack's demo for the simulator's page
 # (simulator/README.md, Demos): played through the headless app on the
 # simulator's board, FACE=gel for Boop's own face. As long as the demo runs.
-demo: voice
+demo:
 	$(MAKE) -C $(ROOT) build
 	cd $(ROOT) && $(PIO) run -e native
 	cd $(ROOT) && simulator/tools/record-demo.sh $(or $(FACE),pixel)
@@ -115,9 +98,13 @@ e2e:
 
 # The tools' own tests, with no board or camera: boopctl's commands (the
 # working day's script and report among them, and the takes they read from
-# the voice pack), the webcam recorder on synthetic video, and charactergen's
-# studio rules (internal/characters/).
-tools-test: tools voice
+# the voice pack), the webcam recorder on synthetic video, charactergen's
+# staging and studio rules (internal/characters/), and each character
+# pack's own (its tests/tools/).
+tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
+	cd $(ROOT) && for tests in characters/*/tests/tools; do \
+	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \
+	done

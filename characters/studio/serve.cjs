@@ -13,10 +13,12 @@ const token=crypto.randomBytes(32).toString('hex'),origin='http://127.0.0.1:'+po
 const captureNames=new Set();
 for(const pack of fs.readdirSync(root)){
   const file=path.join(root,pack,'character.json');if(!fs.existsSync(file))continue;
-  const list=JSON.parse(fs.readFileSync(file,'utf8')).studio?.captures;if(!list)continue;
-  const cases=JSON.parse(fs.readFileSync(path.join(root,pack,list),'utf8')).cases;
-  if(!Array.isArray(cases)||cases.some(item=>!/^[a-z][a-z0-9_.-]{1,80}$/.test(item.id)))throw Error(`Invalid capture allowlist ${pack}/${list}.`);
-  for(const item of cases)captureNames.add(item.id+'.webm');
+  for(const entry of JSON.parse(fs.readFileSync(file,'utf8')).studio||[]){
+    const list=entry.captures;if(!list)continue;
+    const cases=JSON.parse(fs.readFileSync(path.join(root,pack,list),'utf8')).cases;
+    if(!Array.isArray(cases)||cases.some(item=>!/^[a-z][a-z0-9_.-]{1,80}$/.test(item.id)))throw Error(`Invalid capture allowlist ${pack}/${list}.`);
+    for(const item of cases)captureNames.add(item.id+'.webm');
+  }
 }
 const maxCaptureBytes=8*1024*1024; // VALIDATION.md: bounded local evidence export.
 if(captureDir)fs.mkdirSync(captureDir,{recursive:true});

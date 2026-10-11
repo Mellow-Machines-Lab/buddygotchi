@@ -13,6 +13,7 @@ names.
 | What | Where | Licence |
 | --- | --- | --- |
 | Geist Mono, © 2023 Vercel, in collaboration with basement.studio | Rasterised into `firmware/assets/fonts.h` by `internal/tools/fontgen/` | SIL Open Font License 1.1 ([firmware/assets/OFL.txt](firmware/assets/OFL.txt)) |
+| The recorded voice, 2,722 takes generated with ElevenLabs' text-to-speech, then trimmed and shaped for the board's speaker | `characters/pixel/voice/voice.bin`, with its table, `characters/pixel/mac/takes.tsv` | MIT, with the rest of the repo. The recordings they were built from aren't in it |
 
 ## Linked into the firmware
 

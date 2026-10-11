@@ -60,7 +60,7 @@ A generic one, not the CYD or the AMOLED board:
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
 | Light | The dot under the screen, in the LED's colour |
 | Backlight | The screen dims as the firmware dims it |
-| Card | A voice pack: the page fetches one (`voice="…"`), and it can be ejected and put back. On the Mac, the pack this checkout built (`.build/voice/voice.bin`), or with `BOOP_SIM_CARD=DIR` a folder that is the card, where `dbg.card` copies a pack as on a board |
+| Card | A voice pack: the page fetches one (`voice="…"`), and it can be ejected and put back. On the Mac, the chosen character pack's voice (its `voice/voice.bin`), or with `BOOP_SIM_CARD=DIR` a folder that is the card, where `dbg.card` copies a pack as on a board |
 | Power, reset | Power off and Reset. The card stays in its slot through both |
 
 ## The page
@@ -109,8 +109,8 @@ make simulator                    # then http://127.0.0.1:8206/?demo=pixel (or g
 (`Boop --headless --demo pack --record FILE`) with the Mac build's board
 as its device, and takes as long as the demo runs. Into `web/dist/demo/`
 go `<face>.json`, the recording, and `<face>-voice.bin`, a voice pack
-with only the takes it says (`tools/voice_subset.py`: 73 KB for Boop's
-demo, where the whole voice is 29 MB).
+with only the takes it says (`tools/voice_subset.py`: about 70 KB for a
+minute's demo, where the whole voice is 29 MB).
 
 A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
 
@@ -218,4 +218,4 @@ make -C internal sim-test
   order; and a voice pack cut down to a demo's takes that the board plays
   from.
 
-The sound and card tests need a voice pack, and skip without one.
+The sound and card tests need the chosen pack to have a voice, and skip without one.

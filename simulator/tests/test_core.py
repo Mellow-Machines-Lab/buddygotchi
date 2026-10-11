@@ -17,7 +17,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 CORE = REPO / "firmware" / ".pio" / "build" / "native" / "program"
-VOICE = REPO / ".build" / "voice" / "voice.bin"
+# The chosen character pack's voice, as the core takes it (core/file_card.h).
+STAGED = REPO / ".character-build" / "pack"
+VOICE = Path(STAGED.read_text().strip() if STAGED.exists() else REPO / "characters" / "pixel") / "voice" / "voice.bin"
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
@@ -116,7 +118,7 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(first["boot"])
         self.assertNotEqual(first["boot"], second["boot"])
 
-    @unittest.skipUnless(VOICE.exists(), "needs a voice pack: make -C internal voice")
+    @unittest.skipUnless(VOICE.exists(), "the chosen character pack has no voice")
     def test_a_line_plays_at_the_pace_a_dac_would(self) -> None:
         board = self.board()
         self.assertEqual(board.request({"t": "dbg.ping"})["card"], "ok")

@@ -27,6 +27,15 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
+def chosen_voice() -> Path:
+    """The chosen character pack's voice (characters/CHARACTER.md §8): the
+    pack is `BOOP_CHARACTER`'s, else the one last staged
+    (.character-build/pack), else Pixel."""
+    staged = REPO / ".character-build" / "pack"
+    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "pixel")
+    return Path(pack) / "voice" / "voice.bin"
+
+
 # A write to a client that can't finish within this long drops the client,
 # so one that stops reading can't stall the board's lines to the others for
 # longer (the host's own rule for a stuck bridge, linkkit/SPEC.md §8).
@@ -168,7 +177,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8206, help="the page's port on 127.0.0.1 (8206)")
     parser.add_argument("--socket", default="/tmp/boop-sim-usb.sock", help="the board's USB, as a bridge's socket (/tmp/boop-sim-usb.sock)")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
-    parser.add_argument("--voice", default=str(REPO / ".build" / "voice" / "voice.bin"), help="the voice pack on the board's card (.build/voice/voice.bin, if it's been built)")
+    parser.add_argument("--voice", default=str(chosen_voice()), help="the voice pack on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()
     if not (Path(args.dist) / "boop-sim.wasm").exists():
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)

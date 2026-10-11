@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cuts a voice pack down to the takes a demo says, for a page to fetch.
 
-    simulator/tools/voice_subset.py RECORDING.json [--pack .build/voice/voice.bin] --out demo-voice.bin
+    simulator/tools/voice_subset.py RECORDING.json [--pack VOICE.bin] --out demo-voice.bin
 
 A whole voice is tens of megabytes; a demo says a handful of takes. The
 recording lists them (`takes`, DemoRecording). The pack that comes out is
@@ -11,6 +11,7 @@ and samples. A take the pack doesn't have stops it.
 """
 import argparse
 import json
+import os
 import struct
 import sys
 from pathlib import Path
@@ -23,6 +24,15 @@ MAGIC = b"BOOPVOX1"
 # mouth at, its frames), then the mouths and samples.
 HEADER = struct.Struct("<8s16sIIIII20x")
 RECORD = struct.Struct("<72s36sIIII4x")
+
+
+def chosen_voice() -> Path:
+    """The chosen character pack's voice (characters/CHARACTER.md §8): the
+    pack is `BOOP_CHARACTER`'s, else the one last staged
+    (.character-build/pack), else Pixel."""
+    staged = REPO / ".character-build" / "pack"
+    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "pixel")
+    return Path(pack) / "voice" / "voice.bin"
 
 
 def subset(pack: bytes, ids: list) -> bytes:
@@ -50,7 +60,7 @@ def subset(pack: bytes, ids: list) -> bytes:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("recording", type=Path, nargs="+", help="a demo's recording; several share one pack")
-    ap.add_argument("--pack", type=Path, default=REPO / ".build" / "voice" / "voice.bin", help="the whole voice (.build/voice/voice.bin)")
+    ap.add_argument("--pack", type=Path, default=chosen_voice(), help="the whole voice (the chosen character pack's voice/voice.bin)")
     ap.add_argument("--out", type=Path, required=True, help="the pack to write")
     args = ap.parse_args()
     ids = []
