@@ -22,7 +22,7 @@ tests, evals, dev tools and skills.
 | `firmware/pack_file.h` | The voice pack read from the chosen character pack's `voice/voice.bin`, for the firmware's tests, which have no SD card |
 | `tools/` | `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `export` (lays out the public repository without private character packs, and checks it for leaks, [characters/CHARACTER.md](../characters/CHARACTER.md) §11), and the `webcam/` recorder. The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
 | `characters/` | The tests of `characters/charactergen.py`'s studio rules (`make -C internal tools-test`) |
-| `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/`, `.codex/skills/` and `.cursor/skills/` |
+| `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/` and `.codex/skills/` |
 
 ## How it's wired
 
@@ -68,13 +68,8 @@ tests, evals, dev tools and skills.
 root as `make -C internal <target>`. They are listed in
 [VERIFICATION.md](VERIFICATION.md) §2.
 
-`tools/slimegen/slimegen.mjs` generates the opt-in host graph (into Boop's character pack), bundled Mac mirror and native gel catalogs from the slime
-catalog (`--check` checks freshness). The shipping output has no runtime
-dependency on internal tools; see [verification](VERIFICATION.md).
-
-The integer gel engine is checked with
-`python3 characters/boop/tools/slimegen/check-port.py --output /tmp/boop-gel-port`.
-Its native JSON adapter lives in `characters/boop/tools/gel-trace/` and never ships.
-`internal/tools/boopctl sim --face gel` checks the separate gel goldens;
-`--face pixel` checks the unchanged pixel set. See [VERIFICATION.md](VERIFICATION.md) for
-on-board checks and the limits of native evidence.
+The shipping output has no runtime dependency on internal tools.
+`internal/tools/boopctl sim --face pixel` checks the pixel face's
+goldens, and `--face gel` the gel face's, which needs Boop's pack. The
+gel's own tools are in that pack. See [VERIFICATION.md](VERIFICATION.md)
+for on-board checks and the limits of native evidence.

@@ -22,6 +22,11 @@ by their port: `/dev/cu.usbserial-*` or `/dev/cu.wchusbserial*` is the CYD
 With more than one board plugged in it stops and lists them; `BOOP_PORT=…`
 or `BOARD=cyd24`/`BOARD=amoled206` picks one.
 
+The CYD runs any character pack. The AMOLED board draws the gel face,
+which only Boop's pack has for now
+([CHARACTER.md](../characters/CHARACTER.md)), so with Pixel alone its
+build stops at the start and says so (`firmware/tools/needs_gel.py`).
+
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages in `firmware/.platformio-core`, inside the checkout.
 It uses the `pio` on your `PATH`; without one, its first run installs
@@ -31,8 +36,9 @@ Mac's own 3.9.
 Each build bakes in the version from `VERSION` and the git SHA
 (`firmware/tools/version.py`).
 
-The firmware talks over USB serial at **460800 baud**, and flashing uses
-the same rate: the CYD's CH340 on macOS's own driver can't do 921600.
+The firmware talks over USB serial at **460800 baud**. The CYD flashes
+at the same 460800, because its CH340 on macOS's own driver can't do
+921600; the AMOLED board's native USB flashes at 921600.
 Opening the port must not change DTR or RTS, or the auto-reset circuit
 reboots the board; `boopctl` leaves them alone.
 
@@ -65,7 +71,7 @@ one.
 Waveshare **ESP32-S3-Touch-AMOLED-2.06**, a watch-style board, runs the
 same app with its own pins, screen, touch, sound and start-up in
 `src/board/amoled206/`. Nothing outside the two board folders knows which
-board it's on.
+board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 
 | Part | What it is | How Boop uses it |
 | --- | --- | --- |

@@ -52,7 +52,7 @@ with a screen is the body:
 | You need | Why |
 | --- | --- |
 | 💻 **A Mac** | macOS 26 or later, with Command Line Tools (`xcode-select --install`) |
-| 🐍 **Python 3.10 or later** | For flashing the board and for the dashboard. The Mac's own is 3.9, so `brew install python`. PlatformIO installs itself |
+| 🐍 **Python 3.10 or later** | For flashing the board, unless you already have PlatformIO's `pio`. The Mac's own is 3.9, so `brew install python`. PlatformIO installs itself |
 | 🟨 **A board** | One of the two below, and a USB cable that carries data |
 | 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks Boop's reactions. It needs a key from TypeSafe, which may cost money. Without one, Boop still shows what your agents are doing and when you're needed, but doesn't react or celebrate. Add it in Boop's Settings |
 
@@ -92,8 +92,7 @@ Then tap the screen or press BOOT to poke it.
 | --- | --- |
 | Flash the firmware (over USB) | `make flash` |
 | Run Boop in the menu bar | `make run` |
-| See what it did today, and why | `make day` |
-| Try Boop with no board, in a browser | `make simulator` ([simulator/README.md](simulator/README.md)) |
+| Try Boop with no board, in a browser (needs `brew install emscripten`) | `make simulator` ([simulator/README.md](simulator/README.md)) |
 
 Start `make run` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's

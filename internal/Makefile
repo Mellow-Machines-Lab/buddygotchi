@@ -39,9 +39,9 @@ test:
 tools: tools/.venv/.ok
 
 tools/.venv/.ok: tools/requirements.txt
-	@cd $(ROOT) && test -x internal/tools/.venv/bin/python || python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' \
-	  || { echo "tools: boopctl needs Python 3.10 or later, and python3 is $$(python3 --version 2>&1 | cut -d' ' -f2) (brew install python)" >&2; exit 1; }
-	cd $(ROOT) && test -x internal/tools/.venv/bin/python || { python3 -m venv internal/tools/.venv \
+	@cd $(ROOT) && test -x internal/tools/.venv/bin/python || firmware/tools/find-python.sh >/dev/null \
+	  || { echo "tools: boopctl needs Python 3.10 or later, and found none: python3 is $$(python3 --version 2>&1 | cut -d' ' -f2), and no python3.10 to python3.14 (brew install python)" >&2; exit 1; }
+	cd $(ROOT) && test -x internal/tools/.venv/bin/python || { $$(firmware/tools/find-python.sh) -m venv internal/tools/.venv \
 	  && internal/tools/.venv/bin/pip install --quiet --upgrade pip; }
 	cd $(ROOT) && internal/tools/.venv/bin/pip install --quiet -r internal/tools/requirements.txt
 	touch $@

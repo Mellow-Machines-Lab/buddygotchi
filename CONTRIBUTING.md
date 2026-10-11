@@ -7,12 +7,16 @@ same file), but every rule in it applies to people too.
 ## Build and test
 
 You need macOS 26 or later and Command Line Tools. Xcode works but isn't
-needed; the three packages alone need macOS 13. Flashing the board and
-the dev tools (`internal/tools/boopctl`, the simulator, the dashboard)
-also need Python 3.10 or later, newer than the Mac's own
+needed; the three packages alone need macOS 13. Flashing the board
+(unless you already have PlatformIO's `pio`) and the dev tools
+(`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
+snapshots) also need Python 3.10 or later, newer than the Mac's own
 (`brew install python`). The simulator's page also needs Emscripten, to
 build the firmware for a browser, and Node, to test it
-(`brew install emscripten node`).
+(`brew install emscripten node`). Making the faces again
+(`make -C internal faces`) needs Node and Google Chrome, and takes
+several minutes. The first firmware build downloads the ESP32 toolchain
+into the checkout, which takes about five minutes.
 
 `agent-hooks/` and `mellowharness/` are submodules, each a repository
 of its own: clone with `--recurse-submodules`, or run
@@ -44,6 +48,7 @@ One thing that will surprise you:
 | --- | --- |
 | Run Boop and print everything it sees and decides | `make debug` |
 | Watch and poke it live, in a second terminal beside `make debug` | `make dash` |
+| See what it did on the latest day `make debug` logged, and why (`DATE=YYYY-MM-DD` for another) | `make day` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
 
 The dashboard shows the face, Boop's mood, its automatic reactions and the

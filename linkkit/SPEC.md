@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-10-05. The contract between a host (a Mac app) and a small
+Updated 2026-10-11. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -227,7 +227,7 @@ gets none. The kit handles five, and an app adds its own.
 | `{"t":"dbg.shot"}` | The app's current frame, when it draws one |
 | `{"t":"dbg.reset"}` | `{"t":"dbg.reset"}`, after §4's reset and the app's own |
 
-`dbg.state`'s `turn` is `{"holder":{"id":44,"name":"react","resting":false},"waiting":[{"id":45,"name":"react","left_ms":3200}]}`,
+`dbg.state`'s `turn` is `{"holder":{"id":44,"name":"say","resting":false},"waiting":[{"id":45,"name":"show","left_ms":3200},{"id":null,"name":"beep","left_ms":4200}]}`,
 `holder` null when the turn is free.
 
 The device's randomness, which the app draws its choices from, repeats

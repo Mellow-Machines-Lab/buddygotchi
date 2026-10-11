@@ -167,6 +167,15 @@ BOOP_BRIDGE=/tmp/boop-sim-usb.sock internal/tools/boopctl run     # every scenar
 Only this Mac can reach it: the page is served on 127.0.0.1 and the
 socket is its user's alone. The newest page to open is the board.
 
+One simulator runs at a time. A second fails at once ("port 8206 is in
+use: is a simulator already running?") and leaves the first's socket
+alone, and so does one given another `--port` while something still
+answers on the socket. A socket nothing answers on is a stale one's, and
+the next simulator replaces it. Stopped by Ctrl-C, SIGTERM or SIGHUP (a
+closed terminal), the server removes its socket, unless a newer one has
+taken the path since; only a kill leaves it behind, for the next to
+replace (`tests/test_serve.py`).
+
 **The Mac build's** is a pseudo serial port, which bridges and tools open
 as they open a board's `/dev/cu.usbserial-*` (`core/port.h`). It prints
 where it is (`port /dev/ttys004`), and `BOOP_SIM_PORT` names a path that
@@ -209,6 +218,11 @@ make -C internal sim-test
   the line's length, as the boards' takes check holds them). Of the port:
   it's a serial port at the path asked for, what nobody heard is
   forgotten, and a long reply arrives whole.
+- **`tests/test_serve.py`**, the page's server and its socket, on a free
+  port and a socket of its own: a second server leaves a live socket
+  alone, whichever port it's given; a stale socket is replaced, and a
+  file that isn't a socket is left; SIGTERM and SIGHUP remove the
+  socket, but not a newer server's at the same path.
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing, a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a

@@ -1,6 +1,6 @@
 # LinkKit: the device library
 
-Updated 2026-10-05. The C++ half of LinkKit, for the small device a host
+Updated 2026-10-11. The C++ half of LinkKit, for the small device a host
 app drives: it reads the host's lines, keeps track of the links, sends
 `hello`, decides when each `do` plays (the turn), routes `ev` and answers
 the kit's `dbg.*` messages, all as [../SPEC.md](../SPEC.md) says. What the
@@ -55,10 +55,12 @@ one `ended` however your layers overlap.
 
 ### A lamp
 
-`examples/lamp/lamp.h`, trimmed of its comments; the unit tests run it
+`examples/lamp/lamp.h`, without its opening comment; the unit tests run it
 (`test/test_kit`):
 
 ```cpp
+namespace lamp {
+
 class Lamp : public linkkit::App {
  public:
   static constexpr uint32_t kBlinkMs = 200;
@@ -69,22 +71,33 @@ class Lamp : public linkkit::App {
     names = kDoes;
     return 1;
   }
+
   void onState(JsonObjectConst state, uint32_t) override { level_ = state["level"] | 0; }
-  void onDo(const linkkit::Call& c, uint32_t t) override {  // busy while it blinks
+
+  // Busy while it blinks: a `next` blink waits its turn, a `now` one cuts it.
+  void onDo(const linkkit::Call& c, uint32_t t) override {
     int times = c.args["times"] | 1;
     times = times < 1 ? 1 : times > 10 ? 10 : times;
-    blinking_ = c.key, until_ = t + kBlinkMs * uint32_t(times), at_ = t;
+    blinking_ = c.key;
+    until_ = t + kBlinkMs * uint32_t(times);
+    at_ = t;
   }
   void advance(uint32_t t) override {
     if (blinking_ && int32_t(t - until_) >= 0) kit().ended(blinking_), blinking_ = 0;
   }
+  // So a blink waiting starts the millisecond this one ends.
   bool nextDue(uint32_t from, uint32_t to, uint32_t& at) override {
     if (!blinking_ || int32_t(until_ - from) <= 0 || int32_t(until_ - to) > 0) return false;
     at = until_;
     return true;
   }
-  void tick(uint32_t t) override { light_ = blinking_ && (t - at_) / (kBlinkMs / 2) % 2 == 0 ? 255 : level_; }
-  void press() {  // its own button: the device's doing, so it doesn't take the turn
+  void tick(uint32_t t) override {
+    light_ = blinking_ && (t - at_) / (kBlinkMs / 2) % 2 == 0 ? 255 : level_;
+  }
+
+  // The lamp's own button: the device does this itself, so it doesn't
+  // take the turn; it cuts the blink and tells the host.
+  void press() {
     if (blinking_) kit().cut("button"), blinking_ = 0;
     kit().emit("press", "stopped", nullptr, false);
   }
@@ -92,8 +105,11 @@ class Lamp : public linkkit::App {
 
  private:
   uint8_t level_ = 0, light_ = 0;
-  uint32_t blinking_ = 0, until_ = 0, at_ = 0;
+  uint32_t blinking_ = 0;  // the call blinking, 0 for none
+  uint32_t until_ = 0, at_ = 0;
 };
+
+}  // namespace lamp
 ```
 
 On an ESP32 (Arduino), the loop around it:
@@ -107,6 +123,10 @@ struct Board : linkkit::Platform {
   uint32_t realMs() override { return millis(); }
   const char* deviceId() override { return ble.id(); }
   const char* fwVersion() override { return "1.0.0"; }
+  uint32_t bootId() override {  // once per power-on, never 0
+    static const uint32_t id = esp_random() | 1;
+    return id;
+  }
 };
 
 Board board;
@@ -171,6 +191,11 @@ pio test -d linkkit/device -e native          # the kit's own tests
 python3 linkkit/device/tools/check_includes.py   # the include check, by itself
 ```
 
-In Boop's checkout, run PlatformIO through `firmware/tools/pio.sh`, which
-keeps its packages there; `make -C internal fw-test` runs these after
-Boop's own suites.
+In Boop's checkout, `make -C internal fw-test` runs these after Boop's
+own suites, with the PlatformIO that keeps its packages in the checkout.
+To run only the kit's tests that way, give `firmware/tools/pio.sh` an
+absolute path, since it runs from `firmware/`:
+
+```sh
+firmware/tools/pio.sh test -d "$PWD/linkkit/device" -e native
+```

@@ -16,9 +16,12 @@ own Python.
 """
 import argparse
 import base64
+import errno
 import hashlib
 import os
+import signal
 import socket
+import stat
 import struct
 import sys
 import threading
@@ -85,13 +88,33 @@ class Cable:
         except OSError:
             pass
 
-    def serve(self, path: str) -> None:
-        if os.path.exists(path):
-            os.unlink(path)
+    def serve(self, path: str) -> tuple:
+        """Listens at the path, and returns what identifies the socket made
+        there, so it's removed at the end only if it's still this one. A
+        socket that something answers on is another simulator's, and is left
+        alone; one nothing answers on is a stale one's, and goes."""
+        if os.path.lexists(path):
+            if not stat.S_ISSOCK(os.lstat(path).st_mode):
+                raise InUse(f"{path} is there and isn't a socket")
+            probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                probe.connect(path)
+                raise InUse(f"something answers on {path}: is a simulator already running?")
+            except OSError as e:
+                if e.errno not in (errno.ECONNREFUSED, errno.ENOENT):
+                    raise
+            finally:
+                probe.close()
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(path)
         os.chmod(path, 0o600)
         server.listen(8)
+        made = os.lstat(path)
+        ours = (made.st_dev, made.st_ino)
 
         def client(conn: socket.socket) -> None:
             conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, struct.pack("ll", 0, int(SEND_TIMEOUT_S * 1e6)))
@@ -118,6 +141,22 @@ class Cable:
                 threading.Thread(target=client, args=(conn,), daemon=True).start()
 
         threading.Thread(target=accept, daemon=True).start()
+        return ours
+
+
+class InUse(Exception):
+    """Another simulator has the port or the socket."""
+
+
+def remove_if_ours(path: str, ours: tuple) -> None:
+    """Removes the socket only if it's still the one this server made: a
+    newer simulator's, made after a stale one was taken, stays."""
+    try:
+        now = os.lstat(path)
+        if (now.st_dev, now.st_ino) == ours:
+            os.unlink(path)
+    except FileNotFoundError:
+        pass
 
 
 def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
@@ -183,7 +222,6 @@ def main() -> int:
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)
         return 1
     cable = Cable()
-    cable.serve(args.socket)
 
     class Page(SimpleHTTPRequestHandler):
         def __init__(self, *a, **k):
@@ -209,17 +247,39 @@ def main() -> int:
         def log_message(self, *a):
             pass
 
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), Page)
+    # The port first: a second copy fails on it before it touches the first's
+    # socket.
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", args.port), Page)
+    except OSError as e:
+        if e.errno != errno.EADDRINUSE:
+            raise
+        print(f"simulator: port {args.port} is in use: is a simulator already running?", file=sys.stderr)
+        return 1
+    try:
+        ours = cable.serve(args.socket)
+    except InUse as e:
+        server.server_close()
+        print(f"simulator: {e}", file=sys.stderr)
+        return 1
+
+    # Stopped any way but a kill, it takes its socket with it, so the app
+    # doesn't go on finding a simulator that's gone.
+    def stop(signum, frame):
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGHUP, stop)
     print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (add ?face=gel for Boop's own face)")
     print(f"its USB, as a bridge's socket: {args.socket}")
     sys.stdout.flush()
     try:
         server.serve_forever()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
         pass
     finally:
-        if os.path.exists(args.socket):
-            os.unlink(args.socket)
+        server.server_close()
+        remove_if_ours(args.socket, ours)
     return 0
 
 

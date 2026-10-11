@@ -44,7 +44,7 @@ public final class Bridge: @unchecked Sendable {
     /// Written to wake `run`'s poll for `stop`.
     var wake: (read: Int32, write: Int32) = (-1, -1)
 
-    /// `port` is the board's serial device (`/dev/cu.usbserial-…`), and
+    /// `port` is the board's serial device (one of `ports()`), and
     /// `socket` the path to share it on, under 104 bytes.
     public init(port: String, socket: String, baud: Int = Bridge.defaultBaud, maxBehind: Int = Bridge.maxBehind,
                 log: @escaping (String) -> Void = { _ in }) {

@@ -8,6 +8,7 @@ mellowharness-emit (README.md here).
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import shutil
@@ -359,7 +360,13 @@ def popover_png() -> None:
 GIFS = {"boop": boop_gif, "moods": moods_gif, "popover": popover_png, "watch": watch_gif, "beacon": beacon_gif}
 
 if __name__ == "__main__":
-    names = sys.argv[1:] or list(GIFS)
+    parser = argparse.ArgumentParser(description="Makes the READMEs' pictures again, each from a real run.")
+    parser.add_argument("names", nargs="*", metavar="NAME",
+                        help=f"which to make: {', '.join(GIFS)} (all of them by default)")
+    names = parser.parse_args().names or list(GIFS)
+    for name in names:
+        if name not in GIFS:
+            parser.error(f"no picture named {name}: choose from {', '.join(GIFS)}")
     if {"boop", "moods"} & set(names):
         build_sim()
     for name in names:

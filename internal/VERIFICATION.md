@@ -31,9 +31,12 @@ the owner.
 CI (`.github/workflows/ci.yml`) runs what needs nothing on every push to
 `main` and every pull request: `make -C internal test` on macOS 26, and
 `make -C internal fw-test` (L0 for the firmware and LinkKit's device
-library). The runner's Swift (Xcode 26.6) is older than the 6.4 Boop is
-written with, so code must compile on both, and a test that times the
-wall clock checks it only when `CI` isn't set.
+library), and the CYD's firmware built with the public Pixel pack
+(`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`). CI has no private
+pack, so the AMOLED's build there only checks that it stops early,
+saying it needs a gel face. The runner's Swift (Xcode 26.6) is older
+than the 6.4 Boop is written with, so code must compile on both, and a
+test that times the wall clock checks it only when `CI` isn't set.
 
 ## 2. The tools
 
@@ -209,8 +212,8 @@ launch the menu-bar app or run the whole eval.
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal e2e` | Builds, then runs the pipeline check (L4) |
 | `make -C internal faces` | Regenerates the faces (`characters/pixel/firmware/include/faces.h`, the Pixel pack's `characters/pixel/mac/faces.json` with the popover's faces and the designs' loops for the Mac, the frames `fw-test` checks, and the designs' list in `characters/pixel/tools/facegen/design/manifest.json`) from the animation bank (`characters/pixel/design/boop-sound-bank-v4/`), whose generator it runs with node. It stops if an older mood's design doesn't come out as it was captured, then draws each design at a dozen moments in Google Chrome and fails unless facegen's own drawing matches pixel for pixel in RGB565, a blended pixel within one step (8,256 frames of 729 scenes, 7 minutes or so). Then rerun sfxgen (below) |
-| `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual), with Python 3.10 or later; a venv that already works, such as a worktree's link to the main checkout's, is kept and its packages brought up to date. `internal/tools/boopctl` runs it on first run |
-| `make -C internal sim-test` | The simulator (`simulator/tests/`). Its core on the Mac in real time, driven over its serial port as a board is: drawing, a native face's panel, a new boot each power-on, sound at a DAC's pace, and the port (what nobody heard is forgotten, a long reply arrives whole). Then the same core as the browser runs it, built to WebAssembly (it needs Emscripten and Node): touch and BOOT, the card, the page's USB cable, a recording played back, and a demo's cut-down voice. The sound and card tests skip without a voice pack |
+| `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual), with the first Python 3.10 or later on `PATH` (`firmware/tools/find-python.sh`, which `pio.sh` uses too); a venv that already works, such as a worktree's link to the main checkout's, is kept and its packages brought up to date. `internal/tools/boopctl` runs it on first run |
+| `make -C internal sim-test` | The simulator (`simulator/tests/`). Its core on the Mac in real time, driven over its serial port as a board is: drawing, a native face's panel, a new boot each power-on, sound at a DAC's pace, and the port (what nobody heard is forgotten, a long reply arrives whole). Then the page's server and its USB socket (`test_serve.py`): a second server leaves a live socket alone, a stale one is replaced, and SIGTERM or SIGHUP removes it. Then the same core as the browser runs it, built to WebAssembly (it needs Emscripten and Node): touch and BOOT, the card, the page's USB cable, a recording played back, and a demo's cut-down voice. The sound and card tests skip without a voice pack |
 | `make -C internal demo` | Records the staged character pack's demo for the simulator's page ([simulator/README.md](../simulator/README.md), Demos; [characters/CHARACTER.md](../characters/CHARACTER.md) §13): plays it through the headless app with the simulator's board as its device (`simulator/tools/record-demo.sh`), `FACE=gel` for Boop's own face, into `simulator/web/dist/demo/`. It takes as long as the demo runs |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, `charactergen.py`'s staging and studio rules and `packs.py` (`internal/characters/`), and each character pack's own (`characters/<pack>/tests/tools/`: Boop's checks its copy of Pixel's face). boopctl reads the takes from the chosen pack's `voice/voice.bin` |
 
