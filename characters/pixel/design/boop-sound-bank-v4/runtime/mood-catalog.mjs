@@ -44,7 +44,7 @@ const definitions={
 const failure=[['fallen-tower','The work did not hold','A work tower splits into pieces; hold FAILED, no celebration.'],['torn-result','A broken result','A result sheet tears into two halves; present FAILED.'],['empty-podium','No trophy this time','An empty result stand lowers; a large FAILED card replaces it.']];
 const durations={working:[5.4,6.2,5.8,6.7,5.6],starting:[5.4,6.2,5.8],needs_you:[5.6,6.2,6.7],task_complete:[6.4,6.8,7.2],terminal:[5.4,6.2,6.6],asleep:[9,10,12],no_app:[9,10,12],idle:[8,10,9],waiting:[7,8,9]};
 export const moodAdditions=newMoods.flatMap(mood=>Object.entries(definitions).flatMap(([state,defs])=>{
- const entries=state==='starting'?['new_task','session','continuation'].flatMap(startContext=>defs.map(d=>({d,startContext}))):state==='task_complete'?[...defs.map(d=>({d,outcome:'success'})),...failure.map(d=>({d,outcome:'failure'}))]:defs.map(d=>({d}));
+ const entries=state==='starting'?['new_task','session','continuation','compacted'].flatMap(startContext=>defs.map(d=>({d,startContext}))):state==='task_complete'?[...defs.map(d=>({d,outcome:'success'})),...failure.map(d=>({d,outcome:'failure'}))]:defs.map(d=>({d}));
  return entries.map(({d,startContext,outcome},i)=>make(mood,state,d,i+1,{...(startContext?{startContext}:{}),...(outcome?{outcome}:{})}));
 }).concat(workActions[mood].map((d,i)=>make(mood,'working',d,i+1))));
 function make(mood,state,[action,name,caption],variation,extra={}){

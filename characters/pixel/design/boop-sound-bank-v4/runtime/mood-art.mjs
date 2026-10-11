@@ -168,7 +168,7 @@ function props(a,step){
   return at(active?-s%3*3:0,0,path('M251 127h12v-12h12v-12h19v63h-19v-12h-12v-12h-12Z',P.amber)+rect(235,131,20,10,P.prop));
  }
  if(a.state==='starting'){
-  const label={new_task:'NEW TASK',session:'READY',continuation:'CONTINUE'}[a.startContext];
+  const label={new_task:'NEW TASK',session:'READY',continuation:'CONTINUE',compacted:'COMPACTED'}[a.startContext];
   if(k==='placard')return(s>1&&s<7?held(label,147,P.blue):board())+(s===1?pad(80,165)+pad(213,165):'');
   if(k==='ticket')return slab(63,146,62,42,P.dim)+rect(69,150,50,9,P.black)+(active?card(label,148,P.prop)+pad(220,159):'');
   return rect(59,137,202,49,P.dim)+rect(67,142,186,39,P.black)+(active?centered(label,156,2,P.blue):'')+[0,1,2].map(i=>rect(64,139+i*11,192,7,s>i+1&&s<7?P.black:P.prop)).join('');

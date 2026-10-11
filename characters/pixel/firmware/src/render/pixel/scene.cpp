@@ -15,7 +15,7 @@ using namespace faces;
 static_assert(kMaxGroups <= SceneFrame::kMaxGroups, "a scene's groups fit its frame");
 static_assert(int(SceneState::kCount) == kStateCount, "faces.h's states");
 static_assert(faces::kMaxVariants <= render::kMaxVariants, "a state's variations fit");
-static_assert(int(Outcome::kFailure) == 2 && int(StartCtx::kContinuation) == 3, "faces.h's host facts");
+static_assert(int(Outcome::kFailure) == 2 && int(StartCtx::kCompacted) == 4, "faces.h's host facts");
 
 constexpr uint16_t kNone = 0xFFFF;
 

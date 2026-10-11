@@ -18,7 +18,7 @@ public enum FaceLoops {
     /// One design: its loop length, its voice window's start (a line
     /// that comes with its animation starts no sooner), and the host fact
     /// it's for, if any: task_complete's `outcome` (success or failure),
-    /// starting's `ctx` (new_task, session or continuation).
+    /// starting's `ctx` (new_task, session, continuation or compacted).
     public struct Design: Equatable, Sendable {
         public let ms: Int64
         public let voiceMs: Int64

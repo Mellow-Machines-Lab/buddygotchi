@@ -183,10 +183,7 @@ public final class Core {
         let now = event.at
         switch change {
         case .sessionStarted(let source):
-            // Resumed or compacted, the work goes on; started or cleared,
-            // it's a fresh session.
-            return DeviceMoment(anim: Core.starting,
-                                ctx: source == "resume" || source == "compact" ? "continuation" : "session")
+            return DeviceMoment(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
             return DeviceMoment(anim: Core.starting, ctx: "new_task")
@@ -351,6 +348,18 @@ public final class Core {
                                      vol: config.volume, variant: 1)
         if shown.visual == snapshot.visual { snapshot.variant = shown.variant }
         return snapshot
+    }
+
+    /// What a session's start is, from its `source`, as starting's `ctx`:
+    /// `session` for a fresh one (started or cleared, or no source),
+    /// `continuation` for one resumed, where the work goes on, and
+    /// `compacted` for one whose context was compacted.
+    static func startCtx(source: String?) -> String {
+        switch source {
+        case Mapping.compacted: "compacted"
+        case "resume": "continuation"
+        default: "session"
+        }
     }
 
     /// A variation of `mood`'s design for `state` at random, from 1, among

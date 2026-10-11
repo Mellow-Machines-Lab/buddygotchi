@@ -18,9 +18,10 @@ by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
   (`v2`, the first pack's; `v3`, the older moods' newer states; `v4`, the
   new moods' flip-books).
 
-13 moods × 22 states, 770 designs. The older seven moods keep the first
+13 moods × 22 states, 795 designs. The older seven moods keep the first
 pack's designs byte for byte (the bank's `qa/v3-fingerprints.json`, which
-`facegen` checks) and have one or two of most newer states; the six new
+`facegen` checks) and have one or two of most newer states, with one start for each of the
+four contexts, the last (compacted) added after the capture; the six new
 moods have three of each. Asleep and no app look the same in every older
 mood, and in every new one.
 
