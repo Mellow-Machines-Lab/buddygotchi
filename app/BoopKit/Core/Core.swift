@@ -183,9 +183,6 @@ public final class Core {
         let now = event.at
         switch change {
         case .sessionStarted(let source):
-            // Resumed or compacted, the work goes on; started or cleared,
-            // it's a fresh session. A context compacted has a start of its
-            // own, where the face draws one.
             return DeviceMoment(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
@@ -355,12 +352,11 @@ public final class Core {
 
     /// What a session's start is, from its `source`, as starting's `ctx`:
     /// `session` for a fresh one (started or cleared, or no source),
-    /// `continuation` for one resumed, and `compacted` for one whose
-    /// context was compacted, or `continuation` too with a face that draws
-    /// no start for that.
-    public static func startCtx(source: String?) -> String {
+    /// `continuation` for one resumed, where the work goes on, and
+    /// `compacted` for one whose context was compacted.
+    static func startCtx(source: String?) -> String {
         switch source {
-        case "compact": FaceLoops.draws(state: Core.starting, ctx: "compacted") ? "compacted" : "continuation"
+        case Mapping.compacted: "compacted"
         case "resume": "continuation"
         default: "session"
         }

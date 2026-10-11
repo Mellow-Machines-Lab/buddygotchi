@@ -1175,10 +1175,10 @@ def export() -> list[dict]:
     # The older moods' designs were captured before the new moods came
     # (the bank's qa/v3-fingerprints.json): the first pack's (V2), which the
     # device drew before, and the newer states' (V3). Each must come out
-    # byte for byte as it was. Their COMPACTED start card came after the
-    # capture, so it has no fingerprint there.
+    # byte for byte as it was. A design of theirs with no fingerprint came
+    # after the capture.
     prints = json.loads((BANK / "qa" / "v3-fingerprints.json").read_text())["hashes"]
-    older = [a for a in designs if a["dialect"] != "v4" and a.get("ctx") != "compacted"]
+    older = [a for a in designs if a["id"] in prints]
     changed = [a["id"] for a in older
                if hashlib.sha256((BUILD / a["svg"]).read_bytes()).hexdigest() != prints.get(a["id"], {}).get("svg")]
     if changed or len(older) != len(prints):

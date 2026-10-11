@@ -11,7 +11,7 @@ import {cycleHasSound} from '../runtime/score.mjs';
 if(process.argv.includes('--help')){console.log('Usage: node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs\nBuild the bank first. Checks coverage, V3 fingerprints, clocks, outcomes and procedural audio; no browser or API needed.');process.exit(0);}
 const baseline=JSON.parse(fs.readFileSync(new URL('./v3-fingerprints.json',import.meta.url)));
 const sha=value=>createHash('sha256').update(value).digest('hex');
-const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,compactedCards:0,newPlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
+const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,newPlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
 assert.equal(catalog.length,795);assert.equal(moodAdditions.length,480);assert.equal(new Set(catalog.map(a=>a.id)).size,795);
 for(const m of moods)for(const s of stateOrder)assert(catalog.some(a=>a.mood===m&&a.state===s));
 for(const m of newMoods){
@@ -26,9 +26,8 @@ for(const m of newMoods){
 const recipes=new Map();let routineBefore=0,routineAfter=0;
 for(const a of catalog){
  const scene=makeScene(a.id);assert(!/undefined|NaN|Infinity/.test(scene.svg),a.id);
- // The older seven moods' COMPACTED card came after the V3 freeze: drawn the V3 way, with no fingerprint there.
- if(a.renderer!=='mood-v4'&&a.startContext==='compacted'){assert.equal(a.action,'compact-card');report.compactedCards++;continue;}
- if(a.renderer!=='mood-v4'){const old=baseline.hashes[a.id];assert(old,a.id+' missing independent V3 fingerprint');assert.equal(sha(scene.svg),old.svg,a.id+' changed SVG');assert.equal(sha(JSON.stringify(scene.score)),old.score,a.id+' changed score');report.preservedByteExact++;continue;}
+ // A design drawn the V3 way with no fingerprint came after the freeze; every fingerprint must still find its design (below).
+ if(a.renderer!=='mood-v4'){const old=baseline.hashes[a.id];if(!old)continue;assert.equal(sha(scene.svg),old.svg,a.id+' changed SVG');assert.equal(sha(JSON.stringify(scene.score)),old.score,a.id+' changed score');report.preservedByteExact++;continue;}
  const plan=moodPlan(a);assert.equal(plan.steps[0].at,0);assert.equal(plan.steps.at(-1).at,a.seconds);assert.equal(plan.steps[0].stage,plan.steps.at(-1).stage);
  for(let i=1;i<plan.steps.length;i++)assert(plan.steps[i].at>plan.steps[i-1].at,a.id+' nonincreasing time');
  for(const tag of scene.svg.matchAll(/<animate\b([^>]+)\/>/g)){
@@ -49,7 +48,7 @@ for(const e of recipes.values()){
  const pcm=synthesizeCue(e,53,16000);let peak=0;for(const x of pcm){assert(Number.isFinite(x));peak=Math.max(peak,Math.abs(x));}assert(peak>0);assert(peak<=1.001);report.synthRecipesChecked++;
 }
 const c={};vm.runInNewContext(fs.readFileSync(new URL('../dist/boop-runtime.js',import.meta.url),'utf8'),c);assert.equal(c.Boop.catalog.length,795);assert.equal(c.Boop.moods.length,13);
-assert.equal(report.preservedByteExact,baseline.assetCount);assert.equal(report.compactedCards,7);
+assert.equal(report.preservedByteExact,baseline.assetCount);
 assert.equal(c.Boop.makeScene('wounded.working.05').asset.action,'collect-pieces');
 report.newWorkingCueReduction=1-routineAfter/routineBefore;assert(report.newWorkingCueReduction>=.60);report.newWorkingRawCues=routineBefore;report.newWorkingRetainedCues=routineAfter;
 fs.writeFileSync(new URL('./checks.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(report);

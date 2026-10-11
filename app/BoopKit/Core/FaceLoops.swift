@@ -81,12 +81,6 @@ public enum FaceLoops {
         return fit.isEmpty ? Array(1...row.count) : fit
     }
 
-    /// Whether any mood has a design of `state` for `ctx`.
-    public static func draws(state: String, ctx: String) -> Bool {
-        guard let at = states.firstIndex(of: state) else { return false }
-        return designs.values.contains { $0.indices.contains(at) && $0[at].contains { $0.ctx == ctx } }
-    }
-
     /// A design's loop length: `mood`'s design for `state`, variation
     /// `variant` (from 1), the first variation for one out of range.
     public static func ms(mood: String, state: String, variant: Int = 1) -> Int64 {

@@ -354,8 +354,6 @@ final class CoreOneShotTests: XCTestCase {
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
         XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
         XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
-        XCTAssertTrue(FaceLoops.draws(state: "starting", ctx: "compacted"), "the face has a start for it")
-        XCTAssertFalse(FaceLoops.draws(state: "starting", ctx: "squeezed"))
         XCTAssertEqual(shots(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
     }
 
