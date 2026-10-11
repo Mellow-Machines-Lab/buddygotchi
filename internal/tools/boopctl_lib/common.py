@@ -4,6 +4,7 @@ takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
 import json
+import os
 import socket
 import struct
 from dataclasses import dataclass
@@ -97,7 +98,19 @@ def ended(msg: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-PACK = REPO / ".build" / "voice" / "voice.bin"
+def chosen_pack() -> Path:
+    """The character pack in use, as the Swift tests and the simulator
+    take it: `BOOP_CHARACTER`'s, else the one last staged
+    (.character-build/pack, characters/CHARACTER.md §2), else Pixel."""
+    if os.environ.get("BOOP_CHARACTER"):
+        return Path(os.environ["BOOP_CHARACTER"])
+    staged = REPO / ".character-build" / "pack"
+    return Path(staged.read_text().strip()) if staged.exists() else REPO / "characters" / "pixel"
+
+
+# The chosen pack's voice, the file a board's card has as boop/voice.bin
+# (characters/CHARACTER.md §8).
+PACK = chosen_pack() / "voice" / "voice.bin"
 
 
 @dataclass(frozen=True)
@@ -112,9 +125,9 @@ class Take:
 @cache
 def takes() -> tuple[Take, ...]:
     """The takes in the voice pack the board plays from its card
-    (.build/voice/voice.bin, which voicegen writes), by id."""
+    (the chosen character pack's voice/voice.bin), by id."""
     if not PACK.exists():
-        raise DeviceError(f"no voice pack at {PACK}: run make -C internal voice")
+        raise DeviceError(f"no voice pack at {PACK}: the chosen character pack has no voice")
     data = PACK.read_bytes()
     magic, _, count, size, index, rate, _ = struct.unpack_from("<8s16sIIIII", data)
     if magic != b"BOOPVOX1":

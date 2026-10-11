@@ -63,7 +63,7 @@ var packageTargets: [Target] = [
     // microphone and speech usage descriptions without an app bundle.
     // The character pack is bundled as `make build` stages it
     // (characters/charactergen.py --stage, characters/CHARACTER.md §2):
-    // the chosen pack and its base, from .character-build/packs.
+    // the chosen pack, from .character-build/packs.
     .executableTarget(
         name: "Boop",
         dependencies: ["BoopKit", agentHooks, mellowharness, linkKit],

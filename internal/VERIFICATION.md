@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-07. How we check that Boop works, including what's on its
+Updated 2026-10-11. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -168,14 +168,16 @@ needs-you frames through the bundled WKWebView, plus gel Overview panes in
 both themes. The renderer may need access outside the shell sandbox for
 WebKit's subprocesses; it uses no runtime or Bluetooth.
 
-**The recorded voice bank.** Boop's voice comes from it.
+**The recorded voice bank.** The voice comes from it. It's in Boop's
+private pack, so only a checkout with that pack can run these two.
 `node characters/boop/design/assets/boop-voice-v1/tools/check.mjs`
 validates the bank itself: every recording's hash, PCM format and level,
 the indexes, and its own reference selector; it's offline and never plays
 sound or calls an API; the repo keeps only the robot-soft WAVs, and it
 checks the textures that are there. `voicegen` turns the bank into the
-voice pack and the Mac's table (below), and `VoiceTests` checks the two
-list the same takes.
+voice pack and the Mac's table (below), which Boop's pack and Pixel's
+each have a copy of, checked in. `VoiceTests` checks the chosen pack's
+two list the same takes.
 Evidence: voice asset publication,
 voice bank integration.
 
@@ -200,7 +202,6 @@ launch the menu-bar app or run the whole eval.
 | `make flash` | Builds the firmware and uploads it over USB, for whichever board is plugged in (`firmware/tools/flash.sh`); `BOOP_PORT` or `BOARD=cyd24`/`BOARD=amoled206` picks one when more than one is ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Builds, then runs every eval scenario against Jev with no request budget, 3 runs each for an `always` scenario and 1 for the rest (L5): the final pass ([EVALS.md](EVALS.md) §2 counts its requests); fails without `BOOP_JEV_KEY` |
 | `make clean` | Deletes `.build` and `firmware/.pio` |
-| `make -C internal voice` | Builds the voice pack, `.build/voice/voice.bin`, and the Mac's take table, `characters/boop/mac/takes.tsv`, with voicegen (below) when the bank or voicegen changed. `test`, `fw-test` and `sim` make it first, since they read it |
 | `make -C internal test` | The Swift unit tests, the eval runner included with a scripted brain, through the XCTest shim, since there's no Xcode: `make build`, then `.build/debug/BoopTests`. `BOOP_TEST_FILTER=Golden .build/debug/BoopTests` runs only the tests whose `Class.method` name contains `Golden`. Then the own tests of agent-hooks, MellowHarness and LinkKit, in Swift Testing: `swift test --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`, each tried again up to seven times when its build fails with the "plugin for module 'TestingMacros' not found" flake |
 | `make -C internal fw` | Builds the firmware for both boards (envs `cyd24` and `amoled206`, [firmware/README.md](../firmware/README.md)): Boop's app on LinkKit's device library (`linkkit/device/`), whose build fails if the kit includes anything of Boop's (`linkkit/device/tools/check_includes.py`, run by every env) |
 | `make -C internal fw-test` | That the character pack's generated `moods.h` is fresh (`charactergen.py --check`), then the firmware's unit tests on the Mac (`pio test -e native`): the engine's suites in `internal/firmware/test/` and the chosen pack's in its `tests/firmware/` (Boop's `test_gel`), which `characters/charactergen.py --stage` links into `.character-build/firmware-test/` (`CHARACTER=pixel` runs them as Pixel), then LinkKit's device library's own, from its own project (`pio test -d linkkit/device -e native`: `test_turn`, `test_kit`, `test_helpers`) |
@@ -208,7 +209,7 @@ launch the menu-bar app or run the whole eval.
 | `make -C internal e2e` | Builds, then runs the pipeline check (L4) |
 | `make -C internal faces` | Regenerates the faces (`characters/pixel/firmware/include/faces.h`, the Pixel pack's `characters/pixel/mac/faces.json` with the popover's faces and the designs' loops for the Mac, the frames `fw-test` checks, and the designs' list in `characters/pixel/tools/facegen/design/manifest.json`) from the animation bank (`characters/pixel/design/boop-sound-bank-v4/`), whose generator it runs with node. It stops if an older mood's design doesn't come out as it was captured, then draws each design at a dozen moments in Google Chrome and fails unless facegen's own drawing matches pixel for pixel in RGB565, a blended pixel within one step (7,970 frames of 704 scenes, 7 minutes or so). Then rerun sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual), with Python 3.10 or later; a venv that already works, such as a worktree's link to the main checkout's, is kept and its packages brought up to date. `internal/tools/boopctl` runs it on first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, `charactergen.py`'s studio rules and `packs.py` (`internal/characters/`). It makes the voice pack first, since boopctl reads the takes from it |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, `charactergen.py`'s staging and studio rules and `packs.py` (`internal/characters/`), and each character pack's own (`characters/<pack>/tests/tools/`: Boop's checks its copy of Pixel's face). boopctl reads the takes from the chosen pack's `voice/voice.bin` |
 
 **`internal/tools/boopctl`**, the board over USB, the simulator, the
 dashboard and the day's summary. `--port PORT` picks the serial port (default `$BOOP_PORT` or
@@ -235,7 +236,7 @@ commands go through the bridge.
 | `day [--state-dir DIR] [--date YYYY-MM-DD] [file…]` | What Boop did in a day, and why, from debug mode's logs: the state directory's `debug.jsonl` and the earlier launches' kept beside it, oldest first (the everyday app's by default), or the files named, oldest launch first. A table by the hour (finishes: task_complete, reply_ready and older logs' cheers; chatter, the brain's reactions and their faces, alerts (a new or different request shown), mood changes, passes, dropped passes, the brain's reactions that didn't happen, pokes and minutes needing you), then the brain's passes and what the dashboard forced, each mood change and what made it, each time something needed you and how long it took to clear, and why reactions didn't happen. `--date` defaults to the newest line's day; it exits 1 when that day has no lines |
 | `workday plan\|run\|report\|check` | A scripted 8-hour working day through `Boop --headless` and its brain on a compressed clock, and a report of what Boop did hour by hour: mood changes, reactions by kind of line, faces, holds, and the takes they said (L5, [EVALS.md](EVALS.md) §5). `plan` prints the day's story; `run --state DIR` (short, under `/tmp`; it's deleted first), `--seed N` (1), `--brain jev\|scripted` (jev, with `BOOP_JEV_KEY`), `--personality`, `--out DIR`, `--verbose`; `report FILE…` takes `debug.jsonl` files, `--json`; `check FILE…` holds each to the liveliness limits and exits 1 if one fails |
 | `calibrate` | Touch calibration: a person taps crosses on the screen (L6). `--show` prints the stored map, `--show --clear` forgets it |
-| `card [--pack FILE] [--force] [--fresh]` | Copies the voice pack (`.build/voice/voice.bin`) onto the board's microSD card over USB with `dbg.card`, unless the board already plays that version; goes on where a cut-off copy stopped, and resyncs after a lost line. Slow: about 0.7 KB/s on the bench board (2026-09-29), hours for the whole pack, so copying it with a card reader (`voicegen.py --card`) comes first |
+| `card [--pack FILE] [--force] [--fresh]` | Copies the voice pack (the chosen character pack's `voice/voice.bin`) onto the board's microSD card over USB with `dbg.card`, unless the board already plays that version; goes on where a cut-off copy stopped, and resyncs after a lost line. Slow: about 0.7 KB/s on the bench board (2026-09-29), hours for the whole pack, so copying it with a card reader comes first: the file goes on the card as `boop/voice.bin` |
 
 **`.build/debug/boopdev`**, the developer CLI.
 
@@ -270,7 +271,8 @@ commands go through the bridge.
 
 | Tool | What it does |
 | --- | --- |
-| `python3 characters/boop/tools/voicegen/voicegen.py [--pack FILE] [--table FILE] [--card DIR] [--wav-dir DIR]` | Rebuilds the voice from the recorded bank: the pack, `.build/voice/voice.bin` (not checked in), and the Mac's take table in Boop's character pack, `characters/boop/mac/takes.tsv`, in about 3 s. `--card /Volumes/<card>` also copies the pack onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
+| `python3 characters/boop/tools/voicegen/voicegen.py [--packs DIR ...] [--card DIR] [--wav-dir DIR]` | With Boop's pack here, rebuilds the voice from the recorded bank, in about 4 s: the pack, `voice/voice.bin`, and the Mac's take table, `mac/takes.tsv`, the same in each character pack that has the voice (`--packs`; Boop's and Pixel's unless given), all checked in. `--card /Volumes/<card>` also copies the pack onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
+| `python3 characters/boop/tools/pixelsync/pixelsync.py [--check]` | With Boop's pack here, copies Pixel's face into it again: the firmware's pixel renderer, faces and sound effects, `mac/faces.json` and the studio's preview. `--check` copies nothing, says which of Boop's copies differ from Pixel's, and fails if any do |
 | `node characters/pixel/tools/sfxgen/sfxgen.mjs [--wav-dir DIR]` | Rebuilds the sound effects, `characters/pixel/firmware/include/sfx.h`, from the animation bank's synthesiser and timelines, for the designs facegen lists, so after `make -C internal faces`; `--wav-dir` also writes every clip as a WAV |
 | `internal/tools/.venv/bin/python internal/tools/fontgen/fontgen.py [--ttf-dir DIR]` | Rebuilds the device's fonts, `firmware/assets/fonts.h`, and the gel's own, `fonts_gel.h`, from Geist Mono; the `.ttf` files are in `landing/node_modules` after `npm ci` there (the landing page's repository, cloned into `landing/`), by default |
 | `python3 characters/charactergen.py [--check] [PACK]`, `--stage [PACK]`, `--which` | Builds a character pack's generated files from its `character.json`: the firmware's `firmware/include/moods.h` ([CHARACTER.md](../characters/CHARACTER.md) §9), for PACK or every pack in `characters/`. Every form but `--which` also writes the [Character Studio](../characters/studio/README.md)'s `packs.js` and checks its data: the states against the board's, and that each pack's preview plays every mood and state (`--check` fails on a problem, the others warn; [CHARACTER.md](../characters/CHARACTER.md) §12). `--stage` lays the chosen pack out in `.character-build/`, as `firmware/tools/pio.sh` does before every build, and `--which` names it ([CHARACTER.md](../characters/CHARACTER.md) §2) |
