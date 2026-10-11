@@ -1,7 +1,7 @@
 # Boop v1. Run from the repo root. See README.md and internal/VERIFICATION.md.
 # The development targets (tests, simulator, tools) are in internal/Makefile:
 # make -C internal <target>.
-.PHONY: build app run debug dash day flash eval clean
+.PHONY: build app run debug dash day simulator flash eval clean
 
 PIO := firmware/tools/pio.sh
 
@@ -55,6 +55,15 @@ dash:
 # newest line's by default.
 day:
 	internal/tools/boopctl day $(if $(DATE),--date $(DATE))
+
+# The board in a browser, on this Mac (simulator/README.md): the firmware's
+# own code built to WebAssembly, the page that is its screen, finger,
+# speaker and card, and its USB as a bridge's socket for the Mac app and
+# the tools. Needs Emscripten (brew install emscripten). No Bluetooth.
+simulator:
+	python3 characters/charactergen.py --stage
+	simulator/web/build.sh
+	python3 simulator/web/serve.py
 
 # The harness eval scenarios (internal/EVALS.md) against Jev, all of them with no
 # request budget: the final pass (internal/EVALS.md §2 counts its requests).

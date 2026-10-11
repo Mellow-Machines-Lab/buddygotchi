@@ -55,6 +55,9 @@ public final class Runtime: @unchecked Sendable {
         /// stand in.
         public var idleMs: (@Sendable () -> Int64)?
         public var log: @Sendable (String) -> Void = { _ in }
+        /// Every line sent to the device, as it's sent, for whoever
+        /// records them (`DemoRecorder`). On whichever thread sends it.
+        public var onDeviceLine: (@Sendable (String) -> Void)?
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -146,7 +149,7 @@ public final class Runtime: @unchecked Sendable {
     /// The newest snapshot sent to the device.
     public private(set) var latest: StateSnapshot?
     /// Boop's name, from `long-term.md`.
-    let name: String
+    public let name: String
     public private(set) var settings: AppSettings
     public let moodGraph: MoodGraph.Version
     /// The personality running now, touched only on `home`. Starts as the
@@ -267,7 +270,9 @@ public final class Runtime: @unchecked Sendable {
         // boop.log leaves out a `state` sent again unchanged (the keepalive,
         // a reply to `hello`), which debug.jsonl keeps.
         var lastState: String?
+        let sent = options.onDeviceLine
         link.onSend = { line, sender in
+            sent?(line)
             emit(DebugLog.sent(line, by: sender, at: clock()))
             guard debugLog != nil, line != lastState else { return }
             if line.hasPrefix(#"{"t":"state""#) { lastState = line }
@@ -549,39 +554,19 @@ public final class Runtime: @unchecked Sendable {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
         switch object["dev"] as? String {
         case "advance":
-            guard let ms = (object["ms"] as? NSNumber)?.int64Value, ms > 0, let advance = options.advance else { return }
-            advance(ms)
-            options.log("dev: clock advanced \(ms) ms")
-            tick()
+            if let ms = (object["ms"] as? NSNumber)?.int64Value { advanceClock(ms) }
         case "answer":
-            // A forced pass: the actions keep their own rules.
-            guard let choices = object["answers"] as? [String: String] else { return }
-            options.log("dev: forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: Runtime.forcedBy)))
-            changed()
+            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy) }
         case "mood":
-            // The mood action's own change, which tells the device too.
-            guard let to = object["mood"] as? String else { return }
-            let result = harness.force(mood, by: Runtime.forcedBy) {
-                MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()), version: moodGraph)
-            }
-            options.log("dev: mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
-            changed()
+            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy) }
         case "said":
             // What push-to-talk heard, without a mic (VERIFICATION.md §2).
             guard let words = object["words"] as? String else { return }
-            talker = (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app
-            heard(words)
-            options.log("dev: said \(words.count) characters")
+            said(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
         case "tap":
-            // The device's tap, without a board (VERIFICATION.md §2).
-            options.log("dev: tap")
-            run(pipeline.poke(at: options.clock()))
-            changed()
+            tapped()
         case "listen":
-            // The app's mic button.
-            guard let on = object["on"] as? Bool else { return }
-            run(core.listen(on, at: options.clock()))
-            options.log("dev: listen \(on)")
+            if let on = object["on"] as? Bool { listen(on) }
         case "presence":
             // The Mac's signals and idle time, headless only: the app
             // reads the Mac's own.
@@ -599,6 +584,53 @@ public final class Runtime: @unchecked Sendable {
         default:
             break  // such as boopdev replay's probe
         }
+    }
+
+    // What the socket's dev lines do, and a demo's beats (`play`). `who`
+    // is which, for the log: `dev`, or `demo`.
+
+    /// Moves the clock on, where it can be moved (headless).
+    func advanceClock(_ ms: Int64, who: String = "dev") {
+        guard ms > 0, let advance = options.advance else { return }
+        advance(ms)
+        options.log("\(who): clock advanced \(ms) ms")
+        tick()
+    }
+
+    /// A forced pass: the actions keep their own rules. `by` is who the
+    /// pass is by, in the transcript.
+    func forcePass(_ choices: [String: String], by: String, who: String = "dev") {
+        options.log("\(who): forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: by)))
+        changed()
+    }
+
+    /// The mood action's own change, which tells the device too.
+    func forceMood(_ to: String, by: String, who: String = "dev") {
+        let result = harness.force(mood, by: by) {
+            MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()), version: moodGraph)
+        }
+        options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
+        changed()
+    }
+
+    /// What push-to-talk heard, after `by`'s button.
+    func said(_ words: String, by: Core.Talker, who: String = "dev") {
+        talker = by
+        heard(words)
+        options.log("\(who): said \(words.count) characters")
+    }
+
+    /// A tap on the device, without one.
+    func tapped(who: String = "dev") {
+        options.log("\(who): tap")
+        run(pipeline.poke(at: options.clock()))
+        changed()
+    }
+
+    /// The app's mic button.
+    func listen(_ on: Bool, who: String = "dev") {
+        run(core.listen(on, at: options.clock()))
+        options.log("\(who): listen \(on)")
     }
 
     func tick() {

@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-05.</p>
+  <p class="small">Updated 2026-10-11.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -302,6 +302,8 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>
       <tr><td>Boop → LinkKit (a rule's short animation)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, skipped while one of Jev's reactions is playing</td></tr>
       <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactAction</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>
+      <tr><td>Boop → which device</td><td><code>DeviceChooser</code></td><td>The board over Bluetooth, or, while one runs on this Mac and Settings is told to use it, the simulator (<code>simulator/</code>: the firmware's own code in a web page) over its USB socket. Nothing above the transport knows which</td></tr>
+      <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>) comes in through the same doors as real work: a hook as a hook, a tap as the device's, talk as the mic's; its answers are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>
       <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline; <code>talk_on</code> and <code>talk_off</code> drive push-to-talk</td></tr>
     </tbody>
   </table></div>

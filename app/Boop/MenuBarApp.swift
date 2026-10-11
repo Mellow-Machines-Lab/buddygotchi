@@ -74,6 +74,13 @@ final class AppModel: ObservableObject {
     /// row still says why, until the hooks change.
     @Published var hookErrorsDismissed: Set<Agent> = []
     @Published var startError: String?
+    /// A simulator on this Mac, as a body to choose (`DeviceChooser`).
+    enum Simulator { case none, there, inUse }
+    @Published var simulator = Simulator.none
+    var usingSimulator: Bool { simulator == .inUse }
+    var devices: DeviceChooser? {
+        didSet { devices?.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } }
+    }
     /// The "can't react yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
 
@@ -188,12 +195,26 @@ final class AppModel: ObservableObject {
         var detail: String
     }
 
+    /// Looks for a running simulator, off the main thread: it's a look at
+    /// a socket. Only while there's someone to show it to: Settings, open.
+    func lookForSimulator() {
+        guard let devices else { return }
+        DispatchQueue.global(qos: .utility).async {
+            let found: Simulator = devices.choice == .simulator ? .inUse : devices.simulatorIsThere() ? .there : .none
+            Task { @MainActor in if found != self.simulator { self.simulator = found } }
+        }
+    }
+
+    func use(_ choice: DeviceChoice) { devices?.choose(choice) }
+
     var device: DeviceState {
         let how = switch link {
         case .bluetooth: "Bluetooth"
         case .usb: "USB"
         case .none: ""
         }
+        // "Connected over Bluetooth", "Connected to the simulator".
+        let over = usingSimulator ? "to the simulator" : "over \(how)"
         guard let status else {
             return startError == nil ? DeviceState(connected: false, short: "Starting…", detail: "\(name) is starting.")
                 : DeviceState(connected: false, short: "Not running", detail: "\(name) isn't running, so it isn't looking for its body.")
@@ -203,22 +224,25 @@ final class AppModel: ObservableObject {
         }
         guard status.connected else {
             if let why = status.linkTrouble { return DeviceState(connected: false, trouble: true, short: "No \(how)", detail: why) }
+            if usingSimulator {
+                return DeviceState(connected: false, short: "Looking…", detail: "Looking for the simulator. Open its page in a browser.")
+            }
             return DeviceState(connected: false, short: "Looking…", detail: "Looking for it over \(how). Plug it into USB power.")
         }
         // Its firmware doesn't fit the app, so it gets the looks but no
         // reactions (linkkit/SPEC.md §6).
         if let why = status.deviceTrouble {
-            return DeviceState(connected: true, trouble: true, short: "Wrong firmware", detail: "Connected over \(how), but \(why).")
+            return DeviceState(connected: true, trouble: true, short: "Wrong firmware", detail: "Connected \(over), but \(why).")
         }
         // Its card's voice isn't the app's, so it gets no takes.
         // `none` is no card, one it can't read, or no pack on it.
         if let voice = status.device?.voice, status.device?.hasTheVoice == false {
             let card = voice == "none" ? "it has no card, or no voice pack on its card" : "its card's voice pack isn't this app's"
             return DeviceState(connected: true, trouble: true, short: "No voice",
-                               detail: "Connected over \(how), but \(card), so \(name) can't talk. "
+                               detail: "Connected \(over), but \(card), so \(name) can't talk. "
                                    + "Put the app's voice pack on a FAT32 card in the board, then press the board's reset button.")
         }
-        return DeviceState(connected: true, short: "Connected", detail: "Connected over \(how).")
+        return DeviceState(connected: true, short: "Connected", detail: "Connected \(over).")
     }
 
     // The switches show the change at once; the runtime's next status confirms it.
@@ -396,6 +420,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
+        model.devices = options.link as? DeviceChooser
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }
@@ -413,6 +438,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 }
             }
             presenceSignals.start { runtime.presence($0) }
+            // A simulator started or stopped on this Mac: looked for while
+            // Settings is open to show it.
+            let look = Timer.scheduledTimer(withTimeInterval: DeviceChooser.watchEvery, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    guard let model = self?.model, model.shown, model.pane == .settings else { return }
+                    model.lookForSimulator()
+                }
+            }
+            look.tolerance = 0.5
             try runtime.start()
             model.runtime = runtime
             model.startError = nil

@@ -24,7 +24,19 @@ enum Headless {
         // Every value is checked before anything is written, so a typo
         // doesn't leave a set-up Boop behind for the next run to keep.
         let personality = args.choice("--personality", of: Personality.allCases.map(\.rawValue)).flatMap(Personality.init(rawValue:))
-        let brain = args.choice("--brain", of: ["jev", "scripted"]) ?? "jev"
+        // A demo needs no brain: its script says how Boop reacts. With
+        // --brain, the brain answers for the beats that don't.
+        let demo = args["--demo"]
+        let brain = args.choice("--brain", of: ["jev", "scripted"]) ?? (demo == nil ? "jev" : "none")
+        if args["--record"] != nil, demo == nil { fail("--record needs --demo") }
+        var script: DemoScript?
+        if let demo {
+            // `pack` is the character pack's own.
+            guard let file = demo == "pack" ? CharacterPack.active.demo : URL(fileURLWithPath: demo) else {
+                fail("the character pack \(CharacterPack.active.id) has no demo (demo/demo.jsonl)")
+            }
+            do { script = try DemoScript(contentsOf: file) } catch { fail("\(error)") }
+        }
         guard let nature = LongTerm.Nature(rawValue: args["--nature"] ?? "sweet") else { fail("--nature is sweet or cheeky") }
         let log = LogFile(directory: stateDir, echo: true)
 
@@ -46,6 +58,11 @@ enum Headless {
         // shell must never use the owner's key from the Keychain.
         options.readJevKey = { _ in JevKey.environment() }
         if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck } }
+        if brain == "none" { options.brain = { _ in nil } }
+        // `--record` listens from the start, so the recording opens with
+        // how things stood when the demo began (DemoRecorder.begin).
+        let recorder = args["--record"].map { _ in DemoRecorder() }
+        if let recorder { options.onDeviceLine = { recorder.sent($0) } }
         // The clock can be moved forward with `{"dev":"advance","ms":N}`, so
         // the pipeline check can finish a 6-minute turn without waiting it out.
         let skew = OSAllocatedUnfairLock(initialState: Int64(0))
@@ -65,6 +82,8 @@ enum Headless {
             fail("boop: \(error)")
         }
 
+        if let script { play(script, on: runtime, link: link, recorder: recorder, to: args["--record"], log: log) }
+
         // Stop cleanly: close the socket and the link, then exit 0.
         var sources: [DispatchSourceSignal] = []
         for sig in [SIGINT, SIGTERM] {
@@ -81,5 +100,44 @@ enum Headless {
             sources.append(source)
         }
         withExtendedLifetime(sources) { dispatchMain() }
+    }
+
+    /// `--demo`: plays the script once the device is there (with a link),
+    /// then stops. `recorder` keeps what the device was sent
+    /// (`DemoRecording`), written to `file` for the simulator's page.
+    static func play(_ script: DemoScript, on runtime: Runtime, link: LinkSetting, recorder: DemoRecorder?, to file: String?, log: LogFile) {
+        func start() {
+            recorder?.begin(name: runtime.name)
+            runtime.play(script, beat: { beat in
+                let cause = beat.cause(creature: runtime.name)
+                if let cause { log.write("demo: \(cause.text)") }
+                recorder?.happened(cause, input: beat.input)
+            }, done: {
+                if let recorder, let file {
+                    let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"
+                    let encoder = JSONEncoder()
+                    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+                    do {
+                        try encoder.encode(recorder.recording(character: CharacterPack.active.id, face: face))
+                            .write(to: URL(fileURLWithPath: file), options: .atomic)
+                        log.write("demo: recorded to \(file)")
+                    } catch {
+                        log.write("demo: can't write \(file): \(error)")
+                    }
+                }
+                runtime.stop()
+                log.write("boop: stopped")
+                exit(0)
+            })
+        }
+        // With a device, wait for it to say who it is, up to 15 s.
+        var tries = 0
+        func wait() {
+            tries += 1
+            if link == .none || runtime.link.hello != nil { return start() }
+            if tries > 150 { fail("demo: no device on \(link) after 15 s") }
+            runtime.home.asyncAfter(deadline: .now() + 0.1, execute: wait)
+        }
+        runtime.home.async(execute: wait)
     }
 }

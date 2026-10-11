@@ -15,6 +15,7 @@ let usage = """
                ~/.codex: they keep reporting to the everyday app's socket, not this one.
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
                 [--brain jev|scripted] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
+                [--demo FILE|pack [--record FILE]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --personality overrides the saved one for this run only.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
@@ -24,6 +25,10 @@ let usage = """
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
                thread on this Mac; --no-open only logs where it would have opened.
                Every event goes to DIR/transcript/<date>.jsonl, read back at the next launch.
+               --demo plays a demo script (pack: the character pack's own, demo/demo.jsonl) and stops when it's
+               over; with a link it waits for the device first. It runs with no brain unless --brain says one:
+               the script says how Boop reacts. --record writes every line the device was sent, with when and
+               what was happening, for the simulator's page to play back.
            --debug prints everything to this terminal as it happens: each hook and the raw event Boop made
                of it, every line sent to the device, and every view event, pass (with Jev's whole state) and
                action. The events, view events and passes also go to DIR/debug.jsonl, started afresh each
@@ -63,7 +68,10 @@ func bundledSteering() -> Steering {
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile) -> Runtime.Options {
     let transport: Transport? = switch link {
-    case .bluetooth: BLETransport(prefix: BoopDevice.blePrefix, log: { log.write($0) })
+    // The board over Bluetooth, or a simulator running on this Mac, when
+    // Settings is told to use it.
+    case .bluetooth: DeviceChooser(board: BLETransport(prefix: BoopDevice.blePrefix, log: { log.write($0) }),
+                                   log: { log.write($0) })
     case .usb(let path): SocketTransport(path: path)
     case .none: nil
     }
@@ -126,7 +134,7 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--brain", "--name", "--nature"],
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--brain", "--name", "--nature", "--demo", "--record"],
                       ["--headless", "--debug", "--no-open"])
     : launchSnapshots ? (["--snapshots"], [])
     : (["--state-dir", "--link"], ["--debug"])

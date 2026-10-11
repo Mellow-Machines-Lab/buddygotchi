@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-05. The tour of LinkKit: the four messages, the turn, and
+Updated 2026-10-11. The tour of LinkKit: the four messages, the turn, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -155,7 +155,8 @@ final class LampHost: @unchecked Sendable {
   the board at once: `--port` names the port when there's more than one
   USB serial port, `--socket` where to share it (`$TMPDIR/linkkit-bridge.sock` by
   default), `--baud` the board's
-  rate (460800 by default). An app can run one itself (`Bridge`).
+  rate (460800 by default). An app can run one itself (`Bridge`), and ask
+  whether one answers on a socket (`SocketTransport.answers`).
 
 `Wire` builds and reads the lines themselves, and `JSON` and `JSONObject`
 (keys in order) are the app's parts of them.

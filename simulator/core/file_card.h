@@ -1,0 +1,77 @@
+// The card as files on the Mac: BOOP_SIM_CARD names a folder for it, where
+// a pack copied on with dbg.card goes to <folder>/boop/voice.bin, as on the
+// board, and is played from there. Without it the card holds the chosen
+// character pack's voice (its voice/voice.bin, characters/CHARACTER.md §8),
+// if it has one, and takes no copy.
+#pragma once
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <string>
+#include <sys/stat.h>
+
+#include "linkkit/codec.h"
+#include "sim_hal.h"
+
+namespace sim {
+
+struct FileCard : Card {
+  struct File : voice::Source {
+    std::FILE* f = nullptr;
+    bool read(uint32_t at, void* buf, uint32_t n) override {
+      return f && !std::fseek(f, long(at), SEEK_SET) && std::fread(buf, 1, n, f) == n;
+    }
+  };
+
+  std::string dir = std::getenv("BOOP_SIM_CARD") ? std::getenv("BOOP_SIM_CARD") : "";
+  File pack, copy;
+  std::string path(const char* name) const {
+    if (!dir.empty()) return dir + "/boop/" + name;
+    // The chosen pack's folder is the one staging names in
+    // .character-build/pack, found from this file's own path:
+    // <repo>/simulator/core/file_card.h.
+    const std::string here = __FILE__;
+    std::string pack;
+    std::ifstream chosen(here.substr(0, here.rfind("/simulator/core/")) + "/.character-build/pack");
+    std::getline(chosen, pack);
+    return pack + "/voice/" + name;
+  }
+
+  bool open() override {
+    if (pack.f) std::fclose(pack.f), pack.f = nullptr;
+    pack.f = std::fopen(path("voice.bin").c_str(), "rb");
+    return pack.f && voice::openPack(&pack);
+  }
+  bool packBegin(bool keep, uint32_t& have, const char*& why) override {
+    have = 0;
+    if (dir.empty()) return why = "no card", false;
+    ::mkdir(dir.c_str(), 0755), ::mkdir((dir + "/boop").c_str(), 0755);
+    if (copy.f) std::fclose(copy.f);
+    copy.f = std::fopen(path("voice.tmp").c_str(), keep ? "ab" : "wb");
+    if (!copy.f) return why = "can't open /boop/voice.tmp", false;
+    have = uint32_t(std::ftell(copy.f));
+    return true;
+  }
+  bool packAppend(const uint8_t* d, size_t n, uint32_t& have) override {
+    if (!copy.f) return have = 0, false;
+    bool ok = !n || std::fwrite(d, 1, n, copy.f) == n;
+    std::fflush(copy.f);
+    have = uint32_t(std::ftell(copy.f));
+    return ok;
+  }
+  bool packEnd(uint32_t size, uint32_t crc, const char*& why) override {
+    if (!copy.f) return why = "no copy begun", false;
+    std::fclose(copy.f), copy.f = nullptr;
+    std::FILE* f = std::fopen(path("voice.tmp").c_str(), "rb");
+    uint8_t buf[4096];
+    uint32_t got = 0, sum = 0;
+    for (size_t n; f && (n = std::fread(buf, 1, sizeof(buf), f)) > 0; got += uint32_t(n)) sum = linkkit::crc32(buf, n, sum);
+    if (f) std::fclose(f);
+    if (got != size || sum != crc) return why = got != size ? "wrong size" : "wrong crc", false;
+    voice::closePack();
+    if (std::rename(path("voice.tmp").c_str(), path("voice.bin").c_str()) || !open()) return why = "can't swap it in", false;
+    return true;
+  }
+};
+
+}  // namespace sim

@@ -10,7 +10,9 @@ You need macOS 26 or later and Command Line Tools. Xcode works but isn't
 needed; the three packages alone need macOS 13. Flashing the board and
 the dev tools (`internal/tools/boopctl`, the simulator, the dashboard)
 also need Python 3.10 or later, newer than the Mac's own
-(`brew install python`).
+(`brew install python`). The simulator's page also needs Emscripten, to
+build the firmware for a browser, and Node, to test it
+(`brew install emscripten node`).
 
 `agent-hooks/` and `mellowharness/` are submodules, each a repository
 of its own: clone with `--recurse-submodules`, or run
@@ -23,6 +25,7 @@ make build                 # the Mac app, the dev tools and the hook client
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal fw-test   # the firmware's and LinkKit's device tests, on the Mac
 make -C internal sim       # the firmware's drawing, as PNGs, against the goldens
+make -C internal sim-test  # the simulator: its core on the Mac, and in a browser's WebAssembly
 ```
 
 One thing that will surprise you:

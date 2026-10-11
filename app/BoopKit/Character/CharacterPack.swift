@@ -73,6 +73,15 @@ public struct CharacterPack: Sendable {
     let quietNever: Set<String>
 }
 
+extension CharacterPack {
+    /// The pack's demo, if it has one: `demo/demo.jsonl` (`DemoScript`,
+    /// CHARACTER.md §13).
+    public var demo: URL? {
+        let url = directory.appendingPathComponent("demo/demo.jsonl")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+}
+
 public struct CharacterPackError: Error, CustomStringConvertible {
     public let description: String
     init(_ description: String) { self.description = description }
