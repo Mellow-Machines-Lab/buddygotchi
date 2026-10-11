@@ -1,7 +1,7 @@
 // The voice player: the pack's takes found by id, a line of one or two
 // takes played whole at their recorded pitch (11.025 kHz resampled 2× to
-// 22.05 kHz), volume, the cut's fade, and the mouth. The pack is .build/voice/voice.bin, as voicegen
-// writes it and the board reads it from its card.
+// 22.05 kHz), volume, the cut's fade, and the mouth. The pack is the chosen character
+// pack's voice/voice.bin, as the board reads it from its card.
 #include <unity.h>
 
 #include "pack_file.h"  // internal/firmware/
@@ -44,7 +44,7 @@ std::vector<uint8_t> samples(const voice::Clip& c) {
 
 }  // namespace
 
-// The Mac's take table (characters/boop/mac/takes.tsv) comes from the same voicegen run: the same takes by
+// The Mac's take table (the pack's mac/takes.tsv) was written with it: the same takes by
 // the same ids, which the board finds in the pack's sorted index.
 void test_the_pack_finds_takes_by_id() {
   NEEDS_VOICE_PACK();

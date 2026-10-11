@@ -1013,8 +1013,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_takes)
     p = sub.add_parser("card", help="copy the voice pack onto the board's microSD card over USB, unless it has it; "
                                     "goes on where a cut-off copy stopped; slow, hours for the whole pack, where a card "
-                                    "reader and voicegen.py --card take seconds")
-    p.add_argument("--pack", default=str(PACK), help="the pack (default: .build/voice/voice.bin)")
+                                    "reader takes seconds (copy the file to the card's boop/voice.bin)")
+    p.add_argument("--pack", default=str(PACK), help="the pack (default: the chosen character pack's voice/voice.bin)")
     p.add_argument("--force", action="store_true", help="copy even when the card has this version")
     p.add_argument("--fresh", action="store_true", help="start again rather than go on from an earlier copy")
     p.set_defaults(func=cmd_card)

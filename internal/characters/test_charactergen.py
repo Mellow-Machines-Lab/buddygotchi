@@ -39,12 +39,10 @@ class StudioRuleTests(unittest.TestCase):
         self.firmware = self.dir / "types.cpp"
         write(self.firmware, 'constexpr const char* kStateNames[2] = {"idle", "working"};')
 
-    def pack(self, name, moods, studio=None, base=None, files=()):
+    def pack(self, name, moods, studio=None, files=()):
         character = {"id": name, "name": name.title(), "default_mood": moods[0]["id"], "moods": moods}
         if studio is not None:
             character["studio"] = studio
-        if base:
-            character["base"] = base
         write(self.dir / name / "character.json", character)
         for path, value in files:
             write(self.dir / name / path, value)
@@ -74,23 +72,40 @@ class StudioRuleTests(unittest.TestCase):
         pack = self.pack("art", [{"id": "calm"}, {"id": "sad", "fallback": "calm"}], {"coverage": "cover.json"}, files=[("cover.json", coverage)])
         self.assertEqual(self.problems(pack), [])
 
-    def test_a_base_preview_plays_the_packs_moods_through_fallbacks(self):
-        """A base's preview must play each of the pack's moods, itself or through its fallback."""
-        base = self.pack("base", [{"id": "calm"}], {})
-        top = self.pack("top", [{"id": "calm"}, {"id": "giddy"}], {}, base="base")
-        self.assertEqual(self.problems(base, top), ["top: base's preview can't play giddy in idle, working"])
-        top = self.pack("top", [{"id": "calm"}, {"id": "giddy", "fallback": "calm"}], {}, base="base")
-        self.assertEqual(self.problems(base, top), [])
+    def test_each_of_a_packs_previews_plays_its_moods_through_fallbacks(self):
+        """A pack with several previews names each, and each must play every one of the pack's moods, itself or through its fallback."""
+        coverage = {"perPair": {"calm": {"idle": 1, "working": 1}}}
+        two = [{"id": "own"}, {"id": "borrowed", "coverage": "cover.json"}]
+        pack = self.pack("top", [{"id": "calm"}, {"id": "giddy"}], two, files=[("cover.json", coverage)])
+        self.assertEqual(self.problems(pack), ["top: borrowed's preview can't play giddy in idle, working"])
+        pack = self.pack("top", [{"id": "calm"}, {"id": "giddy", "fallback": "calm"}], two, files=[("cover.json", coverage)])
+        self.assertEqual(self.problems(pack), [])
+        pack = self.pack("top", [{"id": "calm"}], [{"id": "own"}, {"id": "own"}])
+        self.assertEqual(self.problems(pack), ["top: each of its studio entries needs an id of its own"])
 
     def test_data_has_paths_from_the_page(self):
         coverage = {"perPair": {"calm": {"idle": 1, "working": 1}}}
-        base = self.pack("base", [{"id": "calm", "meaning": "Settled."}], {"scripts": ["studio/a.js"], "coverage": "c.json"},
-                         files=[("studio/a.js", ""), ("c.json", coverage)])
-        top = self.pack("top", [{"id": "calm", "family": "settled"}], None, base="base")
-        data = gen.studio_data([base, top], top, self.studio)
-        self.assertEqual(data["chosen"], "top")
-        self.assertEqual(data["packs"]["base"]["studio"], {"scripts": ["../base/studio/a.js"], "styles": [], "covers": {"calm": ["idle", "working"]}})
-        self.assertEqual(data["packs"]["top"], {"name": "Top", "default_mood": "calm", "base": "base", "moods": [{"id": "calm", "family": "settled"}], "studio": None})
+        art = self.pack("art", [{"id": "calm", "meaning": "Settled."}], {"scripts": ["studio/a.js"], "coverage": "c.json"},
+                        files=[("studio/a.js", ""), ("c.json", coverage)])
+        plain = self.pack("plain", [{"id": "calm", "family": "settled"}], None)
+        data = gen.studio_data([art, plain], plain, self.studio)
+        self.assertEqual(data["chosen"], "plain")
+        self.assertEqual(data["packs"]["art"]["studio"],
+                         [{"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "covers": {"calm": ["idle", "working"]}}])
+        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}], "studio": []})
+
+    def test_staging_takes_the_packs_own_files_only(self):
+        """The firmware's files are the pack's alone, and the app's copy leaves out what it doesn't read: the voice pack and the pack's sources."""
+        pack = self.pack("solo", [{"id": "calm"}], files=[("firmware/include/moods.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
+                                                           ("steering/guide.md", ""), ("design/art.txt", "")])
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        self.assertEqual(gen.stage(pack), 0)
+        staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
+        self.assertEqual([n for n in staged if not n.startswith("firmware-test/")],
+                         ["firmware/include/moods.h", "pack", "packs/chosen", "packs/solo/character.json", "packs/solo/mac/takes.tsv",
+                          "packs/solo/steering/guide.md"])
+        self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(pack))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Character Studio
 
-Updated 2026-10-05. One page for looking at and listening to any
+Updated 2026-10-11. One page for looking at and listening to any
 character pack: pick a pack, a mood and a state, and the stage plays what
 the device would. The page belongs to the engine and names no character.
 Each pack that wants a preview declares one in its `character.json`
@@ -31,9 +31,9 @@ tools save the clips its studio entry names (`captures`) into `DIR`.
 ## What's on the page
 
 - **Pack**, when there's more than one here, and the **characters** for
-  it: the pack's own preview and its base's (Boop's pack shows its gel
-  slime and Pixel). Switching keeps the mood and state, so the same
-  moment can be compared on both.
+  it: each preview the pack declares (Boop's pack shows its gel slime
+  and its copy of the pixel face). Switching keeps the mood and state,
+  so the same moment can be compared on both.
 - **Mood**: the pack's moods in their families, each with the colour its
   studio entry gives the family. When a character has no art for a mood,
   its chip is dashed with an arrow, and the stage plays the mood the
@@ -71,7 +71,8 @@ The other forms only warn. The rules' tests are in
 ## Writing an adapter
 
 A pack's `scripts` load in order as plain scripts, so they work from
-`file://`. One of them registers the pack's adapter under the pack's id:
+`file://`. One of them registers the entry's adapter under the entry's
+`id`, which is the pack's id unless the pack declares several previews:
 
 ```js
 Studio.register('pixel', {

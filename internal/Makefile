@@ -17,7 +17,7 @@ PIO := firmware/tools/pio.sh
 # (it has failed five times running for one package).
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
-test: voice
+test:
 	$(MAKE) -C $(ROOT) build
 	cd $(ROOT) && .build/debug/BoopTests
 	for pkg in $(SWIFT_PACKAGES); do \
@@ -30,22 +30,22 @@ test: voice
 	  done; \
 	done
 
-# The voice pack, .build/voice/voice.bin, which the board plays from its SD
-# card and the simulator and tests read from here, and
-# the Mac's take table, characters/boop/mac/takes.tsv, from the recorded voice bank. Rebuilt when
-# the bank or voicegen changes. `voicegen.py --card /Volumes/CARD` also
-# copies it onto a card. Without Boop's private pack (the public repository)
-# there's no voice to build, and the tests that read it say so and go on.
+# The voice, each character pack's voice/voice.bin and mac/takes.tsv, is
+# checked in, so nothing here builds it. The recordings and the tool that
+# turns them into those two files are in Boop's private pack; with it in
+# this checkout, `voice` rebuilds both packs' copies when the bank or the
+# tool changed.
 VOICEGEN := $(ROOT)/characters/boop/tools/voicegen/voicegen.py
 ifneq ($(wildcard $(VOICEGEN)),)
-voice: $(ROOT)/.build/voice/voice.bin
+BANK := $(ROOT)/characters/boop/design/assets/boop-voice-v1
+voice: $(ROOT)/characters/boop/voice/voice.bin
+
+$(ROOT)/characters/boop/voice/voice.bin: $(BANK)/manifest.json $(BANK)/dictionary.json $(VOICEGEN)
+	cd $(ROOT) && python3 characters/boop/tools/voicegen/voicegen.py
 else
 voice:
-	@echo "voice: no voice bank here (Boop's pack isn't in this checkout)"
+	@echo "voice: the packs' voice files are as checked in (the recordings aren't in this checkout)"
 endif
-
-$(ROOT)/.build/voice/voice.bin: $(ROOT)/characters/boop/design/assets/boop-voice-v1/manifest.json $(ROOT)/characters/boop/design/assets/boop-voice-v1/dictionary.json $(ROOT)/characters/boop/tools/voicegen/voicegen.py
-	cd $(ROOT) && python3 characters/boop/tools/voicegen/voicegen.py
 
 # internal/tools/.venv with pyserial, Pillow and Textual, for boopctl.
 # internal/tools/boopctl makes it through this when it's missing; this also
@@ -77,7 +77,7 @@ fw:
 # Firmware unit tests on the Mac: that the character pack's moods.h is
 # fresh (characters/CHARACTER.md §9), Boop's, then LinkKit's device
 # library's own (linkkit/device/platformio.ini).
-fw-test: voice
+fw-test:
 	cd $(ROOT) && python3 characters/charactergen.py --check
 	cd $(ROOT) && $(PIO) test -e native
 	cd $(ROOT) && $(PIO) test -d $(ROOT)/linkkit/device -e native
@@ -86,7 +86,7 @@ fw-test: voice
 # pixel face's, then the gel face's (characters/boop/tests/golden-gel/). The
 # PNGs land in /tmp/boop-sim/<face>/<scenario>/; internal/tools/boopctl sim NAME
 # [--face gel] runs one.
-sim: voice
+sim:
 	cd $(ROOT) && internal/tools/boopctl sim
 	cd $(ROOT) && internal/tools/boopctl sim --face gel
 
@@ -97,9 +97,13 @@ e2e:
 
 # The tools' own tests, with no board or camera: boopctl's commands (the
 # working day's script and report among them, and the takes they read from
-# the voice pack), the webcam recorder on synthetic video, and charactergen's
-# studio rules (internal/characters/).
-tools-test: tools voice
+# the voice pack), the webcam recorder on synthetic video, charactergen's
+# staging and studio rules (internal/characters/), and each character
+# pack's own (its tests/tools/).
+tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
+	cd $(ROOT) && for tests in characters/*/tests/tools; do \
+	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \
+	done

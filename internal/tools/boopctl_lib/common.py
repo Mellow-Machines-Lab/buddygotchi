@@ -3,6 +3,7 @@ animations and moods, the messages to and from the board, the board's voice
 takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import socket
 import struct
@@ -97,7 +98,18 @@ def ended(msg: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-PACK = REPO / ".build" / "voice" / "voice.bin"
+def chosen_pack() -> Path:
+    """The chosen character pack's folder, as the builds choose it
+    (characters/charactergen.py, characters/CHARACTER.md §2)."""
+    spec = importlib.util.spec_from_file_location("charactergen", REPO / "characters" / "charactergen.py")
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+    return gen.chosen()
+
+
+# The chosen pack's voice, the file a board's card has as boop/voice.bin
+# (characters/CHARACTER.md §8).
+PACK = chosen_pack() / "voice" / "voice.bin"
 
 
 @dataclass(frozen=True)
@@ -112,9 +124,9 @@ class Take:
 @cache
 def takes() -> tuple[Take, ...]:
     """The takes in the voice pack the board plays from its card
-    (.build/voice/voice.bin, which voicegen writes), by id."""
+    (the chosen character pack's voice/voice.bin), by id."""
     if not PACK.exists():
-        raise DeviceError(f"no voice pack at {PACK}: run make -C internal voice")
+        raise DeviceError(f"no voice pack at {PACK}: the chosen character pack has no voice")
     data = PACK.read_bytes()
     magic, _, count, size, index, rate, _ = struct.unpack_from("<8s16sIIIII", data)
     if magic != b"BOOPVOX1":

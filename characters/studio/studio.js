@@ -1,14 +1,16 @@
 // Character Studio: one page for any character pack's moods, states and sounds.
 // The page owns the selection, the pickers and the URL. A pack that declares
 // a `studio` entry in its character.json brings its own preview: scripts that
-// call Studio.register(packId, adapter) (README.md, "Writing an adapter").
+// call Studio.register(id, adapter) with the entry's id, which is the pack's
+// unless the pack declares several (README.md, "Writing an adapter").
 // charactergen.py writes the pack data this reads, window.StudioData (packs.js).
 (() => {
   const root=document.getElementById('studio');
   const $=selector=>root.querySelector(selector),$$=selector=>[...root.querySelectorAll(selector)];
   const title=id=>id.replaceAll('_',' ').replace(/^\w/,c=>c.toUpperCase());
-  const adapters={};
-  window.Studio={register(id,adapter){adapters[id]=adapter;}};
+  // Each pack's adapters by its entry's id, kept under the pack whose scripts were loading.
+  const adapters={};let loading='';
+  window.Studio={register(id,adapter){adapters[loading+'/'+id]=adapter;}};
   const data=window.StudioData;
   if(!data){$('[data-missing]').hidden=false;$('.layout').hidden=true;return;}
   const packs=data.packs;
@@ -18,39 +20,45 @@
   const stateInfo=Object.fromEntries(stateGroups.flatMap(g=>g.states.map(s=>[s.id,{...s,label:s.label||title(s.id)}])));
   const stateIds=Object.keys(stateInfo);
 
-  // A pack, its base, its base's base: the characters the page can show for it.
-  const chain=id=>{const l=[];while(id&&packs[id]&&!l.includes(id)){l.push(id);id=packs[id].base;}return l;};
-  const cardsOf=id=>{const l=chain(id).filter(p=>packs[p].studio);return l.length?l:[id];};
-  const label=id=>packs[id].studio?.label||packs[id].name;
+  // A pack's cards: one for each preview it declares, by the entry's id, or the pack alone.
+  const cardsOf=pack=>packs[pack].studio.length?packs[pack].studio.map(e=>e.id):[pack];
+  const entryOf=(pack,card)=>packs[pack].studio.find(e=>e.id===card);
+  const entry=()=>entryOf(sel.pack,sel.card);
+  const label=card=>entryOf(sel.pack,card)?.label||packs[sel.pack].name;
   const moodOf=id=>packs[sel.pack].moods.find(m=>m.id===id);
   // What a card plays for one of the pack's moods: the mood, else its fallback, else nothing.
   function shows(card,mood,state){
-    const own=new Set(packs[card].moods.map(m=>m.id)),covers=packs[card].studio?.covers;
-    for(const id of [mood.id,mood.fallback])if(id&&own.has(id)&&(!covers||covers[id]?.includes(state)))return id;
+    const covers=entryOf(sel.pack,card)?.covers;
+    if(!covers)return mood.id;
+    for(const id of [mood.id,mood.fallback])if(id&&covers[id]?.includes(state))return id;
     return null;
   }
+  const familyMeta=()=>Object.assign({},...packs[sel.pack].studio.map(e=>e.families||{}));
   function families(){
-    const pack=packs[sel.pack],meta=Object.assign({},...chain(sel.pack).reverse().map(p=>packs[p].studio?.families||{}));
+    const pack=packs[sel.pack],meta=familyMeta();
     // In the order the studio entry lists the families, then any it leaves out.
     const order=Object.keys(meta).filter(f=>pack.moods.some(m=>m.family===f));
     for(const m of pack.moods){const f=m.family||'';if(!order.includes(f))order.push(f);}
     return order.map(f=>({id:f,label:meta[f]?.label||(f?title(f):'Moods'),colour:meta[f]?.colour,moods:pack.moods.filter(m=>(m.family||'')===f)}));
   }
-  const colourOf=mood=>{const f=moodOf(mood)?.family||'';return packs[sel.pack].studio?.families?.[f]?.colour||chain(sel.pack).map(p=>packs[p].studio?.families?.[f]?.colour).find(Boolean);};
+  const colourOf=mood=>familyMeta()[moodOf(mood)?.family||'']?.colour;
 
   const sel={pack:data.chosen,card:'',mood:'',face:null,state:'idle',outcome:'success',context:'new_task',variant:0};
   let sound=false,volume=.5,started=false,adapter=null,instance=null,info=null,loads={};
   const ctx={root,stage:$('#stage'),tools:$('[data-tools-body]'),get sound(){return sound;},get volume(){return volume;},
     get loop(){return $('[data-loop]').checked;},get selection(){return sel;},onChange:()=>onChange()};
 
-  // A pack's scripts and styles, each once, in order.
-  function load(id){
-    const entry=packs[id].studio;
+  // A preview's scripts and styles, each once, in order, and one preview at a time,
+  // so an adapter registers under the pack that brought it.
+  let queue=Promise.resolve();
+  function load(pack,card){
+    const entry=entryOf(pack,card);
     if(!entry)return Promise.resolve();
-    return loads[id]??=(async()=>{
+    return loads[pack+'/'+card]??=(queue=queue.catch(()=>{}).then(async()=>{
+      loading=pack;
       for(const href of entry.styles||[]){const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.append(l);}
       for(const src of entry.scripts||[])await new Promise((ok,fail)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>fail(Error('Could not load '+src));document.head.append(s);});
-    })();
+    }));
   }
 
   // ── Pickers ─────────────────────────────────────────────────────────────
@@ -76,10 +84,11 @@
       const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.className='character';b.dataset.character=id;
       b.setAttribute('aria-selected',String(id===sel.card));
       const art=document.createElement('span');art.className='character-art';art.setAttribute('aria-hidden','true');
-      if(packs[id].studio?.icon){const img=document.createElement('img');img.src=packs[id].studio.icon;img.alt='';art.append(img);}else art.textContent=packs[id].name[0];
+      const e=entryOf(sel.pack,id);
+      if(e?.icon){const img=document.createElement('img');img.src=e.icon;img.alt='';art.append(img);}else art.textContent=packs[sel.pack].name[0];
       const text=document.createElement('span');text.className='character-text';
       const strong=document.createElement('strong');strong.textContent=label(id);
-      const small=document.createElement('small');small.textContent=[packs[id].studio?.about,`${packs[id].moods.length} moods`].filter(Boolean).join(' · ');
+      const small=document.createElement('small');small.textContent=[e?.about,`${e?.covers?Object.keys(e.covers).length:packs[sel.pack].moods.length} moods`].filter(Boolean).join(' · ');
       text.append(strong,small);b.append(art,text);return b;
     }));
   }
@@ -168,10 +177,10 @@
     instance?.destroy();instance=adapter=null;ctx.stage.replaceChildren();ctx.tools.replaceChildren();
     sel.pack=pack;sel.card=cardsOf(pack).includes(card)?card:cardsOf(pack)[0];sel.variant=variant;
     ctx.stage.dataset.kind=sel.card;
-    try{await load(sel.card);}catch(error){$('[data-status]').textContent=error.message;}
+    try{await load(sel.pack,sel.card);}catch(error){$('[data-status]').textContent=error.message;}
     if(ticket!==switching)return;
-    adapter=adapters[sel.card]||null;
-    if(packs[sel.card].studio&&!adapter)$('[data-status]').textContent=`${label(sel.card)}'s scripts didn't register an adapter.`;
+    adapter=adapters[sel.pack+'/'+sel.card]||null;
+    if(entry()&&!adapter)$('[data-status]').textContent=`${label(sel.card)}'s scripts didn't register an adapter.`;
     instance=adapter?adapter.create(ctx):null;
     instance?.setSound();
     render({autoplay:true});

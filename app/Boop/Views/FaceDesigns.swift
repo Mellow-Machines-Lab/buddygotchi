@@ -6,7 +6,7 @@ import Foundation
 /// blinking, for the popover's tile: the device's own shapes, without
 /// the props. They're the face's `mac/faces.json`
 /// (characters/CHARACTER.md §9), which facegen writes into the Pixel
-/// pack: the character pack's own, else its base's.
+/// pack.
 enum FaceDesigns {
     /// Where the faces sit in the designs' 320×240 screen.
     static var box: CGRect { table.box }

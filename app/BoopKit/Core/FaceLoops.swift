@@ -7,7 +7,7 @@ import Foundation
 /// window, when a line over its animation starts, as the device's sfx.h has
 /// it. They're the face's `mac/faces.json`
 /// (characters/CHARACTER.md §9), which facegen writes into the Pixel
-/// pack: the character pack's own, else its base's.
+/// pack.
 public enum FaceLoops {
     /// The moods the pixel designs draw, in faces.h's order.
     public static var moods: [String] { table.moods }

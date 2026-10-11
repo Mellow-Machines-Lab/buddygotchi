@@ -61,42 +61,32 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(CharacterPack.active.aliases, ["cheerful": "happy"])
     }
 
-    /// CHARACTER.md §6: Boop builds on Pixel. Its files are its own where it
-    /// has them (the steering, the takes, the mirror), else Pixel's (the
-    /// pixel face's mac/faces.json); Pixel loads on its own; and a base
-    /// can't have a base.
-    func testBoopBuildsOnPixel() throws {
+    /// CHARACTER.md §3: a pack stands alone. Boop's and Pixel's each have
+    /// every file the engine reads in their own folder (the pixel face's
+    /// mac/faces.json, the voice's table and its pack), and nothing is
+    /// looked for anywhere else.
+    func testEachPackStandsAlone() throws {
         try requireBoopsPack()
         let boop = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/boop"))
         let pixel = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/pixel"))
-        XCTAssertEqual(boop.baseDirectory?.lastPathComponent, "pixel")
-        XCTAssertNil(pixel.baseDirectory)
         XCTAssertEqual(pixel.moods.map(\.id), MoodGraph.moods)
         XCTAssertEqual(pixel.startupMood, "happy")
-        XCTAssertEqual(boop.file("mac/faces.json"), pixel.file("mac/faces.json"))
-        XCTAssertEqual(boop.file("mac/takes.tsv")?.deletingLastPathComponent().deletingLastPathComponent().lastPathComponent, "boop")
-        XCTAssertNil(pixel.file("mac/takes.tsv"))
-        XCTAssertNil(boop.file("no/such/file"))
+        for pack in [boop, pixel] {
+            for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
+                XCTAssertEqual(pack.file(path)?.path, pack.directory.appendingPathComponent(path).path, "\(pack.id) \(path)")
+            }
+            XCTAssertNil(pack.file("no/such/file"))
+        }
         XCTAssertEqual(FaceLoops.moods, pixel.moods.map(\.id))
         // The graph Pixel keeps is v2's.
         for m in pixel.moods { XCTAssertEqual(m.moves, MoodGraph.moves[m.id], m.id) }
-
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("packs-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: tmp) }
-        for (name, json) in [("a", #"{"id":"a","name":"A","version":"1","base":"b"}"#),
-                             ("b", #"{"id":"b","name":"B","version":"1","base":"c","default_mood":"x","moods":[{"id":"x","meaning":"X."}]}"#)] {
-            try FileManager.default.createDirectory(at: tmp.appendingPathComponent(name), withIntermediateDirectories: true)
-            try json.write(to: tmp.appendingPathComponent("\(name)/character.json"), atomically: true, encoding: .utf8)
-        }
-        var refused = ""
-        do { _ = try CharacterPack(directory: tmp.appendingPathComponent("a")) } catch { refused = "\(error)" }
-        XCTAssertTrue(refused.contains("a base can't have a base of its own"), refused)
     }
 
     /// CHARACTER.md §7, §8: Pixel stands on its own. Its steering has the
     /// guide, its personality and a file for each of its moods, every one
     /// within the budgets, it names the creature
-    /// Pixel and never Boop, and it has no voice.
+    /// Pixel and never Boop, and it has a voice: the table and the pack
+    /// it's the table of.
     func testPixelsSteeringIsComplete() throws {
         let folder = Self.repo.appendingPathComponent("characters/pixel")
         let pixel = try CharacterPack(directory: folder)
@@ -109,7 +99,10 @@ final class CharacterPackTests: XCTestCase {
             let budget = path == "guide" ? Steering.Budget.guide : path.hasPrefix("personality/") ? Steering.Budget.personality : Steering.Budget.mood
             XCTAssertLessThanOrEqual(Steering.tokens(text), budget, path)
         }
-        XCTAssertNil(pixel.file("mac/takes.tsv"))
+        let table = try String(contentsOf: XCTUnwrap(pixel.file("mac/takes.tsv")), encoding: .utf8)
+        let version = try XCTUnwrap(table.split(separator: "\n").first { !$0.hasPrefix("#") })
+        let pack = try Data(contentsOf: XCTUnwrap(pixel.file("voice/voice.bin")))
+        XCTAssertEqual(String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self), String(version))
     }
 
     /// CHARACTER.md §4: a pack that leads to a mood it doesn't have is refused.

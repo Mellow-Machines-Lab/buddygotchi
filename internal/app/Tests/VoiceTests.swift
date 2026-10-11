@@ -17,8 +17,12 @@ extension DeviceMoment.Say {
     }
 }
 
+/// The recorded voice, which Boop's pack and Pixel's each have a copy of
+/// (characters/CHARACTER.md §8): these run with either.
 final class VoiceTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
+    override func setUpWithError() throws {
+        try XCTSkipUnless(!Take.all.isEmpty, "needs a character pack with a voice")
+    }
 
     let moods = MoodAction.moods.map(\.name)
 
@@ -66,8 +70,7 @@ final class VoiceTests: XCTestCase {
     /// The takes the board plays are the Mac's: voicegen writes both, and
     /// the board reports the pack's version.
     func testThePackHasEveryTake() throws {
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../.build/voice/voice.bin")
-        let pack = try Data(contentsOf: url)
+        let pack = try Data(contentsOf: XCTUnwrap(CharacterPack.active.file("voice/voice.bin")))
         XCTAssertEqual(pack.prefix(8), Data("BOOPVOX1".utf8))
         let version = String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
         XCTAssertEqual(version, Take.packVersion, "rerun voicegen")
