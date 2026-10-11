@@ -286,19 +286,20 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The simulator is a body to choose only while it runs
     /// (`DeviceChooser`): chosen, the board is let go and its lines are no
-    /// longer heard; when the simulator stops, Boop is back on its board.
+    /// longer heard; when the simulator stops, Boop is back on its board
+    /// by itself, within a couple of looks (`watchEvery`).
     func testASimulatorIsADeviceToChooseWhileItRuns() throws {
         let path = "/tmp/boop-test-sim-\(getpid()).sock"
         let board = FakeTransport()
         let chooser = DeviceChooser(board: board, simulatorSocket: path)
-        let heard = Heard()
-        chooser.start(onLine: { line in heard.lock.withLock { heard.lines.append(line) } },
-                      onConnection: { up in heard.lock.withLock { heard.ups.append(up) } })
+        let lines = Lines(), ups = Lines(), choices = Lines()
+        chooser.onChoice { choices.add($0.rawValue) }
+        chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
         XCTAssertEqual(chooser.choice, .board)
         XCTAssertFalse(chooser.simulatorIsThere(), "nothing is running")
         board.onConnection?(true)
         board.onLine?("from the board")
-        XCTAssertEqual(heard.lines, ["from the board"])
+        XCTAssertEqual(lines.all, ["from the board"])
 
         let simulator = try XCTUnwrap(EchoSocket(path))
         defer { simulator.stop() }
@@ -307,28 +308,28 @@ final class DeviceLinkTests: XCTestCase {
         chooser.choose(.simulator)
         XCTAssertEqual(chooser.choice, .simulator)
         XCTAssertEqual(chooser.name, "simulator")
-        heard.wait("the board's link dropped, then the simulator's came up") { heard.ups == [true, false, true] }
+        eventually("the board's link dropped, then the simulator's came up") { ups.all == ["up", "down", "up"] }
         board.onLine?("from the board, late")
         chooser.send("to the simulator")
-        heard.wait("the simulator's line, and not the board's") { heard.lines == ["from the board", "to the simulator"] }
+        eventually("the simulator's line, and not the board's") { lines.all == ["from the board", "to the simulator"] }
         XCTAssertFalse(board.lines.contains("to the simulator"))
 
         simulator.stop()
-        heard.wait("the simulator's link dropped") { heard.ups.last == false }
+        eventually("back on its board when the simulator stops", timeout: 3 * DeviceChooser.watchEvery) { chooser.choice == .board }
         XCTAssertFalse(chooser.simulatorIsThere())
-        XCTAssertEqual(chooser.choice, .board, "back on its board when the simulator stops")
+        XCTAssertEqual(choices.all, ["simulator", "board"], "whoever shows the choice hears both changes")
         chooser.send("to the board")
         XCTAssertTrue(board.lines.contains("to the board"))
         chooser.stop()
     }
 
     func testASocketThatIsNotThereIsNoSimulator() {
-        XCTAssertFalse(DeviceChooser.answers("/tmp/boop-test-no-such-\(getpid()).sock"))
+        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: "/tmp/boop-test-no-such-\(getpid()).sock").simulatorIsThere())
         // A plain file of that name isn't one either.
         let file = "/tmp/boop-test-file-\(getpid()).sock"
         FileManager.default.createFile(atPath: file, contents: Data())
         defer { unlink(file) }
-        XCTAssertFalse(DeviceChooser.answers(file))
+        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: file).simulatorIsThere())
     }
 
     func testLinkSettings() {
@@ -383,16 +384,6 @@ final class EchoSocket: @unchecked Sendable {
         close(fd)
         unlink(path)
         lock.withLock { clients }.forEach { shutdown($0, SHUT_RDWR) }
-    }
-}
-
-final class Heard: @unchecked Sendable {
-    let lock = NSLock()
-    var lines: [String] = []
-    var ups: [Bool] = []
-    func wait(_ what: String, _ done: () -> Bool) {
-        for _ in 0..<300 where !lock.withLock(done) { usleep(10_000) }
-        XCTAssertTrue(lock.withLock(done), what)
     }
 }
 

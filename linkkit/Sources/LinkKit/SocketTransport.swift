@@ -140,6 +140,15 @@ public final class SocketTransport: Transport, @unchecked Sendable {
         }
     }
 
+    /// Whether a bridge answers on `path` now: something takes a
+    /// connection there. For a list of devices to choose from, or a bridge
+    /// that won't start beside another.
+    public static func answers(_ path: String) -> Bool {
+        guard let socket = connectOnce(path) else { return false }
+        close(socket)
+        return true
+    }
+
     static func connectOnce(_ path: String) -> Int32? {
         guard var address = UnixSocket.address(path) else { return nil }
         let socket = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)

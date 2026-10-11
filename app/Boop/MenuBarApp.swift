@@ -74,11 +74,13 @@ final class AppModel: ObservableObject {
     /// row still says why, until the hooks change.
     @Published var hookErrorsDismissed: Set<Agent> = []
     @Published var startError: String?
-    /// A simulator is running on this Mac, and whether Boop is using it
-    /// (`DeviceChooser`). Looked at every couple of seconds.
-    @Published var simulatorThere = false
-    @Published var usingSimulator = false
-    var devices: DeviceChooser?
+    /// A simulator on this Mac, as a body to choose (`DeviceChooser`).
+    enum Simulator { case none, there, inUse }
+    @Published var simulator = Simulator.none
+    var usingSimulator: Bool { simulator == .inUse }
+    var devices: DeviceChooser? {
+        didSet { devices?.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } }
+    }
     /// The "can't react yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
 
@@ -193,29 +195,26 @@ final class AppModel: ObservableObject {
         var detail: String
     }
 
-    /// Looks for a running simulator, which also takes Boop back to its
-    /// board when the one it was using has stopped.
+    /// Looks for a running simulator, off the main thread: it's a look at
+    /// a socket. Only while there's someone to show it to: Settings, open.
     func lookForSimulator() {
         guard let devices else { return }
-        let there = devices.simulatorIsThere(), using = devices.choice == .simulator
-        if there != simulatorThere { simulatorThere = there }
-        if using != usingSimulator { usingSimulator = using }
+        DispatchQueue.global(qos: .utility).async {
+            let found: Simulator = devices.choice == .simulator ? .inUse : devices.simulatorIsThere() ? .there : .none
+            Task { @MainActor in if found != self.simulator { self.simulator = found } }
+        }
     }
 
-    func use(_ choice: DeviceChoice) {
-        devices?.choose(choice)
-        lookForSimulator()
-    }
+    func use(_ choice: DeviceChoice) { devices?.choose(choice) }
 
     var device: DeviceState {
         let how = switch link {
-        case _ where usingSimulator: "the simulator"
         case .bluetooth: "Bluetooth"
         case .usb: "USB"
         case .none: ""
         }
         // "Connected over Bluetooth", "Connected to the simulator".
-        let over = usingSimulator ? "to \(how)" : "over \(how)"
+        let over = usingSimulator ? "to the simulator" : "over \(how)"
         guard let status else {
             return startError == nil ? DeviceState(connected: false, short: "Starting…", detail: "\(name) is starting.")
                 : DeviceState(connected: false, short: "Not running", detail: "\(name) isn't running, so it isn't looking for its body.")
@@ -412,7 +411,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     let presenceSignals = PresenceSignals()
-    var simulatorTimer: Timer?
 
     func startRuntime() {
         // In debug mode the dashboard can drive `make debug`; plain `make
@@ -440,11 +438,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 }
             }
             presenceSignals.start { runtime.presence($0) }
-            // A simulator started or stopped on this Mac (DeviceChooser).
-            model.lookForSimulator()
-            simulatorTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-                Task { @MainActor in self?.model.lookForSimulator() }
+            // A simulator started or stopped on this Mac: looked for while
+            // Settings is open to show it.
+            let look = Timer.scheduledTimer(withTimeInterval: DeviceChooser.watchEvery, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    guard let model = self?.model, model.shown, model.pane == .settings else { return }
+                    model.lookForSimulator()
+                }
             }
+            look.tolerance = 0.5
             try runtime.start()
             model.runtime = runtime
             model.startError = nil

@@ -139,7 +139,7 @@ struct SettingsPane: View {
                     }
                 }
                 // A simulator running on this Mac is a body to choose, while it runs.
-                if model.simulatorThere || model.usingSimulator {
+                if model.simulator != .none {
                     Hairline().padding(.leading, 40).padding(.trailing, 12)
                     SettingRow(icon: "macwindow", title: "Simulator",
                                detail: model.usingSimulator ? "\(model.name) is using the simulator in your browser, not its board."

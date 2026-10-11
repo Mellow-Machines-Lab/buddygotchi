@@ -56,6 +56,9 @@ def main() -> int:
     ids = []
     for recording in args.recording:
         ids += json.loads(recording.read_text())["takes"]
+    if not ids:
+        print("voice_subset: the demo says nothing, so it needs no voice")
+        return 0
     out = subset(args.pack.read_bytes(), ids)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_bytes(out)

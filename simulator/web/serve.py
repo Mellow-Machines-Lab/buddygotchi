@@ -27,9 +27,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
-# A client that stops reading is dropped once it's this far behind, as a
-# bridge drops one, so it can't stall the board's lines to the others.
-MAX_BEHIND = 4 * 1024 * 1024
+# A write to a client that can't finish within this long drops the client,
+# so one that stops reading can't stall the board's lines to the others for
+# longer (the host's own rule for a stuck bridge, linkkit/SPEC.md §8).
+SEND_TIMEOUT_S = 0.25
 
 
 class Cable:
@@ -38,7 +39,7 @@ class Cable:
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.board = None  # the page's WebSocket: a callable that sends one line
-        self.clients = {}  # socket → the bytes still to send it
+        self.clients = set()
 
     def plug(self, send) -> None:
         with self.lock:
@@ -69,7 +70,7 @@ class Cable:
 
     def drop(self, client: socket.socket) -> None:
         with self.lock:
-            self.clients.pop(client, None)
+            self.clients.discard(client)
         try:
             client.close()
         except OSError:
@@ -84,11 +85,9 @@ class Cable:
         server.listen(8)
 
         def client(conn: socket.socket) -> None:
-            # A write that can't finish drops the client, never the board.
-            conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, MAX_BEHIND)
-            conn.settimeout(None)
+            conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, struct.pack("ll", 0, int(SEND_TIMEOUT_S * 1e6)))
             with self.lock:
-                self.clients[conn] = b""
+                self.clients.add(conn)
             buf = b""
             try:
                 while True:
@@ -144,7 +143,9 @@ def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
                 n = struct.unpack(">Q", rfile.read(8))[0]
             mask = rfile.read(4) if head[1] & 0x80 else b"\0\0\0\0"
             data = rfile.read(n)
-            data = bytes(b ^ mask[i & 3] for i, b in enumerate(data)) if any(mask) else data
+            if any(mask):  # all at once: a screenshot's line is most of a megabyte
+                key = int.from_bytes((mask * (n // 4 + 1))[:n], "big")
+                data = (int.from_bytes(data, "big") ^ key).to_bytes(n, "big")
             if op == 8:  # close
                 break
             if op == 9:  # ping
@@ -192,7 +193,8 @@ def main() -> int:
             return super().translate_path(path)
 
         def end_headers(self):
-            self.send_header("Cache-Control", "no-store")  # a rebuild shows at the next reload
+            if not self.path.endswith(".bin"):  # a rebuild shows at the next reload; a voice is big, and keeps
+                self.send_header("Cache-Control", "no-store")
             super().end_headers()
 
         def log_message(self, *a):

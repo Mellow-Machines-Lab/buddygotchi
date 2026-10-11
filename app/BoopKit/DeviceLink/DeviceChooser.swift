@@ -21,14 +21,20 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     /// Where a running simulator shares its board's USB, as a bridge
     /// shares a board's (simulator/web/serve.py).
     public static let simulatorSocket = "/tmp/boop-sim-usb.sock"
+    /// How often the chosen simulator is looked for, to go back to the
+    /// board when it has stopped.
+    public static let watchEvery: TimeInterval = 2
 
     private let board: Transport
     private let simulatorPath: String
     private let log: @Sendable (String) -> Void
     private let lock = NSLock()
+    private let queue = DispatchQueue(label: "boop.device-chooser", qos: .utility)
     private var simulator: SocketTransport?
+    private var watch: DispatchSourceTimer?
     private var onLine: (@Sendable (String) -> Void)?
     private var onConnection: (@Sendable (Bool) -> Void)?
+    private var onChoice: (@Sendable (DeviceChoice) -> Void)?
     private var started = false
     /// Goes up at every change, so a transport no longer chosen is no longer heard.
     private var turn = 0
@@ -64,40 +70,56 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
         let was = lock.withLock {
             started = false
             turn += 1
+            watch?.cancel()
+            watch = nil
             return simulator ?? board
         }
         was.stop()
     }
 
+    /// Hears each change of device, whoever made it: `choose`, or the
+    /// simulator stopping.
+    public func onChoice(_ hear: @escaping @Sendable (DeviceChoice) -> Void) { lock.withLock { onChoice = hear } }
+
+    /// Whether a simulator is running: one of this user's own, since
+    /// another user's is never Boop's.
+    public func simulatorIsThere() -> Bool {
+        var info = stat()
+        guard lstat(simulatorPath, &info) == 0, info.st_mode & S_IFMT == S_IFSOCK, info.st_uid == getuid() else { return false }
+        return lock.withLock { simulator != nil && up } || SocketTransport.answers(simulatorPath)
+    }
+
     /// Changes over to the board or the simulator. What the device was
-    /// playing ends as a drop ends it.
+    /// playing ends as a drop ends it. While the simulator is chosen it's
+    /// watched, and Boop goes back to its board when it has stopped.
     public func choose(_ choice: DeviceChoice) {
         guard choice != self.choice else { return }
-        let (was, now, turn, started, wasUp, dropped) = lock.withLock {
+        let (was, now, turn, started, wasUp, dropped, hear) = lock.withLock {
             let was: Transport = simulator ?? board
             simulator = choice == .simulator ? SocketTransport(path: simulatorPath, name: "simulator") : nil
             self.turn += 1
+            watch?.cancel()
+            watch = nil
+            if choice == .simulator {
+                let timer = DispatchSource.makeTimerSource(queue: queue)
+                timer.schedule(deadline: .now() + DeviceChooser.watchEvery, repeating: DeviceChooser.watchEvery, leeway: .milliseconds(500))
+                timer.setEventHandler { [weak self] in
+                    guard let self, !self.simulatorIsThere() else { return }
+                    self.log("device: the simulator stopped")
+                    self.choose(.board)
+                }
+                timer.resume()
+                watch = timer
+            }
             defer { up = false }
-            return (was, simulator ?? board, self.turn, self.started, up, onConnection)
+            return (was, simulator ?? board, self.turn, self.started, up, onConnection, onChoice)
         }
         log("device: now \(choice == .simulator ? "the simulator" : "the board") (\(now.name))")
+        hear?(choice)
         guard started else { return }
         was.stop()
         if wasUp { dropped?(false) }
         start(now, turn)
-    }
-
-    /// Whether a simulator is running, and back to the board if the one
-    /// chosen has stopped. The app asks every couple of seconds.
-    public func simulatorIsThere() -> Bool {
-        let chosen = lock.withLock { simulator != nil }
-        let connected = lock.withLock { simulator != nil && up }
-        let there = connected || DeviceChooser.answers(simulatorPath)
-        if chosen, !there {
-            log("device: the simulator stopped")
-            choose(.board)
-        }
-        return there
     }
 
     private func start(_ transport: Transport, _ turn: Int) {
@@ -112,23 +134,5 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
             }) else { return }
             changed(up)
         })
-    }
-
-    /// A socket of this user's own at `path` that takes a connection: one
-    /// of another user's making is never Boop's simulator.
-    static func answers(_ path: String) -> Bool {
-        var info = stat()
-        guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFSOCK, info.st_uid == getuid() else { return false }
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        let bytes = Array(path.utf8)
-        guard bytes.count < MemoryLayout.size(ofValue: address.sun_path) else { return false }
-        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: bytes) }
-        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard fd >= 0 else { return false }
-        defer { close(fd) }
-        return withUnsafePointer(to: &address) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) == 0 }
-        }
     }
 }

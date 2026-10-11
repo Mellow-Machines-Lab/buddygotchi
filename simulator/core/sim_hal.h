@@ -65,13 +65,27 @@ struct SimHal : app::Hal {
     return size;
   }
 
-  // The panel's finger and the BOOT button, as whoever holds them last said.
-  bool down = false, pressed = false;
-  int x = 0, y = 0;
-  bool bootDown() override { return pressed; }
+  // The panel's finger and the BOOT button, as whoever holds them last
+  // said. A press is seen at least once, however soon it's let go: a click
+  // is over sooner than the board looks.
+  void setTouch(bool on, int tx = 0, int ty = 0) {
+    down = on;
+    if (on) x = tx, y = ty, touched = true;
+  }
+  void setBoot(bool on) {
+    pressed = on;
+    if (on) booted = true;
+  }
+  bool bootDown() override {
+    const bool was = pressed || booted;
+    booted = false;
+    return was;
+  }
   bool touch(int& tx, int& ty) override {
+    const bool was = down || touched;
+    touched = false;
     tx = x, ty = y;
-    return down;
+    return was;
   }
 
   // The light, the backlight and the amp, to be shown.
@@ -98,6 +112,7 @@ struct SimHal : app::Hal {
   app::AudioOut audioOut() override { return speaker ? speaker->stats() : app::AudioOut{}; }
 
   // The card in the slot, if one is; `card` is dbg.ping's word for it.
+  // The board keeps the card that goes back in (Board::setCard).
   Card* slot = nullptr;
   const char* card = "no card";
   const char* cardState() override { return card; }
@@ -124,6 +139,11 @@ struct SimHal : app::Hal {
     if (ok) card = "ok";
     return ok;
   }
+
+ private:
+  bool down = false, pressed = false;
+  bool touched = false, booted = false;  // pressed since last looked at
+  int x = 0, y = 0;
 };
 
 }  // namespace sim

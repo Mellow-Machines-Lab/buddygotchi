@@ -55,7 +55,8 @@ MemoryCard card;
 std::unique_ptr<Board> board;
 std::unique_ptr<PullSpeaker> speaker;
 std::vector<uint8_t> rgba;
-std::string taken, parts;
+int width = 0, height = 0;
+std::string taken, parts;  // what the page was last handed
 uint32_t boots = 0;
 
 }  // namespace
@@ -67,22 +68,27 @@ EMSCRIPTEN_KEEPALIVE void sim_env(const char* name, const char* value) { ::seten
 
 // Power: on makes a new board, as a reset does; off leaves nothing of it.
 EMSCRIPTEN_KEEPALIVE void sim_power(int on) {
+  // A card taken out stays out through a reset, as a real one does.
+  const bool out = board && !std::strcmp(board->hal().card, "no card") && !card.bytes.empty();
   if (board) board->hal().speaker = nullptr;
   speaker.reset();
   board.reset();
   voice::closePack();
   lines.said.clear();
   if (!on) return;
-  board = std::make_unique<Board>(lines, (uint32_t(emscripten_get_now() * 1000) ^ ++boots << 24) | 1);
+  parts.clear();
+  board = std::make_unique<Board>(lines, /*frozenClock=*/false, (uint32_t(emscripten_get_now() * 1000) ^ ++boots << 24) | 1);
   speaker = std::make_unique<PullSpeaker>(board->hal());
   board->hal().speaker = speaker.get();
-  if (!card.bytes.empty()) board->hal().insertCard(&card);
+  board->setCard(card.bytes.empty() ? nullptr : &card, out);
 }
 
-// Room for a voice pack of `bytes` bytes, for the page to fill before
-// `card in` or the next power-on.
+// Room for a voice pack of `bytes` bytes, for the page to fill and then
+// put in (`card in`). It stays in the slot through every power-on, until
+// `card out`.
 EMSCRIPTEN_KEEPALIVE uint8_t* sim_card(int bytes) {
-  card.bytes.assign(size_t(bytes), 0);
+  card.bytes.resize(size_t(bytes));
+  if (board) board->setCard(&card, /*out=*/true);
   return card.bytes.data();
 }
 
@@ -103,30 +109,37 @@ EMSCRIPTEN_KEEPALIVE int sim_tick() {
     rgba[4 * i + 2] = uint8_t(b << 3 | b >> 2);
     rgba[4 * i + 3] = 255;
   }
-  board->shown(uint32_t((emscripten_get_now() - from) * 1000), 0);
+  width = f.width, height = f.height;
+  board->device().shown(board->hal().realMs());
+  board->device().noteFrame(uint32_t((emscripten_get_now() - from) * 1000), 0);  // dbg.ping's fps and draw_us
   return 1;
 }
 EMSCRIPTEN_KEEPALIVE const uint8_t* sim_frame() { return rgba.data(); }
-EMSCRIPTEN_KEEPALIVE int sim_width() { return board ? board->frame().width : 0; }
-EMSCRIPTEN_KEEPALIVE int sim_height() { return board ? board->frame().height : 0; }
+EMSCRIPTEN_KEEPALIVE int sim_width() { return width; }
+EMSCRIPTEN_KEEPALIVE int sim_height() { return height; }
 
 // USB: text a host sends, each line with its newline, and the lines the
-// board has said since last asked.
+// board has said since last asked, or null for none.
 EMSCRIPTEN_KEEPALIVE void sim_usb(const char* text) {
   if (board) board->usb(text, std::strlen(text));
 }
 EMSCRIPTEN_KEEPALIVE const char* sim_usb_out() {
+  if (lines.said.empty()) return nullptr;
   taken.swap(lines.said);
   lines.said.clear();
   return taken.c_str();
 }
 
-// The page's inputs (Board::input), and `card in`.
+// The page's inputs (Board::input).
 EMSCRIPTEN_KEEPALIVE void sim_input(const char* line) {
-  if (board && !board->input(line) && !std::strncmp(line, "card in", 7)) board->hal().insertCard(&card);
+  if (board) board->input(line);
 }
+// The board's parts (Board::parts) when one has changed since last asked, else null.
 EMSCRIPTEN_KEEPALIVE const char* sim_parts() {
-  parts = board ? board->parts() : "";
+  if (!board) return nullptr;
+  std::string now = board->parts();
+  if (now == parts) return nullptr;
+  parts.swap(now);
   return parts.c_str();
 }
 

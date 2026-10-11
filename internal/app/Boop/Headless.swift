@@ -59,6 +59,10 @@ enum Headless {
         options.readJevKey = { _ in JevKey.environment() }
         if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck } }
         if brain == "none" { options.brain = { _ in nil } }
+        // `--record` listens from the start, so the recording opens with
+        // how things stood when the demo began (DemoRecorder.begin).
+        let recorder = args["--record"].map { _ in DemoRecorder() }
+        if let recorder { options.onDeviceLine = { recorder.sent($0) } }
         // The clock can be moved forward with `{"dev":"advance","ms":N}`, so
         // the pipeline check can finish a 6-minute turn without waiting it out.
         let skew = OSAllocatedUnfairLock(initialState: Int64(0))
@@ -78,7 +82,7 @@ enum Headless {
             fail("boop: \(error)")
         }
 
-        if let script { play(script, on: runtime, link: link, record: args["--record"], log: log) }
+        if let script { play(script, on: runtime, link: link, recorder: recorder, to: args["--record"], log: log) }
 
         // Stop cleanly: close the socket and the link, then exit 0.
         var sources: [DispatchSourceSignal] = []
@@ -99,32 +103,26 @@ enum Headless {
     }
 
     /// `--demo`: plays the script once the device is there (with a link),
-    /// then stops. `--record FILE` writes what the device was sent
-    /// (`DemoRecording`), for the simulator's page to play back.
-    static func play(_ script: DemoScript, on runtime: Runtime, link: LinkSetting, record: String?, log: LogFile) {
-        // Listening from the start, so the recording opens with how things
-        // stood when the demo began (DemoRecorder.begin).
-        let recorder: DemoRecorder? = record == nil ? nil : DemoRecorder()
-        if let recorder { runtime.deviceLines.listen { line in recorder.sent(line) } }
-        let name = runtime.name
+    /// then stops. `recorder` keeps what the device was sent
+    /// (`DemoRecording`), written to `file` for the simulator's page.
+    static func play(_ script: DemoScript, on runtime: Runtime, link: LinkSetting, recorder: DemoRecorder?, to file: String?, log: LogFile) {
         func start() {
-            recorder?.begin()
+            recorder?.begin(name: runtime.name)
             runtime.play(script, beat: { beat in
-                if let cause = beat.cause(creature: name) {
-                    log.write("demo: \(cause.text)")
-                    recorder?.happened(cause)
-                }
+                let cause = beat.cause(creature: runtime.name)
+                if let cause { log.write("demo: \(cause.text)") }
+                recorder?.happened(cause, input: beat.input)
             }, done: {
-                if let recorder, let record {
+                if let recorder, let file {
                     let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"
                     let encoder = JSONEncoder()
                     encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
                     do {
-                        try encoder.encode(recorder.recording(character: CharacterPack.active.id, name: name, face: face))
-                            .write(to: URL(fileURLWithPath: record), options: .atomic)
-                        log.write("demo: recorded to \(record)")
+                        try encoder.encode(recorder.recording(character: CharacterPack.active.id, face: face))
+                            .write(to: URL(fileURLWithPath: file), options: .atomic)
+                        log.write("demo: recorded to \(file)")
                     } catch {
-                        log.write("demo: can't write \(record): \(error)")
+                        log.write("demo: can't write \(file): \(error)")
                     }
                 }
                 runtime.stop()

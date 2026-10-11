@@ -112,6 +112,13 @@ public struct DemoScript: Sendable {
 }
 
 extension DemoScript.Beat {
+    /// What whoever replays it must do to the device itself: a tap is a
+    /// finger on its screen, which the device reacts to by itself.
+    public var input: String? {
+        if case .tap = what { return "tap" }
+        return nil
+    }
+
     /// What happened, for whoever is watching: the beat's `note`, else
     /// words made from the beat itself. Nil for a beat nobody would see as
     /// something happening (a session starting, a routine tool call
@@ -135,26 +142,27 @@ extension HookLine {
     /// The agent, as a name: `Claude`, `Codex`.
     var who: String { agent.prefix(1).uppercased() + agent.dropFirst() }
 
-    /// A hook as something that happened, in plain words.
+    /// A hook as something that happened, in plain words. What kind of
+    /// thing it is comes from agent-hooks' own mapping, so a hook means
+    /// here what it means to the rest of Boop.
     var cause: DemoScript.Cause? {
-        // What a tool call was about, when the hook says: "the tests".
-        let about = topic.map { "the \($0)" }
-        switch hook {
-        case "UserPromptSubmit":
+        guard let (kind, phase) = Mapping.kind(of: self) else { return nil }
+        switch (kind, phase) {
+        case (.turn, .start):
             return .init(kind: "prompt", text: prompt.map { "You ask \(who): “\($0)”" } ?? "You give \(who) a task")
-        case "PermissionRequest":
+        case (.tool, .wait):
             return .init(kind: "needs_you", text: "\(who) needs your approval")
-        case "Notification" where kind == "permission_prompt":
-            return .init(kind: "needs_you", text: "\(who) needs your approval")
-        case "PostToolUse":
-            return about.map { .init(kind: "tool", text: "\(who) ran \($0)") }
-        case "PostToolUseFailure":
-            if interrupt { return .init(kind: "stopped", text: "You stop \(who)") }
+        case (.tool, .end) where toolError != nil || hook.hasSuffix("Failure"):
             return .init(kind: "tool_failed", text: "\(who)'s \(topic ?? "command") failed")
-        case "Stop":
-            return .init(kind: "done", text: "\(who) finishes")
-        case "StopFailure":
+        case (.tool, .end):
+            // A call about something: "the tests". A routine one passes unremarked.
+            return topic.map { .init(kind: "tool", text: "\(who) ran the \($0)") }
+        case (.turn, .end) where interrupt || hook == "Interrupt":
+            return .init(kind: "stopped", text: "You stop \(who)")
+        case (.turn, .end) where error != nil || hook.hasSuffix("Failure"):
             return .init(kind: "failed", text: "\(who)'s turn fails" + (error.map { " (\($0.replacingOccurrences(of: "_", with: " ")))" } ?? ""))
+        case (.turn, .end):
+            return .init(kind: "done", text: "\(who) finishes")
         default:
             return nil
         }

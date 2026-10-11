@@ -2,12 +2,13 @@ import Dispatch
 import Foundation
 
 extension Runtime {
-    /// Who a demo's scripted answers are by, in the log.
+    /// Who a demo's scripted answers and moods are by, in the transcript
+    /// and the log.
     public static let demoBy = "demo"
 
     /// Plays a demo: each beat happens when its time comes, as if it were
-    /// real, through the same doors: a hook as a hook from the socket, a
-    /// tap as the device's, talk as the mic's. A beat's `answer` is a
+    /// real: a hook as a hook from the socket, and a tap, talk, a mood and
+    /// the clock as the socket's dev lines do them. A beat's `answer` is a
     /// forced pass, so the actions keep their own rules.
     ///
     /// `beat` hears each beat as it happens and `done` the end, both on
@@ -22,9 +23,7 @@ extension Runtime {
                 happen(b)
             }
             if let answer = b.answer {
-                home.asyncAfter(deadline: start + b.at + b.after) { [self] in
-                    dev(["dev": "answer", "answers": answer, "by": Runtime.demoBy])
-                }
+                home.asyncAfter(deadline: start + b.at + b.after) { [self] in forcePass(answer, by: Runtime.demoBy, who: Runtime.demoBy) }
             }
         }
         home.asyncAfter(deadline: start + script.length) { [self] in
@@ -39,20 +38,16 @@ extension Runtime {
             line.ts = options.wallClock()
             hook(line, received: options.clock())
         case .tap:
-            dev(["dev": "tap"])
+            tapped(who: Runtime.demoBy)
         case .talk(let words, let hold):
-            dev(["dev": "listen", "on": true])
-            home.asyncAfter(deadline: .now() + hold) { [self] in dev(["dev": "said", "words": words]) }
+            listen(true, who: Runtime.demoBy)
+            home.asyncAfter(deadline: .now() + hold) { [self] in said(words, by: .app, who: Runtime.demoBy) }
         case .mood(let mood):
-            dev(["dev": "mood", "mood": mood])
+            forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy)
         case .advance(let seconds):
-            dev(["dev": "advance", "ms": Int64(seconds * 1000)])
+            advanceClock(Int64(seconds * 1000), who: Runtime.demoBy)
         case .nothing:
             break
         }
-    }
-
-    private func dev(_ line: [String: Any]) {
-        if let data = try? JSONSerialization.data(withJSONObject: line) { dev(data) }
     }
 }

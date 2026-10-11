@@ -9,18 +9,28 @@
 #include <sys/stat.h>
 
 #include "linkkit/codec.h"
-#include "pack_file.h"
 #include "sim_hal.h"
 
 namespace sim {
 
 struct FileCard : Card {
+  struct File : voice::Source {
+    std::FILE* f = nullptr;
+    bool read(uint32_t at, void* buf, uint32_t n) override {
+      return f && !std::fseek(f, long(at), SEEK_SET) && std::fread(buf, 1, n, f) == n;
+    }
+  };
+
   std::string dir = std::getenv("BOOP_SIM_CARD") ? std::getenv("BOOP_SIM_CARD") : "";
-  packfile::FileSource pack, copy;
-  std::string path(const char* name) const { return dir + "/boop/" + name; }
+  File pack, copy;
+  std::string path(const char* name) const {
+    if (!dir.empty()) return dir + "/boop/" + name;
+    // The repo's own pack, found from this file's path: <repo>/simulator/core/file_card.h.
+    const std::string here = __FILE__;
+    return here.substr(0, here.rfind("/simulator/core/")) + "/.build/voice/" + name;
+  }
 
   bool open() override {
-    if (dir.empty()) return packfile::open();
     if (pack.f) std::fclose(pack.f), pack.f = nullptr;
     pack.f = std::fopen(path("voice.bin").c_str(), "rb");
     return pack.f && voice::openPack(&pack);

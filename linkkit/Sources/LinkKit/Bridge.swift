@@ -188,11 +188,7 @@ public final class Bridge: @unchecked Sendable {
     }
 
     /// Whether something already answers on `path`.
-    static func answers(_ path: String) -> Bool {
-        guard let socket = SocketTransport.connectOnce(path) else { return false }
-        close(socket)
-        return true
-    }
+    static func answers(_ path: String) -> Bool { SocketTransport.answers(path) }
 
     static func nonBlocking(_ fd: Int32) {
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
