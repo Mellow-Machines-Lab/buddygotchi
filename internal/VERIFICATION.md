@@ -507,7 +507,8 @@ accepted.
    while moving, no sampled frame taking over 40 ms to draw and push (on a
    board whose `hello` says `gel`, which sends a frame while it draws the
    next, the longer of the two), at
-   least 60 KB minimum free heap, and no reset (uptime keeps rising). A
+   least 60 KB minimum free heap (not checked on the simulator, whose
+   `sha` is `sim` and which has no heap), and no reset (uptime keeps rising). A
    frame is drawn only when the picture changes, and the designs step a
    few times a second, so `fps` follows the design rather than the board,
    and a second of a slow one draws only a few frames.
