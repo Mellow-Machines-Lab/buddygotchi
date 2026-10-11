@@ -360,10 +360,10 @@ final class EchoSocket: @unchecked Sendable {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
         }
         guard bound == 0, listen(fd, 4) == 0 else { return nil }
-        let fd = fd
+        let listener = fd
         Thread.detachNewThread {
             while true {
-                let client = accept(fd, nil, nil)
+                let client = accept(listener, nil, nil)
                 guard client >= 0 else { return }
                 self.lock.withLock { self.clients.append(client) }
                 Thread.detachNewThread {
