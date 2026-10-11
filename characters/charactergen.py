@@ -11,9 +11,8 @@ board's startup mood. --check only checks that they're fresh, and fails if
 one isn't.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
-root for the builds to read (§2): its base's firmware/, then its own on
-top, file by file. firmware/tools/pio.sh runs it before every PlatformIO
-build.
+root for the builds to read (§2). firmware/tools/pio.sh runs it before
+every PlatformIO build.
 
 --which prints the chosen pack's folder.
 
@@ -105,17 +104,13 @@ constexpr const char* kMoodNames[kMoodCount] = {{{names}}};
 """
 
 
-def base_of(pack: Path, character: dict) -> Path | None:
-    return pack.parent / character["base"] if character.get("base") else None
-
-
 def load(pack: Path) -> dict:
-    """The pack's character.json, with its base's moods when it inherits them."""
-    character = json.loads((pack / "character.json").read_text())
-    if character.get("moods") in (None, "inherit"):
-        base = base_of(pack, character)
-        character["moods"] = json.loads((base / "character.json").read_text())["moods"]
-    return character
+    return json.loads((pack / "character.json").read_text())
+
+
+def previews(character: dict) -> list[dict]:
+    """The pack's studio entries (§12), one for each preview it brings."""
+    return [dict(e) for e in character.get("studio", [])]
 
 
 def states(studio: Path = STUDIO) -> dict:
@@ -134,38 +129,31 @@ def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     return re.findall(r'"([a-z_]+)"', match.group(1))
 
 
-def chain(pack: Path) -> list[Path]:
-    """The pack, then its base, then the base's base."""
-    layers = []
-    while pack and pack not in layers:
-        layers.append(pack)
-        pack = base_of(pack, json.loads((pack / "character.json").read_text()))
-    return layers
-
-
-def coverage(pack: Path, character: dict) -> dict[str, set[str]] | None:
-    """The mood and state pairs the pack's studio preview has art for, from
-    its `coverage` file's perPair table, or None when it covers every pair."""
-    entry = character.get("studio") or {}
+def coverage(pack: Path, entry: dict) -> dict[str, set[str]] | None:
+    """The mood and state pairs a studio preview has art for, from its
+    `coverage` file's perPair table, or None when it covers every pair of
+    the pack's."""
     if not entry.get("coverage"):
         return None
     table = json.loads((pack / entry["coverage"]).read_text())["perPair"]
     return {mood: {s for s, n in row.items() if n} for mood, row in table.items()}
 
 
-def shows(mood: dict, covered: dict[str, set[str]] | None, moods: set[str], state: str) -> str | None:
+def shows(mood: dict, covered: dict[str, set[str]] | None, state: str) -> str | None:
     """What a preview plays for `mood` in `state`: the mood itself when the
     preview has it, else the mood's fallback when that one has it, else nothing."""
+    if covered is None:
+        return mood["id"]
     for candidate in (mood["id"], mood.get("fallback")):
-        if candidate and candidate in moods and (covered is None or state in covered.get(candidate, set())):
+        if candidate and state in covered.get(candidate, set()):
             return candidate
     return None
 
 
 def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
-    board's, each pack's declared files, and any mood and state pair a
-    preview in the pack's chain can't play, even through the mood's fallback."""
+    board's, each pack's declared files, and any mood and state pair one of
+    the pack's previews can't play, even through the mood's fallback."""
     problems = []
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
@@ -174,22 +162,21 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         problems.append(f"{studio / 'states.json'} doesn't list the board's states (missing {missing}, extra {extra})")
     for pack in packs:
         character = load(pack)
-        entry = character.get("studio")
-        if entry is None:
+        entries = previews(character)
+        names = [e.get("id") for e in entries]
+        if None in names or len(names) != len(set(names)):
+            problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
-        absent = [n for n in files(entry) + [entry.get("coverage")] if n and not (pack / n).is_file()]
-        problems += [f"{pack.name}: studio file {name} doesn't exist" for name in absent]
-        if absent:
-            continue
-        for layer in chain(pack):
-            other = load(layer)
-            if other.get("studio") is None:
+        for entry in entries:
+            absent = [n for n in files(entry) + [entry.get("coverage")] if n and not (pack / n).is_file()]
+            problems += [f"{pack.name}: studio file {name} doesn't exist" for name in absent]
+            if absent:
                 continue
-            covered, moods = coverage(layer, other), {m["id"] for m in other["moods"]}
+            covered = coverage(pack, entry)
             for mood in character["moods"]:
-                gaps = [s for s in ids if not shows(mood, covered, moods, s)]
+                gaps = [s for s in ids if not shows(mood, covered, s)]
                 if gaps:
-                    problems.append(f"{pack.name}: {layer.name}'s preview can't play {mood['id']} in {', '.join(gaps)}")
+                    problems.append(f"{pack.name}: {entry['id']}'s preview can't play {mood['id']} in {', '.join(gaps)}")
     return problems
 
 
@@ -200,14 +187,13 @@ def files(entry: dict) -> list[str]:
 
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
     """The studio page's data: the engine's states and, for each pack, its
-    moods, families, base and studio entry, with paths from the page."""
+    moods and its studio entries, with paths from the page."""
     data = {"chosen": chosen_pack.name, "states": states(studio), "packs": {}}
     for pack in packs:
         character = load(pack)
-        entry = character.get("studio")
-        if entry is not None:
-            entry = dict(entry)
-            covered = coverage(pack, character)
+        entries = previews(character)
+        for entry in entries:
+            covered = coverage(pack, entry)
             here = lambda name: Path(os.path.relpath(pack / name, studio)).as_posix()
             for key in ("scripts", "styles"):
                 entry[key] = [here(name) for name in entry.get(key, [])]
@@ -216,13 +202,11 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
             entry["covers"] = None if covered is None else {m: sorted(s) for m, s in sorted(covered.items())}
             entry.pop("coverage", None)
             entry.pop("captures", None)
-        base = base_of(pack, character)
         data["packs"][pack.name] = {
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "base": base.name if base else None,
             "moods": [{k: m[k] for k in ("id", "meaning", "family", "fallback") if k in m} for m in character["moods"]],
-            "studio": entry,
+            "studio": entries,
         }
     return data
 
@@ -230,7 +214,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
 def local_packs(also: Path | None = None) -> list[Path]:
     packs = [p.parent for p in sorted(CHARACTERS.glob("*/character.json"))]
     if also and also not in packs and (also / "character.json").exists():
-        packs += [layer for layer in chain(also) if layer not in packs]
+        packs.append(also)
     return packs
 
 
@@ -262,29 +246,27 @@ def build(pack: Path, check: bool) -> int:
 
 
 def stage(pack: Path) -> int:
-    """The firmware's files, base first and the pack's on top
-    (.character-build/firmware/); the pack and its base as the Mac app
-    bundles them, without their firmware (.character-build/packs/, with
-    `chosen` naming the pack); and the chosen pack's folder
-    (.character-build/pack), which the tests and boopdev read."""
-    character = json.loads((pack / "character.json").read_text())
-    layers = [f for f in (base_of(pack, character), pack) if f]
+    """The pack's firmware files (.character-build/firmware/); the pack as
+    the Mac app bundles it, with what the app reads and no more
+    (.character-build/packs/, with `chosen` naming the pack); and the
+    chosen pack's folder (.character-build/pack), where the tests, boopdev
+    and the device tools find the rest, the voice pack among it."""
     STAGE.mkdir(exist_ok=True)
     for old in ("firmware", "packs"):
         if (STAGE / old).exists():
             shutil.rmtree(STAGE / old)
-    for layer in layers:
-        if (layer / "firmware").is_dir():
-            shutil.copytree(layer / "firmware", STAGE / "firmware", dirs_exist_ok=True)
-        shutil.copytree(layer, STAGE / "packs" / layer.name,
-                        ignore=shutil.ignore_patterns("firmware", "Makefile", "tools", "tests", "design", "evals", "studio"))
-    # The firmware's test suites: the engine's, then each layer's own
+    if (pack / "firmware").is_dir():
+        shutil.copytree(pack / "firmware", STAGE / "firmware")
+    shutil.copytree(pack, STAGE / "packs" / pack.name,
+                    ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
+                                                  "studio"))
+    # The firmware's test suites: the engine's, then the pack's own
     # (tests/firmware/test_*), linked so an edit lands in the real file.
     tests = STAGE / "firmware-test"
     if tests.exists():
         shutil.rmtree(tests)
     tests.mkdir(parents=True)
-    for folder in [ROOT / "internal" / "firmware" / "test"] + [layer / "tests" / "firmware" for layer in layers]:
+    for folder in [ROOT / "internal" / "firmware" / "test", pack / "tests" / "firmware"]:
         for suite in sorted(folder.glob("test_*")) if folder.is_dir() else []:
             if (tests / suite.name).is_symlink():
                 (tests / suite.name).unlink()

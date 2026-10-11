@@ -21,11 +21,11 @@ cheap ESP32 board with a screen is the body. Start with
 | `agent-hooks/` | The hook layer, a Swift package of its own: a submodule of [Mellow-Machines-Lab/AgentHooks](https://github.com/Mellow-Machines-Lab/AgentHooks) (below, Repositories; [its README](agent-hooks/README.md), [how it works](agent-hooks/ARCHITECTURE.md)): the `agent-hook` hook client, the `agent-hooks` command line, and the `AgentHooks` library that turns hooks into events and keeps the sessions and "needs you". It depends on nothing else in the repo; Boop depends on it |
 | `mellowharness/` | The brain's harness, a Swift package of its own: a submodule of [Mellow-Machines-Lab/MellowHarness](https://github.com/Mellow-Machines-Lab/MellowHarness) (below, Repositories; [its README](mellowharness/README.md), [how it works](mellowharness/ARCHITECTURE.md)): the `MellowHarness` library (events and the log, each kind's line, rules, outputs and `Choice`, the prompt, Jev and the loop that asks it), `mellowharness-emit`, and its worked example Beacon (`beacon`). It depends on nothing else in the repo; Boop's brain runs on it |
 | `linkkit/` | The device link, a package of its own meant to be open-sourced ([its README](linkkit/README.md), [how it works](linkkit/ARCHITECTURE.md), [its spec](linkkit/SPEC.md)): the protocol (four JSON messages, and the turn, by which the device decides what plays when), the Swift host library `LinkKit` with its Bluetooth and socket transports, `linkkit-bridge` (the USB bridge), and the C++ device library in `linkkit/device/` ([its README](linkkit/device/README.md)), with its own PlatformIO project for its tests, that Boop's firmware plugs into. It depends on nothing else in the repo; Boop depends on it |
-| `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`) and what makes it (`design/`, `tools/`, `tests/`): `pixel/`, the open default, with the animation bank and the mood graph it was drawn from ([its design guide](characters/pixel/design/README.md)); and `boop/`, Boop's own, which builds on Pixel and is private: its prompts, voice bank, gel slime, evals and goldens. It isn't tracked here: it's installed from a private repository of its own with `characters/packs.py` (below, Repositories). Also `studio/`, the Character Studio, one page for any pack's moods, states and preview ([its README](characters/studio/README.md)), `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds, and `packs.py`, which installs packs that live in repositories of their own |
+| `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`) and what makes it (`design/`, `tools/`, `tests/`). Each stands alone: the engine reads a pack's files from its own folder only. `pixel/`, the open default, with the animation bank and the mood graph it was drawn from ([its design guide](characters/pixel/design/README.md)), and the recorded voice as built files (`voice/voice.bin`, `mac/takes.tsv`); and `boop/`, Boop's own, which is private: its prompts, gel slime, evals and goldens, its own copies of Pixel's face and of the voice, and the voice's recordings. It isn't tracked here: it's installed from a private repository of its own with `characters/packs.py` (below, Repositories). Also `studio/`, the Character Studio, one page for any pack's moods, states and preview ([its README](characters/studio/README.md)), `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds, and `packs.py`, which installs packs that live in repositories of their own |
 | `app/` | The Mac side that ships: the menu-bar app (`Boop`) and the `BoopKit` library, Boop's own code on the three packages |
 | `firmware/` | PlatformIO firmware for the two boards ([its README](firmware/README.md): the boards, building, flashing, quirks): Boop's app on LinkKit's device library, with its generated assets and build scripts |
 | `internal/` | Everything that doesn't ship ([its README](internal/README.md)), with [VERIFICATION.md](internal/VERIFICATION.md), how everything is checked, and [EVALS.md](internal/EVALS.md), the brain's eval scenarios: `boopdev` and its library, Boop's Swift tests and eval scenarios, the sources of `Boop --headless` and `--snapshots`, and the firmware's simulator and unit tests (env `native`) |
-| `internal/tools/` | `boopctl` (device tool, and `boopctl workday`, a scripted working day through the brain), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs, from real runs), `export` (lays out the public repository without private character packs, and checks it for leaks), `webcam/` (opt-in recorder). The faces' and voice's generators live in their packs: `characters/pixel/tools/` (`facegen`, the device's faces, and `sfxgen`, their sounds, from the animation bank) and `characters/boop/tools/` (`voicegen`, the voice; `slimegen`, the v3 mood graph, the Mac's slime mirror and the gel face's assets, from the slime design; `gel-trace`) |
+| `internal/tools/` | `boopctl` (device tool, and `boopctl workday`, a scripted working day through the brain), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs, from real runs), `export` (lays out the public repository without private character packs, and checks it for leaks), `webcam/` (opt-in recorder). The faces' and voice's generators live in their packs: `characters/pixel/tools/` (`facegen`, the device's faces, and `sfxgen`, their sounds, from the animation bank) and `characters/boop/tools/` (`voicegen`, the voice, which it writes into both packs; `pixelsync`, Boop's copy of Pixel's face; `slimegen`, the v3 mood graph, the Mac's slime mirror and the gel face's assets, from the slime design; `gel-trace`) |
 | `internal/skills/` | `doctor` (hook self-check) and `webcam-verify`, symlinked for Claude and Codex |
 | `landing/` | The Next.js landing page, a repository of its own: clone it here, and this one ignores it |
 | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `CONTRIBUTING.md` | MIT for everything here (each package has its own copy), the fonts and libraries the firmware carries, how to build and test |
@@ -49,7 +49,7 @@ Delete code that nothing uses; git keeps it.
 The everyday entry points are in [README.md](README.md), which stays a
 short overview. The root `Makefile` has only what the owner uses: `build`,
 `app`, `run`, `debug`, `dash`, `day`, `flash`, `eval` and `clean`. The development targets
-(`test`, `tools-test`, `voice`, `fw`, `fw-test`, `sim`, `e2e`, `faces`, `tools`)
+(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `e2e`, `faces`, `tools`)
 are in `internal/Makefile`; run them from the repo root as
 `make -C internal <target>`. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its
@@ -121,7 +121,7 @@ for its profile. You work in the first four from here:
 | Mellow-Machines-Lab/buddygotchi | Public | the root | Boop's engine: the Mac app, the firmware, LinkKit, the open Pixel pack, the studio and the tools, the internal tests and docs |
 | Mellow-Machines-Lab/AgentHooks | Public | `agent-hooks/`, a submodule | Reading coding agents' hooks: events, sessions, "needs you", the installer. Nothing of Boop |
 | Mellow-Machines-Lab/MellowHarness | Public | `mellowharness/`, a submodule | The generic multiple-choice brain: the log, lines, rules, outputs, the prompt, brains. Nothing of Boop |
-| Boop's character pack | Private | `characters/boop/`, an installed pack | Boop's slime: its prompts, voice bank, gel face, design, evals, goldens and their tools |
+| Boop's character pack | Private | `characters/boop/`, an installed pack | Boop's slime: its prompts, gel face, design, evals, goldens and their tools, and the voice's recordings |
 | Mellow-Machines-Lab/.github | Public | not here: clone it beside this one | The organisation's profile README (`profile/README.md`), shown on github.com/Mellow-Machines-Lab, and later the community files every repository shares |
 
 **What goes where.**
@@ -130,9 +130,11 @@ for its profile. You work in the first four from here:
   MellowHarness. Neither names Boop or the other.
 - Boop's own behaviour, the device protocol (`linkkit/`) and anything
   every character shares stay in buddygotchi.
-- Anything that's the slime's own, its words, art, sounds, voice and
-  evals, goes in Boop's pack, never in buddygotchi, which is public.
-  Pixel's go in `characters/pixel/`, which is public by design.
+- Anything that's the slime's own, its words, art, sounds and evals,
+  goes in Boop's pack, never in buddygotchi, which is public. So do the
+  voice's recordings. Pixel's go in `characters/pixel/`, which is public
+  by design, and so does the built voice: a voice change is a commit in
+  each, Pixel's copy here and Boop's in its pack.
 - A change that spans repositories lands package or pack first, then
   buddygotchi's side, so buddygotchi never depends on something that
   isn't pushed.

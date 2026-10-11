@@ -216,7 +216,7 @@ static void test_the_bubble_fits_every_take() {
     }
     return n;
   };
-  if (!packfile::open()) TEST_FAIL_MESSAGE("no voice pack: run make -C internal voice");
+  if (!packfile::open()) TEST_FAIL_MESSAGE("no voice pack: the chosen character pack has none");
   // Each take's text from the pack's index: a 64-byte header with the count
   // at 24 and the index at 32, then 128-byte records, the text at 72.
   uint8_t h[64];

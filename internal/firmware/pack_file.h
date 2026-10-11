@@ -1,8 +1,9 @@
 // The voice pack from a file, for the simulator and the
-// firmware's tests, which have no SD card: .build/voice/voice.bin, which
-// `make -C internal voice` builds (voicegen).
+// firmware's tests, which have no SD card: the chosen character pack's
+// voice/voice.bin (characters/CHARACTER.md §8).
 #pragma once
 #include <cstdio>
+#include <fstream>
 #include <string>
 
 #include "voice/player.h"
@@ -16,26 +17,28 @@ struct FileSource : voice::Source {
   }
 };
 
-// The repo's pack file, found from this file's own path.
+// The chosen pack's voice file. The pack's folder is the one staging
+// names in .character-build/pack, found from this file's own path.
 inline FileSource& source() {
   static FileSource src;
   if (!src.f) {
     std::string here = __FILE__;  // <repo>/internal/firmware/pack_file.h
     std::string repo = here.substr(0, here.rfind("/internal/firmware/"));
-    src.f = std::fopen((repo + "/.build/voice/voice.bin").c_str(), "rb");
+    std::string pack;
+    std::ifstream chosen(repo + "/.character-build/pack");
+    if (std::getline(chosen, pack)) src.f = std::fopen((pack + "/voice/voice.bin").c_str(), "rb");
   }
   return src;
 }
 
-// Opens it as the voice pack; false when it hasn't been built.
+// Opens it as the voice pack; false when the chosen pack has no voice.
 inline bool open() { return source().f && voice::openPack(&source()); }
 
 }  // namespace packfile
 
-// A test that plays takes skips without a voice pack: the public repository
-// has none, since the voice is Boop's private pack's (characters/CHARACTER.md §8).
-// Unity's, so for the tests only.
+// A test that plays takes skips when the chosen pack has no voice
+// (characters/CHARACTER.md §8). Unity's, so for the tests only.
 #define NEEDS_VOICE_PACK() \
   do {                     \
-    if (!packfile::source().f) TEST_IGNORE_MESSAGE("needs a voice pack, which this checkout hasn't: make -C internal voice"); \
+    if (!packfile::source().f) TEST_IGNORE_MESSAGE("needs a voice pack, which the chosen character pack hasn't"); \
   } while (0)

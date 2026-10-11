@@ -343,7 +343,7 @@ static void test_a_fade_changes_the_frame() {
 
 int main(int, char**) {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: run make -C internal voice\n");
+  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
   RUN_TEST(test_every_scene_matches_facegen);
   RUN_TEST(test_variations_and_shared_designs);
   RUN_TEST(test_variations_for_a_result_or_a_context);

@@ -84,7 +84,7 @@ struct StdOut : linkkit::Out {
 int main() {
   SimHal hal;
   // The voice pack, as on the board's card: the card folder's, with
-  // BOOP_SIM_CARD, else .build/voice/voice.bin.
+  // BOOP_SIM_CARD, else the chosen character pack's.
   if (hal.dir.empty() ? packfile::open() : hal.openCardPack()) hal.card = "ok";
   StdOut out;
   std::vector<uint8_t> pixels(size_t(render::kWidth) * render::kHeight, 0);

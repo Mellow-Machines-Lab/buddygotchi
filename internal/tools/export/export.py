@@ -14,8 +14,8 @@ pushed).
 
 Then it checks OUT for a private pack's content: a line of its steering,
 or a mood's meaning or face wording. It also checks for anything that
-looks like a key. Either fails the export. It also notes the files that
-name one of the pack's takes by id. It prints what it finds, writes it to
+looks like a key. Either fails the export. The voice isn't private: Pixel's
+pack has its own copy of the takes. It prints what it finds, writes it to
 --report if given, and exits 1 if anything fails.
 OUT must not exist yet, or be empty.
 """
@@ -41,12 +41,10 @@ def private_packs() -> list[Path]:
     return packs
 
 
-def fingerprints(pack: Path) -> tuple[set[str], set[str]]:
-    """Strings that only a private pack has. Its content, which must not
-    ship: its steering's lines and its moods' wording. And its names, which
-    are only reported: its takes' ids."""
+def fingerprints(pack: Path) -> set[str]:
+    """Strings that only a private pack has, which must not ship: its
+    steering's lines and its moods' wording."""
     found: set[str] = set()
-    names: set[str] = set()
     for md in (pack / "steering").rglob("*.md"):
         for line in md.read_text().splitlines():
             line = line.strip()
@@ -57,13 +55,7 @@ def fingerprints(pack: Path) -> tuple[set[str], set[str]]:
         for key in ("meaning", "face", "not_for", "face_not_for"):
             if len(mood.get(key) or "") >= 30:
                 found.add(mood[key])
-    takes = pack / "mac" / "takes.tsv"
-    if takes.exists():
-        for row in takes.read_text().splitlines()[3:]:
-            take = row.split("\t")[0]
-            if "." in take and len(take) > 12:
-                names.add(take)
-    return found, names
+    return found
 
 
 def main(argv: list[str]) -> int:
@@ -121,16 +113,12 @@ def main(argv: list[str]) -> int:
         if new != text:
             path.write_text(new)
 
-    # Leaks: a private pack's content fails the export; its names, and
-    # anything that looks like a key, are reported.
+    # Leaks: a private pack's content, or anything that looks like a key,
+    # fails the export.
     marks: set[str] = set()
-    names: set[str] = set()
     for pack in packs:
-        content, named = fingerprints(pack)
-        marks |= content
-        names |= named
+        marks |= fingerprints(pack)
     findings: list[str] = []
-    notes: list[str] = []
     for f in kept:
         path = out / f
         if path.is_symlink() or path.suffix not in TEXT:
@@ -142,9 +130,6 @@ def main(argv: list[str]) -> int:
         hits = sorted(m for m in marks if m in text)
         if hits:
             findings.append(f"{f}: {len(hits)} lines of a private pack's: " + "; ".join(h[:60] for h in hits[:3]))
-        named = sorted(m for m in names if m in text)
-        if named:
-            notes.append(f"{f}: {len(named)} of a private pack's take ids: " + "; ".join(named[:2]))
         if KEYLIKE.search(text):
             findings.append(f"{f}: something that looks like a key")
 
@@ -161,9 +146,8 @@ def main(argv: list[str]) -> int:
         subprocess.run(["git", "commit", "-qm", "Boop, the open engine, and Pixel, its open character"], cwd=out, check=True)
 
     summary = (f"export: {len(kept)} files into {out}, leaving out {', '.join(left_out)}; "
-               f"{unlinked} links made plain text; {len(findings)} files with something private, "
-               f"{len(notes)} naming a private take")
-    lines = [f"  private: {line}" for line in findings] + [f"  note: {line}" for line in notes]
+               f"{unlinked} links made plain text; {len(findings)} files with something private")
+    lines = [f"  private: {line}" for line in findings]
     print(summary)
     print("\n".join(lines))
     if report_file:
