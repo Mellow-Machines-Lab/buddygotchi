@@ -81,13 +81,14 @@ static void test_every_scene_matches_facegen() {
 
 // Each mood has its own variations of each state, each a
 // design of its own; one out of range draws the first. The older seven moods
-// have the first pack's (three a state, working five) and one or two of each
-// newer state; the six new ones three of each, nine starts (three a context)
+// have the first pack's (three a state, working five), one or two of each
+// newer state and four starts (one a context); the six new ones three of
+// each, twelve starts (three a context)
 // and six finishes (three a result). Asleep and with no app, Boop looks the
 // same in every older mood, and in every new one.
 static void test_variations_and_shared_designs() {
-  const int older[] = {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1};
-  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+  const int older[] = {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1};
+  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
   for (int m = 0; m < pixelMoods(); ++m) {
     for (int s = 0; s < int(SceneState::kCount); ++s) {
       int n = variants(render::pixelMood(m), SceneState(s));
@@ -96,7 +97,7 @@ static void test_variations_and_shared_designs() {
       for (int v = 1; v < n; ++v) {
         TEST_ASSERT_NOT_EQUAL(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), v));
       }
-      TEST_ASSERT_EQUAL_INT(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), 9));
+      TEST_ASSERT_EQUAL_INT(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), kMaxVariants));
       TEST_ASSERT_EQUAL_INT(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), -1));
     }
     Mood family = m < pixelIndex(Mood::kCalm) ? Mood::kHappy : Mood::kCalm;
@@ -138,9 +139,9 @@ static void test_variations_for_a_result_or_a_context() {
     }
     TEST_ASSERT_EQUAL_INT(done, fitting(mood, SceneState::kTaskComplete, Outcome::kNone, StartCtx::kNone, out));
     int starts = variants(mood, SceneState::kStarting);
-    for (StartCtx c : {StartCtx::kNewTask, StartCtx::kSession, StartCtx::kContinuation}) {
+    for (StartCtx c : {StartCtx::kNewTask, StartCtx::kSession, StartCtx::kContinuation, StartCtx::kCompacted}) {
       int n = fitting(mood, SceneState::kStarting, Outcome::kNone, c, out);
-      TEST_ASSERT_EQUAL_INT(starts / 3, n);
+      TEST_ASSERT_EQUAL_INT(starts / 4, n);
       for (int i = 0; i < n; ++i) TEST_ASSERT_TRUE(variantCtx(mood, SceneState::kStarting, out[i]) == c);
     }
     // A fact no variation is for, or one that doesn't apply, takes them all.
@@ -159,6 +160,7 @@ static void test_variations_for_a_result_or_a_context() {
   TEST_ASSERT_TRUE(outcomeFromName("win") == Outcome::kNone);
   TEST_ASSERT_TRUE(outcomeFromName(nullptr) == Outcome::kNone);
   TEST_ASSERT_TRUE(ctxFromName("continuation") == StartCtx::kContinuation);
+  TEST_ASSERT_TRUE(ctxFromName("compacted") == StartCtx::kCompacted);
   TEST_ASSERT_TRUE(ctxFromName("resume") == StartCtx::kNone);
 }
 

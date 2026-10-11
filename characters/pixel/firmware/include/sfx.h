@@ -7,7 +7,7 @@
 namespace sfx_assets {
 
 constexpr uint32_t kRate = 11025;
-constexpr const char* kVersion = "3694ab1b9abf";
+constexpr const char* kVersion = "5fc4d3ed3a81";
 constexpr int kClips = 49;
 constexpr uint32_t kBytes = 157609;
 constexpr int kMoods = 13;
@@ -17,34 +17,34 @@ constexpr int kLoops = 8;  // a routine design's baked loops: loop n plays list 
 // Each mood and state's variations, as faces.h has them: kVariants[m][s]
 // scores from kScore[kFirst[m][s]] on.
 static const uint8_t kVariants[kMoods][kStates] = {
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // happy
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // excited
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // proud
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // curious
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // determined
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // grumpy
-    {3, 5, 3, 5, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // sad
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // calm
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // engaged
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // annoyed
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // irritated
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // whiny
-    {3, 5, 3, 6, 3, 3, 3, 9, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // wounded
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // happy
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // excited
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // proud
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // curious
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // determined
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // grumpy
+    {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1},  // sad
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // calm
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // engaged
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // annoyed
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // irritated
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // whiny
+    {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},  // wounded
 };
 static const uint16_t kFirst[kMoods][kStates] = {
-    {0, 3, 8, 11, 16, 19, 22, 25, 28, 29, 30, 31, 32, 33, 34, 36, 38, 39, 40, 41, 42, 43},  // happy
-    {44, 47, 52, 55, 60, 63, 66, 69, 72, 73, 74, 75, 76, 77, 78, 80, 82, 83, 84, 85, 86, 87},  // excited
-    {88, 91, 96, 99, 104, 107, 110, 113, 116, 117, 118, 119, 120, 121, 122, 124, 126, 127, 128, 129, 130, 131},  // proud
-    {132, 135, 140, 143, 148, 151, 154, 157, 160, 161, 162, 163, 164, 165, 166, 168, 170, 171, 172, 173, 174, 175},  // curious
-    {176, 179, 184, 187, 192, 195, 198, 201, 204, 205, 206, 207, 208, 209, 210, 212, 214, 215, 216, 217, 218, 219},  // determined
-    {220, 223, 228, 231, 236, 239, 242, 245, 248, 249, 250, 251, 252, 253, 254, 256, 258, 259, 260, 261, 262, 263},  // grumpy
-    {264, 267, 272, 275, 280, 283, 286, 289, 292, 293, 294, 295, 296, 297, 298, 300, 302, 303, 304, 305, 306, 307},  // sad
-    {308, 311, 316, 319, 325, 328, 331, 334, 343, 346, 349, 352, 355, 358, 361, 364, 367, 370, 373, 376, 379, 382},  // calm
-    {385, 388, 393, 396, 402, 405, 408, 411, 420, 423, 426, 429, 432, 435, 438, 441, 444, 447, 450, 453, 456, 459},  // engaged
-    {462, 465, 470, 473, 479, 482, 485, 488, 497, 500, 503, 506, 509, 512, 515, 518, 521, 524, 527, 530, 533, 536},  // annoyed
-    {539, 542, 547, 550, 556, 559, 562, 565, 574, 577, 580, 583, 586, 589, 592, 595, 598, 601, 604, 607, 610, 613},  // irritated
-    {616, 619, 624, 627, 633, 636, 639, 642, 651, 654, 657, 660, 663, 666, 669, 672, 675, 678, 681, 684, 687, 690},  // whiny
-    {693, 696, 701, 704, 710, 713, 716, 719, 728, 731, 734, 737, 740, 743, 746, 749, 752, 755, 758, 761, 764, 767},  // wounded
+    {0, 3, 8, 11, 16, 19, 22, 25, 29, 30, 31, 32, 33, 34, 35, 37, 39, 40, 41, 42, 43, 44},  // happy
+    {45, 48, 53, 56, 61, 64, 67, 70, 74, 75, 76, 77, 78, 79, 80, 82, 84, 85, 86, 87, 88, 89},  // excited
+    {90, 93, 98, 101, 106, 109, 112, 115, 119, 120, 121, 122, 123, 124, 125, 127, 129, 130, 131, 132, 133, 134},  // proud
+    {135, 138, 143, 146, 151, 154, 157, 160, 164, 165, 166, 167, 168, 169, 170, 172, 174, 175, 176, 177, 178, 179},  // curious
+    {180, 183, 188, 191, 196, 199, 202, 205, 209, 210, 211, 212, 213, 214, 215, 217, 219, 220, 221, 222, 223, 224},  // determined
+    {225, 228, 233, 236, 241, 244, 247, 250, 254, 255, 256, 257, 258, 259, 260, 262, 264, 265, 266, 267, 268, 269},  // grumpy
+    {270, 273, 278, 281, 286, 289, 292, 295, 299, 300, 301, 302, 303, 304, 305, 307, 309, 310, 311, 312, 313, 314},  // sad
+    {315, 318, 323, 326, 332, 335, 338, 341, 353, 356, 359, 362, 365, 368, 371, 374, 377, 380, 383, 386, 389, 392},  // calm
+    {395, 398, 403, 406, 412, 415, 418, 421, 433, 436, 439, 442, 445, 448, 451, 454, 457, 460, 463, 466, 469, 472},  // engaged
+    {475, 478, 483, 486, 492, 495, 498, 501, 513, 516, 519, 522, 525, 528, 531, 534, 537, 540, 543, 546, 549, 552},  // annoyed
+    {555, 558, 563, 566, 572, 575, 578, 581, 593, 596, 599, 602, 605, 608, 611, 614, 617, 620, 623, 626, 629, 632},  // irritated
+    {635, 638, 643, 646, 652, 655, 658, 661, 673, 676, 679, 682, 685, 688, 691, 694, 697, 700, 703, 706, 709, 712},  // whiny
+    {715, 718, 723, 726, 732, 735, 738, 741, 753, 756, 759, 762, 765, 768, 771, 774, 777, 780, 783, 786, 789, 792},  // wounded
 };
 
 struct Clip {
@@ -161,748 +161,773 @@ static const Score kScore[] = {
     {kEntry, 1, true, 1, 60, 450},  // happy.starting.01
     {kEntry, 1, true, 1, 61, 450},  // happy.starting.02
     {kEntry, 1, true, 1, 62, 450},  // happy.starting.03
-    {kLoop, 1, true, 8, 63, 450},  // happy.planning.01
-    {kLoop, 1, true, 8, 71, 450},  // happy.terminal.01
-    {kLoop, 1, true, 8, 79, 450},  // happy.tool_use.01
-    {kLoop, 1, true, 8, 87, 450},  // happy.searching.01
-    {kLoop, 1, true, 8, 95, 450},  // happy.analyzing.01
-    {kLoop, 1, true, 8, 103, 450},  // happy.testing.01
-    {kEntry, 1, true, 1, 111, 450},  // happy.delegating.01
-    {kEntry, 1, true, 1, 112, 450},  // happy.delegating.02
-    {kEntry, 1, true, 1, 113, 450},  // happy.helper_return.01
-    {kEntry, 1, true, 1, 114, 450},  // happy.helper_return.02
-    {kSilent, 1, true, 1, 115, 450},  // happy.waiting.01
-    {kEntry, 1, true, 1, 116, 450},  // happy.reply_ready.01
-    {kEntry, 1, false, 1, 117, 3596},  // happy.error.01
-    {kEntry, 1, true, 1, 118, 450},  // happy.stopped.01
-    {kEntry, 1, true, 1, 119, 450},  // happy.poked.01
-    {kEntry, 1, true, 1, 120, 450},  // happy.tap_spam.01
-    {kSilent, 1, true, 1, 121, 450},  // excited.idle.01
-    {kSilent, 1, true, 1, 122, 450},  // excited.idle.02
-    {kSilent, 1, true, 1, 123, 450},  // excited.idle.03
-    {kSparse, 2, true, 8, 124, 450},  // excited.working.01
-    {kSparse, 2, true, 8, 132, 450},  // excited.working.02
-    {kLoop, 1, true, 8, 140, 450},  // excited.working.03
-    {kLoop, 1, true, 8, 148, 450},  // excited.working.04
-    {kSparse, 2, true, 8, 156, 450},  // excited.working.05
-    {kEntry, 1, false, 1, 164, 2520},  // excited.needs_you.01
-    {kEntry, 1, false, 1, 165, 2520},  // excited.needs_you.02
-    {kEntry, 1, false, 1, 166, 2440},  // excited.needs_you.03
-    {kEntry, 1, false, 1, 167, 3050},  // excited.task_complete.01
-    {kEntry, 1, false, 1, 168, 3580},  // excited.task_complete.02
-    {kEntry, 1, false, 1, 169, 3570},  // excited.task_complete.03
-    {kEntry, 1, false, 1, 170, 5116},  // excited.task_complete.04
-    {kEntry, 1, false, 1, 171, 5040},  // excited.task_complete.05
-    {kSilent, 1, true, 1, 172, 450},  // excited.asleep.01
-    {kSilent, 1, true, 1, 173, 450},  // excited.asleep.02
-    {kSilent, 1, true, 1, 174, 450},  // excited.asleep.03
-    {kSilent, 1, true, 1, 175, 450},  // excited.no_app.01
-    {kSilent, 1, true, 1, 176, 450},  // excited.no_app.02
-    {kSilent, 1, true, 1, 177, 450},  // excited.no_app.03
-    {kSilent, 1, true, 1, 178, 450},  // excited.listening.01
-    {kSilent, 1, true, 1, 179, 450},  // excited.listening.02
-    {kSilent, 1, true, 1, 180, 450},  // excited.listening.03
-    {kEntry, 1, true, 1, 181, 450},  // excited.starting.01
-    {kEntry, 1, true, 1, 182, 450},  // excited.starting.02
-    {kEntry, 1, true, 1, 183, 450},  // excited.starting.03
-    {kLoop, 1, true, 8, 184, 450},  // excited.planning.01
-    {kSparse, 2, true, 8, 192, 450},  // excited.terminal.01
-    {kSparse, 2, true, 8, 200, 450},  // excited.tool_use.01
-    {kLoop, 1, true, 8, 208, 450},  // excited.searching.01
-    {kLoop, 1, true, 8, 216, 450},  // excited.analyzing.01
-    {kSparse, 2, true, 8, 224, 450},  // excited.testing.01
-    {kEntry, 1, true, 1, 232, 450},  // excited.delegating.01
-    {kEntry, 1, true, 1, 233, 450},  // excited.delegating.02
-    {kEntry, 1, true, 1, 234, 450},  // excited.helper_return.01
-    {kEntry, 1, true, 1, 235, 450},  // excited.helper_return.02
-    {kSilent, 1, true, 1, 236, 450},  // excited.waiting.01
-    {kEntry, 1, true, 1, 237, 450},  // excited.reply_ready.01
-    {kEntry, 1, false, 1, 238, 2994},  // excited.error.01
-    {kEntry, 1, true, 1, 239, 450},  // excited.stopped.01
-    {kEntry, 1, true, 1, 240, 450},  // excited.poked.01
-    {kEntry, 1, true, 1, 241, 450},  // excited.tap_spam.01
-    {kSilent, 1, true, 1, 242, 450},  // proud.idle.01
-    {kSilent, 1, true, 1, 243, 450},  // proud.idle.02
-    {kSilent, 1, true, 1, 244, 450},  // proud.idle.03
-    {kLoop, 1, true, 8, 245, 450},  // proud.working.01
-    {kLoop, 1, true, 8, 253, 450},  // proud.working.02
-    {kLoop, 1, true, 8, 261, 450},  // proud.working.03
-    {kLoop, 1, true, 8, 269, 450},  // proud.working.04
-    {kLoop, 1, true, 8, 277, 450},  // proud.working.05
-    {kEntry, 1, false, 1, 285, 2560},  // proud.needs_you.01
-    {kEntry, 1, false, 1, 286, 2660},  // proud.needs_you.02
-    {kEntry, 1, false, 1, 287, 2540},  // proud.needs_you.03
-    {kEntry, 1, false, 1, 288, 3050},  // proud.task_complete.01
-    {kEntry, 1, false, 1, 289, 3580},  // proud.task_complete.02
-    {kEntry, 1, false, 1, 290, 3570},  // proud.task_complete.03
-    {kEntry, 1, false, 1, 291, 5116},  // proud.task_complete.04
-    {kEntry, 1, false, 1, 292, 5040},  // proud.task_complete.05
-    {kSilent, 1, true, 1, 293, 450},  // proud.asleep.01
-    {kSilent, 1, true, 1, 294, 450},  // proud.asleep.02
-    {kSilent, 1, true, 1, 295, 450},  // proud.asleep.03
-    {kSilent, 1, true, 1, 296, 450},  // proud.no_app.01
-    {kSilent, 1, true, 1, 297, 450},  // proud.no_app.02
-    {kSilent, 1, true, 1, 298, 450},  // proud.no_app.03
-    {kSilent, 1, true, 1, 299, 450},  // proud.listening.01
-    {kSilent, 1, true, 1, 300, 450},  // proud.listening.02
-    {kSilent, 1, true, 1, 301, 450},  // proud.listening.03
-    {kEntry, 1, true, 1, 302, 450},  // proud.starting.01
-    {kEntry, 1, true, 1, 303, 450},  // proud.starting.02
-    {kEntry, 1, true, 1, 304, 450},  // proud.starting.03
-    {kLoop, 1, true, 8, 305, 450},  // proud.planning.01
-    {kLoop, 1, true, 8, 313, 450},  // proud.terminal.01
-    {kLoop, 1, true, 8, 321, 450},  // proud.tool_use.01
-    {kLoop, 1, true, 8, 329, 450},  // proud.searching.01
-    {kLoop, 1, true, 8, 337, 450},  // proud.analyzing.01
-    {kLoop, 1, true, 8, 345, 450},  // proud.testing.01
-    {kEntry, 1, true, 1, 353, 450},  // proud.delegating.01
-    {kEntry, 1, true, 1, 354, 450},  // proud.delegating.02
-    {kEntry, 1, true, 1, 355, 450},  // proud.helper_return.01
-    {kEntry, 1, true, 1, 356, 450},  // proud.helper_return.02
-    {kSilent, 1, true, 1, 357, 450},  // proud.waiting.01
-    {kEntry, 1, true, 1, 358, 450},  // proud.reply_ready.01
-    {kEntry, 1, false, 1, 359, 3924},  // proud.error.01
-    {kEntry, 1, true, 1, 360, 450},  // proud.stopped.01
-    {kEntry, 1, true, 1, 361, 450},  // proud.poked.01
-    {kEntry, 1, true, 1, 362, 450},  // proud.tap_spam.01
-    {kSilent, 1, true, 1, 363, 450},  // curious.idle.01
-    {kSilent, 1, true, 1, 364, 450},  // curious.idle.02
-    {kSilent, 1, true, 1, 365, 450},  // curious.idle.03
-    {kLoop, 1, true, 8, 366, 450},  // curious.working.01
-    {kLoop, 1, true, 8, 374, 450},  // curious.working.02
-    {kLoop, 1, true, 8, 382, 450},  // curious.working.03
-    {kLoop, 1, true, 8, 390, 450},  // curious.working.04
-    {kLoop, 1, true, 8, 398, 450},  // curious.working.05
-    {kEntry, 1, false, 1, 406, 2700},  // curious.needs_you.01
-    {kEntry, 1, false, 1, 407, 2640},  // curious.needs_you.02
-    {kEntry, 1, false, 1, 408, 2760},  // curious.needs_you.03
-    {kEntry, 1, false, 1, 409, 2500},  // curious.task_complete.01
-    {kEntry, 1, false, 1, 410, 3580},  // curious.task_complete.02
-    {kEntry, 1, false, 1, 411, 3570},  // curious.task_complete.03
-    {kEntry, 1, false, 1, 412, 5116},  // curious.task_complete.04
-    {kEntry, 1, false, 1, 413, 5040},  // curious.task_complete.05
-    {kSilent, 1, true, 1, 414, 450},  // curious.asleep.01
-    {kSilent, 1, true, 1, 415, 450},  // curious.asleep.02
-    {kSilent, 1, true, 1, 416, 450},  // curious.asleep.03
-    {kSilent, 1, true, 1, 417, 450},  // curious.no_app.01
-    {kSilent, 1, true, 1, 418, 450},  // curious.no_app.02
-    {kSilent, 1, true, 1, 419, 450},  // curious.no_app.03
-    {kSilent, 1, true, 1, 420, 450},  // curious.listening.01
-    {kSilent, 1, true, 1, 421, 450},  // curious.listening.02
-    {kSilent, 1, true, 1, 422, 450},  // curious.listening.03
-    {kEntry, 1, true, 1, 423, 450},  // curious.starting.01
-    {kEntry, 1, true, 1, 424, 450},  // curious.starting.02
-    {kEntry, 1, true, 1, 425, 450},  // curious.starting.03
-    {kLoop, 1, true, 8, 426, 450},  // curious.planning.01
-    {kLoop, 1, true, 8, 434, 450},  // curious.terminal.01
-    {kLoop, 1, true, 8, 442, 450},  // curious.tool_use.01
-    {kLoop, 1, true, 8, 450, 450},  // curious.searching.01
-    {kLoop, 1, true, 8, 458, 450},  // curious.analyzing.01
-    {kLoop, 1, true, 8, 466, 450},  // curious.testing.01
-    {kEntry, 1, true, 1, 474, 450},  // curious.delegating.01
-    {kEntry, 1, true, 1, 475, 450},  // curious.delegating.02
-    {kEntry, 1, true, 1, 476, 450},  // curious.helper_return.01
-    {kEntry, 1, true, 1, 477, 450},  // curious.helper_return.02
-    {kSilent, 1, true, 1, 478, 450},  // curious.waiting.01
-    {kEntry, 1, true, 1, 479, 450},  // curious.reply_ready.01
-    {kEntry, 1, false, 1, 480, 3815},  // curious.error.01
-    {kEntry, 1, true, 1, 481, 450},  // curious.stopped.01
-    {kEntry, 1, true, 1, 482, 450},  // curious.poked.01
-    {kEntry, 1, true, 1, 483, 450},  // curious.tap_spam.01
-    {kSilent, 1, true, 1, 484, 450},  // determined.idle.01
-    {kSilent, 1, true, 1, 485, 450},  // determined.idle.02
-    {kSilent, 1, true, 1, 486, 450},  // determined.idle.03
-    {kSparse, 2, true, 8, 487, 450},  // determined.working.01
-    {kLoop, 1, true, 8, 495, 450},  // determined.working.02
-    {kLoop, 1, true, 8, 503, 450},  // determined.working.03
-    {kLoop, 1, true, 8, 511, 450},  // determined.working.04
-    {kLoop, 1, true, 8, 519, 450},  // determined.working.05
-    {kEntry, 1, false, 1, 527, 2320},  // determined.needs_you.01
-    {kEntry, 1, false, 1, 528, 2340},  // determined.needs_you.02
-    {kEntry, 1, false, 1, 529, 2360},  // determined.needs_you.03
-    {kEntry, 1, false, 1, 530, 2500},  // determined.task_complete.01
-    {kEntry, 1, false, 1, 531, 3580},  // determined.task_complete.02
-    {kEntry, 1, false, 1, 532, 3570},  // determined.task_complete.03
-    {kEntry, 1, false, 1, 533, 5116},  // determined.task_complete.04
-    {kEntry, 1, false, 1, 534, 5040},  // determined.task_complete.05
-    {kSilent, 1, true, 1, 535, 450},  // determined.asleep.01
-    {kSilent, 1, true, 1, 536, 450},  // determined.asleep.02
-    {kSilent, 1, true, 1, 537, 450},  // determined.asleep.03
-    {kSilent, 1, true, 1, 538, 450},  // determined.no_app.01
-    {kSilent, 1, true, 1, 539, 450},  // determined.no_app.02
-    {kSilent, 1, true, 1, 540, 450},  // determined.no_app.03
-    {kSilent, 1, true, 1, 541, 450},  // determined.listening.01
-    {kSilent, 1, true, 1, 542, 450},  // determined.listening.02
-    {kSilent, 1, true, 1, 543, 450},  // determined.listening.03
-    {kEntry, 1, true, 1, 544, 450},  // determined.starting.01
-    {kEntry, 1, true, 1, 545, 450},  // determined.starting.02
-    {kEntry, 1, true, 1, 546, 450},  // determined.starting.03
-    {kLoop, 1, true, 8, 547, 450},  // determined.planning.01
-    {kSparse, 2, true, 8, 555, 450},  // determined.terminal.01
-    {kLoop, 1, true, 8, 563, 450},  // determined.tool_use.01
-    {kLoop, 1, true, 8, 571, 450},  // determined.searching.01
-    {kLoop, 1, true, 8, 579, 450},  // determined.analyzing.01
-    {kLoop, 1, true, 8, 587, 450},  // determined.testing.01
-    {kEntry, 1, true, 1, 595, 450},  // determined.delegating.01
-    {kEntry, 1, true, 1, 596, 450},  // determined.delegating.02
-    {kEntry, 1, true, 1, 597, 450},  // determined.helper_return.01
-    {kEntry, 1, true, 1, 598, 450},  // determined.helper_return.02
-    {kSilent, 1, true, 1, 599, 450},  // determined.waiting.01
-    {kEntry, 1, true, 1, 600, 450},  // determined.reply_ready.01
-    {kEntry, 1, false, 1, 601, 3377},  // determined.error.01
-    {kEntry, 1, true, 1, 602, 450},  // determined.stopped.01
-    {kEntry, 1, true, 1, 603, 450},  // determined.poked.01
-    {kEntry, 1, true, 1, 604, 450},  // determined.tap_spam.01
-    {kSilent, 1, true, 1, 605, 450},  // grumpy.idle.01
-    {kSilent, 1, true, 1, 606, 450},  // grumpy.idle.02
-    {kSilent, 1, true, 1, 607, 450},  // grumpy.idle.03
-    {kSparse, 2, true, 8, 608, 450},  // grumpy.working.01
-    {kSparse, 2, true, 8, 616, 450},  // grumpy.working.02
-    {kLoop, 1, true, 8, 624, 450},  // grumpy.working.03
-    {kSparse, 2, true, 8, 632, 450},  // grumpy.working.04
-    {kSparse, 2, true, 8, 640, 450},  // grumpy.working.05
-    {kEntry, 1, false, 1, 648, 2440},  // grumpy.needs_you.01
-    {kEntry, 1, false, 1, 649, 2480},  // grumpy.needs_you.02
-    {kEntry, 1, false, 1, 650, 2420},  // grumpy.needs_you.03
-    {kEntry, 1, false, 1, 651, 2500},  // grumpy.task_complete.01
-    {kEntry, 1, false, 1, 652, 3580},  // grumpy.task_complete.02
-    {kEntry, 1, false, 1, 653, 3570},  // grumpy.task_complete.03
-    {kEntry, 1, false, 1, 654, 5116},  // grumpy.task_complete.04
-    {kEntry, 1, false, 1, 655, 5040},  // grumpy.task_complete.05
-    {kSilent, 1, true, 1, 656, 450},  // grumpy.asleep.01
-    {kSilent, 1, true, 1, 657, 450},  // grumpy.asleep.02
-    {kSilent, 1, true, 1, 658, 450},  // grumpy.asleep.03
-    {kSilent, 1, true, 1, 659, 450},  // grumpy.no_app.01
-    {kSilent, 1, true, 1, 660, 450},  // grumpy.no_app.02
-    {kSilent, 1, true, 1, 661, 450},  // grumpy.no_app.03
-    {kSilent, 1, true, 1, 662, 450},  // grumpy.listening.01
-    {kSilent, 1, true, 1, 663, 450},  // grumpy.listening.02
-    {kSilent, 1, true, 1, 664, 450},  // grumpy.listening.03
-    {kEntry, 1, true, 1, 665, 450},  // grumpy.starting.01
-    {kEntry, 1, true, 1, 666, 450},  // grumpy.starting.02
-    {kEntry, 1, true, 1, 667, 450},  // grumpy.starting.03
-    {kLoop, 1, true, 8, 668, 450},  // grumpy.planning.01
-    {kSparse, 2, true, 8, 676, 450},  // grumpy.terminal.01
-    {kSparse, 2, true, 8, 684, 450},  // grumpy.tool_use.01
-    {kLoop, 1, true, 8, 692, 450},  // grumpy.searching.01
-    {kLoop, 1, true, 8, 700, 450},  // grumpy.analyzing.01
-    {kSparse, 2, true, 8, 708, 450},  // grumpy.testing.01
-    {kEntry, 1, true, 1, 716, 450},  // grumpy.delegating.01
-    {kEntry, 1, true, 1, 717, 450},  // grumpy.delegating.02
-    {kEntry, 1, true, 1, 718, 450},  // grumpy.helper_return.01
-    {kEntry, 1, true, 1, 719, 450},  // grumpy.helper_return.02
-    {kSilent, 1, true, 1, 720, 450},  // grumpy.waiting.01
-    {kEntry, 1, true, 1, 721, 450},  // grumpy.reply_ready.01
-    {kEntry, 1, false, 1, 722, 2939},  // grumpy.error.01
-    {kEntry, 1, true, 1, 723, 450},  // grumpy.stopped.01
-    {kEntry, 1, true, 1, 724, 450},  // grumpy.poked.01
-    {kEntry, 1, true, 1, 725, 450},  // grumpy.tap_spam.01
-    {kSilent, 1, true, 1, 726, 450},  // sad.idle.01
-    {kSilent, 1, true, 1, 727, 450},  // sad.idle.02
-    {kSilent, 1, true, 1, 728, 450},  // sad.idle.03
-    {kLoop, 1, true, 8, 729, 450},  // sad.working.01
-    {kLoop, 1, true, 8, 737, 450},  // sad.working.02
-    {kLoop, 1, true, 8, 745, 450},  // sad.working.03
-    {kLoop, 1, true, 8, 753, 450},  // sad.working.04
-    {kLoop, 1, true, 8, 761, 450},  // sad.working.05
-    {kEntry, 1, false, 1, 769, 3060},  // sad.needs_you.01
-    {kEntry, 1, false, 1, 770, 3220},  // sad.needs_you.02
-    {kEntry, 1, false, 1, 771, 3320},  // sad.needs_you.03
-    {kEntry, 1, false, 1, 772, 2500},  // sad.task_complete.01
-    {kEntry, 1, false, 1, 773, 3580},  // sad.task_complete.02
-    {kEntry, 1, false, 1, 774, 3570},  // sad.task_complete.03
-    {kEntry, 1, false, 1, 775, 5116},  // sad.task_complete.04
-    {kEntry, 1, false, 1, 776, 5040},  // sad.task_complete.05
-    {kSilent, 1, true, 1, 777, 450},  // sad.asleep.01
-    {kSilent, 1, true, 1, 778, 450},  // sad.asleep.02
-    {kSilent, 1, true, 1, 779, 450},  // sad.asleep.03
-    {kSilent, 1, true, 1, 780, 450},  // sad.no_app.01
-    {kSilent, 1, true, 1, 781, 450},  // sad.no_app.02
-    {kSilent, 1, true, 1, 782, 450},  // sad.no_app.03
-    {kSilent, 1, true, 1, 783, 450},  // sad.listening.01
-    {kSilent, 1, true, 1, 784, 450},  // sad.listening.02
-    {kSilent, 1, true, 1, 785, 450},  // sad.listening.03
-    {kEntry, 1, true, 1, 786, 450},  // sad.starting.01
-    {kEntry, 1, true, 1, 787, 450},  // sad.starting.02
-    {kEntry, 1, true, 1, 788, 450},  // sad.starting.03
-    {kLoop, 1, true, 8, 789, 450},  // sad.planning.01
-    {kLoop, 1, true, 8, 797, 450},  // sad.terminal.01
-    {kLoop, 1, true, 8, 805, 450},  // sad.tool_use.01
-    {kLoop, 1, true, 8, 813, 450},  // sad.searching.01
-    {kLoop, 1, true, 8, 821, 450},  // sad.analyzing.01
-    {kLoop, 1, true, 8, 829, 450},  // sad.testing.01
-    {kEntry, 1, true, 1, 837, 450},  // sad.delegating.01
-    {kEntry, 1, true, 1, 838, 450},  // sad.delegating.02
-    {kEntry, 1, true, 1, 839, 450},  // sad.helper_return.01
-    {kEntry, 1, true, 1, 840, 450},  // sad.helper_return.02
-    {kSilent, 1, true, 1, 841, 450},  // sad.waiting.01
-    {kEntry, 1, true, 1, 842, 450},  // sad.reply_ready.01
-    {kEntry, 1, false, 1, 843, 4362},  // sad.error.01
-    {kEntry, 1, true, 1, 844, 450},  // sad.stopped.01
-    {kEntry, 1, true, 1, 845, 450},  // sad.poked.01
-    {kEntry, 1, true, 1, 846, 450},  // sad.tap_spam.01
-    {kSilent, 1, true, 1, 847, 450},  // calm.idle.01
-    {kSilent, 1, true, 1, 848, 450},  // calm.idle.02
-    {kSilent, 1, true, 1, 849, 450},  // calm.idle.03
-    {kLoop, 1, true, 8, 850, 450},  // calm.working.01
-    {kLoop, 1, true, 8, 858, 450},  // calm.working.02
-    {kLoop, 1, true, 8, 866, 450},  // calm.working.03
-    {kLoop, 1, true, 8, 874, 450},  // calm.working.04
-    {kLoop, 1, true, 8, 882, 450},  // calm.working.05
-    {kEntry, 1, false, 1, 890, 2620},  // calm.needs_you.01
-    {kEntry, 1, false, 1, 891, 2740},  // calm.needs_you.02
-    {kEntry, 1, false, 1, 892, 2860},  // calm.needs_you.03
-    {kEntry, 1, false, 1, 893, 5364},  // calm.task_complete.01
-    {kEntry, 1, false, 1, 894, 5879},  // calm.task_complete.02
-    {kEntry, 1, false, 1, 895, 5631},  // calm.task_complete.03
-    {kEntry, 1, false, 1, 896, 3804},  // calm.task_complete.04
-    {kEntry, 1, false, 1, 897, 3769},  // calm.task_complete.05
-    {kEntry, 1, false, 1, 898, 4071},  // calm.task_complete.06
-    {kSilent, 1, true, 1, 899, 450},  // calm.asleep.01
-    {kSilent, 1, true, 1, 900, 450},  // calm.asleep.02
-    {kSilent, 1, true, 1, 901, 450},  // calm.asleep.03
-    {kSilent, 1, true, 1, 902, 450},  // calm.no_app.01
-    {kSilent, 1, true, 1, 903, 450},  // calm.no_app.02
-    {kSilent, 1, true, 1, 904, 450},  // calm.no_app.03
-    {kSilent, 1, true, 1, 905, 450},  // calm.listening.01
-    {kSilent, 1, true, 1, 906, 450},  // calm.listening.02
-    {kSilent, 1, true, 1, 907, 450},  // calm.listening.03
-    {kEntry, 1, true, 1, 908, 450},  // calm.starting.01
-    {kEntry, 1, true, 1, 909, 450},  // calm.starting.02
-    {kEntry, 1, true, 1, 910, 450},  // calm.starting.03
-    {kEntry, 1, true, 1, 911, 450},  // calm.starting.04
-    {kEntry, 1, true, 1, 912, 450},  // calm.starting.05
-    {kEntry, 1, true, 1, 913, 450},  // calm.starting.06
-    {kEntry, 1, true, 1, 914, 450},  // calm.starting.07
-    {kEntry, 1, true, 1, 915, 450},  // calm.starting.08
-    {kEntry, 1, true, 1, 916, 450},  // calm.starting.09
-    {kLoop, 1, true, 8, 917, 450},  // calm.planning.01
-    {kLoop, 1, true, 8, 925, 450},  // calm.planning.02
-    {kLoop, 1, true, 8, 933, 450},  // calm.planning.03
-    {kLoop, 1, true, 8, 941, 450},  // calm.terminal.01
-    {kLoop, 1, true, 8, 949, 450},  // calm.terminal.02
-    {kLoop, 1, true, 8, 957, 450},  // calm.terminal.03
-    {kLoop, 1, true, 8, 965, 450},  // calm.tool_use.01
-    {kLoop, 1, true, 8, 973, 450},  // calm.tool_use.02
-    {kLoop, 1, true, 8, 981, 450},  // calm.tool_use.03
-    {kLoop, 1, true, 8, 989, 450},  // calm.searching.01
-    {kLoop, 1, true, 8, 997, 450},  // calm.searching.02
-    {kLoop, 1, true, 8, 1005, 450},  // calm.searching.03
-    {kLoop, 1, true, 8, 1013, 450},  // calm.analyzing.01
-    {kLoop, 1, true, 8, 1021, 450},  // calm.analyzing.02
-    {kLoop, 1, true, 8, 1029, 450},  // calm.analyzing.03
-    {kLoop, 1, true, 8, 1037, 450},  // calm.testing.01
-    {kLoop, 1, true, 8, 1045, 450},  // calm.testing.02
-    {kLoop, 1, true, 8, 1053, 450},  // calm.testing.03
-    {kEntry, 1, true, 1, 1061, 450},  // calm.delegating.01
-    {kEntry, 1, true, 1, 1062, 450},  // calm.delegating.02
-    {kEntry, 1, true, 1, 1063, 450},  // calm.delegating.03
-    {kEntry, 1, true, 1, 1064, 450},  // calm.helper_return.01
-    {kEntry, 1, true, 1, 1065, 450},  // calm.helper_return.02
-    {kEntry, 1, true, 1, 1066, 450},  // calm.helper_return.03
-    {kSilent, 1, true, 1, 1067, 450},  // calm.waiting.01
-    {kSilent, 1, true, 1, 1068, 450},  // calm.waiting.02
-    {kSilent, 1, true, 1, 1069, 450},  // calm.waiting.03
-    {kEntry, 1, true, 1, 1070, 450},  // calm.reply_ready.01
-    {kEntry, 1, true, 1, 1071, 450},  // calm.reply_ready.02
-    {kEntry, 1, true, 1, 1072, 450},  // calm.reply_ready.03
-    {kEntry, 1, false, 1, 1073, 4546},  // calm.error.01
-    {kEntry, 1, false, 1, 1074, 4805},  // calm.error.02
-    {kEntry, 1, false, 1, 1075, 4949},  // calm.error.03
-    {kEntry, 1, true, 1, 1076, 450},  // calm.stopped.01
-    {kEntry, 1, true, 1, 1077, 450},  // calm.stopped.02
-    {kEntry, 1, true, 1, 1078, 450},  // calm.stopped.03
-    {kEntry, 1, true, 1, 1079, 450},  // calm.poked.01
-    {kEntry, 1, true, 1, 1080, 450},  // calm.poked.02
-    {kEntry, 1, true, 1, 1081, 450},  // calm.poked.03
-    {kEntry, 1, true, 1, 1082, 450},  // calm.tap_spam.01
-    {kEntry, 1, true, 1, 1083, 450},  // calm.tap_spam.02
-    {kEntry, 1, true, 1, 1084, 450},  // calm.tap_spam.03
-    {kSilent, 1, true, 1, 1085, 450},  // engaged.idle.01
-    {kSilent, 1, true, 1, 1086, 450},  // engaged.idle.02
-    {kSilent, 1, true, 1, 1087, 450},  // engaged.idle.03
-    {kLoop, 1, true, 8, 1088, 450},  // engaged.working.01
-    {kLoop, 1, true, 8, 1096, 450},  // engaged.working.02
-    {kLoop, 1, true, 8, 1104, 450},  // engaged.working.03
-    {kLoop, 1, true, 8, 1112, 450},  // engaged.working.04
-    {kLoop, 1, true, 8, 1120, 450},  // engaged.working.05
-    {kEntry, 1, false, 1, 1128, 2490},  // engaged.needs_you.01
-    {kEntry, 1, false, 1, 1129, 2670},  // engaged.needs_you.02
-    {kEntry, 1, false, 1, 1130, 2850},  // engaged.needs_you.03
-    {kEntry, 1, false, 1, 1131, 4916},  // engaged.task_complete.01
-    {kEntry, 1, false, 1, 1132, 5436},  // engaged.task_complete.02
-    {kEntry, 1, false, 1, 1133, 5127},  // engaged.task_complete.03
-    {kEntry, 1, false, 1, 1134, 3356},  // engaged.task_complete.04
-    {kEntry, 1, false, 1, 1135, 3326},  // engaged.task_complete.05
-    {kEntry, 1, false, 1, 1136, 3567},  // engaged.task_complete.06
-    {kSilent, 1, true, 1, 1137, 450},  // engaged.asleep.01
-    {kSilent, 1, true, 1, 1138, 450},  // engaged.asleep.02
-    {kSilent, 1, true, 1, 1139, 450},  // engaged.asleep.03
-    {kSilent, 1, true, 1, 1140, 450},  // engaged.no_app.01
-    {kSilent, 1, true, 1, 1141, 450},  // engaged.no_app.02
-    {kSilent, 1, true, 1, 1142, 450},  // engaged.no_app.03
-    {kSilent, 1, true, 1, 1143, 450},  // engaged.listening.01
-    {kSilent, 1, true, 1, 1144, 450},  // engaged.listening.02
-    {kSilent, 1, true, 1, 1145, 450},  // engaged.listening.03
-    {kEntry, 1, true, 1, 1146, 450},  // engaged.starting.01
-    {kEntry, 1, true, 1, 1147, 450},  // engaged.starting.02
-    {kEntry, 1, true, 1, 1148, 450},  // engaged.starting.03
-    {kEntry, 1, true, 1, 1149, 450},  // engaged.starting.04
-    {kEntry, 1, true, 1, 1150, 450},  // engaged.starting.05
-    {kEntry, 1, true, 1, 1151, 450},  // engaged.starting.06
-    {kEntry, 1, true, 1, 1152, 450},  // engaged.starting.07
-    {kEntry, 1, true, 1, 1153, 450},  // engaged.starting.08
-    {kEntry, 1, true, 1, 1154, 450},  // engaged.starting.09
-    {kLoop, 1, true, 8, 1155, 450},  // engaged.planning.01
-    {kLoop, 1, true, 8, 1163, 450},  // engaged.planning.02
-    {kLoop, 1, true, 8, 1171, 450},  // engaged.planning.03
-    {kLoop, 1, true, 8, 1179, 450},  // engaged.terminal.01
-    {kLoop, 1, true, 8, 1187, 450},  // engaged.terminal.02
-    {kLoop, 1, true, 8, 1195, 450},  // engaged.terminal.03
-    {kLoop, 1, true, 8, 1203, 450},  // engaged.tool_use.01
-    {kLoop, 1, true, 8, 1211, 450},  // engaged.tool_use.02
-    {kLoop, 1, true, 8, 1219, 450},  // engaged.tool_use.03
-    {kLoop, 1, true, 8, 1227, 450},  // engaged.searching.01
-    {kLoop, 1, true, 8, 1235, 450},  // engaged.searching.02
-    {kLoop, 1, true, 8, 1243, 450},  // engaged.searching.03
-    {kLoop, 1, true, 8, 1251, 450},  // engaged.analyzing.01
-    {kLoop, 1, true, 8, 1259, 450},  // engaged.analyzing.02
-    {kLoop, 1, true, 8, 1267, 450},  // engaged.analyzing.03
-    {kLoop, 1, true, 8, 1275, 450},  // engaged.testing.01
-    {kLoop, 1, true, 8, 1283, 450},  // engaged.testing.02
-    {kLoop, 1, true, 8, 1291, 450},  // engaged.testing.03
-    {kEntry, 1, true, 1, 1299, 450},  // engaged.delegating.01
-    {kEntry, 1, true, 1, 1300, 450},  // engaged.delegating.02
-    {kEntry, 1, true, 1, 1301, 450},  // engaged.delegating.03
-    {kEntry, 1, true, 1, 1302, 450},  // engaged.helper_return.01
-    {kEntry, 1, true, 1, 1303, 450},  // engaged.helper_return.02
-    {kEntry, 1, true, 1, 1304, 450},  // engaged.helper_return.03
-    {kSilent, 1, true, 1, 1305, 450},  // engaged.waiting.01
-    {kSilent, 1, true, 1, 1306, 450},  // engaged.waiting.02
-    {kSilent, 1, true, 1, 1307, 450},  // engaged.waiting.03
-    {kEntry, 1, true, 1, 1308, 450},  // engaged.reply_ready.01
-    {kEntry, 1, true, 1, 1309, 450},  // engaged.reply_ready.02
-    {kEntry, 1, true, 1, 1310, 450},  // engaged.reply_ready.03
-    {kEntry, 1, false, 1, 1311, 3351},  // engaged.error.01
-    {kEntry, 1, false, 1, 1312, 3526},  // engaged.error.02
-    {kEntry, 1, false, 1, 1313, 3635},  // engaged.error.03
-    {kEntry, 1, true, 1, 1314, 450},  // engaged.stopped.01
-    {kEntry, 1, true, 1, 1315, 450},  // engaged.stopped.02
-    {kEntry, 1, true, 1, 1316, 450},  // engaged.stopped.03
-    {kEntry, 1, true, 1, 1317, 450},  // engaged.poked.01
-    {kEntry, 1, true, 1, 1318, 450},  // engaged.poked.02
-    {kEntry, 1, true, 1, 1319, 450},  // engaged.poked.03
-    {kEntry, 1, true, 1, 1320, 450},  // engaged.tap_spam.01
-    {kEntry, 1, true, 1, 1321, 450},  // engaged.tap_spam.02
-    {kEntry, 1, true, 1, 1322, 450},  // engaged.tap_spam.03
-    {kSilent, 1, true, 1, 1323, 450},  // annoyed.idle.01
-    {kSilent, 1, true, 1, 1324, 450},  // annoyed.idle.02
-    {kSilent, 1, true, 1, 1325, 450},  // annoyed.idle.03
-    {kLoop, 1, true, 8, 1326, 450},  // annoyed.working.01
-    {kLoop, 1, true, 8, 1334, 450},  // annoyed.working.02
-    {kLoop, 1, true, 8, 1342, 450},  // annoyed.working.03
-    {kLoop, 1, true, 8, 1350, 450},  // annoyed.working.04
-    {kLoop, 1, true, 8, 1358, 450},  // annoyed.working.05
-    {kEntry, 1, false, 1, 1366, 2780},  // annoyed.needs_you.01
-    {kEntry, 1, false, 1, 1367, 2960},  // annoyed.needs_you.02
-    {kEntry, 1, false, 1, 1368, 3140},  // annoyed.needs_you.03
-    {kEntry, 1, false, 1, 1369, 5108},  // annoyed.task_complete.01
-    {kEntry, 1, false, 1, 1370, 5626},  // annoyed.task_complete.02
-    {kEntry, 1, false, 1, 1371, 5343},  // annoyed.task_complete.03
-    {kEntry, 1, false, 1, 1372, 3548},  // annoyed.task_complete.04
-    {kEntry, 1, false, 1, 1373, 3516},  // annoyed.task_complete.05
-    {kEntry, 1, false, 1, 1374, 3783},  // annoyed.task_complete.06
-    {kSilent, 1, true, 1, 1375, 450},  // annoyed.asleep.01
-    {kSilent, 1, true, 1, 1376, 450},  // annoyed.asleep.02
-    {kSilent, 1, true, 1, 1377, 450},  // annoyed.asleep.03
-    {kSilent, 1, true, 1, 1378, 450},  // annoyed.no_app.01
-    {kSilent, 1, true, 1, 1379, 450},  // annoyed.no_app.02
-    {kSilent, 1, true, 1, 1380, 450},  // annoyed.no_app.03
-    {kSilent, 1, true, 1, 1381, 450},  // annoyed.listening.01
-    {kSilent, 1, true, 1, 1382, 450},  // annoyed.listening.02
-    {kSilent, 1, true, 1, 1383, 450},  // annoyed.listening.03
-    {kEntry, 1, true, 1, 1384, 450},  // annoyed.starting.01
-    {kEntry, 1, true, 1, 1385, 450},  // annoyed.starting.02
-    {kEntry, 1, true, 1, 1386, 450},  // annoyed.starting.03
-    {kEntry, 1, true, 1, 1387, 450},  // annoyed.starting.04
-    {kEntry, 1, true, 1, 1388, 450},  // annoyed.starting.05
-    {kEntry, 1, true, 1, 1389, 450},  // annoyed.starting.06
-    {kEntry, 1, true, 1, 1390, 450},  // annoyed.starting.07
-    {kEntry, 1, true, 1, 1391, 450},  // annoyed.starting.08
-    {kEntry, 1, true, 1, 1392, 450},  // annoyed.starting.09
-    {kLoop, 1, true, 8, 1393, 450},  // annoyed.planning.01
-    {kLoop, 1, true, 8, 1401, 450},  // annoyed.planning.02
-    {kLoop, 1, true, 8, 1409, 450},  // annoyed.planning.03
-    {kLoop, 1, true, 8, 1417, 450},  // annoyed.terminal.01
-    {kLoop, 1, true, 8, 1425, 450},  // annoyed.terminal.02
-    {kLoop, 1, true, 8, 1433, 450},  // annoyed.terminal.03
-    {kLoop, 1, true, 8, 1441, 450},  // annoyed.tool_use.01
-    {kLoop, 1, true, 8, 1449, 450},  // annoyed.tool_use.02
-    {kLoop, 1, true, 8, 1457, 450},  // annoyed.tool_use.03
-    {kLoop, 1, true, 8, 1465, 450},  // annoyed.searching.01
-    {kLoop, 1, true, 8, 1473, 450},  // annoyed.searching.02
-    {kLoop, 1, true, 8, 1481, 450},  // annoyed.searching.03
-    {kLoop, 1, true, 8, 1489, 450},  // annoyed.analyzing.01
-    {kLoop, 1, true, 8, 1497, 450},  // annoyed.analyzing.02
-    {kLoop, 1, true, 8, 1505, 450},  // annoyed.analyzing.03
-    {kLoop, 1, true, 8, 1513, 450},  // annoyed.testing.01
-    {kLoop, 1, true, 8, 1521, 450},  // annoyed.testing.02
-    {kLoop, 1, true, 8, 1529, 450},  // annoyed.testing.03
-    {kEntry, 1, true, 1, 1537, 450},  // annoyed.delegating.01
-    {kEntry, 1, true, 1, 1538, 450},  // annoyed.delegating.02
-    {kEntry, 1, true, 1, 1539, 450},  // annoyed.delegating.03
-    {kEntry, 1, true, 1, 1540, 450},  // annoyed.helper_return.01
-    {kEntry, 1, true, 1, 1541, 450},  // annoyed.helper_return.02
-    {kEntry, 1, true, 1, 1542, 450},  // annoyed.helper_return.03
-    {kSilent, 1, true, 1, 1543, 450},  // annoyed.waiting.01
-    {kSilent, 1, true, 1, 1544, 450},  // annoyed.waiting.02
-    {kSilent, 1, true, 1, 1545, 450},  // annoyed.waiting.03
-    {kEntry, 1, true, 1, 1546, 450},  // annoyed.reply_ready.01
-    {kEntry, 1, true, 1, 1547, 450},  // annoyed.reply_ready.02
-    {kEntry, 1, true, 1, 1548, 450},  // annoyed.reply_ready.03
-    {kEntry, 1, false, 1, 1549, 4300},  // annoyed.error.01
-    {kEntry, 1, false, 1, 1550, 4542},  // annoyed.error.02
-    {kEntry, 1, false, 1, 1551, 4672},  // annoyed.error.03
-    {kEntry, 1, true, 1, 1552, 450},  // annoyed.stopped.01
-    {kEntry, 1, true, 1, 1553, 450},  // annoyed.stopped.02
-    {kEntry, 1, true, 1, 1554, 450},  // annoyed.stopped.03
-    {kEntry, 1, true, 1, 1555, 450},  // annoyed.poked.01
-    {kEntry, 1, true, 1, 1556, 450},  // annoyed.poked.02
-    {kEntry, 1, true, 1, 1557, 450},  // annoyed.poked.03
-    {kEntry, 1, true, 1, 1558, 450},  // annoyed.tap_spam.01
-    {kEntry, 1, true, 1, 1559, 450},  // annoyed.tap_spam.02
-    {kEntry, 1, true, 1, 1560, 450},  // annoyed.tap_spam.03
-    {kSilent, 1, true, 1, 1561, 450},  // irritated.idle.01
-    {kSilent, 1, true, 1, 1562, 450},  // irritated.idle.02
-    {kSilent, 1, true, 1, 1563, 450},  // irritated.idle.03
-    {kLoop, 1, true, 8, 1564, 450},  // irritated.working.01
-    {kLoop, 1, true, 8, 1572, 450},  // irritated.working.02
-    {kLoop, 1, true, 8, 1580, 450},  // irritated.working.03
-    {kLoop, 1, true, 8, 1588, 450},  // irritated.working.04
-    {kLoop, 1, true, 8, 1596, 450},  // irritated.working.05
-    {kEntry, 1, false, 1, 1604, 2360},  // irritated.needs_you.01
-    {kEntry, 1, false, 1, 1605, 2600},  // irritated.needs_you.02
-    {kEntry, 1, false, 1, 1606, 2840},  // irritated.needs_you.03
-    {kEntry, 1, false, 1, 1607, 4276},  // irritated.task_complete.01
-    {kEntry, 1, false, 1, 1608, 4804},  // irritated.task_complete.02
-    {kEntry, 1, false, 1, 1609, 4407},  // irritated.task_complete.03
-    {kEntry, 1, false, 1, 1610, 2716},  // irritated.task_complete.04
-    {kEntry, 1, false, 1, 1611, 2694},  // irritated.task_complete.05
-    {kEntry, 1, false, 1, 1612, 2847},  // irritated.task_complete.06
-    {kSilent, 1, true, 1, 1613, 450},  // irritated.asleep.01
-    {kSilent, 1, true, 1, 1614, 450},  // irritated.asleep.02
-    {kSilent, 1, true, 1, 1615, 450},  // irritated.asleep.03
-    {kSilent, 1, true, 1, 1616, 450},  // irritated.no_app.01
-    {kSilent, 1, true, 1, 1617, 450},  // irritated.no_app.02
-    {kSilent, 1, true, 1, 1618, 450},  // irritated.no_app.03
-    {kSilent, 1, true, 1, 1619, 450},  // irritated.listening.01
-    {kSilent, 1, true, 1, 1620, 450},  // irritated.listening.02
-    {kSilent, 1, true, 1, 1621, 450},  // irritated.listening.03
-    {kEntry, 1, true, 1, 1622, 450},  // irritated.starting.01
-    {kEntry, 1, true, 1, 1623, 450},  // irritated.starting.02
-    {kEntry, 1, true, 1, 1624, 450},  // irritated.starting.03
-    {kEntry, 1, true, 1, 1625, 450},  // irritated.starting.04
-    {kEntry, 1, true, 1, 1626, 450},  // irritated.starting.05
-    {kEntry, 1, true, 1, 1627, 450},  // irritated.starting.06
-    {kEntry, 1, true, 1, 1628, 450},  // irritated.starting.07
-    {kEntry, 1, true, 1, 1629, 450},  // irritated.starting.08
-    {kEntry, 1, true, 1, 1630, 450},  // irritated.starting.09
-    {kLoop, 1, true, 8, 1631, 450},  // irritated.planning.01
-    {kLoop, 1, true, 8, 1639, 450},  // irritated.planning.02
-    {kLoop, 1, true, 8, 1647, 450},  // irritated.planning.03
-    {kLoop, 1, true, 8, 1655, 450},  // irritated.terminal.01
-    {kLoop, 1, true, 8, 1663, 450},  // irritated.terminal.02
-    {kLoop, 1, true, 8, 1671, 450},  // irritated.terminal.03
-    {kLoop, 1, true, 8, 1679, 450},  // irritated.tool_use.01
-    {kLoop, 1, true, 8, 1687, 450},  // irritated.tool_use.02
-    {kLoop, 1, true, 8, 1695, 450},  // irritated.tool_use.03
-    {kLoop, 1, true, 8, 1703, 450},  // irritated.searching.01
-    {kLoop, 1, true, 8, 1711, 450},  // irritated.searching.02
-    {kLoop, 1, true, 8, 1719, 450},  // irritated.searching.03
-    {kLoop, 1, true, 8, 1727, 450},  // irritated.analyzing.01
-    {kLoop, 1, true, 8, 1735, 450},  // irritated.analyzing.02
-    {kLoop, 1, true, 8, 1743, 450},  // irritated.analyzing.03
-    {kLoop, 1, true, 8, 1751, 450},  // irritated.testing.01
-    {kLoop, 1, true, 8, 1759, 450},  // irritated.testing.02
-    {kLoop, 1, true, 8, 1767, 450},  // irritated.testing.03
-    {kEntry, 1, true, 1, 1775, 450},  // irritated.delegating.01
-    {kEntry, 1, true, 1, 1776, 450},  // irritated.delegating.02
-    {kEntry, 1, true, 1, 1777, 450},  // irritated.delegating.03
-    {kEntry, 1, true, 1, 1778, 450},  // irritated.helper_return.01
-    {kEntry, 1, true, 1, 1779, 450},  // irritated.helper_return.02
-    {kEntry, 1, true, 1, 1780, 450},  // irritated.helper_return.03
-    {kSilent, 1, true, 1, 1781, 450},  // irritated.waiting.01
-    {kSilent, 1, true, 1, 1782, 450},  // irritated.waiting.02
-    {kSilent, 1, true, 1, 1783, 450},  // irritated.waiting.03
-    {kEntry, 1, true, 1, 1784, 450},  // irritated.reply_ready.01
-    {kEntry, 1, true, 1, 1785, 450},  // irritated.reply_ready.02
-    {kEntry, 1, true, 1, 1786, 450},  // irritated.reply_ready.03
-    {kEntry, 1, false, 1, 1787, 2796},  // irritated.error.01
-    {kEntry, 1, false, 1, 1788, 2932},  // irritated.error.02
-    {kEntry, 1, false, 1, 1789, 3027},  // irritated.error.03
-    {kEntry, 1, true, 1, 1790, 450},  // irritated.stopped.01
-    {kEntry, 1, true, 1, 1791, 450},  // irritated.stopped.02
-    {kEntry, 1, true, 1, 1792, 450},  // irritated.stopped.03
-    {kEntry, 1, true, 1, 1793, 450},  // irritated.poked.01
-    {kEntry, 1, true, 1, 1794, 450},  // irritated.poked.02
-    {kEntry, 1, true, 1, 1795, 450},  // irritated.poked.03
-    {kEntry, 1, true, 1, 1796, 450},  // irritated.tap_spam.01
-    {kEntry, 1, true, 1, 1797, 450},  // irritated.tap_spam.02
-    {kEntry, 1, true, 1, 1798, 450},  // irritated.tap_spam.03
-    {kSilent, 1, true, 1, 1799, 450},  // whiny.idle.01
-    {kSilent, 1, true, 1, 1800, 450},  // whiny.idle.02
-    {kSilent, 1, true, 1, 1801, 450},  // whiny.idle.03
-    {kLoop, 1, true, 8, 1802, 450},  // whiny.working.01
-    {kLoop, 1, true, 8, 1810, 450},  // whiny.working.02
-    {kLoop, 1, true, 8, 1818, 450},  // whiny.working.03
-    {kLoop, 1, true, 8, 1826, 450},  // whiny.working.04
-    {kLoop, 1, true, 8, 1834, 450},  // whiny.working.05
-    {kEntry, 1, false, 1, 1842, 2860},  // whiny.needs_you.01
-    {kEntry, 1, false, 1, 1843, 3040},  // whiny.needs_you.02
-    {kEntry, 1, false, 1, 1844, 3220},  // whiny.needs_you.03
-    {kEntry, 1, false, 1, 1845, 5172},  // whiny.task_complete.01
-    {kEntry, 1, false, 1, 1846, 5689},  // whiny.task_complete.02
-    {kEntry, 1, false, 1, 1847, 5415},  // whiny.task_complete.03
-    {kEntry, 1, false, 1, 1848, 3612},  // whiny.task_complete.04
-    {kEntry, 1, false, 1, 1849, 3579},  // whiny.task_complete.05
-    {kEntry, 1, false, 1, 1850, 3855},  // whiny.task_complete.06
-    {kSilent, 1, true, 1, 1851, 450},  // whiny.asleep.01
-    {kSilent, 1, true, 1, 1852, 450},  // whiny.asleep.02
-    {kSilent, 1, true, 1, 1853, 450},  // whiny.asleep.03
-    {kSilent, 1, true, 1, 1854, 450},  // whiny.no_app.01
-    {kSilent, 1, true, 1, 1855, 450},  // whiny.no_app.02
-    {kSilent, 1, true, 1, 1856, 450},  // whiny.no_app.03
-    {kSilent, 1, true, 1, 1857, 450},  // whiny.listening.01
-    {kSilent, 1, true, 1, 1858, 450},  // whiny.listening.02
-    {kSilent, 1, true, 1, 1859, 450},  // whiny.listening.03
-    {kEntry, 1, true, 1, 1860, 450},  // whiny.starting.01
-    {kEntry, 1, true, 1, 1861, 450},  // whiny.starting.02
-    {kEntry, 1, true, 1, 1862, 450},  // whiny.starting.03
-    {kEntry, 1, true, 1, 1863, 450},  // whiny.starting.04
-    {kEntry, 1, true, 1, 1864, 450},  // whiny.starting.05
-    {kEntry, 1, true, 1, 1865, 450},  // whiny.starting.06
-    {kEntry, 1, true, 1, 1866, 450},  // whiny.starting.07
-    {kEntry, 1, true, 1, 1867, 450},  // whiny.starting.08
-    {kEntry, 1, true, 1, 1868, 450},  // whiny.starting.09
-    {kLoop, 1, true, 8, 1869, 450},  // whiny.planning.01
-    {kLoop, 1, true, 8, 1877, 450},  // whiny.planning.02
-    {kLoop, 1, true, 8, 1885, 450},  // whiny.planning.03
-    {kLoop, 1, true, 8, 1893, 450},  // whiny.terminal.01
-    {kLoop, 1, true, 8, 1901, 450},  // whiny.terminal.02
-    {kLoop, 1, true, 8, 1909, 450},  // whiny.terminal.03
-    {kLoop, 1, true, 8, 1917, 450},  // whiny.tool_use.01
-    {kLoop, 1, true, 8, 1925, 450},  // whiny.tool_use.02
-    {kLoop, 1, true, 8, 1933, 450},  // whiny.tool_use.03
-    {kLoop, 1, true, 8, 1941, 450},  // whiny.searching.01
-    {kLoop, 1, true, 8, 1949, 450},  // whiny.searching.02
-    {kLoop, 1, true, 8, 1957, 450},  // whiny.searching.03
-    {kLoop, 1, true, 8, 1965, 450},  // whiny.analyzing.01
-    {kLoop, 1, true, 8, 1973, 450},  // whiny.analyzing.02
-    {kLoop, 1, true, 8, 1981, 450},  // whiny.analyzing.03
-    {kLoop, 1, true, 8, 1989, 450},  // whiny.testing.01
-    {kLoop, 1, true, 8, 1997, 450},  // whiny.testing.02
-    {kLoop, 1, true, 8, 2005, 450},  // whiny.testing.03
-    {kEntry, 1, true, 1, 2013, 450},  // whiny.delegating.01
-    {kEntry, 1, true, 1, 2014, 450},  // whiny.delegating.02
-    {kEntry, 1, true, 1, 2015, 450},  // whiny.delegating.03
-    {kEntry, 1, true, 1, 2016, 450},  // whiny.helper_return.01
-    {kEntry, 1, true, 1, 2017, 450},  // whiny.helper_return.02
-    {kEntry, 1, true, 1, 2018, 450},  // whiny.helper_return.03
-    {kSilent, 1, true, 1, 2019, 450},  // whiny.waiting.01
-    {kSilent, 1, true, 1, 2020, 450},  // whiny.waiting.02
-    {kSilent, 1, true, 1, 2021, 450},  // whiny.waiting.03
-    {kEntry, 1, true, 1, 2022, 450},  // whiny.reply_ready.01
-    {kEntry, 1, true, 1, 2023, 450},  // whiny.reply_ready.02
-    {kEntry, 1, true, 1, 2024, 450},  // whiny.reply_ready.03
-    {kEntry, 1, false, 1, 2025, 4487},  // whiny.error.01
-    {kEntry, 1, false, 1, 2026, 4743},  // whiny.error.02
-    {kEntry, 1, false, 1, 2027, 4880},  // whiny.error.03
-    {kEntry, 1, true, 1, 2028, 450},  // whiny.stopped.01
-    {kEntry, 1, true, 1, 2029, 450},  // whiny.stopped.02
-    {kEntry, 1, true, 1, 2030, 450},  // whiny.stopped.03
-    {kEntry, 1, true, 1, 2031, 450},  // whiny.poked.01
-    {kEntry, 1, true, 1, 2032, 450},  // whiny.poked.02
-    {kEntry, 1, true, 1, 2033, 450},  // whiny.poked.03
-    {kEntry, 1, true, 1, 2034, 450},  // whiny.tap_spam.01
-    {kEntry, 1, true, 1, 2035, 450},  // whiny.tap_spam.02
-    {kEntry, 1, true, 1, 2036, 450},  // whiny.tap_spam.03
-    {kSilent, 1, true, 1, 2037, 450},  // wounded.idle.01
-    {kSilent, 1, true, 1, 2038, 450},  // wounded.idle.02
-    {kSilent, 1, true, 1, 2039, 450},  // wounded.idle.03
-    {kLoop, 1, true, 8, 2040, 450},  // wounded.working.01
-    {kLoop, 1, true, 8, 2048, 450},  // wounded.working.02
-    {kLoop, 1, true, 8, 2056, 450},  // wounded.working.03
-    {kLoop, 1, true, 8, 2064, 450},  // wounded.working.04
-    {kLoop, 1, true, 8, 2072, 450},  // wounded.working.05
-    {kEntry, 1, false, 1, 2080, 2980},  // wounded.needs_you.01
-    {kEntry, 1, false, 1, 2081, 3100},  // wounded.needs_you.02
-    {kEntry, 1, false, 1, 2082, 3220},  // wounded.needs_you.03
-    {kEntry, 1, false, 1, 2083, 5428},  // wounded.task_complete.01
-    {kEntry, 1, false, 1, 2084, 5942},  // wounded.task_complete.02
-    {kEntry, 1, false, 1, 2085, 5703},  // wounded.task_complete.03
-    {kEntry, 1, false, 1, 2086, 3868},  // wounded.task_complete.04
-    {kEntry, 1, false, 1, 2087, 3832},  // wounded.task_complete.05
-    {kEntry, 1, false, 1, 2088, 4143},  // wounded.task_complete.06
-    {kSilent, 1, true, 1, 2089, 450},  // wounded.asleep.01
-    {kSilent, 1, true, 1, 2090, 450},  // wounded.asleep.02
-    {kSilent, 1, true, 1, 2091, 450},  // wounded.asleep.03
-    {kSilent, 1, true, 1, 2092, 450},  // wounded.no_app.01
-    {kSilent, 1, true, 1, 2093, 450},  // wounded.no_app.02
-    {kSilent, 1, true, 1, 2094, 450},  // wounded.no_app.03
-    {kSilent, 1, true, 1, 2095, 450},  // wounded.listening.01
-    {kSilent, 1, true, 1, 2096, 450},  // wounded.listening.02
-    {kSilent, 1, true, 1, 2097, 450},  // wounded.listening.03
-    {kEntry, 1, true, 1, 2098, 450},  // wounded.starting.01
-    {kEntry, 1, true, 1, 2099, 450},  // wounded.starting.02
-    {kEntry, 1, true, 1, 2100, 450},  // wounded.starting.03
-    {kEntry, 1, true, 1, 2101, 450},  // wounded.starting.04
-    {kEntry, 1, true, 1, 2102, 450},  // wounded.starting.05
-    {kEntry, 1, true, 1, 2103, 450},  // wounded.starting.06
-    {kEntry, 1, true, 1, 2104, 450},  // wounded.starting.07
-    {kEntry, 1, true, 1, 2105, 450},  // wounded.starting.08
-    {kEntry, 1, true, 1, 2106, 450},  // wounded.starting.09
-    {kLoop, 1, true, 8, 2107, 450},  // wounded.planning.01
-    {kLoop, 1, true, 8, 2115, 450},  // wounded.planning.02
-    {kLoop, 1, true, 8, 2123, 450},  // wounded.planning.03
-    {kLoop, 1, true, 8, 2131, 450},  // wounded.terminal.01
-    {kLoop, 1, true, 8, 2139, 450},  // wounded.terminal.02
-    {kLoop, 1, true, 8, 2147, 450},  // wounded.terminal.03
-    {kLoop, 1, true, 8, 2155, 450},  // wounded.tool_use.01
-    {kLoop, 1, true, 8, 2163, 450},  // wounded.tool_use.02
-    {kLoop, 1, true, 8, 2171, 450},  // wounded.tool_use.03
-    {kLoop, 1, true, 8, 2179, 450},  // wounded.searching.01
-    {kLoop, 1, true, 8, 2187, 450},  // wounded.searching.02
-    {kLoop, 1, true, 8, 2195, 450},  // wounded.searching.03
-    {kLoop, 1, true, 8, 2203, 450},  // wounded.analyzing.01
-    {kLoop, 1, true, 8, 2211, 450},  // wounded.analyzing.02
-    {kLoop, 1, true, 8, 2219, 450},  // wounded.analyzing.03
-    {kLoop, 1, true, 8, 2227, 450},  // wounded.testing.01
-    {kLoop, 1, true, 8, 2235, 450},  // wounded.testing.02
-    {kLoop, 1, true, 8, 2243, 450},  // wounded.testing.03
-    {kEntry, 1, true, 1, 2251, 450},  // wounded.delegating.01
-    {kEntry, 1, true, 1, 2252, 450},  // wounded.delegating.02
-    {kEntry, 1, true, 1, 2253, 450},  // wounded.delegating.03
-    {kEntry, 1, true, 1, 2254, 450},  // wounded.helper_return.01
-    {kEntry, 1, true, 1, 2255, 450},  // wounded.helper_return.02
-    {kEntry, 1, true, 1, 2256, 450},  // wounded.helper_return.03
-    {kSilent, 1, true, 1, 2257, 450},  // wounded.waiting.01
-    {kSilent, 1, true, 1, 2258, 450},  // wounded.waiting.02
-    {kSilent, 1, true, 1, 2259, 450},  // wounded.waiting.03
-    {kEntry, 1, true, 1, 2260, 450},  // wounded.reply_ready.01
-    {kEntry, 1, true, 1, 2261, 450},  // wounded.reply_ready.02
-    {kEntry, 1, true, 1, 2262, 450},  // wounded.reply_ready.03
-    {kEntry, 1, false, 1, 2263, 5063},  // wounded.error.01
-    {kEntry, 1, false, 1, 2264, 5359},  // wounded.error.02
-    {kEntry, 1, false, 1, 2265, 5513},  // wounded.error.03
-    {kEntry, 1, true, 1, 2266, 450},  // wounded.stopped.01
-    {kEntry, 1, true, 1, 2267, 450},  // wounded.stopped.02
-    {kEntry, 1, true, 1, 2268, 450},  // wounded.stopped.03
-    {kEntry, 1, true, 1, 2269, 450},  // wounded.poked.01
-    {kEntry, 1, true, 1, 2270, 450},  // wounded.poked.02
-    {kEntry, 1, true, 1, 2271, 450},  // wounded.poked.03
-    {kEntry, 1, true, 1, 2272, 450},  // wounded.tap_spam.01
-    {kEntry, 1, true, 1, 2273, 450},  // wounded.tap_spam.02
-    {kEntry, 1, true, 1, 2274, 450},  // wounded.tap_spam.03
+    {kEntry, 1, true, 1, 63, 450},  // happy.starting.04
+    {kLoop, 1, true, 8, 64, 450},  // happy.planning.01
+    {kLoop, 1, true, 8, 72, 450},  // happy.terminal.01
+    {kLoop, 1, true, 8, 80, 450},  // happy.tool_use.01
+    {kLoop, 1, true, 8, 88, 450},  // happy.searching.01
+    {kLoop, 1, true, 8, 96, 450},  // happy.analyzing.01
+    {kLoop, 1, true, 8, 104, 450},  // happy.testing.01
+    {kEntry, 1, true, 1, 112, 450},  // happy.delegating.01
+    {kEntry, 1, true, 1, 113, 450},  // happy.delegating.02
+    {kEntry, 1, true, 1, 114, 450},  // happy.helper_return.01
+    {kEntry, 1, true, 1, 115, 450},  // happy.helper_return.02
+    {kSilent, 1, true, 1, 116, 450},  // happy.waiting.01
+    {kEntry, 1, true, 1, 117, 450},  // happy.reply_ready.01
+    {kEntry, 1, false, 1, 118, 3596},  // happy.error.01
+    {kEntry, 1, true, 1, 119, 450},  // happy.stopped.01
+    {kEntry, 1, true, 1, 120, 450},  // happy.poked.01
+    {kEntry, 1, true, 1, 121, 450},  // happy.tap_spam.01
+    {kSilent, 1, true, 1, 122, 450},  // excited.idle.01
+    {kSilent, 1, true, 1, 123, 450},  // excited.idle.02
+    {kSilent, 1, true, 1, 124, 450},  // excited.idle.03
+    {kSparse, 2, true, 8, 125, 450},  // excited.working.01
+    {kSparse, 2, true, 8, 133, 450},  // excited.working.02
+    {kLoop, 1, true, 8, 141, 450},  // excited.working.03
+    {kLoop, 1, true, 8, 149, 450},  // excited.working.04
+    {kSparse, 2, true, 8, 157, 450},  // excited.working.05
+    {kEntry, 1, false, 1, 165, 2520},  // excited.needs_you.01
+    {kEntry, 1, false, 1, 166, 2520},  // excited.needs_you.02
+    {kEntry, 1, false, 1, 167, 2440},  // excited.needs_you.03
+    {kEntry, 1, false, 1, 168, 3050},  // excited.task_complete.01
+    {kEntry, 1, false, 1, 169, 3580},  // excited.task_complete.02
+    {kEntry, 1, false, 1, 170, 3570},  // excited.task_complete.03
+    {kEntry, 1, false, 1, 171, 5116},  // excited.task_complete.04
+    {kEntry, 1, false, 1, 172, 5040},  // excited.task_complete.05
+    {kSilent, 1, true, 1, 173, 450},  // excited.asleep.01
+    {kSilent, 1, true, 1, 174, 450},  // excited.asleep.02
+    {kSilent, 1, true, 1, 175, 450},  // excited.asleep.03
+    {kSilent, 1, true, 1, 176, 450},  // excited.no_app.01
+    {kSilent, 1, true, 1, 177, 450},  // excited.no_app.02
+    {kSilent, 1, true, 1, 178, 450},  // excited.no_app.03
+    {kSilent, 1, true, 1, 179, 450},  // excited.listening.01
+    {kSilent, 1, true, 1, 180, 450},  // excited.listening.02
+    {kSilent, 1, true, 1, 181, 450},  // excited.listening.03
+    {kEntry, 1, true, 1, 182, 450},  // excited.starting.01
+    {kEntry, 1, true, 1, 183, 450},  // excited.starting.02
+    {kEntry, 1, true, 1, 184, 450},  // excited.starting.03
+    {kEntry, 1, true, 1, 185, 450},  // excited.starting.04
+    {kLoop, 1, true, 8, 186, 450},  // excited.planning.01
+    {kSparse, 2, true, 8, 194, 450},  // excited.terminal.01
+    {kSparse, 2, true, 8, 202, 450},  // excited.tool_use.01
+    {kLoop, 1, true, 8, 210, 450},  // excited.searching.01
+    {kLoop, 1, true, 8, 218, 450},  // excited.analyzing.01
+    {kSparse, 2, true, 8, 226, 450},  // excited.testing.01
+    {kEntry, 1, true, 1, 234, 450},  // excited.delegating.01
+    {kEntry, 1, true, 1, 235, 450},  // excited.delegating.02
+    {kEntry, 1, true, 1, 236, 450},  // excited.helper_return.01
+    {kEntry, 1, true, 1, 237, 450},  // excited.helper_return.02
+    {kSilent, 1, true, 1, 238, 450},  // excited.waiting.01
+    {kEntry, 1, true, 1, 239, 450},  // excited.reply_ready.01
+    {kEntry, 1, false, 1, 240, 2994},  // excited.error.01
+    {kEntry, 1, true, 1, 241, 450},  // excited.stopped.01
+    {kEntry, 1, true, 1, 242, 450},  // excited.poked.01
+    {kEntry, 1, true, 1, 243, 450},  // excited.tap_spam.01
+    {kSilent, 1, true, 1, 244, 450},  // proud.idle.01
+    {kSilent, 1, true, 1, 245, 450},  // proud.idle.02
+    {kSilent, 1, true, 1, 246, 450},  // proud.idle.03
+    {kLoop, 1, true, 8, 247, 450},  // proud.working.01
+    {kLoop, 1, true, 8, 255, 450},  // proud.working.02
+    {kLoop, 1, true, 8, 263, 450},  // proud.working.03
+    {kLoop, 1, true, 8, 271, 450},  // proud.working.04
+    {kLoop, 1, true, 8, 279, 450},  // proud.working.05
+    {kEntry, 1, false, 1, 287, 2560},  // proud.needs_you.01
+    {kEntry, 1, false, 1, 288, 2660},  // proud.needs_you.02
+    {kEntry, 1, false, 1, 289, 2540},  // proud.needs_you.03
+    {kEntry, 1, false, 1, 290, 3050},  // proud.task_complete.01
+    {kEntry, 1, false, 1, 291, 3580},  // proud.task_complete.02
+    {kEntry, 1, false, 1, 292, 3570},  // proud.task_complete.03
+    {kEntry, 1, false, 1, 293, 5116},  // proud.task_complete.04
+    {kEntry, 1, false, 1, 294, 5040},  // proud.task_complete.05
+    {kSilent, 1, true, 1, 295, 450},  // proud.asleep.01
+    {kSilent, 1, true, 1, 296, 450},  // proud.asleep.02
+    {kSilent, 1, true, 1, 297, 450},  // proud.asleep.03
+    {kSilent, 1, true, 1, 298, 450},  // proud.no_app.01
+    {kSilent, 1, true, 1, 299, 450},  // proud.no_app.02
+    {kSilent, 1, true, 1, 300, 450},  // proud.no_app.03
+    {kSilent, 1, true, 1, 301, 450},  // proud.listening.01
+    {kSilent, 1, true, 1, 302, 450},  // proud.listening.02
+    {kSilent, 1, true, 1, 303, 450},  // proud.listening.03
+    {kEntry, 1, true, 1, 304, 450},  // proud.starting.01
+    {kEntry, 1, true, 1, 305, 450},  // proud.starting.02
+    {kEntry, 1, true, 1, 306, 450},  // proud.starting.03
+    {kEntry, 1, true, 1, 307, 450},  // proud.starting.04
+    {kLoop, 1, true, 8, 308, 450},  // proud.planning.01
+    {kLoop, 1, true, 8, 316, 450},  // proud.terminal.01
+    {kLoop, 1, true, 8, 324, 450},  // proud.tool_use.01
+    {kLoop, 1, true, 8, 332, 450},  // proud.searching.01
+    {kLoop, 1, true, 8, 340, 450},  // proud.analyzing.01
+    {kLoop, 1, true, 8, 348, 450},  // proud.testing.01
+    {kEntry, 1, true, 1, 356, 450},  // proud.delegating.01
+    {kEntry, 1, true, 1, 357, 450},  // proud.delegating.02
+    {kEntry, 1, true, 1, 358, 450},  // proud.helper_return.01
+    {kEntry, 1, true, 1, 359, 450},  // proud.helper_return.02
+    {kSilent, 1, true, 1, 360, 450},  // proud.waiting.01
+    {kEntry, 1, true, 1, 361, 450},  // proud.reply_ready.01
+    {kEntry, 1, false, 1, 362, 3924},  // proud.error.01
+    {kEntry, 1, true, 1, 363, 450},  // proud.stopped.01
+    {kEntry, 1, true, 1, 364, 450},  // proud.poked.01
+    {kEntry, 1, true, 1, 365, 450},  // proud.tap_spam.01
+    {kSilent, 1, true, 1, 366, 450},  // curious.idle.01
+    {kSilent, 1, true, 1, 367, 450},  // curious.idle.02
+    {kSilent, 1, true, 1, 368, 450},  // curious.idle.03
+    {kLoop, 1, true, 8, 369, 450},  // curious.working.01
+    {kLoop, 1, true, 8, 377, 450},  // curious.working.02
+    {kLoop, 1, true, 8, 385, 450},  // curious.working.03
+    {kLoop, 1, true, 8, 393, 450},  // curious.working.04
+    {kLoop, 1, true, 8, 401, 450},  // curious.working.05
+    {kEntry, 1, false, 1, 409, 2700},  // curious.needs_you.01
+    {kEntry, 1, false, 1, 410, 2640},  // curious.needs_you.02
+    {kEntry, 1, false, 1, 411, 2760},  // curious.needs_you.03
+    {kEntry, 1, false, 1, 412, 2500},  // curious.task_complete.01
+    {kEntry, 1, false, 1, 413, 3580},  // curious.task_complete.02
+    {kEntry, 1, false, 1, 414, 3570},  // curious.task_complete.03
+    {kEntry, 1, false, 1, 415, 5116},  // curious.task_complete.04
+    {kEntry, 1, false, 1, 416, 5040},  // curious.task_complete.05
+    {kSilent, 1, true, 1, 417, 450},  // curious.asleep.01
+    {kSilent, 1, true, 1, 418, 450},  // curious.asleep.02
+    {kSilent, 1, true, 1, 419, 450},  // curious.asleep.03
+    {kSilent, 1, true, 1, 420, 450},  // curious.no_app.01
+    {kSilent, 1, true, 1, 421, 450},  // curious.no_app.02
+    {kSilent, 1, true, 1, 422, 450},  // curious.no_app.03
+    {kSilent, 1, true, 1, 423, 450},  // curious.listening.01
+    {kSilent, 1, true, 1, 424, 450},  // curious.listening.02
+    {kSilent, 1, true, 1, 425, 450},  // curious.listening.03
+    {kEntry, 1, true, 1, 426, 450},  // curious.starting.01
+    {kEntry, 1, true, 1, 427, 450},  // curious.starting.02
+    {kEntry, 1, true, 1, 428, 450},  // curious.starting.03
+    {kEntry, 1, true, 1, 429, 450},  // curious.starting.04
+    {kLoop, 1, true, 8, 430, 450},  // curious.planning.01
+    {kLoop, 1, true, 8, 438, 450},  // curious.terminal.01
+    {kLoop, 1, true, 8, 446, 450},  // curious.tool_use.01
+    {kLoop, 1, true, 8, 454, 450},  // curious.searching.01
+    {kLoop, 1, true, 8, 462, 450},  // curious.analyzing.01
+    {kLoop, 1, true, 8, 470, 450},  // curious.testing.01
+    {kEntry, 1, true, 1, 478, 450},  // curious.delegating.01
+    {kEntry, 1, true, 1, 479, 450},  // curious.delegating.02
+    {kEntry, 1, true, 1, 480, 450},  // curious.helper_return.01
+    {kEntry, 1, true, 1, 481, 450},  // curious.helper_return.02
+    {kSilent, 1, true, 1, 482, 450},  // curious.waiting.01
+    {kEntry, 1, true, 1, 483, 450},  // curious.reply_ready.01
+    {kEntry, 1, false, 1, 484, 3815},  // curious.error.01
+    {kEntry, 1, true, 1, 485, 450},  // curious.stopped.01
+    {kEntry, 1, true, 1, 486, 450},  // curious.poked.01
+    {kEntry, 1, true, 1, 487, 450},  // curious.tap_spam.01
+    {kSilent, 1, true, 1, 488, 450},  // determined.idle.01
+    {kSilent, 1, true, 1, 489, 450},  // determined.idle.02
+    {kSilent, 1, true, 1, 490, 450},  // determined.idle.03
+    {kSparse, 2, true, 8, 491, 450},  // determined.working.01
+    {kLoop, 1, true, 8, 499, 450},  // determined.working.02
+    {kLoop, 1, true, 8, 507, 450},  // determined.working.03
+    {kLoop, 1, true, 8, 515, 450},  // determined.working.04
+    {kLoop, 1, true, 8, 523, 450},  // determined.working.05
+    {kEntry, 1, false, 1, 531, 2320},  // determined.needs_you.01
+    {kEntry, 1, false, 1, 532, 2340},  // determined.needs_you.02
+    {kEntry, 1, false, 1, 533, 2360},  // determined.needs_you.03
+    {kEntry, 1, false, 1, 534, 2500},  // determined.task_complete.01
+    {kEntry, 1, false, 1, 535, 3580},  // determined.task_complete.02
+    {kEntry, 1, false, 1, 536, 3570},  // determined.task_complete.03
+    {kEntry, 1, false, 1, 537, 5116},  // determined.task_complete.04
+    {kEntry, 1, false, 1, 538, 5040},  // determined.task_complete.05
+    {kSilent, 1, true, 1, 539, 450},  // determined.asleep.01
+    {kSilent, 1, true, 1, 540, 450},  // determined.asleep.02
+    {kSilent, 1, true, 1, 541, 450},  // determined.asleep.03
+    {kSilent, 1, true, 1, 542, 450},  // determined.no_app.01
+    {kSilent, 1, true, 1, 543, 450},  // determined.no_app.02
+    {kSilent, 1, true, 1, 544, 450},  // determined.no_app.03
+    {kSilent, 1, true, 1, 545, 450},  // determined.listening.01
+    {kSilent, 1, true, 1, 546, 450},  // determined.listening.02
+    {kSilent, 1, true, 1, 547, 450},  // determined.listening.03
+    {kEntry, 1, true, 1, 548, 450},  // determined.starting.01
+    {kEntry, 1, true, 1, 549, 450},  // determined.starting.02
+    {kEntry, 1, true, 1, 550, 450},  // determined.starting.03
+    {kEntry, 1, true, 1, 551, 450},  // determined.starting.04
+    {kLoop, 1, true, 8, 552, 450},  // determined.planning.01
+    {kSparse, 2, true, 8, 560, 450},  // determined.terminal.01
+    {kLoop, 1, true, 8, 568, 450},  // determined.tool_use.01
+    {kLoop, 1, true, 8, 576, 450},  // determined.searching.01
+    {kLoop, 1, true, 8, 584, 450},  // determined.analyzing.01
+    {kLoop, 1, true, 8, 592, 450},  // determined.testing.01
+    {kEntry, 1, true, 1, 600, 450},  // determined.delegating.01
+    {kEntry, 1, true, 1, 601, 450},  // determined.delegating.02
+    {kEntry, 1, true, 1, 602, 450},  // determined.helper_return.01
+    {kEntry, 1, true, 1, 603, 450},  // determined.helper_return.02
+    {kSilent, 1, true, 1, 604, 450},  // determined.waiting.01
+    {kEntry, 1, true, 1, 605, 450},  // determined.reply_ready.01
+    {kEntry, 1, false, 1, 606, 3377},  // determined.error.01
+    {kEntry, 1, true, 1, 607, 450},  // determined.stopped.01
+    {kEntry, 1, true, 1, 608, 450},  // determined.poked.01
+    {kEntry, 1, true, 1, 609, 450},  // determined.tap_spam.01
+    {kSilent, 1, true, 1, 610, 450},  // grumpy.idle.01
+    {kSilent, 1, true, 1, 611, 450},  // grumpy.idle.02
+    {kSilent, 1, true, 1, 612, 450},  // grumpy.idle.03
+    {kSparse, 2, true, 8, 613, 450},  // grumpy.working.01
+    {kSparse, 2, true, 8, 621, 450},  // grumpy.working.02
+    {kLoop, 1, true, 8, 629, 450},  // grumpy.working.03
+    {kSparse, 2, true, 8, 637, 450},  // grumpy.working.04
+    {kSparse, 2, true, 8, 645, 450},  // grumpy.working.05
+    {kEntry, 1, false, 1, 653, 2440},  // grumpy.needs_you.01
+    {kEntry, 1, false, 1, 654, 2480},  // grumpy.needs_you.02
+    {kEntry, 1, false, 1, 655, 2420},  // grumpy.needs_you.03
+    {kEntry, 1, false, 1, 656, 2500},  // grumpy.task_complete.01
+    {kEntry, 1, false, 1, 657, 3580},  // grumpy.task_complete.02
+    {kEntry, 1, false, 1, 658, 3570},  // grumpy.task_complete.03
+    {kEntry, 1, false, 1, 659, 5116},  // grumpy.task_complete.04
+    {kEntry, 1, false, 1, 660, 5040},  // grumpy.task_complete.05
+    {kSilent, 1, true, 1, 661, 450},  // grumpy.asleep.01
+    {kSilent, 1, true, 1, 662, 450},  // grumpy.asleep.02
+    {kSilent, 1, true, 1, 663, 450},  // grumpy.asleep.03
+    {kSilent, 1, true, 1, 664, 450},  // grumpy.no_app.01
+    {kSilent, 1, true, 1, 665, 450},  // grumpy.no_app.02
+    {kSilent, 1, true, 1, 666, 450},  // grumpy.no_app.03
+    {kSilent, 1, true, 1, 667, 450},  // grumpy.listening.01
+    {kSilent, 1, true, 1, 668, 450},  // grumpy.listening.02
+    {kSilent, 1, true, 1, 669, 450},  // grumpy.listening.03
+    {kEntry, 1, true, 1, 670, 450},  // grumpy.starting.01
+    {kEntry, 1, true, 1, 671, 450},  // grumpy.starting.02
+    {kEntry, 1, true, 1, 672, 450},  // grumpy.starting.03
+    {kEntry, 1, true, 1, 673, 450},  // grumpy.starting.04
+    {kLoop, 1, true, 8, 674, 450},  // grumpy.planning.01
+    {kSparse, 2, true, 8, 682, 450},  // grumpy.terminal.01
+    {kSparse, 2, true, 8, 690, 450},  // grumpy.tool_use.01
+    {kLoop, 1, true, 8, 698, 450},  // grumpy.searching.01
+    {kLoop, 1, true, 8, 706, 450},  // grumpy.analyzing.01
+    {kSparse, 2, true, 8, 714, 450},  // grumpy.testing.01
+    {kEntry, 1, true, 1, 722, 450},  // grumpy.delegating.01
+    {kEntry, 1, true, 1, 723, 450},  // grumpy.delegating.02
+    {kEntry, 1, true, 1, 724, 450},  // grumpy.helper_return.01
+    {kEntry, 1, true, 1, 725, 450},  // grumpy.helper_return.02
+    {kSilent, 1, true, 1, 726, 450},  // grumpy.waiting.01
+    {kEntry, 1, true, 1, 727, 450},  // grumpy.reply_ready.01
+    {kEntry, 1, false, 1, 728, 2939},  // grumpy.error.01
+    {kEntry, 1, true, 1, 729, 450},  // grumpy.stopped.01
+    {kEntry, 1, true, 1, 730, 450},  // grumpy.poked.01
+    {kEntry, 1, true, 1, 731, 450},  // grumpy.tap_spam.01
+    {kSilent, 1, true, 1, 732, 450},  // sad.idle.01
+    {kSilent, 1, true, 1, 733, 450},  // sad.idle.02
+    {kSilent, 1, true, 1, 734, 450},  // sad.idle.03
+    {kLoop, 1, true, 8, 735, 450},  // sad.working.01
+    {kLoop, 1, true, 8, 743, 450},  // sad.working.02
+    {kLoop, 1, true, 8, 751, 450},  // sad.working.03
+    {kLoop, 1, true, 8, 759, 450},  // sad.working.04
+    {kLoop, 1, true, 8, 767, 450},  // sad.working.05
+    {kEntry, 1, false, 1, 775, 3060},  // sad.needs_you.01
+    {kEntry, 1, false, 1, 776, 3220},  // sad.needs_you.02
+    {kEntry, 1, false, 1, 777, 3320},  // sad.needs_you.03
+    {kEntry, 1, false, 1, 778, 2500},  // sad.task_complete.01
+    {kEntry, 1, false, 1, 779, 3580},  // sad.task_complete.02
+    {kEntry, 1, false, 1, 780, 3570},  // sad.task_complete.03
+    {kEntry, 1, false, 1, 781, 5116},  // sad.task_complete.04
+    {kEntry, 1, false, 1, 782, 5040},  // sad.task_complete.05
+    {kSilent, 1, true, 1, 783, 450},  // sad.asleep.01
+    {kSilent, 1, true, 1, 784, 450},  // sad.asleep.02
+    {kSilent, 1, true, 1, 785, 450},  // sad.asleep.03
+    {kSilent, 1, true, 1, 786, 450},  // sad.no_app.01
+    {kSilent, 1, true, 1, 787, 450},  // sad.no_app.02
+    {kSilent, 1, true, 1, 788, 450},  // sad.no_app.03
+    {kSilent, 1, true, 1, 789, 450},  // sad.listening.01
+    {kSilent, 1, true, 1, 790, 450},  // sad.listening.02
+    {kSilent, 1, true, 1, 791, 450},  // sad.listening.03
+    {kEntry, 1, true, 1, 792, 450},  // sad.starting.01
+    {kEntry, 1, true, 1, 793, 450},  // sad.starting.02
+    {kEntry, 1, true, 1, 794, 450},  // sad.starting.03
+    {kEntry, 1, true, 1, 795, 450},  // sad.starting.04
+    {kLoop, 1, true, 8, 796, 450},  // sad.planning.01
+    {kLoop, 1, true, 8, 804, 450},  // sad.terminal.01
+    {kLoop, 1, true, 8, 812, 450},  // sad.tool_use.01
+    {kLoop, 1, true, 8, 820, 450},  // sad.searching.01
+    {kLoop, 1, true, 8, 828, 450},  // sad.analyzing.01
+    {kLoop, 1, true, 8, 836, 450},  // sad.testing.01
+    {kEntry, 1, true, 1, 844, 450},  // sad.delegating.01
+    {kEntry, 1, true, 1, 845, 450},  // sad.delegating.02
+    {kEntry, 1, true, 1, 846, 450},  // sad.helper_return.01
+    {kEntry, 1, true, 1, 847, 450},  // sad.helper_return.02
+    {kSilent, 1, true, 1, 848, 450},  // sad.waiting.01
+    {kEntry, 1, true, 1, 849, 450},  // sad.reply_ready.01
+    {kEntry, 1, false, 1, 850, 4362},  // sad.error.01
+    {kEntry, 1, true, 1, 851, 450},  // sad.stopped.01
+    {kEntry, 1, true, 1, 852, 450},  // sad.poked.01
+    {kEntry, 1, true, 1, 853, 450},  // sad.tap_spam.01
+    {kSilent, 1, true, 1, 854, 450},  // calm.idle.01
+    {kSilent, 1, true, 1, 855, 450},  // calm.idle.02
+    {kSilent, 1, true, 1, 856, 450},  // calm.idle.03
+    {kLoop, 1, true, 8, 857, 450},  // calm.working.01
+    {kLoop, 1, true, 8, 865, 450},  // calm.working.02
+    {kLoop, 1, true, 8, 873, 450},  // calm.working.03
+    {kLoop, 1, true, 8, 881, 450},  // calm.working.04
+    {kLoop, 1, true, 8, 889, 450},  // calm.working.05
+    {kEntry, 1, false, 1, 897, 2620},  // calm.needs_you.01
+    {kEntry, 1, false, 1, 898, 2740},  // calm.needs_you.02
+    {kEntry, 1, false, 1, 899, 2860},  // calm.needs_you.03
+    {kEntry, 1, false, 1, 900, 5364},  // calm.task_complete.01
+    {kEntry, 1, false, 1, 901, 5879},  // calm.task_complete.02
+    {kEntry, 1, false, 1, 902, 5631},  // calm.task_complete.03
+    {kEntry, 1, false, 1, 903, 3804},  // calm.task_complete.04
+    {kEntry, 1, false, 1, 904, 3769},  // calm.task_complete.05
+    {kEntry, 1, false, 1, 905, 4071},  // calm.task_complete.06
+    {kSilent, 1, true, 1, 906, 450},  // calm.asleep.01
+    {kSilent, 1, true, 1, 907, 450},  // calm.asleep.02
+    {kSilent, 1, true, 1, 908, 450},  // calm.asleep.03
+    {kSilent, 1, true, 1, 909, 450},  // calm.no_app.01
+    {kSilent, 1, true, 1, 910, 450},  // calm.no_app.02
+    {kSilent, 1, true, 1, 911, 450},  // calm.no_app.03
+    {kSilent, 1, true, 1, 912, 450},  // calm.listening.01
+    {kSilent, 1, true, 1, 913, 450},  // calm.listening.02
+    {kSilent, 1, true, 1, 914, 450},  // calm.listening.03
+    {kEntry, 1, true, 1, 915, 450},  // calm.starting.01
+    {kEntry, 1, true, 1, 916, 450},  // calm.starting.02
+    {kEntry, 1, true, 1, 917, 450},  // calm.starting.03
+    {kEntry, 1, true, 1, 918, 450},  // calm.starting.04
+    {kEntry, 1, true, 1, 919, 450},  // calm.starting.05
+    {kEntry, 1, true, 1, 920, 450},  // calm.starting.06
+    {kEntry, 1, true, 1, 921, 450},  // calm.starting.07
+    {kEntry, 1, true, 1, 922, 450},  // calm.starting.08
+    {kEntry, 1, true, 1, 923, 450},  // calm.starting.09
+    {kEntry, 1, true, 1, 924, 450},  // calm.starting.10
+    {kEntry, 1, true, 1, 925, 450},  // calm.starting.11
+    {kEntry, 1, true, 1, 926, 450},  // calm.starting.12
+    {kLoop, 1, true, 8, 927, 450},  // calm.planning.01
+    {kLoop, 1, true, 8, 935, 450},  // calm.planning.02
+    {kLoop, 1, true, 8, 943, 450},  // calm.planning.03
+    {kLoop, 1, true, 8, 951, 450},  // calm.terminal.01
+    {kLoop, 1, true, 8, 959, 450},  // calm.terminal.02
+    {kLoop, 1, true, 8, 967, 450},  // calm.terminal.03
+    {kLoop, 1, true, 8, 975, 450},  // calm.tool_use.01
+    {kLoop, 1, true, 8, 983, 450},  // calm.tool_use.02
+    {kLoop, 1, true, 8, 991, 450},  // calm.tool_use.03
+    {kLoop, 1, true, 8, 999, 450},  // calm.searching.01
+    {kLoop, 1, true, 8, 1007, 450},  // calm.searching.02
+    {kLoop, 1, true, 8, 1015, 450},  // calm.searching.03
+    {kLoop, 1, true, 8, 1023, 450},  // calm.analyzing.01
+    {kLoop, 1, true, 8, 1031, 450},  // calm.analyzing.02
+    {kLoop, 1, true, 8, 1039, 450},  // calm.analyzing.03
+    {kLoop, 1, true, 8, 1047, 450},  // calm.testing.01
+    {kLoop, 1, true, 8, 1055, 450},  // calm.testing.02
+    {kLoop, 1, true, 8, 1063, 450},  // calm.testing.03
+    {kEntry, 1, true, 1, 1071, 450},  // calm.delegating.01
+    {kEntry, 1, true, 1, 1072, 450},  // calm.delegating.02
+    {kEntry, 1, true, 1, 1073, 450},  // calm.delegating.03
+    {kEntry, 1, true, 1, 1074, 450},  // calm.helper_return.01
+    {kEntry, 1, true, 1, 1075, 450},  // calm.helper_return.02
+    {kEntry, 1, true, 1, 1076, 450},  // calm.helper_return.03
+    {kSilent, 1, true, 1, 1077, 450},  // calm.waiting.01
+    {kSilent, 1, true, 1, 1078, 450},  // calm.waiting.02
+    {kSilent, 1, true, 1, 1079, 450},  // calm.waiting.03
+    {kEntry, 1, true, 1, 1080, 450},  // calm.reply_ready.01
+    {kEntry, 1, true, 1, 1081, 450},  // calm.reply_ready.02
+    {kEntry, 1, true, 1, 1082, 450},  // calm.reply_ready.03
+    {kEntry, 1, false, 1, 1083, 4546},  // calm.error.01
+    {kEntry, 1, false, 1, 1084, 4805},  // calm.error.02
+    {kEntry, 1, false, 1, 1085, 4949},  // calm.error.03
+    {kEntry, 1, true, 1, 1086, 450},  // calm.stopped.01
+    {kEntry, 1, true, 1, 1087, 450},  // calm.stopped.02
+    {kEntry, 1, true, 1, 1088, 450},  // calm.stopped.03
+    {kEntry, 1, true, 1, 1089, 450},  // calm.poked.01
+    {kEntry, 1, true, 1, 1090, 450},  // calm.poked.02
+    {kEntry, 1, true, 1, 1091, 450},  // calm.poked.03
+    {kEntry, 1, true, 1, 1092, 450},  // calm.tap_spam.01
+    {kEntry, 1, true, 1, 1093, 450},  // calm.tap_spam.02
+    {kEntry, 1, true, 1, 1094, 450},  // calm.tap_spam.03
+    {kSilent, 1, true, 1, 1095, 450},  // engaged.idle.01
+    {kSilent, 1, true, 1, 1096, 450},  // engaged.idle.02
+    {kSilent, 1, true, 1, 1097, 450},  // engaged.idle.03
+    {kLoop, 1, true, 8, 1098, 450},  // engaged.working.01
+    {kLoop, 1, true, 8, 1106, 450},  // engaged.working.02
+    {kLoop, 1, true, 8, 1114, 450},  // engaged.working.03
+    {kLoop, 1, true, 8, 1122, 450},  // engaged.working.04
+    {kLoop, 1, true, 8, 1130, 450},  // engaged.working.05
+    {kEntry, 1, false, 1, 1138, 2490},  // engaged.needs_you.01
+    {kEntry, 1, false, 1, 1139, 2670},  // engaged.needs_you.02
+    {kEntry, 1, false, 1, 1140, 2850},  // engaged.needs_you.03
+    {kEntry, 1, false, 1, 1141, 4916},  // engaged.task_complete.01
+    {kEntry, 1, false, 1, 1142, 5436},  // engaged.task_complete.02
+    {kEntry, 1, false, 1, 1143, 5127},  // engaged.task_complete.03
+    {kEntry, 1, false, 1, 1144, 3356},  // engaged.task_complete.04
+    {kEntry, 1, false, 1, 1145, 3326},  // engaged.task_complete.05
+    {kEntry, 1, false, 1, 1146, 3567},  // engaged.task_complete.06
+    {kSilent, 1, true, 1, 1147, 450},  // engaged.asleep.01
+    {kSilent, 1, true, 1, 1148, 450},  // engaged.asleep.02
+    {kSilent, 1, true, 1, 1149, 450},  // engaged.asleep.03
+    {kSilent, 1, true, 1, 1150, 450},  // engaged.no_app.01
+    {kSilent, 1, true, 1, 1151, 450},  // engaged.no_app.02
+    {kSilent, 1, true, 1, 1152, 450},  // engaged.no_app.03
+    {kSilent, 1, true, 1, 1153, 450},  // engaged.listening.01
+    {kSilent, 1, true, 1, 1154, 450},  // engaged.listening.02
+    {kSilent, 1, true, 1, 1155, 450},  // engaged.listening.03
+    {kEntry, 1, true, 1, 1156, 450},  // engaged.starting.01
+    {kEntry, 1, true, 1, 1157, 450},  // engaged.starting.02
+    {kEntry, 1, true, 1, 1158, 450},  // engaged.starting.03
+    {kEntry, 1, true, 1, 1159, 450},  // engaged.starting.04
+    {kEntry, 1, true, 1, 1160, 450},  // engaged.starting.05
+    {kEntry, 1, true, 1, 1161, 450},  // engaged.starting.06
+    {kEntry, 1, true, 1, 1162, 450},  // engaged.starting.07
+    {kEntry, 1, true, 1, 1163, 450},  // engaged.starting.08
+    {kEntry, 1, true, 1, 1164, 450},  // engaged.starting.09
+    {kEntry, 1, true, 1, 1165, 450},  // engaged.starting.10
+    {kEntry, 1, true, 1, 1166, 450},  // engaged.starting.11
+    {kEntry, 1, true, 1, 1167, 450},  // engaged.starting.12
+    {kLoop, 1, true, 8, 1168, 450},  // engaged.planning.01
+    {kLoop, 1, true, 8, 1176, 450},  // engaged.planning.02
+    {kLoop, 1, true, 8, 1184, 450},  // engaged.planning.03
+    {kLoop, 1, true, 8, 1192, 450},  // engaged.terminal.01
+    {kLoop, 1, true, 8, 1200, 450},  // engaged.terminal.02
+    {kLoop, 1, true, 8, 1208, 450},  // engaged.terminal.03
+    {kLoop, 1, true, 8, 1216, 450},  // engaged.tool_use.01
+    {kLoop, 1, true, 8, 1224, 450},  // engaged.tool_use.02
+    {kLoop, 1, true, 8, 1232, 450},  // engaged.tool_use.03
+    {kLoop, 1, true, 8, 1240, 450},  // engaged.searching.01
+    {kLoop, 1, true, 8, 1248, 450},  // engaged.searching.02
+    {kLoop, 1, true, 8, 1256, 450},  // engaged.searching.03
+    {kLoop, 1, true, 8, 1264, 450},  // engaged.analyzing.01
+    {kLoop, 1, true, 8, 1272, 450},  // engaged.analyzing.02
+    {kLoop, 1, true, 8, 1280, 450},  // engaged.analyzing.03
+    {kLoop, 1, true, 8, 1288, 450},  // engaged.testing.01
+    {kLoop, 1, true, 8, 1296, 450},  // engaged.testing.02
+    {kLoop, 1, true, 8, 1304, 450},  // engaged.testing.03
+    {kEntry, 1, true, 1, 1312, 450},  // engaged.delegating.01
+    {kEntry, 1, true, 1, 1313, 450},  // engaged.delegating.02
+    {kEntry, 1, true, 1, 1314, 450},  // engaged.delegating.03
+    {kEntry, 1, true, 1, 1315, 450},  // engaged.helper_return.01
+    {kEntry, 1, true, 1, 1316, 450},  // engaged.helper_return.02
+    {kEntry, 1, true, 1, 1317, 450},  // engaged.helper_return.03
+    {kSilent, 1, true, 1, 1318, 450},  // engaged.waiting.01
+    {kSilent, 1, true, 1, 1319, 450},  // engaged.waiting.02
+    {kSilent, 1, true, 1, 1320, 450},  // engaged.waiting.03
+    {kEntry, 1, true, 1, 1321, 450},  // engaged.reply_ready.01
+    {kEntry, 1, true, 1, 1322, 450},  // engaged.reply_ready.02
+    {kEntry, 1, true, 1, 1323, 450},  // engaged.reply_ready.03
+    {kEntry, 1, false, 1, 1324, 3351},  // engaged.error.01
+    {kEntry, 1, false, 1, 1325, 3526},  // engaged.error.02
+    {kEntry, 1, false, 1, 1326, 3635},  // engaged.error.03
+    {kEntry, 1, true, 1, 1327, 450},  // engaged.stopped.01
+    {kEntry, 1, true, 1, 1328, 450},  // engaged.stopped.02
+    {kEntry, 1, true, 1, 1329, 450},  // engaged.stopped.03
+    {kEntry, 1, true, 1, 1330, 450},  // engaged.poked.01
+    {kEntry, 1, true, 1, 1331, 450},  // engaged.poked.02
+    {kEntry, 1, true, 1, 1332, 450},  // engaged.poked.03
+    {kEntry, 1, true, 1, 1333, 450},  // engaged.tap_spam.01
+    {kEntry, 1, true, 1, 1334, 450},  // engaged.tap_spam.02
+    {kEntry, 1, true, 1, 1335, 450},  // engaged.tap_spam.03
+    {kSilent, 1, true, 1, 1336, 450},  // annoyed.idle.01
+    {kSilent, 1, true, 1, 1337, 450},  // annoyed.idle.02
+    {kSilent, 1, true, 1, 1338, 450},  // annoyed.idle.03
+    {kLoop, 1, true, 8, 1339, 450},  // annoyed.working.01
+    {kLoop, 1, true, 8, 1347, 450},  // annoyed.working.02
+    {kLoop, 1, true, 8, 1355, 450},  // annoyed.working.03
+    {kLoop, 1, true, 8, 1363, 450},  // annoyed.working.04
+    {kLoop, 1, true, 8, 1371, 450},  // annoyed.working.05
+    {kEntry, 1, false, 1, 1379, 2780},  // annoyed.needs_you.01
+    {kEntry, 1, false, 1, 1380, 2960},  // annoyed.needs_you.02
+    {kEntry, 1, false, 1, 1381, 3140},  // annoyed.needs_you.03
+    {kEntry, 1, false, 1, 1382, 5108},  // annoyed.task_complete.01
+    {kEntry, 1, false, 1, 1383, 5626},  // annoyed.task_complete.02
+    {kEntry, 1, false, 1, 1384, 5343},  // annoyed.task_complete.03
+    {kEntry, 1, false, 1, 1385, 3548},  // annoyed.task_complete.04
+    {kEntry, 1, false, 1, 1386, 3516},  // annoyed.task_complete.05
+    {kEntry, 1, false, 1, 1387, 3783},  // annoyed.task_complete.06
+    {kSilent, 1, true, 1, 1388, 450},  // annoyed.asleep.01
+    {kSilent, 1, true, 1, 1389, 450},  // annoyed.asleep.02
+    {kSilent, 1, true, 1, 1390, 450},  // annoyed.asleep.03
+    {kSilent, 1, true, 1, 1391, 450},  // annoyed.no_app.01
+    {kSilent, 1, true, 1, 1392, 450},  // annoyed.no_app.02
+    {kSilent, 1, true, 1, 1393, 450},  // annoyed.no_app.03
+    {kSilent, 1, true, 1, 1394, 450},  // annoyed.listening.01
+    {kSilent, 1, true, 1, 1395, 450},  // annoyed.listening.02
+    {kSilent, 1, true, 1, 1396, 450},  // annoyed.listening.03
+    {kEntry, 1, true, 1, 1397, 450},  // annoyed.starting.01
+    {kEntry, 1, true, 1, 1398, 450},  // annoyed.starting.02
+    {kEntry, 1, true, 1, 1399, 450},  // annoyed.starting.03
+    {kEntry, 1, true, 1, 1400, 450},  // annoyed.starting.04
+    {kEntry, 1, true, 1, 1401, 450},  // annoyed.starting.05
+    {kEntry, 1, true, 1, 1402, 450},  // annoyed.starting.06
+    {kEntry, 1, true, 1, 1403, 450},  // annoyed.starting.07
+    {kEntry, 1, true, 1, 1404, 450},  // annoyed.starting.08
+    {kEntry, 1, true, 1, 1405, 450},  // annoyed.starting.09
+    {kEntry, 1, true, 1, 1406, 450},  // annoyed.starting.10
+    {kEntry, 1, true, 1, 1407, 450},  // annoyed.starting.11
+    {kEntry, 1, true, 1, 1408, 450},  // annoyed.starting.12
+    {kLoop, 1, true, 8, 1409, 450},  // annoyed.planning.01
+    {kLoop, 1, true, 8, 1417, 450},  // annoyed.planning.02
+    {kLoop, 1, true, 8, 1425, 450},  // annoyed.planning.03
+    {kLoop, 1, true, 8, 1433, 450},  // annoyed.terminal.01
+    {kLoop, 1, true, 8, 1441, 450},  // annoyed.terminal.02
+    {kLoop, 1, true, 8, 1449, 450},  // annoyed.terminal.03
+    {kLoop, 1, true, 8, 1457, 450},  // annoyed.tool_use.01
+    {kLoop, 1, true, 8, 1465, 450},  // annoyed.tool_use.02
+    {kLoop, 1, true, 8, 1473, 450},  // annoyed.tool_use.03
+    {kLoop, 1, true, 8, 1481, 450},  // annoyed.searching.01
+    {kLoop, 1, true, 8, 1489, 450},  // annoyed.searching.02
+    {kLoop, 1, true, 8, 1497, 450},  // annoyed.searching.03
+    {kLoop, 1, true, 8, 1505, 450},  // annoyed.analyzing.01
+    {kLoop, 1, true, 8, 1513, 450},  // annoyed.analyzing.02
+    {kLoop, 1, true, 8, 1521, 450},  // annoyed.analyzing.03
+    {kLoop, 1, true, 8, 1529, 450},  // annoyed.testing.01
+    {kLoop, 1, true, 8, 1537, 450},  // annoyed.testing.02
+    {kLoop, 1, true, 8, 1545, 450},  // annoyed.testing.03
+    {kEntry, 1, true, 1, 1553, 450},  // annoyed.delegating.01
+    {kEntry, 1, true, 1, 1554, 450},  // annoyed.delegating.02
+    {kEntry, 1, true, 1, 1555, 450},  // annoyed.delegating.03
+    {kEntry, 1, true, 1, 1556, 450},  // annoyed.helper_return.01
+    {kEntry, 1, true, 1, 1557, 450},  // annoyed.helper_return.02
+    {kEntry, 1, true, 1, 1558, 450},  // annoyed.helper_return.03
+    {kSilent, 1, true, 1, 1559, 450},  // annoyed.waiting.01
+    {kSilent, 1, true, 1, 1560, 450},  // annoyed.waiting.02
+    {kSilent, 1, true, 1, 1561, 450},  // annoyed.waiting.03
+    {kEntry, 1, true, 1, 1562, 450},  // annoyed.reply_ready.01
+    {kEntry, 1, true, 1, 1563, 450},  // annoyed.reply_ready.02
+    {kEntry, 1, true, 1, 1564, 450},  // annoyed.reply_ready.03
+    {kEntry, 1, false, 1, 1565, 4300},  // annoyed.error.01
+    {kEntry, 1, false, 1, 1566, 4542},  // annoyed.error.02
+    {kEntry, 1, false, 1, 1567, 4672},  // annoyed.error.03
+    {kEntry, 1, true, 1, 1568, 450},  // annoyed.stopped.01
+    {kEntry, 1, true, 1, 1569, 450},  // annoyed.stopped.02
+    {kEntry, 1, true, 1, 1570, 450},  // annoyed.stopped.03
+    {kEntry, 1, true, 1, 1571, 450},  // annoyed.poked.01
+    {kEntry, 1, true, 1, 1572, 450},  // annoyed.poked.02
+    {kEntry, 1, true, 1, 1573, 450},  // annoyed.poked.03
+    {kEntry, 1, true, 1, 1574, 450},  // annoyed.tap_spam.01
+    {kEntry, 1, true, 1, 1575, 450},  // annoyed.tap_spam.02
+    {kEntry, 1, true, 1, 1576, 450},  // annoyed.tap_spam.03
+    {kSilent, 1, true, 1, 1577, 450},  // irritated.idle.01
+    {kSilent, 1, true, 1, 1578, 450},  // irritated.idle.02
+    {kSilent, 1, true, 1, 1579, 450},  // irritated.idle.03
+    {kLoop, 1, true, 8, 1580, 450},  // irritated.working.01
+    {kLoop, 1, true, 8, 1588, 450},  // irritated.working.02
+    {kLoop, 1, true, 8, 1596, 450},  // irritated.working.03
+    {kLoop, 1, true, 8, 1604, 450},  // irritated.working.04
+    {kLoop, 1, true, 8, 1612, 450},  // irritated.working.05
+    {kEntry, 1, false, 1, 1620, 2360},  // irritated.needs_you.01
+    {kEntry, 1, false, 1, 1621, 2600},  // irritated.needs_you.02
+    {kEntry, 1, false, 1, 1622, 2840},  // irritated.needs_you.03
+    {kEntry, 1, false, 1, 1623, 4276},  // irritated.task_complete.01
+    {kEntry, 1, false, 1, 1624, 4804},  // irritated.task_complete.02
+    {kEntry, 1, false, 1, 1625, 4407},  // irritated.task_complete.03
+    {kEntry, 1, false, 1, 1626, 2716},  // irritated.task_complete.04
+    {kEntry, 1, false, 1, 1627, 2694},  // irritated.task_complete.05
+    {kEntry, 1, false, 1, 1628, 2847},  // irritated.task_complete.06
+    {kSilent, 1, true, 1, 1629, 450},  // irritated.asleep.01
+    {kSilent, 1, true, 1, 1630, 450},  // irritated.asleep.02
+    {kSilent, 1, true, 1, 1631, 450},  // irritated.asleep.03
+    {kSilent, 1, true, 1, 1632, 450},  // irritated.no_app.01
+    {kSilent, 1, true, 1, 1633, 450},  // irritated.no_app.02
+    {kSilent, 1, true, 1, 1634, 450},  // irritated.no_app.03
+    {kSilent, 1, true, 1, 1635, 450},  // irritated.listening.01
+    {kSilent, 1, true, 1, 1636, 450},  // irritated.listening.02
+    {kSilent, 1, true, 1, 1637, 450},  // irritated.listening.03
+    {kEntry, 1, true, 1, 1638, 450},  // irritated.starting.01
+    {kEntry, 1, true, 1, 1639, 450},  // irritated.starting.02
+    {kEntry, 1, true, 1, 1640, 450},  // irritated.starting.03
+    {kEntry, 1, true, 1, 1641, 450},  // irritated.starting.04
+    {kEntry, 1, true, 1, 1642, 450},  // irritated.starting.05
+    {kEntry, 1, true, 1, 1643, 450},  // irritated.starting.06
+    {kEntry, 1, true, 1, 1644, 450},  // irritated.starting.07
+    {kEntry, 1, true, 1, 1645, 450},  // irritated.starting.08
+    {kEntry, 1, true, 1, 1646, 450},  // irritated.starting.09
+    {kEntry, 1, true, 1, 1647, 450},  // irritated.starting.10
+    {kEntry, 1, true, 1, 1648, 450},  // irritated.starting.11
+    {kEntry, 1, true, 1, 1649, 450},  // irritated.starting.12
+    {kLoop, 1, true, 8, 1650, 450},  // irritated.planning.01
+    {kLoop, 1, true, 8, 1658, 450},  // irritated.planning.02
+    {kLoop, 1, true, 8, 1666, 450},  // irritated.planning.03
+    {kLoop, 1, true, 8, 1674, 450},  // irritated.terminal.01
+    {kLoop, 1, true, 8, 1682, 450},  // irritated.terminal.02
+    {kLoop, 1, true, 8, 1690, 450},  // irritated.terminal.03
+    {kLoop, 1, true, 8, 1698, 450},  // irritated.tool_use.01
+    {kLoop, 1, true, 8, 1706, 450},  // irritated.tool_use.02
+    {kLoop, 1, true, 8, 1714, 450},  // irritated.tool_use.03
+    {kLoop, 1, true, 8, 1722, 450},  // irritated.searching.01
+    {kLoop, 1, true, 8, 1730, 450},  // irritated.searching.02
+    {kLoop, 1, true, 8, 1738, 450},  // irritated.searching.03
+    {kLoop, 1, true, 8, 1746, 450},  // irritated.analyzing.01
+    {kLoop, 1, true, 8, 1754, 450},  // irritated.analyzing.02
+    {kLoop, 1, true, 8, 1762, 450},  // irritated.analyzing.03
+    {kLoop, 1, true, 8, 1770, 450},  // irritated.testing.01
+    {kLoop, 1, true, 8, 1778, 450},  // irritated.testing.02
+    {kLoop, 1, true, 8, 1786, 450},  // irritated.testing.03
+    {kEntry, 1, true, 1, 1794, 450},  // irritated.delegating.01
+    {kEntry, 1, true, 1, 1795, 450},  // irritated.delegating.02
+    {kEntry, 1, true, 1, 1796, 450},  // irritated.delegating.03
+    {kEntry, 1, true, 1, 1797, 450},  // irritated.helper_return.01
+    {kEntry, 1, true, 1, 1798, 450},  // irritated.helper_return.02
+    {kEntry, 1, true, 1, 1799, 450},  // irritated.helper_return.03
+    {kSilent, 1, true, 1, 1800, 450},  // irritated.waiting.01
+    {kSilent, 1, true, 1, 1801, 450},  // irritated.waiting.02
+    {kSilent, 1, true, 1, 1802, 450},  // irritated.waiting.03
+    {kEntry, 1, true, 1, 1803, 450},  // irritated.reply_ready.01
+    {kEntry, 1, true, 1, 1804, 450},  // irritated.reply_ready.02
+    {kEntry, 1, true, 1, 1805, 450},  // irritated.reply_ready.03
+    {kEntry, 1, false, 1, 1806, 2796},  // irritated.error.01
+    {kEntry, 1, false, 1, 1807, 2932},  // irritated.error.02
+    {kEntry, 1, false, 1, 1808, 3027},  // irritated.error.03
+    {kEntry, 1, true, 1, 1809, 450},  // irritated.stopped.01
+    {kEntry, 1, true, 1, 1810, 450},  // irritated.stopped.02
+    {kEntry, 1, true, 1, 1811, 450},  // irritated.stopped.03
+    {kEntry, 1, true, 1, 1812, 450},  // irritated.poked.01
+    {kEntry, 1, true, 1, 1813, 450},  // irritated.poked.02
+    {kEntry, 1, true, 1, 1814, 450},  // irritated.poked.03
+    {kEntry, 1, true, 1, 1815, 450},  // irritated.tap_spam.01
+    {kEntry, 1, true, 1, 1816, 450},  // irritated.tap_spam.02
+    {kEntry, 1, true, 1, 1817, 450},  // irritated.tap_spam.03
+    {kSilent, 1, true, 1, 1818, 450},  // whiny.idle.01
+    {kSilent, 1, true, 1, 1819, 450},  // whiny.idle.02
+    {kSilent, 1, true, 1, 1820, 450},  // whiny.idle.03
+    {kLoop, 1, true, 8, 1821, 450},  // whiny.working.01
+    {kLoop, 1, true, 8, 1829, 450},  // whiny.working.02
+    {kLoop, 1, true, 8, 1837, 450},  // whiny.working.03
+    {kLoop, 1, true, 8, 1845, 450},  // whiny.working.04
+    {kLoop, 1, true, 8, 1853, 450},  // whiny.working.05
+    {kEntry, 1, false, 1, 1861, 2860},  // whiny.needs_you.01
+    {kEntry, 1, false, 1, 1862, 3040},  // whiny.needs_you.02
+    {kEntry, 1, false, 1, 1863, 3220},  // whiny.needs_you.03
+    {kEntry, 1, false, 1, 1864, 5172},  // whiny.task_complete.01
+    {kEntry, 1, false, 1, 1865, 5689},  // whiny.task_complete.02
+    {kEntry, 1, false, 1, 1866, 5415},  // whiny.task_complete.03
+    {kEntry, 1, false, 1, 1867, 3612},  // whiny.task_complete.04
+    {kEntry, 1, false, 1, 1868, 3579},  // whiny.task_complete.05
+    {kEntry, 1, false, 1, 1869, 3855},  // whiny.task_complete.06
+    {kSilent, 1, true, 1, 1870, 450},  // whiny.asleep.01
+    {kSilent, 1, true, 1, 1871, 450},  // whiny.asleep.02
+    {kSilent, 1, true, 1, 1872, 450},  // whiny.asleep.03
+    {kSilent, 1, true, 1, 1873, 450},  // whiny.no_app.01
+    {kSilent, 1, true, 1, 1874, 450},  // whiny.no_app.02
+    {kSilent, 1, true, 1, 1875, 450},  // whiny.no_app.03
+    {kSilent, 1, true, 1, 1876, 450},  // whiny.listening.01
+    {kSilent, 1, true, 1, 1877, 450},  // whiny.listening.02
+    {kSilent, 1, true, 1, 1878, 450},  // whiny.listening.03
+    {kEntry, 1, true, 1, 1879, 450},  // whiny.starting.01
+    {kEntry, 1, true, 1, 1880, 450},  // whiny.starting.02
+    {kEntry, 1, true, 1, 1881, 450},  // whiny.starting.03
+    {kEntry, 1, true, 1, 1882, 450},  // whiny.starting.04
+    {kEntry, 1, true, 1, 1883, 450},  // whiny.starting.05
+    {kEntry, 1, true, 1, 1884, 450},  // whiny.starting.06
+    {kEntry, 1, true, 1, 1885, 450},  // whiny.starting.07
+    {kEntry, 1, true, 1, 1886, 450},  // whiny.starting.08
+    {kEntry, 1, true, 1, 1887, 450},  // whiny.starting.09
+    {kEntry, 1, true, 1, 1888, 450},  // whiny.starting.10
+    {kEntry, 1, true, 1, 1889, 450},  // whiny.starting.11
+    {kEntry, 1, true, 1, 1890, 450},  // whiny.starting.12
+    {kLoop, 1, true, 8, 1891, 450},  // whiny.planning.01
+    {kLoop, 1, true, 8, 1899, 450},  // whiny.planning.02
+    {kLoop, 1, true, 8, 1907, 450},  // whiny.planning.03
+    {kLoop, 1, true, 8, 1915, 450},  // whiny.terminal.01
+    {kLoop, 1, true, 8, 1923, 450},  // whiny.terminal.02
+    {kLoop, 1, true, 8, 1931, 450},  // whiny.terminal.03
+    {kLoop, 1, true, 8, 1939, 450},  // whiny.tool_use.01
+    {kLoop, 1, true, 8, 1947, 450},  // whiny.tool_use.02
+    {kLoop, 1, true, 8, 1955, 450},  // whiny.tool_use.03
+    {kLoop, 1, true, 8, 1963, 450},  // whiny.searching.01
+    {kLoop, 1, true, 8, 1971, 450},  // whiny.searching.02
+    {kLoop, 1, true, 8, 1979, 450},  // whiny.searching.03
+    {kLoop, 1, true, 8, 1987, 450},  // whiny.analyzing.01
+    {kLoop, 1, true, 8, 1995, 450},  // whiny.analyzing.02
+    {kLoop, 1, true, 8, 2003, 450},  // whiny.analyzing.03
+    {kLoop, 1, true, 8, 2011, 450},  // whiny.testing.01
+    {kLoop, 1, true, 8, 2019, 450},  // whiny.testing.02
+    {kLoop, 1, true, 8, 2027, 450},  // whiny.testing.03
+    {kEntry, 1, true, 1, 2035, 450},  // whiny.delegating.01
+    {kEntry, 1, true, 1, 2036, 450},  // whiny.delegating.02
+    {kEntry, 1, true, 1, 2037, 450},  // whiny.delegating.03
+    {kEntry, 1, true, 1, 2038, 450},  // whiny.helper_return.01
+    {kEntry, 1, true, 1, 2039, 450},  // whiny.helper_return.02
+    {kEntry, 1, true, 1, 2040, 450},  // whiny.helper_return.03
+    {kSilent, 1, true, 1, 2041, 450},  // whiny.waiting.01
+    {kSilent, 1, true, 1, 2042, 450},  // whiny.waiting.02
+    {kSilent, 1, true, 1, 2043, 450},  // whiny.waiting.03
+    {kEntry, 1, true, 1, 2044, 450},  // whiny.reply_ready.01
+    {kEntry, 1, true, 1, 2045, 450},  // whiny.reply_ready.02
+    {kEntry, 1, true, 1, 2046, 450},  // whiny.reply_ready.03
+    {kEntry, 1, false, 1, 2047, 4487},  // whiny.error.01
+    {kEntry, 1, false, 1, 2048, 4743},  // whiny.error.02
+    {kEntry, 1, false, 1, 2049, 4880},  // whiny.error.03
+    {kEntry, 1, true, 1, 2050, 450},  // whiny.stopped.01
+    {kEntry, 1, true, 1, 2051, 450},  // whiny.stopped.02
+    {kEntry, 1, true, 1, 2052, 450},  // whiny.stopped.03
+    {kEntry, 1, true, 1, 2053, 450},  // whiny.poked.01
+    {kEntry, 1, true, 1, 2054, 450},  // whiny.poked.02
+    {kEntry, 1, true, 1, 2055, 450},  // whiny.poked.03
+    {kEntry, 1, true, 1, 2056, 450},  // whiny.tap_spam.01
+    {kEntry, 1, true, 1, 2057, 450},  // whiny.tap_spam.02
+    {kEntry, 1, true, 1, 2058, 450},  // whiny.tap_spam.03
+    {kSilent, 1, true, 1, 2059, 450},  // wounded.idle.01
+    {kSilent, 1, true, 1, 2060, 450},  // wounded.idle.02
+    {kSilent, 1, true, 1, 2061, 450},  // wounded.idle.03
+    {kLoop, 1, true, 8, 2062, 450},  // wounded.working.01
+    {kLoop, 1, true, 8, 2070, 450},  // wounded.working.02
+    {kLoop, 1, true, 8, 2078, 450},  // wounded.working.03
+    {kLoop, 1, true, 8, 2086, 450},  // wounded.working.04
+    {kLoop, 1, true, 8, 2094, 450},  // wounded.working.05
+    {kEntry, 1, false, 1, 2102, 2980},  // wounded.needs_you.01
+    {kEntry, 1, false, 1, 2103, 3100},  // wounded.needs_you.02
+    {kEntry, 1, false, 1, 2104, 3220},  // wounded.needs_you.03
+    {kEntry, 1, false, 1, 2105, 5428},  // wounded.task_complete.01
+    {kEntry, 1, false, 1, 2106, 5942},  // wounded.task_complete.02
+    {kEntry, 1, false, 1, 2107, 5703},  // wounded.task_complete.03
+    {kEntry, 1, false, 1, 2108, 3868},  // wounded.task_complete.04
+    {kEntry, 1, false, 1, 2109, 3832},  // wounded.task_complete.05
+    {kEntry, 1, false, 1, 2110, 4143},  // wounded.task_complete.06
+    {kSilent, 1, true, 1, 2111, 450},  // wounded.asleep.01
+    {kSilent, 1, true, 1, 2112, 450},  // wounded.asleep.02
+    {kSilent, 1, true, 1, 2113, 450},  // wounded.asleep.03
+    {kSilent, 1, true, 1, 2114, 450},  // wounded.no_app.01
+    {kSilent, 1, true, 1, 2115, 450},  // wounded.no_app.02
+    {kSilent, 1, true, 1, 2116, 450},  // wounded.no_app.03
+    {kSilent, 1, true, 1, 2117, 450},  // wounded.listening.01
+    {kSilent, 1, true, 1, 2118, 450},  // wounded.listening.02
+    {kSilent, 1, true, 1, 2119, 450},  // wounded.listening.03
+    {kEntry, 1, true, 1, 2120, 450},  // wounded.starting.01
+    {kEntry, 1, true, 1, 2121, 450},  // wounded.starting.02
+    {kEntry, 1, true, 1, 2122, 450},  // wounded.starting.03
+    {kEntry, 1, true, 1, 2123, 450},  // wounded.starting.04
+    {kEntry, 1, true, 1, 2124, 450},  // wounded.starting.05
+    {kEntry, 1, true, 1, 2125, 450},  // wounded.starting.06
+    {kEntry, 1, true, 1, 2126, 450},  // wounded.starting.07
+    {kEntry, 1, true, 1, 2127, 450},  // wounded.starting.08
+    {kEntry, 1, true, 1, 2128, 450},  // wounded.starting.09
+    {kEntry, 1, true, 1, 2129, 450},  // wounded.starting.10
+    {kEntry, 1, true, 1, 2130, 450},  // wounded.starting.11
+    {kEntry, 1, true, 1, 2131, 450},  // wounded.starting.12
+    {kLoop, 1, true, 8, 2132, 450},  // wounded.planning.01
+    {kLoop, 1, true, 8, 2140, 450},  // wounded.planning.02
+    {kLoop, 1, true, 8, 2148, 450},  // wounded.planning.03
+    {kLoop, 1, true, 8, 2156, 450},  // wounded.terminal.01
+    {kLoop, 1, true, 8, 2164, 450},  // wounded.terminal.02
+    {kLoop, 1, true, 8, 2172, 450},  // wounded.terminal.03
+    {kLoop, 1, true, 8, 2180, 450},  // wounded.tool_use.01
+    {kLoop, 1, true, 8, 2188, 450},  // wounded.tool_use.02
+    {kLoop, 1, true, 8, 2196, 450},  // wounded.tool_use.03
+    {kLoop, 1, true, 8, 2204, 450},  // wounded.searching.01
+    {kLoop, 1, true, 8, 2212, 450},  // wounded.searching.02
+    {kLoop, 1, true, 8, 2220, 450},  // wounded.searching.03
+    {kLoop, 1, true, 8, 2228, 450},  // wounded.analyzing.01
+    {kLoop, 1, true, 8, 2236, 450},  // wounded.analyzing.02
+    {kLoop, 1, true, 8, 2244, 450},  // wounded.analyzing.03
+    {kLoop, 1, true, 8, 2252, 450},  // wounded.testing.01
+    {kLoop, 1, true, 8, 2260, 450},  // wounded.testing.02
+    {kLoop, 1, true, 8, 2268, 450},  // wounded.testing.03
+    {kEntry, 1, true, 1, 2276, 450},  // wounded.delegating.01
+    {kEntry, 1, true, 1, 2277, 450},  // wounded.delegating.02
+    {kEntry, 1, true, 1, 2278, 450},  // wounded.delegating.03
+    {kEntry, 1, true, 1, 2279, 450},  // wounded.helper_return.01
+    {kEntry, 1, true, 1, 2280, 450},  // wounded.helper_return.02
+    {kEntry, 1, true, 1, 2281, 450},  // wounded.helper_return.03
+    {kSilent, 1, true, 1, 2282, 450},  // wounded.waiting.01
+    {kSilent, 1, true, 1, 2283, 450},  // wounded.waiting.02
+    {kSilent, 1, true, 1, 2284, 450},  // wounded.waiting.03
+    {kEntry, 1, true, 1, 2285, 450},  // wounded.reply_ready.01
+    {kEntry, 1, true, 1, 2286, 450},  // wounded.reply_ready.02
+    {kEntry, 1, true, 1, 2287, 450},  // wounded.reply_ready.03
+    {kEntry, 1, false, 1, 2288, 5063},  // wounded.error.01
+    {kEntry, 1, false, 1, 2289, 5359},  // wounded.error.02
+    {kEntry, 1, false, 1, 2290, 5513},  // wounded.error.03
+    {kEntry, 1, true, 1, 2291, 450},  // wounded.stopped.01
+    {kEntry, 1, true, 1, 2292, 450},  // wounded.stopped.02
+    {kEntry, 1, true, 1, 2293, 450},  // wounded.stopped.03
+    {kEntry, 1, true, 1, 2294, 450},  // wounded.poked.01
+    {kEntry, 1, true, 1, 2295, 450},  // wounded.poked.02
+    {kEntry, 1, true, 1, 2296, 450},  // wounded.poked.03
+    {kEntry, 1, true, 1, 2297, 450},  // wounded.tap_spam.01
+    {kEntry, 1, true, 1, 2298, 450},  // wounded.tap_spam.02
+    {kEntry, 1, true, 1, 2299, 450},  // wounded.tap_spam.03
 };
 
 // Each score's loops' lists, `lists` of them from its `loop0`, as indexes
@@ -915,72 +940,72 @@ static const uint16_t kLoopList[] = {
     52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67,
     68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83,
     84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
-    100, 101, 102, 0, 103, 104, 105, 106, 107, 0, 0, 0, 108, 109, 110, 111,
+    100, 101, 102, 103, 0, 104, 105, 106, 107, 108, 0, 0, 0, 109, 110, 111,
     112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
-    128, 129, 130, 128, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
-    143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165,
+    128, 129, 130, 131, 129, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,
+    143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165,
     166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181,
     182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197,
-    198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 0, 210, 211, 212,
-    213, 214, 0, 0, 0, 215, 216, 217, 218, 219, 216, 220, 221, 222, 223, 224,
-    225, 226, 227, 228, 229, 18, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-    240, 241, 242, 243, 244, 245, 246, 246, 32, 247, 32, 248, 32, 249, 250, 251,
-    252, 253, 254, 255, 256, 0, 0, 0, 0, 0, 0, 0, 0, 0, 257, 257,
-    258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273,
+    198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 0, 212,
+    213, 214, 215, 216, 0, 0, 0, 217, 218, 219, 220, 221, 218, 222, 223, 224,
+    225, 226, 227, 228, 229, 230, 231, 18, 232, 233, 234, 235, 236, 237, 238, 239,
+    240, 241, 242, 243, 244, 245, 246, 247, 248, 248, 32, 249, 32, 250, 32, 251,
+    252, 253, 254, 255, 256, 257, 258, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    259, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273,
     274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289,
     290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305,
-    306, 307, 308, 309, 310, 0, 311, 312, 313, 314, 315, 0, 0, 0, 316, 317,
-    318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 329, 331, 332,
-    333, 334, 332, 335, 336, 331, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346,
-    347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 361, 362, 363, 364, 365, 366, 367, 368, 369,
+    306, 307, 308, 309, 310, 311, 312, 313, 0, 314, 315, 316, 317, 318, 0, 0,
+    0, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333,
+    332, 334, 335, 336, 337, 335, 338, 339, 334, 340, 341, 342, 343, 344, 345, 346,
+    347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362,
+    363, 0, 0, 0, 0, 0, 0, 0, 0, 0, 364, 365, 366, 367, 368, 369,
     370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385,
     386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401,
-    402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 0, 416,
-    417, 418, 419, 420, 0, 0, 0, 421, 422, 423, 424, 425, 426, 427, 428, 429,
+    402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417,
+    418, 419, 0, 420, 421, 422, 423, 424, 0, 0, 0, 425, 426, 427, 428, 429,
     430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445,
-    446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 456, 457, 458, 459, 460,
-    461, 462, 463, 464, 465, 466, 467, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483,
+    446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 460,
+    461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483,
     484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499,
     500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515,
-    516, 517, 518, 519, 520, 521, 522, 0, 523, 524, 525, 526, 527, 0, 0, 0,
-    528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538, 539, 540, 541, 542, 543,
+    516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 0, 528, 529, 530,
+    531, 532, 0, 0, 0, 533, 534, 535, 536, 537, 538, 539, 540, 541, 542, 543,
     544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559,
     560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 576, 577, 578, 579, 580, 581, 582,
+    576, 577, 578, 579, 580, 0, 0, 0, 0, 0, 0, 0, 0, 0, 581, 582,
     583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593, 594, 595, 596, 597, 598,
     599, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614,
     615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630,
-    0, 631, 632, 633, 634, 635, 0, 0, 0, 636, 637, 638, 639, 640, 641, 642,
+    631, 632, 633, 634, 635, 636, 0, 637, 638, 639, 640, 641, 0, 0, 0, 642,
     643, 644, 645, 646, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 658,
     659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670, 671, 672, 673, 674,
-    675, 676, 677, 678, 679, 680, 681, 682, 683, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 684, 685, 684, 686, 687, 688, 689, 690, 691, 692, 693, 694, 695, 696,
+    675, 676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 690, 691, 690, 692, 693, 694, 695, 696,
     697, 698, 699, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712,
     713, 714, 715, 716, 717, 718, 719, 720, 721, 722, 723, 724, 725, 726, 727, 728,
-    729, 730, 731, 732, 733, 734, 735, 736, 737, 0, 738, 739, 740, 741, 742, 0,
-    0, 0, 743, 744, 745, 746, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756,
-    757, 754, 758, 759, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 770, 771,
+    729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741, 742, 743, 744,
+    0, 745, 746, 747, 748, 749, 0, 0, 0, 750, 751, 752, 753, 754, 755, 756,
+    757, 758, 759, 760, 761, 762, 763, 764, 761, 765, 766, 767, 768, 769, 770, 771,
     772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787,
-    788, 789, 790, 0, 0, 0, 0, 0, 0, 0, 0, 0, 791, 792, 793, 794,
-    795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810,
+    788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810,
     811, 812, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824, 825, 826,
     827, 828, 829, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 840, 841, 842,
-    843, 844, 845, 843, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 856, 857,
+    843, 844, 845, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 853, 856, 857,
     858, 859, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869, 870, 871, 872, 873,
     874, 875, 876, 877, 878, 879, 880, 881, 882, 883, 884, 885, 886, 887, 888, 889,
     890, 891, 892, 893, 894, 895, 896, 897, 898, 899, 900, 901, 902, 903, 904, 905,
     906, 907, 908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921,
     922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937,
-    938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 0, 0, 0, 949, 950,
-    951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 0, 0, 0,
-    964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979,
+    938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953,
+    954, 955, 956, 957, 958, 0, 0, 0, 959, 960, 961, 962, 963, 964, 965, 966,
+    967, 968, 969, 970, 971, 972, 973, 0, 0, 0, 974, 975, 976, 977, 978, 979,
     980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995,
-    996, 997, 996, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010,
-    1011, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1012, 1013, 1014, 1015, 1016, 1017,
-    1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033,
+    996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1006, 1008, 1009, 1010,
+    1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033,
     1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1048, 1049,
     1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059, 1060, 1061, 1062, 1063, 1064, 1065,
     1066, 1067, 1068, 1069, 1070, 1071, 1072, 1073, 1074, 1075, 1076, 1077, 1078, 1079, 1080, 1081,
@@ -989,28 +1014,28 @@ static const uint16_t kLoopList[] = {
     1114, 1115, 1116, 1117, 1118, 1119, 1120, 1121, 1122, 1123, 1124, 1125, 1126, 1127, 1128, 1129,
     1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138, 1139, 1140, 1141, 1142, 1143, 1144, 1145,
     1146, 1147, 1148, 1149, 1150, 1151, 1152, 1153, 1154, 1155, 1156, 1157, 1158, 1159, 1160, 1161,
-    1162, 1163, 1164, 1165, 1166, 1167, 1168, 1169, 1170, 0, 0, 0, 1171, 1172, 1173, 1174,
-    1175, 1176, 1177, 1178, 1179, 1180, 1181, 1182, 1183, 1184, 1185, 0, 0, 0, 1186, 1187,
-    1188, 1189, 1190, 1191, 1192, 1193, 1194, 1195, 1196, 1197, 1198, 1199, 1200, 1201, 1202, 1203,
+    1162, 1163, 1164, 1165, 1166, 1167, 1168, 1169, 1170, 1171, 1172, 1173, 1174, 1175, 1176, 1177,
+    1178, 1179, 1180, 1181, 1182, 1183, 0, 0, 0, 1184, 1185, 1186, 1187, 1188, 1189, 1190,
+    1191, 1192, 1193, 1194, 1195, 1196, 1197, 1198, 0, 0, 0, 1199, 1200, 1201, 1202, 1203,
     1204, 1205, 1206, 1207, 1208, 1209, 1210, 1211, 1212, 1213, 1214, 1215, 1216, 1217, 1218, 1219,
-    1220, 1221, 1222, 1223, 1224, 1225, 1226, 1227, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242,
-    1243, 1244, 1245, 1246, 1247, 1248, 1249, 1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258,
+    1220, 1221, 1222, 1223, 1224, 1225, 1226, 1227, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 1235,
+    1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243, 1244, 1245, 1246, 1247, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 1248, 1249, 1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258,
     1259, 1260, 1261, 1262, 1263, 1264, 1265, 1266, 1267, 1268, 1269, 1270, 1271, 1272, 1273, 1274,
     1275, 1276, 1277, 1278, 1279, 1280, 1281, 1282, 1283, 1284, 1285, 1286, 1287, 1288, 1289, 1290,
     1291, 1292, 1293, 1294, 1295, 1296, 1297, 1298, 1299, 1300, 1301, 1302, 1303, 1304, 1305, 1306,
     1307, 1308, 1309, 1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319, 1320, 1321, 1322,
     1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333, 1334, 1335, 1336, 1337, 1338,
     1339, 1340, 1341, 1342, 1343, 1344, 1345, 1346, 1347, 1348, 1349, 1350, 1351, 1352, 1353, 1354,
-    1355, 1356, 1357, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1366, 1367, 1368, 1369, 1365,
-    1370, 1371, 1372, 1373, 1374, 1375, 1376, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385,
-    1386, 1387, 1388, 1389, 1390, 1391, 1392, 0, 0, 0, 1393, 1394, 1395, 1396, 1397, 1398,
-    1399, 1400, 1401, 1402, 1403, 1404, 1405, 1406, 1407, 0, 0, 0, 1408, 1409, 1410, 1411,
-    1412, 1413, 1414, 1415, 1416, 1417, 1418, 1419, 1420, 1421, 1422, 1423, 1424, 1425, 1426, 1427,
+    1355, 1356, 1357, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1366, 1367, 1368, 1369, 1370,
+    1371, 1372, 1373, 1374, 1375, 1376, 1377, 1378, 1379, 1380, 1381, 1382, 1383, 1384, 1385, 1381,
+    1386, 1387, 1388, 1389, 1390, 1391, 1392, 1393, 1394, 1395, 1396, 1397, 1398, 1399, 1400, 1401,
+    1402, 1403, 1404, 1405, 1406, 1407, 1408, 0, 0, 0, 1409, 1410, 1411, 1412, 1413, 1414,
+    1415, 1416, 1417, 1418, 1419, 1420, 1421, 1422, 1423, 0, 0, 0, 1424, 1425, 1426, 1427,
     1428, 1429, 1430, 1431, 1432, 1433, 1434, 1435, 1436, 1437, 1438, 1439, 1440, 1441, 1442, 1443,
-    1444, 1443, 1445, 1446, 1447, 1448, 1449, 1450, 1451, 1452, 1453, 1454, 1455, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 1456, 1457, 1458, 1459, 1460, 1461, 1462, 1463, 1464, 1465,
-    1466, 1467, 1468, 1469, 1470, 1471, 1472, 1473, 1474, 1475, 1476, 1477, 1478, 1479, 1480, 1481,
+    1444, 1445, 1446, 1447, 1448, 1449, 1450, 1451, 1452, 1453, 1454, 1455, 1456, 1457, 1458, 1459,
+    1460, 1459, 1461, 1462, 1463, 1464, 1465, 1466, 1467, 1468, 1469, 1470, 1471, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1472, 1473, 1474, 1475, 1476, 1477, 1478, 1479, 1480, 1481,
     1482, 1483, 1484, 1485, 1486, 1487, 1488, 1489, 1490, 1491, 1492, 1493, 1494, 1495, 1496, 1497,
     1498, 1499, 1500, 1501, 1502, 1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1511, 1512, 1513,
     1514, 1515, 1516, 1517, 1518, 1519, 1520, 1521, 1522, 1523, 1524, 1525, 1526, 1527, 1528, 1529,
@@ -1019,13 +1044,13 @@ static const uint16_t kLoopList[] = {
     1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577,
     1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593,
     1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609,
-    1610, 1611, 1612, 1613, 1614, 0, 0, 0, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622,
-    1623, 1624, 1625, 1626, 1627, 1628, 1629, 0, 0, 0, 1630, 1631, 1632, 1633, 1634, 1635,
-    1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651,
+    1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625,
+    1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 0, 0, 0, 1634, 1635, 1636, 1637, 1638,
+    1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 0, 0, 0, 1649, 1650, 1651,
     1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667,
-    1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689, 1690,
-    1691, 1692, 1693, 1694, 1695, 1696, 1697, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1705, 1706,
+    1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683,
+    1684, 1685, 1686, 1687, 1688, 1689, 1690, 1691, 1692, 1693, 1694, 1695, 1696, 1697, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1705, 1706,
     1707, 1708, 1709, 1710, 1711, 1712, 1713, 1714, 1715, 1716, 1717, 1718, 1719, 1720, 1721, 1722,
     1723, 1724, 1725, 1726, 1727, 1728, 1729, 1730, 1731, 1732, 1733, 1734, 1735, 1736, 1737, 1738,
     1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754,
@@ -1034,13 +1059,13 @@ static const uint16_t kLoopList[] = {
     1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802,
     1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815, 1816, 1817, 1818,
     1819, 1820, 1821, 1822, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834,
-    1835, 1836, 1837, 0, 0, 0, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847,
-    1848, 1849, 1850, 1851, 1852, 0, 0, 0, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 1860,
-    1861, 1862, 1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 1875, 1876,
+    1835, 1836, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 1848, 1849, 1850,
+    1851, 1852, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 0, 0, 0, 1860, 1861, 1862, 1863,
+    1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 0, 0, 0, 1875, 1876,
     1877, 1878, 1879, 1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890, 1891, 1892,
-    1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1913, 1914, 1915,
-    1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931,
+    1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901, 1902, 1903, 1904, 1905, 1906, 1907, 1908,
+    1909, 1910, 1911, 1912, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931,
     1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947,
     1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963,
     1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
@@ -1049,8 +1074,9 @@ static const uint16_t kLoopList[] = {
     2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027,
     2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040, 2041, 2042, 2043,
     2044, 2045, 2046, 2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054, 2055, 2056, 2057, 2058, 2059,
-    2060, 0, 0, 0, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072,
-    2073, 2074, 2075,
+    2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 2073, 2074, 2075,
+    2076, 2077, 2078, 2079, 2080, 2081, 2082, 2083, 2084, 2085, 0, 0, 0, 2086, 2087, 2088,
+    2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100,
 };
 
 static const List kList[] = {
@@ -1060,260 +1086,263 @@ static const List kList[] = {
     {64, 1}, {65, 1}, {66, 1}, {67, 1}, {68, 1}, {69, 1}, {70, 1}, {71, 1},
     {72, 1}, {73, 1}, {74, 1}, {75, 1}, {76, 1}, {77, 1}, {78, 1}, {79, 1},
     {80, 3}, {83, 4}, {87, 3}, {90, 1}, {91, 3}, {94, 4}, {98, 3}, {101, 6},
-    {107, 1}, {108, 1}, {109, 1}, {110, 2}, {112, 2}, {114, 2}, {116, 2}, {118, 2},
-    {120, 2}, {122, 2}, {124, 2}, {126, 6}, {132, 8}, {140, 8}, {148, 6}, {154, 8},
-    {162, 6}, {168, 8}, {176, 6}, {182, 2}, {184, 2}, {186, 2}, {188, 2}, {190, 2},
-    {192, 2}, {194, 2}, {196, 2}, {198, 2}, {200, 2}, {202, 2}, {204, 2}, {206, 2},
-    {208, 2}, {210, 2}, {212, 2}, {214, 2}, {216, 2}, {218, 2}, {220, 2}, {222, 2},
-    {224, 2}, {226, 2}, {228, 2}, {230, 2}, {232, 2}, {234, 2}, {236, 2}, {238, 2},
-    {240, 2}, {242, 2}, {244, 2}, {246, 2}, {248, 2}, {250, 1}, {251, 1}, {252, 1},
-    {253, 7}, {260, 1}, {261, 1}, {262, 1}, {263, 8}, {271, 6}, {277, 8}, {285, 6},
-    {291, 6}, {297, 6}, {303, 8}, {311, 8}, {319, 2}, {321, 2}, {323, 2}, {325, 2},
-    {327, 2}, {329, 2}, {331, 2}, {333, 2}, {335, 1}, {336, 1}, {337, 1}, {338, 1},
-    {339, 1}, {340, 1}, {341, 1}, {342, 2}, {344, 2}, {346, 2}, {348, 2}, {350, 2},
-    {352, 2}, {354, 2}, {356, 2}, {358, 2}, {360, 2}, {362, 2}, {364, 2}, {366, 2},
-    {368, 2}, {370, 2}, {372, 2}, {374, 7}, {381, 6}, {387, 5}, {392, 1}, {393, 3},
-    {396, 4}, {400, 3}, {403, 6}, {409, 1}, {410, 1}, {411, 1}, {412, 2}, {414, 2},
-    {416, 2}, {418, 2}, {420, 2}, {422, 2}, {424, 2}, {426, 2}, {428, 6}, {434, 8},
-    {442, 8}, {450, 8}, {458, 8}, {466, 6}, {472, 6}, {478, 8}, {486, 2}, {488, 2},
-    {490, 2}, {492, 2}, {494, 2}, {496, 2}, {498, 2}, {500, 2}, {502, 2}, {504, 2},
-    {506, 2}, {508, 2}, {510, 2}, {512, 2}, {514, 2}, {516, 2}, {518, 2}, {520, 2},
-    {522, 2}, {524, 2}, {526, 2}, {528, 2}, {530, 2}, {532, 2}, {534, 2}, {536, 2},
-    {538, 2}, {540, 2}, {542, 2}, {544, 2}, {546, 2}, {548, 2}, {550, 2}, {552, 2},
-    {554, 1}, {555, 1}, {556, 1}, {557, 7}, {564, 1}, {565, 1}, {566, 1}, {567, 1},
-    {568, 1}, {569, 1}, {570, 1}, {571, 1}, {572, 1}, {573, 1}, {574, 3}, {577, 3},
-    {580, 3}, {583, 3}, {586, 3}, {589, 3}, {592, 3}, {595, 3}, {598, 1}, {599, 1},
-    {600, 1}, {601, 1}, {602, 1}, {603, 1}, {604, 1}, {605, 2}, {607, 2}, {609, 2},
-    {611, 2}, {613, 2}, {615, 2}, {617, 2}, {619, 2}, {621, 1}, {622, 1}, {623, 1},
-    {624, 1}, {625, 3}, {628, 3}, {631, 3}, {634, 1}, {635, 3}, {638, 4}, {642, 3},
-    {645, 6}, {651, 1}, {652, 1}, {653, 2}, {655, 2}, {657, 2}, {659, 2}, {661, 2},
-    {663, 2}, {665, 2}, {667, 2}, {669, 6}, {675, 8}, {683, 8}, {691, 6}, {697, 6},
-    {703, 8}, {711, 8}, {719, 8}, {727, 2}, {729, 2}, {731, 2}, {733, 2}, {735, 2},
-    {737, 2}, {739, 2}, {741, 2}, {743, 2}, {745, 2}, {747, 2}, {749, 2}, {751, 2},
-    {753, 2}, {755, 2}, {757, 2}, {759, 2}, {761, 2}, {763, 2}, {765, 2}, {767, 2},
-    {769, 2}, {771, 2}, {773, 2}, {775, 2}, {777, 2}, {779, 2}, {781, 2}, {783, 2},
-    {785, 2}, {787, 2}, {789, 2}, {791, 2}, {793, 2}, {795, 1}, {796, 1}, {797, 1},
-    {798, 7}, {805, 1}, {806, 1}, {807, 1}, {808, 2}, {810, 2}, {812, 2}, {814, 2},
-    {816, 2}, {818, 2}, {820, 2}, {822, 2}, {824, 1}, {825, 1}, {826, 1}, {827, 1},
+    {107, 1}, {108, 1}, {109, 1}, {110, 1}, {111, 2}, {113, 2}, {115, 2}, {117, 2},
+    {119, 2}, {121, 2}, {123, 2}, {125, 2}, {127, 6}, {133, 8}, {141, 8}, {149, 6},
+    {155, 8}, {163, 6}, {169, 8}, {177, 6}, {183, 2}, {185, 2}, {187, 2}, {189, 2},
+    {191, 2}, {193, 2}, {195, 2}, {197, 2}, {199, 2}, {201, 2}, {203, 2}, {205, 2},
+    {207, 2}, {209, 2}, {211, 2}, {213, 2}, {215, 2}, {217, 2}, {219, 2}, {221, 2},
+    {223, 2}, {225, 2}, {227, 2}, {229, 2}, {231, 2}, {233, 2}, {235, 2}, {237, 2},
+    {239, 2}, {241, 2}, {243, 2}, {245, 2}, {247, 2}, {249, 2}, {251, 1}, {252, 1},
+    {253, 1}, {254, 7}, {261, 1}, {262, 1}, {263, 1}, {264, 8}, {272, 6}, {278, 8},
+    {286, 6}, {292, 6}, {298, 6}, {304, 8}, {312, 8}, {320, 2}, {322, 2}, {324, 2},
+    {326, 2}, {328, 2}, {330, 2}, {332, 2}, {334, 2}, {336, 1}, {337, 1}, {338, 1},
+    {339, 1}, {340, 1}, {341, 1}, {342, 1}, {343, 2}, {345, 2}, {347, 2}, {349, 2},
+    {351, 2}, {353, 2}, {355, 2}, {357, 2}, {359, 2}, {361, 2}, {363, 2}, {365, 2},
+    {367, 2}, {369, 2}, {371, 2}, {373, 2}, {375, 7}, {382, 6}, {388, 5}, {393, 1},
+    {394, 3}, {397, 4}, {401, 3}, {404, 6}, {410, 1}, {411, 1}, {412, 1}, {413, 1},
+    {414, 2}, {416, 2}, {418, 2}, {420, 2}, {422, 2}, {424, 2}, {426, 2}, {428, 2},
+    {430, 6}, {436, 8}, {444, 8}, {452, 8}, {460, 8}, {468, 6}, {474, 6}, {480, 8},
+    {488, 2}, {490, 2}, {492, 2}, {494, 2}, {496, 2}, {498, 2}, {500, 2}, {502, 2},
+    {504, 2}, {506, 2}, {508, 2}, {510, 2}, {512, 2}, {514, 2}, {516, 2}, {518, 2},
+    {520, 2}, {522, 2}, {524, 2}, {526, 2}, {528, 2}, {530, 2}, {532, 2}, {534, 2},
+    {536, 2}, {538, 2}, {540, 2}, {542, 2}, {544, 2}, {546, 2}, {548, 2}, {550, 2},
+    {552, 2}, {554, 2}, {556, 1}, {557, 1}, {558, 1}, {559, 7}, {566, 1}, {567, 1},
+    {568, 1}, {569, 1}, {570, 1}, {571, 1}, {572, 1}, {573, 1}, {574, 1}, {575, 1},
+    {576, 3}, {579, 3}, {582, 3}, {585, 3}, {588, 3}, {591, 3}, {594, 3}, {597, 3},
+    {600, 1}, {601, 1}, {602, 1}, {603, 1}, {604, 1}, {605, 1}, {606, 1}, {607, 2},
+    {609, 2}, {611, 2}, {613, 2}, {615, 2}, {617, 2}, {619, 2}, {621, 2}, {623, 1},
+    {624, 1}, {625, 1}, {626, 1}, {627, 3}, {630, 3}, {633, 3}, {636, 1}, {637, 3},
+    {640, 4}, {644, 3}, {647, 6}, {653, 1}, {654, 1}, {655, 1}, {656, 2}, {658, 2},
+    {660, 2}, {662, 2}, {664, 2}, {666, 2}, {668, 2}, {670, 2}, {672, 6}, {678, 8},
+    {686, 8}, {694, 6}, {700, 6}, {706, 8}, {714, 8}, {722, 8}, {730, 2}, {732, 2},
+    {734, 2}, {736, 2}, {738, 2}, {740, 2}, {742, 2}, {744, 2}, {746, 2}, {748, 2},
+    {750, 2}, {752, 2}, {754, 2}, {756, 2}, {758, 2}, {760, 2}, {762, 2}, {764, 2},
+    {766, 2}, {768, 2}, {770, 2}, {772, 2}, {774, 2}, {776, 2}, {778, 2}, {780, 2},
+    {782, 2}, {784, 2}, {786, 2}, {788, 2}, {790, 2}, {792, 2}, {794, 2}, {796, 2},
+    {798, 1}, {799, 1}, {800, 1}, {801, 7}, {808, 1}, {809, 1}, {810, 1}, {811, 2},
+    {813, 2}, {815, 2}, {817, 2}, {819, 2}, {821, 2}, {823, 2}, {825, 2}, {827, 1},
     {828, 1}, {829, 1}, {830, 1}, {831, 1}, {832, 1}, {833, 1}, {834, 1}, {835, 1},
-    {836, 1}, {837, 2}, {839, 2}, {841, 2}, {843, 2}, {845, 2}, {847, 2}, {849, 2},
-    {851, 2}, {853, 1}, {854, 1}, {855, 1}, {856, 1}, {857, 1}, {858, 1}, {859, 1},
-    {860, 1}, {861, 4}, {865, 4}, {869, 4}, {873, 1}, {874, 3}, {877, 4}, {881, 3},
-    {884, 6}, {890, 1}, {891, 1}, {892, 1}, {893, 2}, {895, 2}, {897, 2}, {899, 2},
-    {901, 2}, {903, 2}, {905, 2}, {907, 2}, {909, 8}, {917, 8}, {925, 8}, {933, 6},
-    {939, 8}, {947, 8}, {955, 6}, {961, 8}, {969, 2}, {971, 2}, {973, 2}, {975, 2},
-    {977, 2}, {979, 2}, {981, 2}, {983, 2}, {985, 2}, {987, 2}, {989, 2}, {991, 2},
-    {993, 2}, {995, 2}, {997, 2}, {999, 2}, {1001, 2}, {1003, 2}, {1005, 2}, {1007, 2},
-    {1009, 2}, {1011, 2}, {1013, 2}, {1015, 2}, {1017, 2}, {1019, 2}, {1021, 2}, {1023, 2},
-    {1025, 2}, {1027, 2}, {1029, 2}, {1031, 2}, {1033, 2}, {1035, 2}, {1037, 1}, {1038, 1},
-    {1039, 1}, {1040, 7}, {1047, 1}, {1048, 1}, {1049, 1}, {1050, 8}, {1058, 8}, {1066, 8},
-    {1074, 6}, {1080, 6}, {1086, 6}, {1092, 8}, {1100, 6}, {1106, 2}, {1108, 2}, {1110, 2},
-    {1112, 2}, {1114, 2}, {1116, 2}, {1118, 2}, {1120, 2}, {1122, 2}, {1124, 2}, {1126, 2},
-    {1128, 2}, {1130, 2}, {1132, 2}, {1134, 2}, {1136, 2}, {1138, 4}, {1142, 4}, {1146, 4},
-    {1150, 4}, {1154, 4}, {1158, 4}, {1162, 4}, {1166, 4}, {1170, 1}, {1171, 1}, {1172, 1},
-    {1173, 1}, {1174, 1}, {1175, 1}, {1176, 1}, {1177, 4}, {1181, 4}, {1185, 4}, {1189, 1},
-    {1190, 3}, {1193, 4}, {1197, 3}, {1200, 6}, {1206, 1}, {1207, 1}, {1208, 1}, {1209, 2},
-    {1211, 2}, {1213, 2}, {1215, 2}, {1217, 2}, {1219, 2}, {1221, 2}, {1223, 2}, {1225, 8},
-    {1233, 8}, {1241, 8}, {1249, 8}, {1257, 8}, {1265, 8}, {1273, 8}, {1281, 8}, {1289, 2},
-    {1291, 2}, {1293, 2}, {1295, 2}, {1297, 2}, {1299, 2}, {1301, 2}, {1303, 2}, {1305, 2},
-    {1307, 2}, {1309, 2}, {1311, 2}, {1313, 2}, {1315, 2}, {1317, 2}, {1319, 2}, {1321, 2},
-    {1323, 2}, {1325, 2}, {1327, 2}, {1329, 2}, {1331, 2}, {1333, 2}, {1335, 2}, {1337, 2},
-    {1339, 2}, {1341, 2}, {1343, 2}, {1345, 2}, {1347, 2}, {1349, 2}, {1351, 2}, {1353, 2},
-    {1355, 2}, {1357, 1}, {1358, 1}, {1359, 1}, {1360, 7}, {1367, 1}, {1368, 1}, {1369, 1},
-    {1370, 5}, {1375, 5}, {1380, 5}, {1385, 5}, {1390, 5}, {1395, 5}, {1400, 5}, {1405, 5},
-    {1410, 4}, {1414, 4}, {1418, 4}, {1422, 4}, {1426, 4}, {1430, 4}, {1434, 4}, {1438, 4},
-    {1442, 4}, {1446, 4}, {1450, 4}, {1454, 4}, {1458, 4}, {1462, 4}, {1466, 4}, {1470, 4},
-    {1474, 4}, {1478, 4}, {1482, 4}, {1486, 4}, {1490, 4}, {1494, 4}, {1498, 4}, {1502, 4},
-    {1506, 4}, {1510, 4}, {1514, 4}, {1518, 4}, {1522, 4}, {1526, 4}, {1530, 4}, {1534, 4},
-    {1538, 5}, {1543, 4}, {1547, 6}, {1553, 1}, {1554, 3}, {1557, 4}, {1561, 3}, {1564, 6},
-    {1570, 1}, {1571, 1}, {1572, 1}, {1573, 2}, {1575, 2}, {1577, 2}, {1579, 2}, {1581, 2},
-    {1583, 2}, {1585, 2}, {1587, 2}, {1589, 6}, {1595, 6}, {1601, 6}, {1607, 6}, {1613, 6},
-    {1619, 6}, {1625, 6}, {1631, 8}, {1639, 2}, {1641, 2}, {1643, 2}, {1645, 2}, {1647, 2},
-    {1649, 2}, {1651, 2}, {1653, 2}, {1655, 2}, {1657, 2}, {1659, 2}, {1661, 2}, {1663, 2},
-    {1665, 2}, {1667, 2}, {1669, 2}, {1671, 2}, {1673, 2}, {1675, 2}, {1677, 2}, {1679, 2},
-    {1681, 2}, {1683, 2}, {1685, 2}, {1687, 2}, {1689, 2}, {1691, 2}, {1693, 2}, {1695, 2},
-    {1697, 2}, {1699, 2}, {1701, 2}, {1703, 2}, {1705, 2}, {1707, 1}, {1708, 1}, {1709, 1},
-    {1710, 7}, {1717, 1}, {1718, 1}, {1719, 1}, {1720, 8}, {1728, 6}, {1734, 8}, {1742, 8},
-    {1750, 8}, {1758, 6}, {1764, 6}, {1770, 8}, {1778, 3}, {1781, 3}, {1784, 3}, {1787, 3},
-    {1790, 3}, {1793, 3}, {1796, 3}, {1799, 3}, {1802, 3}, {1805, 3}, {1808, 3}, {1811, 3},
-    {1814, 3}, {1817, 3}, {1820, 3}, {1823, 3}, {1826, 2}, {1828, 2}, {1830, 2}, {1832, 2},
-    {1834, 2}, {1836, 2}, {1838, 2}, {1840, 2}, {1842, 1}, {1843, 1}, {1844, 1}, {1845, 1},
-    {1846, 1}, {1847, 1}, {1848, 1}, {1849, 1}, {1850, 3}, {1853, 3}, {1856, 3}, {1859, 1},
-    {1860, 3}, {1863, 4}, {1867, 3}, {1870, 6}, {1876, 1}, {1877, 1}, {1878, 2}, {1880, 2},
-    {1882, 2}, {1884, 2}, {1886, 2}, {1888, 2}, {1890, 2}, {1892, 2}, {1894, 7}, {1901, 6},
-    {1907, 6}, {1913, 7}, {1920, 7}, {1927, 7}, {1934, 6}, {1940, 6}, {1946, 2}, {1948, 2},
-    {1950, 2}, {1952, 2}, {1954, 2}, {1956, 2}, {1958, 2}, {1960, 2}, {1962, 2}, {1964, 2},
-    {1966, 2}, {1968, 2}, {1970, 2}, {1972, 2}, {1974, 2}, {1976, 2}, {1978, 2}, {1980, 2},
-    {1982, 2}, {1984, 2}, {1986, 2}, {1988, 2}, {1990, 2}, {1992, 2}, {1994, 2}, {1996, 2},
-    {1998, 2}, {2000, 2}, {2002, 2}, {2004, 2}, {2006, 2}, {2008, 2}, {2010, 2}, {2012, 2},
-    {2014, 1}, {2015, 1}, {2016, 1}, {2017, 7}, {2024, 1}, {2025, 1}, {2026, 1}, {2027, 4},
-    {2031, 4}, {2035, 4}, {2039, 3}, {2042, 4}, {2046, 4}, {2050, 4}, {2054, 3}, {2057, 2},
-    {2059, 2}, {2061, 2}, {2063, 2}, {2065, 2}, {2067, 2}, {2069, 2}, {2071, 2}, {2073, 2},
-    {2075, 2}, {2077, 2}, {2079, 2}, {2081, 2}, {2083, 2}, {2085, 2}, {2087, 2}, {2089, 2},
-    {2091, 2}, {2093, 2}, {2095, 2}, {2097, 2}, {2099, 2}, {2101, 2}, {2103, 2}, {2105, 2},
-    {2107, 2}, {2109, 2}, {2111, 2}, {2113, 2}, {2115, 2}, {2117, 2}, {2119, 3}, {2122, 3},
-    {2125, 3}, {2128, 2}, {2130, 2}, {2132, 2}, {2134, 2}, {2136, 2}, {2138, 2}, {2140, 2},
-    {2142, 2}, {2144, 2}, {2146, 2}, {2148, 2}, {2150, 2}, {2152, 2}, {2154, 2}, {2156, 2},
-    {2158, 2}, {2160, 2}, {2162, 2}, {2164, 2}, {2166, 2}, {2168, 2}, {2170, 2}, {2172, 2},
-    {2174, 2}, {2176, 2}, {2178, 2}, {2180, 2}, {2182, 2}, {2184, 2}, {2186, 2}, {2188, 2},
-    {2190, 2}, {2192, 2}, {2194, 2}, {2196, 2}, {2198, 2}, {2200, 2}, {2202, 2}, {2204, 2},
-    {2206, 3}, {2209, 3}, {2212, 3}, {2215, 3}, {2218, 3}, {2221, 4}, {2225, 3}, {2228, 3},
-    {2231, 4}, {2235, 3}, {2238, 3}, {2241, 4}, {2245, 4}, {2249, 3}, {2252, 3}, {2255, 4},
-    {2259, 2}, {2261, 2}, {2263, 2}, {2265, 2}, {2267, 2}, {2269, 2}, {2271, 2}, {2273, 2},
-    {2275, 2}, {2277, 2}, {2279, 2}, {2281, 2}, {2283, 2}, {2285, 2}, {2287, 2}, {2289, 2},
-    {2291, 2}, {2293, 2}, {2295, 2}, {2297, 2}, {2299, 2}, {2301, 2}, {2303, 2}, {2305, 2},
-    {2307, 2}, {2309, 2}, {2311, 2}, {2313, 2}, {2315, 2}, {2317, 2}, {2319, 2}, {2321, 2},
-    {2323, 2}, {2325, 2}, {2327, 2}, {2329, 2}, {2331, 2}, {2333, 2}, {2335, 2}, {2337, 2},
-    {2339, 2}, {2341, 2}, {2343, 2}, {2345, 2}, {2347, 2}, {2349, 2}, {2351, 2}, {2353, 2},
-    {2355, 2}, {2357, 2}, {2359, 2}, {2361, 2}, {2363, 2}, {2365, 2}, {2367, 2}, {2369, 2},
-    {2371, 2}, {2373, 2}, {2375, 2}, {2377, 2}, {2379, 2}, {2381, 2}, {2383, 2}, {2385, 2},
-    {2387, 2}, {2389, 2}, {2391, 2}, {2393, 2}, {2395, 2}, {2397, 2}, {2399, 2}, {2401, 2},
-    {2403, 2}, {2405, 2}, {2407, 2}, {2409, 2}, {2411, 2}, {2413, 2}, {2415, 2}, {2417, 2},
-    {2419, 2}, {2421, 2}, {2423, 2}, {2425, 2}, {2427, 2}, {2429, 2}, {2431, 2}, {2433, 2},
-    {2435, 2}, {2437, 2}, {2439, 2}, {2441, 2}, {2443, 2}, {2445, 2}, {2447, 2}, {2449, 2},
-    {2451, 2}, {2453, 2}, {2455, 2}, {2457, 2}, {2459, 2}, {2461, 2}, {2463, 2}, {2465, 2},
-    {2467, 2}, {2469, 2}, {2471, 2}, {2473, 2}, {2475, 2}, {2477, 2}, {2479, 2}, {2481, 2},
-    {2483, 3}, {2486, 3}, {2489, 3}, {2492, 2}, {2494, 2}, {2496, 2}, {2498, 2}, {2500, 2},
-    {2502, 2}, {2504, 2}, {2506, 2}, {2508, 2}, {2510, 4}, {2514, 3}, {2517, 3}, {2520, 4},
-    {2524, 3}, {2527, 4}, {2531, 3}, {2534, 4}, {2538, 2}, {2540, 2}, {2542, 2}, {2544, 2},
-    {2546, 2}, {2548, 2}, {2550, 2}, {2552, 2}, {2554, 2}, {2556, 2}, {2558, 2}, {2560, 2},
-    {2562, 2}, {2564, 2}, {2566, 2}, {2568, 2}, {2570, 2}, {2572, 2}, {2574, 2}, {2576, 2},
-    {2578, 2}, {2580, 2}, {2582, 2}, {2584, 2}, {2586, 2}, {2588, 2}, {2590, 2}, {2592, 2},
-    {2594, 2}, {2596, 2}, {2598, 2}, {2600, 4}, {2604, 4}, {2608, 4}, {2612, 2}, {2614, 2},
-    {2616, 2}, {2618, 2}, {2620, 2}, {2622, 2}, {2624, 2}, {2626, 2}, {2628, 2}, {2630, 2},
-    {2632, 2}, {2634, 2}, {2636, 2}, {2638, 2}, {2640, 2}, {2642, 2}, {2644, 2}, {2646, 2},
-    {2648, 2}, {2650, 2}, {2652, 2}, {2654, 2}, {2656, 2}, {2658, 2}, {2660, 2}, {2662, 2},
-    {2664, 2}, {2666, 2}, {2668, 2}, {2670, 2}, {2672, 2}, {2674, 2}, {2676, 2}, {2678, 2},
-    {2680, 2}, {2682, 2}, {2684, 2}, {2686, 2}, {2688, 2}, {2690, 4}, {2694, 4}, {2698, 4},
-    {2702, 3}, {2705, 3}, {2708, 3}, {2711, 4}, {2715, 4}, {2719, 3}, {2722, 4}, {2726, 3},
-    {2729, 3}, {2732, 4}, {2736, 3}, {2739, 3}, {2742, 4}, {2746, 2}, {2748, 2}, {2750, 2},
-    {2752, 2}, {2754, 2}, {2756, 2}, {2758, 2}, {2760, 2}, {2762, 2}, {2764, 2}, {2766, 2},
-    {2768, 2}, {2770, 2}, {2772, 2}, {2774, 2}, {2776, 2}, {2778, 2}, {2780, 2}, {2782, 2},
-    {2784, 2}, {2786, 2}, {2788, 2}, {2790, 2}, {2792, 2}, {2794, 2}, {2796, 2}, {2798, 2},
-    {2800, 2}, {2802, 2}, {2804, 2}, {2806, 2}, {2808, 2}, {2810, 2}, {2812, 2}, {2814, 2},
-    {2816, 2}, {2818, 2}, {2820, 2}, {2822, 2}, {2824, 2}, {2826, 2}, {2828, 2}, {2830, 2},
-    {2832, 2}, {2834, 2}, {2836, 2}, {2838, 2}, {2840, 2}, {2842, 2}, {2844, 2}, {2846, 2},
-    {2848, 2}, {2850, 2}, {2852, 2}, {2854, 2}, {2856, 2}, {2858, 2}, {2860, 2}, {2862, 2},
-    {2864, 2}, {2866, 2}, {2868, 2}, {2870, 2}, {2872, 2}, {2874, 2}, {2876, 2}, {2878, 2},
-    {2880, 2}, {2882, 2}, {2884, 2}, {2886, 2}, {2888, 2}, {2890, 2}, {2892, 2}, {2894, 2},
-    {2896, 2}, {2898, 2}, {2900, 2}, {2902, 2}, {2904, 2}, {2906, 2}, {2908, 2}, {2910, 2},
-    {2912, 2}, {2914, 2}, {2916, 2}, {2918, 2}, {2920, 2}, {2922, 2}, {2924, 2}, {2926, 2},
-    {2928, 2}, {2930, 2}, {2932, 2}, {2934, 2}, {2936, 2}, {2938, 2}, {2940, 2}, {2942, 2},
-    {2944, 2}, {2946, 2}, {2948, 2}, {2950, 2}, {2952, 2}, {2954, 2}, {2956, 2}, {2958, 2},
-    {2960, 2}, {2962, 2}, {2964, 2}, {2966, 2}, {2968, 2}, {2970, 2}, {2972, 3}, {2975, 3},
-    {2978, 3}, {2981, 2}, {2983, 2}, {2985, 2}, {2987, 2}, {2989, 2}, {2991, 2}, {2993, 2},
-    {2995, 2}, {2997, 2}, {2999, 2}, {3001, 2}, {3003, 2}, {3005, 2}, {3007, 2}, {3009, 2},
-    {3011, 2}, {3013, 2}, {3015, 2}, {3017, 2}, {3019, 2}, {3021, 2}, {3023, 2}, {3025, 2},
-    {3027, 2}, {3029, 2}, {3031, 2}, {3033, 2}, {3035, 2}, {3037, 2}, {3039, 2}, {3041, 2},
-    {3043, 2}, {3045, 2}, {3047, 2}, {3049, 2}, {3051, 2}, {3053, 2}, {3055, 2}, {3057, 2},
-    {3059, 2}, {3061, 2}, {3063, 2}, {3065, 2}, {3067, 2}, {3069, 2}, {3071, 2}, {3073, 2},
-    {3075, 2}, {3077, 2}, {3079, 4}, {3083, 4}, {3087, 4}, {3091, 2}, {3093, 2}, {3095, 2},
-    {3097, 2}, {3099, 2}, {3101, 2}, {3103, 2}, {3105, 2}, {3107, 2}, {3109, 2}, {3111, 2},
-    {3113, 2}, {3115, 2}, {3117, 2}, {3119, 2}, {3121, 2}, {3123, 2}, {3125, 2}, {3127, 2},
-    {3129, 2}, {3131, 2}, {3133, 2}, {3135, 2}, {3137, 2}, {3139, 2}, {3141, 2}, {3143, 2},
-    {3145, 2}, {3147, 2}, {3149, 2}, {3151, 2}, {3153, 2}, {3155, 2}, {3157, 2}, {3159, 2},
-    {3161, 2}, {3163, 2}, {3165, 2}, {3167, 2}, {3169, 3}, {3172, 3}, {3175, 4}, {3179, 3},
-    {3182, 4}, {3186, 4}, {3190, 4}, {3194, 4}, {3198, 3}, {3201, 3}, {3204, 4}, {3208, 3},
-    {3211, 4}, {3215, 3}, {3218, 4}, {3222, 3}, {3225, 2}, {3227, 2}, {3229, 2}, {3231, 2},
-    {3233, 2}, {3235, 2}, {3237, 2}, {3239, 2}, {3241, 2}, {3243, 2}, {3245, 2}, {3247, 2},
-    {3249, 2}, {3251, 2}, {3253, 2}, {3255, 2}, {3257, 2}, {3259, 2}, {3261, 2}, {3263, 2},
-    {3265, 2}, {3267, 2}, {3269, 2}, {3271, 2}, {3273, 2}, {3275, 2}, {3277, 2}, {3279, 2},
-    {3281, 2}, {3283, 2}, {3285, 2}, {3287, 2}, {3289, 2}, {3291, 2}, {3293, 2}, {3295, 2},
-    {3297, 2}, {3299, 2}, {3301, 2}, {3303, 2}, {3305, 2}, {3307, 2}, {3309, 2}, {3311, 2},
-    {3313, 2}, {3315, 2}, {3317, 2}, {3319, 2}, {3321, 2}, {3323, 2}, {3325, 2}, {3327, 2},
-    {3329, 2}, {3331, 2}, {3333, 2}, {3335, 2}, {3337, 2}, {3339, 2}, {3341, 2}, {3343, 2},
-    {3345, 2}, {3347, 2}, {3349, 2}, {3351, 2}, {3353, 2}, {3355, 2}, {3357, 2}, {3359, 2},
-    {3361, 2}, {3363, 2}, {3365, 2}, {3367, 2}, {3369, 2}, {3371, 2}, {3373, 2}, {3375, 2},
-    {3377, 2}, {3379, 2}, {3381, 2}, {3383, 2}, {3385, 2}, {3387, 2}, {3389, 2}, {3391, 2},
-    {3393, 2}, {3395, 2}, {3397, 2}, {3399, 2}, {3401, 2}, {3403, 2}, {3405, 2}, {3407, 2},
-    {3409, 2}, {3411, 2}, {3413, 2}, {3415, 2}, {3417, 2}, {3419, 2}, {3421, 2}, {3423, 2},
-    {3425, 2}, {3427, 2}, {3429, 2}, {3431, 2}, {3433, 2}, {3435, 2}, {3437, 2}, {3439, 2},
-    {3441, 2}, {3443, 2}, {3445, 2}, {3447, 2}, {3449, 3}, {3452, 3}, {3455, 3}, {3458, 2},
-    {3460, 2}, {3462, 2}, {3464, 2}, {3466, 2}, {3468, 2}, {3470, 2}, {3472, 2}, {3474, 2},
-    {3476, 2}, {3478, 2}, {3480, 2}, {3482, 2}, {3484, 2}, {3486, 2}, {3488, 2}, {3490, 2},
-    {3492, 2}, {3494, 2}, {3496, 2}, {3498, 2}, {3500, 2}, {3502, 2}, {3504, 2}, {3506, 2},
-    {3508, 2}, {3510, 2}, {3512, 2}, {3514, 2}, {3516, 2}, {3518, 2}, {3520, 2}, {3522, 2},
-    {3524, 2}, {3526, 2}, {3528, 2}, {3530, 2}, {3532, 2}, {3534, 2}, {3536, 2}, {3538, 2},
-    {3540, 2}, {3542, 2}, {3544, 2}, {3546, 2}, {3548, 2}, {3550, 2}, {3552, 2}, {3554, 5},
-    {3559, 5}, {3564, 5}, {3569, 2}, {3571, 2}, {3573, 2}, {3575, 2}, {3577, 2}, {3579, 2},
-    {3581, 2}, {3583, 2}, {3585, 2}, {3587, 2}, {3589, 2}, {3591, 2}, {3593, 2}, {3595, 2},
-    {3597, 2}, {3599, 2}, {3601, 2}, {3603, 2}, {3605, 2}, {3607, 2}, {3609, 2}, {3611, 2},
-    {3613, 2}, {3615, 2}, {3617, 2}, {3619, 2}, {3621, 2}, {3623, 2}, {3625, 2}, {3627, 2},
-    {3629, 2}, {3631, 2}, {3633, 2}, {3635, 2}, {3637, 2}, {3639, 2}, {3641, 2}, {3643, 2},
-    {3645, 2}, {3647, 4}, {3651, 3}, {3654, 3}, {3657, 4}, {3661, 3}, {3664, 3}, {3667, 3},
-    {3670, 4}, {3674, 3}, {3677, 4}, {3681, 4}, {3685, 4}, {3689, 3}, {3692, 4}, {3696, 3},
-    {3699, 4}, {3703, 2}, {3705, 2}, {3707, 2}, {3709, 2}, {3711, 2}, {3713, 2}, {3715, 2},
-    {3717, 2}, {3719, 2}, {3721, 2}, {3723, 2}, {3725, 2}, {3727, 2}, {3729, 2}, {3731, 2},
-    {3733, 2}, {3735, 2}, {3737, 2}, {3739, 2}, {3741, 2}, {3743, 2}, {3745, 2}, {3747, 2},
-    {3749, 2}, {3751, 2}, {3753, 2}, {3755, 2}, {3757, 2}, {3759, 2}, {3761, 2}, {3763, 2},
-    {3765, 2}, {3767, 2}, {3769, 2}, {3771, 2}, {3773, 2}, {3775, 2}, {3777, 2}, {3779, 2},
-    {3781, 2}, {3783, 2}, {3785, 2}, {3787, 2}, {3789, 2}, {3791, 2}, {3793, 2}, {3795, 2},
-    {3797, 2}, {3799, 2}, {3801, 2}, {3803, 2}, {3805, 2}, {3807, 2}, {3809, 2}, {3811, 2},
-    {3813, 2}, {3815, 2}, {3817, 2}, {3819, 2}, {3821, 2}, {3823, 2}, {3825, 2}, {3827, 2},
-    {3829, 2}, {3831, 2}, {3833, 2}, {3835, 2}, {3837, 2}, {3839, 2}, {3841, 2}, {3843, 2},
-    {3845, 2}, {3847, 2}, {3849, 2}, {3851, 2}, {3853, 2}, {3855, 2}, {3857, 2}, {3859, 2},
-    {3861, 2}, {3863, 2}, {3865, 2}, {3867, 2}, {3869, 2}, {3871, 2}, {3873, 2}, {3875, 2},
-    {3877, 2}, {3879, 2}, {3881, 2}, {3883, 2}, {3885, 2}, {3887, 2}, {3889, 2}, {3891, 2},
-    {3893, 2}, {3895, 2}, {3897, 2}, {3899, 2}, {3901, 2}, {3903, 2}, {3905, 2}, {3907, 2},
-    {3909, 2}, {3911, 2}, {3913, 2}, {3915, 2}, {3917, 2}, {3919, 2}, {3921, 2}, {3923, 2},
-    {3925, 2}, {3927, 2}, {3929, 3}, {3932, 3}, {3935, 3}, {3938, 2}, {3940, 2}, {3942, 2},
-    {3944, 2}, {3946, 2}, {3948, 2}, {3950, 2}, {3952, 2}, {3954, 2}, {3956, 3}, {3959, 4},
-    {3963, 4}, {3967, 4}, {3971, 3}, {3974, 4}, {3978, 3}, {3981, 4}, {3985, 4}, {3989, 4},
-    {3993, 4}, {3997, 4}, {4001, 4}, {4005, 3}, {4008, 4}, {4012, 4}, {4016, 2}, {4018, 2},
-    {4020, 2}, {4022, 2}, {4024, 2}, {4026, 2}, {4028, 2}, {4030, 2}, {4032, 2}, {4034, 2},
-    {4036, 2}, {4038, 2}, {4040, 2}, {4042, 2}, {4044, 2}, {4046, 2}, {4048, 3}, {4051, 4},
-    {4055, 4}, {4059, 3}, {4062, 4}, {4066, 3}, {4069, 4}, {4073, 3}, {4076, 4}, {4080, 4},
-    {4084, 4}, {4088, 2}, {4090, 2}, {4092, 2}, {4094, 2}, {4096, 2}, {4098, 2}, {4100, 2},
-    {4102, 2}, {4104, 2}, {4106, 2}, {4108, 2}, {4110, 2}, {4112, 2}, {4114, 2}, {4116, 2},
-    {4118, 2}, {4120, 2}, {4122, 2}, {4124, 2}, {4126, 2}, {4128, 2}, {4130, 2}, {4132, 2},
-    {4134, 2}, {4136, 2}, {4138, 2}, {4140, 2}, {4142, 2}, {4144, 2}, {4146, 2}, {4148, 2},
-    {4150, 2}, {4152, 2}, {4154, 2}, {4156, 2}, {4158, 2}, {4160, 2}, {4162, 2}, {4164, 2},
-    {4166, 4}, {4170, 4}, {4174, 3}, {4177, 3}, {4180, 4}, {4184, 4}, {4188, 3}, {4191, 4},
-    {4195, 3}, {4198, 4}, {4202, 3}, {4205, 3}, {4208, 3}, {4211, 3}, {4214, 3}, {4217, 4},
-    {4221, 2}, {4223, 2}, {4225, 2}, {4227, 2}, {4229, 2}, {4231, 2}, {4233, 2}, {4235, 2},
-    {4237, 2}, {4239, 2}, {4241, 2}, {4243, 2}, {4245, 2}, {4247, 2}, {4249, 2}, {4251, 2},
-    {4253, 2}, {4255, 2}, {4257, 2}, {4259, 2}, {4261, 2}, {4263, 2}, {4265, 2}, {4267, 2},
-    {4269, 2}, {4271, 2}, {4273, 2}, {4275, 2}, {4277, 2}, {4279, 2}, {4281, 2}, {4283, 2},
-    {4285, 2}, {4287, 2}, {4289, 2}, {4291, 2}, {4293, 2}, {4295, 2}, {4297, 2}, {4299, 2},
-    {4301, 2}, {4303, 2}, {4305, 2}, {4307, 2}, {4309, 2}, {4311, 2}, {4313, 2}, {4315, 2},
-    {4317, 2}, {4319, 2}, {4321, 2}, {4323, 2}, {4325, 2}, {4327, 2}, {4329, 2}, {4331, 2},
-    {4333, 2}, {4335, 2}, {4337, 2}, {4339, 2}, {4341, 2}, {4343, 2}, {4345, 2}, {4347, 2},
-    {4349, 2}, {4351, 2}, {4353, 2}, {4355, 2}, {4357, 2}, {4359, 2}, {4361, 2}, {4363, 2},
-    {4365, 2}, {4367, 2}, {4369, 2}, {4371, 2}, {4373, 2}, {4375, 2}, {4377, 2}, {4379, 2},
-    {4381, 2}, {4383, 2}, {4385, 2}, {4387, 2}, {4389, 2}, {4391, 2}, {4393, 2}, {4395, 2},
-    {4397, 2}, {4399, 2}, {4401, 2}, {4403, 2}, {4405, 2}, {4407, 2}, {4409, 2}, {4411, 2},
-    {4413, 2}, {4415, 2}, {4417, 2}, {4419, 2}, {4421, 2}, {4423, 2}, {4425, 2}, {4427, 2},
-    {4429, 2}, {4431, 2}, {4433, 2}, {4435, 2}, {4437, 2}, {4439, 2}, {4441, 2}, {4443, 2},
-    {4445, 2}, {4447, 3}, {4450, 3}, {4453, 3}, {4456, 2}, {4458, 2}, {4460, 2}, {4462, 2},
-    {4464, 2}, {4466, 2}, {4468, 2}, {4470, 2}, {4472, 2}, {4474, 4}, {4478, 3}, {4481, 3},
-    {4484, 4}, {4488, 3}, {4491, 3}, {4494, 3}, {4497, 4}, {4501, 2}, {4503, 2}, {4505, 2},
-    {4507, 2}, {4509, 2}, {4511, 2}, {4513, 2}, {4515, 2}, {4517, 2}, {4519, 2}, {4521, 2},
-    {4523, 2}, {4525, 2}, {4527, 2}, {4529, 2}, {4531, 2}, {4533, 2}, {4535, 2}, {4537, 2},
-    {4539, 2}, {4541, 2}, {4543, 2}, {4545, 2}, {4547, 2}, {4549, 2}, {4551, 2}, {4553, 2},
-    {4555, 2}, {4557, 2}, {4559, 2}, {4561, 2}, {4563, 2}, {4565, 3}, {4568, 3}, {4571, 3},
-    {4574, 2}, {4576, 2}, {4578, 2}, {4580, 2}, {4582, 2}, {4584, 2}, {4586, 2}, {4588, 2},
-    {4590, 2}, {4592, 2}, {4594, 2}, {4596, 2}, {4598, 2}, {4600, 2}, {4602, 2}, {4604, 2},
-    {4606, 2}, {4608, 2}, {4610, 2}, {4612, 2}, {4614, 2}, {4616, 2}, {4618, 2}, {4620, 2},
-    {4622, 2}, {4624, 2}, {4626, 2}, {4628, 2}, {4630, 2}, {4632, 2}, {4634, 2}, {4636, 2},
-    {4638, 2}, {4640, 2}, {4642, 2}, {4644, 2}, {4646, 2}, {4648, 2}, {4650, 2}, {4652, 3},
-    {4655, 4}, {4659, 4}, {4663, 4}, {4667, 3}, {4670, 3}, {4673, 3}, {4676, 3}, {4679, 3},
-    {4682, 4}, {4686, 4}, {4690, 4}, {4694, 4}, {4698, 4}, {4702, 3}, {4705, 4}, {4709, 2},
-    {4711, 2}, {4713, 2}, {4715, 2}, {4717, 2}, {4719, 2}, {4721, 2}, {4723, 2}, {4725, 2},
-    {4727, 2}, {4729, 2}, {4731, 2}, {4733, 2}, {4735, 2}, {4737, 2}, {4739, 2}, {4741, 2},
-    {4743, 2}, {4745, 2}, {4747, 2}, {4749, 2}, {4751, 2}, {4753, 2}, {4755, 2}, {4757, 2},
-    {4759, 2}, {4761, 2}, {4763, 2}, {4765, 2}, {4767, 2}, {4769, 2}, {4771, 2}, {4773, 2},
-    {4775, 2}, {4777, 2}, {4779, 2}, {4781, 2}, {4783, 2}, {4785, 2}, {4787, 2}, {4789, 2},
-    {4791, 2}, {4793, 2}, {4795, 2}, {4797, 2}, {4799, 2}, {4801, 2}, {4803, 2}, {4805, 2},
-    {4807, 2}, {4809, 2}, {4811, 2}, {4813, 2}, {4815, 2}, {4817, 2}, {4819, 2}, {4821, 2},
-    {4823, 2}, {4825, 2}, {4827, 2}, {4829, 2}, {4831, 2}, {4833, 2}, {4835, 2}, {4837, 2},
-    {4839, 2}, {4841, 2}, {4843, 2}, {4845, 2}, {4847, 2}, {4849, 2}, {4851, 2}, {4853, 2},
-    {4855, 2}, {4857, 2}, {4859, 2}, {4861, 2}, {4863, 2}, {4865, 2}, {4867, 2}, {4869, 2},
-    {4871, 2}, {4873, 2}, {4875, 2}, {4877, 2}, {4879, 2}, {4881, 2}, {4883, 2}, {4885, 2},
-    {4887, 2}, {4889, 2}, {4891, 2}, {4893, 2}, {4895, 2}, {4897, 2}, {4899, 2}, {4901, 2},
-    {4903, 2}, {4905, 2}, {4907, 2}, {4909, 2}, {4911, 2}, {4913, 2}, {4915, 2}, {4917, 2},
-    {4919, 2}, {4921, 2}, {4923, 2}, {4925, 2}, {4927, 2}, {4929, 2}, {4931, 2}, {4933, 2},
-    {4935, 3}, {4938, 3}, {4941, 3}, {4944, 2}, {4946, 2}, {4948, 2}, {4950, 2}, {4952, 2},
-    {4954, 2}, {4956, 2}, {4958, 2}, {4960, 2},
+    {836, 1}, {837, 1}, {838, 1}, {839, 1}, {840, 2}, {842, 2}, {844, 2}, {846, 2},
+    {848, 2}, {850, 2}, {852, 2}, {854, 2}, {856, 1}, {857, 1}, {858, 1}, {859, 1},
+    {860, 1}, {861, 1}, {862, 1}, {863, 1}, {864, 4}, {868, 4}, {872, 4}, {876, 1},
+    {877, 3}, {880, 4}, {884, 3}, {887, 6}, {893, 1}, {894, 1}, {895, 1}, {896, 1},
+    {897, 2}, {899, 2}, {901, 2}, {903, 2}, {905, 2}, {907, 2}, {909, 2}, {911, 2},
+    {913, 8}, {921, 8}, {929, 8}, {937, 6}, {943, 8}, {951, 8}, {959, 6}, {965, 8},
+    {973, 2}, {975, 2}, {977, 2}, {979, 2}, {981, 2}, {983, 2}, {985, 2}, {987, 2},
+    {989, 2}, {991, 2}, {993, 2}, {995, 2}, {997, 2}, {999, 2}, {1001, 2}, {1003, 2},
+    {1005, 2}, {1007, 2}, {1009, 2}, {1011, 2}, {1013, 2}, {1015, 2}, {1017, 2}, {1019, 2},
+    {1021, 2}, {1023, 2}, {1025, 2}, {1027, 2}, {1029, 2}, {1031, 2}, {1033, 2}, {1035, 2},
+    {1037, 2}, {1039, 2}, {1041, 1}, {1042, 1}, {1043, 1}, {1044, 7}, {1051, 1}, {1052, 1},
+    {1053, 1}, {1054, 8}, {1062, 8}, {1070, 8}, {1078, 6}, {1084, 6}, {1090, 6}, {1096, 8},
+    {1104, 6}, {1110, 2}, {1112, 2}, {1114, 2}, {1116, 2}, {1118, 2}, {1120, 2}, {1122, 2},
+    {1124, 2}, {1126, 2}, {1128, 2}, {1130, 2}, {1132, 2}, {1134, 2}, {1136, 2}, {1138, 2},
+    {1140, 2}, {1142, 4}, {1146, 4}, {1150, 4}, {1154, 4}, {1158, 4}, {1162, 4}, {1166, 4},
+    {1170, 4}, {1174, 1}, {1175, 1}, {1176, 1}, {1177, 1}, {1178, 1}, {1179, 1}, {1180, 1},
+    {1181, 4}, {1185, 4}, {1189, 4}, {1193, 1}, {1194, 3}, {1197, 4}, {1201, 3}, {1204, 6},
+    {1210, 1}, {1211, 1}, {1212, 1}, {1213, 1}, {1214, 2}, {1216, 2}, {1218, 2}, {1220, 2},
+    {1222, 2}, {1224, 2}, {1226, 2}, {1228, 2}, {1230, 8}, {1238, 8}, {1246, 8}, {1254, 8},
+    {1262, 8}, {1270, 8}, {1278, 8}, {1286, 8}, {1294, 2}, {1296, 2}, {1298, 2}, {1300, 2},
+    {1302, 2}, {1304, 2}, {1306, 2}, {1308, 2}, {1310, 2}, {1312, 2}, {1314, 2}, {1316, 2},
+    {1318, 2}, {1320, 2}, {1322, 2}, {1324, 2}, {1326, 2}, {1328, 2}, {1330, 2}, {1332, 2},
+    {1334, 2}, {1336, 2}, {1338, 2}, {1340, 2}, {1342, 2}, {1344, 2}, {1346, 2}, {1348, 2},
+    {1350, 2}, {1352, 2}, {1354, 2}, {1356, 2}, {1358, 2}, {1360, 2}, {1362, 1}, {1363, 1},
+    {1364, 1}, {1365, 7}, {1372, 1}, {1373, 1}, {1374, 1}, {1375, 5}, {1380, 5}, {1385, 5},
+    {1390, 5}, {1395, 5}, {1400, 5}, {1405, 5}, {1410, 5}, {1415, 4}, {1419, 4}, {1423, 4},
+    {1427, 4}, {1431, 4}, {1435, 4}, {1439, 4}, {1443, 4}, {1447, 4}, {1451, 4}, {1455, 4},
+    {1459, 4}, {1463, 4}, {1467, 4}, {1471, 4}, {1475, 4}, {1479, 4}, {1483, 4}, {1487, 4},
+    {1491, 4}, {1495, 4}, {1499, 4}, {1503, 4}, {1507, 4}, {1511, 4}, {1515, 4}, {1519, 4},
+    {1523, 4}, {1527, 4}, {1531, 4}, {1535, 4}, {1539, 4}, {1543, 5}, {1548, 4}, {1552, 6},
+    {1558, 1}, {1559, 3}, {1562, 4}, {1566, 3}, {1569, 6}, {1575, 1}, {1576, 1}, {1577, 1},
+    {1578, 1}, {1579, 2}, {1581, 2}, {1583, 2}, {1585, 2}, {1587, 2}, {1589, 2}, {1591, 2},
+    {1593, 2}, {1595, 6}, {1601, 6}, {1607, 6}, {1613, 6}, {1619, 6}, {1625, 6}, {1631, 6},
+    {1637, 8}, {1645, 2}, {1647, 2}, {1649, 2}, {1651, 2}, {1653, 2}, {1655, 2}, {1657, 2},
+    {1659, 2}, {1661, 2}, {1663, 2}, {1665, 2}, {1667, 2}, {1669, 2}, {1671, 2}, {1673, 2},
+    {1675, 2}, {1677, 2}, {1679, 2}, {1681, 2}, {1683, 2}, {1685, 2}, {1687, 2}, {1689, 2},
+    {1691, 2}, {1693, 2}, {1695, 2}, {1697, 2}, {1699, 2}, {1701, 2}, {1703, 2}, {1705, 2},
+    {1707, 2}, {1709, 2}, {1711, 2}, {1713, 1}, {1714, 1}, {1715, 1}, {1716, 7}, {1723, 1},
+    {1724, 1}, {1725, 1}, {1726, 8}, {1734, 6}, {1740, 8}, {1748, 8}, {1756, 8}, {1764, 6},
+    {1770, 6}, {1776, 8}, {1784, 3}, {1787, 3}, {1790, 3}, {1793, 3}, {1796, 3}, {1799, 3},
+    {1802, 3}, {1805, 3}, {1808, 3}, {1811, 3}, {1814, 3}, {1817, 3}, {1820, 3}, {1823, 3},
+    {1826, 3}, {1829, 3}, {1832, 2}, {1834, 2}, {1836, 2}, {1838, 2}, {1840, 2}, {1842, 2},
+    {1844, 2}, {1846, 2}, {1848, 1}, {1849, 1}, {1850, 1}, {1851, 1}, {1852, 1}, {1853, 1},
+    {1854, 1}, {1855, 1}, {1856, 3}, {1859, 3}, {1862, 3}, {1865, 1}, {1866, 3}, {1869, 4},
+    {1873, 3}, {1876, 6}, {1882, 1}, {1883, 1}, {1884, 1}, {1885, 2}, {1887, 2}, {1889, 2},
+    {1891, 2}, {1893, 2}, {1895, 2}, {1897, 2}, {1899, 2}, {1901, 7}, {1908, 6}, {1914, 6},
+    {1920, 7}, {1927, 7}, {1934, 7}, {1941, 6}, {1947, 6}, {1953, 2}, {1955, 2}, {1957, 2},
+    {1959, 2}, {1961, 2}, {1963, 2}, {1965, 2}, {1967, 2}, {1969, 2}, {1971, 2}, {1973, 2},
+    {1975, 2}, {1977, 2}, {1979, 2}, {1981, 2}, {1983, 2}, {1985, 2}, {1987, 2}, {1989, 2},
+    {1991, 2}, {1993, 2}, {1995, 2}, {1997, 2}, {1999, 2}, {2001, 2}, {2003, 2}, {2005, 2},
+    {2007, 2}, {2009, 2}, {2011, 2}, {2013, 2}, {2015, 2}, {2017, 2}, {2019, 2}, {2021, 1},
+    {2022, 1}, {2023, 1}, {2024, 7}, {2031, 1}, {2032, 1}, {2033, 1}, {2034, 4}, {2038, 4},
+    {2042, 4}, {2046, 3}, {2049, 4}, {2053, 4}, {2057, 4}, {2061, 3}, {2064, 2}, {2066, 2},
+    {2068, 2}, {2070, 2}, {2072, 2}, {2074, 2}, {2076, 2}, {2078, 2}, {2080, 2}, {2082, 2},
+    {2084, 2}, {2086, 2}, {2088, 2}, {2090, 2}, {2092, 2}, {2094, 2}, {2096, 2}, {2098, 2},
+    {2100, 2}, {2102, 2}, {2104, 2}, {2106, 2}, {2108, 2}, {2110, 2}, {2112, 2}, {2114, 2},
+    {2116, 2}, {2118, 2}, {2120, 2}, {2122, 2}, {2124, 2}, {2126, 3}, {2129, 3}, {2132, 3},
+    {2135, 2}, {2137, 2}, {2139, 2}, {2141, 2}, {2143, 2}, {2145, 2}, {2147, 2}, {2149, 2},
+    {2151, 2}, {2153, 2}, {2155, 2}, {2157, 2}, {2159, 2}, {2161, 2}, {2163, 2}, {2165, 2},
+    {2167, 2}, {2169, 2}, {2171, 2}, {2173, 2}, {2175, 2}, {2177, 2}, {2179, 2}, {2181, 2},
+    {2183, 2}, {2185, 2}, {2187, 2}, {2189, 2}, {2191, 2}, {2193, 2}, {2195, 2}, {2197, 2},
+    {2199, 2}, {2201, 2}, {2203, 2}, {2205, 2}, {2207, 2}, {2209, 2}, {2211, 2}, {2213, 2},
+    {2215, 2}, {2217, 2}, {2219, 3}, {2222, 3}, {2225, 3}, {2228, 3}, {2231, 3}, {2234, 4},
+    {2238, 3}, {2241, 3}, {2244, 4}, {2248, 3}, {2251, 3}, {2254, 4}, {2258, 4}, {2262, 3},
+    {2265, 3}, {2268, 4}, {2272, 2}, {2274, 2}, {2276, 2}, {2278, 2}, {2280, 2}, {2282, 2},
+    {2284, 2}, {2286, 2}, {2288, 2}, {2290, 2}, {2292, 2}, {2294, 2}, {2296, 2}, {2298, 2},
+    {2300, 2}, {2302, 2}, {2304, 2}, {2306, 2}, {2308, 2}, {2310, 2}, {2312, 2}, {2314, 2},
+    {2316, 2}, {2318, 2}, {2320, 2}, {2322, 2}, {2324, 2}, {2326, 2}, {2328, 2}, {2330, 2},
+    {2332, 2}, {2334, 2}, {2336, 2}, {2338, 2}, {2340, 2}, {2342, 2}, {2344, 2}, {2346, 2},
+    {2348, 2}, {2350, 2}, {2352, 2}, {2354, 2}, {2356, 2}, {2358, 2}, {2360, 2}, {2362, 2},
+    {2364, 2}, {2366, 2}, {2368, 2}, {2370, 2}, {2372, 2}, {2374, 2}, {2376, 2}, {2378, 2},
+    {2380, 2}, {2382, 2}, {2384, 2}, {2386, 2}, {2388, 2}, {2390, 2}, {2392, 2}, {2394, 2},
+    {2396, 2}, {2398, 2}, {2400, 2}, {2402, 2}, {2404, 2}, {2406, 2}, {2408, 2}, {2410, 2},
+    {2412, 2}, {2414, 2}, {2416, 2}, {2418, 2}, {2420, 2}, {2422, 2}, {2424, 2}, {2426, 2},
+    {2428, 2}, {2430, 2}, {2432, 2}, {2434, 2}, {2436, 2}, {2438, 2}, {2440, 2}, {2442, 2},
+    {2444, 2}, {2446, 2}, {2448, 2}, {2450, 2}, {2452, 2}, {2454, 2}, {2456, 2}, {2458, 2},
+    {2460, 2}, {2462, 2}, {2464, 2}, {2466, 2}, {2468, 2}, {2470, 2}, {2472, 2}, {2474, 2},
+    {2476, 2}, {2478, 2}, {2480, 2}, {2482, 2}, {2484, 2}, {2486, 2}, {2488, 2}, {2490, 2},
+    {2492, 2}, {2494, 2}, {2496, 3}, {2499, 3}, {2502, 3}, {2505, 2}, {2507, 2}, {2509, 2},
+    {2511, 2}, {2513, 2}, {2515, 2}, {2517, 2}, {2519, 2}, {2521, 2}, {2523, 4}, {2527, 3},
+    {2530, 3}, {2533, 4}, {2537, 3}, {2540, 4}, {2544, 3}, {2547, 4}, {2551, 2}, {2553, 2},
+    {2555, 2}, {2557, 2}, {2559, 2}, {2561, 2}, {2563, 2}, {2565, 2}, {2567, 2}, {2569, 2},
+    {2571, 2}, {2573, 2}, {2575, 2}, {2577, 2}, {2579, 2}, {2581, 2}, {2583, 2}, {2585, 2},
+    {2587, 2}, {2589, 2}, {2591, 2}, {2593, 2}, {2595, 2}, {2597, 2}, {2599, 2}, {2601, 2},
+    {2603, 2}, {2605, 2}, {2607, 2}, {2609, 2}, {2611, 2}, {2613, 4}, {2617, 4}, {2621, 4},
+    {2625, 2}, {2627, 2}, {2629, 2}, {2631, 2}, {2633, 2}, {2635, 2}, {2637, 2}, {2639, 2},
+    {2641, 2}, {2643, 2}, {2645, 2}, {2647, 2}, {2649, 2}, {2651, 2}, {2653, 2}, {2655, 2},
+    {2657, 2}, {2659, 2}, {2661, 2}, {2663, 2}, {2665, 2}, {2667, 2}, {2669, 2}, {2671, 2},
+    {2673, 2}, {2675, 2}, {2677, 2}, {2679, 2}, {2681, 2}, {2683, 2}, {2685, 2}, {2687, 2},
+    {2689, 2}, {2691, 2}, {2693, 2}, {2695, 2}, {2697, 2}, {2699, 2}, {2701, 2}, {2703, 2},
+    {2705, 2}, {2707, 2}, {2709, 4}, {2713, 4}, {2717, 4}, {2721, 3}, {2724, 3}, {2727, 3},
+    {2730, 4}, {2734, 4}, {2738, 3}, {2741, 4}, {2745, 3}, {2748, 3}, {2751, 4}, {2755, 3},
+    {2758, 3}, {2761, 4}, {2765, 2}, {2767, 2}, {2769, 2}, {2771, 2}, {2773, 2}, {2775, 2},
+    {2777, 2}, {2779, 2}, {2781, 2}, {2783, 2}, {2785, 2}, {2787, 2}, {2789, 2}, {2791, 2},
+    {2793, 2}, {2795, 2}, {2797, 2}, {2799, 2}, {2801, 2}, {2803, 2}, {2805, 2}, {2807, 2},
+    {2809, 2}, {2811, 2}, {2813, 2}, {2815, 2}, {2817, 2}, {2819, 2}, {2821, 2}, {2823, 2},
+    {2825, 2}, {2827, 2}, {2829, 2}, {2831, 2}, {2833, 2}, {2835, 2}, {2837, 2}, {2839, 2},
+    {2841, 2}, {2843, 2}, {2845, 2}, {2847, 2}, {2849, 2}, {2851, 2}, {2853, 2}, {2855, 2},
+    {2857, 2}, {2859, 2}, {2861, 2}, {2863, 2}, {2865, 2}, {2867, 2}, {2869, 2}, {2871, 2},
+    {2873, 2}, {2875, 2}, {2877, 2}, {2879, 2}, {2881, 2}, {2883, 2}, {2885, 2}, {2887, 2},
+    {2889, 2}, {2891, 2}, {2893, 2}, {2895, 2}, {2897, 2}, {2899, 2}, {2901, 2}, {2903, 2},
+    {2905, 2}, {2907, 2}, {2909, 2}, {2911, 2}, {2913, 2}, {2915, 2}, {2917, 2}, {2919, 2},
+    {2921, 2}, {2923, 2}, {2925, 2}, {2927, 2}, {2929, 2}, {2931, 2}, {2933, 2}, {2935, 2},
+    {2937, 2}, {2939, 2}, {2941, 2}, {2943, 2}, {2945, 2}, {2947, 2}, {2949, 2}, {2951, 2},
+    {2953, 2}, {2955, 2}, {2957, 2}, {2959, 2}, {2961, 2}, {2963, 2}, {2965, 2}, {2967, 2},
+    {2969, 2}, {2971, 2}, {2973, 2}, {2975, 2}, {2977, 2}, {2979, 2}, {2981, 2}, {2983, 2},
+    {2985, 2}, {2987, 2}, {2989, 2}, {2991, 3}, {2994, 3}, {2997, 3}, {3000, 2}, {3002, 2},
+    {3004, 2}, {3006, 2}, {3008, 2}, {3010, 2}, {3012, 2}, {3014, 2}, {3016, 2}, {3018, 2},
+    {3020, 2}, {3022, 2}, {3024, 2}, {3026, 2}, {3028, 2}, {3030, 2}, {3032, 2}, {3034, 2},
+    {3036, 2}, {3038, 2}, {3040, 2}, {3042, 2}, {3044, 2}, {3046, 2}, {3048, 2}, {3050, 2},
+    {3052, 2}, {3054, 2}, {3056, 2}, {3058, 2}, {3060, 2}, {3062, 2}, {3064, 2}, {3066, 2},
+    {3068, 2}, {3070, 2}, {3072, 2}, {3074, 2}, {3076, 2}, {3078, 2}, {3080, 2}, {3082, 2},
+    {3084, 2}, {3086, 2}, {3088, 2}, {3090, 2}, {3092, 2}, {3094, 2}, {3096, 2}, {3098, 4},
+    {3102, 4}, {3106, 4}, {3110, 2}, {3112, 2}, {3114, 2}, {3116, 2}, {3118, 2}, {3120, 2},
+    {3122, 2}, {3124, 2}, {3126, 2}, {3128, 2}, {3130, 2}, {3132, 2}, {3134, 2}, {3136, 2},
+    {3138, 2}, {3140, 2}, {3142, 2}, {3144, 2}, {3146, 2}, {3148, 2}, {3150, 2}, {3152, 2},
+    {3154, 2}, {3156, 2}, {3158, 2}, {3160, 2}, {3162, 2}, {3164, 2}, {3166, 2}, {3168, 2},
+    {3170, 2}, {3172, 2}, {3174, 2}, {3176, 2}, {3178, 2}, {3180, 2}, {3182, 2}, {3184, 2},
+    {3186, 2}, {3188, 2}, {3190, 2}, {3192, 2}, {3194, 3}, {3197, 3}, {3200, 4}, {3204, 3},
+    {3207, 4}, {3211, 4}, {3215, 4}, {3219, 4}, {3223, 3}, {3226, 3}, {3229, 4}, {3233, 3},
+    {3236, 4}, {3240, 3}, {3243, 4}, {3247, 3}, {3250, 2}, {3252, 2}, {3254, 2}, {3256, 2},
+    {3258, 2}, {3260, 2}, {3262, 2}, {3264, 2}, {3266, 2}, {3268, 2}, {3270, 2}, {3272, 2},
+    {3274, 2}, {3276, 2}, {3278, 2}, {3280, 2}, {3282, 2}, {3284, 2}, {3286, 2}, {3288, 2},
+    {3290, 2}, {3292, 2}, {3294, 2}, {3296, 2}, {3298, 2}, {3300, 2}, {3302, 2}, {3304, 2},
+    {3306, 2}, {3308, 2}, {3310, 2}, {3312, 2}, {3314, 2}, {3316, 2}, {3318, 2}, {3320, 2},
+    {3322, 2}, {3324, 2}, {3326, 2}, {3328, 2}, {3330, 2}, {3332, 2}, {3334, 2}, {3336, 2},
+    {3338, 2}, {3340, 2}, {3342, 2}, {3344, 2}, {3346, 2}, {3348, 2}, {3350, 2}, {3352, 2},
+    {3354, 2}, {3356, 2}, {3358, 2}, {3360, 2}, {3362, 2}, {3364, 2}, {3366, 2}, {3368, 2},
+    {3370, 2}, {3372, 2}, {3374, 2}, {3376, 2}, {3378, 2}, {3380, 2}, {3382, 2}, {3384, 2},
+    {3386, 2}, {3388, 2}, {3390, 2}, {3392, 2}, {3394, 2}, {3396, 2}, {3398, 2}, {3400, 2},
+    {3402, 2}, {3404, 2}, {3406, 2}, {3408, 2}, {3410, 2}, {3412, 2}, {3414, 2}, {3416, 2},
+    {3418, 2}, {3420, 2}, {3422, 2}, {3424, 2}, {3426, 2}, {3428, 2}, {3430, 2}, {3432, 2},
+    {3434, 2}, {3436, 2}, {3438, 2}, {3440, 2}, {3442, 2}, {3444, 2}, {3446, 2}, {3448, 2},
+    {3450, 2}, {3452, 2}, {3454, 2}, {3456, 2}, {3458, 2}, {3460, 2}, {3462, 2}, {3464, 2},
+    {3466, 2}, {3468, 2}, {3470, 2}, {3472, 2}, {3474, 3}, {3477, 3}, {3480, 3}, {3483, 2},
+    {3485, 2}, {3487, 2}, {3489, 2}, {3491, 2}, {3493, 2}, {3495, 2}, {3497, 2}, {3499, 2},
+    {3501, 2}, {3503, 2}, {3505, 2}, {3507, 2}, {3509, 2}, {3511, 2}, {3513, 2}, {3515, 2},
+    {3517, 2}, {3519, 2}, {3521, 2}, {3523, 2}, {3525, 2}, {3527, 2}, {3529, 2}, {3531, 2},
+    {3533, 2}, {3535, 2}, {3537, 2}, {3539, 2}, {3541, 2}, {3543, 2}, {3545, 2}, {3547, 2},
+    {3549, 2}, {3551, 2}, {3553, 2}, {3555, 2}, {3557, 2}, {3559, 2}, {3561, 2}, {3563, 2},
+    {3565, 2}, {3567, 2}, {3569, 2}, {3571, 2}, {3573, 2}, {3575, 2}, {3577, 2}, {3579, 5},
+    {3584, 5}, {3589, 5}, {3594, 2}, {3596, 2}, {3598, 2}, {3600, 2}, {3602, 2}, {3604, 2},
+    {3606, 2}, {3608, 2}, {3610, 2}, {3612, 2}, {3614, 2}, {3616, 2}, {3618, 2}, {3620, 2},
+    {3622, 2}, {3624, 2}, {3626, 2}, {3628, 2}, {3630, 2}, {3632, 2}, {3634, 2}, {3636, 2},
+    {3638, 2}, {3640, 2}, {3642, 2}, {3644, 2}, {3646, 2}, {3648, 2}, {3650, 2}, {3652, 2},
+    {3654, 2}, {3656, 2}, {3658, 2}, {3660, 2}, {3662, 2}, {3664, 2}, {3666, 2}, {3668, 2},
+    {3670, 2}, {3672, 2}, {3674, 2}, {3676, 2}, {3678, 4}, {3682, 3}, {3685, 3}, {3688, 4},
+    {3692, 3}, {3695, 3}, {3698, 3}, {3701, 4}, {3705, 3}, {3708, 4}, {3712, 4}, {3716, 4},
+    {3720, 3}, {3723, 4}, {3727, 3}, {3730, 4}, {3734, 2}, {3736, 2}, {3738, 2}, {3740, 2},
+    {3742, 2}, {3744, 2}, {3746, 2}, {3748, 2}, {3750, 2}, {3752, 2}, {3754, 2}, {3756, 2},
+    {3758, 2}, {3760, 2}, {3762, 2}, {3764, 2}, {3766, 2}, {3768, 2}, {3770, 2}, {3772, 2},
+    {3774, 2}, {3776, 2}, {3778, 2}, {3780, 2}, {3782, 2}, {3784, 2}, {3786, 2}, {3788, 2},
+    {3790, 2}, {3792, 2}, {3794, 2}, {3796, 2}, {3798, 2}, {3800, 2}, {3802, 2}, {3804, 2},
+    {3806, 2}, {3808, 2}, {3810, 2}, {3812, 2}, {3814, 2}, {3816, 2}, {3818, 2}, {3820, 2},
+    {3822, 2}, {3824, 2}, {3826, 2}, {3828, 2}, {3830, 2}, {3832, 2}, {3834, 2}, {3836, 2},
+    {3838, 2}, {3840, 2}, {3842, 2}, {3844, 2}, {3846, 2}, {3848, 2}, {3850, 2}, {3852, 2},
+    {3854, 2}, {3856, 2}, {3858, 2}, {3860, 2}, {3862, 2}, {3864, 2}, {3866, 2}, {3868, 2},
+    {3870, 2}, {3872, 2}, {3874, 2}, {3876, 2}, {3878, 2}, {3880, 2}, {3882, 2}, {3884, 2},
+    {3886, 2}, {3888, 2}, {3890, 2}, {3892, 2}, {3894, 2}, {3896, 2}, {3898, 2}, {3900, 2},
+    {3902, 2}, {3904, 2}, {3906, 2}, {3908, 2}, {3910, 2}, {3912, 2}, {3914, 2}, {3916, 2},
+    {3918, 2}, {3920, 2}, {3922, 2}, {3924, 2}, {3926, 2}, {3928, 2}, {3930, 2}, {3932, 2},
+    {3934, 2}, {3936, 2}, {3938, 2}, {3940, 2}, {3942, 2}, {3944, 2}, {3946, 2}, {3948, 2},
+    {3950, 2}, {3952, 2}, {3954, 2}, {3956, 2}, {3958, 2}, {3960, 3}, {3963, 3}, {3966, 3},
+    {3969, 2}, {3971, 2}, {3973, 2}, {3975, 2}, {3977, 2}, {3979, 2}, {3981, 2}, {3983, 2},
+    {3985, 2}, {3987, 3}, {3990, 4}, {3994, 4}, {3998, 4}, {4002, 3}, {4005, 4}, {4009, 3},
+    {4012, 4}, {4016, 4}, {4020, 4}, {4024, 4}, {4028, 4}, {4032, 4}, {4036, 3}, {4039, 4},
+    {4043, 4}, {4047, 2}, {4049, 2}, {4051, 2}, {4053, 2}, {4055, 2}, {4057, 2}, {4059, 2},
+    {4061, 2}, {4063, 2}, {4065, 2}, {4067, 2}, {4069, 2}, {4071, 2}, {4073, 2}, {4075, 2},
+    {4077, 2}, {4079, 3}, {4082, 4}, {4086, 4}, {4090, 3}, {4093, 4}, {4097, 3}, {4100, 4},
+    {4104, 3}, {4107, 4}, {4111, 4}, {4115, 4}, {4119, 2}, {4121, 2}, {4123, 2}, {4125, 2},
+    {4127, 2}, {4129, 2}, {4131, 2}, {4133, 2}, {4135, 2}, {4137, 2}, {4139, 2}, {4141, 2},
+    {4143, 2}, {4145, 2}, {4147, 2}, {4149, 2}, {4151, 2}, {4153, 2}, {4155, 2}, {4157, 2},
+    {4159, 2}, {4161, 2}, {4163, 2}, {4165, 2}, {4167, 2}, {4169, 2}, {4171, 2}, {4173, 2},
+    {4175, 2}, {4177, 2}, {4179, 2}, {4181, 2}, {4183, 2}, {4185, 2}, {4187, 2}, {4189, 2},
+    {4191, 2}, {4193, 2}, {4195, 2}, {4197, 2}, {4199, 2}, {4201, 2}, {4203, 4}, {4207, 4},
+    {4211, 3}, {4214, 3}, {4217, 4}, {4221, 4}, {4225, 3}, {4228, 4}, {4232, 3}, {4235, 4},
+    {4239, 3}, {4242, 3}, {4245, 3}, {4248, 3}, {4251, 3}, {4254, 4}, {4258, 2}, {4260, 2},
+    {4262, 2}, {4264, 2}, {4266, 2}, {4268, 2}, {4270, 2}, {4272, 2}, {4274, 2}, {4276, 2},
+    {4278, 2}, {4280, 2}, {4282, 2}, {4284, 2}, {4286, 2}, {4288, 2}, {4290, 2}, {4292, 2},
+    {4294, 2}, {4296, 2}, {4298, 2}, {4300, 2}, {4302, 2}, {4304, 2}, {4306, 2}, {4308, 2},
+    {4310, 2}, {4312, 2}, {4314, 2}, {4316, 2}, {4318, 2}, {4320, 2}, {4322, 2}, {4324, 2},
+    {4326, 2}, {4328, 2}, {4330, 2}, {4332, 2}, {4334, 2}, {4336, 2}, {4338, 2}, {4340, 2},
+    {4342, 2}, {4344, 2}, {4346, 2}, {4348, 2}, {4350, 2}, {4352, 2}, {4354, 2}, {4356, 2},
+    {4358, 2}, {4360, 2}, {4362, 2}, {4364, 2}, {4366, 2}, {4368, 2}, {4370, 2}, {4372, 2},
+    {4374, 2}, {4376, 2}, {4378, 2}, {4380, 2}, {4382, 2}, {4384, 2}, {4386, 2}, {4388, 2},
+    {4390, 2}, {4392, 2}, {4394, 2}, {4396, 2}, {4398, 2}, {4400, 2}, {4402, 2}, {4404, 2},
+    {4406, 2}, {4408, 2}, {4410, 2}, {4412, 2}, {4414, 2}, {4416, 2}, {4418, 2}, {4420, 2},
+    {4422, 2}, {4424, 2}, {4426, 2}, {4428, 2}, {4430, 2}, {4432, 2}, {4434, 2}, {4436, 2},
+    {4438, 2}, {4440, 2}, {4442, 2}, {4444, 2}, {4446, 2}, {4448, 2}, {4450, 2}, {4452, 2},
+    {4454, 2}, {4456, 2}, {4458, 2}, {4460, 2}, {4462, 2}, {4464, 2}, {4466, 2}, {4468, 2},
+    {4470, 2}, {4472, 2}, {4474, 2}, {4476, 2}, {4478, 2}, {4480, 2}, {4482, 2}, {4484, 3},
+    {4487, 3}, {4490, 3}, {4493, 2}, {4495, 2}, {4497, 2}, {4499, 2}, {4501, 2}, {4503, 2},
+    {4505, 2}, {4507, 2}, {4509, 2}, {4511, 4}, {4515, 3}, {4518, 3}, {4521, 4}, {4525, 3},
+    {4528, 3}, {4531, 3}, {4534, 4}, {4538, 2}, {4540, 2}, {4542, 2}, {4544, 2}, {4546, 2},
+    {4548, 2}, {4550, 2}, {4552, 2}, {4554, 2}, {4556, 2}, {4558, 2}, {4560, 2}, {4562, 2},
+    {4564, 2}, {4566, 2}, {4568, 2}, {4570, 2}, {4572, 2}, {4574, 2}, {4576, 2}, {4578, 2},
+    {4580, 2}, {4582, 2}, {4584, 2}, {4586, 2}, {4588, 2}, {4590, 2}, {4592, 2}, {4594, 2},
+    {4596, 2}, {4598, 2}, {4600, 2}, {4602, 3}, {4605, 3}, {4608, 3}, {4611, 2}, {4613, 2},
+    {4615, 2}, {4617, 2}, {4619, 2}, {4621, 2}, {4623, 2}, {4625, 2}, {4627, 2}, {4629, 2},
+    {4631, 2}, {4633, 2}, {4635, 2}, {4637, 2}, {4639, 2}, {4641, 2}, {4643, 2}, {4645, 2},
+    {4647, 2}, {4649, 2}, {4651, 2}, {4653, 2}, {4655, 2}, {4657, 2}, {4659, 2}, {4661, 2},
+    {4663, 2}, {4665, 2}, {4667, 2}, {4669, 2}, {4671, 2}, {4673, 2}, {4675, 2}, {4677, 2},
+    {4679, 2}, {4681, 2}, {4683, 2}, {4685, 2}, {4687, 2}, {4689, 2}, {4691, 2}, {4693, 2},
+    {4695, 3}, {4698, 4}, {4702, 4}, {4706, 4}, {4710, 3}, {4713, 3}, {4716, 3}, {4719, 3},
+    {4722, 3}, {4725, 4}, {4729, 4}, {4733, 4}, {4737, 4}, {4741, 4}, {4745, 3}, {4748, 4},
+    {4752, 2}, {4754, 2}, {4756, 2}, {4758, 2}, {4760, 2}, {4762, 2}, {4764, 2}, {4766, 2},
+    {4768, 2}, {4770, 2}, {4772, 2}, {4774, 2}, {4776, 2}, {4778, 2}, {4780, 2}, {4782, 2},
+    {4784, 2}, {4786, 2}, {4788, 2}, {4790, 2}, {4792, 2}, {4794, 2}, {4796, 2}, {4798, 2},
+    {4800, 2}, {4802, 2}, {4804, 2}, {4806, 2}, {4808, 2}, {4810, 2}, {4812, 2}, {4814, 2},
+    {4816, 2}, {4818, 2}, {4820, 2}, {4822, 2}, {4824, 2}, {4826, 2}, {4828, 2}, {4830, 2},
+    {4832, 2}, {4834, 2}, {4836, 2}, {4838, 2}, {4840, 2}, {4842, 2}, {4844, 2}, {4846, 2},
+    {4848, 2}, {4850, 2}, {4852, 2}, {4854, 2}, {4856, 2}, {4858, 2}, {4860, 2}, {4862, 2},
+    {4864, 2}, {4866, 2}, {4868, 2}, {4870, 2}, {4872, 2}, {4874, 2}, {4876, 2}, {4878, 2},
+    {4880, 2}, {4882, 2}, {4884, 2}, {4886, 2}, {4888, 2}, {4890, 2}, {4892, 2}, {4894, 2},
+    {4896, 2}, {4898, 2}, {4900, 2}, {4902, 2}, {4904, 2}, {4906, 2}, {4908, 2}, {4910, 2},
+    {4912, 2}, {4914, 2}, {4916, 2}, {4918, 2}, {4920, 2}, {4922, 2}, {4924, 2}, {4926, 2},
+    {4928, 2}, {4930, 2}, {4932, 2}, {4934, 2}, {4936, 2}, {4938, 2}, {4940, 2}, {4942, 2},
+    {4944, 2}, {4946, 2}, {4948, 2}, {4950, 2}, {4952, 2}, {4954, 2}, {4956, 2}, {4958, 2},
+    {4960, 2}, {4962, 2}, {4964, 2}, {4966, 2}, {4968, 2}, {4970, 2}, {4972, 2}, {4974, 2},
+    {4976, 2}, {4978, 3}, {4981, 3}, {4984, 3}, {4987, 2}, {4989, 2}, {4991, 2}, {4993, 2},
+    {4995, 2}, {4997, 2}, {4999, 2}, {5001, 2}, {5003, 2},
 };
 
 static const Event kEvent[] = {
@@ -1335,251 +1364,252 @@ static const Event kEvent[] = {
     {80, 44, 241, 1000}, {216, 10, 63, 1000}, {610, 45, 226, 1000}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 1000},
     {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 69, 1040}, {1160, 45, 198, 1000}, {4756, 10, 45, 1040}, {520, 11, 61, 1040},
     {1196, 11, 66, 1040}, {1872, 35, 122, 1040}, {2392, 24, 69, 1040}, {2860, 15, 89, 1000}, {4680, 10, 48, 1040}, {722, 25, 68, 1040},
-    {722, 25, 63, 1040}, {2204, 16, 63, 1040}, {384, 28, 70, 1040}, {4368, 28, 47, 1040}, {1488, 48, 73, 1040}, {3840, 25, 57, 1040},
-    {912, 48, 75, 1040}, {3264, 28, 60, 1040}, {2736, 34, 52, 1040}, {4368, 28, 53, 1040}, {384, 28, 65, 1040}, {1488, 48, 74, 1040},
-    {384, 28, 67, 1040}, {2736, 34, 54, 1040}, {1488, 48, 72, 1040}, {2736, 34, 55, 1040}, {2736, 34, 49, 1040}, {3264, 28, 62, 1040},
-    {1619, 19, 109, 1040}, {1718, 31, 42, 1040}, {2787, 38, 113, 1040}, {2885, 31, 41, 1040}, {2953, 19, 105, 1040}, {3052, 31, 40, 1040},
-    {952, 19, 105, 1040}, {1051, 31, 40, 1040}, {1786, 20, 99, 1040}, {1885, 31, 42, 1040}, {1953, 21, 98, 1040}, {2052, 31, 41, 1040},
-    {2120, 38, 114, 1040}, {2218, 31, 41, 1040}, {952, 19, 116, 1040}, {1051, 31, 44, 1040}, {1953, 21, 100, 1040}, {2052, 31, 42, 1040},
-    {2120, 38, 116, 1040}, {2218, 31, 42, 1040}, {2286, 19, 106, 1040}, {2385, 31, 40, 1040}, {952, 19, 104, 1040}, {1051, 31, 39, 1040},
-    {1953, 21, 94, 1040}, {2052, 31, 40, 1040}, {2120, 38, 119, 1040}, {2218, 31, 43, 1040}, {952, 19, 107, 1040}, {1051, 31, 41, 1040},
-    {1119, 20, 97, 1040}, {1218, 31, 41, 1040}, {1286, 21, 97, 1040}, {1384, 31, 41, 1040}, {2453, 20, 95, 1040}, {2552, 31, 40, 1040},
-    {1119, 20, 94, 1040}, {1218, 31, 40, 1040}, {1286, 21, 102, 1040}, {1384, 31, 43, 1040}, {2953, 19, 102, 1040}, {3052, 31, 39, 1040},
-    {785, 38, 121, 1040}, {884, 31, 44, 1040}, {952, 19, 111, 1040}, {1051, 31, 42, 1040}, {1119, 20, 99, 1040}, {1218, 31, 41, 1040},
-    {2620, 21, 98, 1040}, {2719, 31, 41, 1040}, {452, 20, 102, 1040}, {551, 31, 43, 1040}, {2286, 19, 102, 1040}, {2385, 31, 39, 1040},
-    {2453, 20, 103, 1040}, {2552, 31, 43, 1040}, {2156, 30, 67, 1040}, {3564, 29, 58, 1040}, {3564, 29, 57, 1040}, {4092, 48, 62, 1040},
-    {2596, 30, 62, 1040}, {3564, 29, 63, 1040}, {440, 25, 65, 1040}, {1628, 25, 67, 1040}, {1012, 26, 63, 1040}, {2596, 30, 63, 1040},
-    {1628, 25, 60, 1040}, {2156, 30, 67, 1040}, {1012, 26, 63, 1040}, {3564, 29, 64, 1040}, {2596, 30, 67, 1040}, {3564, 29, 60, 1040},
-    {480, 34, 48, 1040}, {3168, 28, 56, 1040}, {1056, 25, 42, 1040}, {1632, 34, 47, 1040}, {480, 34, 50, 1040}, {1056, 25, 40, 1040},
-    {480, 34, 51, 1040}, {4224, 48, 59, 1040}, {2160, 42, 49, 1040}, {3744, 28, 65, 1040}, {3168, 28, 53, 1040}, {4224, 48, 63, 1040},
-    {2160, 42, 50, 1040}, {3168, 28, 56, 1040}, {1632, 34, 51, 1040}, {3744, 28, 68, 1040}, {4032, 48, 59, 1040}, {4512, 28, 45, 1040},
-    {1104, 34, 53, 1040}, {4512, 28, 45, 1040}, {384, 28, 65, 1040}, {3360, 28, 58, 1040}, {384, 28, 70, 1040}, {4512, 28, 46, 1040},
-    {2640, 25, 49, 1040}, {4032, 48, 59, 1040}, {4032, 48, 57, 1040}, {4512, 28, 47, 1040}, {1872, 34, 51, 1040}, {4032, 48, 64, 1040},
-    {384, 28, 66, 1040}, {3360, 28, 55, 1040}, {880, 25, 51, 1040}, {2640, 48, 61, 1040}, {1540, 48, 64, 1040}, {1980, 25, 48, 1040},
-    {440, 48, 59, 1040}, {1980, 25, 51, 1040}, {1276, 34, 46, 1040}, {1540, 48, 64, 1040}, {440, 48, 61, 1040}, {880, 25, 50, 1040},
-    {2640, 48, 61, 1040}, {3080, 25, 46, 1040}, {440, 48, 64, 1040}, {2640, 48, 60, 1040}, {1540, 48, 64, 1040}, {2376, 34, 46, 1040},
-    {1012, 29, 65, 1040}, {3872, 25, 52, 1040}, {2352, 48, 66, 1040}, {3888, 42, 47, 1040}, {1764, 28, 63, 1040}, {2448, 28, 66, 1040},
-    {1008, 16, 52, 1040}, {342, 30, 79, 1040}, {760, 11, 65, 1040}, {1178, 30, 79, 1040}, {1482, 11, 67, 1040}, {1862, 35, 136, 1040},
-    {2280, 22, 73, 1040}, {2736, 15, 83, 1000}, {1848, 48, 58, 1040}, {896, 32, 63, 1040}, {1064, 13, 37, 1040}, {50, 19, 152, 1000},
-    {75, 31, 72, 1000}, {150, 20, 136, 1000}, {175, 31, 67, 1000}, {250, 21, 136, 1000}, {275, 31, 68, 1000}, {950, 20, 148, 1000},
-    {975, 31, 73, 1000}, {50, 19, 153, 1000}, {75, 31, 73, 1000}, {150, 20, 140, 1000}, {175, 31, 69, 1000}, {950, 20, 134, 1000},
-    {975, 31, 66, 1000}, {250, 21, 137, 1000}, {275, 31, 68, 1000}, {1150, 38, 157, 1000}, {1175, 31, 66, 1000}, {1250, 19, 143, 1000},
-    {1275, 31, 68, 1000}, {1350, 20, 133, 1000}, {1375, 31, 66, 1000}, {250, 21, 147, 1000}, {275, 31, 73, 1000}, {1050, 21, 148, 1000},
-    {1075, 31, 74, 1000}, {1150, 38, 173, 1000}, {1175, 31, 73, 1000}, {250, 21, 140, 1000}, {275, 31, 70, 1000}, {350, 38, 165, 1000},
-    {375, 31, 70, 1000}, {1450, 21, 138, 1000}, {1475, 31, 69, 1000}, {550, 20, 148, 1000}, {575, 31, 73, 1000}, {650, 21, 143, 1000},
-    {675, 31, 71, 1000}, {1450, 21, 149, 1000}, {1475, 31, 74, 1000}, {250, 21, 131, 1000}, {275, 31, 65, 1000}, {350, 38, 170, 1000},
-    {375, 31, 72, 1000}, {450, 19, 152, 1000}, {475, 31, 72, 1000}, {1050, 21, 137, 1000}, {1075, 31, 68, 1000}, {50, 19, 147, 1000},
-    {75, 31, 70, 1000}, {1250, 19, 152, 1000}, {1275, 31, 73, 1000}, {1350, 20, 138, 1000}, {1375, 31, 68, 1000}, {1450, 21, 134, 1000},
-    {1475, 31, 67, 1000}, {1200, 32, 69, 1000}, {1800, 32, 75, 1000}, {900, 42, 35, 1000}, {2100, 42, 35, 1000}, {1500, 42, 39, 1000},
-    {2700, 42, 37, 1000}, {1800, 32, 78, 1000}, {2100, 42, 37, 1000}, {600, 32, 73, 1000}, {900, 42, 39, 1000}, {300, 42, 38, 1000},
-    {900, 42, 38, 1000}, {600, 32, 70, 1000}, {1200, 32, 73, 1000}, {600, 32, 77, 1000}, {2100, 42, 39, 1000}, {1120, 18, 92, 1000},
-    {1120, 18, 91, 1000}, {1120, 18, 104, 1000}, {2240, 24, 55, 1000}, {1120, 18, 96, 1000}, {560, 18, 77, 1000}, {560, 18, 75, 1000},
-    {720, 30, 59, 1000}, {2880, 30, 61, 1000}, {2520, 28, 57, 1000}, {2880, 30, 64, 1000}, {2520, 28, 58, 1000}, {2880, 30, 67, 1000},
-    {360, 28, 62, 1000}, {1440, 30, 65, 1000}, {2160, 30, 62, 1000}, {3240, 28, 59, 1000}, {2880, 30, 67, 1000}, {3240, 28, 60, 1000},
-    {1440, 30, 60, 1000}, {3240, 28, 60, 1000}, {1440, 30, 67, 1000}, {3240, 28, 64, 1000}, {420, 25, 68, 1000}, {1680, 32, 62, 1000},
-    {1260, 25, 68, 1000}, {1680, 32, 59, 1000}, {420, 32, 58, 1000}, {1680, 25, 76, 1000}, {420, 25, 73, 1000}, {1260, 25, 68, 1000},
-    {840, 25, 72, 1000}, {1260, 25, 71, 1000}, {1260, 32, 59, 1000}, {1680, 25, 71, 1000}, {840, 25, 70, 1000}, {1260, 25, 73, 1000},
-    {420, 25, 77, 1000}, {1260, 25, 72, 1000}, {260, 6, 113, 1120}, {440, 6, 116, 1120}, {620, 6, 113, 1120}, {800, 6, 116, 1120},
-    {980, 6, 113, 1120}, {1160, 6, 116, 1120}, {1520, 1, 251, 1000}, {280, 5, 129, 1120}, {500, 5, 132, 1120}, {720, 5, 129, 1120},
-    {940, 5, 132, 1120}, {1160, 5, 129, 1120}, {1520, 1, 251, 1000}, {320, 5, 129, 1120}, {540, 5, 132, 1120}, {760, 5, 129, 1120},
-    {1080, 5, 132, 1120}, {1440, 1, 251, 1000}, {80, 45, 232, 1060}, {216, 10, 63, 1000}, {610, 45, 226, 1060}, {1080, 42, 59, 1000},
-    {800, 30, 57, 1000}, {800, 46, 235, 1060}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 70, 1080}, {1160, 45, 201, 1000},
-    {4756, 10, 46, 1080}, {520, 11, 62, 1080}, {1196, 11, 67, 1080}, {1872, 35, 124, 1080}, {2392, 24, 70, 1080}, {2860, 15, 91, 1000},
-    {4680, 10, 48, 1080}, {2075, 30, 65, 1080}, {563, 25, 67, 1080}, {1719, 16, 63, 1080}, {300, 28, 71, 1080}, {2995, 25, 51, 1080},
-    {1610, 48, 72, 1080}, {2546, 28, 57, 1080}, {300, 28, 63, 1080}, {1161, 48, 73, 1080}, {1610, 48, 79, 1080}, {2546, 28, 63, 1080},
-    {711, 48, 73, 1080}, {2995, 25, 58, 1080}, {1161, 48, 74, 1080}, {3407, 28, 48, 1080}, {1610, 48, 73, 1080}, {3407, 28, 49, 1080},
-    {300, 28, 72, 1080}, {3407, 28, 54, 1080}, {1198, 21, 93, 1080}, {1275, 31, 39, 1080}, {1783, 19, 110, 1080}, {1860, 31, 42, 1080},
-    {1881, 20, 97, 1080}, {1958, 31, 41, 1080}, {222, 19, 113, 1080}, {299, 31, 43, 1080}, {1783, 19, 111, 1080}, {1860, 31, 42, 1080},
-    {1881, 20, 103, 1080}, {1958, 31, 43, 1080}, {1978, 21, 93, 1080}, {2056, 31, 39, 1080}, {417, 21, 94, 1080}, {494, 31, 40, 1080},
-    {515, 38, 124, 1080}, {592, 31, 45, 1080}, {613, 19, 115, 1080}, {690, 31, 44, 1080}, {1686, 38, 113, 1080}, {1763, 31, 41, 1080},
-    {808, 21, 94, 1080}, {885, 31, 40, 1080}, {905, 38, 111, 1080}, {982, 31, 40, 1080}, {1003, 19, 115, 1080}, {1080, 31, 44, 1080},
-    {1881, 20, 97, 1080}, {1958, 31, 41, 1080}, {222, 19, 106, 1080}, {299, 31, 40, 1080}, {1198, 21, 105, 1080}, {1275, 31, 44, 1080},
-    {1296, 38, 117, 1080}, {1373, 31, 42, 1080}, {1393, 19, 118, 1080}, {1470, 31, 45, 1080}, {613, 19, 105, 1080}, {690, 31, 40, 1080},
-    {1783, 19, 111, 1080}, {1860, 31, 42, 1080}, {1881, 20, 96, 1080}, {1958, 31, 40, 1080}, {320, 20, 94, 1080}, {397, 31, 40, 1080},
-    {1198, 21, 101, 1080}, {1275, 31, 43, 1080}, {1296, 38, 116, 1080}, {1373, 31, 41, 1080}, {808, 21, 103, 1080}, {885, 31, 43, 1080},
-    {905, 38, 115, 1080}, {982, 31, 41, 1080}, {1003, 19, 114, 1080}, {1080, 31, 43, 1080}, {1978, 21, 97, 1080}, {2056, 31, 41, 1080},
-    {2025, 30, 70, 1080}, {2368, 30, 67, 1080}, {343, 25, 70, 1080}, {1682, 30, 64, 1080}, {1270, 25, 64, 1080}, {2025, 30, 69, 1080},
-    {1270, 25, 66, 1080}, {2780, 29, 58, 1080}, {1682, 30, 71, 1080}, {3192, 48, 64, 1080}, {1682, 30, 64, 1080}, {2368, 30, 69, 1080},
-    {1270, 25, 68, 1080}, {1682, 30, 67, 1080}, {789, 26, 70, 1080}, {3192, 48, 59, 1080}, {374, 34, 52, 1080}, {1685, 42, 49, 1080},
-    {824, 25, 40, 1080}, {1685, 42, 48, 1080}, {824, 25, 43, 1080}, {2471, 28, 57, 1080}, {374, 34, 48, 1080}, {3295, 48, 56, 1080},
-    {1685, 42, 51, 1080}, {2471, 28, 55, 1080}, {374, 34, 54, 1080}, {3295, 48, 61, 1080}, {824, 25, 43, 1080}, {2471, 28, 60, 1080},
-    {1273, 34, 49, 1080}, {2920, 28, 66, 1080}, {1460, 34, 48, 1080}, {3145, 48, 65, 1080}, {1460, 34, 50, 1080}, {2059, 25, 46, 1080},
-    {861, 34, 47, 1080}, {2621, 28, 59, 1080}, {300, 28, 71, 1080}, {3519, 28, 46, 1080}, {3145, 48, 59, 1080}, {3519, 28, 46, 1080},
-    {861, 34, 53, 1080}, {3145, 48, 60, 1080}, {1460, 34, 51, 1080}, {3145, 48, 62, 1080}, {300, 28, 65, 1080}, {3145, 48, 58, 1080},
-    {1853, 34, 48, 1080}, {2059, 48, 62, 1080}, {1544, 25, 52, 1080}, {2402, 25, 51, 1080}, {1544, 25, 48, 1080}, {1853, 34, 46, 1080},
-    {995, 34, 43, 1080}, {1853, 34, 44, 1080}, {995, 34, 43, 1080}, {1544, 25, 53, 1080}, {1201, 48, 63, 1080}, {2402, 25, 53, 1080},
-    {343, 48, 62, 1080}, {2402, 25, 53, 1080}, {2059, 48, 65, 1080}, {2711, 34, 43, 1080}, {2196, 24, 52, 1080}, {3020, 25, 53, 1080},
-    {300, 24, 51, 1080}, {786, 10, 40, 1080}, {885, 24, 51, 1080}, {374, 48, 65, 1080}, {786, 16, 53, 1080}, {267, 30, 80, 1080},
-    {593, 11, 66, 1080}, {919, 30, 80, 1080}, {1156, 11, 68, 1080}, {1452, 35, 138, 1080}, {1778, 22, 74, 1080}, {2134, 15, 84, 1000},
-    {1966, 10, 42, 1080}, {699, 32, 59, 1080}, {1927, 28, 49, 1080}, {2800, 27, 43, 1000}, {1400, 25, 68, 1000}, {1400, 25, 61, 1000},
-    {2800, 27, 44, 1000}, {1400, 33, 40, 1000}, {1400, 33, 38, 1000}, {2800, 27, 42, 1000}, {1120, 42, 50, 1000}, {2240, 42, 48, 1000},
-    {2640, 28, 56, 1000}, {1680, 28, 52, 1000}, {2240, 42, 50, 1000}, {3040, 42, 47, 1000}, {560, 42, 44, 1000}, {1680, 42, 45, 1000},
-    {2640, 28, 55, 1000}, {560, 42, 47, 1000}, {2240, 42, 45, 1000}, {2640, 42, 49, 1000}, {3040, 42, 50, 1000}, {3440, 42, 49, 1000},
-    {3760, 42, 47, 1000}, {1120, 42, 49, 1000}, {1680, 42, 50, 1000}, {2640, 28, 53, 1000}, {560, 28, 57, 1000}, {1680, 28, 55, 1000},
-    {2640, 28, 54, 1000}, {1680, 42, 45, 1000}, {2240, 42, 44, 1000}, {3440, 42, 49, 1000}, {2100, 28, 58, 1000}, {3475, 42, 53, 1000},
-    {2100, 28, 56, 1000}, {2100, 28, 52, 1000}, {3475, 42, 49, 1000}, {700, 16, 77, 1000}, {700, 16, 76, 1000}, {630, 10, 58, 1000},
-    {1890, 33, 40, 1000}, {2520, 10, 63, 1000}, {3420, 10, 60, 1000}, {630, 10, 64, 1000}, {1260, 10, 57, 1000}, {630, 10, 64, 1000},
-    {1890, 33, 38, 1000}, {1890, 33, 40, 1000}, {2520, 10, 63, 1000}, {630, 10, 57, 1000}, {4230, 10, 64, 1000}, {630, 10, 64, 1000},
-    {1260, 10, 62, 1000}, {1260, 10, 63, 1000}, {3870, 10, 57, 1000}, {560, 11, 45, 1000}, {1680, 22, 48, 1000}, {1120, 38, 193, 1000},
-    {1680, 22, 51, 1000}, {560, 3, 153, 980}, {1200, 3, 157, 980}, {1560, 1, 247, 1000}, {560, 3, 153, 980}, {1300, 3, 157, 980},
-    {1660, 1, 247, 1000}, {500, 6, 113, 980}, {1180, 6, 116, 980}, {1540, 1, 247, 1000}, {80, 45, 232, 940}, {216, 10, 63, 1000},
-    {610, 45, 226, 940}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 940}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000},
-    {464, 28, 67, 960}, {1160, 45, 191, 1000}, {4756, 10, 43, 960}, {520, 11, 59, 960}, {1196, 11, 64, 960}, {1872, 35, 118, 960},
-    {2392, 24, 66, 960}, {2860, 15, 86, 1000}, {4680, 10, 46, 960}, {2468, 16, 56, 960}, {2979, 30, 61, 960}, {3656, 28, 56, 960},
-    {4301, 25, 55, 960}, {430, 28, 66, 960}, {1667, 48, 72, 960}, {1021, 48, 70, 960}, {4892, 28, 48, 960}, {430, 28, 60, 960},
-    {4892, 28, 49, 960}, {1667, 48, 65, 960}, {3064, 34, 50, 960}, {1667, 48, 68, 960}, {2312, 48, 76, 960}, {430, 28, 63, 960},
-    {4301, 25, 51, 960}, {1667, 48, 67, 960}, {3064, 34, 53, 960}, {559, 20, 94, 960}, {670, 31, 40, 960}, {1760, 21, 95, 960},
-    {1871, 31, 40, 960}, {2000, 38, 105, 960}, {2111, 31, 38, 960}, {1040, 38, 115, 960}, {1150, 31, 41, 960}, {1280, 19, 108, 960},
-    {1390, 31, 41, 960}, {1520, 20, 95, 960}, {1631, 31, 40, 960}, {2240, 19, 109, 960}, {2351, 31, 41, 960}, {319, 19, 106, 960},
-    {430, 31, 40, 960}, {2481, 20, 95, 960}, {2591, 31, 40, 960}, {2721, 21, 96, 960}, {2831, 31, 41, 960}, {2961, 38, 105, 960},
-    {3072, 31, 38, 960}, {559, 20, 98, 960}, {670, 31, 41, 960}, {2240, 19, 106, 960}, {2351, 31, 40, 960}, {2481, 20, 101, 960},
-    {2591, 31, 42, 960}, {800, 21, 88, 960}, {910, 31, 37, 960}, {1040, 38, 115, 960}, {1150, 31, 41, 960}, {3441, 20, 92, 960},
-    {3552, 31, 39, 960}, {1040, 38, 110, 960}, {1150, 31, 39, 960}, {2481, 20, 91, 960}, {2591, 31, 38, 960}, {2721, 21, 97, 960},
-    {2831, 31, 41, 960}, {2961, 38, 106, 960}, {3072, 31, 38, 960}, {800, 21, 100, 960}, {910, 31, 42, 960}, {2000, 38, 110, 960},
-    {2111, 31, 40, 960}, {2240, 19, 108, 960}, {2351, 31, 41, 960}, {2481, 20, 98, 960}, {2591, 31, 41, 960}, {1280, 19, 98, 960},
-    {1390, 31, 37, 960}, {2961, 38, 118, 960}, {3072, 31, 42, 960}, {3201, 19, 108, 960}, {3312, 31, 41, 960}, {3441, 20, 98, 960},
-    {3552, 31, 41, 960}, {1823, 25, 66, 960}, {2908, 30, 67, 960}, {1823, 25, 62, 960}, {3992, 29, 62, 960}, {1133, 26, 63, 960},
-    {4583, 48, 62, 960}, {493, 25, 63, 960}, {2415, 30, 62, 960}, {493, 25, 62, 960}, {3400, 30, 63, 960}, {493, 25, 63, 960},
-    {4583, 48, 58, 960}, {493, 25, 64, 960}, {3400, 30, 64, 960}, {2908, 30, 66, 960}, {3992, 29, 61, 960}, {1828, 34, 48, 960},
-    {4731, 48, 55, 960}, {538, 34, 46, 960}, {4193, 28, 61, 960}, {538, 34, 47, 960}, {4193, 28, 64, 960}, {2419, 42, 50, 960},
-    {4193, 28, 65, 960}, {1828, 34, 45, 960}, {4193, 28, 62, 960}, {2419, 42, 47, 960}, {4193, 28, 61, 960}, {3548, 28, 51, 960},
-    {4193, 28, 65, 960}, {2419, 42, 51, 960}, {4193, 28, 61, 960}, {1236, 34, 46, 960}, {2097, 34, 46, 960}, {430, 28, 67, 960},
-    {3763, 28, 55, 960}, {2097, 34, 50, 960}, {2957, 25, 48, 960}, {3763, 28, 52, 960}, {4516, 48, 55, 960}, {1236, 34, 47, 960},
-    {4516, 48, 62, 960}, {430, 28, 61, 960}, {2957, 25, 44, 960}, {430, 28, 63, 960}, {2957, 25, 47, 960}, {430, 28, 62, 960},
-    {4516, 48, 55, 960}, {1725, 48, 60, 960}, {2218, 25, 49, 960}, {493, 48, 59, 960}, {1725, 48, 59, 960}, {2957, 48, 61, 960},
-    {3893, 34, 43, 960}, {986, 25, 50, 960}, {2661, 34, 44, 960}, {2218, 25, 45, 960}, {3450, 25, 46, 960}, {2218, 25, 50, 960},
-    {2957, 48, 56, 960}, {493, 48, 58, 960}, {2661, 34, 42, 960}, {1725, 48, 61, 960}, {3450, 25, 46, 960}, {1133, 29, 59, 960},
-    {2464, 24, 49, 960}, {430, 24, 44, 960}, {1129, 10, 37, 960}, {3810, 42, 41, 960}, {2742, 28, 64, 960}, {470, 28, 62, 960},
-    {383, 30, 76, 960}, {851, 11, 63, 960}, {1319, 30, 76, 960}, {1660, 11, 64, 960}, {2085, 35, 131, 960}, {2554, 22, 70, 960},
-    {3064, 15, 80, 1000}, {1599, 8, 68, 960}, {1004, 32, 54, 960}, {2766, 28, 50, 960}, {1400, 25, 45, 1000}, {3800, 25, 43, 1000},
-    {700, 34, 42, 1000}, {3300, 34, 42, 1000}, {3300, 34, 46, 1000}, {4300, 34, 45, 1000}, {700, 34, 41, 1000}, {2800, 25, 43, 1000},
-    {2100, 34, 42, 1000}, {2800, 25, 48, 1000}, {2100, 34, 45, 1000}, {3300, 34, 45, 1000}, {1400, 25, 46, 1000}, {4300, 34, 46, 1000},
-    {2800, 25, 43, 1000}, {3800, 25, 47, 1000}, {2100, 25, 51, 1000}, {700, 30, 64, 1000}, {2100, 25, 54, 1000}, {1400, 30, 74, 1000},
-    {1400, 30, 75, 1000}, {1400, 30, 70, 1000}, {2800, 34, 58, 1000}, {1400, 25, 69, 1000}, {1400, 25, 65, 1000}, {2800, 25, 78, 1000},
-    {1400, 25, 72, 1000}, {700, 29, 73, 1000}, {700, 29, 72, 1000}, {1400, 20, 85, 1000}, {4700, 20, 76, 1000}, {2800, 20, 82, 1000},
-    {4300, 25, 47, 1000}, {700, 25, 47, 1000}, {3800, 20, 83, 1000}, {2100, 25, 45, 1000}, {2800, 20, 80, 1000}, {2800, 20, 79, 1000},
-    {3300, 25, 50, 1000}, {2100, 25, 49, 1000}, {3800, 20, 76, 1000}, {1400, 20, 77, 1000}, {2100, 25, 45, 1000}, {700, 25, 48, 1000},
-    {3300, 25, 44, 1000}, {1400, 33, 32, 1000}, {1400, 33, 34, 1000}, {700, 11, 53, 1000}, {1400, 25, 63, 1000}, {1400, 25, 67, 1000},
-    {1400, 33, 33, 1000}, {1400, 25, 60, 1000}, {700, 11, 57, 1000}, {460, 3, 127, 1040}, {940, 3, 130, 1040}, {1340, 3, 127, 1040},
-    {1700, 1, 242, 1000}, {480, 2, 89, 1040}, {940, 2, 92, 1040}, {1280, 2, 89, 1040}, {1640, 1, 242, 1000}, {480, 3, 127, 1040},
-    {1020, 3, 130, 1040}, {1400, 3, 127, 1040}, {1760, 1, 242, 1000}, {80, 44, 241, 1030}, {216, 10, 63, 1000}, {610, 45, 226, 1030},
-    {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 1030}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 64, 1030},
-    {1160, 45, 184, 1000}, {4756, 10, 42, 1030}, {520, 11, 57, 1030}, {1196, 11, 61, 1030}, {1872, 35, 113, 1030}, {2392, 24, 64, 1030},
-    {2860, 15, 83, 1000}, {4680, 10, 44, 1030}, {780, 25, 59, 1030}, {2873, 30, 58, 1030}, {369, 28, 60, 1030}, {1607, 48, 68, 1030},
-    {4717, 28, 49, 1030}, {415, 28, 65, 1030}, {4717, 28, 45, 1030}, {4147, 25, 47, 1030}, {4717, 28, 44, 1030}, {985, 48, 66, 1030},
-    {2229, 48, 66, 1030}, {1607, 48, 64, 1030}, {4717, 28, 49, 1030}, {415, 28, 63, 1030}, {985, 48, 67, 1030}, {2229, 48, 66, 1030},
-    {4147, 25, 49, 1030}, {2229, 48, 71, 1030}, {2955, 34, 52, 1030}, {1726, 38, 111, 1030}, {1833, 31, 40, 1030}, {2537, 38, 104, 1030},
-    {2643, 31, 37, 1030}, {2739, 19, 96, 1030}, {2846, 31, 36, 1030}, {2942, 20, 97, 1030}, {3049, 31, 41, 1030}, {510, 20, 97, 1030},
-    {617, 31, 41, 1030}, {713, 21, 94, 1030}, {820, 31, 40, 1030}, {916, 38, 114, 1030}, {1022, 31, 41, 1030}, {1726, 38, 108, 1030},
-    {1833, 31, 39, 1030}, {1321, 20, 92, 1030}, {1428, 31, 39, 1030}, {1524, 21, 86, 1030}, {1630, 31, 36, 1030}, {1726, 38, 103, 1030},
-    {1833, 31, 37, 1030}, {3145, 21, 93, 1030}, {3251, 31, 39, 1030}, {1118, 19, 101, 1030}, {1225, 31, 39, 1030}, {2334, 21, 88, 1030},
-    {2441, 31, 37, 1030}, {2537, 38, 100, 1030}, {2643, 31, 36, 1030}, {308, 19, 103, 1030}, {415, 31, 39, 1030}, {510, 20, 96, 1030},
-    {617, 31, 40, 1030}, {713, 21, 97, 1030}, {820, 31, 41, 1030}, {1524, 21, 89, 1030}, {1630, 31, 37, 1030}, {713, 21, 93, 1030},
-    {820, 31, 39, 1030}, {2132, 20, 95, 1030}, {2238, 31, 40, 1030}, {2334, 21, 91, 1030}, {2441, 31, 38, 1030}, {2537, 38, 102, 1030},
-    {2643, 31, 37, 1030}, {308, 19, 107, 1030}, {415, 31, 41, 1030}, {1321, 20, 88, 1030}, {1428, 31, 37, 1030}, {1524, 21, 88, 1030},
-    {1630, 31, 37, 1030}, {916, 38, 111, 1030}, {1022, 31, 40, 1030}, {1929, 19, 105, 1030}, {2036, 31, 40, 1030}, {2132, 20, 95, 1030},
-    {2238, 31, 40, 1030}, {2334, 21, 95, 1030}, {2441, 31, 40, 1030}, {1093, 26, 59, 1030}, {2804, 30, 64, 1030}, {1093, 26, 62, 1030},
-    {3849, 29, 54, 1030}, {475, 25, 63, 1030}, {1758, 25, 63, 1030}, {3279, 30, 62, 1030}, {4419, 48, 55, 1030}, {3279, 30, 64, 1030},
-    {3849, 29, 57, 1030}, {3279, 30, 64, 1030}, {4419, 48, 59, 1030}, {1093, 26, 61, 1030}, {2328, 30, 59, 1030}, {3279, 30, 62, 1030},
-    {3849, 29, 59, 1030}, {518, 34, 44, 1030}, {1763, 34, 42, 1030}, {1140, 25, 40, 1030}, {4562, 48, 54, 1030}, {2333, 42, 46, 1030},
-    {3421, 28, 52, 1030}, {3421, 28, 52, 1030}, {4562, 48, 55, 1030}, {518, 34, 46, 1030}, {4044, 28, 63, 1030}, {3421, 28, 49, 1030},
-    {4044, 28, 56, 1030}, {518, 34, 48, 1030}, {2333, 42, 49, 1030}, {518, 34, 48, 1030}, {4044, 28, 57, 1030}, {1192, 34, 45, 1030},
-    {2022, 34, 49, 1030}, {1192, 34, 46, 1030}, {3629, 28, 54, 1030}, {415, 28, 58, 1030}, {3629, 28, 48, 1030}, {4355, 48, 53, 1030},
-    {4873, 28, 44, 1030}, {415, 28, 64, 1030}, {3629, 28, 52, 1030}, {415, 28, 61, 1030}, {1192, 34, 49, 1030}, {415, 28, 61, 1030},
-    {1192, 34, 44, 1030}, {2022, 34, 45, 1030}, {3629, 28, 54, 1030}, {950, 25, 43, 1030}, {1378, 34, 40, 1030}, {475, 48, 53, 1030},
-    {2566, 34, 40, 1030}, {2851, 48, 54, 1030}, {3754, 34, 43, 1030}, {2138, 25, 43, 1030}, {2851, 48, 56, 1030}, {475, 48, 56, 1030},
-    {1663, 48, 54, 1030}, {1378, 34, 44, 1030}, {3754, 34, 44, 1030}, {2566, 34, 43, 1030}, {3754, 34, 43, 1030}, {2851, 48, 60, 1030},
-    {3326, 25, 45, 1030}, {3612, 42, 45, 1030}, {4182, 25, 44, 1030}, {2540, 48, 59, 1030}, {3059, 48, 62, 1030}, {1225, 24, 48, 1030},
-    {1244, 24, 47, 1030}, {1950, 34, 55, 1030}, {369, 30, 73, 1030}, {821, 11, 60, 1030}, {1272, 30, 73, 1030}, {1601, 11, 62, 1030},
-    {2011, 35, 126, 1030}, {2462, 22, 67, 1030}, {2955, 15, 77, 1000}, {3946, 34, 42, 1030}, {302, 13, 37, 1030}, {2668, 28, 49, 1030},
-    {950, 21, 146, 1000}, {995, 31, 73, 1000}, {1100, 38, 158, 1000}, {1145, 31, 67, 1000}, {1250, 19, 138, 1000}, {1295, 31, 66, 1000},
-    {1850, 19, 144, 1000}, {1895, 31, 68, 1000}, {350, 21, 132, 1000}, {395, 31, 66, 1000}, {500, 38, 155, 1000}, {545, 31, 65, 1000},
-    {650, 19, 140, 1000}, {695, 31, 66, 1000}, {1250, 19, 152, 1000}, {1295, 31, 73, 1000}, {200, 20, 132, 1000}, {245, 31, 65, 1000},
-    {1400, 20, 134, 1000}, {1445, 31, 66, 1000}, {1550, 21, 147, 1000}, {1595, 31, 73, 1000}, {1700, 38, 166, 1000}, {1745, 31, 70, 1000},
-    {1100, 38, 173, 1000}, {1145, 31, 73, 1000}, {1250, 19, 139, 1000}, {1295, 31, 66, 1000}, {1850, 19, 151, 1000}, {1895, 31, 72, 1000},
-    {1100, 38, 174, 1000}, {1145, 31, 74, 1000}, {1250, 19, 155, 1000}, {1295, 31, 74, 1000}, {2300, 38, 163, 1000}, {2345, 31, 69, 1000},
-    {350, 21, 139, 1000}, {395, 31, 69, 1000}, {1550, 21, 140, 1000}, {1595, 31, 70, 1000}, {1700, 38, 156, 1000}, {1745, 31, 66, 1000},
-    {950, 21, 145, 1000}, {995, 31, 72, 1000}, {1100, 38, 154, 1000}, {1145, 31, 65, 1000}, {1250, 19, 148, 1000}, {1295, 31, 70, 1000},
-    {1850, 19, 149, 1000}, {1895, 31, 71, 1000}, {1400, 20, 139, 1000}, {1445, 31, 69, 1000}, {1550, 21, 143, 1000}, {1595, 31, 71, 1000},
-    {2150, 21, 147, 1000}, {2195, 31, 73, 1000}, {700, 34, 70, 1000}, {2800, 34, 77, 1000}, {1400, 34, 69, 1000}, {2100, 48, 68, 1000},
-    {1400, 34, 74, 1000}, {2800, 34, 77, 1000}, {2100, 34, 75, 1000}, {2800, 34, 77, 1000}, {1400, 48, 67, 1000}, {2100, 34, 74, 1000},
-    {2100, 48, 70, 1000}, {2800, 48, 66, 1000}, {1400, 48, 67, 1000}, {2100, 34, 77, 1000}, {1400, 34, 74, 1000}, {2800, 34, 72, 1000},
-    {1400, 48, 89, 1000}, {2144, 48, 68, 1120}, {2100, 48, 88, 1000}, {2800, 48, 93, 1000}, {744, 48, 69, 1120}, {1400, 48, 82, 1000},
-    {1444, 48, 66, 1120}, {2844, 48, 66, 1120}, {744, 48, 67, 1120}, {2144, 48, 64, 1120}, {2144, 48, 67, 1120}, {2800, 48, 90, 1000},
-    {700, 48, 83, 1000}, {2844, 48, 71, 1120}, {2144, 48, 70, 1120}, {3475, 34, 60, 1000}, {700, 11, 36, 1000}, {1400, 30, 69, 1000},
-    {2100, 30, 74, 1000}, {3300, 11, 37, 1000}, {2100, 30, 71, 1000}, {2800, 30, 66, 1000}, {3300, 11, 37, 1000}, {4700, 11, 38, 1000},
-    {700, 11, 35, 1000}, {2100, 30, 75, 1000}, {3300, 11, 35, 1000}, {3800, 30, 66, 1000}, {700, 11, 34, 1000}, {2100, 11, 37, 1000},
-    {3300, 30, 74, 1000}, {3800, 11, 37, 1000}, {700, 30, 75, 1000}, {2100, 30, 68, 1000}, {2800, 30, 74, 1000}, {4700, 11, 35, 1000},
-    {700, 11, 35, 1000}, {2800, 30, 75, 1000}, {3800, 30, 73, 1000}, {4700, 30, 69, 1000}, {700, 30, 71, 1000}, {2100, 11, 35, 1000},
-    {3300, 11, 35, 1000}, {3800, 30, 75, 1000}, {700, 30, 73, 1000}, {1400, 30, 69, 1000}, {2100, 30, 72, 1000}, {4300, 30, 74, 1000},
-    {1120, 36, 91, 1000}, {1120, 36, 88, 1000}, {1120, 36, 85, 1000}, {1120, 36, 90, 1000}, {1120, 36, 81, 1000}, {1120, 36, 80, 1000},
-    {1120, 36, 89, 1000}, {320, 3, 178, 1000}, {640, 3, 178, 1000}, {960, 3, 178, 1000}, {1320, 1, 250, 1000}, {380, 2, 125, 1000},
-    {680, 2, 125, 1000}, {980, 2, 125, 1000}, {1340, 1, 250, 1000}, {360, 3, 178, 1000}, {680, 3, 178, 1000}, {1000, 3, 178, 1000},
-    {1360, 1, 250, 1000}, {80, 44, 241, 980}, {216, 10, 63, 1000}, {610, 45, 226, 980}, {1080, 42, 59, 1000}, {800, 30, 57, 1000},
-    {800, 46, 235, 980}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 69, 1000}, {1160, 45, 198, 1000}, {4756, 10, 45, 1000},
-    {520, 11, 61, 1000}, {1196, 11, 66, 1000}, {1872, 35, 122, 1000}, {2392, 24, 69, 1000}, {2860, 15, 89, 1000}, {4680, 10, 48, 1000},
-    {2762, 19, 104, 1000}, {664, 25, 65, 1000}, {2447, 30, 62, 1000}, {353, 28, 68, 1000}, {4019, 28, 50, 1000}, {353, 28, 63, 1000},
-    {3533, 25, 54, 1000}, {353, 28, 70, 1000}, {3003, 28, 58, 1000}, {1369, 48, 68, 1000}, {2517, 34, 53, 1000}, {839, 48, 69, 1000},
-    {4019, 28, 50, 1000}, {3533, 25, 55, 1000}, {4019, 28, 49, 1000}, {839, 48, 69, 1000}, {2517, 34, 51, 1000}, {353, 28, 63, 1000},
-    {839, 48, 75, 1000}, {513, 21, 100, 1000}, {604, 31, 42, 1000}, {1267, 19, 107, 1000}, {1357, 31, 41, 1000}, {1392, 20, 96, 1000},
-    {1483, 31, 40, 1000}, {1518, 21, 98, 1000}, {1608, 31, 41, 1000}, {1015, 21, 95, 1000}, {1106, 31, 40, 1000}, {1141, 38, 117, 1000},
-    {1232, 31, 42, 1000}, {1267, 19, 105, 1000}, {1357, 31, 40, 1000}, {1894, 20, 95, 1000}, {1985, 31, 40, 1000}, {1015, 21, 100, 1000},
-    {1106, 31, 42, 1000}, {1141, 38, 119, 1000}, {1232, 31, 43, 1000}, {1267, 19, 112, 1000}, {1357, 31, 42, 1000}, {2899, 20, 102, 1000},
-    {2989, 31, 43, 1000}, {262, 19, 112, 1000}, {353, 31, 43, 1000}, {388, 20, 92, 1000}, {479, 31, 39, 1000}, {513, 21, 95, 1000},
-    {604, 31, 40, 1000}, {1643, 38, 110, 1000}, {1734, 31, 40, 1000}, {513, 21, 92, 1000}, {604, 31, 39, 1000}, {639, 38, 111, 1000},
-    {730, 31, 40, 1000}, {764, 19, 107, 1000}, {855, 31, 41, 1000}, {1894, 20, 102, 1000}, {1985, 31, 43, 1000}, {764, 19, 109, 1000},
-    {855, 31, 42, 1000}, {2396, 20, 99, 1000}, {2487, 31, 42, 1000}, {2522, 21, 95, 1000}, {2613, 31, 40, 1000}, {2647, 38, 119, 1000},
-    {2738, 31, 43, 1000}, {1894, 20, 102, 1000}, {1985, 31, 43, 1000}, {2020, 21, 100, 1000}, {2111, 31, 42, 1000}, {2145, 38, 110, 1000},
-    {2236, 31, 40, 1000}, {2899, 20, 98, 1000}, {2989, 31, 41, 1000}, {1015, 21, 97, 1000}, {1106, 31, 41, 1000}, {1141, 38, 115, 1000},
-    {1232, 31, 41, 1000}, {1267, 19, 108, 1000}, {1357, 31, 41, 1000}, {2522, 21, 97, 1000}, {2613, 31, 41, 1000}, {931, 26, 68, 1000},
-    {2388, 30, 67, 1000}, {1498, 25, 69, 1000}, {1984, 30, 62, 1000}, {2388, 30, 68, 1000}, {2793, 30, 64, 1000}, {931, 26, 68, 1000},
-    {1498, 25, 62, 1000}, {1498, 25, 68, 1000}, {2793, 30, 68, 1000}, {931, 26, 66, 1000}, {2793, 30, 61, 1000}, {931, 26, 64, 1000},
-    {2793, 30, 63, 1000}, {2793, 30, 70, 1000}, {3765, 48, 58, 1000}, {972, 25, 39, 1000}, {2915, 28, 54, 1000}, {442, 34, 51, 1000},
-    {1501, 34, 52, 1000}, {1501, 34, 51, 1000}, {3444, 28, 61, 1000}, {2915, 28, 53, 1000}, {3444, 28, 63, 1000}, {972, 25, 38, 1000},
-    {3444, 28, 65, 1000}, {442, 34, 49, 1000}, {1987, 42, 50, 1000}, {2915, 28, 58, 1000}, {3886, 48, 55, 1000}, {3444, 28, 63, 1000},
-    {3886, 48, 63, 1000}, {1016, 34, 49, 1000}, {1722, 34, 52, 1000}, {2429, 25, 48, 1000}, {4151, 28, 45, 1000}, {353, 28, 63, 1000},
-    {1016, 34, 52, 1000}, {1722, 34, 48, 1000}, {3091, 28, 58, 1000}, {1016, 34, 53, 1000}, {4151, 28, 45, 1000}, {3091, 28, 54, 1000},
-    {4151, 28, 47, 1000}, {353, 28, 67, 1000}, {3091, 28, 52, 1000}, {1722, 34, 49, 1000}, {2429, 25, 47, 1000}, {2186, 34, 48, 1000},
-    {2834, 25, 49, 1000}, {1174, 34, 46, 1000}, {2834, 25, 52, 1000}, {1417, 48, 61, 1000}, {1822, 25, 50, 1000}, {1174, 34, 42, 1000},
-    {2429, 48, 58, 1000}, {810, 25, 51, 1000}, {2834, 25, 47, 1000}, {1417, 48, 60, 1000}, {2186, 34, 44, 1000}, {405, 48, 61, 1000},
-    {1822, 25, 52, 1000}, {810, 25, 52, 1000}, {2429, 48, 61, 1000}, {3076, 42, 43, 1000}, {3562, 25, 47, 1000}, {2605, 48, 66, 1000},
-    {3577, 42, 42, 1000}, {464, 34, 54, 1000}, {1060, 24, 49, 1000}, {386, 28, 70, 1000}, {315, 30, 79, 1000}, {699, 11, 65, 1000},
-    {1084, 30, 79, 1000}, {1363, 11, 67, 1000}, {1713, 35, 136, 1000}, {2098, 22, 73, 1000}, {2517, 15, 83, 1000}, {773, 30, 53, 1000},
-    {258, 13, 44, 1000}, {2272, 28, 49, 1000}, {550, 22, 67, 1000}, {750, 7, 117, 1000}, {820, 31, 68, 1000}, {850, 22, 64, 1000},
-    {1450, 22, 67, 1000}, {150, 7, 120, 1000}, {750, 7, 125, 1000}, {820, 31, 72, 1000}, {1650, 7, 126, 1000}, {1720, 31, 67, 1000},
-    {1350, 7, 126, 1000}, {1420, 31, 73, 1000}, {1450, 22, 60, 1000}, {1650, 7, 123, 1000}, {1750, 22, 66, 1000}, {550, 22, 59, 1000},
-    {750, 7, 128, 1000}, {820, 31, 74, 1000}, {1650, 7, 124, 1000}, {1720, 31, 66, 1000}, {450, 7, 138, 1000}, {1350, 7, 123, 1000},
-    {1420, 31, 70, 1000}, {1650, 7, 123, 1000}, {1720, 31, 66, 1000}, {750, 7, 127, 1000}, {1050, 7, 130, 1000}, {1120, 31, 69, 1000},
-    {1150, 22, 64, 1000}, {1750, 22, 64, 1000}, {250, 22, 60, 1000}, {550, 22, 59, 1000}, {1050, 7, 122, 1000}, {1120, 31, 65, 1000},
-    {1750, 22, 60, 1000}, {150, 7, 128, 1000}, {220, 31, 74, 1000}, {250, 22, 61, 1000}, {1150, 22, 66, 1000}, {1750, 22, 60, 1000},
-    {1050, 11, 60, 1000}, {1200, 35, 142, 1000}, {1940, 22, 59, 1000}, {2280, 24, 44, 1000}, {680, 7, 132, 1000}, {1200, 35, 137, 1000},
-    {2280, 24, 44, 1000}, {2780, 19, 140, 1000}, {940, 7, 136, 1000}, {1200, 35, 152, 1000}, {1560, 47, 73, 1000}, {1940, 22, 60, 1000},
-    {1200, 35, 152, 1000}, {1560, 47, 65, 1000}, {1860, 24, 75, 1000}, {2440, 19, 133, 1000}, {1200, 35, 143, 1000}, {1560, 47, 69, 1000},
-    {1940, 22, 59, 1000}, {2440, 19, 130, 1000}, {380, 7, 115, 1000}, {1050, 11, 61, 1000}, {1200, 35, 137, 1000}, {1560, 47, 64, 1000},
-    {940, 7, 135, 1000}, {1050, 11, 59, 1000}, {1200, 35, 137, 1000}, {1560, 47, 70, 1000}, {1050, 11, 60, 1000}, {1200, 35, 140, 1000},
-    {1940, 22, 63, 1000}, {2780, 19, 148, 1000}, {320, 7, 121, 1000}, {680, 17, 101, 1000}, {1480, 17, 105, 1000}, {2220, 22, 54, 1000},
-    {1480, 17, 108, 1000}, {2220, 22, 53, 1000}, {3340, 24, 56, 1000}, {4080, 19, 136, 1000}, {725, 35, 93, 1000}, {1095, 35, 96, 1000},
-    {3340, 24, 59, 1000}, {4080, 19, 138, 1000}, {1050, 17, 98, 1000}, {2920, 10, 51, 1000}, {3340, 24, 58, 1000}, {3780, 19, 147, 1000},
-    {1095, 35, 97, 1000}, {2920, 10, 51, 1000}, {3060, 10, 57, 1000}, {3340, 24, 53, 1000}, {680, 17, 93, 1000}, {1525, 35, 94, 1000},
-    {3480, 19, 133, 1000}, {3780, 19, 145, 1000}, {725, 35, 93, 1000}, {1095, 35, 94, 1000}, {2920, 10, 53, 1000}, {3780, 19, 140, 1000},
-    {725, 35, 99, 1000}, {1050, 17, 96, 1000}, {1480, 17, 112, 1000}, {2920, 10, 51, 1000}, {840, 12, 123, 1000}, {1140, 42, 68, 1000},
-    {1870, 42, 64, 1000}, {2400, 28, 71, 1000}, {120, 12, 114, 1000}, {310, 28, 62, 1000}, {1140, 42, 67, 1000}, {1770, 28, 64, 1000},
-    {940, 43, 96, 1000}, {1140, 42, 70, 1000}, {1360, 13, 44, 1000}, {1870, 42, 63, 1000}, {120, 12, 111, 1000}, {1140, 42, 66, 1000},
-    {1770, 28, 64, 1000}, {2400, 28, 70, 1000}, {230, 43, 96, 1000}, {410, 42, 70, 1000}, {840, 12, 117, 1000}, {1040, 28, 68, 1000},
-    {620, 13, 46, 1000}, {1140, 42, 65, 1000}, {1670, 43, 102, 1000}, {1770, 28, 64, 1000}, {310, 28, 65, 1000}, {840, 12, 119, 1000},
-    {1360, 13, 43, 1000}, {2400, 28, 71, 1000}, {410, 42, 72, 1000}, {1570, 12, 110, 1000}, {1870, 42, 67, 1000}, {2400, 28, 69, 1000},
-    {490, 41, 96, 1000}, {840, 26, 74, 1000}, {1040, 26, 76, 1000}, {1900, 26, 80, 1000}, {600, 26, 79, 1000}, {770, 26, 73, 1000},
-    {910, 41, 105, 1000}, {1780, 26, 104, 1000}, {330, 26, 77, 1000}, {690, 26, 74, 1000}, {910, 41, 111, 1000}, {1780, 26, 112, 1000},
-    {330, 26, 72, 1000}, {490, 41, 86, 1000}, {1340, 29, 99, 1000}, {1780, 26, 109, 1000}, {330, 26, 79, 1000}, {490, 41, 91, 1000},
-    {840, 26, 78, 1000}, {1780, 26, 113, 1000}, {490, 41, 95, 1000}, {770, 26, 77, 1000}, {910, 41, 109, 1000}, {1365, 41, 90, 1000},
-    {490, 41, 88, 1000}, {770, 26, 73, 1000}, {910, 41, 102, 1000}, {1040, 26, 80, 1000}, {160, 26, 80, 1000}, {250, 26, 75, 1000},
-    {690, 26, 76, 1000}, {1340, 29, 101, 1000}, {340, 2, 141, 910}, {600, 2, 144, 910}, {840, 2, 141, 910}, {1080, 2, 144, 910},
-    {1440, 1, 255, 1000}, {440, 0, 183, 910}, {740, 0, 188, 910}, {1120, 0, 183, 910}, {1480, 1, 255, 1000}, {250, 3, 200, 910},
-    {430, 3, 205, 910}, {610, 3, 200, 910}, {790, 3, 205, 910}, {1060, 3, 200, 910}, {1420, 1, 255, 1000}, {80, 44, 241, 910},
-    {216, 10, 63, 1000}, {610, 45, 226, 910}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 910}, {1600, 30, 57, 1000},
-    {2400, 30, 57, 1000}, {464, 28, 76, 940}, {1160, 45, 217, 1000}, {4756, 10, 49, 940}, {520, 11, 67, 940}, {1196, 11, 72, 940},
-    {1872, 35, 134, 940}, {2392, 24, 76, 940}, {2860, 15, 98, 1000}, {4680, 10, 52, 940}, {260, 28, 73, 940}, {1675, 16, 66, 940},
-    {549, 25, 70, 940}, {1131, 48, 79, 940}, {3320, 28, 55, 940}, {2918, 25, 60, 940}, {3320, 28, 53, 940}, {693, 48, 79, 940},
+    {722, 25, 63, 1040}, {2204, 16, 63, 1040}, {2660, 30, 64, 1040}, {384, 28, 70, 1040}, {4368, 28, 47, 1040}, {1488, 48, 73, 1040},
+    {3840, 25, 57, 1040}, {912, 48, 75, 1040}, {3264, 28, 60, 1040}, {2736, 34, 52, 1040}, {4368, 28, 53, 1040}, {384, 28, 65, 1040},
+    {1488, 48, 74, 1040}, {384, 28, 67, 1040}, {2736, 34, 54, 1040}, {1488, 48, 72, 1040}, {2736, 34, 55, 1040}, {2736, 34, 49, 1040},
+    {3264, 28, 62, 1040}, {1619, 19, 109, 1040}, {1718, 31, 42, 1040}, {2787, 38, 113, 1040}, {2885, 31, 41, 1040}, {2953, 19, 105, 1040},
+    {3052, 31, 40, 1040}, {952, 19, 105, 1040}, {1051, 31, 40, 1040}, {1786, 20, 99, 1040}, {1885, 31, 42, 1040}, {1953, 21, 98, 1040},
+    {2052, 31, 41, 1040}, {2120, 38, 114, 1040}, {2218, 31, 41, 1040}, {952, 19, 116, 1040}, {1051, 31, 44, 1040}, {1953, 21, 100, 1040},
+    {2052, 31, 42, 1040}, {2120, 38, 116, 1040}, {2218, 31, 42, 1040}, {2286, 19, 106, 1040}, {2385, 31, 40, 1040}, {952, 19, 104, 1040},
+    {1051, 31, 39, 1040}, {1953, 21, 94, 1040}, {2052, 31, 40, 1040}, {2120, 38, 119, 1040}, {2218, 31, 43, 1040}, {952, 19, 107, 1040},
+    {1051, 31, 41, 1040}, {1119, 20, 97, 1040}, {1218, 31, 41, 1040}, {1286, 21, 97, 1040}, {1384, 31, 41, 1040}, {2453, 20, 95, 1040},
+    {2552, 31, 40, 1040}, {1119, 20, 94, 1040}, {1218, 31, 40, 1040}, {1286, 21, 102, 1040}, {1384, 31, 43, 1040}, {2953, 19, 102, 1040},
+    {3052, 31, 39, 1040}, {785, 38, 121, 1040}, {884, 31, 44, 1040}, {952, 19, 111, 1040}, {1051, 31, 42, 1040}, {1119, 20, 99, 1040},
+    {1218, 31, 41, 1040}, {2620, 21, 98, 1040}, {2719, 31, 41, 1040}, {452, 20, 102, 1040}, {551, 31, 43, 1040}, {2286, 19, 102, 1040},
+    {2385, 31, 39, 1040}, {2453, 20, 103, 1040}, {2552, 31, 43, 1040}, {2156, 30, 67, 1040}, {3564, 29, 58, 1040}, {3564, 29, 57, 1040},
+    {4092, 48, 62, 1040}, {2596, 30, 62, 1040}, {3564, 29, 63, 1040}, {440, 25, 65, 1040}, {1628, 25, 67, 1040}, {1012, 26, 63, 1040},
+    {2596, 30, 63, 1040}, {1628, 25, 60, 1040}, {2156, 30, 67, 1040}, {1012, 26, 63, 1040}, {3564, 29, 64, 1040}, {2596, 30, 67, 1040},
+    {3564, 29, 60, 1040}, {480, 34, 48, 1040}, {3168, 28, 56, 1040}, {1056, 25, 42, 1040}, {1632, 34, 47, 1040}, {480, 34, 50, 1040},
+    {1056, 25, 40, 1040}, {480, 34, 51, 1040}, {4224, 48, 59, 1040}, {2160, 42, 49, 1040}, {3744, 28, 65, 1040}, {3168, 28, 53, 1040},
+    {4224, 48, 63, 1040}, {2160, 42, 50, 1040}, {3168, 28, 56, 1040}, {1632, 34, 51, 1040}, {3744, 28, 68, 1040}, {4032, 48, 59, 1040},
+    {4512, 28, 45, 1040}, {1104, 34, 53, 1040}, {4512, 28, 45, 1040}, {384, 28, 65, 1040}, {3360, 28, 58, 1040}, {384, 28, 70, 1040},
+    {4512, 28, 46, 1040}, {2640, 25, 49, 1040}, {4032, 48, 59, 1040}, {4032, 48, 57, 1040}, {4512, 28, 47, 1040}, {1872, 34, 51, 1040},
+    {4032, 48, 64, 1040}, {384, 28, 66, 1040}, {3360, 28, 55, 1040}, {880, 25, 51, 1040}, {2640, 48, 61, 1040}, {1540, 48, 64, 1040},
+    {1980, 25, 48, 1040}, {440, 48, 59, 1040}, {1980, 25, 51, 1040}, {1276, 34, 46, 1040}, {1540, 48, 64, 1040}, {440, 48, 61, 1040},
+    {880, 25, 50, 1040}, {2640, 48, 61, 1040}, {3080, 25, 46, 1040}, {440, 48, 64, 1040}, {2640, 48, 60, 1040}, {1540, 48, 64, 1040},
+    {2376, 34, 46, 1040}, {1012, 29, 65, 1040}, {3872, 25, 52, 1040}, {2352, 48, 66, 1040}, {3888, 42, 47, 1040}, {1764, 28, 63, 1040},
+    {2448, 28, 66, 1040}, {1008, 16, 52, 1040}, {342, 30, 79, 1040}, {760, 11, 65, 1040}, {1178, 30, 79, 1040}, {1482, 11, 67, 1040},
+    {1862, 35, 136, 1040}, {2280, 22, 73, 1040}, {2736, 15, 83, 1000}, {1848, 48, 58, 1040}, {896, 32, 63, 1040}, {1064, 13, 37, 1040},
+    {50, 19, 152, 1000}, {75, 31, 72, 1000}, {150, 20, 136, 1000}, {175, 31, 67, 1000}, {250, 21, 136, 1000}, {275, 31, 68, 1000},
+    {950, 20, 148, 1000}, {975, 31, 73, 1000}, {50, 19, 153, 1000}, {75, 31, 73, 1000}, {150, 20, 140, 1000}, {175, 31, 69, 1000},
+    {950, 20, 134, 1000}, {975, 31, 66, 1000}, {250, 21, 137, 1000}, {275, 31, 68, 1000}, {1150, 38, 157, 1000}, {1175, 31, 66, 1000},
+    {1250, 19, 143, 1000}, {1275, 31, 68, 1000}, {1350, 20, 133, 1000}, {1375, 31, 66, 1000}, {250, 21, 147, 1000}, {275, 31, 73, 1000},
+    {1050, 21, 148, 1000}, {1075, 31, 74, 1000}, {1150, 38, 173, 1000}, {1175, 31, 73, 1000}, {250, 21, 140, 1000}, {275, 31, 70, 1000},
+    {350, 38, 165, 1000}, {375, 31, 70, 1000}, {1450, 21, 138, 1000}, {1475, 31, 69, 1000}, {550, 20, 148, 1000}, {575, 31, 73, 1000},
+    {650, 21, 143, 1000}, {675, 31, 71, 1000}, {1450, 21, 149, 1000}, {1475, 31, 74, 1000}, {250, 21, 131, 1000}, {275, 31, 65, 1000},
+    {350, 38, 170, 1000}, {375, 31, 72, 1000}, {450, 19, 152, 1000}, {475, 31, 72, 1000}, {1050, 21, 137, 1000}, {1075, 31, 68, 1000},
+    {50, 19, 147, 1000}, {75, 31, 70, 1000}, {1250, 19, 152, 1000}, {1275, 31, 73, 1000}, {1350, 20, 138, 1000}, {1375, 31, 68, 1000},
+    {1450, 21, 134, 1000}, {1475, 31, 67, 1000}, {1200, 32, 69, 1000}, {1800, 32, 75, 1000}, {900, 42, 35, 1000}, {2100, 42, 35, 1000},
+    {1500, 42, 39, 1000}, {2700, 42, 37, 1000}, {1800, 32, 78, 1000}, {2100, 42, 37, 1000}, {600, 32, 73, 1000}, {900, 42, 39, 1000},
+    {300, 42, 38, 1000}, {900, 42, 38, 1000}, {600, 32, 70, 1000}, {1200, 32, 73, 1000}, {600, 32, 77, 1000}, {2100, 42, 39, 1000},
+    {1120, 18, 92, 1000}, {1120, 18, 91, 1000}, {1120, 18, 104, 1000}, {2240, 24, 55, 1000}, {1120, 18, 96, 1000}, {560, 18, 77, 1000},
+    {560, 18, 75, 1000}, {720, 30, 59, 1000}, {2880, 30, 61, 1000}, {2520, 28, 57, 1000}, {2880, 30, 64, 1000}, {2520, 28, 58, 1000},
+    {2880, 30, 67, 1000}, {360, 28, 62, 1000}, {1440, 30, 65, 1000}, {2160, 30, 62, 1000}, {3240, 28, 59, 1000}, {2880, 30, 67, 1000},
+    {3240, 28, 60, 1000}, {1440, 30, 60, 1000}, {3240, 28, 60, 1000}, {1440, 30, 67, 1000}, {3240, 28, 64, 1000}, {420, 25, 68, 1000},
+    {1680, 32, 62, 1000}, {1260, 25, 68, 1000}, {1680, 32, 59, 1000}, {420, 32, 58, 1000}, {1680, 25, 76, 1000}, {420, 25, 73, 1000},
+    {1260, 25, 68, 1000}, {840, 25, 72, 1000}, {1260, 25, 71, 1000}, {1260, 32, 59, 1000}, {1680, 25, 71, 1000}, {840, 25, 70, 1000},
+    {1260, 25, 73, 1000}, {420, 25, 77, 1000}, {1260, 25, 72, 1000}, {260, 6, 113, 1120}, {440, 6, 116, 1120}, {620, 6, 113, 1120},
+    {800, 6, 116, 1120}, {980, 6, 113, 1120}, {1160, 6, 116, 1120}, {1520, 1, 251, 1000}, {280, 5, 129, 1120}, {500, 5, 132, 1120},
+    {720, 5, 129, 1120}, {940, 5, 132, 1120}, {1160, 5, 129, 1120}, {1520, 1, 251, 1000}, {320, 5, 129, 1120}, {540, 5, 132, 1120},
+    {760, 5, 129, 1120}, {1080, 5, 132, 1120}, {1440, 1, 251, 1000}, {80, 45, 232, 1060}, {216, 10, 63, 1000}, {610, 45, 226, 1060},
+    {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 1060}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 70, 1080},
+    {1160, 45, 201, 1000}, {4756, 10, 46, 1080}, {520, 11, 62, 1080}, {1196, 11, 67, 1080}, {1872, 35, 124, 1080}, {2392, 24, 70, 1080},
+    {2860, 15, 91, 1000}, {4680, 10, 48, 1080}, {2075, 30, 65, 1080}, {563, 25, 67, 1080}, {1719, 16, 63, 1080}, {267, 28, 71, 1080},
+    {300, 28, 71, 1080}, {2995, 25, 51, 1080}, {1610, 48, 72, 1080}, {2546, 28, 57, 1080}, {300, 28, 63, 1080}, {1161, 48, 73, 1080},
+    {1610, 48, 79, 1080}, {2546, 28, 63, 1080}, {711, 48, 73, 1080}, {2995, 25, 58, 1080}, {1161, 48, 74, 1080}, {3407, 28, 48, 1080},
+    {1610, 48, 73, 1080}, {3407, 28, 49, 1080}, {300, 28, 72, 1080}, {3407, 28, 54, 1080}, {1198, 21, 93, 1080}, {1275, 31, 39, 1080},
+    {1783, 19, 110, 1080}, {1860, 31, 42, 1080}, {1881, 20, 97, 1080}, {1958, 31, 41, 1080}, {222, 19, 113, 1080}, {299, 31, 43, 1080},
+    {1783, 19, 111, 1080}, {1860, 31, 42, 1080}, {1881, 20, 103, 1080}, {1958, 31, 43, 1080}, {1978, 21, 93, 1080}, {2056, 31, 39, 1080},
+    {417, 21, 94, 1080}, {494, 31, 40, 1080}, {515, 38, 124, 1080}, {592, 31, 45, 1080}, {613, 19, 115, 1080}, {690, 31, 44, 1080},
+    {1686, 38, 113, 1080}, {1763, 31, 41, 1080}, {808, 21, 94, 1080}, {885, 31, 40, 1080}, {905, 38, 111, 1080}, {982, 31, 40, 1080},
+    {1003, 19, 115, 1080}, {1080, 31, 44, 1080}, {1881, 20, 97, 1080}, {1958, 31, 41, 1080}, {222, 19, 106, 1080}, {299, 31, 40, 1080},
+    {1198, 21, 105, 1080}, {1275, 31, 44, 1080}, {1296, 38, 117, 1080}, {1373, 31, 42, 1080}, {1393, 19, 118, 1080}, {1470, 31, 45, 1080},
+    {613, 19, 105, 1080}, {690, 31, 40, 1080}, {1783, 19, 111, 1080}, {1860, 31, 42, 1080}, {1881, 20, 96, 1080}, {1958, 31, 40, 1080},
+    {320, 20, 94, 1080}, {397, 31, 40, 1080}, {1198, 21, 101, 1080}, {1275, 31, 43, 1080}, {1296, 38, 116, 1080}, {1373, 31, 41, 1080},
+    {808, 21, 103, 1080}, {885, 31, 43, 1080}, {905, 38, 115, 1080}, {982, 31, 41, 1080}, {1003, 19, 114, 1080}, {1080, 31, 43, 1080},
+    {1978, 21, 97, 1080}, {2056, 31, 41, 1080}, {2025, 30, 70, 1080}, {2368, 30, 67, 1080}, {343, 25, 70, 1080}, {1682, 30, 64, 1080},
+    {1270, 25, 64, 1080}, {2025, 30, 69, 1080}, {1270, 25, 66, 1080}, {2780, 29, 58, 1080}, {1682, 30, 71, 1080}, {3192, 48, 64, 1080},
+    {1682, 30, 64, 1080}, {2368, 30, 69, 1080}, {1270, 25, 68, 1080}, {1682, 30, 67, 1080}, {789, 26, 70, 1080}, {3192, 48, 59, 1080},
+    {374, 34, 52, 1080}, {1685, 42, 49, 1080}, {824, 25, 40, 1080}, {1685, 42, 48, 1080}, {824, 25, 43, 1080}, {2471, 28, 57, 1080},
+    {374, 34, 48, 1080}, {3295, 48, 56, 1080}, {1685, 42, 51, 1080}, {2471, 28, 55, 1080}, {374, 34, 54, 1080}, {3295, 48, 61, 1080},
+    {824, 25, 43, 1080}, {2471, 28, 60, 1080}, {1273, 34, 49, 1080}, {2920, 28, 66, 1080}, {1460, 34, 48, 1080}, {3145, 48, 65, 1080},
+    {1460, 34, 50, 1080}, {2059, 25, 46, 1080}, {861, 34, 47, 1080}, {2621, 28, 59, 1080}, {300, 28, 71, 1080}, {3519, 28, 46, 1080},
+    {3145, 48, 59, 1080}, {3519, 28, 46, 1080}, {861, 34, 53, 1080}, {3145, 48, 60, 1080}, {1460, 34, 51, 1080}, {3145, 48, 62, 1080},
+    {300, 28, 65, 1080}, {3145, 48, 58, 1080}, {1853, 34, 48, 1080}, {2059, 48, 62, 1080}, {1544, 25, 52, 1080}, {2402, 25, 51, 1080},
+    {1544, 25, 48, 1080}, {1853, 34, 46, 1080}, {995, 34, 43, 1080}, {1853, 34, 44, 1080}, {995, 34, 43, 1080}, {1544, 25, 53, 1080},
+    {1201, 48, 63, 1080}, {2402, 25, 53, 1080}, {343, 48, 62, 1080}, {2402, 25, 53, 1080}, {2059, 48, 65, 1080}, {2711, 34, 43, 1080},
+    {2196, 24, 52, 1080}, {3020, 25, 53, 1080}, {300, 24, 51, 1080}, {786, 10, 40, 1080}, {885, 24, 51, 1080}, {374, 48, 65, 1080},
+    {786, 16, 53, 1080}, {267, 30, 80, 1080}, {593, 11, 66, 1080}, {919, 30, 80, 1080}, {1156, 11, 68, 1080}, {1452, 35, 138, 1080},
+    {1778, 22, 74, 1080}, {2134, 15, 84, 1000}, {1966, 10, 42, 1080}, {699, 32, 59, 1080}, {1927, 28, 49, 1080}, {2800, 27, 43, 1000},
+    {1400, 25, 68, 1000}, {1400, 25, 61, 1000}, {2800, 27, 44, 1000}, {1400, 33, 40, 1000}, {1400, 33, 38, 1000}, {2800, 27, 42, 1000},
+    {1120, 42, 50, 1000}, {2240, 42, 48, 1000}, {2640, 28, 56, 1000}, {1680, 28, 52, 1000}, {2240, 42, 50, 1000}, {3040, 42, 47, 1000},
+    {560, 42, 44, 1000}, {1680, 42, 45, 1000}, {2640, 28, 55, 1000}, {560, 42, 47, 1000}, {2240, 42, 45, 1000}, {2640, 42, 49, 1000},
+    {3040, 42, 50, 1000}, {3440, 42, 49, 1000}, {3760, 42, 47, 1000}, {1120, 42, 49, 1000}, {1680, 42, 50, 1000}, {2640, 28, 53, 1000},
+    {560, 28, 57, 1000}, {1680, 28, 55, 1000}, {2640, 28, 54, 1000}, {1680, 42, 45, 1000}, {2240, 42, 44, 1000}, {3440, 42, 49, 1000},
+    {2100, 28, 58, 1000}, {3475, 42, 53, 1000}, {2100, 28, 56, 1000}, {2100, 28, 52, 1000}, {3475, 42, 49, 1000}, {700, 16, 77, 1000},
+    {700, 16, 76, 1000}, {630, 10, 58, 1000}, {1890, 33, 40, 1000}, {2520, 10, 63, 1000}, {3420, 10, 60, 1000}, {630, 10, 64, 1000},
+    {1260, 10, 57, 1000}, {630, 10, 64, 1000}, {1890, 33, 38, 1000}, {1890, 33, 40, 1000}, {2520, 10, 63, 1000}, {630, 10, 57, 1000},
+    {4230, 10, 64, 1000}, {630, 10, 64, 1000}, {1260, 10, 62, 1000}, {1260, 10, 63, 1000}, {3870, 10, 57, 1000}, {560, 11, 45, 1000},
+    {1680, 22, 48, 1000}, {1120, 38, 193, 1000}, {1680, 22, 51, 1000}, {560, 3, 153, 980}, {1200, 3, 157, 980}, {1560, 1, 247, 1000},
+    {560, 3, 153, 980}, {1300, 3, 157, 980}, {1660, 1, 247, 1000}, {500, 6, 113, 980}, {1180, 6, 116, 980}, {1540, 1, 247, 1000},
+    {80, 45, 232, 940}, {216, 10, 63, 1000}, {610, 45, 226, 940}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 940},
+    {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 67, 960}, {1160, 45, 191, 1000}, {4756, 10, 43, 960}, {520, 11, 59, 960},
+    {1196, 11, 64, 960}, {1872, 35, 118, 960}, {2392, 24, 66, 960}, {2860, 15, 86, 1000}, {4680, 10, 46, 960}, {2468, 16, 56, 960},
+    {2979, 30, 61, 960}, {809, 25, 64, 960}, {3656, 28, 56, 960}, {4301, 25, 55, 960}, {430, 28, 66, 960}, {1667, 48, 72, 960},
+    {1021, 48, 70, 960}, {4892, 28, 48, 960}, {430, 28, 60, 960}, {4892, 28, 49, 960}, {1667, 48, 65, 960}, {3064, 34, 50, 960},
+    {1667, 48, 68, 960}, {2312, 48, 76, 960}, {430, 28, 63, 960}, {4301, 25, 51, 960}, {1667, 48, 67, 960}, {3064, 34, 53, 960},
+    {559, 20, 94, 960}, {670, 31, 40, 960}, {1760, 21, 95, 960}, {1871, 31, 40, 960}, {2000, 38, 105, 960}, {2111, 31, 38, 960},
+    {1040, 38, 115, 960}, {1150, 31, 41, 960}, {1280, 19, 108, 960}, {1390, 31, 41, 960}, {1520, 20, 95, 960}, {1631, 31, 40, 960},
+    {2240, 19, 109, 960}, {2351, 31, 41, 960}, {319, 19, 106, 960}, {430, 31, 40, 960}, {2481, 20, 95, 960}, {2591, 31, 40, 960},
+    {2721, 21, 96, 960}, {2831, 31, 41, 960}, {2961, 38, 105, 960}, {3072, 31, 38, 960}, {559, 20, 98, 960}, {670, 31, 41, 960},
+    {2240, 19, 106, 960}, {2351, 31, 40, 960}, {2481, 20, 101, 960}, {2591, 31, 42, 960}, {800, 21, 88, 960}, {910, 31, 37, 960},
+    {1040, 38, 115, 960}, {1150, 31, 41, 960}, {3441, 20, 92, 960}, {3552, 31, 39, 960}, {1040, 38, 110, 960}, {1150, 31, 39, 960},
+    {2481, 20, 91, 960}, {2591, 31, 38, 960}, {2721, 21, 97, 960}, {2831, 31, 41, 960}, {2961, 38, 106, 960}, {3072, 31, 38, 960},
+    {800, 21, 100, 960}, {910, 31, 42, 960}, {2000, 38, 110, 960}, {2111, 31, 40, 960}, {2240, 19, 108, 960}, {2351, 31, 41, 960},
+    {2481, 20, 98, 960}, {2591, 31, 41, 960}, {1280, 19, 98, 960}, {1390, 31, 37, 960}, {2961, 38, 118, 960}, {3072, 31, 42, 960},
+    {3201, 19, 108, 960}, {3312, 31, 41, 960}, {3441, 20, 98, 960}, {3552, 31, 41, 960}, {1823, 25, 66, 960}, {2908, 30, 67, 960},
+    {1823, 25, 62, 960}, {3992, 29, 62, 960}, {1133, 26, 63, 960}, {4583, 48, 62, 960}, {493, 25, 63, 960}, {2415, 30, 62, 960},
+    {493, 25, 62, 960}, {3400, 30, 63, 960}, {493, 25, 63, 960}, {4583, 48, 58, 960}, {493, 25, 64, 960}, {3400, 30, 64, 960},
+    {2908, 30, 66, 960}, {3992, 29, 61, 960}, {1828, 34, 48, 960}, {4731, 48, 55, 960}, {538, 34, 46, 960}, {4193, 28, 61, 960},
+    {538, 34, 47, 960}, {4193, 28, 64, 960}, {2419, 42, 50, 960}, {4193, 28, 65, 960}, {1828, 34, 45, 960}, {4193, 28, 62, 960},
+    {2419, 42, 47, 960}, {4193, 28, 61, 960}, {3548, 28, 51, 960}, {4193, 28, 65, 960}, {2419, 42, 51, 960}, {4193, 28, 61, 960},
+    {1236, 34, 46, 960}, {2097, 34, 46, 960}, {430, 28, 67, 960}, {3763, 28, 55, 960}, {2097, 34, 50, 960}, {2957, 25, 48, 960},
+    {3763, 28, 52, 960}, {4516, 48, 55, 960}, {1236, 34, 47, 960}, {4516, 48, 62, 960}, {430, 28, 61, 960}, {2957, 25, 44, 960},
+    {430, 28, 63, 960}, {2957, 25, 47, 960}, {430, 28, 62, 960}, {4516, 48, 55, 960}, {1725, 48, 60, 960}, {2218, 25, 49, 960},
+    {493, 48, 59, 960}, {1725, 48, 59, 960}, {2957, 48, 61, 960}, {3893, 34, 43, 960}, {986, 25, 50, 960}, {2661, 34, 44, 960},
+    {2218, 25, 45, 960}, {3450, 25, 46, 960}, {2218, 25, 50, 960}, {2957, 48, 56, 960}, {493, 48, 58, 960}, {2661, 34, 42, 960},
+    {1725, 48, 61, 960}, {3450, 25, 46, 960}, {1133, 29, 59, 960}, {2464, 24, 49, 960}, {430, 24, 44, 960}, {1129, 10, 37, 960},
+    {3810, 42, 41, 960}, {2742, 28, 64, 960}, {470, 28, 62, 960}, {383, 30, 76, 960}, {851, 11, 63, 960}, {1319, 30, 76, 960},
+    {1660, 11, 64, 960}, {2085, 35, 131, 960}, {2554, 22, 70, 960}, {3064, 15, 80, 1000}, {1599, 8, 68, 960}, {1004, 32, 54, 960},
+    {2766, 28, 50, 960}, {1400, 25, 45, 1000}, {3800, 25, 43, 1000}, {700, 34, 42, 1000}, {3300, 34, 42, 1000}, {3300, 34, 46, 1000},
+    {4300, 34, 45, 1000}, {700, 34, 41, 1000}, {2800, 25, 43, 1000}, {2100, 34, 42, 1000}, {2800, 25, 48, 1000}, {2100, 34, 45, 1000},
+    {3300, 34, 45, 1000}, {1400, 25, 46, 1000}, {4300, 34, 46, 1000}, {2800, 25, 43, 1000}, {3800, 25, 47, 1000}, {2100, 25, 51, 1000},
+    {700, 30, 64, 1000}, {2100, 25, 54, 1000}, {1400, 30, 74, 1000}, {1400, 30, 75, 1000}, {1400, 30, 70, 1000}, {2800, 34, 58, 1000},
+    {1400, 25, 69, 1000}, {1400, 25, 65, 1000}, {2800, 25, 78, 1000}, {1400, 25, 72, 1000}, {700, 29, 73, 1000}, {700, 29, 72, 1000},
+    {1400, 20, 85, 1000}, {4700, 20, 76, 1000}, {2800, 20, 82, 1000}, {4300, 25, 47, 1000}, {700, 25, 47, 1000}, {3800, 20, 83, 1000},
+    {2100, 25, 45, 1000}, {2800, 20, 80, 1000}, {2800, 20, 79, 1000}, {3300, 25, 50, 1000}, {2100, 25, 49, 1000}, {3800, 20, 76, 1000},
+    {1400, 20, 77, 1000}, {2100, 25, 45, 1000}, {700, 25, 48, 1000}, {3300, 25, 44, 1000}, {1400, 33, 32, 1000}, {1400, 33, 34, 1000},
+    {700, 11, 53, 1000}, {1400, 25, 63, 1000}, {1400, 25, 67, 1000}, {1400, 33, 33, 1000}, {1400, 25, 60, 1000}, {700, 11, 57, 1000},
+    {460, 3, 127, 1040}, {940, 3, 130, 1040}, {1340, 3, 127, 1040}, {1700, 1, 242, 1000}, {480, 2, 89, 1040}, {940, 2, 92, 1040},
+    {1280, 2, 89, 1040}, {1640, 1, 242, 1000}, {480, 3, 127, 1040}, {1020, 3, 130, 1040}, {1400, 3, 127, 1040}, {1760, 1, 242, 1000},
+    {80, 44, 241, 1030}, {216, 10, 63, 1000}, {610, 45, 226, 1030}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 1030},
+    {1600, 30, 57, 1000}, {2400, 30, 57, 1000}, {464, 28, 64, 1030}, {1160, 45, 184, 1000}, {4756, 10, 42, 1030}, {520, 11, 57, 1030},
+    {1196, 11, 61, 1030}, {1872, 35, 113, 1030}, {2392, 24, 64, 1030}, {2860, 15, 83, 1000}, {4680, 10, 44, 1030}, {780, 25, 59, 1030},
+    {2873, 30, 58, 1030}, {369, 28, 60, 1030}, {780, 25, 61, 1030}, {1607, 48, 68, 1030}, {4717, 28, 49, 1030}, {415, 28, 65, 1030},
+    {4717, 28, 45, 1030}, {4147, 25, 47, 1030}, {4717, 28, 44, 1030}, {985, 48, 66, 1030}, {2229, 48, 66, 1030}, {1607, 48, 64, 1030},
+    {4717, 28, 49, 1030}, {415, 28, 63, 1030}, {985, 48, 67, 1030}, {2229, 48, 66, 1030}, {4147, 25, 49, 1030}, {2229, 48, 71, 1030},
+    {2955, 34, 52, 1030}, {1726, 38, 111, 1030}, {1833, 31, 40, 1030}, {2537, 38, 104, 1030}, {2643, 31, 37, 1030}, {2739, 19, 96, 1030},
+    {2846, 31, 36, 1030}, {2942, 20, 97, 1030}, {3049, 31, 41, 1030}, {510, 20, 97, 1030}, {617, 31, 41, 1030}, {713, 21, 94, 1030},
+    {820, 31, 40, 1030}, {916, 38, 114, 1030}, {1022, 31, 41, 1030}, {1726, 38, 108, 1030}, {1833, 31, 39, 1030}, {1321, 20, 92, 1030},
+    {1428, 31, 39, 1030}, {1524, 21, 86, 1030}, {1630, 31, 36, 1030}, {1726, 38, 103, 1030}, {1833, 31, 37, 1030}, {3145, 21, 93, 1030},
+    {3251, 31, 39, 1030}, {1118, 19, 101, 1030}, {1225, 31, 39, 1030}, {2334, 21, 88, 1030}, {2441, 31, 37, 1030}, {2537, 38, 100, 1030},
+    {2643, 31, 36, 1030}, {308, 19, 103, 1030}, {415, 31, 39, 1030}, {510, 20, 96, 1030}, {617, 31, 40, 1030}, {713, 21, 97, 1030},
+    {820, 31, 41, 1030}, {1524, 21, 89, 1030}, {1630, 31, 37, 1030}, {713, 21, 93, 1030}, {820, 31, 39, 1030}, {2132, 20, 95, 1030},
+    {2238, 31, 40, 1030}, {2334, 21, 91, 1030}, {2441, 31, 38, 1030}, {2537, 38, 102, 1030}, {2643, 31, 37, 1030}, {308, 19, 107, 1030},
+    {415, 31, 41, 1030}, {1321, 20, 88, 1030}, {1428, 31, 37, 1030}, {1524, 21, 88, 1030}, {1630, 31, 37, 1030}, {916, 38, 111, 1030},
+    {1022, 31, 40, 1030}, {1929, 19, 105, 1030}, {2036, 31, 40, 1030}, {2132, 20, 95, 1030}, {2238, 31, 40, 1030}, {2334, 21, 95, 1030},
+    {2441, 31, 40, 1030}, {1093, 26, 59, 1030}, {2804, 30, 64, 1030}, {1093, 26, 62, 1030}, {3849, 29, 54, 1030}, {475, 25, 63, 1030},
+    {1758, 25, 63, 1030}, {3279, 30, 62, 1030}, {4419, 48, 55, 1030}, {3279, 30, 64, 1030}, {3849, 29, 57, 1030}, {3279, 30, 64, 1030},
+    {4419, 48, 59, 1030}, {1093, 26, 61, 1030}, {2328, 30, 59, 1030}, {3279, 30, 62, 1030}, {3849, 29, 59, 1030}, {518, 34, 44, 1030},
+    {1763, 34, 42, 1030}, {1140, 25, 40, 1030}, {4562, 48, 54, 1030}, {2333, 42, 46, 1030}, {3421, 28, 52, 1030}, {3421, 28, 52, 1030},
+    {4562, 48, 55, 1030}, {518, 34, 46, 1030}, {4044, 28, 63, 1030}, {3421, 28, 49, 1030}, {4044, 28, 56, 1030}, {518, 34, 48, 1030},
+    {2333, 42, 49, 1030}, {518, 34, 48, 1030}, {4044, 28, 57, 1030}, {1192, 34, 45, 1030}, {2022, 34, 49, 1030}, {1192, 34, 46, 1030},
+    {3629, 28, 54, 1030}, {415, 28, 58, 1030}, {3629, 28, 48, 1030}, {4355, 48, 53, 1030}, {4873, 28, 44, 1030}, {415, 28, 64, 1030},
+    {3629, 28, 52, 1030}, {415, 28, 61, 1030}, {1192, 34, 49, 1030}, {415, 28, 61, 1030}, {1192, 34, 44, 1030}, {2022, 34, 45, 1030},
+    {3629, 28, 54, 1030}, {950, 25, 43, 1030}, {1378, 34, 40, 1030}, {475, 48, 53, 1030}, {2566, 34, 40, 1030}, {2851, 48, 54, 1030},
+    {3754, 34, 43, 1030}, {2138, 25, 43, 1030}, {2851, 48, 56, 1030}, {475, 48, 56, 1030}, {1663, 48, 54, 1030}, {1378, 34, 44, 1030},
+    {3754, 34, 44, 1030}, {2566, 34, 43, 1030}, {3754, 34, 43, 1030}, {2851, 48, 60, 1030}, {3326, 25, 45, 1030}, {3612, 42, 45, 1030},
+    {4182, 25, 44, 1030}, {2540, 48, 59, 1030}, {3059, 48, 62, 1030}, {1225, 24, 48, 1030}, {1244, 24, 47, 1030}, {1950, 34, 55, 1030},
+    {369, 30, 73, 1030}, {821, 11, 60, 1030}, {1272, 30, 73, 1030}, {1601, 11, 62, 1030}, {2011, 35, 126, 1030}, {2462, 22, 67, 1030},
+    {2955, 15, 77, 1000}, {3946, 34, 42, 1030}, {302, 13, 37, 1030}, {2668, 28, 49, 1030}, {950, 21, 146, 1000}, {995, 31, 73, 1000},
+    {1100, 38, 158, 1000}, {1145, 31, 67, 1000}, {1250, 19, 138, 1000}, {1295, 31, 66, 1000}, {1850, 19, 144, 1000}, {1895, 31, 68, 1000},
+    {350, 21, 132, 1000}, {395, 31, 66, 1000}, {500, 38, 155, 1000}, {545, 31, 65, 1000}, {650, 19, 140, 1000}, {695, 31, 66, 1000},
+    {1250, 19, 152, 1000}, {1295, 31, 73, 1000}, {200, 20, 132, 1000}, {245, 31, 65, 1000}, {1400, 20, 134, 1000}, {1445, 31, 66, 1000},
+    {1550, 21, 147, 1000}, {1595, 31, 73, 1000}, {1700, 38, 166, 1000}, {1745, 31, 70, 1000}, {1100, 38, 173, 1000}, {1145, 31, 73, 1000},
+    {1250, 19, 139, 1000}, {1295, 31, 66, 1000}, {1850, 19, 151, 1000}, {1895, 31, 72, 1000}, {1100, 38, 174, 1000}, {1145, 31, 74, 1000},
+    {1250, 19, 155, 1000}, {1295, 31, 74, 1000}, {2300, 38, 163, 1000}, {2345, 31, 69, 1000}, {350, 21, 139, 1000}, {395, 31, 69, 1000},
+    {1550, 21, 140, 1000}, {1595, 31, 70, 1000}, {1700, 38, 156, 1000}, {1745, 31, 66, 1000}, {950, 21, 145, 1000}, {995, 31, 72, 1000},
+    {1100, 38, 154, 1000}, {1145, 31, 65, 1000}, {1250, 19, 148, 1000}, {1295, 31, 70, 1000}, {1850, 19, 149, 1000}, {1895, 31, 71, 1000},
+    {1400, 20, 139, 1000}, {1445, 31, 69, 1000}, {1550, 21, 143, 1000}, {1595, 31, 71, 1000}, {2150, 21, 147, 1000}, {2195, 31, 73, 1000},
+    {700, 34, 70, 1000}, {2800, 34, 77, 1000}, {1400, 34, 69, 1000}, {2100, 48, 68, 1000}, {1400, 34, 74, 1000}, {2800, 34, 77, 1000},
+    {2100, 34, 75, 1000}, {2800, 34, 77, 1000}, {1400, 48, 67, 1000}, {2100, 34, 74, 1000}, {2100, 48, 70, 1000}, {2800, 48, 66, 1000},
+    {1400, 48, 67, 1000}, {2100, 34, 77, 1000}, {1400, 34, 74, 1000}, {2800, 34, 72, 1000}, {1400, 48, 89, 1000}, {2144, 48, 68, 1120},
+    {2100, 48, 88, 1000}, {2800, 48, 93, 1000}, {744, 48, 69, 1120}, {1400, 48, 82, 1000}, {1444, 48, 66, 1120}, {2844, 48, 66, 1120},
+    {744, 48, 67, 1120}, {2144, 48, 64, 1120}, {2144, 48, 67, 1120}, {2800, 48, 90, 1000}, {700, 48, 83, 1000}, {2844, 48, 71, 1120},
+    {2144, 48, 70, 1120}, {3475, 34, 60, 1000}, {700, 11, 36, 1000}, {1400, 30, 69, 1000}, {2100, 30, 74, 1000}, {3300, 11, 37, 1000},
+    {2100, 30, 71, 1000}, {2800, 30, 66, 1000}, {3300, 11, 37, 1000}, {4700, 11, 38, 1000}, {700, 11, 35, 1000}, {2100, 30, 75, 1000},
+    {3300, 11, 35, 1000}, {3800, 30, 66, 1000}, {700, 11, 34, 1000}, {2100, 11, 37, 1000}, {3300, 30, 74, 1000}, {3800, 11, 37, 1000},
+    {700, 30, 75, 1000}, {2100, 30, 68, 1000}, {2800, 30, 74, 1000}, {4700, 11, 35, 1000}, {700, 11, 35, 1000}, {2800, 30, 75, 1000},
+    {3800, 30, 73, 1000}, {4700, 30, 69, 1000}, {700, 30, 71, 1000}, {2100, 11, 35, 1000}, {3300, 11, 35, 1000}, {3800, 30, 75, 1000},
+    {700, 30, 73, 1000}, {1400, 30, 69, 1000}, {2100, 30, 72, 1000}, {4300, 30, 74, 1000}, {1120, 36, 91, 1000}, {1120, 36, 88, 1000},
+    {1120, 36, 85, 1000}, {1120, 36, 90, 1000}, {1120, 36, 81, 1000}, {1120, 36, 80, 1000}, {1120, 36, 89, 1000}, {320, 3, 178, 1000},
+    {640, 3, 178, 1000}, {960, 3, 178, 1000}, {1320, 1, 250, 1000}, {380, 2, 125, 1000}, {680, 2, 125, 1000}, {980, 2, 125, 1000},
+    {1340, 1, 250, 1000}, {360, 3, 178, 1000}, {680, 3, 178, 1000}, {1000, 3, 178, 1000}, {1360, 1, 250, 1000}, {80, 44, 241, 980},
+    {216, 10, 63, 1000}, {610, 45, 226, 980}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 980}, {1600, 30, 57, 1000},
+    {2400, 30, 57, 1000}, {464, 28, 69, 1000}, {1160, 45, 198, 1000}, {4756, 10, 45, 1000}, {520, 11, 61, 1000}, {1196, 11, 66, 1000},
+    {1872, 35, 122, 1000}, {2392, 24, 69, 1000}, {2860, 15, 89, 1000}, {4680, 10, 48, 1000}, {2762, 19, 104, 1000}, {664, 25, 65, 1000},
+    {2447, 30, 62, 1000}, {315, 28, 65, 1000}, {353, 28, 68, 1000}, {4019, 28, 50, 1000}, {353, 28, 63, 1000}, {3533, 25, 54, 1000},
+    {353, 28, 70, 1000}, {3003, 28, 58, 1000}, {1369, 48, 68, 1000}, {2517, 34, 53, 1000}, {839, 48, 69, 1000}, {4019, 28, 50, 1000},
+    {3533, 25, 55, 1000}, {4019, 28, 49, 1000}, {839, 48, 69, 1000}, {2517, 34, 51, 1000}, {353, 28, 63, 1000}, {839, 48, 75, 1000},
+    {513, 21, 100, 1000}, {604, 31, 42, 1000}, {1267, 19, 107, 1000}, {1357, 31, 41, 1000}, {1392, 20, 96, 1000}, {1483, 31, 40, 1000},
+    {1518, 21, 98, 1000}, {1608, 31, 41, 1000}, {1015, 21, 95, 1000}, {1106, 31, 40, 1000}, {1141, 38, 117, 1000}, {1232, 31, 42, 1000},
+    {1267, 19, 105, 1000}, {1357, 31, 40, 1000}, {1894, 20, 95, 1000}, {1985, 31, 40, 1000}, {1015, 21, 100, 1000}, {1106, 31, 42, 1000},
+    {1141, 38, 119, 1000}, {1232, 31, 43, 1000}, {1267, 19, 112, 1000}, {1357, 31, 42, 1000}, {2899, 20, 102, 1000}, {2989, 31, 43, 1000},
+    {262, 19, 112, 1000}, {353, 31, 43, 1000}, {388, 20, 92, 1000}, {479, 31, 39, 1000}, {513, 21, 95, 1000}, {604, 31, 40, 1000},
+    {1643, 38, 110, 1000}, {1734, 31, 40, 1000}, {513, 21, 92, 1000}, {604, 31, 39, 1000}, {639, 38, 111, 1000}, {730, 31, 40, 1000},
+    {764, 19, 107, 1000}, {855, 31, 41, 1000}, {1894, 20, 102, 1000}, {1985, 31, 43, 1000}, {764, 19, 109, 1000}, {855, 31, 42, 1000},
+    {2396, 20, 99, 1000}, {2487, 31, 42, 1000}, {2522, 21, 95, 1000}, {2613, 31, 40, 1000}, {2647, 38, 119, 1000}, {2738, 31, 43, 1000},
+    {1894, 20, 102, 1000}, {1985, 31, 43, 1000}, {2020, 21, 100, 1000}, {2111, 31, 42, 1000}, {2145, 38, 110, 1000}, {2236, 31, 40, 1000},
+    {2899, 20, 98, 1000}, {2989, 31, 41, 1000}, {1015, 21, 97, 1000}, {1106, 31, 41, 1000}, {1141, 38, 115, 1000}, {1232, 31, 41, 1000},
+    {1267, 19, 108, 1000}, {1357, 31, 41, 1000}, {2522, 21, 97, 1000}, {2613, 31, 41, 1000}, {931, 26, 68, 1000}, {2388, 30, 67, 1000},
+    {1498, 25, 69, 1000}, {1984, 30, 62, 1000}, {2388, 30, 68, 1000}, {2793, 30, 64, 1000}, {931, 26, 68, 1000}, {1498, 25, 62, 1000},
+    {1498, 25, 68, 1000}, {2793, 30, 68, 1000}, {931, 26, 66, 1000}, {2793, 30, 61, 1000}, {931, 26, 64, 1000}, {2793, 30, 63, 1000},
+    {2793, 30, 70, 1000}, {3765, 48, 58, 1000}, {972, 25, 39, 1000}, {2915, 28, 54, 1000}, {442, 34, 51, 1000}, {1501, 34, 52, 1000},
+    {1501, 34, 51, 1000}, {3444, 28, 61, 1000}, {2915, 28, 53, 1000}, {3444, 28, 63, 1000}, {972, 25, 38, 1000}, {3444, 28, 65, 1000},
+    {442, 34, 49, 1000}, {1987, 42, 50, 1000}, {2915, 28, 58, 1000}, {3886, 48, 55, 1000}, {3444, 28, 63, 1000}, {3886, 48, 63, 1000},
+    {1016, 34, 49, 1000}, {1722, 34, 52, 1000}, {2429, 25, 48, 1000}, {4151, 28, 45, 1000}, {353, 28, 63, 1000}, {1016, 34, 52, 1000},
+    {1722, 34, 48, 1000}, {3091, 28, 58, 1000}, {1016, 34, 53, 1000}, {4151, 28, 45, 1000}, {3091, 28, 54, 1000}, {4151, 28, 47, 1000},
+    {353, 28, 67, 1000}, {3091, 28, 52, 1000}, {1722, 34, 49, 1000}, {2429, 25, 47, 1000}, {2186, 34, 48, 1000}, {2834, 25, 49, 1000},
+    {1174, 34, 46, 1000}, {2834, 25, 52, 1000}, {1417, 48, 61, 1000}, {1822, 25, 50, 1000}, {1174, 34, 42, 1000}, {2429, 48, 58, 1000},
+    {810, 25, 51, 1000}, {2834, 25, 47, 1000}, {1417, 48, 60, 1000}, {2186, 34, 44, 1000}, {405, 48, 61, 1000}, {1822, 25, 52, 1000},
+    {810, 25, 52, 1000}, {2429, 48, 61, 1000}, {3076, 42, 43, 1000}, {3562, 25, 47, 1000}, {2605, 48, 66, 1000}, {3577, 42, 42, 1000},
+    {464, 34, 54, 1000}, {1060, 24, 49, 1000}, {386, 28, 70, 1000}, {315, 30, 79, 1000}, {699, 11, 65, 1000}, {1084, 30, 79, 1000},
+    {1363, 11, 67, 1000}, {1713, 35, 136, 1000}, {2098, 22, 73, 1000}, {2517, 15, 83, 1000}, {773, 30, 53, 1000}, {258, 13, 44, 1000},
+    {2272, 28, 49, 1000}, {550, 22, 67, 1000}, {750, 7, 117, 1000}, {820, 31, 68, 1000}, {850, 22, 64, 1000}, {1450, 22, 67, 1000},
+    {150, 7, 120, 1000}, {750, 7, 125, 1000}, {820, 31, 72, 1000}, {1650, 7, 126, 1000}, {1720, 31, 67, 1000}, {1350, 7, 126, 1000},
+    {1420, 31, 73, 1000}, {1450, 22, 60, 1000}, {1650, 7, 123, 1000}, {1750, 22, 66, 1000}, {550, 22, 59, 1000}, {750, 7, 128, 1000},
+    {820, 31, 74, 1000}, {1650, 7, 124, 1000}, {1720, 31, 66, 1000}, {450, 7, 138, 1000}, {1350, 7, 123, 1000}, {1420, 31, 70, 1000},
+    {1650, 7, 123, 1000}, {1720, 31, 66, 1000}, {750, 7, 127, 1000}, {1050, 7, 130, 1000}, {1120, 31, 69, 1000}, {1150, 22, 64, 1000},
+    {1750, 22, 64, 1000}, {250, 22, 60, 1000}, {550, 22, 59, 1000}, {1050, 7, 122, 1000}, {1120, 31, 65, 1000}, {1750, 22, 60, 1000},
+    {150, 7, 128, 1000}, {220, 31, 74, 1000}, {250, 22, 61, 1000}, {1150, 22, 66, 1000}, {1750, 22, 60, 1000}, {1050, 11, 60, 1000},
+    {1200, 35, 142, 1000}, {1940, 22, 59, 1000}, {2280, 24, 44, 1000}, {680, 7, 132, 1000}, {1200, 35, 137, 1000}, {2280, 24, 44, 1000},
+    {2780, 19, 140, 1000}, {940, 7, 136, 1000}, {1200, 35, 152, 1000}, {1560, 47, 73, 1000}, {1940, 22, 60, 1000}, {1200, 35, 152, 1000},
+    {1560, 47, 65, 1000}, {1860, 24, 75, 1000}, {2440, 19, 133, 1000}, {1200, 35, 143, 1000}, {1560, 47, 69, 1000}, {1940, 22, 59, 1000},
+    {2440, 19, 130, 1000}, {380, 7, 115, 1000}, {1050, 11, 61, 1000}, {1200, 35, 137, 1000}, {1560, 47, 64, 1000}, {940, 7, 135, 1000},
+    {1050, 11, 59, 1000}, {1200, 35, 137, 1000}, {1560, 47, 70, 1000}, {1050, 11, 60, 1000}, {1200, 35, 140, 1000}, {1940, 22, 63, 1000},
+    {2780, 19, 148, 1000}, {320, 7, 121, 1000}, {680, 17, 101, 1000}, {1480, 17, 105, 1000}, {2220, 22, 54, 1000}, {1480, 17, 108, 1000},
+    {2220, 22, 53, 1000}, {3340, 24, 56, 1000}, {4080, 19, 136, 1000}, {725, 35, 93, 1000}, {1095, 35, 96, 1000}, {3340, 24, 59, 1000},
+    {4080, 19, 138, 1000}, {1050, 17, 98, 1000}, {2920, 10, 51, 1000}, {3340, 24, 58, 1000}, {3780, 19, 147, 1000}, {1095, 35, 97, 1000},
+    {2920, 10, 51, 1000}, {3060, 10, 57, 1000}, {3340, 24, 53, 1000}, {680, 17, 93, 1000}, {1525, 35, 94, 1000}, {3480, 19, 133, 1000},
+    {3780, 19, 145, 1000}, {725, 35, 93, 1000}, {1095, 35, 94, 1000}, {2920, 10, 53, 1000}, {3780, 19, 140, 1000}, {725, 35, 99, 1000},
+    {1050, 17, 96, 1000}, {1480, 17, 112, 1000}, {2920, 10, 51, 1000}, {840, 12, 123, 1000}, {1140, 42, 68, 1000}, {1870, 42, 64, 1000},
+    {2400, 28, 71, 1000}, {120, 12, 114, 1000}, {310, 28, 62, 1000}, {1140, 42, 67, 1000}, {1770, 28, 64, 1000}, {940, 43, 96, 1000},
+    {1140, 42, 70, 1000}, {1360, 13, 44, 1000}, {1870, 42, 63, 1000}, {120, 12, 111, 1000}, {1140, 42, 66, 1000}, {1770, 28, 64, 1000},
+    {2400, 28, 70, 1000}, {230, 43, 96, 1000}, {410, 42, 70, 1000}, {840, 12, 117, 1000}, {1040, 28, 68, 1000}, {620, 13, 46, 1000},
+    {1140, 42, 65, 1000}, {1670, 43, 102, 1000}, {1770, 28, 64, 1000}, {310, 28, 65, 1000}, {840, 12, 119, 1000}, {1360, 13, 43, 1000},
+    {2400, 28, 71, 1000}, {410, 42, 72, 1000}, {1570, 12, 110, 1000}, {1870, 42, 67, 1000}, {2400, 28, 69, 1000}, {490, 41, 96, 1000},
+    {840, 26, 74, 1000}, {1040, 26, 76, 1000}, {1900, 26, 80, 1000}, {600, 26, 79, 1000}, {770, 26, 73, 1000}, {910, 41, 105, 1000},
+    {1780, 26, 104, 1000}, {330, 26, 77, 1000}, {690, 26, 74, 1000}, {910, 41, 111, 1000}, {1780, 26, 112, 1000}, {330, 26, 72, 1000},
+    {490, 41, 86, 1000}, {1340, 29, 99, 1000}, {1780, 26, 109, 1000}, {330, 26, 79, 1000}, {490, 41, 91, 1000}, {840, 26, 78, 1000},
+    {1780, 26, 113, 1000}, {490, 41, 95, 1000}, {770, 26, 77, 1000}, {910, 41, 109, 1000}, {1365, 41, 90, 1000}, {490, 41, 88, 1000},
+    {770, 26, 73, 1000}, {910, 41, 102, 1000}, {1040, 26, 80, 1000}, {160, 26, 80, 1000}, {250, 26, 75, 1000}, {690, 26, 76, 1000},
+    {1340, 29, 101, 1000}, {340, 2, 141, 910}, {600, 2, 144, 910}, {840, 2, 141, 910}, {1080, 2, 144, 910}, {1440, 1, 255, 1000},
+    {440, 0, 183, 910}, {740, 0, 188, 910}, {1120, 0, 183, 910}, {1480, 1, 255, 1000}, {250, 3, 200, 910}, {430, 3, 205, 910},
+    {610, 3, 200, 910}, {790, 3, 205, 910}, {1060, 3, 200, 910}, {1420, 1, 255, 1000}, {80, 44, 241, 910}, {216, 10, 63, 1000},
+    {610, 45, 226, 910}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 235, 910}, {1600, 30, 57, 1000}, {2400, 30, 57, 1000},
+    {464, 28, 76, 940}, {1160, 45, 217, 1000}, {4756, 10, 49, 940}, {520, 11, 67, 940}, {1196, 11, 72, 940}, {1872, 35, 134, 940},
+    {2392, 24, 76, 940}, {2860, 15, 98, 1000}, {4680, 10, 52, 940}, {260, 28, 73, 940}, {1675, 16, 66, 940}, {549, 25, 70, 940},
+    {2022, 30, 71, 940}, {1131, 48, 79, 940}, {3320, 28, 55, 940}, {2918, 25, 60, 940}, {3320, 28, 53, 940}, {693, 48, 79, 940},
     {2079, 34, 59, 940}, {693, 48, 78, 940}, {2918, 25, 61, 940}, {1569, 48, 85, 940}, {2481, 28, 68, 940}, {1569, 48, 83, 940},
     {2079, 34, 57, 940}, {2079, 34, 57, 940}, {2481, 28, 67, 940}, {2079, 34, 55, 940}, {2918, 25, 62, 940}, {1254, 21, 104, 940},
     {1329, 31, 44, 940}, {1461, 19, 123, 940}, {1536, 31, 47, 940}, {2187, 38, 119, 940}, {2262, 31, 43, 940}, {424, 21, 105, 940},
@@ -1630,520 +1660,527 @@ static const Event kEvent[] = {
     {216, 10, 63, 1000}, {610, 45, 200, 960}, {1080, 42, 59, 1000}, {800, 30, 57, 1000}, {800, 46, 210, 960}, {1600, 30, 57, 1000},
     {2400, 30, 57, 1000}, {464, 28, 57, 980}, {1160, 45, 164, 1000}, {4756, 10, 37, 980}, {520, 11, 51, 980}, {1196, 11, 55, 980},
     {1872, 35, 101, 980}, {2392, 24, 57, 980}, {2860, 15, 74, 1000}, {4680, 10, 39, 980}, {924, 25, 52, 980}, {3405, 30, 52, 980},
-    {492, 28, 57, 980}, {1167, 48, 62, 980}, {492, 28, 56, 980}, {5591, 28, 41, 980}, {3502, 34, 42, 980}, {5591, 28, 41, 980},
-    {1905, 48, 62, 980}, {5591, 28, 43, 980}, {1905, 48, 59, 980}, {2642, 48, 63, 980}, {1905, 48, 60, 980}, {4915, 25, 44, 980},
-    {4915, 25, 42, 980}, {5591, 28, 40, 980}, {492, 28, 58, 980}, {2642, 48, 60, 980}, {685, 37, 69, 980}, {1966, 37, 69, 980},
-    {2092, 31, 33, 980}, {2286, 37, 71, 980}, {2413, 31, 34, 980}, {2606, 37, 76, 980}, {2733, 31, 36, 980}, {1325, 37, 72, 980},
-    {1452, 31, 34, 980}, {1966, 37, 73, 980}, {2092, 31, 35, 980}, {2286, 37, 72, 980}, {2413, 31, 34, 980}, {365, 37, 88, 980},
-    {491, 31, 36, 980}, {685, 37, 74, 980}, {811, 31, 35, 980}, {2606, 37, 68, 980}, {2733, 31, 32, 980}, {685, 37, 76, 980},
-    {811, 31, 36, 980}, {1005, 37, 73, 980}, {1132, 31, 35, 980}, {1325, 37, 73, 980}, {1452, 31, 35, 980}, {2606, 37, 68, 980},
-    {365, 37, 90, 980}, {491, 31, 36, 980}, {685, 37, 75, 980}, {811, 31, 36, 980}, {1005, 37, 71, 980}, {1132, 31, 34, 980},
-    {2606, 37, 70, 980}, {365, 37, 84, 980}, {491, 31, 34, 980}, {685, 37, 71, 980}, {811, 31, 34, 980}, {1005, 37, 71, 980},
-    {1132, 31, 34, 980}, {3247, 37, 73, 980}, {2606, 37, 77, 980}, {2733, 31, 37, 980}, {3567, 37, 77, 980}, {3693, 31, 37, 980},
-    {3887, 37, 72, 980}, {4014, 31, 34, 980}, {1646, 37, 83, 980}, {1772, 31, 33, 980}, {1966, 37, 74, 980}, {2092, 31, 35, 980},
-    {3567, 37, 72, 980}, {3693, 31, 34, 980}, {3323, 30, 55, 980}, {4562, 29, 50, 980}, {2760, 30, 54, 980}, {3886, 30, 53, 980},
-    {2760, 30, 51, 980}, {5238, 48, 50, 980}, {1295, 26, 56, 980}, {4562, 29, 53, 980}, {563, 25, 55, 980}, {1295, 26, 55, 980},
-    {4562, 29, 47, 980}, {5238, 48, 53, 980}, {2084, 25, 54, 980}, {2760, 30, 51, 980}, {1295, 26, 55, 980}, {2084, 25, 54, 980},
-    {2089, 34, 43, 980}, {2765, 42, 42, 980}, {1352, 25, 35, 980}, {4792, 28, 53, 980}, {1352, 25, 32, 980}, {5407, 48, 47, 980},
-    {2765, 42, 43, 980}, {4055, 28, 44, 980}, {614, 34, 44, 980}, {2089, 34, 41, 980}, {1352, 25, 34, 980}, {4792, 28, 53, 980},
-    {614, 34, 39, 980}, {1352, 25, 36, 980}, {2765, 42, 41, 980}, {5407, 48, 47, 980}, {492, 28, 59, 980}, {4301, 28, 45, 980},
-    {492, 28, 58, 980}, {4301, 28, 43, 980}, {492, 28, 57, 980}, {4301, 28, 45, 980}, {3379, 25, 36, 980}, {5775, 28, 38, 980},
-    {5161, 48, 50, 980}, {5775, 28, 37, 980}, {1413, 34, 42, 980}, {4301, 28, 48, 980}, {492, 28, 58, 980}, {4301, 28, 47, 980},
-    {492, 28, 51, 980}, {2396, 34, 40, 980}, {1633, 34, 35, 980}, {1971, 48, 48, 980}, {1633, 34, 39, 980}, {3942, 25, 43, 980},
-    {1971, 48, 49, 980}, {3942, 25, 42, 980}, {3942, 25, 42, 980}, {4449, 34, 36, 980}, {563, 48, 47, 980}, {1126, 25, 39, 980},
-    {1971, 48, 51, 980}, {3041, 34, 37, 980}, {563, 48, 52, 980}, {3379, 48, 49, 980}, {1633, 34, 40, 980}, {3942, 25, 40, 980},
-    {563, 30, 54, 980}, {2816, 24, 41, 980}, {2335, 28, 49, 980}, {3625, 48, 56, 980}, {3279, 16, 37, 980}, {4485, 10, 30, 980},
-    {1290, 16, 44, 980}, {438, 30, 65, 980}, {973, 11, 54, 980}, {1508, 30, 65, 980}, {1897, 11, 55, 980}, {2383, 35, 113, 980},
-    {2918, 22, 60, 980}, {3502, 15, 69, 1000}, {3226, 10, 34, 980}, {2509, 10, 27, 980}, {1848, 10, 39, 980}, {1713, 20, 82, 980},
-    {3413, 21, 80, 980}, {4414, 38, 100, 980}, {4638, 19, 75, 980}, {922, 19, 71, 980}, {1054, 19, 74, 980}, {1351, 20, 77, 980},
-    {4638, 19, 80, 980}, {3030, 21, 75, 980}, {3175, 20, 76, 980}, {3413, 21, 82, 980}, {4638, 19, 73, 980}, {1054, 19, 76, 980},
-    {2042, 38, 95, 980}, {2998, 19, 79, 980}, {922, 19, 75, 980}, {1054, 19, 70, 980}, {1351, 20, 79, 980}, {4414, 38, 93, 980},
-    {2998, 19, 80, 980}, {3030, 21, 79, 980}, {3175, 20, 76, 980}, {5205, 19, 74, 980}, {922, 19, 70, 980}, {1713, 20, 83, 980},
-    {2042, 38, 93, 980}, {2998, 19, 75, 980}, {2042, 38, 94, 980}, {2998, 19, 75, 980}, {4414, 38, 90, 980}, {2462, 28, 47, 980},
-    {5557, 19, 69, 980}, {4783, 34, 44, 980}, {7035, 10, 41, 980}, {985, 19, 71, 980}, {2462, 28, 49, 980}, {4783, 34, 48, 980},
-    {7035, 10, 39, 980}, {2462, 28, 50, 980}, {4783, 34, 46, 980}, {4010, 48, 57, 980}, {4783, 34, 49, 980}, {4010, 48, 57, 980},
-    {5557, 19, 77, 980}, {2604, 28, 47, 980}, {3156, 48, 57, 980}, {4161, 25, 43, 980}, {4713, 34, 46, 980}, {4713, 34, 49, 980},
-    {5717, 28, 45, 980}, {4161, 25, 45, 980}, {4713, 34, 44, 980}, {2604, 28, 45, 980}, {4161, 25, 44, 980}, {2604, 28, 49, 980},
-    {4713, 34, 47, 980}, {4161, 25, 46, 980}, {5717, 28, 47, 980}, {1741, 34, 48, 980}, {4161, 25, 43, 980}, {1817, 20, 74, 980},
-    {3983, 48, 58, 980}, {3983, 48, 53, 980}, {6499, 10, 41, 980}, {1817, 20, 78, 980}, {3214, 21, 77, 980}, {1817, 20, 76, 980},
-    {6499, 10, 43, 980}, {3214, 21, 77, 980}, {6499, 10, 38, 980}, {3983, 48, 57, 980}, {4752, 34, 46, 980}, {978, 19, 77, 980},
-    {5521, 19, 74, 980}, {978, 19, 76, 980}, {5521, 19, 73, 980}, {4222, 36, 45, 980}, {5036, 28, 47, 980}, {2592, 34, 46, 980},
-    {4222, 36, 45, 980}, {1037, 28, 44, 980}, {4222, 36, 46, 980}, {4222, 36, 43, 980}, {5036, 28, 48, 980}, {1926, 16, 43, 980},
-    {4222, 36, 44, 980}, {1037, 28, 49, 980}, {4222, 36, 47, 980}, {2592, 34, 44, 980}, {4222, 36, 47, 980}, {4222, 36, 42, 980},
-    {5851, 10, 42, 980}, {550, 23, 104, 980}, {1240, 23, 104, 980}, {1620, 1, 247, 1000}, {610, 23, 104, 980}, {1360, 23, 104, 980},
-    {1740, 1, 247, 1000}, {670, 23, 104, 980}, {1480, 23, 104, 980}, {1860, 1, 247, 1000}, {1664, 28, 70, 980}, {2944, 44, 241, 1000},
-    {1644, 28, 70, 980}, {2909, 45, 232, 1000}, {1771, 28, 70, 980}, {3211, 44, 241, 1000}, {1664, 28, 70, 980}, {2944, 15, 117, 1000},
-    {1644, 28, 70, 980}, {2909, 15, 117, 1000}, {1771, 28, 70, 980}, {3211, 15, 117, 1000}, {3755, 16, 44, 980}, {6127, 10, 39, 980},
-    {985, 28, 45, 980}, {1829, 16, 45, 980}, {1741, 16, 44, 980}, {5717, 19, 78, 980}, {2306, 25, 46, 980}, {6127, 10, 41, 980},
-    {1829, 16, 44, 980}, {5557, 19, 70, 980}, {2604, 25, 45, 980}, {4161, 16, 45, 980}, {3030, 28, 46, 980}, {5205, 19, 69, 980},
-    {1829, 16, 41, 980}, {3236, 28, 46, 980}, {4713, 34, 45, 980}, {6581, 10, 40, 980}, {2263, 34, 49, 980}, {2974, 28, 50, 980},
-    {1681, 48, 58, 980}, {3686, 25, 46, 980}, {3686, 25, 45, 980}, {6013, 10, 40, 980}, {2263, 34, 48, 980}, {2974, 28, 48, 980},
-    {1681, 48, 57, 980}, {2263, 34, 44, 980}, {1681, 48, 56, 980}, {3686, 25, 48, 980}, {1681, 48, 58, 980}, {2263, 34, 46, 980},
-    {905, 28, 46, 980}, {6013, 10, 40, 980}, {2422, 34, 44, 980}, {3184, 28, 46, 980}, {969, 28, 49, 980}, {5468, 16, 40, 980},
-    {2422, 34, 45, 980}, {3945, 25, 45, 980}, {1799, 48, 57, 980}, {3945, 25, 43, 980}, {2422, 34, 49, 980}, {4706, 28, 47, 980},
-    {969, 28, 49, 980}, {4706, 28, 46, 980}, {1799, 48, 54, 980}, {4706, 28, 47, 980}, {4706, 28, 48, 980}, {6921, 10, 38, 980},
-    {1711, 48, 58, 980}, {4089, 25, 45, 980}, {2559, 34, 49, 980}, {4631, 28, 46, 980}, {1099, 28, 49, 980}, {4631, 28, 46, 980},
-    {2559, 34, 48, 980}, {4631, 28, 47, 980}, {1099, 28, 44, 980}, {3101, 28, 44, 980}, {2559, 34, 48, 980}, {5619, 16, 45, 980},
-    {3101, 28, 50, 980}, {6467, 10, 42, 980}, {4631, 28, 45, 980}, {6467, 10, 43, 980}, {2042, 38, 88, 980}, {2306, 20, 81, 980},
-    {3030, 38, 96, 980}, {2306, 20, 73, 980}, {3413, 21, 76, 980}, {3755, 21, 77, 980}, {3175, 20, 75, 980}, {4638, 19, 72, 980},
-    {4888, 20, 82, 980}, {1351, 20, 83, 980}, {1561, 21, 76, 980}, {3030, 38, 88, 980}, {2042, 38, 100, 980}, {3175, 20, 83, 980},
-    {3413, 21, 79, 980}, {1713, 19, 76, 980}, {2042, 38, 88, 980}, {2306, 20, 78, 980}, {3175, 20, 76, 980}, {1054, 19, 80, 980},
-    {3030, 38, 92, 980}, {3175, 20, 84, 980}, {2042, 38, 95, 980}, {2306, 20, 78, 980}, {3755, 21, 80, 980}, {1829, 19, 78, 980},
-    {2345, 38, 98, 980}, {2462, 20, 83, 980}, {5612, 20, 83, 980}, {3236, 38, 89, 980}, {3918, 21, 76, 980}, {4010, 21, 74, 980},
-    {1210, 19, 80, 980}, {2345, 38, 95, 980}, {2462, 20, 81, 980}, {1793, 21, 76, 980}, {1829, 19, 69, 980}, {2345, 38, 90, 980},
-    {5325, 19, 71, 980}, {1210, 19, 76, 980}, {2462, 20, 78, 980}, {3236, 38, 91, 980}, {3442, 19, 76, 980}, {1829, 19, 78, 980},
-    {4783, 19, 77, 980}, {5068, 38, 94, 980}, {2462, 20, 73, 980}, {3236, 38, 86, 980}, {4010, 21, 82, 980}, {2345, 38, 91, 980},
-    {5068, 38, 98, 980}, {5325, 19, 80, 980}, {5612, 20, 79, 980}, {1981, 19, 76, 980}, {2963, 20, 78, 980}, {3591, 38, 92, 980},
-    {4735, 21, 82, 980}, {4735, 21, 74, 980}, {5363, 19, 73, 980}, {4735, 21, 82, 980}, {5363, 19, 77, 980}, {3591, 38, 97, 980},
-    {4735, 21, 72, 980}, {2963, 20, 77, 980}, {3591, 38, 85, 980}, {1981, 19, 78, 980}, {2963, 20, 76, 980}, {2974, 30, 45, 980},
-    {6013, 10, 41, 980}, {1681, 26, 55, 980}, {5108, 34, 45, 980}, {905, 25, 46, 980}, {1681, 26, 59, 980}, {2263, 25, 45, 980},
-    {2974, 30, 45, 980}, {2263, 25, 45, 980}, {3686, 30, 44, 980}, {905, 25, 43, 980}, {6013, 10, 42, 980}, {1681, 26, 55, 980},
-    {3686, 30, 49, 980}, {1681, 26, 57, 980}, {5108, 34, 46, 980}, {1799, 26, 53, 980}, {3184, 30, 47, 980}, {4706, 26, 55, 980},
-    {5468, 34, 43, 980}, {3945, 30, 48, 980}, {6921, 10, 43, 980}, {969, 25, 45, 980}, {5468, 34, 47, 980}, {3184, 30, 49, 980},
-    {4706, 26, 57, 980}, {1799, 26, 59, 980}, {6921, 10, 41, 980}, {2422, 25, 47, 980}, {3184, 30, 46, 980}, {969, 25, 48, 980},
-    {4706, 26, 59, 980}, {2559, 25, 43, 980}, {4631, 26, 53, 980}, {1099, 25, 48, 980}, {5619, 34, 48, 980}, {3101, 30, 45, 980},
-    {6467, 10, 43, 980}, {5619, 34, 47, 980}, {6467, 10, 40, 980}, {1099, 25, 45, 980}, {4089, 30, 45, 980}, {2559, 25, 48, 980},
-    {5619, 34, 48, 980}, {1099, 25, 44, 980}, {4631, 26, 55, 980}, {3101, 30, 47, 980}, {6467, 10, 41, 980}, {4397, 28, 45, 980},
-    {5108, 48, 58, 980}, {2263, 34, 44, 980}, {2974, 42, 39, 980}, {1681, 25, 47, 980}, {6013, 10, 38, 980}, {2974, 42, 41, 980},
-    {4397, 28, 44, 980}, {905, 34, 47, 980}, {6013, 10, 42, 980}, {1681, 25, 44, 980}, {2974, 42, 40, 980}, {2974, 42, 41, 980},
-    {3686, 28, 50, 980}, {2974, 42, 40, 980}, {6013, 10, 43, 980}, {3945, 28, 47, 980}, {4706, 28, 44, 980}, {969, 34, 45, 980},
-    {2422, 34, 45, 980}, {1799, 25, 46, 980}, {3184, 42, 44, 980}, {969, 34, 47, 980}, {4706, 28, 48, 980}, {1799, 25, 48, 980},
-    {3945, 28, 49, 980}, {969, 34, 44, 980}, {6921, 10, 40, 980}, {969, 34, 43, 980}, {2422, 34, 49, 980}, {2422, 34, 46, 980},
-    {3184, 42, 42, 980}, {4089, 28, 47, 980}, {6467, 10, 42, 980}, {1099, 34, 46, 980}, {2559, 34, 47, 980}, {3101, 42, 42, 980},
-    {4089, 28, 44, 980}, {1711, 25, 44, 980}, {6467, 10, 38, 980}, {3101, 42, 43, 980}, {4631, 28, 46, 980}, {1099, 34, 49, 980},
-    {5619, 48, 55, 980}, {1711, 25, 46, 980}, {4089, 28, 44, 980}, {4631, 28, 48, 980}, {5619, 48, 54, 980}, {3686, 28, 44, 980},
-    {5108, 34, 48, 980}, {3686, 28, 48, 980}, {4397, 48, 55, 980}, {905, 28, 46, 980}, {2263, 28, 44, 980}, {1681, 34, 49, 980},
-    {4397, 48, 56, 980}, {3686, 28, 47, 980}, {4397, 48, 57, 980}, {1681, 34, 44, 980}, {2263, 28, 49, 980}, {3686, 28, 47, 980},
-    {6013, 10, 43, 980}, {905, 28, 44, 980}, {5108, 34, 45, 980}, {1799, 34, 47, 980}, {2422, 28, 47, 980}, {3945, 28, 49, 980},
-    {6921, 10, 41, 980}, {3945, 28, 49, 980}, {5468, 34, 44, 980}, {1799, 34, 46, 980}, {5468, 34, 43, 980}, {2422, 28, 49, 980},
-    {6921, 10, 42, 980}, {2422, 28, 48, 980}, {4706, 48, 55, 980}, {5468, 34, 45, 980}, {6921, 10, 40, 980}, {5468, 34, 49, 980},
-    {6921, 10, 41, 980}, {4631, 48, 58, 980}, {6467, 10, 38, 980}, {1099, 28, 47, 980}, {5619, 34, 47, 980}, {1099, 28, 45, 980},
-    {4089, 28, 45, 980}, {1099, 28, 49, 980}, {6467, 10, 41, 980}, {5619, 34, 47, 980}, {6467, 10, 42, 980}, {1099, 28, 50, 980},
-    {4089, 28, 49, 980}, {1711, 34, 47, 980}, {5619, 34, 46, 980}, {4631, 48, 55, 980}, {5619, 34, 45, 980}, {3686, 25, 48, 980},
-    {6013, 10, 38, 980}, {905, 48, 58, 980}, {4397, 34, 47, 980}, {1681, 25, 47, 980}, {3686, 25, 48, 980}, {2974, 48, 53, 980},
-    {4397, 34, 48, 980}, {1681, 25, 43, 980}, {2974, 48, 56, 980}, {2263, 34, 44, 980}, {3686, 25, 44, 980}, {905, 48, 59, 980},
-    {1681, 25, 48, 980}, {905, 48, 54, 980}, {2263, 34, 45, 980}, {969, 48, 57, 980}, {5468, 48, 53, 980}, {2422, 34, 49, 980},
-    {3184, 48, 52, 980}, {3945, 25, 43, 980}, {4706, 34, 47, 980}, {969, 48, 57, 980}, {3184, 48, 59, 980}, {969, 48, 52, 980},
-    {2422, 34, 49, 980}, {1799, 25, 46, 980}, {3184, 48, 59, 980}, {1799, 25, 46, 980}, {4706, 34, 45, 980}, {3184, 48, 55, 980},
-    {4706, 34, 49, 980}, {1711, 25, 42, 980}, {2559, 34, 45, 980}, {4089, 25, 42, 980}, {6467, 10, 41, 980}, {2559, 34, 48, 980},
-    {4089, 25, 44, 980}, {4089, 25, 46, 980}, {6467, 10, 41, 980}, {3101, 48, 53, 980}, {4631, 34, 45, 980}, {1711, 25, 43, 980},
-    {2559, 34, 44, 980}, {4089, 25, 45, 980}, {5619, 48, 58, 980}, {4089, 25, 44, 980}, {5619, 48, 58, 980}, {2974, 48, 56, 980},
-    {3686, 48, 60, 980}, {2422, 24, 43, 980}, {3184, 48, 54, 980}, {2559, 24, 47, 980}, {4631, 42, 38, 980}, {1681, 24, 47, 980},
-    {5108, 34, 49, 980}, {2422, 10, 42, 980}, {6921, 10, 41, 980}, {3101, 28, 47, 980}, {4631, 10, 41, 980}, {5108, 16, 40, 980},
-    {6013, 10, 40, 980}, {2422, 34, 48, 980}, {5468, 16, 42, 980}, {1099, 28, 44, 980}, {3101, 28, 46, 980}, {1681, 30, 84, 980},
-    {2974, 35, 128, 980}, {3686, 15, 111, 1000}, {1799, 30, 84, 980}, {3184, 35, 128, 980}, {3945, 15, 111, 1000}, {1711, 30, 84, 980},
-    {3101, 35, 128, 980}, {4089, 15, 111, 1000}, {2263, 34, 47, 980}, {2974, 25, 43, 980}, {969, 8, 52, 980}, {2422, 34, 47, 980},
-    {1711, 48, 53, 980}, {5619, 10, 43, 980}, {4397, 10, 38, 980}, {6013, 10, 43, 980}, {969, 13, 31, 980}, {6921, 10, 38, 980},
-    {1099, 13, 31, 980}, {2559, 13, 30, 980}, {2263, 10, 42, 980}, {2974, 13, 30, 980}, {3945, 32, 51, 980}, {4706, 10, 41, 980},
-    {2559, 10, 43, 980}, {4089, 32, 53, 980}, {914, 20, 86, 1020}, {1041, 20, 95, 1020}, {1203, 21, 86, 1020}, {2310, 19, 85, 1020},
-    {2310, 19, 85, 1020}, {2447, 20, 88, 1020}, {3574, 19, 81, 1020}, {2447, 20, 94, 1020}, {2629, 21, 89, 1020}, {3766, 20, 94, 1020},
-    {1041, 20, 94, 1020}, {1203, 21, 91, 1020}, {1574, 38, 110, 1020}, {3807, 19, 86, 1020}, {914, 20, 92, 1020}, {1041, 20, 89, 1020},
-    {3807, 19, 85, 1020}, {1041, 20, 91, 1020}, {1203, 21, 86, 1020}, {1574, 38, 100, 1020}, {3807, 19, 81, 1020}, {1574, 38, 102, 1020},
-    {3574, 19, 87, 1020}, {3766, 20, 91, 1020}, {457, 19, 86, 1020}, {812, 19, 85, 1020}, {914, 20, 93, 1020}, {2447, 20, 97, 1020},
-    {976, 34, 52, 1020}, {4065, 28, 50, 1020}, {3360, 34, 55, 1020}, {5303, 10, 44, 1020}, {2710, 25, 50, 1020}, {3360, 34, 55, 1020},
-    {2114, 48, 62, 1020}, {4065, 28, 51, 1020}, {976, 34, 54, 1020}, {3360, 34, 52, 1020}, {488, 48, 67, 1020}, {3360, 34, 56, 1020},
-    {976, 34, 56, 1020}, {5303, 10, 45, 1020}, {976, 34, 56, 1020}, {2114, 48, 65, 1020}, {905, 34, 49, 1020}, {4187, 28, 56, 1020},
-    {2050, 48, 60, 1020}, {4187, 28, 53, 1020}, {905, 34, 52, 1020}, {2824, 25, 55, 1020}, {3304, 34, 51, 1020}, {4187, 28, 51, 1020},
-    {2050, 48, 64, 1020}, {2824, 25, 55, 1020}, {905, 34, 52, 1020}, {4187, 28, 53, 1020}, {589, 48, 68, 1020}, {4961, 10, 49, 1020},
-    {589, 48, 60, 1020}, {905, 34, 56, 1020}, {2738, 30, 56, 1020}, {4983, 10, 49, 1020}, {3395, 34, 50, 1020}, {4983, 10, 45, 1020},
-    {1533, 11, 40, 1020}, {4107, 25, 51, 1020}, {986, 30, 52, 1020}, {2738, 30, 50, 1020}, {2136, 25, 50, 1020}, {2738, 30, 54, 1020},
-    {1533, 11, 41, 1020}, {2136, 25, 54, 1020}, {493, 26, 64, 1020}, {2136, 25, 53, 1020}, {3395, 34, 53, 1020}, {4107, 25, 49, 1020},
-    {2896, 36, 53, 1020}, {4344, 10, 48, 1020}, {2896, 36, 54, 1020}, {3591, 28, 56, 1020}, {2896, 36, 49, 1020}, {3591, 28, 54, 1020},
-    {2896, 36, 53, 1020}, {3591, 28, 50, 1020}, {1622, 34, 49, 1020}, {2896, 36, 53, 1020}, {1043, 16, 46, 1020}, {2896, 36, 53, 1020},
-    {1622, 34, 53, 1020}, {2896, 36, 48, 1020}, {420, 23, 136, 1020}, {730, 23, 136, 1020}, {1110, 23, 136, 1020}, {1490, 1, 247, 1000},
-    {480, 23, 136, 1020}, {850, 23, 136, 1020}, {1290, 23, 136, 1020}, {1670, 1, 247, 1000}, {540, 23, 136, 1020}, {970, 23, 136, 1020},
-    {1470, 23, 136, 1020}, {1850, 1, 247, 1000}, {1152, 28, 70, 1020}, {2496, 44, 241, 1000}, {1138, 28, 70, 1020}, {2466, 45, 232, 1000},
-    {1195, 28, 70, 1020}, {2707, 44, 241, 1000}, {1152, 28, 70, 1020}, {2496, 15, 117, 1000}, {1138, 28, 70, 1020}, {2466, 15, 117, 1000},
-    {1195, 28, 70, 1020}, {2707, 15, 117, 1000}, {1421, 25, 52, 1020}, {1980, 28, 49, 1020}, {2710, 16, 50, 1020}, {3360, 34, 56, 1020},
-    {2050, 28, 53, 1020}, {4187, 19, 88, 1020}, {457, 28, 52, 1020}, {914, 16, 45, 1020}, {2710, 16, 45, 1020}, {5303, 10, 49, 1020},
-    {1625, 25, 54, 1020}, {4187, 19, 82, 1020}, {3147, 34, 55, 1020}, {3807, 19, 80, 1020}, {1518, 25, 52, 1020}, {2114, 28, 55, 1020},
-    {2050, 28, 54, 1020}, {3304, 34, 55, 1020}, {448, 28, 54, 1020}, {3737, 16, 47, 1020}, {897, 48, 65, 1020}, {4534, 10, 46, 1020},
-    {448, 28, 54, 1020}, {2491, 25, 55, 1020}, {897, 48, 64, 1020}, {2491, 25, 54, 1020}, {1395, 34, 54, 1020}, {1943, 28, 56, 1020},
-    {1395, 34, 52, 1020}, {3737, 16, 50, 1020}, {448, 28, 54, 1020}, {2491, 25, 48, 1020}, {448, 28, 56, 1020}, {3737, 16, 48, 1020},
-    {480, 28, 56, 1020}, {2666, 25, 51, 1020}, {480, 28, 53, 1020}, {2080, 28, 50, 1020}, {2080, 28, 50, 1020}, {3999, 16, 51, 1020},
-    {480, 28, 50, 1020}, {1493, 34, 55, 1020}, {960, 48, 66, 1020}, {3999, 16, 49, 1020}, {2080, 28, 56, 1020}, {5218, 10, 46, 1020},
-    {2080, 28, 50, 1020}, {5218, 10, 46, 1020}, {1493, 34, 52, 1020}, {3306, 28, 55, 1020}, {2775, 25, 52, 1020}, {4115, 16, 49, 1020},
-    {889, 48, 68, 1020}, {2775, 25, 48, 1020}, {1597, 34, 53, 1020}, {4876, 10, 49, 1020}, {2015, 28, 53, 1020}, {3247, 28, 51, 1020},
-    {579, 28, 54, 1020}, {4876, 10, 44, 1020}, {579, 28, 54, 1020}, {4876, 10, 46, 1020}, {579, 28, 55, 1020}, {4115, 16, 45, 1020},
-    {2015, 28, 52, 1020}, {3247, 28, 51, 1020}, {1421, 20, 91, 1020}, {3147, 19, 80, 1020}, {3401, 38, 111, 1020}, {3574, 19, 83, 1020},
-    {1041, 20, 88, 1020}, {1203, 21, 91, 1020}, {1421, 20, 86, 1020}, {3147, 19, 88, 1020}, {812, 19, 84, 1020}, {1980, 38, 97, 1020},
-    {2310, 19, 83, 1020}, {2447, 20, 96, 1020}, {1041, 20, 91, 1020}, {1203, 21, 85, 1020}, {2310, 19, 90, 1020}, {2447, 20, 96, 1020},
-    {3401, 38, 111, 1020}, {3574, 19, 85, 1020}, {1203, 21, 88, 1020}, {2538, 21, 93, 1020}, {2629, 21, 96, 1020}, {1203, 21, 95, 1020},
-    {2447, 20, 92, 1020}, {2538, 21, 84, 1020}, {2629, 21, 88, 1020}, {1421, 20, 88, 1020}, {1574, 38, 102, 1020}, {1980, 38, 104, 1020},
-    {2538, 21, 93, 1020}, {1195, 20, 94, 1020}, {1381, 21, 94, 1020}, {2114, 38, 99, 1020}, {1518, 20, 87, 1020}, {2652, 19, 82, 1020},
-    {2710, 21, 93, 1020}, {2809, 20, 92, 1020}, {2114, 38, 100, 1020}, {2652, 19, 82, 1020}, {4324, 20, 97, 1020}, {1195, 20, 97, 1020},
-    {2710, 21, 86, 1020}, {2809, 20, 86, 1020}, {2114, 38, 100, 1020}, {3360, 19, 87, 1020}, {3905, 38, 105, 1020}, {4103, 19, 90, 1020},
-    {976, 19, 88, 1020}, {1195, 20, 90, 1020}, {2710, 21, 82, 1020}, {1195, 20, 87, 1020}, {2114, 38, 108, 1020}, {2652, 19, 86, 1020},
-    {1381, 21, 88, 1020}, {1518, 20, 84, 1020}, {1807, 38, 108, 1020}, {2809, 20, 91, 1020}, {1030, 19, 88, 1020}, {1849, 20, 85, 1020},
-    {2333, 38, 105, 1020}, {3214, 21, 87, 1020}, {1849, 20, 92, 1020}, {2333, 38, 97, 1020}, {2333, 38, 99, 1020}, {3214, 21, 86, 1020},
-    {2333, 38, 102, 1020}, {3214, 21, 90, 1020}, {1849, 20, 83, 1020}, {2333, 38, 105, 1020}, {3214, 21, 85, 1020}, {3760, 19, 83, 1020},
-    {1030, 19, 78, 1020}, {1849, 20, 90, 1020}, {1943, 30, 52, 1020}, {3089, 26, 64, 1020}, {448, 25, 50, 1020}, {1395, 25, 53, 1020},
-    {1395, 25, 54, 1020}, {2491, 30, 54, 1020}, {448, 25, 54, 1020}, {1395, 25, 52, 1020}, {897, 26, 68, 1020}, {2491, 30, 52, 1020},
-    {2491, 30, 54, 1020}, {4534, 10, 49, 1020}, {448, 25, 55, 1020}, {897, 26, 67, 1020}, {1943, 30, 50, 1020}, {3089, 26, 69, 1020},
-    {480, 25, 51, 1020}, {2080, 30, 50, 1020}, {1493, 25, 54, 1020}, {3306, 26, 68, 1020}, {2666, 30, 52, 1020}, {5218, 10, 46, 1020},
-    {2080, 30, 52, 1020}, {3306, 26, 67, 1020}, {480, 25, 50, 1020}, {1493, 25, 52, 1020}, {960, 26, 60, 1020}, {1493, 25, 50, 1020},
-    {2080, 30, 53, 1020}, {3999, 34, 55, 1020}, {2666, 30, 55, 1020}, {5218, 10, 44, 1020}, {889, 26, 67, 1020}, {1597, 25, 48, 1020},
-    {2775, 30, 52, 1020}, {3247, 26, 67, 1020}, {889, 26, 65, 1020}, {2015, 30, 55, 1020}, {1597, 25, 54, 1020}, {2775, 30, 52, 1020},
-    {1597, 25, 53, 1020}, {2015, 30, 52, 1020}, {579, 25, 53, 1020}, {2015, 30, 55, 1020}, {579, 25, 53, 1020}, {4876, 10, 48, 1020},
-    {579, 25, 52, 1020}, {2015, 30, 55, 1020}, {3089, 28, 55, 1020}, {3737, 48, 65, 1020}, {448, 34, 51, 1020}, {3737, 48, 62, 1020},
-    {448, 34, 54, 1020}, {3737, 48, 62, 1020}, {897, 25, 48, 1020}, {1943, 42, 49, 1020}, {3089, 28, 56, 1020}, {4534, 10, 43, 1020},
-    {448, 34, 55, 1020}, {4534, 10, 45, 1020}, {448, 34, 54, 1020}, {1395, 34, 53, 1020}, {1943, 42, 43, 1020}, {3089, 28, 52, 1020},
-    {480, 34, 52, 1020}, {960, 25, 49, 1020}, {1493, 34, 54, 1020}, {2666, 28, 55, 1020}, {960, 25, 52, 1020}, {2080, 42, 44, 1020},
-    {1493, 34, 53, 1020}, {3999, 48, 62, 1020}, {480, 34, 56, 1020}, {960, 25, 55, 1020}, {960, 25, 51, 1020}, {5218, 10, 47, 1020},
-    {2666, 28, 56, 1020}, {5218, 10, 43, 1020}, {3306, 28, 52, 1020}, {5218, 10, 47, 1020}, {889, 25, 53, 1020}, {2775, 28, 54, 1020},
-    {579, 34, 56, 1020}, {889, 25, 52, 1020}, {4115, 48, 66, 1020}, {4876, 10, 49, 1020}, {579, 34, 51, 1020}, {2015, 42, 44, 1020},
-    {579, 34, 49, 1020}, {1597, 34, 52, 1020}, {4115, 48, 66, 1020}, {4876, 10, 45, 1020}, {889, 25, 49, 1020}, {4876, 10, 49, 1020},
-    {3247, 28, 51, 1020}, {4876, 10, 47, 1020}, {448, 28, 55, 1020}, {1395, 28, 55, 1020}, {2491, 28, 50, 1020}, {3089, 48, 66, 1020},
-    {3089, 48, 68, 1020}, {4534, 10, 44, 1020}, {1395, 28, 53, 1020}, {2491, 28, 54, 1020}, {448, 28, 56, 1020}, {1395, 28, 56, 1020},
-    {897, 34, 51, 1020}, {3737, 34, 52, 1020}, {1943, 25, 53, 1020}, {3089, 48, 62, 1020}, {1943, 25, 55, 1020}, {3089, 48, 68, 1020},
-    {3306, 48, 68, 1020}, {5218, 10, 48, 1020}, {2666, 28, 53, 1020}, {3306, 48, 65, 1020}, {2666, 28, 49, 1020}, {3306, 48, 60, 1020},
-    {960, 34, 52, 1020}, {3999, 34, 54, 1020}, {1493, 28, 54, 1020}, {2080, 25, 53, 1020}, {1493, 28, 50, 1020}, {5218, 10, 46, 1020},
-    {1493, 28, 51, 1020}, {5218, 10, 49, 1020}, {480, 28, 50, 1020}, {1493, 28, 53, 1020}, {2775, 28, 52, 1020}, {4115, 34, 54, 1020},
-    {1597, 28, 51, 1020}, {3247, 48, 67, 1020}, {1597, 28, 55, 1020}, {4876, 10, 46, 1020}, {4115, 34, 51, 1020}, {4876, 10, 46, 1020},
-    {889, 34, 55, 1020}, {2015, 25, 50, 1020}, {2015, 25, 52, 1020}, {3247, 48, 67, 1020}, {2015, 25, 52, 1020}, {4876, 10, 49, 1020},
-    {889, 34, 56, 1020}, {1597, 28, 56, 1020}, {2491, 25, 53, 1020}, {3089, 34, 55, 1020}, {448, 48, 60, 1020}, {2491, 25, 53, 1020},
-    {897, 25, 52, 1020}, {1395, 34, 53, 1020}, {897, 25, 54, 1020}, {4534, 10, 49, 1020}, {448, 48, 66, 1020}, {1943, 48, 61, 1020},
-    {2491, 25, 52, 1020}, {3737, 48, 60, 1020}, {448, 48, 67, 1020}, {3089, 34, 50, 1020}, {448, 48, 67, 1020}, {1943, 48, 68, 1020},
-    {1493, 34, 53, 1020}, {3306, 34, 50, 1020}, {480, 48, 63, 1020}, {5218, 10, 47, 1020}, {2080, 48, 65, 1020}, {3306, 34, 52, 1020},
-    {2080, 48, 66, 1020}, {3999, 48, 61, 1020}, {960, 25, 49, 1020}, {3999, 48, 63, 1020}, {960, 25, 54, 1020}, {3306, 34, 52, 1020},
-    {2666, 25, 53, 1020}, {5218, 10, 44, 1020}, {2666, 25, 52, 1020}, {5218, 10, 48, 1020}, {579, 48, 62, 1020}, {4115, 48, 65, 1020},
-    {1597, 34, 50, 1020}, {4115, 48, 63, 1020}, {2775, 25, 52, 1020}, {4115, 48, 68, 1020}, {2775, 25, 51, 1020}, {4876, 10, 43, 1020},
-    {2775, 25, 49, 1020}, {3247, 34, 52, 1020}, {1597, 34, 56, 1020}, {2015, 48, 60, 1020}, {2015, 48, 67, 1020}, {2775, 25, 54, 1020},
-    {579, 48, 64, 1020}, {3247, 34, 55, 1020}, {448, 30, 53, 1020}, {897, 29, 64, 1020}, {480, 30, 49, 1020}, {5218, 10, 45, 1020},
-    {2015, 48, 68, 1020}, {4876, 10, 43, 1020}, {1943, 28, 53, 1020}, {3737, 34, 49, 1020}, {2080, 28, 51, 1020}, {3999, 34, 51, 1020},
-    {4115, 34, 56, 1020}, {4876, 10, 48, 1020}, {897, 16, 52, 1020}, {3089, 28, 54, 1020}, {2666, 25, 55, 1020}, {5218, 10, 44, 1020},
-    {2015, 28, 54, 1020}, {4115, 16, 49, 1020}, {897, 30, 84, 1020}, {1943, 35, 128, 1020}, {2491, 15, 111, 1000}, {960, 30, 84, 1020},
-    {2080, 35, 128, 1020}, {2666, 15, 111, 1000}, {889, 30, 84, 1020}, {2015, 35, 128, 1020}, {2775, 15, 111, 1000}, {448, 8, 59, 1020},
-    {1395, 34, 50, 1020}, {960, 48, 68, 1020}, {2080, 25, 51, 1020}, {1597, 34, 51, 1020}, {4115, 10, 47, 1020}, {1943, 10, 43, 1020},
-    {4534, 10, 45, 1020}, {480, 13, 36, 1020}, {960, 32, 60, 1020}, {889, 32, 58, 1020}, {2775, 32, 63, 1020}, {1395, 10, 48, 1020},
-    {4534, 10, 45, 1020}, {960, 13, 35, 1020}, {2666, 32, 63, 1020}, {3247, 10, 48, 1020}, {4115, 10, 47, 1020}, {2020, 28, 47, 960},
-    {2495, 21, 86, 960}, {594, 19, 81, 960}, {2495, 21, 87, 960}, {2020, 28, 51, 960}, {5584, 10, 42, 960}, {594, 19, 82, 960},
-    {5584, 10, 47, 960}, {594, 19, 75, 960}, {3505, 48, 60, 960}, {2495, 21, 87, 960}, {4752, 19, 79, 960}, {1069, 20, 88, 960},
-    {4752, 19, 83, 960}, {594, 19, 84, 960}, {3505, 48, 63, 960}, {1142, 34, 51, 960}, {2664, 48, 62, 960}, {634, 48, 64, 960},
-    {1142, 34, 47, 960}, {2664, 48, 62, 960}, {6411, 10, 46, 960}, {3742, 25, 48, 960}, {6411, 10, 45, 960}, {4186, 34, 49, 960},
-    {5074, 28, 51, 960}, {634, 48, 63, 960}, {6411, 10, 46, 960}, {2156, 28, 50, 960}, {5074, 28, 50, 960}, {2156, 28, 49, 960},
-    {2664, 48, 57, 960}, {1059, 20, 86, 960}, {2590, 21, 81, 960}, {4121, 34, 47, 960}, {5997, 10, 45, 960}, {1059, 20, 81, 960},
-    {3879, 48, 59, 960}, {753, 19, 80, 960}, {5219, 19, 76, 960}, {2284, 28, 49, 960}, {4121, 34, 51, 960}, {1059, 20, 79, 960},
-    {2590, 21, 82, 960}, {1059, 20, 83, 960}, {2284, 28, 50, 960}, {2284, 28, 52, 960}, {2590, 21, 89, 960}, {3741, 36, 49, 960},
-    {5072, 10, 46, 960}, {3741, 36, 45, 960}, {4184, 28, 47, 960}, {2156, 34, 48, 960}, {3741, 36, 47, 960}, {1141, 16, 44, 960},
-    {3741, 36, 51, 960}, {2156, 34, 51, 960}, {3741, 36, 49, 960}, {2663, 28, 48, 960}, {3741, 36, 49, 960}, {3741, 36, 45, 960},
-    {4184, 28, 49, 960}, {2156, 34, 52, 960}, {3741, 36, 46, 960}, {1209, 16, 48, 960}, {3962, 36, 49, 960}, {3962, 36, 45, 960},
-    {5372, 10, 47, 960}, {2283, 34, 47, 960}, {3962, 36, 47, 960}, {3962, 36, 45, 960}, {4432, 28, 50, 960}, {2283, 34, 52, 960},
-    {3962, 36, 45, 960}, {3962, 36, 47, 960}, {4432, 28, 48, 960}, {1209, 16, 48, 960}, {3962, 36, 51, 960}, {2820, 28, 52, 960},
-    {3962, 36, 46, 960}, {500, 23, 133, 960}, {1140, 23, 133, 960}, {1400, 23, 133, 960}, {1780, 1, 247, 1000}, {560, 23, 133, 960},
-    {1260, 23, 133, 960}, {1580, 23, 133, 960}, {1960, 1, 247, 1000}, {620, 23, 133, 960}, {1380, 23, 133, 960}, {1760, 23, 133, 960},
-    {2140, 1, 247, 1000}, {1152, 28, 70, 960}, {2688, 44, 241, 1000}, {1138, 28, 70, 960}, {2656, 45, 232, 1000}, {1195, 28, 70, 960},
-    {2923, 44, 241, 1000}, {1152, 28, 70, 960}, {2688, 15, 117, 1000}, {1138, 28, 70, 960}, {2656, 15, 117, 1000}, {1195, 28, 70, 960},
-    {2923, 15, 117, 1000}, {3920, 34, 51, 960}, {4752, 19, 78, 960}, {2664, 28, 50, 960}, {3742, 16, 48, 960}, {753, 28, 49, 960},
-    {3879, 16, 45, 960}, {4752, 19, 84, 960}, {5584, 10, 43, 960}, {1142, 16, 44, 960}, {2156, 25, 48, 960}, {3879, 16, 49, 960},
-    {5219, 19, 79, 960}, {2495, 28, 51, 960}, {5584, 10, 44, 960}, {2156, 25, 52, 960}, {4186, 34, 52, 960}, {4121, 34, 49, 960},
-    {5997, 10, 41, 960}, {583, 28, 53, 960}, {3848, 28, 48, 960}, {1982, 34, 49, 960}, {4664, 16, 45, 960}, {2449, 28, 48, 960},
-    {5480, 10, 45, 960}, {4664, 16, 43, 960}, {5480, 10, 43, 960}, {1049, 48, 57, 960}, {3848, 28, 52, 960}, {1049, 48, 63, 960},
-    {3848, 28, 50, 960}, {1049, 48, 62, 960}, {4664, 16, 43, 960}, {3848, 28, 53, 960}, {5480, 10, 45, 960}, {3682, 25, 46, 960},
-    {4119, 28, 52, 960}, {2621, 28, 51, 960}, {6307, 10, 47, 960}, {2621, 28, 51, 960}, {6307, 10, 42, 960}, {624, 28, 49, 960},
-    {2621, 28, 54, 960}, {2122, 34, 49, 960}, {6307, 10, 45, 960}, {4992, 16, 44, 960}, {6307, 10, 42, 960}, {624, 28, 50, 960},
-    {4119, 28, 51, 960}, {2621, 28, 48, 960}, {4119, 28, 51, 960}, {740, 28, 51, 960}, {5894, 10, 41, 960}, {740, 28, 51, 960},
-    {1041, 48, 57, 960}, {740, 28, 52, 960}, {1041, 48, 57, 960}, {3812, 25, 47, 960}, {5129, 16, 49, 960}, {3812, 25, 51, 960},
-    {5894, 10, 45, 960}, {4050, 28, 51, 960}, {5894, 10, 45, 960}, {2245, 34, 47, 960}, {2546, 28, 49, 960}, {740, 28, 49, 960},
-    {5894, 10, 42, 960}, {1841, 38, 107, 960}, {2020, 20, 89, 960}, {4182, 19, 78, 960}, {1408, 21, 87, 960}, {1841, 38, 101, 960},
-    {2703, 19, 84, 960}, {1218, 20, 90, 960}, {1408, 21, 82, 960}, {1841, 38, 101, 960}, {2495, 38, 98, 960}, {1841, 38, 104, 960},
-    {2020, 20, 89, 960}, {3077, 21, 91, 960}, {1408, 21, 88, 960}, {3920, 19, 79, 960}, {3980, 38, 95, 960}, {4182, 19, 78, 960},
-    {1069, 19, 75, 960}, {1218, 20, 88, 960}, {1408, 21, 87, 960}, {2863, 20, 88, 960}, {1218, 20, 85, 960}, {3980, 38, 106, 960},
-    {4182, 19, 84, 960}, {4407, 20, 81, 960}, {1069, 19, 81, 960}, {1218, 20, 92, 960}, {1408, 21, 89, 960}, {3920, 19, 80, 960},
-    {2114, 38, 101, 960}, {3533, 21, 90, 960}, {3742, 21, 80, 960}, {3103, 19, 78, 960}, {3287, 20, 92, 960}, {4569, 38, 99, 960},
-    {3287, 20, 84, 960}, {3533, 21, 80, 960}, {3742, 21, 78, 960}, {4569, 38, 103, 960}, {2114, 38, 107, 960}, {3103, 19, 79, 960},
-    {3287, 20, 86, 960}, {1091, 19, 84, 960}, {4569, 38, 95, 960}, {4801, 19, 79, 960}, {5060, 20, 92, 960}, {1142, 19, 84, 960},
-    {1398, 20, 89, 960}, {2156, 20, 90, 960}, {2114, 38, 107, 960}, {2156, 20, 79, 960}, {2664, 38, 98, 960}, {4186, 19, 78, 960},
-    {3103, 19, 83, 960}, {3287, 20, 86, 960}, {4569, 38, 100, 960}, {2948, 38, 96, 960}, {4414, 21, 82, 960}, {2599, 20, 84, 960},
-    {2948, 38, 97, 960}, {1205, 19, 79, 960}, {2599, 20, 84, 960}, {1205, 19, 81, 960}, {2599, 20, 86, 960}, {2948, 38, 101, 960},
-    {4414, 21, 84, 960}, {1205, 19, 83, 960}, {2599, 20, 88, 960}, {2948, 38, 105, 960}, {4414, 21, 81, 960}, {4414, 21, 88, 960},
-    {4690, 19, 81, 960}, {1049, 26, 64, 960}, {5480, 10, 44, 960}, {1049, 26, 60, 960}, {3848, 26, 61, 960}, {1049, 26, 65, 960},
-    {5480, 10, 43, 960}, {1982, 25, 52, 960}, {2449, 30, 49, 960}, {4664, 34, 48, 960}, {5480, 10, 45, 960}, {2449, 30, 51, 960},
-    {3848, 26, 63, 960}, {583, 25, 47, 960}, {3848, 26, 60, 960}, {3848, 26, 60, 960}, {5480, 10, 45, 960}, {2122, 25, 47, 960},
-    {3682, 30, 50, 960}, {624, 25, 50, 960}, {4992, 34, 50, 960}, {2122, 25, 49, 960}, {6307, 10, 43, 960}, {2122, 25, 48, 960},
-    {4992, 34, 47, 960}, {1123, 26, 59, 960}, {4992, 34, 49, 960}, {2621, 30, 48, 960}, {3682, 30, 46, 960}, {2621, 30, 51, 960},
-    {4119, 26, 59, 960}, {2122, 25, 50, 960}, {6307, 10, 42, 960}, {2546, 30, 50, 960}, {4050, 26, 61, 960}, {2546, 30, 51, 960},
-    {3812, 30, 51, 960}, {3812, 30, 51, 960}, {4050, 26, 63, 960}, {1041, 26, 63, 960}, {3812, 30, 51, 960}, {740, 25, 51, 960},
-    {3812, 30, 51, 960}, {740, 25, 52, 960}, {5894, 10, 45, 960}, {740, 25, 46, 960}, {2245, 25, 49, 960}, {3812, 30, 47, 960},
-    {4050, 26, 62, 960}, {4664, 48, 60, 960}, {5480, 10, 46, 960}, {3440, 28, 51, 960}, {4664, 48, 63, 960}, {583, 34, 51, 960},
-    {1982, 34, 51, 960}, {3440, 28, 54, 960}, {3848, 28, 53, 960}, {2449, 42, 42, 960}, {3848, 28, 49, 960}, {1049, 25, 50, 960},
-    {2449, 42, 44, 960}, {1982, 34, 47, 960}, {3848, 28, 49, 960}, {2449, 42, 43, 960}, {3440, 28, 48, 960}, {1123, 25, 49, 960},
-    {6307, 10, 47, 960}, {4119, 28, 47, 960}, {6307, 10, 42, 960}, {4119, 28, 48, 960}, {4992, 48, 58, 960}, {1123, 25, 51, 960},
-    {2621, 42, 41, 960}, {3682, 28, 52, 960}, {6307, 10, 41, 960}, {624, 34, 49, 960}, {2122, 34, 49, 960}, {2122, 34, 52, 960},
-    {2621, 42, 44, 960}, {2621, 42, 46, 960}, {6307, 10, 47, 960}, {740, 34, 50, 960}, {2546, 42, 45, 960}, {2245, 34, 50, 960},
-    {3812, 28, 48, 960}, {2245, 34, 49, 960}, {3812, 28, 51, 960}, {3812, 28, 51, 960}, {5129, 48, 63, 960}, {740, 34, 51, 960},
-    {3812, 28, 51, 960}, {740, 34, 49, 960}, {1041, 25, 49, 960}, {2245, 34, 52, 960}, {2546, 42, 43, 960}, {2245, 34, 53, 960},
-    {5894, 10, 47, 960}, {1982, 28, 50, 960}, {4664, 34, 47, 960}, {1049, 34, 50, 960}, {3848, 48, 62, 960}, {1049, 34, 47, 960},
-    {4664, 34, 53, 960}, {1049, 34, 52, 960}, {3848, 48, 57, 960}, {3848, 48, 60, 960}, {4664, 34, 47, 960}, {2449, 25, 47, 960},
-    {3440, 28, 51, 960}, {1982, 28, 48, 960}, {5480, 10, 44, 960}, {583, 28, 48, 960}, {1049, 34, 49, 960}, {2122, 28, 53, 960},
-    {4992, 34, 49, 960}, {624, 28, 53, 960}, {1123, 34, 49, 960}, {2122, 28, 48, 960}, {6307, 10, 43, 960}, {1123, 34, 52, 960},
-    {4119, 48, 62, 960}, {624, 28, 50, 960}, {4992, 34, 52, 960}, {4119, 48, 63, 960}, {6307, 10, 46, 960}, {2621, 25, 50, 960},
-    {4119, 48, 60, 960}, {2621, 25, 51, 960}, {4119, 48, 62, 960}, {2245, 28, 51, 960}, {5894, 10, 47, 960}, {2245, 28, 47, 960},
-    {5894, 10, 46, 960}, {740, 28, 53, 960}, {3812, 28, 52, 960}, {5129, 34, 49, 960}, {5894, 10, 46, 960}, {2546, 25, 49, 960},
-    {4050, 48, 61, 960}, {2245, 28, 50, 960}, {5129, 34, 49, 960}, {2245, 28, 53, 960}, {3812, 28, 48, 960}, {2245, 28, 48, 960},
-    {5129, 34, 49, 960}, {583, 48, 60, 960}, {2449, 48, 59, 960}, {1049, 25, 52, 960}, {3848, 34, 48, 960}, {583, 48, 59, 960},
-    {5480, 10, 45, 960}, {1049, 25, 52, 960}, {2449, 48, 61, 960}, {4664, 48, 64, 960}, {5480, 10, 42, 960}, {1982, 34, 48, 960},
-    {4664, 48, 59, 960}, {1049, 25, 46, 960}, {3848, 34, 47, 960}, {2122, 34, 53, 960}, {4119, 34, 51, 960}, {624, 48, 59, 960},
-    {3682, 25, 51, 960}, {2621, 48, 58, 960}, {4119, 34, 49, 960}, {2621, 48, 60, 960}, {3682, 25, 50, 960}, {2621, 48, 60, 960},
-    {3682, 25, 49, 960}, {1123, 25, 47, 960}, {3682, 25, 52, 960}, {3682, 25, 50, 960}, {6307, 10, 43, 960}, {2122, 34, 50, 960},
-    {6307, 10, 45, 960}, {2245, 34, 51, 960}, {3812, 25, 47, 960}, {3812, 25, 49, 960}, {5894, 10, 46, 960}, {1041, 25, 46, 960},
-    {4050, 34, 52, 960}, {1041, 25, 48, 960}, {5894, 10, 45, 960}, {740, 48, 59, 960}, {3812, 25, 50, 960}, {1041, 25, 48, 960},
-    {3812, 25, 52, 960}, {2245, 34, 52, 960}, {4050, 34, 53, 960}, {3812, 25, 52, 960}, {5894, 10, 44, 960}, {583, 30, 48, 960},
-    {3848, 42, 43, 960}, {3682, 48, 61, 960}, {4992, 25, 51, 960}, {4050, 42, 46, 960}, {5894, 10, 45, 960}, {1982, 10, 44, 960},
-    {3848, 10, 46, 960}, {624, 34, 50, 960}, {1123, 24, 47, 960}, {1041, 24, 45, 960}, {5894, 10, 41, 960}, {3440, 25, 52, 960},
-    {4664, 16, 49, 960}, {1123, 16, 46, 960}, {2122, 34, 49, 960}, {4050, 28, 52, 960}, {5129, 16, 49, 960}, {1049, 30, 84, 960},
-    {2449, 35, 128, 960}, {3440, 15, 111, 1000}, {1123, 30, 84, 960}, {2621, 35, 128, 960}, {3682, 15, 111, 1000}, {1041, 30, 84, 960},
-    {2546, 35, 128, 960}, {3812, 15, 111, 1000}, {2449, 25, 46, 960}, {3848, 10, 45, 960}, {624, 8, 59, 960}, {2122, 34, 51, 960},
-    {1041, 48, 60, 960}, {2245, 34, 53, 960}, {1049, 32, 59, 960}, {1982, 13, 35, 960}, {1123, 32, 59, 960}, {6307, 10, 41, 960},
-    {4050, 10, 45, 960}, {5129, 10, 45, 960}, {1982, 10, 47, 960}, {5480, 10, 45, 960}, {624, 13, 34, 960}, {6307, 10, 44, 960},
-    {4050, 10, 45, 960}, {5129, 10, 43, 960}, {314, 19, 82, 980}, {1300, 21, 95, 980}, {314, 19, 87, 980}, {3093, 19, 82, 980},
-    {3093, 19, 91, 980}, {3989, 10, 50, 980}, {1972, 48, 63, 980}, {3989, 10, 47, 980}, {314, 19, 86, 980}, {627, 20, 92, 980},
-    {627, 20, 94, 980}, {1300, 21, 87, 980}, {1972, 48, 66, 980}, {3989, 10, 44, 980}, {314, 19, 90, 980}, {3093, 19, 90, 980},
-    {335, 26, 62, 980}, {3302, 25, 54, 980}, {335, 26, 69, 980}, {2536, 34, 53, 980}, {335, 26, 69, 980}, {4580, 10, 50, 980},
-    {335, 26, 68, 980}, {1101, 11, 40, 980}, {335, 26, 66, 980}, {3302, 25, 49, 980}, {670, 30, 51, 980}, {3302, 25, 53, 980},
-    {2106, 30, 50, 980}, {4580, 10, 48, 980}, {2536, 34, 52, 980}, {3302, 25, 51, 980}, {424, 28, 54, 980}, {2205, 36, 49, 980},
-    {2205, 36, 54, 980}, {4284, 16, 51, 980}, {424, 28, 57, 980}, {2205, 36, 55, 980}, {2205, 36, 50, 980}, {4284, 16, 52, 980},
-    {607, 16, 50, 980}, {2205, 36, 51, 980}, {424, 28, 53, 980}, {2205, 36, 50, 980}, {607, 16, 51, 980}, {2205, 36, 48, 980},
-    {1329, 28, 55, 980}, {2205, 36, 53, 980}, {342, 26, 64, 980}, {2587, 34, 55, 980}, {1123, 11, 44, 980}, {2148, 30, 56, 980},
-    {2148, 30, 57, 980}, {2587, 34, 56, 980}, {1416, 25, 53, 980}, {4345, 10, 49, 980}, {342, 26, 63, 980}, {1123, 11, 41, 980},
-    {2587, 34, 52, 980}, {4345, 10, 47, 980}, {683, 30, 54, 980}, {4345, 10, 48, 980}, {342, 26, 70, 980}, {4345, 10, 47, 980},
-    {2269, 36, 50, 980}, {4936, 16, 52, 980}, {2269, 36, 54, 980}, {2734, 28, 53, 980}, {2269, 36, 51, 980}, {4936, 16, 52, 980},
-    {2269, 36, 52, 980}, {3559, 10, 49, 980}, {1186, 34, 56, 980}, {2269, 36, 49, 980}, {2269, 36, 48, 980}, {2734, 28, 55, 980},
-    {2269, 36, 53, 980}, {4936, 16, 50, 980}, {320, 23, 161, 980}, {490, 23, 161, 980}, {810, 23, 161, 980}, {980, 23, 161, 980},
-    {1360, 1, 247, 1000}, {380, 23, 161, 980}, {610, 23, 161, 980}, {990, 23, 161, 980}, {1220, 23, 161, 980}, {1600, 1, 247, 1000},
-    {440, 23, 161, 980}, {730, 23, 161, 980}, {1170, 23, 161, 980}, {1460, 23, 161, 980}, {1840, 1, 247, 1000}, {896, 28, 70, 980},
-    {1856, 44, 241, 1000}, {885, 28, 70, 980}, {1834, 45, 232, 1000}, {907, 28, 70, 980}, {1987, 44, 241, 1000}, {896, 28, 70, 980},
-    {1856, 15, 117, 1000}, {885, 28, 70, 980}, {1834, 15, 117, 1000}, {907, 28, 70, 980}, {1987, 15, 117, 1000}, {314, 28, 52, 980},
-    {1300, 28, 56, 980}, {2106, 16, 50, 980}, {2536, 34, 51, 980}, {424, 28, 55, 980}, {2484, 34, 57, 980}, {314, 28, 52, 980},
-    {2375, 34, 52, 980}, {670, 16, 51, 980}, {2106, 16, 48, 980}, {424, 28, 53, 980}, {607, 16, 49, 980}, {627, 16, 52, 980},
-    {1972, 16, 46, 980}, {670, 16, 49, 980}, {1101, 25, 55, 980}, {607, 16, 52, 980}, {4284, 10, 46, 980}, {1276, 28, 52, 980},
-    {3035, 16, 49, 980}, {308, 28, 57, 980}, {3915, 10, 44, 980}, {2331, 28, 57, 980}, {3035, 16, 47, 980}, {616, 48, 66, 980},
-    {1276, 28, 51, 980}, {1936, 25, 56, 980}, {2331, 28, 55, 980}, {1012, 34, 55, 980}, {1936, 25, 55, 980}, {1276, 28, 56, 980},
-    {2331, 28, 52, 980}, {2331, 28, 57, 980}, {3035, 16, 51, 980}, {2496, 28, 51, 980}, {3249, 16, 52, 980}, {1365, 28, 53, 980},
-    {2496, 28, 55, 980}, {330, 28, 55, 980}, {3249, 16, 50, 980}, {2496, 28, 54, 980}, {4506, 10, 45, 980}, {1365, 28, 58, 980},
-    {2072, 25, 49, 980}, {659, 48, 62, 980}, {2072, 25, 53, 980}, {1083, 34, 51, 980}, {2072, 25, 52, 980}, {330, 28, 57, 980},
-    {2072, 25, 50, 980}, {3350, 16, 51, 980}, {4211, 10, 50, 980}, {1173, 34, 56, 980}, {1306, 28, 53, 980}, {596, 48, 68, 980},
-    {4211, 10, 50, 980}, {3350, 16, 50, 980}, {4211, 10, 50, 980}, {1173, 34, 58, 980}, {2441, 28, 53, 980}, {596, 48, 68, 980},
-    {1173, 34, 53, 980}, {596, 48, 70, 980}, {2441, 28, 57, 980}, {1306, 28, 57, 980}, {2441, 28, 52, 980}, {1389, 38, 106, 980},
-    {1972, 21, 90, 980}, {2039, 19, 86, 980}, {3326, 20, 96, 980}, {1031, 20, 85, 980}, {1062, 21, 89, 980}, {3326, 20, 99, 980},
-    {1300, 38, 112, 980}, {2322, 21, 96, 980}, {2375, 19, 83, 980}, {1972, 21, 91, 980}, {2039, 19, 86, 980}, {2160, 20, 92, 980},
-    {3155, 19, 84, 980}, {1062, 21, 88, 980}, {1300, 38, 101, 980}, {3326, 20, 94, 980}, {1062, 21, 95, 980}, {1300, 38, 108, 980},
-    {3003, 38, 114, 980}, {1062, 21, 90, 980}, {2375, 19, 81, 980}, {3003, 38, 102, 980}, {717, 19, 93, 980}, {919, 20, 88, 980},
-    {1031, 20, 94, 980}, {3155, 19, 91, 980}, {823, 19, 89, 980}, {2666, 21, 91, 980}, {3448, 38, 105, 980}, {1055, 20, 96, 980},
-    {1101, 20, 89, 980}, {1220, 21, 97, 980}, {3818, 20, 91, 980}, {1101, 20, 87, 980}, {1220, 21, 88, 980}, {1388, 38, 107, 980},
-    {2341, 19, 85, 980}, {1055, 20, 99, 980}, {2666, 21, 98, 980}, {3448, 38, 104, 980}, {3623, 19, 92, 980}, {823, 19, 82, 980},
-    {1388, 38, 108, 980}, {1595, 38, 103, 980}, {670, 19, 91, 980}, {823, 19, 85, 980}, {1055, 20, 93, 980}, {3623, 19, 85, 980},
-    {1101, 20, 96, 980}, {1220, 21, 96, 980}, {2480, 20, 97, 980}, {1101, 20, 93, 980}, {1220, 21, 87, 980}, {1388, 38, 103, 980},
-    {3818, 20, 99, 980}, {1359, 20, 88, 980}, {1512, 38, 113, 980}, {690, 19, 84, 980}, {1359, 20, 89, 980}, {1512, 38, 104, 980},
-    {2509, 21, 86, 980}, {1359, 20, 88, 980}, {1512, 38, 107, 980}, {690, 19, 82, 980}, {1359, 20, 92, 980}, {690, 19, 81, 980},
-    {1359, 20, 88, 980}, {1512, 38, 109, 980}, {2509, 21, 92, 980}, {1512, 38, 100, 980}, {2509, 21, 87, 980}, {616, 26, 69, 980},
-    {1936, 30, 57, 980}, {1276, 30, 52, 980}, {1936, 30, 53, 980}, {308, 25, 56, 980}, {616, 26, 63, 980}, {1012, 25, 54, 980},
-    {3915, 10, 46, 980}, {308, 25, 53, 980}, {616, 26, 62, 980}, {2331, 26, 62, 980}, {3915, 10, 47, 980}, {3035, 34, 53, 980},
-    {3915, 10, 44, 980}, {616, 26, 64, 980}, {1012, 25, 53, 980}, {2072, 30, 53, 980}, {3249, 34, 54, 980}, {1365, 30, 53, 980},
-    {4506, 10, 44, 980}, {1365, 30, 52, 980}, {4506, 10, 48, 980}, {659, 26, 63, 980}, {3249, 34, 51, 980}, {330, 25, 55, 980},
-    {1083, 25, 54, 980}, {3249, 34, 57, 980}, {4506, 10, 45, 980}, {659, 26, 68, 980}, {2072, 30, 54, 980}, {1083, 25, 55, 980},
-    {2496, 26, 69, 980}, {2441, 26, 70, 980}, {4211, 10, 48, 980}, {416, 25, 52, 980}, {1173, 25, 55, 980}, {416, 25, 54, 980},
-    {4211, 10, 50, 980}, {416, 25, 52, 980}, {3350, 34, 52, 980}, {1306, 30, 51, 980}, {2167, 30, 54, 980}, {1173, 25, 51, 980},
-    {2167, 30, 54, 980}, {2441, 26, 62, 980}, {4211, 10, 47, 980}, {1306, 30, 50, 980}, {2167, 30, 52, 980}, {616, 25, 51, 980},
-    {1936, 28, 54, 980}, {1012, 34, 55, 980}, {1936, 28, 57, 980}, {616, 25, 53, 980}, {3035, 48, 65, 980}, {1012, 34, 57, 980},
-    {1936, 28, 53, 980}, {1276, 42, 50, 980}, {1936, 28, 55, 980}, {616, 25, 56, 980}, {3915, 10, 48, 980}, {2331, 28, 57, 980},
-    {3915, 10, 47, 980}, {1936, 28, 56, 980}, {3035, 48, 66, 980}, {330, 34, 53, 980}, {3249, 48, 67, 980}, {1083, 34, 51, 980},
-    {1365, 42, 50, 980}, {659, 25, 51, 980}, {1083, 34, 51, 980}, {659, 25, 49, 980}, {1083, 34, 55, 980}, {330, 34, 56, 980},
-    {2072, 28, 54, 980}, {2496, 28, 55, 980}, {3249, 48, 66, 980}, {1083, 34, 57, 980}, {2072, 28, 54, 980}, {330, 34, 51, 980},
-    {3249, 48, 66, 980}, {2441, 28, 55, 980}, {4211, 10, 46, 980}, {2441, 28, 52, 980}, {4211, 10, 47, 980}, {416, 34, 53, 980},
-    {4211, 10, 47, 980}, {1173, 34, 54, 980}, {4211, 10, 47, 980}, {1173, 34, 51, 980}, {2441, 28, 57, 980}, {596, 25, 53, 980},
-    {3350, 48, 63, 980}, {416, 34, 51, 980}, {1173, 34, 54, 980}, {2441, 28, 52, 980}, {4211, 10, 50, 980}, {308, 28, 55, 980},
-    {616, 34, 56, 980}, {2331, 48, 65, 980}, {3915, 10, 48, 980}, {616, 34, 52, 980}, {2331, 48, 66, 980}, {1012, 28, 58, 980},
-    {2331, 48, 61, 980}, {1936, 28, 52, 980}, {3915, 10, 44, 980}, {308, 28, 56, 980}, {3035, 34, 51, 980}, {1276, 25, 56, 980},
-    {2331, 48, 67, 980}, {1276, 25, 56, 980}, {3915, 10, 47, 980}, {659, 34, 51, 980}, {2496, 48, 63, 980}, {659, 34, 54, 980},
-    {1083, 28, 55, 980}, {659, 34, 54, 980}, {3249, 34, 54, 980}, {659, 34, 53, 980}, {1365, 25, 54, 980}, {1083, 28, 57, 980},
-    {2496, 48, 66, 980}, {330, 28, 50, 980}, {2496, 48, 67, 980}, {2072, 28, 55, 980}, {2496, 48, 67, 980}, {659, 34, 53, 980},
-    {3249, 34, 53, 980}, {3350, 34, 55, 980}, {4211, 10, 50, 980}, {1173, 28, 53, 980}, {4211, 10, 46, 980}, {2441, 48, 68, 980},
-    {4211, 10, 45, 980}, {1306, 25, 51, 980}, {3350, 34, 55, 980}, {3350, 34, 50, 980}, {4211, 10, 49, 980}, {416, 28, 56, 980},
-    {596, 34, 54, 980}, {596, 34, 55, 980}, {4211, 10, 48, 980}, {416, 28, 54, 980}, {596, 34, 55, 980}, {1936, 25, 51, 980},
-    {2331, 34, 58, 980}, {1012, 34, 56, 980}, {2331, 34, 52, 980}, {308, 48, 68, 980}, {616, 25, 52, 980}, {1276, 48, 65, 980},
-    {3915, 10, 45, 980}, {1276, 48, 63, 980}, {2331, 34, 53, 980}, {1936, 25, 56, 980}, {3035, 48, 69, 980}, {616, 25, 50, 980},
-    {1276, 48, 62, 980}, {1276, 48, 69, 980}, {1936, 25, 55, 980}, {1365, 48, 66, 980}, {4506, 10, 50, 980}, {1083, 34, 52, 980},
-    {2072, 25, 53, 980}, {330, 48, 69, 980}, {659, 25, 50, 980}, {1083, 34, 51, 980}, {3249, 48, 65, 980}, {1083, 34, 55, 980},
-    {1365, 48, 69, 980}, {1365, 48, 66, 980}, {4506, 10, 45, 980}, {1083, 34, 52, 980}, {3249, 48, 65, 980}, {2072, 25, 54, 980},
-    {4506, 10, 46, 980}, {1173, 34, 56, 980}, {3350, 48, 68, 980}, {416, 48, 61, 980}, {1306, 48, 64, 980}, {2167, 25, 50, 980},
-    {3350, 48, 63, 980}, {2441, 34, 51, 980}, {3350, 48, 64, 980}, {1306, 48, 66, 980}, {3350, 48, 65, 980}, {416, 48, 62, 980},
-    {4211, 10, 51, 980}, {596, 25, 50, 980}, {2441, 34, 54, 980}, {416, 48, 65, 980}, {2441, 34, 51, 980}, {308, 30, 52, 980},
-    {1936, 48, 66, 980}, {330, 30, 57, 980}, {659, 29, 62, 980}, {416, 30, 52, 980}, {596, 29, 65, 980}, {308, 34, 56, 980},
-    {3035, 34, 52, 980}, {330, 34, 52, 980}, {3249, 34, 52, 980}, {596, 24, 52, 980}, {1173, 10, 49, 980}, {308, 28, 54, 980},
-    {616, 16, 48, 980}, {1083, 34, 51, 980}, {3249, 16, 48, 980}, {2167, 25, 49, 980}, {2441, 28, 56, 980}, {616, 30, 84, 980},
-    {1276, 35, 128, 980}, {1936, 15, 111, 1000}, {659, 30, 84, 980}, {1365, 35, 128, 980}, {2072, 15, 111, 1000}, {596, 30, 84, 980},
-    {1306, 35, 128, 980}, {2167, 15, 111, 1000}, {616, 48, 64, 980}, {1012, 34, 55, 980}, {2072, 28, 57, 980}, {2496, 10, 46, 980},
-    {596, 48, 65, 980}, {2167, 28, 56, 980}, {308, 13, 38, 980}, {1012, 13, 37, 980}, {1365, 10, 46, 980}, {2496, 10, 50, 980},
-    {1173, 13, 36, 980}, {1306, 10, 47, 980}, {1276, 13, 34, 980}, {3035, 10, 44, 980}, {1365, 13, 34, 980}, {3249, 10, 50, 980},
-    {1173, 10, 46, 980}, {2167, 32, 62, 980}, {1284, 20, 86, 1050}, {4648, 20, 84, 1050}, {5136, 19, 70, 1050}, {2850, 19, 71, 1050},
-    {3019, 20, 82, 1050}, {3245, 21, 81, 1050}, {4197, 38, 89, 1050}, {1284, 20, 84, 1050}, {1441, 20, 83, 1050}, {1485, 21, 83, 1050},
-    {5136, 19, 72, 1050}, {814, 19, 73, 1050}, {1441, 20, 83, 1050}, {1485, 21, 76, 1050}, {1942, 38, 93, 1050}, {814, 19, 77, 1050},
-    {1002, 19, 77, 1050}, {3245, 21, 79, 1050}, {1284, 20, 81, 1050}, {1942, 38, 99, 1050}, {2694, 21, 81, 1050}, {2850, 19, 74, 1050},
-    {1002, 19, 72, 1050}, {3245, 21, 77, 1050}, {4197, 38, 96, 1050}, {1002, 19, 76, 1050}, {3245, 21, 83, 1050}, {4197, 38, 92, 1050},
-    {4410, 19, 73, 1050}, {1151, 19, 78, 1050}, {1474, 20, 84, 1050}, {1705, 21, 82, 1050}, {3467, 20, 83, 1050}, {1474, 20, 75, 1050},
-    {4819, 38, 88, 1050}, {5063, 19, 71, 1050}, {5336, 20, 85, 1050}, {1151, 19, 73, 1050}, {1705, 21, 85, 1050}, {2230, 38, 94, 1050},
-    {3272, 19, 75, 1050}, {1705, 21, 74, 1050}, {3467, 20, 76, 1050}, {3725, 21, 82, 1050}, {4819, 38, 89, 1050}, {1151, 19, 80, 1050},
-    {1474, 20, 82, 1050}, {1705, 21, 75, 1050}, {3467, 20, 80, 1050}, {1474, 20, 80, 1050}, {1705, 21, 79, 1050}, {3467, 20, 81, 1050},
-    {1474, 20, 75, 1050}, {1705, 21, 81, 1050}, {2230, 38, 91, 1050}, {3725, 21, 84, 1050}, {1705, 21, 78, 1050}, {2230, 38, 90, 1050},
-    {3272, 19, 74, 1050}, {4819, 38, 95, 1050}, {996, 48, 58, 1050}, {4481, 34, 46, 1050}, {4091, 25, 44, 1050}, {4481, 34, 49, 1050},
-    {2476, 28, 44, 1050}, {4481, 34, 46, 1050}, {1453, 34, 46, 1050}, {5638, 28, 47, 1050}, {996, 48, 57, 1050}, {6324, 10, 38, 1050},
-    {2476, 28, 44, 1050}, {2799, 48, 52, 1050}, {4481, 34, 47, 1050}, {6324, 10, 42, 1050}, {4091, 25, 45, 1050}, {4481, 34, 49, 1050},
-    {3932, 30, 48, 1050}, {5464, 25, 42, 1050}, {2866, 25, 45, 1050}, {6264, 10, 43, 1050}, {1533, 30, 47, 1050}, {6264, 10, 39, 1050},
-    {2866, 25, 46, 1050}, {6264, 10, 41, 1050}, {2866, 25, 46, 1050}, {4532, 34, 48, 1050}, {1533, 30, 49, 1050}, {5464, 25, 46, 1050},
-    {1533, 30, 49, 1050}, {5464, 25, 43, 1050}, {866, 26, 55, 1050}, {3932, 30, 49, 1050}, {1624, 20, 83, 1050}, {1799, 21, 82, 1050},
-    {2354, 38, 88, 1050}, {1624, 20, 77, 1050}, {1799, 21, 80, 1050}, {2354, 38, 95, 1050}, {3036, 21, 81, 1050}, {1556, 20, 79, 1050},
-    {3933, 21, 79, 1050}, {5087, 38, 99, 1050}, {5345, 19, 75, 1050}, {1215, 19, 77, 1050}, {3933, 21, 84, 1050}, {5087, 38, 99, 1050},
-    {918, 19, 68, 1050}, {1215, 19, 79, 1050}, {1556, 20, 81, 1050}, {3036, 21, 81, 1050}, {1215, 19, 80, 1050}, {1556, 20, 77, 1050},
-    {3036, 21, 83, 1050}, {918, 19, 75, 1050}, {1215, 19, 74, 1050}, {1556, 20, 81, 1050}, {2354, 38, 94, 1050}, {1556, 20, 83, 1050},
-    {1624, 20, 73, 1050}, {5633, 20, 82, 1050}, {620, 23, 106, 1050}, {1190, 23, 106, 1050}, {1480, 23, 106, 1050}, {1860, 1, 247, 1000},
-    {680, 23, 106, 1050}, {1310, 23, 106, 1050}, {1660, 23, 106, 1050}, {2040, 1, 247, 1000}, {740, 23, 106, 1050}, {1430, 23, 106, 1050},
-    {1840, 23, 106, 1050}, {2220, 1, 247, 1000}, {1472, 28, 70, 1050}, {2752, 44, 241, 1000}, {1455, 28, 70, 1050}, {2719, 45, 232, 1000},
-    {1555, 28, 70, 1050}, {2995, 44, 241, 1000}, {1472, 28, 70, 1050}, {2752, 15, 117, 1000}, {1455, 28, 70, 1050}, {2719, 15, 117, 1000},
-    {1555, 28, 70, 1050}, {2995, 15, 117, 1000}, {1441, 16, 42, 1050}, {5136, 19, 72, 1050}, {5485, 19, 73, 1050}, {6760, 10, 41, 1050},
-    {4091, 16, 45, 1050}, {5638, 19, 69, 1050}, {814, 28, 47, 1050}, {3696, 16, 40, 1050}, {5485, 19, 78, 1050}, {6760, 10, 40, 1050},
-    {2476, 25, 48, 1050}, {4481, 34, 46, 1050}, {1441, 16, 45, 1050}, {2694, 28, 44, 1050}, {870, 28, 46, 1050}, {2876, 28, 47, 1050},
-    {1453, 16, 41, 1050}, {2476, 25, 42, 1050}, {3627, 25, 46, 1050}, {5779, 10, 39, 1050}, {2152, 34, 48, 1050}, {2644, 28, 48, 1050},
-    {1414, 48, 55, 1050}, {2644, 28, 45, 1050}, {1414, 48, 60, 1050}, {2644, 28, 45, 1050}, {3627, 25, 43, 1050}, {5779, 10, 41, 1050},
-    {799, 28, 48, 1050}, {4181, 28, 48, 1050}, {799, 28, 48, 1050}, {4181, 28, 45, 1050}, {799, 28, 49, 1050}, {5779, 10, 40, 1050},
-    {2830, 28, 44, 1050}, {3883, 25, 45, 1050}, {855, 28, 45, 1050}, {6651, 10, 39, 1050}, {3883, 25, 47, 1050}, {6651, 10, 39, 1050},
-    {3883, 25, 48, 1050}, {5396, 16, 43, 1050}, {2830, 28, 45, 1050}, {4475, 28, 49, 1050}, {1514, 48, 55, 1050}, {5396, 16, 41, 1050},
-    {5396, 16, 45, 1050}, {6651, 10, 42, 1050}, {1514, 48, 56, 1050}, {3883, 25, 45, 1050}, {4404, 28, 45, 1050}, {6215, 10, 42, 1050},
-    {1428, 48, 60, 1050}, {5541, 16, 41, 1050}, {5541, 16, 43, 1050}, {6215, 10, 40, 1050}, {2433, 34, 47, 1050}, {6215, 10, 43, 1050},
-    {2433, 34, 48, 1050}, {5541, 16, 45, 1050}, {4404, 28, 50, 1050}, {6215, 10, 39, 1050}, {2751, 28, 48, 1050}, {6215, 10, 42, 1050},
-    {4404, 28, 45, 1050}, {6215, 10, 43, 1050}, {3019, 20, 82, 1050}, {3696, 21, 76, 1050}, {4197, 38, 97, 1050}, {4260, 19, 76, 1050},
-    {2694, 38, 87, 1050}, {4260, 19, 76, 1050}, {4410, 19, 78, 1050}, {4648, 20, 81, 1050}, {1002, 19, 75, 1050}, {1284, 20, 83, 1050},
-    {4260, 19, 72, 1050}, {1942, 38, 88, 1050}, {2192, 20, 81, 1050}, {4648, 20, 84, 1050}, {1942, 38, 100, 1050}, {2192, 20, 79, 1050},
-    {2694, 38, 89, 1050}, {4197, 38, 88, 1050}, {1942, 38, 91, 1050}, {4197, 38, 92, 1050}, {4260, 19, 74, 1050}, {4410, 19, 81, 1050},
-    {1441, 19, 75, 1050}, {4260, 19, 78, 1050}, {4410, 19, 76, 1050}, {1485, 21, 83, 1050}, {1942, 38, 90, 1050}, {2192, 20, 73, 1050},
-    {4260, 19, 69, 1050}, {1538, 19, 76, 1050}, {4548, 19, 68, 1050}, {4819, 38, 88, 1050}, {2341, 20, 77, 1050}, {2876, 38, 93, 1050},
-    {3272, 19, 76, 1050}, {5063, 19, 75, 1050}, {3725, 21, 75, 1050}, {3946, 21, 81, 1050}, {4548, 19, 73, 1050}, {3467, 20, 81, 1050},
-    {3725, 21, 82, 1050}, {5336, 20, 76, 1050}, {1474, 20, 84, 1050}, {4548, 19, 69, 1050}, {4819, 38, 88, 1050}, {3725, 21, 81, 1050},
-    {3946, 21, 75, 1050}, {4819, 38, 93, 1050}, {1474, 20, 83, 1050}, {5063, 19, 81, 1050}, {5336, 20, 84, 1050}, {1151, 19, 75, 1050},
-    {3725, 21, 79, 1050}, {3946, 21, 74, 1050}, {4548, 19, 77, 1050}, {4655, 21, 81, 1050}, {5099, 19, 71, 1050}, {3185, 38, 93, 1050},
-    {4655, 21, 74, 1050}, {1654, 19, 70, 1050}, {2817, 20, 77, 1050}, {1654, 19, 74, 1050}, {2817, 20, 75, 1050}, {1654, 19, 76, 1050},
-    {2817, 20, 82, 1050}, {2817, 20, 76, 1050}, {3185, 38, 87, 1050}, {1654, 19, 69, 1050}, {2817, 20, 74, 1050}, {3185, 38, 92, 1050},
-    {4655, 21, 75, 1050}, {1414, 26, 54, 1050}, {2152, 25, 44, 1050}, {1414, 26, 60, 1050}, {5041, 34, 43, 1050}, {2152, 25, 43, 1050},
-    {2644, 30, 44, 1050}, {3627, 30, 46, 1050}, {5041, 34, 46, 1050}, {2152, 25, 45, 1050}, {3627, 30, 43, 1050}, {2152, 25, 46, 1050},
-    {5041, 34, 47, 1050}, {799, 25, 44, 1050}, {2644, 30, 47, 1050}, {2152, 25, 44, 1050}, {3627, 30, 44, 1050}, {855, 25, 42, 1050},
-    {2830, 30, 43, 1050}, {855, 25, 47, 1050}, {5396, 34, 47, 1050}, {5396, 34, 44, 1050}, {6651, 10, 40, 1050}, {855, 25, 44, 1050},
-    {3883, 30, 46, 1050}, {5396, 34, 49, 1050}, {6651, 10, 40, 1050}, {1514, 26, 54, 1050}, {6651, 10, 39, 1050}, {4475, 26, 57, 1050},
-    {5396, 34, 49, 1050}, {1514, 26, 55, 1050}, {5396, 34, 46, 1050}, {979, 25, 43, 1050}, {2751, 30, 44, 1050}, {4020, 30, 44, 1050},
-    {5541, 34, 46, 1050}, {2751, 30, 44, 1050}, {4020, 30, 48, 1050}, {5541, 34, 49, 1050}, {6215, 10, 39, 1050}, {2433, 25, 44, 1050},
-    {6215, 10, 40, 1050}, {2433, 25, 44, 1050}, {2751, 30, 46, 1050}, {1428, 26, 57, 1050}, {2433, 25, 47, 1050}, {1428, 26, 57, 1050},
-    {2433, 25, 44, 1050}, {5041, 48, 54, 1050}, {5779, 10, 43, 1050}, {2644, 42, 38, 1050}, {3627, 28, 47, 1050}, {2644, 42, 40, 1050},
-    {3627, 28, 46, 1050}, {2152, 34, 45, 1050}, {2644, 42, 42, 1050}, {3627, 28, 49, 1050}, {4181, 28, 46, 1050}, {799, 34, 44, 1050},
-    {4181, 28, 49, 1050}, {1414, 25, 47, 1050}, {4181, 28, 47, 1050}, {2152, 34, 48, 1050}, {5779, 10, 39, 1050}, {4475, 28, 44, 1050},
-    {5396, 48, 54, 1050}, {2830, 42, 40, 1050}, {4475, 28, 47, 1050}, {2830, 42, 41, 1050}, {6651, 10, 41, 1050}, {2303, 34, 47, 1050},
-    {2830, 42, 41, 1050}, {855, 34, 46, 1050}, {5396, 48, 56, 1050}, {855, 34, 46, 1050}, {3883, 28, 49, 1050}, {855, 34, 44, 1050},
-    {2830, 42, 39, 1050}, {1514, 25, 44, 1050}, {4475, 28, 49, 1050}, {2433, 34, 45, 1050}, {4404, 28, 46, 1050}, {979, 34, 47, 1050},
-    {2433, 34, 46, 1050}, {4020, 28, 44, 1050}, {5541, 48, 55, 1050}, {2433, 34, 47, 1050}, {4404, 28, 49, 1050}, {1428, 25, 45, 1050},
-    {4020, 28, 48, 1050}, {2751, 42, 41, 1050}, {6215, 10, 40, 1050}, {2751, 42, 44, 1050}, {4404, 28, 50, 1050}, {979, 34, 45, 1050},
-    {4020, 28, 48, 1050}, {2644, 25, 47, 1050}, {4181, 48, 56, 1050}, {4181, 48, 55, 1050}, {5779, 10, 41, 1050}, {2644, 25, 45, 1050},
-    {5779, 10, 41, 1050}, {3627, 28, 44, 1050}, {5779, 10, 43, 1050}, {2152, 28, 45, 1050}, {4181, 48, 52, 1050}, {799, 28, 45, 1050},
-    {2152, 28, 44, 1050}, {1414, 34, 43, 1050}, {5041, 34, 45, 1050}, {3627, 28, 49, 1050}, {5041, 34, 47, 1050}, {1514, 34, 49, 1050},
-    {3883, 28, 47, 1050}, {1514, 34, 47, 1050}, {2830, 25, 44, 1050}, {5396, 34, 48, 1050}, {6651, 10, 38, 1050}, {855, 28, 44, 1050},
-    {4475, 48, 53, 1050}, {2303, 28, 44, 1050}, {3883, 28, 47, 1050}, {855, 28, 44, 1050}, {1514, 34, 47, 1050}, {2303, 28, 46, 1050},
-    {2830, 25, 45, 1050}, {3883, 28, 46, 1050}, {6651, 10, 39, 1050}, {2751, 25, 42, 1050}, {4404, 48, 54, 1050}, {1428, 34, 49, 1050},
-    {4020, 28, 48, 1050}, {1428, 34, 46, 1050}, {5541, 34, 48, 1050}, {1428, 34, 49, 1050}, {2433, 28, 47, 1050}, {2751, 25, 47, 1050},
-    {4404, 48, 56, 1050}, {979, 28, 44, 1050}, {5541, 34, 45, 1050}, {979, 28, 49, 1050}, {1428, 34, 45, 1050}, {4020, 28, 46, 1050},
-    {4404, 48, 59, 1050}, {1414, 25, 44, 1050}, {4181, 34, 44, 1050}, {2152, 34, 48, 1050}, {5041, 48, 58, 1050}, {2644, 48, 53, 1050},
-    {5779, 10, 39, 1050}, {799, 48, 55, 1050}, {3627, 25, 45, 1050}, {799, 48, 57, 1050}, {3627, 25, 46, 1050}, {4181, 34, 44, 1050},
-    {5041, 48, 52, 1050}, {799, 48, 54, 1050}, {2644, 48, 54, 1050}, {2152, 34, 48, 1050}, {4181, 34, 47, 1050}, {3883, 25, 44, 1050},
-    {5396, 48, 56, 1050}, {2303, 34, 45, 1050}, {5396, 48, 57, 1050}, {855, 48, 54, 1050}, {2830, 48, 53, 1050}, {855, 48, 54, 1050},
-    {2830, 48, 59, 1050}, {2303, 34, 49, 1050}, {2830, 48, 59, 1050}, {1514, 25, 47, 1050}, {2830, 48, 58, 1050}, {4475, 34, 44, 1050},
-    {5396, 48, 55, 1050}, {3883, 25, 47, 1050}, {5396, 48, 57, 1050}, {2433, 34, 45, 1050}, {2751, 48, 55, 1050}, {4020, 25, 43, 1050},
-    {6215, 10, 38, 1050}, {2751, 48, 59, 1050}, {4020, 25, 44, 1050}, {2433, 34, 46, 1050}, {5541, 48, 59, 1050}, {2433, 34, 46, 1050},
-    {4020, 25, 46, 1050}, {979, 48, 55, 1050}, {4404, 34, 48, 1050}, {4404, 34, 45, 1050}, {6215, 10, 40, 1050}, {2433, 34, 48, 1050},
-    {2751, 48, 57, 1050}, {1414, 29, 54, 1050}, {4181, 42, 41, 1050}, {4475, 42, 41, 1050}, {6651, 10, 38, 1050}, {2433, 24, 47, 1050},
-    {5541, 25, 43, 1050}, {2152, 10, 41, 1050}, {4181, 10, 42, 1050}, {1514, 24, 45, 1050}, {2830, 28, 50, 1050}, {979, 34, 48, 1050},
-    {6215, 10, 40, 1050}, {3627, 25, 47, 1050}, {5779, 10, 38, 1050}, {2303, 34, 45, 1050}, {6651, 10, 41, 1050}, {979, 28, 48, 1050},
-    {6215, 10, 41, 1050}, {1414, 30, 84, 1050}, {2644, 35, 128, 1050}, {3627, 15, 111, 1000}, {1514, 30, 84, 1050}, {2830, 35, 128, 1050},
-    {3883, 15, 111, 1000}, {1428, 30, 84, 1050}, {2751, 35, 128, 1050}, {4020, 15, 111, 1000}, {2644, 25, 44, 1050}, {3627, 28, 45, 1050},
-    {3883, 28, 48, 1050}, {5396, 10, 42, 1050}, {4020, 28, 46, 1050}, {4404, 10, 41, 1050}, {2152, 13, 29, 1050}, {5779, 10, 43, 1050},
-    {855, 13, 28, 1050}, {2303, 13, 30, 1050}, {1428, 32, 56, 1050}, {4020, 32, 54, 1050}, {1414, 13, 32, 1050}, {2644, 13, 32, 1050},
-    {3883, 32, 52, 1050}, {4475, 10, 40, 1050}, {4020, 32, 54, 1050}, {6215, 10, 42, 1050}, {1615, 20, 67, 980}, {1664, 37, 64, 980},
-    {2176, 37, 64, 980}, {4942, 37, 64, 980}, {2176, 37, 61, 980}, {3194, 37, 63, 980}, {5209, 37, 68, 980}, {3194, 37, 65, 980},
-    {3299, 21, 75, 980}, {4942, 37, 68, 980}, {2176, 37, 69, 980}, {3194, 37, 63, 980}, {3299, 21, 68, 980}, {5209, 37, 64, 980},
-    {1615, 20, 66, 980}, {3636, 37, 64, 980}, {4703, 37, 61, 980}, {3194, 37, 63, 980}, {4942, 37, 62, 980}, {5209, 37, 68, 980},
-    {1123, 37, 67, 980}, {1439, 37, 67, 980}, {4703, 37, 67, 980}, {1664, 37, 61, 980}, {3194, 37, 63, 980}, {3299, 21, 69, 980},
-    {3384, 37, 67, 980}, {3523, 28, 43, 980}, {4572, 36, 38, 980}, {4572, 36, 40, 980}, {6222, 10, 37, 980}, {1724, 16, 41, 980},
-    {4572, 36, 42, 980}, {1199, 28, 43, 980}, {4572, 36, 40, 980}, {4572, 36, 43, 980}, {6222, 10, 35, 980}, {4572, 36, 40, 980},
-    {7657, 16, 41, 980}, {1724, 16, 40, 980}, {4572, 36, 41, 980}, {3523, 28, 43, 980}, {4572, 36, 40, 980}, {1629, 20, 71, 980},
-    {5097, 34, 42, 980}, {1629, 20, 69, 980}, {6394, 19, 66, 980}, {1629, 20, 73, 980}, {3438, 21, 71, 980}, {3438, 21, 69, 980},
-    {6394, 19, 68, 980}, {1629, 20, 73, 980}, {3001, 28, 45, 980}, {6394, 19, 63, 980}, {7163, 10, 39, 980}, {3438, 21, 67, 980},
-    {7163, 10, 35, 980}, {5097, 34, 44, 980}, {6394, 19, 70, 980}, {3487, 28, 45, 980}, {4526, 36, 40, 980}, {1187, 28, 42, 980},
-    {4526, 36, 40, 980}, {1187, 28, 43, 980}, {4526, 36, 43, 980}, {1187, 28, 40, 980}, {4526, 36, 40, 980}, {1187, 28, 42, 980},
-    {4526, 36, 42, 980}, {4526, 36, 43, 980}, {5120, 28, 40, 980}, {1187, 28, 42, 980}, {4526, 36, 41, 980}, {3487, 28, 44, 980},
-    {4526, 36, 41, 980}, {1259, 48, 51, 980}, {2990, 28, 42, 980}, {1259, 48, 51, 980}, {4799, 25, 41, 980}, {1259, 48, 49, 980},
-    {2990, 28, 45, 980}, {1259, 48, 54, 980}, {2990, 28, 44, 980}, {4799, 25, 44, 980}, {6530, 28, 42, 980}, {1810, 34, 43, 980},
-    {4799, 25, 43, 980}, {1259, 48, 53, 980}, {4799, 25, 42, 980}, {1259, 48, 51, 980}, {3698, 48, 53, 980}, {760, 23, 90, 980},
-    {1600, 23, 90, 980}, {1980, 1, 247, 1000}, {820, 23, 90, 980}, {1720, 23, 90, 980}, {2100, 1, 247, 1000}, {880, 23, 90, 980},
-    {1840, 23, 90, 980}, {2220, 1, 247, 1000}, {1472, 28, 70, 980}, {3008, 44, 241, 1000}, {1455, 28, 70, 980}, {2972, 45, 232, 1000},
-    {1555, 28, 70, 980}, {3283, 44, 241, 1000}, {1472, 28, 70, 980}, {3008, 15, 117, 1000}, {1455, 28, 70, 980}, {2972, 15, 117, 1000},
-    {1555, 28, 70, 980}, {3283, 15, 117, 1000}, {2668, 25, 42, 980}, {4844, 34, 44, 980}, {3523, 28, 42, 980}, {7657, 10, 38, 980},
-    {4735, 16, 37, 980}, {6394, 19, 68, 980}, {1123, 28, 43, 980}, {3299, 28, 44, 980}, {1724, 16, 41, 980}, {4572, 16, 38, 980},
-    {3001, 25, 44, 980}, {5097, 34, 41, 980}, {3299, 28, 45, 980}, {6669, 10, 35, 980}, {4572, 16, 39, 980}, {7657, 10, 35, 980},
-    {5097, 34, 42, 980}, {7163, 10, 37, 980}, {3238, 28, 44, 980}, {4754, 28, 41, 980}, {1585, 48, 55, 980}, {5719, 16, 38, 980},
-    {1102, 28, 45, 980}, {5719, 16, 41, 980}, {1585, 48, 53, 980}, {5719, 16, 36, 980}, {1585, 48, 50, 980}, {6546, 10, 35, 980},
-    {1102, 28, 42, 980}, {2618, 34, 45, 980}, {3238, 28, 43, 980}, {4754, 28, 45, 980}, {2618, 34, 44, 980}, {3238, 28, 45, 980},
-    {1180, 28, 44, 980}, {4499, 25, 40, 980}, {2802, 34, 44, 980}, {7534, 10, 37, 980}, {2802, 34, 42, 980}, {7534, 10, 38, 980},
-    {3466, 28, 42, 980}, {5089, 28, 44, 980}, {1696, 48, 48, 980}, {6121, 16, 38, 980}, {5089, 28, 43, 980}, {6121, 16, 41, 980},
-    {4499, 25, 41, 980}, {6121, 16, 40, 980}, {1180, 28, 40, 980}, {3466, 28, 44, 980}, {1601, 48, 48, 980}, {7040, 10, 35, 980},
-    {1319, 28, 40, 980}, {5009, 28, 45, 980}, {3379, 28, 45, 980}, {5009, 28, 41, 980}, {3379, 28, 43, 980}, {4653, 25, 41, 980},
-    {1319, 28, 45, 980}, {4653, 25, 42, 980}, {1319, 28, 41, 980}, {4653, 25, 39, 980}, {5009, 28, 41, 980}, {6284, 16, 40, 980},
-    {1601, 48, 52, 980}, {4653, 25, 41, 980}, {3384, 37, 66, 980}, {3636, 37, 63, 980}, {4844, 19, 65, 980}, {1439, 37, 68, 980},
-    {4844, 19, 63, 980}, {4942, 37, 68, 980}, {5209, 37, 60, 980}, {1664, 37, 62, 980}, {2176, 37, 63, 980}, {2668, 20, 70, 980},
-    {3299, 38, 79, 980}, {1664, 37, 63, 980}, {4703, 37, 66, 980}, {4844, 19, 65, 980}, {4942, 37, 65, 980}, {2176, 37, 68, 980},
-    {4844, 19, 69, 980}, {4942, 37, 64, 980}, {3299, 38, 86, 980}, {3384, 37, 65, 980}, {4703, 37, 66, 980}, {1123, 37, 68, 980},
-    {1439, 37, 60, 980}, {3194, 37, 67, 980}, {3194, 37, 64, 980}, {4703, 37, 66, 980}, {4844, 19, 64, 980}, {1724, 19, 70, 980},
-    {1910, 37, 63, 980}, {3523, 38, 87, 980}, {4175, 37, 65, 980}, {5400, 37, 64, 980}, {5674, 37, 64, 980}, {5981, 37, 61, 980},
-    {1290, 37, 63, 980}, {1652, 37, 64, 980}, {1724, 19, 64, 980}, {4572, 21, 68, 980}, {1724, 19, 69, 980}, {5400, 37, 69, 980},
-    {5674, 37, 68, 980}, {5981, 37, 69, 980}, {4572, 21, 75, 980}, {5400, 37, 64, 980}, {5674, 37, 61, 980}, {5981, 37, 69, 980},
-    {1910, 37, 62, 980}, {2499, 37, 66, 980}, {2848, 20, 67, 980}, {4572, 21, 75, 980}, {1910, 37, 66, 980}, {3667, 37, 65, 980},
-    {3885, 37, 64, 980}, {1652, 37, 63, 980}, {1724, 19, 68, 980}, {1910, 37, 61, 980}, {3885, 37, 68, 980}, {5388, 21, 73, 980},
-    {5800, 19, 70, 980}, {3912, 38, 79, 980}, {5388, 21, 73, 980}, {1853, 19, 65, 980}, {3415, 20, 67, 980}, {5388, 21, 70, 980},
-    {5800, 19, 63, 980}, {3912, 38, 83, 980}, {5388, 21, 66, 980}, {3415, 20, 71, 980}, {3912, 38, 87, 980}, {3912, 38, 83, 980},
-    {5388, 21, 70, 980}, {3415, 20, 74, 980}, {3912, 38, 82, 980}, {4203, 30, 44, 980}, {5719, 34, 41, 980}, {1585, 26, 50, 980},
-    {6546, 10, 36, 980}, {5719, 34, 42, 980}, {6546, 10, 36, 980}, {2618, 25, 39, 980}, {4203, 30, 41, 980}, {2618, 25, 39, 980},
-    {6546, 10, 39, 980}, {1102, 25, 42, 980}, {2618, 25, 40, 980}, {4203, 30, 41, 980}, {5719, 34, 45, 980}, {2618, 25, 41, 980},
-    {4203, 30, 40, 980}, {2802, 25, 43, 980}, {4499, 30, 41, 980}, {3466, 30, 42, 980}, {4499, 30, 44, 980}, {2802, 25, 39, 980},
-    {7534, 10, 39, 980}, {1180, 25, 40, 980}, {1696, 26, 50, 980}, {1696, 26, 55, 980}, {4499, 30, 39, 980}, {1696, 26, 51, 980},
-    {5089, 26, 54, 980}, {1180, 25, 39, 980}, {2802, 25, 41, 980}, {1180, 25, 43, 980}, {3466, 30, 44, 980}, {2949, 25, 43, 980},
-    {3379, 30, 40, 980}, {4653, 30, 44, 980}, {5009, 26, 50, 980}, {1601, 26, 49, 980}, {6284, 34, 42, 980}, {2949, 25, 41, 980},
-    {7040, 10, 35, 980}, {4653, 30, 39, 980}, {7040, 10, 37, 980}, {1601, 26, 48, 980}, {3379, 30, 40, 980}, {2949, 25, 41, 980},
-    {6284, 34, 42, 980}, {2949, 25, 41, 980}, {3379, 30, 44, 980}, {3238, 42, 35, 980}, {5719, 48, 53, 980}, {2618, 34, 44, 980},
-    {3238, 42, 35, 980}, {1585, 25, 41, 980}, {4754, 28, 40, 980}, {1585, 25, 43, 980}, {4754, 28, 42, 980}, {4754, 28, 44, 980},
-    {5719, 48, 48, 980}, {2618, 34, 40, 980}, {4754, 28, 42, 980}, {1585, 25, 42, 980}, {5719, 48, 51, 980}, {1585, 25, 42, 980},
-    {2618, 34, 44, 980}, {3466, 42, 36, 980}, {7534, 10, 35, 980}, {1180, 34, 40, 980}, {3466, 42, 35, 980}, {5089, 28, 44, 980},
-    {6121, 48, 54, 980}, {1180, 34, 40, 980}, {3466, 42, 39, 980}, {1696, 25, 42, 980}, {4499, 28, 43, 980}, {4499, 28, 44, 980},
-    {6121, 48, 49, 980}, {1180, 34, 42, 980}, {7534, 10, 38, 980}, {2802, 34, 40, 980}, {6121, 48, 54, 980}, {2949, 34, 45, 980},
-    {4653, 28, 43, 980}, {1319, 34, 42, 980}, {4653, 28, 43, 980}, {6284, 48, 49, 980}, {7040, 10, 37, 980}, {3379, 42, 38, 980},
-    {6284, 48, 51, 980}, {4653, 28, 42, 980}, {7040, 10, 36, 980}, {1319, 34, 44, 980}, {4653, 28, 43, 980}, {4653, 28, 40, 980},
-    {5009, 28, 43, 980}, {1319, 34, 41, 980}, {1601, 25, 42, 980}, {4203, 28, 41, 980}, {6546, 10, 35, 980}, {4203, 28, 43, 980},
-    {6546, 10, 38, 980}, {2618, 28, 43, 980}, {6546, 10, 37, 980}, {1585, 34, 41, 980}, {5719, 34, 45, 980}, {2618, 28, 43, 980},
-    {4203, 28, 41, 980}, {1585, 34, 45, 980}, {6546, 10, 36, 980}, {3238, 25, 41, 980}, {4754, 48, 53, 980}, {1102, 28, 45, 980},
-    {1585, 34, 41, 980}, {3466, 25, 40, 980}, {6121, 34, 44, 980}, {4499, 28, 44, 980}, {6121, 34, 43, 980}, {2802, 28, 44, 980},
-    {6121, 34, 45, 980}, {1696, 34, 41, 980}, {6121, 34, 45, 980}, {1180, 28, 43, 980}, {6121, 34, 45, 980}, {1180, 28, 42, 980},
-    {4499, 28, 45, 980}, {1696, 34, 42, 980}, {2802, 28, 44, 980}, {4499, 28, 44, 980}, {7534, 10, 39, 980}, {1601, 34, 45, 980},
-    {5009, 48, 52, 980}, {3379, 25, 41, 980}, {6284, 34, 42, 980}, {2949, 28, 43, 980}, {7040, 10, 38, 980}, {1319, 28, 43, 980},
-    {3379, 25, 40, 980}, {1601, 34, 45, 980}, {4653, 28, 40, 980}, {1319, 28, 45, 980}, {2949, 28, 44, 980}, {1319, 28, 44, 980},
-    {7040, 10, 39, 980}, {2949, 28, 45, 980}, {7040, 10, 36, 980}, {1102, 48, 52, 980}, {2618, 34, 40, 980}, {4754, 34, 44, 980},
-    {5719, 48, 48, 980}, {1102, 48, 53, 980}, {4754, 34, 45, 980}, {3238, 48, 49, 980}, {4203, 25, 43, 980}, {3238, 48, 52, 980},
-    {4203, 25, 40, 980}, {1102, 48, 51, 980}, {4203, 25, 40, 980}, {2618, 34, 40, 980}, {4754, 34, 43, 980}, {4203, 25, 44, 980},
-    {4754, 34, 40, 980}, {4499, 25, 42, 980}, {6121, 48, 51, 980}, {4499, 25, 40, 980}, {6121, 48, 51, 980}, {6121, 48, 54, 980},
-    {7534, 10, 39, 980}, {1696, 25, 44, 980}, {7534, 10, 37, 980}, {3466, 48, 50, 980}, {5089, 34, 44, 980}, {3466, 48, 54, 980},
-    {5089, 34, 45, 980}, {3466, 48, 48, 980}, {6121, 48, 50, 980}, {3466, 48, 55, 980}, {6121, 48, 54, 980}, {1601, 25, 40, 980},
-    {4653, 25, 41, 980}, {5009, 34, 45, 980}, {7040, 10, 40, 980}, {3379, 48, 54, 980}, {5009, 34, 44, 980}, {3379, 48, 48, 980},
-    {4653, 25, 41, 980}, {2949, 34, 42, 980}, {4653, 25, 42, 980}, {2949, 34, 45, 980}, {6284, 48, 54, 980}, {5009, 34, 40, 980},
-    {6284, 48, 53, 980}, {1319, 48, 52, 980}, {7040, 10, 40, 980}, {1102, 30, 43, 980}, {2618, 24, 38, 980}, {1696, 29, 49, 980},
-    {2802, 24, 41, 980}, {1319, 30, 40, 980}, {3379, 48, 54, 980}, {1102, 34, 43, 980}, {5719, 34, 41, 980}, {1696, 24, 38, 980},
-    {3466, 28, 40, 980}, {2949, 10, 38, 980}, {7040, 10, 40, 980}, {1585, 16, 39, 980}, {4203, 25, 43, 980}, {5089, 28, 41, 980},
-    {7534, 10, 36, 980}, {1601, 16, 39, 980}, {4653, 25, 42, 980}, {1585, 30, 84, 980}, {3238, 35, 128, 980}, {4203, 15, 111, 1000},
-    {1696, 30, 84, 980}, {3466, 35, 128, 980}, {4499, 15, 111, 1000}, {1601, 30, 84, 980}, {3379, 35, 128, 980}, {4653, 15, 111, 1000},
-    {1102, 8, 53, 980}, {5719, 10, 38, 980}, {4499, 28, 45, 980}, {5089, 10, 38, 980}, {2949, 34, 41, 980}, {7040, 10, 37, 980},
-    {5719, 10, 36, 980}, {6546, 10, 35, 980}, {1696, 32, 49, 980}, {2802, 13, 27, 980}, {1319, 13, 27, 980}, {1601, 32, 50, 980},
-    {3238, 13, 27, 980}, {4754, 10, 36, 980}, {2802, 10, 39, 980}, {7534, 10, 35, 980}, {1601, 13, 29, 980}, {6284, 10, 39, 980},
+    {2821, 16, 49, 980}, {492, 28, 57, 980}, {1167, 48, 62, 980}, {492, 28, 56, 980}, {5591, 28, 41, 980}, {3502, 34, 42, 980},
+    {5591, 28, 41, 980}, {1905, 48, 62, 980}, {5591, 28, 43, 980}, {1905, 48, 59, 980}, {2642, 48, 63, 980}, {1905, 48, 60, 980},
+    {4915, 25, 44, 980}, {4915, 25, 42, 980}, {5591, 28, 40, 980}, {492, 28, 58, 980}, {2642, 48, 60, 980}, {685, 37, 69, 980},
+    {1966, 37, 69, 980}, {2092, 31, 33, 980}, {2286, 37, 71, 980}, {2413, 31, 34, 980}, {2606, 37, 76, 980}, {2733, 31, 36, 980},
+    {1325, 37, 72, 980}, {1452, 31, 34, 980}, {1966, 37, 73, 980}, {2092, 31, 35, 980}, {2286, 37, 72, 980}, {2413, 31, 34, 980},
+    {365, 37, 88, 980}, {491, 31, 36, 980}, {685, 37, 74, 980}, {811, 31, 35, 980}, {2606, 37, 68, 980}, {2733, 31, 32, 980},
+    {685, 37, 76, 980}, {811, 31, 36, 980}, {1005, 37, 73, 980}, {1132, 31, 35, 980}, {1325, 37, 73, 980}, {1452, 31, 35, 980},
+    {2606, 37, 68, 980}, {365, 37, 90, 980}, {491, 31, 36, 980}, {685, 37, 75, 980}, {811, 31, 36, 980}, {1005, 37, 71, 980},
+    {1132, 31, 34, 980}, {2606, 37, 70, 980}, {365, 37, 84, 980}, {491, 31, 34, 980}, {685, 37, 71, 980}, {811, 31, 34, 980},
+    {1005, 37, 71, 980}, {1132, 31, 34, 980}, {3247, 37, 73, 980}, {2606, 37, 77, 980}, {2733, 31, 37, 980}, {3567, 37, 77, 980},
+    {3693, 31, 37, 980}, {3887, 37, 72, 980}, {4014, 31, 34, 980}, {1646, 37, 83, 980}, {1772, 31, 33, 980}, {1966, 37, 74, 980},
+    {2092, 31, 35, 980}, {3567, 37, 72, 980}, {3693, 31, 34, 980}, {3323, 30, 55, 980}, {4562, 29, 50, 980}, {2760, 30, 54, 980},
+    {3886, 30, 53, 980}, {2760, 30, 51, 980}, {5238, 48, 50, 980}, {1295, 26, 56, 980}, {4562, 29, 53, 980}, {563, 25, 55, 980},
+    {1295, 26, 55, 980}, {4562, 29, 47, 980}, {5238, 48, 53, 980}, {2084, 25, 54, 980}, {2760, 30, 51, 980}, {1295, 26, 55, 980},
+    {2084, 25, 54, 980}, {2089, 34, 43, 980}, {2765, 42, 42, 980}, {1352, 25, 35, 980}, {4792, 28, 53, 980}, {1352, 25, 32, 980},
+    {5407, 48, 47, 980}, {2765, 42, 43, 980}, {4055, 28, 44, 980}, {614, 34, 44, 980}, {2089, 34, 41, 980}, {1352, 25, 34, 980},
+    {4792, 28, 53, 980}, {614, 34, 39, 980}, {1352, 25, 36, 980}, {2765, 42, 41, 980}, {5407, 48, 47, 980}, {492, 28, 59, 980},
+    {4301, 28, 45, 980}, {492, 28, 58, 980}, {4301, 28, 43, 980}, {492, 28, 57, 980}, {4301, 28, 45, 980}, {3379, 25, 36, 980},
+    {5775, 28, 38, 980}, {5161, 48, 50, 980}, {5775, 28, 37, 980}, {1413, 34, 42, 980}, {4301, 28, 48, 980}, {492, 28, 58, 980},
+    {4301, 28, 47, 980}, {492, 28, 51, 980}, {2396, 34, 40, 980}, {1633, 34, 35, 980}, {1971, 48, 48, 980}, {1633, 34, 39, 980},
+    {3942, 25, 43, 980}, {1971, 48, 49, 980}, {3942, 25, 42, 980}, {3942, 25, 42, 980}, {4449, 34, 36, 980}, {563, 48, 47, 980},
+    {1126, 25, 39, 980}, {1971, 48, 51, 980}, {3041, 34, 37, 980}, {563, 48, 52, 980}, {3379, 48, 49, 980}, {1633, 34, 40, 980},
+    {3942, 25, 40, 980}, {563, 30, 54, 980}, {2816, 24, 41, 980}, {2335, 28, 49, 980}, {3625, 48, 56, 980}, {3279, 16, 37, 980},
+    {4485, 10, 30, 980}, {1290, 16, 44, 980}, {438, 30, 65, 980}, {973, 11, 54, 980}, {1508, 30, 65, 980}, {1897, 11, 55, 980},
+    {2383, 35, 113, 980}, {2918, 22, 60, 980}, {3502, 15, 69, 1000}, {3226, 10, 34, 980}, {2509, 10, 27, 980}, {1848, 10, 39, 980},
+    {1713, 20, 82, 980}, {3413, 21, 80, 980}, {4414, 38, 100, 980}, {4638, 19, 75, 980}, {922, 19, 71, 980}, {1054, 19, 74, 980},
+    {1351, 20, 77, 980}, {4638, 19, 80, 980}, {3030, 21, 75, 980}, {3175, 20, 76, 980}, {3413, 21, 82, 980}, {4638, 19, 73, 980},
+    {1054, 19, 76, 980}, {2042, 38, 95, 980}, {2998, 19, 79, 980}, {922, 19, 75, 980}, {1054, 19, 70, 980}, {1351, 20, 79, 980},
+    {4414, 38, 93, 980}, {2998, 19, 80, 980}, {3030, 21, 79, 980}, {3175, 20, 76, 980}, {5205, 19, 74, 980}, {922, 19, 70, 980},
+    {1713, 20, 83, 980}, {2042, 38, 93, 980}, {2998, 19, 75, 980}, {2042, 38, 94, 980}, {2998, 19, 75, 980}, {4414, 38, 90, 980},
+    {2462, 28, 47, 980}, {5557, 19, 69, 980}, {4783, 34, 44, 980}, {7035, 10, 41, 980}, {985, 19, 71, 980}, {2462, 28, 49, 980},
+    {4783, 34, 48, 980}, {7035, 10, 39, 980}, {2462, 28, 50, 980}, {4783, 34, 46, 980}, {4010, 48, 57, 980}, {4783, 34, 49, 980},
+    {4010, 48, 57, 980}, {5557, 19, 77, 980}, {2604, 28, 47, 980}, {3156, 48, 57, 980}, {4161, 25, 43, 980}, {4713, 34, 46, 980},
+    {4713, 34, 49, 980}, {5717, 28, 45, 980}, {4161, 25, 45, 980}, {4713, 34, 44, 980}, {2604, 28, 45, 980}, {4161, 25, 44, 980},
+    {2604, 28, 49, 980}, {4713, 34, 47, 980}, {4161, 25, 46, 980}, {5717, 28, 47, 980}, {1741, 34, 48, 980}, {4161, 25, 43, 980},
+    {1817, 20, 74, 980}, {3983, 48, 58, 980}, {3983, 48, 53, 980}, {6499, 10, 41, 980}, {1817, 20, 78, 980}, {3214, 21, 77, 980},
+    {1817, 20, 76, 980}, {6499, 10, 43, 980}, {3214, 21, 77, 980}, {6499, 10, 38, 980}, {3983, 48, 57, 980}, {4752, 34, 46, 980},
+    {978, 19, 77, 980}, {5521, 19, 74, 980}, {978, 19, 76, 980}, {5521, 19, 73, 980}, {4222, 36, 45, 980}, {5036, 28, 47, 980},
+    {2592, 34, 46, 980}, {4222, 36, 45, 980}, {1037, 28, 44, 980}, {4222, 36, 46, 980}, {4222, 36, 43, 980}, {5036, 28, 48, 980},
+    {1926, 16, 43, 980}, {4222, 36, 44, 980}, {1037, 28, 49, 980}, {4222, 36, 47, 980}, {2592, 34, 44, 980}, {4222, 36, 47, 980},
+    {4222, 36, 42, 980}, {5851, 10, 42, 980}, {550, 23, 104, 980}, {1240, 23, 104, 980}, {1620, 1, 247, 1000}, {610, 23, 104, 980},
+    {1360, 23, 104, 980}, {1740, 1, 247, 1000}, {670, 23, 104, 980}, {1480, 23, 104, 980}, {1860, 1, 247, 1000}, {1664, 28, 70, 980},
+    {2944, 44, 241, 1000}, {1644, 28, 70, 980}, {2909, 45, 232, 1000}, {1771, 28, 70, 980}, {3211, 44, 241, 1000}, {1664, 28, 70, 980},
+    {2944, 15, 117, 1000}, {1644, 28, 70, 980}, {2909, 15, 117, 1000}, {1771, 28, 70, 980}, {3211, 15, 117, 1000}, {3755, 16, 44, 980},
+    {6127, 10, 39, 980}, {985, 28, 45, 980}, {1829, 16, 45, 980}, {1741, 16, 44, 980}, {5717, 19, 78, 980}, {2306, 25, 46, 980},
+    {6127, 10, 41, 980}, {1829, 16, 44, 980}, {5557, 19, 70, 980}, {2604, 25, 45, 980}, {4161, 16, 45, 980}, {3030, 28, 46, 980},
+    {5205, 19, 69, 980}, {1829, 16, 41, 980}, {3236, 28, 46, 980}, {4713, 34, 45, 980}, {6581, 10, 40, 980}, {3755, 16, 45, 980},
+    {4480, 34, 44, 980}, {3236, 28, 45, 980}, {4010, 16, 45, 980}, {3156, 28, 45, 980}, {4713, 34, 43, 980}, {2263, 34, 49, 980},
+    {2974, 28, 50, 980}, {1681, 48, 58, 980}, {3686, 25, 46, 980}, {3686, 25, 45, 980}, {6013, 10, 40, 980}, {2263, 34, 48, 980},
+    {2974, 28, 48, 980}, {1681, 48, 57, 980}, {2263, 34, 44, 980}, {1681, 48, 56, 980}, {3686, 25, 48, 980}, {1681, 48, 58, 980},
+    {2263, 34, 46, 980}, {905, 28, 46, 980}, {6013, 10, 40, 980}, {2422, 34, 44, 980}, {3184, 28, 46, 980}, {969, 28, 49, 980},
+    {5468, 16, 40, 980}, {2422, 34, 45, 980}, {3945, 25, 45, 980}, {1799, 48, 57, 980}, {3945, 25, 43, 980}, {2422, 34, 49, 980},
+    {4706, 28, 47, 980}, {969, 28, 49, 980}, {4706, 28, 46, 980}, {1799, 48, 54, 980}, {4706, 28, 47, 980}, {4706, 28, 48, 980},
+    {6921, 10, 38, 980}, {1711, 48, 58, 980}, {4089, 25, 45, 980}, {2559, 34, 49, 980}, {4631, 28, 46, 980}, {1099, 28, 49, 980},
+    {4631, 28, 46, 980}, {2559, 34, 48, 980}, {4631, 28, 47, 980}, {1099, 28, 44, 980}, {3101, 28, 44, 980}, {2559, 34, 48, 980},
+    {5619, 16, 45, 980}, {3101, 28, 50, 980}, {6467, 10, 42, 980}, {4631, 28, 45, 980}, {6467, 10, 43, 980}, {2042, 38, 88, 980},
+    {2306, 20, 81, 980}, {3030, 38, 96, 980}, {2306, 20, 73, 980}, {3413, 21, 76, 980}, {3755, 21, 77, 980}, {3175, 20, 75, 980},
+    {4638, 19, 72, 980}, {4888, 20, 82, 980}, {1351, 20, 83, 980}, {1561, 21, 76, 980}, {3030, 38, 88, 980}, {2042, 38, 100, 980},
+    {3175, 20, 83, 980}, {3413, 21, 79, 980}, {1713, 19, 76, 980}, {2042, 38, 88, 980}, {2306, 20, 78, 980}, {3175, 20, 76, 980},
+    {1054, 19, 80, 980}, {3030, 38, 92, 980}, {3175, 20, 84, 980}, {2042, 38, 95, 980}, {2306, 20, 78, 980}, {3755, 21, 80, 980},
+    {1829, 19, 78, 980}, {2345, 38, 98, 980}, {2462, 20, 83, 980}, {5612, 20, 83, 980}, {3236, 38, 89, 980}, {3918, 21, 76, 980},
+    {4010, 21, 74, 980}, {1210, 19, 80, 980}, {2345, 38, 95, 980}, {2462, 20, 81, 980}, {1793, 21, 76, 980}, {1829, 19, 69, 980},
+    {2345, 38, 90, 980}, {5325, 19, 71, 980}, {1210, 19, 76, 980}, {2462, 20, 78, 980}, {3236, 38, 91, 980}, {3442, 19, 76, 980},
+    {1829, 19, 78, 980}, {4783, 19, 77, 980}, {5068, 38, 94, 980}, {2462, 20, 73, 980}, {3236, 38, 86, 980}, {4010, 21, 82, 980},
+    {2345, 38, 91, 980}, {5068, 38, 98, 980}, {5325, 19, 80, 980}, {5612, 20, 79, 980}, {1981, 19, 76, 980}, {2963, 20, 78, 980},
+    {3591, 38, 92, 980}, {4735, 21, 82, 980}, {4735, 21, 74, 980}, {5363, 19, 73, 980}, {4735, 21, 82, 980}, {5363, 19, 77, 980},
+    {3591, 38, 97, 980}, {4735, 21, 72, 980}, {2963, 20, 77, 980}, {3591, 38, 85, 980}, {1981, 19, 78, 980}, {2963, 20, 76, 980},
+    {2974, 30, 45, 980}, {6013, 10, 41, 980}, {1681, 26, 55, 980}, {5108, 34, 45, 980}, {905, 25, 46, 980}, {1681, 26, 59, 980},
+    {2263, 25, 45, 980}, {2974, 30, 45, 980}, {2263, 25, 45, 980}, {3686, 30, 44, 980}, {905, 25, 43, 980}, {6013, 10, 42, 980},
+    {1681, 26, 55, 980}, {3686, 30, 49, 980}, {1681, 26, 57, 980}, {5108, 34, 46, 980}, {1799, 26, 53, 980}, {3184, 30, 47, 980},
+    {4706, 26, 55, 980}, {5468, 34, 43, 980}, {3945, 30, 48, 980}, {6921, 10, 43, 980}, {969, 25, 45, 980}, {5468, 34, 47, 980},
+    {3184, 30, 49, 980}, {4706, 26, 57, 980}, {1799, 26, 59, 980}, {6921, 10, 41, 980}, {2422, 25, 47, 980}, {3184, 30, 46, 980},
+    {969, 25, 48, 980}, {4706, 26, 59, 980}, {2559, 25, 43, 980}, {4631, 26, 53, 980}, {1099, 25, 48, 980}, {5619, 34, 48, 980},
+    {3101, 30, 45, 980}, {6467, 10, 43, 980}, {5619, 34, 47, 980}, {6467, 10, 40, 980}, {1099, 25, 45, 980}, {4089, 30, 45, 980},
+    {2559, 25, 48, 980}, {5619, 34, 48, 980}, {1099, 25, 44, 980}, {4631, 26, 55, 980}, {3101, 30, 47, 980}, {6467, 10, 41, 980},
+    {4397, 28, 45, 980}, {5108, 48, 58, 980}, {2263, 34, 44, 980}, {2974, 42, 39, 980}, {1681, 25, 47, 980}, {6013, 10, 38, 980},
+    {2974, 42, 41, 980}, {4397, 28, 44, 980}, {905, 34, 47, 980}, {6013, 10, 42, 980}, {1681, 25, 44, 980}, {2974, 42, 40, 980},
+    {2974, 42, 41, 980}, {3686, 28, 50, 980}, {2974, 42, 40, 980}, {6013, 10, 43, 980}, {3945, 28, 47, 980}, {4706, 28, 44, 980},
+    {969, 34, 45, 980}, {2422, 34, 45, 980}, {1799, 25, 46, 980}, {3184, 42, 44, 980}, {969, 34, 47, 980}, {4706, 28, 48, 980},
+    {1799, 25, 48, 980}, {3945, 28, 49, 980}, {969, 34, 44, 980}, {6921, 10, 40, 980}, {969, 34, 43, 980}, {2422, 34, 49, 980},
+    {2422, 34, 46, 980}, {3184, 42, 42, 980}, {4089, 28, 47, 980}, {6467, 10, 42, 980}, {1099, 34, 46, 980}, {2559, 34, 47, 980},
+    {3101, 42, 42, 980}, {4089, 28, 44, 980}, {1711, 25, 44, 980}, {6467, 10, 38, 980}, {3101, 42, 43, 980}, {4631, 28, 46, 980},
+    {1099, 34, 49, 980}, {5619, 48, 55, 980}, {1711, 25, 46, 980}, {4089, 28, 44, 980}, {4631, 28, 48, 980}, {5619, 48, 54, 980},
+    {3686, 28, 44, 980}, {5108, 34, 48, 980}, {3686, 28, 48, 980}, {4397, 48, 55, 980}, {905, 28, 46, 980}, {2263, 28, 44, 980},
+    {1681, 34, 49, 980}, {4397, 48, 56, 980}, {3686, 28, 47, 980}, {4397, 48, 57, 980}, {1681, 34, 44, 980}, {2263, 28, 49, 980},
+    {3686, 28, 47, 980}, {6013, 10, 43, 980}, {905, 28, 44, 980}, {5108, 34, 45, 980}, {1799, 34, 47, 980}, {2422, 28, 47, 980},
+    {3945, 28, 49, 980}, {6921, 10, 41, 980}, {3945, 28, 49, 980}, {5468, 34, 44, 980}, {1799, 34, 46, 980}, {5468, 34, 43, 980},
+    {2422, 28, 49, 980}, {6921, 10, 42, 980}, {2422, 28, 48, 980}, {4706, 48, 55, 980}, {5468, 34, 45, 980}, {6921, 10, 40, 980},
+    {5468, 34, 49, 980}, {6921, 10, 41, 980}, {4631, 48, 58, 980}, {6467, 10, 38, 980}, {1099, 28, 47, 980}, {5619, 34, 47, 980},
+    {1099, 28, 45, 980}, {4089, 28, 45, 980}, {1099, 28, 49, 980}, {6467, 10, 41, 980}, {5619, 34, 47, 980}, {6467, 10, 42, 980},
+    {1099, 28, 50, 980}, {4089, 28, 49, 980}, {1711, 34, 47, 980}, {5619, 34, 46, 980}, {4631, 48, 55, 980}, {5619, 34, 45, 980},
+    {3686, 25, 48, 980}, {6013, 10, 38, 980}, {905, 48, 58, 980}, {4397, 34, 47, 980}, {1681, 25, 47, 980}, {3686, 25, 48, 980},
+    {2974, 48, 53, 980}, {4397, 34, 48, 980}, {1681, 25, 43, 980}, {2974, 48, 56, 980}, {2263, 34, 44, 980}, {3686, 25, 44, 980},
+    {905, 48, 59, 980}, {1681, 25, 48, 980}, {905, 48, 54, 980}, {2263, 34, 45, 980}, {969, 48, 57, 980}, {5468, 48, 53, 980},
+    {2422, 34, 49, 980}, {3184, 48, 52, 980}, {3945, 25, 43, 980}, {4706, 34, 47, 980}, {969, 48, 57, 980}, {3184, 48, 59, 980},
+    {969, 48, 52, 980}, {2422, 34, 49, 980}, {1799, 25, 46, 980}, {3184, 48, 59, 980}, {1799, 25, 46, 980}, {4706, 34, 45, 980},
+    {3184, 48, 55, 980}, {4706, 34, 49, 980}, {1711, 25, 42, 980}, {2559, 34, 45, 980}, {4089, 25, 42, 980}, {6467, 10, 41, 980},
+    {2559, 34, 48, 980}, {4089, 25, 44, 980}, {4089, 25, 46, 980}, {6467, 10, 41, 980}, {3101, 48, 53, 980}, {4631, 34, 45, 980},
+    {1711, 25, 43, 980}, {2559, 34, 44, 980}, {4089, 25, 45, 980}, {5619, 48, 58, 980}, {4089, 25, 44, 980}, {5619, 48, 58, 980},
+    {2974, 48, 56, 980}, {3686, 48, 60, 980}, {2422, 24, 43, 980}, {3184, 48, 54, 980}, {2559, 24, 47, 980}, {4631, 42, 38, 980},
+    {1681, 24, 47, 980}, {5108, 34, 49, 980}, {2422, 10, 42, 980}, {6921, 10, 41, 980}, {3101, 28, 47, 980}, {4631, 10, 41, 980},
+    {5108, 16, 40, 980}, {6013, 10, 40, 980}, {2422, 34, 48, 980}, {5468, 16, 42, 980}, {1099, 28, 44, 980}, {3101, 28, 46, 980},
+    {1681, 30, 84, 980}, {2974, 35, 128, 980}, {3686, 15, 111, 1000}, {1799, 30, 84, 980}, {3184, 35, 128, 980}, {3945, 15, 111, 1000},
+    {1711, 30, 84, 980}, {3101, 35, 128, 980}, {4089, 15, 111, 1000}, {2263, 34, 47, 980}, {2974, 25, 43, 980}, {969, 8, 52, 980},
+    {2422, 34, 47, 980}, {1711, 48, 53, 980}, {5619, 10, 43, 980}, {4397, 10, 38, 980}, {6013, 10, 43, 980}, {969, 13, 31, 980},
+    {6921, 10, 38, 980}, {1099, 13, 31, 980}, {2559, 13, 30, 980}, {2263, 10, 42, 980}, {2974, 13, 30, 980}, {3945, 32, 51, 980},
+    {4706, 10, 41, 980}, {2559, 10, 43, 980}, {4089, 32, 53, 980}, {914, 20, 86, 1020}, {1041, 20, 95, 1020}, {1203, 21, 86, 1020},
+    {2310, 19, 85, 1020}, {2310, 19, 85, 1020}, {2447, 20, 88, 1020}, {3574, 19, 81, 1020}, {2447, 20, 94, 1020}, {2629, 21, 89, 1020},
+    {3766, 20, 94, 1020}, {1041, 20, 94, 1020}, {1203, 21, 91, 1020}, {1574, 38, 110, 1020}, {3807, 19, 86, 1020}, {914, 20, 92, 1020},
+    {1041, 20, 89, 1020}, {3807, 19, 85, 1020}, {1041, 20, 91, 1020}, {1203, 21, 86, 1020}, {1574, 38, 100, 1020}, {3807, 19, 81, 1020},
+    {1574, 38, 102, 1020}, {3574, 19, 87, 1020}, {3766, 20, 91, 1020}, {457, 19, 86, 1020}, {812, 19, 85, 1020}, {914, 20, 93, 1020},
+    {2447, 20, 97, 1020}, {976, 34, 52, 1020}, {4065, 28, 50, 1020}, {3360, 34, 55, 1020}, {5303, 10, 44, 1020}, {2710, 25, 50, 1020},
+    {3360, 34, 55, 1020}, {2114, 48, 62, 1020}, {4065, 28, 51, 1020}, {976, 34, 54, 1020}, {3360, 34, 52, 1020}, {488, 48, 67, 1020},
+    {3360, 34, 56, 1020}, {976, 34, 56, 1020}, {5303, 10, 45, 1020}, {976, 34, 56, 1020}, {2114, 48, 65, 1020}, {905, 34, 49, 1020},
+    {4187, 28, 56, 1020}, {2050, 48, 60, 1020}, {4187, 28, 53, 1020}, {905, 34, 52, 1020}, {2824, 25, 55, 1020}, {3304, 34, 51, 1020},
+    {4187, 28, 51, 1020}, {2050, 48, 64, 1020}, {2824, 25, 55, 1020}, {905, 34, 52, 1020}, {4187, 28, 53, 1020}, {589, 48, 68, 1020},
+    {4961, 10, 49, 1020}, {589, 48, 60, 1020}, {905, 34, 56, 1020}, {2738, 30, 56, 1020}, {4983, 10, 49, 1020}, {3395, 34, 50, 1020},
+    {4983, 10, 45, 1020}, {1533, 11, 40, 1020}, {4107, 25, 51, 1020}, {986, 30, 52, 1020}, {2738, 30, 50, 1020}, {2136, 25, 50, 1020},
+    {2738, 30, 54, 1020}, {1533, 11, 41, 1020}, {2136, 25, 54, 1020}, {493, 26, 64, 1020}, {2136, 25, 53, 1020}, {3395, 34, 53, 1020},
+    {4107, 25, 49, 1020}, {2896, 36, 53, 1020}, {4344, 10, 48, 1020}, {2896, 36, 54, 1020}, {3591, 28, 56, 1020}, {2896, 36, 49, 1020},
+    {3591, 28, 54, 1020}, {2896, 36, 53, 1020}, {3591, 28, 50, 1020}, {1622, 34, 49, 1020}, {2896, 36, 53, 1020}, {1043, 16, 46, 1020},
+    {2896, 36, 53, 1020}, {1622, 34, 53, 1020}, {2896, 36, 48, 1020}, {420, 23, 136, 1020}, {730, 23, 136, 1020}, {1110, 23, 136, 1020},
+    {1490, 1, 247, 1000}, {480, 23, 136, 1020}, {850, 23, 136, 1020}, {1290, 23, 136, 1020}, {1670, 1, 247, 1000}, {540, 23, 136, 1020},
+    {970, 23, 136, 1020}, {1470, 23, 136, 1020}, {1850, 1, 247, 1000}, {1152, 28, 70, 1020}, {2496, 44, 241, 1000}, {1138, 28, 70, 1020},
+    {2466, 45, 232, 1000}, {1195, 28, 70, 1020}, {2707, 44, 241, 1000}, {1152, 28, 70, 1020}, {2496, 15, 117, 1000}, {1138, 28, 70, 1020},
+    {2466, 15, 117, 1000}, {1195, 28, 70, 1020}, {2707, 15, 117, 1000}, {1421, 25, 52, 1020}, {1980, 28, 49, 1020}, {2710, 16, 50, 1020},
+    {3360, 34, 56, 1020}, {2050, 28, 53, 1020}, {4187, 19, 88, 1020}, {457, 28, 52, 1020}, {914, 16, 45, 1020}, {2710, 16, 45, 1020},
+    {5303, 10, 49, 1020}, {1625, 25, 54, 1020}, {4187, 19, 82, 1020}, {3147, 34, 55, 1020}, {3807, 19, 80, 1020}, {1518, 25, 52, 1020},
+    {2114, 28, 55, 1020}, {2050, 28, 54, 1020}, {3304, 34, 55, 1020}, {457, 28, 54, 1020}, {1980, 28, 52, 1020}, {1518, 25, 51, 1020},
+    {3360, 34, 54, 1020}, {2050, 28, 52, 1020}, {3304, 34, 52, 1020}, {448, 28, 54, 1020}, {3737, 16, 47, 1020}, {897, 48, 65, 1020},
+    {4534, 10, 46, 1020}, {448, 28, 54, 1020}, {2491, 25, 55, 1020}, {897, 48, 64, 1020}, {2491, 25, 54, 1020}, {1395, 34, 54, 1020},
+    {1943, 28, 56, 1020}, {1395, 34, 52, 1020}, {3737, 16, 50, 1020}, {448, 28, 54, 1020}, {2491, 25, 48, 1020}, {448, 28, 56, 1020},
+    {3737, 16, 48, 1020}, {480, 28, 56, 1020}, {2666, 25, 51, 1020}, {480, 28, 53, 1020}, {2080, 28, 50, 1020}, {2080, 28, 50, 1020},
+    {3999, 16, 51, 1020}, {480, 28, 50, 1020}, {1493, 34, 55, 1020}, {960, 48, 66, 1020}, {3999, 16, 49, 1020}, {2080, 28, 56, 1020},
+    {5218, 10, 46, 1020}, {2080, 28, 50, 1020}, {5218, 10, 46, 1020}, {1493, 34, 52, 1020}, {3306, 28, 55, 1020}, {2775, 25, 52, 1020},
+    {4115, 16, 49, 1020}, {889, 48, 68, 1020}, {2775, 25, 48, 1020}, {1597, 34, 53, 1020}, {4876, 10, 49, 1020}, {2015, 28, 53, 1020},
+    {3247, 28, 51, 1020}, {579, 28, 54, 1020}, {4876, 10, 44, 1020}, {579, 28, 54, 1020}, {4876, 10, 46, 1020}, {579, 28, 55, 1020},
+    {4115, 16, 45, 1020}, {2015, 28, 52, 1020}, {3247, 28, 51, 1020}, {1421, 20, 91, 1020}, {3147, 19, 80, 1020}, {3401, 38, 111, 1020},
+    {3574, 19, 83, 1020}, {1041, 20, 88, 1020}, {1203, 21, 91, 1020}, {1421, 20, 86, 1020}, {3147, 19, 88, 1020}, {812, 19, 84, 1020},
+    {1980, 38, 97, 1020}, {2310, 19, 83, 1020}, {2447, 20, 96, 1020}, {1041, 20, 91, 1020}, {1203, 21, 85, 1020}, {2310, 19, 90, 1020},
+    {2447, 20, 96, 1020}, {3401, 38, 111, 1020}, {3574, 19, 85, 1020}, {1203, 21, 88, 1020}, {2538, 21, 93, 1020}, {2629, 21, 96, 1020},
+    {1203, 21, 95, 1020}, {2447, 20, 92, 1020}, {2538, 21, 84, 1020}, {2629, 21, 88, 1020}, {1421, 20, 88, 1020}, {1574, 38, 102, 1020},
+    {1980, 38, 104, 1020}, {2538, 21, 93, 1020}, {1195, 20, 94, 1020}, {1381, 21, 94, 1020}, {2114, 38, 99, 1020}, {1518, 20, 87, 1020},
+    {2652, 19, 82, 1020}, {2710, 21, 93, 1020}, {2809, 20, 92, 1020}, {2114, 38, 100, 1020}, {2652, 19, 82, 1020}, {4324, 20, 97, 1020},
+    {1195, 20, 97, 1020}, {2710, 21, 86, 1020}, {2809, 20, 86, 1020}, {2114, 38, 100, 1020}, {3360, 19, 87, 1020}, {3905, 38, 105, 1020},
+    {4103, 19, 90, 1020}, {976, 19, 88, 1020}, {1195, 20, 90, 1020}, {2710, 21, 82, 1020}, {1195, 20, 87, 1020}, {2114, 38, 108, 1020},
+    {2652, 19, 86, 1020}, {1381, 21, 88, 1020}, {1518, 20, 84, 1020}, {1807, 38, 108, 1020}, {2809, 20, 91, 1020}, {1030, 19, 88, 1020},
+    {1849, 20, 85, 1020}, {2333, 38, 105, 1020}, {3214, 21, 87, 1020}, {1849, 20, 92, 1020}, {2333, 38, 97, 1020}, {2333, 38, 99, 1020},
+    {3214, 21, 86, 1020}, {2333, 38, 102, 1020}, {3214, 21, 90, 1020}, {1849, 20, 83, 1020}, {2333, 38, 105, 1020}, {3214, 21, 85, 1020},
+    {3760, 19, 83, 1020}, {1030, 19, 78, 1020}, {1849, 20, 90, 1020}, {1943, 30, 52, 1020}, {3089, 26, 64, 1020}, {448, 25, 50, 1020},
+    {1395, 25, 53, 1020}, {1395, 25, 54, 1020}, {2491, 30, 54, 1020}, {448, 25, 54, 1020}, {1395, 25, 52, 1020}, {897, 26, 68, 1020},
+    {2491, 30, 52, 1020}, {2491, 30, 54, 1020}, {4534, 10, 49, 1020}, {448, 25, 55, 1020}, {897, 26, 67, 1020}, {1943, 30, 50, 1020},
+    {3089, 26, 69, 1020}, {480, 25, 51, 1020}, {2080, 30, 50, 1020}, {1493, 25, 54, 1020}, {3306, 26, 68, 1020}, {2666, 30, 52, 1020},
+    {5218, 10, 46, 1020}, {2080, 30, 52, 1020}, {3306, 26, 67, 1020}, {480, 25, 50, 1020}, {1493, 25, 52, 1020}, {960, 26, 60, 1020},
+    {1493, 25, 50, 1020}, {2080, 30, 53, 1020}, {3999, 34, 55, 1020}, {2666, 30, 55, 1020}, {5218, 10, 44, 1020}, {889, 26, 67, 1020},
+    {1597, 25, 48, 1020}, {2775, 30, 52, 1020}, {3247, 26, 67, 1020}, {889, 26, 65, 1020}, {2015, 30, 55, 1020}, {1597, 25, 54, 1020},
+    {2775, 30, 52, 1020}, {1597, 25, 53, 1020}, {2015, 30, 52, 1020}, {579, 25, 53, 1020}, {2015, 30, 55, 1020}, {579, 25, 53, 1020},
+    {4876, 10, 48, 1020}, {579, 25, 52, 1020}, {2015, 30, 55, 1020}, {3089, 28, 55, 1020}, {3737, 48, 65, 1020}, {448, 34, 51, 1020},
+    {3737, 48, 62, 1020}, {448, 34, 54, 1020}, {3737, 48, 62, 1020}, {897, 25, 48, 1020}, {1943, 42, 49, 1020}, {3089, 28, 56, 1020},
+    {4534, 10, 43, 1020}, {448, 34, 55, 1020}, {4534, 10, 45, 1020}, {448, 34, 54, 1020}, {1395, 34, 53, 1020}, {1943, 42, 43, 1020},
+    {3089, 28, 52, 1020}, {480, 34, 52, 1020}, {960, 25, 49, 1020}, {1493, 34, 54, 1020}, {2666, 28, 55, 1020}, {960, 25, 52, 1020},
+    {2080, 42, 44, 1020}, {1493, 34, 53, 1020}, {3999, 48, 62, 1020}, {480, 34, 56, 1020}, {960, 25, 55, 1020}, {960, 25, 51, 1020},
+    {5218, 10, 47, 1020}, {2666, 28, 56, 1020}, {5218, 10, 43, 1020}, {3306, 28, 52, 1020}, {5218, 10, 47, 1020}, {889, 25, 53, 1020},
+    {2775, 28, 54, 1020}, {579, 34, 56, 1020}, {889, 25, 52, 1020}, {4115, 48, 66, 1020}, {4876, 10, 49, 1020}, {579, 34, 51, 1020},
+    {2015, 42, 44, 1020}, {579, 34, 49, 1020}, {1597, 34, 52, 1020}, {4115, 48, 66, 1020}, {4876, 10, 45, 1020}, {889, 25, 49, 1020},
+    {4876, 10, 49, 1020}, {3247, 28, 51, 1020}, {4876, 10, 47, 1020}, {448, 28, 55, 1020}, {1395, 28, 55, 1020}, {2491, 28, 50, 1020},
+    {3089, 48, 66, 1020}, {3089, 48, 68, 1020}, {4534, 10, 44, 1020}, {1395, 28, 53, 1020}, {2491, 28, 54, 1020}, {448, 28, 56, 1020},
+    {1395, 28, 56, 1020}, {897, 34, 51, 1020}, {3737, 34, 52, 1020}, {1943, 25, 53, 1020}, {3089, 48, 62, 1020}, {1943, 25, 55, 1020},
+    {3089, 48, 68, 1020}, {3306, 48, 68, 1020}, {5218, 10, 48, 1020}, {2666, 28, 53, 1020}, {3306, 48, 65, 1020}, {2666, 28, 49, 1020},
+    {3306, 48, 60, 1020}, {960, 34, 52, 1020}, {3999, 34, 54, 1020}, {1493, 28, 54, 1020}, {2080, 25, 53, 1020}, {1493, 28, 50, 1020},
+    {5218, 10, 46, 1020}, {1493, 28, 51, 1020}, {5218, 10, 49, 1020}, {480, 28, 50, 1020}, {1493, 28, 53, 1020}, {2775, 28, 52, 1020},
+    {4115, 34, 54, 1020}, {1597, 28, 51, 1020}, {3247, 48, 67, 1020}, {1597, 28, 55, 1020}, {4876, 10, 46, 1020}, {4115, 34, 51, 1020},
+    {4876, 10, 46, 1020}, {889, 34, 55, 1020}, {2015, 25, 50, 1020}, {2015, 25, 52, 1020}, {3247, 48, 67, 1020}, {2015, 25, 52, 1020},
+    {4876, 10, 49, 1020}, {889, 34, 56, 1020}, {1597, 28, 56, 1020}, {2491, 25, 53, 1020}, {3089, 34, 55, 1020}, {448, 48, 60, 1020},
+    {2491, 25, 53, 1020}, {897, 25, 52, 1020}, {1395, 34, 53, 1020}, {897, 25, 54, 1020}, {4534, 10, 49, 1020}, {448, 48, 66, 1020},
+    {1943, 48, 61, 1020}, {2491, 25, 52, 1020}, {3737, 48, 60, 1020}, {448, 48, 67, 1020}, {3089, 34, 50, 1020}, {448, 48, 67, 1020},
+    {1943, 48, 68, 1020}, {1493, 34, 53, 1020}, {3306, 34, 50, 1020}, {480, 48, 63, 1020}, {5218, 10, 47, 1020}, {2080, 48, 65, 1020},
+    {3306, 34, 52, 1020}, {2080, 48, 66, 1020}, {3999, 48, 61, 1020}, {960, 25, 49, 1020}, {3999, 48, 63, 1020}, {960, 25, 54, 1020},
+    {3306, 34, 52, 1020}, {2666, 25, 53, 1020}, {5218, 10, 44, 1020}, {2666, 25, 52, 1020}, {5218, 10, 48, 1020}, {579, 48, 62, 1020},
+    {4115, 48, 65, 1020}, {1597, 34, 50, 1020}, {4115, 48, 63, 1020}, {2775, 25, 52, 1020}, {4115, 48, 68, 1020}, {2775, 25, 51, 1020},
+    {4876, 10, 43, 1020}, {2775, 25, 49, 1020}, {3247, 34, 52, 1020}, {1597, 34, 56, 1020}, {2015, 48, 60, 1020}, {2015, 48, 67, 1020},
+    {2775, 25, 54, 1020}, {579, 48, 64, 1020}, {3247, 34, 55, 1020}, {448, 30, 53, 1020}, {897, 29, 64, 1020}, {480, 30, 49, 1020},
+    {5218, 10, 45, 1020}, {2015, 48, 68, 1020}, {4876, 10, 43, 1020}, {1943, 28, 53, 1020}, {3737, 34, 49, 1020}, {2080, 28, 51, 1020},
+    {3999, 34, 51, 1020}, {4115, 34, 56, 1020}, {4876, 10, 48, 1020}, {897, 16, 52, 1020}, {3089, 28, 54, 1020}, {2666, 25, 55, 1020},
+    {5218, 10, 44, 1020}, {2015, 28, 54, 1020}, {4115, 16, 49, 1020}, {897, 30, 84, 1020}, {1943, 35, 128, 1020}, {2491, 15, 111, 1000},
+    {960, 30, 84, 1020}, {2080, 35, 128, 1020}, {2666, 15, 111, 1000}, {889, 30, 84, 1020}, {2015, 35, 128, 1020}, {2775, 15, 111, 1000},
+    {448, 8, 59, 1020}, {1395, 34, 50, 1020}, {960, 48, 68, 1020}, {2080, 25, 51, 1020}, {1597, 34, 51, 1020}, {4115, 10, 47, 1020},
+    {1943, 10, 43, 1020}, {4534, 10, 45, 1020}, {480, 13, 36, 1020}, {960, 32, 60, 1020}, {889, 32, 58, 1020}, {2775, 32, 63, 1020},
+    {1395, 10, 48, 1020}, {4534, 10, 45, 1020}, {960, 13, 35, 1020}, {2666, 32, 63, 1020}, {3247, 10, 48, 1020}, {4115, 10, 47, 1020},
+    {2020, 28, 47, 960}, {2495, 21, 86, 960}, {594, 19, 81, 960}, {2495, 21, 87, 960}, {2020, 28, 51, 960}, {5584, 10, 42, 960},
+    {594, 19, 82, 960}, {5584, 10, 47, 960}, {594, 19, 75, 960}, {3505, 48, 60, 960}, {2495, 21, 87, 960}, {4752, 19, 79, 960},
+    {1069, 20, 88, 960}, {4752, 19, 83, 960}, {594, 19, 84, 960}, {3505, 48, 63, 960}, {1142, 34, 51, 960}, {2664, 48, 62, 960},
+    {634, 48, 64, 960}, {1142, 34, 47, 960}, {2664, 48, 62, 960}, {6411, 10, 46, 960}, {3742, 25, 48, 960}, {6411, 10, 45, 960},
+    {4186, 34, 49, 960}, {5074, 28, 51, 960}, {634, 48, 63, 960}, {6411, 10, 46, 960}, {2156, 28, 50, 960}, {5074, 28, 50, 960},
+    {2156, 28, 49, 960}, {2664, 48, 57, 960}, {1059, 20, 86, 960}, {2590, 21, 81, 960}, {4121, 34, 47, 960}, {5997, 10, 45, 960},
+    {1059, 20, 81, 960}, {3879, 48, 59, 960}, {753, 19, 80, 960}, {5219, 19, 76, 960}, {2284, 28, 49, 960}, {4121, 34, 51, 960},
+    {1059, 20, 79, 960}, {2590, 21, 82, 960}, {1059, 20, 83, 960}, {2284, 28, 50, 960}, {2284, 28, 52, 960}, {2590, 21, 89, 960},
+    {3741, 36, 49, 960}, {5072, 10, 46, 960}, {3741, 36, 45, 960}, {4184, 28, 47, 960}, {2156, 34, 48, 960}, {3741, 36, 47, 960},
+    {1141, 16, 44, 960}, {3741, 36, 51, 960}, {2156, 34, 51, 960}, {3741, 36, 49, 960}, {2663, 28, 48, 960}, {3741, 36, 49, 960},
+    {3741, 36, 45, 960}, {4184, 28, 49, 960}, {2156, 34, 52, 960}, {3741, 36, 46, 960}, {1209, 16, 48, 960}, {3962, 36, 49, 960},
+    {3962, 36, 45, 960}, {5372, 10, 47, 960}, {2283, 34, 47, 960}, {3962, 36, 47, 960}, {3962, 36, 45, 960}, {4432, 28, 50, 960},
+    {2283, 34, 52, 960}, {3962, 36, 45, 960}, {3962, 36, 47, 960}, {4432, 28, 48, 960}, {1209, 16, 48, 960}, {3962, 36, 51, 960},
+    {2820, 28, 52, 960}, {3962, 36, 46, 960}, {500, 23, 133, 960}, {1140, 23, 133, 960}, {1400, 23, 133, 960}, {1780, 1, 247, 1000},
+    {560, 23, 133, 960}, {1260, 23, 133, 960}, {1580, 23, 133, 960}, {1960, 1, 247, 1000}, {620, 23, 133, 960}, {1380, 23, 133, 960},
+    {1760, 23, 133, 960}, {2140, 1, 247, 1000}, {1152, 28, 70, 960}, {2688, 44, 241, 1000}, {1138, 28, 70, 960}, {2656, 45, 232, 1000},
+    {1195, 28, 70, 960}, {2923, 44, 241, 1000}, {1152, 28, 70, 960}, {2688, 15, 117, 1000}, {1138, 28, 70, 960}, {2656, 15, 117, 1000},
+    {1195, 28, 70, 960}, {2923, 15, 117, 1000}, {3920, 34, 51, 960}, {4752, 19, 78, 960}, {2664, 28, 50, 960}, {3742, 16, 48, 960},
+    {753, 28, 49, 960}, {3879, 16, 45, 960}, {4752, 19, 84, 960}, {5584, 10, 43, 960}, {1142, 16, 44, 960}, {2156, 25, 48, 960},
+    {3879, 16, 49, 960}, {5219, 19, 79, 960}, {2495, 28, 51, 960}, {5584, 10, 44, 960}, {2156, 25, 52, 960}, {4186, 34, 52, 960},
+    {4121, 34, 49, 960}, {5997, 10, 41, 960}, {2495, 28, 48, 960}, {5584, 10, 42, 960}, {634, 28, 52, 960}, {5074, 19, 80, 960},
+    {753, 28, 52, 960}, {3879, 16, 46, 960}, {583, 28, 53, 960}, {3848, 28, 48, 960}, {1982, 34, 49, 960}, {4664, 16, 45, 960},
+    {2449, 28, 48, 960}, {5480, 10, 45, 960}, {4664, 16, 43, 960}, {5480, 10, 43, 960}, {1049, 48, 57, 960}, {3848, 28, 52, 960},
+    {1049, 48, 63, 960}, {3848, 28, 50, 960}, {1049, 48, 62, 960}, {4664, 16, 43, 960}, {3848, 28, 53, 960}, {5480, 10, 45, 960},
+    {3682, 25, 46, 960}, {4119, 28, 52, 960}, {2621, 28, 51, 960}, {6307, 10, 47, 960}, {2621, 28, 51, 960}, {6307, 10, 42, 960},
+    {624, 28, 49, 960}, {2621, 28, 54, 960}, {2122, 34, 49, 960}, {6307, 10, 45, 960}, {4992, 16, 44, 960}, {6307, 10, 42, 960},
+    {624, 28, 50, 960}, {4119, 28, 51, 960}, {2621, 28, 48, 960}, {4119, 28, 51, 960}, {740, 28, 51, 960}, {5894, 10, 41, 960},
+    {740, 28, 51, 960}, {1041, 48, 57, 960}, {740, 28, 52, 960}, {1041, 48, 57, 960}, {3812, 25, 47, 960}, {5129, 16, 49, 960},
+    {3812, 25, 51, 960}, {5894, 10, 45, 960}, {4050, 28, 51, 960}, {5894, 10, 45, 960}, {2245, 34, 47, 960}, {2546, 28, 49, 960},
+    {740, 28, 49, 960}, {5894, 10, 42, 960}, {1841, 38, 107, 960}, {2020, 20, 89, 960}, {4182, 19, 78, 960}, {1408, 21, 87, 960},
+    {1841, 38, 101, 960}, {2703, 19, 84, 960}, {1218, 20, 90, 960}, {1408, 21, 82, 960}, {1841, 38, 101, 960}, {2495, 38, 98, 960},
+    {1841, 38, 104, 960}, {2020, 20, 89, 960}, {3077, 21, 91, 960}, {1408, 21, 88, 960}, {3920, 19, 79, 960}, {3980, 38, 95, 960},
+    {4182, 19, 78, 960}, {1069, 19, 75, 960}, {1218, 20, 88, 960}, {1408, 21, 87, 960}, {2863, 20, 88, 960}, {1218, 20, 85, 960},
+    {3980, 38, 106, 960}, {4182, 19, 84, 960}, {4407, 20, 81, 960}, {1069, 19, 81, 960}, {1218, 20, 92, 960}, {1408, 21, 89, 960},
+    {3920, 19, 80, 960}, {2114, 38, 101, 960}, {3533, 21, 90, 960}, {3742, 21, 80, 960}, {3103, 19, 78, 960}, {3287, 20, 92, 960},
+    {4569, 38, 99, 960}, {3287, 20, 84, 960}, {3533, 21, 80, 960}, {3742, 21, 78, 960}, {4569, 38, 103, 960}, {2114, 38, 107, 960},
+    {3103, 19, 79, 960}, {3287, 20, 86, 960}, {1091, 19, 84, 960}, {4569, 38, 95, 960}, {4801, 19, 79, 960}, {5060, 20, 92, 960},
+    {1142, 19, 84, 960}, {1398, 20, 89, 960}, {2156, 20, 90, 960}, {2114, 38, 107, 960}, {2156, 20, 79, 960}, {2664, 38, 98, 960},
+    {4186, 19, 78, 960}, {3103, 19, 83, 960}, {3287, 20, 86, 960}, {4569, 38, 100, 960}, {2948, 38, 96, 960}, {4414, 21, 82, 960},
+    {2599, 20, 84, 960}, {2948, 38, 97, 960}, {1205, 19, 79, 960}, {2599, 20, 84, 960}, {1205, 19, 81, 960}, {2599, 20, 86, 960},
+    {2948, 38, 101, 960}, {4414, 21, 84, 960}, {1205, 19, 83, 960}, {2599, 20, 88, 960}, {2948, 38, 105, 960}, {4414, 21, 81, 960},
+    {4414, 21, 88, 960}, {4690, 19, 81, 960}, {1049, 26, 64, 960}, {5480, 10, 44, 960}, {1049, 26, 60, 960}, {3848, 26, 61, 960},
+    {1049, 26, 65, 960}, {5480, 10, 43, 960}, {1982, 25, 52, 960}, {2449, 30, 49, 960}, {4664, 34, 48, 960}, {5480, 10, 45, 960},
+    {2449, 30, 51, 960}, {3848, 26, 63, 960}, {583, 25, 47, 960}, {3848, 26, 60, 960}, {3848, 26, 60, 960}, {5480, 10, 45, 960},
+    {2122, 25, 47, 960}, {3682, 30, 50, 960}, {624, 25, 50, 960}, {4992, 34, 50, 960}, {2122, 25, 49, 960}, {6307, 10, 43, 960},
+    {2122, 25, 48, 960}, {4992, 34, 47, 960}, {1123, 26, 59, 960}, {4992, 34, 49, 960}, {2621, 30, 48, 960}, {3682, 30, 46, 960},
+    {2621, 30, 51, 960}, {4119, 26, 59, 960}, {2122, 25, 50, 960}, {6307, 10, 42, 960}, {2546, 30, 50, 960}, {4050, 26, 61, 960},
+    {2546, 30, 51, 960}, {3812, 30, 51, 960}, {3812, 30, 51, 960}, {4050, 26, 63, 960}, {1041, 26, 63, 960}, {3812, 30, 51, 960},
+    {740, 25, 51, 960}, {3812, 30, 51, 960}, {740, 25, 52, 960}, {5894, 10, 45, 960}, {740, 25, 46, 960}, {2245, 25, 49, 960},
+    {3812, 30, 47, 960}, {4050, 26, 62, 960}, {4664, 48, 60, 960}, {5480, 10, 46, 960}, {3440, 28, 51, 960}, {4664, 48, 63, 960},
+    {583, 34, 51, 960}, {1982, 34, 51, 960}, {3440, 28, 54, 960}, {3848, 28, 53, 960}, {2449, 42, 42, 960}, {3848, 28, 49, 960},
+    {1049, 25, 50, 960}, {2449, 42, 44, 960}, {1982, 34, 47, 960}, {3848, 28, 49, 960}, {2449, 42, 43, 960}, {3440, 28, 48, 960},
+    {1123, 25, 49, 960}, {6307, 10, 47, 960}, {4119, 28, 47, 960}, {6307, 10, 42, 960}, {4119, 28, 48, 960}, {4992, 48, 58, 960},
+    {1123, 25, 51, 960}, {2621, 42, 41, 960}, {3682, 28, 52, 960}, {6307, 10, 41, 960}, {624, 34, 49, 960}, {2122, 34, 49, 960},
+    {2122, 34, 52, 960}, {2621, 42, 44, 960}, {2621, 42, 46, 960}, {6307, 10, 47, 960}, {740, 34, 50, 960}, {2546, 42, 45, 960},
+    {2245, 34, 50, 960}, {3812, 28, 48, 960}, {2245, 34, 49, 960}, {3812, 28, 51, 960}, {3812, 28, 51, 960}, {5129, 48, 63, 960},
+    {740, 34, 51, 960}, {3812, 28, 51, 960}, {740, 34, 49, 960}, {1041, 25, 49, 960}, {2245, 34, 52, 960}, {2546, 42, 43, 960},
+    {2245, 34, 53, 960}, {5894, 10, 47, 960}, {1982, 28, 50, 960}, {4664, 34, 47, 960}, {1049, 34, 50, 960}, {3848, 48, 62, 960},
+    {1049, 34, 47, 960}, {4664, 34, 53, 960}, {1049, 34, 52, 960}, {3848, 48, 57, 960}, {3848, 48, 60, 960}, {4664, 34, 47, 960},
+    {2449, 25, 47, 960}, {3440, 28, 51, 960}, {1982, 28, 48, 960}, {5480, 10, 44, 960}, {583, 28, 48, 960}, {1049, 34, 49, 960},
+    {2122, 28, 53, 960}, {4992, 34, 49, 960}, {624, 28, 53, 960}, {1123, 34, 49, 960}, {2122, 28, 48, 960}, {6307, 10, 43, 960},
+    {1123, 34, 52, 960}, {4119, 48, 62, 960}, {624, 28, 50, 960}, {4992, 34, 52, 960}, {4119, 48, 63, 960}, {6307, 10, 46, 960},
+    {2621, 25, 50, 960}, {4119, 48, 60, 960}, {2621, 25, 51, 960}, {4119, 48, 62, 960}, {2245, 28, 51, 960}, {5894, 10, 47, 960},
+    {2245, 28, 47, 960}, {5894, 10, 46, 960}, {740, 28, 53, 960}, {3812, 28, 52, 960}, {5129, 34, 49, 960}, {5894, 10, 46, 960},
+    {2546, 25, 49, 960}, {4050, 48, 61, 960}, {2245, 28, 50, 960}, {5129, 34, 49, 960}, {2245, 28, 53, 960}, {3812, 28, 48, 960},
+    {2245, 28, 48, 960}, {5129, 34, 49, 960}, {583, 48, 60, 960}, {2449, 48, 59, 960}, {1049, 25, 52, 960}, {3848, 34, 48, 960},
+    {583, 48, 59, 960}, {5480, 10, 45, 960}, {1049, 25, 52, 960}, {2449, 48, 61, 960}, {4664, 48, 64, 960}, {5480, 10, 42, 960},
+    {1982, 34, 48, 960}, {4664, 48, 59, 960}, {1049, 25, 46, 960}, {3848, 34, 47, 960}, {2122, 34, 53, 960}, {4119, 34, 51, 960},
+    {624, 48, 59, 960}, {3682, 25, 51, 960}, {2621, 48, 58, 960}, {4119, 34, 49, 960}, {2621, 48, 60, 960}, {3682, 25, 50, 960},
+    {2621, 48, 60, 960}, {3682, 25, 49, 960}, {1123, 25, 47, 960}, {3682, 25, 52, 960}, {3682, 25, 50, 960}, {6307, 10, 43, 960},
+    {2122, 34, 50, 960}, {6307, 10, 45, 960}, {2245, 34, 51, 960}, {3812, 25, 47, 960}, {3812, 25, 49, 960}, {5894, 10, 46, 960},
+    {1041, 25, 46, 960}, {4050, 34, 52, 960}, {1041, 25, 48, 960}, {5894, 10, 45, 960}, {740, 48, 59, 960}, {3812, 25, 50, 960},
+    {1041, 25, 48, 960}, {3812, 25, 52, 960}, {2245, 34, 52, 960}, {4050, 34, 53, 960}, {3812, 25, 52, 960}, {5894, 10, 44, 960},
+    {583, 30, 48, 960}, {3848, 42, 43, 960}, {3682, 48, 61, 960}, {4992, 25, 51, 960}, {4050, 42, 46, 960}, {5894, 10, 45, 960},
+    {1982, 10, 44, 960}, {3848, 10, 46, 960}, {624, 34, 50, 960}, {1123, 24, 47, 960}, {1041, 24, 45, 960}, {5894, 10, 41, 960},
+    {3440, 25, 52, 960}, {4664, 16, 49, 960}, {1123, 16, 46, 960}, {2122, 34, 49, 960}, {4050, 28, 52, 960}, {5129, 16, 49, 960},
+    {1049, 30, 84, 960}, {2449, 35, 128, 960}, {3440, 15, 111, 1000}, {1123, 30, 84, 960}, {2621, 35, 128, 960}, {3682, 15, 111, 1000},
+    {1041, 30, 84, 960}, {2546, 35, 128, 960}, {3812, 15, 111, 1000}, {2449, 25, 46, 960}, {3848, 10, 45, 960}, {624, 8, 59, 960},
+    {2122, 34, 51, 960}, {1041, 48, 60, 960}, {2245, 34, 53, 960}, {1049, 32, 59, 960}, {1982, 13, 35, 960}, {1123, 32, 59, 960},
+    {6307, 10, 41, 960}, {4050, 10, 45, 960}, {5129, 10, 45, 960}, {1982, 10, 47, 960}, {5480, 10, 45, 960}, {624, 13, 34, 960},
+    {6307, 10, 44, 960}, {4050, 10, 45, 960}, {5129, 10, 43, 960}, {314, 19, 82, 980}, {1300, 21, 95, 980}, {314, 19, 87, 980},
+    {3093, 19, 82, 980}, {3093, 19, 91, 980}, {3989, 10, 50, 980}, {1972, 48, 63, 980}, {3989, 10, 47, 980}, {314, 19, 86, 980},
+    {627, 20, 92, 980}, {627, 20, 94, 980}, {1300, 21, 87, 980}, {1972, 48, 66, 980}, {3989, 10, 44, 980}, {314, 19, 90, 980},
+    {3093, 19, 90, 980}, {335, 26, 62, 980}, {3302, 25, 54, 980}, {335, 26, 69, 980}, {2536, 34, 53, 980}, {335, 26, 69, 980},
+    {4580, 10, 50, 980}, {335, 26, 68, 980}, {1101, 11, 40, 980}, {335, 26, 66, 980}, {3302, 25, 49, 980}, {670, 30, 51, 980},
+    {3302, 25, 53, 980}, {2106, 30, 50, 980}, {4580, 10, 48, 980}, {2536, 34, 52, 980}, {3302, 25, 51, 980}, {424, 28, 54, 980},
+    {2205, 36, 49, 980}, {2205, 36, 54, 980}, {4284, 16, 51, 980}, {424, 28, 57, 980}, {2205, 36, 55, 980}, {2205, 36, 50, 980},
+    {4284, 16, 52, 980}, {607, 16, 50, 980}, {2205, 36, 51, 980}, {424, 28, 53, 980}, {2205, 36, 50, 980}, {607, 16, 51, 980},
+    {2205, 36, 48, 980}, {1329, 28, 55, 980}, {2205, 36, 53, 980}, {342, 26, 64, 980}, {2587, 34, 55, 980}, {1123, 11, 44, 980},
+    {2148, 30, 56, 980}, {2148, 30, 57, 980}, {2587, 34, 56, 980}, {1416, 25, 53, 980}, {4345, 10, 49, 980}, {342, 26, 63, 980},
+    {1123, 11, 41, 980}, {2587, 34, 52, 980}, {4345, 10, 47, 980}, {683, 30, 54, 980}, {4345, 10, 48, 980}, {342, 26, 70, 980},
+    {4345, 10, 47, 980}, {2269, 36, 50, 980}, {4936, 16, 52, 980}, {2269, 36, 54, 980}, {2734, 28, 53, 980}, {2269, 36, 51, 980},
+    {4936, 16, 52, 980}, {2269, 36, 52, 980}, {3559, 10, 49, 980}, {1186, 34, 56, 980}, {2269, 36, 49, 980}, {2269, 36, 48, 980},
+    {2734, 28, 55, 980}, {2269, 36, 53, 980}, {4936, 16, 50, 980}, {320, 23, 161, 980}, {490, 23, 161, 980}, {810, 23, 161, 980},
+    {980, 23, 161, 980}, {1360, 1, 247, 1000}, {380, 23, 161, 980}, {610, 23, 161, 980}, {990, 23, 161, 980}, {1220, 23, 161, 980},
+    {1600, 1, 247, 1000}, {440, 23, 161, 980}, {730, 23, 161, 980}, {1170, 23, 161, 980}, {1460, 23, 161, 980}, {1840, 1, 247, 1000},
+    {896, 28, 70, 980}, {1856, 44, 241, 1000}, {885, 28, 70, 980}, {1834, 45, 232, 1000}, {907, 28, 70, 980}, {1987, 44, 241, 1000},
+    {896, 28, 70, 980}, {1856, 15, 117, 1000}, {885, 28, 70, 980}, {1834, 15, 117, 1000}, {907, 28, 70, 980}, {1987, 15, 117, 1000},
+    {314, 28, 52, 980}, {1300, 28, 56, 980}, {2106, 16, 50, 980}, {2536, 34, 51, 980}, {424, 28, 55, 980}, {2484, 34, 57, 980},
+    {314, 28, 52, 980}, {2375, 34, 52, 980}, {670, 16, 51, 980}, {2106, 16, 48, 980}, {424, 28, 53, 980}, {607, 16, 49, 980},
+    {627, 16, 52, 980}, {1972, 16, 46, 980}, {670, 16, 49, 980}, {1101, 25, 55, 980}, {607, 16, 52, 980}, {4284, 10, 46, 980},
+    {314, 28, 53, 980}, {2375, 34, 51, 980}, {670, 16, 50, 980}, {3302, 19, 88, 980}, {1329, 28, 58, 980}, {2484, 34, 57, 980},
+    {1276, 28, 52, 980}, {3035, 16, 49, 980}, {308, 28, 57, 980}, {3915, 10, 44, 980}, {2331, 28, 57, 980}, {3035, 16, 47, 980},
+    {616, 48, 66, 980}, {1276, 28, 51, 980}, {1936, 25, 56, 980}, {2331, 28, 55, 980}, {1012, 34, 55, 980}, {1936, 25, 55, 980},
+    {1276, 28, 56, 980}, {2331, 28, 52, 980}, {2331, 28, 57, 980}, {3035, 16, 51, 980}, {2496, 28, 51, 980}, {3249, 16, 52, 980},
+    {1365, 28, 53, 980}, {2496, 28, 55, 980}, {330, 28, 55, 980}, {3249, 16, 50, 980}, {2496, 28, 54, 980}, {4506, 10, 45, 980},
+    {1365, 28, 58, 980}, {2072, 25, 49, 980}, {659, 48, 62, 980}, {2072, 25, 53, 980}, {1083, 34, 51, 980}, {2072, 25, 52, 980},
+    {330, 28, 57, 980}, {2072, 25, 50, 980}, {3350, 16, 51, 980}, {4211, 10, 50, 980}, {1173, 34, 56, 980}, {1306, 28, 53, 980},
+    {596, 48, 68, 980}, {4211, 10, 50, 980}, {3350, 16, 50, 980}, {4211, 10, 50, 980}, {1173, 34, 58, 980}, {2441, 28, 53, 980},
+    {596, 48, 68, 980}, {1173, 34, 53, 980}, {596, 48, 70, 980}, {2441, 28, 57, 980}, {1306, 28, 57, 980}, {2441, 28, 52, 980},
+    {1389, 38, 106, 980}, {1972, 21, 90, 980}, {2039, 19, 86, 980}, {3326, 20, 96, 980}, {1031, 20, 85, 980}, {1062, 21, 89, 980},
+    {3326, 20, 99, 980}, {1300, 38, 112, 980}, {2322, 21, 96, 980}, {2375, 19, 83, 980}, {1972, 21, 91, 980}, {2039, 19, 86, 980},
+    {2160, 20, 92, 980}, {3155, 19, 84, 980}, {1062, 21, 88, 980}, {1300, 38, 101, 980}, {3326, 20, 94, 980}, {1062, 21, 95, 980},
+    {1300, 38, 108, 980}, {3003, 38, 114, 980}, {1062, 21, 90, 980}, {2375, 19, 81, 980}, {3003, 38, 102, 980}, {717, 19, 93, 980},
+    {919, 20, 88, 980}, {1031, 20, 94, 980}, {3155, 19, 91, 980}, {823, 19, 89, 980}, {2666, 21, 91, 980}, {3448, 38, 105, 980},
+    {1055, 20, 96, 980}, {1101, 20, 89, 980}, {1220, 21, 97, 980}, {3818, 20, 91, 980}, {1101, 20, 87, 980}, {1220, 21, 88, 980},
+    {1388, 38, 107, 980}, {2341, 19, 85, 980}, {1055, 20, 99, 980}, {2666, 21, 98, 980}, {3448, 38, 104, 980}, {3623, 19, 92, 980},
+    {823, 19, 82, 980}, {1388, 38, 108, 980}, {1595, 38, 103, 980}, {670, 19, 91, 980}, {823, 19, 85, 980}, {1055, 20, 93, 980},
+    {3623, 19, 85, 980}, {1101, 20, 96, 980}, {1220, 21, 96, 980}, {2480, 20, 97, 980}, {1101, 20, 93, 980}, {1220, 21, 87, 980},
+    {1388, 38, 103, 980}, {3818, 20, 99, 980}, {1359, 20, 88, 980}, {1512, 38, 113, 980}, {690, 19, 84, 980}, {1359, 20, 89, 980},
+    {1512, 38, 104, 980}, {2509, 21, 86, 980}, {1359, 20, 88, 980}, {1512, 38, 107, 980}, {690, 19, 82, 980}, {1359, 20, 92, 980},
+    {690, 19, 81, 980}, {1359, 20, 88, 980}, {1512, 38, 109, 980}, {2509, 21, 92, 980}, {1512, 38, 100, 980}, {2509, 21, 87, 980},
+    {616, 26, 69, 980}, {1936, 30, 57, 980}, {1276, 30, 52, 980}, {1936, 30, 53, 980}, {308, 25, 56, 980}, {616, 26, 63, 980},
+    {1012, 25, 54, 980}, {3915, 10, 46, 980}, {308, 25, 53, 980}, {616, 26, 62, 980}, {2331, 26, 62, 980}, {3915, 10, 47, 980},
+    {3035, 34, 53, 980}, {3915, 10, 44, 980}, {616, 26, 64, 980}, {1012, 25, 53, 980}, {2072, 30, 53, 980}, {3249, 34, 54, 980},
+    {1365, 30, 53, 980}, {4506, 10, 44, 980}, {1365, 30, 52, 980}, {4506, 10, 48, 980}, {659, 26, 63, 980}, {3249, 34, 51, 980},
+    {330, 25, 55, 980}, {1083, 25, 54, 980}, {3249, 34, 57, 980}, {4506, 10, 45, 980}, {659, 26, 68, 980}, {2072, 30, 54, 980},
+    {1083, 25, 55, 980}, {2496, 26, 69, 980}, {2441, 26, 70, 980}, {4211, 10, 48, 980}, {416, 25, 52, 980}, {1173, 25, 55, 980},
+    {416, 25, 54, 980}, {4211, 10, 50, 980}, {416, 25, 52, 980}, {3350, 34, 52, 980}, {1306, 30, 51, 980}, {2167, 30, 54, 980},
+    {1173, 25, 51, 980}, {2167, 30, 54, 980}, {2441, 26, 62, 980}, {4211, 10, 47, 980}, {1306, 30, 50, 980}, {2167, 30, 52, 980},
+    {616, 25, 51, 980}, {1936, 28, 54, 980}, {1012, 34, 55, 980}, {1936, 28, 57, 980}, {616, 25, 53, 980}, {3035, 48, 65, 980},
+    {1012, 34, 57, 980}, {1936, 28, 53, 980}, {1276, 42, 50, 980}, {1936, 28, 55, 980}, {616, 25, 56, 980}, {3915, 10, 48, 980},
+    {2331, 28, 57, 980}, {3915, 10, 47, 980}, {1936, 28, 56, 980}, {3035, 48, 66, 980}, {330, 34, 53, 980}, {3249, 48, 67, 980},
+    {1083, 34, 51, 980}, {1365, 42, 50, 980}, {659, 25, 51, 980}, {1083, 34, 51, 980}, {659, 25, 49, 980}, {1083, 34, 55, 980},
+    {330, 34, 56, 980}, {2072, 28, 54, 980}, {2496, 28, 55, 980}, {3249, 48, 66, 980}, {1083, 34, 57, 980}, {2072, 28, 54, 980},
+    {330, 34, 51, 980}, {3249, 48, 66, 980}, {2441, 28, 55, 980}, {4211, 10, 46, 980}, {2441, 28, 52, 980}, {4211, 10, 47, 980},
+    {416, 34, 53, 980}, {4211, 10, 47, 980}, {1173, 34, 54, 980}, {4211, 10, 47, 980}, {1173, 34, 51, 980}, {2441, 28, 57, 980},
+    {596, 25, 53, 980}, {3350, 48, 63, 980}, {416, 34, 51, 980}, {1173, 34, 54, 980}, {2441, 28, 52, 980}, {4211, 10, 50, 980},
+    {308, 28, 55, 980}, {616, 34, 56, 980}, {2331, 48, 65, 980}, {3915, 10, 48, 980}, {616, 34, 52, 980}, {2331, 48, 66, 980},
+    {1012, 28, 58, 980}, {2331, 48, 61, 980}, {1936, 28, 52, 980}, {3915, 10, 44, 980}, {308, 28, 56, 980}, {3035, 34, 51, 980},
+    {1276, 25, 56, 980}, {2331, 48, 67, 980}, {1276, 25, 56, 980}, {3915, 10, 47, 980}, {659, 34, 51, 980}, {2496, 48, 63, 980},
+    {659, 34, 54, 980}, {1083, 28, 55, 980}, {659, 34, 54, 980}, {3249, 34, 54, 980}, {659, 34, 53, 980}, {1365, 25, 54, 980},
+    {1083, 28, 57, 980}, {2496, 48, 66, 980}, {330, 28, 50, 980}, {2496, 48, 67, 980}, {2072, 28, 55, 980}, {2496, 48, 67, 980},
+    {659, 34, 53, 980}, {3249, 34, 53, 980}, {3350, 34, 55, 980}, {4211, 10, 50, 980}, {1173, 28, 53, 980}, {4211, 10, 46, 980},
+    {2441, 48, 68, 980}, {4211, 10, 45, 980}, {1306, 25, 51, 980}, {3350, 34, 55, 980}, {3350, 34, 50, 980}, {4211, 10, 49, 980},
+    {416, 28, 56, 980}, {596, 34, 54, 980}, {596, 34, 55, 980}, {4211, 10, 48, 980}, {416, 28, 54, 980}, {596, 34, 55, 980},
+    {1936, 25, 51, 980}, {2331, 34, 58, 980}, {1012, 34, 56, 980}, {2331, 34, 52, 980}, {308, 48, 68, 980}, {616, 25, 52, 980},
+    {1276, 48, 65, 980}, {3915, 10, 45, 980}, {1276, 48, 63, 980}, {2331, 34, 53, 980}, {1936, 25, 56, 980}, {3035, 48, 69, 980},
+    {616, 25, 50, 980}, {1276, 48, 62, 980}, {1276, 48, 69, 980}, {1936, 25, 55, 980}, {1365, 48, 66, 980}, {4506, 10, 50, 980},
+    {1083, 34, 52, 980}, {2072, 25, 53, 980}, {330, 48, 69, 980}, {659, 25, 50, 980}, {1083, 34, 51, 980}, {3249, 48, 65, 980},
+    {1083, 34, 55, 980}, {1365, 48, 69, 980}, {1365, 48, 66, 980}, {4506, 10, 45, 980}, {1083, 34, 52, 980}, {3249, 48, 65, 980},
+    {2072, 25, 54, 980}, {4506, 10, 46, 980}, {1173, 34, 56, 980}, {3350, 48, 68, 980}, {416, 48, 61, 980}, {1306, 48, 64, 980},
+    {2167, 25, 50, 980}, {3350, 48, 63, 980}, {2441, 34, 51, 980}, {3350, 48, 64, 980}, {1306, 48, 66, 980}, {3350, 48, 65, 980},
+    {416, 48, 62, 980}, {4211, 10, 51, 980}, {596, 25, 50, 980}, {2441, 34, 54, 980}, {416, 48, 65, 980}, {2441, 34, 51, 980},
+    {308, 30, 52, 980}, {1936, 48, 66, 980}, {330, 30, 57, 980}, {659, 29, 62, 980}, {416, 30, 52, 980}, {596, 29, 65, 980},
+    {308, 34, 56, 980}, {3035, 34, 52, 980}, {330, 34, 52, 980}, {3249, 34, 52, 980}, {596, 24, 52, 980}, {1173, 10, 49, 980},
+    {308, 28, 54, 980}, {616, 16, 48, 980}, {1083, 34, 51, 980}, {3249, 16, 48, 980}, {2167, 25, 49, 980}, {2441, 28, 56, 980},
+    {616, 30, 84, 980}, {1276, 35, 128, 980}, {1936, 15, 111, 1000}, {659, 30, 84, 980}, {1365, 35, 128, 980}, {2072, 15, 111, 1000},
+    {596, 30, 84, 980}, {1306, 35, 128, 980}, {2167, 15, 111, 1000}, {616, 48, 64, 980}, {1012, 34, 55, 980}, {2072, 28, 57, 980},
+    {2496, 10, 46, 980}, {596, 48, 65, 980}, {2167, 28, 56, 980}, {308, 13, 38, 980}, {1012, 13, 37, 980}, {1365, 10, 46, 980},
+    {2496, 10, 50, 980}, {1173, 13, 36, 980}, {1306, 10, 47, 980}, {1276, 13, 34, 980}, {3035, 10, 44, 980}, {1365, 13, 34, 980},
+    {3249, 10, 50, 980}, {1173, 10, 46, 980}, {2167, 32, 62, 980}, {1284, 20, 86, 1050}, {4648, 20, 84, 1050}, {5136, 19, 70, 1050},
+    {2850, 19, 71, 1050}, {3019, 20, 82, 1050}, {3245, 21, 81, 1050}, {4197, 38, 89, 1050}, {1284, 20, 84, 1050}, {1441, 20, 83, 1050},
+    {1485, 21, 83, 1050}, {5136, 19, 72, 1050}, {814, 19, 73, 1050}, {1441, 20, 83, 1050}, {1485, 21, 76, 1050}, {1942, 38, 93, 1050},
+    {814, 19, 77, 1050}, {1002, 19, 77, 1050}, {3245, 21, 79, 1050}, {1284, 20, 81, 1050}, {1942, 38, 99, 1050}, {2694, 21, 81, 1050},
+    {2850, 19, 74, 1050}, {1002, 19, 72, 1050}, {3245, 21, 77, 1050}, {4197, 38, 96, 1050}, {1002, 19, 76, 1050}, {3245, 21, 83, 1050},
+    {4197, 38, 92, 1050}, {4410, 19, 73, 1050}, {1151, 19, 78, 1050}, {1474, 20, 84, 1050}, {1705, 21, 82, 1050}, {3467, 20, 83, 1050},
+    {1474, 20, 75, 1050}, {4819, 38, 88, 1050}, {5063, 19, 71, 1050}, {5336, 20, 85, 1050}, {1151, 19, 73, 1050}, {1705, 21, 85, 1050},
+    {2230, 38, 94, 1050}, {3272, 19, 75, 1050}, {1705, 21, 74, 1050}, {3467, 20, 76, 1050}, {3725, 21, 82, 1050}, {4819, 38, 89, 1050},
+    {1151, 19, 80, 1050}, {1474, 20, 82, 1050}, {1705, 21, 75, 1050}, {3467, 20, 80, 1050}, {1474, 20, 80, 1050}, {1705, 21, 79, 1050},
+    {3467, 20, 81, 1050}, {1474, 20, 75, 1050}, {1705, 21, 81, 1050}, {2230, 38, 91, 1050}, {3725, 21, 84, 1050}, {1705, 21, 78, 1050},
+    {2230, 38, 90, 1050}, {3272, 19, 74, 1050}, {4819, 38, 95, 1050}, {996, 48, 58, 1050}, {4481, 34, 46, 1050}, {4091, 25, 44, 1050},
+    {4481, 34, 49, 1050}, {2476, 28, 44, 1050}, {4481, 34, 46, 1050}, {1453, 34, 46, 1050}, {5638, 28, 47, 1050}, {996, 48, 57, 1050},
+    {6324, 10, 38, 1050}, {2476, 28, 44, 1050}, {2799, 48, 52, 1050}, {4481, 34, 47, 1050}, {6324, 10, 42, 1050}, {4091, 25, 45, 1050},
+    {4481, 34, 49, 1050}, {3932, 30, 48, 1050}, {5464, 25, 42, 1050}, {2866, 25, 45, 1050}, {6264, 10, 43, 1050}, {1533, 30, 47, 1050},
+    {6264, 10, 39, 1050}, {2866, 25, 46, 1050}, {6264, 10, 41, 1050}, {2866, 25, 46, 1050}, {4532, 34, 48, 1050}, {1533, 30, 49, 1050},
+    {5464, 25, 46, 1050}, {1533, 30, 49, 1050}, {5464, 25, 43, 1050}, {866, 26, 55, 1050}, {3932, 30, 49, 1050}, {1624, 20, 83, 1050},
+    {1799, 21, 82, 1050}, {2354, 38, 88, 1050}, {1624, 20, 77, 1050}, {1799, 21, 80, 1050}, {2354, 38, 95, 1050}, {3036, 21, 81, 1050},
+    {1556, 20, 79, 1050}, {3933, 21, 79, 1050}, {5087, 38, 99, 1050}, {5345, 19, 75, 1050}, {1215, 19, 77, 1050}, {3933, 21, 84, 1050},
+    {5087, 38, 99, 1050}, {918, 19, 68, 1050}, {1215, 19, 79, 1050}, {1556, 20, 81, 1050}, {3036, 21, 81, 1050}, {1215, 19, 80, 1050},
+    {1556, 20, 77, 1050}, {3036, 21, 83, 1050}, {918, 19, 75, 1050}, {1215, 19, 74, 1050}, {1556, 20, 81, 1050}, {2354, 38, 94, 1050},
+    {1556, 20, 83, 1050}, {1624, 20, 73, 1050}, {5633, 20, 82, 1050}, {620, 23, 106, 1050}, {1190, 23, 106, 1050}, {1480, 23, 106, 1050},
+    {1860, 1, 247, 1000}, {680, 23, 106, 1050}, {1310, 23, 106, 1050}, {1660, 23, 106, 1050}, {2040, 1, 247, 1000}, {740, 23, 106, 1050},
+    {1430, 23, 106, 1050}, {1840, 23, 106, 1050}, {2220, 1, 247, 1000}, {1472, 28, 70, 1050}, {2752, 44, 241, 1000}, {1455, 28, 70, 1050},
+    {2719, 45, 232, 1000}, {1555, 28, 70, 1050}, {2995, 44, 241, 1000}, {1472, 28, 70, 1050}, {2752, 15, 117, 1000}, {1455, 28, 70, 1050},
+    {2719, 15, 117, 1000}, {1555, 28, 70, 1050}, {2995, 15, 117, 1000}, {1441, 16, 42, 1050}, {5136, 19, 72, 1050}, {5485, 19, 73, 1050},
+    {6760, 10, 41, 1050}, {4091, 16, 45, 1050}, {5638, 19, 69, 1050}, {814, 28, 47, 1050}, {3696, 16, 40, 1050}, {5485, 19, 78, 1050},
+    {6760, 10, 40, 1050}, {2476, 25, 48, 1050}, {4481, 34, 46, 1050}, {1441, 16, 45, 1050}, {2694, 28, 44, 1050}, {870, 28, 46, 1050},
+    {2876, 28, 47, 1050}, {1453, 16, 41, 1050}, {2476, 25, 42, 1050}, {1441, 16, 45, 1050}, {4260, 34, 45, 1050}, {5485, 19, 70, 1050},
+    {6760, 10, 38, 1050}, {1453, 16, 42, 1050}, {2799, 28, 47, 1050}, {3627, 25, 46, 1050}, {5779, 10, 39, 1050}, {2152, 34, 48, 1050},
+    {2644, 28, 48, 1050}, {1414, 48, 55, 1050}, {2644, 28, 45, 1050}, {1414, 48, 60, 1050}, {2644, 28, 45, 1050}, {3627, 25, 43, 1050},
+    {5779, 10, 41, 1050}, {799, 28, 48, 1050}, {4181, 28, 48, 1050}, {799, 28, 48, 1050}, {4181, 28, 45, 1050}, {799, 28, 49, 1050},
+    {5779, 10, 40, 1050}, {2830, 28, 44, 1050}, {3883, 25, 45, 1050}, {855, 28, 45, 1050}, {6651, 10, 39, 1050}, {3883, 25, 47, 1050},
+    {6651, 10, 39, 1050}, {3883, 25, 48, 1050}, {5396, 16, 43, 1050}, {2830, 28, 45, 1050}, {4475, 28, 49, 1050}, {1514, 48, 55, 1050},
+    {5396, 16, 41, 1050}, {5396, 16, 45, 1050}, {6651, 10, 42, 1050}, {1514, 48, 56, 1050}, {3883, 25, 45, 1050}, {4404, 28, 45, 1050},
+    {6215, 10, 42, 1050}, {1428, 48, 60, 1050}, {5541, 16, 41, 1050}, {5541, 16, 43, 1050}, {6215, 10, 40, 1050}, {2433, 34, 47, 1050},
+    {6215, 10, 43, 1050}, {2433, 34, 48, 1050}, {5541, 16, 45, 1050}, {4404, 28, 50, 1050}, {6215, 10, 39, 1050}, {2751, 28, 48, 1050},
+    {6215, 10, 42, 1050}, {4404, 28, 45, 1050}, {6215, 10, 43, 1050}, {3019, 20, 82, 1050}, {3696, 21, 76, 1050}, {4197, 38, 97, 1050},
+    {4260, 19, 76, 1050}, {2694, 38, 87, 1050}, {4260, 19, 76, 1050}, {4410, 19, 78, 1050}, {4648, 20, 81, 1050}, {1002, 19, 75, 1050},
+    {1284, 20, 83, 1050}, {4260, 19, 72, 1050}, {1942, 38, 88, 1050}, {2192, 20, 81, 1050}, {4648, 20, 84, 1050}, {1942, 38, 100, 1050},
+    {2192, 20, 79, 1050}, {2694, 38, 89, 1050}, {4197, 38, 88, 1050}, {1942, 38, 91, 1050}, {4197, 38, 92, 1050}, {4260, 19, 74, 1050},
+    {4410, 19, 81, 1050}, {1441, 19, 75, 1050}, {4260, 19, 78, 1050}, {4410, 19, 76, 1050}, {1485, 21, 83, 1050}, {1942, 38, 90, 1050},
+    {2192, 20, 73, 1050}, {4260, 19, 69, 1050}, {1538, 19, 76, 1050}, {4548, 19, 68, 1050}, {4819, 38, 88, 1050}, {2341, 20, 77, 1050},
+    {2876, 38, 93, 1050}, {3272, 19, 76, 1050}, {5063, 19, 75, 1050}, {3725, 21, 75, 1050}, {3946, 21, 81, 1050}, {4548, 19, 73, 1050},
+    {3467, 20, 81, 1050}, {3725, 21, 82, 1050}, {5336, 20, 76, 1050}, {1474, 20, 84, 1050}, {4548, 19, 69, 1050}, {4819, 38, 88, 1050},
+    {3725, 21, 81, 1050}, {3946, 21, 75, 1050}, {4819, 38, 93, 1050}, {1474, 20, 83, 1050}, {5063, 19, 81, 1050}, {5336, 20, 84, 1050},
+    {1151, 19, 75, 1050}, {3725, 21, 79, 1050}, {3946, 21, 74, 1050}, {4548, 19, 77, 1050}, {4655, 21, 81, 1050}, {5099, 19, 71, 1050},
+    {3185, 38, 93, 1050}, {4655, 21, 74, 1050}, {1654, 19, 70, 1050}, {2817, 20, 77, 1050}, {1654, 19, 74, 1050}, {2817, 20, 75, 1050},
+    {1654, 19, 76, 1050}, {2817, 20, 82, 1050}, {2817, 20, 76, 1050}, {3185, 38, 87, 1050}, {1654, 19, 69, 1050}, {2817, 20, 74, 1050},
+    {3185, 38, 92, 1050}, {4655, 21, 75, 1050}, {1414, 26, 54, 1050}, {2152, 25, 44, 1050}, {1414, 26, 60, 1050}, {5041, 34, 43, 1050},
+    {2152, 25, 43, 1050}, {2644, 30, 44, 1050}, {3627, 30, 46, 1050}, {5041, 34, 46, 1050}, {2152, 25, 45, 1050}, {3627, 30, 43, 1050},
+    {2152, 25, 46, 1050}, {5041, 34, 47, 1050}, {799, 25, 44, 1050}, {2644, 30, 47, 1050}, {2152, 25, 44, 1050}, {3627, 30, 44, 1050},
+    {855, 25, 42, 1050}, {2830, 30, 43, 1050}, {855, 25, 47, 1050}, {5396, 34, 47, 1050}, {5396, 34, 44, 1050}, {6651, 10, 40, 1050},
+    {855, 25, 44, 1050}, {3883, 30, 46, 1050}, {5396, 34, 49, 1050}, {6651, 10, 40, 1050}, {1514, 26, 54, 1050}, {6651, 10, 39, 1050},
+    {4475, 26, 57, 1050}, {5396, 34, 49, 1050}, {1514, 26, 55, 1050}, {5396, 34, 46, 1050}, {979, 25, 43, 1050}, {2751, 30, 44, 1050},
+    {4020, 30, 44, 1050}, {5541, 34, 46, 1050}, {2751, 30, 44, 1050}, {4020, 30, 48, 1050}, {5541, 34, 49, 1050}, {6215, 10, 39, 1050},
+    {2433, 25, 44, 1050}, {6215, 10, 40, 1050}, {2433, 25, 44, 1050}, {2751, 30, 46, 1050}, {1428, 26, 57, 1050}, {2433, 25, 47, 1050},
+    {1428, 26, 57, 1050}, {2433, 25, 44, 1050}, {5041, 48, 54, 1050}, {5779, 10, 43, 1050}, {2644, 42, 38, 1050}, {3627, 28, 47, 1050},
+    {2644, 42, 40, 1050}, {3627, 28, 46, 1050}, {2152, 34, 45, 1050}, {2644, 42, 42, 1050}, {3627, 28, 49, 1050}, {4181, 28, 46, 1050},
+    {799, 34, 44, 1050}, {4181, 28, 49, 1050}, {1414, 25, 47, 1050}, {4181, 28, 47, 1050}, {2152, 34, 48, 1050}, {5779, 10, 39, 1050},
+    {4475, 28, 44, 1050}, {5396, 48, 54, 1050}, {2830, 42, 40, 1050}, {4475, 28, 47, 1050}, {2830, 42, 41, 1050}, {6651, 10, 41, 1050},
+    {2303, 34, 47, 1050}, {2830, 42, 41, 1050}, {855, 34, 46, 1050}, {5396, 48, 56, 1050}, {855, 34, 46, 1050}, {3883, 28, 49, 1050},
+    {855, 34, 44, 1050}, {2830, 42, 39, 1050}, {1514, 25, 44, 1050}, {4475, 28, 49, 1050}, {2433, 34, 45, 1050}, {4404, 28, 46, 1050},
+    {979, 34, 47, 1050}, {2433, 34, 46, 1050}, {4020, 28, 44, 1050}, {5541, 48, 55, 1050}, {2433, 34, 47, 1050}, {4404, 28, 49, 1050},
+    {1428, 25, 45, 1050}, {4020, 28, 48, 1050}, {2751, 42, 41, 1050}, {6215, 10, 40, 1050}, {2751, 42, 44, 1050}, {4404, 28, 50, 1050},
+    {979, 34, 45, 1050}, {4020, 28, 48, 1050}, {2644, 25, 47, 1050}, {4181, 48, 56, 1050}, {4181, 48, 55, 1050}, {5779, 10, 41, 1050},
+    {2644, 25, 45, 1050}, {5779, 10, 41, 1050}, {3627, 28, 44, 1050}, {5779, 10, 43, 1050}, {2152, 28, 45, 1050}, {4181, 48, 52, 1050},
+    {799, 28, 45, 1050}, {2152, 28, 44, 1050}, {1414, 34, 43, 1050}, {5041, 34, 45, 1050}, {3627, 28, 49, 1050}, {5041, 34, 47, 1050},
+    {1514, 34, 49, 1050}, {3883, 28, 47, 1050}, {1514, 34, 47, 1050}, {2830, 25, 44, 1050}, {5396, 34, 48, 1050}, {6651, 10, 38, 1050},
+    {855, 28, 44, 1050}, {4475, 48, 53, 1050}, {2303, 28, 44, 1050}, {3883, 28, 47, 1050}, {855, 28, 44, 1050}, {1514, 34, 47, 1050},
+    {2303, 28, 46, 1050}, {2830, 25, 45, 1050}, {3883, 28, 46, 1050}, {6651, 10, 39, 1050}, {2751, 25, 42, 1050}, {4404, 48, 54, 1050},
+    {1428, 34, 49, 1050}, {4020, 28, 48, 1050}, {1428, 34, 46, 1050}, {5541, 34, 48, 1050}, {1428, 34, 49, 1050}, {2433, 28, 47, 1050},
+    {2751, 25, 47, 1050}, {4404, 48, 56, 1050}, {979, 28, 44, 1050}, {5541, 34, 45, 1050}, {979, 28, 49, 1050}, {1428, 34, 45, 1050},
+    {4020, 28, 46, 1050}, {4404, 48, 59, 1050}, {1414, 25, 44, 1050}, {4181, 34, 44, 1050}, {2152, 34, 48, 1050}, {5041, 48, 58, 1050},
+    {2644, 48, 53, 1050}, {5779, 10, 39, 1050}, {799, 48, 55, 1050}, {3627, 25, 45, 1050}, {799, 48, 57, 1050}, {3627, 25, 46, 1050},
+    {4181, 34, 44, 1050}, {5041, 48, 52, 1050}, {799, 48, 54, 1050}, {2644, 48, 54, 1050}, {2152, 34, 48, 1050}, {4181, 34, 47, 1050},
+    {3883, 25, 44, 1050}, {5396, 48, 56, 1050}, {2303, 34, 45, 1050}, {5396, 48, 57, 1050}, {855, 48, 54, 1050}, {2830, 48, 53, 1050},
+    {855, 48, 54, 1050}, {2830, 48, 59, 1050}, {2303, 34, 49, 1050}, {2830, 48, 59, 1050}, {1514, 25, 47, 1050}, {2830, 48, 58, 1050},
+    {4475, 34, 44, 1050}, {5396, 48, 55, 1050}, {3883, 25, 47, 1050}, {5396, 48, 57, 1050}, {2433, 34, 45, 1050}, {2751, 48, 55, 1050},
+    {4020, 25, 43, 1050}, {6215, 10, 38, 1050}, {2751, 48, 59, 1050}, {4020, 25, 44, 1050}, {2433, 34, 46, 1050}, {5541, 48, 59, 1050},
+    {2433, 34, 46, 1050}, {4020, 25, 46, 1050}, {979, 48, 55, 1050}, {4404, 34, 48, 1050}, {4404, 34, 45, 1050}, {6215, 10, 40, 1050},
+    {2433, 34, 48, 1050}, {2751, 48, 57, 1050}, {1414, 29, 54, 1050}, {4181, 42, 41, 1050}, {4475, 42, 41, 1050}, {6651, 10, 38, 1050},
+    {2433, 24, 47, 1050}, {5541, 25, 43, 1050}, {2152, 10, 41, 1050}, {4181, 10, 42, 1050}, {1514, 24, 45, 1050}, {2830, 28, 50, 1050},
+    {979, 34, 48, 1050}, {6215, 10, 40, 1050}, {3627, 25, 47, 1050}, {5779, 10, 38, 1050}, {2303, 34, 45, 1050}, {6651, 10, 41, 1050},
+    {979, 28, 48, 1050}, {6215, 10, 41, 1050}, {1414, 30, 84, 1050}, {2644, 35, 128, 1050}, {3627, 15, 111, 1000}, {1514, 30, 84, 1050},
+    {2830, 35, 128, 1050}, {3883, 15, 111, 1000}, {1428, 30, 84, 1050}, {2751, 35, 128, 1050}, {4020, 15, 111, 1000}, {2644, 25, 44, 1050},
+    {3627, 28, 45, 1050}, {3883, 28, 48, 1050}, {5396, 10, 42, 1050}, {4020, 28, 46, 1050}, {4404, 10, 41, 1050}, {2152, 13, 29, 1050},
+    {5779, 10, 43, 1050}, {855, 13, 28, 1050}, {2303, 13, 30, 1050}, {1428, 32, 56, 1050}, {4020, 32, 54, 1050}, {1414, 13, 32, 1050},
+    {2644, 13, 32, 1050}, {3883, 32, 52, 1050}, {4475, 10, 40, 1050}, {4020, 32, 54, 1050}, {6215, 10, 42, 1050}, {1615, 20, 67, 980},
+    {1664, 37, 64, 980}, {2176, 37, 64, 980}, {4942, 37, 64, 980}, {2176, 37, 61, 980}, {3194, 37, 63, 980}, {5209, 37, 68, 980},
+    {3194, 37, 65, 980}, {3299, 21, 75, 980}, {4942, 37, 68, 980}, {2176, 37, 69, 980}, {3194, 37, 63, 980}, {3299, 21, 68, 980},
+    {5209, 37, 64, 980}, {1615, 20, 66, 980}, {3636, 37, 64, 980}, {4703, 37, 61, 980}, {3194, 37, 63, 980}, {4942, 37, 62, 980},
+    {5209, 37, 68, 980}, {1123, 37, 67, 980}, {1439, 37, 67, 980}, {4703, 37, 67, 980}, {1664, 37, 61, 980}, {3194, 37, 63, 980},
+    {3299, 21, 69, 980}, {3384, 37, 67, 980}, {3523, 28, 43, 980}, {4572, 36, 38, 980}, {4572, 36, 40, 980}, {6222, 10, 37, 980},
+    {1724, 16, 41, 980}, {4572, 36, 42, 980}, {1199, 28, 43, 980}, {4572, 36, 40, 980}, {4572, 36, 43, 980}, {6222, 10, 35, 980},
+    {4572, 36, 40, 980}, {7657, 16, 41, 980}, {1724, 16, 40, 980}, {4572, 36, 41, 980}, {3523, 28, 43, 980}, {4572, 36, 40, 980},
+    {1629, 20, 71, 980}, {5097, 34, 42, 980}, {1629, 20, 69, 980}, {6394, 19, 66, 980}, {1629, 20, 73, 980}, {3438, 21, 71, 980},
+    {3438, 21, 69, 980}, {6394, 19, 68, 980}, {1629, 20, 73, 980}, {3001, 28, 45, 980}, {6394, 19, 63, 980}, {7163, 10, 39, 980},
+    {3438, 21, 67, 980}, {7163, 10, 35, 980}, {5097, 34, 44, 980}, {6394, 19, 70, 980}, {3487, 28, 45, 980}, {4526, 36, 40, 980},
+    {1187, 28, 42, 980}, {4526, 36, 40, 980}, {1187, 28, 43, 980}, {4526, 36, 43, 980}, {1187, 28, 40, 980}, {4526, 36, 40, 980},
+    {1187, 28, 42, 980}, {4526, 36, 42, 980}, {4526, 36, 43, 980}, {5120, 28, 40, 980}, {1187, 28, 42, 980}, {4526, 36, 41, 980},
+    {3487, 28, 44, 980}, {4526, 36, 41, 980}, {1259, 48, 51, 980}, {2990, 28, 42, 980}, {1259, 48, 51, 980}, {4799, 25, 41, 980},
+    {1259, 48, 49, 980}, {2990, 28, 45, 980}, {1259, 48, 54, 980}, {2990, 28, 44, 980}, {4799, 25, 44, 980}, {6530, 28, 42, 980},
+    {1810, 34, 43, 980}, {4799, 25, 43, 980}, {1259, 48, 53, 980}, {4799, 25, 42, 980}, {1259, 48, 51, 980}, {3698, 48, 53, 980},
+    {760, 23, 90, 980}, {1600, 23, 90, 980}, {1980, 1, 247, 1000}, {820, 23, 90, 980}, {1720, 23, 90, 980}, {2100, 1, 247, 1000},
+    {880, 23, 90, 980}, {1840, 23, 90, 980}, {2220, 1, 247, 1000}, {1472, 28, 70, 980}, {3008, 44, 241, 1000}, {1455, 28, 70, 980},
+    {2972, 45, 232, 1000}, {1555, 28, 70, 980}, {3283, 44, 241, 1000}, {1472, 28, 70, 980}, {3008, 15, 117, 1000}, {1455, 28, 70, 980},
+    {2972, 15, 117, 1000}, {1555, 28, 70, 980}, {3283, 15, 117, 1000}, {2668, 25, 42, 980}, {4844, 34, 44, 980}, {3523, 28, 42, 980},
+    {7657, 10, 38, 980}, {4735, 16, 37, 980}, {6394, 19, 68, 980}, {1123, 28, 43, 980}, {3299, 28, 44, 980}, {1724, 16, 41, 980},
+    {4572, 16, 38, 980}, {3001, 25, 44, 980}, {5097, 34, 41, 980}, {3299, 28, 45, 980}, {6669, 10, 35, 980}, {4572, 16, 39, 980},
+    {7657, 10, 35, 980}, {5097, 34, 42, 980}, {7163, 10, 37, 980}, {1123, 28, 45, 980}, {4282, 16, 39, 980}, {2848, 25, 44, 980},
+    {4572, 16, 39, 980}, {5097, 34, 43, 980}, {6394, 19, 70, 980}, {3238, 28, 44, 980}, {4754, 28, 41, 980}, {1585, 48, 55, 980},
+    {5719, 16, 38, 980}, {1102, 28, 45, 980}, {5719, 16, 41, 980}, {1585, 48, 53, 980}, {5719, 16, 36, 980}, {1585, 48, 50, 980},
+    {6546, 10, 35, 980}, {1102, 28, 42, 980}, {2618, 34, 45, 980}, {3238, 28, 43, 980}, {4754, 28, 45, 980}, {2618, 34, 44, 980},
+    {3238, 28, 45, 980}, {1180, 28, 44, 980}, {4499, 25, 40, 980}, {2802, 34, 44, 980}, {7534, 10, 37, 980}, {2802, 34, 42, 980},
+    {7534, 10, 38, 980}, {3466, 28, 42, 980}, {5089, 28, 44, 980}, {1696, 48, 48, 980}, {6121, 16, 38, 980}, {5089, 28, 43, 980},
+    {6121, 16, 41, 980}, {4499, 25, 41, 980}, {6121, 16, 40, 980}, {1180, 28, 40, 980}, {3466, 28, 44, 980}, {1601, 48, 48, 980},
+    {7040, 10, 35, 980}, {1319, 28, 40, 980}, {5009, 28, 45, 980}, {3379, 28, 45, 980}, {5009, 28, 41, 980}, {3379, 28, 43, 980},
+    {4653, 25, 41, 980}, {1319, 28, 45, 980}, {4653, 25, 42, 980}, {1319, 28, 41, 980}, {4653, 25, 39, 980}, {5009, 28, 41, 980},
+    {6284, 16, 40, 980}, {1601, 48, 52, 980}, {4653, 25, 41, 980}, {3384, 37, 66, 980}, {3636, 37, 63, 980}, {4844, 19, 65, 980},
+    {1439, 37, 68, 980}, {4844, 19, 63, 980}, {4942, 37, 68, 980}, {5209, 37, 60, 980}, {1664, 37, 62, 980}, {2176, 37, 63, 980},
+    {2668, 20, 70, 980}, {3299, 38, 79, 980}, {1664, 37, 63, 980}, {4703, 37, 66, 980}, {4844, 19, 65, 980}, {4942, 37, 65, 980},
+    {2176, 37, 68, 980}, {4844, 19, 69, 980}, {4942, 37, 64, 980}, {3299, 38, 86, 980}, {3384, 37, 65, 980}, {4703, 37, 66, 980},
+    {1123, 37, 68, 980}, {1439, 37, 60, 980}, {3194, 37, 67, 980}, {3194, 37, 64, 980}, {4703, 37, 66, 980}, {4844, 19, 64, 980},
+    {1724, 19, 70, 980}, {1910, 37, 63, 980}, {3523, 38, 87, 980}, {4175, 37, 65, 980}, {5400, 37, 64, 980}, {5674, 37, 64, 980},
+    {5981, 37, 61, 980}, {1290, 37, 63, 980}, {1652, 37, 64, 980}, {1724, 19, 64, 980}, {4572, 21, 68, 980}, {1724, 19, 69, 980},
+    {5400, 37, 69, 980}, {5674, 37, 68, 980}, {5981, 37, 69, 980}, {4572, 21, 75, 980}, {5400, 37, 64, 980}, {5674, 37, 61, 980},
+    {5981, 37, 69, 980}, {1910, 37, 62, 980}, {2499, 37, 66, 980}, {2848, 20, 67, 980}, {4572, 21, 75, 980}, {1910, 37, 66, 980},
+    {3667, 37, 65, 980}, {3885, 37, 64, 980}, {1652, 37, 63, 980}, {1724, 19, 68, 980}, {1910, 37, 61, 980}, {3885, 37, 68, 980},
+    {5388, 21, 73, 980}, {5800, 19, 70, 980}, {3912, 38, 79, 980}, {5388, 21, 73, 980}, {1853, 19, 65, 980}, {3415, 20, 67, 980},
+    {5388, 21, 70, 980}, {5800, 19, 63, 980}, {3912, 38, 83, 980}, {5388, 21, 66, 980}, {3415, 20, 71, 980}, {3912, 38, 87, 980},
+    {3912, 38, 83, 980}, {5388, 21, 70, 980}, {3415, 20, 74, 980}, {3912, 38, 82, 980}, {4203, 30, 44, 980}, {5719, 34, 41, 980},
+    {1585, 26, 50, 980}, {6546, 10, 36, 980}, {5719, 34, 42, 980}, {6546, 10, 36, 980}, {2618, 25, 39, 980}, {4203, 30, 41, 980},
+    {2618, 25, 39, 980}, {6546, 10, 39, 980}, {1102, 25, 42, 980}, {2618, 25, 40, 980}, {4203, 30, 41, 980}, {5719, 34, 45, 980},
+    {2618, 25, 41, 980}, {4203, 30, 40, 980}, {2802, 25, 43, 980}, {4499, 30, 41, 980}, {3466, 30, 42, 980}, {4499, 30, 44, 980},
+    {2802, 25, 39, 980}, {7534, 10, 39, 980}, {1180, 25, 40, 980}, {1696, 26, 50, 980}, {1696, 26, 55, 980}, {4499, 30, 39, 980},
+    {1696, 26, 51, 980}, {5089, 26, 54, 980}, {1180, 25, 39, 980}, {2802, 25, 41, 980}, {1180, 25, 43, 980}, {3466, 30, 44, 980},
+    {2949, 25, 43, 980}, {3379, 30, 40, 980}, {4653, 30, 44, 980}, {5009, 26, 50, 980}, {1601, 26, 49, 980}, {6284, 34, 42, 980},
+    {2949, 25, 41, 980}, {7040, 10, 35, 980}, {4653, 30, 39, 980}, {7040, 10, 37, 980}, {1601, 26, 48, 980}, {3379, 30, 40, 980},
+    {2949, 25, 41, 980}, {6284, 34, 42, 980}, {2949, 25, 41, 980}, {3379, 30, 44, 980}, {3238, 42, 35, 980}, {5719, 48, 53, 980},
+    {2618, 34, 44, 980}, {3238, 42, 35, 980}, {1585, 25, 41, 980}, {4754, 28, 40, 980}, {1585, 25, 43, 980}, {4754, 28, 42, 980},
+    {4754, 28, 44, 980}, {5719, 48, 48, 980}, {2618, 34, 40, 980}, {4754, 28, 42, 980}, {1585, 25, 42, 980}, {5719, 48, 51, 980},
+    {1585, 25, 42, 980}, {2618, 34, 44, 980}, {3466, 42, 36, 980}, {7534, 10, 35, 980}, {1180, 34, 40, 980}, {3466, 42, 35, 980},
+    {5089, 28, 44, 980}, {6121, 48, 54, 980}, {1180, 34, 40, 980}, {3466, 42, 39, 980}, {1696, 25, 42, 980}, {4499, 28, 43, 980},
+    {4499, 28, 44, 980}, {6121, 48, 49, 980}, {1180, 34, 42, 980}, {7534, 10, 38, 980}, {2802, 34, 40, 980}, {6121, 48, 54, 980},
+    {2949, 34, 45, 980}, {4653, 28, 43, 980}, {1319, 34, 42, 980}, {4653, 28, 43, 980}, {6284, 48, 49, 980}, {7040, 10, 37, 980},
+    {3379, 42, 38, 980}, {6284, 48, 51, 980}, {4653, 28, 42, 980}, {7040, 10, 36, 980}, {1319, 34, 44, 980}, {4653, 28, 43, 980},
+    {4653, 28, 40, 980}, {5009, 28, 43, 980}, {1319, 34, 41, 980}, {1601, 25, 42, 980}, {4203, 28, 41, 980}, {6546, 10, 35, 980},
+    {4203, 28, 43, 980}, {6546, 10, 38, 980}, {2618, 28, 43, 980}, {6546, 10, 37, 980}, {1585, 34, 41, 980}, {5719, 34, 45, 980},
+    {2618, 28, 43, 980}, {4203, 28, 41, 980}, {1585, 34, 45, 980}, {6546, 10, 36, 980}, {3238, 25, 41, 980}, {4754, 48, 53, 980},
+    {1102, 28, 45, 980}, {1585, 34, 41, 980}, {3466, 25, 40, 980}, {6121, 34, 44, 980}, {4499, 28, 44, 980}, {6121, 34, 43, 980},
+    {2802, 28, 44, 980}, {6121, 34, 45, 980}, {1696, 34, 41, 980}, {6121, 34, 45, 980}, {1180, 28, 43, 980}, {6121, 34, 45, 980},
+    {1180, 28, 42, 980}, {4499, 28, 45, 980}, {1696, 34, 42, 980}, {2802, 28, 44, 980}, {4499, 28, 44, 980}, {7534, 10, 39, 980},
+    {1601, 34, 45, 980}, {5009, 48, 52, 980}, {3379, 25, 41, 980}, {6284, 34, 42, 980}, {2949, 28, 43, 980}, {7040, 10, 38, 980},
+    {1319, 28, 43, 980}, {3379, 25, 40, 980}, {1601, 34, 45, 980}, {4653, 28, 40, 980}, {1319, 28, 45, 980}, {2949, 28, 44, 980},
+    {1319, 28, 44, 980}, {7040, 10, 39, 980}, {2949, 28, 45, 980}, {7040, 10, 36, 980}, {1102, 48, 52, 980}, {2618, 34, 40, 980},
+    {4754, 34, 44, 980}, {5719, 48, 48, 980}, {1102, 48, 53, 980}, {4754, 34, 45, 980}, {3238, 48, 49, 980}, {4203, 25, 43, 980},
+    {3238, 48, 52, 980}, {4203, 25, 40, 980}, {1102, 48, 51, 980}, {4203, 25, 40, 980}, {2618, 34, 40, 980}, {4754, 34, 43, 980},
+    {4203, 25, 44, 980}, {4754, 34, 40, 980}, {4499, 25, 42, 980}, {6121, 48, 51, 980}, {4499, 25, 40, 980}, {6121, 48, 51, 980},
+    {6121, 48, 54, 980}, {7534, 10, 39, 980}, {1696, 25, 44, 980}, {7534, 10, 37, 980}, {3466, 48, 50, 980}, {5089, 34, 44, 980},
+    {3466, 48, 54, 980}, {5089, 34, 45, 980}, {3466, 48, 48, 980}, {6121, 48, 50, 980}, {3466, 48, 55, 980}, {6121, 48, 54, 980},
+    {1601, 25, 40, 980}, {4653, 25, 41, 980}, {5009, 34, 45, 980}, {7040, 10, 40, 980}, {3379, 48, 54, 980}, {5009, 34, 44, 980},
+    {3379, 48, 48, 980}, {4653, 25, 41, 980}, {2949, 34, 42, 980}, {4653, 25, 42, 980}, {2949, 34, 45, 980}, {6284, 48, 54, 980},
+    {5009, 34, 40, 980}, {6284, 48, 53, 980}, {1319, 48, 52, 980}, {7040, 10, 40, 980}, {1102, 30, 43, 980}, {2618, 24, 38, 980},
+    {1696, 29, 49, 980}, {2802, 24, 41, 980}, {1319, 30, 40, 980}, {3379, 48, 54, 980}, {1102, 34, 43, 980}, {5719, 34, 41, 980},
+    {1696, 24, 38, 980}, {3466, 28, 40, 980}, {2949, 10, 38, 980}, {7040, 10, 40, 980}, {1585, 16, 39, 980}, {4203, 25, 43, 980},
+    {5089, 28, 41, 980}, {7534, 10, 36, 980}, {1601, 16, 39, 980}, {4653, 25, 42, 980}, {1585, 30, 84, 980}, {3238, 35, 128, 980},
+    {4203, 15, 111, 1000}, {1696, 30, 84, 980}, {3466, 35, 128, 980}, {4499, 15, 111, 1000}, {1601, 30, 84, 980}, {3379, 35, 128, 980},
+    {4653, 15, 111, 1000}, {1102, 8, 53, 980}, {5719, 10, 38, 980}, {4499, 28, 45, 980}, {5089, 10, 38, 980}, {2949, 34, 41, 980},
+    {7040, 10, 37, 980}, {5719, 10, 36, 980}, {6546, 10, 35, 980}, {1696, 32, 49, 980}, {2802, 13, 27, 980}, {1319, 13, 27, 980},
+    {1601, 32, 50, 980}, {3238, 13, 27, 980}, {4754, 10, 36, 980}, {2802, 10, 39, 980}, {7534, 10, 35, 980}, {1601, 13, 29, 980},
+    {6284, 10, 39, 980},
 };
 
 static const uint8_t kSamples[] = {

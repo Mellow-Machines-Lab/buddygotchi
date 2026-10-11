@@ -361,7 +361,11 @@ facegen writes it into the Pixel pack. It holds:
 - `moods` and `states`, in the designs' order
 - `designs`: each design's loop length, voice window and host fact, the
   numbers `faces.h` and `sfx.h` give the board, which the core times
-  moments and picks variations by
+  moments and picks variations by. The host facts are task_complete's
+  `outcome` (`success`, `failure`) and starting's `ctx` (`new_task`,
+  `session`, `continuation`, `compacted`). A face with no start drawn for
+  `compacted`, an agent's context made smaller mid-work, gets
+  `continuation` for it
 - `box`, `colors` and `faces`: the popover's still face per mood and look
 
 `mac/mirror/`, if present, is a web page the popover shows instead, fed

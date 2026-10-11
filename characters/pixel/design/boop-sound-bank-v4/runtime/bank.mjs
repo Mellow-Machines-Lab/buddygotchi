@@ -38,7 +38,7 @@ export function chooseVariation(pair,{previousId=null,random=Math.random,hostCon
   let state=pair.state;
   if(state==='task_complete'&&!hostContext.completionOutcome)state='reply_ready';
   if(pair.state==='task_complete'&&hostContext.completionOutcome&&!['success','failure'].includes(hostContext.completionOutcome))throw new Error('Invalid task completion outcome');
-  if(state==='starting'&&hostContext.startContext&&!['new_task','session','continuation'].includes(hostContext.startContext))throw new Error('Invalid start context');
+  if(state==='starting'&&hostContext.startContext&&!['new_task','session','continuation','compacted'].includes(hostContext.startContext))throw new Error('Invalid start context');
   const list=catalog.filter(a=>a.mood===pair.mood&&a.state===state&&
     (state!=='task_complete'||a.outcome===hostContext.completionOutcome)&&
     (state!=='starting'||a.startContext===(hostContext.startContext||'session')));

@@ -156,8 +156,9 @@ final class ReplayTests: XCTestCase {
         ])
     }
 
-    /// What a Codex session shows. Its hooks report
-    /// no web search, helpers or failures, so none of those.
+    /// What a Codex session shows, its context compacted mid-turn
+    /// included. Its hooks report no web search, helpers or failures, so
+    /// none of those.
     func testACodexSessionShowsWhatItsHooksReport() throws {
         let got = try summary("codex/synthetic/states.jsonl", agent: "codex")
         XCTAssertEqual(got, [
@@ -166,13 +167,14 @@ final class ReplayTests: XCTestCase {
             "+1.0s working - 0",
             "+1.0s starting new_task",
             "+2.0s working/analyzing - 0",
+            "+4.0s starting compacted",
             "+5.0s working - 0",
-            "+6.0s working/testing - 0",
-            "+9.0s working/tool_use - 0",
-            "+10.0s working/terminal - 0",
-            "+31.0s working/waiting - 0",
-            "+36.0s idle - 0",
-            "+36.0s stopped",
+            "+7.0s working/testing - 0",
+            "+10.0s working/tool_use - 0",
+            "+11.0s working/terminal - 0",
+            "+32.0s working/waiting - 0",
+            "+37.0s idle - 0",
+            "+37.0s stopped",
         ])
     }
 

@@ -18,7 +18,7 @@ public enum FaceLoops {
     /// One design: its loop length, its voice window's start (a line
     /// that comes with its animation starts no sooner), and the host fact
     /// it's for, if any: task_complete's `outcome` (success or failure),
-    /// starting's `ctx` (new_task, session or continuation).
+    /// starting's `ctx` (new_task, session, continuation or compacted).
     public struct Design: Equatable, Sendable {
         public let ms: Int64
         public let voiceMs: Int64
@@ -79,6 +79,12 @@ public enum FaceLoops {
             (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx)
         }.map { $0 + 1 }
         return fit.isEmpty ? Array(1...row.count) : fit
+    }
+
+    /// Whether any mood has a design of `state` for `ctx`.
+    public static func draws(state: String, ctx: String) -> Bool {
+        guard let at = states.firstIndex(of: state) else { return false }
+        return designs.values.contains { $0.indices.contains(at) && $0[at].contains { $0.ctx == ctx } }
     }
 
     /// A design's loop length: `mood`'s design for `state`, variation
