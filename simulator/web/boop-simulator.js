@@ -230,16 +230,18 @@ export class DemoPlayer extends EventTarget {
 }
 
 const STYLE = `
-  :host { display: inline-block; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #999; }
+  :host { display: inline-block; max-width: 100%; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #999; }
   .body { background: #212121; border-radius: 18px; padding: 22px 22px 12px; }
+  /* On a screen narrower than the board, it shrinks to fit rather than scroll sideways. */
+  @media (max-width: 600px) { .body { padding: 12px 12px 8px; } }
   .screen { position: relative; }
   canvas { display: block; background: #000; border-radius: 6px; image-rendering: pixelated; touch-action: none;
-           cursor: pointer; width: var(--w); height: var(--h); }
+           cursor: pointer; width: var(--w); max-width: 100%; height: auto; }
   .finger { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px; border-radius: 50%;
             border: 2px solid #fff; opacity: 0; pointer-events: none; }
   .finger.down { animation: finger .6s ease-out; }
   @keyframes finger { from { opacity: .9; transform: scale(.3); } to { opacity: 0; transform: scale(1.4); } }
-  .chin { display: flex; align-items: center; gap: 8px; height: 34px; }
+  .chin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 34px; padding: 4px 0; box-sizing: border-box; }
   button { font: inherit; color: #bbb; background: #383838; border: 0; border-radius: 5px; padding: 3px 10px; cursor: pointer; }
   button:active, button.down { background: #666; }
   .led { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #333; }
@@ -354,7 +356,6 @@ export class BoopSimulator extends Element {
   #size(w, h) {
     if (this.#canvas.width !== w || this.#canvas.height !== h) { this.#canvas.width = w; this.#canvas.height = h; }
     this.#canvas.style.setProperty('--w', `${w * this.zoom}px`);
-    this.#canvas.style.setProperty('--h', `${h * this.zoom}px`);
   }
 
   #draw(frame) {
