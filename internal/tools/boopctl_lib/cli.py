@@ -316,6 +316,7 @@ def cmd_perf(args: argparse.Namespace) -> int:
     working = {"t": "state", "base": "working", "busy": 1, "vol": 0}  # muted: a missing vol is 6
     with Device(args.port) as dev:
         overlapped = dev.request({"t": "hello"}).get("face") == "gel"
+        simulated = dev.request({"t": "dbg.ping"}).get("sha") == "sim"
         dev.request({"t": "dbg.clock", "run": True})
         dev.send(working)
         start = time.monotonic()
@@ -326,7 +327,7 @@ def cmd_perf(args: argparse.Namespace) -> int:
                 dev.send(do(ANIMS[i % len(ANIMS)]))
                 dev.send(working)
                 last_anim, i = elapsed, i + 1
-            time.sleep(1.0)
+            dev.listen(1.0)
             samples.append(dev.vitals())
     fps = [s["fps"] for s in samples[1:]] or [0]  # the first second includes the start
     result = {
@@ -334,12 +335,14 @@ def cmd_perf(args: argparse.Namespace) -> int:
         "fps_min": min(fps),
         "fps_mean": round(sum(fps) / len(fps), 1),
         "frame_ms_max": round(max(frame_us(s, overlapped) for s in samples) / 1000, 1),
-        "heap_min": min(s["heap_min"] for s in samples),
+        # A simulator has no heap to report (its sha is "sim").
+        "heap_min": None if simulated else min(s["heap_min"] for s in samples),
         "reset": restarted([s["up"] for s in samples]),
         "motion": args.motion,
     }
     moving = result["fps_min"] >= 1 and result["frame_ms_max"] <= 40  # VERIFICATION.md L2
-    result["ok"] = (not args.motion or moving) and result["heap_min"] >= 60000 and not result["reset"]
+    result["ok"] = ((not args.motion or moving) and (simulated or result["heap_min"] >= 60000)
+                    and not result["reset"])
     emit(result)
     return 0 if result["ok"] else 1
 
@@ -645,7 +648,7 @@ def cmd_soak(args: argparse.Namespace) -> int:
                     samples.append({"t": round(elapsed, 1), **dev.vitals()})
                     keep({"partial": True})
                     next_ping = elapsed + 5
-                time.sleep(rng.uniform(0.2, 1.5))
+                dev.listen(rng.uniform(0.2, 1.5))
         except (DeviceError, OSError, KeyboardInterrupt) as exc:
             # The port went (unplugged, or the board reset) or Ctrl-C: what
             # it saw so far, never a pass.
@@ -663,7 +666,7 @@ def cmd_soak(args: argparse.Namespace) -> int:
         settle_by = time.monotonic() + 75
         while True:
             send(calm)
-            time.sleep(5)
+            dev.listen(5)
             final = dev.request({"t": "dbg.state"})
             plain = final.get("screen") == "face" and final.get("moment") is None and final.get("expr") is None
             if plain or time.monotonic() > settle_by:

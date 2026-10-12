@@ -66,6 +66,12 @@ class Link:
     # debug request or screenshot that fails that way is asked for again,
     # up to that many times, and `on_retry` (if set) hears of each failure.
     retries = 0
+    # A screenshot only reads the canvas, so asking again is always safe,
+    # and it's the one reply big enough to lose bytes routinely: the
+    # AMOLED's own USB drops the oldest queued bytes whenever its plugged
+    # check flickers mid-shot. So a shot is asked for up to this many more
+    # times even when `retries` is 0.
+    shot_retries = 2
     on_retry: Callable[[Exception], None] | None = None
     # Hears every message read while waiting for another, such as the
     # board's `hello` and `ev` (a tap, a request `ended`), which come
@@ -106,23 +112,39 @@ class Link:
                 time.sleep(0.002)
         return None
 
+    def _parse(self, line: bytes) -> dict[str, Any] | None:
+        """A line as a message; None for noise, and a torn one is heard."""
+        if not line.startswith(b"{"):
+            return None  # boot log or other noise
+        try:
+            return json.loads(line)
+        except ValueError:
+            if self.heard:  # a line that lost bytes on the way
+                self.heard({"t": "torn", "line": line[:120].decode(errors="replace")})
+            return None
+
     def wait_for(self, match: Callable[[dict[str, Any]], bool], timeout: float | None = None) -> dict[str, Any]:
         deadline = time.monotonic() + (timeout or self.timeout)
         while True:
             line = self.read_line(deadline)
             if line is None:
                 raise DeviceError(f"timed out waiting for {self.name}")
-            if not line.startswith(b"{"):
-                continue  # boot log or other noise
-            try:
-                msg = json.loads(line)
-            except ValueError:
-                if self.heard:  # a line that lost bytes on the way
-                    self.heard({"t": "torn", "line": line[:120].decode(errors="replace")})
+            msg = self._parse(line)
+            if msg is None:
                 continue
             if match(msg):
                 return msg
             if self.heard:
+                self.heard(msg)
+
+    def listen(self, seconds: float) -> None:
+        """Waits this long reading, as a host that stays connected does:
+        what comes unasked (an `ended`, a tap) goes to `heard` as it comes.
+        A simulator's port forgets what sits unread for long (its
+        Port::kStaleMs), so a pause in a long run is this, not a sleep."""
+        deadline = time.monotonic() + seconds
+        while (line := self.read_line(deadline)) is not None:
+            if (msg := self._parse(line)) is not None and self.heard:
                 self.heard(msg)
 
     def _retrying(self, call: Callable[[], Any]) -> Any:
@@ -154,7 +176,12 @@ class Link:
     def shot(self) -> tuple[list[int] | None, bytes, tuple[int, int]]:
         """The canvas: 256 RGB565 palette entries, one index per pixel, and
         the (width, height) from the header, so a PNG has the device's shape."""
-        return self._retrying(self._shot)
+        retries = self.retries
+        self.retries = max(retries, self.shot_retries)
+        try:
+            return self._retrying(self._shot)
+        finally:
+            self.retries = retries
 
     def _shot(self) -> tuple[list[int] | None, bytes, tuple[int, int]]:
         self.send({"t": "dbg.shot"})

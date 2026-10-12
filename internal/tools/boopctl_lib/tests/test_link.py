@@ -1,6 +1,10 @@
 """boopctl's Link on a scripted fake board: a debug request whose reply is
-lost is asked for again when `retries` allows. Needs no board."""
+lost is asked for again when `retries` allows, and a short screenshot
+always is. Needs no board."""
+import base64
+import json
 import sys
+import zlib
 import unittest
 from pathlib import Path
 
@@ -32,6 +36,29 @@ class LinkTests(unittest.TestCase):
         with self.assertRaises(DeviceError):
             board.request({"t": "dbg.state"})
         self.assertEqual(len(board.sent), 2)
+
+    def test_a_short_screenshot_is_asked_for_again_without_retries(self):
+        """Link.shot_retries: a shot that lost bytes is asked for again even
+        with `retries` at 0, which stays as it was for other requests."""
+        raw = bytes(range(256)) * 2 + bytes(range(8))  # a palette and 8 pixels
+        head = json.dumps({"t": "dbg.shot", "w": 4, "h": 2, "bytes": len(raw), "crc": zlib.crc32(raw)}).encode()
+        data = base64.b64encode(raw)
+        board = FakeBoard.in_turn([head + b"\n" + data[:-8] + b"\n", head + b"\n" + data + b"\n"])
+        palette, pixels, size = board.shot()
+        self.assertEqual((size, pixels, len(palette)), ((4, 2), bytes(range(8)), 256))
+        self.assertEqual(len(board.sent), 2)
+        self.assertEqual(board.retries, 0)
+
+    def test_listening_hears_what_comes_unasked(self):
+        """Link.listen reads while it waits, so an `ended` that comes then is
+        heard (a simulator's port forgets what sits unread), torn lines too."""
+        board = FakeBoard.in_turn([])
+        board.pending = b'{"t":"ev","kind":"ended","data":{"id":1,"how":"done"}}\nboot noise\n{"t":"ev","ki\n'
+        heard: list[dict] = []
+        board.heard = heard.append
+        board.listen(0.05)
+        self.assertEqual([m["t"] for m in heard], ["ev", "torn"])
+        self.assertEqual(heard[0]["data"], {"id": 1, "how": "done"})
 
 
 if __name__ == "__main__":

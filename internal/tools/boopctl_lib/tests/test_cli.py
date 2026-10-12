@@ -318,7 +318,7 @@ class SoakCutShortTests(unittest.TestCase):
         board = Board(answer)
         out, path = io.StringIO(), Path(self.enterContext(tempfile.TemporaryDirectory())) / "soak.json"
         with mock.patch.object(cli, "Device", lambda port: board), mock.patch.object(cli, "time", clock), \
-                contextlib.redirect_stdout(out):
+                mock.patch("boopctl_lib.device.time", clock), contextlib.redirect_stdout(out):
             code = cli.cmd_soak(cli.build_parser().parse_args(["soak", "--minutes", "30", "--vol", "0",
                                                                 "--out", str(path)]))
         result = json.loads(out.getvalue())
@@ -449,10 +449,10 @@ class PerfTests(unittest.TestCase):
             def sleep(self, s: float) -> None:
                 self.now += s
 
-        board = FakeBoard(answer)
+        board, clock = FakeBoard(answer), Clock()
         out = io.StringIO()
-        with mock.patch.object(cli, "Device", lambda port: board), mock.patch.object(cli, "time", Clock()), \
-                contextlib.redirect_stdout(out):
+        with mock.patch.object(cli, "Device", lambda port: board), mock.patch.object(cli, "time", clock), \
+                mock.patch("boopctl_lib.device.time", clock), contextlib.redirect_stdout(out):
             cli.cmd_perf(cli.build_parser().parse_args(["perf", "--motion", "--seconds", "5"]))
         self.sent = board.sent
         return json.loads(out.getvalue())

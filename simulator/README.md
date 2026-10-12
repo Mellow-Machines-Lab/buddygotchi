@@ -193,7 +193,9 @@ Three things a cable does that the port does too:
   standard rate.
 - **Nobody listening hears nothing later.** With nothing reading, what
   the board said 500 ms ago is thrown away, so a tool that opens the port
-  later hears only what's said from then on.
+  later hears only what's said from then on. A tool that pauses with the
+  port open keeps reading as it waits (`boopctl`'s soak and perf do), or
+  what comes unasked, such as an `ended`, is lost.
 - **A long reply arrives whole.** A screenshot is far more than the port
   holds at once: the board waits for its reader, and gives up on one that
   takes nothing for 250 ms.
