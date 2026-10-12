@@ -83,8 +83,8 @@ bool Ble::begin(const char* namePrefix, const char* idPrefix) {
   tx = svc->createCharacteristic(kTx, NIMBLE_PROPERTY::NOTIFY);
   NimBLECharacteristic* rx = svc->createCharacteristic(kRx, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
   rx->setCallbacks(&rxEvents);
-  svc->start();
 
+  // Starting to advertise starts the server, and with it the service.
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
   adv->setName(name_);
   adv->addServiceUUID(kService);

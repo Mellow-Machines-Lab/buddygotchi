@@ -30,7 +30,7 @@ cheap ESP32 board with a screen is the body. Start with
 | `internal/skills/` | `doctor` (hook self-check) and `webcam-verify`, symlinked for Claude and Codex |
 | `landing/` | The Next.js landing page, a repository of its own: clone it here, and this one ignores it |
 | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `CONTRIBUTING.md` | MIT for everything here (each package has its own copy), the fonts and libraries the firmware carries, how to build and test |
-| `.github/workflows/` | CI: the Swift tests and the firmware's unit tests ([internal/VERIFICATION.md](internal/VERIFICATION.md) §1) |
+| `.github/workflows/` | CI: the Swift tests, the firmware's unit tests and the CYD's firmware with Pixel ([internal/VERIFICATION.md](internal/VERIFICATION.md) §1) |
 
 Code that doesn't ship goes in `internal/`: tests, evals, dev tools,
 skills and the simulator. What ships (`BoopKit`, `Boop`, the three

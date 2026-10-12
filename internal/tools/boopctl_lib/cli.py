@@ -966,7 +966,7 @@ def play_needs(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="boopctl", description="Talk to the Boop board over USB (internal/VERIFICATION.md §2).")
-    parser.add_argument("--port", help="serial port (default: $BOOP_PORT or the first /dev/cu.usbserial-* or /dev/cu.usbmodem*)")
+    parser.add_argument("--port", help="serial port (default: $BOOP_PORT or the first /dev/cu.usbserial-*, /dev/cu.wchusbserial* or /dev/cu.usbmodem*)")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
     sub.add_parser("ping", help="firmware version, uptime, heap, fps, link").set_defaults(func=cmd_ping)
     sub.add_parser("state", help="the device's own view of itself").set_defaults(func=cmd_state)

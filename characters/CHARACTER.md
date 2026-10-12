@@ -7,10 +7,10 @@ character behind this spec phase by phase. Each phase updates this page
 with what it delivers.
 
 **What works so far.**
-- **The Mac** reads its moods from `characters/boop/character.json`
+- **The Mac** reads its moods from the chosen pack's `character.json`
   (§4–5): `CharacterPack`, in `app/BoopKit/Character/`. The app bundles
-  that file and loads it at start; the tests and `boopdev` take
-  `BOOP_CHARACTER`, else the repo's copy.
+  that pack and loads it at start; the tests and `boopdev` take
+  `BOOP_CHARACTER`, else the pack the repo last staged (§2).
 - **The firmware** takes its mood list from the pack's generated
   `firmware/include/moods.h` (§9), which `firmware/platformio.ini` puts
   on the include path.

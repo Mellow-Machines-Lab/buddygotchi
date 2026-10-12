@@ -19,14 +19,7 @@ if [ -z "$pio" ]; then
   venv="$PLATFORMIO_CORE_DIR/venv"
   pio="$venv/bin/pio"
   if [ ! -x "$pio" ]; then
-    python=
-    for candidate in python3 python3.14 python3.13 python3.12 python3.11 python3.10; do
-      if "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null; then
-        python=$candidate
-        break
-      fi
-    done
-    if [ -z "$python" ]; then
+    if ! python=$("$firmware_dir/tools/find-python.sh"); then
       echo "pio.sh: no pio on PATH, and installing PlatformIO needs Python 3.10 or later (brew install python)" >&2
       exit 1
     fi

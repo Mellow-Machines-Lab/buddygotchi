@@ -10,7 +10,8 @@ let usage = """
     Shares the board's USB serial port on a Unix socket until Ctrl-C (SPEC.md §8):
     every line from the board goes to every client, and each client's lines go
     to the board whole. A client that stops reading is dropped.
-      --port    the serial port; the only USB one here (/dev/cu.usbserial-…) by default
+      --port    the serial port; by default the only USB one here
+                (/dev/cu.usbserial*, cu.wchusbserial* or cu.usbmodem*)
       --socket  where to share it, under 104 bytes; \(defaultSocket) by default
       --baud    the board's rate; \(Bridge.defaultBaud) by default
     """

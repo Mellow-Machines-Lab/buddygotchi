@@ -52,6 +52,10 @@ Then add the host library to your app's `Package.swift`:
 .product(name: "LinkKit", package: "linkkit"),
 ```
 
+LinkKit lives inside Boop's repository for now, so both sides are used
+by path, from a checkout of it. A version to depend on by URL comes when
+it has a repository of its own.
+
 The device library's README has a whole lamp that fits on a page.
 
 ## Learn more
