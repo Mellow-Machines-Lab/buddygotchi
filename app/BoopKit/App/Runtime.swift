@@ -216,6 +216,9 @@ public final class Runtime: @unchecked Sendable {
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
+    /// Hears every agent's hook as it comes, before Boop takes it: a live
+    /// demo's player (`play`), which keeps its script to the agent's pace.
+    var demoHeard: ((HookLine) -> Void)?
 
     /// A clock that never steps and keeps counting while the Mac sleeps,
     /// starting at the wall clock's time: the keepalive and the link's
@@ -471,6 +474,7 @@ public final class Runtime: @unchecked Sendable {
     // MARK: Inputs (on `home`)
 
     func hook(_ line: HookLine, received: Int64) {
+        demoHeard?(line)
         let event = Adapter.event(from: line, receivedAt: received)
         // Debug mode logs every hook with what it became; the doctor skill
         // arms the plain line to see hooks arrive. Otherwise hooks aren't logged.

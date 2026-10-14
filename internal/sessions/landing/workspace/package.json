@@ -1,0 +1,10 @@
+{
+  "name": "notes",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "test": "node test/shortcuts.test.js",
+    "test:browser": "node test/browser.test.js",
+    "setup:browser": "node scripts/setup-browser.js"
+  }
+}

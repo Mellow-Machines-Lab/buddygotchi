@@ -28,6 +28,12 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(MoodAction.moods.map(\.name), MoodGraph.moods)
     }
 
+    /// A pixel face draws each mood it has as itself, whatever the pack:
+    /// one with no `moods_v2` (Pixel's) once sent every mood as calm.
+    func testAPixelFaceDrawsItsOwnMoodsAsThemselves() {
+        for mood in MoodGraph.moods { XCTAssertEqual(MoodGraph.pixelFallback(mood), mood) }
+    }
+
     /// CHARACTER.md §5: v3's moods are the slime design's host graph, in its
     /// order, with its timings (slimegen writes them), and each falls back
     /// to one of the 13 a pixel face draws.

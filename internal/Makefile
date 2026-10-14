@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools faces fw fw-test sim sim-test demo e2e tools-test
+.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -83,14 +83,6 @@ sim-test:
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && node --test simulator/tests/
 
-# Records the staged character pack's demo for the simulator's page
-# (simulator/README.md, Demos): played through the headless app on the
-# simulator's board, FACE=gel for Boop's own face. As long as the demo runs.
-demo:
-	$(MAKE) -C $(ROOT) build
-	cd $(ROOT) && $(PIO) run -e native
-	cd $(ROOT) && simulator/tools/record-demo.sh $(or $(FACE),pixel)
-
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:
 	$(MAKE) -C $(ROOT) build
@@ -104,6 +96,7 @@ e2e:
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
+	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
 	cd $(ROOT) && for tests in characters/*/tests/tools; do \
 	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \

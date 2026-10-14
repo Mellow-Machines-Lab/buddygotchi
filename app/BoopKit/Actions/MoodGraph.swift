@@ -43,8 +43,10 @@ extension MoodGraph {
     /// The retained mood standing in for a v3 one: what a pixel device
     /// draws, and whose voice a reaction's takes are in, since the takes were
     /// recorded in the retained moods only. Never a change to
-    /// the logical mood.
+    /// the logical mood. A retained mood stands for itself: a pack with no
+    /// `moods_v2` has only retained moods, each with the resting mood as
+    /// its v3 fallback.
     public static func pixelFallback(_ mood: String) -> String {
-        MoodGraphV3.nodes[mood]?.fallback ?? (moods.contains(mood) ? mood : MoodAction.initial)
+        moods.contains(mood) ? mood : MoodGraphV3.nodes[mood]?.fallback ?? MoodAction.initial
     }
 }

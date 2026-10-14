@@ -14,21 +14,24 @@ let usage = """
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, not this one.
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
-                [--brain jev|scripted] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
-                [--demo FILE|pack [--record FILE]]
+                [--brain jev|scripted|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
+                [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --personality overrides the saved one for this run only.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
-               every pass the same way without a network: an excited "Go", for pipeline checks.
+               every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
+               asks no brain at all, even with a key: only the rules, and dev lines' answers.
                Stops cleanly on SIGINT or SIGTERM. {"dev":"advance","ms":N} on the socket moves the clock forward,
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
                thread on this Mac; --no-open only logs where it would have opened.
                Every event goes to DIR/transcript/<date>.jsonl, read back at the next launch.
-               --demo plays a demo script (pack: the character pack's own, demo/demo.jsonl) and stops when it's
-               over; with a link it waits for the device first. It runs with no brain unless --brain says one:
-               the script says how Boop reacts. --record writes every line the device was sent, with when and
-               what was happening, for the simulator's page to play back.
+               --demo plays a demo script (pack: the character pack's own, demo/demo.jsonl; pack:NAME its
+               demo/NAME.jsonl) and stops when it's over; with a link it waits for the device first. It runs with
+               no brain unless --brain says one: the script says how Boop reacts. With --live a real agent plays
+               the script's agent, its hooks coming to the socket, and the rest keeps to its pace; the line due
+               now is in DIR/demo-cursor. --record writes every line the device was sent, with when and what was
+               happening, for the simulator's page to play back.
            --debug prints everything to this terminal as it happens: each hook and the raw event Boop made
                of it, every line sent to the device, and every view event, pass (with Jev's whole state) and
                action. The events, view events and passes also go to DIR/debug.jsonl, started afresh each
@@ -135,7 +138,7 @@ let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
     launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--brain", "--name", "--nature", "--demo", "--record"],
-                      ["--headless", "--debug", "--no-open"])
+                      ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
     : (["--state-dir", "--link"], ["--debug"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)

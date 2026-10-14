@@ -1,0 +1,50 @@
+// The landing page's demo (mellowmachines.com): adding keyboard shortcuts to a notes app, with
+// Pixel told off twice, poked too often, comforted, a test failing and passing after a hint, an
+// approval, a reviewer, and done. One script for `make demo` (the player is the agent), and
+// `make demo IN=…` (a replayed or a real agent, whose hooks the rest keeps to); the project the
+// agent works in is internal/sessions/landing/workspace/.
+{"demo": 1, "title": "Keyboard shortcuts"}
+{"agent": "prompt", "text": "Add keyboard shortcuts to the editor. Keep typing and focus behavior intact."}
+{"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
+{"you": "poke", "after": 1.5, "note": "You poke Pixel hello"}
+{"brain": {"react.mood": "happy", "say.feeling": "tickled", "say.kind": "word"}, "mood": "happy"}
+{"agent": "read", "file": "src/editor.js", "say": "I'll start by reading how the editor and its commands fit together.", "after": 2}
+{"you": "talk", "text": "You suck at this. You've got to up your game!", "hold": 2, "after": 1}
+{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "phrase"}, "mood": "determined", "after": 0.75}
+{"agent": "read", "file": "src/commands.js", "after": 2}
+{"you": "talk", "text": "You really suck. Come on, get working!", "after": 1.5}
+{"brain": {"react.mood": "grumpy", "say.feeling": "upset", "say.kind": "sound"}, "mood": "grumpy", "after": 0.75}
+{"agent": "read", "file": "src/useShortcuts.js", "after": 2}
+{"you": "poke", "after": 1.5, "note": "You poke Pixel three times while it's busy"}
+{"you": "poke", "after": 0.4}
+{"you": "poke", "after": 0.4}
+{"brain": {"react.mood": "irritated", "say.feeling": "upset", "say.kind": "sound"}, "mood": "irritated"}
+{"agent": "edit", "file": "src/useShortcuts.js", "old": "// Keyboard shortcuts for the editor.\nfunction useShortcuts(editor, doc) {\n  // TODO: Mod+K opens the command menu and / opens search, without getting\n  // in the way of typing.\n  return () => {};\n}", "new": "const EDITABLE = new Set([\"true\", \"plaintext-only\"]);\n\n// Whether a key lands somewhere the person types: an input, a textarea or\n// an editable block.\nfunction isTyping(target) {\n  const tag = (target.tagName || \"\").toLowerCase();\n  return tag === \"input\" || tag === \"textarea\" || EDITABLE.has(target.contentEditable);\n}\n\n// Keyboard shortcuts for the editor: Mod+K opens the command menu from\n// anywhere, and / opens search unless you're typing. Keys an input method\n// is still composing are left alone.\nfunction useShortcuts(editor, doc) {\n  function onKeyDown(event) {\n    if (event.isComposing) return;\n    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === \"k\") {\n      event.preventDefault();\n      editor.openMenu();\n    } else if (event.key === \"/\" && !isTyping(event.target)) {\n      event.preventDefault();\n      editor.openSearch();\n    }\n  }\n  doc.addEventListener(\"keydown\", onKeyDown);\n  return () => doc.removeEventListener(\"keydown\", onKeyDown);\n}", "after": 2, "takes": 1.5, "say": "I'll add one keydown listener: Mod+K opens the menu from anywhere, and / opens search unless you're typing."}
+{"you": "poke", "after": 2, "note": "A poke doesn't undo a grumpy mood"}
+{"brain": {"react.mood": "grumpy", "say.feeling": "tickled", "say.kind": "word"}, "mood": "grumpy"}
+// Claude is about to test; you get impatient, then kind, before the run.
+{"you": "talk", "text": "Still not done? Come on, Pixel!", "after": 2.5}
+{"brain": {"react.mood": "whiny", "say.feeling": "upset", "say.kind": "phrase"}, "mood": "whiny", "after": 0.75}
+{"you": "talk", "text": "Hey, I was too harsh. You're doing fine. Take your time.", "hold": 3, "after": 4}
+{"brain": {"react.mood": "calm", "say.about": "work", "say.kind": "phrase"}, "mood": "calm", "after": 0.75}
+{"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests", "fails": true, "say": "Now the tests.", "after": 2, "takes": 3}
+{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
+{"you": "talk", "text": "Try checking the editable parent. You can do this.", "after": 2.5}
+{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "word"}, "mood": "determined", "after": 0.75}
+{"agent": "edit", "file": "src/useShortcuts.js", "old": "// Whether a key lands somewhere the person types: an input, a textarea or\n// an editable block.\nfunction isTyping(target) {\n  const tag = (target.tagName || \"\").toLowerCase();\n  return tag === \"input\" || tag === \"textarea\" || EDITABLE.has(target.contentEditable);\n}", "new": "// Whether a key lands somewhere the person types: an input, a textarea or\n// anything inside an editable block, so the closest editable ancestor counts.\nfunction isTyping(target) {\n  for (let node = target; node; node = node.parentNode) {\n    const tag = (node.tagName || \"\").toLowerCase();\n    if (tag === \"input\" || tag === \"textarea\" || EDITABLE.has(node.contentEditable)) return true;\n  }\n  return false;\n}", "after": 2, "takes": 1.5, "say": "The failing test types inside a span within a note, so the target itself isn't marked editable. I'll check the closest editable ancestor instead."}
+{"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests again", "after": 1.5, "takes": 3}
+{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}, "mood": "happy"}
+{"agent": "run", "cmd": "npm run setup:browser", "about": "Install the browser test runner", "ask": 5, "after": 2.5, "takes": 3, "say": "All six unit tests pass. To check the shortcuts in a real browser I need the browser test runner."}
+{"you": "poke", "after": 1.5, "note": "One little reassuring poke"}
+{"brain": {"react.mood": "happy", "say.feeling": "tickled", "say.kind": "word"}}
+{"agent": "run", "cmd": "npm run test:browser", "about": "Run the browser checks", "say": "Now the browser checks.", "after": 2, "takes": 7}
+{"you": "poke", "after": 1.5, "note": "Green checks! You poke Pixel to celebrate"}
+{"brain": {"react.mood": "excited", "say.feeling": "tickled", "say.kind": "word"}, "mood": "excited"}
+// Claude sends a reviewer over the diff, in the background, and wraps up when it reports back.
+{"agent": "review", "task": "Review the diff", "after": 2, "prompt": "Review the uncommitted change to the keyboard shortcuts: look for duplicate listeners and missing cleanup.", "say": "All twelve browser checks pass. One last look before I hand it over."}
+{"agent": "reply", "text": "A reviewer is looking over the diff. I'll wrap up when it reports back.", "after": 1.5, "takes": 1.5, "note": "Claude waits for its reviewer"}
+{"agent": "run", "cmd": "git diff", "about": "Read the change", "by": "reviewer", "after": 2, "takes": 0.5}
+{"agent": "reply", "text": "One keydown listener is added and the cleanup removes it. The rest is the new isTyping helper and the two shortcuts. Looks good.", "by": "reviewer", "after": 2, "takes": 2}
+{"brain": {"react.mood": "engaged", "say.about": "helper back", "say.kind": "word"}, "mood": "engaged"}
+{"agent": "reply", "text": "Keyboard shortcuts are in. Mod+K opens the command menu from anywhere, and / opens search, except while you type in a field or a note. The six unit tests and twelve browser checks pass.", "after": 2, "takes": 3}
+{"brain": {"react.mood": "proud", "react.animation": "success", "react.loops": "twice", "say.about": "done", "say.kind": "word"}, "mood": "proud"}
