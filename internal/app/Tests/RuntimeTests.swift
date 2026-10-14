@@ -1734,6 +1734,109 @@ final class RuntimeTests: XCTestCase {
         change("calm")
         XCTAssertNil(closing(), "back to calm")
     }
+    /// A live demo keeps to the agent: an agent line waits for the agent's
+    /// own hook for it, however long that takes, and the person's and the
+    /// brain's lines after it wait too. A hook the script doesn't have
+    /// passes by. The line due is in the cursor file, then the line count.
+    func testALiveDemoKeepsToTheAgent() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"brain": {"react.mood": "curious"}, "after": 0}
+            {"you": "poke", "after": 0}
+            {"agent": "run", "cmd": "npm test", "fails": true}
+            {"brain": {"react.mood": "annoyed"}, "after": 0}
+            """)
+        let cursor = dir.appendingPathComponent("demo-cursor")
+        let over = Lines()
+        runtime.home.sync { runtime.play(script, live: true, cursor: cursor, done: { over.add("over") }) }
+        func settle() { runtime.home.sync {}; Thread.sleep(forTimeInterval: 0.1); runtime.home.sync {} }
+        func due() -> String? { (try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        func forced() -> [String] {
+            runtime.home.sync {
+                runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
+                    .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
+            }
+        }
+        func hook(_ name: String, _ tool: String? = nil) {
+            runtime.home.sync {
+                runtime.hook(HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/notes", tool: tool, ts: 0), received: 0)
+            }
+            settle()
+        }
+        settle()
+        XCTAssertEqual(due(), "0", "the prompt is due")
+        XCTAssertEqual(forced(), [], "nothing before the agent's prompt")
+        hook("SessionStart")  // not in the script: it passes by
+        hook("UserPromptSubmit")
+        XCTAssertEqual(forced(), ["curious"])
+        XCTAssertEqual(due(), "3", "the brain's answer and the poke are done; the run is due")
+        hook("PreToolUse", "Read")
+        hook("PostToolUse", "Read")  // a read, where the script has a run: it passes by
+        XCTAssertEqual(forced(), ["curious"], "still waiting for the run")
+        hook("PreToolUse", "Bash")
+        hook("PostToolUseFailure", "Bash")
+        XCTAssertEqual(forced(), ["curious", "annoyed"])
+        XCTAssertEqual(due(), "5", "over: the line count")
+        for _ in 0..<Int((Runtime.demoTail + 2) * 10) where over.all.isEmpty { Thread.sleep(forTimeInterval: 0.1) }
+        XCTAssertEqual(over.all, ["over"], "it ends after its tail")
+    }
+
+
+    /// When the agent leaves a line out (a step it skipped, or a call it
+    /// was refused), the next agent line's hook moves the script on to it,
+    /// without the lines between, rather than wait for good.
+    func testALiveDemoGoesOnWhenTheAgentLeavesALineOut() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"agent": "run", "cmd": "git diff --stat", "by": "reviewer"}
+            {"brain": {"react.mood": "curious"}, "after": 0}
+            {"agent": "reply", "text": "Looks good.", "by": "reviewer"}
+            {"brain": {"react.mood": "happy"}, "after": 0}
+            """)
+        let cursor = dir.appendingPathComponent("demo-cursor")
+        runtime.home.sync { runtime.play(script, live: true, cursor: cursor) }
+        func settle() { runtime.home.sync {}; Thread.sleep(forTimeInterval: 0.1); runtime.home.sync {} }
+        func hook(_ name: String) {
+            runtime.home.sync { runtime.hook(HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/notes", ts: 0), received: 0) }
+            settle()
+        }
+        settle()
+        hook("UserPromptSubmit")
+        hook("SubagentStop")  // the reviewer's command never ran
+        let forced = runtime.home.sync {
+            runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
+                .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
+        }
+        XCTAssertEqual(forced, ["happy"], "the left-out line's answer is left out too")
+        XCTAssertEqual((try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines), "5")
+    }
+
+    /// A live demo hears the agent from when it's readied, while its device
+    /// is awaited: a prompt sent before it starts is its first line. Its
+    /// cursor says -1 until then.
+    func testALiveDemoKeepsTheHooksFromBeforeItStarts() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"brain": {"react.mood": "curious"}, "after": 0}
+            """)
+        let cursor = dir.appendingPathComponent("demo-cursor")
+        runtime.home.sync {
+            let player = runtime.demo(script, live: true, cursor: cursor)
+            XCTAssertEqual((try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines), "-1",
+                           "not started")
+            runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/notes", ts: 0), received: 0)
+            player.start()
+        }
+        runtime.home.sync {}; Thread.sleep(forTimeInterval: 0.2); runtime.home.sync {}
+        let forced = runtime.home.sync {
+            runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
+                .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
+        }
+        XCTAssertEqual(forced, ["curious"])
+    }
 }
 
 /// What a runtime in debug mode logged and printed. Not nested in a test:

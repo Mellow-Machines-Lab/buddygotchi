@@ -24,16 +24,17 @@ enum Headless {
         // Every value is checked before anything is written, so a typo
         // doesn't leave a set-up Boop behind for the next run to keep.
         let personality = args.choice("--personality", of: Personality.allCases.map(\.rawValue)).flatMap(Personality.init(rawValue:))
-        // A demo needs no brain: its script says how Boop reacts. With
-        // --brain, the brain answers for the beats that don't.
+        // A demo needs no brain: its script says how Boop reacts.
         let demo = args["--demo"]
-        let brain = args.choice("--brain", of: ["jev", "scripted"]) ?? (demo == nil ? "jev" : "none")
+        let brain = args.choice("--brain", of: ["jev", "scripted", "none"]) ?? (demo == nil ? "jev" : "none")
         if args["--record"] != nil, demo == nil { fail("--record needs --demo") }
+        if args.has("--live"), demo == nil { fail("--live needs --demo") }
         var script: DemoScript?
         if let demo {
-            // `pack` is the character pack's own.
-            guard let file = demo == "pack" ? CharacterPack.active.demo : URL(fileURLWithPath: demo) else {
-                fail("the character pack \(CharacterPack.active.id) has no demo (demo/demo.jsonl)")
+            // `pack` is the character pack's own, and `pack:NAME` its demo/NAME.jsonl.
+            let named = demo == "pack" ? "demo" : demo.hasPrefix("pack:") ? String(demo.dropFirst(5)) : nil
+            guard let file = named.map(CharacterPack.active.demo(named:)) ?? URL(fileURLWithPath: demo) else {
+                fail("the character pack \(CharacterPack.active.id) has no demo/\(named ?? "demo").jsonl")
             }
             do { script = try DemoScript(contentsOf: file) } catch { fail("\(error)") }
         }
@@ -82,7 +83,10 @@ enum Headless {
             fail("boop: \(error)")
         }
 
-        if let script { play(script, on: runtime, link: link, recorder: recorder, to: args["--record"], log: log) }
+        if let script {
+            play(script, live: args.has("--live"), cursor: stateDir.appendingPathComponent("demo-cursor"),
+                 on: runtime, link: link, recorder: recorder, to: args["--record"], log: log)
+        }
 
         // Stop cleanly: close the socket and the link, then exit 0.
         var sources: [DispatchSourceSignal] = []
@@ -105,13 +109,15 @@ enum Headless {
     /// `--demo`: plays the script once the device is there (with a link),
     /// then stops. `recorder` keeps what the device was sent
     /// (`DemoRecording`), written to `file` for the simulator's page.
-    static func play(_ script: DemoScript, on runtime: Runtime, link: LinkSetting, recorder: DemoRecorder?, to file: String?, log: LogFile) {
-        func start() {
-            recorder?.begin(name: runtime.name)
-            runtime.play(script, beat: { beat in
-                let cause = beat.cause(creature: runtime.name)
+    static func play(_ script: DemoScript, live: Bool, cursor: URL, on runtime: Runtime, link: LinkSetting,
+                     recorder: DemoRecorder?, to file: String?, log: LogFile) {
+        // Ready at once, so a live agent may start while the device is
+        // awaited; played once it's there.
+        let player = runtime.home.sync {
+            runtime.demo(script, live: live, cursor: cursor, line: { line, agent in
+                let cause = line.cause(creature: runtime.name, agent: agent)
                 if let cause { log.write("demo: \(cause.text)") }
-                recorder?.happened(cause, input: beat.input)
+                recorder?.happened(cause, input: line.input)
             }, done: {
                 if let recorder, let file {
                     let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"
@@ -130,12 +136,17 @@ enum Headless {
                 exit(0)
             })
         }
-        // With a device, wait for it to say who it is, up to 15 s.
+        // With a device, wait for it to say who it is: up to 15 s, or for
+        // as long as a live demo's caller waits, its person perhaps still
+        // opening the simulator's page.
         var tries = 0
         func wait() {
             tries += 1
-            if link == .none || runtime.link.hello != nil { return start() }
-            if tries > 150 { fail("demo: no device on \(link) after 15 s") }
+            if link == .none || runtime.link.hello != nil {
+                recorder?.begin(name: runtime.name)
+                return player.start()
+            }
+            if !live, tries > 150 { fail("demo: no device on \(link) after 15 s") }
             runtime.home.asyncAfter(deadline: .now() + 0.1, execute: wait)
         }
         runtime.home.async(execute: wait)

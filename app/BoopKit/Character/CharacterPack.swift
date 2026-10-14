@@ -76,9 +76,19 @@ public struct CharacterPack: Sendable {
 extension CharacterPack {
     /// The pack's demo, if it has one: `demo/demo.jsonl` (`DemoScript`,
     /// CHARACTER.md §13).
-    public var demo: URL? {
-        let url = directory.appendingPathComponent("demo/demo.jsonl")
+    public var demo: URL? { demo(named: "demo") }
+
+    /// One of the pack's demos by name, `demo/<name>.jsonl`, if it has it.
+    public func demo(named name: String) -> URL? {
+        let url = directory.appendingPathComponent("demo/\(name).jsonl")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Every demo the pack has, `demo/*.jsonl`, by name.
+    public var demos: [URL] {
+        let folder = directory.appendingPathComponent("demo")
+        let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+        return files.filter { $0.pathExtension == "jsonl" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 }
 

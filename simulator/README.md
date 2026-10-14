@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-11. A board with no board: the firmware's own code in a
+Updated 2026-10-14. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -92,6 +92,10 @@ board's lines mean: they pass through it.
 
 ## Demos
 
+For a demo through a real agent, which drives the page live from the
+agent's own hooks, see `make demo IN=…`
+([internal/sessions/README.md](../internal/sessions/README.md)).
+
 A character pack's demo ([characters/CHARACTER.md](../characters/CHARACTER.md)
 §13) is a script the Mac app plays. The app can't run in a browser, so
 the page plays a **recording** of it: every line the app sent the board,
@@ -100,17 +104,25 @@ behind it. The screen is still the firmware's own drawing, and you can
 still poke it.
 
 ```sh
-make -C internal demo             # records the staged pack's demo on the pixel face
-make -C internal demo FACE=gel    # on Boop's own
-make simulator                    # then http://127.0.0.1:8206/?demo=pixel (or gel)
+make demo                   # Pixel's demo/landing.jsonl: the landing page's story
+make demo NAME=demo         # a pack's demo/demo.jsonl
+make demo FACE=gel          # on Boop's own face
+make demo NAME=?            # lists the demos there are
 ```
 
+`make demo` (`tools/demo.sh`) finds `demo/NAME.jsonl` in the chosen
+pack, else in the one pack that has it, and plays everything as that
+pack. It records the demo the first time, and again when the script
+changes or with `FRESH=1`; then it serves the page and opens
+`http://127.0.0.1:8206/?demo=pixel-landing` (the face, then the name).
+
 `tools/record-demo.sh` plays the script through the real headless app
-(`Boop --headless --demo pack --record FILE`) with the Mac build's board
-as its device, and takes as long as the demo runs. Into `web/dist/demo/`
-go `<face>.json`, the recording, and `<face>-voice.bin`, a voice pack
-with only the takes it says (`tools/voice_subset.py`: about 70 KB for a
-minute's demo, where the whole voice is 29 MB).
+(`Boop --headless --demo pack:NAME --record FILE`) with the Mac build's
+board as its device, and takes as long as the demo runs. Into
+`web/dist/demo/` go `<face>-NAME.json`, the recording, and
+`<face>-NAME-voice.bin`, a voice pack with only the takes it says
+(`tools/voice_subset.py`: about 70 KB for a minute's demo, where the whole
+voice is 29 MB).
 
 A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
 

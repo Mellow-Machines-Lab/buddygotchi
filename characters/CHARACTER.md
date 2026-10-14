@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-11. **Draft.** This is the contract a character pack
+Updated 2026-10-13. **Draft.** This is the contract a character pack
 meets so that any character can be dropped into the engine. The
 split plan moves Boop's
 character behind this spec phase by phase. Each phase updates this page
@@ -467,54 +467,62 @@ through its `fallback`.
 ## 13. A demo (optional)
 
 A pack can carry a demo: a scripted stretch of work for its creature to
-live through, `demo/demo.jsonl`. The engine plays it as if it were
-happening (`Runtime.play`, `app/BoopKit/Demo/`), through the same doors
-as real work, so the rules do what they always do; and the script says
-how the creature reacts, in the pack's own moods and words. That's why
-it's the pack's: the engine has the player, and the character has the
-story. The app bundles the folder.
+live through, `demo/demo.jsonl`, and more beside it as
+`demo/<name>.jsonl`: Pixel's `landing.jsonl` is the story the landing
+page plays (mellowmachines.com). The engine plays one through the same
+doors as real work (`Runtime.play`, `app/BoopKit/Demo/`), so the rules do
+what they always do; and the script says how the creature reacts, in the
+pack's own moods and words. That's why it's the pack's: the engine has the
+player, and the character has the story. The app bundles the folder.
 
-One JSON object a line, each a beat: `at`, the seconds since the start,
-and one thing that happens then. A line starting `//` is a comment.
-From Pixel's:
+A script is one list of lines, each by one of three: the agent, the
+person (`you`), or the creature's brain. One JSON object a line; a line
+starting `//` is a comment, and the first may be a header,
+`{"demo": 1, "title": "…"}`. From Pixel's `landing.jsonl`:
 
 ```json
-{"at": 2, "agent": "claude", "hook": "UserPromptSubmit", "session": "demo", "cwd": "/demo/shortcuts", "prompt": "Add keyboard shortcuts", "answer": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
-{"at": 17, "tap": true}
-{"at": 30, "agent": "claude", "hook": "PreToolUse", "session": "demo", "cwd": "/demo/shortcuts", "tool": "Bash", "topic": "deploy", "tool_use_id": "t2", "note": "You approve it"}
-{"at": 42, "talk": "how's it going?", "answer": {"react.mood": "determined", "say.about": "work", "say.kind": "phrase"}, "after": 2.2}
-{"at": 60, "advance": 300}
-{"at": 72, "mood": "proud", "note": "A good day's work"}
+{"agent": "prompt", "text": "Add keyboard shortcuts to the editor. Keep typing and focus behavior intact."}
+{"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
+{"you": "poke", "after": 1.5, "note": "You poke Pixel hello"}
+{"agent": "read", "file": "src/editor.js", "say": "I'll start by reading how the editor and its commands fit together.", "after": 2}
+{"you": "talk", "text": "You suck at this. You've got to up your game!", "hold": 2, "after": 1}
+{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "phrase"}, "mood": "determined", "after": 0.75}
+{"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests", "fails": true, "say": "Now the tests.", "after": 2, "takes": 3}
 ```
 
-| A beat with | Is |
+| A line | Is |
 | --- | --- |
-| `hook` | An agent's hook, in the form `agent-hook` sends ([agent-hooks](../agent-hooks/README.md)): `agent`, `hook`, `session`, and whichever of `cwd`, `tool`, `topic`, `tool_use_id`, `tool_error`, `prompt`, `message`, `error`, `kind` that hook carries |
-| `tap` | A tap on the creature |
-| `talk` | Push-to-talk: the button held for `hold` seconds (1.5), then those words heard |
-| `mood` | The mood, set |
-| `advance` | The clock moved on that many seconds, so a long turn needn't be waited out. Only where the clock can be moved: headless |
+| `agent` | What the agent does: `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's `old` and `new`), `run` (a `cmd`, what it's `about`, whether it `fails`, and `ask`: it asks you first, and you allow it after that many seconds), `review` (a subagent, its `task` and `prompt`), `reply` (`text` that ends the turn). `say` is what it says before it acts; `"by": "reviewer"` is the subagent's own |
+| `you` | `poke`, or `talk`: the button held `hold` seconds (1.5), then `text` heard |
+| `brain` | The brain's answers about the line above, as forced answers to its questions: `react.mood` (a mood's face, or `none`), `react.animation` (`success`, `failure` or `reply`, for a turn that finished), `react.loops`, and for a pack with a voice `say.feeling`, `say.about` and `say.kind` (§8). `mood` sets the mood |
 
-Any beat may also carry:
+The lines happen in order, each `after` the one before it ends (the
+defaults are about as long as each takes), and an `agent` line `takes`
+its own time. Any line may carry a `note`: what happened, in words for
+whoever is watching, in place of the words the engine makes of it.
 
-- **`answer`:** how the creature reacts, as the brain's answers to its
-  questions, given `after` seconds later (0.3, about as long as the brain
-  takes): `react.mood` (a mood's face, or `none`), `react.animation`
-  (`success`, `failure` or `reply`, for a turn that finished),
-  `react.loops`, and for a pack with a voice `say.feeling`, `say.about`
-  and `say.kind` (§8). A demo plays with no brain, so a beat with no
-  answer gets what the rules do and nothing more.
-- **`note`:** what happened, in words for whoever is watching, in place
-  of the words the engine finds for the beat (`You ask Claude: “…”`,
-  `Claude ran the tests`, `You poke Pixel`).
+Who plays the agent is the only thing that changes. With no agent
+(`--demo`), the player sends the hooks the agent would, so the story plays
+by itself: this is what the simulator's page records. With a live one
+(`--demo … --live`), a real Claude Code or Codex does the work, and the
+player waits for its own hooks for each `agent` line, so the person's and
+the brain's lines keep to its pace ([internal/sessions/README.md](../internal/sessions/README.md)).
+A demo plays with no brain: a moment with no `brain` line gets what the
+rules do and nothing more, so put the brain's lines where real Boop's
+brain would be asked (a turn starting or ending, a poke, talk, a check
+failing or passing again), and keep the agent's words true to what it
+does: a real model won't say what isn't.
 
-`DemoTests` holds the chosen pack's demo to its pack: every answer is to
+`DemoTests` holds each of the chosen pack's demos to its pack: every answer is to
 a question the brain is asked, with a choice it's offered, and every
 mood is one the pack has.
 
 ```sh
 .build/debug/Boop --headless --state-dir /tmp/boop-demo --demo pack                     # play it, with no device
 simulator/tools/record-demo.sh pixel                                                    # record it for the simulator's page
+BOOP_CHARACTER=characters/pixel .build/debug/Boop --headless --state-dir /tmp/boop-demo-landing --demo pack:landing   # Pixel's demo/landing.jsonl
+make demo NAME=landing                                                                  # watch it in the simulator's page
+make demo NAME=landing IN=claude                                                        # with the real Claude, in the desktop app
 ```
 
 The second plays it on the simulator's board and keeps every line the

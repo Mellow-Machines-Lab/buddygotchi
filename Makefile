@@ -1,7 +1,7 @@
 # Boop v1. Run from the repo root. See README.md and internal/VERIFICATION.md.
 # The development targets (tests, simulator, tools) are in internal/Makefile:
 # make -C internal <target>.
-.PHONY: build app run debug dash day simulator flash eval clean
+.PHONY: build app run debug dash day simulator demo flash eval clean
 
 PIO := firmware/tools/pio.sh
 
@@ -64,6 +64,29 @@ simulator:
 	python3 characters/charactergen.py --stage
 	simulator/web/build.sh
 	python3 simulator/web/serve.py
+
+# A pack's demo by name (NAME=landing, the default; NAME=? lists them),
+# with Boop on the simulator's page (simulator/README.md, Demos). IN says
+# where you watch the agent:
+#   (nothing)                  no agent: Boop plays it, as the page records
+#                              it (FACE=gel for Boop's own face, FRESH=1 to
+#                              record it again)
+#   claude                     the real Claude, in the Claude desktop app,
+#                              following the script as /demo
+#   simulated-claude-terminal  Claude Code in this terminal, its replies
+#                              replayed from the script
+#   simulated-codex-terminal   the same with Codex
+# An agent keeps in step with the script (internal/sessions/README.md);
+# BOARD=usb:SOCKET plays it on a board on a USB bridge.
+DEMO_RUN := internal/tools/session/session.py run $(or $(NAME),landing) --board $(or $(BOARD),sim)
+demo:
+	@case "$(IN)" in \
+	  "") simulator/tools/demo.sh $(or $(NAME),landing) $(or $(FACE),pixel) ;; \
+	  claude) $(DEMO_RUN) --ui desktop ;; \
+	  simulated-claude-terminal) $(DEMO_RUN) --agent claude ;; \
+	  simulated-codex-terminal) $(DEMO_RUN) --agent codex ;; \
+	  *) echo "make demo: IN is claude, simulated-claude-terminal or simulated-codex-terminal, or nothing" >&2; exit 1 ;; \
+	esac
 
 # The harness eval scenarios (internal/EVALS.md) against Jev, all of them with no
 # request budget: the final pass (internal/EVALS.md §2 counts its requests).

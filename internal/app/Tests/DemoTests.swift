@@ -7,26 +7,48 @@ import XCTest
 /// Demos: the script a character pack carries, what each beat is called
 /// for whoever watches, and the recording the simulator's page plays back.
 final class DemoTests: XCTestCase {
-    func testAScriptIsBeatsInOrder() throws {
+    func testAScriptIsLinesInOrder() throws {
         let script = try DemoScript("""
+            {"demo": 1, "title": "Keyboard shortcuts", "agent": "codex"}
             // A comment, and a blank line.
 
-            {"at": 9, "tap": true}
-            {"at": 2, "agent": "claude", "hook": "UserPromptSubmit", "session": "demo", "prompt": "Add shortcuts", "answer": {"react.mood": "curious"}}
-            {"at": 14, "talk": "how's it going?", "hold": 2, "answer": {"react.mood": "happy"}, "after": 2.5}
-            {"at": 20, "mood": "proud", "note": "A good day"}
-            {"at": 30, "advance": 300}
+            {"agent": "prompt", "text": "Add shortcuts"}
+            {"brain": {"react.mood": "curious"}, "mood": "curious", "after": 0.5}
+            {"you": "talk", "text": "how's it going?", "hold": 2}
+            {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true, "takes": 3}
+            {"agent": "run", "cmd": "npm run setup", "ask": 4}
+            {"agent": "reply", "text": "Done.", "by": "reviewer"}
+            {"you": "poke"}
             """)
-        XCTAssertEqual(script.beats.map(\.at), [2, 9, 14, 20, 30], "by time, however the file has them")
-        guard case .hook(let line) = script.beats[0].what else { XCTFail("a hook"); return }
-        XCTAssertEqual([line.agent, line.hook, line.session, line.prompt], ["claude", "UserPromptSubmit", "demo", "Add shortcuts"])
-        XCTAssertEqual(script.beats[0].answer, ["react.mood": "curious"])
-        XCTAssertEqual(script.beats[0].after, 0.3, "about as long as the brain takes")
-        guard case .talk(let words, let hold) = script.beats[2].what else { XCTFail("talk"); return }
-        XCTAssertEqual(words, "how's it going?")
-        XCTAssertEqual(hold, 2)
-        // Its last beat, and DemoScript.tail for what that starts to play out.
-        XCTAssertEqual(script.length, 30 + 0.3 + 6)
+        XCTAssertEqual(script.title, "Keyboard shortcuts")
+        XCTAssertEqual(script.agent, "codex")
+        XCTAssertEqual(script.lines.map(\.number), [4, 5, 6, 7, 8, 9, 10], "in the file's order")
+        XCTAssertEqual(script.lines[1].what, .brain(["react.mood": "curious"], mood: "curious"))
+        XCTAssertEqual(script.lines[1].after, 0.5)
+        XCTAssertEqual(script.lines[2].what, .talk("how's it going?", hold: 2))
+        guard case .agent(let run) = script.lines[3].what else { XCTFail("an agent line"); return }
+        XCTAssertEqual([run.cmd, run.about], ["npm test", "Run the tests"])
+        XCTAssertTrue(run.fails)
+        XCTAssertEqual(script.lines[3].takes, 3)
+        guard case .agent(let asks) = script.lines[4].what, case .agent(let report) = script.lines[5].what else { XCTFail("agent lines"); return }
+        XCTAssertEqual(asks.ask, 4)
+        XCTAssertTrue(report.byReviewer)
+        XCTAssertEqual(script.lines[6].what, .poke)
+        XCTAssertEqual(script.lines[6].input, "tap", "a finger on the device's own screen")
+    }
+
+    /// Pins how long a line waits after the one before, and an agent line
+    /// takes, when the script doesn't say: about as long as each takes.
+    func testWhatALineWaitsWhenTheScriptDoesntSay() throws {
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"brain": {}}
+            {"you": "poke"}
+            {"agent": "read", "file": "a.js"}
+            {"agent": "run", "cmd": "make"}
+            """)
+        XCTAssertEqual(script.lines.map(\.after), [1, 0.3, 0.8, 1, 1])
+        XCTAssertEqual(script.lines.map(\.takes), [0, 0, 0, 0.6, 2])
     }
 
     func testABadLineSaysWhere() {
@@ -38,35 +60,31 @@ final class DemoTests: XCTestCase {
                 return "\(error)"
             }
         }
-        XCTAssertTrue(problem(#"{"tap": true}"#).contains("demo.jsonl:1: needs \"at\""))
-        XCTAssertTrue(problem("{\"at\": 1, \"tap\": true}\n{\"at\": 2}").contains("demo.jsonl:2: nothing happens"))
-        XCTAssertTrue(problem(#"{"at": 1, "hook": "Stop"}"#).contains("a hook needs agent, hook and session"))
-        XCTAssertTrue(problem(#"{"at": 1, "tap": true, "answer": "happy"}"#).contains("answer is question keys to choices"))
+        XCTAssertTrue(problem(#"{"tap": true}"#).contains("demo.jsonl:1: a line is by the agent, you or the brain"))
+        XCTAssertTrue(problem("{\"you\": \"poke\"}\n{\"agent\": \"dance\"}").contains("demo.jsonl:2: agent is one of"))
+        XCTAssertTrue(problem(#"{"agent": "edit", "file": "a.js"}"#).contains("an edit needs a file, old and new"))
+        XCTAssertTrue(problem(#"{"brain": "happy"}"#).contains("brain is question keys to choices"))
+        XCTAssertTrue(problem("{\"you\": \"poke\"}\n{\"demo\": 1}").contains("the header comes first"))
     }
 
-    /// Pins the words a watcher reads for each kind of beat.
-    func testWhatABeatIsCalled() throws {
-        func cause(_ json: String) throws -> DemoScript.Cause? { try DemoScript(json).beats[0].cause(creature: "Pip") }
-        let hook = #""agent": "claude", "session": "demo""#
-        try XCTAssertEqual(cause(#"{"at": 0, "tap": true}"#), .init(kind: "tap", text: "You poke Pip"))
-        try XCTAssertEqual(cause(#"{"at": 0, "talk": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"UserPromptSubmit\", \"prompt\": \"Fix it\"}"),
-                       .init(kind: "prompt", text: "You ask Claude: “Fix it”"))
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"PermissionRequest\"}"), .init(kind: "needs_you", text: "Claude needs your approval"))
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"PostToolUse\", \"topic\": \"tests\"}"), .init(kind: "tool", text: "Claude ran the tests"))
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"PostToolUseFailure\", \"topic\": \"deploy\"}"),
-                       .init(kind: "tool_failed", text: "Claude's deploy failed"))
-        try XCTAssertEqual(cause("{\"at\": 0, \"agent\": \"codex\", \"session\": \"d\", \"hook\": \"Stop\"}"), .init(kind: "done", text: "Codex finishes"))
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"StopFailure\", \"error\": \"rate_limit\"}"),
-                       .init(kind: "failed", text: "Claude's turn fails (rate limit)"))
-        // Nothing a watcher would call something happening.
-        try XCTAssertNil(cause("{\"at\": 0, \(hook), \"hook\": \"SessionStart\"}"))
-        try XCTAssertNil(cause("{\"at\": 0, \(hook), \"hook\": \"PreToolUse\", \"tool\": \"Bash\"}"))
-        try XCTAssertNil(cause("{\"at\": 0, \(hook), \"hook\": \"PostToolUse\", \"tool\": \"Read\"}"), "a routine call, about nothing")
-        try XCTAssertNil(cause(#"{"at": 0, "advance": 60}"#))
-        // A note says it in the script's words, and makes something of those.
-        try XCTAssertEqual(cause("{\"at\": 0, \(hook), \"hook\": \"PreToolUse\", \"note\": \"You approve it\"}"), .init(kind: "note", text: "You approve it"))
-        try XCTAssertEqual(cause(#"{"at": 0, "tap": true, "note": "A poke"}"#), .init(kind: "tap", text: "A poke"))
+    /// Pins the words a watcher reads for each kind of line.
+    func testWhatALineIsCalled() throws {
+        func cause(_ json: String, agent: String = "claude") throws -> DemoScript.Cause? {
+            try DemoScript(json).lines[0].cause(creature: "Pip", agent: agent)
+        }
+        try XCTAssertEqual(cause(#"{"you": "poke"}"#), .init(kind: "tap", text: "You poke Pip"))
+        try XCTAssertEqual(cause(#"{"you": "talk", "text": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
+        try XCTAssertEqual(cause(#"{"agent": "prompt", "text": "Fix it"}"#), .init(kind: "prompt", text: "You ask Claude: “Fix it”"))
+        try XCTAssertEqual(cause(#"{"agent": "read", "file": "a.js"}"#, agent: "codex"), .init(kind: "tool", text: "Codex reads a.js"))
+        try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}"#),
+                           .init(kind: "tool_failed", text: "Claude: run the tests, and it fails"))
+        try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm run setup", "about": "Install the runner", "ask": 3}"#),
+                           .init(kind: "needs_you", text: "Claude asks to install the runner, and you allow it"))
+        try XCTAssertEqual(cause(#"{"agent": "review", "task": "Review the diff"}"#), .init(kind: "tool", text: "Claude sends a reviewer: Review the diff"))
+        try XCTAssertEqual(cause(#"{"agent": "reply", "text": "ok", "by": "reviewer"}"#), .init(kind: "tool", text: "The reviewer reports back"))
+        try XCTAssertEqual(cause(#"{"agent": "reply", "text": "Done."}"#), .init(kind: "done", text: "Claude finishes"))
+        try XCTAssertNil(cause(#"{"brain": {"react.mood": "happy"}}"#), "the brain's answers show in what the creature does")
+        try XCTAssertEqual(cause(#"{"you": "poke", "note": "A poke"}"#), .init(kind: "tap", text: "A poke"))
     }
 
     func testARecordingStartsWithHowThingsStood() {
@@ -118,21 +136,25 @@ final class DemoTests: XCTestCase {
         ])
     }
 
-    /// The character pack's own demo plays in its own words: every answer
-    /// is to a question the brain is asked, with a choice it's offered.
-    func testThePacksDemoAnswersWhatTheBrainIsAsked() throws {
-        try XCTSkipUnless(CharacterPack.active.demo != nil, "the pack \(CharacterPack.active.id) has no demo")
-        let url = try XCTUnwrap(CharacterPack.active.demo)
-        let script = try DemoScript(contentsOf: url)
-        XCTAssertFalse(script.beats.isEmpty)
+    /// The character pack's own demos play in its own words: every answer
+    /// is to a question the brain is asked, with a choice it's offered, and
+    /// every mood is one the pack has.
+    func testThePacksDemosAnswerWhatTheBrainIsAsked() throws {
+        try XCTSkipUnless(!CharacterPack.active.demos.isEmpty, "the pack \(CharacterPack.active.id) has no demo")
         var offered = Dictionary(uniqueKeysWithValues: ReactAction.asked.map { ($0.key, Set($0.options.map(\.name))) })
         offered["react.mood", default: []].formUnion(CharacterPack.active.moods.map(\.id))
-        for beat in script.beats {
-            for (key, choice) in beat.answer ?? [:] {
-                XCTAssertTrue(offered[key]?.contains(choice) == true, "at \(beat.at) s: \(key) has no choice \(choice)")
-            }
-            if case .mood(let mood) = beat.what {
-                XCTAssertTrue(CharacterPack.active.moods.contains { $0.id == mood }, "at \(beat.at) s: no mood \(mood)")
+        for url in CharacterPack.active.demos {
+            let name = url.lastPathComponent
+            let script = try DemoScript(contentsOf: url)
+            XCTAssertFalse(script.lines.isEmpty, name)
+            for line in script.lines {
+                guard case .brain(let answers, let mood) = line.what else { continue }
+                for (key, choice) in answers {
+                    XCTAssertTrue(offered[key]?.contains(choice) == true, "\(name):\(line.number): \(key) has no choice \(choice)")
+                }
+                if let mood {
+                    XCTAssertTrue(CharacterPack.active.moods.contains { $0.id == mood }, "\(name):\(line.number): no mood \(mood)")
+                }
             }
         }
     }
