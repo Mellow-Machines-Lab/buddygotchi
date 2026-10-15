@@ -186,8 +186,8 @@ public final class Pipeline {
         }
     }
 
-    /// The threads as the view has them now (tests).
-    var threads: [String: TranscriptView.Thread] { view.threads(transcript.view(now: inputTime.now)) }
+    /// The sessions as the view has them now (tests).
+    var threads: [String: SessionTracker.Session] { view.sessions(transcript.view(now: inputTime.now)) }
 
     /// Why an event may not wake the brain now, or nil if it may: it needs
     /// a brain, and the view's holds.

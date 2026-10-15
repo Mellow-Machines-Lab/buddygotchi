@@ -385,12 +385,10 @@ public final class Runtime: @unchecked Sendable {
             reactions.pokesStopped()
         }
         let react = ReactAction(queue: queue, blocked: { core.reactionBlock }, who: { [weak h] now in
-            // The thread's name as its agent's app shows it, once an event
-            // brought one, else the view's: its workspace, else its project.
             // Weak: the harness holds this output.
             guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                   let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
-            return DeviceMoment.Who(agent: who.agent, thread: core.name(about: key) ?? who.thread, opens: core.thread(about: key))
+            return DeviceMoment.Who(agent: who.agent, thread: who.thread, opens: who.opens)
         }, speaks: speaks, version: version, face: face)
         h.output(mood)
         h.output(react, openFor: ReactAction.openForMs, keepOpen: TranscriptView.heldByPokes)

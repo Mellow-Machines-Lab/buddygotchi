@@ -189,6 +189,28 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(hook(.turnStart).first?.line, #"claude started turn 1 on "fix-nav" (landing)."#, "back, from turn 1")
     }
 
+    /// The view's sessions are agent-hooks' `SessionTracker`, as the core's
+    /// are, so the working heartbeat comes only while the core shows the
+    /// session working. Here a request waits, a subagent's call goes on
+    /// beside it, and then the safety net's 10 silent minutes expire the
+    /// request: the session is idle, and no working heartbeat says
+    /// otherwise. Before, the view kept a fold of its own, which counted
+    /// the safety net from the request only, and so worked on for the
+    /// hour.
+    func testTheViewWorksOnlyWhenTheCoreDoes() {
+        rig = CoreRig(seed: 7, rules: .chatty)
+        hook(.turnStart)
+        hook(.activity, tool: "Bash", id: "t1")
+        hook(.needsYou, tool: "Bash")
+        rig.wait(1000)
+        rig.send(.activity, subagent: "a1", tool: "Read", id: "r1")
+        XCTAssertNotNil(rig.state.attn, "the subagent's call doesn't answer the request")
+        rig.wait(SessionFold.safetyNetMs)
+        XCTAssertEqual(rig.state.base, "idle")
+        XCTAssertEqual(workBeats(rig.wait(20 * 60_000)), [], "no working heartbeat")
+        XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
+    }
+
     /// Nothing but what you say wakes the brain while
     /// something needs you, a poke included (the tap opens the thread),
     /// and nothing with no brain; the view events still come.
@@ -502,13 +524,13 @@ final class ViewTests: XCTestCase {
         let relaunched = needs(second.tick(at: rig.now))
         XCTAssertEqual(relaunched.map(\.phase), [.end], "Codex's request ends, and no request starts again")
         XCTAssertEqual(relaunched.first?.data["why"], "nothing for 10 minutes")
-        XCTAssertEqual(second.threads["codex/c1"]?.waiting, false)
+        XCTAssertNil(second.threads["codex/c1"]?.needsSince, "the view's sessions agree")
         let shown = second.core.snapshot(at: rig.now)
         XCTAssertEqual(shown.attn?.agent, "claude", "its request still waits")
         XCTAssertEqual(shown.busy, 1, "s2 still works")
         let answered = second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         XCTAssertEqual(needs(answered).map(\.phase), [.end])
-        XCTAssertEqual(second.threads["claude/s1"]?.waiting, false, "the view hears it end")
+        XCTAssertNil(second.threads["claude/s1"]?.needsSince, "the view folds the answer too")
         XCTAssertEqual(second.core.snapshot(at: rig.now).busy, 2, "s1 works again")
         XCTAssertNotNil(second.view.workingSince(at: rig.now, second.transcript.view(now: rig.now)))
     }
@@ -516,11 +538,11 @@ final class ViewTests: XCTestCase {
     /// A relaunch takes which requests were shown from the transcript's
     /// `needs_you` records, not from folding the sessions again with this
     /// launch's rules (`replay`): where the two disagree, the
-    /// first publish records what's missing, so the core and the view
-    /// agree. Here a launch whose core started empty, as every launch's
-    /// did before 2026-09-29, never recorded the end of a request
-    /// answered after it; before, no launch ever did, and the view kept
-    /// the thread waiting until its next request.
+    /// first publish records what's missing, so the transcript says what
+    /// the sessions do. Here a launch whose core started empty, as every
+    /// launch's did before 2026-09-29, never recorded the end of a request
+    /// answered after it. The view folds the sessions itself, so it never
+    /// waited on that end.
     func testARelaunchTakesTheRequestsShownFromTheTranscript() throws {
         let dir = tempDir("boop-tr")
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -542,11 +564,10 @@ final class ViewTests: XCTestCase {
         rig.now += 1000
         let third = pipeline()
         third.readBack(now: rig.now)
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, true, "no end in the transcript")
+        XCTAssertNil(third.threads["claude/s1"]?.needsSince, "the view folds the answer, with no end in the transcript")
         let ended = needs(third.tick(at: rig.now))
         XCTAssertEqual(ended.map(\.phase), [.end])
         XCTAssertEqual(ended.first?.data["outcome"], "done")
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, false, "the view hears it end")
         XCTAssertNil(third.core.snapshot(at: rig.now).attn)
     }
 
@@ -581,7 +602,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(ended.map(\.phase), [.end])
         XCTAssertEqual(ended.first?.data["outcome"], "failed")
         XCTAssertEqual(ended.first?.data["why"], "nothing for 10 minutes")
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, false, "the view hears it end")
+        XCTAssertNil(third.threads["claude/s1"]?.needsSince, "the view's sessions agree")
     }
 
     /// A session's first event each day carries its

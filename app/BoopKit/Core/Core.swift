@@ -106,13 +106,6 @@ public final class Core {
         rng = SplitMix64(seed: config.seed)
     }
 
-    /// The thread's name as its agent's app shows it, for the session `key`
-    /// names (the view's keys are the same), or nil.
-    public func name(about key: String) -> String? { sessions[key]?.name }
-
-    /// Where the session `key` names opens on the Mac, or nil.
-    public func thread(about key: String) -> ThreadRef? { sessions[key]?.thread }
-
     /// The rules' one-shots.
     public static let starting = "starting", stopped = "stopped", error = "error", helperReturn = "helper_return"
     /// The failed calls that play the error one-shot: a command that
@@ -161,10 +154,11 @@ public final class Core {
     /// `handle` takes it, and the timers run at every event's time, as the
     /// last launch's ticks did when they recorded something. What the
     /// rules did then is recorded already, so nothing is carried out.
-    /// Which requests were shown is what the `needs_you` records say, as
-    /// the view has it: where the sessions folded again disagree, the
-    /// first publish records the start or end that's missing, with why a
-    /// request the read-back cleared did.
+    /// Which requests were shown is what the `needs_you` records say:
+    /// where the sessions folded again disagree (a launch that missed an
+    /// end, or ran the timers at other times), the first publish records
+    /// the start or end that's missing, with why a request the read-back
+    /// cleared did.
     public func replay(_ event: Event) {
         if let agentEvent = AgentEvent(event) {
             _ = take(agentEvent, ref: event.seq)
@@ -487,8 +481,7 @@ public final class Core {
     }
 
     /// "Needs you" starting or clearing for a session, as a rule action:
-    /// the view says who needs you from it, and knows while nothing may
-    /// wake the brain. A session gone while it
+    /// the view says who needs you from its start. A session gone while it
     /// waited clears too.
     func recordNeeds(_ now: Int64, _ fx: inout [CoreEffect]) {
         let showing = sessions.filter { $0.value.needsSince != nil }

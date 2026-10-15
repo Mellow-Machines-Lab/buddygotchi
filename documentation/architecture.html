@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-13.</p>
+  <p class="small">Updated 2026-10-15.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -298,7 +298,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
     <tbody>
       <tr><td>agent-hooks → Boop</td><td><code>Adapter.event(from:)</code>, <code>Runtime.hook</code></td><td>Each hook line becomes an <code>AgentEvent</code>, kept as a MellowHarness <code>Event</code> with its facts in <code>data</code></td></tr>
       <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' short animations</td></tr>
-      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is logged and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, and <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
+      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is logged and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's, so the two agree. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>
       <tr><td>Boop → LinkKit (a rule's short animation)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, skipped while one of Jev's reactions is playing</td></tr>
       <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactAction</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>

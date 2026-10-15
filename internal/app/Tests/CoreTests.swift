@@ -1224,7 +1224,8 @@ final class CoreNeedsYouTests: XCTestCase {
         prompt.data["name"] = "Fix the nav"
         rig.send(prompt)
         XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.name, "Fix the nav")
-        XCTAssertEqual(rig.core.name(about: SessionFold.key(.claude, "s1")), "Fix the nav")
+        XCTAssertEqual(rig.view.who(about: SessionFold.key(.claude, "s1"), rig.pipeline.transcript.view(now: rig.now))?.thread,
+                       "Fix the nav", "a cheer names it")
         rig.send(.activity, tool: "Bash")  // an event with no name keeps it
         XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.name, "Fix the nav")
         var renamed = rig.event(.activity, tool: "Edit")
