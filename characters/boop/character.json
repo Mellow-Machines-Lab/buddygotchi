@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "default_mood": "calm",
   "startup_mood": "happy",
+  "faces": {
+    "cyd24": "pixel",
+    "amoled206": "gel"
+  },
   "uses": {
     "pixel_face": "pixel",
     "voice": "pixel"

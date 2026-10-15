@@ -22,10 +22,12 @@ by their port: `/dev/cu.usbserial-*` or `/dev/cu.wchusbserial*` is the CYD
 With more than one board plugged in it stops and lists them; `BOOP_PORT=…`
 or `BOARD=cyd24`/`BOARD=amoled206` picks one.
 
-The CYD runs any character pack. The AMOLED board draws the gel face,
-which only Boop's pack has for now
-([CHARACTER.md](../characters/CHARACTER.md)), so built with Pixel its
-build stops at the start and says so (`firmware/tools/needs_gel.py`).
+A character pack says which of its faces each board draws (its
+`faces`, by the env's `custom_board`; [CHARACTER.md](../characters/CHARACTER.md)
+§9), and `firmware/tools/pack_face.py` builds that face and none of the
+pack's others. Boop's draws the pixel face on the CYD and the gel slime
+on the AMOLED; Pixel's names only the CYD, so built with Pixel the
+AMOLED's build stops at the start and says so.
 
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages in `firmware/.platformio-core`, inside the checkout.

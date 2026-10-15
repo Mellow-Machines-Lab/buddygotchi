@@ -106,10 +106,13 @@ class StudioRuleTests(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def pack(self, name, moods, studio=None, files=(), **extra):
-        character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods, **extra}
+        character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods,
+                     "faces": {"cyd24": "face"}, **extra}
         if studio is not None:
             character["studio"] = studio
         write(self.dir / name / "character.json", character)
+        if "faces" not in extra:
+            write(self.dir / name / "firmware/src/render/face/face.cpp", "")
         for path, value in files:
             write(self.dir / name / path, value)
         return self.dir / name
@@ -164,8 +167,8 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(gen.stage(pack), 0)
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
         self.assertEqual([n for n in staged if not n.startswith(("firmware-test/", "staged/"))],
-                         ["firmware/include/face.h", "firmware/include/moods.h", "pack", "packs/solo/character.json",
-                          "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
+                         ["firmware/include/face.h", "firmware/include/moods.h", "firmware/src/render/face/face.cpp", "pack",
+                          "packs/solo/character.json", "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
         moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
         self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
         self.assertIn('kPackId = "solo"', moods)
@@ -188,6 +191,15 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h"])
         self.assertEqual((gen.STAGE / "packs" / "user" / "mac" / "takes.tsv").read_text(), "t")
         self.assertFalse((gen.STAGE / "packs" / "user" / "voice").exists())
+
+    def test_each_board_has_a_face(self):
+        """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has or uses."""
+        self.assertEqual(gen.pack_problems(self.pack("plain", [{"id": "calm", "meaning": "Settled."}]), gen.load(self.dir / "plain")), [])
+        self.pack("lender", [{"id": "calm"}], shares={"face": {"files": ["firmware/src/render/face"]}})
+        user = self.pack("user", [{"id": "calm", "meaning": "Settled."}], faces={"cyd24": "face", "amoled206": "gel"}, uses={"face": "lender"})
+        self.assertEqual(gen.pack_problems(user, gen.load(user)), ["faces gives amoled206 the gel face, and there's no firmware/src/render/gel/"])
+        none = self.pack("none", [{"id": "calm", "meaning": "Settled."}], faces={})
+        self.assertEqual(gen.pack_problems(none, gen.load(none)), ["faces names no board's face"])
 
     def test_what_a_pack_uses_must_be_there(self):
         """A share from no pack, one the pack doesn't share, a file it lacks, or one the user has itself fails."""

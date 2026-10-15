@@ -367,9 +367,17 @@ def write_studio(pack: Path, check: bool) -> int:
 def pack_problems(pack: Path, character: dict) -> list[str]:
     """What stops a pack from staging: its moods (§5), what it uses (§6),
     and an id or version too long for the board's hello (§10)."""
-    problems = mood_problems(character, universal_moods()) + used(pack, character)[1]
+    paths, problems = used(pack, character)
+    problems = mood_problems(character, universal_moods()) + problems
     if len(character.get("id", "")) > 24 or len(character.get("version", "")) > 16:
         problems.append("id is at most 24 characters, and version 16")
+    # Each board's face (§9): a folder of the pack's, or one it uses.
+    if not character.get("faces"):
+        problems.append("faces names no board's face")
+    for board, face in character.get("faces", {}).items():
+        folder = f"firmware/src/render/{face}"
+        if not (pack / folder).is_dir() and not (folder in paths and paths[folder].is_dir()):
+            problems.append(f"faces gives {board} the {face} face, and there's no {folder}/")
     return problems
 
 

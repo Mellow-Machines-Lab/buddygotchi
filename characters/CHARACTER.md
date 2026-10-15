@@ -115,7 +115,7 @@ import it, the shell and Node call `--which`, the Swift tests read the
 environment and then the pointer, and the C++ tests, which run only
 after a stage, read the pointer. `Boop` itself takes `BOOP_CHARACTER`
 when it starts, else its bundled pack, so one build can play any pack's
-demo. Staging also links the pack's own firmware
+demo. Staging also links the staged pack's firmware
 tests (`tests/firmware/test_*`) beside the engine's, so
 `make -C internal fw-test` runs both; `make -C internal tools-test` runs
 the Python tests in a pack's `tests/tools/`.
@@ -143,7 +143,8 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     takes.tsv        optional: the voice's take table (§8)
   firmware/          what the firmware compiles in (§9)
     include/…        the faces' generated art and sounds
-    src/render/…     the faces' code, and make_face.cpp, which picks one
+    src/render/…     each face's code in a folder of its own, and
+                     make_face.cpp, which makes the board's (§9)
   voice/voice.bin    optional: the microSD card's voice pack (§8)
   studio/            optional: the studio's preview adapter (§12)
   design/, tools/    optional: what the pack's art and sounds are
@@ -214,6 +215,7 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
 | `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
+| `faces` | yes | The face each board draws, by the board's name: `cyd24`, `amoled206` (§9). A board it names none for won't build with it |
 | `uses` | no | What it takes from another pack: each share's name, and the pack that has it (§6) |
 | `shares` | no | What it lends: each share's name, with its `files` and its `studio` previews (§6) |
 
@@ -437,10 +439,15 @@ and `src/` on the include path. It holds:
   `characters/pixel/tools/borrowed.json`, lends it until it has art of
   its own. The borrowers point at the same designs, so they cost no
   frames.
-- One or more faces behind `render::Face`, and `render::makeFace()` in
-  `src/render/make_face.cpp`, which picks one by the board's build
-  flags. Pixel's always makes the pixel face. Boop's makes the gel face
-  on the AMOLED.
+- One or more faces behind `render::Face`, each in its own folder,
+  `src/render/<face>/`, and `render::makeFace()` in
+  `src/render/make_face.cpp`, which makes one. `faces` in
+  `character.json` names the face each board draws: Boop's
+  `{"cyd24": "pixel", "amoled206": "gel"}`, Pixel's
+  `{"cyd24": "pixel"}`. A board's build compiles that face's folder and
+  no other, and defines `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for
+  `makeFace()` (`firmware/tools/pack_face.py`). The simulator builds
+  every face, and `makeFace()` picks by `BOOP_SIM_FACE`.
 - Today, every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
   carries that file, or uses it, until the palette is split from the art.
@@ -463,8 +470,8 @@ facegen writes it into the Pixel pack. It holds:
 `mac/mirror/`, if present, is a web page the popover shows instead, fed
 the same state the board gets (the gel slime has one).
 
-Today a pack's AMOLED build needs a gel face, which only Boop's pack
-has. Pixel's face is for the CYD board.
+A board a pack names no face for doesn't build with it: Pixel's names
+only the CYD, as the gel face, Boop's own, is the AMOLED's only one.
 
 Faces are code for now: both of today's faces implement `render::Face`
 in C++. A picture-based face is planned, with frames per state and mood

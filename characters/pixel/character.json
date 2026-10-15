@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "default_mood": "calm",
   "startup_mood": "happy",
+  "faces": {
+    "cyd24": "pixel"
+  },
   "personalities": [
     {
       "id": "pixel",
@@ -16,7 +19,8 @@
         "firmware/include/faces.h",
         "firmware/include/sfx.h",
         "firmware/src/render/pixel",
-        "mac/faces.json"
+        "mac/faces.json",
+        "tests/firmware/test_scene"
       ],
       "studio": [
         "pixel"

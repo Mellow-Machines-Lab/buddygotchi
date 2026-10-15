@@ -7,7 +7,7 @@ bank's own generator (bank.mjs, beside this) to write every design's SVG into
 build/, which git ignores, and lists the designs in design/manifest.json. It
 reads each SVG as rectangles and step-wise timings and writes
 the Pixel pack's characters/pixel/firmware/include/faces.h, plus the frames the firmware test checks the device's
-player against (internal/firmware/test/test_scene/frames.h), and the Pixel
+player against (the pack's tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
 faces the Mac's popover shows, and each design's loop length and host fact
 for the Mac, which faces.h has too, so both sides time a moment's loops
@@ -58,7 +58,7 @@ MANIFEST = DESIGN / "manifest.json"
 BUILD = HERE / "build"  # the bank's SVGs, made afresh each run (ignored by git)
 BANK = REPO / "characters" / "pixel" / "design" / "boop-sound-bank-v4"
 OUT = REPO / "characters" / "pixel" / "firmware" / "include" / "faces.h"
-FRAMES = REPO / "internal" / "firmware" / "test" / "test_scene" / "frames.h"
+FRAMES = REPO / "characters" / "pixel" / "tests" / "firmware" / "test_scene" / "frames.h"
 FACES_JSON = REPO / "characters" / "pixel" / "mac" / "faces.json"
 PACK = REPO / "characters" / "pixel" / "character.json"
 BORROWED = HERE.parent / "borrowed.json"  # TEMPORARY: see its "why"

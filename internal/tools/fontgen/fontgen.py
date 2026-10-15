@@ -3,8 +3,8 @@
 Renders Geist Mono (SIL Open Font License 1.1, copyright Vercel) with
 Pillow into 4-bit coverage cells: printable ASCII plus a middle dot. The
 outputs are checked in: firmware/assets/fonts.h, which both boards build,
-and fonts_gel.h, the gel face's own, which only the AMOLED and the Mac's
-native build include. Rerun this only to change the fonts:
+and fonts_gel.h, the gel face's own, in Boop's character pack, which
+only builds that draw the gel include. Rerun this only to change the fonts:
 
     internal/tools/.venv/bin/python internal/tools/fontgen/fontgen.py [--ttf-dir DIR]
 """
@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 REPO = Path(__file__).resolve().parents[3]
 OUT = REPO / "firmware" / "assets" / "fonts.h"
-OUT_GEL = REPO / "firmware" / "assets" / "fonts_gel.h"
+OUT_GEL = REPO / "characters" / "boop" / "firmware" / "include" / "fonts_gel.h"
 # The two weights it draws, from the geist npm package 1.7.2, with their
 # licence beside them.
 TTF_DIR = Path(__file__).resolve().parent / "geist-mono"
