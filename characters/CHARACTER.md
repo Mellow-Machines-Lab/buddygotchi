@@ -389,8 +389,8 @@ the moment the request came), for as long as it waits, and the face's
 sound cues follow the same clock. So a pack can make it a performance
 that grows the longer you leave it, and the engine needs to know
 nothing about it. Pixel holds up a sign with who's asking and peeks over
-it, then sways it, shakes it and waves a mitt, then lowers it and stares
-at you, and at last gives up and peeks calmly (`render/pixel/sign.h`).
+it, then sways it and waves a mitt, then shakes it and waves both, then
+lowers it and stares at you, and at last gives up and peeks calmly (`render/pixel/sign.h`).
 Answer at any point and the face goes straight back to its look.
 
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.

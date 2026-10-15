@@ -1,9 +1,9 @@
 // Half a minute, for a short: Claude asks to deploy and nobody answers.
 // Pixel holds up its sign and asks harder the longer it waits (it sways
-// the sign, shakes it and waves, stares at you over it), then gives up;
-// you allow it at last, and it acts as if nothing happened. Everything
-// but the brain's two answers is the needs-you screen doing what it always
-// does.
+// it and waves, shakes it and waves both hands, stares at you over it),
+// then gives up; you allow it at last, and it acts as if nothing
+// happened. Everything but the brain's two answers is the needs-you
+// screen doing what it always does.
 {"demo": 1, "title": "Deploy the docs"}
 {"agent": "prompt", "text": "Deploy the docs site"}
 {"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}

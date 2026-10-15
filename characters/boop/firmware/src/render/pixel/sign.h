@@ -1,8 +1,12 @@
 // The needs-you sign: Boop holds up an amber sign that
 // fills the screen, with who's asking in large type, and peeks over its top
 // edge, ducking and popping up at the left corner, the right, then the
-// middle. It replaces the mood's needs-you design; the design's sounds
-// still play. Pure drawing, a function of the time since the request came.
+// middle. The longer the request waits, the harder it asks (Arc): it sways
+// the sign and waves a mitt over its edge, then shakes it and waves both,
+// then lowers it and stares at you over it, and at last gives up and goes
+// back to peeking. It replaces the mood's needs-you design; the design's sounds
+// still play, and the arc's own cues (kArcCues) play over them. Pure
+// drawing, a function of the time since the request came.
 #pragma once
 #include <cstdint>
 
@@ -10,6 +14,49 @@
 #include "render/screens.h"
 
 namespace render {
+
+// How the asking grows, in ms from the request.
+struct Arc {
+  static constexpr uint32_t kSwayAt = 5000;     // calm until here, then it sways the sign and waves
+  static constexpr uint32_t kShakeAt = 12000;   // then shakes it and waves both mitts
+  static constexpr uint32_t kStareAt = 17000;   // then lowers it and stares at you over it
+  static constexpr uint32_t kGiveUpAt = 22000;  // then it gives up: calm again, for good
+  // The sway and the shake: the sign goes kSway px either way and bobs up
+  // kBob px once every kBeat ms. Swaying, the head pops from spot to spot
+  // every kSwayHopMs; shaking, it bounces in the middle.
+  static constexpr uint32_t kSwayBeatMs = 560, kShakeBeatMs = 280;
+  static constexpr int kSway = 6, kShake = 12;
+  static constexpr int kSwayBob = 6, kShakeBob = 9;
+  static constexpr uint32_t kSwayHopMs = 1400;
+  // The waving mitts, kUp px above the sign's edge, wave back and forth
+  // kWave px either way, tilting kTilt px at the knuckles, once every
+  // kWaveMs: one mitt swaying, kOut px from the head's spot on the side
+  // away from it; both shaking, kOut px either side of the middle.
+  static constexpr uint32_t kSwayWaveMs = 700, kShakeWaveMs = 360;
+  static constexpr int kSwayWave = 16, kShakeWave = 18, kTilt = 5;
+  static constexpr int kMittOut = 92, kMittUp = 22;
+  // The stare: the sign comes down to kStareTop over kLowerMs, and the head
+  // grows to kStareScale at kStareY in the middle, all of the face showing.
+  static constexpr uint32_t kLowerMs = 400;
+  static constexpr int kStareTop = 84, kStareY = 52, kStareScale = 40;
+};
+
+// The arc's sounds: a clip from the face's bank (by name) at a time from
+// the request, over the needs-you design's own. Never ducked, like needs
+// you's.
+struct ArcCue {
+  uint32_t at;
+  const char* clip;
+  uint8_t gain;
+};
+constexpr ArcCue kArcCues[] = {
+    {Arc::kSwayAt, "swipe", 200},              // it starts to sway the sign
+    {Arc::kShakeAt, "alertKnock", 255},        // the shake: knock,
+    {Arc::kShakeAt + 450, "alertKnock", 255},  // knock,
+    {Arc::kShakeAt + 900, "alertKnock", 255},  // knock
+    {Arc::kStareAt, "brake", 230},             // and it stops dead
+    {Arc::kGiveUpAt, "slide", 220},            // the sign goes back up
+};
 
 struct Sign {
   // Timings, in ms from the request.
@@ -34,25 +81,34 @@ struct Sign {
 // Where everything is at one moment. Two equal poses draw the same pixels
 // for the same text, so the device skips redrawing an unchanged one.
 struct SignPose {
-  int16_t signY = 0;         // the sign's top
+  int16_t signY = 0;             // the sign's top
   int16_t headX = 0, headY = 0;  // the face's centre
-  uint8_t scale = 64;        // the face's size in 64ths
-  int8_t glance = 0;         // the eyes look left (-1), ahead or right (1)
-  bool eyesShut = false;     // a blink
-  bool whole = true;         // the cheeks and mouth show, before the sign hides them
-  bool hands = false;        // the mitts on the sign's top edge, either side of the head
+  uint8_t scale = 64;            // the face's size in 64ths
+  int8_t glance = 0;             // the eyes look left (-1), ahead or right (1)
+  bool eyesShut = false;         // a blink
+  bool whole = true;             // the cheeks and mouth show, before the sign hides them
+  bool hands = false;            // the mitts on the sign's top edge, either side of the head
   int16_t handX = 0, handY = 0;  // the spot the mitts are for, and their top
+  int16_t signX = 0;             // the sign swayed from its place, and the mitts with it
+  uint8_t waving = 0;            // mitts let go to wave over the edge: none, the one at waveX, or both
+  int16_t waveX = 0, waveY = 0;  // the waving mitt's centre (the right one, with both) and top
+  int16_t waveX2 = 0;            // with both, the left one's centre
+  int8_t tilt = 0;               // how far the mitts' knuckles lean, left (-) or right
+  bool flat = false;             // the stare's flat mouth, in place of the "o"
   bool operator==(const SignPose& o) const {
     return signY == o.signY && headX == o.headX && headY == o.headY && scale == o.scale && glance == o.glance &&
-           eyesShut == o.eyesShut && whole == o.whole && hands == o.hands && handX == o.handX && handY == o.handY;
+           eyesShut == o.eyesShut && whole == o.whole && hands == o.hands && handX == o.handX && handY == o.handY &&
+           signX == o.signX && waving == o.waving && waveX == o.waveX && waveY == o.waveY && waveX2 == o.waveX2 &&
+           tilt == o.tilt && flat == o.flat;
   }
 };
 
-// The pose `ms` after the request, with the device's blink and press dip.
+// The pose `ms` after the request, with the device's blink (none while it
+// stares) and press dip.
 SignPose signPose(uint32_t ms, bool eyesShut = false, int dy = 0);
 // The needs-you screen: the strip until the sign covers it, the head, the
 // sign over it with the strip's agent, thread (else project) and "+N more",
-// and the mitts either side of the head.
+// and the mitts either side of the head, or one of them waving.
 void drawSignScreen(Canvas& c, const SignPose& p, const Strip& s);
 
 }  // namespace render

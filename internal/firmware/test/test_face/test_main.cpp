@@ -412,20 +412,33 @@ void test_it_asks_harder_the_longer_it_waits() {
   TEST_ASSERT_TRUE(shakeBob > swayBob && swayBob > calmBob);  // the nudge, calm
   TEST_ASSERT_EQUAL_INT(0, laterSway);
   TEST_ASSERT_EQUAL_INT(calmBob, laterBob);
-  // Only the shake waves a mitt, over the sign's edge.
-  for (uint32_t ms : {3000u, 8000u, 19000u, 25000u}) TEST_ASSERT_FALSE(signPose(ms).waving);
-  SignPose p = signPose(Arc::kShakeAt + 100);
-  TEST_ASSERT_TRUE(p.waving);
-  TEST_ASSERT_TRUE(p.waveY + Arc::kMittUp == p.signY);
-  // Well clear of the head, at any spot.
-  for (uint32_t ms = Arc::kShakeAt; ms < Arc::kStareAt; ms += 50) {
-    SignPose q = signPose(ms);
-    const int d = q.waveX - q.headX;
-    TEST_ASSERT_TRUE(d > 70 || d < -70);
-    TEST_ASSERT_TRUE(q.waveX - 13 >= 0 && q.waveX + 13 < kWidth);
-  }
+  // Swaying it waves one mitt and shaking both, back and forth over the
+  // sign's edge, the knuckles tilting with the wave, well clear of the
+  // head; calm or staring, none.
+  for (uint32_t ms : {3000u, 19000u, 25000u}) TEST_ASSERT_EQUAL_INT(0, signPose(ms).waving);
+  auto waves = [](uint32_t from, uint32_t to, int count, int reach) {
+    int lo = 1000, hi = -1000, tilts = 0;
+    for (uint32_t ms = from; ms < to; ms += 5) {
+      SignPose q = signPose(ms);
+      TEST_ASSERT_EQUAL_INT(count, q.waving);
+      TEST_ASSERT_EQUAL_INT(q.signY - Arc::kMittUp, q.waveY);
+      for (int x : {int(q.waveX), count == 2 ? int(q.waveX2) : int(q.waveX)}) {
+        TEST_ASSERT_TRUE(x - q.headX > 70 || x - q.headX < -70);
+        TEST_ASSERT_TRUE(x - 13 >= 0 && x + 13 < kWidth);
+      }
+      const int off = q.waveX - q.handX - (q.waveX > q.handX ? Arc::kMittOut : -Arc::kMittOut);
+      lo = off < lo ? off : lo, hi = off > hi ? off : hi;
+      tilts |= q.tilt < 0 ? 1 : q.tilt > 0 ? 2 : 0;
+    }
+    TEST_ASSERT_EQUAL_INT(-reach, lo);
+    TEST_ASSERT_EQUAL_INT(reach, hi);
+    TEST_ASSERT_EQUAL_INT(3, tilts);  // both ways
+  };
+  waves(Arc::kSwayAt, Arc::kShakeAt, 1, Arc::kSwayWave);
+  waves(Arc::kShakeAt, Arc::kStareAt, 2, Arc::kShakeWave);
+  TEST_ASSERT_TRUE(Arc::kShakeWaveMs < Arc::kSwayWaveMs);
   // The stare.
-  p = signPose(Arc::kStareAt + Arc::kLowerMs, true);
+  SignPose p = signPose(Arc::kStareAt + Arc::kLowerMs, true);
   TEST_ASSERT_EQUAL_INT(Arc::kStareTop, p.signY);
   TEST_ASSERT_EQUAL_INT(Arc::kStareScale, p.scale);
   TEST_ASSERT_EQUAL_INT(Arc::kStareY, p.headY);

@@ -84,17 +84,20 @@ void drawMitt(Canvas& c, int x, int y) {
 
 // A mitt let go of the sign to wave: the gripping mitt's three knuckles,
 // bigger, on a round palm that rises from behind the sign's edge at
-// `edge`, its thumb out to `side` (-1 left, 1 right).
-void drawMitten(Canvas& c, int x, int y, int side, int edge) {
+// `edge`, its thumb out to `side` (-1 left, 1 right). It tilts `tilt` px
+// at the knuckles, half that at the thumb, as a hand rocks when it waves.
+void drawMitten(Canvas& c, int x, int y, int side, int tilt, int edge) {
   const uint8_t white = sceneInk(1);
+  const int mid = x + tilt / 2;
   for (int i = 0; i < 3; ++i) {
-    c.fillRect(x - 8 + i * 6, y + 1, 4, 3, white);  // a knuckle, rounded
-    c.fillRect(x - 7 + i * 6, y, 2, 1, white);
+    c.fillRect(x + tilt - 8 + i * 6, y + 1, 4, 3, white);  // a knuckle, rounded
+    c.fillRect(x + tilt - 7 + i * 6, y, 2, 1, white);
   }
-  c.fillRect(x - 9, y + 4, 18, edge - y - 4, white);
-  c.fillRect(x - 8, y + 3, 16, 1, white);
-  c.fillRect(side < 0 ? x - 12 : x + 9, y + 8, 3, 5, white);  // the thumb
-  c.fillRect(side < 0 ? x - 11 : x + 9, y + 7, 2, 1, white);
+  c.fillRect(x + tilt - 8, y + 3, 16, 1, white);
+  c.fillRect(mid - 9, y + 4, 18, 6, white);  // the palm, rocking less toward the wrist
+  c.fillRect(x - 9, y + 10, 18, edge - y - 10, white);
+  c.fillRect(side < 0 ? mid - 12 : mid + 9, y + 8, 3, 5, white);  // the thumb
+  c.fillRect(side < 0 ? mid - 11 : mid + 9, y + 7, 2, 1, white);
 }
 
 // The sign: amber with stepped corners, like the bubble's, and who's asking
@@ -183,13 +186,15 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
     peek(ph, Sign::kHopMs, spot, pop);
   } else if (!staring) {
     // Swaying, then shaking: the sign goes side to side and bobs on the
-    // beat, and the head pops from spot to spot faster.
+    // beat; swaying, the head pops from spot to spot faster, and shaking it
+    // bounces in the middle.
     const bool shaking = t >= Arc::kShakeAt;
     into = t - (shaking ? Arc::kShakeAt : Arc::kSwayAt);
     beat = shaking ? Arc::kShakeBeatMs : Arc::kSwayBeatMs;
     sway = (shaking ? Arc::kShake : Arc::kSway) * swing(into, beat) / kOne;
     bob = (shaking ? Arc::kShakeBob : Arc::kSwayBob) * hop(into, beat) / kOne;
-    peek(into, shaking ? Arc::kShakeHopMs : Arc::kSwayHopMs, spot, pop);
+    if (shaking) spot = 2;
+    else peek(into, Arc::kSwayHopMs, spot, pop);
   } else {
     spot = 2;  // the middle
   }
@@ -220,13 +225,24 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
   p.flat = lowered > kOne / 2;
   p.hands = rise > kOne / 5;
   if (p.hands) p.handX = int16_t(lerp(x, kWidth / 2, lowered)), p.handY = int16_t(p.signY - 6 + pop * 8 / kOne);
-  // Shaking, a mitt lets go and waves over the edge, well clear of the
-  // head: the right one, or the left with the head at the right corner.
-  if (beat == Arc::kShakeBeatMs && p.hands) {
-    p.waving = true;
-    const int side = x > kWidth / 2 + Sign::kSpotX[2] / 4 ? -1 : 1;
-    p.waveX = int16_t(p.handX + side * Arc::kMittOut + Arc::kMittSwing * swing(into, beat) / kOne);
+  // Swaying, a mitt lets go and waves back and forth over the edge, well
+  // clear of the head: the right one, or the left with the head at the
+  // right corner. Shaking, both do, faster, either side of the head.
+  if (beat && p.hands) {
+    const bool shaking = beat == Arc::kShakeBeatMs;
+    const int64_t period = shaking ? Arc::kShakeWaveMs : Arc::kSwayWaveMs;
+    const int w = swing(into, period);
+    const int wave = (shaking ? Arc::kShakeWave : Arc::kSwayWave) * w / kOne;
+    p.tilt = int8_t(Arc::kTilt * w / kOne);
     p.waveY = int16_t(p.signY - Arc::kMittUp);
+    if (shaking) {
+      p.waving = 2;
+      p.waveX = int16_t(p.handX + Arc::kMittOut + wave), p.waveX2 = int16_t(p.handX - Arc::kMittOut + wave);
+    } else {
+      p.waving = 1;
+      const int side = x > kWidth / 2 + Sign::kSpotX[2] / 4 ? -1 : 1;
+      p.waveX = int16_t(p.handX + side * Arc::kMittOut + wave);
+    }
   }
   return p;
 }
@@ -237,9 +253,11 @@ void drawSignScreen(Canvas& c, const SignPose& p, const Strip& s) {
   drawHead(c, p);   // behind the sign
   drawSign(c, p.signY, s, p.signX);
   if (p.hands) {
-    if (!p.waving || p.waveX < p.handX) drawMitt(c, p.handX + 48, p.handY);
-    if (!p.waving || p.waveX > p.handX) drawMitt(c, p.handX - 62, p.handY);
-    if (p.waving) drawMitten(c, p.waveX, p.waveY, p.waveX < p.handX ? 1 : -1, p.signY);  // thumb toward the head
+    // The thumbs point toward the head.
+    if (!p.waving || (p.waving == 1 && p.waveX < p.handX)) drawMitt(c, p.handX + 48, p.handY);
+    if (!p.waving || (p.waving == 1 && p.waveX > p.handX)) drawMitt(c, p.handX - 62, p.handY);
+    if (p.waving) drawMitten(c, p.waveX, p.waveY, p.waveX < p.handX ? 1 : -1, p.tilt, p.signY);
+    if (p.waving == 2) drawMitten(c, p.waveX2, p.waveY, 1, p.tilt, p.signY);
   }
 }
 
