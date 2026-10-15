@@ -359,6 +359,15 @@ Besides drawing each mood and state, a face:
   bubble. The face calls `drawLane` to draw them.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
+- **May ask harder the longer you wait.** Needs you is drawn on the
+  request's own clock (`designMs`, from the moment the request came) for
+  as long as it waits, and its `cues` follow the same clock, so a face
+  can make it a performance that grows, and the engine knows nothing of
+  it. Pixel holds up a sign with who's asking and peeks over it, then
+  sways it and waves a mitt, then shakes it and waves both, then lowers
+  it and stares at you, and at last gives up and peeks calmly
+  (`render/pixel/sign.h`). Answer at any point and the face goes straight
+  back to its look.
 - **Has a name** for the board's `hello` (`name`), and says which moods
   it draws (`supportsMood`). The Mac sends a mood the face doesn't draw
   as the first of its `fallback`s that it does (§5), else the resting
@@ -383,15 +392,6 @@ and `src/` on the include path. It holds:
 - Today, every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
   carries that file until the palette is split from the art.
-
-Needs you is drawn on the request's own clock (`Face::designMs`, from
-the moment the request came), for as long as it waits, and the face's
-sound cues follow the same clock. So a pack can make it a performance
-that grows the longer you leave it, and the engine needs to know
-nothing about it. Pixel holds up a sign with who's asking and peeks over
-it, then sways it and waves a mitt, then shakes it and waves both, then
-lowers it and stares at you, and at last gives up and peeks calmly (`render/pixel/sign.h`).
-Answer at any point and the face goes straight back to its look.
 
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:

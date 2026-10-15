@@ -132,5 +132,5 @@ make demo NAME=hello IN=claude                         # your real Claude, in th
 With `IN=…`, a real Claude Code or Codex does the work in a fresh copy of
 `internal/sessions/<name>/workspace/`. Make that folder with the files the
 script's agent reads, edits and runs, and with tests that give the
-script's results (`hello` and `landing` are examples). With no `IN`, a
+script's results (`hello`, `landing` and `hanging` are examples). With no `IN`, a
 demo needs no project.
