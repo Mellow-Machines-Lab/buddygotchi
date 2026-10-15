@@ -1,13 +1,14 @@
 // Half a minute, for a short: Claude asks to deploy and nobody answers.
 // Pixel holds up its sign and asks harder the longer it waits (it sways
 // it and waves, shakes it and waves both hands, stares at you over it),
-// then gives up; you allow it at last, and it acts as if nothing
-// happened. Everything but the brain's two answers is the needs-you
-// screen doing what it always does.
+// then gives up; you allow it at last, the docs go out, and it cheers.
+// Everything but the brain's answers is the needs-you screen doing what
+// it always does.
 {"demo": 1, "title": "Deploy the docs"}
 {"agent": "prompt", "text": "Deploy the docs site"}
 {"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
 {"agent": "read", "file": "README.md", "say": "Let me check how the docs deploy."}
-{"agent": "run", "cmd": "npm run deploy", "about": "Deploy the docs site", "ask": 25, "say": "Now the deploy.", "takes": 2}
-{"agent": "reply", "text": "The docs are deployed."}
-{"brain": {"react.mood": "calm", "say.about": "done", "say.kind": "sound"}}
+{"agent": "run", "cmd": "npm run deploy", "about": "Deploy the docs site", "ask": 25, "say": "Now the deploy.", "takes": 1}
+{"agent": "reply", "text": "The docs are deployed.", "after": 0.5}
+{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}}
+{"brain": {}, "mood": "proud", "after": 8, "note": "Finally"}
