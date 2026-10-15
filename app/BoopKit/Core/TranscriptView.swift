@@ -271,7 +271,7 @@ public final class TranscriptView {
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)
-        case nil: return nil
+        case .listen?, nil: return nil
         }
     }
 
@@ -485,14 +485,18 @@ public final class TranscriptView {
     }
 
     /// Whether `e` ends a run of pokes: anything but another poke of the
-    /// run (within `inARowMs` of the one before), "needs you", or
-    /// MellowHarness's own events. Then the reactions a tap cut short end as
-    /// done: `log` is the log before `e`.
+    /// run (within `inARowMs` of the one before), "needs you",
+    /// push-to-talk's `listen` records, or MellowHarness's own events. Then
+    /// the reactions a tap cut short end as done: `log` is the log before
+    /// `e`.
     public static func stopsThePokes(_ e: Event, _ log: LogView) -> Bool {
-        guard let type = e.type, type != .needsYou else { return false }
+        guard let type = e.type, !passesThePokes.contains(type) else { return false }
         guard type == .poke else { return true }
         return log.last(Event.kind(.poke, nil)).map { e.at - $0.at >= inARowMs } ?? true
     }
+
+    /// The core's records that a run of pokes goes on through.
+    static let passesThePokes: Set<Event.Kind> = [.needsYou, .listen]
 
     /// Whether the reaction `did` is one your tap cut short that the pokes
     /// still hold: a poke came after it, and no
@@ -506,7 +510,7 @@ public final class TranscriptView {
         guard let cut = after.firstIndex(where: { $0.type == .poke }) else { return false }
         var lastPoke = after[cut].at
         for e in after[after.index(after: cut)...] {
-            guard let type = e.type, type != .needsYou else { continue }
+            guard let type = e.type, !passesThePokes.contains(type) else { continue }
             guard type == .poke, e.at - lastPoke < inARowMs else { return false }
             lastPoke = e.at
         }

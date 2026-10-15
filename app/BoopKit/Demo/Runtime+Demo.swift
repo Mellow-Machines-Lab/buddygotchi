@@ -125,7 +125,7 @@ public final class DemoPlayer: @unchecked Sendable {
             heardLine(line, agent)
             runtime.listen(true, who: Runtime.demoBy)
             later(hold) { [self] in
-                runtime.said(words, by: .app, who: Runtime.demoBy)
+                runtime.heard(words, by: .app, who: Runtime.demoBy)
                 then()
             }
         case .brain(let answers, let mood):

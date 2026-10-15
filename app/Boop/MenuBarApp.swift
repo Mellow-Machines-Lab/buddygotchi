@@ -171,15 +171,11 @@ final class AppModel: ObservableObject {
 
     /// The mic button: click to talk, click again to send.
     func toggleTalk() {
-        let on = !listening
-        if on { status?.micTrouble = nil }
-        status?.listening = on
-        runtime?.setListening(on)
+        runtime?.setListening(!listening)
     }
 
     /// Hides the "can't hear you" notice until the next try.
     func dismissMicTrouble() {
-        status?.micTrouble = nil
         runtime?.dismissMicTrouble()
     }
 

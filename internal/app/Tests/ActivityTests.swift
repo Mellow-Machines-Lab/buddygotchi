@@ -456,7 +456,7 @@ final class CoreOneShotTests: XCTestCase {
         XCTAssertEqual(shots(rig.send(.turnStart, session: "c")), [], "the mic is on")
         rig.talk(false)
         XCTAssertEqual(shots(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
-        rig.core.listeningEnded()
+        rig.passed(reacted: true)
         XCTAssertEqual(shots(rig.send(.turnStart, session: "d")), ["starting new_task"])
     }
 

@@ -4,7 +4,8 @@ import MellowHarness
 
 /// Boop's view of an event: what MellowHarness's event
 /// holds for Boop. An agent's hook, a poke, what
-/// you said, away and back, a heartbeat and "needs you" are each a type,
+/// you said, away and back, a heartbeat, "needs you" and push-to-talk's
+/// listening are each a type,
 /// and a type with a lifetime a phase: the event's `kind` is the two
 /// together (`tool_end`, `poke`). The source's own name for it, the
 /// session, subagent and working directory are in `data`. MellowHarness's own
@@ -28,6 +29,10 @@ extension Event {
         case session, turn, tool, subagent, poke, talk, presence, heartbeat
         /// "Needs you" showing for a session, and clearing: the core's.
         case needsYou = "needs_you"
+        /// Push-to-talk's listening: the Mac's mic going on (`start`), off
+        /// with the reply still to come (`wait`), and listening over
+        /// (`end`). The core's, and log-only: no line, no wake.
+        case listen
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

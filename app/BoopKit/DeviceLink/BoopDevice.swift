@@ -14,6 +14,10 @@ public enum BoopDevice {
     /// Push-to-talk's face after the Mac's Talk button, and its end when no
     /// reply is coming.
     public static let listening = "listening", stopListening = "stop_listening"
+    /// When a rule's moment plays: push-to-talk's `listening` at once,
+    /// cutting what plays, and the rest only if the turn is free: a late
+    /// one-shot is worse than none.
+    public static func play(_ name: String) -> Wire.Play { name == listening ? .now : .ifFree }
     /// Why the device drops the reactions waiting when push-to-talk starts:
     /// a reaction would end `listening`.
     public static let micOn = "mic_on"

@@ -170,6 +170,13 @@ final class CoreRig {
         note(Fx(pipeline.effects(core.listen(on, by: .device, at: now), at: now)))
     }
 
+    /// A pass is over, about the event `seq`, with a reaction or not: for
+    /// push-to-talk's reply.
+    @discardableResult
+    func passed(about seq: Int? = nil, reacted: Bool) -> Fx {
+        note(Fx(pipeline.effects(core.passed(about: seq, reacted: reacted, at: now), at: now)))
+    }
+
     /// Boop starts a reaction, as the harness records one.
     func react() {
         pipeline.record(Event.action(at: now, phase: .start, name: ReactAction.actionName,
@@ -1524,14 +1531,66 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.talk(true)
         rig.wait(2000)
         XCTAssertTrue(rig.talk(false).contains(.listen(false, by: .device)))
-        rig.core.listeningEnded()
+        rig.passed(reacted: true)
         XCTAssertFalse(rig.core.showsListening(at: rig.now), "the reply went out")
 
-        XCTAssertEqual(rig.core.listen(true, at: rig.now), [.listen(true, by: .app)])
-        XCTAssertEqual(rig.core.linkDown(at: rig.now), [], "the app's button carries on")
-        XCTAssertEqual(rig.core.listen(false, at: rig.now), [.listen(false, by: .app)])
+        let app = rig.core.listen(true, at: rig.now)
+        XCTAssertTrue(app.contains(.listen(true, by: .app)))
+        XCTAssertEqual(moments(app).map(\.name), ["listening"], "the device is told to show it")
+        XCTAssertEqual(BoopDevice.play(BoopDevice.listening), .now, "at once")
+        XCTAssertEqual(BoopDevice.play(BoopDevice.stopListening), .ifFree)
+        XCTAssertFalse(rig.core.linkDown(at: rig.now).contains(.listen(false, by: .app)), "the app's button carries on")
+        XCTAssertTrue(rig.core.listen(false, at: rig.now).contains(.listen(false, by: .app)))
         rig.talk(true)
-        XCTAssertEqual(rig.core.linkDown(at: rig.now), [.listen(false, by: .device)], "its release can't arrive")
+        XCTAssertTrue(rig.core.linkDown(at: rig.now).contains(.listen(false, by: .device)), "its release can't arrive")
+    }
+
+    /// Every step of push-to-talk is the core's, and each is recorded by
+    /// rule for whose button it was: the mic on (`listen_start`), off with
+    /// the reply still to come and why (`listen_wait`), and `listening` over
+    /// and why (`listen_end`). They make no line, so the brain hears none
+    /// of them. `stop_listening` goes out where no reply is coming; a
+    /// reaction is the reply, which the device ends `listening` for itself.
+    func testPushToTalkIsRecorded() throws {
+        let rig = CoreRig()
+        func listens() -> [String] {
+            rig.pipeline.transcript.events.filter { $0.type == .listen }.map {
+                [$0.kind, $0.specificType, $0["why"]?.string].compactMap { $0 }.joined(separator: " ")
+            }
+        }
+        func run(_ fx: [CoreEffect]) -> Fx { rig.note(Fx(rig.pipeline.effects(fx, at: rig.now))) }
+        func stops(_ fx: Fx) -> Bool { moments(fx).map(\.name) == [BoopDevice.stopListening] }
+
+        XCTAssertEqual(rig.talk(true).views, [], "no line")
+        XCTAssertTrue(rig.pipeline.transcript.events.filter { $0.type == .listen }.allSatisfy { $0["by"] == "rule" })
+        rig.talk(false)
+        let said = rig.said("are the tests passing?")
+        let seq = try XCTUnwrap(said.views.first?.seq)
+        XCTAssertFalse(stops(run(rig.core.heard(replyTo: seq, at: rig.now))), "the reply may come")
+        XCTAssertFalse(stops(rig.passed(about: seq - 1, reacted: false)), "a pass on something older")
+        XCTAssertTrue(stops(rig.passed(about: seq, reacted: false)), "no reply")
+        XCTAssertEqual(listens(), ["listen_start device", "listen_wait device released", "listen_end device no reply"])
+
+        run(rig.core.listen(true, by: .app, at: rig.now))
+        rig.wait(Core.listenLimitMs)
+        XCTAssertFalse(stops(rig.passed(reacted: true)), "a reaction is the reply")
+        XCTAssertEqual(listens().suffix(3), ["listen_start app", "listen_wait app limit", "listen_end app replied"])
+
+        rig.talk(true)
+        XCTAssertTrue(stops(run(rig.core.micFailed("no mic", at: rig.now))))
+        XCTAssertEqual(rig.core.talk.trouble, "no mic")
+        XCTAssertEqual(rig.pipeline.transcript.events.last { $0.type == .listen }?["trouble"], "no mic")
+        rig.talk(true)
+        XCTAssertNil(rig.core.talk.trouble, "until the next try")
+        run(rig.core.linkDown(at: rig.now))
+        rig.wait(Core.replyWaitMs)
+        XCTAssertFalse(rig.core.showsListening(at: rig.now))
+        XCTAssertEqual(listens().suffix(5), ["listen_start device", "listen_end device mic failed", "listen_start device",
+                                             "listen_wait device link down", "listen_end device timed out"])
+        XCTAssertTrue(stops(run(rig.core.heardNothing(at: rig.now))), "stop_listening ends nothing else")
+        XCTAssertEqual(listens().count, 11, "nothing more to record")
+        XCTAssertTrue(stops(run(rig.core.heard(replyTo: nil, at: rig.now))), "nothing to wake: no reply")
+        XCTAssertEqual(listens().count, 11)
     }
 
     /// Every poke wakes the brain, with no limit; the

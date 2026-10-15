@@ -27,8 +27,10 @@ public enum CoreEffect: Equatable, Sendable {
     case listen(Bool, by: Core.Talker)
     /// A rule's one-shot for the device, after the
     /// snapshot of the same input: `starting`, `stopped`, `error` or
-    /// `helper_return`, which plays only if the device's turn is free
-    /// (`if_free`) and which no brain waits on.
+    /// `helper_return`, or push-to-talk's `stop_listening`, which play only
+    /// if the device's turn is free (`if_free`) and which no brain waits
+    /// on; or push-to-talk's `listening` after the app's mic button, which
+    /// plays at once (`BoopDevice.play`).
     case moment(DeviceMoment)
     /// Open a thread on the Mac, in the app it runs in: a tap while
     /// something needs you.

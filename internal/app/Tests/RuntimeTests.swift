@@ -904,6 +904,11 @@ final class RuntimeTests: XCTestCase {
             transport.onLine?(#"{"t":"ev","kind":"talk_off"}"#)
             eventually("heard nothing") { transport.dos.contains { $0.hasSuffix(stop) } }
             XCTAssertEqual(runtime.home.sync { self.recorded().filter { $0.type == .talk }.count }, 0)
+            func listens() -> [String] {
+                runtime.home.sync { self.recorded().filter { $0.type == .listen }.map { $0.kind + " " + ($0["why"]?.string ?? "") } }
+            }
+            XCTAssertEqual(listens(), ["listen_start ", "listen_wait released", "listen_end heard nothing"],
+                           "each step in the transcript")
 
             let before = transport.sent.count
             dev(#"{"dev":"said","words":"are the tests passing?","by":"device"}"#)
@@ -920,10 +925,12 @@ final class RuntimeTests: XCTestCase {
             }
             let talk = try XCTUnwrap(runtime.home.sync { self.recorded().last { $0.type == .talk } })
             XCTAssertEqual(talk["words"], "are the tests passing?")
+            XCTAssertEqual(listens().count, 3, "listening had ended: nothing more to record")
 
             dev(#"{"dev":"listen","on":true}"#)
             eventually("the app's button") { transport.dos.contains { $0.hasSuffix(#","name":"listening","play":"now"}"#) } }
             XCTAssertTrue(runtime.home.sync { runtime.core.listening?.by == .app })
+            XCTAssertEqual(listens().last, "listen_start ")
             runtime.stop()
         }
     }

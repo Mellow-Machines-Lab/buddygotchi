@@ -196,18 +196,11 @@ public final class Runtime: @unchecked Sendable {
     /// Read-only visual mirror of requested moments. Never completes a handle.
     public var onMoment: ((Int, DeviceMoment) -> Void)?
 
-    // Push-to-talk. All on `home`.
-    /// Turns the Mac's mic on (true) or off. Once it's off, the app hands
-    /// what it heard to `said`, or calls `heardNothing`; with none set
-    /// (headless), turning it off hears nothing.
+    /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
+    /// says. Once it's off, the app hands what it heard to `said`, or calls
+    /// `heardNothing`; with none set (headless), turning it off hears
+    /// nothing. The core keeps push-to-talk's state (`Core.Talk`). On `home`.
     public var onListen: ((Bool) -> Void)?
-    /// Whose button turned the mic on last: what it hears is theirs.
-    var talker: Core.Talker = .app
-    /// The `seq` of what you said, while its reply may still come: the
-    /// first pass on it or anything newer ends `listening` on the device
-    /// unless it queued a reaction, which is the reply.
-    var replyFor: Int?
-    var micTrouble: String?
 
     // Here and away. All on `home`.
     /// Decides whether you're at the Mac, from where the transcript left it.
@@ -538,7 +531,7 @@ public final class Runtime: @unchecked Sendable {
         case "said":
             // What push-to-talk heard, without a mic (VERIFICATION.md §2).
             guard let words = object["words"] as? String else { return }
-            said(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
+            heard(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
         case "tap":
             tapped()
         case "listen":
@@ -589,10 +582,15 @@ public final class Runtime: @unchecked Sendable {
         changed()
     }
 
-    /// What push-to-talk heard, after `by`'s button.
-    func said(_ words: String, by: Core.Talker, who: String = "dev") {
-        talker = by
-        heard(words)
+    /// What push-to-talk heard, after `by`'s button, or nil for whoever's
+    /// turned the mic on last: an event that may wake the brain, whose
+    /// pass replies or ends `listening` (`passed`). `who` is `mic` for
+    /// the app's own.
+    func heard(_ words: String, by: Core.Talker?, who: String = "dev") {
+        let now = options.clock()
+        let step = pipeline.said(words, by: by ?? core.talk.by, at: now)
+        run(step)
+        run(core.heard(replyTo: step.waking.first?.seq, at: now))
         options.log("\(who): said \(words.count) characters")
     }
 
@@ -603,9 +601,9 @@ public final class Runtime: @unchecked Sendable {
         changed()
     }
 
-    /// The app's mic button.
+    /// The app's mic button: `who` is `app` for the app's own.
     func listen(_ on: Bool, who: String = "dev") {
-        run(core.listen(on, at: options.clock()))
+        run(core.listen(on, by: .app, at: options.clock()))
         options.log("\(who): listen \(on)")
     }
 
@@ -667,7 +665,7 @@ public final class Runtime: @unchecked Sendable {
             case .newDay:
                 pipeline.transcript.prune(now: options.clock())
             case .listen(let on, let by):
-                listen(on, by: by)
+                mic(on, by: by)
                 stateChanged = true
             case .moment(let moment):
                 playRule(moment)
@@ -678,50 +676,18 @@ public final class Runtime: @unchecked Sendable {
         if stateChanged || grew { changed() }
     }
 
-    /// The core turned the mic on or off. On: after
-    /// the app's button the device is told to show `listening` at once,
-    /// and it drops the reactions waiting there, since one would end it
-    /// (the device's own button does both itself). Off: what the mic heard
-    /// comes back to `said` or `heardNothing`.
-    func listen(_ on: Bool, by: Core.Talker) {
+    /// The core turned the Mac's mic on or off, after `by`'s button. On:
+    /// the device's own button already shows `listening`, which the mirror
+    /// shows too. Off: what the mic heard comes back to `said` or
+    /// `heardNothing`.
+    func mic(_ on: Bool, by: Core.Talker) {
         options.log("talk: mic \(on ? "on" : "off") (\(by.rawValue))")
         guard on else {
             if onListen != nil { onListen?(false) } else { heardNothing() }
             return
         }
-        talker = by
-        micTrouble = nil
-        replyFor = nil
-        if by == .app {
-            if let id = link.do(BoopDevice.listening, play: .now, by: .rule, now: options.clock(), { _ in }) {
-                onMoment?(id, DeviceMoment(anim: BoopDevice.listening))
-            }
-        } else {
-            // The device's button already started this local visual.
-            onMoment?(0, DeviceMoment(anim: BoopDevice.listening))
-        }
+        if by == .device { onMoment?(0, DeviceMoment(anim: BoopDevice.listening)) }
         onListen?(true)
-    }
-
-    /// What the mic heard: an event that wakes the brain, whose pass
-    /// replies or ends `listening` (`replied`). With no brain to wake, no
-    /// reply is coming, so `listening` ends at once.
-    func heard(_ words: String) {
-        let step = pipeline.said(words, by: talker, at: options.clock())
-        run(step)
-        if let v = step.waking.first {
-            replyFor = v.seq
-        } else {
-            endListening()
-        }
-    }
-
-    /// The first pass on what you said, or on anything newer, is over: if
-    /// it queued no reaction, none is coming, so `listening` ends now.
-    func replied(_ pass: Harness.Pass) {
-        guard let seq = replyFor, let e = pass.event, e.seq >= seq else { return }
-        replyFor = nil
-        if !pass.actions.contains(where: { $0.name == ReactAction.actionName && $0.result.ok }) { endListening() }
     }
 
     /// Who forces passes and actions, for no event: the dashboard's.
@@ -742,7 +708,10 @@ public final class Runtime: @unchecked Sendable {
         }
         // The head is logged only when it changes; the pass, HISTORY and NOW.
         debugWriter?.pass(pass, launchOptions: launchOptions, at: now)
-        replied(pass)
+        // Push-to-talk's reply: a reaction is one, and a pass on what you
+        // said without one means none is coming.
+        run(core.passed(about: pass.event?.seq,
+                        reacted: pass.actions.contains { $0.name == ReactAction.actionName && $0.result.ok }, at: now))
         changed()
     }
 
@@ -756,14 +725,6 @@ public final class Runtime: @unchecked Sendable {
         return "brain \(e.name) \(pass.latencyMs) ms → " + result
     }
 
-    /// Ends `listening` on the device with `stop_listening`, which ends
-    /// nothing else.
-    func endListening() {
-        core.listeningEnded()
-        if let id = link.do(BoopDevice.stopListening, play: .ifFree, by: .rule, now: options.clock(), { _ in }) {
-            onMoment?(id, DeviceMoment(anim: BoopDevice.stopListening))
-        }
-    }
 
     /// A snapshot for the device.
     func show(_ snapshot: StateSnapshot) {
@@ -771,14 +732,16 @@ public final class Runtime: @unchecked Sendable {
         link.update(state: snapshot.fields, now: options.clock())
     }
 
-    /// A rule's one-shot: sent at once, after the
-    /// `state` of the same input, to play only if the device's turn is free
-    /// or resting (`if_free`): a brain reaction's line holding it would be
-    /// cut, and a late one-shot is worse than none, so the device skips it
-    /// then. The core has already left it out while something needs you or
-    /// `listening` shows.
+    /// A rule's moment: sent at once, after the
+    /// `state` of the same input. A one-shot plays only if the device's turn
+    /// is free or resting (`if_free`): a brain reaction's line holding it
+    /// would be cut, and a late one-shot is worse than none, so the device
+    /// skips it then. The core has already left it out while something
+    /// needs you or `listening` shows. Push-to-talk's `listening` plays at
+    /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ moment: DeviceMoment) {
-        if let id = link.do(moment.name, args: moment.args, play: .ifFree, by: .rule, now: options.clock(), { _ in }) {
+        if let id = link.do(moment.name, args: moment.args, play: BoopDevice.play(moment.name), by: .rule,
+                            now: options.clock(), { _ in }) {
             onMoment?(id, moment)
         }
     }
@@ -788,7 +751,6 @@ public final class Runtime: @unchecked Sendable {
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
     func queue(_ moment: DeviceMoment, _ pending: Pending) {
-        core.listeningEnded()  // a reaction ends `listening`: it's the reply
         let now = options.clock(), reactions = reactions
         let id = link.do(moment.name, args: moment.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
                          now: now) { outcome in
@@ -804,7 +766,7 @@ public final class Runtime: @unchecked Sendable {
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
-                            micTrouble: micTrouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+                            micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
         grew = false
         if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)
@@ -845,19 +807,19 @@ public final class Runtime: @unchecked Sendable {
 
     /// The app's mic button: start or stop listening.
     public func setListening(_ on: Bool) {
-        home.async { [self] in run(core.listen(on, at: options.clock())) }
+        home.async { [self] in listen(on, who: "app") }
     }
 
     /// What push-to-talk heard, once the mic is off.
     public func said(_ words: String) {
-        home.async { [self] in heard(words) }
+        home.async { [self] in heard(words, by: nil, who: "mic") }
     }
 
     /// The mic went off and heard nothing: no reply is coming.
     public func heardNothing() {
         home.async { [self] in
             options.log("talk: heard nothing")
-            endListening()
+            run(core.heardNothing(at: options.clock()))
         }
     }
 
@@ -866,8 +828,7 @@ public final class Runtime: @unchecked Sendable {
     public func micFailed(_ why: String) {
         home.async { [self] in
             options.log("talk: \(why)")
-            micTrouble = why
-            endListening()
+            run(core.micFailed(why, at: options.clock()))
             changed()
         }
     }
@@ -881,7 +842,7 @@ public final class Runtime: @unchecked Sendable {
     /// The popover's "can't hear you" notice was dismissed.
     public func dismissMicTrouble() {
         home.async { [self] in
-            micTrouble = nil
+            core.dismissMicTrouble()
             changed()
         }
     }
