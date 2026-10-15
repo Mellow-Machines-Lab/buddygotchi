@@ -118,12 +118,11 @@ HISTORY (oldest first; indented lines add to the line above)
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 1 min ago: You stepped away from the Mac.
 
 NOW (14:02, Wednesday)
@@ -133,7 +132,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 4 min ago: You stepped away from the Mac.
 2 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -145,7 +143,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 6 min ago: You stepped away from the Mac.
 4 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -159,7 +156,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 7 min ago: You stepped away from the Mac.
 6 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -175,7 +171,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 9 min ago: You stepped away from the Mac.
 8 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -193,7 +188,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 12 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 11 min ago: You stepped away from the Mac.
 10 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -213,7 +207,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 15 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 14 min ago: You stepped away from the Mac.
 12 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -235,7 +228,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 18 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 17 min ago: You stepped away from the Mac.
 15 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -259,7 +251,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 21 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 20 min ago: You stepped away from the Mac.
 18 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -285,7 +276,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 23 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 22 min ago: You stepped away from the Mac.
 20 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -313,7 +303,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 24 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 23 min ago: You stepped away from the Mac.
 22 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -343,7 +332,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 27 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 26 min ago: You stepped away from the Mac.
 24 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
@@ -375,7 +363,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 29 min ago: claude started turn 1 on "landing".
   You asked: "add dark mode to the settings page"
-  Boop reacted to the new turn on its own.
 28 min ago: You stepped away from the Mac.
 26 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".

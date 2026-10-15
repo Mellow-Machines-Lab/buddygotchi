@@ -287,7 +287,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(states(fx).last?.base, "working")
         XCTAssertEqual(states(fx).last?.busy, 1)
         XCTAssertEqual(woke(fx), [#"claude started turn 1 on "landing"."#])
-        XCTAssertEqual(events(fx).first?.reaction, "\(CharacterPack.active.name) reacted to the new turn on its own.")
+        XCTAssertNil(events(fx).first?.reaction, "a turn start's one-shot is in the log, not HISTORY")
     }
 
     /// No rule celebrates a finish, whatever its length.

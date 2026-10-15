@@ -453,14 +453,14 @@ final class CoreOneShotTests: XCTestCase {
                 .map { "\($0.action ?? "") \($0["by"]?.string ?? "") \($0["message"]?.string ?? "")" }
         }
         XCTAssertEqual(did(rig.send(.sessionStart, source: "resume")),
-                       ["starting rule \(name) reacted to the session resuming on its own."])
+                       ["starting rule "])
         XCTAssertEqual(rig.pipeline.transcript.events.last?["ctx"], "continuation")
-        XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule \(name) reacted to the new session on its own."])
+        XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule "])
         XCTAssertEqual(did(rig.send(.sessionStart, session: "s3", source: "compact")),
-                       ["starting rule \(name) reacted to the compacted context on its own."])
+                       ["starting rule "])
         let start = rig.send(.turnStart)
-        XCTAssertEqual(did(start), ["starting rule \(name) reacted to the new turn on its own."])
-        XCTAssertEqual(events(start).first?.reaction, "\(name) reacted to the new turn on its own.", "shown under its line")
+        XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
+        XCTAssertNil(events(start).first?.reaction, "not shown under its line")
         rig.send(.activity, tool: "Bash", topic: "tests", id: "1")
         let failed = rig.send(.activity, tool: "Bash", topic: "tests", failed: true, id: "1", error: "exit_code")
         XCTAssertEqual(did(failed), ["error rule \(name) reacted to the error on its own."])

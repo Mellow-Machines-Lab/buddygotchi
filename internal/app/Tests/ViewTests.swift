@@ -454,7 +454,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(restarted.seq, 5, "seq goes on")
         XCTAssertEqual(second.transcript.lastSeq, 5)
         XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
-        XCTAssertEqual(second.views.first?.did.map(\.by), ["rule"], "a reaction that can't end now isn't shown; the one-shot is")
+        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's one-shot")
         rig.wait(1000)
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])

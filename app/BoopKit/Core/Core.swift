@@ -271,25 +271,23 @@ public final class Core {
                                           avoiding: lastVariant[anim], &rng)
         lastVariant[anim] = moment.variant
         fx.append(.moment(moment))
-        fx.append(.record(Event.did(Core.played(moment), for: seq, action: anim, by: "rule",
-                                    facts: moment.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)))
+        var did = Event.did(Core.played(moment) ?? "", for: seq, action: anim, by: "rule",
+                            facts: moment.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+        if Core.played(moment) == nil { did.data["message"] = nil }
+        fx.append(.record(did))
     }
 
-    /// What a one-shot's `did` says Boop did: `Boop reacted to the error on
-    /// its own.`
-    static func played(_ shot: DeviceMoment) -> String {
-        let what = switch shot.anim {
-        case Core.starting?:
-            switch shot.ctx {
-            case "session": "the new session"
-            case "continuation": "the session resuming"
-            case "compacted": "the compacted context"
-            default: "the new turn"
-            }
-        case Core.stopped?: "the stop"
-        case Core.error?: "the error"
-        case Core.helperReturn?: "the helper coming back"
-        default: "it"
+    /// What a one-shot's `did` says Boop did, for HISTORY and NOW: `Boop
+    /// reacted to the error on its own.` None for `starting`: every turn
+    /// starts with it, so the brain hears the start itself and nothing
+    /// more, and the log alone keeps that it played.
+    static func played(_ shot: DeviceMoment) -> String? {
+        let what: String
+        switch shot.anim {
+        case Core.stopped?: what = "the stop"
+        case Core.error?: what = "the error"
+        case Core.helperReturn?: what = "the helper coming back"
+        default: return nil
         }
         return "\(CharacterPack.active.name) reacted to \(what) on its own."
     }

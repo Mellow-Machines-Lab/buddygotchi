@@ -118,11 +118,10 @@ Boop has been excited for under a minute.
 
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
-  Boop reacted to the new turn on its own.
 Boop has been excited for under a minute.
 
 NOW (14:00, Wednesday)

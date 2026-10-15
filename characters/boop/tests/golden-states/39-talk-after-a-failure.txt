@@ -117,11 +117,10 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
-  Boop reacted to the new turn on its own.
 
 NOW (14:02, Wednesday)
 claude finished turn 1 on "landing": failed, a long turn, no tool calls.
@@ -240,7 +239,6 @@ Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
-  Boop reacted to the new turn on its own.
 just now: claude finished turn 1 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face, held twice, and said "Uh-oh".
@@ -252,7 +250,6 @@ Boop did nothing on its own.
 === pass 4
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
-  Boop reacted to the new turn on its own.
 1 min ago: claude finished turn 1 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face, held twice, and said "Uh-oh".

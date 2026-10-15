@@ -118,12 +118,11 @@ HISTORY (oldest first; indented lines add to the line above)
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
   You asked: "get the release build working"
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
   You asked: "get the release build working"
-  Boop reacted to the new turn on its own.
 
 NOW (14:02, Wednesday)
 claude is still working on "landing", a long turn.
@@ -132,7 +131,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
   You asked: "get the release build working"
-  Boop reacted to the new turn on its own.
 just now: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 

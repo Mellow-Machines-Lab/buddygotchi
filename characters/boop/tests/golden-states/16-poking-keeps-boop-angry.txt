@@ -1857,7 +1857,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:06, Wednesday)
 claude started turn 1 on "landing".
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 14
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: You poked Boop.
@@ -1909,7 +1909,6 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 just now: claude started turn 1 on "landing".
-  Boop reacted to the new turn on its own.
 
 NOW (14:06, Wednesday)
 claude finished turn 1 on "landing": done, a short turn, no tool calls.

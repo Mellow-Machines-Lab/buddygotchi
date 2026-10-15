@@ -118,12 +118,11 @@ HISTORY (oldest first; indented lines add to the line above)
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
   You asked: "add a logout button to the nav"
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
   You asked: "add a logout button to the nav"
-  Boop reacted to the new turn on its own.
 
 NOW (14:00, Wednesday)
 claude finished turn 1 on "landing": done, a short turn, no tool calls.
@@ -248,7 +247,6 @@ min.
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
   You asked: "add a logout button to the nav"
-  Boop reacted to the new turn on its own.
 2 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
   Its last message: "Added the logout button to the nav."
   Boop's mood changed: calm → curious.
@@ -258,4 +256,4 @@ Boop has been curious for 2 min.
 NOW (14:03, Wednesday)
 claude started turn 2 on "landing".
   You asked: "it's still broken, the button does nothing. why does this keep happening"
-Boop reacted to the new turn on its own.
+Boop did nothing on its own.
