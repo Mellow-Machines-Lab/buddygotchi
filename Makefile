@@ -92,8 +92,11 @@ demo:
 # request budget: the final pass (internal/EVALS.md §2 counts its requests).
 # While developing, run .build/debug/boopdev eval --only TEXT instead.
 # They need Jev's key in BOOP_JEV_KEY and fail without it
-# (internal/VERIFICATION.md L5).
-eval: build
+# (internal/VERIFICATION.md L5). Builds boopdev alone, with the chosen
+# pack staged, not the rest of `build`.
+eval:
+	python3 characters/charactergen.py --stage
+	swift build $(SWIFT_CHECK) --product boopdev
 	.build/debug/boopdev eval --no-budget
 
 # Build and upload over USB (auto-reset, no BOOT press), for whichever
@@ -102,5 +105,13 @@ eval: build
 flash:
 	firmware/tools/flash.sh
 
+# Every build's output, so the next build starts from nothing: the Swift
+# package's and each package's own (their tests' builds), PlatformIO's
+# (LinkKit's device library's own project too), the staged character pack,
+# the tests' generated runner and the simulator's page, its recorded demos
+# with it. Keeps the tools' venv and PlatformIO's own packages
+# (firmware/.platformio-core), which are installs, not build output.
 clean:
-	rm -rf .build firmware/.pio
+	rm -rf .build agent-hooks/.build mellowharness/.build linkkit/.build \
+	  firmware/.pio linkkit/device/.pio .character-build \
+	  internal/app/Tests/GeneratedTestRunner.swift simulator/web/dist

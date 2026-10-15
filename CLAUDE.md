@@ -58,7 +58,7 @@ flags with `--help`. `make run` and `make debug` use Bluetooth, so they're
 the owner's. For agents:
 
 ```sh
-make build                                            # Mac app, boopdev, the tests' runner, agent-hook, mellowharness-emit, beacon and linkkit-bridge (make -C internal test and make eval build too)
+make build                                            # Mac app, boopdev, the tests' runner, agent-hook, mellowharness-emit, beacon and linkkit-bridge (make -C internal test builds it too)
 make -C internal test                                 # Swift unit tests: Boop's, then swift test in agent-hooks/, mellowharness/ and linkkit/
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth, printing everything
 .build/debug/Boop --snapshots DIR                     # the popover's panes and the menu-bar icons as PNGs, then exits
