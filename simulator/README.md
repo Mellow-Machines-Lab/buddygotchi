@@ -35,7 +35,9 @@ the next launch starts with the board (`DeviceChooser`, in
 
 **The core** (`core/`) is the firmware's portable code (`render/`, `app/`
 and `voice/`) and LinkKit's device library, with a stand-in for the
-hardware (`sim_hal.h`). Both builds run the same `Board` (`board.h`), so
+hardware (`sim_hal.h`). It takes USB's lines as the firmware's loop
+does: in order, with a `dbg.*` line ending the batch, so the lines after
+it wait for the next pass. Both builds run the same `Board` (`board.h`), so
 they show the same board:
 
 | Build | By | Runs | For |
@@ -230,7 +232,8 @@ make -C internal sim-test
   line plays at the pace a DAC would (the output's time within 10% of
   the line's length, as the boards' takes check holds them). Of the port:
   it's a serial port at the path asked for, what nobody heard is
-  forgotten, and a long reply arrives whole.
+  forgotten, a long reply arrives whole, and a debug line ends a batch
+  of lines that arrive together.
 - **`tests/test_serve.py`**, the page's server and its socket, on a free
   port and a socket of its own: a second server leaves a live socket
   alone, whichever port it's given; a stale socket is replaced, and a

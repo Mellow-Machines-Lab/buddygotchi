@@ -21,24 +21,38 @@ void Board::setCard(Card* card, bool out) {
 }
 
 int Board::usb(const char* bytes, size_t n) {
-  int lines = 0;
-  for (size_t i = 0; i < n; ++i) {
-    if (!line_.feed(bytes[i])) continue;
+  held_.append(bytes, n);
+  return ticked_ ? lines() : 0;
+}
+
+int Board::lines() {
+  int handled = 0;
+  size_t i = 0;
+  while (i < held_.size()) {
     // Through the board's own LineReader, so a line over its limit
     // (linkkit/SPEC.md §2) is dropped here exactly as on USB.
-    kit_->handleLine(line_.line(), line_.length(), linkkit::Link::kUsb);
-    ++lines;
+    if (!line_.feed(held_[i++])) continue;
+    ++handled;
+    if (kit_->handleLine(line_.line(), line_.length(), linkkit::Link::kUsb)) {
+      ticked_ = false;
+      break;
+    }
   }
-  return lines;
+  held_.erase(0, i);
+  return handled;
 }
 
 bool Board::tick() {
   kit_->tick();
-  if (!device_->takeFrame()) return false;
+  ticked_ = true;
+  const bool drew = device_->takeFrame();
   // A native face's frames turn as on the board, so a screenshot comes
   // from the same two surfaces.
-  if (auto* frames = device_->frames()) frames->present(device_->canvas());
-  return true;
+  if (drew) {
+    if (auto* frames = device_->frames()) frames->present(device_->canvas());
+  }
+  lines();
+  return drew;
 }
 
 Board::Frame Board::frame() {

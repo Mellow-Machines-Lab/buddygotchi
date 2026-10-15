@@ -164,6 +164,17 @@ class CoreTests(unittest.TestCase):
         board.pump(0.6)
         self.assertIn("tap", board.events())
 
+    def test_a_debug_line_ends_the_batch(self) -> None:
+        # As on the board, lines that arrive together are handled in order
+        # until a dbg.* line, and the rest wait for the next tick: so the
+        # press below is read before dbg.state, which then shows it.
+        board = self.board()
+        os.write(board.serial, b'{"t":"dbg.press","ms":300}\n{"t":"dbg.state"}\n')
+        board.pump(0.3)
+        state = [m for m in board.lines() if m["t"] == "dbg.state"]
+        self.assertEqual(len(state), 1)
+        self.assertTrue(state[0]["boot"], "the tick between the lines read the press")
+
     def test_a_long_reply_arrives_whole(self) -> None:
         # A screenshot is far more than the port holds at once: the board
         # waits for the reader, and drops nothing.

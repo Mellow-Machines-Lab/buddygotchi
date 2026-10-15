@@ -33,9 +33,13 @@ class Board {
   // The card that goes in the slot at `card in`, and now unless `out`.
   void setCard(Card* card, bool out = false);
 
-  // Bytes a host sent on USB. Returns how many lines they finished.
+  // Bytes a host sent on USB. The board handles the lines waiting in
+  // order, as the firmware's loop does, and a dbg.* line ends the batch:
+  // the lines after it wait for the next tick, since tools order their
+  // input and clock steps against ticks. Returns how many lines it handled.
   int usb(const char* bytes, size_t n);
-  // One pass of the board's loop. True when it drew a frame.
+  // One pass of the board's loop, then the next batch of lines waiting.
+  // True when it drew a frame.
   bool tick();
   // The frame it last drew.
   Frame frame();
@@ -55,6 +59,12 @@ class Board {
   std::unique_ptr<app::Device> device_;
   std::unique_ptr<linkkit::Kit> kit_;
   linkkit::LineReader line_;
+  // The bytes after a batch's dbg.* line, held for after the next tick;
+  // `ticked_` is false from that line until then.
+  std::string held_;
+  bool ticked_ = true;
+
+  int lines();  // the next batch from held_
 };
 
 }  // namespace sim
