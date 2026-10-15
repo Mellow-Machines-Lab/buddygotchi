@@ -137,7 +137,6 @@ public struct Scenario: Sendable {
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
-    public var graph: MoodGraph.Version
     public var steps: [Step]
     public var file: String
 
@@ -161,7 +160,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "mood", "graph", "checks", "steps"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "mood", "checks", "steps"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -209,9 +208,7 @@ public struct Scenario: Sendable {
             guard let p = Personality(rawValue: $0) else { throw bad("unknown personality \($0)") }
             return p
         } ?? .default
-        guard let graph = MoodGraph.Version(rawValue: o["graph"] as? String ?? "v2") else { throw bad("graph is v2 or v3") }
-        self.graph = graph
-        let graphMoods = MoodGraph.moods(for: graph)
+        let graphMoods = MoodGraph.moods
         mood = try (o["mood"] as? String).map {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
             return $0
@@ -474,18 +471,18 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            }, version: scenario.graph, face: { scenario.graph == .v3 ? .gel : .pixel })
+            })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
         }
-        func moodNow() -> String { home.sync { MoodAction.value(mood, harness.log.view(now: clock.now), version: scenario.graph) } }
+        func moodNow() -> String { home.sync { MoodAction.value(mood, harness.log.view(now: clock.now)) } }
         home.sync {
             harness.use(brain)
             // The mood it starts in, as the dashboard would set it just before.
             if scenario.mood != MoodAction.initial {
                 harness.force(mood, by: Runtime.forcedBy) {
-                    MoodAction.change(mood, to: scenario.mood, log: harness.log.view(now: clock.now), version: scenario.graph)
+                    MoodAction.change(mood, to: scenario.mood, log: harness.log.view(now: clock.now))
                 }
             }
         }
@@ -562,14 +559,14 @@ public struct Eval {
                                 latencyMs: record.latencyMs))
         }
         if let s = since, let end = scenario.steps.last?.atMs { working.append((s, end)) }
-        let runChecks = scenario.checks.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood, graph: scenario.graph) } ?? []
+        let runChecks = scenario.checks.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
         return Result(scenario: scenario.name, file: scenario.file, checks: checks, runChecks: runChecks, timeline: timeline)
     }
 
     /// The whole-run checks (internal/EVALS.md §3) against a run's passes, the
     /// spans its turn worked and the mood it started in.
     static func judge(_ c: Scenario.Checks, timeline: [Pass], working: [(Int64, Int64)],
-                      start: String = MoodAction.initial, graph: MoodGraph.Version = .v2) -> [RunCheck] {
+                      start: String = MoodAction.initial) -> [RunCheck] {
         var out: [RunCheck] = []
         let played = timeline.filter { $0.reaction != nil }
         func clock(_ ms: Int64) -> String { "\(ms / 60_000)m\(String(format: "%02d", ms / 1000 % 60))s" }
@@ -630,7 +627,7 @@ public struct Eval {
                     wrong = "at \(clock(p.atMs)): no usable mood answer"
                 } else if p.dropped == nil, let answer = p.answer, !p.offered.contains(answer) {
                     wrong = "at \(clock(p.atMs)): answered \(answer), offered \(p.offered.joined(separator: "|"))"
-                } else if p.mood != before, !(MoodGraph.moves(for: graph)[before]?.all.contains(p.mood) ?? false) {
+                } else if p.mood != before, !(MoodGraph.moves[before]?.all.contains(p.mood) ?? false) {
                     wrong = "at \(clock(p.atMs)): \(before) → \(p.mood) isn't a move"
                 }
                 before = p.mood

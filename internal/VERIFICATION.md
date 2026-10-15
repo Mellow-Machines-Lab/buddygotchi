@@ -50,8 +50,7 @@ clock checks it only when `CI` isn't set.
 **The animation bank and the mood graph.** The bank is where the
 device's designs and sounds come from: `make -C internal faces` and
 sfxgen (below) build from it.
-`node characters/pixel/design/boop-mood-spectrum-v2/validate.mjs` checks the
-approved graph topology. `node characters/pixel/design/boop-sound-bank-v4/source/build.mjs`
+`node characters/pixel/design/boop-sound-bank-v4/source/build.mjs`
 builds the portable runtime and manifests; `--svg` additionally
 exports all selections as SVG. Then
 `node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs` checks coverage,
@@ -147,17 +146,19 @@ These are simulator/host checks; hardware throughput and speaker review are
 separate checks. The temporary Phase 8 fixture has been removed.
 
 **Slime host generation.** `node characters/boop/tools/slimegen/slimegen.mjs`
-regenerates v3's moods and pacing in `characters/boop/character.json`, the offline Mac mirror resources, and the
+regenerates Boop's mood graph and pacing in `characters/boop/character.json`, the offline Mac mirror resources, and the
 firmware gel catalogs, vector art and sampled material mesh; add
 `--check` for freshness only. Swift
 `MoodPolicyTests` cover topology, pacing boundaries, evidence identity (a
 decision's own pass never using up its event through a real harness pass,
-and the copies-only check matching a whole-log scan on a long log), v2
-option parity, pixel/gel serialization, and the newer moods' reactions
-speaking in their fallback's voice. Runtime tests check the first hello
-reply, a hello LinkKit turns away, and reconnect. The eval runner accepts `graph: "v3"`;
-the v3 scenarios are prepared for interleaved A/B Jev runs when the owner
-provides the key. Scripted tests cannot substitute for those judgments.
+and the copies-only check matching a whole-log scan on a long log), the
+mood question offering exactly the policy's moves, and every mood's
+reaction speaking in takes of its own mood. `MoodGraphTests` hold every
+pack's moods to the universal list and its graph to one the policy can
+walk. Runtime tests check that every hello and reconnect gets the mood
+itself. Scenarios 66–69 are prepared for interleaved A/B Jev runs when
+the owner provides the key. Scripted tests cannot substitute for those
+judgments.
 
 `node characters/boop/tools/slimegen/check-mirror.mjs` checks transient clearing,
 preserved body state and the silent offline resource policy. It also runs

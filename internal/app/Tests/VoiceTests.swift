@@ -14,7 +14,7 @@ extension DeviceMoment.Say {
 
     /// A made-up take `ms` long, for tests that time a line.
     static func test(ms: Int) -> DeviceMoment.Say {
-        .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "start", kind: .word, mood: "calm", finish: nil, ms: ms)])
+        .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "start", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
     }
 }
 
@@ -25,7 +25,7 @@ final class VoiceTests: XCTestCase {
 
     let moods = MoodAction.moods.map(\.name)
 
-    /// Every take is in one of the 13 moods, answers a
+    /// Every take plays in moods the pack has, answers a
     /// question the react action asks (or only the rules say it), and has
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
@@ -33,7 +33,8 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Take.all.count, 2722)
         XCTAssertEqual(Set(Take.all.map(\.id)).count, Take.all.count)
         for t in Take.all {
-            XCTAssertTrue(moods.contains(t.mood), "\(t.id) is in \(t.mood)")
+            XCTAssertFalse(t.moods.isEmpty, t.id)
+            XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
             switch t.part {
             case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning), which say.feeling doesn't offer")
             case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning), which say.about doesn't offer")
@@ -48,18 +49,20 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Take.packVersion.count, 12)
     }
 
-    /// The owner's rule: every face has a take for every
-    /// feeling and every topic, so the react action offers them all.
-    /// Every feeling has one that plays whatever
-    /// the finish, but glad in a bad mood, which is only relief at a
-    /// success.
+    /// The owner's rule: every face, each of the universal moods, has a
+    /// take for every feeling and every topic, so the react action offers
+    /// them all. Every feeling has one that plays whatever the finish, but
+    /// glad in a bad mood, which is only relief at a success: a mood whose
+    /// takes were performed in a bad one.
     func testNoFaceIsWithoutWords() {
         let bad: Set = ["annoyed", "irritated", "grumpy", "whiny", "wounded", "sad"]
+        XCTAssertEqual(Set(moods), Set(CharacterPack.universalMoods))
+        func performedIn(_ face: String) -> String { Take.all.first { $0.moods.contains(face) }!.moods[0] }
         for (part, answers) in [(Take.Part.feeling, ReactAction.feelings), (.about, ReactAction.topics)] {
             for a in answers.map(\.name) {
-                XCTAssertEqual(Set(Take.all.filter { $0.part == part && $0.meaning == a }.map(\.mood)), Set(moods), "\(part) \(a)")
-                for face in moods where part == .feeling && !(a == "glad" && bad.contains(face)) {
-                    XCTAssertTrue(Take.all.contains { $0.part == part && $0.meaning == a && $0.mood == face && $0.finish == nil },
+                XCTAssertEqual(Set(Take.all.filter { $0.part == part && $0.meaning == a }.flatMap(\.moods)), Set(moods), "\(part) \(a)")
+                for face in moods where part == .feeling && !(a == "glad" && bad.contains(performedIn(face))) {
+                    XCTAssertTrue(Take.all.contains { $0.part == part && $0.meaning == a && $0.moods.contains(face) && $0.finish == nil },
                                   "\(face) \(a) says nothing unless the turn finished")
                 }
             }
@@ -88,7 +91,7 @@ final class VoiceTests: XCTestCase {
                     for kind in Take.Kind.allCases {
                         for finish in [nil, "success", "failure"] {
                             guard let t = Voice.take(part, meaning: a, kind: kind, face: face, finish: finish, rng: &rng) else { continue }
-                            XCTAssertEqual(t.mood, face)
+                            XCTAssertTrue(t.moods.contains(face))
                             XCTAssertEqual(t.meaning, a)
                             XCTAssertEqual(t.part, part)
                             XCTAssertTrue(t.finish == nil || t.finish == finish, "\(t.id) needs a \(t.finish!)")
@@ -133,7 +136,7 @@ final class VoiceTests: XCTestCase {
     /// fits.
     func testTheLastTakesArentRepeated() {
         var rng = SplitMix64(seed: 4)
-        let sounds = Take.all.filter { $0.part == .feeling && $0.meaning == "upset" && $0.mood == "annoyed" && $0.kind == .sound }
+        let sounds = Take.all.filter { $0.part == .feeling && $0.meaning == "upset" && $0.moods.contains("annoyed") && $0.kind == .sound }
         let avoiding = Set(sounds.dropLast().map(\.text))
         for _ in 0..<50 {
             XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .sound, face: "annoyed", finish: nil, avoiding: avoiding, rng: &rng)?.id,

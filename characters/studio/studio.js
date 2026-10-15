@@ -25,13 +25,8 @@
   const entryOf=(pack,card)=>packs[pack].studio.find(e=>e.id===card);
   const label=card=>entryOf(sel.pack,card)?.label||packs[sel.pack].name;
   const moodOf=id=>packs[sel.pack].moods.find(m=>m.id===id);
-  // What a card plays for one of the pack's moods: the mood, else its fallback, else nothing.
-  function shows(card,mood,state){
-    const covers=entryOf(sel.pack,card)?.covers;
-    if(!covers)return mood.id;
-    for(const id of [mood.id,mood.fallback])if(id&&covers[id]?.includes(state))return id;
-    return null;
-  }
+  // What a card plays for one of the pack's moods: the mood, or the one whose art it wears (its entry's `wears`).
+  const shows=(card,mood)=>entryOf(sel.pack,card)?.wears?.[mood.id]||mood.id;
   const familyMeta=()=>Object.assign({},...packs[sel.pack].studio.map(e=>e.families||{}));
   function families(){
     const pack=packs[sel.pack],meta=familyMeta();
@@ -62,8 +57,8 @@
     const b=document.createElement('button');b.type='button';b.className='chip';b.setAttribute('aria-pressed',String(pressed));
     if(hue)b.style.setProperty('--hue',hue);
     b.append(text);
-    if(borrowed){b.classList.add('borrowed');const t=document.createElement('span');t.className='to';t.textContent='→ '+(to?title(to):'none');b.append(t);
-      b.title=to?`No art of its own here: ${label(sel.card)} shows ${title(to)}`:`${label(sel.card)} has nothing to show for this mood`;}
+    if(borrowed){b.classList.add('borrowed');const t=document.createElement('span');t.className='to';t.textContent='→ '+title(to);b.append(t);
+      b.title=`No art of its own here: ${label(sel.card)} shows ${title(to)}`;}
     Object.assign(b.dataset,data);return b;
   }
   function group(text,chips){
@@ -84,14 +79,14 @@
       if(e?.icon){const img=document.createElement('img');img.src=e.icon;img.alt='';art.append(img);}else art.textContent=packs[sel.pack].name[0];
       const text=document.createElement('span');text.className='character-text';
       const strong=document.createElement('strong');strong.textContent=label(id);
-      const small=document.createElement('small');small.textContent=[e?.about,`${e?.covers?Object.keys(e.covers).length:packs[sel.pack].moods.length} moods`].filter(Boolean).join(' · ');
+      const small=document.createElement('small');small.textContent=[e?.about,`${packs[sel.pack].moods.length} moods`].filter(Boolean).join(' · ');
       text.append(strong,small);b.append(art,text);return b;
     }));
   }
   function renderMoods(){
     let borrowed=false;
     $('[data-moods]').replaceChildren(...families().map(f=>group(f.label,f.moods.map(m=>{
-      const to=shows(sel.card,m,sel.state),other=to!==m.id;borrowed||=other;
+      const to=shows(sel.card,m),other=to!==m.id;borrowed||=other;
       return chip(title(m.id),{pressed:m.id===sel.mood,hue:f.colour,borrowed:other,to,data:{mood:m.id}});
     }))));
     $('[data-legend]').hidden=!borrowed;
@@ -113,7 +108,7 @@
   // ── Applying the selection ─────────────────────────────────────────────
   function render({autoplay=false}={}){
     if(!moodOf(sel.mood))sel.mood=packs[sel.pack].default_mood;
-    const mood=moodOf(sel.mood),plays=shows(sel.card,mood,sel.state);
+    const mood=moodOf(sel.mood),plays=shows(sel.card,mood);
     renderCards();renderMoods();renderStates();renderFacts();
 
     const faces=instance?.faces?.(plays)||[];
@@ -123,8 +118,8 @@
     setSegment($('[data-face-choice]'),sel.face||plays);
 
     info=null;
-    const empty=!instance?(adapter?'':`${label(sel.card)} has no preview: its pack declares no studio entry.`):!plays?`${label(sel.card)} has nothing to show for ${title(sel.mood)} while ${stateInfo[sel.state].label.toLowerCase()}.`:'';
-    if(instance&&plays)info=instance.select({mood:plays,face:sel.face,state:sel.state,outcome:sel.outcome,context:sel.context,variant:sel.variant});
+    const empty=!instance?(adapter?'':`${label(sel.card)} has no preview: its pack declares no studio entry.`):'';
+    if(instance)info=instance.select({mood:plays,face:sel.face,state:sel.state,outcome:sel.outcome,context:sel.context,variant:sel.variant});
     $('[data-empty]').hidden=!empty;$('[data-empty]').textContent=empty;
     const variants=info?.variants||[];
     sel.variant=Math.max(0,Math.min(sel.variant,variants.length-1));
@@ -142,7 +137,7 @@
     $('[data-caption]').textContent=info?.caption||'';$('[data-caption]').hidden=!info?.caption;
     $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||'';
     $('[data-state-term]').textContent=stateInfo[sel.state].label;$('[data-state-describe]').textContent=stateInfo[sel.state].about;
-    const note=$('[data-note]');note.hidden=!plays||plays===sel.mood;
+    const note=$('[data-note]');note.hidden=plays===sel.mood;
     if(!note.hidden)note.textContent=`${label(sel.card)} has no ${title(sel.mood).toLowerCase()} art. It shows ${title(plays).toLowerCase()} instead, which is what plays here.`;
 
     const transport=info?adapter.transport:null;

@@ -1,6 +1,7 @@
 {
   "name": "Thanks bring a whiny or wounded Boop back",
   "case": "Boop is whiny when the person starts a turn by thanking the agent for all its help: Boop comes back, to calm or, a jump the thanks earn, happy. Then the person snaps that Boop is useless, and it's hurt: wounded. A few minutes later they apologise and thank the agent, and Boop comes back again, to calm or happy.",
+  "gap": "Written for the 13-mood graph (before 2026-10-15). Whiny has no move to calm or happy, and thanks or rude words aren't strong events MoodPolicy lets jump. Fix: re-pin the moods along whiny's moves.",
   "why": "characters/boop/steering/mood/whiny.md and wounded.md: thanks and kind words leave them for happy (a jump) or calm; rude words hurt, wounded; the mood question offers only the mood's moves",
   "mood": "whiny",
   "checks": {"moves_on_graph": true},

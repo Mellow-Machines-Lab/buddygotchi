@@ -14,12 +14,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop and moves a step at a time: to a mood on
-  offer when NOW is MOOD's reason to leave, but never for a routine
-  turn alone, and not while HISTORY ends "for under a minute" unless a
-  turn failed, a very long turn ended, or Boop was poked or talked to.
-  After the minutes MOOD gives, or an hour of nothing, it fades one
-  step, to the mood MOOD names, at whatever NOW is.
+- The mood is the backdrop. The offered choices already enforce pacing,
+  freshness and the directed graph. Stay unless an offered meaning fits
+  NOW; a quiet recovery softens one step without inventing success.
+  Brief reactions take their offered recovery when nothing renews them.
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
@@ -102,18 +100,11 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Engaged. Boop is in the flow, following steady work. At ease: nothing
-has failed.
-Its faces lean engaged; a failure gets a determined face.
-Says work: a word or grunt.
-Stays engaged while the work goes on, through routine finishes.
-Leaves for determined when a very long turn works on, a check fails or
-the person sounds frustrated; proud when a check passes after failing
-or a long turn's hard work is done; happy at kind words to Boop;
-curious at a poke; annoyed at a failed turn; excited when a very long
-turn finishes done; sad when a very long turn fails, the agent gives
-up or the person shares sad news. Once Boop has been engaged for 5
-min, fades to calm at anything but work going on.
+Engaged. Productively absorbed; performing rather than struggling.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.
 
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been engaged for under a minute.

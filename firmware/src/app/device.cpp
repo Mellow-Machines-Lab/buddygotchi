@@ -188,8 +188,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   Model m;
   m.base = baseFromName(doc["base"]);          // idle if missing or unknown
   m.act = actFromName(doc["act"]);             // working's design if missing or unknown
-  m.mood = render::moodFromName(doc["mood"]);
-  if (!b_.face().supportsMood(m.mood)) m.mood = render::kStartupMood;  // the startup mood if missing or unknown
+  m.mood = render::moodFromName(doc["mood"]);  // the startup mood if missing or unknown
   JsonObjectConst attn = doc["attn"];
   if (attn) {
     m.attn = true;
@@ -227,7 +226,7 @@ MomentIn Device::parse(const Call& c) {
   }
   JsonObjectConst args = c.args;
   mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::SceneState::kNone;
-  mo.expr = render::parseMood(args["mood"], mo.mood) && b_.face().supportsMood(mo.mood);  // unknown or missing: the state's mood
+  mo.expr = render::parseMood(args["mood"], mo.mood);  // unknown or missing: the state's mood
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
   if (mo.anim != render::SceneState::kNone) {
     render::Outcome outcome = render::Outcome::kNone;

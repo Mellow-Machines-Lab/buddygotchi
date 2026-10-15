@@ -21,7 +21,7 @@ public struct PackCheck {
         // Steering: the guide and each personality, within the budgets.
         do {
             let steering = try Steering(directory: directory.appendingPathComponent("steering"), pack: pack)
-            for mood in pack.v2Names where steering.files["mood/\(mood)"] == nil {
+            for mood in pack.moods.map(\.id) where steering.files["mood/\(mood)"] == nil {
                 notes.append("steering/mood/\(mood).md is missing: \(mood) reads as \(pack.defaultMood)'s")
             }
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {

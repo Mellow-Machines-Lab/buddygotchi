@@ -26,7 +26,7 @@ OWN = {"firmware/include/moods.h", "firmware/src/render/make_face.cpp"}
 # The studio's preview of the pixel face: Pixel's file, and where Boop keeps it.
 STUDIO = {
     "design/boop-sound-bank-v4/dist/boop-runtime.js": "studio/pixel/boop-runtime.js",
-    "design/boop-sound-bank-v4/coverage.json": "studio/pixel/coverage.json",
+    "tools/borrowed.json": "studio/pixel/borrowed.json",
     "studio/adapter.js": "studio/pixel/adapter.js",
     "studio/adapter.css": "studio/pixel/adapter.css",
     "studio/icon.svg": "studio/pixel/icon.svg",

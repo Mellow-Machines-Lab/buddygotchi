@@ -1,12 +1,6 @@
-<!-- The calm mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Calm. Boop is settled and content, at rest: nothing much is going on.
-Its faces lean calm and happy; a failure gets an annoyed face.
-Says little: a word to begin a turn.
-Stays calm through routine turns, plain finishes and questions.
-Leaves for curious or happy at a poke; happy at kind words to Boop or
-a long turn's hard work done; engaged while a long turn works on;
-annoyed at a failed check or turn, frustration, or 2 pokes in a row;
-excited when a very long turn finishes done or the person thanks the
-agent; sad when a very long turn fails, the agent gives up or the
-person shares sad news; wounded at rude words to Boop.
+Calm. Awake, settled neutrality, without announcing success.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.

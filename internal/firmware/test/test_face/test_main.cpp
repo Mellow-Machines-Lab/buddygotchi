@@ -96,6 +96,10 @@ static void test_every_mood_has_a_name() {
                          "calm",  "engaged", "annoyed", "irritated", "whiny",      "wounded"};
   TEST_ASSERT_EQUAL_INT(13, render::pixelMoods());
   for (int i = 0; i < 13; ++i) TEST_ASSERT_EQUAL_STRING(names[i], moodName(render::pixelMood(i)));
+  // Every mood is drawn: the others wear one of the thirteen (faces.h's kWears).
+  for (int i = 0; i < int(Mood::kCount); ++i) TEST_ASSERT_TRUE_MESSAGE(render::pixelIndex(Mood(i)) >= 0, moodName(Mood(i)));
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kCalm), render::pixelIndex(Mood::kComfy));
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kWounded), render::pixelIndex(Mood::kFrightened));
   TEST_ASSERT_EQUAL_STRING("happy", moodName(render::kStartupMood));
   for (const char* other : {"cheerful", "no_such_mood", "", "Happy", "Calm"}) {
     TEST_ASSERT_TRUE_MESSAGE(moodFromName(other) == Mood::kHappy, other);

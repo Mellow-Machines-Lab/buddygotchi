@@ -5,10 +5,12 @@
     characters/charactergen.py --stage [PACK]
     characters/charactergen.py --which
 
-The first form builds a pack's generated files from its character.json:
-today the firmware's moods.h, the mood list in the pack's order with the
-board's startup mood. --check only checks that they're fresh, and fails if
-one isn't.
+The first form checks a pack's character.json (its moods are exactly the
+universal ones, CHARACTER.md §5, and every move, outcome and default
+mood is one of them) and builds its generated files from it: today the
+firmware's moods.h, the mood list in the pack's order with the board's
+startup mood. --check only checks that they're fresh, and fails if one
+isn't.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
 root for the builds to read (§2). firmware/tools/pio.sh runs it before
@@ -44,6 +46,8 @@ CHARACTERS = ROOT / "characters"
 STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
+# The universal moods' one list, which the app's pack loader holds too.
+UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
 
 def chosen() -> Path:
@@ -73,6 +77,42 @@ def in_use() -> Path:
 
 def camel(mood: str) -> str:
     return "k" + "".join(part.capitalize() for part in mood.split("_"))
+
+
+def universal_moods(source: Path = UNIVERSAL) -> list[str]:
+    """Every pack's moods: CharacterPack.universalMoods, one literal of
+    quoted names in the app's source."""
+    match = re.search(r"universalMoods = \[([^\]]*)\]", source.read_text())
+    if not match:
+        raise SystemExit(f"charactergen: no universalMoods in {source}")
+    return re.findall(r'"([a-z_]+)"', match.group(1))
+
+
+def mood_problems(character: dict, universal: list[str]) -> list[str]:
+    """What's wrong with a pack's moods, as the app's loader refuses them:
+    not exactly the universal moods, or a move, outcome, default or
+    startup mood that isn't one."""
+    ids = [m.get("id") for m in character.get("moods", [])]
+    problems = []
+    if len(ids) != len(set(ids)):
+        problems.append("moods names a mood twice")
+    if set(ids) != set(universal):
+        missing, extra = sorted(set(universal) - set(ids)), sorted(set(ids) - set(universal))
+        problems.append(f"moods aren't the universal ones (missing {missing}, extra {extra})")
+    names = set(ids)
+    for m in character.get("moods", []):
+        if not m.get("meaning"):
+            problems.append(f"{m.get('id')} has no meaning")
+        moves = m.get("moves", {})
+        for to in moves.get("ordinary", []) + moves.get("dramatic", []):
+            if to not in names:
+                problems.append(f"{m.get('id')} leads to {to}, which isn't a mood")
+    for key in ("default_mood", "startup_mood"):
+        if key in character and character[key] not in names:
+            problems.append(f"{key} {character[key]} isn't a mood")
+    for kind, listed in character.get("outcomes", {}).items():
+        problems += [f"outcomes.{kind} names {m}, which isn't a mood" for m in listed if m not in names]
+    return problems
 
 
 def moods_h(pack: Path, character: dict) -> str:
@@ -138,31 +178,19 @@ def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     return re.findall(r'"([a-z_]+)"', match.group(1))
 
 
-def coverage(pack: Path, entry: dict) -> dict[str, set[str]] | None:
-    """The mood and state pairs a studio preview has art for, from its
-    `coverage` file's perPair table, or None when it covers every pair of
-    the pack's."""
-    if not entry.get("coverage"):
-        return None
-    table = json.loads((pack / entry["coverage"]).read_text())["perPair"]
-    return {mood: {s for s, n in row.items() if n} for mood, row in table.items()}
-
-
-def shows(mood: dict, covered: dict[str, set[str]] | None, state: str) -> str | None:
-    """What a preview plays for `mood` in `state`: the mood itself when the
-    preview has it, else the mood's fallback when that one has it, else nothing."""
-    if covered is None:
-        return mood["id"]
-    for candidate in (mood["id"], mood.get("fallback")):
-        if candidate and state in covered.get(candidate, set()):
-            return candidate
-    return None
+def wears(pack: Path, entry: dict) -> dict[str, str]:
+    """The moods a studio preview has no art of its own for, each with the
+    mood whose art it shows instead: its `wears` file's `borrows` table
+    (Pixel's temporary one), or none."""
+    if not entry.get("wears"):
+        return {}
+    return json.loads((pack / entry["wears"]).read_text())["borrows"]
 
 
 def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
-    board's, each pack's declared files, and any mood and state pair one of
-    the pack's previews can't play, even through the mood's fallback."""
+    board's, each pack's declared files, and a preview that has a mood
+    wear one that isn't the pack's."""
     problems = []
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
@@ -177,15 +205,14 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
         for entry in entries:
-            absent = [n for n in files(entry) + [entry.get("coverage")] if n and not (pack / n).is_file()]
+            absent = [n for n in files(entry) + [entry.get("wears")] if n and not (pack / n).is_file()]
             problems += [f"{pack.name}: studio file {name} doesn't exist" for name in absent]
             if absent:
                 continue
-            covered = coverage(pack, entry)
-            for mood in character["moods"]:
-                gaps = [s for s in ids if not shows(mood, covered, s)]
-                if gaps:
-                    problems.append(f"{pack.name}: {entry['id']}'s preview can't play {mood['id']} in {', '.join(gaps)}")
+            moods = {m["id"] for m in character["moods"]}
+            for mood, worn in wears(pack, entry).items():
+                if mood not in moods or worn not in moods:
+                    problems.append(f"{pack.name}: {entry['id']}'s preview has {mood} wear {worn}, which isn't a mood of its")
     return problems
 
 
@@ -229,19 +256,18 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
         character = load(pack)
         entries = previews(character)
         for entry in entries:
-            covered = coverage(pack, entry)
+            borrows = wears(pack, entry)
             here = lambda name: Path(os.path.relpath(pack / name, studio)).as_posix()
             for key in ("scripts", "styles"):
                 entry[key] = [here(name) for name in entry.get(key, [])]
             if entry.get("icon"):
                 entry["icon"] = here(entry["icon"])
-            entry["covers"] = None if covered is None else {m: sorted(s) for m, s in sorted(covered.items())}
-            entry.pop("coverage", None)
+            entry["wears"] = dict(sorted(borrows.items()))
             entry.pop("captures", None)
         data["packs"][pack.name] = {
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "moods": [{k: m[k] for k in ("id", "meaning", "family", "fallback") if k in m} for m in character["moods"]],
+            "moods": [{k: m[k] for k in ("id", "meaning", "family") if k in m} for m in character["moods"]],
             "studio": entries,
         }
     return data
@@ -268,6 +294,11 @@ def write_studio(pack: Path, check: bool) -> int:
 
 def build(pack: Path, check: bool) -> int:
     character = load(pack)
+    problems = mood_problems(character, universal_moods())
+    for problem in problems:
+        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
+    if problems:
+        return 1
     outputs = {pack / "firmware/include/moods.h": moods_h(pack, character)}
     for path, content in outputs.items():
         if check:

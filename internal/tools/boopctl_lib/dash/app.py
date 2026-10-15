@@ -279,7 +279,7 @@ class Dash(App[None]):
 
     @work
     async def action_mood(self) -> None:
-        # Any of the 13, as the app's dev line takes any: Jev is offered only
+        # Any mood, as the app's dev line takes any: Jev is offered only
         # the graph's moves from the mood now.
         asked = self.questions("mood")
         mood = asked and await self.pick("Preview a mood" if self.look else "Set the mood", list(MOODS))

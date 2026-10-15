@@ -15,14 +15,14 @@ public struct CharacterPack: Sendable {
         /// When the creature is in it: the `mood` question's option.
         public let meaning: String
         public let notFor: String?
-        /// What its face means for one moment: the reaction's face option.
+        /// What its face means for one moment: the reaction's face option,
+        /// the meaning when the pack gives none.
         public let face: String?
         public let faceNotFor: String?
         public let moves: MoodGraph.Moves
-        /// The mood a face or voice that lacks this one uses instead.
-        public let fallback: String?
         public let family: String?
-        /// Only passes through, and leaves for its fallback soon after.
+        /// Only passes through: once its short exit time is up, the only
+        /// move offered is one step toward the resting mood (MoodPolicy).
         public let brief: Bool
         /// Never reached from routine work, only from a fresh, strong event.
         public let quietNever: Bool
@@ -55,20 +55,13 @@ public struct CharacterPack: Sendable {
     /// `big_failure`.
     public let outcomes: [String: [String]]
     public let pacing: Pacing
-    /// The moods in the pack's order: v3's graph for Boop.
+    /// Every universal mood (`universalMoods`), in the pack's order.
     public let moods: [Mood]
-    /// v2's 13 moods, with their faces' wording. They stay until Boop's
-    /// pack takes v3 alone.
-    public let moodsV2: [Mood]
 
     // Derived once, since the mood action reads them on every pass.
-    /// The moods the v2 graph and the pixel face go by: `moods_v2`, else `moods`.
-    public let v2Names: [String]
-    let v2Options: [Option]
-    let v3Options: [Option]
+    let options: [Option]
     let faces: [Option]
-    let movesV2: [String: MoodGraph.Moves]
-    let nodesV3: [String: MoodGraphV3.Node]
+    let byId: [String: Mood]
     let quietNever: Set<String>
 }
 
@@ -81,15 +74,6 @@ extension CharacterPack {
     public func demo(named name: String) -> URL? {
         let url = directory.appendingPathComponent("demo/\(name).jsonl")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-
-    /// The mood a face that draws only `drawn` shows for `mood`: the mood
-    /// itself, else the first its `fallback`s lead to that the face draws,
-    /// else the resting mood.
-    public func mood(_ mood: String, drawnFrom drawn: [String]) -> String {
-        var at = mood, seen: Set<String> = []
-        while !drawn.contains(at), seen.insert(at).inserted, let next = nodesV3[at]?.fallback { at = next }
-        return drawn.contains(at) ? at : defaultMood
     }
 
     /// Every demo the pack has, `demo/*.jsonl`, by name.
@@ -107,8 +91,8 @@ public struct CharacterPackError: Error, CustomStringConvertible {
 
 extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
-    /// a pack: a key missing, a move, fallback or outcome to a mood that
-    /// isn't one, or a default mood that isn't one. A pack stands alone:
+    /// a pack: a key missing, moods that aren't the universal ones, or a
+    /// move, outcome or default mood that isn't one. A pack stands alone:
     /// everything it has is in its own folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
@@ -125,9 +109,6 @@ extension CharacterPack {
         func string(_ key: String) throws -> String {
             guard let s = json[key] as? String, !s.isEmpty else { throw CharacterPackError("\(source): \(key) is missing") }
             return s
-        }
-        func moodList(_ key: String) throws -> [Mood] {
-            try (json[key] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         }
         id = try string("id")
         name = try string("name")
@@ -151,45 +132,31 @@ extension CharacterPack {
             pacing.freshEvidenceMs = ms("fresh_evidence_ms") ?? pacing.freshEvidenceMs
         }
         self.pacing = pacing
-        moods = try moodList("moods")
-        moodsV2 = try moodList("moods_v2")
-        guard !moods.isEmpty else { throw CharacterPackError("\(source): moods is empty") }
+        moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         guard !personalities.isEmpty else { throw CharacterPackError("\(source): personalities is empty") }
         // The board reports the id, and the firmware names each mood in code.
         guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
-        for m in moods + moodsV2 where m.id.wholeMatch(of: /[a-z][a-z0-9_]*/) == nil {
-            throw CharacterPackError("\(source): mood \(m.id) isn't a lower-case letter, then lower case, digits and _")
+        let names = Set(moods.map(\.id))
+        guard names.count == moods.count else { throw CharacterPackError("\(source): moods names a mood twice") }
+        let universal = Set(CharacterPack.universalMoods)
+        guard names == universal else {
+            let missing = universal.subtracting(names).sorted(), extra = names.subtracting(universal).sorted()
+            throw CharacterPackError("\(source): moods aren't the universal ones (missing \(missing), extra \(extra))")
         }
-
-        for (key, list) in [("moods", moods), ("moods_v2", moodsV2)] {
-            let names = Set(list.map(\.id))
-            guard names.count == list.count else { throw CharacterPackError("\(source): \(key) names a mood twice") }
-            for m in list {
-                for to in m.moves.all + [m.fallback].compactMap({ $0 }) where !names.contains(to) {
-                    throw CharacterPackError("\(source): \(m.id) in \(key) leads to \(to), which isn't a mood")
-                }
+        for m in moods {
+            for to in m.moves.all where !names.contains(to) {
+                throw CharacterPackError("\(source): \(m.id) leads to \(to), which isn't a mood")
             }
         }
-        let names = Set(moods.map(\.id))
         guard names.contains(defaultMood) else { throw CharacterPackError("\(source): default_mood \(defaultMood) isn't a mood") }
         guard names.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a mood") }
         for (kind, list) in outcomes {
             for m in list where !names.contains(m) { throw CharacterPackError("\(source): outcomes.\(kind) names \(m), which isn't a mood") }
         }
 
-        // A pack without `moods_v2` (all but Boop's for now) keeps its one
-        // list for both.
-        let v2 = moodsV2.isEmpty ? moods : moodsV2
-        v2Names = v2.map(\.id)
-        v2Options = v2.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
-        v3Options = moods.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
-        faces = v2.compactMap { m in m.face.map { Option(m.id, $0, notFor: m.faceNotFor) } }
-        movesV2 = Dictionary(uniqueKeysWithValues: v2.map { ($0.id, $0.moves) })
-        let resting = defaultMood
-        nodesV3 = Dictionary(uniqueKeysWithValues: moods.map {
-            ($0.id, MoodGraphV3.Node(meaning: $0.meaning, family: $0.family ?? "", fallback: $0.fallback ?? resting,
-                                     brief: $0.brief, moves: $0.moves))
-        })
+        options = moods.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
+        faces = moods.map { m in m.face.map { Option(m.id, $0, notFor: m.faceNotFor) } ?? Option(m.id, m.meaning, notFor: m.notFor) }
+        byId = Dictionary(uniqueKeysWithValues: moods.map { ($0.id, $0) })
         quietNever = Set(moods.filter(\.quietNever).map(\.id))
     }
 
@@ -201,7 +168,7 @@ extension CharacterPack {
         return Mood(id: id, meaning: meaning, notFor: m["not_for"] as? String,
                     face: m["face"] as? String, faceNotFor: m["face_not_for"] as? String,
                     moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
-                    fallback: m["fallback"] as? String, family: m["family"] as? String,
+                    family: m["family"] as? String,
                     brief: m["brief"] as? Bool ?? false, quietNever: m["quiet_never"] as? Bool ?? false)
     }
 }

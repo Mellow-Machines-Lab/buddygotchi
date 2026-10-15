@@ -12,7 +12,6 @@ class GelFace final : public Face {
  public:
   GelFace() : engine_(std::make_unique<Engine>()) {}
   const char* name() const override { return "gel"; }
-  bool supportsMood(Mood mood) const override { return int(mood) < kMoodCount; }
   bool drawsNative() const override { return true; }
   const voice::EffectClips& clips() const override;
   void reset(uint32_t t, linkkit::Rng&) override;

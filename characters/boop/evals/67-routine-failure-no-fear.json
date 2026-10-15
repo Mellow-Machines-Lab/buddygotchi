@@ -1,8 +1,7 @@
 {
   "name": "A routine failed check does not justify fear or a dramatic jump.",
   "case": "A routine failed check does not justify fear or a dramatic jump.",
-  "why": "Opt-in graph v3 pacing and evidence",
-  "graph": "v3",
+  "why": "The mood policy's pacing and evidence",
   "mood": "grumpy",
   "checks": {
     "moves_on_graph": true

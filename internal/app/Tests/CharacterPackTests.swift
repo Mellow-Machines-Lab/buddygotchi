@@ -17,67 +17,37 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(pack.defaultMood, "calm")
         XCTAssertEqual(pack.personalities, Personality.allCases.map(\.rawValue))
         XCTAssertEqual(CharacterPack.active.moods, pack.moods)
-        XCTAssertEqual(CharacterPack.active.moodsV2, pack.moodsV2)
     }
 
-    /// CHARACTER.md §5: v2's 13 moods are the faces facegen draws, in the
-    /// device's order, and every one has a face's wording.
-    func testV2sMoodsAreTheFacesTheDeviceDraws() throws {
-        try requirePack("boop")
-        XCTAssertEqual(MoodGraph.moods, FaceLoops.moods)
+    /// CHARACTER.md §5, §9: every mood has a face's wording (its meaning
+    /// when it has none), an option for the mood question, and designs on
+    /// the pixel face, which draws all of them.
+    func testEveryMoodHasAFaceAndDesigns() throws {
         XCTAssertEqual(ReactAction.expressions.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodAction.moods.map(\.name), MoodGraph.moods)
-    }
-
-    /// A pixel face draws each mood it has as itself, whatever the pack:
-    /// one with no `moods_v2` (Pixel's) once sent every mood as calm.
-    func testAPixelFaceDrawsItsOwnMoodsAsThemselves() {
-        for mood in FaceLoops.moods { XCTAssertEqual(MoodGraph.pixelFallback(mood), mood) }
-    }
-
-    /// CHARACTER.md §9: a mood the face doesn't draw draws its fallback,
-    /// or its fallback's, and the resting mood when none of them is drawn.
-    /// A new mood in a pack that keeps Pixel's face once drew the board's
-    /// startup mood instead.
-    func testAMoodTheFaceDoesntDrawDrawsItsFallback() throws {
-        func mood(_ id: String, fallback: String? = nil) -> [String: Any] {
-            ["id": id, "meaning": id, "moves": ["ordinary": [String](), "dramatic": [String]()]].merging(
-                fallback.map { ["fallback": $0] } ?? [:]) { a, _ in a }
+        XCTAssertEqual(Set(FaceLoops.moods), Set(CharacterPack.universalMoods))
+        for mood in MoodGraph.moods {
+            XCTAssertEqual(FaceLoops.designs[mood]?.count, FaceLoops.states.count, mood)
         }
-        let pack = try CharacterPack(json: [
-            "id": "pal", "name": "Pal", "version": "1", "default_mood": "calm", "personalities": ["pal"],
-            "moods": [mood("calm"), mood("happy"), mood("dozy", fallback: "sleepy"), mood("sleepy", fallback: "calm"),
-                      mood("loop", fallback: "lap"), mood("lap", fallback: "loop")],
-        ], from: "test")
-        let drawn = ["happy", "calm"]
-        XCTAssertEqual(pack.mood("happy", drawnFrom: drawn), "happy")
-        XCTAssertEqual(pack.mood("sleepy", drawnFrom: drawn), "calm")
-        XCTAssertEqual(pack.mood("dozy", drawnFrom: drawn), "calm", "a fallback's fallback")
-        XCTAssertEqual(pack.mood("loop", drawnFrom: drawn), "calm", "fallbacks in a circle end at the resting mood")
-        XCTAssertEqual(pack.mood("nonsense", drawnFrom: drawn), "calm")
     }
 
-    /// CHARACTER.md §5: v3's moods are the slime design's host graph, in its
-    /// order, with its timings (slimegen writes them), and each falls back
-    /// to one of the 13 a pixel face draws.
-    func testV3sMoodsAreTheSlimeDesigns() throws {
+    /// CHARACTER.md §5: Boop's moods are the slime design's host graph, in
+    /// its order, with its timings (slimegen writes them).
+    func testBoopsMoodsAreTheSlimeDesigns() throws {
         try requirePack("boop")
         let file = Self.repo.appendingPathComponent("characters/boop/design/slime-blob/emotion-graph.json")
         let graph = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
         let nodes = try XCTUnwrap(graph["nodes"] as? [String: [String: Any]])
-        XCTAssertEqual(Set(MoodGraphV3.moods), Set(nodes.keys))
-        XCTAssertEqual(MoodGraphV3.moods.count, 42)
+        XCTAssertEqual(MoodGraph.moods.count, 42)
         for (id, n) in nodes {
-            let node = try XCTUnwrap(MoodGraphV3.nodes[id])
-            XCTAssertEqual(node.meaning, n["meaning"] as? String, id)
-            XCTAssertEqual(node.fallback, n["fallback"] as? String, id)
-            XCTAssertEqual(node.moves.ordinary, n["ordinary"] as? [String], id)
-            XCTAssertEqual(node.moves.dramatic, n["dramatic"] as? [String], id)
-            XCTAssertTrue(MoodGraph.moods.contains(node.fallback), "\(id) falls back to a pixel mood")
+            let mood = try XCTUnwrap(MoodGraph.mood(id))
+            XCTAssertEqual(mood.meaning, n["meaning"] as? String, id)
+            XCTAssertEqual(mood.moves.ordinary, n["ordinary"] as? [String], id)
+            XCTAssertEqual(mood.moves.dramatic, n["dramatic"] as? [String], id)
         }
         let policy = try XCTUnwrap(graph["hostPolicy"] as? [String: Any])
-        XCTAssertEqual(MoodGraphV3.ordinaryDwellMs, (policy["ordinaryDwellMs"] as? NSNumber)?.int64Value)
-        XCTAssertEqual(MoodGraphV3.freshEvidenceMs, (policy["freshEvidenceMs"] as? NSNumber)?.int64Value)
+        XCTAssertEqual(MoodGraph.pacing.ordinaryDwellMs, (policy["ordinaryDwellMs"] as? NSNumber)?.int64Value)
+        XCTAssertEqual(MoodGraph.pacing.freshEvidenceMs, (policy["freshEvidenceMs"] as? NSNumber)?.int64Value)
     }
 
     /// A very long turn's finish may jump to these, and
@@ -96,16 +66,17 @@ final class CharacterPackTests: XCTestCase {
         try requirePack("boop")
         let boop = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/boop"))
         let pixel = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/pixel"))
-        XCTAssertEqual(pixel.moods.map(\.id), MoodGraph.moods)
+        XCTAssertEqual(pixel.moods.map(\.id), boop.moods.map(\.id))
         XCTAssertEqual(pixel.startupMood, "happy")
         for pack in [boop, pixel] {
             for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
                 XCTAssertTrue(FileManager.default.fileExists(atPath: pack.directory.appendingPathComponent(path).path), "\(pack.id) \(path)")
             }
         }
-        XCTAssertEqual(FaceLoops.moods, pixel.moods.map(\.id))
-        // The graph Pixel keeps is v2's.
-        for m in pixel.moods { XCTAssertEqual(m.moves, MoodGraph.moves[m.id], m.id) }
+        // Pixel's moves and pacing are Boop's, for now.
+        for m in pixel.moods { XCTAssertEqual(m.moves, boop.byId[m.id]?.moves, m.id) }
+        XCTAssertEqual(pixel.pacing, boop.pacing)
+        XCTAssertEqual(pixel.outcomes, boop.outcomes)
     }
 
     /// CHARACTER.md §7, §8: Pixel stands on its own. Its steering has the
@@ -165,21 +136,28 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertTrue(check.notes.contains("steering/mood/sad.md is missing: sad reads as calm's"), "\(check.notes)")
     }
 
-    /// CHARACTER.md §4: a pack that leads to a mood it doesn't have is refused.
+    /// CHARACTER.md §4, §5: a pack whose moods aren't exactly the
+    /// universal ones, or that leads to a word that isn't a mood, is refused.
     func testABrokenPackSaysWhy() {
-        let json: [String: Any] = [
-            "id": "test", "name": "Test", "version": "1", "default_mood": "calm", "personalities": ["test"],
-            "moods": [["id": "calm", "meaning": "Calm.", "moves": ["ordinary": ["happy"], "dramatic": []]]],
-        ]
-        XCTAssertEqual(refusal(json), "test: calm in moods leads to happy, which isn't a mood")
+        let every = CharacterPack.universalMoods.map { ["id": $0, "meaning": "\($0)."] as [String: Any] }
+        let json: [String: Any] = ["id": "test", "name": "Test", "version": "1", "default_mood": "calm", "personalities": ["test"],
+                                   "moods": every]
+        XCTAssertNil(refusal(json))
+        var short = json
+        short["moods"] = Array(every.dropLast()) + [["id": "sulky", "meaning": "Sulky."]]
+        XCTAssertEqual(refusal(short), "test: moods aren't the universal ones (missing [\"disgusted\"], extra [\"sulky\"])")
+        var twice = json
+        twice["moods"] = every + [every[0]]
+        XCTAssertEqual(refusal(twice), "test: moods names a mood twice")
+        var badMove = json
+        badMove["moods"] = [["id": "calm", "meaning": "Calm.", "moves": ["ordinary": ["sulky"], "dramatic": []]]] + every.dropFirst()
+        XCTAssertEqual(refusal(badMove), "test: calm leads to sulky, which isn't a mood")
         var noDefault = json
-        noDefault["moods"] = [["id": "happy", "meaning": "Happy."]]
-        XCTAssertEqual(refusal(noDefault), "test: default_mood calm isn't a mood")
-        var badName = json
-        badName["moods"] = [["id": "calm", "meaning": "Calm."], ["id": "very-happy", "meaning": "Happy."]]
-        XCTAssertEqual(refusal(badName), "test: mood very-happy isn't a lower-case letter, then lower case, digits and _")
-        badName["personalities"] = [String]()
-        XCTAssertEqual(refusal(badName), "test: personalities is empty")
+        noDefault["default_mood"] = "sulky"
+        XCTAssertEqual(refusal(noDefault), "test: default_mood sulky isn't a mood")
+        var nobody = json
+        nobody["personalities"] = [String]()
+        XCTAssertEqual(refusal(nobody), "test: personalities is empty")
     }
 
     private func refusal(_ json: [String: Any]) -> String? {

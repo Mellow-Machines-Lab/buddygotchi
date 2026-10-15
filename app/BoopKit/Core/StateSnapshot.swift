@@ -57,7 +57,7 @@ public struct StateSnapshot: Equatable, Sendable {
     /// is `working` and nothing needs you: the look shows it in working's
     /// place. Nil sends none.
     public var act: String?
-    /// Boop's mood, one of the selected graph's moods, which
+    /// Boop's mood, one of the pack's moods, which
     /// picks the set of faces the device draws everything in.
     public var mood: String
     public var attn: Attention?
@@ -112,12 +112,4 @@ public struct StateSnapshot: Equatable, Sendable {
 
     /// One JSON line, keys in the protocol's order.
     public var jsonLine: String { Wire.state(fields) }
-    /// The logical mood is preserved in memory; old/pixel devices receive
-    /// only names in their bank.
-    public func fields(for face: DeviceInfo.Face) -> JSONObject {
-        var out = fields
-        out["mood"] = .string(face == .gel ? mood : MoodGraph.pixelFallback(mood))
-        return out
-    }
-
 }

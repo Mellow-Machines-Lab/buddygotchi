@@ -1,5 +1,5 @@
-"""The studio's data rules in characters/charactergen.py (characters/CHARACTER.md §12), and
-the board's states where the spec and the packs name them (§9)."""
+"""characters/charactergen.py's rules: a pack's moods (characters/CHARACTER.md §5), the studio's
+data (§12), and the board's states where the spec and the packs name them (§9)."""
 import importlib.util
 import json
 import shutil
@@ -28,6 +28,38 @@ class RepoTests(unittest.TestCase):
     def test_every_pack_here_is_clean(self):
         self.assertEqual(gen.studio_problems(gen.local_packs()), [])
         self.assertEqual(gen.state_problems(gen.local_packs()), [])
+        for pack in gen.local_packs():
+            self.assertEqual(gen.mood_problems(gen.load(pack), gen.universal_moods()), [], pack.name)
+
+    def test_the_universal_moods_are_the_apps(self):
+        """The one list, CharacterPack.universalMoods in the app's source: 42 moods, each once."""
+        moods = gen.universal_moods()
+        self.assertEqual(len(moods), 42)
+        self.assertEqual(len(set(moods)), 42)
+        self.assertIn("calm", moods)
+
+
+class MoodRuleTests(unittest.TestCase):
+    """A pack's moods against a small universal list, as the app's loader checks them."""
+
+    UNIVERSAL = ["calm", "sad", "glad"]
+
+    def character(self, moods, **extra):
+        return {"default_mood": "calm", "moods": [{"id": m, "meaning": m.title() + "."} for m in moods], **extra}
+
+    def test_exactly_the_universal_moods(self):
+        self.assertEqual(gen.mood_problems(self.character(["calm", "glad", "sad"]), self.UNIVERSAL), [])
+        self.assertEqual(gen.mood_problems(self.character(["calm", "sad", "giddy"]), self.UNIVERSAL),
+                         ["moods aren't the universal ones (missing ['glad'], extra ['giddy'])"])
+        self.assertEqual(gen.mood_problems(self.character(["calm", "sad", "glad", "sad"]), self.UNIVERSAL),
+                         ["moods names a mood twice"])
+
+    def test_moves_outcomes_and_defaults_name_moods(self):
+        c = self.character(["calm", "sad", "glad"], startup_mood="giddy", outcomes={"big_success": ["glad", "giddy"]})
+        c["moods"][0]["moves"] = {"ordinary": ["sad"], "dramatic": ["sulky"]}
+        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
+                         ["calm leads to sulky, which isn't a mood", "startup_mood giddy isn't a mood",
+                          "outcomes.big_success names giddy, which isn't a mood"])
 
 
 class StateRuleTests(unittest.TestCase):
@@ -94,34 +126,28 @@ class StudioRuleTests(unittest.TestCase):
         pack = self.pack("art", [{"id": "calm"}], [{"id": "art", "scripts": ["studio/adapter.js"]}])
         self.assertEqual(self.problems(pack), ["art: studio file studio/adapter.js doesn't exist"])
 
-    def test_every_mood_and_state_needs_a_preview(self):
-        """Every pair a pack's coverage leaves out fails, unless the mood's fallback covers it."""
-        coverage = {"perPair": {"calm": {"idle": 2, "working": 1}, "sad": {"idle": 1, "working": 0}}}
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "coverage": "cover.json"}], files=[("cover.json", coverage)])
-        self.assertEqual(self.problems(pack), ["art: art's preview can't play sad in working"])
-        pack = self.pack("art", [{"id": "calm"}, {"id": "sad", "fallback": "calm"}], [{"id": "art", "coverage": "cover.json"}], files=[("cover.json", coverage)])
+    def test_a_preview_wears_only_the_packs_moods(self):
+        """A preview's `wears` table must exist and lend only the pack's moods to the pack's moods."""
+        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}])
+        self.assertEqual(self.problems(pack), ["art: studio file wears.json doesn't exist"])
+        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}],
+                         files=[("wears.json", {"borrows": {"sad": "calm"}})])
         self.assertEqual(self.problems(pack), [])
-
-    def test_each_of_a_packs_previews_plays_its_moods_through_fallbacks(self):
-        """A pack with several previews names each, and each must play every one of the pack's moods, itself or through its fallback."""
-        coverage = {"perPair": {"calm": {"idle": 1, "working": 1}}}
-        two = [{"id": "own"}, {"id": "borrowed", "coverage": "cover.json"}]
-        pack = self.pack("top", [{"id": "calm"}, {"id": "giddy"}], two, files=[("cover.json", coverage)])
-        self.assertEqual(self.problems(pack), ["top: borrowed's preview can't play giddy in idle, working"])
-        pack = self.pack("top", [{"id": "calm"}, {"id": "giddy", "fallback": "calm"}], two, files=[("cover.json", coverage)])
-        self.assertEqual(self.problems(pack), [])
+        pack = self.pack("art", [{"id": "calm"}, {"id": "sad"}], [{"id": "art", "wears": "wears.json"}],
+                         files=[("wears.json", {"borrows": {"sad": "giddy"}})])
+        self.assertEqual(self.problems(pack), ["art: art's preview has sad wear giddy, which isn't a mood of its"])
         pack = self.pack("top", [{"id": "calm"}], [{"id": "own"}, {"id": "own"}])
         self.assertEqual(self.problems(pack), ["top: each of its studio entries needs an id of its own"])
 
     def test_data_has_paths_from_the_page(self):
-        coverage = {"perPair": {"calm": {"idle": 1, "working": 1}}}
-        art = self.pack("art", [{"id": "calm", "meaning": "Settled."}], [{"id": "art", "scripts": ["studio/a.js"], "coverage": "c.json"}],
-                        files=[("studio/a.js", ""), ("c.json", coverage)])
+        art = self.pack("art", [{"id": "calm", "meaning": "Settled."}, {"id": "sad"}],
+                        [{"id": "art", "scripts": ["studio/a.js"], "wears": "w.json"}],
+                        files=[("studio/a.js", ""), ("w.json", {"why": "", "borrows": {"sad": "calm"}})])
         plain = self.pack("plain", [{"id": "calm", "family": "settled"}])
         data = gen.studio_data([art, plain], plain, self.studio)
         self.assertEqual(data["chosen"], "plain")
         self.assertEqual(data["packs"]["art"]["studio"],
-                         [{"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "covers": {"calm": ["idle", "working"]}}])
+                         [{"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}}])
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}], "studio": []})
 
     def test_staging_takes_the_packs_own_files_only(self):

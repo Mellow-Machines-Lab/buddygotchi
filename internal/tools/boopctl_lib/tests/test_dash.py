@@ -689,7 +689,8 @@ class AppTests(unittest.TestCase):
                         await pilot.press(*["down"] * down, "enter")
                     await pilot.pause()
 
-                await pick("m", 5)  # grumpy
+                from boopctl_lib.common import MOODS
+                await pick("m", MOODS.index("grumpy"))
                 await pick("r", 6, 4, 0)  # grumpy, again, none
                 got = server.wait(2)
                 self.assertEqual(got, [{"dev": "mood", "mood": "grumpy"},
@@ -711,7 +712,7 @@ class AppTests(unittest.TestCase):
                 await pick("p", 1)
                 self.assertEqual(face.sent[-1]["base"], "working")
                 self.assertIn("PREVIEW: working", app.query_one("#face").border_title)
-                await pick("m", 6)  # sad: the mood's faces, on the sim only
+                await pick("m", MOODS.index("sad"))  # the mood's faces, on the sim only
                 self.assertEqual((face.sent[-1]["base"], face.sent[-1]["mood"]), ("working", "sad"))
                 self.assertEqual(len(server.wait(3, timeout=0.3)), 2, "nothing went to the app")
                 with log.open("a") as f:

@@ -369,7 +369,7 @@ public final class Core {
     /// and the harness may later.
     public static func pickVariant(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
                                    avoiding last: Int?, _ rng: inout SplitMix64) -> Int {
-        let fit = FaceLoops.variants(mood: MoodGraph.pixelFallback(mood), state: state, outcome: outcome, ctx: ctx)
+        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx)
         let choices = fit.filter { $0 != last }
         guard !choices.isEmpty else { return fit.first ?? 1 }
         return choices[rng.int(in: 0...(choices.count - 1))]
@@ -510,7 +510,7 @@ public final class Core {
         recordNeeds(now, &fx)
         updateActs(now)
         var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: MoodGraph.pixelFallback(config.mood), state: snapshot.visual) {
+        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: config.mood, state: snapshot.visual) {
             // A new visual, or a new mood with fewer variations of it than
             // the one showing: a variation of it at random.
             shown = (snapshot.visual, Core.pickVariant(mood: config.mood, state: snapshot.visual,

@@ -113,12 +113,4 @@ public struct DeviceMoment: Equatable, Sendable {
         if let loops { args["loops"] = .int(loops) }
         return args
     }
-    /// The logical mood is preserved in memory; old/pixel devices receive
-    /// only names in their bank.
-    public func args(for face: DeviceInfo.Face) -> JSONObject {
-        var out = args
-        if let mood { out["mood"] = .string(face == .gel ? mood : MoodGraph.pixelFallback(mood)) }
-        return out
-    }
-
 }

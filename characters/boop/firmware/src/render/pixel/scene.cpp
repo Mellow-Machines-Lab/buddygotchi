@@ -174,8 +174,8 @@ int pixelIndex(Mood m) {
     } p{};
     for (int i = 0; i < render::kMoodCount; ++i) {
       p.of[i] = -1;
-      for (int j = 0; j < faces::kMoodCount; ++j) {
-        if (!std::strcmp(render::kMoodNames[i], faces::kMoodNames[j])) p.of[i] = int8_t(j);
+      for (int j = 0; j < faces::kNameCount; ++j) {
+        if (!std::strcmp(render::kMoodNames[i], faces::kNames[j])) p.of[i] = int8_t(faces::kWears[j]);
       }
     }
     return p;

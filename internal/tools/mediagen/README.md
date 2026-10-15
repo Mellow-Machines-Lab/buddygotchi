@@ -6,7 +6,7 @@ again when the face, the popover or a command's output changes:
 | Name | File | From |
 | --- | --- | --- |
 | `boop` | `documentation/media/boop.gif` | boop-sim, the firmware's own drawing on the Mac: napping, working, needs you, tests, a big finish |
-| `moods` | `documentation/media/moods.gif` | boop-sim: a reaction in eight of the 13 moods |
+| `moods` | `documentation/media/moods.gif` | boop-sim: a reaction in eight of the moods |
 | `popover` | `documentation/media/popover-light.png`, `popover-dark.png` | `Boop --snapshots`: the working and needs-you panes side by side |
 | `watch` | `agent-hooks/media/watch.gif` | `agent-hooks/Examples/watch.sh`, on hooks from two made-up sessions sent through the real `agent-hook`, in a throwaway home |
 | `beacon` | `mellowharness/media/beacon.gif` | `beacon listen`, with three builds sent by `mellowharness-emit` |

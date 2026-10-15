@@ -9,10 +9,10 @@ they're rerun.
 - [Animation bank](boop-sound-bank-v4/README.md): editable SVG generators,
   procedural sounds, portable browser player and coverage index.
 - [Mood graph and JEV handover](boop-mood-spectrum-v2/HANDOVER.md):
-  neighbor choices, dramatic-edge gating, migration and voice guidance.
-- [Machine-readable graph](boop-mood-spectrum-v2/mood-graph.json). The
-  app ships it as `app/BoopKit/Actions/MoodGraph.swift`, which a test
-  holds to this file move for move.
+  the 13-mood graph's design history (neighbor choices, dramatic-edge
+  gating, migration and voice guidance). The graph a pack runs is in its
+  `character.json` (characters/CHARACTER.md §5); Pixel's is a copy of
+  Boop's for now.
 
 Boop's own design, in its pack's `design/` (characters/CHARACTER.md),
 is the rest: the voice bank and the gel slime.
@@ -20,7 +20,6 @@ is the rest: the voice bank and the gel slime.
 From the **repository root**, with Node.js:
 
 ```sh
-node characters/pixel/design/boop-mood-spectrum-v2/validate.mjs
 node characters/pixel/design/boop-sound-bank-v4/source/build.mjs
 node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs
 ```

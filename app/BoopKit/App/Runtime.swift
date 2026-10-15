@@ -151,7 +151,6 @@ public final class Runtime: @unchecked Sendable {
     /// Boop's name, from `long-term.md`.
     public let name: String
     public private(set) var settings: AppSettings
-    public let moodGraph: MoodGraph.Version
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
     public private(set) var personality: Personality
@@ -250,12 +249,6 @@ public final class Runtime: @unchecked Sendable {
         else { throw OpenError.notSetUp }
         name = longTerm.name
         settings = AppSettings.load(from: options.stateDir)
-        moodGraph = settings.moodGraph
-        if moodGraph == .v3 {
-            for path in ["guide-v3"] + MoodGraphV3.moods.map({ "mood/\($0)" }) + MoodGraph.moods.map({ "mood-v3/\($0)" }) where options.steering.files[path] == nil {
-                throw SteeringError("\(path).md is missing for graph v3")
-            }
-        }
         link = BoopDevice.link(options.link, log: log)
         let recent = DebugLog.Recent()
         self.recent = recent
@@ -297,7 +290,7 @@ public final class Runtime: @unchecked Sendable {
         pipeline = Pipeline(core: core, view: view, transcript: transcript, time: options.time,
                             clock: Harness.Clock(now: options.clock, wall: options.wallClock), queue: home, note: log)
         pipeline.brain = false  // until Jev's key is read
-        for over in options.steering.overBudget(version: moodGraph) { log("steering: over budget: \(over)") }
+        for over in options.steering.overBudget() { log("steering: over budget: \(over)") }
 
         // The actions' closures are only ever called on `home`, and reach
         // `self` once it's whole.
@@ -308,8 +301,7 @@ public final class Runtime: @unchecked Sendable {
         self.reactions = reactions
         (harness, mood) = Runtime.harness(
             pipeline: pipeline, steering: options.steering, personality: { personalityNow() }, reactions: reactions,
-            queue: { queued($0, $1) }, speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-            version: moodGraph, face: { link.hello.map { DeviceInfo($0).face } ?? .pixel })
+            queue: { queued($0, $1) }, speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true })
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
         // means a new launch. The read-back's own lines wait for it.
@@ -326,7 +318,7 @@ public final class Runtime: @unchecked Sendable {
         // The view and the core pick up where the last launch left them.
         let read = home.sync { pipeline.readBack(now: now) }
         let logNow = transcript.view(now: now)
-        core.restore(mood: MoodAction.value(mood, logNow, version: moodGraph))
+        core.restore(mood: MoodAction.value(mood, logNow))
         let questions = DebugLog.questions(Runtime.outputs(harness), log: logNow, at: now)
         emit(questions)
         launchOptions = DebugLog.options(questions)
@@ -369,12 +361,11 @@ public final class Runtime: @unchecked Sendable {
     /// plays Voice's takes. The brain is the caller's to set (`harness.use`).
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceMoment, Pending) -> Void,
-                               speaks: @escaping () -> Bool = { true }, version: MoodGraph.Version = .v2,
-                               face: @escaping () -> DeviceInfo.Face = { .pixel }) -> (harness: Harness, mood: Choice) {
+                               speaks: @escaping () -> Bool = { true }) -> (harness: Harness, mood: Choice) {
         let h = pipeline.harness
         let core = pipeline.core
         let view = pipeline.view
-        let mood = MoodAction.choice(version: version)
+        let mood = MoodAction.choice()
         // A reaction your tap cut short is in progress while the pokes go
         // on, and done once anything else happens.
         // A reaction's end, MellowHarness's own event, never stops the pokes.
@@ -389,13 +380,13 @@ public final class Runtime: @unchecked Sendable {
             guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                   let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
             return DeviceMoment.Who(agent: who.agent, thread: who.thread, opens: who.opens)
-        }, speaks: speaks, version: version, face: face)
+        }, speaks: speaks)
         h.output(mood)
         h.output(react, openFor: ReactAction.openForMs, keepOpen: TranscriptView.heldByPokes)
-        h.section { _ in steering.guide(for: version) + "\n" + EventLine.reading + "\n" + EventLine.words }
+        h.section { _ in steering.guide + "\n" + EventLine.reading + "\n" + EventLine.words }
         h.section { _ in steering.personality(personality()).text }
-        h.section { log in steering.mood(MoodAction.value(mood, log, version: version), version: version) }
-        h.closing { _, now, log in MoodAction.sinceLine(mood, log, at: now, version: version) }
+        h.section { log in steering.mood(MoodAction.value(mood, log)) }
+        h.closing { _, now, log in MoodAction.sinceLine(mood, log, at: now) }
         h.reachBack { _, now, log in view.workingSince(at: now, log) }
         return (h, mood)
     }
@@ -489,9 +480,6 @@ public final class Runtime: @unchecked Sendable {
     /// so a tap on a finish still playing still opens its thread.
     func connection(_ up: Bool) {
         let now = options.clock()
-        // A new connection starts with the backwards-compatible bank. Clear
-        // a former gel device's cached full mood before LinkKit sends state.
-        if up, !link.connected, let latest { link.update(state: latest.fields(for: .pixel), now: now) }
         link.connection(up, now: now)
         if !up { run(core.linkDown(at: now)) }
         changed()
@@ -502,11 +490,6 @@ public final class Runtime: @unchecked Sendable {
     /// the link hands to whoever asked for it, and which is logged here.
     func device(_ line: String) {
         let now = options.clock()
-        // LinkKit replies to hello before its onHello callback. Adapt that
-        // reply first, including a gel-to-pixel swap on the same transport.
-        if let latest, let face = BoopDevice.face(saying: line) {
-            link.update(state: latest.fields(for: face), now: now)
-        }
         switch link.receive(line, now: now) {
         case .ended(let ended):
             options.log("device: do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
@@ -600,7 +583,7 @@ public final class Runtime: @unchecked Sendable {
     /// The mood action's own change, which tells the device too.
     func forceMood(_ to: String, by: String, who: String = "dev") {
         let result = harness.force(mood, by: by) {
-            MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()), version: moodGraph)
+            MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()))
         }
         options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
         changed()
@@ -745,7 +728,7 @@ public final class Runtime: @unchecked Sendable {
     public static let forcedBy = "dashboard"
 
     /// Boop's mood now, as the log has it.
-    var moodNow: String { MoodAction.value(mood, harness.log.view(now: options.clock()), version: moodGraph) }
+    var moodNow: String { MoodAction.value(mood, harness.log.view(now: options.clock())) }
 
     /// Every pass the harness made: its app log line
     /// (the brain's only), whether the brain is in trouble, its
@@ -782,12 +765,10 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    var deviceFace: DeviceInfo.Face { link.hello.map { DeviceInfo($0).face } ?? .pixel }
-
     /// A snapshot for the device.
     func show(_ snapshot: StateSnapshot) {
         latest = snapshot
-        link.update(state: snapshot.fields(for: deviceFace), now: options.clock())
+        link.update(state: snapshot.fields, now: options.clock())
     }
 
     /// A rule's one-shot: sent at once, after the
@@ -797,7 +778,7 @@ public final class Runtime: @unchecked Sendable {
     /// then. The core has already left it out while something needs you or
     /// `listening` shows.
     func playRule(_ moment: DeviceMoment) {
-        if let id = link.do(moment.name, args: moment.args(for: deviceFace), play: .ifFree, by: .rule, now: options.clock(), { _ in }) {
+        if let id = link.do(moment.name, args: moment.args, play: .ifFree, by: .rule, now: options.clock(), { _ in }) {
             onMoment?(id, moment)
         }
     }
@@ -809,7 +790,7 @@ public final class Runtime: @unchecked Sendable {
     func queue(_ moment: DeviceMoment, _ pending: Pending) {
         core.listeningEnded()  // a reaction ends `listening`: it's the reply
         let now = options.clock(), reactions = reactions
-        let id = link.do(moment.name, args: moment.args(for: deviceFace), play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+        let id = link.do(moment.name, args: moment.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
                          now: now) { outcome in
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }

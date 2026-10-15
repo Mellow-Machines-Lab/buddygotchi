@@ -97,10 +97,10 @@ class PlayTests(unittest.TestCase):
             cli.build_parser().parse_args(["play", "cheer", "--mood", "cheerful"])
 
     def test_the_moods_are_the_devices(self):
-        """The moods boopctl sends are facegen's, which it writes into the
-        Pixel pack's faces.h, in the device's order."""
-        self.assertEqual(cli.MOODS, facegen.MOODS)
-        self.assertEqual(cli.MOODS, firmware_names("../../characters/pixel/firmware/include/faces.h", "kMoodNames["))
+        """The moods boopctl sends are facegen's, every mood the Pixel pack
+        has, which it writes into the pack's faces.h, in the pack's order."""
+        self.assertEqual(cli.MOODS, facegen.NAMES)
+        self.assertEqual(cli.MOODS, firmware_names("../../characters/pixel/firmware/include/faces.h", "kNames["))
 
     def test_play_sends_just_the_animation_now(self):
         """A `do` with the animation's name, played `now` so it replaces

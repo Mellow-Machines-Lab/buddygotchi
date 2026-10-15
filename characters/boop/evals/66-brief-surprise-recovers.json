@@ -1,8 +1,7 @@
 {
   "name": "A brief surprise recovers through an ordinary neighbor after its short hold.",
   "case": "A brief surprise recovers through an ordinary neighbor after its short hold.",
-  "why": "Opt-in graph v3 pacing and evidence",
-  "graph": "v3",
+  "why": "The mood policy's pacing and evidence",
   "mood": "surprised",
   "checks": {
     "moves_on_graph": true

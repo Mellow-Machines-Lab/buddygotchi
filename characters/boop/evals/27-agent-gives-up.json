@@ -1,6 +1,7 @@
 {
   "name": "An agent that couldn't do it makes Boop sad",
   "case": "The agent's turn ends without an error, but its last message says it couldn't get the login working and is stuck. Boop is deflated along with it: its mood turns sad, with a sad face, and the finish plays as a failure. It isn't grumpy, since nothing failed on the agent's side.",
+  "gap": "Written for the 13-mood graph (before 2026-10-15). Calm has no move to sad, and a turn that ends without a failure isn't a strong event. Fix: re-pin the mood (uneasy), or teach MoodPolicy that giving up is one.",
   "why": "characters/boop/steering/guide.md: a turn isn't routine when the agent's last message is giving up; characters/boop/steering/mood/calm.md: calm leaves for sad when the agent gives up; react.animation: a message saying the agent couldn't finish is a failure; PERSONALITY's Examples: that message is sad, a failure, says nothing, once",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "fix the login redirect"},

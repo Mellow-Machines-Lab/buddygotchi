@@ -74,9 +74,8 @@ static void test_one_face_vocabulary_and_latest_facts() {
   app::Behaviour b(std::make_unique<GelFace>());
   b.reset(0, rng);
   TEST_ASSERT_EQUAL_STRING("gel", b.face().name());
-  TEST_ASSERT_TRUE(b.face().supportsMood(Mood::kFrightened));
-  pixel::PixelFace pixel;
-  TEST_ASSERT_FALSE(pixel.supportsMood(Mood::kFrightened));
+  // Every face draws every mood: the pixel face's frightened wears wounded's designs.
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kWounded), render::pixelIndex(Mood::kFrightened));
   app::Model m;
   m.mood = Mood::kFrightened;
   m.base = SceneState::kWorking;

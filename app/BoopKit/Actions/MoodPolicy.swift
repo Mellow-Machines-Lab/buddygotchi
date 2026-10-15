@@ -1,22 +1,23 @@
 import Foundation
 import MellowHarness
 
-/// The opt-in v3 code gate. Pure: the options follow
+/// Which of the mood graph's moves are offered now, by the pack's pacing
+/// (characters/CHARACTER.md §5), for every pack. Pure: the options follow
 /// from the mood, the event and the log view alone, never animation state.
 /// Validation reads the view after its pass is logged, which doesn't use up
 /// its own event (`fresh`), so it offers what asking did unless a pacing
 /// boundary passed while the brain answered.
 public enum MoodPolicy {
-    /// A shortest ordinary path toward calm supplies a justified softening
+    /// A shortest ordinary path toward the resting mood supplies a justified softening
     /// edge. It never restores a remembered mood or invents an edge.
     public static func recovery(from mood: String) -> String? {
-        guard mood != MoodAction.initial, let node = MoodGraphV3.nodes[mood] else { return nil }
+        guard mood != MoodAction.initial, let node = MoodGraph.mood(mood) else { return nil }
         var queue = node.moves.ordinary.map { ($0, $0) }, seen: Set<String> = [mood]
         while !queue.isEmpty {
             let (next, first) = queue.removeFirst()
             if next == MoodAction.initial { return first }
             if seen.insert(next).inserted {
-                queue += (MoodGraphV3.nodes[next]?.moves.ordinary ?? []).map { ($0, first) }
+                queue += (MoodGraph.mood(next)?.moves.ordinary ?? []).map { ($0, first) }
             }
         }
         return nil
@@ -45,7 +46,7 @@ public enum MoodPolicy {
     /// for `e`, or for a copy of it (the same thread, kind and `identity`).
     /// A pass uses it even when its answer was stay.
     static func fresh(_ e: Event?, _ log: LogView) -> Event? {
-        guard let e, e.seq > 0, e.at <= log.now, log.now - e.at <= MoodGraphV3.freshEvidenceMs,
+        guard let e, e.seq > 0, e.at <= log.now, log.now - e.at <= MoodGraph.pacing.freshEvidenceMs,
               ["turn_start", "turn_end", "tool_end", "subagent_end", "poke", "talk", "presence_end"].contains(e.kind) else { return nil }
         let id = identity(e, log)
         // Only the copies are looked at, through the log's indexes, never
@@ -84,18 +85,18 @@ public enum MoodPolicy {
     }
 
     public static func destinations(from mood: String, event: Event?, log: LogView) -> MoodGraph.Moves {
-        guard let node = MoodGraphV3.nodes[mood] else { return .init(ordinary: [], dramatic: []) }
+        guard let node = MoodGraph.mood(mood) else { return .init(ordinary: [], dramatic: []) }
         let last = log.lastDid(MoodAction.actionName) { $0["ok"]?.bool == true && $0["to"]?.string != nil }
         let age = last.map { max(0, log.now - $0.at) } ?? Int64.max
         let evidence = fresh(event, log)
         let recovery = recovery(from: mood)
-        let exitReady = age >= (node.brief ? MoodGraphV3.briefExitMs : MoodGraphV3.ordinaryDwellMs)
+        let exitReady = age >= (node.brief ? MoodGraph.pacing.briefExitMs : MoodGraph.pacing.ordinaryDwellMs)
         var ordinary: [String] = []
         if exitReady {
             ordinary = node.moves.ordinary.filter { to in
                 if node.brief { return to == recovery }
                 let reverse = last?["from"]?.string == to
-                if reverse && age < MoodGraphV3.reverseCooldownMs { return false }
+                if reverse && age < MoodGraph.pacing.reverseCooldownMs { return false }
                 // Quiet can soften exactly one step. It cannot escalate.
                 guard evidence != nil else { return to == recovery }
                 // No routine work invents fear, loneliness or affection: the

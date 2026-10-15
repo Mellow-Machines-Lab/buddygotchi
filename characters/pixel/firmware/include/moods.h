@@ -7,26 +7,55 @@
 namespace render {
 
 enum class Mood : uint8_t {
+  kCalm,
+  kComfy,
+  kLazy,
+  kBored,
+  kPleased,
   kHappy,
   kExcited,
-  kProud,
   kCurious,
-  kDetermined,
-  kGrumpy,
-  kSad,
-  kCalm,
   kEngaged,
+  kDetermined,
+  kProud,
+  kMischievous,
+  kShy,
+  kUncomfortable,
   kAnnoyed,
   kIrritated,
+  kGrumpy,
+  kAngry,
+  kDisappointed,
+  kSad,
+  kCrying,
   kWhiny,
   kWounded,
+  kUneasy,
+  kScared,
+  kFrightened,
+  kSurprised,
+  kStunned,
+  kSpeechless,
+  kAmused,
+  kHopeful,
+  kRelieved,
+  kConfused,
+  kBaffled,
+  kSkeptical,
+  kEmbarrassed,
+  kAffectionate,
+  kLonely,
+  kTired,
+  kExhausted,
+  kOverwhelmed,
+  kDisgusted,
   kCount
 };
-constexpr int kMoodCount = 13;
+constexpr int kMoodCount = 42;
 // What the board shows before the Mac sends a mood, and for a name it
 // doesn't know: the pack's startup_mood, else its default_mood.
 constexpr Mood kStartupMood = Mood::kHappy;
-constexpr const char* kMoodNames[kMoodCount] = {"happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"};
+constexpr const char* kMoodNames[kMoodCount] = {"calm", "comfy", "lazy", "bored", "pleased", "happy", "excited", "curious", "engaged", "determined", "proud", "mischievous", "shy", "uncomfortable", "annoyed", "irritated", "grumpy", "angry", "disappointed", "sad", "crying", "whiny", "wounded", "uneasy", "scared", "frightened", "surprised", "stunned", "speechless", "amused", "hopeful", "relieved", "confused", "baffled", "skeptical", "embarrassed", "affectionate", "lonely", "tired", "exhausted", "overwhelmed", "disgusted"};
 // The pack the board's hello names, for the Mac to tell its own from another.
 constexpr const char* kPackId = "pixel";
 constexpr const char* kPackVersion = "0.1.0";

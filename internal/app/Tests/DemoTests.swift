@@ -159,7 +159,7 @@ final class DemoTests: XCTestCase {
         let problems = script.problems(for: pack)
         XCTAssertEqual(problems.count, 4, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
-        XCTAssertTrue(problems[1].hasPrefix("line 2: react.mood has no choice jolly; it has none, happy"))
+        XCTAssertTrue(problems[1].hasPrefix("line 2: react.mood has no choice jolly; it has none, \(pack.moods[0].id)"))
         XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
         XCTAssertTrue(problems[3].hasPrefix("line 4: say.kind has no choice wrod"))
     }

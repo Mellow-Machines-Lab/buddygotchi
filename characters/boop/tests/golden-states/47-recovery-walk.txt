@@ -14,12 +14,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop and moves a step at a time: to a mood on
-  offer when NOW is MOOD's reason to leave, but never for a routine
-  turn alone, and not while HISTORY ends "for under a minute" unless a
-  turn failed, a very long turn ended, or Boop was poked or talked to.
-  After the minutes MOOD gives, or an hour of nothing, it fades one
-  step, to the mood MOOD names, at whatever NOW is.
+- The mood is the backdrop. The offered choices already enforce pacing,
+  freshness and the directed graph. Stay unless an offered meaning fits
+  NOW; a quiet recovery softens one step without inventing success.
+  Brief reactions take their offered recovery when nothing renews them.
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
@@ -102,18 +100,11 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Grumpy. Boop is fed up: turns failed, or pokes kept coming.
-It flares up and soon blows over: once Boop has been grumpy for 2
-min, anything but a poke in NOW cools it to annoyed.
-Its faces lean grumpy at failures and pokes. A win gets a grudging
-proud, never grumpy or excited.
-Grumbles: work in a grunt, upset in a phrase at failures and pokes,
-a swear at a failed turn that stings.
-A poke in NOW keeps it grumpy, whatever the count.
-Leaves for irritated or annoyed when the person says sorry to Boop;
-annoyed when a check passes after failing; whiny when the agent gives
-up; sad when a very long turn fails or the person shares sad news;
-calm when the person thanks the agent.
+Grumpy. Sustained theatrical bad temper: disgruntled but still doing the work, not a refusal or user-directed attack.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.
 
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been grumpy for under a minute.
@@ -148,12 +139,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop and moves a step at a time: to a mood on
-  offer when NOW is MOOD's reason to leave, but never for a routine
-  turn alone, and not while HISTORY ends "for under a minute" unless a
-  turn failed, a very long turn ended, or Boop was poked or talked to.
-  After the minutes MOOD gives, or an hour of nothing, it fades one
-  step, to the mood MOOD names, at whatever NOW is.
+- The mood is the backdrop. The offered choices already enforce pacing,
+  freshness and the directed graph. Stay unless an offered meaning fits
+  NOW; a quiet recovery softens one step without inventing success.
+  Brief reactions take their offered recovery when nothing renews them.
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
@@ -236,27 +225,20 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Annoyed. Boop is mildly put out: one thing failed, or 2 pokes.
-Milder than irritated.
-Its faces lean annoyed; a win gets a grudging happy face.
-Says upset, retry at a repeat, a swear at a failed turn.
-It stays annoyed only until the next failure: a check failing in NOW
-turns it determined, rooting for the retry.
-Leaves for determined too when the person sounds frustrated; irritated
-at 3+ pokes in a row; grumpy when a turn finishes failed; whiny when
-the agent gives up; sad when a very long turn fails or the person
-shares sad news; wounded at rude words to Boop; calm when the person
-says sorry to Boop. Fades to calm once Boop has been annoyed for 3
-min, unless NOW is a failure.
+Whiny. An outward protest or plea for sympathy; not simply a weaker sad.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.
 
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
   You asked: "fix the typo on the pricing page"
 2 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
   Its last message: "Fixed the typo; the page renders."
-  Boop's mood changed: grumpy → annoyed.
+  Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
-Boop has been annoyed for 2 min.
+Boop has been whiny for 2 min.
 
 NOW (14:04, Wednesday)
 claude started turn 2 on "landing".
@@ -268,11 +250,11 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "fix the typo on the pricing page"
 4 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
   Its last message: "Fixed the typo; the page renders."
-  Boop's mood changed: grumpy → annoyed.
+  Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 2 min ago: claude started turn 2 on "landing".
   You asked: "add validation to the signup form"
-Boop has been annoyed for 4 min.
+Boop has been whiny for 4 min.
 
 NOW (14:06, Wednesday)
 claude finished turn 2 on "landing": done, a long turn, 1 tool call.
@@ -294,12 +276,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop and moves a step at a time: to a mood on
-  offer when NOW is MOOD's reason to leave, but never for a routine
-  turn alone, and not while HISTORY ends "for under a minute" unless a
-  turn failed, a very long turn ended, or Boop was poked or talked to.
-  After the minutes MOOD gives, or an hour of nothing, it fades one
-  step, to the mood MOOD names, at whatever NOW is.
+- The mood is the backdrop. The offered choices already enforce pacing,
+  freshness and the directed graph. Stay unless an offered meaning fits
+  NOW; a quiet recovery softens one step without inventing success.
+  Brief reactions take their offered recovery when nothing renews them.
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
@@ -382,33 +362,26 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Engaged. Boop is in the flow, following steady work. At ease: nothing
-has failed.
-Its faces lean engaged; a failure gets a determined face.
-Says work: a word or grunt.
-Stays engaged while the work goes on, through routine finishes.
-Leaves for determined when a very long turn works on, a check fails or
-the person sounds frustrated; proud when a check passes after failing
-or a long turn's hard work is done; happy at kind words to Boop;
-curious at a poke; annoyed at a failed turn; excited when a very long
-turn finishes done; sad when a very long turn fails, the agent gives
-up or the person shares sad news. Once Boop has been engaged for 5
-min, fades to calm at anything but work going on.
+Determined. Focused effort under challenge, not anger.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.
 
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
   You asked: "fix the typo on the pricing page"
 7 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
   Its last message: "Fixed the typo; the page renders."
-  Boop's mood changed: grumpy → annoyed.
+  Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 5 min ago: claude started turn 2 on "landing".
   You asked: "add validation to the signup form"
 3 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call.
   Its last message: "Done: the form validates and the tests pass."
-  Boop's mood changed: annoyed → engaged.
+  Boop's mood changed: whiny → determined.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
-Boop has been engaged for 3 min.
+Boop has been determined for 3 min.
 
 NOW (14:09, Wednesday)
 claude started turn 3 on "landing".
@@ -420,17 +393,17 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "fix the typo on the pricing page"
 8 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
   Its last message: "Fixed the typo; the page renders."
-  Boop's mood changed: grumpy → annoyed.
+  Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 6 min ago: claude started turn 2 on "landing".
   You asked: "add validation to the signup form"
 4 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call.
   Its last message: "Done: the form validates and the tests pass."
-  Boop's mood changed: annoyed → engaged.
+  Boop's mood changed: whiny → determined.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 1 min ago: claude started turn 3 on "landing".
   You asked: "update the footer links"
-Boop has been engaged for 4 min.
+Boop has been determined for 4 min.
 
 NOW (14:10, Wednesday)
 claude finished turn 3 on "landing": done, a long turn, no tool calls.
@@ -452,12 +425,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop and moves a step at a time: to a mood on
-  offer when NOW is MOOD's reason to leave, but never for a routine
-  turn alone, and not while HISTORY ends "for under a minute" unless a
-  turn failed, a very long turn ended, or Boop was poked or talked to.
-  After the minutes MOOD gives, or an hour of nothing, it fades one
-  step, to the mood MOOD names, at whatever NOW is.
+- The mood is the backdrop. The offered choices already enforce pacing,
+  freshness and the directed graph. Stay unless an offered meaning fits
+  NOW; a quiet recovery softens one step without inventing success.
+  Brief reactions take their offered recovery when nothing renews them.
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
@@ -540,33 +511,26 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Proud. Earned theatrical self-satisfaction; the core overconfident show-off.
+Boop keeps doing the actual task while showing this feeling.
+Stay when NOW supplies no fresh reason to move. Leaves for an offered
+neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
+softens a feeling; it never invents success or clears an unresolved alert.
 
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 2 on "landing".
   You asked: "add validation to the signup form"
 7 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call.
   Its last message: "Done: the form validates and the tests pass."
-  Boop's mood changed: annoyed → engaged.
+  Boop's mood changed: whiny → determined.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 4 min ago: claude started turn 3 on "landing".
   You asked: "update the footer links"
 3 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls.
   Its last message: "Updated the footer links."
-  Boop's mood changed: engaged → happy.
+  Boop's mood changed: determined → proud.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
-Boop has been happy for 3 min.
+Boop has been proud for 3 min.
 
 NOW (14:13, Wednesday)
 claude started turn 4 on "landing".
@@ -578,17 +542,17 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add validation to the signup form"
 8 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call.
   Its last message: "Done: the form validates and the tests pass."
-  Boop's mood changed: annoyed → engaged.
+  Boop's mood changed: whiny → determined.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 5 min ago: claude started turn 3 on "landing".
   You asked: "update the footer links"
 4 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls.
   Its last message: "Updated the footer links."
-  Boop's mood changed: engaged → happy.
+  Boop's mood changed: determined → proud.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
 1 min ago: claude started turn 4 on "landing".
   You asked: "bump the version"
-Boop has been happy for 4 min.
+Boop has been proud for 4 min.
 
 NOW (14:14, Wednesday)
 claude finished turn 4 on "landing": done, a long turn, no tool calls.

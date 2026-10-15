@@ -7,7 +7,6 @@ parser.add_argument('--native',action='store_true',help='use the real gel firmwa
 args=parser.parse_args();root=pathlib.Path(__file__).resolve().parents[4]
 with tempfile.TemporaryDirectory(prefix='boop-gel-',dir='/tmp') as folder:
     base=pathlib.Path(folder);state=base/'state';state.mkdir();home=base/'home';home.mkdir()
-    (state/'settings.json').write_text(json.dumps({'moodGraph':'v3'}))
     path=str(base/'link');server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);server.bind(path);server.listen(1);server.settimeout(10)
     captured=[];native_messages=[];errors=[];done=threading.Event()
     def native_peer():

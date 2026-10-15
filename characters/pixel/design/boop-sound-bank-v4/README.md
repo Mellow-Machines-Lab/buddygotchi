@@ -42,7 +42,7 @@ player.setSpeechActive(true); // ducks routine material accents, not attention c
 
 Only mood/state are the character selection axes. Host-only `completionOutcome` and `startContext` are factual filters, not mood intensity values or JEV-authored results. Missing completion outcome falls back to reply_ready. Valid start contexts are new_task/session/continuation; omitted context means READY. `force: true` is for a genuinely fresh same-state event; ordinary duplicate updates must not retrigger entry sounds.
 
-Graph design and JEV handover: `../boop-mood-spectrum-v2/HANDOVER.md`, with `mood-graph.json`. This bank does **not** enforce graph traversal or infer agent events. Do not silently add that policy inside the generic player or harness. Implement it in the application's Mood action under repository instructions, with persistence and stale-decision tests.
+Graph design history and JEV handover: `../boop-mood-spectrum-v2/HANDOVER.md`; the graph itself is the pack's `character.json`. This bank does **not** enforce graph traversal or infer agent events. Do not silently add that policy inside the generic player or harness. Implement it in the application's Mood action under repository instructions, with persistence and stale-decision tests.
 
 ## Sound and voice integration
 
@@ -59,7 +59,6 @@ JEV should select semantic intent/mood, while a deterministic compatibility filt
 ## Rebuild and checks
 
 ```sh
-node characters/pixel/design/boop-mood-spectrum-v2/validate.mjs
 node characters/pixel/design/boop-sound-bank-v4/source/build.mjs
 node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs
 node characters/pixel/design/boop-sound-bank-v4/qa/browser.mjs

@@ -11,7 +11,6 @@ class PixelFace final : public Face {
   static constexpr uint32_t kBlendMs = 150, kBlinkMs = 180, kTurnMinMs = 5000;
   static constexpr int kTurnPct = 67;
   const char* name() const override { return "pixel"; }
-  bool supportsMood(Mood mood) const override { return pixelIndex(mood) >= 0; }
   const voice::EffectClips& clips() const override { return render::pixel::clips(); }
   void reset(uint32_t t, linkkit::Rng& rng) override;
   void sync(const FaceSource& source, const FaceContext& context, uint32_t t) override;

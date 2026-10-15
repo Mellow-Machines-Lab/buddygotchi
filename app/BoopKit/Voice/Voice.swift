@@ -3,9 +3,10 @@ import Foundation
 /// Boop's voice: the recorded takes the board has, and what a
 /// reaction says. The only code that knows what Boop can say. The brain
 /// answers how Boop feels and what NOW is about, and a kind; the face picks
-/// the mood; Voice finds a take for each answer performed in that mood and
-/// joins them into a line of at most two: the feeling, then the topic. A
-/// take is never borrowed from another mood.
+/// the mood; Voice finds a take for each answer that plays in that mood and
+/// joins them into a line of at most two: the feeling, then the topic.
+/// Which moods a take plays in is the pack's table's to say; Voice never
+/// borrows one from another mood.
 public enum Voice {
     /// The pause between a line's two takes, in milliseconds.
     public static let joinGapMs = 180
@@ -29,7 +30,7 @@ public enum Voice {
     }
 
     /// The take one answer says: `part`'s `meaning`,
-    /// performed in the `face`'s mood, fit for the turn's `finish` (a
+    /// that plays in the `face`'s mood, fit for the turn's `finish` (a
     /// success take only on a success, a swear only on a failure), of the
     /// nearest kind to `kind` that has one, at random, and not one whose
     /// text is in `avoiding` (the last line's) when another fits: the bank
@@ -38,7 +39,7 @@ public enum Voice {
     static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String, finish: String?,
                      avoiding: Set<String> = [], rng: inout SplitMix64) -> Take? {
         let fit = Take.all.filter {
-            $0.part == part && $0.meaning == meaning && $0.mood == face && ($0.finish == nil || $0.finish == finish)
+            $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish)
         }
         for k in Self.order(kind) {
             var pool = fit.filter { $0.kind == k }

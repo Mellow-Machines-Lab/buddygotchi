@@ -26,22 +26,6 @@ public enum BoopDevice {
         DeviceLink(app: app, transport: transport, log: log)
     }
 
-    /// The face a `hello` line says the device draws, for
-    /// the `state` the link sends in answer, which goes out inside
-    /// `receive`, before `onHello`; nil for any other line. A `hello` the
-    /// link turns away (another `kit` or `app`, linkkit/SPEC.md §6) means
-    /// pixel. LinkKit's rule for which fit isn't public, so a link with no
-    /// transport, which sends nothing, judges the line: the rule itself,
-    /// never a copy that could drift from it.
-    public static func face(saying line: String) -> DeviceInfo.Face? {
-        // Every device line passes through here: only a hello, which comes
-        // on connect and once a minute, is worth a link to judge it.
-        guard case .hello = Wire.decode(line) else { return nil }
-        let judge = link(nil)
-        guard case .hello = judge.receive(line, now: 0) else { return nil }
-        return judge.hello.map { DeviceInfo($0).face } ?? .pixel
-    }
-
     /// The `do` id of the brain's finish a tap landed on, when the device
     /// says so (`data.on`): it only dipped the face, and
     /// the tap opens that thread.
@@ -59,6 +43,8 @@ public struct DeviceInfo: Equatable, Sendable {
     /// The version of the voice pack on its card, `none`
     /// with no card or none readable, or nil from firmware that doesn't say.
     public var voice: String?
+    /// Which face it draws: the popover mirrors the gel one, and a demo
+    /// recording says which it was made on. Every face draws every mood.
     public enum Face: String, Sendable { case pixel, gel }
     public var face: Face
     /// The character pack its firmware was built with, as `id version`

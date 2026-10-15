@@ -278,8 +278,8 @@ extension DemoScript {
                     found.append("line \(line.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
                 }
             }
-            if let mood, !pack.v2Names.contains(mood) {
-                found.append("line \(line.number): \(pack.id) has no mood \(mood); it has \(pack.v2Names.joined(separator: ", "))")
+            if let mood, !pack.moods.map(\.id).contains(mood) {
+                found.append("line \(line.number): \(pack.id) has no mood \(mood); it has \(pack.moods.map(\.id).joined(separator: ", "))")
             }
         }
         return found

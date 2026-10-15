@@ -7,13 +7,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Who Boop is: the personality file it reads.
     public var personality = Personality.default
     public var volume = 6
-    public var moodGraph = MoodGraph.Version.v2
 
     public init() {}
 
     public init(from decoder: Decoder) throws {
         // Missing keys keep their defaults, so older files still load; keys
-        // this version doesn't know are ignored: `mode` from before the
+        // this version doesn't know are ignored: `moodGraph` from before the
+        // one mood graph (2026-10-15), `mode` from before the
         // personalities (2026-09-27), `classifier`, `writer` and `brain` from
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
         // `projects` from before 2026-09-26. A personality the pack doesn't have is its default.
@@ -21,19 +21,15 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if let raw = try? c.decodeIfPresent(String.self, forKey: .personality), let p = Personality(rawValue: raw) {
             personality = p
         }
-        if let raw = try? c.decodeIfPresent(String.self, forKey: .moodGraph) {
-            moodGraph = MoodGraph.Version(rawValue: raw) ?? .v2
-        }
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume, moodGraph }
+    enum CodingKeys: String, CodingKey { case personality, volume }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(personality.rawValue, forKey: .personality)
         try c.encode(volume, forKey: .volume)
-        try c.encode(moodGraph.rawValue, forKey: .moodGraph)
     }
 
     public static let file = "settings.json"

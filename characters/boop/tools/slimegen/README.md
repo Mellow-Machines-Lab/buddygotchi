@@ -1,17 +1,18 @@
 # Slime asset generator
 
-Updated 2026-10-05.
+Updated 2026-10-15.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
 
-The slime design's `emotion-graph.json` is the source for v3's moods in
-Boop's character pack, `characters/boop/character.json`
+The slime design's `emotion-graph.json` is the source for Boop's moods
+in its character pack, `characters/boop/character.json`
 ([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key
-(ordered adjacency, meanings, families, pixel fallbacks and brief markers)
+(ordered adjacency, meanings, families and brief markers)
 and `pacing` (provisional host pacing). It rewrites only those two keys,
 and keeps any key a mood has that the design doesn't set, such as
-`quiet_never`.
+`quiet_never` and `face`. The design's pixel `fallback`s aren't written:
+every pack has every mood.
 The same tool bundles the reference engine, WebGL/Canvas renderer and a
 silent adapter into Boop's character pack, `characters/boop/mac/mirror/`. The shipped files have no
 dependency on this tool at runtime. `check-mirror.mjs` checks interruption and

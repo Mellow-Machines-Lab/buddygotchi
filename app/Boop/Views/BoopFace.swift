@@ -52,9 +52,9 @@ struct BoopFace: View {
         let startup = CharacterPack.active.startupMood
         return switch mood {
         case .asleep, .stopped: "\(startup)/asleep"
-        case .idle: "\(MoodGraph.pixelFallback(design))/idle"
-        case .working: "\(MoodGraph.pixelFallback(design))/working"
-        case .needsYou: "\(MoodGraph.pixelFallback(design))/needs_you"
+        case .idle: "\(design)/idle"
+        case .working: "\(design)/working"
+        case .needsYou: "\(design)/needs_you"
         case .happy, .cheeky: "\(startup)/idle"
         }
     }

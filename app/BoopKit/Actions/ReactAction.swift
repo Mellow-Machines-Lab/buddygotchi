@@ -28,8 +28,6 @@ public final class ReactAction: Action {
     /// card has another pack, or none, and then Boop says
     /// nothing.
     let speaks: () -> Bool
-    let version: MoodGraph.Version
-    let face: () -> DeviceInfo.Face
     /// Picks among the takes that fit, and remembers the last line's
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
@@ -38,21 +36,19 @@ public final class ReactAction: Action {
     var variants = SplitMix64(seed: 0xB00B)
     var lastVariant: [String: Int] = [:]
     public init(queue: @escaping (DeviceMoment, Pending) -> Void, blocked: @escaping () -> String?,
-                who: @escaping (Event?) -> DeviceMoment.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true },
-                version: MoodGraph.Version = .v2, face: @escaping () -> DeviceInfo.Face = { .pixel }) {
+                who: @escaping (Event?) -> DeviceMoment.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true }) {
         self.queue = queue
         self.blocked = blocked
         self.who = who
         self.speaks = speaks
-        self.version = version
-        self.face = face
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
 
     /// Each expression: a mood's name, in `MoodAction.moods`' order, and
     /// what the face means for this moment, from the
-    /// pack's `moods_v2` faces (characters/CHARACTER.md §5). It's the
+    /// pack's moods' `face`, else their meaning (characters/CHARACTER.md
+    /// §5). It's the
     /// moment's face only, never the lasting mood. What it says is a take
     /// performed in that mood (`Voice`).
     public static var expressions: [Option] { CharacterPack.active.faces }
@@ -182,17 +178,7 @@ public final class ReactAction: Action {
         answers["say.kind"].flatMap { Take.Kind(rawValue: $0.choice) } ?? .sound
     }
 
-    public var offeredExpressions: [Option] {
-        version == .v3 && face() == .gel ? MoodAction.catalog(.v3) : Self.expressions
-    }
-
-    public func questions(now: Event?, log: LogView) -> [Question] {
-        var questions = Self.asked
-        questions[0] = Question(key: questions[0].key, text: questions[0].text,
-                               about: questions[0].about, judgeBy: questions[0].judgeBy,
-                               options: [Self.asked[0].options[0]] + offeredExpressions)
-        return questions
-    }
+    public func questions(now: Event?, log: LogView) -> [Question] { Self.asked }
 
     /// The questions asked: a character pack with no voice is never asked
     /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
@@ -227,20 +213,18 @@ public final class ReactAction: Action {
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> ActionResult? {
         // 1. Does Jev want a reaction at all, and with which face?
-        guard let choice = answers["react.mood"]?.choice, offeredExpressions.contains(where: { $0.name == choice }) else {
+        guard let choice = answers["react.mood"]?.choice, Self.expressions.contains(where: { $0.name == choice }) else {
             return nil
         }
         // 2. This action's own rules.
         if let why = blocked() { return .failed(why) }
         // 3. The effect: the face, and the line it says, if Voice has takes
         // for the feeling and the topic in this face's mood and the turn's
-        // finish. The takes were recorded in the 13 retained moods only, so
-        // a v3 face speaks in its retained fallback's voice;
-        // the moment keeps the face's own mood.
+        // finish.
         let loops = Self.loops(answers)
         let pick = Self.animation(answers)
         let line = !speaks() ? [] : Voice.line(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
-                                               face: MoodGraph.pixelFallback(choice), finish: pick, avoiding: lastWords, rng: &takes)
+                                               face: choice, finish: pick, avoiding: lastWords, rng: &takes)
         if !line.isEmpty { lastWords = Set(line.map(\.text)) }
         let say = DeviceMoment.Say(takes: line)
         var moment = DeviceMoment(say: say, mood: choice, loops: loops)

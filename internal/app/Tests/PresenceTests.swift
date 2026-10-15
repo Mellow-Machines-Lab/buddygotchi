@@ -231,7 +231,7 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
         for mood in MoodAction.moods.map(\.name) {
-            XCTAssertGreaterThanOrEqual(hello.filter { $0.mood == mood }.count, 4, mood)
+            XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {

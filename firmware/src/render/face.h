@@ -55,8 +55,6 @@ class Face {
   static constexpr int kMaxCues = 16;
   virtual ~Face() = default;
   virtual const char* name() const = 0;  // hello's `face`
-  // Whether it draws the mood; one it doesn't draws its fallback (characters/CHARACTER.md §9).
-  virtual bool supportsMood(Mood mood) const = 0;
   // Draws into the board's native RGB565 surface (Device allocates it, at
   // the panel's size) rather than the 8-bit canvas alone.
   virtual bool drawsNative() const { return false; }

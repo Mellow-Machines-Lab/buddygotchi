@@ -1,10 +1,10 @@
 {
   "name": "Talking to a fed-up Boop still gets a face",
-  "case": "The person pokes Boop until it's fed up, then a few seconds later says sorry and that it's doing great. It answers with a face, never none and never grumpy: a proud, happy, excited or calm one for the kind words, or, since the apology softens it a step, an irritated or annoyed one.",
+  "case": "The person pokes Boop until it's fed up (its face; its mood steps once), then a few seconds later says sorry and that it's doing great. It answers with a face, never none and never grumpy: a proud, happy, excited or calm one for the kind words, or, since the apology softens it a step, an irritated or annoyed one.",
   "always": true,
-  "why": "PERSONALITY: talked to, Boop always answers with a face, never none, proud at kind words, whatever its mood. A fed-up mood from pokes mustn't make it ignore you. characters/boop/steering/mood/grumpy.md: saying sorry moves it to irritated or annoyed, and the guide reacts with the new mood's face",
+  "why": "The one mood graph (2026-10-15): a mood moves one step along its pack's moves and holds at least 30 s (MoodPolicy), so a barrage moves the mood once. PERSONALITY: talked to, Boop always answers with a face, never none, proud at kind words, whatever its mood. A fed-up mood from pokes mustn't make it ignore you. characters/boop/steering/mood/grumpy.md: saying sorry moves it to irritated or annoyed, and the guide reacts with the new mood's face",
   "steps": [
-    {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy|irritated"}},
+    {"event": "pokes", "at": "0s", "expect": {"mood": "engaged|curious|uneasy"}},
     {"event": "said", "at": "10s", "words": "sorry buddy, you're doing great", "expect": {"react": "proud|happy|excited|calm|irritated|annoyed"}}
   ]
 }
