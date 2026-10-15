@@ -99,9 +99,14 @@ class StudioRuleTests(unittest.TestCase):
         write(self.studio / "states.json", {"groups": [{"label": "All", "states": [{"id": "idle", "about": ""}, {"id": "working", "about": ""}]}], "facts": {}})
         self.firmware = self.dir / "types.cpp"
         write(self.firmware, 'constexpr const char* kStateNames[2] = {"idle", "working"};')
+        # These packs' moods are the universal ones.
+        from unittest import mock
+        patch = mock.patch.object(gen, "universal_moods", lambda: ["calm"])
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def pack(self, name, moods, studio=None, files=(), **extra):
-        character = {"id": name, "name": name.title(), "default_mood": moods[0]["id"], "moods": moods, **extra}
+        character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods, **extra}
         if studio is not None:
             character["studio"] = studio
         write(self.dir / name / "character.json", character)
@@ -150,24 +155,28 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}], "studio": []})
 
     def test_staging_takes_the_packs_own_files_only(self):
-        """The firmware's files are the pack's alone, and the app's copy leaves out what it doesn't read: the voice pack and the pack's sources."""
-        pack = self.pack("solo", [{"id": "calm"}], files=[("firmware/include/moods.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
-                                                           ("steering/guide.md", ""), ("design/art.txt", "")])
+        """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice pack and the pack's sources."""
+        pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
+                         files=[("firmware/include/face.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
+                                ("steering/guide.md", ""), ("design/art.txt", "")])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
         self.assertEqual([n for n in staged if not n.startswith(("firmware-test/", "staged/"))],
-                         ["firmware/include/moods.h", "pack", "packs/solo/character.json", "packs/solo/mac/takes.tsv",
-                          "packs/solo/steering/guide.md"])
+                         ["firmware/include/face.h", "firmware/include/moods.h", "pack", "packs/solo/character.json",
+                          "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
+        moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
+        self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
+        self.assertIn('kPackId = "solo"', moods)
         self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(gen.STAGE / "staged" / "solo"))
         self.assertEqual(gen.own_folder(gen.STAGE / "staged" / "solo"), pack.resolve())
 
     def test_staging_takes_what_a_pack_uses(self):
         """CHARACTER.md §6: a pack that uses another's share is staged with the share's files, linked from that pack."""
-        self.pack("lender", [{"id": "calm"}], files=[("voice/voice.bin", "v"), ("mac/takes.tsv", "t"), ("firmware/include/art.h", "a")],
+        self.pack("lender", [{"id": "calm", "meaning": "Settled."}], files=[("voice/voice.bin", "v"), ("mac/takes.tsv", "t"), ("firmware/include/art.h", "a")],
                   shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}, "art": {"files": ["firmware/include/art.h"]}})
-        pack = self.pack("user", [{"id": "calm"}], files=[("firmware/include/moods.h", ""), ("mac/mirror/index.html", "")],
+        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], files=[("mac/mirror/index.html", "")],
                          uses={"voice": "lender", "art": "lender"})
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
@@ -204,7 +213,7 @@ class StudioRuleTests(unittest.TestCase):
         """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
         import os
         from unittest import mock
-        staged, other = self.pack("staged", [{"id": "calm"}]), self.pack("other", [{"id": "calm"}])
+        staged, other = (self.pack(name, [{"id": "calm", "meaning": "Settled."}]) for name in ("staged", "other"))
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         env = {k: v for k, v in os.environ.items() if k not in ("BOOP_CHARACTER", "CHARACTER")}

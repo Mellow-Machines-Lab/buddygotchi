@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """Builds and stages character packs (characters/CHARACTER.md).
 
-    characters/charactergen.py [--check] [PACK]
+    characters/charactergen.py --check [PACK]
     characters/charactergen.py --stage [PACK]
     characters/charactergen.py --which
 
-The first form checks a pack's character.json (its moods are exactly the
-universal ones, CHARACTER.md §5, and every move and default mood is
-one of them) and builds its generated files from it: today the
-firmware's moods.h, the mood list in the pack's order with the board's
-startup mood. --check only checks that they're fresh, and fails if one
-isn't.
+--check checks a pack's character.json: its moods are exactly the
+universal ones (CHARACTER.md §5), and every move and default mood is
+one of them; what it uses from other packs is there (§6); and its
+id and version fit the board's hello (§10). Without PACK, every pack in
+characters/.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
-root for the builds to read (§2), with what it uses from other packs (§6).
-firmware/tools/pio.sh runs it before every PlatformIO build.
+root for the builds to read (§2), with what it uses from other packs (§6)
+and the firmware's moods.h, which it makes from character.json: the mood
+list in the pack's order with the board's startup mood. It checks the
+pack as --check does first. firmware/tools/pio.sh runs it before every
+PlatformIO build.
 
 --which prints the folder of the pack in use: the one everything that runs
 after a build reads (in_use()).
@@ -23,7 +25,7 @@ Every form but --which also checks the board's states where they're
 named (CHARACTER.md §9 and each pack's mac/faces.json), each pack's
 studio entry (§12), and writes characters/studio/packs.js, the studio
 page's data for the packs in this checkout, which git ignores. --check
-fails on a problem with any of them; --stage and the first form only warn.
+fails on a problem with any of them; --stage only warns.
 
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
@@ -130,15 +132,11 @@ def mood_problems(character: dict, universal: list[str]) -> list[str]:
 
 
 def moods_h(pack: Path, character: dict) -> str:
+    """The firmware's moods.h, which staging writes: the mood list in the
+    pack's order with the board's startup mood, and the pack's id and
+    version for the board's hello. pack_problems() has checked them."""
     moods = [m["id"] for m in character["moods"]]
     startup = character.get("startup_mood", character["default_mood"])
-    if startup not in moods:
-        raise SystemExit(f"{pack}: startup_mood {startup} isn't a mood")
-    # The board's hello names both, and must fit in one line.
-    if len(character["id"]) > 24 or len(character["version"]) > 16:
-        raise SystemExit(f"{pack}: id is at most 24 characters, and version 16")
-    # By the pack's folder name only, so a pack that moves (a copy, another
-    # checkout) keeps the same file.
     source = f"characters/{pack.name}/character.json"
     rows = ",\n".join(f"  {camel(m)}" for m in moods)
     names = ", ".join(f'"{m}"' for m in moods)
@@ -366,24 +364,23 @@ def write_studio(pack: Path, check: bool) -> int:
     return 1 if check and problems else 0
 
 
-def build(pack: Path, check: bool) -> int:
-    character = load(pack)
+def pack_problems(pack: Path, character: dict) -> list[str]:
+    """What stops a pack from staging: its moods (§5), what it uses (§6),
+    and an id or version too long for the board's hello (§10)."""
     problems = mood_problems(character, universal_moods()) + used(pack, character)[1]
+    if len(character.get("id", "")) > 24 or len(character.get("version", "")) > 16:
+        problems.append("id is at most 24 characters, and version 16")
+    return problems
+
+
+def check(pack: Path) -> int:
+    character = load(pack)
+    problems = pack_problems(pack, character)
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
-    if problems:
-        return 1
-    outputs = {pack / "firmware/include/moods.h": moods_h(pack, character)}
-    for path, content in outputs.items():
-        if check:
-            if not path.exists() or path.read_text() != content:
-                print(f"CHARACTERGEN FAIL: {path} is stale: run characters/charactergen.py {pack}", file=sys.stderr)
-                return 1
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
-    print(("CHARACTERGEN PASS: fresh" if check else "Generated") + f" {character['id']}'s files ({len(outputs)})")
-    return 0
+    if not problems:
+        print(f"CHARACTERGEN PASS: {character['id']}")
+    return 1 if problems else 0
 
 
 def stage(pack: Path) -> int:
@@ -391,10 +388,12 @@ def stage(pack: Path) -> int:
     what it uses from other packs (§6), as links, the one folder the tests,
     boopdev and the device tools read, and the pointer to it
     (.character-build/pack); from it, the firmware's files
-    (.character-build/firmware/), and the pack as the Mac app bundles it,
-    with what the app reads and no more (.character-build/packs/, that
-    pack alone)."""
-    paths, problems = used(pack)
+    (.character-build/firmware/) with the generated moods.h, and the pack
+    as the Mac app bundles it, with what the app reads and no more
+    (.character-build/packs/, that pack alone)."""
+    character = load(pack)
+    paths = used(pack, character)[0]
+    problems = pack_problems(pack, character)
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
     if problems:
@@ -407,6 +406,8 @@ def stage(pack: Path) -> int:
     overlay(view, pack, paths)
     if (view / "firmware").is_dir():
         shutil.copytree(view / "firmware", STAGE / "firmware")
+    (STAGE / "firmware" / "include").mkdir(parents=True, exist_ok=True)
+    (STAGE / "firmware" / "include" / "moods.h").write_text(moods_h(pack, character))
     shutil.copytree(view, STAGE / "packs" / pack.name,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
                                                   "studio"))
@@ -439,10 +440,13 @@ def main(argv: list[str]) -> int:
         return 0
     if "--stage" in argv:
         return stage(pack) | write_studio(pack, check=False)
+    if "--check" not in argv:
+        print(__doc__.strip().split("\n\n")[1], file=sys.stderr)
+        return 2
     status = 0
     for each in ([pack] if rest else [p.parent for p in sorted(CHARACTERS.glob("*/character.json"))]):
-        status |= build(each, "--check" in argv)
-    return status | write_studio(pack, "--check" in argv)
+        status |= check(each)
+    return status | write_studio(pack, check=True)
 
 
 if __name__ == "__main__":

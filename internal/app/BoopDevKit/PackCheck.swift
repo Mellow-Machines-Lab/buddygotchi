@@ -51,7 +51,7 @@ public struct PackCheck {
         }
 
         // Faces: what the firmware compiles in, and what the Mac reads.
-        for path in ["firmware/include/moods.h", "firmware/src/render/make_face.cpp", "mac/faces.json"] where !has(path) {
+        for path in ["firmware/src/render/make_face.cpp", "mac/faces.json"] where !has(path) {
             problems.append("\(path) is missing")
         }
 

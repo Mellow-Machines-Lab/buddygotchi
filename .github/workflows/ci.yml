@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
       - run: /usr/bin/python3 --version
-      - name: Every pack's generated files are fresh
+      - name: Every pack checks out (its moods, what it uses, its studio entry)
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
         run: /usr/bin/python3 -m unittest discover -s internal/characters

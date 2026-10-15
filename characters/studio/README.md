@@ -10,11 +10,11 @@ its moods, their meanings and the states.
 ## Open it
 
 The page reads `packs.js`, which `characters/charactergen.py` writes on
-every run (`make build` runs it) for the packs in this checkout. Git
+every run but `--which` (`make build` stages, which writes it) for the packs in this checkout. Git
 ignores it. From the repository root:
 
 ```sh
-python3 characters/charactergen.py
+python3 characters/charactergen.py --check
 ```
 
 Then open [index.html](index.html) in a browser. It works from `file://`

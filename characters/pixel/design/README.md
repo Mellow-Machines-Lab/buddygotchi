@@ -34,7 +34,7 @@ ignored, rather than duplicating the compact source in Git. Use the builder's
 new-scene voice window are in the generated `boop-sound-bank-v4/manifest.json`.
 
 Browser QA is optional and needs Playwright, pngjs and Chromium. It drives the
-studio, so run `python3 characters/charactergen.py` first:
+studio, so run `python3 characters/charactergen.py --check` first:
 
 ```sh
 npm --prefix characters/pixel/design install --no-save --package-lock=false playwright pngjs

@@ -17,7 +17,7 @@ What a pack holds, and what it must have:
 | `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
 | `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
-| `firmware/` | yes | Its faces' code and art for the board, and `include/moods.h`, which `charactergen.py` makes (§9) |
+| `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
 | `mac/mirror/` | no | A web page the popover shows as the face (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
@@ -34,8 +34,8 @@ make build && .build/debug/boopdev check            # every pack in characters/
 ```
 
 `boopdev check` reads a pack as the engine does: `character.json`, the
-steering, the faces' files, the voice, every demo, and the generated
-files (`charactergen.py --check`). A pack that passes plugs in. Then
+steering, the faces' files, the voice, every demo, and its moods, what
+it uses and its studio entry (`charactergen.py --check`). A pack that passes plugs in. Then
 build the firmware with it, to check its faces:
 `CHARACTER=<name> make -C internal fw-test`. The engine's own Swift tests
 (`make -C internal test`) run on whichever pack is chosen, using its
@@ -142,7 +142,6 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     mirror/          optional: a web page the popover shows as the face
     takes.tsv        optional: the voice's take table (§8)
   firmware/          what the firmware compiles in (§9)
-    include/moods.h  the mood list, generated (§9)
     include/…        the faces' generated art and sounds
     src/render/…     the faces' code, and make_face.cpp, which picks one
   voice/voice.bin    optional: the microSD card's voice pack (§8)
@@ -427,9 +426,9 @@ build. `firmware/platformio.ini` compiles its `src/` and puts `include/`
 and `src/` on the include path. It holds:
 
 - `include/moods.h`: `enum class Mood`, in `character.json`'s order,
-  with `kMoodCount`, `kStartupMood` and `kMoodNames`.
-  `characters/charactergen.py` makes it from `character.json`; never
-  edit it by hand. Engine code assumes nothing else about moods: no mood
+  with `kMoodCount`, `kStartupMood` and `kMoodNames`. It isn't in the
+  pack: staging makes it from `character.json` (§2), into the staged
+  `firmware/include/`. Engine code assumes nothing else about moods: no mood
   name is in the engine. A face looks a mood up by its name, never its
   number (the pixel face with `render::pixelIndex`).
 - Pixel's `faces.h` (facegen's) draws 13 moods (`kMoodNames`), and names
@@ -475,7 +474,7 @@ drawn by an engine renderer, so a character can be drawn with no code.
 
 The board's `hello` names the pack its firmware was built with, beside
 its `face` and its card's `voice`: `"pack":"boop","pack_version":"0.1.0"`
-(`kPackId` and `kPackVersion` in the generated `moods.h`). So keep the id
+(`kPackId` and `kPackVersion` in the staged `moods.h`). So keep the id
 to 24 characters and the version to 16: `hello` must fit in one line.
 
 When that isn't the Mac's pack, another id or another version, the Mac:
@@ -574,9 +573,7 @@ The app bundles the folder. How to write and play one:
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.
-5. Run `characters/charactergen.py characters/<yours>` to make
-   `firmware/include/moods.h`, then `make build` and
-   `.build/debug/boopdev check`.
+5. Run `make build` and `.build/debug/boopdev check`.
 6. Try it: `CHARACTER=<yours> make demo NAME=hello` plays Pixel's short
    demo, which the copy carries, in the simulator's page.
 7. Flash it: `make flash CHARACTER=<yours>`.

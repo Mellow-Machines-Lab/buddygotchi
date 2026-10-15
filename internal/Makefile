@@ -57,11 +57,10 @@ faces: tools
 fw:
 	cd $(ROOT) && $(PIO) run -e cyd24 -e amoled206
 
-# Firmware unit tests on the Mac: that the character pack's moods.h is
-# fresh (characters/CHARACTER.md §9), Boop's, then LinkKit's device
-# library's own (linkkit/device/platformio.ini).
+# Firmware unit tests on the Mac: Boop's, with the chosen character
+# pack's (which pio.sh stages), then LinkKit's device library's own
+# (linkkit/device/platformio.ini).
 fw-test:
-	cd $(ROOT) && python3 characters/charactergen.py --check
 	cd $(ROOT) && $(PIO) test -e native
 	cd $(ROOT) && $(PIO) test -d $(ROOT)/linkkit/device -e native
 

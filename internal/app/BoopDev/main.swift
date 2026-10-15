@@ -29,7 +29,7 @@ let usages: [(command: String, text: String)] = [
     ("check", """
     boopdev check [PACK…]
         Checks character packs as the engine reads them (characters/CHARACTER.md): character.json, the
-        steering, the faces' files, the voice and every demo script, then the generated files and the
+        steering, the faces' files, the voice and every demo script, then its moods, what it uses and the
         studio (characters/charactergen.py --check). PACK is a pack's folder; without one, every pack in
         the repo's characters/. Prints each problem, which stops a pack from working, and each note,
         which doesn't. Exits 1 on a problem.
@@ -240,7 +240,7 @@ func check(_ raw: [String]) {
         for p in found.problems { print("  problem: \(p)") }
         for n in found.notes { print("  note: \(n)") }
     }
-    // The generated files and the studio, as charactergen.py checks them.
+    // The moods, what the pack uses and the studio, as charactergen.py checks them.
     fflush(stdout)
     if let repo {
         for each in args.words.isEmpty ? [nil] : packs.map(Optional.some) {
