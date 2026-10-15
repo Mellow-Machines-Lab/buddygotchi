@@ -205,7 +205,7 @@ final class AdapterTests: XCTestCase {
         for (error, expected) in classes {
             XCTAssertEqual(Adapter.event(from: line("claude", "StopFailure", error: error))?["error"]?.string, expected, error)
         }
-        XCTAssertEqual(Mapping.errorClass("Request timeout"), "timeout", "other text by what it contains")
+        XCTAssertEqual(TurnError.classify("Request timeout"), "timeout", "other text by what it contains")
     }
 
     /// Claude's PostToolUse and PostToolUseFailure say

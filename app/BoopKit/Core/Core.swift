@@ -74,6 +74,11 @@ public final class Core {
     /// The sessions "needs you" showed for when last published, for their
     /// `needs_you` actions.
     var shownNeeds: [String: (agent: Agent, id: String)] = [:]
+    /// The sessions whose request the tracker's safety net expired, until
+    /// the `needs_you` end that says so is recorded, or the next start.
+    var expired: Set<String> = []
+    /// Why a request the safety net expired cleared.
+    static let expiredWhy = "nothing for 10 minutes"
 
     // Push-to-talk.
     /// Who turned the Mac's mic on: the device's BOOT button or the app's
@@ -112,7 +117,7 @@ public final class Core {
     public static let starting = "starting", stopped = "stopped", error = "error", helperReturn = "helper_return"
     /// The failed calls that play the error one-shot: a command that
     /// exited with an error or timed out, never a request you denied.
-    static let errorClasses: Set<String> = ["exit_code", "timeout"]
+    static let errorClasses: Set<String> = [ToolError.exitCode, ToolError.timeout]
     /// The error one-shot plays at most once in this long.
     public static let errorEveryMs: Int64 = 30_000
 
@@ -170,7 +175,7 @@ public final class Core {
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
             shownNeeds[key] = event.phase == .start ? (agent, session) : nil
-            if event.phase == .start { tracker.clearedWhy[key] = nil }
+            if event.phase == .start { expired.remove(key) }
         }
     }
 
@@ -179,6 +184,8 @@ public final class Core {
     /// `ref` is its `seq`, which a request it starts keeps.
     private func take(_ event: AgentEvent, ref: Int) -> DeviceMoment? {
         let key = event.key
+        // The timers due by the event's time first, to hear what they did.
+        advance(to: event.at, sparing: key)
         guard let change = tracker.handle(event, ref: ref) else { return nil }
         let now = event.at
         switch change {
@@ -213,7 +220,7 @@ public final class Core {
         case .sessionEnded:
             held[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .other:
+        case .callStarted, .asked, .subagentStarted, .requestExpired, .other:
             return nil
         }
     }
@@ -471,8 +478,12 @@ public final class Core {
 
     /// Runs the session table's timers due by `now`: a
     /// Codex request past its grace shows, the safety net, and forgetting.
-    func advance(to now: Int64) {
-        tracker.advance(to: now)
+    /// Each request the safety net expires is kept for its `needs_you` end.
+    /// `sparing`'s Codex request isn't shown: its event comes first.
+    func advance(to now: Int64, sparing: String? = nil) {
+        for (key, change) in tracker.advance(to: now, sparing: sparing) where change == .requestExpired {
+            expired.insert(key)
+        }
     }
 
     /// "Needs you" starting or clearing for a session, as a rule action:
@@ -484,7 +495,7 @@ public final class Core {
         for (key, s) in showing.sorted(by: { ($0.value.needsSince!, $0.value.request) < ($1.value.needsSince!, $1.value.request) })
         where shownNeeds[key] == nil {
             shownNeeds[key] = (s.agent, s.id)
-            tracker.clearedWhy[key] = nil
+            expired.remove(key)
             fx.append(.record(Event(ts: now, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou,
                                     session: s.id,
                                     data: ["for": s.requestRef.map { .int(Int64($0)) } ?? .null, "by": "rule",
@@ -493,7 +504,7 @@ public final class Core {
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
-            let why = tracker.clearedWhy.removeValue(forKey: key) ?? (sessions[key] == nil ? "the session ended" : nil)
+            let why = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended" : nil
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
