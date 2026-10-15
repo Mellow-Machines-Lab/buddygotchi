@@ -1,0 +1,19 @@
+{
+  "name": "Short wins leave Boop calm, and a very long turn done lifts it",
+  "case": "Three quick turns in a row each pass their tests and finish within a minute; Boop stays calm through them. Then a twelve-minute turn passes its tests and finishes well: Boop plays it as a success and its mood lifts, to excited, or proud or happy on the way.",
+  "why": "characters/boop/steering/mood/calm.md: calm stays through routine turns; a very long turn (5 minutes or more) finishing done lifts it to excited (a jump the finish earns), and from engaged or determined, where the long work took it, to excited or proud; characters/boop/steering/guide.md: the change shows, with the new mood's face (PERSONALITY's Examples)",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "40s", "expect": {"mood": "calm"}},
+    {"event": "turn started", "at": "1m"},
+    {"event": "command", "at": "1m30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "1m40s", "expect": {"mood": "calm"}},
+    {"event": "turn started", "at": "2m"},
+    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "2m40s", "expect": {"mood": "calm"}},
+    {"event": "turn started", "at": "4m"},
+    {"event": "command", "at": "15m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "16m", "expect": {"react": "excited|proud|happy", "animation": "success", "mood": "excited|proud|happy"}}
+  ]
+}

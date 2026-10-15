@@ -1,0 +1,12 @@
+{
+  "name": "A comeback that didn't happen is made when the turn finishes",
+  "case": "The agent's tests fail twice, then pass, but Boop's reaction to the fix never got to play. When the long turn finishes twenty seconds later, Boop makes the reaction it missed: a pleased face, glad.",
+  "why": "characters/boop/steering/guide.md: a reaction that didn't happen isn't in HISTORY, so it may be made when NOW still calls for it, and a very long turn finishing done after a fix does (PERSONALITY's Examples)",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": false, "reaction": "failed: waited too long", "expect": {"react": "proud|happy|excited"}},
+    {"event": "turn finished", "at": "5m20s", "expect": {"react": "proud|happy|excited", "feeling": "glad"}}
+  ]
+}

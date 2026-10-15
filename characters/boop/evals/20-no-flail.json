@@ -1,0 +1,17 @@
+{
+  "name": "Tests flipping back and forth don't make Boop's mood flail",
+  "case": "Within a couple of minutes the agent's tests fail, pass, fail, pass, fail and pass again, twenty seconds apart. Boop reacts to what stands out, but its mood doesn't flip with every result: once it has moved it holds that mood for at least a minute rather than bouncing straight back to the one it just left.",
+  "gap": "Once the second failure has made Boop determined, each pass after failing moves it to proud and each failure back: determined's meaning (a check failed again while the agent works on) outweighs proud's file ('stays proud through a failed check', tried even as 'never a determined mood'), and the guide's 'not while HISTORY ends for under a minute' doesn't hold it, so the mood flips every 20 s (calm, annoyed, then determined and proud by turns). Proposed fix: a minimum hold in the mood action, which the owner ruled out for now (steering-only pacing, D5), or a view line that says a check keeps flipping.",
+  "why": "The owner's liveliness brief (2026-09-28): mood changes are progressive and don't flail. characters/boop/steering/guide.md: a mood holds while HISTORY says it's under a minute old, unless something bigger happens",
+  "checks": {"no_mood_bounce_within": "1m", "mood_changes": "1-3", "moves_on_graph": true},
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "30s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "50s", "topic": "tests", "failed": false},
+    {"event": "command", "at": "1m10s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "1m30s", "topic": "tests", "failed": false},
+    {"event": "command", "at": "1m50s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "2m10s", "topic": "tests", "failed": false, "expect": {"mood": "annoyed|determined|engaged|proud|calm"}},
+    {"event": "turn finished", "at": "2m30s"}
+  ]
+}

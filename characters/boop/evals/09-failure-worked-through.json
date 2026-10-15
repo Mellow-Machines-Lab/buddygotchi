@@ -1,0 +1,12 @@
+{
+  "name": "A failure being worked through makes Boop determined, and the fix makes it proud",
+  "case": "The agent's tests fail twice while it works: Boop is put out, then roots for the agent, determined. Then the tests pass. That's a hard-won win: Boop turns proud, with a pleased face (proud, excited or happy), glad, held more than once.",
+  "always": true,
+  "why": "characters/boop/steering/mood/: calm leaves for annoyed at a failed check and annoyed for determined at another while the agent works on, and determined leaves for proud when the check passes after failing; that is a big moment, held more than once (PERSONALITY's Examples)",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "expect": {"mood": "determined"}},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": false, "expect": {"react": "proud|happy|excited", "feeling": "glad", "loops": "twice|three times|four times", "mood": "proud"}}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "New work may change a settled mood only through an offered neighbor.",
+  "case": "New work may change a settled mood only through an offered neighbor.",
+  "why": "Opt-in graph v3 pacing and evidence",
+  "graph": "v3",
+  "mood": "comfy",
+  "checks": {
+    "moves_on_graph": true
+  },
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "1m"
+    },
+    {
+      "event": "command",
+      "at": "1m10s",
+      "topic": "tests",
+      "failed": false
+    }
+  ]
+}

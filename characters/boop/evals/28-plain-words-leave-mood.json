@@ -1,0 +1,19 @@
+{
+  "name": "Plain requests and routine finishes leave the mood alone",
+  "case": "Five quick turns go by, each a plain request and a short, matter-of-fact finish (one says the tests pass). None of the words carry any feeling, so Boop stays calm all through, whatever faces it makes.",
+  "always": true,
+  "why": "characters/boop/steering/guide.md: never change the mood for a routine turn alone; characters/boop/steering/mood/calm.md: stays calm through routine turns and plain finishes. Hard work done only lifts it on a long or very long turn",
+  "checks": {"mood_changes": "0"},
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "rename getUser to fetchUser"},
+    {"event": "turn finished", "at": "20s", "message": "Renamed getUser to fetchUser in 4 files."},
+    {"event": "turn started", "at": "1m", "prompt": "add a test for fetchUser"},
+    {"event": "turn finished", "at": "1m40s", "message": "Added a test for fetchUser; the tests pass.", "expect": {"mood": "calm"}},
+    {"event": "turn started", "at": "3m", "prompt": "what does the retry helper do?"},
+    {"event": "turn finished", "at": "3m30s", "message": "It retries a request up to three times with a growing delay."},
+    {"event": "turn started", "at": "5m", "prompt": "bump the version to 1.4.0"},
+    {"event": "turn finished", "at": "5m15s", "message": "Bumped the version to 1.4.0."},
+    {"event": "turn started", "at": "7m", "prompt": "update the changelog"},
+    {"event": "turn finished", "at": "7m30s", "message": "Added a 1.4.0 entry to the changelog.", "expect": {"mood": "calm"}}
+  ]
+}

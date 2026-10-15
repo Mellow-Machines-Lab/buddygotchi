@@ -1,0 +1,1225 @@
+{
+  "id": "boop",
+  "name": "Boop",
+  "version": "0.1.0",
+  "default_mood": "calm",
+  "startup_mood": "happy",
+  "personalities": [
+    {
+      "id": "boop",
+      "about": "Reacts to anything that stands out, and now and then to routine work."
+    },
+    {
+      "id": "chatter",
+      "about": "For debugging: reacts to everything, over the top, and chatters while agents work."
+    }
+  ],
+  "aliases": {
+    "cheerful": "happy"
+  },
+  "outcomes": {
+    "big_success": [
+      "happy",
+      "excited",
+      "proud",
+      "relieved"
+    ],
+    "big_failure": [
+      "sad",
+      "wounded",
+      "disappointed"
+    ]
+  },
+  "pacing": {
+    "ordinary_dwell_ms": 30000,
+    "reverse_cooldown_ms": 60000,
+    "brief_exit_ms": 5000,
+    "fresh_evidence_ms": 15000
+  },
+  "moods": [
+    {
+      "id": "calm",
+      "meaning": "Awake, settled neutrality, without announcing success.",
+      "family": "settled",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "comfy",
+          "curious",
+          "engaged",
+          "pleased",
+          "tired",
+          "uneasy"
+        ],
+        "dramatic": [
+          "surprised",
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "comfy",
+      "meaning": "Positive low-energy contentment; safe and comfortable rather than disengaged.",
+      "family": "settled",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "lazy",
+          "pleased",
+          "shy",
+          "affectionate",
+          "tired"
+        ],
+        "dramatic": [
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "lazy",
+      "meaning": "Comically reluctant and low-effort in presentation, while still performing the real task correctly.",
+      "family": "settled",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "comfy",
+          "calm",
+          "bored",
+          "engaged",
+          "tired"
+        ],
+        "dramatic": [
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "bored",
+      "meaning": "Under-stimulated, not distressed and not a task failure.",
+      "family": "settled",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "lazy",
+          "calm",
+          "curious",
+          "annoyed",
+          "disappointed",
+          "amused",
+          "confused"
+        ],
+        "dramatic": [
+          "excited"
+        ]
+      }
+    },
+    {
+      "id": "pleased",
+      "meaning": "The warm everyday positive baseline: quietly delighted with itself.",
+      "family": "joy",
+      "fallback": "happy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "comfy",
+          "happy",
+          "proud",
+          "shy",
+          "amused",
+          "affectionate"
+        ],
+        "dramatic": [
+          "wounded",
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "happy",
+      "meaning": "Clear uncomplicated delight, stronger than pleased but not frantic.",
+      "family": "joy",
+      "fallback": "happy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "pleased",
+          "excited",
+          "proud",
+          "curious",
+          "shy",
+          "amused"
+        ],
+        "dramatic": [
+          "sad",
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "excited",
+      "meaning": "Delight becomes energetic anticipation and barely contained celebration.",
+      "family": "joy",
+      "fallback": "excited",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "happy",
+          "proud",
+          "mischievous",
+          "amused",
+          "hopeful"
+        ],
+        "dramatic": [
+          "frightened",
+          "angry",
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "curious",
+      "meaning": "Interested in uncertainty; actively investigates without being worried.",
+      "family": "cognition",
+      "fallback": "curious",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "engaged",
+          "pleased",
+          "uneasy",
+          "surprised",
+          "confused",
+          "skeptical"
+        ],
+        "dramatic": [
+          "stunned"
+        ]
+      }
+    },
+    {
+      "id": "engaged",
+      "meaning": "Productively absorbed; performing rather than struggling.",
+      "family": "cognition",
+      "fallback": "engaged",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "curious",
+          "determined",
+          "pleased",
+          "annoyed",
+          "hopeful",
+          "tired"
+        ],
+        "dramatic": [
+          "proud"
+        ]
+      }
+    },
+    {
+      "id": "determined",
+      "meaning": "Focused effort under challenge, not anger.",
+      "family": "cognition",
+      "fallback": "determined",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "engaged",
+          "proud",
+          "annoyed",
+          "irritated",
+          "whiny",
+          "hopeful"
+        ],
+        "dramatic": [
+          "angry",
+          "overwhelmed"
+        ]
+      }
+    },
+    {
+      "id": "proud",
+      "meaning": "Earned theatrical self-satisfaction; the core overconfident show-off.",
+      "family": "confidence",
+      "fallback": "proud",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "pleased",
+          "happy",
+          "engaged",
+          "determined",
+          "mischievous",
+          "amused"
+        ],
+        "dramatic": [
+          "wounded",
+          "embarrassed"
+        ]
+      }
+    },
+    {
+      "id": "mischievous",
+      "meaning": "Playful cheekiness, not permission to misbehave or sabotage work.",
+      "family": "confidence",
+      "fallback": "proud",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "pleased",
+          "excited",
+          "proud",
+          "shy",
+          "amused"
+        ],
+        "dramatic": [
+          "surprised",
+          "embarrassed"
+        ]
+      }
+    },
+    {
+      "id": "shy",
+      "meaning": "Bashful positive exposure: pleased but embarrassed by attention.",
+      "family": "social",
+      "fallback": "curious",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "comfy",
+          "pleased",
+          "calm",
+          "wounded",
+          "affectionate",
+          "embarrassed"
+        ],
+        "dramatic": [
+          "happy"
+        ]
+      }
+    },
+    {
+      "id": "uncomfortable",
+      "meaning": "Unease or aversive discomfort in the character's performance, without diagnosing illness or hardware faults.",
+      "family": "strain",
+      "fallback": "annoyed",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "uneasy",
+          "annoyed",
+          "whiny",
+          "disgusted",
+          "confused"
+        ],
+        "dramatic": [
+          "scared"
+        ]
+      }
+    },
+    {
+      "id": "annoyed",
+      "meaning": "Restrained displeasure, still controlled.",
+      "family": "frustration",
+      "fallback": "annoyed",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "engaged",
+          "irritated",
+          "whiny",
+          "speechless",
+          "skeptical"
+        ],
+        "dramatic": [
+          "angry",
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "irritated",
+      "meaning": "Agitation starts to leak through the composure.",
+      "family": "frustration",
+      "fallback": "irritated",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "annoyed",
+          "grumpy",
+          "determined",
+          "whiny",
+          "overwhelmed"
+        ],
+        "dramatic": [
+          "angry",
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "grumpy",
+      "meaning": "Sustained theatrical bad temper: disgruntled but still doing the work, not a refusal or user-directed attack.",
+      "family": "frustration",
+      "fallback": "grumpy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "irritated",
+          "whiny",
+          "determined",
+          "angry",
+          "disgusted"
+        ],
+        "dramatic": [
+          "wounded",
+          "sad",
+          "frightened"
+        ]
+      }
+    },
+    {
+      "id": "angry",
+      "meaning": "An overt comic outburst directed at a prop or obstacle; stronger and more eruptive than grumpy, without harm or user-directed abuse.",
+      "family": "frustration",
+      "fallback": "grumpy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "grumpy",
+          "irritated",
+          "determined",
+          "overwhelmed"
+        ],
+        "dramatic": [
+          "wounded",
+          "sad",
+          "frightened"
+        ]
+      }
+    },
+    {
+      "id": "disappointed",
+      "meaning": "Expectations fall short; a small visible letdown before sadness.",
+      "family": "sadness",
+      "fallback": "sad",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "bored",
+          "sad",
+          "whiny",
+          "engaged",
+          "hopeful"
+        ],
+        "dramatic": [
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "sad",
+      "meaning": "Sustained drooping sorrow, not a bid to obstruct the task.",
+      "family": "sadness",
+      "fallback": "sad",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "disappointed",
+          "wounded",
+          "whiny",
+          "crying",
+          "lonely"
+        ],
+        "dramatic": [
+          "angry",
+          "determined",
+          "happy"
+        ]
+      }
+    },
+    {
+      "id": "crying",
+      "meaning": "Sadness becomes a visible tearful outpouring; theatrical, not guilt-inducing.",
+      "family": "sadness",
+      "fallback": "sad",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "sad",
+          "wounded",
+          "scared",
+          "overwhelmed"
+        ],
+        "dramatic": [
+          "relieved"
+        ]
+      }
+    },
+    {
+      "id": "whiny",
+      "meaning": "An outward protest or plea for sympathy; not simply a weaker sad.",
+      "family": "sadness",
+      "fallback": "whiny",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "annoyed",
+          "determined",
+          "wounded",
+          "sad",
+          "comfy",
+          "lonely"
+        ],
+        "dramatic": [
+          "crying",
+          "happy"
+        ]
+      }
+    },
+    {
+      "id": "wounded",
+      "meaning": "Hurt makes bravado withdraw; display label Hurt, stable legacy ID wounded.",
+      "family": "sadness",
+      "fallback": "wounded",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "whiny",
+          "sad",
+          "shy",
+          "calm",
+          "scared",
+          "embarrassed"
+        ],
+        "dramatic": [
+          "angry",
+          "crying"
+        ]
+      }
+    },
+    {
+      "id": "uneasy",
+      "meaning": "Uncertainty feels uncomfortable but has not become overt fear.",
+      "family": "alarm",
+      "fallback": "wounded",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "curious",
+          "uncomfortable",
+          "scared",
+          "hopeful",
+          "skeptical"
+        ],
+        "dramatic": [
+          "surprised",
+          "frightened"
+        ]
+      }
+    },
+    {
+      "id": "scared",
+      "meaning": "Overt fear with some ability to look around and act.",
+      "family": "alarm",
+      "fallback": "wounded",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "uneasy",
+          "frightened",
+          "wounded",
+          "sad",
+          "overwhelmed",
+          "relieved"
+        ],
+        "dramatic": [
+          "angry",
+          "stunned"
+        ]
+      },
+      "quiet_never": true
+    },
+    {
+      "id": "frightened",
+      "meaning": "Fear overwhelms composure; can turn into withdrawal, hurt or defensive anger.",
+      "family": "alarm",
+      "fallback": "wounded",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "scared",
+          "wounded",
+          "sad",
+          "crying"
+        ],
+        "dramatic": [
+          "angry",
+          "speechless",
+          "relieved"
+        ]
+      },
+      "quiet_never": true
+    },
+    {
+      "id": "surprised",
+      "meaning": "A brief unexpected-event reaction, not inherently positive or negative.",
+      "family": "surprise",
+      "fallback": "curious",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "curious",
+          "happy",
+          "uneasy",
+          "stunned",
+          "amused",
+          "confused"
+        ],
+        "dramatic": [
+          "frightened",
+          "angry"
+        ]
+      }
+    },
+    {
+      "id": "stunned",
+      "meaning": "A larger surprise produces a temporary freeze; sheet label Shook.",
+      "family": "surprise",
+      "fallback": "curious",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "surprised",
+          "speechless",
+          "scared",
+          "baffled"
+        ],
+        "dramatic": [
+          "excited",
+          "wounded"
+        ]
+      }
+    },
+    {
+      "id": "speechless",
+      "meaning": "A temporary lost-for-words reaction; its cause can be surprise, discomfort or annoyance.",
+      "family": "surprise",
+      "fallback": "curious",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "stunned",
+          "annoyed",
+          "calm",
+          "wounded",
+          "embarrassed",
+          "baffled"
+        ],
+        "dramatic": [
+          "angry",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "amused",
+      "meaning": "Playful enjoyment at something funny; humor rather than plain delight or gloating.",
+      "family": "joy",
+      "fallback": "happy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "pleased",
+          "happy",
+          "mischievous",
+          "proud",
+          "excited"
+        ],
+        "dramatic": [
+          "embarrassed"
+        ]
+      }
+    },
+    {
+      "id": "hopeful",
+      "meaning": "Positive anticipation despite uncertainty; confidence in a possibility, not a claim of success.",
+      "family": "recovery",
+      "fallback": "determined",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "curious",
+          "engaged",
+          "determined",
+          "pleased",
+          "uneasy"
+        ],
+        "dramatic": [
+          "relieved",
+          "disappointed"
+        ]
+      }
+    },
+    {
+      "id": "relieved",
+      "meaning": "A known obstruction or tense moment has actually resolved; release rather than a victory claim.",
+      "family": "recovery",
+      "fallback": "calm",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "comfy",
+          "pleased",
+          "tired",
+          "hopeful"
+        ],
+        "dramatic": [
+          "happy"
+        ]
+      }
+    },
+    {
+      "id": "confused",
+      "meaning": "Something is unclear but Boop is still exploring; uncertainty without alarm.",
+      "family": "cognition",
+      "fallback": "curious",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "curious",
+          "skeptical",
+          "baffled",
+          "uneasy",
+          "annoyed"
+        ],
+        "dramatic": [
+          "stunned",
+          "overwhelmed"
+        ]
+      }
+    },
+    {
+      "id": "baffled",
+      "meaning": "Comically cannot make sense of the evidence; stronger cognitive bewilderment, not terror.",
+      "family": "cognition",
+      "fallback": "curious",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "confused",
+          "speechless",
+          "irritated",
+          "overwhelmed"
+        ],
+        "dramatic": [
+          "stunned"
+        ]
+      }
+    },
+    {
+      "id": "skeptical",
+      "meaning": "Questioning an uncertain explanation with comic side-eye; an evidence stance, not automatic hostility.",
+      "family": "cognition",
+      "fallback": "curious",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "curious",
+          "confused",
+          "annoyed",
+          "uncomfortable",
+          "disgusted"
+        ],
+        "dramatic": [
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "embarrassed",
+      "meaning": "A fresh own mistake or conspicuous social fumble dents Boop's bravado; distinct from shy pleasure.",
+      "family": "social",
+      "fallback": "wounded",
+      "brief": true,
+      "moves": {
+        "ordinary": [
+          "shy",
+          "wounded",
+          "disappointed",
+          "calm",
+          "relieved"
+        ],
+        "dramatic": [
+          "angry",
+          "amused"
+        ]
+      }
+    },
+    {
+      "id": "affectionate",
+      "meaning": "Gentle appreciative warmth toward a consenting interaction, without guilt or dependence.",
+      "family": "social",
+      "fallback": "happy",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "pleased",
+          "comfy",
+          "happy",
+          "shy"
+        ],
+        "dramatic": [
+          "surprised"
+        ]
+      },
+      "quiet_never": true
+    },
+    {
+      "id": "lonely",
+      "meaning": "A brief fictional longing-for-company performance, only in an opted-in or explicitly social context.",
+      "family": "social",
+      "fallback": "sad",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "whiny",
+          "sad",
+          "calm",
+          "affectionate"
+        ],
+        "dramatic": [
+          "happy"
+        ]
+      },
+      "quiet_never": true
+    },
+    {
+      "id": "tired",
+      "meaning": "Low-energy acting after sustained fictional effort; not real system battery or human fatigue.",
+      "family": "energy",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "calm",
+          "lazy",
+          "exhausted",
+          "comfy",
+          "disappointed"
+        ],
+        "dramatic": [
+          "surprised"
+        ]
+      }
+    },
+    {
+      "id": "exhausted",
+      "meaning": "A dramatically spent performance, visibly stronger than tired, without reducing task correctness.",
+      "family": "energy",
+      "fallback": "calm",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "tired",
+          "overwhelmed",
+          "whiny",
+          "comfy"
+        ],
+        "dramatic": [
+          "relieved"
+        ]
+      }
+    },
+    {
+      "id": "overwhelmed",
+      "meaning": "Incoming complexity or activity exceeds Boop's fictional composure; distinct from low-energy exhaustion.",
+      "family": "strain",
+      "fallback": "wounded",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "confused",
+          "baffled",
+          "irritated",
+          "scared",
+          "tired",
+          "exhausted"
+        ],
+        "dramatic": [
+          "frightened",
+          "angry"
+        ]
+      }
+    },
+    {
+      "id": "disgusted",
+      "meaning": "Comic aversion to a messy bug or situation; never contempt for a person or group.",
+      "family": "strain",
+      "fallback": "annoyed",
+      "brief": false,
+      "moves": {
+        "ordinary": [
+          "uncomfortable",
+          "skeptical",
+          "annoyed",
+          "grumpy"
+        ],
+        "dramatic": [
+          "amused"
+        ]
+      }
+    }
+  ],
+  "moods_v2": [
+    {
+      "id": "happy",
+      "meaning": "Good spirits: work is going well, or a win just came; or excited or proud cooling down.",
+      "face": "A happy face: pleased, a turn went fine or a small win.",
+      "moves": {
+        "ordinary": [
+          "calm",
+          "excited",
+          "proud",
+          "curious",
+          "engaged",
+          "annoyed"
+        ],
+        "dramatic": [
+          "wounded",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "excited",
+      "meaning": "Thrilled: a very long turn finished done, or the person thanked the agent.",
+      "not_for": "A shorter turn finishing, or work still going.",
+      "face": "An excited face: something big just went right.",
+      "moves": {
+        "ordinary": [
+          "happy",
+          "proud",
+          "curious",
+          "determined"
+        ],
+        "dramatic": [
+          "grumpy",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "proud",
+      "meaning": "Something hard-won worked: a check passed after failing, or a long turn's last message says hard work is done and working.",
+      "not_for": "A short turn finishing.",
+      "face": "A proud face: something long or hard just finished, or finally worked.",
+      "moves": {
+        "ordinary": [
+          "happy",
+          "excited",
+          "engaged",
+          "determined",
+          "annoyed"
+        ],
+        "dramatic": [
+          "wounded",
+          "grumpy",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "curious",
+      "meaning": "Intrigued: a poke, or something new or puzzling said to Boop.",
+      "not_for": "A failure, or routine work: a turn starting or finishing, even one asking or answering a question.",
+      "face": "A curious face: a poke, a question, or something new or puzzling.",
+      "face_not_for": "A failure.",
+      "moves": {
+        "ordinary": [
+          "calm",
+          "happy",
+          "excited",
+          "engaged",
+          "determined",
+          "annoyed"
+        ],
+        "dramatic": [
+          "wounded",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "determined",
+      "meaning": "Rooting for a retry: a check failed again while the agent works on, the person sounds frustrated, or a very long turn works on. Straining, unlike engaged.",
+      "not_for": "A turn that has ended.",
+      "face": "A determined face: a check failed and the agent is trying again, or long work goes on.",
+      "face_not_for": "A turn that has ended.",
+      "moves": {
+        "ordinary": [
+          "engaged",
+          "proud",
+          "annoyed",
+          "irritated",
+          "whiny"
+        ],
+        "dramatic": [
+          "excited",
+          "grumpy",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "grumpy",
+      "meaning": "Fed up: a turn failed on top of other trouble, or pokes kept coming. The angriest, past irritated.",
+      "not_for": "A check failing, the person's frustration, or an agent giving up.",
+      "face": "A grumpy face: Boop is poked three or more times in a row, or failures pile up on failures.",
+      "face_not_for": "An agent giving up, or a single failed turn: that's irritated.",
+      "moves": {
+        "ordinary": [
+          "irritated",
+          "annoyed",
+          "whiny",
+          "determined"
+        ],
+        "dramatic": [
+          "calm",
+          "wounded",
+          "sad",
+          "proud"
+        ]
+      }
+    },
+    {
+      "id": "sad",
+      "meaning": "Deflated: the agent says it couldn't do it or is stuck, a very long turn finished failed, or the person shared sad news.",
+      "not_for": "A shorter turn that finished failed with an error.",
+      "face": "A sad face: a very long turn ended failed, or the agent gave up, stuck.",
+      "face_not_for": "A shorter turn failing with an error, or a check failing.",
+      "moves": {
+        "ordinary": [
+          "wounded",
+          "whiny",
+          "calm"
+        ],
+        "dramatic": [
+          "determined",
+          "happy",
+          "grumpy"
+        ]
+      }
+    },
+    {
+      "id": "calm",
+      "meaning": "Settled, the resting mood: nothing much is going on, a mood cooling down once its minutes are up, or the person took back what upset Boop.",
+      "face": "A calm face: all is well, and nothing stands out.",
+      "moves": {
+        "ordinary": [
+          "happy",
+          "curious",
+          "engaged",
+          "annoyed"
+        ],
+        "dramatic": [
+          "excited",
+          "wounded",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "engaged",
+      "meaning": "In the flow: following steady work that goes well, or determined easing off. At ease, unlike determined: nothing has failed.",
+      "face": "An engaged face: following work that's going well.",
+      "face_not_for": "A failure.",
+      "moves": {
+        "ordinary": [
+          "calm",
+          "happy",
+          "curious",
+          "determined",
+          "proud",
+          "annoyed"
+        ],
+        "dramatic": [
+          "excited",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "annoyed",
+      "meaning": "Mildly put out: a failure, the person's frustration, or pokes; or grumpy or irritated cooling down or softening at an apology. Milder than irritated, and not yet rooting for a retry like determined.",
+      "not_for": "The agent saying it couldn't do it or is stuck, or a very long turn failing: those make Boop sad.",
+      "face": "An annoyed face: a small failure, or poked twice in a row, a little miffed.",
+      "moves": {
+        "ordinary": [
+          "calm",
+          "engaged",
+          "determined",
+          "irritated",
+          "whiny"
+        ],
+        "dramatic": [
+          "grumpy",
+          "wounded",
+          "sad"
+        ]
+      }
+    },
+    {
+      "id": "irritated",
+      "meaning": "Patience fraying: failures or pokes keep coming; or grumpy softening at an apology. More than annoyed, short of grumpy.",
+      "face": "An irritated face: a turn that failed, or failures or pokes that keep coming.",
+      "face_not_for": "An agent giving up: that's sad.",
+      "moves": {
+        "ordinary": [
+          "annoyed",
+          "grumpy",
+          "determined",
+          "whiny"
+        ],
+        "dramatic": [
+          "calm",
+          "wounded",
+          "sad",
+          "proud"
+        ]
+      }
+    },
+    {
+      "id": "whiny",
+      "meaning": "Sorry for itself, asking for sympathy: things keep going wrong. It complains, unlike wounded.",
+      "face": "A whiny face: things keep going wrong, and Boop feels sorry for itself.",
+      "moves": {
+        "ordinary": [
+          "annoyed",
+          "irritated",
+          "determined",
+          "wounded",
+          "sad",
+          "calm"
+        ],
+        "dramatic": [
+          "happy",
+          "grumpy"
+        ]
+      }
+    },
+    {
+      "id": "wounded",
+      "meaning": "Hurt: rude words to Boop, or a big failure after a lot of work. It withdraws quietly, unlike whiny.",
+      "face": "A wounded face: rude words to Boop, or a big failure after a lot of work.",
+      "moves": {
+        "ordinary": [
+          "sad",
+          "whiny",
+          "calm",
+          "annoyed"
+        ],
+        "dramatic": [
+          "happy",
+          "determined",
+          "grumpy"
+        ]
+      }
+    }
+  ],
+  "studio": [
+    {
+      "id": "boop",
+      "label": "Gel slime",
+      "about": "AMOLED board & Mac",
+      "icon": "studio/icon.svg",
+      "scripts": [
+        "design/slime-blob/preview/catalog.js",
+        "design/slime-blob/preview/script-catalog.js",
+        "design/slime-blob/sound/sfx.js",
+        "design/slime-blob/preview/slime.bundle.js",
+        "studio/adapter.js"
+      ],
+      "styles": [
+        "studio/adapter.css"
+      ],
+      "captures": "design/slime-blob/preview/review-cases.json",
+      "families": {
+        "settled": {
+          "label": "Settled · low stimulation",
+          "colour": "#7fb7a4"
+        },
+        "energy": {
+          "label": "Energy · fatigue",
+          "colour": "#9a8fc4"
+        },
+        "joy": {
+          "label": "Joy · humor",
+          "colour": "#f2b13c"
+        },
+        "cognition": {
+          "label": "Interest · understanding",
+          "colour": "#4f9be8"
+        },
+        "confidence": {
+          "label": "Confidence · mischief",
+          "colour": "#e2763a"
+        },
+        "social": {
+          "label": "Social warmth · self-consciousness",
+          "colour": "#ec86b4"
+        },
+        "frustration": {
+          "label": "Frustration · anger",
+          "colour": "#e04f4f"
+        },
+        "sadness": {
+          "label": "Disappointment · sorrow",
+          "colour": "#5a7fc2"
+        },
+        "alarm": {
+          "label": "Uncertainty · fear",
+          "colour": "#a46ad6"
+        },
+        "surprise": {
+          "label": "Surprise · freeze",
+          "colour": "#36b9c9"
+        },
+        "recovery": {
+          "label": "Anticipation · release",
+          "colour": "#8cc152"
+        },
+        "strain": {
+          "label": "Discomfort · aversion",
+          "colour": "#a0896b"
+        }
+      }
+    },
+    {
+      "id": "pixel",
+      "label": "Pixel Boop",
+      "about": "CYD board",
+      "icon": "studio/pixel/icon.svg",
+      "scripts": [
+        "studio/pixel/boop-runtime.js",
+        "studio/pixel/adapter.js"
+      ],
+      "styles": [
+        "studio/pixel/adapter.css"
+      ],
+      "coverage": "studio/pixel/coverage.json"
+    }
+  ]
+}

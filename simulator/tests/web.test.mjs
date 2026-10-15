@@ -13,9 +13,9 @@ import { fileURLToPath } from 'node:url';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dist = path.join(repo, 'simulator/web/dist');
-// The chosen character pack's voice (characters/CHARACTER.md §8): the pack last staged, else Pixel.
+// The chosen character pack's voice (characters/CHARACTER.md §8): the pack last staged, else Boop.
 const staged = path.join(repo, '.character-build/pack');
-const voice = path.join(existsSync(staged) ? readFileSync(staged, 'utf8').trim() : path.join(repo, 'characters/pixel'), 'voice/voice.bin');
+const voice = path.join(existsSync(staged) ? readFileSync(staged, 'utf8').trim() : path.join(repo, 'characters/boop'), 'voice/voice.bin');
 const skip = existsSync(path.join(dist, 'boop-sim.wasm')) ? false : 'the page isn\'t built: simulator/web/build.sh';
 const needsVoice = skip || (existsSync(voice) ? false : 'the chosen character pack has no voice');
 const sleep = ms => new Promise(r => setTimeout(r, ms));

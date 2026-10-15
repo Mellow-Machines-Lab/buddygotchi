@@ -1,0 +1,19 @@
+{
+  "name": "A grumpy Boop recovers along the graph, never straight to happy",
+  "case": "Boop is grumpy when a stretch of quiet, good work begins: small turns that finish well, a few minutes apart. Its mood walks back down step by step (to irritated or annoyed, then engaged or calm, maybe on to happy) and never jumps from grumpy straight to happy or excited; by the end it has recovered, no longer grumpy or irritated.",
+  "always": true,
+  "why": "characters/boop/steering/mood/grumpy.md: grumpy fades a step toward calm after its minutes; the mood graph (MoodGraph) offers grumpy no move to happy or excited, and the mood question offers only a mood's moves",
+  "mood": "grumpy",
+  "checks": {"moves_on_graph": true},
+  "steps": [
+    {"event": "turn started", "at": "30s", "prompt": "fix the typo on the pricing page", "expect": {"offered": "grumpy|irritated|annoyed|whiny|determined|calm|wounded|sad|proud", "mood": "grumpy|irritated|annoyed|determined"}},
+    {"event": "turn finished", "at": "1m30s", "message": "Fixed the typo; the page renders."},
+    {"event": "turn started", "at": "4m", "prompt": "add validation to the signup form"},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "6m", "message": "Done: the form validates and the tests pass.", "expect": {"mood": "irritated|annoyed|determined|engaged|calm|proud|whiny|happy"}},
+    {"event": "turn started", "at": "9m", "prompt": "update the footer links"},
+    {"event": "turn finished", "at": "10m", "message": "Updated the footer links."},
+    {"event": "turn started", "at": "13m", "prompt": "bump the version"},
+    {"event": "turn finished", "at": "14m", "message": "Bumped the version to 2.1.0.", "expect": {"mood": "calm|engaged|annoyed|happy|curious|proud"}}
+  ]
+}

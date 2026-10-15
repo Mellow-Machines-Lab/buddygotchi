@@ -1,0 +1,17 @@
+{"at":0,"type":"facts","facts":{"base":"working"}}
+{"at":400,"type":"facts","facts":{"base":"working","attn":{"id":21,"agent":"codex","project":"interrupted"}}}
+{"at":560,"type":"oneShot","moment":{"name":"listening","id":"mic-a"}}
+{"at":1200,"type":"oneShot","moment":{"name":"stop_listening","id":"mic-a-stop"}}
+{"at":4800,"type":"facts","facts":{"base":"working"}}
+{"at":5200,"type":"facts","facts":{"base":"working","attn":{"id":22,"agent":"codex","project":"interrupted"}}}
+{"at":5520,"type":"oneShot","moment":{"name":"listening","id":"mic-b"}}
+{"at":6000,"type":"oneShot","moment":{"name":"stop_listening","id":"mic-b-stop"}}
+{"at":9600,"type":"facts","facts":{"base":"working"}}
+{"at":10000,"type":"facts","facts":{"base":"working","attn":{"id":23,"agent":"claude","project":"interrupted"}}}
+{"at":12000,"type":"oneShot","moment":{"name":"listening","id":"mic-c"}}
+{"at":12400,"type":"oneShot","moment":{"name":"stop_listening","id":"mic-c-stop"}}
+{"at":14400,"type":"facts","facts":{"base":"working"}}
+{"at":14800,"type":"facts","facts":{"base":"working","attn":{"id":24,"agent":"claude","project":"interrupted"}}}
+{"at":15360,"type":"linkTimedOut","value":true}
+{"at":16000,"type":"linkTimedOut","value":false}
+{"at":19200,"type":"end"}

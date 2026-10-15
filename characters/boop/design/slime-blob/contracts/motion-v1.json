@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "status": "USER-ACCEPTED MOTION BASELINE",
+  "acceptedOn": "2026-10-01",
+  "approval": "User: Also lock in this motion system. I think this is exactly what we want.",
+  "referenceSource": "../engine/motion-v1.mjs",
+  "scope": {
+    "accepted": [
+      "One persistent procedural full-body slime; no asset/emoji flash swaps.",
+      "Spring-driven lean, volume-compensating squash, ripple and local poke dent.",
+      "Continuous velocities: new impulses add to existing movement and then settle.",
+      "Idle breathing, blink/gaze timing and smooth face-weight retargeting.",
+      "Poke/shake response magnitudes and reduced-motion behavior."
+    ],
+    "excluded": [
+      "Material, color, reflections, inner light and glow remain subject to design iteration.",
+      "Facial art and the proposed 42-mood graph are not newly approved by this motion approval.",
+      "The poke-to-next-face cycle is an audition convenience, not the production mood policy.",
+      "Task-specific choreography, props, voice and sound integration are future work.",
+      "No ESP32 performance, streaming, firmware or production harness integration is validated."
+    ],
+    "publication": "Local design lock only. No push, pull request or merge without new explicit consent."
+  },
+  "physics": {
+    "state": "Each mode stores displacement x and velocity v. Do not reset them on a face/material/activity change.",
+    "equation": "v += (-frequency²*x - damping*v)*h; x += v*h",
+    "integrator": "Semi-implicit Euler with substeps no larger than 1/240 s.",
+    "modes": {
+      "lean": {
+        "frequency": 11,
+        "damping": 4.6
+      },
+      "squash": {
+        "frequency": 13,
+        "damping": 4.5
+      },
+      "ripple": {
+        "frequency": 18,
+        "damping": 5.3
+      },
+      "dent": {
+        "frequency": 16,
+        "damping": 6
+      }
+    },
+    "bounds": {
+      "displacement": [
+        -0.72,
+        0.72
+      ],
+      "velocity": [
+        -9,
+        9
+      ],
+      "impulseVelocity": [
+        -8,
+        8
+      ],
+      "maximumFrameDeltaSeconds": 0.045
+    },
+    "idleBreathing": {
+      "angularFrequency": 1.65,
+      "amplitude": 0.011,
+      "reducedMotionAmplitude": 0
+    },
+    "poke": {
+      "leanVelocityBySide": [
+        2.6,
+        -2.6
+      ],
+      "squashVelocity": -3.5,
+      "rippleVelocity": 3.5,
+      "dentVelocity": 4.8
+    },
+    "shake": {
+      "leanVelocity": 4.5,
+      "squashVelocity": -2.6,
+      "rippleVelocity": 5,
+      "dentVelocity": 0
+    },
+    "reducedMotionImpulseMultiplier": 0.25,
+    "contactBounds": {
+      "x": [
+        -0.85,
+        0.85
+      ],
+      "y": [
+        -0.25,
+        0.65
+      ]
+    },
+    "faceWeightBlend": "1 - exp(-dt * rate); rate=14, or 35 for reduced motion. Controls blend on the same actor.",
+    "blink": {
+      "durationSeconds": 0.24,
+      "intervalSeconds": [
+        3,
+        7
+      ]
+    },
+    "gaze": {
+      "amplitude": 0.028,
+      "intervalSeconds": [
+        3.2,
+        7.2
+      ],
+      "blendRate": 3
+    }
+  },
+  "continuityRules": [
+    "Preserve the same actor, base mesh and current spring state across expression changes.",
+    "Drive all channels from one monotonic animation clock; pause/hidden views do not advance it.",
+    "Retarget controls rather than generating intermediate frames or replacing the body.",
+    "Clear materials may change independently of these accepted motion blocks.",
+    "Future task gestures must compose with this base or use an explicitly reviewed new motion revision."
+  ],
+  "portingGuidance": "Hashes protect this exact JavaScript/WebGL reference. A different renderer or language may port the behavior, but must verify equivalent movement separately; the hash check is not proof of device or physical performance.",
+  "lockedBlocks": {
+    "configuration": {
+      "sha256": "d56e8b389fac822d149e2489f194d138c8665760bfc26882c8fcef8d2daa3d21",
+      "code": "const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));\n  const spring = (frequency, damping) => ({x:0, v:0, frequency, damping});\n  const modes = {lean:spring(11,4.6), squash:spring(13,4.5), ripple:spring(18,5.3), dent:spring(16,6.0)};"
+    },
+    "integration": {
+      "sha256": "ee9af0f1bbe3875bd3f95f33fb1bcb8274bf6fb62b4da55f6608bbeee27729b0",
+      "code": "for(const m of Object.values(modes)){\n      let left = dt;\n      while(left>0){const h=Math.min(left,1/240);m.v+=(-m.frequency*m.frequency*m.x-m.damping*m.v)*h;m.x+=m.v*h;left-=h;}\n      m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-9,9);\n    }"
+    },
+    "face-timing": {
+      "sha256": "67e2483c0442162b3562a0e01948c4186dd2072e641fdc2447075b161d01de81",
+      "code": "if(time>nextBlink){blinkAt=time;nextBlink=time+3+rand()*4;}\n    if(time>nextLook){gazeTarget=(rand()-.5)*.028;nextLook=time+3.2+rand()*4;}\n    gaze+=(gazeTarget-gaze)*(1-Math.exp(-dt*3));\n    const smoothing=1-Math.exp(-dt*(reduced.matches?35:14));\n    for(let i=0;i<weights.length;i++)weights[i]+=(Number(emotions[i]===emotion)-weights[i])*smoothing;"
+    },
+    "idle-pose": {
+      "sha256": "39288bb5677361cfdd48bb2237e7bb740e81cc40518142320f1c43bf5390e622",
+      "code": "function blink(){\n    const age=time-blinkAt;\n    return age>=0&&age<.24 ? Math.pow(Math.sin(Math.PI*age/.24),2) : 0;\n  }\n  function pose(){\n    const breathe=reduced.matches?0:Math.sin(time*1.65)*.011;\n    return [modes.lean.x, modes.squash.x+breathe, modes.ripple.x, modes.dent.x];\n  }"
+    },
+    "excitation": {
+      "sha256": "70488e6575cffadb525849a244f8d38d092e5287cd8c2039a0bedd34971b77ed",
+      "code": "contact={x:clamp(x,-.85,.85),y:clamp(y,-.25,.65)};\n    const strength=reduced.matches?.25:1;\n    modes.lean.v=clamp(modes.lean.v+(kind==='shake'?4.5:(x>=0?-2.6:2.6))*strength,-8,8);\n    modes.squash.v=clamp(modes.squash.v-(kind==='shake'?2.6:3.5)*strength,-8,8);\n    modes.ripple.v=clamp(modes.ripple.v+(kind==='shake'?5:3.5)*strength,-8,8);\n    modes.dent.v=clamp(modes.dent.v+(kind==='shake'?0:4.8)*strength,-8,8);"
+    },
+    "deformation": {
+      "sha256": "c56b31faaece2c32ad9622c7c154b6c6cf46cc649612769fdc7048a750504541",
+      "code": "vec3 shape(vec2 uv){\n        float t=uv.x, p=uv.y;\n        float sy=sin(t), cy=cos(t);\n        float raw=.56+.91*cy;\n        float y=.5*(raw+sqrt(raw*raw+.0032))+.019;\n        float sx=1.0/sqrt(max(.76,1.0+uModes.y*.52));\n        float radius=sy*(1.10-.07*cy);\n        float x=radius*cos(p),z=radius*.77*sin(p);\n        float h=y/1.49;\n        float organic=.015*sin(p*3.0+cy*2.0)*sy;\n        x*=1.0+organic;\n        float ripple=uModes.z*.055*sy*sin(p*3.0+t*2.5);\n        x=(x+ripple*cos(p))*sx;\n        z=(z+ripple*sin(p))*sx;\n        y*=1.0+uModes.y*.52;\n        x+=uModes.x*.34*h*h;\n        z+=uModes.x*.09*h;\n        float front=smoothstep(.35,.9,sin(p));\n        vec2 samplePoint=vec2(sy*cos(p),cy);\n        vec2 distanceToContact=(samplePoint-uContact)*vec2(3.9,3.1);\n        float dent=exp(-dot(distanceToContact,distanceToContact));\n        z-=uModes.w*.12*dent*front;\n        x+=uModes.w*.025*x*front;\n        return vec3(x,y,z);\n      }"
+    },
+    "frame-step": {
+      "sha256": "12796b321f6947030c24af3fd2b026e84c09aad8b12ecee14ef7498ab89cc696",
+      "code": "const dt=lastTime?clamp((stamp-lastTime)/1000,0,.045):0;lastTime=stamp;\n    if(!hidden&&!paused){advance(dt);draw();frames++;}"
+    }
+  }
+}

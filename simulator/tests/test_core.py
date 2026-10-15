@@ -19,7 +19,7 @@ REPO = Path(__file__).resolve().parents[2]
 CORE = REPO / "firmware" / ".pio" / "build" / "native" / "program"
 # The chosen character pack's voice, as the core takes it (core/file_card.h).
 STAGED = REPO / ".character-build" / "pack"
-VOICE = Path(STAGED.read_text().strip() if STAGED.exists() else REPO / "characters" / "pixel") / "voice" / "voice.bin"
+VOICE = Path(STAGED.read_text().strip() if STAGED.exists() else REPO / "characters" / "boop") / "voice" / "voice.bin"
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 

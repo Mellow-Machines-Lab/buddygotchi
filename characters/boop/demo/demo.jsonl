@@ -1,0 +1,17 @@
+// Boop's demo (DemoScript, characters/CHARACTER.md §13): a task from start to finish in a
+// little over a minute, with a poke, an approval, a failed deploy and a question on the way.
+{"demo": 1, "title": "Keyboard shortcuts"}
+{"agent": "prompt", "text": "Add keyboard shortcuts", "after": 2}
+{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"agent": "run", "cmd": "npm test", "about": "Run the tests", "after": 4, "takes": 5}
+{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.about": "tests", "say.kind": "word"}}
+{"you": "poke", "after": 6}
+{"agent": "run", "cmd": "vercel deploy", "about": "Deploy", "ask": 7, "fails": true, "after": 6, "takes": 5}
+{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "sound"}}
+{"you": "talk", "text": "how's it going?", "after": 7}
+{"brain": {"react.mood": "determined", "say.about": "work", "say.kind": "phrase"}, "after": 0.7}
+{"agent": "run", "cmd": "vercel deploy", "about": "Deploy again", "after": 8, "takes": 5}
+{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}}
+{"agent": "reply", "text": "Shortcuts are in, and the deploy went through.", "after": 7}
+{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}}
+{"brain": {}, "mood": "proud", "after": 10, "note": "A good day's work"}

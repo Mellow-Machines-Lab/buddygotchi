@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-13. **Draft.** This is the contract a character pack
+Updated 2026-10-15. **Draft.** This is the contract a character pack
 meets so that any character can be dropped into the engine. The
 split plan moves Boop's
 character behind this spec phase by phase. Each phase updates this page
@@ -44,8 +44,7 @@ with what it delivers.
   recordings), `tools/` (slimegen, gel-trace, voicegen, which writes
   both packs' voice files, and pixelsync, which copies Pixel's face into
   Boop's pack), `evals/` and `tests/` (its golden states and the gel
-  face's simulator scenarios and goldens). Everything in
-  `characters/boop/` is private; everything else is public.
+  face's simulator scenarios and goldens).
 - **Each pack can show itself in the Character Studio** (§12),
   `characters/studio/`: Pixel's preview is its animation bank, and
   Boop's pack has two, its gel slime and its copy of the pixel face.
@@ -97,13 +96,12 @@ along.
   connect.
 - Its prompts, and whether it has a voice.
 
-One pack comes with the engine's repo: **`characters/pixel/`**, the
-default, with Pixel Boop's faces and sound effects, 13 moods, plain
-prompts and a recorded voice. It's the example to copy.
-
-Any other pack can live in a git repository of its own and be installed
-into `characters/` (§2). Boop's own pack, the slime, is one: it's
-private, so only those with access to its repository have it.
+Two packs come with the engine's repo, and both are public:
+- **`characters/boop/`**, the default: Boop's own, the gel slime, with
+  its prompts, evals and goldens, and what its art and voice are made
+  from.
+- **`characters/pixel/`**, with Pixel Boop's faces and sound effects, 13
+  moods, plain prompts and a recorded voice. It's the example to copy.
 
 ## 2. Choosing a pack
 
@@ -114,36 +112,13 @@ The first of these wins:
    line.
 2. The name or path in `.character` at the repo root, a one-line file
    that git ignores. It's how `make run` remembers your choice.
-3. The first pack installed from a repository of its own, by name
-   (below).
-4. `characters/pixel/`.
+3. `characters/boop/`.
 
 `python3 characters/charactergen.py --which` prints the one chosen, and
 `--stage` lays it out in `.character-build/` at the repo root (also
 ignored): the pack's `firmware/`, the folders the app bundles, and the
 pack's own path. The builds read only from there.
 `firmware/tools/pio.sh` stages before every PlatformIO run.
-
-### Packs from their own repositories
-
-A pack can live in a git repository of its own and be installed here,
-as a checkout at `characters/<name>/` that this repository never
-tracks. You work in it, commit and push as in any repository:
-
-```sh
-python3 characters/packs.py add NAME URL   # install a pack
-python3 characters/packs.py sync           # in a new worktree: check out every installed pack
-python3 characters/packs.py list           # what's installed, and on which branch
-python3 characters/packs.py remove NAME    # take it out of this worktree
-```
-
-What's installed, and from where, stays in this clone's own `.git`
-folder, never in a commit: a shared copy of each pack's repository, the
-list, and the rule that ignores the packs' folders. So nothing of a
-private pack, not even its address, reaches this repository. Every
-worktree sees the same list; `sync` gives it its own checkout of each
-pack, on a branch named after the worktree's (the main checkout's are on
-`main`).
 
 The Mac reads its pack when it starts, so switching means restarting.
 The board's face is compiled into its firmware, so switching faces means
@@ -156,7 +131,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
 ```
 <pack>/
   character.json     who it is, its moods and how they connect (§4–5)
-  LICENSE            the pack's own licence (§11)
+  LICENSE            optional: the pack's own licence (§11)
   steering/          what the brain reads (§7)
     guide.md
     personality/<name>.md
@@ -229,7 +204,6 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 13 moods:
 | `id` | yes | Lower case, digits and `-`. The board reports it (§10) |
 | `name` | yes | What the app shows |
 | `version` | yes | The pack's version. A Mac and a board with different versions of the same pack fall back safely (§10) |
-| `private` | no | `true` for a pack that isn't published with the engine: the public export leaves its folder out (§11). Boop's is |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood`. Boop's is `happy`, as the board always started |
 | `aliases` | no | Old names for moods, read as the mood: a saved mood from an older version (Boop's `cheerful` is happy) |
@@ -321,7 +295,7 @@ feeling, a topic and a kind:
 Both are built files and checked in. Pixel's pack and Boop's each have a
 copy of the same voice, 2,722 takes. What they're built from stays out
 of both: the recordings, and voicegen, the tool that turns them into the
-two files, are kept in Boop's private pack, and one run of it writes
+two files, are kept in Boop's pack, and one run of it writes
 both packs' copies.
 
 A pack without a voice leaves both out. The brain is then never asked
@@ -387,31 +361,18 @@ Mac's pack isn't the board's, the Mac:
 
 It never sends a mood or take the board can't play.
 
-## 11. Licence and the public repository
+## 11. Licence
 
-A pack carries its own `LICENSE`, and the engine's MIT licence doesn't
-cover it. Pixel is open. Boop's own pack is private: it lives in a
-private repository of its own (§2), so this repository never has it.
+Every pack here is public, under the repository's MIT licence
+([LICENSE](../LICENSE)), unless it carries a `LICENSE` of its own. A
+pack from elsewhere brings its own.
 
-`python3 internal/tools/export/export.py OUT [--commit]` lays out the
-repository as the public would get it, as a last check that nothing
-private is tracked. It writes HEAD's files without:
-- every pack whose `character.json` says `"private": true`
-
-The submodules (`agent-hooks/`, `mellowharness/`) stay submodules,
-each at the commit HEAD has; `--commit` records them and makes the
-commit as this repository's git identity, never the global one.
-
-Links to what's left out become their text. Then it checks the result
-for a private pack's content (a line of its steering, a mood's meaning
-or face wording) and anything that looks like a key, and fails on
-either. The voice isn't private: Pixel's pack has its own copy.
-
-Without Boop's pack, the public repository builds and tests as Pixel:
+Every pack builds and tests on its own. With another pack chosen
+(`CHARACTER=pixel`):
 - The Swift tests that need Boop's pack (its goldens, evals, wording
   and moods) skip, saying so (`requireBoopsPack()`).
-- The tests that play takes run, on Pixel's voice. With a pack that has
-  none they skip (`NEEDS_VOICE_PACK()` in the firmware's).
+- The tests that play takes run on that pack's voice. With a pack that
+  has none they skip (`NEEDS_VOICE_PACK()` in the firmware's).
 
 ## 12. The studio (optional)
 
@@ -533,8 +494,7 @@ that back into the firmware itself, with no app behind it.
 ## 14. Making your own
 
 1. Copy `characters/pixel/` to `characters/<yours>/` and set `id` and
-   `name` in `character.json`. To keep it in a repository of its own,
-   push that folder to one and install it with `packs.py add` (§2).
+   `name` in `character.json`.
 2. Change the moods: their names, meanings and moves. Write a
    `steering/mood/` file for each.
 3. Rewrite `steering/personality/` and `guide.md` in its voice.

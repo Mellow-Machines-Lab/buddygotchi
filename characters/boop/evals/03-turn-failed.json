@@ -1,0 +1,10 @@
+{
+  "name": "A failed turn puts Boop out, and shows it",
+  "case": "The agent's turn fails after a couple of minutes (it hit a rate limit). Boop is put out at once: a grumpy or annoyed face, upset or saying nothing, played as a failure, and its mood turns annoyed. It isn't sad, since the turn wasn't a long one.",
+  "always": true,
+  "why": "characters/boop/steering/mood/calm.md: calm leaves for annoyed when a turn fails (grumpy is further along the mood graph); characters/boop/steering/guide.md: a mood change shows, with the new mood's face; PERSONALITY's Examples: a failed turn is grumpy, a failure. A turn of two minutes failing is no reason to be sad",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn failed", "at": "2m", "error": "rate_limit", "expect": {"react": "grumpy|annoyed|irritated", "animation": "failure", "feeling": "upset|none", "mood": "annoyed"}}
+  ]
+}

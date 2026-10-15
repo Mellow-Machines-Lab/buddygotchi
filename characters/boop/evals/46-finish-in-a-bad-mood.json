@@ -1,0 +1,14 @@
+{
+  "name": "A finish in a sad or fed-up mood is still judged by what it says",
+  "case": "Boop is sad when the agent finishes a fix, saying the tests pass: the finish is still a success, played in whatever face fits Boop's mood. Then the person pokes Boop until it's fed up, and the agent finishes another turn saying the endpoint works: a success again. A bad mood never turns a success into a failure.",
+  "why": "react.animation is judged by NOW's line and the agent's last message, not by the mood; the handover (characters/pixel/design/boop-mood-spectrum-v2/HANDOVER.md): a task outcome is never inferred from mood",
+  "mood": "sad",
+  "steps": [
+    {"event": "turn started", "at": "2m", "prompt": "fix the flaky login test"},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "3m30s", "message": "Done: the fix is in and all the tests pass.", "expect": {"animation": "success"}},
+    {"event": "pokes", "at": "5m"},
+    {"event": "turn started", "at": "5m30s", "prompt": "add the health endpoint"},
+    {"event": "turn finished", "at": "6m30s", "message": "All set: the health endpoint works and its test is green.", "expect": {"animation": "success"}}
+  ]
+}

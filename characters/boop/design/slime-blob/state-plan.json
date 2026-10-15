@@ -1,0 +1,383 @@
+{
+  "version": 1,
+  "status": "REFERENCE SCENES IMPLEMENTED \u2014 production adapter and synchronized sound remain planned",
+  "primaryParameters": [
+    "mood",
+    "state"
+  ],
+  "hostFacts": {
+    "starting": {
+      "ctx": [
+        "new_task",
+        "session",
+        "continuation",
+        "compacted"
+      ]
+    },
+    "task_complete": {
+      "outcome": [
+        "success",
+        "failure"
+      ]
+    }
+  },
+  "sceneFamilies": [
+    "rest",
+    "idle",
+    "listen",
+    "start",
+    "desk",
+    "helpers",
+    "alert",
+    "result",
+    "touch"
+  ],
+  "states": [
+    {
+      "id": "no_app",
+      "scene": "rest",
+      "kind": "persistent",
+      "trigger": "Link lost; device-owned timeout, never inferred by Jev.",
+      "visual": "Resting closed lids; keep the same blue body and retain mood internally.",
+      "variations": [
+        "still-rest",
+        "slow-settle",
+        "one-sleepy-shift"
+      ],
+      "audioPolicy": "silent",
+      "status": "implemented-quiet-alias"
+    },
+    {
+      "id": "asleep",
+      "scene": "rest",
+      "kind": "persistent",
+      "trigger": "No sessions, as the core derives; not a mood.",
+      "visual": "Shared sleepy face; no angry-sleeping catalogue.",
+      "variations": [
+        "still-rest",
+        "slow-settle",
+        "one-sleepy-shift"
+      ],
+      "audioPolicy": "silent",
+      "status": "implemented-quiet-alias"
+    },
+    {
+      "id": "idle",
+      "scene": "idle",
+      "kind": "persistent",
+      "trigger": "Sessions exist but none are working.",
+      "visual": "Show mood face, soft breathing and occasional quiet gesture.",
+      "variations": [
+        "look-and-return",
+        "small-nod",
+        "settle-sway"
+      ],
+      "audioPolicy": "silent",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "listening",
+      "scene": "listen",
+      "kind": "persistent",
+      "trigger": "Actual mic capture / push-to-talk, not every user prompt.",
+      "visual": "Lean toward user; tiny pulsing listen cue, no invented transcript.",
+      "variations": [
+        "lean-listen",
+        "tilt-listen",
+        "still-listen"
+      ],
+      "audioPolicy": "silent",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "starting",
+      "scene": "start",
+      "kind": "one_shot",
+      "trigger": "Core-confirmed session/task/continuation start, or a context compacted; ctx selects the wording.",
+      "visual": "Same body perks up beside a rounded START/NEW TASK/RESUME/COMPACTED card.",
+      "variations": [
+        "perk-and-card",
+        "nod-and-card",
+        "stretch-and-card"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography",
+      "factVariations": {
+        "ctx": {
+          "new_task": [
+            "new_task.perk-and-card",
+            "new_task.nod-and-card",
+            "new_task.stretch-and-card"
+          ],
+          "session": [
+            "session.perk-and-card",
+            "session.nod-and-card",
+            "session.stretch-and-card"
+          ],
+          "continuation": [
+            "continuation.perk-and-card",
+            "continuation.nod-and-card",
+            "continuation.stretch-and-card"
+          ],
+          "compacted": [
+            "compacted.perk-and-card",
+            "compacted.nod-and-card",
+            "compacted.stretch-and-card"
+          ]
+        }
+      }
+    },
+    {
+      "id": "planning",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Plan mode or planning tool classification.",
+      "visual": "Same computer; pause typing to arrange a few task dots.",
+      "variations": [
+        "consider-and-nod",
+        "short-type-pause",
+        "inspect-list"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "working",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Working without a more specific act.",
+      "visual": "Same keyboard; irregular typing bursts and thinking rests.",
+      "variations": [
+        "short-burst",
+        "two-bursts-with-look",
+        "lean-and-one-confirm"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "terminal",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Shell/CLI classified by Act.of; tests/inspect override shell.",
+      "visual": "Same keyboard; softly scrolling generic code, never real command contents.",
+      "variations": [
+        "type-command-pause",
+        "scroll-and-check",
+        "rapid-burst-settle"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "tool_use",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Generic edit/MCP/unknown tool only after specific classification.",
+      "visual": "Same computer; simple gear/link icon, not a new character.",
+      "variations": [
+        "invoke-and-wait",
+        "inspect-response",
+        "confirm-and-return"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "searching",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Web tool currently running.",
+      "visual": "Computer search card with soft magnifier, not the private query.",
+      "variations": [
+        "scan-left-right",
+        "lean-into-search",
+        "one-result-pop"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "analyzing",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Read/search/inspect tool as classified; no guessed post-search phase.",
+      "visual": "Same computer; inspect result cards and think.",
+      "variations": [
+        "inspect-one-card",
+        "compare-two-cards",
+        "pause-and-nod"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "testing",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Topic tests, even when the tool is Bash.",
+      "visual": "Same computer; neutral test progress dots, no fake PASS/FAIL outcome.",
+      "variations": [
+        "launch-and-watch",
+        "short-burst-check",
+        "lean-monitor"
+      ],
+      "audioPolicy": "sparse_contacts",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "delegating",
+      "scene": "helpers",
+      "kind": "persistent",
+      "trigger": "Main-agent delegation tool or observed live helper.",
+      "visual": "Same desk plus two/three tiny original gel helpers; no new hero body.",
+      "variations": [
+        "send-two-helpers",
+        "dispatch-three",
+        "commander-nod"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "helper_return",
+      "scene": "helpers",
+      "kind": "one_shot",
+      "trigger": "Observed subagent end; do not presume success or invent a start.",
+      "visual": "One small helper returns beside the same body with a neutral report card.",
+      "variations": [
+        "return-and-nod",
+        "soft-report-salute",
+        "relay-card"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "waiting",
+      "scene": "desk",
+      "kind": "persistent",
+      "trigger": "Tool silence/pending grace as core derives; not an unresolved approval sign.",
+      "visual": "Keep desk and mood; still attentive pauses with no loading panic.",
+      "variations": [
+        "still-watch",
+        "small-side-look",
+        "settle-at-desk"
+      ],
+      "audioPolicy": "silent",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "needs_you",
+      "scene": "alert",
+      "kind": "attention",
+      "trigger": "Authoritative attention snapshot / wait for permission or input.",
+      "visual": "Rounded alert in upper 80%; large surface taps then recognizable ding; text lane clear.",
+      "variations": [
+        "single-surface-knock",
+        "two-location-knocks",
+        "firm-three-knocks"
+      ],
+      "audioPolicy": "attention_once",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "reply_ready",
+      "scene": "result",
+      "kind": "one_shot",
+      "trigger": "Authorized reply finish; not all turn-end events are success.",
+      "visual": "Neutral READY card and gentle present gesture, no trophy.",
+      "variations": [
+        "present-card",
+        "nod-ready",
+        "small-reveal"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "task_complete",
+      "scene": "result",
+      "kind": "one_shot",
+      "trigger": "Authorized finish, with explicit outcome success/failure.",
+      "visual": "Success COMPLETE+trophy; failure TRY AGAIN/FAILED struggle, never a victory cue.",
+      "variations": [
+        "settle-and-card",
+        "lift-and-card",
+        "bounce-and-card"
+      ],
+      "audioPolicy": "attention_once",
+      "status": "implemented-reference-choreography",
+      "factVariations": {
+        "outcome": {
+          "success": [
+            "settle-and-trophy",
+            "hop-and-complete-card",
+            "small-confetti-reveal"
+          ],
+          "failure": [
+            "slump-and-failed-card",
+            "stumble-and-recover",
+            "strained-shake-and-warning"
+          ]
+        }
+      }
+    },
+    {
+      "id": "error",
+      "scene": "result",
+      "kind": "one_shot",
+      "trigger": "Observed tool failure class; not automatically failed whole task.",
+      "visual": "Small jolt and readable warning with desk retained underneath.",
+      "variations": [
+        "soft-sputter",
+        "wince-and-warning",
+        "recoil-and-recover"
+      ],
+      "audioPolicy": "attention_once",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "stopped",
+      "scene": "result",
+      "kind": "one_shot",
+      "trigger": "Interrupted/stopped turn, not failure.",
+      "visual": "Brake movement gently, STOPPED card; never punish an interrupt.",
+      "variations": [
+        "gentle-brake",
+        "pause-and-settle",
+        "look-up-stop"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "poked",
+      "scene": "touch",
+      "kind": "one_shot",
+      "trigger": "Ordinary tap; needs-you tap follows existing open-thread semantics, never approval.",
+      "visual": "Local indentation, face follows surface, rebound on same body.",
+      "variations": [
+        "local-dent",
+        "side-wobble",
+        "small-bounce"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "tap_spam",
+      "scene": "touch",
+      "kind": "one_shot",
+      "trigger": "Existing device/core repeated-tap classification.",
+      "visual": "Bounded recoil or wobble complaint; preserve face mood unless host changes it.",
+      "variations": [
+        "quick-wobble",
+        "squash-and-recover",
+        "dodge-and-settle"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    }
+  ]
+}

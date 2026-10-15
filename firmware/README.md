@@ -24,7 +24,7 @@ or `BOARD=cyd24`/`BOARD=amoled206` picks one.
 
 The CYD runs any character pack. The AMOLED board draws the gel face,
 which only Boop's pack has for now
-([CHARACTER.md](../characters/CHARACTER.md)), so with Pixel alone its
+([CHARACTER.md](../characters/CHARACTER.md)), so built with Pixel its
 build stops at the start and says so (`firmware/tools/needs_gel.py`).
 
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which

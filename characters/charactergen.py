@@ -23,8 +23,7 @@ this checkout, which git ignores. --check fails on a studio problem;
 
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
-folder in the repo's .character file, the first pack installed from a
-repository of its own (characters/packs.py), and characters/pixel/.
+folder in the repo's .character file, and characters/boop/.
 """
 from __future__ import annotations
 
@@ -51,22 +50,7 @@ def chosen() -> Path:
     if saved.exists() and saved.read_text().strip():
         name = saved.read_text().strip()
         return (ROOT / name).resolve() if "/" in name else CHARACTERS / name
-    installed = installed_packs()
-    if installed:
-        return CHARACTERS / installed[0]
-    return CHARACTERS / "pixel"
-
-
-def installed_packs() -> list[str]:
-    """The packs characters/packs.py installed in this checkout, by name."""
-    try:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("packs", CHARACTERS / "packs.py")
-        packs = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(packs)
-        return packs.installed()
-    except Exception:  # not a git checkout, or no git: none installed
-        return []
+    return CHARACTERS / "boop"
 
 
 def camel(mood: str) -> str:

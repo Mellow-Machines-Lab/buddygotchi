@@ -1,0 +1,10 @@
+{
+  "name": "Coming back after ten minutes gets a cheer too",
+  "case": "Boop is calm and nothing is going on. The person locks the Mac, steps away for ten minutes, the shortest break Boop hears of, and comes back. Boop greets them with a glad face, saying something glad and hello, happy, excited or curious, with no finish played, and its mood stays calm or turns happy.",
+  "always": true,
+  "why": "A lock under 10 minutes records nothing, so any back is worth a hello; PERSONALITY's Examples: coming back is happy, glad in a sound, then hello",
+  "steps": [
+    {"event": "away", "at": "0s"},
+    {"event": "back", "at": "10m", "expect": {"react": "happy|excited|curious", "animation": "none", "feeling": "glad", "about": "hello", "mood": "calm|happy"}}
+  ]
+}
