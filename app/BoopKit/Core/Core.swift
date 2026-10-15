@@ -121,7 +121,7 @@ public final class Core {
     @discardableResult
     public func handle(_ event: Event) -> [CoreEffect] {
         guard let agentEvent = AgentEvent(event) else { return [] }
-        let now = event.ts
+        let now = event.at
         var fx: [CoreEffect] = []
         let shot = take(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
@@ -138,8 +138,8 @@ public final class Core {
     /// reads back only the last days' files.
     func unrepeated(_ event: Event) -> Event {
         guard let agent = event.agent, let session = event.session,
-              let s = sessions[SessionFold.key(agent, session)], !SessionFold.forgotten(s.lastEventAt, at: event.ts),
-              config.time.day(s.lastEventAt) == config.time.day(event.ts) else { return event }
+              let s = sessions[SessionFold.key(agent, session)], !SessionFold.forgotten(s.lastEventAt, at: event.at),
+              config.time.day(s.lastEventAt) == config.time.day(event.at) else { return event }
         var event = event
         for (key, held) in [("name", s.name), ("app", s.app), ("app_session", s.appSession)]
         where held != nil && event[key]?.string == held {
@@ -164,7 +164,7 @@ public final class Core {
             _ = take(agentEvent, ref: event.seq)
             return
         }
-        advance(to: event.ts)
+        advance(to: event.at)
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -489,7 +489,7 @@ public final class Core {
         where shownNeeds[key] == nil {
             shownNeeds[key] = (s.agent, s.id)
             expired.remove(key)
-            fx.append(.record(Event(ts: now, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou,
+            fx.append(.record(Event(at: now, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou,
                                     session: s.id,
                                     data: ["for": s.requestRef.map { .int(Int64($0)) } ?? .null, "by": "rule",
                                            "agent": .string(s.agent.rawValue), "ok": true,
@@ -501,7 +501,7 @@ public final class Core {
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
-            fx.append(.record(Event(ts: now, source: .boop, type: .needsYou, phase: .end, specificType: Core.needsYou,
+            fx.append(.record(Event(at: now, source: .boop, type: .needsYou, phase: .end, specificType: Core.needsYou,
                                     session: was.id, data: data)))
         }
     }

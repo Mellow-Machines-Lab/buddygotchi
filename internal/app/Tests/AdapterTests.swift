@@ -177,8 +177,8 @@ final class AdapterTests: XCTestCase {
         XCTAssertEqual(failed["error"], "rate_limit")
         XCTAssertEqual(Adapter.event(from: line("claude", "StopFailure", error: "weird thing"))?["error"], "other")
         XCTAssertEqual(start.cwd, "/w/landing", "the view and the core name the place")
-        XCTAssertEqual(start.ts, 7)
-        XCTAssertEqual(Adapter.event(from: line("claude", "Stop"), receivedAt: 99)?.ts, 99)
+        XCTAssertEqual(start.at, 7)
+        XCTAssertEqual(Adapter.event(from: line("claude", "Stop"), receivedAt: 99)?.at, 99)
     }
 
     /// What you asked and what the agent said last are the
@@ -300,6 +300,10 @@ final class AdapterTests: XCTestCase {
                               message: "Done.")
         var event = Event(full)
         event.seq = 3
+        XCTAssertEqual(Set(event.data.keys), [
+            "specific_type", "session", "subagent", "agent_type", "cwd", "name", "app", "app_session", "mode", "source",
+            "prompt", "tool", "tool_use_id", "topic", "failed", "error", "asking", "notice", "outcome", "message",
+        ], "the transcript's names, and the envelope's facts only in the envelope")
         let read = try XCTUnwrap(Event(jsonLine: event.jsonLine))
         XCTAssertEqual(AgentEvent(read), full)
         XCTAssertNil(read["for"], "`for` is the seq an event answers, MellowHarness's `about`")
@@ -308,14 +312,28 @@ final class AdapterTests: XCTestCase {
     /// Older transcripts kept what a request asks for under `for`: a
     /// string there still reads as it, and a seq there isn't one.
     func testAnOlderTranscriptsStringForReadsAsAsking() throws {
-        let older = Event(ts: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
+        let older = Event(at: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
                           session: "b1", data: ["for": "permission", "tool": "Bash"])
         let read = try XCTUnwrap(AgentEvent(try XCTUnwrap(Event(jsonLine: older.jsonLine))))
         XCTAssertEqual(read.asking, .permission)
-        let answering = Event(ts: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
+        let answering = Event(at: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
                               session: "s", data: ["for": 3])
         let answers = try XCTUnwrap(AgentEvent(answering))
         XCTAssertNil(answers.asking)
+    }
+
+    /// A value agent-hooks doesn't know (a request or an outcome) reads as
+    /// none, and a line with no hook name as `""`: the event still counts.
+    func testAnUnknownValueReadsAsNone() throws {
+        let odd = Event(at: 1, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s",
+                        data: ["outcome": "vanished", "asking": "money", "tool": "Bash"])
+        let read = try XCTUnwrap(AgentEvent(odd))
+        XCTAssertNil(read.outcome)
+        XCTAssertNil(read.asking)
+        XCTAssertEqual(read.tool, "Bash")
+        var nameless = odd
+        nameless.data["specific_type"] = nil
+        XCTAssertEqual(AgentEvent(nameless)?.hook, "")
     }
 
     /// Boop's installer counts the entries Boop wrote before

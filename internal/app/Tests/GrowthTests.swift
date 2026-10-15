@@ -18,7 +18,7 @@ final class GrowthTests: XCTestCase {
 
     func event(_ seq: Int, _ type: Event.Kind, _ phase: Event.Phase? = nil, _ data: [String: JSONValue] = [:],
                from source: Event.Source = .claude) -> Event {
-        var e = Event(ts: 1_000, source: source, type: type, phase: phase, specificType: "x", session: "s1", data: data)
+        var e = Event(at: 1_000, source: source, type: type, phase: phase, specificType: "x", session: "s1", data: data)
         e.seq = seq
         return e
     }

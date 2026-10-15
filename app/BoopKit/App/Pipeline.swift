@@ -104,7 +104,7 @@ public final class Pipeline {
     /// without what its session already has (`Core.unrepeated`).
     @discardableResult
     public func agent(_ event: Event) -> Step {
-        input(at: event.ts) {
+        input(at: event.at) {
             let e = harness.emit(core.unrepeated(event))
             run(core.handle(e))
         }
@@ -116,7 +116,7 @@ public final class Pipeline {
     @discardableResult
     public func poke(at now: Int64, finish: ThreadRef? = nil) -> Step {
         input(at: now) {
-            let e = harness.emit(Event(ts: now, source: .device, type: .poke, specificType: "input"))
+            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input"))
             run(core.poke(at: now, seq: e.seq, finish: finish))
         }
     }
@@ -129,7 +129,7 @@ public final class Pipeline {
     public func said(_ words: String, by: Core.Talker, at now: Int64) -> Step {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
-            harness.emit(Event(ts: now, source: .mic, type: .talk, specificType: by.rawValue, data: ["words": .string(cut)]))
+            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, data: ["words": .string(cut)]))
         }
     }
 
@@ -138,7 +138,7 @@ public final class Pipeline {
     /// core's. Only a back wakes the brain.
     @discardableResult
     public func presence(_ event: Event) -> Step {
-        input(at: event.ts) { harness.emit(event) }
+        input(at: event.at) { harness.emit(event) }
     }
 
     /// The core's timers, then the harness's tick: a heartbeat if one is

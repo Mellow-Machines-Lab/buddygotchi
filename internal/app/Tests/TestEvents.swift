@@ -12,15 +12,15 @@ let harnessT0: Int64 = 1_790_000_000_000
 extension Event {
     /// An action named `name`: `.end` is its `ended` (`for` its `did`),
     /// `.start` an open `did`, nil a plain one.
-    static func action(ts: Int64, phase: Phase? = nil, name: String, data: [String: JSONValue] = [:]) -> Event {
+    static func action(at: Int64, phase: Phase? = nil, name: String, data: [String: JSONValue] = [:]) -> Event {
         var data = data
         data["action"] = .string(name)
         switch phase {
-        case .end?: return Event(at: ts, source: Event.harness, kind: Event.ended, data: data)
+        case .end?: return Event(at: at, source: Event.harness, kind: Event.ended, data: data)
         case .start?: data["open"] = true
         default: break
         }
-        return Event(at: ts, source: Event.harness, kind: Event.did, data: data)
+        return Event(at: at, source: Event.harness, kind: Event.did, data: data)
     }
 
     /// `data` without Boop's own fields (`specific_type`, `session`,

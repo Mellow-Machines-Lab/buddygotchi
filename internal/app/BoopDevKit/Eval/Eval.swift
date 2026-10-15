@@ -683,7 +683,7 @@ public struct Eval {
         let session = step.session ?? "s1"
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:]) -> (Pipeline) -> Pipeline.Step {
-            { $0.agent(Event(ts: now, source: .claude, type: type, phase: phase, specificType: specific, session: session,
+            { $0.agent(Event(at: now, source: .claude, type: type, phase: phase, specificType: specific, session: session,
                              cwd: cwd, data: data)) }
         }
         switch step.event {
@@ -703,9 +703,9 @@ public struct Eval {
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.
-        case "away": return [{ $0.presence(Event(ts: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
+        case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
                                                  data: ["since": .int(now)])) }]
-        case "back": return [{ $0.presence(Event(ts: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
+        case "back": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
         default: return []  // wait
         }
     }

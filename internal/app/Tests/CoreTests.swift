@@ -131,7 +131,7 @@ final class CoreRig {
         case .subagentEnd: (type, phase, specific) = (.subagent, .end, "SubagentStop")
         }
         let cwd = workspace.map { "/rig/\(project)/.worktrees/\($0)" } ?? "/rig/\(project)"
-        return Event(ts: now, source: Event.Source(agent), type: type, phase: phase, specificType: specific,
+        return Event(at: now, source: Event.Source(agent), type: type, phase: phase, specificType: specific,
                      session: session, subagent: subagent, cwd: cwd, data: data)
     }
 
@@ -172,7 +172,7 @@ final class CoreRig {
 
     /// Boop starts a reaction, as the harness records one.
     func react() {
-        pipeline.record(Event.action(ts: now, phase: .start, name: ReactAction.actionName,
+        pipeline.record(Event.action(at: now, phase: .start, name: ReactAction.actionName,
                               data: ["for": .null, "by": "brain", "ok": true, "message": "Boop made a happy face."]))
     }
 

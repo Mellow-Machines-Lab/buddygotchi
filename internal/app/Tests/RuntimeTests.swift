@@ -621,7 +621,7 @@ final class RuntimeTests: XCTestCase {
                             transcript: Transcript.log(folder: dir.appendingPathComponent(Transcript.folderName)))
         let line = HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/jetpack", ts: now - 1000)
         let prompt = try XCTUnwrap(last.agent(XCTUnwrap(Adapter.event(from: line, receivedAt: now - 1000))).recorded.first)
-        last.record(Event.action(ts: now - 900, phase: .start, name: "react",
+        last.record(Event.action(at: now - 900, phase: .start, name: "react",
                           data: ["for": .int(Int64(prompt.seq)), "by": "brain", "ok": true, "message": "Boop smiled."]))
         let runtime = try Runtime(options)
         try runtime.start()
@@ -1259,7 +1259,7 @@ final class RuntimeTests: XCTestCase {
         device(FakeTransport.ended(tappedId, "done"))
         XCTAssertNil(end(of: tapped.seq), "only the first end counts")
         runtime.home.sync {  // anything but another poke, and nothing that wakes the brain
-            runtime.run(runtime.pipeline.presence(Event(ts: clock.now, source: .mac, type: .presence, phase: .start,
+            runtime.run(runtime.pipeline.presence(Event(at: clock.now, source: .mac, type: .presence, phase: .start,
                                                         specificType: "locked", data: ["since": .int(clock.now)])))
         }
         XCTAssertEqual(end(of: tapped.seq), .done, "you saw it begin: done once something else happens")
@@ -1680,7 +1680,7 @@ final class RuntimeTests: XCTestCase {
         var config = Core.Config()
         config.firstAsk = Int(Int32.max)
         let core = Core(config: config)
-        core.handle(Event(ts: 1000, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
+        core.handle(Event(at: 1000, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
                           session: "s", cwd: "/w/landing", data: ["tool": "Bash", "asking": "permission"]))
         XCTAssertEqual(core.snapshot(at: 1000).attn?.id, 1, "back to 1, never 0")
     }
@@ -1693,7 +1693,7 @@ final class RuntimeTests: XCTestCase {
     func testBrainTroubleShowsAtOnceForTheAccountAndAfterThreeInARowElse() throws {
         XCTAssertEqual(BrainTrouble.showAfter, 3)
         let runtime = try Runtime(options(nil))
-        let e = Event(seq: 1, ts: 1, source: .device, type: .poke, specificType: "input")
+        let e = Event(seq: 1, at: 1, source: .device, type: .poke, specificType: "input")
         func pass(_ status: Int?, asked: Bool = true, current: Bool = true) -> BrainTrouble? {
             let error = status.map { BrainError("jev: HTTP \($0)", status: $0) }
             let p = Harness.Pass(event: e, line: "You poked Boop.", seq: 2, answers: [:], dropped: error?.description, held: nil,

@@ -263,7 +263,7 @@ public final class TranscriptView {
     func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
         if let a = AgentEvent(e) { return agentEvent(a) }
-        advance(to: e.ts)
+        advance(to: e.at)
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return nil
         case .poke?: return poke(e)
@@ -452,7 +452,7 @@ public final class TranscriptView {
     /// A poke, with how many came in a row: each within `inARowMs` of the
     /// one before.
     func poke(_ e: Event) -> Line {
-        let now = e.ts
+        let now = e.at
         noteActivity(now)
         if let last = fold.pokes.last, now - last >= Self.inARowMs { fold.pokes.removeAll() }
         fold.pokes.append(now)
@@ -471,7 +471,7 @@ public final class TranscriptView {
     public func pokesAnswered(_ e: Event, _ log: LogView) -> Bool {
         var run: [Event] = [e]
         for p in log.all(Event.kind(.poke, nil)).reversed() where p.seq < e.seq {
-            guard run.last!.ts - p.ts < Self.inARowMs else { break }
+            guard run.last!.at - p.at < Self.inARowMs else { break }
             run.append(p)
         }
         run.reverse()
@@ -491,7 +491,7 @@ public final class TranscriptView {
     public static func stopsThePokes(_ e: Event, _ log: LogView) -> Bool {
         guard let type = e.type, type != .needsYou else { return false }
         guard type == .poke else { return true }
-        return log.last(Event.kind(.poke, nil)).map { e.ts - $0.ts >= inARowMs } ?? true
+        return log.last(Event.kind(.poke, nil)).map { e.at - $0.at >= inARowMs } ?? true
     }
 
     /// Whether the reaction `did` is one your tap cut short that the pokes
@@ -504,11 +504,11 @@ public final class TranscriptView {
     public static func heldByPokes(_ did: Event, _ log: LogView) -> Bool {
         let after = log.events(after: did.seq)
         guard let cut = after.firstIndex(where: { $0.type == .poke }) else { return false }
-        var lastPoke = after[cut].ts
+        var lastPoke = after[cut].at
         for e in after[after.index(after: cut)...] {
             guard let type = e.type, type != .needsYou else { continue }
-            guard type == .poke, e.ts - lastPoke < inARowMs else { return false }
-            lastPoke = e.ts
+            guard type == .poke, e.at - lastPoke < inARowMs else { return false }
+            lastPoke = e.at
         }
         return true
     }
@@ -519,7 +519,7 @@ public final class TranscriptView {
     /// that are only whitespace make no line.
     func talk(_ e: Event) -> Line? {
         guard let words = e["words"]?.string, let line = EventLine.said(words) else { return nil }
-        noteActivity(e.ts)
+        noteActivity(e.at)
         return Line(line, facts: ["words": .string(words), "by": .string(e.specificType)])
     }
 
@@ -537,14 +537,14 @@ public final class TranscriptView {
     /// before it makes no line.
     func presence(_ e: Event) -> Line? {
         if e.phase == .start {
-            let since = e["since"]?.int ?? e.ts
+            let since = e["since"]?.int ?? e.at
             fold.awaySince = (e.seq, since)
             return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
         }
         guard let away = fold.awaySince else { return nil }
         fold.awaySince = nil
-        noteActivity(e.ts)
-        let ms = max(0, e.ts - away.at)
+        noteActivity(e.at)
+        let ms = max(0, e.at - away.at)
         return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
     }
 
@@ -588,17 +588,17 @@ public final class TranscriptView {
             }
             guard now >= due else { return nil }
             nextWorkBeatAt = now + Int64(rng.int(in: gap))
-            return Event(ts: now, source: .clock, type: .heartbeat, specificType: "working")
+            return Event(at: now, source: .clock, type: .heartbeat, specificType: "working")
         }
         nextWorkBeatAt = nil
         guard !working, let last = fold.lastActivityAt, (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else {
             return nil
         }
-        return Event(ts: now, source: .clock, type: .heartbeat, specificType: "idle")
+        return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
     }
 
     func heartbeat(_ e: Event) -> Line? {
-        let now = e.ts
+        let now = e.at
         let working = working(at: now)
         if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
             let t = Thread(s)
@@ -662,7 +662,7 @@ public final class TranscriptView {
         let from = type == .needsYou ? (e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq])
             : type == .presence && e.phase == .end ? [log.last(Event.kind(.presence, .start))?.seq, e.seq].compactMap { $0 }
             : [e.seq]
-        return ViewEvent(id: e.seq, type: shownType, phase: shownPhase, from: from, ts: e.ts, line: line.text, notes: line.notes,
+        return ViewEvent(id: e.seq, type: shownType, phase: shownPhase, from: from, ts: e.at, line: line.text, notes: line.notes,
                          wakesBrain: wakes,
                          about: Self.about(e, facts: line.facts),
                          facts: line.facts)

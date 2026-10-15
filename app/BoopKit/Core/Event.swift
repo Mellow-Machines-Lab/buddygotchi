@@ -39,25 +39,19 @@ extension Event {
     /// The `data` keys Boop's own fields take.
     static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd"]
 
-    public init(seq: Int = 0, ts: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
+    public init(seq: Int = 0, at: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
                 session: String? = nil, subagent: String? = nil, cwd: String? = nil, data: [String: JSONValue] = [:]) {
         var data = data
         data["specific_type"] = .string(specificType)
         if let session { data["session"] = .string(session) }
         if let subagent { data["subagent"] = .string(subagent) }
         if let cwd { data["cwd"] = .string(cwd) }
-        self.init(seq: seq, at: ts, source: source.rawValue, kind: Event.kind(type, phase), data: data)
+        self.init(seq: seq, at: at, source: source.rawValue, kind: Event.kind(type, phase), data: data)
     }
 
     /// A type and phase's `kind`: `tool_end`, `poke`.
     public static func kind(_ type: Kind, _ phase: Phase?) -> String {
         phase.map { "\(type.rawValue)_\($0.rawValue)" } ?? type.rawValue
-    }
-
-    /// When it happened, in unix milliseconds: its `at`.
-    public var ts: Int64 {
-        get { at }
-        set { at = newValue }
     }
 
     /// Where it came from, for one of Boop's sources.

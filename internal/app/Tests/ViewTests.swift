@@ -335,12 +335,12 @@ final class ViewTests: XCTestCase {
     func testAPokeWaitsWhileItsRunIsBeingAnswered() {
         XCTAssertEqual(TranscriptView.answersRunFrom, 3)
         func react(to poke: ViewEvent, _ name: String = "react", started: Bool = true) -> Int {
-            rig.pipeline.record(Event.action(ts: rig.now, phase: started ? .start : nil,
+            rig.pipeline.record(Event.action(at: rig.now, phase: started ? .start : nil,
                                       name: name, data: ["for": .int(Int64(poke.seq)), "by": "brain", "ok": true,
                                                                  "message": "Boop did it."])).seq
         }
         func end(_ seq: Int, _ why: String? = nil) {
-            rig.pipeline.record(Event.action(ts: rig.now, phase: .end, name: "react",
+            rig.pipeline.record(Event.action(at: rig.now, phase: .end, name: "react",
                                       data: ["for": .int(Int64(seq)), "by": "brain", "outcome": why == nil ? "done" : "failed",
                                              "why": why.map { .string($0) } ?? .null]))
         }
@@ -431,7 +431,7 @@ final class ViewTests: XCTestCase {
         let first = pipeline()
         rig = CoreRig()
         first.agent(rig.event(.turnStart))
-        let start = first.record(Event.action(ts: rig.now, phase: .start, name: "react",
+        let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
                                        data: ["for": 1, "by": "brain", "ok": true, "message": "Boop smiled."]))
         XCTAssertEqual(start.seq, 2)
         first.agent(rig.event(.turnEnd))
