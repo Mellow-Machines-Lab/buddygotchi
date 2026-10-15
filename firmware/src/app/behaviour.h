@@ -5,13 +5,14 @@
 // frozen clock gives the same frames on the board and in the simulator.
 // Device owns the I/O, and LinkKit decides when a call from the Mac plays
 // (linkkit/SPEC.md §4): Behaviour says whether one may (admit) and plays it
-// (play), and reports when each has stopped playing.
+// (play), and reports when the call holding the turn has stopped playing.
 #pragma once
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 
 #include "linkkit/clock.h"
+#include "linkkit/limits.h"
 #include "render/face.h"
 #include "render/screens.h"
 #include "voice/player.h"
@@ -19,11 +20,6 @@
 namespace app {
 
 using linkkit::Rng;
-
-// kNoApp draws the face screen with the no-app design and the unplugged
-// icon.
-enum class Screen : uint8_t { kFace, kNeedsYou, kNoApp, kPattern };
-const char* screenName(Screen s);
 
 // Copies `src` into a buffer of `n` bytes, cut to fit; null copies as "".
 inline void copyStr(char* dst, size_t n, const char* src) { std::snprintf(dst, n, "%s", src ? src : ""); }
@@ -60,14 +56,15 @@ render::SceneState actFromName(const char* name);
 // What cut a call short (`ended`): a tap (its poke, or push-to-talk's
 // listening) or "needs you" starting. Each is the `why` of a `cut`. A
 // newer call and dbg.reset need none here: the kit has already ended the
-// call it held when it takes the next or resets its turn, and it passes
-// on only the holder's end.
+// call it held when it takes the next or resets its turn.
 enum class CutBy : uint8_t { kNone, kTap, kNeedsYou };
 const char* cutByName(CutBy c);  // null for kNone
 
-// A call from the Mac that no part of plays any more, for Device to hand
-// to the kit: done, or cut by `by`. The kit keeps only the holder's.
-struct Ended {
+// The call from the Mac that last played, once no part of it plays any
+// more, for Device to hand to the kit: done, or cut by `by`. Every call
+// plays as it takes the turn, so it's the kit's holder, unless the kit
+// has ended it already, and then the kit ignores it.
+struct PlayedOut {
   uint32_t call = 0;
   CutBy by = CutBy::kNone;
 };
@@ -76,7 +73,7 @@ struct Ended {
 // held in range: the do's name as an animation (none for `react`), a line,
 // a face. With no anim, only the line, or only the face.
 struct MomentIn {
-  render::Anim anim = render::Anim::kNone;
+  render::SceneState anim = render::SceneState::kNone;  // a moment's (render::isMoment)
   // It had a `say` field: the reply `listening` waits for, even with no
   // take. `stop_listening` is empty: it ends `listening` and does nothing
   // else.
@@ -101,7 +98,7 @@ struct MomentIn {
   const char* whoAgent = nullptr;
   const char* whoThread = nullptr;
   // The kit's key for the call (linkkit::Call::key), 0 for none: its parts
-  // carry it, and its end comes back as an Ended with it.
+  // carry it, and its end comes back as a PlayedOut with it.
   uint32_t call = 0;
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
@@ -113,8 +110,10 @@ class Behaviour {
   explicit Behaviour(std::unique_ptr<render::Face> face) : face_(std::move(face)) {}
   render::Face& face() { return *face_; }
   const render::Face& face() const { return *face_; }
-  // Timings.
-  static constexpr uint32_t kNoAppMs = 30000;
+  // Timings. No app after the kit's host-gone window
+  // (linkkit/SPEC.md §5) with no `state`, on the device clock, which a
+  // tool can freeze and step.
+  static constexpr uint32_t kNoAppMs = linkkit::kHostGoneMs;
   static constexpr uint32_t kBubbleReadMs = 1200;  // the text stays up after the take
   static constexpr uint32_t kPressEaseMs = 60;     // a press draws at once this long
   static constexpr int kPressPx = 2;                // a press dips the face this far
@@ -153,7 +152,8 @@ class Behaviour {
   // (from 1, 0 for none) when it's one of those for the moment's outcome
   // and context (render::fitting), else one of those at random, never the
   // one shown last.
-  uint8_t pick(render::Anim a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c, Rng& rng) const;
+  uint8_t pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
+               Rng& rng) const;
 
   // Inputs, already recognised as gestures.
   void pressDown(uint32_t t);  // visible feedback at once
@@ -175,7 +175,8 @@ class Behaviour {
   void advance(uint32_t t, Rng& rng);
 
   // Queries at t (after advance).
-  Screen screen(uint32_t t) const;
+  // The look: kNoApp, kNeedsYou, or what the Mac says (Model::look).
+  render::SceneState look(uint32_t t) const;
   // The face at t: its design, the design's clock, and what the device
   // adds on top (render/face.h).
   render::SceneShow show(uint32_t t) const;
@@ -196,7 +197,7 @@ class Behaviour {
   // it starts later, if nothing replaces it first.
   bool lineAhead(uint32_t t) const;
   // The animation playing (kNone for none) and ms left, and its variation.
-  render::Anim moment(uint32_t t, uint32_t& left) const;
+  render::SceneState moment(uint32_t t, uint32_t& left) const;
   uint8_t momentVariant() const { return moment_.variant; }
   bool speaking(uint32_t t) const;
   // The expression the face borrows while its call plays:
@@ -208,9 +209,10 @@ class Behaviour {
   // Counts moments and lines started, local ones included, so a line can
   // tell it was replaced.
   uint32_t momentSeq() const { return momentSeq_; }
-  // The next call from the Mac that no part plays of any more, oldest
-  // first, each exactly once; false when there's none.
-  bool takeEnded(Ended& e);
+  // The call that last played, once no part of it plays any more, exactly
+  // once; false when there's none. Device takes it after every line, hook
+  // and tick.
+  bool takePlayedOut(PlayedOut& p);
   // The first instant after `from`, at most `to`, at which a part ends
   // (an animation, a line with its bubble, a borrowed face); false for none.
   bool nextEnd(uint32_t from, uint32_t to, uint32_t& at) const;
@@ -235,7 +237,7 @@ class Behaviour {
   // Each part of a call (the animation, the line, the expression) carries
   // its call's key, 0 for the device's own.
   struct Moment {
-    render::Anim anim = render::Anim::kNone;
+    render::SceneState anim = render::SceneState::kNone;
     uint8_t variant = 0;
     uint32_t at = 0, ms = 0;
     // Its design's loops; held longer for its line, it rests on its last
@@ -261,29 +263,13 @@ class Behaviour {
     uint32_t speakMs = 0;  // the takes play this long, the gap included
     uint32_t call = 0;
   };
-  // A call from the Mac, while any part of it plays, and what first cut
-  // its animation or its line short, if anything.
-  struct Waiting {
-    uint32_t call = 0;
-    CutBy cut = CutBy::kNone;
-  };
-  // What the Mac is owed: the calls playing, at most one per part plus
-  // the one arriving, and the ends not yet taken.
-  // Device takes them after every line, hook and tick.
-  struct Owed {
-    static constexpr int kWaiting = 4, kEnded = 8;
-    Waiting waiting[kWaiting];
-    int nWaiting = 0;
-    Ended ended[kEnded];
-    int nEnded = 0;
-  };
   using Source = render::FaceSource;
 
   // An animation plays `loops` times in `mood`'s design (listening until
   // the reply), cutting the one playing, by `by`, but not the line or
   // expression; a finish for `outcome`, a start for `ctx`. kNone for a
   // newer call: the kit ended the call it replaces.
-  void playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
+  void playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
                 render::Outcome outcome = render::Outcome::kNone, render::StartCtx ctx = render::StartCtx::kNone);
   // The line and the expression end, the line cut short by `by`: a new
   // moment's animation, or listening, replaces them; a tap's poke doesn't.
@@ -310,12 +296,10 @@ class Behaviour {
     modelT_ = t;
     sweep(t);
   }
-  // Calls from the Mac: one starting, a part of one cut short while it
-  // plays, and each one with no part left playing at t ended.
-  void wait(uint32_t call);
+  // The call that last played: it starts, a part of it is cut short while
+  // it plays, and it's played out once no part of it plays at t.
   void cut(uint32_t call, CutBy by);
   void sweep(uint32_t t);
-  void report(const Ended& e);
   bool holds(uint32_t call, uint32_t t) const;
   void resync(uint32_t t);
   bool momentOn(uint32_t t) const;
@@ -357,7 +341,10 @@ class Behaviour {
   render::Mood exprMood_ = render::kStartupMood;
   uint32_t exprAt_ = 0, exprMs_ = 0;
   uint32_t exprCall_ = 0;
-  Owed owed_;
+  // The call that last played while a part of it plays, with what first
+  // cut its animation or its line short; then, once it's played out, its
+  // end until Device takes it. Call 0 for none.
+  PlayedOut playing_, playedOut_;
   // The taps in the run, the last at lastTap_; 0 before the first.
   int taps_ = 0;
   uint32_t lastTap_ = 0;

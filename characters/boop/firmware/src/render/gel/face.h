@@ -18,27 +18,29 @@ class GelFace final : public Face {
   void reset(uint32_t t, linkkit::Rng&) override;
   void seed(uint32_t s) override;
   void sync(const FaceSource&, const FaceContext&, uint32_t) override;
-  void rewind(uint32_t t, linkkit::Rng& rng) override { reset(t, rng); }
-  bool nextDue(uint32_t from, uint32_t to, uint32_t& at) const override;
-  unsigned dueAt(uint32_t) const override { return 1; }
-  void step(uint32_t t, linkkit::Rng&, unsigned) override;
+  bool nextDue(uint32_t from, uint32_t to, uint32_t& at) override;
+  void step(uint32_t t, linkkit::Rng&) override;
   // The engine picks the look's variations itself; the Mac's is ignored.
   uint8_t lookVariant() const override { return uint8_t(engine_->scenes.variant); }
-  uint8_t pick(Anim, Mood, int, Outcome, StartCtx, linkkit::Rng&) const override;
-  void started(Anim, Mood, uint8_t, Outcome, StartCtx) override;
+  uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&) const override;
+  void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;
   // Its recipes are chosen for the outcome asked for.
   Outcome outcome(Mood, SceneState, int, Outcome requested) const override { return requested; }
   uint32_t voiceMs(Mood, SceneState, int) const override;
   uint32_t holdMs(Mood, int loops, uint32_t t) const override;
-  uint32_t designMs(uint32_t t) const override { return t - (source_.anim != Anim::kNone ? source_.at : lookAt_); }
+  uint32_t designMs(uint32_t t) const override {
+    return t - (source_.anim != SceneState::kNone ? source_.at : lookAt_);
+  }
   bool blinking(uint32_t) const override { return max(engine_->face.bridgeBlink, engine_->motion.blink()) > 0; }
-  SceneShow show(uint32_t t, uint32_t, bool mouth, int dy) const override {
+  SceneShow show(uint32_t t, bool mouth, int dy) const override {
     return {source_.mood, source_.state(), uint8_t(engine_->scenes.variant), designMs(t), false, mouth, int16_t(dy)};
   }
+  // Its engine keeps its own clock: it ignores draw's t and dirty, and
+  // cues' t and shown (its contact cues play under the pattern too).
   bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const Strip&, bool) override;
-  int cues(const SceneShow*, voice::FxEvent*, bool&) override;
+  int cues(uint32_t, bool, voice::FxEvent*, bool&) override;
   int profile(char* out, size_t n, uint32_t frames) override;
   const Engine& engine() const { return *engine_; }
 

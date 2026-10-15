@@ -61,24 +61,28 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
 // with the moment message. Each plays its own design, and every design
 // has a loop.
 static void test_every_anim_has_a_name_and_ends() {
-  TEST_ASSERT_EQUAL_INT(10, int(Anim::kCount));  // with kNone
   const char* names[] = {"task_complete", "reply_ready", "starting", "stopped", "error",
                          "helper_return", "poked",       "tap_spam", "listening"};
-  for (int i = 1; i < int(Anim::kCount); ++i) {
-    Anim a = Anim(i);
-    TEST_ASSERT_EQUAL_STRING(names[i - 1], animName(a));
-    TEST_ASSERT_TRUE(animFromName(animName(a)) == a);
-    TEST_ASSERT_EQUAL_STRING(animName(a), stateName(animState(a)));  // its own design
+  int moments = 0;
+  for (int i = 0; i < int(SceneState::kCount); ++i) moments += isMoment(SceneState(i));
+  TEST_ASSERT_EQUAL_INT(9, moments);
+  for (const char* name : names) {
+    const SceneState a = momentFromName(name);
+    TEST_ASSERT_TRUE_MESSAGE(isMoment(a), name);
+    TEST_ASSERT_EQUAL_STRING(name, stateName(a));  // its own design
   }
-  TEST_ASSERT_TRUE(animFromName("cheer") == Anim::kNone);
-  TEST_ASSERT_TRUE(animFromName("wiggle") == Anim::kNone);
+  TEST_ASSERT_FALSE(isMoment(SceneState::kNone));
+  TEST_ASSERT_EQUAL_STRING("none", stateName(SceneState::kNone));
+  TEST_ASSERT_TRUE(momentFromName("cheer") == SceneState::kNone);
+  TEST_ASSERT_TRUE(momentFromName("wiggle") == SceneState::kNone);
+  TEST_ASSERT_TRUE(momentFromName(nullptr) == SceneState::kNone);
   for (int m = 0; m < render::pixelMoods(); ++m) {
     for (int s = 0; s < int(SceneState::kCount); ++s) TEST_ASSERT_TRUE(loopMs(render::pixelMood(m), SceneState(s)) > 0);
   }
   for (const char* gone : {"dance", "oops", "side_eye", "stretch", "yawn", "zip", "gobble", "rumble", "levelup",
                            "happy", "proud", "smug", "curious", "sleepy", "worried", "sulky", "love", "nod",
                            "thinking", "shrug", "idle", "working", "terminal", "needs_you", "no_app", "none"}) {
-    TEST_ASSERT_TRUE_MESSAGE(animFromName(gone) == Anim::kNone, gone);
+    TEST_ASSERT_TRUE_MESSAGE(momentFromName(gone) == SceneState::kNone, gone);
   }
 }
 

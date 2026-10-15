@@ -174,14 +174,8 @@ class Device : public linkkit::App {
     uint32_t at = 0;
     int x = -1, y = -1;
   };
-  // The call refuse() last parsed, for onDo, which follows at once.
-  struct Parsed {
-    uint32_t key = 0;
-    MomentIn in;
-  };
-
   MomentIn parse(const linkkit::Call& c);
-  void drain();  // Behaviour's ends, to the kit
+  void drain();  // Behaviour's end of the call it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   void tapped(uint32_t t, bool injected);  // a tap, from BOOT or the panel
   void readInputs(uint32_t t);
@@ -189,7 +183,8 @@ class Device : public linkkit::App {
   void hush();
   bool startLine(uint32_t t);
   void followSound(uint32_t t);
-  Screen screenAt(uint32_t t) const { return pattern_ ? Screen::kPattern : b_.screen(t); }
+  // dbg.state's `screen`: the test pattern, no app, needs you or the face.
+  const char* screenName(uint32_t t) const;
 
   Hal& hal_;
   render::Canvas canvas_;
@@ -198,14 +193,18 @@ class Device : public linkkit::App {
   std::unique_ptr<render::SurfacePair> native_;
   Behaviour b_;
   ButtonGesture boot_;
-  Parsed parsed_;
+  // The call refuse() last parsed (MomentIn::call is its key), for onDo,
+  // which follows at once: parsing again would pick its variation again.
+  MomentIn parsed_;
   // The holder's rest: a reaction rests kReactGapMs after
   // its line and bubble have played, restKey_ at restAt_; 0 when none is due.
   uint32_t restKey_ = 0;
   uint32_t restAt_ = 0;
 
-  Screen screen_ = Screen::kFace;
   bool pattern_ = false;  // dbg.pattern until the next state
+  // "No app" showing at the last tick, under no pattern: when it starts
+  // with no message, so the frame isn't otherwise dirty.
+  bool noApp_ = false;
   int patternFill_ = -1;  // a solid dbg.pattern screen, or -1
   int targetX_ = -1, targetY_ = -1;  // a calibration target on dbg.pattern, or -1
   uint32_t drawnT_ = 0;   // the time of the last frame

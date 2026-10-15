@@ -22,7 +22,7 @@ struct Facts {
 struct Request {
   std::string id;
   bool hasId = false, stop = false, say = false;
-  Anim anim = Anim::kNone;
+  SceneState anim = SceneState::kNone;  // the moment's animation (isMoment); kNone for a face alone
   int expression = -1, loops = 1, variant = -1;
   bool hold = false;  // the host times it: held until cleared (router.mjs)
   Outcome outcome = Outcome::kNone;

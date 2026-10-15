@@ -81,7 +81,7 @@ bool Router::oneShot(const Request& in, T time, T loopMs) {
     return accepted;
   }
   if (timedOut) return false;
-  if (in.anim == Anim::kListening) {
+  if (in.anim == SceneState::kListening) {
     if (listening) return true;
     hasMoment = hasOverlay = false;
     listening = true;
@@ -90,12 +90,12 @@ bool Router::oneShot(const Request& in, T time, T loopMs) {
   }
   if (listening || facts.attention.on) return false;
   const std::string id = in.hasId ? in.id : "local-" + std::to_string(++sequence_);
-  const std::string key = "moment:" + std::string(in.anim == Anim::kNone ? "react" : animName(in.anim)) + ":" + id;
+  const std::string key = "moment:" + std::string(in.anim == SceneState::kNone ? "react" : stateName(in.anim)) + ":" + id;
   const uint64_t seen = identityKey(key);
   if (recent_.find([&](uint64_t k) { return k == seen; })) return false;
   recent_.add(seen);
   int loops = std::max(1, std::min(6, in.loops));
-  if (in.anim == Anim::kNone) {
+  if (in.anim == SceneState::kNone) {
     if (in.expression < 0) return false;
     hasOverlay = true;
     overlayHeld = false;
@@ -120,7 +120,7 @@ Route Router::resolve() const {
   r.state = timedOut             ? SceneState::kNoApp
             : listening          ? SceneState::kListening
             : facts.attention.on ? SceneState::kNeedsYou
-            : hasMoment          ? animState(moment.value.anim)
+            : hasMoment          ? moment.value.anim
                                  : r.baseState;
   r.group = family(r.state);
   r.quiet = r.state == SceneState::kAsleep || r.state == SceneState::kNoApp;

@@ -19,16 +19,6 @@ bool within(uint32_t t, uint32_t from, uint32_t ms) { return int32_t(t - from) >
 
 }  // namespace
 
-const char* screenName(Screen s) {
-  switch (s) {
-    case Screen::kFace: return "face";
-    case Screen::kNeedsYou: return "needs_you";
-    case Screen::kNoApp: return "no_app";
-    case Screen::kPattern: return "pattern";
-  }
-  return "face";
-}
-
 const char* cutByName(CutBy c) {
   switch (c) {
     case CutBy::kTap: return "tap";
@@ -74,10 +64,10 @@ void Behaviour::reset(uint32_t t, Rng& rng) {
 bool Behaviour::noApp(uint32_t t) const { return stale_ || int32_t(t - lastState_) >= int32_t(kNoAppMs); }
 
 bool Behaviour::momentOn(uint32_t t) const {
-  return moment_.anim != render::Anim::kNone && within(t, moment_.at, moment_.ms);
+  return moment_.anim != render::SceneState::kNone && within(t, moment_.at, moment_.ms);
 }
 
-bool Behaviour::listening(uint32_t t) const { return momentOn(t) && moment_.anim == render::Anim::kListening; }
+bool Behaviour::listening(uint32_t t) const { return momentOn(t) && moment_.anim == render::SceneState::kListening; }
 
 // What shows, first first: no app, listening, needs you,
 // then a tap's poke and the moments, then the look. So with no app, while
@@ -112,7 +102,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     auto consider = [&](uint32_t c) {
       if (after(c, modelT_) && !after(c, t) && (!found || after(next, c))) next = c, found = true;
     };
-    if (moment_.anim != render::Anim::kNone) consider(moment_.at + moment_.ms);
+    if (moment_.anim != render::SceneState::kNone) consider(moment_.at + moment_.ms);
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     consider(lastState_ + kNoAppMs);
@@ -120,13 +110,11 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     if (face_->nextDue(modelT_, t, faceAt)) consider(faceAt);
     if (!found) break;
     // Everything due at `next`, in a fixed order.
-    unsigned due = face_->dueAt(next);
     resync(next);
-    face_->step(next, rng, due);
+    face_->step(next, rng);
     change(next, [] {});
   }
   resync(t);
-  face_->step(t, rng, 0);
 }
 
 // Time-based changes at t: a moment or its expression that has ended, and
@@ -138,61 +126,40 @@ void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
   change(t, [&] {
-    if (moment_.anim != render::Anim::kNone && !within(t, moment_.at, moment_.ms)) moment_.anim = render::Anim::kNone;
+    if (moment_.anim != render::SceneState::kNone && !within(t, moment_.at, moment_.ms)) {
+      moment_.anim = render::SceneState::kNone;
+    }
     if (expr_ && !within(t, exprAt_, exprMs_)) expr_ = false;
     if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true;
   });
 }
 
-// ---- Calls from the Mac: how each ended (`ended`) -----------------------
+// ---- The call playing: how it ended (`ended`) ---------------------------
 
-// A call is over when none of its parts plays: the animation, the line
-// and its bubble, the expression. It was cut if its animation or its line
-// was stopped early. Its expression holds on after its line, and ending
-// that early doesn't cut it: the reaction was seen and heard. The kit
-// passes on only the holder's end; a call it replaced was answered then.
+// A call is played out when none of its parts plays: the animation, the
+// line and its bubble, the expression. It was cut if its animation or its
+// line was stopped early. Its expression holds on after its line, and
+// ending that early doesn't cut it: the reaction was seen and heard. Only
+// the call that last played is followed: it's the one the kit holds, and
+// the kit ended any before it when this one took the turn.
 bool Behaviour::holds(uint32_t call, uint32_t t) const {
   return (momentOn(t) && moment_.call == call) || (sayDue(t) && say_.call == call) ||
          (exprOn(t) && exprCall_ == call);
 }
 
-void Behaviour::wait(uint32_t call) {
-  // Can't overflow: each part holds one call, and those with none left
-  // were ended at the last change.
-  if (owed_.nWaiting < Owed::kWaiting) owed_.waiting[owed_.nWaiting++] = Waiting{call, CutBy::kNone};
-}
-
 // The first cut is the one reported.
 void Behaviour::cut(uint32_t call, CutBy by) {
-  for (int i = 0; i < owed_.nWaiting; ++i) {
-    Waiting& w = owed_.waiting[i];
-    if (w.call == call && w.cut == CutBy::kNone) w.cut = by;
-  }
+  if (playing_.call == call && playing_.by == CutBy::kNone) playing_.by = by;
 }
 
 void Behaviour::sweep(uint32_t t) {
-  int kept = 0;
-  for (int i = 0; i < owed_.nWaiting; ++i) {
-    const Waiting w = owed_.waiting[i];
-    if (holds(w.call, t)) {
-      owed_.waiting[kept++] = w;
-    } else {
-      report(Ended{w.call, w.cut});
-    }
-  }
-  owed_.nWaiting = kept;
+  if (playing_.call && !holds(playing_.call, t)) playedOut_ = playing_, playing_ = PlayedOut{};
 }
 
-// Device takes the ends after every line and tick, so a few are enough.
-void Behaviour::report(const Ended& e) {
-  if (owed_.nEnded < Owed::kEnded) owed_.ended[owed_.nEnded++] = e;
-}
-
-bool Behaviour::takeEnded(Ended& e) {
-  if (owed_.nEnded == 0) return false;
-  e = owed_.ended[0];
-  for (int i = 1; i < owed_.nEnded; ++i) owed_.ended[i - 1] = owed_.ended[i];
-  --owed_.nEnded;
+bool Behaviour::takePlayedOut(PlayedOut& p) {
+  if (!playedOut_.call) return false;
+  p = playedOut_;
+  playedOut_ = PlayedOut{};
   return true;
 }
 
@@ -201,7 +168,7 @@ bool Behaviour::nextEnd(uint32_t from, uint32_t to, uint32_t& at) const {
   auto consider = [&](uint32_t c) {
     if (after(c, from) && !after(c, to) && (!found || after(at, c))) at = c, found = true;
   };
-  if (moment_.anim != render::Anim::kNone) consider(moment_.at + moment_.ms);
+  if (moment_.anim != render::SceneState::kNone) consider(moment_.at + moment_.ms);
   if (say_.take >= 0) consider(say_.at + say_.ms);
   if (expr_) consider(exprAt_ + exprMs_);
   return found;
@@ -229,7 +196,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       face_->alert(t, had);
       // Listening is the one moment that plays on, so
       // push-to-talk still works.
-      if (momentOn(t) && !listening(t)) cut(moment_.call, CutBy::kNeedsYou), moment_.anim = render::Anim::kNone;
+      if (momentOn(t) && !listening(t)) cut(moment_.call, CutBy::kNeedsYou), moment_.anim = render::SceneState::kNone;
       if (sayDue(t)) cut(say_.call, CutBy::kNeedsYou);
       say_ = Say{};  // no lines while something needs you
       expr_ = false;
@@ -260,11 +227,11 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // finish or a face without a `say`. A listening call while listening
 // carries on with the same design, its time starting over.
 const char* Behaviour::admit(const MomentIn& in, uint32_t t) {
-  const bool listen = in.anim == render::Anim::kListening;
+  const bool listen = in.anim == render::SceneState::kListening;
   const bool wasListening = listening(t);
-  if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { moment_.anim = render::Anim::kNone; });
+  if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { moment_.anim = render::SceneState::kNone; });
   if (in.empty) return wasListening ? nullptr : "not_listening";
-  bool anim = in.anim != render::Anim::kNone && (listen || !held(t));
+  bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool line = in.take >= 0 && !model_.attn && !noApp(t);
   bool face = in.expr && !held(t);  // listening, if it's still on, holds the face
   if (anim || line || face) return nullptr;
@@ -275,8 +242,8 @@ const char* Behaviour::admit(const MomentIn& in, uint32_t t) {
 }
 
 bool Behaviour::play(const MomentIn& in, uint32_t t) {
-  const bool listen = in.anim == render::Anim::kListening;
-  bool anim = in.anim != render::Anim::kNone && (listen || !held(t));
+  const bool listen = in.anim == render::SceneState::kListening;
+  bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool line = in.take >= 0 && !model_.attn && !noApp(t);
   bool face = in.expr && !held(t);
   if (!anim && !line && !face) return false;  // stop_listening: admit did it all
@@ -292,12 +259,12 @@ bool Behaviour::play(const MomentIn& in, uint32_t t) {
       playAnim(in.anim, t, CutBy::kNone, in.loops, mood, in.variant, in.outcome, in.ctx);
       moment_.call = in.call;
       moment_.id = in.id;
-      bool finish = in.anim == render::Anim::kTaskComplete || in.anim == render::Anim::kReplyReady;
+      bool finish = in.anim == render::SceneState::kTaskComplete || in.anim == render::SceneState::kReplyReady;
       if (finish && in.whoAgent && in.whoAgent[0]) {
         copyStr(moment_.agent, sizeof(moment_.agent), in.whoAgent);
         copyStr(moment_.thread, sizeof(moment_.thread), in.whoThread);
       }
-      if (!listen) voice = face_->voiceMs(mood, render::animState(in.anim), in.variant);
+      if (!listen) voice = face_->voiceMs(mood, in.anim, in.variant);
     }
     if (line) {
       startSay(in, t, t + voice);
@@ -312,19 +279,19 @@ bool Behaviour::play(const MomentIn& in, uint32_t t) {
       if (line && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprCall_ = in.call;
     }
-    if (in.call) wait(in.call);
+    if (in.call) playing_ = PlayedOut{in.call, CutBy::kNone};
   });
   return line;
 }
 
-uint8_t Behaviour::pick(render::Anim a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
+uint8_t Behaviour::pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
                         Rng& rng) const {
   return face_->pick(a, mood, wanted, o, c, rng);
 }
 
 // The animation playing is cut short, by `by`; the line and the
 // expression play on (endLine ends them).
-void Behaviour::playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
+void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
                          render::Outcome outcome, render::StartCtx ctx) {
   if (by != CutBy::kNone && momentOn(t)) cut(moment_.call, by);
   moment_ = Moment{};
@@ -334,14 +301,13 @@ void Behaviour::playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render
   moment_.at = t;
   moment_.requestedOutcome = outcome;
   moment_.ctx = ctx;
-  const render::SceneState s = render::animState(a);
-  if (a == render::Anim::kListening) {
+  if (a == render::SceneState::kListening) {
     moment_.ms = kListenMs + kReplyWaitMs;
     moment_.playMs = UINT32_MAX;  // its design loops on until the reply
   } else {
-    moment_.ms = moment_.playMs = uint32_t(loops) * face_->loopMs(mood, s, variant);
+    moment_.ms = moment_.playMs = uint32_t(loops) * face_->loopMs(mood, a, variant);
   }
-  moment_.outcome = face_->outcome(mood, s, variant, outcome);
+  moment_.outcome = face_->outcome(mood, a, variant, outcome);
   face_->started(a, mood, variant, outcome, ctx);
 }
 
@@ -394,10 +360,10 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
   taps_ = inRun ? std::min(taps_ + 1, 1000) : 1;
   lastTap_ = t;
   if (held(t) || finishShown(t)) return "dip";
-  const render::Anim a = taps_ >= kTapSpamFrom ? render::Anim::kTapSpam : render::Anim::kPoked;
+  const render::SceneState a = taps_ >= kTapSpamFrom ? render::SceneState::kTapSpam : render::SceneState::kPoked;
   const uint8_t v = pick(a, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
   change(t, [&] { playAnim(a, t, CutBy::kTap, 1, model_.mood, v); });
-  return render::animName(a);
+  return render::stateName(a);
 }
 
 // BOOT held: listening at once, even while something needs you, cutting
@@ -408,9 +374,9 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
     if (listening(t)) {
       moment_.ms = (t - moment_.at) + kListenMs + kReplyWaitMs;
     } else {
-      uint8_t v = pick(render::Anim::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
+      uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
       endLine(t, CutBy::kTap);
-      playAnim(render::Anim::kListening, t, CutBy::kTap, 1, model_.mood, v);
+      playAnim(render::SceneState::kListening, t, CutBy::kTap, 1, model_.mood, v);
     }
   });
 }
@@ -426,9 +392,9 @@ void Behaviour::talkOff(uint32_t t) {
 
 // ---- What shows ------------------------------------------------------------
 
-Screen Behaviour::screen(uint32_t t) const {
-  if (noApp(t)) return Screen::kNoApp;
-  return model_.attn ? Screen::kNeedsYou : Screen::kFace;
+render::SceneState Behaviour::look(uint32_t t) const {
+  if (noApp(t)) return render::SceneState::kNoApp;
+  return model_.attn ? render::SceneState::kNeedsYou : model_.look();
 }
 
 // No app shows over everything; then an animation (listening only, while
@@ -457,6 +423,7 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     s.id = moment_.id;
     s.outcome = moment_.requestedOutcome;
     s.ctx = moment_.ctx;
+    s.playMs = moment_.playMs;
   }
   return s;
 }
@@ -490,7 +457,7 @@ render::SceneShow Behaviour::show(uint32_t t) const {
     uint32_t lt = t - say_.at;
     mouth = lt < say_.speakMs && voice::lineMouthOpen(say_.take, say_.then, lt);
   }
-  return face_->show(t, moment_.playMs, mouth, pressed_ ? kPressPx : 0);
+  return face_->show(t, mouth, pressed_ ? kPressPx : 0);
 }
 
 bool Behaviour::pressEasing(uint32_t t) const { return pressed_ && within(t, pressAt_, kPressEaseMs); }
@@ -518,7 +485,7 @@ uint8_t Behaviour::blTarget(uint32_t t) const {
 }
 
 bool Behaviour::finishOn(uint32_t t) const {
-  bool finish = moment_.anim == render::Anim::kTaskComplete || moment_.anim == render::Anim::kReplyReady;
+  bool finish = moment_.anim == render::SceneState::kTaskComplete || moment_.anim == render::SceneState::kReplyReady;
   return momentOn(t) && finish && moment_.agent[0];
 }
 
@@ -544,10 +511,10 @@ const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ?
 
 bool Behaviour::lineAhead(uint32_t t) const { return sayDue(t) && !sayOn(t); }
 
-render::Anim Behaviour::moment(uint32_t t, uint32_t& left) const {
+render::SceneState Behaviour::moment(uint32_t t, uint32_t& left) const {
   if (!momentOn(t)) {
     left = 0;
-    return render::Anim::kNone;
+    return render::SceneState::kNone;
   }
   left = moment_.at + moment_.ms - t;
   return moment_.anim;

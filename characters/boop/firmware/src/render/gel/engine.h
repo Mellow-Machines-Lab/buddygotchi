@@ -51,8 +51,8 @@ class Engine {
   bool oneShot(const Request& value) {
     bool ok = router.oneShot(value, timeMs());
     sync();
-    if (ok && (value.anim == Anim::kPoked || value.anim == Anim::kTapSpam))
-      motion.impulse(value.anim == Anim::kTapSpam, reduced);
+    if (ok && (value.anim == SceneState::kPoked || value.anim == SceneState::kTapSpam))
+      motion.impulse(value.anim == SceneState::kTapSpam, reduced);
     return ok;
   }
   void linkTimedOut(bool value) {

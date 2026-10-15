@@ -29,7 +29,7 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
   context_ = context;
   if (switched_ && !within(t, switchAt_, kBlendMs)) switched_ = false;
   if (!(next == src_)) {
-    bool restart = next.anim != Anim::kNone && next.at != src_.at;
+    bool restart = next.anim != SceneState::kNone && next.at != src_.at;
     if (sceneOf(next.mood, next.state(), next.variant()) != sceneOf(src_.mood, src_.state(), src_.variant()) || restart)
       switched_ = true, switchAt_ = t;
     if (next.look != src_.look || next.lookVariant != src_.lookVariant) lookAt_ = t;
@@ -48,28 +48,34 @@ uint32_t PixelFace::loopEnd(uint32_t t) const {
   uint32_t loop = loopMs(src_.mood, src_.look, src_.lookVariant);
   return t - (t - lookAt_) % loop + loop;
 }
-bool PixelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) const {
+// The next blink, or the look's loop ending while its variations may take
+// turns. What's due then is decided here, before Behaviour syncs the face
+// to that instant: a moment ending at the same instant doesn't make a turn
+// due.
+bool PixelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   bool found = false;
   auto consider = [&](uint32_t c) {
     if (after(c, from) && !after(c, to) && (!found || after(at, c))) at = c, found = true;
   };
   consider(nextBlink_);
   if (turnable()) consider(loopEnd(from));
-  return found;
+  due_ = 0;
+  if (!found) return false;
+  dueAt_ = at;
+  if (at == nextBlink_) due_ |= kBlink;
+  if (turnable() && at == loopEnd(at - 1)) due_ |= kTurn;
+  return true;
 }
-unsigned PixelFace::dueAt(uint32_t t) const {
-  unsigned result = t == nextBlink_ ? 1u : 0u;
-  if (turnable() && t == loopEnd(t - 1)) result |= 2u;
-  return result;
-}
-void PixelFace::step(uint32_t t, linkkit::Rng& rng, unsigned due) {
-  if (due & 1u) {
-    blink_ = src_.anim == Anim::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp &&
+void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
+  const uint8_t due = t == dueAt_ ? due_ : 0;
+  due_ = 0;
+  if (due & kBlink) {
+    blink_ = src_.anim == SceneState::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp &&
              !blinksItself(src_.mood, src_.look, src_.lookVariant);
     blinkAt_ = t;
     nextBlink_ = t + (blink_ ? kBlinkMs : 0) + blinkGap(rng);
   }
-  if ((due & 2u) && turnable() && int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct) {
+  if ((due & kTurn) && turnable() && int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct) {
     int v = rng.range(0, variants(context_.mood, context_.look) - 2);
     if (v >= lookVariant_) ++v;
     lookVariant_ = uint8_t(v);
@@ -79,12 +85,11 @@ void PixelFace::alert(uint32_t t, bool replacing) {
   lookAt_ = t;
   if (replacing) switched_ = true, switchAt_ = t;
 }
-void PixelFace::started(Anim a, Mood, uint8_t variant, Outcome, StartCtx) {
-  last_[int(animState(a))] = uint8_t(variant + 1);
+void PixelFace::started(SceneState a, Mood, uint8_t variant, Outcome, StartCtx) {
+  last_[int(a)] = uint8_t(variant + 1);
   blink_ = false;
 }
-uint8_t PixelFace::pick(Anim a, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng) const {
-  SceneState s = animState(a);
+uint8_t PixelFace::pick(SceneState s, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng) const {
   uint8_t fit[kMaxVariants];
   int n = fitting(mood, s, o, c, fit);
   for (int i = 0; i < n; ++i)
@@ -101,20 +106,41 @@ uint32_t PixelFace::holdMs(Mood mood, int loops, uint32_t t) const {
   uint32_t into = designMs(t) % loop;
   return loop - into + uint32_t(loops - 1) * loop;
 }
-// The design's sounds, then the needs-you arc's on the request's clock
-// (show's t, which Device sets to designMs): each cue once, as the clock
-// reaches it, and one that late dropped, as the design's are. A new request
-// starts the clock over, and so the cues.
-int PixelFace::cues(const SceneShow* s, voice::FxEvent* out, bool& changed) {
-  int n = fx_.follow(s, out, changed);
-  if (!s || s->state != SceneState::kNeedsYou) {
+bool PixelFace::blinking(uint32_t t) const { return blink_ && within(t, blinkAt_, kBlinkMs); }
+SceneShow PixelFace::show(uint32_t t, bool mouthOpen, int dy) const {
+  SceneShow s;
+  s.mood = src_.mood;
+  s.state = src_.state();
+  s.variant = src_.variant();
+  s.t = designMs(t);
+  uint32_t loop = loopMs(s.mood, s.state, s.variant);
+  if (src_.anim != SceneState::kNone) s.t = s.t >= src_.playMs ? loop - 1 : s.t % loop;
+  if (s.state == SceneState::kNeedsYou && s.t >= loop) s.t = 0;
+  s.eyesShut = blinking(t) || (switched_ && within(t, switchAt_, kBlendMs));
+  s.mouthOpen = mouthOpen;
+  s.dy = int16_t(dy);
+  return s;
+}
+// The design's sounds, on its clock unwrapped since the timeline counts
+// its own loops, then the needs-you arc's on the request's clock: each cue
+// once, as the clock reaches it, and one that late dropped, as the design's
+// are. A new request starts the clock over, and so the cues.
+int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) {
+  if (!shown) {
+    arcOn_ = false;
+    return fx_.follow(nullptr, out, changed);
+  }
+  SceneShow s = show(t, false, 0);
+  s.t = designMs(t);
+  int n = fx_.follow(&s, out, changed);
+  if (s.state != SceneState::kNeedsYou) {
     arcOn_ = false;
     return n;
   }
-  if (!arcOn_ || s->t + EffectTrack::kLeadMs < arcCovered_) arcOn_ = true, arcCovered_ = s->t;
-  const uint32_t until = s->t + EffectTrack::kLeadMs;
+  if (!arcOn_ || s.t + EffectTrack::kLeadMs < arcCovered_) arcOn_ = true, arcCovered_ = s.t;
+  const uint32_t until = s.t + EffectTrack::kLeadMs;
   for (const ArcCue& c : kArcCues) {
-    if (c.at < arcCovered_ || c.at >= until || c.at + EffectTrack::kLateMs < s->t) continue;
+    if (c.at < arcCovered_ || c.at >= until || c.at + EffectTrack::kLateMs < s.t) continue;
     const int clip = clips().index(c.clip);
     if (clip < 0 || n >= Face::kMaxCues) continue;
     voice::FxEvent e;
@@ -123,21 +149,6 @@ int PixelFace::cues(const SceneShow* s, voice::FxEvent* out, bool& changed) {
   }
   if (until > arcCovered_) arcCovered_ = until;
   return n;
-}
-bool PixelFace::blinking(uint32_t t) const { return blink_ && within(t, blinkAt_, kBlinkMs); }
-SceneShow PixelFace::show(uint32_t t, uint32_t playMs, bool mouthOpen, int dy) const {
-  SceneShow s;
-  s.mood = src_.mood;
-  s.state = src_.state();
-  s.variant = src_.variant();
-  s.t = designMs(t);
-  uint32_t loop = loopMs(s.mood, s.state, s.variant);
-  if (src_.anim != Anim::kNone) s.t = s.t >= playMs ? loop - 1 : s.t % loop;
-  if (s.state == SceneState::kNeedsYou && s.t >= loop) s.t = 0;
-  s.eyesShut = blinking(t) || (switched_ && within(t, switchAt_, kBlendMs));
-  s.mouthOpen = mouthOpen;
-  s.dy = int16_t(dy);
-  return s;
 }
 bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble, const Strip& strip,
                      bool dirty) {

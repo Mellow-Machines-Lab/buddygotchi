@@ -134,15 +134,15 @@ class PlayTests(unittest.TestCase):
 
     def test_the_animations_are_the_devices(self):
         """The names boopctl plays are the device's own, the names of the
-        states whose designs they play (firmware/src/render/scene.cpp
-        animState; faces.h names them), and all of them are in Boop's
+        states whose designs they play (firmware/src/render/types.cpp
+        isMoment; faces.h names them), and all of them are in Boop's
         `hello.does`, but for a tap's, which the device plays itself. The
         older one is play's own, sent by today's name."""
         names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
         self.assertEqual(names, facegen.STATES)
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
-        plays = firmware_names("render/types.cpp", "SceneState animState(Anim a) {",
-                               r"case Anim::k\w+:\s*return SceneState::(k\w+);", end="\n}\n")
+        plays = firmware_names("render/types.cpp", "bool isMoment(SceneState s) {", r"case SceneState::(k\w+):",
+                               end="\n}\n")
         self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
         self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
@@ -154,7 +154,7 @@ class PlayTests(unittest.TestCase):
         are the tools' NO_ANIM."""
         names = firmware_names("app/device.cpp", "kDoNames[kDoCount] =")
         self.assertEqual(common.DOES, names)
-        anims = firmware_names("app/device.cpp", "kDoAnims[kDoCount] =", r"render::Anim::k(\w+)")
+        anims = firmware_names("app/device.cpp", "kDoAnims[kDoCount] =", r"render::SceneState::k(\w+)")
         self.assertEqual(len(anims), len(names))
         self.assertEqual(common.NO_ANIM, {n for n, a in zip(names, anims) if a == "None"})
 

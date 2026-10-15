@@ -25,10 +25,6 @@ constexpr uint32_t kDefaultPressMs = 100;
 constexpr uint32_t kFrameMs = 16;
 // BOOT's cap on talking is where listening stops listening.
 static_assert(ButtonGesture::kTalkCapMs == Behaviour::kListenMs, "the talk cap is listening's");
-// The face's no-app look and the kit's host-gone window are the same 30 s
-// (linkkit/SPEC.md §5), on the device clock and in real
-// time.
-static_assert(Behaviour::kNoAppMs == linkkit::kHostGoneMs, "no app is when the host is gone");
 // dbg.shot sends the palette as it's laid out in memory: 256 RGB565
 // entries, low byte first.
 static_assert(sizeof(render::kPalette.c) == 512, "the palette is 256 entries");
@@ -62,10 +58,10 @@ enum Do : uint8_t {
 };
 constexpr const char* kDoNames[kDoCount] = {"react", "task_complete", "reply_ready", "starting",      "stopped",
                                             "error", "helper_return", "listening",   "stop_listening"};
-constexpr render::Anim kDoAnims[kDoCount] = {
-    render::Anim::kNone,         render::Anim::kTaskComplete, render::Anim::kReplyReady,
-    render::Anim::kStarting,     render::Anim::kStopped,      render::Anim::kError,
-    render::Anim::kHelperReturn, render::Anim::kListening,    render::Anim::kNone};
+constexpr render::SceneState kDoAnims[kDoCount] = {
+    render::SceneState::kNone,         render::SceneState::kTaskComplete, render::SceneState::kReplyReady,
+    render::SceneState::kStarting,     render::SceneState::kStopped,      render::SceneState::kError,
+    render::SceneState::kHelperReturn, render::SceneState::kListening,    render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -161,7 +157,7 @@ void Device::begin() {
 void Device::reset() {
   b_.reset(0, kit().rng());
   drain();
-  parsed_ = Parsed{};
+  parsed_ = MomentIn{};
   restKey_ = 0;
   hush();
   saidSeq_ = 0;
@@ -177,8 +173,8 @@ void Device::reset() {
 }
 
 void Device::drain() {
-  Ended e;
-  while (b_.takeEnded(e)) kit().ended(e.call, e.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(e.by));
+  PlayedOut p;
+  if (b_.takePlayedOut(p)) kit().ended(p.call, p.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(p.by));
 }
 
 void Device::input(const char* k, uint32_t t, int x, int y) {
@@ -230,14 +226,14 @@ MomentIn Device::parse(const Call& c) {
     return mo;
   }
   JsonObjectConst args = c.args;
-  mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::Anim::kNone;
+  mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::SceneState::kNone;
   mo.expr = render::parseMood(args["mood"], mo.mood) && b_.face().supportsMood(mo.mood);  // unknown or missing: the state's mood
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
-  if (mo.anim != render::Anim::kNone) {
+  if (mo.anim != render::SceneState::kNone) {
     render::Outcome outcome = render::Outcome::kNone;
     render::StartCtx ctx = render::StartCtx::kNone;
-    if (mo.anim == render::Anim::kTaskComplete) outcome = render::outcomeFromName(args["outcome"]);
-    if (mo.anim == render::Anim::kStarting) ctx = render::ctxFromName(args["ctx"]);
+    if (mo.anim == render::SceneState::kTaskComplete) outcome = render::outcomeFromName(args["outcome"]);
+    if (mo.anim == render::SceneState::kStarting) ctx = render::ctxFromName(args["ctx"]);
     mo.outcome = outcome;
     mo.ctx = ctx;
     mo.variant = b_.pick(mo.anim, mo.expr ? mo.mood : b_.model().mood, heldTo(args["variant"], 0, 255, 0), outcome,
@@ -259,10 +255,10 @@ MomentIn Device::parse(const Call& c) {
 // so is stop_listening with nothing to stop. A reply ends listening either
 // way.
 const char* Device::refuse(const Call& c, uint32_t t) {
-  parsed_ = Parsed{c.key, parse(c)};
-  const char* why = b_.admit(parsed_.in, t);
+  parsed_ = parse(c);
+  const char* why = b_.admit(parsed_, t);
   drain();  // a listening call the reply ended
-  if (why) parsed_ = Parsed{};
+  if (why) parsed_ = MomentIn{};
   return why;
 }
 
@@ -276,8 +272,8 @@ const char* Device::refuse(const Call& c, uint32_t t) {
 // dropped its own queue.
 void Device::onDo(const Call& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait for the turn
-  const MomentIn mo = parsed_.key == c.key ? parsed_.in : parse(c);
-  parsed_ = Parsed{};
+  const MomentIn mo = parsed_.call == c.key ? parsed_ : parse(c);
+  parsed_ = MomentIn{};
   uint32_t seq = b_.momentSeq();
   // A line's sound goes with its bubble: now, or at its animation's voice
   // window. Any other call drops one still waiting.
@@ -411,9 +407,18 @@ void Device::ping(JsonObject d) {
   d["h"] = render::kHeight;
 }
 
+const char* Device::screenName(uint32_t t) const {
+  if (pattern_) return "pattern";
+  switch (b_.look(t)) {
+    case render::SceneState::kNoApp: return "no_app";
+    case render::SceneState::kNeedsYou: return "needs_you";
+    default: return "face";
+  }
+}
+
 void Device::state(JsonObject d, uint32_t t) {
   const Model& m = b_.model();
-  d["screen"] = screenName(screenAt(t));
+  d["screen"] = screenName(t);
   d["base"] = render::stateName(m.base);
   if (m.act != render::SceneState::kWorking) d["act"] = render::stateName(m.act);
   else d["act"] = nullptr;
@@ -430,9 +435,9 @@ void Device::state(JsonObject d, uint32_t t) {
     d["attn"] = nullptr;
   }
   uint32_t left;
-  render::Anim anim = b_.moment(t, left);
-  if (anim != render::Anim::kNone) {
-    d["moment"]["anim"] = render::animName(anim);
+  render::SceneState anim = b_.moment(t, left);
+  if (anim != render::SceneState::kNone) {
+    d["moment"]["anim"] = render::stateName(anim);
     d["moment"]["left_ms"] = left;
     d["moment"]["variant"] = b_.momentVariant() + 1;
   } else {
@@ -499,7 +504,7 @@ void Device::state(JsonObject d, uint32_t t) {
 // pixel, row by row, drawn afresh; a native face's frame as its RGB565
 // pixels. Either is the frame the board sends next.
 bool Device::shot(linkkit::Shot& s, uint32_t t) {
-  screen_ = screenAt(t);
+  noApp_ = !pattern_ && b_.noApp(t);
   dirty_ = true;
   render(t);
   if (auto* native = surface()) {
@@ -584,7 +589,7 @@ void Device::readInputs(uint32_t t) {
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
   if (contact) touchSeenReal_ = real, touchInjected_ = injTouch_;
   bool touching = contact || (touchDown_ && !touchInjected_ && real - touchSeenReal_ < kTouchReleaseMs);
-  bool faced = screenAt(t) != Screen::kPattern;
+  bool faced = !pattern_;
   if (touching && !touchDown_) {
     input("touch", t, x, y);
     if (faced) {
@@ -617,15 +622,15 @@ void Device::tick(uint32_t t) {
   uint8_t bl = b_.backlight(t);
   if (bl != backlight_) backlight_ = bl, hal_.setBacklight(bl);
 
-  Screen screen = screenAt(t);
-  if (screen != screen_) screen_ = screen, dirty_ = true;
+  const bool noApp = !pattern_ && b_.noApp(t);
+  if (noApp != noApp_) noApp_ = noApp, dirty_ = true;
   // The face may change without a message: its design moves on its own
   // clock (a breath, keys lighting, a blink), so on the face screens every
   // step is checked, and drawn only if its frame changed. A frozen clock
   // looks on every step, so scenario frames stay exact, and the press
   // squish on every pass, so the cap doesn't delay a press.
   bool due = kit().frozen() || b_.pressEasing(t) || hal_.realMs() - drawnReal_ >= kFrameMs;
-  if (dirty_ || (screen_ != Screen::kPattern && t != drawnT_ && due)) render(t);
+  if (dirty_ || (!pattern_ && t != drawnT_ && due)) render(t);
 }
 
 // ---- Sound -----------------------------------------------------------------
@@ -661,11 +666,9 @@ void Device::followSound(uint32_t t) {
   if (saying_ && (b_.momentSeq() != saidSeq_ || !b_.bubble(t))) hush();
   startLine(t);
   const Model& m = b_.model();
-  render::SceneShow show = b_.show(t);
-  show.t = b_.designMs(t);
   voice::FxEvent due[render::Face::kMaxCues];
   bool changed;
-  int n = b_.face().cues(screenAt(t) == Screen::kPattern ? nullptr : &show, due, changed);
+  int n = b_.face().cues(t, !pattern_, due, changed);
   if (changed) hal_.stopEffects();
   if (m.vol == 0) return;
   const voice::EffectClips& clips = b_.face().clips();
@@ -689,7 +692,7 @@ void Device::render(uint32_t t) {
   drawnReal_ = hal_.realMs();
   // A native face draws into the surface not being sent.
   render::SurfacePair* native = frames();
-  if (screen_ == Screen::kPattern) {  // drawn only when dirty: it doesn't move
+  if (pattern_) {  // drawn only when dirty: it doesn't move
     if (targetX_ >= 0) {
       canvas_.fill(render::kBlack);
       canvas_.fillRect(targetX_ - 10, targetY_ - 1, 21, 3, render::kAmber);

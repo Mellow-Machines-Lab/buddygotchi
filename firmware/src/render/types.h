@@ -7,24 +7,6 @@
 
 namespace render {
 
-enum class Anim : uint8_t {
-  kNone,
-  kTaskComplete,  // the brain's finish: a turn done or failed
-  kReplyReady,    // the brain's finish: an answer, or a question back
-  kStarting,      // the rules' one-shots
-  kStopped,
-  kError,
-  kHelperReturn,
-  kPoked,      // a tap
-  kTapSpam,    // the third tap in a row and on
-  kListening,  // push-to-talk: the listening design, until the reply
-  kCount,
-};
-
-// By its design's state's name, as Boop's do names it: kNone if unknown.
-Anim animFromName(const char* name);
-const char* animName(Anim a);  // its design's state's name, such as "task_complete"; "none" for kNone
-
 // The character's mood, which picks the set of designs every look and
 // animation is drawn in. The list is the character pack's,
 // in its order, from its generated moods.h (characters/CHARACTER.md §9):
@@ -37,7 +19,8 @@ const char* moodName(Mood m);
 // seven keep the numbers they had before the rest came. Idle, working,
 // asleep, needs you, no app and what the agents are doing (planning to
 // waiting) are looks, what the face shows when no moment plays; the rest are
-// the animations' (animState).
+// the moments' animations (isMoment), each playing its own state's design.
+// kNone, past the designs, is no animation.
 enum class SceneState : uint8_t {
   kIdle,
   kWorking,
@@ -61,13 +44,20 @@ enum class SceneState : uint8_t {
   kStopped,
   kPoked,
   kTapSpam,
-  kCount
+  kCount,
+  kNone = 0xFF
 };
-// The state's name, faces.h's kStateNames ("idle", "needs_you", ...).
+// The state's name, faces.h's kStateNames ("idle", "needs_you", ...);
+// "none" for kNone.
 const char* stateName(SceneState s);
 SceneState stateFromName(const char* name);  // kIdle if missing or unknown
-// The design an animation plays: its own state's.
-SceneState animState(Anim a);
+// The moments' animations: the brain's finish (task_complete, a turn done
+// or failed; reply_ready, an answer or a question back), the rules'
+// one-shots (starting, stopped, error, helper_return), a tap's (poked, and
+// tap_spam from the third in a row) and push-to-talk's listening, until
+// the reply.
+bool isMoment(SceneState s);
+SceneState momentFromName(const char* name);  // kNone for any other name
 
 // The host fact a variation is for, when it's for one: task_complete's
 // outcome and starting's context. kNone on a design

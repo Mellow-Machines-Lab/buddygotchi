@@ -45,7 +45,7 @@ void GelFace::seed(uint32_t s) {
 }
 
 // The engine steps on the reference's 16 ms grid from the last reset.
-bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) const {
+bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   uint32_t next = origin_ + ((from - origin_) / 16 + 1) * 16;
   if (int32_t(to - next) < 0) return false;
   at = next;
@@ -82,9 +82,8 @@ void GelFace::advanceTo(uint32_t t) {
   }
 }
 
-void GelFace::step(uint32_t t, linkkit::Rng&, unsigned due) {
-  if (due) advanceTo(t);
-}
+// At every stop of Behaviour's, on the grid or not.
+void GelFace::step(uint32_t t, linkkit::Rng&) { advanceTo(t); }
 
 // Compares without building the engine's facts, so an unchanged state
 // (every tick's sync) allocates nothing.
@@ -119,7 +118,7 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   bool timeout = source.look == SceneState::kNoApp;
   if (timeout != e.router.timedOut) e.linkTimedOut(timeout);
   const int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
-  bool nextMoment = source.anim != Anim::kNone && (source.anim != source_.anim || source.at != source_.at);
+  bool nextMoment = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (nextMoment) {
     // Behaviour times the moment (its loops, its line), so the engine
     // holds it until the source moves on.
@@ -136,7 +135,7 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     r.say = true;
     e.oneShot(r);
     restartCues();
-  } else if (source.anim == Anim::kNone && source_.anim != Anim::kNone && !timeout) {
+  } else if (source.anim == SceneState::kNone && source_.anim != SceneState::kNone && !timeout) {
     e.clearTransient();
     restartCues();
   }
@@ -151,15 +150,14 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
 // The engine's shuffle bag for the moment, drawn from copies: a call
 // refused after its pick (Device::refuse) leaves the bag and the engine's
 // randomness as they were. started draws the same take for real.
-uint8_t GelFace::pick(Anim a, Mood mood, int, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
-  Bag bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(animState(a), outcome, ctx)];
+uint8_t GelFace::pick(SceneState a, Mood mood, int, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
+  Bag bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)];
   Random random = engine_->random;
   return uint8_t(bag.next(random));
 }
 
-void GelFace::started(Anim a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
-  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(animState(a), outcome, ctx)].next(
-      engine_->random);
+void GelFace::started(SceneState a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
+  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)].next(engine_->random);
 }
 
 int GelFace::variants(Mood, SceneState) const { return kTakes; }
@@ -183,7 +181,7 @@ uint32_t GelFace::holdMs(Mood, int loops, uint32_t) const {
   return loop * loops - age % loop;
 }
 
-int GelFace::cues(const SceneShow*, voice::FxEvent* out, bool& changed) {
+int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
   changed = revision_ != cueRevision_;
   cueRevision_ = revision_;
   int count = pendingCount_;
