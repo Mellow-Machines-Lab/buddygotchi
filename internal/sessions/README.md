@@ -1,4 +1,4 @@
-# Demos with a real agent
+# Demos
 
 Updated 2026-10-15. A character pack's demo script
 ([characters/DEMOS.md](../../characters/DEMOS.md)), played
@@ -8,20 +8,39 @@ really reads, edits and runs things in a fresh copy of a small project,
 and its real hooks reach Boop, which keeps the person's pokes and talk and
 its brain's answers in step with it.
 
+## Every way to run one
+
+All of it is `make demo` from the repo root, and these variables:
+
+| Variable | Value | What it does |
+| --- | --- | --- |
+| `NAME` | a script's name (`landing` when left out), or `?` | Plays `demo/NAME.jsonl` from the pack that has one (`CHARACTER=…` picks when two packs share a name). `?` lists them |
+| `IN` | nothing | No agent: Boop plays the agent's part too, on the simulator's page in a browser, as it records it for the website |
+| | `simulated-claude-terminal` | Claude Code in this terminal, its model a local server that replays the script's replies |
+| | `simulated-codex-terminal` | The same with Codex (a script with no reviewer: Codex has no subagents here) |
+| | `claude` | Your real Claude, in the Claude desktop app, performing the script as `/demo` |
+| `BOARD` | `sim` (when left out), or `usb:SOCKET` | With an agent: where Boop shows, the simulator's page or a real board through `internal/tools/boopctl bridge` |
+| `FACE` | `pixel` (when left out), or `gel` | With no agent: the face on the simulator's page |
+| `FRESH` | `1` | With no agent: record the demo again, though the script hasn't changed |
+
 ```sh
-make demo IN=claude                         # the real Claude, in the Claude desktop app
-make demo IN=simulated-claude-terminal      # Claude Code in this terminal, its replies replayed
-make demo IN=simulated-codex-terminal       # Codex (a script with no reviewer: Codex has no subagents here)
-make demo IN=claude NAME=hello              # half a minute: a quick check that it all works
-make demo IN=claude BOARD=usb:/tmp/boop-bridge.sock   # a real board, on internal/tools/boopctl bridge
+make demo NAME=?                                          # the demos there are
+make demo NAME=hanging                                    # no agent, in the browser
+make demo NAME=hanging IN=simulated-claude-terminal       # Claude Code replayed, Boop in the browser
+make demo NAME=hello IN=claude                            # half a minute: a quick check that it all works
 ```
 
-`make demo` with no `IN` plays the same script with no agent, in the
-browser page alone.
+On a real board, plugged in over USB, quit the Boop menu-bar app first
+(it would draw over the demo by Bluetooth), then:
 
-It builds Boop with the script's character pack, serves the simulator's
-page (unless one is running) and opens it, waits for the board, then
-starts the agent. Put the agent and the page side by side and record the
+```sh
+internal/tools/boopctl bridge                                                          # one terminal: it holds the board's port
+make demo NAME=hanging IN=simulated-claude-terminal BOARD=usb:/tmp/boop-bridge.sock    # another
+```
+
+With an agent, it builds Boop with the script's character pack, serves
+the simulator's page (unless one is running) and opens it, waits for the
+board, then starts the agent. Put the agent and the page side by side and record the
 screen. Your keys reach the agent as ever: quit it (Ctrl-C twice) and the
 run stops with it.
 
@@ -92,7 +111,10 @@ Each run keeps its logs in its `/tmp/boop-session-*` folder:
 `NAME/workspace/` here is the project the script's agent works in: its
 files, and tests that give the story's results when the script's edits are
 made (`hello`, `landing`), or that runs the command it asks you about
-(`hanging`, whose story is the wait before you allow it). A real model reads what it runs, so the
+(`hanging`, whose story is the wait before you allow it). Its copy is
+named after the script's title (`deploy-the-docs`), as the player with
+no agent names its project, so the board's sign says the same either way.
+A real model reads what it runs, so the
 project and the script must agree, and the script must say only what's
 true: a reviewer asked to say "nothing else changed" when something did
 won't. `make -C internal tools-test` holds the landing project to its

@@ -41,6 +41,15 @@ class Script:
     def name(self) -> str:
         return self.path.stem
 
+    @property
+    def project(self) -> str:
+        """The project's folder: the title, lowercase, its runs of anything
+        but letters and digits one "-", as the player with no agent names
+        its own (Runtime+Demo's slug), so the screen says the same either
+        way."""
+        words = "".join(c if c.isalnum() else " " for c in self.title.lower()).split()
+        return "-".join(words) or "project"
+
     def agent_lines(self) -> List[Dict[str, Any]]:
         return [l for l in self.lines if "agent" in l]
 

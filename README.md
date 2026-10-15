@@ -112,7 +112,7 @@ Then tap the screen or press BOOT to poke it.
 | Run Boop in the menu bar | `make run` |
 | Try Boop with no board, in a browser (needs `brew install emscripten`) | `make simulator` ([simulator/README.md](simulator/README.md)) |
 | Watch a scripted demo in that browser board, by name | `make demo` (the landing story; `NAME=?` lists them) |
-| Watch a demo with a real agent, for videos | `make demo IN=claude` (the desktop app), `IN=simulated-claude-terminal` or `IN=simulated-codex-terminal` ([internal/sessions/README.md](internal/sessions/README.md)) |
+| Watch a demo with a real agent, for videos | `make demo IN=claude` (the desktop app), `IN=simulated-claude-terminal` or `IN=simulated-codex-terminal`; every option, and on a real board: [internal/sessions/README.md](internal/sessions/README.md) |
 
 Start `make run` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's

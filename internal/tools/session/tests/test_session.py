@@ -78,6 +78,14 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual(rules["ask"], ["Bash(npm run setup:browser)"])
         self.assertIn("Bash(git:*)", rules["allow"], "the reviewer words its own git commands")
 
+    def test_the_project_is_named_as_the_player_with_no_agent_names_it(self):
+        # The sign on the board shows the project, so a live run and the
+        # recorded one must agree (Runtime+Demo's slug).
+        self.assertEqual("deploy-the-docs", scripts.load(scripts.find("hanging")).project)
+        self.assertEqual("keyboard-shortcuts", scripts.load(scripts.find("landing")).project)
+        self.assertEqual("a-b-2", scripts.Script(path=Path("x.jsonl"), title=" A, b--2! ").project)
+        self.assertEqual("project", scripts.Script(path=Path("x.jsonl"), title="").project)
+
     def test_the_demo_command_is_the_scripts_replies_in_order(self):
         s = scripts.load(scripts.find("landing"))
         text = desktop.script(s.replies(), s.title)
