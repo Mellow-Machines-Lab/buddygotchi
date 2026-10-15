@@ -10,7 +10,7 @@ Import("env")  # noqa: F821
 stage = os.path.join(env["PROJECT_DIR"], "..", ".character-build")  # noqa: F821
 if not os.path.isdir(os.path.join(stage, "firmware", "src", "render", "gel")):
     try:
-        pack = open(os.path.join(stage, "packs", "chosen")).read().strip()
+        pack = os.path.basename(open(os.path.join(stage, "pack")).read().strip())
     except OSError:
         pack = "(none staged)"
     sys.stderr.write(

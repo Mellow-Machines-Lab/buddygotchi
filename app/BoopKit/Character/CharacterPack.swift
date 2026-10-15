@@ -216,18 +216,24 @@ extension CharacterPack {
     /// `active`.
     public static func use(_ character: CharacterPack) { store.set(character) }
 
-    /// The pack a process uses when nothing chose one: `BOOP_CHARACTER`'s,
-    /// else the one the repo this file was built from last staged
-    /// (`.character-build/pack`, CHARACTER.md §2), else its Boop pack.
+    /// The pack a process uses when nothing chose one, by charactergen's
+    /// rule for the pack in use (CHARACTER.md §2): `BOOP_CHARACTER`'s, else
+    /// `CHARACTER`'s in `characters/`, else the one the repo this file was
+    /// built from last staged (`.character-build/pack`). Every build stages
+    /// first, so there's always one; without it, loading fails and says
+    /// where it looked.
     static var defaultDirectory: URL {
-        if let path = ProcessInfo.processInfo.environment["BOOP_CHARACTER"], !path.isEmpty {
+        let env = ProcessInfo.processInfo.environment
+        if let path = env["BOOP_CHARACTER"], !path.isEmpty {
             return URL(fileURLWithPath: path)
         }
         let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
-        if let staged = try? String(contentsOf: repo.appendingPathComponent(".character-build/pack"), encoding: .utf8) {
-            return URL(fileURLWithPath: staged.trimmingCharacters(in: .whitespacesAndNewlines))
+        if let name = env["CHARACTER"], !name.isEmpty {
+            return repo.appendingPathComponent("characters").appendingPathComponent(name)
         }
-        return repo.appendingPathComponent("characters/boop")
+        let pointer = repo.appendingPathComponent(".character-build/pack")
+        guard let staged = try? String(contentsOf: pointer, encoding: .utf8) else { return pointer }
+        return URL(fileURLWithPath: staged.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private static let store = Store()

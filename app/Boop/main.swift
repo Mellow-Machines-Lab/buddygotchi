@@ -49,7 +49,7 @@ let usage = """
     """
 
 /// The character pack bundled with the app: the one `make build` staged
-/// (characters/CHARACTER.md §2), which the bundle's `packs/chosen` names.
+/// (characters/CHARACTER.md §2), the only folder in the bundle's `packs`.
 /// `BOOP_CHARACTER`, a pack's folder, comes first, as for the tests and
 /// boopdev, so one build plays any pack's demo.
 func bundledCharacter() -> CharacterPack {
@@ -57,10 +57,10 @@ func bundledCharacter() -> CharacterPack {
         do { return try CharacterPack(directory: URL(fileURLWithPath: path).standardizedFileURL) } catch { fail("BOOP_CHARACTER: \(error)") }
     }
     guard let packs = Bundle.module.url(forResource: "packs", withExtension: nil),
-          let chosen = try? String(contentsOf: packs.appendingPathComponent("chosen"), encoding: .utf8) else {
+          let url = (try? FileManager.default.contentsOfDirectory(at: packs, includingPropertiesForKeys: [.isDirectoryKey]))?
+              .first(where: { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }) else {
         fail("the character pack is missing from the app: build it with make build, which stages it")
     }
-    let url = packs.appendingPathComponent(chosen.trimmingCharacters(in: .whitespacesAndNewlines))
     do { return try CharacterPack(directory: url) } catch { fail("the app's character pack is broken: \(error)") }
 }
 

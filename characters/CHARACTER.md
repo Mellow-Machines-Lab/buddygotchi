@@ -93,16 +93,25 @@ The first of these wins:
    that git ignores. It's how `make run` remembers your choice.
 3. `characters/boop/`.
 
-`python3 characters/charactergen.py --which` prints the one chosen, and
-`--stage` lays it out in `.character-build/` at the repo root (also
-ignored): the pack's `firmware/`, the folders the app bundles, and the
-pack's own path. The builds read only from there.
-`firmware/tools/pio.sh` stages before every PlatformIO run, and `make
-build` before every app build. The app bundles only what it reads of the
-pack (not its firmware, voice pack, tools or tests), and the tests,
-`boopdev` and the device tools read the chosen pack's own folder.
-`Boop` itself also takes `BOOP_CHARACTER` when it starts, so one build
-can play any pack's demo. Staging also links the pack's own firmware
+`python3 characters/charactergen.py --stage` lays the chosen pack out in
+`.character-build/` at the repo root (also ignored): the pack's
+`firmware/`, the folder the app bundles (`packs/`, that pack alone), and
+`pack`, the one pointer to the pack's own folder. The builds read only
+from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
+and `make build` before every app build. The app bundles only what it
+reads of the pack (not its firmware, voice pack, tools or tests).
+
+Everything that runs after a build, the tests, `boopdev`, the device
+tools and the simulator, reads the **pack in use**: the one the
+environment chooses (`BOOP_CHARACTER` or `CHARACTER`), else the one
+`pack` points to, else the chosen one (nothing staged yet). So a change
+to `.character` waits for the next stage. `charactergen.py` keeps this
+rule (`in_use()`), and `--which` prints its answer; the Python tools
+import it, the shell and Node call `--which`, the Swift tests read the
+environment and then the pointer, and the C++ tests, which run only
+after a stage, read the pointer. `Boop` itself takes `BOOP_CHARACTER`
+when it starts, else its bundled pack, so one build can play any pack's
+demo. Staging also links the pack's own firmware
 tests (`tests/firmware/test_*`) beside the engine's, so
 `make -C internal fw-test` runs both; `make -C internal tools-test` runs
 the Python tests in a pack's `tests/tools/`.

@@ -3,7 +3,7 @@
 // and its USB cable (web/serve.py). Needs simulator/web/build.sh to have run.
 //   node --test simulator/tests/
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
@@ -13,9 +13,9 @@ import { fileURLToPath } from 'node:url';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dist = path.join(repo, 'simulator/web/dist');
-// The chosen character pack's voice (characters/CHARACTER.md §8): the pack last staged, else Boop.
-const staged = path.join(repo, '.character-build/pack');
-const voice = path.join(existsSync(staged) ? readFileSync(staged, 'utf8').trim() : path.join(repo, 'characters/boop'), 'voice/voice.bin');
+// The voice of the character pack in use (characters/CHARACTER.md §2, §8).
+const inUse = execFileSync('python3', [path.join(repo, 'characters/charactergen.py'), '--which'], { encoding: 'utf8' }).trim();
+const voice = path.join(inUse, 'voice/voice.bin');
 const skip = existsSync(path.join(dist, 'boop-sim.wasm')) ? false : 'the page isn\'t built: simulator/web/build.sh';
 const needsVoice = skip || (existsSync(voice) ? false : 'the chosen character pack has no voice');
 const sleep = ms => new Promise(r => setTimeout(r, ms));

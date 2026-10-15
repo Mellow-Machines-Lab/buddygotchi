@@ -31,13 +31,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
-def chosen_voice() -> Path:
-    """The chosen character pack's voice (characters/CHARACTER.md §8): the
-    pack is `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack), else Boop."""
-    staged = REPO / ".character-build" / "pack"
-    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "boop")
-    return Path(pack) / "voice" / "voice.bin"
+sys.path.insert(0, str(REPO / "simulator" / "tools"))
+from voice_subset import chosen_voice  # noqa: E402  the pack in use's voice
+sys.path.pop(0)
 
 
 # A client this far behind on the board's lines (it stopped reading) is

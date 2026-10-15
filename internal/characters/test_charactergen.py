@@ -133,9 +133,32 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(gen.stage(pack), 0)
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
         self.assertEqual([n for n in staged if not n.startswith("firmware-test/")],
-                         ["firmware/include/moods.h", "pack", "packs/chosen", "packs/solo/character.json", "packs/solo/mac/takes.tsv",
+                         ["firmware/include/moods.h", "pack", "packs/solo/character.json", "packs/solo/mac/takes.tsv",
                           "packs/solo/steering/guide.md"])
         self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(pack))
+
+    def test_the_pack_in_use(self):
+        """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
+        import os
+        from unittest import mock
+        staged, other = self.pack("staged", [{"id": "calm"}]), self.pack("other", [{"id": "calm"}])
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        env = {k: v for k, v in os.environ.items() if k not in ("BOOP_CHARACTER", "CHARACTER")}
+        with mock.patch.dict(os.environ, env, clear=True):
+            (self.dir / ".character").write_text("other")
+            root, gen.ROOT = gen.ROOT, self.dir  # .character, the remembered choice
+            characters, gen.CHARACTERS = gen.CHARACTERS, self.dir
+            self.addCleanup(setattr, gen, "ROOT", root)
+            self.addCleanup(setattr, gen, "CHARACTERS", characters)
+            self.assertEqual(gen.in_use(), other)  # nothing staged: the chosen one
+            gen.stage(staged)
+            self.assertEqual(gen.in_use(), staged)  # .character waits for the next stage
+            os.environ["CHARACTER"] = "other"
+            self.assertEqual(gen.in_use(), other)
+            del os.environ["CHARACTER"]
+            os.environ["BOOP_CHARACTER"] = str(other)
+            self.assertEqual(gen.in_use(), other.resolve())
 
 
 if __name__ == "__main__":

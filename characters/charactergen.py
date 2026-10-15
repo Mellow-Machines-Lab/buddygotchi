@@ -14,7 +14,8 @@ one isn't.
 root for the builds to read (§2). firmware/tools/pio.sh runs it before
 every PlatformIO build.
 
---which prints the chosen pack's folder.
+--which prints the folder of the pack in use: the one everything that runs
+after a build reads (in_use()).
 
 Every form but --which also checks the board's states where they're
 named (CHARACTER.md §9 and each pack's mac/faces.json), each pack's
@@ -24,7 +25,10 @@ fails on a problem with any of them; --stage and the first form only warn.
 
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
-folder in the repo's .character file, and characters/boop/.
+folder in the repo's .character file, and characters/boop/. Staging
+writes the chosen pack's folder in .character-build/pack, the one pointer
+to it; the pack in use is the one the environment chooses, else that one,
+else the chosen one (nothing staged yet).
 """
 from __future__ import annotations
 
@@ -52,6 +56,19 @@ def chosen() -> Path:
         name = saved.read_text().strip()
         return (ROOT / name).resolve() if "/" in name else CHARACTERS / name
     return CHARACTERS / "boop"
+
+
+def in_use() -> Path:
+    """The pack the tools, tests and simulator read: one the environment
+    chooses ($BOOP_CHARACTER or $CHARACTER), else the one last staged
+    (.character-build/pack), else the chosen one. The Swift and C++ code
+    keeps the same rule by reading the environment and the pointer."""
+    if os.environ.get("BOOP_CHARACTER") or os.environ.get("CHARACTER"):
+        return chosen()
+    pointer = STAGE / "pack"
+    if pointer.exists() and pointer.read_text().strip():
+        return Path(pointer.read_text().strip())
+    return chosen()
 
 
 def camel(mood: str) -> str:
@@ -267,9 +284,9 @@ def build(pack: Path, check: bool) -> int:
 def stage(pack: Path) -> int:
     """The pack's firmware files (.character-build/firmware/); the pack as
     the Mac app bundles it, with what the app reads and no more
-    (.character-build/packs/, with `chosen` naming the pack); and the
-    chosen pack's folder (.character-build/pack), where the tests, boopdev
-    and the device tools find the rest, the voice pack among it."""
+    (.character-build/packs/, that pack alone); and the pointer to the
+    pack's folder (.character-build/pack), where the tests, boopdev and the
+    device tools find the rest, the voice pack among it."""
     STAGE.mkdir(exist_ok=True)
     for old in ("firmware", "packs"):
         if (STAGE / old).exists():
@@ -290,7 +307,6 @@ def stage(pack: Path) -> int:
             if (tests / suite.name).is_symlink():
                 (tests / suite.name).unlink()
             (tests / suite.name).symlink_to(suite.resolve())
-    (STAGE / "packs" / "chosen").write_text(f"{pack.name}\n")
     (STAGE / "pack").write_text(f"{pack}\n")
     return 0
 
@@ -300,7 +316,7 @@ def main(argv: list[str]) -> int:
         print(__doc__.strip())
         return 0
     rest = [a for a in argv if not a.startswith("--")]
-    pack = Path(rest[0]).resolve() if rest else chosen()
+    pack = Path(rest[0]).resolve() if rest else in_use() if "--which" in argv else chosen()
     if not (pack / "character.json").exists():
         print(f"charactergen: {pack} isn't a character pack (no character.json)", file=sys.stderr)
         return 1

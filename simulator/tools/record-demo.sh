@@ -33,7 +33,7 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do [ -e "$DIR/port" ] && break; sleep 0.2; done
 .build/debug/linkkit-bridge --port "$DIR/port" --socket "$DIR/usb.sock" >/dev/null 2>&1 & BRIDGE_PID=$!
 mkdir -p "$OUT"
 # The creature's name is the staged pack's, so the story calls it by it.
-PACK="$(cat .character-build/pack)"
+PACK="$(python3 characters/charactergen.py --which)"
 CREATURE="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["name"])' "$PACK/character.json")"
 .build/debug/Boop --headless --state-dir "$DIR/state" --link "usb:$DIR/usb.sock" --socket "$DIR/boop.sock" \
     --no-open --name "$CREATURE" --demo "pack:$DEMO" --record "$OUT/$NAME.json" 2>&1 | grep "demo:" || true

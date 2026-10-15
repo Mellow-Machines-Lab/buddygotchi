@@ -7,6 +7,7 @@ import json
 import os
 import socket
 import struct
+import sys
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -99,13 +100,14 @@ def ended(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def chosen_pack() -> Path:
-    """The character pack in use, as the Swift tests and the simulator
-    take it: `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack, characters/CHARACTER.md §2), else Boop."""
-    if os.environ.get("BOOP_CHARACTER"):
-        return Path(os.environ["BOOP_CHARACTER"])
-    staged = REPO / ".character-build" / "pack"
-    return Path(staged.read_text().strip()) if staged.exists() else REPO / "characters" / "boop"
+    """The character pack in use, by charactergen's one rule
+    (characters/CHARACTER.md §2)."""
+    sys.path.insert(0, str(REPO / "characters"))
+    try:
+        import charactergen
+    finally:
+        sys.path.pop(0)
+    return charactergen.in_use()
 
 
 # The chosen pack's voice, the file a board's card has as boop/voice.bin

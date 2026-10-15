@@ -11,7 +11,6 @@ and samples. A take the pack doesn't have stops it.
 """
 import argparse
 import json
-import os
 import struct
 import sys
 from pathlib import Path
@@ -27,12 +26,12 @@ RECORD = struct.Struct("<72s36sIIII4x")
 
 
 def chosen_voice() -> Path:
-    """The chosen character pack's voice (characters/CHARACTER.md §8): the
-    pack is `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack), else Boop."""
-    staged = REPO / ".character-build" / "pack"
-    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "boop")
-    return Path(pack) / "voice" / "voice.bin"
+    """The voice of the character pack in use (characters/CHARACTER.md §2,
+    §8), by charactergen's rule."""
+    sys.path.insert(0, str(REPO / "characters"))
+    from charactergen import in_use
+    sys.path.pop(0)
+    return in_use() / "voice" / "voice.bin"
 
 
 def subset(pack: bytes, ids: list) -> bytes:

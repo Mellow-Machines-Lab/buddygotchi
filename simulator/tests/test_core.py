@@ -8,6 +8,7 @@ import json
 import os
 import select
 import subprocess
+import sys
 import tempfile
 import time
 import tty
@@ -17,9 +18,11 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 CORE = REPO / "firmware" / ".pio" / "build" / "native" / "program"
-# The chosen character pack's voice, as the core takes it (core/file_card.h).
-STAGED = REPO / ".character-build" / "pack"
-VOICE = Path(STAGED.read_text().strip() if STAGED.exists() else REPO / "characters" / "boop") / "voice" / "voice.bin"
+# The voice of the character pack in use, as the core takes it (core/file_card.h).
+sys.path.insert(0, str(REPO / "simulator" / "tools"))
+from voice_subset import chosen_voice  # noqa: E402
+sys.path.pop(0)
+VOICE = chosen_voice()
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
