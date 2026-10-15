@@ -308,8 +308,9 @@ final class AdapterTests: XCTestCase {
     /// Older transcripts kept what a request asks for under `for`: a
     /// string there still reads as it, and a seq there isn't one.
     func testAnOlderTranscriptsStringForReadsAsAsking() throws {
-        let old = #"{"seq":17,"ts":1,"source":"claude","type":"tool","phase":"wait","specific_type":"PermissionRequest","session":"b1","cwd":"/w","data":{"for":"permission","tool":"Bash"}}"#
-        let read = try XCTUnwrap(AgentEvent(try XCTUnwrap(Event.legacy(old))))
+        let older = Event(ts: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
+                          session: "b1", data: ["for": "permission", "tool": "Bash"])
+        let read = try XCTUnwrap(AgentEvent(try XCTUnwrap(Event(jsonLine: older.jsonLine))))
         XCTAssertEqual(read.asking, .permission)
         let answering = Event(ts: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
                               session: "s", data: ["for": 3])
