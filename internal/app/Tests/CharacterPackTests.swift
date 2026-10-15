@@ -87,7 +87,6 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(Set(CharacterPack.active.outcomes["big_success"] ?? []), ["happy", "excited", "proud", "relieved"])
         XCTAssertEqual(Set(CharacterPack.active.outcomes["big_failure"] ?? []), ["sad", "wounded", "disappointed"])
         XCTAssertEqual(CharacterPack.active.quietNever, ["scared", "frightened", "lonely", "affectionate"])
-        XCTAssertEqual(CharacterPack.active.aliases, ["cheerful": "happy"])
     }
 
     /// CHARACTER.md §3: a pack stands alone. Boop's and Pixel's each have

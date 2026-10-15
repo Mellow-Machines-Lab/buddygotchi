@@ -57,10 +57,12 @@ render::SceneState baseFromName(const char* name);
 // testing, delegating or waiting, and kWorking for anything else.
 render::SceneState actFromName(const char* name);
 
-// What cut a call short (`ended`): a newer call's play, a
-// tap (its poke, or push-to-talk's listening), "needs you" starting, or
-// dbg.reset. Each is the `why` of a `cut`.
-enum class CutBy : uint8_t { kNone, kNewer, kTap, kNeedsYou, kReset };
+// What cut a call short (`ended`): a tap (its poke, or push-to-talk's
+// listening) or "needs you" starting. Each is the `why` of a `cut`. A
+// newer call and dbg.reset need none here: the kit has already ended the
+// call it held when it takes the next or resets its turn, and it passes
+// on only the holder's end.
+enum class CutBy : uint8_t { kNone, kTap, kNeedsYou };
 const char* cutByName(CutBy c);  // null for kNone
 
 // A call from the Mac that no part of plays any more, for Device to hand
@@ -265,8 +267,8 @@ class Behaviour {
     uint32_t call = 0;
     CutBy cut = CutBy::kNone;
   };
-  // What the Mac is owed, which dbg.reset keeps: the calls playing, at
-  // most one per part plus the one arriving, and the ends not yet taken.
+  // What the Mac is owed: the calls playing, at most one per part plus
+  // the one arriving, and the ends not yet taken.
   // Device takes them after every line, hook and tick.
   struct Owed {
     static constexpr int kWaiting = 4, kEnded = 8;
@@ -278,12 +280,14 @@ class Behaviour {
   using Source = render::FaceSource;
 
   // An animation plays `loops` times in `mood`'s design (listening until
-  // the reply), cutting the one playing but not the line or expression;
-  // a finish for `outcome`, a start for `ctx`.
+  // the reply), cutting the one playing, by `by`, but not the line or
+  // expression; a finish for `outcome`, a start for `ctx`. kNone for a
+  // newer call: the kit ended the call it replaces.
   void playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
                 render::Outcome outcome = render::Outcome::kNone, render::StartCtx ctx = render::StartCtx::kNone);
   // The line and the expression end, the line cut short by `by`: a new
   // moment's animation, or listening, replaces them; a tap's poke doesn't.
+  // kNone for a newer call, as for playAnim.
   void endLine(uint32_t t, CutBy by);
   // How long a borrowed face in `mood` holds from t: `loops` loops of the
   // design it's drawn in, ending on a loop boundary of that design's clock.

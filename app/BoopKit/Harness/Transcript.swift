@@ -3,8 +3,7 @@ import MellowHarness
 
 /// Boop's record of what happened and what it did:
 /// MellowHarness's log in the state directory's
-/// `transcript/`, one file a day, named for the day in Boop's time zone,
-/// with lines written before MellowHarness still read (`Event.legacy`).
+/// `transcript/`, one file a day, named for the day in Boop's time zone.
 public enum Transcript {
     /// Days of files kept; older ones are deleted at launch and each new day.
     public static let keptDays = 14
@@ -16,7 +15,6 @@ public enum Transcript {
         var options = Log.Options()
         options.keptDays = keptDays
         options.day = { time.day($0) }
-        options.decode = { Event.legacy($0) }
         return Log(folder: folder, options: options, note: note)
     }
 }

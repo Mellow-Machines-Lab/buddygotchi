@@ -13,11 +13,10 @@ import Foundation
 ///   device that still counts the host as there (an app relaunched within
 ///   30 s, or one taking over a Bluetooth link macOS kept) doesn't say it
 ///   unasked. Checked against the kit's version and the app's name. A
-///   device that doesn't fit (a `kit` other than 1, another app, or
-///   firmware the app finds too old, `incompatible`) still gets `state`, so
-///   a device flashed while the link stays up hears the host and says its
-///   new `hello`, but no `do`, and its `ev`s are dropped: `trouble` says
-///   why.
+///   device that doesn't fit (a `kit` other than 1, or another app) still
+///   gets `state`, so a device flashed while the link stays up hears the
+///   host and says its new `hello`, but no `do`, and its `ev`s are
+///   dropped: `trouble` says why.
 /// - `do`: each gets an id and exactly one `Outcome`: the device's
 ///   `ended`, or a failure here (no link, no hello yet, a name the device
 ///   doesn't play, the link dropping, no answer by its `ttl` plus 60 s).
@@ -69,8 +68,7 @@ public final class DeviceLink {
     /// doesn't fit this app. `description` says it in plain words, with
     /// what to do.
     public enum Trouble: Equatable, Sendable, CustomStringConvertible {
-        /// Firmware older than the host: its `kit` is below 1 or missing,
-        /// or the app finds it too old (`incompatible`).
+        /// Firmware older than the host: its `kit` is below 1 or missing.
         case tooOld
         /// A `kit` newer than the host speaks.
         case tooNew
@@ -359,18 +357,6 @@ public final class DeviceLink {
 
     // MARK: - Trouble
 
-    /// The app found that the device doesn't fit in a way the kit can't
-    /// see, such as its own firmware from before the kit, which says
-    /// something else where a `hello` would be (SPEC.md §6 leaves that to
-    /// the app): too old, by default. As for a `hello` that doesn't fit:
-    /// it's the `trouble`, logged once, what waits fails, and the device
-    /// still gets the latest `state`, now, but no `do`. A drop or a
-    /// `hello` that fits clears it.
-    public func incompatible(_ why: Trouble = .tooOld, now: Int64) {
-        meetTrouble(why)
-        sendState(now: now)
-    }
-
     /// Why a `hello` doesn't fit (SPEC.md §6), or nil when it does.
     func problem(with hello: Hello) -> Trouble? {
         guard let kit = hello.kit, kit >= Wire.kit else { return .tooOld }
@@ -382,11 +368,11 @@ public final class DeviceLink {
     /// The device doesn't fit: it gets no `do`, and what waited on it
     /// fails. Logged once for each new reason, with who said the `hello`
     /// that didn't fit.
-    func meetTrouble(_ why: Trouble, from misfit: Hello? = nil) {
+    func meetTrouble(_ why: Trouble, from misfit: Hello) {
         hello = nil
         if trouble != why {
             trouble = why
-            log("device link: " + (misfit.flatMap { $0.id.isEmpty ? nil : "\($0.id) firmware \($0.fw): " } ?? "") + why.description)
+            log("device link: " + (misfit.id.isEmpty ? "" : "\(misfit.id) firmware \(misfit.fw): ") + why.description)
         }
         for w in takeWaiting() { w.completion(.failed(.incompatible)) }
     }

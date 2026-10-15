@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-11. The tour of LinkKit: the four messages, the turn, and
+Updated 2026-10-15. The tour of LinkKit: the four messages, the turn, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -138,9 +138,7 @@ final class LampHost: @unchecked Sendable {
   it comes, since a device that still counts the host as there (an app
   relaunched within 30 s, or one taking over a Bluetooth link macOS
   kept) doesn't say it unasked. A device whose `kit` or `app` doesn't
-  fit, or one your app finds too old by a line of its own
-  (`link.incompatible`, for firmware from before it had a `hello`),
-  still gets `state` but no `do`, its `ev`s are dropped, and
+  fit still gets `state` but no `do`, its `ev`s are dropped, and
   `link.trouble` says why (`.tooOld`, `.tooNew`, `.otherApp`), with what
   to do about it in its `description`, for your settings screen.
 - **Bluetooth:** `BLETransport(prefix: "Lamp")` finds `Lamp-XXXX` on the

@@ -27,9 +27,6 @@ public struct ViewEvent: Equatable, Sendable {
     /// Whether it wakes the brain: its kind's `wake`, a brain, and nothing
     /// holding it back when it came.
     public var wakesBrain: Bool
-    /// Its kind's `wake`: a finished turn 1, what
-    /// you said 2, the rest 0.
-    public var passPriority = 0
     /// The thread it's about, as the view keys threads; nil for pokes,
     /// what you said and idle heartbeats.
     public var about: String?
@@ -97,7 +94,6 @@ public final class TranscriptView {
         var asked = false
 
         var name: String { workspace ?? project }
-        var key: String { SessionFold.key(agent, id) }
     }
 
     /// Everything the lines need from the log so far, folded in order:
@@ -242,19 +238,11 @@ public final class TranscriptView {
     /// folded in.
     public func line(_ e: Event, _ log: LogView) -> Line? {
         catchUp(before: e.seq, log)
-        return take(e)?.line
+        return take(e)
     }
 
-    /// What folding an event made: its line, the events it came from and
-    /// the thread it's about.
-    struct Made {
-        var line: Line
-        var from: [Int]
-        var about: String?
-    }
-
-    /// Folds one event and returns what it made, if it has a line.
-    func take(_ e: Event) -> Made? {
+    /// Folds one event and returns its line, if it has one.
+    func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return agentEvent(e)
@@ -269,7 +257,7 @@ public final class TranscriptView {
 
     // MARK: Agents
 
-    func agentEvent(_ e: Event) -> Made? {
+    func agentEvent(_ e: Event) -> Line? {
         // The session bookkeeping is agent-hooks', as the core's is:
         // it reads the event as agent-hooks has it.
         guard let a = AgentEvent(e), let agent = e.agent, let session = e.session else { return nil }
@@ -314,9 +302,9 @@ public final class TranscriptView {
             resetCounts(&t)
             fold.threads[key] = t
             let prompt = e["prompt"]?.string
-            return made(e, Line(EventLine.turnStart(agent: agent.rawValue, turn: t.turns, thread: threadLine(t)),
-                                notes: prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
-                                facts: ["thread": threadFacts(t), "prompt": .of(prompt)]), about: key)
+            return Line(EventLine.turnStart(agent: agent.rawValue, turn: t.turns, thread: threadLine(t)),
+                        notes: prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
+                        facts: ["thread": threadFacts(t), "prompt": .of(prompt)])
         case .activity:
             let tool = e["tool"]?.string
             let done = e.phase == .end && tool != nil
@@ -339,7 +327,7 @@ public final class TranscriptView {
             if let topic { t.topic = topic }
             if let topic, let failed = e["failed"]?.bool, TranscriptView.checks.contains(topic) { t.check = (topic, failed) }
             fold.threads[key] = t
-            return line.map { made(e, $0, about: key) }
+            return line
         case .turnEnd, .turnFailed, .turnStopped:
             // A finish with no turn open (a second `Stop`, one after the
             // turn stopped, or the first Boop hears from a session)
@@ -360,9 +348,8 @@ public final class TranscriptView {
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
-            return made(e, turnEnded(t, e, outcome: outcome, error: step == .turnFailed ? e["error"]?.string : nil,
-                                     message: step == .turnEnd ? e["message"]?.string : nil, lengthMs: max(0, now - started)),
-                        about: key)
+            return turnEnded(t, e, outcome: outcome, error: step == .turnFailed ? e["error"]?.string : nil,
+                             message: step == .turnEnd ? e["message"]?.string : nil, lengthMs: max(0, now - started))
         case .sessionEnd:
             fold.threads[key] = nil
             fold.sessions.end(key, at: now)
@@ -373,10 +360,6 @@ public final class TranscriptView {
         case .needsYou, .subagentStart, .subagentEnd:
             return nil
         }
-    }
-
-    func made(_ e: Event, _ line: Line, from: [Int]? = nil, about: String? = nil) -> Made {
-        Made(line: line, from: from ?? [e.seq], about: about)
     }
 
     func newThread(_ agent: Agent, _ id: String, _ now: Int64) -> Thread {
@@ -480,15 +463,14 @@ public final class TranscriptView {
 
     /// A poke, with how many came in a row: each within `inARowMs` of the
     /// one before.
-    func poke(_ e: Event) -> Made {
+    func poke(_ e: Event) -> Line {
         let now = e.ts
         noteActivity(now)
         if let last = fold.pokes.last, now - last >= Self.inARowMs { fold.pokes.removeAll() }
         fold.pokes.append(now)
         let count = fold.pokes.count
         let seconds = max(1, Int((now - fold.pokes[0] + 999) / 1000))
-        return made(e, Line(EventLine.poke(inARow: count),
-                            facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))]))
+        return Line(EventLine.poke(inARow: count), facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to
@@ -547,10 +529,10 @@ public final class TranscriptView {
 
     /// What you said to Boop on push-to-talk. Words
     /// that are only whitespace make no line.
-    func talk(_ e: Event) -> Made? {
+    func talk(_ e: Event) -> Line? {
         guard let words = e["words"]?.string, let line = EventLine.said(words) else { return nil }
         noteActivity(e.ts)
-        return made(e, Line(line, facts: ["words": .string(words), "by": .string(e.specificType)]))
+        return Line(line, facts: ["words": .string(words), "by": .string(e.specificType)])
     }
 
     // MARK: Here and away
@@ -565,18 +547,17 @@ public final class TranscriptView {
     /// You stepping away or coming back, as the presence detector decided:
     /// the view only pairs them. A back with no away
     /// before it makes no line.
-    func presence(_ e: Event) -> Made? {
+    func presence(_ e: Event) -> Line? {
         if e.phase == .start {
             let since = e["since"]?.int ?? e.ts
             fold.awaySince = (e.seq, since)
-            return made(e, Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)]))
+            return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
         }
         guard let away = fold.awaySince else { return nil }
         fold.awaySince = nil
         noteActivity(e.ts)
         let ms = max(0, e.ts - away.at)
-        return made(e, Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)]),
-                    from: [away.seq, e.seq])
+        return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
     }
 
     // MARK: Heartbeats
@@ -627,26 +608,25 @@ public final class TranscriptView {
         return Event(ts: now, source: .clock, type: .heartbeat, specificType: "idle")
     }
 
-    func heartbeat(_ e: Event) -> Made? {
+    func heartbeat(_ e: Event) -> Line? {
         let now = e.ts
         let working = fold.threads.values.filter { isWorking($0, now) }
         if let t = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
             let ms = max(0, now - (t.turn.startedAt ?? now))
-            return made(e, Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
-                                facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(t.topic)]),
-                        about: t.key)
+            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
+                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(t.topic)])
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
         guard hours > 0 else { return nil }
         fold.heartbeats = Int(hours)
-        return made(e, Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)]))
+        return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
     }
 
     // MARK: Needs you
 
     /// "Needs you" showing or clearing (the core's): showing is a line.
-    func needs(_ e: Event) -> Made? {
+    func needs(_ e: Event) -> Line? {
         guard let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session else { return nil }
         let key = SessionFold.key(agent, session)
         var t = fold.threads[key] ?? newThread(agent, session, e.ts)
@@ -659,9 +639,7 @@ public final class TranscriptView {
         fold.threads[key] = t
         // The request's own event is a tool call's wait; "needs you"
         // showing is when it has a line, after Codex's grace.
-        let asked = e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq]
-        return made(e, Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)]),
-                    from: asked, about: key)
+        return Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
     }
 
     // MARK: Reading
@@ -699,7 +677,7 @@ public final class TranscriptView {
             : type == .presence && e.phase == .end ? [log.last(Event.kind(.presence, .start))?.seq, e.seq].compactMap { $0 }
             : [e.seq]
         return ViewEvent(id: e.seq, type: shownType, phase: shownPhase, from: from, ts: e.ts, line: line.text, notes: line.notes,
-                         wakesBrain: wakes, passPriority: Self.wakes[e.kind] ?? 0,
+                         wakesBrain: wakes,
                          about: Self.about(e, facts: line.facts),
                          facts: line.facts)
     }

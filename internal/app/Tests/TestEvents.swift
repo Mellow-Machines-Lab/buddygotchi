@@ -42,3 +42,30 @@ extension Event {
         return self["open"]?.bool == true ? .start : nil
     }
 }
+
+/// What the tests read of a pipeline, past the step each input returns.
+extension Pipeline {
+    /// Logs an event nothing else acts on, such as an action's.
+    @discardableResult
+    func record(_ event: Event) -> Event {
+        var logged = event
+        _ = input(at: max(inputTime.now, event.at)) { logged = harness.emit(event) }
+        return logged
+    }
+
+    /// Whether you're away from the Mac, as the log has it.
+    var away: Bool { view.away(transcript.view(now: inputTime.now)) }
+
+    /// The event `seq` with its line and what the rules did about it, as
+    /// it stands now; nil for one with no line.
+    func viewEvent(_ seq: Int) -> ViewEvent? {
+        guard let e = transcript.event(seq), let line = harness.line(seq),
+              var v = view.view(e, line, wakes: false, log: transcript.view(before: e)) else { return nil }
+        v.wakesBrain = harness.wakes(e) && whyNotWake(e) == nil
+        v.did = shown(dids: seq, transcript.view(now: inputTime.now))
+        return v
+    }
+
+    /// Every event with a line in the log, oldest first.
+    var views: [ViewEvent] { transcript.events.compactMap { viewEvent($0.seq) } }
+}

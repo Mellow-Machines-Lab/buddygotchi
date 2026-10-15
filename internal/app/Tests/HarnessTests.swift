@@ -54,7 +54,7 @@ final class HarnessTests: XCTestCase {
             (#"{"event":{"seq":9,"at":9,"source":"self","kind":"did","data":{"action":"wiggle","by":"rule","for":4,"message":"Boop wiggled on its own.","ok":true}},"received_at_ms":9}"#,
              "  ✓ wiggle (rule): Boop wiggled on its own."),
             ("not json", "not json"),
-            (#"{"sent":{"t":"do","id":1,"name":"poked","play":"now"},"by":"rule","received_at_ms":9}"#, nil),
+            (#"{"sent":{"t":"do","id":1,"name":"starting","play":"if_free"},"by":"rule","received_at_ms":9}"#, nil),
             (DebugLog.ended(Ended(id: 1, how: .skipped, why: "busy"), at: 9), nil),
             (#"{"status":{"brain":"none","connected":false,"mood":"cheerful","personality":"boop","sessions":[]},"received_at_ms":9}"#, nil),
             (#"{"questions":[],"received_at_ms":9}"#, nil),
@@ -302,8 +302,6 @@ final class HarnessTests: XCTestCase {
         log.append(Event.did("Boop's mood changed: grumpy → delighted.", for: nil, action: mood.name, by: "brain",
                              facts: ["from": "grumpy", "to": "delighted"]), now: 1)
         XCTAssertEqual(MoodAction.value(mood, view()), "calm", "one that isn't a mood reads as calm")
-        XCTAssertEqual(Event.legacy(#"{"seq":9,"ts":1,"source":"boop","type":"action","specific_type":"mood","data":{"by":"brain","for":3,"message":"Boop's mood changed: calm → curious.","ok":true}}"#)?["to"],
-                       "curious", "a change logged before MellowHarness said its mood in its message only")
     }
 
     /// The mood the dashboard sets changes as Jev's does,

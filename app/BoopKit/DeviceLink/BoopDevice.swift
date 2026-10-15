@@ -49,15 +49,6 @@ public enum BoopDevice {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }
         return on
     }
-
-    /// Who Boop's firmware from before LinkKit says it is, in the `status`
-    /// it sends where a `hello` would be; nil for any
-    /// other line. Such firmware is too old for the app (`DeviceLink.Trouble.tooOld`),
-    /// which the app spots itself (linkkit/SPEC.md §6).
-    public static func fromBeforeTheKit(_ line: String) -> DeviceInfo? {
-        guard let o = JSON.parse(line)?.object, o["t"]?.string == "status" else { return nil }
-        return DeviceInfo(id: o["id"]?.string ?? "", fw: o["fw"]?.string ?? "", voice: o["voice"]?.string)
-    }
 }
 
 /// What Boop's device says of itself in its `hello`.

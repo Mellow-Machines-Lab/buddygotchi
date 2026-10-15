@@ -151,11 +151,12 @@ final class ViewTests: XCTestCase {
         let failed = hook(.turnFailed, workspace: nil, error: "rate_limit").first
         XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a short turn, no tool calls."#)
         XCTAssertEqual(failed?.facts["error"], "rate_limit")
-        XCTAssertEqual(failed?.passPriority, 1, "a finish keeps its pass while it waits")
+        XCTAssertEqual(TranscriptView.wakes[failed!.name.replacingOccurrences(of: " ", with: "_")], 1,
+                       "a finish keeps its pass while it waits")
         rig.wait(30_000)
         let start = hook(.turnStart, workspace: nil).first
         XCTAssertEqual(start?.line, #"claude started turn 2 on "landing"."#)
-        XCTAssertEqual(start?.passPriority, 0)
+        XCTAssertEqual(TranscriptView.wakes[start!.name.replacingOccurrences(of: " ", with: "_")], 0)
         rig.wait(90_000)
         let stopped = hook(.turnStopped, workspace: nil, tool: "Bash")
         XCTAssertEqual(stopped.first?.line, #"claude finished turn 2 on "landing": stopped, a long turn, no tool calls."#)
@@ -258,7 +259,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(said.map(\.line), [#"You said to \#(creature): "are the tests passing yet?""#])
         XCTAssertEqual(said.map(\.name), ["talk"])
         XCTAssertTrue(said[0].wakesBrain)
-        XCTAssertEqual(said[0].passPriority, 2, "it goes ahead of a finish waiting")
+        XCTAssertEqual(TranscriptView.wakes[said[0].name], 2, "it goes ahead of a finish waiting")
         XCTAssertNil(said[0].about)
         XCTAssertEqual(said[0].facts["words"], "are the tests\npassing yet?")
         XCTAssertEqual(said[0].facts["by"], "device")

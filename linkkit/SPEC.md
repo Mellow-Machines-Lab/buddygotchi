@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-10-11. The contract between a host (a Mac app) and a small
+Updated 2026-10-15. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -209,9 +209,7 @@ already live, which the device has no way to tell from the host before.
   stays up still hears it and answers with its new `hello`), but sends no
   `do`, drops the device's `ev`s, and says the firmware is too new, too
   old or not its device. A
-  `do` asked for before a `hello` has come fails at once. How to recognise
-  an app's older firmware (Boop's sent `status` before there was a
-  `hello`) is the app's business.
+  `do` asked for before a `hello` has come fails at once.
 
 ## 7. Debug messages (USB only)
 

@@ -64,8 +64,8 @@ final class RuntimeTests: XCTestCase {
             XCTAssertTrue(ends.isEmpty)
             runtime.device(FakeTransport.ended(mirrored[0].0, "done"))
             XCTAssertEqual(ends, [.done])
-            runtime.playRule(DeviceMoment(anim: "poked"))
-            XCTAssertEqual(mirrored.last?.1.name, "poked")
+            runtime.playRule(DeviceMoment(anim: "starting"))
+            XCTAssertEqual(mirrored.last?.1.name, "starting")
         }
     }
 
@@ -318,16 +318,15 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNil(runtime.home.sync { statuses.last?.linkTrouble })
     }
 
-    /// linkkit/SPEC.md §6: firmware from before the
-    /// kit says `status` where Boop's says `hello`, which Boop spots itself.
-    /// The popover says to flash it, boop.log says whose firmware it is and
+    /// linkkit/SPEC.md §6: firmware too old for the kit (a `hello` with
+    /// no `kit`). The popover says to flash it, boop.log says whose firmware it is and
     /// a bug report why it gets no `do`; the device still gets its `state`,
     /// and a reaction fails at once instead of going to it; its taps are
     /// left out.
     func testFirmwareThatDoesntFitIsThePopoversTrouble() throws {
         let transport = FakeTransport()
-        let status = #"{"t":"status","v":1,"id":"b00p-7f3a","fw":"0.3.1"}"#
-        transport.greeting = status
+        let old = #"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#
+        transport.greeting = old
         let lines = Lines()
         var options = try options(transport)
         options.log = { lines.add($0) }
@@ -349,9 +348,9 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync {}
         XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.type == .poke } }, "its taps are left out")
         XCTAssertEqual(Set(transport.types()), ["hello", "state"], "the ask on connect, then only state")
-        transport.onLine?(status)
+        transport.onLine?(old)
         runtime.home.sync {}
-        XCTAssertEqual(lines.all.filter { $0 == "device: b00p-7f3a firmware 0.3.1" }.count, 1, "whose it is, once")
+        XCTAssertEqual(lines.all.filter { $0.hasPrefix("device link: b00p-7f3a firmware 0.3.1: ") }.count, 1, "whose it is, once")
         let saved = Lines()
         runtime.saveReport { saved.add($0?.path ?? "none") }
         eventually("the report") { !saved.all.isEmpty }
@@ -802,7 +801,7 @@ final class RuntimeTests: XCTestCase {
         let questions = try XCTUnwrap(lines.first?["questions"] as? [[String: Any]], "the questions come first")
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
-                       ["calm"] + MoodGraph.neighbours(of: "calm"), "staying calm, then calm's moves")
+                       ["calm"] + MoodGraph.moves["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(creature) react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
@@ -920,7 +919,7 @@ final class RuntimeTests: XCTestCase {
         let passes = lines.compactMap { $0["pass"] as? [String: Any] }
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
-        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours(of: "happy")])
+        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.moves["happy"]!.all])
     }
 
     /// BOOT held and let go turns the mic on and off; with

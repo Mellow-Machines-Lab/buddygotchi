@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice pack.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","listening","stop_listening","poked","tap_spam"],"voice":"\#(Take.packVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","listening","stop_listening"],"voice":"\#(Take.packVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -161,9 +161,8 @@ final class DeviceLinkTests: XCTestCase {
     /// linkkit/SPEC.md §5–6 in Boop's words: the link asks for the device's
     /// `hello` and sends the latest `state` when it connects, answers the
     /// `hello` with the `state`, and takes only Boop's firmware. Firmware
-    /// from before the kit says `status` where a `hello` would be, which
-    /// Boop spots itself (the kit leaves that to the app): it still gets
-    /// its `state` but no `do`, and the popover says to flash it.
+    /// too old for the kit still gets its `state` but no `do`, and the
+    /// popover says to flash it.
     func testTheLinkTakesBoopsFirmware() throws {
         try requireVoice()
         let transport = FakeTransport()
@@ -178,12 +177,7 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.id, "b00p-54fe")
         XCTAssertNotNil(link.do("react", args: DeviceMoment(say: .go).args, now: 300) { _ in })
 
-        let status = #"{"t":"status","v":1,"id":"b00p-7f3a","fw":"0.3.1"}"#
-        XCTAssertEqual(link.receive(status, now: 400), .other(status), "LinkKit leaves it to the app")
-        XCTAssertEqual(BoopDevice.fromBeforeTheKit(status), DeviceInfo(id: "b00p-7f3a", fw: "0.3.1"))
-        XCTAssertNil(BoopDevice.fromBeforeTheKit(FakeTransport.hello))
-        XCTAssertNil(BoopDevice.fromBeforeTheKit("rst:0x1 (POWERON_RESET)"))
-        link.incompatible(.tooOld, now: 400)
+        link.receive(#"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#, now: 400)
         XCTAssertEqual(link.trouble, .tooOld)
         XCTAssertEqual(link.trouble?.description, "the device's firmware is too old for this app: flash it")
         XCTAssertNil(link.hello)

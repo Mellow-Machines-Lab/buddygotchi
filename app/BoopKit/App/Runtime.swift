@@ -325,8 +325,6 @@ public final class Runtime: @unchecked Sendable {
         growth = GrowthStore(values, log: log)
         // The view and the core pick up where the last launch left them.
         let read = home.sync { pipeline.readBack(now: now) }
-        // The mood an older Boop kept in its own file.
-        home.sync { MoodAction.carryOver(mood, stateDir: options.stateDir, harness: harness, version: moodGraph, note: log) }
         let logNow = transcript.view(now: now)
         core.restore(mood: MoodAction.value(mood, logNow, version: moodGraph))
         let questions = DebugLog.questions(Runtime.outputs(harness), log: logNow, at: now)
@@ -503,9 +501,7 @@ public final class Runtime: @unchecked Sendable {
 
     /// A line from the device: its `hello`, answered by the link with the
     /// latest `state`; an `ev` (`deviceEvent`); how a `do` ended, which
-    /// the link hands to whoever asked for it, and which is logged here; or
-    /// the `status` of Boop's firmware from before LinkKit, which is too
-    /// old: it gets `state` but no `do`, and the popover says to flash it.
+    /// the link hands to whoever asked for it, and which is logged here.
     func device(_ line: String) {
         let now = options.clock()
         // LinkKit replies to hello before its onHello callback. Adapt that
@@ -518,10 +514,6 @@ public final class Runtime: @unchecked Sendable {
             options.log("device: do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
             emit(DebugLog.ended(ended, at: now))
             reactions.ended(ended.id)
-        case .other:
-            guard let old = BoopDevice.fromBeforeTheKit(line) else { break }
-            if link.trouble != .tooOld { options.log("device: \(old.id) firmware \(old.fw)") }
-            link.incompatible(.tooOld, now: now)
         default:
             break
         }

@@ -22,21 +22,21 @@ REPO = Path(__file__).resolve().parents[3]
 MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_text())["moods"]
 
 # The animations a `do` plays by name:
-# the brain's finish, the rules' one-shots and a tap's, each its design's
-# state.
-ANIMS = ["task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "poked", "tap_spam"]
+# the brain's finish and the rules' one-shots, each its design's state. A
+# tap's (poked, tap_spam) the device plays itself, never by name.
+ANIMS = ["task_complete", "reply_ready", "starting", "stopped", "error", "helper_return"]
 # Every name Boop's device plays, its `hello.does`:
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
 DOES = ["react", "task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "listening",
-        "stop_listening", "poked", "tap_spam"]
+        "stop_listening"]
 # The `do` names that play no animation: a face and a line, and ending
 # push-to-talk.
 NO_ANIM = {"react", "stop_listening"}
-# The older names of two animations, which older logs have and `boopctl
-# play` still takes; the device doesn't know them: `cheer` is
-# task_complete's success, `wiggle` is poked.
-OLD_ANIMS = {"cheer": "task_complete", "wiggle": "poked"}
+# The older name of an animation, which older logs have and `boopctl
+# play` still takes; the device doesn't know it: `cheer` is
+# task_complete's success.
+OLD_ANIMS = {"cheer": "task_complete"}
 # The one-shots the rules send, never the brain.
 RULE_ONE_SHOTS = {"starting", "stopped", "error", "helper_return"}
 # The animations that play a turn's finish: the brain's

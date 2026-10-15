@@ -92,7 +92,7 @@ enum Snapshots {
                 // A card with another pack than the app's, and no card or pack: no voice.
                 shot("settings-old-voice", model(installer, status: status(voice: "0123456789abcdef")), pane: .settings)
                 shot("settings-no-voice", model(installer, status: status(voice: "none")), pane: .settings)
-                // Firmware from before LinkKit: the looks, but no reactions (linkkit/SPEC.md §6).
+                // Firmware too old for the kit: the looks, but no reactions (linkkit/SPEC.md §6).
                 shot("settings-old-firmware", model(installer, status: status(deviceTrouble: "the device's firmware is too old for this app: flash it")),
                      pane: .settings)
 

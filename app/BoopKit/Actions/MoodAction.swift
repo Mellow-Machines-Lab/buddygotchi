@@ -13,12 +13,10 @@ public enum MoodAction {
     /// How long Boop has been in its mood, for the line that closes HISTORY:
     /// `Boop has been proud for 7 min.`, so
     /// the mood files' minutes need no sums. Nil while calm, the resting
-    /// mood every other fades toward, before any change in the log, and
-    /// for a mood carried over from the `mood` file, whose change has no
-    /// time.
+    /// mood every other fades toward, and before any change in the log.
     public static func sinceLine(_ mood: Choice, _ log: LogView, at now: Int64, version: MoodGraph.Version = .v2) -> String? {
         let current = value(mood, log, version: version)
-        guard current != initial, let latest = mood.latest(log), latest["by"]?.string != carriedBy else { return nil }
+        guard current != initial, let latest = mood.latest(log) else { return nil }
         let at = latest.at
         let ms = now - at
         let span = ms < 60_000 ? "under a minute" : ms < 60 * 60_000 ? "\(ms / 60_000) min" : "\(ms / 3_600_000) h"
@@ -79,39 +77,6 @@ public enum MoodAction {
     public static func value(_ mood: Choice, _ log: LogView, version: MoodGraph.Version = .v2) -> String { known(mood.value(log), version: version) }
 
     static func known(_ word: String, version: MoodGraph.Version = .v2) -> String { catalog(version).contains { $0.name == word } ? word : initial }
-
-    /// The state directory's file where Boop kept its mood before the log
-    /// did: one word.
-    public static let fileName = "mood"
-
-    /// Who logs a mood carried over from the `mood` file (`carryOver`).
-    public static let carriedBy = "upgrade"
-
-    /// Carries the mood an older Boop saved in the state directory's `mood`
-    /// file into the log, at the first launch after the log took over:
-    /// when the log's last day has no change of
-    /// its own, Boop comes back in the mood it left, however long ago, as
-    /// it did when the file kept it. It's MellowHarness's `restore`, a change
-    /// with no line, so HISTORY doesn't show it, and no time counts from it
-    /// (`sinceLine`). The file goes either way: from then on the log alone keeps the
-    /// mood. It reads one of the pack's aliases as its mood (Boop's
-    /// `cheerful`, happy's old name, as happy), and a word that isn't a mood
-    /// as the resting mood. On the harness's queue, after the read-back.
-    public static func carryOver(_ mood: Choice, stateDir: URL, harness: Harness, version: MoodGraph.Version = .v2, note: (String) -> Void = { _ in }) {
-        let file = stateDir.appendingPathComponent(fileName)
-        guard let saved = try? String(contentsOf: file, encoding: .utf8) else { return }
-        defer { try? FileManager.default.removeItem(at: file) }
-        let log = harness.log.view(now: harness.clock.now())
-        guard mood.latest(log) == nil else { return }
-        let word = saved.trimmingCharacters(in: .whitespacesAndNewlines)
-        let to = CharacterPack.active.aliases[word] ?? word
-        guard catalog(version).contains(where: { $0.name == to }) else {
-            if !word.isEmpty { note("mood: the mood file says \(word), which isn't a mood; reading it as \(initial)") }
-            return
-        }
-        guard to != value(mood, log, version: version), mood.restore(to, by: carriedBy, in: harness) != nil else { return }
-        note("mood: \(to), carried over from the mood file")
-    }
 
     /// Changes the mood now to any of the moods, off the graph, with a
     /// result for the current mood or one that isn't a mood: the dashboard

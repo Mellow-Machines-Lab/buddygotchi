@@ -1,9 +1,0 @@
-{"seq":1,"ts":1790708400000,"source":"claude","type":"session","phase":"start","specific_type":"SessionStart","session":"a1","cwd":"/tmp/par/alpha","data":{}}
-{"seq":2,"ts":1790708401000,"source":"claude","type":"turn","phase":"start","specific_type":"UserPromptSubmit","session":"a1","cwd":"/tmp/par/alpha","data":{"prompt":"Fix the login test."}}
-{"seq":3,"ts":1790708405000,"source":"claude","type":"tool","phase":"start","specific_type":"PreToolUse","session":"a1","cwd":"/tmp/par/alpha","data":{"tool":"Bash","tool_use_id":"toolu_1790708405000","topic":"tests"}}
-{"seq":4,"ts":1790708409000,"source":"claude","type":"tool","phase":"end","specific_type":"PostToolUse","session":"a1","cwd":"/tmp/par/alpha","data":{"failed":false,"tool":"Bash","tool_use_id":"toolu_1790708409000","topic":"tests"}}
-{"seq":5,"ts":1790708412000,"source":"claude","type":"turn","phase":"end","specific_type":"Stop","session":"a1","cwd":"/tmp/par/alpha","data":{"message":"The login test passes.","outcome":"done"}}
-{"seq":6,"ts":1790712000000,"source":"boop","type":"action","specific_type":"mood","data":{"by":"dashboard","for":null,"latency_ms":0,"message":"Boop's mood changed: calm → proud.","ok":true}}
-{"seq":7,"ts":1790719200000,"source":"claude","type":"session","phase":"start","specific_type":"SessionStart","session":"g1","cwd":"/tmp/par/gamma","data":{}}
-{"seq":8,"ts":1790719201000,"source":"claude","type":"turn","phase":"start","specific_type":"UserPromptSubmit","session":"g1","cwd":"/tmp/par/gamma","data":{"prompt":"Look around."}}
-{"seq":9,"ts":1790719209000,"source":"claude","type":"turn","phase":"end","specific_type":"Stop","session":"g1","cwd":"/tmp/par/gamma","data":{"message":"Looked.","outcome":"done"}}

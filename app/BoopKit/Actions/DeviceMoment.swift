@@ -86,11 +86,11 @@ public struct DeviceMoment: Equatable, Sendable {
         self.ctx = ctx
     }
 
-    /// The animations the device plays, each its design
+    /// The animations the Mac asks the device to play, each its design
     /// state's name, besides `listening`, which only push-to-talk plays
-    /// (`BoopDevice.listening`).
-    public static let anims = ["task_complete", "reply_ready", "starting", "helper_return",
-                               "error", "stopped", "poked", "tap_spam"]
+    /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
+    /// plays itself.
+    public static let anims = ["task_complete", "reply_ready", "starting", "helper_return", "error", "stopped"]
     /// A brain reaction with no animation: a line, a face, or both.
     public static let react = "react"
 

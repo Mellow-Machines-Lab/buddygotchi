@@ -110,47 +110,6 @@ extension Event {
 
     /// `value` as JSON, keys sorted: a string comes back quoted.
     static func json(_ value: Any) -> String { JSONLine.encode(value) }
-
-    /// A transcript line from before MellowHarness:
-    /// `ts`, `type`, `phase`, `specific_type`, `session`, `subagent` and
-    /// `cwd` at the top, and actions as a type of their own. Read so a
-    /// launch just after the change picks up where the last one left.
-    public static func legacy(_ line: some StringProtocol) -> Event? {
-        guard let o = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
-              let seq = (o["seq"] as? NSNumber)?.intValue, let ts = (o["ts"] as? NSNumber)?.int64Value,
-              let source = o["source"] as? String, let type = o["type"] as? String,
-              let specific = o["specific_type"] as? String else { return nil }
-        var data = (o["data"] as? [String: Any] ?? [:]).mapValues { JSONValue(foundation: $0) }
-        let phase = o["phase"] as? String
-        if type == "action" {
-            if specific == Core.needsYou {
-                if let session = o["session"] as? String { data["session"] = .string(session) }
-                data["specific_type"] = .string(specific)
-                return Event(seq: seq, at: ts, source: Source.boop.rawValue,
-                             kind: phase == "end" ? "needs_you_end" : "needs_you_start", data: data)
-            }
-            data["action"] = .string(specific)
-            if phase == "end" { return Event(seq: seq, at: ts, source: Event.harness, kind: Event.ended, data: data) }
-            // A mood change said what it changed from and to only in its
-            // message; the mood is its latest `to` now.
-            if specific == MoodAction.actionName, let message = data["message"]?.string,
-               let said = message.range(of: "'s mood changed: "), message.hasSuffix(".") {
-                // "<name>'s mood changed: from → to.", the name the character's.
-                let parts = message[said.upperBound...].dropLast().components(separatedBy: " → ")
-                if parts.count == 2 {
-                    data["from"] = .string(parts[0])
-                    data["to"] = .string(parts[1])
-                }
-            }
-            if phase == "start" { data["open"] = true }
-            return Event(seq: seq, at: ts, source: Event.harness, kind: Event.did, data: data)
-        }
-        data["specific_type"] = .string(specific)
-        for key in ["session", "subagent", "cwd"] {
-            if let value = o[key] as? String { data[key] = .string(value) }
-        }
-        return Event(seq: seq, at: ts, source: source, kind: phase.map { "\(type)_\($0)" } ?? type, data: data)
-    }
 }
 
 /// Numbers named, so no brain has to compare them.

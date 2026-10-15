@@ -14,9 +14,6 @@
       "about": "For debugging: reacts to everything, over the top, and chatters while agents work."
     }
   ],
-  "aliases": {
-    "cheerful": "happy"
-  },
   "outcomes": {
     "big_success": [
       "happy",

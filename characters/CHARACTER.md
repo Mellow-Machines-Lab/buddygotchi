@@ -193,7 +193,6 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 13 moods:
 | `version` | yes | The pack's version. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood`. Boop's is `happy`, as the board always started |
-| `aliases` | no | Old names for moods, read as the mood: a saved mood from an older version (Boop's `cheerful` is happy) |
 | `pacing` | no | The mood policy's four timings in ms: `ordinary_dwell_ms`, `reverse_cooldown_ms`, `brief_exit_ms`, `fresh_evidence_ms` (§5) |
 | `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | The mood list, in order (§5). Its order is the firmware's `Mood` order |

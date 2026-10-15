@@ -51,8 +51,6 @@ public struct CharacterPack: Sendable {
     public let personalities: [String]
     /// What each personality does, in one line, for Settings.
     public let personalityAbout: [String: String]
-    /// Old names for moods, read as the mood (Boop's `cheerful` is happy).
-    public let aliases: [String: String]
     /// The moods a very long turn's finish may jump to: `big_success` and
     /// `big_failure`.
     public let outcomes: [String: [String]]
@@ -143,7 +141,6 @@ extension CharacterPack {
             guard let p = item as? [String: Any], let id = p["id"] as? String, let about = p["about"] as? String else { return nil }
             return (id, about)
         }, uniquingKeysWith: { a, _ in a })
-        aliases = json["aliases"] as? [String: String] ?? [:]
         outcomes = json["outcomes"] as? [String: [String]] ?? [:]
         var pacing = Pacing()
         if let p = json["pacing"] as? [String: Any] {
@@ -178,9 +175,6 @@ extension CharacterPack {
         guard names.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a mood") }
         for (kind, list) in outcomes {
             for m in list where !names.contains(m) { throw CharacterPackError("\(source): outcomes.\(kind) names \(m), which isn't a mood") }
-        }
-        for (old, new) in aliases where !names.contains(new) {
-            throw CharacterPackError("\(source): alias \(old) is for \(new), which isn't a mood")
         }
 
         // A pack without `moods_v2` (all but Boop's for now) keeps its one

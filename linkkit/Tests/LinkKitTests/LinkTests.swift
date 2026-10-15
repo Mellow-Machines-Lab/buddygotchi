@@ -179,23 +179,17 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         #expect(transport.types() == ["state"], "nor while it doesn't fit")
     }
 
-    /// SPEC.md §6: how to spot an app's own firmware from before the kit
-    /// is the app's (Boop's says `status` where a `hello` would be); the
-    /// kit hands the line on (`.other`), and the app says so with
-    /// `incompatible`. The device still gets `state` (at once, on change and
-    /// as the keepalive) but no `do`, and no `hello` ask; its `ev`s are
-    /// dropped, and `trouble` says why, logged once.
-    @Test func testAnAppsIncompatibleGetsStateButNoDo() {
+    /// SPEC.md §6: a device that doesn't fit still gets `state` (at once,
+    /// on change and as the keepalive) but no `do`, and no `hello` ask;
+    /// its `ev`s are dropped, and `trouble` says why, logged once.
+    @Test func testTroubleGetsStateButNoDo() {
         let (link, transport, logs) = makeLink(hello: false)
         let events = Box<DeviceEvent>()
         link.onEvent = { events.add($0) }
         link.update(state: fields, now: 0)
         transport.clear()
-        let status = #"{"t":"status","v":1,"id":"pip-7f3a","fw":"0.3.1"}"#
-        for t in [100, 200] as [Int64] {
-            #expect(link.receive(status, now: t) == .other(status))
-            link.incompatible(now: t)
-        }
+        let old = #"{"t":"hello","app":"pip","id":"pip-7f3a","fw":"0.3.1","does":["react"]}"#
+        for t in [100, 200] as [Int64] { link.receive(old, now: t) }
         #expect(link.trouble == .tooOld)
         #expect(link.trouble?.description == "the device's firmware is too old for this app: flash it")
         #expect(logs.all.filter { $0.contains("too old") }.count == 1)
@@ -273,7 +267,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         link.receive(#"{"t":"hello","kit":2,"app":"pip","id":"i","fw":"9","does":["react"]}"#, now: 10)
         link.receive(helloLine, now: 20)
         link.do("react", now: 30) { outcomes.add($0) }
-        link.incompatible(now: 40)
+        link.receive(#"{"t":"hello","app":"pip","id":"i","fw":"0","does":["react"]}"#, now: 40)
         #expect(outcomes.all == [.failed(.incompatible), .failed(.incompatible)])
     }
 
@@ -294,7 +288,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         link.receive(helloLine, now: 63_100)
         #expect(heard.all == ["1.0.0", "1.0.1", "1.0.0"])
 
-        link.incompatible(.tooNew, now: 64_000)
+        link.receive(#"{"t":"hello","kit":2,"app":"pip","id":"i","fw":"9","does":["react"]}"#, now: 64_000)
         #expect(link.trouble == .tooNew)
         #expect(link.trouble != nil)
         link.connection(false, now: 65_000)

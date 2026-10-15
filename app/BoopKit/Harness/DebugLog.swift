@@ -327,7 +327,7 @@ public enum DebugLog {
                 }
                 return out
             }
-            if let raw = o["event"] as? [String: Any], let e = Event(json: raw) ?? Event.legacy(JSONLine.encode(raw)) {
+            if let raw = o["event"] as? [String: Any], let e = Event(json: raw) {
                 let by = e["by"]?.string == "rule" || e.type == .needsYou ? " (rule)" : ""
                 if e.type == .needsYou {
                     return e.phase == .end ? "  · \(Core.needsYou)\(by) ended" + (e["why"]?.string.map { ": \($0)" } ?? "")

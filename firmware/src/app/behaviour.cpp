@@ -31,10 +31,8 @@ const char* screenName(Screen s) {
 
 const char* cutByName(CutBy c) {
   switch (c) {
-    case CutBy::kNewer: return "now";
     case CutBy::kTap: return "tap";
     case CutBy::kNeedsYou: return "needs_you";
-    case CutBy::kReset: return "reset";
     default: return nullptr;
   }
 }
@@ -60,15 +58,11 @@ render::SceneState actFromName(const char* name) {
   }
 }
 
-// Forgets everything but what the Mac is owed: each call playing has
-// stopped, cut short.
+// Forgets everything, what the Mac is owed included: the kit has already
+// cut the call it held (dbg.reset resets its turn first).
 void Behaviour::reset(uint32_t t, Rng& rng) {
-  Owed owed = owed_;
   auto face = std::move(face_);
   *this = Behaviour(std::move(face));
-  owed_ = owed;
-  for (int i = 0; i < owed_.nWaiting; ++i) cut(owed_.waiting[i].call, CutBy::kReset);
-  sweep(t);
   modelT_ = t;
   lastState_ = t;
   face_->reset(t, rng);
@@ -290,13 +284,12 @@ bool Behaviour::play(const MomentIn& in, uint32_t t) {
     const render::Mood mood = in.expr ? in.mood : model_.mood;  // the mood it's drawn in
     uint32_t voice = 0;  // when its line starts, from t
     if (anim && listen && listening(t)) {
-      if (moment_.call && moment_.call != in.call) cut(moment_.call, CutBy::kNewer);
       moment_.ms = (t - moment_.at) + kListenMs + kReplyWaitMs;
       moment_.call = in.call;
       moment_.id = in.id;
     } else if (anim) {
-      endLine(t, CutBy::kNewer);
-      playAnim(in.anim, t, CutBy::kNewer, in.loops, mood, in.variant, in.outcome, in.ctx);
+      endLine(t, CutBy::kNone);
+      playAnim(in.anim, t, CutBy::kNone, in.loops, mood, in.variant, in.outcome, in.ctx);
       moment_.call = in.call;
       moment_.id = in.id;
       bool finish = in.anim == render::Anim::kTaskComplete || in.anim == render::Anim::kReplyReady;
@@ -333,7 +326,7 @@ uint8_t Behaviour::pick(render::Anim a, render::Mood mood, int wanted, render::O
 // expression play on (endLine ends them).
 void Behaviour::playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
                          render::Outcome outcome, render::StartCtx ctx) {
-  if (momentOn(t)) cut(moment_.call, by);
+  if (by != CutBy::kNone && momentOn(t)) cut(moment_.call, by);
   moment_ = Moment{};
   moment_.anim = a;
   moment_.variant = variant;
@@ -355,7 +348,7 @@ void Behaviour::playAnim(render::Anim a, uint32_t t, CutBy by, int loops, render
 // A new moment replaces the line playing, cut short by `by`, and its
 // expression.
 void Behaviour::endLine(uint32_t t, CutBy by) {
-  if (sayDue(t)) cut(say_.call, by);
+  if (by != CutBy::kNone && sayDue(t)) cut(say_.call, by);
   say_ = Say{};
   expr_ = false;
   ++momentSeq_;
@@ -370,7 +363,7 @@ uint32_t Behaviour::holdMs(render::Mood mood, int loops, uint32_t t) const {
 }
 
 void Behaviour::startSay(const MomentIn& in, uint32_t t, uint32_t at) {
-  endLine(t, CutBy::kNewer);  // a new line ends the last one and the last moment's expression
+  endLine(t, CutBy::kNone);  // a new line ends the last one and the last moment's expression
   Say& s = say_;
   s.take = in.take;
   s.then = voice::takeText(in.then) ? in.then : -1;

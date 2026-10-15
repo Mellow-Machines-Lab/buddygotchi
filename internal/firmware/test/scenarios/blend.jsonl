@@ -13,15 +13,15 @@
 {"t":"do","name":"task_complete","play":"now","args":{"outcome":"success","variant":1}}
 {"clock":1225}
 {"shot":"to-cheer-75ms"}
-{"t":"do","name":"poked","play":"now"}
+{"t":"do","name":"stopped","play":"now"}
 {"clock":1300}
 {"shot":"interrupted-75ms"}
-{"expect":{"moment":{"anim":"poked","left_ms":2725}}}
-// A poke (the dashboard's), happy's 2.8 s design: it ends at
-// 4025, and working comes back behind a blink.
-{"clock":4024}
-{"expect":{"moment":{"anim":"poked","left_ms":1}}}
-{"clock":4025}
+{"expect":{"moment":{"anim":"stopped","left_ms":4125}}}
+// A one-shot, happy's 4.2 s stopped: it ends at 5425, and working
+// comes back behind a blink.
+{"clock":5424}
+{"expect":{"moment":{"anim":"stopped","left_ms":1}}}
+{"clock":5425}
 {"expect":{"moment":null}}
-{"clock":4100}
+{"clock":5500}
 {"shot":"back-to-working-75ms"}

@@ -91,7 +91,7 @@ class PlayTests(unittest.TestCase):
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["determined"])
         self.play("cheer", "--mood", "wounded")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["wounded"])
-        self.play("wiggle")
+        self.play("starting")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["happy"])
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             cli.build_parser().parse_args(["play", "cheer", "--mood", "cheerful"])
@@ -109,15 +109,13 @@ class PlayTests(unittest.TestCase):
         for anim in cli.ANIMS:
             self.assertEqual(self.play(anim), (0, [anim]))
             self.assertEqual(self.dos(), [{"t": "do", "name": anim, "play": "now"}])
-        self.assertEqual(self.play("task_complete", playing="poked")[0], 1, "something else playing")
+        self.assertEqual(self.play("task_complete", playing="starting")[0], 1, "something else playing")
 
     def test_the_older_names_are_sent_by_todays(self):
-        """The device no longer knows `cheer` or `wiggle`: play sends
-        task_complete's success and poked."""
+        """The device no longer knows `cheer`: play sends task_complete's
+        success."""
         self.assertEqual(self.play("cheer"), (0, ["task_complete"]))
         self.assertEqual(self.args(), [{"outcome": "success"}])
-        self.assertEqual(self.play("wiggle"), (0, ["poked"]))
-        self.assertEqual(self.args(), [{}])
         with self.assertRaisesRegex(cli.DeviceError, "task_complete --outcome failure"):
             self.play("cheer", "--outcome", "failure")
 
@@ -138,13 +136,14 @@ class PlayTests(unittest.TestCase):
         """The names boopctl plays are the device's own, the names of the
         states whose designs they play (firmware/src/render/scene.cpp
         animState; faces.h names them), and all of them are in Boop's
-        `hello.does`. The older two are play's own, sent by today's names."""
+        `hello.does`, but for a tap's, which the device plays itself. The
+        older one is play's own, sent by today's name."""
         names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
         self.assertEqual(names, facegen.STATES)
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
         plays = firmware_names("render/types.cpp", "SceneState animState(Anim a) {",
                                r"case Anim::k\w+:\s*return SceneState::(k\w+);", end="\n}\n")
-        self.assertEqual(cli.ANIMS + ["listening"], [states[s] for s in plays])
+        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
         self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
         self.assertTrue(set(cli.OLD_ANIMS.values()) <= set(cli.ANIMS))
@@ -176,7 +175,7 @@ class WireTests(unittest.TestCase):
         self.assertEqual(json.dumps(common.do("react", id=44, play="next", ttl=5000, mood="calm")),
                          '{"t": "do", "id": 44, "name": "react", "play": "next", "ttl": 5000, "args": {"mood": "calm"}}',
                          "in the vocabulary's order")
-        self.assertEqual(common.do("poked"), {"t": "do", "name": "poked", "play": "now"}, "now, no id, no args")
+        self.assertEqual(common.do("starting"), {"t": "do", "name": "starting", "play": "now"}, "now, no id, no args")
 
     def test_what_a_request_asks(self):
         call = common.call
@@ -545,7 +544,7 @@ class SoakTests(unittest.TestCase):
         # Each asks for its turn as the Mac or a tool would.
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
         self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
-                                 "helper_return": ("if_free", None), "poked": ("now", None), "tap_spam": ("now", None),
+                                 "helper_return": ("if_free", None),
                                  "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "react": ("next", 5000)})
 
     def test_each_reaction_ends_once(self):

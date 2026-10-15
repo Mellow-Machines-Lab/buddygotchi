@@ -151,14 +151,6 @@ public final class Pipeline {
         }
     }
 
-    /// Logs an event nothing else acts on, such as an action's.
-    @discardableResult
-    public func record(_ event: Event) -> Event {
-        var logged = event
-        _ = input(at: max(inputTime.now, event.at)) { logged = harness.emit(event) }
-        return logged
-    }
-
     /// The core's effects from a call outside the inputs above (the mood
     /// changing, the mic): their records logged, the rest for the caller.
     @discardableResult
@@ -185,20 +177,6 @@ public final class Pipeline {
         return read.count
     }
 
-    /// Whether you're away from the Mac, as the log has it:
-    /// the presence detector starts from this at launch.
-    public var away: Bool { view.away(transcript.view(now: inputTime.now)) }
-
-    /// The event `seq` with its line and what the rules did about it, as
-    /// it stands now; nil for one with no line.
-    public func viewEvent(_ seq: Int) -> ViewEvent? {
-        guard let e = transcript.event(seq), let line = harness.line(seq),
-              var v = view.view(e, line, wakes: false, log: transcript.view(before: e)) else { return nil }
-        v.wakesBrain = harness.wakes(e) && whyNotWake(e) == nil
-        v.did = shown(dids: seq, transcript.view(now: inputTime.now))
-        return v
-    }
-
     /// What was done about the event `seq` as HISTORY shows it
     /// (`LogView.shown`): what's done or in
     /// progress, not what failed or ended failed.
@@ -210,9 +188,6 @@ public final class Pipeline {
 
     /// The threads as the view has them now (tests).
     var threads: [String: TranscriptView.Thread] { view.threads(transcript.view(now: inputTime.now)) }
-
-    /// Every event with a line in the log, oldest first.
-    public var views: [ViewEvent] { transcript.events.compactMap { viewEvent($0.seq) } }
 
     /// Why an event may not wake the brain now, or nil if it may: it needs
     /// a brain, and the view's holds.

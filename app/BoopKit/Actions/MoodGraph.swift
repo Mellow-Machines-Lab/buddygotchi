@@ -24,13 +24,6 @@ public enum MoodGraph {
 
     /// Each mood's moves, from the pack's `moods_v2`.
     public static var moves: [String: Moves] { CharacterPack.active.movesV2 }
-
-    /// Where `mood` can move: its ordinary moves, then its dramatic ones;
-    /// none for a word that isn't a mood.
-    public static func neighbours(of mood: String) -> [String] { moves[mood]?.all ?? [] }
-
-    /// Whether `from` can move to `to` in one step. Staying isn't a move.
-    public static func isMove(from: String, to: String) -> Bool { neighbours(of: from).contains(to) }
 }
 
 extension MoodGraph {

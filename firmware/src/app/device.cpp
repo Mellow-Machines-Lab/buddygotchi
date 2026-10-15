@@ -46,17 +46,26 @@ bool sameModel(const Model& a, const Model& b) {
 
 // Boop's do names, in hello.does's order, and the
 // animation each plays: none for a reaction (a line, a face) and for
-// stop_listening.
+// stop_listening. A tap's poked and tap_spam aren't among them: the device
+// plays those itself.
 enum Do : uint8_t {
-  kReact, kTaskComplete, kReplyReady, kStarting, kStopped, kError, kHelperReturn,
-  kListening, kStopListening, kPoked, kTapSpam, kDoCount
+  kReact,
+  kTaskComplete,
+  kReplyReady,
+  kStarting,
+  kStopped,
+  kError,
+  kHelperReturn,
+  kListening,
+  kStopListening,
+  kDoCount
 };
-constexpr const char* kDoNames[kDoCount] = {"react", "task_complete", "reply_ready", "starting", "stopped", "error",
-                                            "helper_return", "listening", "stop_listening", "poked", "tap_spam"};
+constexpr const char* kDoNames[kDoCount] = {"react", "task_complete", "reply_ready", "starting",      "stopped",
+                                            "error", "helper_return", "listening",   "stop_listening"};
 constexpr render::Anim kDoAnims[kDoCount] = {
-    render::Anim::kNone,        render::Anim::kTaskComplete, render::Anim::kReplyReady, render::Anim::kStarting,
-    render::Anim::kStopped,     render::Anim::kError,        render::Anim::kHelperReturn, render::Anim::kListening,
-    render::Anim::kNone,        render::Anim::kPoked,        render::Anim::kTapSpam};
+    render::Anim::kNone,         render::Anim::kTaskComplete, render::Anim::kReplyReady,
+    render::Anim::kStarting,     render::Anim::kStopped,      render::Anim::kError,
+    render::Anim::kHelperReturn, render::Anim::kListening,    render::Anim::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a

@@ -2,8 +2,8 @@
 // characteristic frame. The finish's success, as the dashboard plays it:
 // its `loops` of happy's first task-complete design (6.4 s), one when the
 // call doesn't say. With `who`, the strip names whose turn it was, after a
-// tick. Then the dashboard's poke. (The shots keep the older names they
-// were first taken under: `cheer` for the success.)
+// tick. (The shots keep the older names they were first taken under:
+// `cheer` for the success.) A tap's poke is taps.jsonl's.
 {"clock":0}
 {"t":"state","base":"idle"}
 {"clock":10000}
@@ -22,12 +22,6 @@
 {"shot":"cheer_who"}
 {"clock":26400}
 {"expect":{"moment":null}}
-{"t":"state","base":"idle"}
-{"clock":30000}
-{"t":"do","name":"poked","play":"now"}
-{"clock":30090}
-{"expect":{"moment":{"anim":"poked","left_ms":2710}}}
-{"shot":"poked"}
 {"t":"state","base":"idle"}
 // stop_listening with nothing to stop is skipped: it never ends another
 // animation.

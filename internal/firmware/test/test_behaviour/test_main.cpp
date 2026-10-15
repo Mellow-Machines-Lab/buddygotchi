@@ -1272,10 +1272,11 @@ static void test_an_expression_ends_with_its_moment() {
 // A call from the Mac ends exactly once, when no part of
 // it plays any more (the line and its bubble, an animation, the borrowed
 // face): done when it played out, or when only the face it holds after
-// its line was ended early; cut, and by what, when a tap's poke, a newer
-// call, "needs you" or dbg.reset stopped its animation or its line. (One
-// none of which would play is refused, and the kit skips it; the kit
-// passes on only the holder's end: test_device, test_turn.)
+// its line was ended early; cut, and by what, when a tap's poke or
+// "needs you" stopped its animation or its line. A newer call or
+// dbg.reset gives no reason: the kit has already ended the call it held
+// then. (One none of which would play is refused, and the kit skips it;
+// the kit passes on only the holder's end: test_device, test_turn.)
 static std::string ended(Rig& r) {
   std::string out;
   app::Ended e;
@@ -1351,23 +1352,24 @@ static void test_a_waited_moment_says_how_it_ended() {
     p.at(1000 + 2 * look + kGoMs + Behaviour::kBubbleReadMs);
     TEST_ASSERT_EQUAL_STRING("10 done", ended(p).c_str());
   }
-  // Cut short: by a newer moment (a finish, a line, the Mac's next), and
-  // by "needs you".
+  // Replaced by a newer moment (a finish, a line, the Mac's next): over
+  // at once, with no reason, since the kit already cut it. Cut short by
+  // "needs you".
   r.at(30000);
   r.state(base("idle"));  // no app would skip them
   r.at(31000);
   onMoment(r.b, waited(11), r.t);
   r.moment(Anim::kTaskComplete);
-  TEST_ASSERT_EQUAL_STRING("11 cut by now", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("11 done", ended(r).c_str());
   r.at(35000);
   onMoment(r.b, waited(12), r.t);
   r.at(35100);
   r.say();
-  TEST_ASSERT_EQUAL_STRING("12 cut by now", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("12 done", ended(r).c_str());
   r.at(40000);
   onMoment(r.b, waited(13), r.t);
   onMoment(r.b, waited(14), r.t);
-  TEST_ASSERT_EQUAL_STRING("13 cut by now", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("13 done", ended(r).c_str());
   r.at(40100);
   r.state(attn());
   TEST_ASSERT_EQUAL_STRING("14 cut by needs_you", ended(r).c_str());
@@ -1451,12 +1453,13 @@ static void test_a_waited_moment_says_how_it_ended() {
   TEST_ASSERT_TRUE(h.b.expression(h.t, face));
   TEST_ASSERT_EQUAL(render::Mood::kGrumpy, face);
 
-  // dbg.reset forgets the moment, which the Mac is still told of.
+  // dbg.reset forgets the moment, and what it owes: the kit has already
+  // told the Mac.
   r.at(50000);
   r.state(base("idle"));
   onMoment(r.b, waited(16), r.t);
   r.b.reset(r.t, r.rng);
-  TEST_ASSERT_EQUAL_STRING("16 cut by reset", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
 
   // A moment with no id never ends out loud.
   Rig n;

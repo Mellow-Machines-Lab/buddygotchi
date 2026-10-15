@@ -255,7 +255,7 @@ static void test_hello_on_the_first_line_and_every_minute() {
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
-                          "\"listening\",\"stop_listening\",\"poked\",\"tap_spam\"],\"voice\":\"") +
+                          "\"listening\",\"stop_listening\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
                       "\",\"pack_version\":\"" + render::kPackVersion + "\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
@@ -936,10 +936,10 @@ static void test_moment_plays_then_ends_and_a_new_one_replaces_it() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"poked\",\"play\":\"now\"}");  // the dashboard's: the poke
+  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");  // a rule's one-shot
   r.usbLine("{\"t\":\"dbg.state\"}");
-  const uint32_t poke = render::loopMs(render::Mood::kHappy, render::SceneState::kPoked);
-  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"poked\",\"left_ms\":" + std::to_string(poke) + ",").c_str()));
+  const uint32_t stopped = render::loopMs(render::Mood::kHappy, render::SceneState::kStopped);
+  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"stopped\",\"left_ms\":" + std::to_string(stopped) + ",").c_str()));
   r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"size\":3,\"ttl\":5}}");  // args it doesn't know are ignored
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1458,8 +1458,6 @@ static void test_moments_read_their_facts() {
       {"{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}", "\"anim\":\"stopped\",\"left_ms\":4200,\"variant\":1}"},
       {"{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\",\"args\":{\"variant\":1}}", "\"anim\":\"error\",\"left_ms\":3800,\"variant\":1}"},
       {"{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\",\"args\":{\"variant\":2}}", "\"anim\":\"helper_return\",\"left_ms\":4800,\"variant\":2}"},
-      {"{\"t\":\"do\",\"name\":\"poked\",\"play\":\"now\"}", "\"anim\":\"poked\",\"left_ms\":2800,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"tap_spam\",\"play\":\"now\"}", "\"anim\":\"tap_spam\",\"left_ms\":3800,\"variant\":1}"},
   };
   for (const auto& c : cases) {
     r.usbLine(c.moment);
@@ -2018,7 +2016,7 @@ static void test_dbg_latency_times_inputs_and_messages() {
   r.kit.tick();
   showFrame(r, 2120);
   r.hal.real = 3000;
-  r.usbLine("{\"t\":\"do\",\"name\":\"poked\",\"play\":\"now\"}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");
   showFrame(r, 3004);
   d = latencyOf(r, true);
   TEST_ASSERT_EQUAL_UINT32(12, d["press"]["max"].as<uint32_t>());

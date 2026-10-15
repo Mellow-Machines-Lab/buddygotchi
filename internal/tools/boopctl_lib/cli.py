@@ -197,15 +197,16 @@ def frame_us(sample: dict, overlapped: bool) -> int:
     return sample["draw_us"] + sample["push_us"]
 
 
-# perf --scenes (internal/VERIFICATION.md §8): each scene's state, the `do` it repeats
-# every 2 s (None for none), and the frames a second its slowest second
-# must reach (None: reported only). A detailed expression and needs you
+# perf --scenes (internal/VERIFICATION.md §8): each scene's state, the
+# request it repeats every 2 s (None for none: a `do`, or a BOOT tap for
+# a poke), and the frames a second its slowest second must reach (None:
+# reported only). A detailed expression and needs you
 # may draw a little slower than working.
 WORKING = {"t": "state", "base": "working", "act": "terminal", "mood": "happy", "busy": 1}
 PERF_SCENES = [
     ("working", WORKING, None, 30),
     ("attention", {**WORKING, "attn": {"id": 5000, "agent": "codex", "project": "perf"}}, None, 28),
-    ("pokes", WORKING, "poked", None),
+    ("pokes", WORKING, {"t": "dbg.press", "ms": 100}, None),
     ("frightened", {**WORKING, "mood": "frightened"}, None, 28),
     ("asleep", {"t": "state", "base": "asleep", "mood": "happy"}, None, None),
 ]
@@ -255,7 +256,7 @@ def perf_scenes(args: argparse.Namespace) -> int:
                     dev.send({**state, "vol": vol})
                     next_state += 2  # as the Mac repeats it
                 if repeat and elapsed >= next_do:
-                    dev.send(do(repeat))
+                    dev.request(repeat)
                     next_do += 2
                 if say and "attn" not in state and elapsed >= next_line:
                     dev.send(do("react", say={"take": say}))
@@ -382,20 +383,20 @@ def clock_offset(dev: "Device", rng: random.Random, pings: int) -> tuple[float, 
 def latency_stimulus(kind: str, i: int, rng: random.Random) -> dict:
     """One input or message whose way to the panel the board times: a BOOT
     tap or a touch (each a press and then its tap, 100 ms later), the i-th
-    `state`, each changing the mood from the last, or a poke played `now`."""
+    `state`, each changing the mood from the last, or a one-shot played `now`."""
     if kind == "boot":
         return {"t": "dbg.press", "ms": 100}
     if kind == "touch":
         return {"t": "dbg.touch", "x": rng.randint(40, 280), "y": rng.randint(30, 180), "ms": 100}
     if kind == "state":
         return {"t": "state", "base": "working", "busy": 1, "mood": MOODS[i % 2], "vol": 0}
-    return do("poked")
+    return do("starting")
 
 
 def cmd_latency(args: argparse.Namespace) -> int:
     """Times how long the board takes from an input or a Mac message to
     the frame that shows it (dbg.latency; internal/VERIFICATION.md §8):
-    BOOT taps, touches, mood changes and pokes, each sent at a random moment
+    BOOT taps, touches, mood changes and `do`s, each sent at a random moment
     of the board's frame, one at a time. The board stamps each when it reads
     it and when the frame that shows it has been sent. Pinging first gives
     the board's clock against this one, so a press, a state and a do count
@@ -488,20 +489,17 @@ def soak_say(rng: random.Random) -> dict:
 
 def soak_play(name: str) -> dict:
     """How a `do` of `name` asks for its turn: the rules'
-    one-shots only when the turn is free, a poke or a spam at once as the
-    tools send them, a finish or a line waiting its turn for up to 5 s, as
-    the Mac sends the brain's."""
+    one-shots only when the turn is free, a finish or a line waiting its
+    turn for up to 5 s, as the Mac sends the brain's."""
     if name in RULE_ONE_SHOTS:
         return {"play": "if_free"}
-    if name in ("poked", "tap_spam"):
-        return {"play": "now"}
     return {"play": "next", "ttl": TTL_MS}
 
 
 def soak_do(rng: random.Random) -> dict:
     """An animation, a line, or both, which the soak doesn't wait on, each
     asking for its turn as it would from the Mac or a tool (soak_play): a
-    finish with its outcome and loops (1–3), a one-shot, a poke, a line."""
+    finish with its outcome and loops (1–3), a one-shot, a line."""
     name = rng.choice(ANIMS) if rng.random() < 0.7 else "react"
     args: dict = {}
     if name == "task_complete":
@@ -895,9 +893,9 @@ def cmd_play(args: argparse.Namespace) -> int:
     an animation from the set, --loops times, with --take
     a take over it (from the design's voice window), as a `do` played `now`
     so it replaces whatever plays; `needs`, a fake "needs you"
-    (play_needs); or the bring-up `pattern`. `cheer` and `wiggle` are the
-    older names of task_complete's success and poked, which the device no
-    longer knows: they're sent by today's."""
+    (play_needs); or the bring-up `pattern`. `cheer` is the older name of
+    task_complete's success, which the device no longer knows: it's sent
+    by today's."""
     if (args.take or args.loops or args.outcome or args.ctx or args.variant) and args.what in ("needs", "pattern"):
         raise DeviceError(f"play {args.what} takes no --take, --loops, --outcome, --ctx or --variant")
     if args.what == "cheer" and args.outcome == "failure":
@@ -983,7 +981,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("play", help="play an animation (with --take, a take over it), a fake needs-you "
                                     "with its ding, or the bring-up pattern")
     p.add_argument("what", choices=ANIMS + list(OLD_ANIMS) + ["needs", "pattern"],
-                   help=", ".join(ANIMS) + " (or the older cheer, task_complete's success, and wiggle, poked); "
+                   help=", ".join(ANIMS) + " (or the older cheer, task_complete's success); "
                         "needs; pattern")
     p.add_argument("--take", metavar="ID",
                    help="a take over it, by id (`boopctl takes` lists them)")

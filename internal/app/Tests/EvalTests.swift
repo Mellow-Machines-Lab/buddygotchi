@@ -248,7 +248,7 @@ final class EvalTests: XCTestCase {
     /// mood's moves on the graph.
     func testAScenarioStartsInItsMoodAndChecksWhatWasOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("start-mood-\(UUID().uuidString).json")
-        let grumpy = (["grumpy"] + MoodGraph.neighbours(of: "grumpy")).joined(separator: "|")
+        let grumpy = (["grumpy"] + MoodGraph.moves["grumpy"]!.all).joined(separator: "|")
         try Data(#"{"name":"n","case":"c","why":"w","mood":"grumpy","steps":[{"event":"turn started","at":"2m","expect":{"offered":"\#(grumpy)","mood":"irritated"}},{"event":"turn finished","at":"3m","expect":{"offered":"calm|happy"}}]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
@@ -264,9 +264,9 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(states.all.first?.contains("\n\(creature) has been grumpy for 2 min.\n") == true,
                       "and knows how long, as if the dashboard set it at the start: \(states.all.first ?? "")")
         XCTAssertTrue(result.checks[0].passed, result.checks[0].summary)
-        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.neighbours(of: "irritated"))
+        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.moves["irritated"]!.all)
         XCTAssertFalse(result.checks[1].passed)
-        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.neighbours(of: "irritated")).sorted().joined(separator: "|")),
+        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.moves["irritated"]!.all).sorted().joined(separator: "|")),
                       result.checks[1].summary)
         XCTAssertTrue(result.checks[1].summary.contains("wanted offered calm|happy; got react none"), result.checks[1].summary)
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","mood":"sulky","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "mood is one of"),

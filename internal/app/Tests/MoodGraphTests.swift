@@ -38,11 +38,11 @@ final class MoodGraphTests: XCTestCase {
             }
             XCTAssertEqual(seen, Set(MoodGraph.moods), "every mood from \(from) by ordinary moves")
         }
-        XCTAssertTrue(MoodGraph.isMove(from: "grumpy", to: "sad"))
+        XCTAssertTrue(MoodGraph.moves["grumpy"]!.all.contains("sad"))
         XCTAssertTrue(MoodGraph.moves["grumpy"]!.dramatic.contains("sad"))
         XCTAssertFalse(MoodGraph.moves["grumpy"]!.dramatic.contains("irritated"))
-        XCTAssertFalse(MoodGraph.isMove(from: "excited", to: "calm"), "excited goes through happy")
-        XCTAssertFalse(MoodGraph.isMove(from: "grumpy", to: "grumpy"))
-        XCTAssertFalse(MoodGraph.isMove(from: "sulky", to: "calm"))
+        XCTAssertFalse(MoodGraph.moves["excited"]!.all.contains("calm"), "excited goes through happy")
+        XCTAssertFalse(MoodGraph.moves["grumpy"]!.all.contains("grumpy"), "staying isn't a move")
+        XCTAssertNil(MoodGraph.moves["sulky"], "not a mood")
     }
 }
