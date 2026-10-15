@@ -5,13 +5,9 @@ scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
 
-Every scenario runs on the pack's one mood graph (characters/CHARACTER.md
-§5): the mood question offers staying and every move from the mood, and
-how long a mood holds is the steering's. Scenarios 68 and 69 start in
-moods outside the first 13, fear and comfy; a unit test runs them with a
-scripted brain that stays. Run steering comparisons interleaved A/B when
-the owner supplies `BOOP_JEV_KEY`; their presence and scripted execution
-do not claim Jev passed.
+The mood question offers staying and every move from the mood on the
+pack's graph ([characters/CHARACTER.md](../characters/CHARACTER.md) §5),
+and how long a mood holds is the steering's.
 
 ## 1. What an eval is
 
@@ -81,9 +77,8 @@ the whole eval as broken. The evals ask Jev, so they need its key and
 fail without it.
 
 **The whole-run checks.** A scenario's `checks` are judged over every
-pass of a run, checked or not, for how lively Boop stays (the owner's
-brief of 2026-09-28: an animated Boop that doesn't sit on one look,
-repeat itself or flail). Each is loose, there to catch a clear failure,
+pass of a run, checked or not, for how lively Boop stays: an animated
+Boop that doesn't sit on one look, repeat itself or flail. Each is loose, there to catch a clear failure,
 and to be tightened once Boop meets it (`Eval.judge`):
 
 | Check | Fails when |
@@ -187,7 +182,7 @@ file-name order:
 | `why` | The spec or steering file that says so |
 | `always` | `true` for Boop's character (§1): 3 runs by default, and `--always` runs these |
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
-| `mood` | The mood the run starts in, one of the 13: `calm` by default |
+| `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), and `moves_on_graph` (`true`) |
 | `personality` | `boop` (the default) or `chatter` |
@@ -252,14 +247,14 @@ kinds, all with the `boop` personality unless the file says otherwise:
   whiny or wounded Boop back (`50`), routine work holds calm (`52`), an
   irritated Boop answers as irritated, not grumpy (`54`), and hours of
   nothing fade excited through happy to calm (`55`). And talk moves
-  the mood at once (the owner's brief of 2026-09-29): one apology
+  the mood at once: one apology
   softens a fed-up Boop a step (`56`), a second is fair only after
   poking it again (`57`), sad news makes it sad and keeps it so until
   it's taken back, when it switches (`58`), and a plain question
   softens nothing (`59`). And work that finished while you were away
   from the Mac is celebrated as it ends, never replayed when you're
-  back, when Boop cheers to see you (`65`). And moods outside the first
-  13: quiet takes a frightened Boop at most an ordinary step (`68`), and
+  back, when Boop cheers to see you (`65`). And the rarer
+  moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
   new work moves a comfy one only to a mood on offer (`69`).
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.

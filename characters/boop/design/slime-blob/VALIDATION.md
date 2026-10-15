@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-05. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-15. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -95,6 +95,46 @@ node characters/boop/design/slime-blob/tools/browser.cjs
 temporary directory is used. `BOOP_CAPTURE_FACES=0` skips per-face screenshots,
 not the expression-selection checks. `--help` is supported by all package
 scripts. QA images are review evidence, not packaged runtime assets.
+
+## The firmware port
+
+The C++ gel face (`characters/boop/firmware/src/render/gel/`) is checked
+against this package's reference engine, from the repository root:
+
+```sh
+make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against
+python3 characters/boop/tools/slimegen/check-port.py --output /tmp/boop-gel-port
+internal/tools/boopctl sim --face gel
+```
+
+- `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
+  the one build that keeps the recipes' `intent`) and replays every
+  `scripts/*.jsonl` against the saved traces. It checks every scalar,
+  categorical field, cue and frame count within its tolerance, and fails
+  on unexpected extra fields too.
+- `test_gel` (in the pack's `tests/firmware/`, run by `fw-test`) checks
+  arithmetic, reference clock rounding, every expression buffer's
+  bounds, deterministic pixels, request identity, bounded caches, alerts
+  interrupted by listening or a link timeout signalling exactly once,
+  drawn face ratios and the alert's ramp moving without jumps across
+  every directed edge, voice lead, stale cues, return to the latest
+  facts, projected face anchors against the reference camera,
+  extreme-pose buffer bounds, drawing by coverage (a shape's ink is its
+  area wherever it sits between pixels, a stroke keeps its width and
+  blends once, the body's outline is soft with no seam inside), and
+  tracked-clear parity with full clearing across pose and prop changes.
+  RGB565 opacity rounding is checked against an independent scalar
+  reference across every channel value and all 256 opacity levels.
+- `boopctl sim --face gel` plays the pack's `tests/scenarios-gel/`
+  against its `tests/golden-gel/`: every canonical mood and factual
+  state, failure and neutral-finish frames, and the host lane at the
+  panel's size (`lane.jsonl`: the working count, a long name that needs
+  you, the finish's marks and the bubble in each of its fonts).
+  `--accept` updates only the gel goldens, after looking at them.
+  `boopctl run` reads the board's `hello` to pick the matching face.
+
+These are simulator and host checks. Display throughput on the board
+and speaker review are separate.
 
 ## Imported export's recorded result
 

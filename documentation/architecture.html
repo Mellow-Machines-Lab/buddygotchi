@@ -209,7 +209,7 @@ Boop did nothing on its own.</pre></div>
       </li>
       <li class="link"><div class="wire"><span>the sentence, with recent history</span></div></li>
       <li class="hop">
-        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality and rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't.</p></div>
+        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality, the nature you chose at setup (sweet or cheeky) and its rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't.</p></div>
         <div class="pay"><span class="what">Two of the questions (options trimmed), and the answers</span>
 <pre>After NOW, what is Boop's mood?
   calm      Stay calm: NOW is no reason MOOD gives to leave it…
@@ -225,7 +225,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       </li>
       <li class="link"><div class="wire"><span>Jev's answers</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
+        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
         <div class="pay"><span class="what"><code>do</code> to the device: play this when you can</span>
 <pre>{
   "t": "do",
@@ -292,7 +292,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
 
 <section id="joins">
   <h2>Where the pieces join</h2>
-  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>.</p>
+  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>, which is split by job over six files in <code>app/BoopKit/App/</code>: <code>Runtime.swift</code>, and <code>Runtime+Brain</code>, <code>+Device</code>, <code>+Talk</code>, <code>+Status</code> and <code>+Dev</code>.</p>
   <div class="scroll"><table>
     <thead><tr><th>From → to</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
@@ -300,7 +300,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' reactions</td></tr>
       <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is written to the transcript and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's, so the two agree. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>
-      <tr><td>Boop → LinkKit (a rule's reaction)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, skipped while one of Jev's reactions is playing. Push-to-talk's <code>listening</code> after the app's mic button is <code>play: now</code></td></tr>
+      <tr><td>Boop → LinkKit (a rule's reaction)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, and skipped unless nothing plays on the device or what plays is resting. The core records each one it plays, so the next prompt says Boop already reacted on its own (a turn's <code>starting</code> is recorded but left out of the prompt). Push-to-talk's <code>listening</code> after the app's mic button is <code>play: now</code></td></tr>
       <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactOutput</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>
       <tr><td>Boop → which device</td><td><code>DeviceChooser</code></td><td>The board over Bluetooth, or, while one runs on this Mac and Settings is told to use it, the simulator (<code>simulator/</code>: the firmware's own code in a web page) over its USB socket. Nothing above the transport knows which</td></tr>
       <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>, or another in <code>demo/</code>) comes in through the same doors as real work: the agent's hooks as hooks (sent by the player, or with <code>--live</code> a real agent's, which the rest keeps to), a poke as the device's, talk as the mic's; the brain's steps are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>

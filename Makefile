@@ -65,19 +65,8 @@ simulator:
 	simulator/web/build.sh
 	python3 simulator/web/serve.py
 
-# A pack's demo by name (NAME=landing, the default; NAME=? lists them),
-# with Boop on the simulator's page (simulator/README.md, Demos). IN says
-# where you watch the agent:
-#   (nothing)                  no agent: Boop plays it, as the page records
-#                              it (FACE=gel for Boop's own face, FRESH=1 to
-#                              record it again)
-#   claude                     the real Claude, in the Claude desktop app,
-#                              following the script as /demo
-#   simulated-claude-terminal  Claude Code in this terminal, its replies
-#                              replayed from the script
-#   simulated-codex-terminal   the same with Codex
-# An agent keeps in step with the script (internal/sessions/README.md).
-# BOARD=usb:SOCKET plays it on a board on a USB bridge in any of them.
+# A pack's demo by name (characters/DEMOS.md): NAME (landing), and IN for
+# where you watch an agent play it, none by default.
 DEMO_RUN := internal/tools/session/session.py run $(or $(NAME),landing) --board $(or $(BOARD),sim)
 demo:
 	@case "$(IN)" in \

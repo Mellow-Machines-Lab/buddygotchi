@@ -12,9 +12,8 @@ PIO := firmware/tools/pio.sh
 # included), then the runner. Then the own tests of agent-hooks, mellowharness
 # and linkkit, which use Swift Testing and so run under `swift test`, each
 # in a build folder of its own. That build now and then fails with "plugin
-# for module 'TestingMacros' not found", a toolchain flake that passes
-# when run again, so that failure alone is tried again, up to seven times
-# (it has failed five times running for one package).
+# for module 'TestingMacros' not found", a toolchain flake, so that
+# failure alone is tried again, up to eight tries in all.
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
 test:

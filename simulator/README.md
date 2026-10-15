@@ -4,10 +4,6 @@ Updated 2026-10-15. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
-**Being built.** What's below works. Still to come: simulated Bluetooth,
-an inspector for the messages and the queue, and the device-level checks run
-against it as a matter of course.
-
 ```sh
 brew install emscripten   # once: it builds the firmware for a browser
 make simulator            # builds it, then serves http://127.0.0.1:8206/
@@ -94,28 +90,14 @@ board's messages mean: they pass through it.
 
 ## Demos
 
-For a demo through a real agent, which drives the page live from the
-agent's own hooks, see `make demo IN=…`
-([internal/sessions/README.md](../internal/sessions/README.md)).
-
-A character pack's demo ([characters/DEMOS.md](../characters/DEMOS.md)) is a script the Mac app plays. The app can't run in a browser, so
-the page plays a **recording** of it: every message the app sent the board,
-with when, so the firmware in the page does what it did, with no app
-behind it. The screen is still the firmware's own drawing, and you can
-still poke it.
-
-```sh
-make demo                   # Pixel's demo/landing.jsonl: the landing page's story
-make demo NAME=demo         # a pack's demo/demo.jsonl
-make demo FACE=gel          # on Boop's own face
-make demo NAME=?            # lists the demos there are
-```
-
-`make demo` (`tools/demo.sh`) finds `demo/NAME.jsonl` in the chosen
-pack, else in the one pack that has it, and plays everything as that
-pack. It records the demo the first time, and again when the script
-changes or with `FRESH=1`; then it serves the page and opens
-`http://127.0.0.1:8206/?demo=pixel-landing` (the face, then the name).
+`make demo` shows a character pack's demo here
+([characters/DEMOS.md](../characters/DEMOS.md)). A demo is a script the
+Mac app plays, and the app can't run in a browser, so the page plays a
+**recording** of it: every message the app sent the board, with when,
+so the firmware in the page does what it did, with no app behind it.
+The screen is still the firmware's own drawing, and you can still poke
+it. The page opens at `http://127.0.0.1:8206/?demo=pixel-landing` (the
+face, then the name).
 
 `tools/record-demo.sh` plays the script through the real headless app
 (`Boop --headless --demo pack:NAME --record FILE`) with the Mac build's
@@ -165,14 +147,11 @@ The board's USB carries LinkKit's messages
 them differs from a board's.
 
 **The page's**, served by `make simulator` (`web/serve.py`), is a Unix
-socket that keeps a bridge's rules, `/tmp/boop-sim-usb.sock`
-([linkkit/SPEC.md](../linkkit/SPEC.md) §8): every whole line from the
-board goes to every client, and every whole line from a client goes to
-the board whole. It never waits on a client: one that falls 4 MB behind
-is dropped, and a client's message longer than a message may be (512
-bytes) is dropped whole, as a board drops it. So the tools and the Mac app reach the
-board in the browser as they reach one on a bridge
-([internal/VERIFICATION.md](../internal/VERIFICATION.md) L4):
+socket, `/tmp/boop-sim-usb.sock`, that keeps a bridge's rules
+([linkkit/SPEC.md](../linkkit/SPEC.md) §8). A client's message longer
+than a message may be is dropped whole, as a board drops it. So the
+tools and the Mac app reach the board in the browser as they reach one
+on a bridge ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L4):
 
 ```sh
 BOOP_BRIDGE=/tmp/boop-sim-usb.sock internal/tools/boopctl ping
@@ -254,3 +233,9 @@ make -C internal sim-test
   from.
 
 The sound and card tests need the chosen pack to have a voice file, and skip without one.
+
+## Not yet
+
+Simulated Bluetooth, an inspector for the messages and the queue, and
+the device-level checks (L2) run against the simulator as a matter of
+course.

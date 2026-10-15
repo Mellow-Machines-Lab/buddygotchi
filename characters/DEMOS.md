@@ -92,11 +92,12 @@ one script plays with or without a voice.
 ## Play it
 
 ```sh
-make demo NAME=?                                       # list the demos
+make demo 'NAME=?'                                     # list the demos (quoted for zsh)
 make demo NAME=hello                                   # the simulator's page, no agent
+make demo NAME=hello FACE=gel                          # the same, on Boop's gel face
 make demo NAME=hello BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, no agent
 make demo NAME=hello IN=simulated-claude-terminal      # Claude Code in this terminal, replies replayed
-make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex
+make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex (no reviewer steps: Codex has no subagents here)
 make demo NAME=hello IN=claude                         # your real Claude, in the Claude desktop app
 ```
 
@@ -111,7 +112,8 @@ make demo NAME=hello IN=claude                         # your real Claude, in th
   brain's after it. How this works:
   [internal/sessions/README.md](../internal/sessions/README.md).
 - `make demo` plays the demo as its pack. If two packs have a demo with
-  the same name, choose one with `CHARACTER=<pack>`.
+  the same name, choose one with `CHARACTER=<pack>`. With no `NAME`, it
+  plays `landing`.
 
 ## The same every time
 
@@ -119,7 +121,8 @@ make demo NAME=hello IN=claude                         # your real Claude, in th
   demo` plays the script through the real app and records every message
   the board gets. The page then plays that recording, so each viewing is the
   same. It records again when the script changes, or with `FRESH=1`.
-  This is what the landing page shows.
+  This is what the landing page shows. The recording's format is in
+  [simulator/README.md](../simulator/README.md), Demos.
 - **A board or an agent plays live.** The steps come in the same order,
   each at its time or at the agent's pace.
 - **In the terminal, the agent's model is replayed** from the script, so
@@ -130,8 +133,8 @@ make demo NAME=hello IN=claude                         # your real Claude, in th
 
 ## A project for a real agent
 
-With `IN=…`, a real Claude Code or Codex does the work in a fresh copy of
-`internal/sessions/<name>/workspace/`. Make that folder with the files the
-script's agent reads, edits and runs, and with tests that give the
-script's results (`hello`, `landing` and `hanging` are examples). With no `IN`, a
-demo needs no project.
+With `IN=…`, the agent works in a fresh copy of
+`internal/sessions/<name>/workspace/`: the files the script's agent
+reads, edits and runs, and tests that give the script's results. How to
+make one: [internal/sessions/README.md](../internal/sessions/README.md),
+A demo's project. With no `IN`, a demo needs no project.

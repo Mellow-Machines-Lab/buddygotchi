@@ -1,25 +1,14 @@
 # Demos with a real agent
 
-Updated 2026-10-15. A character pack's demo script
-([characters/DEMOS.md](../../characters/DEMOS.md)), played
-through a real Claude Code or Codex with Boop watching, for recording
-videos. The same script `make demo` plays with no agent: here the agent
-really reads, edits and runs things in a fresh copy of a small project,
-and its real hooks reach Boop, which keeps the person's pokes and talk and
-its brain's answers in step with it.
+Updated 2026-10-15. How a character pack's demo script plays through a
+real Claude Code or Codex with Boop watching, for recording videos
+(`make demo IN=…`; the commands are in
+[characters/DEMOS.md](../../characters/DEMOS.md), Play it). Here the
+agent really reads, edits and runs things in a fresh copy of a small
+project, and its real hooks reach Boop, which keeps the person's pokes
+and talk and its brain's answers in step with it.
 
-```sh
-make demo IN=claude                         # the real Claude, in the Claude desktop app
-make demo IN=simulated-claude-terminal      # Claude Code in this terminal, its replies replayed
-make demo IN=simulated-codex-terminal       # Codex (a script with no reviewer: Codex has no subagents here)
-make demo IN=claude NAME=hello              # half a minute: a quick check that it all works
-make demo IN=claude BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, on .build/debug/linkkit-bridge
-```
-
-`make demo` with no `IN` plays the same script with no agent, in the
-browser page alone.
-
-It builds Boop with the script's character pack, serves the simulator's
+`make demo IN=…` builds Boop with the script's character pack, serves the simulator's
 page (unless one is running) and opens it, waits for the board, then
 starts the agent. Put the agent and the page side by side and record the
 screen. Your keys reach the agent as ever: quit it (Ctrl-C twice) and the

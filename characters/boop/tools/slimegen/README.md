@@ -18,8 +18,9 @@ The same tool bundles the reference engine, WebGL/Canvas renderer and a
 silent adapter into Boop's character pack, `characters/boop/mac/mirror/`. The shipped files have no
 dependency on this tool at runtime. `check-mirror.mjs` checks interruption and
 resource policy, and runs the generated `slime.js` on stubs to check its
-drawing: none while the popover is closed, at most 60 frames a second while
-it is open, and the renderer's supersampling tiers. Edit
+drawing: none while the popover is closed, a frame at once when it opens,
+60 frames a second while it is open on a 120 Hz display as on a 60 Hz
+one, and the renderer's supersampling tiers. Edit
 `mirror.mjs` or the design's `render/` sources, never `slime.js`, and
 regenerate. `check-headless.py --output FILE` exercises the real scripted
 app against an isolated synthetic gel USB peer. Add `--native` to connect it
