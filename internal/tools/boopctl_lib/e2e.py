@@ -1,6 +1,6 @@
 """The pipeline check (internal/VERIFICATION.md L4): hook → app → USB → device.
 
-Starts `boopctl bridge` and a headless app with throwaway state, sends each
+Starts `linkkit-bridge` and a headless app with throwaway state, sends each
 fixture's payloads through the real `agent-hook`, run as Boop installs it
 (`--keep-text`), and checks the device's `dbg.state` at every checkpoint.
 Latency is hook launch to the device having received the new `state` (its
@@ -78,11 +78,10 @@ class Run:
             shutil.rmtree(self.root)
         self.root.mkdir(parents=True)
         self.out.mkdir(parents=True, exist_ok=True)
-        for name in ("Boop", "agent-hook"):
+        for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
                 raise DeviceError(f"no {BIN / name}; run make build")
-        bridge = [str(REPO / "internal" / "tools" / "boopctl")] + (["--port", self.port] if self.port else [])
-        bridge += ["bridge", "--socket", self.bridge_sock, "--quiet"]
+        bridge = [str(BIN / "linkkit-bridge"), "--socket", self.bridge_sock] + (["--port", self.port] if self.port else [])
         self.bridge = subprocess.Popen(bridge, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.app.wait_for(lambda: os.path.exists(self.bridge_sock), 10, "the bridge's socket")
         self.app.start()
@@ -97,7 +96,7 @@ class Run:
         if (code := self.app.stop()) is not None:
             self.say(f"Boop exit {code}")
         if self.bridge and self.bridge.poll() is None:
-            self.say(f"boopctl exit {stop_proc(self.bridge)}")
+            self.say(f"linkkit-bridge exit {stop_proc(self.bridge)}")
         self.bridge = None
 
     # Steps

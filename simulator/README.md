@@ -165,9 +165,12 @@ The board's USB carries LinkKit's lines
 them differs from a board's.
 
 **The page's**, served by `make simulator` (`web/serve.py`), is a Unix
-socket that keeps a bridge's rules, `/tmp/boop-sim-usb.sock`: every whole
-line from the board goes to every client, and every whole line from a
-client goes to the board whole. So the tools and the Mac app reach the
+socket that keeps a bridge's rules, `/tmp/boop-sim-usb.sock`
+([linkkit/SPEC.md](../linkkit/SPEC.md) §8): every whole line from the
+board goes to every client, and every whole line from a client goes to
+the board whole. It never waits on a client: one that falls 4 MB behind
+is dropped, and a client's line longer than a line may be (512 bytes) is
+dropped whole, as a board drops it. So the tools and the Mac app reach the
 board in the browser as they reach one on a bridge
 ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L4):
 
@@ -244,7 +247,9 @@ make -C internal sim-test
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
   line's sound asked for a chunk at a time, and the card staying in its
   slot through a reset. Then the page's cable carrying whole lines both
-  ways, a 900 KB one among them; a recording played into a board in
+  ways, a 900 KB one among them, and keeping a bridge's rules: a client
+  that stops reading dropped while another hears every line, and a
+  client's line over 512 bytes dropped whole; a recording played into a board in
   order; and a voice pack cut down to a demo's takes that the board plays
   from.
 

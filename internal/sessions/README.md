@@ -13,7 +13,7 @@ make demo IN=claude                         # the real Claude, in the Claude des
 make demo IN=simulated-claude-terminal      # Claude Code in this terminal, its replies replayed
 make demo IN=simulated-codex-terminal       # Codex (a script with no reviewer: Codex has no subagents here)
 make demo IN=claude NAME=hello              # half a minute: a quick check that it all works
-make demo IN=claude BOARD=usb:/tmp/boop-bridge.sock   # a real board, on internal/tools/boopctl bridge
+make demo IN=claude BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, on .build/debug/linkkit-bridge
 ```
 
 `make demo` with no `IN` plays the same script with no agent, in the

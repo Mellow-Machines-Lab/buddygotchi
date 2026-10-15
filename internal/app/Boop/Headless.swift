@@ -5,7 +5,8 @@ import MellowHarness
 import os
 
 /// `Boop --headless`: the whole runtime with isolated state, no UI and no
-/// Bluetooth. The device, if any, is reached through `boopctl bridge`.
+/// Bluetooth. The device, if any, is reached through a USB bridge
+/// (`linkkit-bridge`) or the simulator's socket.
 enum Headless {
     static func run(_ args: Arguments) -> Never {
         guard let dir = args["--state-dir"] else { fail("--headless needs --state-dir\n" + usage) }

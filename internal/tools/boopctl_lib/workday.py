@@ -326,7 +326,7 @@ REACTIONS = {"react", "task_complete", "reply_ready"}
 
 
 class FakeDevice:
-    """The app's USB link connects here as it would to `boopctl bridge`.
+    """The app's USB link connects here as it would to a bridge's.
     It answers the first line on each connection, and every `hello` the
     app sends, with a `hello` (linkkit/SPEC.md §3, §5), says every
     request with an `id` played to the end at once (the brain's reactions

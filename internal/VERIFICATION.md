@@ -221,7 +221,7 @@ launch the menu-bar app or run the whole eval.
 | `make -C internal e2e` | Builds, then runs the pipeline check (L4) |
 | `make -C internal faces` | Regenerates the faces (`characters/pixel/firmware/include/faces.h`, the Pixel pack's `characters/pixel/mac/faces.json` with the popover's faces and the designs' loops for the Mac, the frames `fw-test` checks, and the designs' list in `characters/pixel/tools/facegen/design/manifest.json`) from the animation bank (`characters/pixel/design/boop-sound-bank-v4/`), whose generator it runs with node. It stops if an older mood's design doesn't come out as it was captured, then draws each design at a dozen moments in Google Chrome and fails unless facegen's own drawing matches pixel for pixel in RGB565, a blended pixel within one step (8,256 frames of 729 scenes, 7 minutes or so). Then rerun sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual), with the first Python 3.10 or later on `PATH` (`firmware/tools/find-python.sh`, which `pio.sh` uses too); a venv that already works, such as a worktree's link to the main checkout's, is kept and its packages brought up to date. `internal/tools/boopctl` runs it on first run |
-| `make -C internal sim-test` | The simulator (`simulator/tests/`). Its core on the Mac in real time, driven over its serial port as a board is: drawing, a native face's panel, a new boot each power-on, sound at a DAC's pace, and the port (what nobody heard is forgotten, a long reply arrives whole, a debug line ends a batch of lines). Then the page's server and its USB socket (`test_serve.py`): a second server leaves a live socket alone, a stale one is replaced, and SIGTERM or SIGHUP removes it. Then the same core as the browser runs it, built to WebAssembly (it needs Emscripten and Node): touch and BOOT, the card, the page's USB cable, a recording played back, and a demo's cut-down voice. The sound and card tests skip without a voice pack |
+| `make -C internal sim-test` | The simulator (`simulator/tests/`). Its core on the Mac in real time, driven over its serial port as a board is: drawing, a native face's panel, a new boot each power-on, sound at a DAC's pace, and the port (what nobody heard is forgotten, a long reply arrives whole, a debug line ends a batch of lines). Then the page's server and its USB socket (`test_serve.py`): a second server leaves a live socket alone, a stale one is replaced, and SIGTERM or SIGHUP removes it. Then the same core as the browser runs it, built to WebAssembly (it needs Emscripten and Node): touch and BOOT, the card, the page's USB cable and its bridge rules, a recording played back, and a demo's cut-down voice. The sound and card tests skip without a voice pack |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, the session tool's script reading, replay server, gate and `/demo` command, and the landing demo's edits against its project (`internal/tools/session/tests/`, which needs `node` for the last), `charactergen.py`'s staging and studio rules (`internal/characters/`), and each character pack's own (`characters/<pack>/tests/tools/`: Boop's checks its copy of Pixel's face). boopctl reads the takes from the chosen pack's `voice/voice.bin` |
 
 **`internal/tools/boopctl`**, the board over USB, the simulator, the
@@ -243,7 +243,6 @@ commands go through the bridge.
 | `latency [--rounds N] [--pings N] [--seed N]` | BOOT taps, touches, mood changes and `do`s (a `starting` played `now`), N of each (20), muted, each sent at a random moment of the board's frame, timed to the frame that shows it against the budgets in §8; `--pings` (40) find the board's clock first (L2) |
 | `soak [--minutes N] [--seed N] [--vol N] [--out FILE]` | Random, realistic traffic and inputs for N minutes (20), each `do` asking for its turn as the Mac or a tool would, brain reactions with ids and loops among them, at `--vol` (6; 1 is quiet; 0 is silent) (L2). `--out` is rewritten after every 5-second sample, and a soak cut short (the port lost, Ctrl-C) reports the minutes it ran and its heap so far, and fails. `--pipeline` loops the L4 fixtures through the headless app instead, with `--brain scripted\|jev` and `--out DIR` |
 | `e2e [fixture…]` | The pipeline check (L4). `--brain scripted\|jev` (scripted), `--out DIR` (`/tmp/boop-e2e-out`), `--clip` to film a Claude session first (L3, with `--camera ID`) |
-| `bridge [--socket PATH] [--quiet]` | Owns the serial port and shares it on a Unix socket (below) |
 | `cam frame\|pattern\|clip [name]` | The webcam helpers (L3). `--seconds N` for a clip (8, at most 10), `--usb bottom\|right\|top\|left` for framing, `--camera ID` (default `$BOOP_CAMERA` or the built-in camera) |
 | `dash [--state-dir DIR] [--socket PATH]` | The live dashboard |
 | `day [--state-dir DIR] [--date YYYY-MM-DD] [file…]` | What Boop did in a day, and why, from debug mode's logs: the state directory's `debug.jsonl` and the earlier launches' kept beside it, oldest first (the everyday app's by default), or the files named, oldest launch first. A table by the hour (finishes: task_complete, reply_ready and older logs' cheers; chatter, the brain's reactions and their faces, alerts (a new or different request shown), mood changes, passes, dropped passes, the brain's reactions that didn't happen, pokes and minutes needing you), then the brain's passes and what the dashboard forced, each mood change and what made it, each time something needed you and how long it took to clear, and why reactions didn't happen. `--date` defaults to the newest line's day; it exits 1 when that day has no lines |
@@ -293,14 +292,22 @@ commands go through the bridge.
 | `agent-hooks install\|remove\|status\|tail\|doctor` | agent-hooks' own command line, built in `agent-hooks/` with `swift build` (`agent-hooks --help`). `tail --sessions` prints every hook's event and each session's state as it changes. Give it a temporary `HOME` and `--home` together in tests, as for `boopdev hooks`: without `--keep-text` its install makes Boop's entries outdated |
 
 **Sharing the port.** Only one process can open the serial port, so
-`boopctl bridge` owns it and shares it on a Unix socket (`--socket`,
-default `$BOOP_BRIDGE` or `/tmp/boop-bridge.sock`). Every line from the
-board goes to every client, and each client's lines reach the board whole.
-The bridge never waits on a client: one that stops reading and falls 4 MB
-behind is dropped. These are LinkKit's bridge rules
-([linkkit/SPEC.md](../linkkit/SPEC.md) §8), which LinkKit's own
-`linkkit-bridge` keeps too. The app's USB link (`--link usb:SOCKET`) and
-other `boopctl` commands can use the board at the same time.
+LinkKit's bridge owns it and shares it on a Unix socket. `make build`
+builds it; run it in a terminal of its own:
+
+```sh
+.build/debug/linkkit-bridge                     # the only USB board here, on $TMPDIR/linkkit-bridge.sock
+.build/debug/linkkit-bridge --port /dev/cu.usbmodem1101 --socket /tmp/my.sock
+```
+
+Every line from the board goes to every client, and each client's lines
+reach the board whole. The bridge never waits on a client: one that stops
+reading and falls 4 MB behind is dropped. These are LinkKit's bridge rules
+([linkkit/SPEC.md](../linkkit/SPEC.md) §8), which the simulator's socket
+keeps too. `boopctl` finds the bridge at `$BOOP_BRIDGE`, else at
+`linkkit-bridge`'s own socket, and the app's USB link takes it as
+`--link usb:$TMPDIR/linkkit-bridge.sock`; both can use the board at the
+same time.
 
 ## 3. The debug channel
 
@@ -573,7 +580,7 @@ This checks the whole path, hook → app → board, without Bluetooth, which
 an agent can't use. `make -C internal e2e` (`internal/tools/boopctl e2e`)
 does all of it:
 
-1. `boopctl bridge` owns the serial port on `/tmp/boop-e2e/usb.sock`.
+1. `linkkit-bridge` owns the serial port on `/tmp/boop-e2e/usb.sock`.
 2. The app runs headless with its own state and sockets, never the
    everyday ones:
    `.build/debug/Boop --headless --state-dir /tmp/boop-e2e/state --link usb:/tmp/boop-e2e/usb.sock --socket /tmp/boop-e2e/boop.sock --brain scripted --name Pip --no-open --debug`.

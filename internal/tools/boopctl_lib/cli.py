@@ -723,12 +723,6 @@ def cmd_e2e(args: argparse.Namespace) -> int:
     return e2e.main(Path(args.out), args.brain, args.port, args.fixture or None, args.clip, args.camera)
 
 
-def cmd_bridge(args: argparse.Namespace) -> int:
-    from boopctl_lib.bridge import bridge_path, serve
-
-    return serve(args.port, args.socket or bridge_path(), quiet=args.quiet)
-
-
 # Hearing and watching Boop by hand: takes and play drive the board over
 # USB the way the Mac would, and read dbg.state to say whether it happened.
 # The Mac app, if it's connected over Bluetooth, keeps sending its own
@@ -1064,10 +1058,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="first film a 10 s Claude session on the webcam (authorised runs only; §6)")
     p.add_argument("--camera", help="with --clip: the camera id (default: $BOOP_CAMERA or the built-in one)")
     p.set_defaults(func=cmd_e2e)
-    p = sub.add_parser("bridge", help="own the serial port and share it on a Unix socket")
-    p.add_argument("--socket", help="socket path (default: $BOOP_BRIDGE or /tmp/boop-bridge.sock)")
-    p.add_argument("--quiet", action="store_true")
-    p.set_defaults(func=cmd_bridge)
     p = sub.add_parser("cam", help="webcam helpers (opt-in; internal/VERIFICATION.md §6)")
     p.add_argument("action", choices=["frame", "pattern", "clip"])
     p.add_argument("name", nargs="?", help="clip: idle, needs_you, cheer or tap")

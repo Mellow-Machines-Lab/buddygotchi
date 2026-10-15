@@ -205,8 +205,8 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
 
 - **Don't launch the Boop app with Bluetooth, or run `bleak`, from an agent
   shell.** macOS kills the process on its first Bluetooth use. For live
-  checks, use USB: `internal/tools/boopctl bridge` plus
-  `Boop --headless --state-dir DIR --link usb:SOCKET`
+  checks, use USB: `.build/debug/linkkit-bridge` plus
+  `Boop --headless --state-dir DIR --link usb:$TMPDIR/linkkit-bridge.sock`
   ([internal/VERIFICATION.md](internal/VERIFICATION.md) L4). Ask the owner to run
   `make run` for Bluetooth.
 - **Don't modify `~/.claude`, `~/.codex`, or the everyday app's state from

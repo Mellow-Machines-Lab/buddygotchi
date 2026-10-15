@@ -93,14 +93,14 @@ one script plays with or without a voice.
 ```sh
 make demo NAME=?                                       # list the demos
 make demo NAME=hello                                   # the simulator's page, no agent
-make demo NAME=hello BOARD=usb:/tmp/boop-bridge.sock   # a real board, no agent
+make demo NAME=hello BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, no agent
 make demo NAME=hello IN=simulated-claude-terminal      # Claude Code in this terminal, replies replayed
 make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex
 make demo NAME=hello IN=claude                         # your real Claude, in the Claude desktop app
 ```
 
 - **A real board** needs the bridge first:
-  `internal/tools/boopctl bridge` in another terminal. Quit the menu-bar
+  `.build/debug/linkkit-bridge` in another terminal. Quit the menu-bar
   app, so that only one app talks to the board. `BOARD` works with every
   `IN` too.
 - **With no agent,** Boop plays the agent: it sends the hooks that the

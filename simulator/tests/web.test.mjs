@@ -181,6 +181,45 @@ test('the cable carries whole lines both ways, long ones too', { skip }, async t
   tool.destroy();
 });
 
+// Pins the cable's bridge rules (linkkit/SPEC.md §8, §9): a client 4 MB
+// behind is dropped without stalling the rest, and a client's line over
+// 512 bytes is dropped whole.
+test('the cable never waits on a client, and drops a line too long for the board', { skip }, async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
+  const socket = path.join(dir, 'usb.sock'), port = 18206 + Math.floor(Math.random() * 1000);
+  const server = spawn('python3', [path.join(repo, 'simulator/web/serve.py'), '--port', String(port), '--socket', socket, '--dist', dist]);
+  t.after(() => server.kill());
+  for (let i = 0; i < 100 && !existsSync(socket); i++) await sleep(50);
+  const page = new WebSocket(`ws://127.0.0.1:${port}/usb`);
+  await new Promise((ok, no) => { page.onopen = ok; page.onerror = no; });
+  const heardByPage = [];
+  page.onmessage = e => heardByPage.push(String(e.data));
+  const connect = async () => { const s = net.connect(socket); await new Promise(ok => s.on('connect', ok)); return s; };
+  const stuck = await connect(), tool = await connect();
+  stuck.pause();  // stops reading
+  let closed = false;
+  stuck.on('close', () => { closed = true; });
+  let heard = 0;
+  tool.on('data', d => { heard += d.length; });
+  await sleep(100);
+  const line = 'y'.repeat(900_000);
+  for (let n = 1; n <= 8; n++) {  // 7.2 MB in all: far past 4 MB, at the pace the reading client takes it
+    page.send(line);
+    for (let i = 0; i < 100 && heard < n * 900_001; i++) await sleep(20);
+  }
+  assert.equal(heard, 8 * 900_001, 'the reading client hears every line');
+  stuck.resume();
+  for (let i = 0; i < 100 && !closed; i++) await sleep(50);
+  assert.ok(closed, 'the client that stopped reading was dropped');
+  tool.write('{"t":"' + 'z'.repeat(600) + '"}\n{"t":"hello"}\n');
+  for (let i = 0; i < 100 && heardByPage.length < 1; i++) await sleep(50);
+  await sleep(100);
+  assert.deepEqual(heardByPage, ['{"t":"hello"}']);
+  page.close();
+  tool.destroy();
+  stuck.destroy();
+});
+
 test('a recording plays into the board in order, and knows nothing of what its lines mean', { skip }, async () => {
   const { DemoPlayer } = await import(path.join(dist, 'boop-simulator.js'));
   const recording = {
