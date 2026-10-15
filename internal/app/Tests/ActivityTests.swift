@@ -309,7 +309,7 @@ final class CoreActivityTests: XCTestCase {
         let fewer = FaceLoops.count(mood: few, state: "terminal")
         try XCTSkipUnless(FaceLoops.count(mood: many, state: "terminal") > fewer, "every mood has as many terminal looks")
         let rig = CoreRig(seed: 7)
-        _ = rig.core.setMood(many, at: rig.now)
+        _ = rig.setMood(many)
         var n = 0
         repeat {
             rig.send(.turnEnd)
@@ -319,7 +319,7 @@ final class CoreActivityTests: XCTestCase {
         } while rig.state.variant <= fewer && n < 50
         XCTAssertEqual(rig.state.visual, "terminal")
         XCTAssertGreaterThan(rig.state.variant, fewer, "a variation \(few) hasn't")
-        let fx = rig.core.setMood(few, at: rig.now)
+        let fx = rig.setMood(few)
         XCTAssertEqual(states(fx).last?.visual, "terminal")
         XCTAssertTrue((1...fewer).contains(rig.state.variant), "\(rig.state.variant) of \(fewer)")
     }
@@ -503,7 +503,7 @@ final class CoreOneShotTests: XCTestCase {
     /// played last when there's another.
     func testOneShotsTakeTheMoodsVariations() {
         let rig = CoreRig(seed: 5)
-        _ = rig.core.setMood("calm", at: rig.now)
+        _ = rig.setMood("calm")
         let fit = FaceLoops.variants(mood: "calm", state: "starting", ctx: "new_task")
         var last: Int?
         for _ in 0..<12 {

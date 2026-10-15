@@ -67,6 +67,14 @@ final class CoreRig {
         if !newDay { core.tick(at: start) }  // the first snapshot has gone out
     }
 
+    /// The mood action's change, as the runtime hands it on: the core
+    /// reads `mood` from now, and publishes it.
+    @discardableResult
+    func setMood(_ mood: String) -> [CoreEffect] {
+        core.mood = { mood }
+        return core.moodChanged(at: now)
+    }
+
     /// The raw event a hook of `kind` makes, as the adapter would.
     func event(_ kind: Hook, _ agent: Agent = .claude, session: String = "s1", subagent: String? = nil,
                project: String = "landing", workspace: String? = nil, tool: String? = nil, topic: String? = nil,
@@ -1838,7 +1846,7 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(seen["working"], Set(1...5), "all five working variations come up")
         XCTAssertEqual(seen["needs_you"], Set(1...3))
         let before = rig.state.variant
-        rig.core.setMood("grumpy", at: rig.now)
+        rig.setMood("grumpy")
         XCTAssertEqual(rig.state.variant, before, "a new mood keeps the variation")
     }
 
@@ -1862,7 +1870,7 @@ final class CoreRulesTests: XCTestCase {
     func testANewMoodGoesOutInTheNextState() {
         let rig = CoreRig()
         XCTAssertEqual(rig.state.mood, "calm")
-        let fx = rig.core.setMood("determined", at: rig.now)
+        let fx = rig.setMood("determined")
         guard case .state(let s)? = fx.first, fx.count == 1 else {
             XCTFail("\(fx)")
             return
@@ -2090,7 +2098,7 @@ final class CoreFuzzTests: XCTestCase {
                 XCTAssertNil(moment.mood, why)
                 XCTAssertTrue(["starting", "stopped", "error", "helper_return"].contains(moment.anim ?? ""), why)
                 XCTAssertEqual(moment.ctx != nil, moment.anim == "starting", why)
-                XCTAssertTrue(FaceLoops.variants(mood: rig.core.config.mood, state: moment.anim!, ctx: moment.ctx)
+                XCTAssertTrue(FaceLoops.variants(mood: rig.core.mood(), state: moment.anim!, ctx: moment.ctx)
                     .contains(moment.variant ?? 0), why)
                 if moment.anim == "error" {
                     if let last = lastError { XCTAssertGreaterThanOrEqual(rig.now - last, Core.errorEveryMs, why) }

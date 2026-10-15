@@ -25,9 +25,6 @@ import MellowHarness
 public final class Core {
     public struct Config: Sendable {
         public var volume: Int
-        /// Boop's mood, which the mood action sets
-        /// and every `state` carries.
-        public var mood = MoodAction.initial
         public var time: LocalTime
         public var seed: UInt64
         /// Where this launch's request numbers start: the first request
@@ -48,6 +45,10 @@ public final class Core {
     typealias Session = SessionTracker.Session
 
     public private(set) var config: Config
+    /// Boop's mood now, which every `state` carries and the rules'
+    /// one-shots are drawn in: the runtime reads it from the log, where the
+    /// mood action keeps it. The resting mood until it's set.
+    var mood: () -> String = { MoodAction.initial }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -267,7 +268,7 @@ public final class Core {
             lastErrorAt = now
         }
         var moment = shot
-        moment.variant = Core.pickVariant(mood: config.mood, state: anim, ctx: shot.ctx,
+        moment.variant = Core.pickVariant(mood: mood(), state: anim, ctx: shot.ctx,
                                           avoiding: lastVariant[anim], &rng)
         lastVariant[anim] = moment.variant
         fx.append(.moment(moment))
@@ -404,12 +405,10 @@ public final class Core {
         return fx
     }
 
-    /// The mood the log has at launch, before anything is published.
-    public func restore(mood: String) { config.mood = mood }
-
-    /// The mood action saved a new mood: the next `state` carries it.
-    public func setMood(_ mood: String, at now: Int64) -> [CoreEffect] {
-        config.mood = mood
+    /// The mood action saved a new mood (`mood` reads it): a `state`
+    /// carries it at once.
+    @discardableResult
+    public func moodChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx
@@ -458,7 +457,7 @@ public final class Core {
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
-        var snapshot = StateSnapshot(base: base, act: act, mood: config.mood, attn: attn, busy: working.count,
+        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
                                      vol: config.volume, variant: 1)
         if shown.visual == snapshot.visual { snapshot.variant = shown.variant }
         return snapshot
@@ -655,10 +654,10 @@ public final class Core {
         recordNeeds(now, &fx)
         updateActs(now)
         var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: config.mood, state: snapshot.visual) {
+        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual) {
             // A new visual, or a new mood with fewer variations of it than
             // the one showing: a variation of it at random.
-            shown = (snapshot.visual, Core.pickVariant(mood: config.mood, state: snapshot.visual,
+            shown = (snapshot.visual, Core.pickVariant(mood: snapshot.mood, state: snapshot.visual,
                                                          avoiding: lastVariant[snapshot.visual], &rng))
             lastVariant[snapshot.visual] = shown.variant
             snapshot.variant = shown.variant

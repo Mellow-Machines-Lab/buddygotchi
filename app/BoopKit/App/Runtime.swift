@@ -311,7 +311,6 @@ public final class Runtime: @unchecked Sendable {
         // The view and the core pick up where the last launch left them.
         let read = home.sync { pipeline.readBack(now: now) }
         let logNow = transcript.view(now: now)
-        core.restore(mood: MoodAction.value(mood, logNow))
         let questions = DebugLog.questions(Runtime.outputs(harness), log: logNow, at: now)
         emit(questions)
         launchOptions = DebugLog.options(questions)
@@ -320,6 +319,10 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
+        // The core reads the mood where the mood action keeps it. Weak: the
+        // harness holds the core.
+        let mood = self.mood
+        core.mood = { [weak harness = self.harness] in harness.map { MoodAction.value(mood, $0.log.view(now: clock())) } ?? MoodAction.initial }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] moment, pending in self?.queue(moment, pending) }
         // The device's taps and push-to-talk; the link leaves out those of
@@ -333,8 +336,8 @@ public final class Runtime: @unchecked Sendable {
         }
         // A pass can change the mood, which the device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
-            guard e.action == MoodAction.actionName, e["ok"]?.bool == true, let to = e["to"]?.string else { return }
-            self?.moodChanged(to)
+            guard let self, e.action == MoodAction.actionName, e["ok"]?.bool == true else { return }
+            run(core.moodChanged(at: options.clock()))
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
@@ -613,9 +616,6 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock()
         core.setWallClock(options.wallClock(), at: now)
         run(pipeline.tick(at: now))
-        // A mood whose change has aged out of the log is calm there, and
-        // on the device too.
-        if moodNow != core.config.mood { moodChanged(moodNow) }
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         link.tick(now: now)
@@ -637,12 +637,6 @@ public final class Runtime: @unchecked Sendable {
     /// A signal from the Mac for the presence detector.
     func presenceSignal(_ signal: PresenceDetector.Signal) {
         if let e = presence.signal(signal, at: options.clock()) { recordPresence(e) }
-    }
-
-    /// The mood action saved a new mood: the device draws it from the next
-    /// `state`.
-    func moodChanged(_ mood: String) {
-        run(core.setMood(mood, at: options.clock()))
     }
 
     /// Carries out the core's effects from a call outside the pipeline.

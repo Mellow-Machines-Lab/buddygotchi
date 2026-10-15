@@ -834,6 +834,33 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(states(runtime.home.sync { sentLines.all }), states(sent), "no new state")
     }
 
+    /// The mood lives only in the log: a change reaches the device in a
+    /// `state` at once, as the mood action logs it, with no tick between
+    /// (the runtime doesn't poll the log for it), and the core reads it
+    /// from the log every time after.
+    func testAMoodChangeReachesTheDeviceWithoutATick() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        func moods() -> [String] {
+            transport.sent.compactMap { line in
+                guard let o = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any], o["t"] as? String == "state"
+                else { return nil }
+                return o["mood"] as? String
+            }
+        }
+        // Not started: no timer, so nothing ticks in this test but the first.
+        runtime.home.sync {
+            transport.start(onLine: { _ in }, onConnection: { _ in })
+            transport.onConnection?(true)
+            runtime.connection(true)
+            runtime.run(runtime.core.tick(at: runtime.options.clock()))
+        }
+        XCTAssertEqual(moods().last, "calm")
+        runtime.home.sync { runtime.forceMood("grumpy", by: Runtime.forcedBy) }
+        XCTAssertEqual(moods().last, "grumpy", "the change's own state")
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).mood }, "grumpy")
+    }
+
     /// The dashboard's dev lines. A forced pass needs no
     /// brain and reacts as Jev's would; a forced mood changes as Jev's
     /// does, device included; each is recorded for no event, by the
