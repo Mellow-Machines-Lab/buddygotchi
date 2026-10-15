@@ -183,7 +183,7 @@ validates the bank itself: every recording's hash, PCM format and level,
 the indexes, and its own reference selector; it's offline and never plays
 sound or calls an API; the repo keeps only the robot-soft WAVs, and it
 checks the textures that are there. `voicegen` turns the bank into the
-voice pack and the Mac's table (below), checked in in Pixel's pack,
+voice file and the Mac's table (below), checked in in Pixel's pack,
 which Boop's uses. `VoiceTests` checks the chosen pack's two list the
 same takes.
 Evidence: voice asset publication,
@@ -214,7 +214,7 @@ launch the menu-bar app or run the whole eval.
 | `make clean` | Deletes every build's output: `.build` here and in `agent-hooks/`, `mellowharness/` and `linkkit/`, `firmware/.pio` and `linkkit/device/.pio`, `.character-build`, the tests' generated runner and `simulator/web/dist` (its recorded demos too). It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
 | `make -C internal test` | The Swift unit tests, the eval runner included with a scripted brain, through the XCTest shim, since there's no Xcode: `make build`, then `.build/debug/BoopTests`. `BOOP_TEST_FILTER=Golden .build/debug/BoopTests` runs only the tests whose `Class.method` name contains `Golden`. Then the own tests of agent-hooks, MellowHarness and LinkKit, in Swift Testing: `swift test --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`, each tried again up to seven times when its build fails with the "plugin for module 'TestingMacros' not found" flake |
 | `make -C internal fw` | Builds the firmware for both boards (envs `cyd24` and `amoled206`, [firmware/README.md](../firmware/README.md)): Boop's app on LinkKit's device library (`linkkit/device/`), whose build fails if the kit includes anything of Boop's (`linkkit/device/tools/check_includes.py`, run by every env) |
-| `make -C internal fw-test` | The firmware's unit tests on the Mac (`pio test -e native`): the engine's suites in `internal/firmware/test/` and the staged pack's in its `tests/firmware/` (Boop's `test_gel`, and Pixel's `test_scene`, which Boop's uses with the pixel face), which `characters/charactergen.py --stage` links into `.character-build/firmware-test/` (`CHARACTER=pixel` runs them as Pixel), then LinkKit's device library's own, from its own project (`pio test -d linkkit/device -e native`: `test_turn`, `test_kit`, `test_helpers`) |
+| `make -C internal fw-test` | The firmware's unit tests on the Mac (`pio test -e native`): the engine's suites in `internal/firmware/test/` and the staged pack's in its `tests/firmware/` (Boop's `test_gel`, and Pixel's `test_scene`, which Boop's uses with the pixel face), which `characters/charactergen.py --stage` links into `.character-build/firmware-test/` (`CHARACTER=pixel` runs them as Pixel), then LinkKit's device library's own, from its own project (`pio test -d linkkit/device -e native`: `test_queue`, `test_kit`, `test_helpers`) |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal e2e` | Builds, then runs the pipeline check (L4) |
 | `make -C internal faces` | Regenerates the faces (`characters/pixel/firmware/include/faces.h`, the Pixel pack's `characters/pixel/mac/faces.json` with the popover's faces and the designs' loops for the Mac, the frames `fw-test` checks, and the designs' list in `characters/pixel/tools/facegen/design/manifest.json`) from the animation bank (`characters/pixel/design/boop-sound-bank-v4/`), whose generator it runs with node. It stops if an older mood's design doesn't come out as it was captured, then draws each design at a dozen moments in Google Chrome and fails unless facegen's own drawing matches pixel for pixel in RGB565, a blended pixel within one step (8,256 frames of 729 scenes, 7 minutes or so). Then rerun sfxgen (below) |
@@ -234,19 +234,19 @@ commands go through the bridge.
 | `shot [--out FILE]` | Saves a screenshot of the canvas as a PNG (default `/tmp/boop-shot.png`) |
 | `send '<json>'` | Sends one message as the Mac would; for a `dbg.*` request it prints the reply |
 | `play ANIM\|needs\|pattern` | Makes the board do one thing the Mac can, and checks it took. An animation (`task_complete`, `reply_ready`, `starting`, `stopped`, `error` or `helper_return`, or the older `cheer`, sent as task_complete's success) is a `do` played `now`, replacing whatever plays, over `--base` (idle) in `--mood` (happy) at `--vol` (1–10, 6), and `--loops N` (1–6) sends that many loops (without it the `do` has none, which plays once); `--variant N`, `--outcome success\|failure` (task_complete) and `--ctx new_task\|session\|continuation\|compacted` (starting) pick its variation, and it prints the one playing; `--take ID` adds that take, from the design's voice window. `needs` holds a fake "needs you" for `--seconds` (10) from `--agent` (claude) on `--project` (boopctl) with `--more` (0), and reports whether its performance started and its ding was sent. `pattern` shows the test pattern |
-| `takes [--only TEXT]` | Plays every take in the card's voice pack on its own, one after another, about two and a half hours for all 2,722 (or those whose id starts with `--only`, or whose text is it or has it as a word, any case), printing each id and text, and checks each in `audio.out`: the take, and the DAC's time within 10% of its length; then that a muted line moves the mouth silently. `--vol`, `--gap S` between takes (0.8), `--json`. For listening: `--board-volume` plays the first take at the volume the board already has; `--levels L…` plays the first take at each level, `--rounds N` times (6) |
+| `takes [--only TEXT]` | Plays every take in the card's voice file on its own, one after another, about two and a half hours for all 2,722 (or those whose id starts with `--only`, or whose text is it or has it as a word, any case), printing each id and text, and checks each in `audio.out`: the take, and the DAC's time within 10% of its length; then that a muted take moves the mouth silently. `--vol`, `--gap S` between takes (0.8), `--json`. For listening: `--board-volume` plays the first take at the volume the board already has; `--levels L…` plays the first take at each level, `--rounds N` times (6) |
 | `sim [scenario…] [--face pixel\|gel] [--accept]` | Plays scenarios (all by default) in the simulator into `/tmp/boop-sim/<face>/<scenario>/` and compares them with the goldens (L1); `--accept` copies the pictures in |
 | `run [scenario…]` | Plays scenarios on the board and diffs each screenshot against the simulator's, threshold 0 (L2), then lets the clock run again |
-| `perf [--seconds N] [--motion \| --scenes [--sound]]` | Samples fps, frame time and heap once a second for N s (30), muted; `--motion` keeps the face moving (L2). `--scenes` needs the `amoled206_profile` build: it holds working, needs you, pokes (a BOOT tap every 2 s), the frightened face and asleep for N s each and averages the build's one-second lines per scene against their budgets (§8); muted, or with `--sound` a line every 3 s |
+| `perf [--seconds N] [--motion \| --scenes [--sound]]` | Samples fps, frame time and heap once a second for N s (30), muted; `--motion` keeps the face moving (L2). `--scenes` needs the `amoled206_profile` build: it holds working, needs you, pokes (a BOOT tap every 2 s), the frightened face and asleep for N s each and averages the build's one-second reports per scene against their budgets (§8); muted, or with `--sound` a take every 3 s |
 | `latency [--rounds N] [--pings N] [--seed N]` | BOOT taps, touches, mood changes and `do`s (a `starting` played `now`), N of each (20), muted, each sent at a random moment of the board's frame, timed to the frame that shows it against the budgets in §8; `--pings` (40) find the board's clock first (L2) |
-| `soak [--minutes N] [--seed N] [--vol N] [--out FILE]` | Random, realistic traffic and inputs for N minutes (20), each `do` asking for its turn as the Mac or a tool would, brain reactions with ids and loops among them, at `--vol` (6; 1 is quiet; 0 is silent) (L2). `--out` is rewritten after every 5-second sample, and a soak cut short (the port lost, Ctrl-C) reports the minutes it ran and its heap so far, and fails. `--pipeline` loops the L4 fixtures through the headless app instead, with `--brain scripted\|jev` and `--out DIR` |
+| `soak [--minutes N] [--seed N] [--vol N] [--out FILE]` | Random, realistic traffic and inputs for N minutes (20), each `do` asking to play as the Mac or a tool would, brain reactions with ids and loops among them, at `--vol` (6; 1 is quiet; 0 is silent) (L2). `--out` is rewritten after every 5-second sample, and a soak cut short (the port lost, Ctrl-C) reports the minutes it ran and its heap so far, and fails. `--pipeline` loops the L4 fixtures through the headless app instead, with `--brain scripted\|jev` and `--out DIR` |
 | `e2e [fixture…]` | The pipeline check (L4). `--brain scripted\|jev` (scripted), `--out DIR` (`/tmp/boop-e2e-out`), `--clip` to film a Claude session first (L3, with `--camera ID`) |
 | `cam frame\|pattern\|clip [name]` | The webcam helpers (L3). `--seconds N` for a clip (8, at most 10), `--usb bottom\|right\|top\|left` for framing, `--camera ID` (default `$BOOP_CAMERA` or the built-in camera) |
 | `dash [--state-dir DIR] [--socket PATH]` | The live dashboard |
-| `day [--state-dir DIR] [--date YYYY-MM-DD] [file…]` | What Boop did in a day, and why, from debug mode's logs: the state directory's `debug.jsonl` and the earlier launches' kept beside it, oldest first (the everyday app's by default), or the files named, oldest launch first. A table by the hour (finishes: task_complete, reply_ready and older logs' cheers; chatter, the brain's reactions and their faces, alerts (a new or different request shown), mood changes, passes, dropped passes, the brain's reactions that didn't happen, pokes and minutes needing you), then the brain's passes and what the dashboard forced, each mood change and what made it, each time something needed you and how long it took to clear, and why reactions didn't happen. `--date` defaults to the newest line's day; it exits 1 when that day has no lines |
-| `workday plan\|run\|report\|check` | A scripted 8-hour working day through `Boop --headless` and its brain on a compressed clock, and a report of what Boop did hour by hour: mood changes, reactions by kind of line, faces, holds, and the takes they said (L5, [EVALS.md](EVALS.md) §5). `plan` prints the day's story; `run --state DIR` (short, under `/tmp`; it's deleted first), `--seed N` (1), `--brain jev\|scripted` (jev, with `BOOP_JEV_KEY`), `--personality`, `--out DIR`, `--verbose`; `report FILE…` takes `debug.jsonl` files, `--json`; `check FILE…` holds each to the liveliness limits and exits 1 if one fails |
+| `day [--state-dir DIR] [--date YYYY-MM-DD] [file…]` | What Boop did in a day, and why, from debug mode's logs: the state directory's `debug.jsonl` and the earlier launches' kept beside it, oldest first (the everyday app's by default), or the files named, oldest launch first. A table by the hour (finishes: task_complete, reply_ready and older logs' cheers; chatter, the brain's reactions and their faces, needs you (a new or different request shown), mood changes, passes, dropped passes, the brain's reactions that didn't happen, pokes and minutes needing you), then the brain's passes and what the dashboard forced, each mood change and what made it, each time something needed you and how long it took to clear, and why reactions didn't happen. `--date` defaults to the newest line's day; it exits 1 when that day has no lines |
+| `workday plan\|run\|report\|check` | A scripted 8-hour working day through `Boop --headless` and its brain on a compressed clock, and a report of what Boop did hour by hour: mood changes, reactions by kind of step, faces, holds, and the takes they said (L5, [EVALS.md](EVALS.md) §5). `plan` prints the day's story; `run --state DIR` (short, under `/tmp`; it's deleted first), `--seed N` (1), `--brain jev\|scripted` (jev, with `BOOP_JEV_KEY`), `--personality`, `--out DIR`, `--verbose`; `report FILE…` takes `debug.jsonl` files, `--json`; `check FILE…` holds each to the liveliness limits and exits 1 if one fails |
 | `calibrate` | Touch calibration: a person taps crosses on the screen (L6). `--show` prints the stored map, `--show --clear` forgets it |
-| `card [--pack FILE] [--force] [--fresh]` | Copies the voice pack (the chosen character pack's `voice/voice.bin`) onto the board's microSD card over USB with `dbg.card`, unless the board already plays that version; goes on where a cut-off copy stopped, and resyncs after a lost line. Slow: about 0.7 KB/s on the bench board (2026-09-29), hours for the whole pack, so copying it with a card reader comes first: the file goes on the card as `boop/voice.bin` |
+| `card [--voice FILE] [--force] [--fresh]` | Copies the voice file (the chosen character pack's `voice/voice.bin`) onto the board's microSD card over USB with `dbg.card`, unless the board already plays that version; goes on where a cut-off copy stopped, and resyncs after a lost message. Slow: about 0.7 KB/s on the bench board (2026-09-29), hours for the whole file, so copying it with a card reader comes first: the file goes on the card as `boop/voice.bin` |
 
 **`.build/debug/boopdev`**, the developer CLI.
 
@@ -262,7 +262,7 @@ commands go through the bridge.
 | Command | What it does |
 | --- | --- |
 | `.build/debug/beacon` | Runs Beacon, MellowHarness's worked example, through its timeline on a virtual clock with a scripted brain, and prints every event the log wrote and every prompt the brain was sent. `--steering DIR` (default `mellowharness/Examples/Beacon/steering` in the source tree it was built from) |
-| `.build/debug/beacon listen --socket PATH` | Beacon live on a socket, the scripted brain answering and the light saying each one-shot is done 2 s later; prints each line, action and pass as it happens, until Ctrl-C |
+| `.build/debug/beacon listen --socket PATH` | Beacon live on a socket, the scripted brain answering and the light saying each animation is done 2 s later; prints each line, output and pass as it happens, until Ctrl-C |
 | `.build/debug/mellowharness-emit --socket PATH SOURCE KIND [key=value …] [--line TEXT]` | Sends one event to a harness's socket: `mellowharness-emit --socket /tmp/beacon.sock ci build_failed branch=main run=812`. A whole number is one, `true` and `false` yes and no, the rest strings |
 
 **`.build/debug/Boop`**, the app.
@@ -271,22 +271,22 @@ commands go through the bridge.
 | --- | --- |
 | `Boop [--state-dir DIR] [--link ble\|usb:SOCKET\|none] [--debug]` | The menu-bar app, with Bluetooth by default. The owner's. With a state directory other than the everyday one, it never installs or repairs the hooks |
 | `Boop --headless --state-dir DIR` | The whole runtime with no UI and no Bluetooth (L4). `--link usb:SOCKET\|none` (none), `--socket PATH` (`DIR/boop.sock`), `--personality boop\|chatter` for this run, `--brain jev\|scripted\|none` (jev, only with `BOOP_JEV_KEY`; scripted answers every pass the same way, with no network; none asks no brain), `--name NAME` and `--nature sweet\|cheeky` for a new state directory, `--debug`. `--no-open` only logs where a tap would open a thread, instead of opening it on this Mac: `boopctl e2e`, `soak --pipeline` and `workday` pass it (`boopctl_lib/headless.py`). On its socket `{"dev":"advance","ms":N}` moves its clock, `{"dev":"tap"}` stands in for a tap on the board, `{"dev":"listen","on":true}` and `{"dev":"said","words":"…"}` stand in for push-to-talk's button and mic, and `{"dev":"presence",…}` for the Mac's lock, sleep and idle time. It keeps its transcript in `DIR/transcript/` and reads it back at launch. `--demo FILE\|pack\|pack:NAME` plays a demo script (`pack`: the character pack's own, `pack:NAME` its `demo/NAME.jsonl`) and stops when it's over, waiting for the device first when there's a link, with no brain unless `--brain` names one; with `--live` a real agent's hooks play the script's agent, the rest keeping to them, and `DIR/demo-cursor` holds the line due (`make demo IN=…`); `--record FILE` writes every line the device was sent, with when and what was happening, for the simulator's page |
-| `--debug`, either way | Prints every hook, view event, action, device line and brain pass as it happens, and writes `DIR/debug.jsonl` for `boopctl dash`; the socket then also takes the dashboard's dev lines |
+| `--debug`, either way | Prints every hook, view event, output, device message and brain pass as it happens, and writes `DIR/debug.jsonl` for `boopctl dash`; the socket then also takes the dashboard's dev messages |
 | `Boop --snapshots DIR` | Renders the popover's panes, fixed WebKit gel frames, and the menu-bar icons to PNGs, light and dark, from fixtures, and fails on low contrast (L0). No runtime, no Bluetooth |
 
 **Other tools.**
 
 | Tool | What it does |
 | --- | --- |
-| `python3 characters/boop/tools/voicegen/voicegen.py [--pack DIR] [--card DIR] [--wav-dir DIR]` | Rebuilds the voice from the recorded bank, in about 4 s: the pack, `voice/voice.bin`, and the Mac's take table, `mac/takes.tsv`, both checked in, in Pixel's character pack, which Boop's uses (`--pack` for another). `--card /Volumes/<card>` also copies the pack onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
+| `python3 characters/boop/tools/voicegen/voicegen.py [--pack DIR] [--card DIR] [--wav-dir DIR]` | Rebuilds the voice from the recorded bank, in about 4 s: the voice file, `voice/voice.bin`, and the Mac's take table, `mac/takes.tsv`, both checked in, in Pixel's character pack, which Boop's uses (`--pack` for another). `--card /Volumes/<card>` also copies the voice file onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
 | `node characters/pixel/tools/sfxgen/sfxgen.mjs [--wav-dir DIR]` | Rebuilds the sound effects, `characters/pixel/firmware/include/sfx.h`, from the animation bank's synthesiser and timelines, for the designs facegen lists, so after `make -C internal faces`; `--wav-dir` also writes every clip as a WAV |
 | `internal/tools/.venv/bin/python internal/tools/fontgen/fontgen.py [--ttf-dir DIR]` | Rebuilds the device's fonts, `firmware/assets/fonts.h`, and the gel face's own, `fonts_gel.h` in Boop's pack's `firmware/include/`, from Geist Mono, whose two `.ttf` files are in `internal/tools/fontgen/geist-mono/` with their licence |
 | `python3 characters/charactergen.py --check [PACK]`, `--stage [PACK]`, `--which` | `--check` checks a character pack's `character.json`, for PACK or every pack in `characters/`: its moods ([CHARACTER.md](../characters/CHARACTER.md) §5), what it uses from another pack (§6) and its id and version. Every form but `--which` also writes the [Character Studio](../characters/studio/README.md)'s `packs.js` and checks its data: the states against the board's, and that each pack's preview plays every mood and state (`--check` fails on a problem, `--stage` warns; [CHARACTER.md](../characters/CHARACTER.md) §12). `--stage` lays the chosen pack out in `.character-build/`, with what it uses and the firmware's `moods.h`, made from `character.json` (§9), as `firmware/tools/pio.sh` does before every build, and `--which` names the pack in use: the environment's, else the one last staged ([CHARACTER.md](../characters/CHARACTER.md) §2) |
 | `internal/tools/.venv/bin/python characters/pixel/tools/facegen/facegen.py [--check]` | What `make -C internal faces` runs; without `--check` it skips the comparison with Chrome |
-| `internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [boop moods popover watch beacon]` | Makes the READMEs' GIFs and the popover's picture again, each from a real run: boop-sim's frames, `Boop --snapshots` (after `make build`), agent-hooks' `Examples/watch.sh` and `beacon listen` ([its README](tools/mediagen/README.md)) |
+| `internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [boop moods popover watch beacon]` | Makes the READMEs' GIFs and the popover's picture again, each from a real run: the native simulator build's frames, `Boop --snapshots` (after `make build`), agent-hooks' `Examples/watch.sh` and `beacon listen` ([its README](tools/mediagen/README.md)) |
 | `internal/tools/webcam/webcam.sh list\|record\|analyze` | The camera recorder ([its README](tools/webcam/README.md)); `boopctl cam` wraps it |
 | `internal/skills/doctor/doctor.sh` | Checks from inside an agent that its hooks reach Boop; `--headless` against a throwaway app |
-| `agent-hooks install\|remove\|status\|tail\|doctor` | agent-hooks' own command line, built in `agent-hooks/` with `swift build` (`agent-hooks --help`). `tail --sessions` prints every hook's event and each session's state as it changes. Give it a temporary `HOME` and `--home` together in tests, as for `boopdev hooks`: without `--keep-text` its install makes Boop's entries outdated |
+| `agent-hooks install\|remove\|status\|tail\|doctor` | agent-hooks' own command line, built in `agent-hooks/` with `swift build` (`agent-hooks --help`). `tail --sessions` prints every hook's event and each session's activity as it changes. Give it a temporary `HOME` and `--home` together in tests, as for `boopdev hooks`: without `--keep-text` its install makes Boop's entries outdated |
 
 **Sharing the port.** Only one process can open the serial port, so
 LinkKit's bridge owns it and shares it on a Unix socket. `make build`
@@ -354,7 +354,7 @@ of `behaviour.jsonl`:
 | Line | Meaning |
 | --- | --- |
 | `{"clock": ms}` | Freezes the clock at this time since the scenario started |
-| A protocol message | Sent as if it came from the Mac: a `state`, or a `do` (the scenarios send `"play":"now"`, so each replaces the last at once, as a tool's does; `turn.jsonl` plays them as the Mac does, `next` and `if_free`) |
+| A protocol message | Sent as if it came from the Mac: a `state`, or a `do` (the scenarios send `"play":"now"`, so each replaces the last at once, as a tool's does; `queue.jsonl` plays them as the Mac does, `next` and `if_free`) |
 | A `dbg.` message | Sent as a debug request, such as `{"t":"dbg.pattern"}` |
 | `{"input": {"press":"tap"}}` | Presses BOOT for 100 ms, or `"ms"`; 400 ms or more is push-to-talk (the scenarios write `"press":"hold"`) |
 | `{"input": {"touch":[x,y]}}` | Touches the screen at (x, y) for 100 ms, or `"ms"` |
@@ -377,8 +377,8 @@ gets at least one scenario. Their pictures are the golden images in
 ### L0: unit tests
 
 - **Swift (`make -C internal test`):** every part in
-  the Mac app (the core, the view, the harness, the actions, Voice, the
-  memory store, the device link and the runtime) has tests; the harness and actions
+  the Mac app (the core, the view, the harness, the outputs, Voice, the
+  memory store, the device link and the runtime) has tests; the harness and outputs
   run with a scripted brain and no network, and the eval runner is tested
   the same way ([EVALS.md](EVALS.md)). `CoreFuzzTests` plays 20,000 random
   hooks from three sessions (Claude with subagents, and Codex) into the
@@ -390,7 +390,7 @@ gets at least one scenario. Their pictures are the golden images in
   that subagent's request, isn't activity, and makes its session work
   again only while its turn goes on, and its start changes none of that.
   It also checks what the agents are doing shows only in the working
-  look, every variation is one the visual has, and the rules' one-shots
+  look, every variation is one the visual has, and the rules' reactions
   never go out while something needs you or with an `id`, the error one
   at most every 30 s.
   `GoldenStateTests` runs every eval scenario with a scripted brain that
@@ -430,16 +430,16 @@ gets at least one scenario. Their pictures are the golden images in
   on a pseudo-terminal (whole lines both ways, a client that stops
   reading dropped, the board going away), the wire, the keepalive,
   `hello` and trouble (a device that doesn't fit gets `state` but no
-  `do`, and its `ev`s are dropped), who sent each line, ids, exactly one
+  `do`, and its `ev`s are dropped), who sent each message, ids, exactly one
   end per `do`, the give-up at its `ttl` plus 60 s and a link that drops.
 - **LinkKit's device library (`pio test -d linkkit/device -e native`,
   run by `make -C internal fw-test`):** the library alone, from its own
-  PlatformIO project, with a fake app and nothing of Boop's: every rule of the turn with its numbers
-  (`test_turn`: `now`, `next` and `if_free`, rest and the line moving at
+  PlatformIO project, with a fake app and nothing of Boop's: every rule of the queue with its numbers
+  (`test_queue`: `now`, `next` and `if_free`, rest and the queue moving at
   its exact millisecond, 4 waiting, `ttl` 5000 and 1–60000, refuse, the
-  one `ended` per id, same id again, dropping the line whole or by link,
-  `dbg.reset`) and the rest of the kit (`test_kit`: 512-byte lines,
-  `hello`, the host's `hello` asking for one, one too long for a line,
+  one `ended` per id, same id again, dropping the queue whole or by link,
+  `dbg.reset`) and the rest of the kit (`test_kit`: 512-byte messages,
+  `hello`, the host's `hello` asking for one, one too long for a message,
   its 60 s repeat, the 30 s host-gone window, `ev` routing, the app's
   words escaped, `dbg.ping`, `dbg.clock` and its thaw, `dbg.shot`,
   `dbg.state`, and the README's lamp example), and line reassembly
@@ -447,8 +447,8 @@ gets at least one scenario. Their pictures are the golden images in
   screenshot encoding and the clock (`test_helpers`), each test naming
   its [linkkit/SPEC.md](../linkkit/SPEC.md) section.
 - **Firmware (`make -C internal fw-test`):** BOOT's gestures
-  (`test_gesture`); Boop's vocabulary line in and line out, its
-  rules for the turn, the debug channel and inputs (`test_device`),
+  (`test_gesture`); Boop's vocabulary message in and message out, its
+  rules for the queue, the debug channel and inputs (`test_device`),
   including unchanged heartbeats causing no redraw while changed state,
   reconnection and leaving the test pattern still draw at once, and each
   latency counted from its event to the frame sent after it
@@ -456,11 +456,11 @@ gets at least one scenario. Their pictures are the golden images in
   the behaviour state machine, to the millisecond, including
   `test_no_change_ever_cuts_hard` and
   `test_nothing_cuts_hard_as_it_plays_out`, which hold every change and
-  every moment running out (a reaction's borrowed face, a finish's loops
-  and its line, a one-shot and a poke included), in the first pack's
+  every reaction running out (a brain reaction's borrowed face, a finish's loops
+  and its `say`, a rule's reaction and a poke included), in the first pack's
   moods and the new moods' flip-books, to the face never cutting hard:
   the same design at the same moment, or the design's own shut eyes
-  showing; and what the agents are doing, the one-shots and the finish
+  showing; and what the agents are doing, the rules' reactions and the finish
   with their facts and voice window, taps in a row and what shows first
   (`test_behaviour`); the canvas and
   renderer, the bubble in the bottom lane included (`test_canvas`,
@@ -469,7 +469,7 @@ gets at least one scenario. Their pictures are the golden images in
   to a model panel, which must show the frame drawn after every frame of
   random drawing, lane changes, test patterns and frames without the lane,
   and of a long random gel sequence through `Device` (moods, states,
-  moments, pokes, needs you, bubbles, patterns, screenshots), whose frames
+  reactions, pokes, needs you, bubbles, patterns, screenshots), whose frames
   must also match one surface drawn as before, and a lane the gel draws
   itself going out only when it changes; it prints what steady gel
   scenes send a frame; the animation bank's player
@@ -535,13 +535,13 @@ accepted.
    `internal/tools/boopctl soak` (20 minutes by default, with one 35 s
    silence halfway) ends with no reset, the minimum heap within 2 KB of
    where it stood after the first minute, the board still answering, no
-   audio errors, the plain face back with no moment or borrowed face
+   audio errors, the plain face back with no reaction or borrowed face
    (within 75 s of calm), and one `ended` for every reaction it sent
-   ([linkkit/SPEC.md](../linkkit/SPEC.md) §4), short only by as many lines
-   as were lost; a reaction skipped for waiting its turn too long has
+   ([linkkit/SPEC.md](../linkkit/SPEC.md) §4), short only by as many messages
+   as were lost; a reaction skipped for waiting in the queue too long has
    ended too, and one skipped as a name the board doesn't play fails. It
-   reports how they ended, the lines the board never got (from
-   `dbg.state`'s `rx`, which counts `state` and `do`), lines that came back
+   reports how they ended, the messages the board never got (from
+   `dbg.state`'s `rx`, which counts `state` and `do`), messages that came back
    torn, and debug replies it had to ask for again.
 
 **Pass:** all of the above.
@@ -603,12 +603,12 @@ does all of it:
    (`link brain → …` and `device: do N ended HOW (WHY)`), that every
    brain reaction came after the rules' reaction, that the board said how
    every one it was sent ended (`ended`, [linkkit/SPEC.md](../linkkit/SPEC.md) §4),
-   that none was cut short by the brain's own next request, which waits
-   for the line to play (LinkKit's turn), and
+   that none was cut short by the brain's own next reaction, which waits
+   for the one playing (LinkKit's queue), and
    that none was skipped as a name the board doesn't play. The board
    queues the brain's reactions, so one that waited behind another's
-   line, or was skipped for waiting past its 5 s, is fine. It lists the
-   ones a `now` request cut short.
+   `say`, or was skipped for waiting past its 5 s, is fine. It lists the
+   ones a `now` cut short.
 
 **Pass:** every checkpoint matches, and p95 latency from hook to board is
 under 200 ms.
@@ -617,7 +617,7 @@ under 200 ms.
 `--minutes`, with a tap between rounds and a quiet minute at the end. It
 fails on a board reset, a minimum-heap drift over 2 KB, audio errors, the
 app exiting, or anything left on screen (not the plain face, or `attn` or
-a moment still set), and reports checkpoint misses. The CH340 now and then
+a reaction still set), and reports checkpoint misses. The CH340 now and then
 drops bytes over a long run, so a debug request that loses its reply is
 retried once and counted as a link glitch.
 
@@ -635,7 +635,7 @@ retried once and counted as a link glitch.
    day ([EVALS.md](EVALS.md) §5): `boopctl workday run` twice before the
    change and twice after, same seed, and `boopctl workday report` and
    `boopctl workday check` on each.
-   How often the mood changes per hour, whether a routine line changed
+   How often the mood changes per hour, whether a routine step changed
    it, and how often, with which faces and which takes Boop reacts,
    before against after.
 
@@ -677,10 +677,10 @@ from when it knew of it to the end of sending the first frame drawn
 after it (`app::Latency`, read with `dbg.latency`): a press going down
 (BOOT or a touch), a tap's release, which plays the poke, a `state` that
 changes the picture, and a `do` as it starts to play, so not its wait
-for the turn. A frame counts as sent when the AMOLED's push task has
+in the queue. A frame counts as sent when the AMOLED's push task has
 finished it, when the CYD's push returns, and in the simulator when it's
 taken. Each kind keeps its latest 32 samples for the p95 and the worst.
-The device stamps a line when it reads it and a press when a loop pass
+The device stamps a message when it reads it and a press when a loop pass
 sees it, so `boopctl latency` adds the wait back: it finds the board's
 clock with pings and times a press, a `state` and a `do` from when it
 sent them. A tap counts from its release, including the 50 ms the device
@@ -688,14 +688,14 @@ waits to be sure the finger lifted.
 
 | Path | Target | Source, and what checks it |
 | --- | --- | --- |
-| Agent event → pixel (the reactive loop: hook → rule → `state` or a rule's one-shot, never waiting for the brain) | < 200 ms p95 | This table; `make -C internal e2e` fails over it (L4) |
-| An input or a Mac message → the frame showing it (the device's reflex loop: tap feedback, blinks, what plays when, the needs-you alert, never waiting for the Mac) | A press 80 ms p95 (100 at worst), a tap's release to its poke 80 ms, a `state` or a `do` 100 ms, on the device | `LATENCY_BUDGETS` in `internal/tools/boopctl_lib/`; `boopctl latency` on the board (L2), and `test_device`'s `test_the_redraw_cap_doesnt_delay_a_press` |
+| Agent event → pixel (the reactive speed: hook → rule → `state` or a rule's reaction, never waiting for the brain) | < 200 ms p95 | This table; `make -C internal e2e` fails over it (L4) |
+| An input or a Mac message → the frame showing it (the device's reflex speed: tap feedback, blinks, the queue, needs you, never waiting for the Mac) | A press 80 ms p95 (100 at worst), a tap's release to its poke 80 ms, a `state` or a `do` 100 ms, on the device | `LATENCY_BUDGETS` in `internal/tools/boopctl_lib/`; `boopctl latency` on the board (L2), and `test_device`'s `test_the_redraw_cap_doesnt_delay_a_press` |
 | Hook client | Single-digit ms. Connecting and writing share 50 ms for each app listening, then it gives up on it; it exits within 1 s whatever happens. It reads at most 256 KB and keeps fields of at most 200 characters | `HookSocket.send` and `agent-hook`'s `main.swift` in `agent-hooks/Sources/` |
 | Hook entry timeout | 3 s in the agent's settings; never reached | `HookInstaller.timeout` in `agent-hooks/Sources/AgentHooks/` |
 | Hook server | A connection is read until it closes, is quiet for 200 ms, or reaches 64 KB | `HookServer` in `agent-hooks/Sources/AgentHooks/` |
-| Brain, per pass (the deliberative loop, which never blocks the reactive one) | Jev's answer within 1.5 s, one retry included; a late answer is dropped | `deadlineMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
-| A brain reaction's wait for its turn | 5 s on the device (its `ttl`), then the device skips it | `BoopDevice.reactionTTL` in `app/BoopKit/DeviceLink/BoopDevice.swift` |
+| Brain, per pass (the deliberative speed, which never blocks the reactive one) | Jev's answer within 1.5 s, one retry included; a late answer is dropped | `deadlineMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
+| A brain reaction's wait in the queue | 5 s on the device (its `ttl`), then the device skips it | `BoopDevice.reactionTTL` in `app/BoopKit/DeviceLink/BoopDevice.swift` |
 | An `ended` | The link gives up on it at the `do`'s `ttl` plus 60 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §5 |
-| An action | Logged if it takes over 300 ms | `actionSlowMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
+| An output's `run` | Logged if it takes over 300 ms | `outputSlowMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
 | `state` keepalive | Every 10 s; the device gives up on the app after 30 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §9, `kNoAppMs` in `firmware/src/app/behaviour.h` |
-| Protocol line | At most 512 bytes; each text field has its own cap (`attn.project` 47 bytes, `who.thread` 23, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 |
+| Protocol message | At most 512 bytes; each text field has its own cap (`attn.project` 47 bytes, `who.thread` 23, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 |

@@ -249,7 +249,7 @@ static void event(Engine& e, JsonVariantConst v) {
     r.id = scalar(j["id"]);
     r.stop = name == "stop_listening";
     r.say = !j["args"]["say"].isNull();
-    r.anim = momentFromName(name.c_str());
+    r.anim = reactionFromName(name.c_str());
     auto args = j["args"];
     r.expression = expressionFromName(args["mood"]);
     r.loops = args["loops"] | 1;

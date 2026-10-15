@@ -8,12 +8,12 @@ extension Take {
     static func named(_ id: String) -> Take { Take.all.first { $0.id == id }! }
 }
 
-extension DeviceMoment.Say {
+extension DeviceReaction.Say {
     /// Excited's "Go" (new.d02): a real take for tests.
-    static let go = DeviceMoment.Say(takes: [.named("new.d02")])
+    static let go = DeviceReaction.Say(takes: [.named("new.d02")])
 
     /// A made-up take `ms` long, for tests that time a line.
-    static func test(ms: Int) -> DeviceMoment.Say {
+    static func test(ms: Int) -> DeviceReaction.Say {
         .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "start", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
     }
 }
@@ -23,13 +23,13 @@ extension DeviceMoment.Say {
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }
 
-    let moods = MoodAction.moods.map(\.name)
+    let moods = MoodOutput.moods.map(\.name)
 
     /// Every take plays in moods the pack has, answers a
-    /// question the react action asks (or only the rules say it), and has
+    /// question the react output asks (or only the rules say it), and has
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
-        let feelings = Set(ReactAction.feelings.map(\.name)), topics = Set(ReactAction.topics.map(\.name))
+        let feelings = Set(ReactOutput.feelings.map(\.name)), topics = Set(ReactOutput.topics.map(\.name))
         XCTAssertEqual(Take.all.count, 2722)
         XCTAssertEqual(Set(Take.all.map(\.id)).count, Take.all.count)
         for t in Take.all {
@@ -46,11 +46,11 @@ final class VoiceTests: XCTestCase {
         }
         // Swears only on a failure, and only as a feeling.
         XCTAssertTrue(Take.all.filter { $0.kind == .swear }.allSatisfy { $0.finish == "failure" && $0.part == .feeling })
-        XCTAssertEqual(Take.packVersion.count, 12)
+        XCTAssertEqual(Take.voiceVersion.count, 12)
     }
 
     /// The owner's rule: every face, each of the universal moods, has a
-    /// take for every feeling and every topic, so the react action offers
+    /// take for every feeling and every topic, so the react output offers
     /// them all. Every feeling has one that plays whatever the finish, but
     /// glad in a bad mood, which is only relief at a success: a mood whose
     /// takes were performed in a bad one.
@@ -58,7 +58,7 @@ final class VoiceTests: XCTestCase {
         let bad: Set = ["annoyed", "irritated", "grumpy", "whiny", "wounded", "sad"]
         XCTAssertEqual(Set(moods), Set(CharacterPack.universalMoods))
         func performedIn(_ face: String) -> String { Take.all.first { $0.moods.contains(face) }!.moods[0] }
-        for (part, answers) in [(Take.Part.feeling, ReactAction.feelings), (.about, ReactAction.topics)] {
+        for (part, answers) in [(Take.Part.feeling, ReactOutput.feelings), (.about, ReactOutput.topics)] {
             for a in answers.map(\.name) {
                 XCTAssertEqual(Set(Take.all.filter { $0.part == part && $0.meaning == a }.flatMap(\.moods)), Set(moods), "\(part) \(a)")
                 for face in moods where part == .feeling && !(a == "glad" && bad.contains(performedIn(face))) {
@@ -74,7 +74,7 @@ final class VoiceTests: XCTestCase {
     func testThePackHasEveryTake() throws {
         let pack = try Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("voice/voice.bin"))
         XCTAssertEqual(pack.prefix(8), Data("BOOPVOX1".utf8))
-        XCTAssertEqual(PackCheck.voicePackVersion(pack), Take.packVersion, "rerun voicegen")
+        XCTAssertEqual(PackCheck.voiceFileVersion(pack), Take.voiceVersion, "rerun voicegen")
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }
@@ -161,44 +161,44 @@ final class VoiceTests: XCTestCase {
     }
 
     /// The feeling, then the topic; a phrase alone; and a pair
-    /// no longer than `maxLineMs`.
+    /// no longer than `maxSayMs`.
     func testALineIsTheFeelingThenTheTopic() {
         var rng = SplitMix64(seed: 5)
         for _ in 0..<50 {
-            let line = Voice.line(feeling: "upset", about: "tests", kind: .sound, face: "annoyed", finish: nil, rng: &rng)
+            let line = Voice.say(feeling: "upset", about: "tests", kind: .sound, face: "annoyed", finish: nil, rng: &rng)
             XCTAssertFalse(line.isEmpty)
             XCTAssertEqual(line[0].part, .feeling)
             if line.count == 2 {
                 XCTAssertEqual(line[1].part, .about)
                 XCTAssertEqual(line[1].meaning, "tests")
-                XCTAssertLessThanOrEqual(line[0].ms + Voice.joinGapMs + line[1].ms, Voice.maxLineMs)
+                XCTAssertLessThanOrEqual(line[0].ms + Voice.joinGapMs + line[1].ms, Voice.maxSayMs)
             }
             XCTAssertLessThanOrEqual(line.count, 2)
         }
         // A phrase plays alone.
-        let phrase = Voice.line(feeling: "upset", about: "tests", kind: .phrase, face: "grumpy", finish: nil, rng: &rng)
+        let phrase = Voice.say(feeling: "upset", about: "tests", kind: .phrase, face: "grumpy", finish: nil, rng: &rng)
         XCTAssertEqual(phrase.map(\.kind), [.phrase])
         // A phrase asked for is the topic's when only the topic has one:
         // curious and happy have no glad phrase.
-        XCTAssertEqual(Voice.line(feeling: "glad", about: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng).map(\.text),
+        XCTAssertEqual(Voice.say(feeling: "glad", about: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng).map(\.text),
                        ["Fingers crossed"])
-        let done = Voice.line(feeling: "glad", about: "done", kind: .phrase, face: "happy", finish: "success", rng: &rng)
+        let done = Voice.say(feeling: "glad", about: "done", kind: .phrase, face: "happy", finish: "success", rng: &rng)
         XCTAssertEqual(done.map { "\($0.part) \($0.kind)" }, ["about phrase"])
         // Any other ask keeps the feeling's take, so a swear asked for with
         // none to say stays upset: the feeling's phrase in sad, and in calm
         // its word, not the topic's phrase ("Tiny steps").
-        let sad = Voice.line(feeling: "upset", about: "stopped", kind: .swear, face: "sad", finish: "failure", rng: &rng)
+        let sad = Voice.say(feeling: "upset", about: "stopped", kind: .swear, face: "sad", finish: "failure", rng: &rng)
         XCTAssertEqual(sad.map { "\($0.part) \($0.kind)" }, ["feeling phrase"])
         for _ in 0..<20 {
-            let calm = Voice.line(feeling: "upset", about: "start", kind: .swear, face: "calm", finish: nil, rng: &rng)
+            let calm = Voice.say(feeling: "upset", about: "start", kind: .swear, face: "calm", finish: nil, rng: &rng)
             XCTAssertEqual(calm.map { "\($0.part) \($0.kind)" }, ["feeling word"])
         }
         // Only a topic: its take alone.
-        let topic = Voice.line(feeling: nil, about: "tests", kind: .sound, face: "calm", finish: nil, rng: &rng)
+        let topic = Voice.say(feeling: nil, about: "tests", kind: .sound, face: "calm", finish: nil, rng: &rng)
         XCTAssertEqual(topic.map(\.part), [.about])
-        XCTAssertEqual(Voice.line(feeling: nil, about: nil, kind: .sound, face: "calm", finish: nil, rng: &rng), [])
+        XCTAssertEqual(Voice.say(feeling: nil, about: nil, kind: .sound, face: "calm", finish: nil, rng: &rng), [])
         // Two takes on the wire.
-        let two = DeviceMoment.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
+        let two = DeviceReaction.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
         XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"phase1.word.test.test__annoyed__contained"}"#)
         XCTAssertEqual(two.text, "Tsk... Test")
     }

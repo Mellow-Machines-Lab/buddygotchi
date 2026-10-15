@@ -6,14 +6,14 @@ namespace voice {
 
 namespace {
 
-// The pack's layout (voicegen's HEADER and RECORD),
+// The voice file's layout (voicegen's HEADER and RECORD),
 // little-endian: a 64-byte header, then fixed-size records sorted by id,
 // then each take's mouth (a byte per frame) and samples.
 constexpr char kMagic[8] = {'B', 'O', 'O', 'P', 'V', 'O', 'X', '1'};
 constexpr uint32_t kHeader = 64;
 constexpr uint32_t kRecord = 128;
 
-// A line cut short (hushed, or replaced) fades from where it was to
+// A `say` cut short (hushed, or replaced) fades from where it was to
 // silence over 4 ms, under whatever comes next: a step in one sample clicks.
 constexpr uint32_t kCutFade = kOutRate * 4 / 1000;
 // The mouth's frames are this many source samples.
@@ -22,12 +22,12 @@ static_assert(kOutRate == 2 * kRate, "the takes play at half a source sample per
 
 uint32_t u32(const uint8_t* p) { return p[0] | p[1] << 8 | p[2] << 16 | uint32_t(p[3]) << 24; }
 
-struct Pack {
+struct VoiceFile {
   Source* source = nullptr;
   char version[17] = "none";
   uint32_t count = 0, indexAt = 0;
 };
-Pack pack;
+VoiceFile file;
 
 // The takes looked up lately, each by the handle it was given.
 struct Loaded {
@@ -50,42 +50,42 @@ const Loaded* slot(int i) {
 
 // Record `i` of the index, its id and text NUL-ended.
 bool record(uint32_t i, uint8_t (&r)[kRecord]) {
-  if (!pack.source->read(pack.indexAt + i * kRecord, r, kRecord)) return false;
+  if (!file.source->read(file.indexAt + i * kRecord, r, kRecord)) return false;
   r[kIdMax - 1] = r[kIdMax + kTextMax - 1] = 0;
   return true;
 }
 
 }  // namespace
 
-bool openPack(Source* source) {
-  closePack();
+bool openFile(Source* source) {
+  closeFile();
   uint8_t h[kHeader];
   if (!source || !source->read(0, h, kHeader) || std::memcmp(h, kMagic, 8)) return false;
   if (u32(h + 28) != kRecord || u32(h + 36) != kRate || u32(h + 40) != kMouthMs) return false;
-  pack.source = source;
-  std::memcpy(pack.version, h + 8, 16);
-  pack.version[16] = 0;
-  pack.count = u32(h + 24);
-  pack.indexAt = u32(h + 32);
+  file.source = source;
+  std::memcpy(file.version, h + 8, 16);
+  file.version[16] = 0;
+  file.count = u32(h + 24);
+  file.indexAt = u32(h + 32);
   return true;
 }
 
-void closePack() {
-  pack = Pack{};
+void closeFile() {
+  file = VoiceFile{};
   for (Loaded& s : slots) s.handle = -1;
 }
 
-bool packOpen() { return pack.source != nullptr; }
-const char* assetsVersion() { return pack.version; }
-int takeCount() { return int(pack.count); }
+bool fileOpen() { return file.source != nullptr; }
+const char* assetsVersion() { return file.version; }
+int takeCount() { return int(file.count); }
 
 int takeIndex(const char* id) {
-  if (!id || !pack.source) return -1;
+  if (!id || !file.source) return -1;
   for (const Loaded& s : slots)
     if (s.handle >= 0 && !std::strcmp(s.id, id)) return s.handle;
   // Binary search of the index, which voicegen sorted by id's bytes.
   uint8_t r[kRecord];
-  uint32_t lo = 0, hi = pack.count;
+  uint32_t lo = 0, hi = file.count;
   while (lo < hi) {
     uint32_t mid = (lo + hi) / 2;
     if (!record(mid, r)) return -1;
@@ -94,7 +94,7 @@ int takeIndex(const char* id) {
       const uint8_t* f = r + kIdMax + kTextMax;
       uint32_t frames = u32(f + 12);
       uint8_t bytes[kMaxFrames];
-      if (frames > kMaxFrames || !pack.source->read(u32(f + 8), bytes, frames)) return -1;
+      if (frames > kMaxFrames || !file.source->read(u32(f + 8), bytes, frames)) return -1;
       int handle = nextHandle++;
       Loaded& s = slots[handle % kSlots];
       s = Loaded{};
@@ -129,19 +129,19 @@ bool mouthOpen(int i, uint32_t ms) {
   return frame < s->frames && (s->mouth[frame / 8] >> (frame % 8) & 1);
 }
 
-uint32_t lineMs(int take, int then) {
+uint32_t sayMs(int take, int then) {
   if (!slot(take)) return 0;
   return takeMs(take) + (slot(then) ? kJoinGapMs + takeMs(then) : 0);
 }
 
-bool lineMouthOpen(int take, int then, uint32_t ms) {
+bool sayMouthOpen(int take, int then, uint32_t ms) {
   uint32_t first = takeMs(take);
   if (ms < first) return mouthOpen(take, ms);
   return slot(then) && ms >= first + kJoinGapMs && mouthOpen(then, ms - first - kJoinGapMs);
 }
 
-Line makeLine(int take, int then, uint8_t vol) {
-  Line l;
+Say makeSay(int take, int then, uint8_t vol) {
+  Say l;
   l.vol = vol;
   if (!slot(take)) return l;
   l.take = take;
@@ -153,19 +153,19 @@ Line makeLine(int take, int then, uint8_t vol) {
   return l;
 }
 
-uint32_t lineSamples(const Line& l) {
+uint32_t saySamples(const Say& l) {
   if (!l.a.len) return 0;
   return 2u * (l.a.len + (l.b.len ? kGapSamples + l.b.len : 0));
 }
 
-void Player::start(const Line& l) {
+void Player::start(const Say& l) {
   stop();
   gain_ = l.vol * 256 / 10;
-  const bool plays = l.a.len && gain_ && pack.source;  // muted, no take or no card: nothing to play
+  const bool plays = l.a.len && gain_ && file.source;  // muted, no take or no card: nothing to play
   take_ = plays ? l.take : -1;
   a_ = plays ? l.a : Clip{};
   b_ = plays ? l.b : Clip{};
-  total_ = plays ? lineSamples(l) : 0;
+  total_ = plays ? saySamples(l) : 0;
   bufLen_ = 0;
 }
 
@@ -189,10 +189,10 @@ int Player::sample(uint32_t s) {
     // Refill from here: a clip's end may cut the window short.
     const Clip& c = s < a_.len ? a_ : b_;
     uint32_t n = c.at + c.len - at < kBuf ? c.at + c.len - at : kBuf;
-    bufLen_ = pack.source && pack.source->read(at, buf_, n) ? n : 0;
+    bufLen_ = file.source && file.source->read(at, buf_, n) ? n : 0;
     bufAt_ = at;
     if (!bufLen_) {
-      // The card failed: the rest of the line goes, fading out, rather
+      // The card failed: the rest of the `say` goes, fading out, rather
       // than asking the card again for every sample.
       if (pos_ < total_) fadeFrom_ = last_, fade_ = kCutFade, total_ = pos_;
       return 0;

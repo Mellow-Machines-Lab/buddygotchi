@@ -179,7 +179,7 @@ struct SoakWork {
         return out
     }
 
-    static let moods = MoodAction.moods.map(\.name)
+    static let moods = MoodOutput.moods.map(\.name)
 
     /// A pass's answers, with a probability for each of many options, as
     /// Jev's carry them.
@@ -220,13 +220,13 @@ struct SoakWork {
                 guard line.hook == "Stop" else { continue }
                 if turn % 4 == 0 {
                     let to = mood == "calm" ? "happy" : "calm"
-                    _ = log(Event.did("Boop's mood changed: \(mood) → \(to).", for: s, action: MoodAction.actionName, by: "brain",
+                    _ = log(Event.did("Boop's mood changed: \(mood) → \(to).", for: s, action: MoodOutput.outputName, by: "brain",
                                       facts: ["from": .string(mood), "to": .string(to), "latency_ms": 0], at: t + 700))
                     mood = to
                 }
-                let d = log(Event.did("Boop cheered with a success animation, saying \"yay\".", for: s, action: ReactAction.actionName,
+                let d = log(Event.did("Boop cheered with a success animation, saying \"yay\".", for: s, action: ReactOutput.outputName,
                                       by: "brain", open: true, facts: ["latency_ms": 0], at: t + 700))
-                _ = log(Event.ended(d, action: ReactAction.actionName, by: "brain", at: t + 6700))
+                _ = log(Event.ended(d, action: ReactOutput.outputName, by: "brain", at: t + 6700))
             }
         }
         while at + Self.turnMs <= end {

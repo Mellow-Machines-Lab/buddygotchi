@@ -1,4 +1,4 @@
-"""The fixtures are logs from before the device took turns: the Mac sent a
+"""The fixtures are logs from before the device kept a queue: the Mac sent a
 `moment`, which played at once, and `sent` lines had no `by`. `as_do`
 rewrites such a line as the Mac writes it today, a `do` (linkkit/SPEC.md §3),
 so a test can check that a reader makes the same of both. The tests put
@@ -12,10 +12,10 @@ Line = dict[str, Any]
 
 def as_do(line: Line) -> Line:
     """A debug.jsonl line with its `sent` moment as the `do` the Mac sends
-    for it: the animation as the name, a face or a line with none as
+    for it: the animation as the name, a face or a `say` with none as
     `react`, the empty moment (push-to-talk ending) as `stop_listening`,
-    the rest in `args`; the brain's with their `id`, waiting their turn for
-    up to 5 s, the rules' only if the turn is free. Each gets the `by` the
+    the rest in `args`; the brain's with their `id`, waiting in the queue for
+    up to 5 s, the rules' only if nothing plays. Each gets the `by` the
     old reader guessed (a moment with a face was the brain's). Names are
     kept, older ones included, so what a reader shows of the two is the
     same. Any other line is left as it is."""

@@ -15,13 +15,13 @@ class ChunkSpeaker : public Speaker, protected app::Sound::Out {
  public:
   explicit ChunkSpeaker(SimHal& hal) : hal_(hal), sound_(*this) { sound_.ready(); }
 
-  void say(const voice::Line& l) override { send({app::Sound::Kind::kSay, l, {}}); }
+  void say(const voice::Say& l) override { send({app::Sound::Kind::kSay, l, {}}); }
   void hush() override { send({app::Sound::Kind::kHush, {}, {}}); }
   void effect(const voice::Effect& e) override { send({app::Sound::Kind::kEffect, {}, e}); }
   void stopEffects() override { send({app::Sound::Kind::kStopEffects, {}, {}}); }
   app::AudioOut stats() override { return sound_.stats(); }
 
-  // What the board's task does each time round: the lines and effects
+  // What the board's task does each time round: the `say`s and effects
   // waiting, then one chunk made and written (Out::write, the subclass's).
   void step() {
     for (;;) {

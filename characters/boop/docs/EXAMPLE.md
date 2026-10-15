@@ -1,6 +1,6 @@
 # Boop: harness example, end to end
 
-Updated 2026-10-05. One turn of failing tests, from the raw events to
+Updated 2026-10-15. One turn of failing tests, from the raw events to
 what Boop does: the view events, the state and questions Jev gets, its
 answers, and what the actions did. How it works is in the code; this
 file only shows it.
@@ -101,7 +101,7 @@ in the order the `pass` line lists them: `mood`, `react.mood`,
 `say.kind`.
 
 `say.feeling` and `say.about` offer `none`, then every answer in
-`ReactAction`'s order, since every face can say each one: `say.feeling`
+`ReactOutput`'s order, since every face can say each one: `say.feeling`
 `none`, `upset`, `glad` and `tickled`, and `say.about` `none` and its
 15 topics, as the `p` maps in §5 show.
 

@@ -20,11 +20,11 @@ cheap ESP32 board with a screen is the body. Start with
 | `Package.swift` | The Swift package, at the root because its targets are in both `app/` and `internal/`. It builds into `.build/` |
 | `agent-hooks/` | The hook layer, a Swift package of its own: a submodule of [Mellow-Machines-Lab/AgentHooks](https://github.com/Mellow-Machines-Lab/AgentHooks) (below, Repositories; [its README](agent-hooks/README.md), [how it works](agent-hooks/ARCHITECTURE.md)): the `agent-hook` hook client, the `agent-hooks` command line, and the `AgentHooks` library that turns hooks into events and keeps the sessions and "needs you". It depends on nothing else in the repo; Boop depends on it |
 | `mellowharness/` | The brain's harness, a Swift package of its own: a submodule of [Mellow-Machines-Lab/MellowHarness](https://github.com/Mellow-Machines-Lab/MellowHarness) (below, Repositories; [its README](mellowharness/README.md), [how it works](mellowharness/ARCHITECTURE.md)): the `MellowHarness` library (events and the log, each kind's line, rules, outputs and `Choice`, the prompt, Jev and the loop that asks it), `mellowharness-emit`, and its worked example Beacon (`beacon`). It depends on nothing else in the repo; Boop's brain runs on it |
-| `linkkit/` | The device link, a package of its own meant to be open-sourced ([its README](linkkit/README.md), [how it works](linkkit/ARCHITECTURE.md), [its spec](linkkit/SPEC.md)): the protocol (four JSON messages, and the turn, by which the device decides what plays when), the Swift host library `LinkKit` with its Bluetooth and socket transports, `linkkit-bridge` (the USB bridge), and the C++ device library in `linkkit/device/` ([its README](linkkit/device/README.md)), with its own PlatformIO project for its tests, that Boop's firmware plugs into. It depends on nothing else in the repo; Boop depends on it |
+| `linkkit/` | The device link, a package of its own meant to be open-sourced ([its README](linkkit/README.md), [how it works](linkkit/ARCHITECTURE.md), [its spec](linkkit/SPEC.md)): the protocol (four JSON messages, and the queue, by which the device decides what plays when), the Swift host library `LinkKit` with its Bluetooth and socket transports, `linkkit-bridge` (the USB bridge), and the C++ device library in `linkkit/device/` ([its README](linkkit/device/README.md)), with its own PlatformIO project for its tests, that Boop's firmware plugs into. It depends on nothing else in the repo; Boop depends on it |
 | `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`, and `demo/`, scripted demos, [characters/DEMOS.md](characters/DEMOS.md)) and what makes it (`design/`, `tools/`, `tests/`). Each stands alone: the engine reads a pack's files from its own folder only. `pixel/`, the open default, with the animation bank ([its design guide](characters/pixel/design/README.md)), the recorded voice as built files (`voice/voice.bin`, `mac/takes.tsv`), and `tools/borrowed.json`, the temporary table that lends its 13 drawn moods' art and takes to the other universal moods; and `boop/`, Boop's own and the default: its prompts, gel slime, evals and goldens, its own copies of Pixel's face and of the voice, and the voice's recordings. Both are public. Also `studio/`, the Character Studio, one page for any pack's moods, states and preview ([its README](characters/studio/README.md)), and `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds |
 | `app/` | The Mac side that ships: the menu-bar app (`Boop`) and the `BoopKit` library, Boop's own code on the three packages |
 | `firmware/` | PlatformIO firmware for the two boards ([its README](firmware/README.md): the boards, building, flashing, quirks): Boop's app on LinkKit's device library, with its generated assets and build scripts |
-| `simulator/` | The board with no board, for development, tests and demos ([its README](simulator/README.md)): `core/`, the firmware's portable code and LinkKit's device library as a simulated board, built for the Mac as `boop-sim` (PlatformIO's `native` env) and for a browser as WebAssembly; `web/`, the page that is its screen, finger, speaker and card (`<boop-simulator>`, one script to embed), which also plays a pack's recorded demo, with the local server that gives it a USB cable; `tools/`, which record a demo and cut its voice. Neither ships in the app or the firmware |
+| `simulator/` | The board with no board, for development, tests and demos ([its README](simulator/README.md)): `core/`, the firmware's portable code and LinkKit's device library as a simulated board, built for the Mac as `firmware/.pio/build/native/program` (PlatformIO's `native` env) and for a browser as WebAssembly; `web/`, the page that is its screen, finger, speaker and card (`<boop-simulator>`, one script to embed), which also plays a pack's recorded demo, with the local server that gives it a USB cable; `tools/`, which record a demo and cut its voice. Neither ships in the app or the firmware |
 | `internal/` | Everything that doesn't ship ([its README](internal/README.md)), with [VERIFICATION.md](internal/VERIFICATION.md), how everything is checked, and [EVALS.md](internal/EVALS.md), the brain's eval scenarios: `boopdev` and its library, Boop's Swift tests and eval scenarios, the sources of `Boop --headless` and `--snapshots`, and the firmware's unit tests and the simulator's scenarios (env `native`), and `sessions/`, the projects a pack's demo scripts run in when a real agent plays them, for videos (`make demo IN=…`, [internal/sessions/README.md](internal/sessions/README.md)) |
 | `internal/tools/` | `boopctl` (device tool, and `boopctl workday`, a scripted working day through the brain), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs, from real runs), `session/` (plays a pack's demo script through a real agent: the model's replay server, the agent's terminal, the gate and the desktop app's `/demo`), `webcam/` (opt-in recorder). The faces' and voice's generators live in their packs: `characters/pixel/tools/` (`facegen`, the device's faces, and `sfxgen`, their sounds, from the animation bank) and `characters/boop/tools/` (`voicegen`, the voice, which it writes into both packs; `pixelsync`, Boop's copy of Pixel's face; `slimegen`, Boop's mood graph, the Mac's slime mirror and the gel face's assets, from the slime design; `gel-trace`) |
 | `internal/skills/` | `doctor` (hook self-check) and `webcam-verify`, symlinked for Claude and Codex |
@@ -217,6 +217,28 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
   only report, and they fail open.
 - **Don't use the webcam unless the owner asks** (below).
 
+## Words
+
+One concept, one word, in code, comments and docs. Wire and on-disk keys
+keep their names.
+
+| Word | Means | Not |
+| --- | --- | --- |
+| reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
+| the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
+| message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |
+| line | What the brain reads for one event (MellowHarness's `Line`) | |
+| take | One recorded clip of the voice; a `say` is up to two | line |
+| step | One row of a demo script or an eval scenario | line |
+| output | What the brain's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action |
+| transcript | Boop's event files: MellowHarness's log, kept as files (`app/BoopKit/Harness/Transcript.swift`) | the log |
+| activity | What an agent is doing: working, idle, a tool | state (the `state` message keeps its name) |
+| the prompt | What Jev reads on each pass | the state |
+| speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
+| the voice file | `voice/voice.bin`, on the board's card | voice pack |
+| needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
+| personality, nature | The pack's personality file, and the person's sweet or cheeky choice laid over it (characters/CHARACTER.md §7) | |
+
 ## Architecture rules
 
 The full picture, with how Boop sits on its three packages (agent-hooks,
@@ -224,9 +246,9 @@ MellowHarness, LinkKit), is
 [documentation/architecture.html](documentation/architecture.html). The rules that are easy to break:
 
 - **Decisions and effects are separate.** The core and the brain decide.
-  Actions (`mood`, `react`) carry out effects and check their own rules.
+  Outputs (`mood`, `react`) carry out effects and check their own rules.
 - **Everything goes through the transcript.** Hooks, pokes, heartbeats
-  and every action are raw events in one shape; the view folds them into
+  and everything the rules and outputs do are raw events in one shape; the view folds them into
   what the brain hears (`app/BoopKit/Core/TranscriptView.swift`).
   Anything else is a log line.
 - **The packages stay apart.** agent-hooks, MellowHarness and LinkKit know
@@ -241,13 +263,13 @@ MellowHarness, LinkKit), is
   the memory files. Only LinkKit knows Bluetooth or USB: on the Mac its
   `DeviceLink` and transports, with Boop's vocabulary on them in
   `app/BoopKit/DeviceLink/BoopDevice.swift`; on the board its device
-  library, which `firmware/src/main.cpp` feeds the serial port's lines.
+  library, which `firmware/src/main.cpp` feeds the serial port's messages.
 - **The brain is never on the screen's path.** Rules keep the screen true
-  at once (the look, "needs you", the tap's poke, the rules' one-shots).
+  at once (the look, "needs you", the tap's poke, the rules' reactions).
   Every reaction, a finished turn's included, is the brain's, later or
   not at all.
 - **The brain is Jev: multiple choice only.** It answers questions about
-  a plain-text state; there's no free text. Keep questions few, with
+  the prompt, in plain text; there's no free text. Keep questions few, with
   options that say what they're not.
 - **The steering files are read-only at runtime.** `characters/boop/steering/` is
   the single source, and the app bundles it at build time
@@ -256,8 +278,8 @@ MellowHarness, LinkKit), is
   to the brain.** The only words are your prompt, the agent's last
   message and what you say to Boop on push-to-talk, cut short.
 - **"Needs you" and the screen priority are plain rules in the core.**
-- **The device renders, reports, and decides when a request plays**
-  (LinkKit's turn), never what Boop does: the Mac sends each thing to
+- **The device renders, reports, and decides when a reaction plays**
+  (LinkKit's queue), never what Boop does: the Mac sends each thing to
   play at once and never times it. It receives the same messages over
   Bluetooth and USB. Its drawing code stays independent of the display
   library, so the simulator and a later ESP-IDF + LVGL port can reuse it.
@@ -281,7 +303,7 @@ unpushed local `main`.
 | `linkkit/` (the device library included) | `linkkit/SPEC.md`, `ARCHITECTURE.md`, `README.md`, `linkkit/device/README.md` |
 | How the pieces join, structure or boundaries, which package products Boop takes | `documentation/architecture.html` |
 | What a character pack holds or how the engine loads one (`characters/`, `app/BoopKit/Character/`, `internal/app/BoopDevKit/PackCheck.swift`, `characters/charactergen.py` and its staging) | `characters/CHARACTER.md` |
-| A demo script's lines or how one plays (`app/BoopKit/Demo/`, `make demo`, `simulator/tools/demo.sh`, `internal/tools/session/`) | `characters/DEMOS.md`, `internal/sessions/README.md` |
+| A demo script's steps or how one plays (`app/BoopKit/Demo/`, `make demo`, `simulator/tools/demo.sh`, `internal/tools/session/`) | `characters/DEMOS.md`, `internal/sessions/README.md` |
 | The boards, `firmware/src/board/`, `firmware/platformio.ini`, flashing | `firmware/README.md` |
 | `simulator/` (the core, the page, the server and its cable, recording and playing demos, its tests) | `simulator/README.md`, `internal/VERIFICATION.md` |
 | `Makefile`, `internal/Makefile`, `internal/tools/`, `internal/app/BoopDev/`, `internal/skills/`, the simulator, tests, `.github/workflows/`, a budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |

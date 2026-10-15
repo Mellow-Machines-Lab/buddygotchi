@@ -241,10 +241,10 @@ final class AppModel: ObservableObject {
         // Its card's voice isn't the app's, so it gets no takes.
         // `none` is no card, one it can't read, or no pack on it.
         if let voice = status.device?.voice, status.device?.hasTheVoice == false {
-            let card = voice == "none" ? "it has no card, or no voice pack on its card" : "its card's voice pack isn't this app's"
+            let card = voice == "none" ? "it has no card, or no voice file on its card" : "its card's voice file isn't this app's"
             return DeviceState(connected: true, trouble: true, short: "No voice",
                                detail: "Connected \(over), but \(card), so \(name) can't talk. "
-                                   + "Put the app's voice pack on a FAT32 card in the board, then press the board's reset button.")
+                                   + "Put the app's voice file on a FAT32 card in the board, then press the board's reset button.")
         }
         return DeviceState(connected: true, short: "Connected", detail: "Connected \(over).")
     }
@@ -428,7 +428,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }
-            runtime.onMoment = { [weak self] id, moment in Task { @MainActor in self?.model.slime.moment(id: id, moment) } }
+            runtime.onReaction = { [weak self] id, reaction in Task { @MainActor in self?.model.slime.reaction(id: id, reaction) } }
             // Push-to-talk: the core says when the mic
             // is on; what it heard goes back to the runtime.
             let listener = SpeechListener(log: { [log] in log.write($0) })

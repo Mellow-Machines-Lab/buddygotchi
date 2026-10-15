@@ -51,7 +51,7 @@ final class EvalTests: XCTestCase {
 
     /// A brain that answers the way the scenario wants passes it, which
     /// checks that every expected step wakes the brain and that the mood and
-    /// what Boop said are read as the actions leave them. A reaction's moment goes
+    /// what Boop said are read as the outputs leave them. A reaction goes
     /// nowhere and counts as played at once, so HISTORY shows it plainly
     /// (EVALS.md §1).
     func testTheTestsFightBackWithAnAgreeableBrain() async throws {
@@ -289,7 +289,7 @@ final class EvalTests: XCTestCase {
 
     /// EVALS.md §3: `moves_on_graph` fails a run whose mood answer wasn't
     /// one it was offered, and passes one that only stays or moves along
-    /// the graph; the mood action takes nothing else, so the mood itself
+    /// the graph; the mood output takes nothing else, so the mood itself
     /// never leaves the graph.
     func testMovesOnGraphCatchesAnAnswerThatWasntOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("on-graph-\(UUID().uuidString).json")
@@ -300,7 +300,7 @@ final class EvalTests: XCTestCase {
         let offGraph = ScriptedBrain(always: ["mood": Answer(choice: "grumpy", probabilities: ["grumpy": 1])])
         let wrong = try await Eval(brain: offGraph, steering: RuntimeTests.steering).run(scenario)
         XCTAssertFalse(wrong.passed)
-        XCTAssertEqual(wrong.timeline.map(\.mood), ["calm", "calm"], "the mood action took nothing off the graph")
+        XCTAssertEqual(wrong.timeline.map(\.mood), ["calm", "calm"], "the mood output took nothing off the graph")
         XCTAssertTrue(wrong.runChecks.first?.detail.hasPrefix("at 0m00s: answered grumpy, offered calm|comfy|curious") == true,
                       wrong.runChecks.first?.detail ?? "")
         let steps = ScriptedBrain { _, questions in

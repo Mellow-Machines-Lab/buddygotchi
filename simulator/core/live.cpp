@@ -68,7 +68,7 @@ int live(Port& port) {
   // Each power-on differs, as a board's does.
   Board board(port, /*frozenClock=*/false, (us(Clock::now().time_since_epoch()) ^ uint32_t(::getpid()) << 16) | 1);
   FileCard card;
-  board.setCard(&card);  // the voice pack, as on the board's card
+  board.setCard(&card);  // the voice file, as on the board's card
   LiveSpeaker speaker(board.hal());
   board.hal().speaker = &speaker;
   while (!stopped) {

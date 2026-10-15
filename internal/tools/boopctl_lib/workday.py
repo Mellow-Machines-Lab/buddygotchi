@@ -12,9 +12,9 @@ isn't deterministic, so run each at least twice.
 `run` needs `make build` first. It starts the headless app with its own
 state directory (keep it short and under /tmp: a Unix socket's path has
 room for 103 bytes), a fake device on a Unix socket that says hello as
-Boop's device does and says each request played to the end, and the brain (`--brain jev`, the
+Boop's device does and says each `do` played to the end, and the brain (`--brain jev`, the
 default, needs `BOOP_JEV_KEY`; `--brain scripted` needs nothing). It moves
-the app's clock to 09:00 the next morning, then sends each hook line
+the app's clock to 09:00 the next morning, then sends each step's hook
 straight to the app's socket in the wire form `agent-hook` sends, moving the
 clock between them with `{"dev":"advance"}`, and waits for every brain
 pass and every reaction to finish before moving on, so no event is
@@ -47,10 +47,10 @@ from boopctl_lib.device import DeviceError
 from boopctl_lib.headless import Headless
 
 # The resting mood: a new Boop starts in it and moods fade back toward it
-# (`MoodAction.initial`).
+# (`MoodOutput.initial`).
 REST = "calm"
 
-# A turn this long or longer, ending, is a big moment, not routine
+# A turn this long or longer, ending, is notable, not routine
 # (the steering's "a very long turn": 5 minutes or more).
 BIG_TURN_MS = 5 * 60_000
 
@@ -318,7 +318,7 @@ def plan(seed: int) -> str:
 
 # What the fake device says it is when the app first speaks
 # (linkkit/SPEC.md §5): Boop's device, playing every name Boop sends. It
-# names no voice pack, so the app picks lines as for a device that has its
+# names no voice file, so the app picks takes as for a device that has its
 # own, as it did before devices said hello.
 HELLO = {"t": "hello", "kit": 1, "app": "boop", "id": "b00p-fake", "fw": "workday", "does": DOES}
 # The brain's reactions, which `run` counts as played.
@@ -327,10 +327,10 @@ REACTIONS = {"react", "task_complete", "reply_ready"}
 
 class FakeDevice:
     """The app's USB link connects here as it would to a bridge's.
-    It answers the first line on each connection, and every `hello` the
+    It answers the first message on each connection, and every `hello` the
     app sends, with a `hello` (linkkit/SPEC.md §3, §5), says every
-    request with an `id` played to the end at once (the brain's reactions
-    and the rules' one-shots alike), and `tap` sends a tap as the board
+    `do` with an `id` played to the end at once (the brain's reactions
+    and the rules' reactions alike), and `tap` sends a tap as the board
     would."""
 
     def __init__(self, path: str) -> None:
@@ -375,7 +375,7 @@ class FakeDevice:
             return
         if not isinstance(msg, dict):
             return
-        # A hello for the app's first line, and for every hello it sends.
+        # A hello for the app's first message, and for every hello it sends.
         first = not self.greeted and not str(msg.get("t", "")).startswith("dbg.")
         if first or msg.get("t") == "hello":
             self.greeted = True
@@ -596,11 +596,11 @@ def run(state: Path, seed: int, brain: str, personality: str | None, out: Path |
 # ---------------------------------------------------------------- the report
 
 
-# What a line is, for the report: `notable` lines should almost always get
+# What a step is, for the report: `notable` steps should almost always get
 # a reaction; `minutes` (a finish done in 1 to 5 minutes) often; `short`
 # (a finish done under a minute) and `start` now and then; `quiet` is the
 # heartbeat. The mood shouldn't move for `start`, `short` or `minutes`.
-# A finish is judged by what its line says: its outcome and length.
+# A finish is judged by what its step's line says: its outcome and length.
 CLASSES = ["notable", "minutes", "short", "start", "quiet"]
 ROUTINE = {"start", "short", "minutes"}
 
@@ -646,7 +646,7 @@ def summarize(path: Path) -> dict[str, Any]:
     hours: dict[int, dict[str, Any]] = defaultdict(new_hour)
     changes: list[dict[str, Any]] = []
     reactions: list[dict[str, Any]] = []
-    # Boop's mood: the first `state` sent says it, and each mood action
+    # Boop's mood: the first `state` sent says it, and each mood output
     # changes it to its pass's answer.
     mood: str | None = None
     # When any agent works: [start, end] spans, from turn starts and ends.
@@ -693,8 +693,8 @@ def summarize(path: Path) -> dict[str, Any]:
             if act["name"] == "mood":
                 before, mood = mood or REST, feed.choice(passes.get(act["for"], {}), "mood") or "?"
                 hr["mood_changes"] += 1
-                # On a routine line, going back to the resting mood is a
-                # mood fading (the guide); any other change is one the line
+                # On a routine step, going back to the resting mood is a
+                # mood fading (the guide); any other change is one the step
                 # shouldn't have caused.
                 if routine and mood == REST:
                     hr["back_to_rest"] += 1
@@ -826,11 +826,11 @@ def report(paths: list[Path], as_json: bool = False) -> str:
     out = []
     for p, r in zip(paths, runs):
         out += [f"## {p}", "",
-                "Reactions are to each kind of line that woke the brain, reacted/all: notable (failures, "
+                "Reactions are to each kind of step that woke the brain, reacted/all: notable (failures, "
                 "fixes, failed or stopped turns, turns of 5 min or more, pokes), finishes done in 1–5 min, "
                 "finishes done under a minute, turn starts, heartbeats.", "",
-                "Mood changes on a routine line (a turn start, or a finish done under 5 min) are split: back "
-                f"to {REST}, the resting mood (a mood fading), and any other (which the line shouldn't cause).", "",
+                "Mood changes on a routine step (a turn start, or a finish done under 5 min) are split: back "
+                f"to {REST}, the resting mood (a mood fading), and any other (which the step shouldn't cause).", "",
                 f"| Hour | Turns | Passes | Mood changes | … routine, to {REST} | … routine, other | Reactions "
                 "| notable | 1–5 min | short | starts | quiet | Faces |",
                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]

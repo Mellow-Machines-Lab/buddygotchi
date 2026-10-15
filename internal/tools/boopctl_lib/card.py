@@ -1,11 +1,11 @@
-"""Copying the voice pack onto the board's microSD card over USB (`boopctl
+"""Copying the voice file onto the board's microSD card over USB (`boopctl
 card`): `dbg.card` `begin`, a `put` per chunk with its CRC-32, then `end`
 with the whole file's size and CRC-32, which the board checks by reading the
 file back before it swaps it in.
 
-It's slow, hours for the whole pack, so a
+It's slow, hours for the whole file, so a
 card reader comes first (copy the file to the card's boop/voice.bin). A few `put`s are in flight
-at once. Every reply says how much the card holds, so a line lost on the
+at once. Every reply says how much the card holds, so a message lost on the
 way (the CH340 drops a run of bytes now and then) costs a resync, not the
 copy; and a copy that was cut off goes on where it stopped."""
 from __future__ import annotations
@@ -18,7 +18,7 @@ from collections import deque
 from pathlib import Path
 from typing import Callable
 
-from boopctl_lib.common import PACK
+from boopctl_lib.common import VOICE_FILE
 from boopctl_lib.device import DeviceError, Link
 
 # Bytes per `put`: with base64 and the rest of the message, the line stays
@@ -30,11 +30,11 @@ WINDOW = 3
 REPLY_S = 3.0
 
 
-def pack_version(data: bytes) -> str:
-    """The version in a pack's header (voicegen's HEADER)."""
+def voice_version(data: bytes) -> str:
+    """The version in a voice file's header (voicegen's HEADER)."""
     magic, version = struct.unpack_from("<8s16s", data)
     if magic != b"BOOPVOX1":
-        raise DeviceError("not a voice pack")
+        raise DeviceError("not a voice file")
     return version.split(b"\0")[0].decode()
 
 
@@ -89,7 +89,7 @@ def push(link: Link, data: bytes, fresh: bool = False,
         at, inflight = begin(link, keep=True), deque()
     r = link.request({"t": "dbg.card", "op": "end", "size": len(data), "crc": binascii.crc32(data)}, timeout=120)
     if not r.get("ok") and r.get("why") == "wrong crc" and not fresh:
-        # What an earlier copy left was another pack's: start again.
+        # What an earlier copy left was another voice file's: start again.
         return push(link, data, fresh=True, progress=progress)
     if not r.get("ok"):
         raise DeviceError(f"the card didn't take it: {r.get('why')}")
@@ -97,13 +97,13 @@ def push(link: Link, data: bytes, fresh: bool = False,
     return r
 
 
-def copy(link: Link, pack: Path = PACK, force: bool = False, fresh: bool = False,
+def copy(link: Link, voice: Path = VOICE_FILE, force: bool = False, fresh: bool = False,
          say: Callable[[str], None] = print) -> int:
-    """`boopctl card`: copies the pack unless the board already has it."""
-    if not pack.exists():
-        raise DeviceError(f"no voice pack at {pack}: the chosen character pack has no voice")
-    data = pack.read_bytes()
-    want = pack_version(data)
+    """`boopctl card`: copies the voice file unless the board already has it."""
+    if not voice.exists():
+        raise DeviceError(f"no voice file at {voice}: the chosen character pack has no voice")
+    data = voice.read_bytes()
+    want = voice_version(data)
     ping = link.request({"t": "dbg.ping"})
     if ping.get("voice") == want and not force:
         say(f"the card already has voice {want} ({ping.get('card')})")

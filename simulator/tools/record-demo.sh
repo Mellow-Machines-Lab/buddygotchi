@@ -7,10 +7,10 @@
 # the real headless app, with the simulator's board on the Mac as its
 # device (the face named, pixel by default), and writes into OUT_DIR
 # (simulator/web/dist/demo):
-#   <face>-DEMO.json        every line the board was sent, with when and
+#   <face>-DEMO.json        every message the board was sent, with when and
 #                           what was happening (DemoRecording), which the
 #                           page plays back
-#   <face>-DEMO-voice.bin   a voice pack with only the takes it says, when
+#   <face>-DEMO-voice.bin   a voice file with only the takes it says, when
 #                           the pack has a voice
 # It takes as long as the demo runs. Needs `make build` and the core
 # (firmware/tools/pio.sh run -e native).

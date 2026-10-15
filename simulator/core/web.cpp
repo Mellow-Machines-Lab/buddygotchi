@@ -25,10 +25,10 @@ struct Lines : linkkit::Out {
   void write(const char* s, size_t n) override { said.append(s, n); }
 };
 
-// The card: a voice pack the page fetched.
+// The card: a voice file the page fetched.
 struct MemoryCard : sim::Card, voice::Source {
   std::vector<uint8_t> bytes;
-  bool open() override { return !bytes.empty() && voice::openPack(this); }
+  bool open() override { return !bytes.empty() && voice::openFile(this); }
   bool read(uint32_t at, void* buf, uint32_t n) override {
     if (uint64_t(at) + n > bytes.size()) return false;
     std::memcpy(buf, bytes.data() + at, n);
@@ -73,7 +73,7 @@ EMSCRIPTEN_KEEPALIVE void sim_power(int on) {
   if (board) board->hal().speaker = nullptr;
   speaker.reset();
   board.reset();
-  voice::closePack();
+  voice::closeFile();
   lines.said.clear();
   if (!on) return;
   parts.clear();
@@ -83,7 +83,7 @@ EMSCRIPTEN_KEEPALIVE void sim_power(int on) {
   board->setCard(card.bytes.empty() ? nullptr : &card, out);
 }
 
-// Room for a voice pack of `bytes` bytes, for the page to fill and then
+// Room for a voice file of `bytes` bytes, for the page to fill and then
 // put in (`card in`). It stays in the slot through every power-on, until
 // `card out`.
 EMSCRIPTEN_KEEPALIVE uint8_t* sim_card(int bytes) {

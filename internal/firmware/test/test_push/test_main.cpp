@@ -1,12 +1,12 @@
 // A native face's frames reach the panel. Two surfaces are
-// drawn in turn, each frame's push is planned from what either frame wrote
+// drawn alternately, each frame's push is planned from what either frame wrote
 // and from the lane's canvas changes, and each band is turned a quarter
 // into a panel window. A model panel takes every window the AMOLED would
 // send, through the same code (render/push.h), and must equal the frame
 // drawn after every frame.
 #include <unity.h>
 
-#include "pack_file.h"  // internal/firmware/
+#include "voice_file.h"  // internal/firmware/
 
 #include <algorithm>
 #include <cstdio>
@@ -319,7 +319,7 @@ bool presentAndCheck(Rig& r, ModelPanel& panel, Tally& tally, const std::string&
 }  // namespace
 
 // The gel through Device, as the board runs it. After every
-// frame of a long random sequence (moods, states, moments and pokes, needs
+// frame of a long random sequence (moods, states, reactions and pokes, needs
 // you, lane bubbles and the strip's count, test patterns and screenshots,
 // uneven clock steps) the panel shows the frame drawn, and that frame is
 // the one a single surface, cleared and drawn as before, would hold.
@@ -464,7 +464,7 @@ static void test_an_unchanged_lane_isnt_sent_again() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
+  if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_bands_turn_the_surface_a_quarter);
   RUN_TEST(test_a_frame_sends_what_either_frame_wrote);
   RUN_TEST(test_random_frames_always_reach_the_panel);

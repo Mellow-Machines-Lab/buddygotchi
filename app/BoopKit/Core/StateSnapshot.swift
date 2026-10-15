@@ -7,11 +7,11 @@ public struct StateSnapshot: Equatable, Sendable {
         public var agent: String
         public var project: String
         /// The thread's name, which the device shows in the project's
-        /// place; `""` for none, and then the line doesn't carry it.
+        /// place; `""` for none, and then the message doesn't carry it.
         public var name: String
         public var more: Int
         /// The request shown's number, counting up from a random one each
-        /// launch: a new one is a different request, which alerts.
+        /// launch: a new one is a different request, which the face knocks for again.
         /// 0 sends none.
         public var id: Int
 
@@ -88,10 +88,10 @@ public struct StateSnapshot: Equatable, Sendable {
     public var visual: String { attn != nil ? "needs_you" : look }
 
     /// How many sessions need you: `attn`'s and its `more`. The popover's
-    /// headline; the line doesn't carry it.
+    /// headline; the message doesn't carry it.
     public var waiting: Int { attn.map { $0.more + 1 } ?? 0 }
 
-    /// The line's fields after its `t`, in the protocol's order: the
+    /// The message's fields after its `t`, in the protocol's order: the
     /// app's part of LinkKit's `state` (linkkit/SPEC.md §3).
     public var fields: JSONObject {
         var fields: JSONObject = ["base": .string(base)]
@@ -110,6 +110,6 @@ public struct StateSnapshot: Equatable, Sendable {
         return fields
     }
 
-    /// One JSON line, keys in the protocol's order.
+    /// The message as one JSON line, keys in the protocol's order.
     public var jsonLine: String { Wire.state(fields) }
 }

@@ -3,7 +3,7 @@
 // of the SVGs (internal/VERIFICATION.md L0).
 #include <unity.h>
 
-#include "pack_file.h"  // internal/firmware/
+#include "voice_file.h"  // internal/firmware/
 
 #include <cstdio>
 #include <vector>
@@ -345,7 +345,7 @@ static void test_a_fade_changes_the_frame() {
 
 int main(int, char**) {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
+  if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_every_scene_matches_facegen);
   RUN_TEST(test_variations_and_shared_designs);
   RUN_TEST(test_variations_for_a_result_or_a_context);

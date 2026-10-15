@@ -1,5 +1,5 @@
 """The READMEs' pictures, each from a real run: the firmware's own drawing
-in boop-sim, the popover from `Boop --snapshots`, agent-hooks' watch
+in the native simulator, the popover from `Boop --snapshots`, agent-hooks' watch
 example on hooks sent through its client, and Beacon on events sent with
 mellowharness-emit (README.md here).
 
@@ -56,14 +56,14 @@ def save_gif(frames: list[Image.Image], durations: list[int], path: Path, extra:
     print(f"{path.relative_to(REPO)}: {len(frames)} frames, {path.stat().st_size // 1024} KB")
 
 
-# --- The face, in boop-sim -------------------------------------------------
+# --- The face, in the native simulator ------------------------------------
 
 STEP_MS = 80
 
 
 def record(steps: list[tuple[int, dict | None]]) -> list[Image.Image]:
     """Plays `steps` ((at ms, message or None), the last one's time the end)
-    on boop-sim's frozen clock, a screenshot every STEP_MS."""
+    on the native simulator's frozen clock, a screenshot every STEP_MS."""
     frames = []
     with Sim(str(SIM_PROGRAM)) as sim:
         sim.request({"t": "dbg.reset"})

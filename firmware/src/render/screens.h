@@ -1,5 +1,5 @@
 // The screen: the face, drawn as its mood design, and in the bottom lane
-// the status strip, or the bubble while a line plays. The same drawing
+// the status strip, or the bubble while a `say` plays. The same drawing
 // serves the face, needs-you and no-app screens; only what it shows differs.
 // Pure drawing: the device core decides what to show and passes it in.
 #pragma once
@@ -12,7 +12,7 @@ namespace render {
 
 // Screen bands on the 320×240 screen, in pixels. The animation bank's
 // designs leave the bottom 48 px, the lane, for text: the strip sits in it,
-// and the bubble takes the whole lane while a line plays, in the strip's
+// and the bubble takes the whole lane while a `say` plays, in the strip's
 // place. The first pack's looks and its successes for the finish draw into
 // the lane too; the bubble blanks it.
 constexpr int kLaneTop = 192;   // the bottom lane: the bubble's

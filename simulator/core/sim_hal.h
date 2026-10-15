@@ -14,29 +14,29 @@ namespace sim {
 // The speaker (speaker.h); none for a board that plays nothing.
 struct Speaker {
   virtual ~Speaker() = default;
-  virtual void say(const voice::Line& l) = 0;
+  virtual void say(const voice::Say& l) = 0;
   virtual void hush() = 0;
   virtual void effect(const voice::Effect& e) = 0;
   virtual void stopEffects() = 0;
   virtual app::AudioOut stats() = 0;
 };
 
-// The microSD card that holds the voice pack: a folder on the Mac
+// The microSD card that holds the voice file: a folder on the Mac
 // (file_card.h), or bytes in the browser (web.cpp).
 struct Card {
   virtual ~Card() = default;
-  // Opens its pack as the voice; false when it holds none.
+  // Opens its voice file; false when it holds none.
   virtual bool open() = 0;
-  // Copying a new pack onto it over USB (dbg.card), as app::Hal has them.
-  virtual bool packBegin(bool keep, uint32_t& have, const char*& why) {
+  // Copying a new voice file onto it over USB (dbg.card), as app::Hal has them.
+  virtual bool copyBegin(bool keep, uint32_t& have, const char*& why) {
     (void)keep, have = 0, why = "no card";
     return false;
   }
-  virtual bool packAppend(const uint8_t* d, size_t n, uint32_t& have) {
+  virtual bool copyAppend(const uint8_t* d, size_t n, uint32_t& have) {
     (void)d, (void)n, have = 0;
     return false;
   }
-  virtual bool packEnd(uint32_t size, uint32_t crc, const char*& why) {
+  virtual bool copyEnd(uint32_t size, uint32_t crc, const char*& why) {
     (void)size, (void)crc, why = "no card";
     return false;
   }
@@ -97,7 +97,7 @@ struct SimHal : app::Hal {
   bool ampOn() override { return amp; }
 
   Speaker* speaker = nullptr;
-  void say(const voice::Line& l) override {
+  void say(const voice::Say& l) override {
     if (speaker) speaker->say(l);
   }
   void hush() override {
@@ -121,21 +121,21 @@ struct SimHal : app::Hal {
     card = c && c->open() ? "ok" : c ? "no pack" : "no card";
   }
   void ejectCard() {
-    voice::closePack();
+    voice::closeFile();
     slot = nullptr;
     card = "no card";
   }
-  bool packBegin(bool keep, uint32_t& have, const char*& why) override {
+  bool copyBegin(bool keep, uint32_t& have, const char*& why) override {
     if (!slot) return have = 0, why = "no card", false;
-    return slot->packBegin(keep, have, why);
+    return slot->copyBegin(keep, have, why);
   }
-  bool packAppend(const uint8_t* d, size_t n, uint32_t& have) override {
-    return slot ? slot->packAppend(d, n, have) : (have = 0, false);
+  bool copyAppend(const uint8_t* d, size_t n, uint32_t& have) override {
+    return slot ? slot->copyAppend(d, n, have) : (have = 0, false);
   }
-  bool packEnd(uint32_t size, uint32_t crc, const char*& why) override {
+  bool copyEnd(uint32_t size, uint32_t crc, const char*& why) override {
     if (!slot) return why = "no card", false;
     card = "no pack";
-    const bool ok = slot->packEnd(size, crc, why);
+    const bool ok = slot->copyEnd(size, crc, why);
     if (ok) card = "ok";
     return ok;
   }

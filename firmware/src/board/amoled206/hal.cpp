@@ -34,7 +34,7 @@ void BoardHal::beginBoard() {
   pinMode(pins::kMainButton, INPUT_PULLUP);
   Wire.begin(pins::kI2cSda, pins::kI2cScl, 400000);  // touch now, the codec in audioBegin
   touchBegin();
-  cardBegin();  // the voice pack; dbg.ping's `card` says whether it's there
+  cardBegin();  // the voice file; dbg.ping's `card` says whether it's there
   defaultCal_ = panelToCanvas();
 }
 

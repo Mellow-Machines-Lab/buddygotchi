@@ -2,16 +2,16 @@ import AgentHooks
 import Foundation
 import LinkKit
 
-/// Something for the device to play, sent as a `do`: a
-/// rule's one-shot is its animation; a brain reaction has a `say` and a
+/// A reaction for the device to play, sent as a `do`: a
+/// rule's reaction is its animation; a brain reaction has a `say` and a
 /// `mood`, its expression: the device draws that mood's version of the
-/// look while it plays, and says the line in `say`, if there is one, over
-/// it. With no animation it's a `react`; with one (task_complete,
-/// reply_ready) it's the brain's finish. The rules' one-shots never carry
+/// look while it plays, and says the takes in `say`, if there are any,
+/// over it. With no animation it's a `react`; with one (task_complete,
+/// reply_ready) it's the brain's finish. The rules' reactions never carry
 /// a mood. Whoever plays an animation or a face says how many `loops` of
 /// its design. The finish for a thread's turn says `who`: the device names
 /// it in the strip while the finish plays.
-public struct DeviceMoment: Equatable, Sendable {
+public struct DeviceReaction: Equatable, Sendable {
     /// The agent and thread the finish is for.
     public struct Who: Equatable, Sendable {
         /// `claude` or `codex`.
@@ -29,7 +29,7 @@ public struct DeviceMoment: Equatable, Sendable {
         }
     }
 
-    /// What a brain reaction says: a line of up to two recorded takes (the
+    /// What a brain reaction says: up to two recorded takes (the
     /// feeling's, then the topic's), or nothing. A reaction
     /// always has one, even with no take: it's the reply that ends
     /// push-to-talk's `listening`.
@@ -53,7 +53,7 @@ public struct DeviceMoment: Equatable, Sendable {
         public var text: String? { takes.isEmpty ? nil : takes.map(\.text).joined(separator: " ") }
     }
 
-    /// The animation: a rule's one-shot, or the brain's finish; nil for a
+    /// The animation: a rule's reaction, or the brain's finish; nil for a
     /// brain reaction with none, a `react`.
     public var anim: String?
     public var say: Say?
@@ -63,7 +63,7 @@ public struct DeviceMoment: Equatable, Sendable {
     /// face holds. Nil sends none, which the device reads as 1.
     public var loops: Int?
     /// The animation's variation, from 1; nil sends none, and the device
-    /// picks one for the moment's facts.
+    /// picks one for the reaction's facts.
     public var variant: Int?
     /// With the finish, whose turn it was; nil sends none.
     public var who: Who?
@@ -91,7 +91,7 @@ public struct DeviceMoment: Equatable, Sendable {
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
     public static let anims = ["task_complete", "reply_ready", "starting", "helper_return", "error", "stopped"]
-    /// A brain reaction with no animation: a line, a face, or both.
+    /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 
     /// The most `loops` the device plays (firmware `Behaviour::kMaxLoops`).

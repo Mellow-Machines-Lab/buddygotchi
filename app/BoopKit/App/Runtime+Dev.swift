@@ -54,17 +54,17 @@ extension Runtime {
         tick()
     }
 
-    /// A forced pass: the actions keep their own rules. `by` is who the
+    /// A forced pass: the outputs keep their own rules. `by` is who the
     /// pass is by, in the transcript.
     func forcePass(_ choices: [String: String], by: String, who: String = "dev") {
-        options.log("\(who): forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: by)))
+        options.log("\(who): forced pass → " + Harness.OutputRecord.names(harness.force(choices, by: by)))
         changed()
     }
 
-    /// The mood action's own change, which tells the device too.
+    /// The mood output's own change, which tells the device too.
     func forceMood(_ to: String, by: String, who: String = "dev") {
         let result = harness.force(mood, by: by) {
-            MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()))
+            MoodOutput.change(mood, to: to, log: harness.log.view(now: options.clock()))
         }
         options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
         changed()
@@ -77,6 +77,6 @@ extension Runtime {
         changed()
     }
 
-    /// Who forces passes and actions, for no event: the dashboard's.
+    /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
 }

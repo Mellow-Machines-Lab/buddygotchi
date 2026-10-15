@@ -17,7 +17,7 @@
 {"clock":1300}
 {"shot":"interrupted-75ms"}
 {"expect":{"moment":{"anim":"stopped","left_ms":4125}}}
-// A one-shot, happy's 4.2 s stopped: it ends at 5425, and working
+// A rule's reaction, happy's 4.2 s stopped: it ends at 5425, and working
 // comes back behind a blink.
 {"clock":5424}
 {"expect":{"moment":{"anim":"stopped","left_ms":1}}}

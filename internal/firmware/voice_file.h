@@ -1,4 +1,4 @@
-// The voice pack from a file, for the simulator and the
+// The voice file read from disk, for the simulator and the
 // firmware's tests, which have no SD card: the chosen character pack's
 // voice/voice.bin (characters/CHARACTER.md §8).
 #pragma once
@@ -8,7 +8,7 @@
 
 #include "voice/player.h"
 
-namespace packfile {
+namespace voicefile {
 
 struct FileSource : voice::Source {
   std::FILE* f = nullptr;
@@ -22,7 +22,7 @@ struct FileSource : voice::Source {
 inline FileSource& source() {
   static FileSource src;
   if (!src.f) {
-    std::string here = __FILE__;  // <repo>/internal/firmware/pack_file.h
+    std::string here = __FILE__;  // <repo>/internal/firmware/voice_file.h
     std::string repo = here.substr(0, here.rfind("/internal/firmware/"));
     std::string pack;
     std::ifstream chosen(repo + "/.character-build/pack");
@@ -31,14 +31,14 @@ inline FileSource& source() {
   return src;
 }
 
-// Opens it as the voice pack; false when the chosen pack has no voice.
-inline bool open() { return source().f && voice::openPack(&source()); }
+// Opens it as the voice file; false when the chosen pack has none.
+inline bool open() { return source().f && voice::openFile(&source()); }
 
-}  // namespace packfile
+}  // namespace voicefile
 
 // A test that plays takes skips when the chosen pack has no voice
 // (characters/CHARACTER.md §8). Unity's, so for the tests only.
 #define NEEDS_VOICE_PACK() \
   do {                     \
-    if (!packfile::source().f) TEST_IGNORE_MESSAGE("needs a voice pack, which the chosen character pack hasn't"); \
+    if (!voicefile::source().f) TEST_IGNORE_MESSAGE("needs a voice file, which the chosen character pack hasn't"); \
   } while (0)

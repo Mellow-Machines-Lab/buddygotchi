@@ -1,11 +1,11 @@
 // The behaviour state machine: what the Mac last said,
-// the moment and the line playing, taps in a row, needs you, and
+// the reaction and the `say` playing, taps in a row, needs you, and
 // the light and backlight they imply. Pure C++ and a function of the device
 // clock: every time-based change happens at an exact millisecond, so a
 // frozen clock gives the same frames on the board and in the simulator.
-// Device owns the I/O, and LinkKit decides when a call from the Mac plays
-// (linkkit/SPEC.md §4): Behaviour says whether one may (admit) and plays it
-// (play), and reports when the call holding the turn has stopped playing.
+// Device owns the I/O, and LinkKit's queue decides when a reaction from the
+// Mac plays (linkkit/SPEC.md §4): Behaviour says whether one may (admit) and
+// plays it (play), and reports when the one playing has stopped.
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -27,8 +27,8 @@ inline void copyStr(char* dst, size_t n, const char* src) { std::snprintf(dst, n
 // What the Mac last said, as the device parsed it.
 struct Model {
   render::SceneState base = render::SceneState::kIdle;  // idle, working or asleep
-  // What the agents are doing while working (`act`): that state's design
-  // shows in working's place. kWorking for none.
+  // What the agents are doing while working (`act`): that activity's
+  // design shows in working's place. kWorking for none.
   render::SceneState act = render::SceneState::kWorking;
   render::Mood mood = render::kStartupMood;
   // The variation of the visual the Mac shows (needs you's while something
@@ -40,7 +40,7 @@ struct Model {
   char project[48] = "";
   char name[48] = "";  // the thread's name; "" when the Mac sends none
   int more = 0;
-  uint32_t attnId = 0;  // the request shown's number; 0 when the Mac sends none
+  uint32_t attnId = 0;  // the needs-you shown's number; 0 when the Mac sends none
   int busy = 0;
   int vol = 6;  // 0–10
   // The look while nothing needs you: what the agents are doing while
@@ -53,35 +53,35 @@ render::SceneState baseFromName(const char* name);
 // testing, delegating or waiting, and kWorking for anything else.
 render::SceneState actFromName(const char* name);
 
-// What cut a call short (`ended`): a tap (its poke, or push-to-talk's
+// What cut a reaction short (`ended`): a tap (its poke, or push-to-talk's
 // listening) or "needs you" starting. Each is the `why` of a `cut`. A
-// newer call and dbg.reset need none here: the kit has already ended the
-// call it held when it takes the next or resets its turn.
+// newer reaction and dbg.reset need none here: the kit has already ended
+// the one playing when it starts the next or resets its queue.
 enum class CutBy : uint8_t { kNone, kTap, kNeedsYou };
 const char* cutByName(CutBy c);  // null for kNone
 
-// The call from the Mac that last played, once no part of it plays any
-// more, for Device to hand to the kit: done, or cut by `by`. Every call
-// plays as it takes the turn, so it's the kit's holder, unless the kit
-// has ended it already, and then the kit ignores it.
+// The reaction from the Mac that last played, once no part of it plays any
+// more, for Device to hand to the kit: done, or cut by `by`. Every reaction
+// plays as soon as the queue starts it, so it's the one the kit has
+// playing, unless the kit has ended it already, and then the kit ignores it.
 struct PlayedOut {
-  uint32_t call = 0;
+  uint32_t key = 0;
   CutBy by = CutBy::kNone;
 };
 
-// A call from the Mac as Device parsed its args, already
-// held in range: the do's name as an animation (none for `react`), a line,
-// a face. With no anim, only the line, or only the face.
-struct MomentIn {
-  render::SceneState anim = render::SceneState::kNone;  // a moment's (render::isMoment)
+// A reaction from the Mac as Device parsed its args, already
+// held in range: the do's name as an animation (none for `react`), a
+// `say`, a face. With no anim, only the `say`, or only the face.
+struct ReactionIn {
+  render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isReaction)
   // It had a `say` field: the reply `listening` waits for, even with no
   // take. `stop_listening` is empty: it ends `listening` and does nothing
   // else.
   bool said = false;
   bool empty = false;
-  int take = -1;  // the line: its first take's handle (voice/player.h), -1 for none
+  int take = -1;  // the `say`: its first take's handle (voice/player.h), -1 for none
   int then = -1;  // and its second's, -1 for none
-  // The expression: this mood's version of the look while the moment
+  // The expression: this mood's version of the look while the reaction
   // plays. Only a known mood sets it.
   bool expr = false;
   render::Mood mood = render::kStartupMood;
@@ -97,9 +97,9 @@ struct MomentIn {
   // (`who`): named in the strip while it plays. Null for none.
   const char* whoAgent = nullptr;
   const char* whoThread = nullptr;
-  // The kit's key for the call (linkkit::Call::key), 0 for none: its parts
+  // The kit's key for the reaction (linkkit::Do::key), 0 for none: its parts
   // carry it, and its end comes back as a PlayedOut with it.
-  uint32_t call = 0;
+  uint32_t key = 0;
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
 };
@@ -118,7 +118,7 @@ class Behaviour {
   static constexpr uint32_t kPressEaseMs = 60;     // a press draws at once this long
   static constexpr int kPressPx = 2;                // a press dips the face this far
   static constexpr uint32_t kBacklightEaseMs = 150;
-  static constexpr int kMaxLoops = 6;  // a call's `loops`
+  static constexpr int kMaxLoops = 6;  // a reaction's `loops`
   // Push-to-talk: `listening` shows for at most kListenMs
   // of talking, then waits at most kReplyWaitMs for the reply; the
   // release shortens the wait to kReplyWaitMs from then.
@@ -139,17 +139,17 @@ class Behaviour {
 
   // Messages from the Mac, at time t.
   void onState(const Model& m, uint32_t t);
-  // Whether a call may play at t (the kit's refuse): null when some part
+  // Whether a reaction may play at t (the kit's refuse): null when some part
   // of it would, else why not: "no_app", "listening", "needs_you",
   // "not_listening" (stop_listening with nothing to stop) or "nothing". A
   // reply (a `say`, or stop_listening) ends listening first, whether or
   // not any of it then plays.
-  const char* admit(const MomentIn& m, uint32_t t);
-  // Plays a call admitted at t. True when it carries a line that will
+  const char* admit(const ReactionIn& m, uint32_t t);
+  // Plays a reaction admitted at t. True when it carries a `say` that will
   // play: not while something needs you, or with no app.
-  bool play(const MomentIn& m, uint32_t t);
+  bool play(const ReactionIn& m, uint32_t t);
   // Which variation (from 0) of animation `a` to play in `mood`: `wanted`
-  // (from 1, 0 for none) when it's one of those for the moment's outcome
+  // (from 1, 0 for none) when it's one of those for the reaction's outcome
   // and context (render::fitting), else one of those at random, never the
   // one shown last.
   uint8_t pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
@@ -171,7 +171,7 @@ class Behaviour {
   void overrideBacklight(uint8_t level) { blOverride_ = true, blSet_ = level; }
 
   // Moves to time t, handling every time-based change on the way at its
-  // exact millisecond (a moment or line ends, a blink, the no-app timeout).
+  // exact millisecond (a reaction or `say` ends, a blink, the no-app timeout).
   void advance(uint32_t t, Rng& rng);
 
   // Queries at t (after advance).
@@ -190,60 +190,60 @@ class Behaviour {
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
   render::Strip strip(uint32_t t) const;
-  // The line's text in the bubble, or null: from its line's start, which
+  // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
-  // A line has arrived that waits for its animation's voice window:
+  // A `say` has arrived that waits for its animation's voice window:
   // it starts later, if nothing replaces it first.
-  bool lineAhead(uint32_t t) const;
+  bool sayAhead(uint32_t t) const;
   // The animation playing (kNone for none) and ms left, and its variation.
-  render::SceneState moment(uint32_t t, uint32_t& left) const;
-  uint8_t momentVariant() const { return moment_.variant; }
+  render::SceneState reaction(uint32_t t, uint32_t& left) const;
+  uint8_t reactionVariant() const { return reaction_.variant; }
   bool speaking(uint32_t t) const;
-  // The expression the face borrows while its call plays:
-  // true, with its mood, until the call ends or another replaces it.
+  // The expression the face borrows while its reaction plays:
+  // true, with its mood, until the reaction ends or another replaces it.
   bool expression(uint32_t t, render::Mood& mood) const;
-  // The line's takes, while it plays or waits to (-1 for none).
+  // The `say`'s takes, while it plays or waits to (-1 for none).
   int take() const { return say_.take; }
   int then() const { return say_.then; }
-  // Counts moments and lines started, local ones included, so a line can
-  // tell it was replaced.
-  uint32_t momentSeq() const { return momentSeq_; }
-  // The call that last played, once no part of it plays any more, exactly
-  // once; false when there's none. Device takes it after every line, hook
-  // and tick.
+  // Counts reactions and `say`s started, local ones included, so a `say`
+  // can tell it was replaced.
+  uint32_t reactionSeq() const { return reactionSeq_; }
+  // The reaction that last played, once no part of it plays any more,
+  // exactly once; false when there's none. Device takes it after every
+  // message, hook and tick.
   bool takePlayedOut(PlayedOut& p);
   // The first instant after `from`, at most `to`, at which a part ends
-  // (an animation, a line with its bubble, a borrowed face); false for none.
+  // (an animation, a `say` with its bubble, a borrowed face); false for none.
   bool nextEnd(uint32_t from, uint32_t to, uint32_t& at) const;
-  // When the line's bubble goes, from its start at its voice window.
+  // When the `say`'s bubble goes, from its start at its voice window.
   uint32_t sayEnd() const { return say_.at + say_.ms; }
   // A blink, Boop's idle life, is showing.
   bool blinking(uint32_t t) const { return face_->blinking(t); }
   // When needs you's performance, with its knocks and ding, last started
-  // for a new request; false before any.
+  // for a new needs-you; false before any.
   bool alerted(uint32_t& at) const {
     at = alertAt_;
     return alerted_;
   }
   const Model& model() const { return model_; }
   // The variation the look shows, from 0: the Mac's, until the variations
-  // take turns.
+  // rotate.
   uint8_t lookVariant() const { return face_->lookVariant(); }
   // Taps in the run so far: 0 before any.
   int taps() const { return taps_; }
 
  private:
-  // Each part of a call (the animation, the line, the expression) carries
-  // its call's key, 0 for the device's own.
-  struct Moment {
+  // Each part of a reaction (the animation, the `say`, the expression)
+  // carries its reaction's key, 0 for the device's own.
+  struct Reaction {
     render::SceneState anim = render::SceneState::kNone;
     uint8_t variant = 0;
     uint32_t at = 0, ms = 0;
-    // Its design's loops; held longer for its line, it rests on its last
+    // Its design's loops; held longer for its `say`, it rests on its last
     // frame.
     uint32_t playMs = 0;
-    uint32_t call = 0;
+    uint32_t key = 0;
     int loops = 1;
     render::Outcome requestedOutcome = render::Outcome::kNone;
     render::StartCtx ctx = render::StartCtx::kNone;
@@ -252,37 +252,37 @@ class Behaviour {
     char agent[12] = "";  // the finish's `who`; empty for none
     char thread[24] = "";
   };
-  // A line: its one or two takes, the bubble with their text, and the
+  // A `say`: its one or two takes, the bubble with their text, and the
   // mouth following their loudness. It plays over whatever face is showing,
   // from `at`, which with an animation is its design's voice window.
   struct Say {
-    int take = -1;  // -1: no line
+    int take = -1;  // -1: no `say`
     int then = -1;
     char text[2 * voice::kTextMax] = "";  // the bubble's: the takes' words
     uint32_t at = 0, ms = 0;
     uint32_t speakMs = 0;  // the takes play this long, the gap included
-    uint32_t call = 0;
+    uint32_t key = 0;
   };
   using Source = render::FaceSource;
 
   // An animation plays `loops` times in `mood`'s design (listening until
-  // the reply), cutting the one playing, by `by`, but not the line or
+  // the reply), cutting the one playing, by `by`, but not the `say` or
   // expression; a finish for `outcome`, a start for `ctx`. kNone for a
-  // newer call: the kit ended the call it replaces.
+  // newer reaction: the kit ended the one it replaces.
   void playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, render::Mood mood, uint8_t variant,
                 render::Outcome outcome = render::Outcome::kNone, render::StartCtx ctx = render::StartCtx::kNone);
-  // The line and the expression end, the line cut short by `by`: a new
-  // moment's animation, or listening, replaces them; a tap's poke doesn't.
-  // kNone for a newer call, as for playAnim.
-  void endLine(uint32_t t, CutBy by);
+  // The `say` and the expression end, the `say` cut short by `by`: a new
+  // reaction's animation, or listening, replaces them; a tap's poke doesn't.
+  // kNone for a newer reaction, as for playAnim.
+  void endSay(uint32_t t, CutBy by);
   // How long a borrowed face in `mood` holds from t: `loops` loops of the
   // design it's drawn in, ending on a loop boundary of that design's clock.
   uint32_t holdMs(render::Mood mood, int loops, uint32_t t) const;
-  // A line from `at`, which a moment's animation can put after t.
-  void startSay(const MomentIn& in, uint32_t t, uint32_t at);
+  // A `say` from `at`, which a reaction's animation can put after t.
+  void startSay(const ReactionIn& in, uint32_t t, uint32_t at);
   // Every change goes through here: `f` changes the state at t, and if
-  // what the face follows changed to another design, the eyes shut for a
-  // moment; a new look starts its design's clock. The backlight eases from
+  // what the face follows changed to another design, the eyes shut
+  // briefly; a new look starts its design's clock. The backlight eases from
   // the level that was showing.
   template <class F>
   void change(uint32_t t, F f) {
@@ -296,13 +296,13 @@ class Behaviour {
     modelT_ = t;
     sweep(t);
   }
-  // The call that last played: it starts, a part of it is cut short while
+  // The reaction that last played: it starts, a part of it is cut short while
   // it plays, and it's played out once no part of it plays at t.
-  void cut(uint32_t call, CutBy by);
+  void cut(uint32_t key, CutBy by);
   void sweep(uint32_t t);
-  bool holds(uint32_t call, uint32_t t) const;
+  bool holds(uint32_t key, uint32_t t) const;
   void resync(uint32_t t);
-  bool momentOn(uint32_t t) const;
+  bool reactionOn(uint32_t t) const;
   // The brain's finish plays, naming whose turn it was (the strip shows it).
   bool finishOn(uint32_t t) const;
   bool listening(uint32_t t) const;  // `listening` is playing
@@ -311,8 +311,8 @@ class Behaviour {
   // the face over.
   bool held(uint32_t t) const;
   uint8_t blTarget(uint32_t t) const;  // the level the state asks for at t
-  bool sayOn(uint32_t t) const;   // the line plays, or its bubble shows
-  bool sayDue(uint32_t t) const;  // the line plays, or waits to
+  bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
+  bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
   // What the Mac last said, as the face may use it (render::FaceContext).
@@ -332,18 +332,18 @@ class Behaviour {
   bool blFade_ = false;
   uint8_t blFrom_ = 255;
   uint32_t blAt_ = 0;
-  Moment moment_;
+  Reaction reaction_;
   Say say_;
-  // The moment's expression: its mood from exprAt_ for exprMs_: as long as
-  // the animation with it plays, or its loops; and at least as long as the
-  // line with it.
+  // The reaction's expression: its mood from exprAt_ for exprMs_: as long
+  // as the animation with it plays, or its loops; and at least as long as
+  // the `say` with it.
   bool expr_ = false;
   render::Mood exprMood_ = render::kStartupMood;
   uint32_t exprAt_ = 0, exprMs_ = 0;
-  uint32_t exprCall_ = 0;
-  // The call that last played while a part of it plays, with what first
-  // cut its animation or its line short; then, once it's played out, its
-  // end until Device takes it. Call 0 for none.
+  uint32_t exprKey_ = 0;
+  // The reaction that last played while a part of it plays, with what
+  // first cut its animation or its `say` short; then, once it's played out,
+  // its end until Device takes it. Key 0 for none.
   PlayedOut playing_, playedOut_;
   // The taps in the run, the last at lastTap_; 0 before the first.
   int taps_ = 0;
@@ -353,7 +353,7 @@ class Behaviour {
   bool alerted_ = false;
   uint32_t alertAt_ = 0;
   uint32_t modelT_ = 0;
-  uint32_t momentSeq_ = 0;
+  uint32_t reactionSeq_ = 0;
 };
 
 }  // namespace app

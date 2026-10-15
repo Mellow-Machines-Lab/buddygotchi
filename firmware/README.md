@@ -113,7 +113,7 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   screen's bus.
 - **Boop is silent, faces fine:** the popover says "No voice", and
   `ping`'s `card` says why. `no card`: the card is out, or exFAT (cards
-  over 32 GB come that way; format it FAT32). `no pack`: copy the character
+  over 32 GB come that way; format it FAT32). `no pack`, no voice file: copy the character
   pack's `voice/voice.bin` onto the card as `boop/voice.bin`. Press the
   board's reset button once the card is back in.
 - **Backlight flickers:** unstable USB power, or PWM under 5 kHz.

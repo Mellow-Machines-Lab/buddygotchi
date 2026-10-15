@@ -102,7 +102,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         #expect(transport.sent.count == 5, "a hello's answer counts as the keepalive")
     }
 
-    /// SPEC.md §2: a host never sends a line longer than 512 bytes. A
+    /// SPEC.md §2: a host never sends a message longer than 512 bytes. A
     /// `state` that would be is logged once and not sent, and the last one
     /// that fit stays the keepalive.
     @Test func testAStateTooLongIsNeverSent() {
@@ -119,10 +119,10 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         #expect(transport.sent == [Wire.state(fields), Wire.state(fields)], "the last that fit is the keepalive")
     }
 
-    /// Every line goes to `onSend` with who asked for it: the app's name
+    /// Every message goes to `onSend` with who asked for it: the app's name
     /// for a `do`, `app` when it doesn't say, and `link` for the link's
-    /// own lines, every `state` and the ask for `hello`.
-    @Test func testOnSendTracesEveryLineWithItsSender() {
+    /// own messages, every `state` and the ask for `hello`.
+    @Test func testOnSendTracesEveryMessageWithItsSender() {
         let (link, _, _) = makeLink(connected: false, hello: false)
         let traced = Box<String>()
         link.onSend = { line, by in traced.add("\(by) \(JSON.parse(line)?.object?["t"]?.string ?? "?")") }
@@ -400,7 +400,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
 
     /// SPEC.md §3: a name not in `hello.does` would come back `skipped`,
     /// `unknown`, so it fails at once and nothing goes out; so does a `do`
-    /// with no link, before a hello, or too long for a line.
+    /// with no link, before a hello, or longer than 512 bytes.
     @Test func testADoThatCantPlayFailsAtOnce() {
         func attempt(_ link: DeviceLink, _ name: String = "react", args: JSONObject = [:]) -> DeviceLink.Outcome? {
             var outcome: DeviceLink.Outcome?
@@ -451,7 +451,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         #expect(events.all[1].data["on"]?.int == 44)
     }
 
-    /// `receive` says what each line was, for the owner's log.
+    /// `receive` says what each message was, for the owner's log.
     @Test func testReceiveSaysWhatTheLineWas() {
         let (link, _, _) = makeLink()
         let id = link.do("react", now: 0) { _ in }!

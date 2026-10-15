@@ -251,7 +251,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8206, help="the page's port on 127.0.0.1 (8206)")
     parser.add_argument("--socket", default="/tmp/boop-sim-usb.sock", help="the board's USB, as a bridge's socket (/tmp/boop-sim-usb.sock)")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
-    parser.add_argument("--voice", default=str(chosen_voice()), help="the voice pack on the board's card (the chosen character pack's, if it has one)")
+    parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()
     if not (Path(args.dist) / "boop-sim.wasm").exists():
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)

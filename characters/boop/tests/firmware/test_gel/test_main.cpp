@@ -81,7 +81,7 @@ static void test_one_face_vocabulary_and_latest_facts() {
   m.base = SceneState::kWorking;
   m.act = SceneState::kTerminal;
   b.onState(m, 0);
-  app::MomentIn in;
+  app::ReactionIn in;
   in.anim = SceneState::kTaskComplete;
   in.outcome = Outcome::kFailure;
   in.id = 42;
@@ -473,7 +473,7 @@ static void test_tracked_clear_matches_full_clear() {
     f.attention.on = SceneState(state) == SceneState::kNeedsYou;
     e->setFacts(f);
     Request r;
-    r.anim = momentFromName(stateName(SceneState(state)));
+    r.anim = reactionFromName(stateName(SceneState(state)));
     r.hasId = true;
     r.id = std::to_string(state);
     if (r.anim != SceneState::kNone) e->oneShot(r);

@@ -22,22 +22,22 @@ final class DemoTests: XCTestCase {
             """)
         XCTAssertEqual(script.title, "Keyboard shortcuts")
         XCTAssertEqual(script.agent, "codex")
-        XCTAssertEqual(script.lines.map(\.number), [4, 5, 6, 7, 8, 9, 10], "in the file's order")
-        XCTAssertEqual(script.lines[1].what, .brain(["react.mood": "curious"], mood: "curious"))
-        XCTAssertEqual(script.lines[1].after, 0.5)
-        XCTAssertEqual(script.lines[2].what, .talk("how's it going?", hold: 2))
-        guard case .agent(let run) = script.lines[3].what else { XCTFail("an agent line"); return }
+        XCTAssertEqual(script.steps.map(\.number), [4, 5, 6, 7, 8, 9, 10], "in the file's order")
+        XCTAssertEqual(script.steps[1].what, .brain(["react.mood": "curious"], mood: "curious"))
+        XCTAssertEqual(script.steps[1].after, 0.5)
+        XCTAssertEqual(script.steps[2].what, .talk("how's it going?", hold: 2))
+        guard case .agent(let run) = script.steps[3].what else { XCTFail("an agent step"); return }
         XCTAssertEqual([run.cmd, run.about], ["npm test", "Run the tests"])
         XCTAssertTrue(run.fails)
-        XCTAssertEqual(script.lines[3].takes, 3)
-        guard case .agent(let asks) = script.lines[4].what, case .agent(let report) = script.lines[5].what else { XCTFail("agent lines"); return }
+        XCTAssertEqual(script.steps[3].takes, 3)
+        guard case .agent(let asks) = script.steps[4].what, case .agent(let report) = script.steps[5].what else { XCTFail("agent steps"); return }
         XCTAssertEqual(asks.ask, 4)
         XCTAssertTrue(report.byReviewer)
-        XCTAssertEqual(script.lines[6].what, .poke)
-        XCTAssertEqual(script.lines[6].input, "tap", "a finger on the device's own screen")
+        XCTAssertEqual(script.steps[6].what, .poke)
+        XCTAssertEqual(script.steps[6].input, "tap", "a finger on the device's own screen")
     }
 
-    /// Pins how long a line waits after the one before, and an agent line
+    /// Pins how long a step waits after the one before, and an agent step
     /// takes, when the script doesn't say: about as long as each takes.
     func testWhatALineWaitsWhenTheScriptDoesntSay() throws {
         let script = try DemoScript("""
@@ -47,8 +47,8 @@ final class DemoTests: XCTestCase {
             {"agent": "read", "file": "a.js"}
             {"agent": "run", "cmd": "make"}
             """)
-        XCTAssertEqual(script.lines.map(\.after), [1, 0.3, 0.8, 1, 1])
-        XCTAssertEqual(script.lines.map(\.takes), [0, 0, 0, 0.6, 2])
+        XCTAssertEqual(script.steps.map(\.after), [1, 0.3, 0.8, 1, 1])
+        XCTAssertEqual(script.steps.map(\.takes), [0, 0, 0, 0.6, 2])
     }
 
     func testABadLineSaysWhere() {
@@ -60,27 +60,27 @@ final class DemoTests: XCTestCase {
                 return "\(error)"
             }
         }
-        XCTAssertTrue(problem(#"{"tap": true}"#).contains("demo.jsonl:1: a line is by the agent, you or the brain"))
+        XCTAssertTrue(problem(#"{"tap": true}"#).contains("demo.jsonl:1: a step is by the agent, you or the brain"))
         XCTAssertTrue(problem("{\"you\": \"poke\"}\n{\"agent\": \"dance\"}").contains("demo.jsonl:2: agent is one of"))
         XCTAssertTrue(problem(#"{"agent": "edit", "file": "a.js"}"#).contains("an edit needs a file, old and new"))
         XCTAssertTrue(problem(#"{"brain": "happy"}"#).contains("brain is question keys to choices"))
         XCTAssertTrue(problem("{\"you\": \"poke\"}\n{\"demo\": 1}").contains("the header comes first"))
         // A mistyped key or a value of the wrong type would otherwise be left out quietly.
-        XCTAssertTrue(problem(#"{"agent": "prompt", "text": "Go", "afer": 2}"#).contains("demo.jsonl:1: an agent line has no key afer"))
+        XCTAssertTrue(problem(#"{"agent": "prompt", "text": "Go", "afer": 2}"#).contains("demo.jsonl:1: an agent step has no key afer"))
         XCTAssertTrue(problem(#"{"you": "poke", "after": "2"}"#).contains("demo.jsonl:1: after is a number"))
         XCTAssertTrue(problem(#"{"agent": "run", "cmd": "make", "fails": "yes"}"#).contains("fails is true or false"))
-        XCTAssertTrue(problem(#"{"mood": "calm", "say": "hi"}"#).contains("a brain line has no key say"))
+        XCTAssertTrue(problem(#"{"mood": "calm", "say": "hi"}"#).contains("a brain step has no key say"))
     }
 
-    /// A mood alone is the brain's line: `{"mood": "proud"}`.
+    /// A mood alone is the brain's step: `{"mood": "proud"}`.
     func testAMoodAloneIsTheBrainsLine() throws {
-        XCTAssertEqual(try DemoScript(#"{"mood": "proud"}"#).lines[0].what, .brain([:], mood: "proud"))
+        XCTAssertEqual(try DemoScript(#"{"mood": "proud"}"#).steps[0].what, .brain([:], mood: "proud"))
     }
 
-    /// Pins the words a watcher reads for each kind of line.
+    /// Pins the words a watcher reads for each kind of step.
     func testWhatALineIsCalled() throws {
         func cause(_ json: String, agent: String = "claude") throws -> DemoScript.Cause? {
-            try DemoScript(json).lines[0].cause(creature: "Pip", agent: agent)
+            try DemoScript(json).steps[0].cause(creature: "Pip", agent: agent)
         }
         try XCTAssertEqual(cause(#"{"you": "poke"}"#), .init(kind: "tap", text: "You poke Pip"))
         try XCTAssertEqual(cause(#"{"you": "talk", "text": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
@@ -117,17 +117,17 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(recording.events[0].line, #"{"t":"state","base":"asleep","mood":"calm"}"#, "the device's picture, as a board that just connected is told")
         XCTAssertEqual(recording.events[1].cause?.text, "You poke Pip")
         XCTAssertEqual(recording.events[1].input, "tap", "a finger on the device's own screen, for whoever replays it")
-        XCTAssertEqual(recording.takes, ["t.go", "t.now"], "only what the demo itself says, both takes of a line")
+        XCTAssertEqual(recording.takes, ["t.go", "t.now"], "only what the demo itself says, both takes of a `say`")
         XCTAssertEqual(recording.name, "Pip")
         XCTAssertEqual(recording.length, 4)
         XCTAssertEqual(recording.version, 1)
     }
 
-    /// Pins the words for what the creature does at each kind of line.
+    /// Pins the words for what the creature does at each kind of step.
     func testWhatTheCreatureDoesIsRecordedInWords() {
         let recorder = DemoRecorder(takes: [Take(row: "t.go\tGo\tabout\tstart\tword\texcited\t\t400")])
         recorder.begin(name: "Pip")
-        for line in [
+        for message in [
             #"{"t":"state","base":"working","mood":"calm","busy":1}"#,
             #"{"t":"state","base":"working","mood":"calm","busy":1}"#,
             #"{"t":"do","id":1,"name":"react","args":{"say":{"take":"t.go"},"mood":"excited"}}"#,
@@ -139,7 +139,7 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":5,"name":"error"}"#,
             #"{"t":"do","id":6,"name":"listening"}"#,
             #"{"t":"do","id":7,"name":"starting"}"#,
-        ] { recorder.sent(line) }
+        ] { recorder.sent(message) }
         XCTAssertEqual(recorder.recording(character: "pixel", face: "pixel").events.map(\.effect), [
             nil, nil, "Pip makes an excited face and says “Go”", "Pip makes a curious face",
             "Pip shows that it needs you", "Pip's mood is now proud", "Pip celebrates", "Pip slumps", "Pip winces", "Pip listens", nil,

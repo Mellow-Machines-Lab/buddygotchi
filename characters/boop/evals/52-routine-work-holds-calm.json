@@ -1,7 +1,7 @@
 {
   "name": "Routine work leaves a calm Boop calm",
   "case": "With the chatter personality, so every tool call reaches Boop, two quick turns go by: commands that pass, a plain request and a matter-of-fact finish each. Boop may react to everything, but none of it is a reason to leave calm: its mood holds all through, with no bouncing.",
-  "why": "characters/boop/steering/guide.md: never change the mood for a routine turn alone; characters/boop/steering/mood/calm.md: calm stays through routine turns and plain finishes. Staying is the mood question's first option, and no change is fine (MoodAction.options)",
+  "why": "characters/boop/steering/guide.md: never change the mood for a routine turn alone; characters/boop/steering/mood/calm.md: calm stays through routine turns and plain finishes. Staying is the mood question's first option, and no change is fine (MoodOutput.options)",
   "personality": "chatter",
   "checks": {"mood_changes": "0"},
   "steps": [

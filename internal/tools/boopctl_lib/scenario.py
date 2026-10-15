@@ -1,5 +1,5 @@
 """Scenarios (internal/VERIFICATION.md §4): one JSON object per line, played the
-same way on the board and in boop-sim."""
+same way on the board and in the native simulator."""
 from __future__ import annotations
 
 import json

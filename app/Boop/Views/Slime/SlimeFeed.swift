@@ -5,7 +5,7 @@ import LinkKit
 import WebKit
 
 /// Boop facts into the bundled engine. This is a silent mirror; no callback
-/// can play a device moment, select a mood, or finish a reaction's handle.
+/// can play a reaction on the device, select a mood, or finish a reaction's handle.
 @MainActor
 final class SlimeFeed: NSObject, WKNavigationDelegate {
     private(set) weak var webView: WKWebView?
@@ -13,7 +13,7 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     private var visible = false
     private var reduced = false
     private var listening = false
-    private var localMoment = 0
+    private var localReaction = 0
     private var state: StateSnapshot?
     /// A fixed frame for SwiftUI's synchronous snapshot path. WKWebView's
     /// remote layers cannot be captured by NSView.cacheDisplay.
@@ -54,12 +54,12 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
         if self.reduced != reduced { self.reduced = reduced; send(kind: "reduced", value: reduced) }
     }
 
-    /// Elapsed moments are never queued for a newly opened popover.
-    func moment(id: Int, _ moment: DeviceMoment) {
+    /// Reactions already over are never queued for a newly opened popover.
+    func reaction(id: Int, _ reaction: DeviceReaction) {
         guard visible else { return }
-        localMoment += 1
-        let identity = id == 0 ? "local-\(localMoment)" : String(id)
-        send(kind: "moment", value: ["id": identity, "name": moment.name, "args": Self.object(moment.args)])
+        localReaction += 1
+        let identity = id == 0 ? "local-\(localReaction)" : String(id)
+        send(kind: "moment", value: ["id": identity, "name": reaction.name, "args": Self.object(reaction.args)])
     }
 
     static func object(_ object: JSONObject) -> [String: Any] {

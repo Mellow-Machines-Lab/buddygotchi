@@ -23,9 +23,9 @@ AudioOut Sound::stats() {
 }
 
 void Sound::finish(bool cut) {
-  if (!cur_.line) return;
+  if (!cur_.saying) return;
   uint32_t wall = 0;
-  if (cur_.chunks) {  // the output's pace, over the line's own samples
+  if (cur_.chunks) {  // the output's pace, over the `say`'s own samples
     int64_t us = (lastWriteUs_ - cur_.startUs) * int64_t(cur_.samples) / int64_t(cur_.chunks * kChunk);
     wall = uint32_t(us / 1000);
   }
@@ -42,14 +42,14 @@ void Sound::finish(bool cut) {
 }
 
 void Sound::applyVoice(const Cmd& c) {
-  if (cur_.line) finish(true);  // anything new replaces a line
+  if (cur_.saying) finish(true);  // anything new replaces a `say`
   switch (c.kind) {
     case Kind::kSay:
-      player_.start(c.line);
+      player_.start(c.say);
       if (player_.playing()) {
-        cur_.line = true;
-        cur_.take = c.line.take;
-        cur_.planMs = voice::lineSamples(c.line) * 1000 / voice::kOutRate;
+        cur_.saying = true;
+        cur_.take = c.say.take;
+        cur_.planMs = voice::saySamples(c.say) * 1000 / voice::kOutRate;
         cur_.startUs = lastWriteUs_;
       }
       break;
@@ -78,7 +78,7 @@ void Sound::apply(const Cmd& c) {
 void Sound::step() {
   bool was = player_.playing();
   bool wasAny = sounding();
-  bool speaking = player_.playing();  // a line, which the effects go under
+  bool speaking = player_.playing();  // a `say`, which the effects go under
   size_t made = player_.render(chunk_, kChunk);
   effects_.mix(chunk_, kChunk, speaking);
   if (!out_.write(chunk_)) {
@@ -86,7 +86,7 @@ void Sound::step() {
     ++stats_.errors;
   }
   lastWriteUs_ = out_.nowUs();
-  if (cur_.line && made) cur_.samples += made, ++cur_.chunks;
+  if (cur_.saying && made) cur_.samples += made, ++cur_.chunks;
   if (was && !player_.playing()) finish(false);
   if (wasAny && !sounding()) drain_ = kAmpHold;
   if (drain_ > 0 && --drain_ == 0 && !sounding()) {

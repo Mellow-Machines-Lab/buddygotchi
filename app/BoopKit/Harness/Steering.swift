@@ -40,7 +40,7 @@ extension Steering {
 
     /// The MOOD section for a mood, or the resting mood's for one Boop doesn't know.
     public func mood(_ name: String) -> String {
-        files["mood/\(name)"] ?? self["mood/\(MoodAction.initial)"]
+        files["mood/\(name)"] ?? self["mood/\(MoodOutput.initial)"]
     }
 
     /// Budgets in tokens.
@@ -63,7 +63,7 @@ extension Steering {
         for n in [LongTerm.Nature.sweet, .cheeky] {
             if let text = nature(n) { parts.append(("nature/\(n.rawValue)", Steering.tokens(text), Budget.nature)) }
         }
-        for name in MoodAction.moods.map(\.name).sorted() {
+        for name in MoodOutput.moods.map(\.name).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name)), Budget.mood))
         }
         return parts.filter { $0.1 > $0.2 }.map { "\($0.0): \($0.1) > \($0.2)" }

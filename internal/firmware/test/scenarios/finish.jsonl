@@ -1,9 +1,9 @@
 // The brain's finish: task_complete for its outcome, or
 // reply_ready, in the brain's face, naming whose turn in the strip after a
-// mark for the result. Its line starts at the design's voice window,
-// and the design holds on until the line and its bubble
+// mark for the result. Its `say` starts at the design's voice window,
+// and the design holds on until the `say` and its bubble
 // end, resting on its last frame. The bubble takes the bottom lane, in the
-// strip's place, while the line plays.
+// strip's place, while the `say` plays.
 // A success, excited: happy's first task-complete design (6.4 s), whose
 // window opens 3.05 s in.
 {"clock":0}
@@ -30,7 +30,7 @@
 {"clock":7400}
 {"expect":{"moment":null,"expr":null}}
 // A failure, grumpy: its window opens 5.04 s into a 5.2 s design, so the
-// design rests on its last frame until the line and its bubble end, at
+// design rests on its last frame until the `say` and its bubble end, at
 // 5040 + 898 ("Hrr...") + 1200 = 7138 ms.
 {"clock":20000}
 {"t":"state","base":"idle","mood":"grumpy","busy":1}
@@ -48,7 +48,7 @@
 {"expect":{"moment":{"anim":"task_complete","left_ms":1}}}
 {"clock":27138}
 {"expect":{"moment":null,"audio":{"take":null}}}
-// A reply, calm: three dots, and a line from 0.45 s in.
+// A reply, calm: three dots, and a `say` from 0.45 s in.
 {"clock":40000}
 {"t":"state","base":"idle","mood":"calm","busy":1}
 {"t":"do","id":13,"name":"reply_ready","play":"now","args":{"variant":1,"say":{"take":"new.d13"},"mood":"calm","loops":1,"who":{"agent":"codex","thread":"landing"}}}

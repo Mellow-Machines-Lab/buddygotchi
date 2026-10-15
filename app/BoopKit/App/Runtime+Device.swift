@@ -2,7 +2,7 @@ import Foundation
 import LinkKit
 import MellowHarness
 
-// The device: its link coming and going, its lines and events, and
+// The device: its link coming and going, its messages and events, and
 // what the rules and the brain send it. On `home`, but `reconnectDevice`.
 extension Runtime {
     /// The transport connected or dropped. On a drop the link fails every
@@ -17,7 +17,7 @@ extension Runtime {
         changed()
     }
 
-    /// A line from the device: its `hello`, answered by the link with the
+    /// A message from the device: its `hello`, answered by the link with the
     /// latest `state`; an `ev` (`deviceEvent`); how a `do` ended, which
     /// the link hands to whoever asked for it, and which is logged here.
     func device(_ line: String) {
@@ -38,11 +38,11 @@ extension Runtime {
         let now = options.clock()
         switch ev.kind {
         case "tap":
-            if ev.did == "poked" || ev.did == "tap_spam" { onMoment?(0, DeviceMoment(anim: ev.did)) }
+            if ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did)) }
             let finish = BoopDevice.finish(tapped: ev)
             options.log("device: tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
             // A poke. The device has already poked,
-            // cutting the animation playing but not a reaction's line or face;
+            // cutting the animation playing but not a reaction's `say` or face;
             // on the brain's finish that names whose turn it was it only
             // dipped, and the tap opens that thread.
             run(pipeline.poke(at: now, finish: finish.flatMap { reactions.opens(finish: $0) }))
@@ -61,32 +61,32 @@ extension Runtime {
         link.update(state: snapshot.fields, now: options.clock())
     }
 
-    /// A rule's moment: sent at once, after the
-    /// `state` of the same input. A one-shot plays only if the device's turn
-    /// is free or resting (`if_free`): a brain reaction's line holding it
-    /// would be cut, and a late one-shot is worse than none, so the device
+    /// A rule's reaction: sent at once, after the
+    /// `state` of the same input. It plays only if nothing plays on the
+    /// device, or what plays is resting (`if_free`): a brain reaction's
+    /// `say` playing would be cut, and a late rule reaction is worse than none, so the device
     /// skips it then. The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ moment: DeviceMoment) {
-        if let id = link.do(moment.name, args: moment.args, play: BoopDevice.play(moment.name), by: .rule,
+    func playRule(_ reaction: DeviceReaction) {
+        if let id = link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule,
                             now: options.clock(), { _ in }) {
-            onMoment?(id, moment)
+            onReaction?(id, reaction)
         }
     }
 
-    /// A reaction from the brain, sent at once to wait its turn on the
-    /// device (`next`, for up to 5 s), and its handle, ended once it's
+    /// A reaction from the brain, sent at once to wait in the device's
+    /// queue (`next`, for up to 5 s), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
-    func queue(_ moment: DeviceMoment, _ pending: Pending) {
+    func queue(_ reaction: DeviceReaction, _ pending: Pending) {
         let now = options.clock(), reactions = reactions
-        let id = link.do(moment.name, args: moment.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+        let id = link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
                          now: now) { outcome in
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }
-        if let id { onMoment?(id, moment) }
-        if let id, let thread = moment.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
+        if let id { onReaction?(id, reaction) }
+        if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
     }
 
     /// Drops the device link and looks for the device again now.

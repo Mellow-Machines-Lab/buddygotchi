@@ -1,5 +1,5 @@
 // Boop's face boundary. The app owns priority, voice and
-// LinkKit's turn. A face owns its presentation clock, variations, drawing,
+// LinkKit's queue. A face owns its presentation clock, variations, drawing,
 // its sound clips and when they play. No display-library types cross this
 // boundary, and nothing outside render/<face>/ knows which face is built:
 // makeFace is the one place that chooses.
@@ -14,10 +14,10 @@
 #include "voice/effects.h"
 
 namespace render {
-// What the face follows (Behaviour::sourceAt): the moment playing, if any,
+// What the face follows (Behaviour::sourceAt): the reaction playing, if any,
 // else the look, with the host facts a variation is chosen for.
 struct FaceSource {
-  SceneState anim = SceneState::kNone;  // the moment's animation (isMoment), kNone for none
+  SceneState anim = SceneState::kNone;  // the reaction's animation (isReaction), kNone for none
   uint32_t at = 0;
   SceneState look = SceneState::kIdle;
   uint8_t lookVariant = 0, animVariant = 0;
@@ -26,7 +26,7 @@ struct FaceSource {
   StartCtx ctx = StartCtx::kNone;
   int loops = 1;
   // How long the animation's design plays its loops, from `at`; it rests
-  // on its last frame after that, while the moment holds on for its line.
+  // on its last frame after that, while the reaction holds on for its `say`.
   uint32_t playMs = 0;
   uint32_t id = 0;
   bool operator==(const FaceSource& o) const {
@@ -79,20 +79,20 @@ class Face {
   virtual bool nextDue(uint32_t from, uint32_t to, uint32_t& at) = 0;
   virtual void step(uint32_t t, linkkit::Rng& rng) = 0;
 
-  // Bookkeeping a face may ignore: a new needs-you request, the Mac's
+  // Bookkeeping a face may ignore: a new needs-you, the Mac's
   // variation of the look. lookVariant is the one showing: the Mac's, or
   // the face's own choice.
   virtual void alert(uint32_t t, bool replacing) { (void)t, (void)replacing; }
   virtual uint8_t lookVariant() const = 0;
   virtual void setLookVariant(uint8_t variant) { (void)variant; }
 
-  // A moment's variation: pick chooses without changing anything (a
-  // refused call leaves no trace); started is told what played.
+  // A reaction's variation: pick chooses without changing anything (a
+  // refused reaction leaves no trace); started is told what played.
   virtual uint8_t pick(SceneState anim, Mood mood, int wanted, Outcome outcome, StartCtx ctx,
                        linkkit::Rng& rng) const = 0;
   virtual void started(SceneState anim, Mood mood, uint8_t variant, Outcome outcome, StartCtx ctx) = 0;
 
-  // Its designs' timing, which Behaviour plays moments and lines by.
+  // Its designs' timing, which Behaviour plays reactions and `say`s by.
   virtual int variants(Mood mood, SceneState state) const = 0;
   virtual uint32_t loopMs(Mood mood, SceneState state, int variant) const = 0;
   // The result a finish shows in the strip: its design's, or the one asked for.

@@ -1,7 +1,7 @@
 {
   "name": "A small failure from calm is a small step; a big one may jump",
   "case": "Boop is calm when the agent's tests fail once: that's small, and Boop's mood only steps to annoyed, never straight to wounded or sad. The fix comes, the turn ends well and Boop settles again. Later, a very long turn of twenty-five minutes fails: that's big, and Boop's mood may jump, to sad or wounded.",
-  "why": "characters/boop/steering/mood/calm.md: a failed check leaves calm for annoyed, an ordinary move; a very long turn failing leaves it for sad or wounded, jumps the mood question offers only for a fresh, big event (MoodAction.jump)",
+  "why": "characters/boop/steering/mood/calm.md: a failed check leaves calm for annoyed, an ordinary move; a very long turn failing leaves it for sad or wounded, jumps the mood question offers only for a fresh, big event (MoodOutput.jump)",
   "checks": {"moves_on_graph": true},
   "steps": [
     {"event": "turn started", "at": "0s"},

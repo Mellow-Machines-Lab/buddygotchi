@@ -199,7 +199,7 @@ _ATTN = {**_WORKING, "attn": {"agent": "codex", "project": "landing", "more": 0}
 CLIPS = {
     "idle": [(0.0, {"t": "state", "base": "idle"})],
     "needs_you": [(0.0, _WORKING), (2.0, _ATTN), (5.0, _ATTN)],
-    # A finish (task_complete's success, the cheer), then a line on its own
+    # A finish (task_complete's success, the cheer), then a `say` on its own
     # over the working face, each played `now` as a tool plays it.
     "cheer": [(0.0, _WORKING), (1.5, do("task_complete", outcome="success")),
               (4.0, do("react", say={"take": "previous.done"})),

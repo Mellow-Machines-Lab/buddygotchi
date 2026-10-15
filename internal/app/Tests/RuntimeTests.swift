@@ -46,25 +46,25 @@ final class RuntimeTests: XCTestCase {
         try Runtime(options(transport, brain: brain, readJevKey: readJevKey))
     }
 
-    /// Mirroring a requested moment cannot finish its
+    /// Mirroring a reaction cannot finish its
     /// Pending. Only the device's ended drives the reaction lifecycle.
     func testTheVisualMirrorDoesNotOwnReactionCompletion() throws {
         let runtime = try makeRuntime(FakeTransport())
         runtime.home.sync {
             runtime.connection(true)
             runtime.device(FakeTransport.hello)
-            var mirrored: [(Int, DeviceMoment)] = [], ends: [Pending.End] = []
-            runtime.onMoment = { mirrored.append(($0, $1)) }
+            var mirrored: [(Int, DeviceReaction)] = [], ends: [Pending.End] = []
+            runtime.onReaction = { mirrored.append(($0, $1)) }
             let pending = Pending()
             pending.bind { ends.append($0) }
-            let moment = DeviceMoment(anim: "task_complete", mood: "happy", loops: 2, outcome: "success")
-            runtime.queue(moment, pending)
+            let reaction = DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success")
+            runtime.queue(reaction, pending)
             XCTAssertEqual(mirrored.count, 1)
             XCTAssertEqual(mirrored[0].1.mood, "happy")
             XCTAssertTrue(ends.isEmpty)
             runtime.device(FakeTransport.ended(mirrored[0].0, "done"))
             XCTAssertEqual(ends, [.done])
-            runtime.playRule(DeviceMoment(anim: "starting"))
+            runtime.playRule(DeviceReaction(anim: "starting"))
             XCTAssertEqual(mirrored.last?.1.name, "starting")
         }
     }
@@ -209,7 +209,7 @@ final class RuntimeTests: XCTestCase {
 
         XCTAssertTrue(HookSocket.send(hook("SessionStart"), to: socketPath))
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
-        eventually("working state") { transport.sent.contains { $0.contains("\"base\":\"working\"") } }
+        eventually("working") { transport.sent.contains { $0.contains("\"base\":\"working\"") } }
         XCTAssertTrue(HookSocket.send(hook("PermissionRequest", tool: "Bash"), to: socketPath))
         eventually("needs you") { transport.sent.contains { $0.contains("\"attn\":{\"agent\":\"claude\",\"project\":\"jetpack\"") } }
 
@@ -355,7 +355,7 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// An event that wakes the brain gets a pass;
-    /// the answers become a reaction on the device, and the mood action's
+    /// the answers become a reaction on the device, and the mood output's
     /// change reaches the transcript, the device's state, and the next
     /// pass's MOOD.
     func testAPassMumblesAndChangesTheMood() throws {
@@ -380,7 +380,7 @@ final class RuntimeTests: XCTestCase {
         eventually("a mumble") { transport.dos("react").contains { $0.contains(#""args":{"say":"#) } }
         eventually("engaged") { runtime.home.sync { runtime.moodNow == "engaged" } }
         eventually("the device hears it") { transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""mood":"engaged""#) } }
-        XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodAction.actionName && $0["to"] == "engaged" } },
+        XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["to"] == "engaged" } },
                       "the mood is its latest change in the log")
         eventually("the log line") { lines.lock.withLock { lines.log.contains { $0.hasPrefix("brain turn start ") && $0.hasSuffix("→ mood, react") } } }
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
@@ -399,7 +399,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(heads[1].contains(opening("engaged")), "the next reads the new mood's file")
         XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.moods.contains("grumpy")
                           && passes()[1].contains(#"\#(creature) made a grumpy face, held once, and said \"\#($0.text)\"."#) },
-                      "HISTORY shows what the actions did")
+                      "HISTORY shows what the outputs did")
         XCTAssertFalse(lines.lock.withLock { lines.log.contains { $0.contains("PERSONALITY") } }, "the state stays out of boop.log")
     }
 
@@ -740,7 +740,7 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// Debug mode also writes the
-    /// dashboard's lines, with no `seq`: every action's questions first at
+    /// dashboard's lines, with no `seq`: every output's questions first at
     /// launch, and again only when they change (not here: the scripted
     /// brain keeps the mood, whose options would change with it), every
     /// line sent to the device verbatim with who sent it (`brain` for the
@@ -835,7 +835,7 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// The mood lives only in the log: a change reaches the device in a
-    /// `state` at once, as the mood action logs it, with no tick between
+    /// `state` at once, as the mood output logs it, with no tick between
     /// (the runtime doesn't poll the log for it), and the core reads it
     /// from the log every time after.
     func testAMoodChangeReachesTheDeviceWithoutATick() throws {
@@ -916,7 +916,7 @@ final class RuntimeTests: XCTestCase {
 
     /// BOOT held and let go turns the mic on and off; with
     /// no mic (headless) it hears nothing, so `listening` ends at once with
-    /// `stop_listening`, if the turn is free. What the mic heard is recorded
+    /// `stop_listening`, if nothing plays. What the mic heard is recorded
     /// and wakes the brain: a reaction is the reply, and a pass that reacts
     /// with none ends `listening` too. The app's button tells the device to
     /// show it at once.
@@ -1001,7 +1001,7 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync {}
         XCTAssertEqual(runtime.home.sync { runtime.moodNow }, "calm")
         XCTAssertFalse(transport.sent.contains { $0.contains("task_complete\"") })
-        XCTAssertFalse(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodAction.actionName && $0["ok"]?.bool == true } })
+        XCTAssertFalse(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["ok"]?.bool == true } })
     }
 
     /// While the doctor has armed the app it logs every
@@ -1154,7 +1154,7 @@ final class RuntimeTests: XCTestCase {
         eventually("the start's reaction") { transport.dos("react").contains { $0.contains("\"say\"") } }
         XCTAssertTrue(transport.dos("task_complete").isEmpty && transport.dos("reply_ready").isEmpty, "a start gets no finish")
         let starting = transport.dos("starting")
-        XCTAssertEqual(starting.count, 1, "only the rule's one-shot")
+        XCTAssertEqual(starting.count, 1, "only the rule's reaction")
         XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"variant":"#), starting[0])
         transport.endDos()  // the device says each has played
         eventually("the start's reaction has played") {
@@ -1309,7 +1309,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(Reactions.end(.failed(.incompatible)), .failed("the device's firmware doesn't fit this app"))
         XCTAssertEqual(Reactions.end(.failed(.unknownName)), .failed("the device doesn't play that"))
         XCTAssertEqual(Reactions.end(.failed(.tooLong)), .failed("the line is too long"))
-        XCTAssertEqual(BoopDevice.reactionTTL, 5000, "a reaction waits 5 s for its turn")
+        XCTAssertEqual(BoopDevice.reactionTTL, 5000, "a reaction waits 5 s in the queue")
     }
 
     /// Where a tap on the brain's finish opens its
@@ -1346,23 +1346,23 @@ final class RuntimeTests: XCTestCase {
     /// reaction held longest, in the design with the longest loop of any of
     /// the moods and any look, or with the longest line after the latest
     /// voice window and its bubble, ends on the device before the link
-    /// gives up on its `ended` (60 s after its turn could come at the
+    /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
     /// end it. The loops are the designs' (`FaceLoops`), so a new design
     /// with a long loop fails here rather than in HISTORY: wounded's 13 s
     /// idle, held four times, is 52 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
-        let held = Int64(ReactAction.holds.count)
+        let held = Int64(ReactOutput.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
-            MoodAction.moods.map(\.name).flatMap { mood in
+            MoodOutput.moods.map(\.name).flatMap { mood in
                 FaceLoops.states.flatMap { state in (1...FaceLoops.count(mood: mood, state: state)).map { ms(mood, state, $0) } }
             }.max() ?? 0
         }
         let longestLoop = longest { FaceLoops.ms(mood: $0, state: $1, variant: $2) }
         let latestVoice = longest { FaceLoops.voiceMs(mood: $0, state: $1, variant: $2) }
-        // A line joins two takes only within `Voice.maxLineMs`; one take
+        // A line joins two takes only within `Voice.maxSayMs`; one take
         // plays alone whatever its length.
-        let longestLine = max(Int64(Voice.maxLineMs), Int64(Take.all.map(\.ms).max() ?? 0))
+        let longestLine = max(Int64(Voice.maxSayMs), Int64(Take.all.map(\.ms).max() ?? 0))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
         let behaviour = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../firmware/src/app/behaviour.h").standardizedFileURL, encoding: .utf8)
@@ -1371,7 +1371,7 @@ final class RuntimeTests: XCTestCase {
         let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
         XCTAssertGreaterThan(longestPlay, 30_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
-        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, ReactAction.openForMs)
+        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, ReactOutput.openForMs)
     }
 
     /// The Mac bounds a reaction's length
@@ -1425,11 +1425,11 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(windows.count, n)
     }
 
-    /// The rules' one-shot goes to the device right
-    /// after the `state` of the same hook, to play only if the device's
-    /// turn is free (`if_free`), and no reaction waits on it: how it ended
+    /// The rules' reaction goes to the device right
+    /// after the `state` of the same hook, to play only if nothing plays
+    /// on the device (`if_free`), and no reaction waits on it: how it ended
     /// is only logged.
-    func testARuleOneShotFollowsItsState() throws {
+    func testARuleReactionFollowsItsState() throws {
         let transport = FakeTransport()
         let lines = Lines()
         var options = try options(transport, brain: ScriptedBrain(id: "jev-test", always: [:]))
@@ -1454,7 +1454,7 @@ final class RuntimeTests: XCTestCase {
 
     /// linkkit/SPEC.md §4: the device decides what
     /// plays when, so the Mac sends each reaction at once, however many are
-    /// still playing or waiting there, each to wait its turn for up to 5 s
+    /// still playing or waiting there, each to wait in the queue for up to 5 s
     /// (`next`), and each ends as the device says. A link that drops fails
     /// every one still waiting for its `ended`, and with no device a
     /// reaction fails at once.
@@ -1518,7 +1518,7 @@ final class RuntimeTests: XCTestCase {
         var ends: [Pending.End] = []
         let pending = Pending()
         pending.bind { ends.append($0) }
-        runtime.home.sync { runtime.queue(DeviceMoment(say: .test(ms: 100), mood: "sad"), pending) }
+        runtime.home.sync { runtime.queue(DeviceReaction(say: .test(ms: 100), mood: "sad"), pending) }
         XCTAssertEqual(transport.dos("react").count, 1)
         clock.now += 70_000  // the clock jumps
         runtime.home.sync { runtime.tick() }
@@ -1554,7 +1554,7 @@ final class RuntimeTests: XCTestCase {
         let pending = Pending()
         pending.bind { ends.append($0) }
         runtime.home.sync {
-            runtime.queue(DeviceMoment(anim: "task_complete", say: .init(takes: []), mood: "proud", variant: 1,
+            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud", variant: 1,
                                        who: .init(agent: "claude", thread: "jetpack", opens: thread), outcome: "success"), pending)
         }
         let id = FakeTransport.id(try XCTUnwrap(transport.dos("task_complete").first))
@@ -1703,7 +1703,7 @@ final class RuntimeTests: XCTestCase {
             let error = status.map { BrainError("jev: HTTP \($0)", status: $0) }
             let p = Harness.Pass(event: e, line: "You poked Boop.", seq: 2, answers: [:], dropped: error?.description, held: nil,
                                  latencyMs: 1, brain: "jev:jev-latest", by: nil, prompt: asked ? "state" : nil, questions: [],
-                                 seen: 1, actions: [], error: error, current: current)
+                                 seen: 1, outputs: [], error: error, current: current)
             return runtime.home.sync {
                 runtime.passed(p)
                 return runtime.trouble
@@ -1730,8 +1730,8 @@ final class RuntimeTests: XCTestCase {
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView(), clock: Harness.Clock(now: { clock.now }))
         let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
         func log() -> LogView { harness.log.view(now: clock.now) }
-        func closing() -> String? { MoodAction.sinceLine(mood, log(), at: clock.now) }
-        func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodAction.change(mood, to: to, log: log()) } }
+        func closing() -> String? { MoodOutput.sinceLine(mood, log(), at: clock.now) }
+        func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodOutput.change(mood, to: to, log: log()) } }
         XCTAssertNil(closing(), "calm says nothing")
         change("grumpy")
         clock.now += 30_000
@@ -1741,17 +1741,17 @@ final class RuntimeTests: XCTestCase {
         let relaunched = Pipeline(core: Core(config: .init()), view: TranscriptView(), transcript: harness.log,
                                   clock: Harness.Clock(now: { clock.now }))
         let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, personality: { .default }, queue: { _, _ in })
-        XCTAssertEqual(MoodAction.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
+        XCTAssertEqual(MoodOutput.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
                        "the mood and its time are the log's, so a relaunch keeps both")
         change("happy")
         XCTAssertEqual(closing(), "\(creature) has been happy for under a minute.", "happy is a mood like any other")
         change("calm")
         XCTAssertNil(closing(), "back to calm")
     }
-    /// A live demo keeps to the agent: an agent line waits for the agent's
+    /// A live demo keeps to the agent: an agent step waits for the agent's
     /// own hook for it, however long that takes, and the person's and the
-    /// brain's lines after it wait too. A hook the script doesn't have
-    /// passes by. The line due is in the cursor file, then the line count.
+    /// brain's steps after it wait too. A hook the script doesn't have
+    /// passes by. The step due is in the cursor file, then the step count.
     func testALiveDemoKeepsToTheAgent() throws {
         let runtime = try makeRuntime(FakeTransport())
         let script = try DemoScript("""
@@ -1791,16 +1791,16 @@ final class RuntimeTests: XCTestCase {
         hook("PreToolUse", "Bash")
         hook("PostToolUseFailure", "Bash")
         XCTAssertEqual(forced(), ["curious", "annoyed"])
-        XCTAssertEqual(due(), "5", "over: the line count")
+        XCTAssertEqual(due(), "5", "over: the step count")
         for _ in 0..<Int((Runtime.demoTail + 2) * 10) where over.all.isEmpty { Thread.sleep(forTimeInterval: 0.1) }
         XCTAssertEqual(over.all, ["over"], "it ends after its tail")
     }
 
 
-    /// When the agent leaves a line out (a step it skipped, or a call it
-    /// was refused), the next agent line's hook moves the script on to it,
-    /// without the lines between, rather than wait for good.
-    func testALiveDemoGoesOnWhenTheAgentLeavesALineOut() throws {
+    /// When the agent leaves a step out (one it skipped, or a call it
+    /// was refused), the next agent step's hook moves the script on to it,
+    /// without the steps between, rather than wait for good.
+    func testALiveDemoGoesOnWhenTheAgentLeavesAStepOut() throws {
         let runtime = try makeRuntime(FakeTransport())
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
@@ -1823,12 +1823,12 @@ final class RuntimeTests: XCTestCase {
             runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
                 .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
         }
-        XCTAssertEqual(forced, ["happy"], "the left-out line's answer is left out too")
+        XCTAssertEqual(forced, ["happy"], "the left-out step's answer is left out too")
         XCTAssertEqual((try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines), "5")
     }
 
     /// A live demo hears the agent from when it's readied, while its device
-    /// is awaited: a prompt sent before it starts is its first line. Its
+    /// is awaited: a prompt sent before it starts is its first step. Its
     /// cursor says -1 until then.
     func testALiveDemoKeepsTheHooksFromBeforeItStarts() throws {
         let runtime = try makeRuntime(FakeTransport())

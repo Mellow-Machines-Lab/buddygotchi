@@ -37,10 +37,10 @@ public struct Take: Equatable, Sendable {
 }
 
 extension Take {
-    /// The version of the voice pack these takes are in, as the board
+    /// The version of the voice file these takes are in, as the board
     /// reports it: the character pack's `mac/takes.tsv`'s
     /// (characters/CHARACTER.md §8), or "" for a pack with no voice.
-    public static var packVersion: String { table.version }
+    public static var voiceVersion: String { table.version }
 
     /// Every take the board has, in the bank's order; none for a pack with
     /// no voice.

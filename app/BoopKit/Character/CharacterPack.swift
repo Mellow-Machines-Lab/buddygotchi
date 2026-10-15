@@ -15,7 +15,7 @@ public struct CharacterPack: Sendable {
         /// When the creature is in it: the `mood` question's option.
         public let meaning: String
         public let notFor: String?
-        /// What its face means for one moment: the reaction's face option,
+        /// What its face means for one reaction: the reaction's face option,
         /// the meaning when the pack gives none.
         public let face: String?
         public let faceNotFor: String?
@@ -41,7 +41,7 @@ public struct CharacterPack: Sendable {
     /// Every universal mood (`universalMoods`), in the pack's order.
     public let moods: [Mood]
 
-    // Derived once, since the mood action reads them on every pass.
+    // Derived once, since the mood output reads them on every pass.
     let options: [Option]
     let faces: [Option]
     let byId: [String: Mood]

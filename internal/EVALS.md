@@ -2,7 +2,7 @@
 
 Updated 2026-10-15. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
-the core and the view), MellowHarness's `Harness` and Boop's actions,
+the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
 
 Every scenario runs on the pack's one mood graph (characters/CHARACTER.md
@@ -21,7 +21,7 @@ scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
 say how long Boop has been in it. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
-(`Runtime.harness`), with the real `mood` and `react` actions, except
+(`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a reaction goes to a fake device, which answers at once with the
 `ended` the step names, `done` unless it says otherwise (`reaction`,
 §3), read as the app reads the device's (`Reactions`), so HISTORY shows
@@ -70,7 +70,7 @@ a scenario holds wherever more than one answer is right:
 | `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
 | `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
 | `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when `react` didn't react |
-| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the line's takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
+| `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `loops` | How long the face held, Jev's `react.loops` pick (`once` to `four times`), or `none` when `react` didn't react |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
@@ -303,11 +303,11 @@ heartbeat.
 state directory and a fake device on a Unix socket (`--link usb:`) that
 says hello as Boop's device does and each `do` played to the end, so HISTORY reads as
 it would with a board, and whose taps make the pokes. It moves
-the app's clock to 09:00 the next morning, sends each hook line straight
+the app's clock to 09:00 the next morning, sends each step's hook straight
 to the app's socket in `agent-hook`'s wire form, moves the clock between
 them with `{"dev":"advance"}` (a minute at a time over a long gap, so the
 heartbeat comes when it would), and waits for every pass and the brain's
-reactions to end before the next line, so no view event waits behind
+reactions to end before the next step, so no view event waits behind
 Jev (a rule's needs-you, which lasts until the day answers the request
 steps later, isn't waited for). `--brain
 scripted` runs it without a key, and `--personality chatter` with the
@@ -316,19 +316,19 @@ other text.
 **The report** reads `debug.jsonl` as `boopctl day` and the dashboard
 do: a mood change's new mood and a reaction's face, finish and hold from
 the answers of the pass it ran for, and what it said from the takes its
-action recorded, never
-from an action's message. It gives, for each hour of the app's clock: turns ended,
+output recorded, never
+from an output's message. It gives, for each hour of the app's clock: turns ended,
 passes (and how many dropped), mood changes, with those on a routine
-line (a turn start, or a finish done under 5 minutes) split into back
+step (a turn start, or a finish done under 5 minutes) split into back
 to calm, the resting mood (a mood fading, as the guide says), and any
-other (which a routine line shouldn't cause); and reactions, as reacted/all for each
-kind of line that woke the brain: notable (a failure, a fix, a failed or
+other (which a routine step shouldn't cause); and reactions, as reacted/all for each
+kind of step that woke the brain: notable (a failure, a fix, a failed or
 stopped turn, a turn of 5 minutes or more, a poke), a finish
 done in 1 to 5 minutes, one under a minute, a turn start, and a
 heartbeat; and the faces used. Then how long the reactions held and
 the takes they said over the day (`none` for a reaction that said
 nothing), how long each mood
-lasted, and every mood change with the line that brought it. `--json`
+lasted, and every mood change with the step that brought it. `--json`
 gives all that and every reaction.
 
 **Liveliness.** The report also gives, for the day: the longest stretch

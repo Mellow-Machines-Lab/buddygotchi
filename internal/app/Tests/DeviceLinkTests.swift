@@ -14,8 +14,8 @@ import XCTest
 /// its transports.
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
-    /// voice pack.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","listening","stop_listening"],"voice":"\#(Take.packVersion)"}"#
+    /// voice file.
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","listening","stop_listening"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -99,7 +99,7 @@ func sampleSnapshot(busy: Int = 0) -> StateSnapshot {
 
 /// Boop's vocabulary on LinkKit: its `state` and `do` lines,
 /// what its `hello` and taps mean, and the `--link` setting.
-extension DeviceMoment {
+extension DeviceReaction {
     /// The `do` line the link sends for it, with `id` and `play`: what the
     /// device reads.
     func line(id: Int, play: Wire.Play, ttl: Int = Wire.defaultTTL) -> String {
@@ -114,7 +114,7 @@ final class DeviceLinkTests: XCTestCase {
     /// it only dipped the face.
     func testWhatTheDeviceSays() throws {
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
-        XCTAssertEqual(DeviceInfo(hello), DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: Take.packVersion))
+        XCTAssertEqual(DeviceInfo(hello), DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: Take.voiceVersion))
         XCTAssertEqual(hello.app, BoopDevice.app)
         func tap(_ line: String) -> Int?? {
             guard case .event(let ev) = Wire.decode(line), ev.kind == "tap" else { return .none }
@@ -127,33 +127,33 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(Wire.decode(FakeTransport.ended(5, "cut", "tap")), .ended(Ended(id: 5, how: .cut, why: "tap")))
     }
 
-    /// Each moment's `do`, with its name and its `args` in
+    /// Each reaction's `do`, with its name and its `args` in
     /// the protocol's order, every string escaped. A brain reaction with no
     /// animation is `react`, and still has a `say`: the reply that ends
     /// push-to-talk's listening. The longest one fits in a line.
     func testDoLinesMatchTheProtocol() throws {
         try requireVoice()
-        XCTAssertEqual(DeviceMoment(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
+        XCTAssertEqual(DeviceReaction(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
-        XCTAssertEqual(DeviceMoment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
+        XCTAssertEqual(DeviceReaction(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(DeviceMoment(anim: "starting", variant: 3, ctx: "new_task").line(id: 558386701, play: .ifFree),
+        XCTAssertEqual(DeviceReaction(anim: "starting", variant: 3, ctx: "new_task").line(id: 558386701, play: .ifFree),
                        #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"variant":3,"ctx":"new_task"}}"#)
-        XCTAssertEqual(DeviceMoment(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
-        let finish = DeviceMoment(anim: "task_complete", say: .go, mood: "proud", variant: 2,
+        XCTAssertEqual(DeviceReaction(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
+        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud", variant: 2,
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
                        #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":2,"who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
-        let quoted = DeviceMoment(anim: "reply_ready", variant: 1,
+        let quoted = DeviceReaction(anim: "reply_ready", variant: 1,
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
         XCTAssertEqual(quoted.args.json, #"{"variant":1,"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
-        XCTAssertEqual(DeviceMoment.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
+        XCTAssertEqual(DeviceReaction.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
-        let longest = DeviceMoment.Say(takes: [byLength[0], byLength[1]])
-        let longestWho = DeviceMoment.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
-        XCTAssertLessThanOrEqual(DeviceMoment(anim: "task_complete", say: longest, mood: "determined", loops: DeviceMoment.maxLoops,
+        let longest = DeviceReaction.Say(takes: [byLength[0], byLength[1]])
+        let longestWho = DeviceReaction.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
+        XCTAssertLessThanOrEqual(DeviceReaction(anim: "task_complete", say: longest, mood: "determined", loops: DeviceReaction.maxLoops,
                                               variant: 5, who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)
     }
@@ -175,7 +175,7 @@ final class DeviceLinkTests: XCTestCase {
                        "sent into nothing, then the ask and the state on connect, then the state for the hello")
         XCTAssertEqual(transport.sent.last, sampleSnapshot(busy: 2).jsonLine)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.id, "b00p-54fe")
-        XCTAssertNotNil(link.do("react", args: DeviceMoment(say: .go).args, now: 300) { _ in })
+        XCTAssertNotNil(link.do("react", args: DeviceReaction(say: .go).args, now: 300) { _ in })
 
         link.receive(#"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#, now: 400)
         XCTAssertEqual(link.trouble, .tooOld)
@@ -193,7 +193,7 @@ final class DeviceLinkTests: XCTestCase {
     /// (`kDoNames` in firmware/src/app/device.cpp, in its order), and every
     /// name the Mac sends is among them: LinkKit fails a `do` whose name the
     /// `hello` doesn't list, so a name the firmware drops or renames would
-    /// silently cost Boop that one-shot, or every reaction.
+    /// silently cost Boop that reaction, or every reaction.
     func testTheMacSendsOnlyNamesTheFirmwarePlays() throws {
         let device = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../firmware/src/app/device.cpp").standardizedFileURL
@@ -206,7 +206,7 @@ final class DeviceLinkTests: XCTestCase {
             .map { String(body[Range($0.range(at: 1), in: body)!]) }
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(hello.does, firmware, "the fake device plays what the firmware does")
-        let sent = DeviceMoment.anims + [DeviceMoment.react, BoopDevice.listening, BoopDevice.stopListening]
+        let sent = DeviceReaction.anims + [DeviceReaction.react, BoopDevice.listening, BoopDevice.stopListening]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
     }
 
@@ -230,7 +230,7 @@ final class DeviceLinkTests: XCTestCase {
         link.onHello = { DeviceInfo($0).logLines.forEach(lines.add) }
         link.connection(true, now: 0)
         func hello(_ voice: String?) -> String {
-            FakeTransport.hello.replacingOccurrences(of: #","voice":"\#(Take.packVersion)""#, with: voice.map { #","voice":"\#($0)""# } ?? "")
+            FakeTransport.hello.replacingOccurrences(of: #","voice":"\#(Take.voiceVersion)""#, with: voice.map { #","voice":"\#($0)""# } ?? "")
         }
         link.receive(hello("none"), now: 100)
         link.receive(hello("none"), now: 200)
@@ -239,7 +239,7 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(lines.all.first, "device: b00p-54fe firmware 1.0.0 voice none")
         link.receive(hello("0123456789abcdef"), now: 300)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheVoice, false)
-        link.receive(hello(Take.packVersion), now: 400)
+        link.receive(hello(Take.voiceVersion), now: 400)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheVoice, true)
         link.receive(hello(nil), now: 500)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheVoice, true, "firmware that doesn't say")
@@ -299,7 +299,7 @@ final class DeviceLinkTests: XCTestCase {
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               busy: 999, vol: 10, variant: 9)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
-        XCTAssertEqual(s.visual, "needs_you", "attn wins")
+        XCTAssertEqual(s.visual, "needs_you", "needs you wins")
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)
     }
 

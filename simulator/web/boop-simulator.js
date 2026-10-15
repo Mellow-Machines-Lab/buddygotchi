@@ -68,7 +68,7 @@ export class Board extends EventTarget {
   release() { this.#say('release'); }
   boot(down) { this.#say(`boot ${down ? 1 : 0}`); }
 
-  /// The card: a voice pack's bytes go in, the card that came out goes
+  /// The card: a voice file's bytes go in, the card that came out goes
   /// back (no bytes), or it comes out.
   insertCard(bytes) {
     if (bytes) {
@@ -267,7 +267,7 @@ const Element = globalThis.HTMLElement ?? class {};
 
 /// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json" controls>
 /// The board, drawn as a thing on a desk, with its BOOT button and a Sound
-/// button (a browser plays nothing until a click). `voice` is a voice pack
+/// button (a browser plays nothing until a click). `voice` is a voice file
 /// to fetch for its card; `usb` a WebSocket that is its USB cable, one
 /// line a message each way (serve.py's, which leads to the Mac app and the
 /// tools); `controls` adds power, reset and card buttons. `demo` is a

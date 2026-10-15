@@ -18,8 +18,9 @@ const char* moodName(Mood m);
 // The designs' states, in faces.h's order: the first
 // seven keep the numbers they had before the rest came. Idle, working,
 // asleep, needs you, no app and what the agents are doing (planning to
-// waiting) are looks, what the face shows when no moment plays; the rest are
-// the moments' animations (isMoment), each playing its own state's design.
+// waiting) are looks, what the face shows when no reaction plays; the rest
+// are the reactions' animations (isReaction), each playing its own state's
+// design.
 // kNone, past the designs, is no animation.
 enum class SceneState : uint8_t {
   kIdle,
@@ -51,13 +52,13 @@ enum class SceneState : uint8_t {
 // "none" for kNone.
 const char* stateName(SceneState s);
 SceneState stateFromName(const char* name);  // kIdle if missing or unknown
-// The moments' animations: the brain's finish (task_complete, a turn done
+// The reactions' animations: the brain's finish (task_complete, a turn done
 // or failed; reply_ready, an answer or a question back), the rules'
-// one-shots (starting, stopped, error, helper_return), a tap's (poked, and
+// reactions (starting, stopped, error, helper_return), a tap's (poked, and
 // tap_spam from the third in a row) and push-to-talk's listening, until
 // the reply.
-bool isMoment(SceneState s);
-SceneState momentFromName(const char* name);  // kNone for any other name
+bool isReaction(SceneState s);
+SceneState reactionFromName(const char* name);  // kNone for any other name
 
 // The host fact a variation is for, when it's for one: task_complete's
 // outcome and starting's context. kNone on a design

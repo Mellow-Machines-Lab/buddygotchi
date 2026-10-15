@@ -1,4 +1,4 @@
-// The bubble: the take's text in amber, centred in its box. A line on its
+// The bubble: the take's text in amber, centred in its box. A `say` on its
 // own plays over whatever face is showing: here, working.
 {"clock":0}
 {"t":"state","base":"working","busy":1}
@@ -30,7 +30,7 @@
 {"expect":{"moment":null,"audio":{"playing":false,"take":null}}}
 {"clock":34000}
 {"shot":"bubble-gone"}
-// A line of two takes: both words, one after the other.
+// A `say` of two takes: both words, one after the other.
 {"clock":35000}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.tsk","then":"phase1.word.test.validate__annoyed__contained"}}}
 {"clock":35400}
@@ -41,7 +41,7 @@
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"phase1.phrase.setback.technical-difficulties__sad__contained"}}}
 {"clock":40400}
 {"shot":"small-text"}
-// Over an animation, a line leaves it playing, and plays at once; the
+// Over an animation, a `say` leaves it playing, and plays at once; the
 // bubble blanks the lane, which the first pack's success fills with gold.
 {"t":"state","base":"idle"}
 {"clock":40000}

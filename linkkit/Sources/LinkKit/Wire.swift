@@ -17,7 +17,7 @@ public struct Hello: Equatable, Sendable {
     /// Picked at random each time the device powers on (8 hex digits), so
     /// a new one means it restarted; nil when it gives none.
     public var boot: String?
-    /// Every other field, in the line's order: the app's own.
+    /// Every other field, in the message's order: the app's own.
     public var fields: JSONObject
 
     public init(kit: Int? = Wire.kit, app: String, id: String, fw: String, does: [String], boot: String? = nil,
@@ -39,7 +39,7 @@ public struct DeviceEvent: Equatable, Sendable {
     public var kind: String
     /// What the device already did about it on its own, if it says.
     public var did: String?
-    /// The app's details; empty when the line has none.
+    /// The app's details; empty when the message has none.
     public var data: JSONObject
 
     public init(kind: String, did: String? = nil, data: JSONObject = [:]) {
@@ -76,31 +76,32 @@ public struct Ended: Equatable, Sendable {
 }
 
 /// The messages' shapes on the wire (SPEC.md §2–3): building the host's
-/// lines and reading the device's.
+/// messages and reading the device's.
 public enum Wire {
-    /// A line is at most this many bytes, its newline aside, either way
+    /// A message is at most this many bytes, its newline aside, either way
     /// (SPEC.md §2).
     public static let maxLine = 512
     /// The protocol version this library speaks (SPEC.md §6).
     public static let kit = 1
     /// A `do`'s ids run 1…this (SPEC.md §3).
     public static let maxId = Int(Int32.max)
-    /// A `next` waits this long for the turn when it doesn't say (SPEC.md §3).
+    /// A `next` waits this long in the queue when it doesn't say (SPEC.md §3).
     public static let defaultTTL = 5000
     /// The longest `ttl` (SPEC.md §3).
     public static let maxTTL = 60_000
 
-    /// How a `do` takes the turn (SPEC.md §4).
+    /// How a `do` joins the queue (SPEC.md §4).
     public enum Play: String, Sendable {
-        /// Takes the turn at once, cutting a busy holder.
+        /// Plays at once, cutting a busy one playing.
         case now
-        /// Waits its turn, for up to its `ttl`.
+        /// Waits in the queue, for up to its `ttl`.
         case next
-        /// Plays only if the turn is free or resting; else it's skipped.
+        /// Plays only if nothing is playing or the one playing is resting;
+        /// else it's skipped.
         case ifFree = "if_free"
     }
 
-    /// A line from the device.
+    /// A message from the device.
     public enum Message: Equatable, Sendable {
         case hello(Hello)
         /// Any `ev` but `ended`.
@@ -118,7 +119,7 @@ public enum Wire {
     /// link, whether or not it already counts the host as there (SPEC.md §3).
     public static let hello = #"{"t":"hello"}"#
 
-    /// A `state` line: `{"t":"state",` then the app's fields in their
+    /// A `state` message: `{"t":"state",` then the app's fields in their
     /// order. A `t` among them is left out, since it's the message's.
     public static func state(_ fields: JSONObject) -> String {
         var out = #"{"t":"state""#
@@ -127,7 +128,7 @@ public enum Wire {
         return out
     }
 
-    /// A `do` line, fields in SPEC.md §3's order. `ttl` goes only with
+    /// A `do` message, fields in SPEC.md §3's order. `ttl` goes only with
     /// `next`, the one play it means something for, and `args` only when
     /// there are some.
     public static func `do`(id: Int, name: String, play: Play, ttl: Int, args: JSONObject) -> String {
@@ -143,7 +144,7 @@ public enum Wire {
         return out
     }
 
-    /// Reads one line from the device. Fields it doesn't know are ignored
+    /// Reads one message from the device. Fields it doesn't know are ignored
     /// (SPEC.md §2).
     public static func decode(_ line: String) -> Message {
         guard line.hasPrefix("{"), let object = JSON.parse(line)?.object, let type = object["t"]?.string

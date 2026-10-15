@@ -13,7 +13,7 @@ What a pack holds, and what it must have:
 | Path | Must have | What it is |
 | --- | --- | --- |
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
-| `steering/guide.md` | yes | How it reads the moment, for the brain (§7) |
+| `steering/guide.md` | yes | How it reads what happens, for the brain (§7) |
 | `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
 | `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
@@ -102,7 +102,7 @@ each a link to the file in its pack; `pack`, the one pointer to it; and
 from it, the pack's `firmware/` and the folder the app bundles
 (`packs/`, that pack alone). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
 and `make build` before every app build. The app bundles only what it
-reads of the pack (not its firmware, voice pack, tools or tests).
+reads of the pack (not its firmware, voice file, tools or tests).
 
 Everything that runs after a build, the tests, `boopdev`, the device
 tools and the simulator, reads the **pack in use**: the one the
@@ -145,7 +145,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     include/…        the faces' generated art and sounds
     src/render/…     each face's code in a folder of its own, and
                      make_face.cpp, which makes the board's (§9)
-  voice/voice.bin    optional: the microSD card's voice pack (§8)
+  voice/voice.bin    optional: the voice file, for the microSD card (§8)
   studio/            optional: the studio's preview adapter (§12)
   design/, tools/    optional: what the pack's art and sounds are
                      made from, and the tools that make them
@@ -237,7 +237,7 @@ Each mood in `moods`:
 | --- | --- | --- |
 | `id` | yes | Its name, as the brain and the protocol see it: lower case and `_` |
 | `meaning` | yes | When the character is in it: the option text when the brain picks a mood |
-| `face` | no | What this mood's face means for a single moment: the option text when the brain picks a reaction's face. Without it, `meaning` |
+| `face` | no | What this mood's face means for a single reaction: the option text when the brain picks a reaction's face. Without it, `meaning` |
 | `not_for` | no | When the mood isn't meant, added to the `mood` question's option |
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
 | `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
@@ -292,17 +292,22 @@ them out.
 
 What the brain reads, in plain Markdown, as now:
 
-- `guide.md` (required): how the creature reads the moment, read on
+- `guide.md` (required): how the creature reads what happens, read on
   every pass.
 - `personality/<name>.md` (one per name in `personalities`): who it is,
   with front matter for the view's rules (`working_heartbeat`,
   `tool_uses`).
 - `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
   person chose at setup, saved in `long-term.md`. The chosen one goes
-  into the state right after the personality's PERSONALITY section,
+  into the prompt right after the personality's PERSONALITY section,
   whatever the personality: sweet is warm and gentle with failures,
   cheeky playful and teasing, never mean to the person. A pack without
   the file adds nothing; `boopdev check` notes a pack with only one.
+
+  So a **personality** is the pack's: a file in `personality/` (Boop's
+  pack has `boop` and `chatter`), picked in Settings. A **nature** is the
+  person's: sweet or cheeky, chosen at setup, a file in `nature/` laid
+  over whichever personality is on.
 - `mood/<mood>.md` (one per mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
@@ -315,9 +320,10 @@ file over budget and still uses it.
 A pack with a voice has recorded takes, each tagged with the moods it
 plays in, a feeling, a topic and a kind:
 
-- `voice/voice.bin` is the microSD card's pack.
+- `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take. Its
-  first line holds the pack's version, the same one the board reports.
+  first line holds the voice file's version, the same one the board
+  reports.
 
 A pack may have them, or use another's (§6). Both are built files and
 checked in. The one voice there is, 2,722 takes, is in Pixel's pack,
@@ -350,7 +356,7 @@ for all 22, and the gel face maps some to others in its own code
 (`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
 and `charactergen.py --check` holds this table to them.
 
-**Looks** last until the next one. They show when no moment plays.
+**Looks** last until the next one. They show when no reaction plays.
 
 | State | When it shows | Sent by |
 | --- | --- | --- |
@@ -368,7 +374,8 @@ and `charactergen.py --check` holds this table to them.
 | `needs_you` | An agent waits for your approval or answer on the Mac | the Mac |
 | `no_app` | The board has lost the Mac | the board |
 
-**Moments** play once over the look, or `loops` times (1 to 6), then go.
+**Reactions** play once over the look, or `loops` times (1 to 6), then go:
+the brain's, a rule's, or the board's own.
 
 | State | When it plays | Sent by |
 | --- | --- | --- |
@@ -382,11 +389,12 @@ and `charactergen.py --check` holds this table to them.
 | `tap_spam` | The third tap in a row, and each after | the board |
 | `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |
 
-A state a face doesn't know draws `idle`. A moment whose design has no
+A state a face doesn't know draws `idle`. A reaction whose design has no
 length (`loopMs` of 0) plays nothing.
 
-**A reaction** (`react`, the brain's) is no state of its own: the face
-draws the look in another mood for a moment, and the voice may speak.
+**A brain reaction with no animation** (`react`) is no state of its own:
+the face draws the look in another mood for a while, and the voice may
+speak.
 
 ### What else a face does
 
@@ -394,10 +402,10 @@ The engine's interface is `render::Face` (`firmware/src/render/face.h`).
 Besides drawing each mood and state, a face:
 
 - **Has variations.** A state may have several designs, numbered from 1.
-  The Mac picks one, and a moment's facts (`outcome`, `ctx`) pick among
+  The Mac picks one, and a reaction's facts (`outcome`, `ctx`) pick among
   them. A face says how many it has (`variants`).
 - **Times them.** Each design's loop length (`loopMs`), which sets how
-  long a moment plays, and its voice window (`voiceMs`), when a line may
+  long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
 - **Moves with the engine.** It blinks, opens its mouth while the voice
   speaks (`mouthOpen`), and presses down under a finger (`dy`).
@@ -408,7 +416,7 @@ Besides drawing each mood and state, a face:
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the
-  request's own clock (`designMs`, from the moment the request came) for
+  request's own clock (`designMs`, from when the request came) for
   as long as it waits, and its `cues` follow the same clock, so a face
   can make it a performance that grows, and the engine knows nothing of
   it. Pixel holds up a sign with who's asking and peeks over it, then
@@ -461,7 +469,7 @@ facegen writes it into the Pixel pack. It holds:
   the designs it wears), with each variation's
   loop length (`ms`), voice window (`voice_ms`) and fact (`outcome` or
   `ctx`). The board has the same numbers (`faces.h`, `sfx.h`). The Mac
-  times moments and picks variations by them. A fact no design is for
+  times reactions and picks variations by them. A fact no design is for
   plays any of the state's designs.
 - `box`, `colors` and `faces`: the popover's still faces, each as
   `<mood>/<look>` for `idle`, `working` and `needs_you`, and

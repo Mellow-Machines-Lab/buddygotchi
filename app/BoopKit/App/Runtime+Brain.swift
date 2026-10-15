@@ -4,7 +4,7 @@ import MellowHarness
 // The brain: Jev's key, the brain it builds, and each pass's outcome.
 extension Runtime {
     /// Boop's mood now, as the log has it.
-    var moodNow: String { MoodAction.value(mood, harness.log.view(now: options.clock())) }
+    var moodNow: String { MoodOutput.value(mood, harness.log.view(now: options.clock())) }
 
     /// Every pass the harness made: its app log line
     /// (the brain's only), whether the brain is in trouble, its
@@ -21,17 +21,17 @@ extension Runtime {
         // Push-to-talk's reply: a reaction is one, and a pass on what you
         // said without one means none is coming.
         run(core.passed(about: pass.event?.seq,
-                        reacted: pass.actions.contains { $0.name == ReactAction.actionName && $0.result.ok }, at: now))
+                        reacted: pass.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }, at: now))
         changed()
     }
 
     /// The app log's line for a pass the brain was asked, or held back for:
-    /// its event's type and phase, the time and which actions returned
+    /// its event's type and phase, the time and which outputs returned
     /// a result, never their messages. Nil for a forced pass.
     static func logLine(_ pass: Harness.Pass) -> String? {
         guard let e = pass.event else { return nil }
         let result = pass.dropped.map { "dropped: \($0)" } ?? pass.held.map { "held: \($0)" }
-            ?? Harness.ActionRecord.names(pass.actions)
+            ?? Harness.OutputRecord.names(pass.outputs)
         return "brain \(e.name) \(pass.latencyMs) ms → " + result
     }
 
@@ -56,7 +56,7 @@ extension Runtime {
     }
 
     /// Reads Jev's key off `home`: a Keychain prompt
-    /// there would stall every hook, tick and device line until it's
+    /// there would stall every hook, tick and device message until it's
     /// answered. Then the brain is built with it. On `home`.
     func readJevKey() {
         guard jevKey == nil else { return }

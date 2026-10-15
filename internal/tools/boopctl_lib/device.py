@@ -1,8 +1,8 @@
-"""Links to the board (USB serial at 460800 baud) and to boop-sim: one JSON
+"""Links to the board (USB serial at 460800 baud) and to the native simulator: one JSON
 message per line in each direction.
 
 Only one process may hold the port. A lock file in /tmp makes concurrent
-boopctl commands wait their turn instead of corrupting each other's lines.
+boopctl commands wait for each other instead of corrupting each other's messages.
 """
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def port_holder(port: str) -> str:
 
 
 class Link:
-    """One JSON message per line in each direction: the board or boop-sim."""
+    """One JSON message per line in each direction: the board or the native simulator."""
 
     timeout = 3.0
     # The CH340 at 460800 baud on macOS now and then drops a run of bytes
@@ -228,9 +228,9 @@ class Link:
 
 
 class Sim(Link):
-    """boop-sim as a subprocess: the device core on the Mac."""
+    """The native simulator as a subprocess: the device core on the Mac."""
 
-    name = "boop-sim"
+    name = "the native simulator"
 
     def __init__(self, program: str) -> None:
         super().__init__()

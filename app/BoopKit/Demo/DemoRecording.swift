@@ -1,17 +1,17 @@
 import Foundation
 
-/// A demo as the device lived it: every line the app sent the device, with
+/// A demo as the device lived it: every message the app sent the device, with
 /// when, and what was happening, for whoever watches it played back. The
 /// simulator's page plays one into the firmware itself
 /// (simulator/README.md), so a recording shows what a board shows, with no
-/// app behind it, and needs to know nothing of what the lines mean.
+/// app behind it, and needs to know nothing of what the messages mean.
 public struct DemoRecording: Codable, Sendable, Equatable {
     public struct Event: Codable, Sendable, Equatable {
         /// Seconds since the demo started.
         public var at: Double
-        /// A line the app sent the device, as it was sent.
+        /// A message the app sent the device, as it was sent.
         public var line: String?
-        /// What the creature does at that line, in words, when it's something to see.
+        /// What the creature does at that message, in words, when it's something to see.
         public var effect: String?
         /// What happened then (`DemoScript.Cause`).
         public var cause: DemoScript.Cause?
@@ -28,7 +28,7 @@ public struct DemoRecording: Codable, Sendable, Equatable {
     public var face: String
     /// How long it runs, in seconds.
     public var length: Double
-    /// The takes it says, for a voice pack with only those.
+    /// The takes it says, for a voice file with only those.
     public var takes: [String]
     public var events: [Event]
 }
@@ -68,7 +68,7 @@ public final class DemoRecorder: @unchecked Sendable {
         }
     }
 
-    /// A line the app sent the device.
+    /// A message the app sent the device.
     public func sent(_ line: String) {
         let message = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any] ?? [:]
         lock.withLock { events.append(.init(at: now, line: line, effect: effect(of: message))) }
@@ -90,7 +90,7 @@ public final class DemoRecorder: @unchecked Sendable {
     // Under the lock.
     private var now: Double { Double(clock() - started) / 1000 }
 
-    /// What the creature does at a line, in words: a reaction's face and
+    /// What the creature does at a message, in words: a reaction's face and
     /// what it says, a finish, and the looks that mean something changed.
     private func effect(of message: [String: Any]) -> String? {
         let args = message["args"] as? [String: Any] ?? [:]
@@ -102,14 +102,14 @@ public final class DemoRecorder: @unchecked Sendable {
             if needsYou, !was { return "\(name) shows that it needs you" }
             return !before.isEmpty && !mood.isEmpty && mood != before ? "\(name)'s mood is now \(mood)" : nil
         case "do":
-            // A line names its take, and the one after it: `"say":{"take":"…","then":"…"}`.
+            // A `say` names its take, and the one after it: `"say":{"take":"…","then":"…"}`.
             let say = args["say"] as? [String: Any] ?? [:]
             let said = ["take", "then"].compactMap { say[$0] as? String }
             for take in said where !takes.contains(take) { takes.append(take) }
             let words = said.compactMap { texts[$0] }.joined(separator: " ")
             let says = words.isEmpty ? "" : " and says “\(words)”"
             switch message["name"] as? String {
-            case DeviceMoment.react:
+            case DeviceReaction.react:
                 guard let face = args["mood"] as? String else { return "\(name) reacts\(says)" }
                 return "\(name) makes \("aeiou".contains(face.prefix(1)) ? "an" : "a") \(face) face\(says)"
             case "task_complete": return "\(name) \(args["outcome"] as? String == "failure" ? "slumps" : "celebrates")\(says)"

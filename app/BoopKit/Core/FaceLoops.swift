@@ -2,9 +2,9 @@ import Foundation
 
 /// How long each of the pixel face's designs takes to play once through,
 /// in ms: its longest animation, leaving out the blink, which the device
-/// times on its own. A moment's `loops` count these, and the device's
+/// times on its own. A reaction's `loops` count these, and the device's
 /// faces.h has the same numbers. And each design's voice
-/// window, when a line over its animation starts, as the device's sfx.h has
+/// window, when a `say` over its animation starts, as the device's sfx.h has
 /// it. They're the face's `mac/faces.json`
 /// (characters/CHARACTER.md §9), which facegen writes into the Pixel
 /// pack.
@@ -15,7 +15,7 @@ public enum FaceLoops {
     /// The designs' states, in the device's order (`render::SceneState`).
     public static var states: [String] { table.states }
 
-    /// One design: its loop length, its voice window's start (a line
+    /// One design: its loop length, its voice window's start (a `say`
     /// that comes with its animation starts no sooner), and the host fact
     /// it's for, if any: task_complete's `outcome` (success or failure),
     /// starting's `ctx` (new_task, session, continuation or compacted).
@@ -88,7 +88,7 @@ public enum FaceLoops {
         return row[(1...row.count).contains(variant) ? variant - 1 : 0].ms
     }
 
-    /// When a line that comes with the animation of `mood`'s design for
+    /// When a `say` that comes with the animation of `mood`'s design for
     /// `state`, variation `variant` (from 1), starts: its voice window, in
     /// ms from the design's start; the first variation's for one out of
     /// range.

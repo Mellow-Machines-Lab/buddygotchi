@@ -7,8 +7,8 @@ import MellowHarness
 /// keep the mood or move it one step along the mood graph (`MoodGraph`):
 /// those are all it's offered. Which offered move fits NOW, and how soon,
 /// is the steering's to say.
-public enum MoodAction {
-    public static let actionName = "mood"
+public enum MoodOutput {
+    public static let outputName = "mood"
 
     /// How long Boop has been in its mood, for the line that closes HISTORY:
     /// `Boop has been proud for 7 min.`, so
@@ -56,7 +56,7 @@ public enum MoodAction {
     /// every move from the mood it has (`options(from:)`), and the line a
     /// change shows.
     public static func choice() -> Choice {
-        Choice(name: actionName, start: initial, question: "After NOW, what is \(CharacterPack.active.name)'s mood?",
+        Choice(name: outputName, start: initial, question: "After NOW, what is \(CharacterPack.active.name)'s mood?",
                about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                said: { from, to in "\(CharacterPack.active.name)'s mood changed: \(from) → \(to)." },
                options: { current, _, _ in options(from: known(current)) })
@@ -71,7 +71,7 @@ public enum MoodAction {
     /// Changes the mood now to any of the moods, off the graph, with a
     /// result for the current mood or one that isn't a mood: the dashboard
     /// sets one through here.
-    public static func change(_ mood: Choice, to: String, log: LogView) -> ActionResult {
+    public static func change(_ mood: Choice, to: String, log: LogView) -> OutputResult {
         guard MoodGraph.mood(to) != nil else { return .failed("\(to) isn't a mood") }
         let from = value(mood, log)
         guard to != from else { return .failed("already \(to)") }

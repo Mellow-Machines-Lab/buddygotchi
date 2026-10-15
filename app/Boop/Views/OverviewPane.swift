@@ -78,7 +78,7 @@ struct OverviewPane: View {
                     if let status = model.status, status.connected, status.device?.face == .gel, SlimeFeed.folder != nil {
                         SlimeFace(feed: model.slime, snapshot: status.snapshot, live: model.shown, listening: status.faceListening, size: faceSize)
                     } else {
-                        BoopFace(mood: FaceMood(model.status), design: model.status?.snapshot.mood ?? MoodAction.initial,
+                        BoopFace(mood: FaceMood(model.status), design: model.status?.snapshot.mood ?? MoodOutput.initial,
                                  size: faceSize)
                     }
                     VStack(alignment: .leading, spacing: 3) {

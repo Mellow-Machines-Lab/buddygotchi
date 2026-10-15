@@ -21,7 +21,7 @@ using Kind = app::Sound::Kind;
 static_assert(app::Sound::kChunk == audio_out::kChunk, "the output takes the chunks the sound makes");
 
 // Deep enough for the busiest design's events between two passes of the
-// main loop, and a line.
+// main loop, and a `say`.
 constexpr int kQueue = 8;
 
 QueueHandle_t queue = nullptr;
@@ -71,7 +71,7 @@ bool audioBegin() {
 }
 
 // BoardHal's sound: the queue to the task, its figures and the amp.
-void BoardHal::say(const voice::Line& l) { send({Kind::kSay, l, {}}); }
+void BoardHal::say(const voice::Say& l) { send({Kind::kSay, l, {}}); }
 void BoardHal::hush() { send({Kind::kHush, {}, {}}); }
 void BoardHal::effect(const voice::Effect& e) { send({Kind::kEffect, {}, e}); }
 void BoardHal::stopEffects() { send({Kind::kStopEffects, {}, {}}); }

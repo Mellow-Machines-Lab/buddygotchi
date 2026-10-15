@@ -5,12 +5,12 @@ import MellowHarness
 /// The core: plain rules with no queue. It reads the
 /// session table agent-hooks keeps (`SessionTracker`) and
 /// decides which visual the device shows, what the
-/// agents are doing included (`act`), and which one-shots the rules play.
+/// agents are doing included (`act`), and which reactions the rules play.
 /// What it does by rule it records as `action`
 /// events: "needs you" showing and ending, and a poke (the `wiggle`
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
-/// one-shot it plays (`starting`, `stopped`, `error`, `helper_return`),
+/// reaction it plays (`starting`, `stopped`, `error`, `helper_return`),
 /// as a `did` named after it. It also
 /// keeps push-to-talk (`Talk`): when the mic
 /// goes on and off and when `listening` ends, recorded as `listen` events
@@ -46,9 +46,9 @@ public final class Core {
 
     public private(set) var config: Config
     /// Boop's mood now, which every `state` carries and the rules'
-    /// one-shots are drawn in: the runtime reads it from the log, where the
-    /// mood action keeps it. The resting mood until it's set.
-    var mood: () -> String = { MoodAction.initial }
+    /// reactions are drawn in: the runtime reads it from the transcript,
+    /// where the mood output keeps it. The resting mood until it's set.
+    var mood: () -> String = { MoodOutput.initial }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -69,7 +69,7 @@ public final class Core {
     /// working session's, held.
     var shownAct: Timed?
     var held: [String: Timed] = [:]
-    /// When the rules last played the error one-shot: at most one every
+    /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
     /// The wall clock less the steady one, for days and times of day.
@@ -139,12 +139,12 @@ public final class Core {
         rng = SplitMix64(seed: config.seed)
     }
 
-    /// The rules' one-shots.
+    /// The rules' reactions.
     public static let starting = "starting", stopped = "stopped", error = "error", helperReturn = "helper_return"
-    /// The failed calls that play the error one-shot: a command that
+    /// The failed calls that play the error reaction: a command that
     /// exited with an error or timed out, never a request you denied.
     static let errorClasses: Set<String> = [ToolError.exitCode, ToolError.timeout]
-    /// The error one-shot plays at most once in this long.
+    /// The error reaction plays at most once in this long.
     public static let errorEveryMs: Int64 = 30_000
 
     // MARK: - Inputs
@@ -156,9 +156,9 @@ public final class Core {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
-        let shot = take(agentEvent, ref: event.seq)
+        let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
-        if let shot { play(shot, for: event.seq, now, &fx) }
+        if let reaction { play(reaction, for: event.seq, now, &fx) }
         publish(now, &fx)
         return fx
     }
@@ -194,7 +194,7 @@ public final class Core {
     /// cleared did.
     public func replay(_ event: Event) {
         if let agentEvent = AgentEvent(event) {
-            _ = take(agentEvent, ref: event.seq)
+            _ = fold(agentEvent, ref: event.seq)
             return
         }
         advance(to: event.at)
@@ -207,9 +207,9 @@ public final class Core {
     }
 
     /// An agent's event folded into the session table, the timers due by
-    /// its time run first: the one-shot it plays, if any.
+    /// its time run first: the reaction it plays, if any.
     /// `ref` is its `seq`, which a request it starts keeps.
-    private func take(_ event: AgentEvent, ref: Int) -> DeviceMoment? {
+    private func fold(_ event: AgentEvent, ref: Int) -> DeviceReaction? {
         let key = event.key
         // The timers due by the event's time first, to hear what they did.
         advance(to: event.at, sparing: key)
@@ -217,10 +217,10 @@ public final class Core {
         let now = event.at
         switch change {
         case .sessionStarted(let source):
-            return DeviceMoment(anim: Core.starting, ctx: Core.startCtx(source: source))
+            return DeviceReaction(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
-            return DeviceMoment(anim: Core.starting, ctx: "new_task")
+            return DeviceReaction(anim: Core.starting, ctx: "new_task")
         case .callEnded(let call, let late):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
@@ -228,22 +228,22 @@ public final class Core {
             if !late, failed, event.error.map(Core.errorClasses.contains) == true {
                 // A command that failed or timed out, not a request you
                 // denied.
-                return DeviceMoment(anim: Core.error)
+                return DeviceReaction(anim: Core.error)
             }
             if !late, !failed, let call, Core.act(call) == .delegating, !call.sawSubagent {
                 // A helper's call returned, from hooks that don't say when
                 // helpers start: its `SubagentStop` can't.
-                return DeviceMoment(anim: Core.helperReturn)
+                return DeviceReaction(anim: Core.helperReturn)
             }
             return nil
         case .turnEnded(let outcome, let endedTurn):
-            // Only a stop that ends a turn plays its one-shot: Claude's idle
+            // Only a stop that ends a turn plays its reaction: Claude's idle
             // notice after a turn that finished doesn't.
             held[key] = nil
-            return outcome == .stopped && endedTurn ? DeviceMoment(anim: Core.stopped) : nil
+            return outcome == .stopped && endedTurn ? DeviceReaction(anim: Core.stopped) : nil
         case .subagentEnded(let returned):
             // A helper Boop saw start returns, while its turn goes on.
-            return returned ? DeviceMoment(anim: Core.helperReturn) : nil
+            return returned ? DeviceReaction(anim: Core.helperReturn) : nil
         case .sessionEnded:
             held[key] = nil
             return nil
@@ -252,37 +252,37 @@ public final class Core {
         }
     }
 
-    /// A rule's one-shot, in Boop's mood with a
+    /// A rule's reaction, in Boop's mood with a
     /// variation at random, never the one it played last: not while
     /// something needs you or `listening` holds the screen, and the error
-    /// one-shot at most once every `errorEveryMs`. The device also skips
-    /// it while a brain reaction holds its turn (`if_free`). Recorded as a
+    /// reaction at most once every `errorEveryMs`. The device also skips
+    /// it while a brain reaction plays (`if_free`). Recorded as a
     /// `did` named after it, for the event `seq` that played it, as the
     /// poke's `wiggle` is, so the brain hears that Boop already reacted.
-    func play(_ shot: DeviceMoment, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
-        guard let anim = shot.anim, !needsYouShowing, !showsListening(at: now) else { return }
+    func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         if anim == Core.error {
             if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
             lastErrorAt = now
         }
-        var moment = shot
-        moment.variant = Core.pickVariant(mood: mood(), state: anim, ctx: shot.ctx,
-                                          avoiding: lastVariant[anim], &rng)
-        lastVariant[anim] = moment.variant
-        fx.append(.moment(moment))
-        var did = Event.did(Core.played(moment) ?? "", for: seq, action: anim, by: "rule",
-                            facts: moment.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
-        if Core.played(moment) == nil { did.data["message"] = nil }
+        var reaction = rule
+        reaction.variant = Core.pickVariant(mood: mood(), state: anim, ctx: rule.ctx,
+                                            avoiding: lastVariant[anim], &rng)
+        lastVariant[anim] = reaction.variant
+        fx.append(.reaction(reaction))
+        var did = Event.did(Core.played(reaction) ?? "", for: seq, action: anim, by: "rule",
+                            facts: reaction.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+        if Core.played(reaction) == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
 
-    /// What a one-shot's `did` says Boop did, for HISTORY and NOW: `Boop
+    /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
     /// reacted to the error on its own.` None for `starting`: every turn
     /// starts with it, so the brain hears the start itself and nothing
     /// more, and the log alone keeps that it played.
-    static func played(_ shot: DeviceMoment) -> String? {
+    static func played(_ reaction: DeviceReaction) -> String? {
         let what: String
-        switch shot.anim {
+        switch reaction.anim {
         case Core.stopped?: what = "the stop"
         case Core.error?: what = "the error"
         case Core.helperReturn?: what = "the helper coming back"
@@ -388,7 +388,7 @@ public final class Core {
     }
 
     /// The rest of push-to-talk's steps change nothing the device's
-    /// `state` shows: only their records and moments.
+    /// `state` shows: only their records and reactions.
     private func talkStep(_ body: (inout [CoreEffect]) -> Void) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         body(&fx)
@@ -403,7 +403,7 @@ public final class Core {
         return fx
     }
 
-    /// The mood action saved a new mood (`mood` reads it): a `state`
+    /// The mood output saved a new mood (`mood` reads it): a `state`
     /// carries it at once.
     @discardableResult
     public func moodChanged(at now: Int64) -> [CoreEffect] {
@@ -551,7 +551,7 @@ public final class Core {
         guard talk.mic == nil else { return }
         talk = Talk(mic: Talk.Mic(by: talker, since: now), by: talker)
         recordListen(.start, now, &fx)
-        if talker == .app { fx.append(.moment(DeviceMoment(anim: BoopDevice.listening))) }
+        if talker == .app { fx.append(.reaction(DeviceReaction(anim: BoopDevice.listening))) }
         fx.append(.listen(true, by: talker))
     }
 
@@ -580,7 +580,7 @@ public final class Core {
         }
         talk.mic = nil
         talk.replyUntil = nil
-        if stop { fx.append(.moment(DeviceMoment(anim: BoopDevice.stopListening))) }
+        if stop { fx.append(.reaction(DeviceReaction(anim: BoopDevice.stopListening))) }
     }
 
     /// A `listen_start`, `listen_wait` or `listen_end` record: the core's,
@@ -652,7 +652,7 @@ public final class Core {
         defer { lastSessions = sessions }
         if snapshot != lastPublished {
             lastPublished = snapshot
-            // The picture changes before any moment plays on top of it.
+            // The picture changes before any reaction plays on top of it.
             fx.insert(.state(snapshot), at: 0)
         } else if sessions != lastSessions {
             fx.insert(.sessions, at: 0)

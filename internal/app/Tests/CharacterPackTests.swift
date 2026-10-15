@@ -23,8 +23,8 @@ final class CharacterPackTests: XCTestCase {
     /// when it has none), an option for the mood question, and designs on
     /// the pixel face, which draws all of them.
     func testEveryMoodHasAFaceAndDesigns() throws {
-        XCTAssertEqual(ReactAction.expressions.map(\.name), MoodGraph.moods)
-        XCTAssertEqual(MoodAction.moods.map(\.name), MoodGraph.moods)
+        XCTAssertEqual(ReactOutput.expressions.map(\.name), MoodGraph.moods)
+        XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         XCTAssertEqual(Set(FaceLoops.moods), Set(CharacterPack.universalMoods))
         for mood in MoodGraph.moods {
             XCTAssertEqual(FaceLoops.designs[mood]?.count, FaceLoops.states.count, mood)
@@ -90,7 +90,7 @@ final class CharacterPackTests: XCTestCase {
         let table = try String(contentsOf: folder.appendingPathComponent("mac/takes.tsv"), encoding: .utf8)
         let version = try XCTUnwrap(table.split(separator: "\n").first { !$0.hasPrefix("#") })
         let pack = try Data(contentsOf: folder.appendingPathComponent("voice/voice.bin"))
-        XCTAssertEqual(PackCheck.voicePackVersion(pack), String(version))
+        XCTAssertEqual(PackCheck.voiceFileVersion(pack), String(version))
     }
 
     /// Every pack in the repo plugs in, as `boopdev check` sees it: its

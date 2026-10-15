@@ -1,8 +1,8 @@
-// boop-sim: Boop on LinkKit, on the Mac (simulator/README.md). It behaves
-// like the board on USB: protocol and dbg.* lines in, replies out.
+// The native simulator build: Boop on LinkKit, on the Mac (simulator/README.md).
+// It behaves like the board on USB: protocol and dbg.* messages in, replies out.
 //
 // On its own, USB is stdin and stdout, and the clock starts frozen at 0:
-// nothing moves but by a line. `boopctl sim` drives it with the same
+// nothing moves but by a message. `boopctl sim` drives it with the same
 // scenario runner as the board, so a device screenshot and a simulator
 // screenshot come from the same messages.
 //
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   if (argc > 1 && !std::strcmp(argv[1], "--live")) {
     sim::Port port;
     const char* link = std::getenv("BOOP_SIM_PORT");
-    if (!port.open(link ? link : "")) return std::fprintf(stderr, "boop-sim: %s\n", port.error().c_str()), 1;
+    if (!port.open(link ? link : "")) return std::fprintf(stderr, "simulator: %s\n", port.error().c_str()), 1;
     std::printf("port %s\n", port.path().c_str());
     std::fflush(stdout);
     return sim::live(port);
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   StdOut out;
   sim::Board board(out, /*frozenClock=*/true);
   sim::FileCard card;
-  board.setCard(&card);  // the voice pack, as on the board's card
+  board.setCard(&card);  // the voice file, as on the board's card
   for (int c; (c = std::getchar()) != EOF;) {
     const char byte = char(c);
     if (!board.usb(&byte, 1)) continue;

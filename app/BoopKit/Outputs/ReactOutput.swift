@@ -3,40 +3,40 @@ import MellowHarness
 
 /// Whether Boop reacts to NOW: with which mood's face, which animation,
 /// for how long, and what it says. A reaction
-/// is a mood × a visual for a moment: the device draws that mood's design
+/// is a mood × a visual for a while: the device draws that mood's design
 /// of whatever look is showing, or of the animation picked (a turn's
 /// finish: task_complete for its outcome, or reply_ready), for a number of
 /// its loops. Jev picks what Boop says as a feeling, a
 /// topic and a kind, and Voice finds a recorded take of each in the face's
-/// mood and joins them into a line, or finds none, and then the face plays
-/// in silence. It waits its turn on the device until any line or
-/// reaction's face playing there has finished. It's started, not done,
+/// mood and joins them into a `say`, or finds none, and then the face plays
+/// in silence. It waits in the device's queue until whatever plays there
+/// has finished. It's started, not done,
 /// until whoever plays it ends its handle.
-public final class ReactAction: Action {
-    public static let actionName = "react"
-    public let name = ReactAction.actionName
-    /// Sends a brain reaction, which waits its turn on the device behind
+public final class ReactOutput: Output {
+    public static let outputName = "react"
+    public let name = ReactOutput.outputName
+    /// Sends a brain reaction, which waits in the device's queue behind
     /// whatever is playing, with the handle to end once the device says how
     /// it ended, or once it never will.
-    let queue: (DeviceMoment, Pending) -> Void
+    let queue: (DeviceReaction, Pending) -> Void
     /// Why a reaction can't play now (something needs you), or nil.
     let blocked: () -> String?
     /// The agent and thread the event the brain answers is about, or nil
     /// (a poke, an idle heartbeat): a finish names it on the device.
-    let who: (Event?) -> DeviceMoment.Who?
+    let who: (Event?) -> DeviceReaction.Who?
     /// Whether the device plays the takes Voice picks from: false while its
     /// card has another pack, or none, and then Boop says
     /// nothing.
     let speaks: () -> Bool
-    /// Picks among the takes that fit, and remembers the last line's
+    /// Picks among the takes that fit, and remembers the last `say`'s
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
     var lastWords: Set<String> = []
     /// Picks each finish's variation, never the last one of its animation.
     var variants = SplitMix64(seed: 0xB00B)
     var lastVariant: [String: Int] = [:]
-    public init(queue: @escaping (DeviceMoment, Pending) -> Void, blocked: @escaping () -> String?,
-                who: @escaping (Event?) -> DeviceMoment.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true }) {
+    public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
+                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true }) {
         self.queue = queue
         self.blocked = blocked
         self.who = who
@@ -45,11 +45,11 @@ public final class ReactAction: Action {
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
 
-    /// Each expression: a mood's name, in `MoodAction.moods`' order, and
-    /// what the face means for this moment, from the
+    /// Each expression: a mood's name, in `MoodOutput.moods`' order, and
+    /// what the face means for this reaction, from the
     /// pack's moods' `face`, else their meaning (characters/CHARACTER.md
     /// §5). It's the
-    /// moment's face only, never the lasting mood. What it says is a take
+    /// reaction's face only, never the lasting mood. What it says is a take
     /// performed in that mood (`Voice`).
     public static var expressions: [Option] { CharacterPack.active.faces }
 
@@ -193,60 +193,60 @@ public final class ReactAction: Action {
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
                                           + "or HISTORY shows \(CharacterPack.active.name) still making the one it calls for (in progress).",
                                       notFor: "Anything PERSONALITY's Examples react to that \(CharacterPack.active.name) isn't already doing.")]
-                         + ReactAction.expressions),
+                         + ReactOutput.expressions),
             Question(key: "react.animation", text: "If \(CharacterPack.active.name) reacts and NOW's line is a turn that finished, how did the turn end?",
                      about: "the NOW section", judgeBy: "NOW's line and the agent's last message under it",
                      options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed. A turn starting, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(CharacterPack.active.name) and a stopped turn all get none.")]
-                         + ReactAction.animations),
+                         + ReactOutput.animations),
             Question(key: "react.loops", text: "If \(CharacterPack.active.name) reacts, how long does it hold the face?", about: "the NOW section",
-                     judgeBy: byBoth, options: ReactAction.holds),
+                     judgeBy: byBoth, options: ReactOutput.holds),
             Question(key: "say.feeling", text: "If \(CharacterPack.active.name) reacts, how does it feel about NOW? It says so first, in its face's mood.",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactAction.feelings),
+                     options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactOutput.feelings),
             Question(key: "say.about", text: "If \(CharacterPack.active.name) reacts, what is NOW about? It names it after the feeling, in its face's mood.",
                      about: "the NOW section", judgeBy: "NOW's line",
-                     options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactAction.topics),
+                     options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactOutput.topics),
             Question(key: "say.kind", text: "If \(CharacterPack.active.name) says something, how big is it?", about: "the NOW section",
-                     judgeBy: byBoth, options: ReactAction.kinds),
+                     judgeBy: byBoth, options: ReactOutput.kinds),
         ]
     }()
 
-    public func run(_ answers: Answers, now: Event?, log: LogView) -> ActionResult? {
+    public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
         // 1. Does Jev want a reaction at all, and with which face?
         guard let choice = answers["react.mood"]?.choice, Self.expressions.contains(where: { $0.name == choice }) else {
             return nil
         }
-        // 2. This action's own rules.
+        // 2. This output's own rules.
         if let why = blocked() { return .failed(why) }
-        // 3. The effect: the face, and the line it says, if Voice has takes
+        // 3. The effect: the face, and the `say`, if Voice has takes
         // for the feeling and the topic in this face's mood and the turn's
         // finish.
         let loops = Self.loops(answers)
         let pick = Self.animation(answers)
-        let line = !speaks() ? [] : Voice.line(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
+        let said = !speaks() ? [] : Voice.say(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
                                                face: choice, finish: pick, avoiding: lastWords, rng: &takes)
-        if !line.isEmpty { lastWords = Set(line.map(\.text)) }
-        let say = DeviceMoment.Say(takes: line)
-        var moment = DeviceMoment(say: say, mood: choice, loops: loops)
+        if !said.isEmpty { lastWords = Set(said.map(\.text)) }
+        let say = DeviceReaction.Say(takes: said)
+        var reaction = DeviceReaction(say: say, mood: choice, loops: loops)
         if let pick {
             // A finish: its scene, a variation of it for its outcome in the
             // face's design (never the last one), and whose turn it was.
             let (anim, outcome) = Self.finish(pick)
             let variant = Core.pickVariant(mood: choice, state: anim, outcome: outcome, avoiding: lastVariant[anim], &variants)
             lastVariant[anim] = variant
-            moment.anim = anim
-            moment.outcome = outcome
-            moment.variant = variant
-            moment.who = who(now)
+            reaction.anim = anim
+            reaction.outcome = outcome
+            reaction.variant = variant
+            reaction.who = who(now)
         }
         let pending = Pending()
-        queue(moment, pending)
+        queue(reaction, pending)
         // 4. What it started, as its line in HISTORY: in progress until
-        // the device says how the moment ended.
+        // the device says how the reaction ended.
         let did = pick.map { "\(CharacterPack.active.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
             ?? "\(CharacterPack.active.name) made \(Self.article(choice)) \(choice) face"
         // The takes' ids in order, for the tools to say what it said.
         return .started(did + ", held \(Self.holds[loops - 1].name)" + (say.text.map { ", and said \"\($0)\"." } ?? "."), pending,
-                        facts: ["takes": .array(line.map { .string($0.id) })])
+                        facts: ["takes": .array(said.map { .string($0.id) })])
     }
 }

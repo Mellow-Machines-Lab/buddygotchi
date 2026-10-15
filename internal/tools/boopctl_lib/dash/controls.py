@@ -74,12 +74,12 @@ def preview_state(latest: Line | None, look: str, mood: str | None = None) -> Li
 
 
 # A finish `react.animation` picks, as the device plays it: its animation
-# and outcome (ReactAction.finish).
+# and outcome (ReactOutput.finish).
 FINISH = {"success": ("task_complete", "success"), "failure": ("task_complete", "failure"), "reply": ("reply_ready", None)}
 
 
 def preview_reaction(face: str, take: str | None, loops: int = 1, finish: str | None = None) -> Line:
-    """A reaction as the react action sends it: `react`
+    """A reaction as the react output sends it: `react`
     with the face as its `mood`, held `loops` times, and the take with id
     `take`, or `{}` for one that says nothing; with a `finish` picked
     (react.animation's success, failure or reply), that finish's animation

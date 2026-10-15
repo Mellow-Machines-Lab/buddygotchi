@@ -34,7 +34,7 @@ public final class Runtime: @unchecked Sendable {
         /// Moves `clock` forward, for `{"dev":"advance"}`; nil ignores it.
         public var advance: (@Sendable (Int64) -> Void)?
         /// Debug mode: logs every hook with what the
-        /// adapter made of it and every line sent to the device, starts
+        /// adapter made of it and every message sent to the device, starts
         /// `debug.jsonl` afresh in the state directory (keeping the last
         /// launches' copies beside it) with every event, view event and
         /// pass and the dashboard's lines, and hands them and the core's
@@ -55,7 +55,7 @@ public final class Runtime: @unchecked Sendable {
         /// stand in.
         public var idleMs: (@Sendable () -> Int64)?
         public var log: @Sendable (String) -> Void = { _ in }
-        /// Every line sent to the device, as it's sent, for whoever
+        /// Every message sent to the device, as it's sent, for whoever
         /// records them (`DemoRecorder`). On whichever thread sends it.
         public var onDeviceLine: (@Sendable (String) -> Void)?
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
@@ -145,8 +145,8 @@ public final class Runtime: @unchecked Sendable {
 
     /// After every change the menu bar might show. Called on `home`.
     public var onChange: ((Status) -> Void)?
-    /// Read-only visual mirror of requested moments. Never completes a handle.
-    public var onMoment: ((Int, DeviceMoment) -> Void)?
+    /// Read-only visual mirror of the reactions sent. Never completes a handle.
+    public var onReaction: ((Int, DeviceReaction) -> Void)?
 
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
@@ -237,10 +237,10 @@ public final class Runtime: @unchecked Sendable {
         pipeline.brain = false  // until Jev's key is read
         for over in options.steering.overBudget() { log("steering: over budget: \(over)") }
 
-        // The actions' closures are only ever called on `home`, and reach
+        // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var personalityNow: () -> Personality = { .default }
-        var queued: (DeviceMoment, Pending) -> Void = { _, _ in }
+        var queued: (DeviceReaction, Pending) -> Void = { _, _ in }
         let link = self.link
         let reactions = Reactions()
         self.reactions = reactions
@@ -263,7 +263,7 @@ public final class Runtime: @unchecked Sendable {
         // The view and the core pick up where the last launch left them.
         let read = home.sync { pipeline.readBack(now: now) }
         let logNow = transcript.view(now: now)
-        let questions = DebugLog.questions(harness.actions, log: logNow, at: now)
+        let questions = DebugLog.questions(harness.outputs, log: logNow, at: now)
         emit(questions)
         launchOptions = DebugLog.options(questions)
         holding = false
@@ -271,12 +271,12 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
-        // The core reads the mood where the mood action keeps it. Weak: the
+        // The core reads the mood where the mood output keeps it. Weak: the
         // harness holds the core.
         let mood = self.mood
-        core.mood = { [weak harness = self.harness] in harness.map { MoodAction.value(mood, $0.log.view(now: clock())) } ?? MoodAction.initial }
+        core.mood = { [weak harness = self.harness] in harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? MoodOutput.initial }
         personalityNow = { [weak self] in self?.personality ?? .default }
-        queued = { [weak self] moment, pending in self?.queue(moment, pending) }
+        queued = { [weak self] reaction, pending in self?.queue(reaction, pending) }
         // The device's taps and push-to-talk; the link leaves out those of
         // a device whose firmware doesn't fit.
         link.onEvent = { [weak self] ev in self?.deviceEvent(ev) }
@@ -288,7 +288,7 @@ public final class Runtime: @unchecked Sendable {
         }
         // A pass can change the mood, which the device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
-            guard let self, e.action == MoodAction.actionName, e["ok"]?.bool == true else { return }
+            guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
             run(core.moodChanged(at: options.clock()))
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
@@ -305,16 +305,16 @@ public final class Runtime: @unchecked Sendable {
     /// `nature` chosen at setup adds to it (the pack's `nature/` file, if
     /// any), and MOOD, then HISTORY, closed by how long Boop has been in its mood and
     /// reaching back to the oldest working turn. The app's, and the evals',
-    /// so the two can't drift apart. `queue` plays a reaction's moment,
+    /// so the two can't drift apart. `queue` plays a reaction,
     /// whose end `reactions` reads, and `speaks` says whether the device
     /// plays Voice's takes. The brain is the caller's to set (`harness.use`).
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
-                               reactions: Reactions = Reactions(), queue: @escaping (DeviceMoment, Pending) -> Void,
+                               reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
         let h = pipeline.harness
         let core = pipeline.core
         let view = pipeline.view
-        let mood = MoodAction.choice()
+        let mood = MoodOutput.choice()
         // A reaction your tap cut short is in progress while the pokes go
         // on, and done once anything else happens.
         // A reaction's end, MellowHarness's own event, never stops the pokes.
@@ -324,19 +324,19 @@ public final class Runtime: @unchecked Sendable {
             guard !reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
             reactions.pokesStopped()
         }
-        let react = ReactAction(queue: queue, blocked: { core.reactionBlock }, who: { [weak h] now in
+        let react = ReactOutput(queue: queue, blocked: { core.reactionBlock }, who: { [weak h] now in
             // Weak: the harness holds this output.
             guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                   let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
-            return DeviceMoment.Who(agent: who.agent, thread: who.thread, opens: who.opens)
+            return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
         }, speaks: speaks)
         h.output(mood)
-        h.output(react, openFor: ReactAction.openForMs, keepOpen: TranscriptView.heldByPokes)
+        h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         h.section { _ in steering.guide + "\n" + EventLine.reading + "\n" + EventLine.words }
         h.section { _ in steering.personality(personality()).text }
         h.section { _ in nature.flatMap(steering.nature) }
-        h.section { log in steering.mood(MoodAction.value(mood, log)) }
-        h.closing { _, now, log in MoodAction.sinceLine(mood, log, at: now) }
+        h.section { log in steering.mood(MoodOutput.value(mood, log)) }
+        h.closing { _, now, log in MoodOutput.sinceLine(mood, log, at: now) }
         h.reachBack { _, now, log in view.workingSince(at: now, log) }
         return (h, mood)
     }
@@ -470,8 +470,8 @@ public final class Runtime: @unchecked Sendable {
             case .listen(let on, let by):
                 mic(on, by: by)
                 stateChanged = true
-            case .moment(let moment):
-                playRule(moment)
+            case .reaction(let reaction):
+                playRule(reaction)
             case .open(let thread):
                 open(thread, by: "tap")
             }

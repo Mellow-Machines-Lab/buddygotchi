@@ -1,11 +1,11 @@
 """A demo script, as the session tool reads it, and what its pieces share.
 
 The script is a character pack's `demo/<name>.jsonl`, the same one Boop
-plays (`DemoScript` in app/BoopKit/Demo/, which describes every line).
-Boop does the person's and the brain's lines and keeps to the agent's;
+plays (`DemoScript` in app/BoopKit/Demo/, which describes every step).
+Boop does the person's and the brain's steps and keeps to the agent's;
 this tool needs only the agent's: what the model says and calls, for the
-replay server and the `/demo` command, and which line each tool call is,
-for the gate. A line's number, `n`, is its place among the script's lines,
+replay server and the `/demo` command, and which step each tool call is,
+for the gate. A step's number, `n`, is its place among the script's steps,
 from 0, as Boop counts them in its cursor file.
 
     script.py which NAME     prints the script `make demo NAME=…` plays
@@ -35,7 +35,7 @@ class ScriptError(Exception):
 class Script:
     path: Path
     title: str
-    lines: List[Dict[str, Any]] = field(default_factory=list)
+    steps: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def name(self) -> str:
@@ -50,33 +50,33 @@ class Script:
         words = "".join(c if c.isalnum() else " " for c in self.title.lower()).split()
         return "-".join(words) or "project"
 
-    def agent_lines(self) -> List[Dict[str, Any]]:
-        return [l for l in self.lines if "agent" in l]
+    def agent_steps(self) -> List[Dict[str, Any]]:
+        return [l for l in self.steps if "agent" in l]
 
     @property
     def prompt(self) -> Dict[str, Any]:
-        return next(l for l in self.lines if l.get("agent") == "prompt")
+        return next(l for l in self.steps if l.get("agent") == "prompt")
 
     def replies(self) -> List[Dict[str, Any]]:
-        """The model's replies: every agent line after the prompt, each one
+        """The model's replies: every agent step after the prompt, each one
         turn of the main thread's or, `"by": "reviewer"`, the subagent's."""
-        return [l for l in self.agent_lines() if l["agent"] != "prompt"]
+        return [l for l in self.agent_steps() if l["agent"] != "prompt"]
 
 
 def said(l: Dict[str, Any]) -> Optional[str]:
-    """What an agent line's model says: a reply's text, or what it says
+    """What an agent step's model says: a reply's text, or what it says
     before it acts."""
     return l["text"] if l["agent"] == "reply" else l.get("say")
 
 
 def target(l: Dict[str, Any]) -> Optional[str]:
-    """What a tool call of this line names, to tell it from others: the
+    """What a tool call of this step names, to tell it from others: the
     file, the command, or nothing (a review: any subagent call)."""
     return l.get("file") or l.get("cmd")
 
 
 def cursor_at(path: Path) -> int:
-    """The line Boop's cursor file says is due: -1 before the script starts."""
+    """The step Boop's cursor file says is due: -1 before the script starts."""
     try:
         return int(path.read_text().strip())
     except (OSError, ValueError):
@@ -92,7 +92,7 @@ def load(path: Path) -> Script:
     if not path.exists():
         raise ScriptError(f"no script at {path}")
     title = ""
-    lines: List[Dict[str, Any]] = []
+    steps: List[Dict[str, Any]] = []
     for number, raw in enumerate(path.read_text().split("\n"), 1):
         line = raw.strip()
         if not line or line.startswith("//"):
@@ -104,12 +104,12 @@ def load(path: Path) -> Script:
         if "demo" in obj:
             title = obj.get("title", "")
             continue
-        obj["n"] = len(lines)
+        obj["n"] = len(steps)
         obj["number"] = number
-        lines.append(obj)
-    if not any(l.get("agent") == "prompt" for l in lines):
+        steps.append(obj)
+    if not any(l.get("agent") == "prompt" for l in steps):
         raise ScriptError(f"{path.name}: no prompt, so no agent can play it")
-    return Script(path=path, title=title, lines=lines)
+    return Script(path=path, title=title, steps=steps)
 
 
 def find(name: str) -> Path:

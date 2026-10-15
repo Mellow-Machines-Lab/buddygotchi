@@ -205,7 +205,7 @@ adjacency data and eligibility guards. For a mood question:
    directed edge. Invalid or stale answers hold. Consume evidence once.
 7. Retarget the same actor; preserve the factual state and unresolved alert.
 
-The graph uses an implicit `hold` choice. The shipping `MoodAction` uses
+The graph uses an implicit `hold` choice. The shipping `MoodOutput` uses
 the current mood's own ID for its stay option. Adapt between them in
 Boop's Mood output; do not change MellowHarness's generic multiple-choice
 machinery or mistake `hold` for a mood asset.
@@ -319,8 +319,8 @@ The repository evolved after the earlier transcript examples:
 - [LinkKit](../../../../linkkit/README.md) owns state/do/hello/ev and the
   device's turn/lifecycle. Do not bypass it or put rendering into Jev.
 - Boop's `app/BoopKit/Core/Activity.swift` classifies work; `Core` owns
-  factual priority; `Actions/MoodAction.swift` and `MoodGraph.swift` own
-  Boop's emotional choices; `Actions/ReactAction.swift` owns reactions.
+  factual priority; `Outputs/MoodOutput.swift` and `MoodGraph.swift` own
+  Boop's emotional choices; `Outputs/ReactOutput.swift` owns reactions.
 - `StateSnapshot.swift` and `DeviceLink/BoopDevice.swift` express Boop's
   vocabulary over LinkKit. Existing `state.base` is asleep/idle/working;
   `act`, `attn` and `do` select the other visuals. The design's `state`

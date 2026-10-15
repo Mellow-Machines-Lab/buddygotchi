@@ -15,7 +15,7 @@ namespace app {
 
 namespace {
 
-using linkkit::Call;
+using linkkit::Do;
 using linkkit::How;
 using linkkit::Link;
 
@@ -41,10 +41,10 @@ bool sameModel(const Model& a, const Model& b) {
 }
 
 // Boop's do names, in hello.does's order, and the
-// animation each plays: none for a reaction (a line, a face) and for
+// animation each plays: none for `react` (a `say`, a face) and for
 // stop_listening. A tap's poked and tap_spam aren't among them: the device
 // plays those itself.
-enum Do : uint8_t {
+enum DoIndex : uint8_t {
   kReact,
   kTaskComplete,
   kReplyReady,
@@ -72,7 +72,7 @@ int heldTo(JsonVariantConst v, int lo, int hi, int missing) {
   return n >= hi ? hi : n > lo ? int(n) : lo;
 }
 
-// Copying a voice pack onto the card over USB:
+// Copying a voice file onto the card over USB:
 // `begin` (afresh, or `keep` to go on), then `put`s of base64 chunks at
 // the end of what the card holds, each with its CRC-32, then `end` with the
 // whole file's size and CRC-32. Every reply says what the card holds, so
@@ -88,18 +88,18 @@ __attribute__((noinline)) size_t cardCopy(Hal& hal, JsonObjectConst doc, char* b
   swapped = false;
   int n;
   if (!std::strcmp(op, "begin")) {
-    ok = hal.packBegin(doc["keep"] | false, have, why);
+    ok = hal.copyBegin(doc["keep"] | false, have, why);
   } else if (!std::strcmp(op, "put")) {
     uint8_t chunk[kCardChunk];  // on the stack: static, it'd hold 360 B of heap for good
     const char* d = doc["d"] | "";
     long got = linkkit::base64Decode(d, std::strlen(d), chunk, sizeof(chunk));
-    hal.packAppend(chunk, 0, have);  // how much the card holds
+    hal.copyAppend(chunk, 0, have);  // how much the card holds
     if (got < 0) why = "not base64";
     else if (linkkit::crc32(chunk, size_t(got)) != (doc["c"] | 0u)) why = "wrong crc";
     else if ((doc["at"] | 0u) != have) why = "not where the card is";
-    else if (!(ok = hal.packAppend(chunk, size_t(got), have))) why = "can't write";
+    else if (!(ok = hal.copyAppend(chunk, size_t(got), have))) why = "can't write";
   } else if (!std::strcmp(op, "end")) {
-    ok = swapped = hal.packEnd(doc["size"] | 0u, doc["crc"] | 0u, why);
+    ok = swapped = hal.copyEnd(doc["size"] | 0u, doc["crc"] | 0u, why);
     n = std::snprintf(buf, cap, "{\"t\":\"dbg.card\",\"op\":\"end\",\"ok\":%s,\"voice\":\"%s\",\"why\":\"%s\"}",
                       ok ? "true" : "false", voice::assetsVersion(), ok ? "" : why);
     return n > 0 && size_t(n) < cap ? size_t(n) : 0;
@@ -134,7 +134,7 @@ int Device::does(const char* const*& names) const {
   return kDoCount;
 }
 
-// The voice pack on the card, which the Mac checks before it sends takes.
+// The voice file on the card, which the Mac checks before it sends takes.
 void Device::hello(JsonObject extra) {
   extra["voice"] = voice::assetsVersion();
   extra["face"] = b_.face().name();
@@ -157,7 +157,7 @@ void Device::begin() {
 void Device::reset() {
   b_.reset(0, kit().rng());
   drain();
-  parsed_ = MomentIn{};
+  parsed_ = ReactionIn{};
   restKey_ = 0;
   hush();
   saidSeq_ = 0;
@@ -174,7 +174,7 @@ void Device::reset() {
 
 void Device::drain() {
   PlayedOut p;
-  if (b_.takePlayedOut(p)) kit().ended(p.call, p.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(p.by));
+  if (b_.takePlayedOut(p)) kit().ended(p.key, p.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(p.by));
 }
 
 void Device::input(const char* k, uint32_t t, int x, int y) {
@@ -211,14 +211,14 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   drain();  // "needs you" cuts what plays
 }
 
-// A do's args, as today's moment fields. The variation
-// is picked here, as the call is about to play: the Mac's (from 1) when
+// A do's args, as a reaction's fields. The variation
+// is picked here, as the reaction is about to play: the Mac's (from 1) when
 // it's one of its design's, in the mood it's drawn in, for the finish's
 // outcome or the start's context; else the device picks one of those,
 // never the one it showed last.
-MomentIn Device::parse(const Call& c) {
-  MomentIn mo;
-  mo.call = c.key;
+ReactionIn Device::parse(const Do& c) {
+  ReactionIn mo;
+  mo.key = c.key;
   mo.id = c.id > 0 ? uint32_t(c.id) : 0;
   if (c.what == kStopListening) {
     mo.empty = true;
@@ -241,8 +241,8 @@ MomentIn Device::parse(const Call& c) {
   mo.said = !args["say"].isNull();
   JsonObjectConst who = args["who"];  // copied by play, while the args live
   if (who) mo.whoAgent = who["agent"] | "", mo.whoThread = who["thread"] | "";
-  // The line: a take by its id, and maybe a second, `then`, from the
-  // card's voice pack. `{}`, or an id the pack doesn't have (or no card),
+  // The `say`: a take by its id, and maybe a second, `then`, from the
+  // card's voice file. `{}`, or an id the file doesn't have (or no card),
   // is still a `say` (the reply listening waits for) but plays nothing.
   mo.take = voice::takeIndex(args["say"]["take"].as<const char*>());
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
@@ -250,41 +250,40 @@ MomentIn Device::parse(const Call& c) {
 }
 
 // While something needs you, with no app, or while
-// listening holds the face, a call none of which would play is skipped;
+// listening holds the face, a reaction none of which would play is skipped;
 // so is stop_listening with nothing to stop. A reply ends listening either
 // way.
-const char* Device::refuse(const Call& c, uint32_t t) {
+const char* Device::refuse(const Do& c, uint32_t t) {
   parsed_ = parse(c);
   const char* why = b_.admit(parsed_, t);
-  drain();  // a listening call the reply ended
-  if (why) parsed_ = MomentIn{};
+  drain();  // a listening reaction the reply ended
+  if (why) parsed_ = ReactionIn{};
   return why;
 }
 
-// The call holds the turn: it plays as a moment always has, layered over
-// what plays, and says when it may be replaced: a
-// reaction half a second after its line and bubble have played, or 1.7 s
-// in for a face with no line (it ends sooner if nothing of it plays by
-// then); a finish never, until it's over; the one-shots, a poke and
+// The reaction starts playing: layered over what plays, and it says when
+// it may be replaced: a
+// `react` half a second after its `say` and bubble have played, or 1.7 s
+// in for a face with no `say` (it ends sooner if nothing of it plays by
+// then); a finish never, until it's over; the rules' reactions, a poke and
 // listening at once; stop_listening is over as it starts. The Mac's
-// `listening` drops the calls its own host has waiting, as the Mac once
-// dropped its own queue.
-void Device::onDo(const Call& c, uint32_t t) {
-  latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait for the turn
-  const MomentIn mo = parsed_.call == c.key ? parsed_ : parse(c);
-  parsed_ = MomentIn{};
-  uint32_t seq = b_.momentSeq();
-  // A line's sound goes with its bubble: now, or at its animation's voice
-  // window. Any other call drops one still waiting.
-  const bool line = b_.play(mo, t);
-  if (!line) saidSeq_ = b_.momentSeq();
-  if (!startLine(t) && b_.momentSeq() != seq) hush();  // a new moment replaces the line
+// `listening` drops the reactions its own host has waiting in the queue.
+void Device::onDo(const Do& c, uint32_t t) {
+  latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
+  const ReactionIn mo = parsed_.key == c.key ? parsed_ : parse(c);
+  parsed_ = ReactionIn{};
+  uint32_t seq = b_.reactionSeq();
+  // A `say`'s sound goes with its bubble: now, or at its animation's voice
+  // window. Any other reaction drops one still waiting.
+  const bool say = b_.play(mo, t);
+  if (!say) saidSeq_ = b_.reactionSeq();
+  if (!startSay(t) && b_.reactionSeq() != seq) hush();  // a new reaction replaces the `say`
   dirty_ = true;
   restKey_ = 0;
   switch (c.what) {
     case kReact:
       restKey_ = c.key;
-      restAt_ = (line ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
+      restAt_ = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -359,12 +358,12 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
                     : std::snprintf(buf, sizeof(buf), "{\"t\":\"dbg.touchcal\",\"cal\":null}");
     if (n > 0 && size_t(n) < sizeof(buf)) kit().reply(from, buf, size_t(n));
   } else if (!std::strcmp(type, "dbg.card")) {
-    // Nothing reads the old pack while `end` swaps it, and a waiting line is dropped.
-    if (!std::strcmp(doc["op"] | "", "end")) hush(), saidSeq_ = b_.momentSeq();
+    // Nothing reads the old voice file while `end` swaps it, and a waiting `say` is dropped.
+    if (!std::strcmp(doc["op"] | "", "end")) hush(), saidSeq_ = b_.reactionSeq();
     bool swapped;
     size_t n = cardCopy(hal_, doc, buf, sizeof(buf), swapped);
     if (n) kit().reply(from, buf, n);
-    if (swapped) kit().helloChanged();  // hello's `voice` names the new pack
+    if (swapped) kit().helloChanged();  // hello's `voice` names the new voice file
   } else if (!std::strcmp(type, "dbg.light")) {
     if (doc["bl"].is<int>()) b_.overrideBacklight(uint8_t(doc["bl"].as<int>()));
     kit().reply(from, "{\"t\":\"dbg.light\"}", 17);
@@ -434,11 +433,11 @@ void Device::state(JsonObject d, uint32_t t) {
     d["attn"] = nullptr;
   }
   uint32_t left;
-  render::SceneState anim = b_.moment(t, left);
+  render::SceneState anim = b_.reaction(t, left);
   if (anim != render::SceneState::kNone) {
     d["moment"]["anim"] = render::stateName(anim);
     d["moment"]["left_ms"] = left;
-    d["moment"]["variant"] = b_.momentVariant() + 1;
+    d["moment"]["variant"] = b_.reactionVariant() + 1;
   } else {
     d["moment"] = nullptr;
   }
@@ -639,31 +638,31 @@ void Device::hush() {
   saying_ = false;
 }
 
-// The line that arrived starts its sound when its bubble shows, at the
+// The `say` that arrived starts its sound when its bubble shows, at the
 // volume then; one replaced, or over, before it started is dropped. True
 // when it starts now.
-bool Device::startLine(uint32_t t) {
-  if (b_.momentSeq() == saidSeq_) return false;
+bool Device::startSay(uint32_t t) {
+  if (b_.reactionSeq() == saidSeq_) return false;
   if (!b_.bubble(t)) {  // it waits for its animation's voice window, or it's gone
-    if (!b_.lineAhead(t)) saidSeq_ = b_.momentSeq();
+    if (!b_.sayAhead(t)) saidSeq_ = b_.reactionSeq();
     return false;
   }
-  saidSeq_ = b_.momentSeq();
+  saidSeq_ = b_.reactionSeq();
   const Model& m = b_.model();
   if (m.vol <= 0) return false;
-  hal_.say(voice::makeLine(b_.take(), b_.then(), uint8_t(m.vol)));
+  hal_.say(voice::makeSay(b_.take(), b_.then(), uint8_t(m.vol)));
   saying_ = true;
   return true;
 }
 
-// Stops a line whose bubble ended or was replaced (a newer moment, say), and
+// Stops a `say` whose bubble ended or was replaced (by a newer reaction), and
 // starts one that waited for its voice window, then plays the face's sound
 // effects: its design's events as its clock reaches them,
 // and silence for the last design's when it changes or starts over (needs
-// you's, for a new request).
+// you's, for a new needs-you).
 void Device::followSound(uint32_t t) {
-  if (saying_ && (b_.momentSeq() != saidSeq_ || !b_.bubble(t))) hush();
-  startLine(t);
+  if (saying_ && (b_.reactionSeq() != saidSeq_ || !b_.bubble(t))) hush();
+  startSay(t);
   const Model& m = b_.model();
   voice::FxEvent due[render::Face::kMaxCues];
   bool changed;

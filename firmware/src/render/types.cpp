@@ -30,7 +30,7 @@ const char* stateName(SceneState s) {
   return kStateNames[int(s) < int(SceneState::kCount) ? int(s) : 0];
 }
 
-bool isMoment(SceneState s) {
+bool isReaction(SceneState s) {
   switch (s) {
     case SceneState::kTaskComplete:
     case SceneState::kReplyReady:
@@ -45,9 +45,9 @@ bool isMoment(SceneState s) {
   }
 }
 
-SceneState momentFromName(const char* name) {
+SceneState reactionFromName(const char* name) {
   const SceneState s = stateFromName(name);
-  return name && isMoment(s) ? s : SceneState::kNone;
+  return name && isReaction(s) ? s : SceneState::kNone;
 }
 
 SceneState stateFromName(const char* name) {

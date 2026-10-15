@@ -19,15 +19,15 @@ namespace board {
 namespace {
 
 // The card's SPI clock: the probe of 2026-09-29 read about 900 KB/s at
-// 10 MHz, eighty times what a line needs.
+// 10 MHz, eighty times what a `say` needs.
 constexpr uint32_t kCardHz = 10000000;
-constexpr const char* kPackPath = "/boop/voice.bin";
+constexpr const char* kVoicePath = "/boop/voice.bin";
 constexpr const char* kCopyPath = "/boop/voice.tmp";
 
 SPIClass cardSpi(pins::kCardSpiBus);
 const char* state = "no card";
 
-// The pack's bytes from one open file, shared by lookups on the main loop
+// The voice file's bytes, from one open file, shared by lookups on the main loop
 // and the audio task under a mutex. One file, and a plain POSIX
 // descriptor rather than Arduino's File: the mount reserves a FatFs file
 // (a 4 KB sector each) for every file it allows open, and a File adds a
@@ -62,17 +62,17 @@ struct CardSource : voice::Source {
     if (lock) xSemaphoreGive(lock);
   }
 };
-CardSource pack;
+CardSource voiceFile;
 bool mounted = false;
-File copy;  // the pack being copied on
+File copy;  // the voice file being copied on
 
 bool mount() {
-  if (!mounted) mounted = SD.begin(pins::kCardCs, cardSpi, kCardHz, "/sd", 1);  // the pack, or a copy of one
+  if (!mounted) mounted = SD.begin(pins::kCardCs, cardSpi, kCardHz, "/sd", 1);  // the voice file, or a copy of one
   return mounted;
 }
 
-bool openPack() {
-  if (!pack.open() || !voice::openPack(&pack)) return false;
+bool openFile() {
+  if (!voiceFile.open() || !voice::openFile(&voiceFile)) return false;
   state = "ok";
   return true;
 }
@@ -83,10 +83,10 @@ bool cardBegin() {
   cardSpi.begin(pins::kCardSclk, pins::kCardMiso, pins::kCardMosi, pins::kCardCs);
   if (!mount()) return false;
   state = "no pack";
-  return openPack();
+  return openFile();
 }
 
-bool BoardHal::packBegin(bool keep, uint32_t& have, const char*& why) {
+bool BoardHal::copyBegin(bool keep, uint32_t& have, const char*& why) {
   have = 0;
   if (copy) copy.close();
   if (!mount()) {
@@ -98,8 +98,8 @@ bool BoardHal::packBegin(bool keep, uint32_t& have, const char*& why) {
   // is the copy's.
   hush();
   delay(60);
-  voice::closePack();
-  pack.close();
+  voice::closeFile();
+  voiceFile.close();
   state = "copying";
   if (!keep) SD.remove(kCopyPath);
   copy = SD.open(kCopyPath, FILE_APPEND);
@@ -111,7 +111,7 @@ bool BoardHal::packBegin(bool keep, uint32_t& have, const char*& why) {
   return true;
 }
 
-bool BoardHal::packAppend(const uint8_t* d, size_t n, uint32_t& have) {
+bool BoardHal::copyAppend(const uint8_t* d, size_t n, uint32_t& have) {
   if (!copy) {
     have = 0;
     return false;
@@ -131,7 +131,7 @@ static __attribute__((noinline)) void readBack(uint32_t& got, uint32_t& sum) {
   if (f) f.close();
 }
 
-bool BoardHal::packEnd(uint32_t size, uint32_t crc, const char*& why) {
+bool BoardHal::copyEnd(uint32_t size, uint32_t crc, const char*& why) {
   if (!copy) {
     why = "no copy begun";
     return false;
@@ -143,17 +143,17 @@ bool BoardHal::packEnd(uint32_t size, uint32_t crc, const char*& why) {
   if (got != size || sum != crc) {
     why = got != size ? "wrong size" : "wrong crc";
     state = "no pack";
-    openPack();  // the old pack, if there is one, plays again
+    openFile();  // the old voice file, if there is one, plays again
     return false;
   }
-  // Swap it in: nothing plays while the old pack closes.
+  // Swap it in: nothing plays while the old voice file closes.
   hush();
   delay(60);
-  voice::closePack();
-  pack.close();
-  SD.remove(kPackPath);
+  voice::closeFile();
+  voiceFile.close();
+  SD.remove(kVoicePath);
   state = "no pack";
-  if (!SD.rename(kCopyPath, kPackPath) || !openPack()) {
+  if (!SD.rename(kCopyPath, kVoicePath) || !openFile()) {
     why = "can't swap it in";
     return false;
   }

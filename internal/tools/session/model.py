@@ -4,12 +4,12 @@ It speaks the two APIs the agents call, streamed as the real ones stream:
 Anthropic's Messages API (`/v1/messages`) for Claude Code and OpenAI's
 Responses API (`/v1/responses`) for Codex, which take it as their base
 URL. Each request the agent makes for its next turn gets the script's next
-agent line, once the script has reached it, translated into that agent's
+agent step, once the script has reached it, translated into that agent's
 own tools; everything after, running the tools and firing the hooks, the
 agent does for real.
 
 Requests that aren't a turn of the session, such as an agent asking a
-model for a title, get the script's title and don't use up a line.
+model for a title, get the script's title and don't use up a step.
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ SPEED = 1.0
 
 
 def claude_call(l: Dict[str, Any], workspace: str, tools: List[str]) -> Tuple[str, Dict[str, Any]]:
-    """An agent line's tool call as Claude Code's: (name, input)."""
+    """An agent step's tool call as Claude Code's: (name, input)."""
     path = lambda p: p if p.startswith("/") else f"{workspace}/{p}"
     does = l["agent"]
     if does == "read":
@@ -49,7 +49,7 @@ def claude_call(l: Dict[str, Any], workspace: str, tools: List[str]) -> Tuple[st
 
 
 def codex_item(l: Dict[str, Any], cid: str) -> Optional[Dict[str, Any]]:
-    """An agent line's tool call as Codex's output item: a shell command for
+    """An agent step's tool call as Codex's output item: a shell command for
     reading and running, apply_patch for an edit. None for a review: Codex
     has no subagents here."""
     def shell(cmd: str, **extra: Any) -> Dict[str, Any]:
@@ -73,17 +73,17 @@ def codex_item(l: Dict[str, Any], cid: str) -> Optional[Dict[str, Any]]:
 
 
 class Replay:
-    """The script's agent lines, handed out in order, each once the script
+    """The script's agent steps, handed out in order, each once the script
     has reached it (`due`), and a log of what was asked."""
 
-    def __init__(self, lines: List[Dict[str, Any]], workspace: str, log: Callable[[str], None],
+    def __init__(self, steps: List[Dict[str, Any]], workspace: str, log: Callable[[str], None],
                  due: Callable[[int], Any] = lambda n: None, keep: Optional[str] = None, title: str = "A coding session"):
         # The main thread's turns, and a subagent's: a subagent runs beside
         # the main thread, so each has its own turn.
-        self.queues = {"main": [l for l in lines if l.get("by") != "reviewer"],
-                       "agent": [l for l in lines if l.get("by") == "reviewer"]}
-        self.prompts = [l.get("prompt", l["task"]) for l in lines if l["agent"] == "review"]
-        self.total = len(lines)
+        self.queues = {"main": [l for l in steps if l.get("by") != "reviewer"],
+                       "agent": [l for l in steps if l.get("by") == "reviewer"]}
+        self.prompts = [l.get("prompt", l["task"]) for l in steps if l["agent"] == "review"]
+        self.total = len(steps)
         self.served = 0
         self.workspace, self.log, self.due, self.keep, self.title = workspace, log, due, keep, title
         self.lock = threading.Lock()
@@ -112,11 +112,11 @@ class Replay:
             if not queue:
                 self.log("model: the script has no more replies; ending the turn")
                 return None
-            line = queue.pop(0)
+            step = queue.pop(0)
             self.served += 1
-        self.due(line["n"])
-        self.log(f"model: reply {self.served} of {self.total} (line {line['n']}, {thread})")
-        return line
+        self.due(step["n"])
+        self.log(f"model: reply {self.served} of {self.total} (step {step['n']}, {thread})")
+        return step
 
     @staticmethod
     def wait(seconds: float) -> None:
@@ -139,9 +139,9 @@ def serve_anthropic(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, A
     tools = [t.get("name") for t in body.get("tools") or []]
     model = body.get("model", "claude")
     # A turn of the session offers tools; a title or a probe doesn't.
-    line = replay.next(replay.thread(body)) if tools and (body.get("max_tokens") or 2) > 1 else None
-    text = (said(line) or "") if line else replay.title
-    calls = [claude_call(line, replay.workspace, tools)] if line and line["agent"] != "reply" else []
+    step = replay.next(replay.thread(body)) if tools and (body.get("max_tokens") or 2) > 1 else None
+    text = (said(step) or "") if step else replay.title
+    calls = [claude_call(step, replay.workspace, tools)] if step and step["agent"] != "reply" else []
     blocks: List[Tuple[str, Any]] = ([("text", text)] if text else []) + [("tool", c) for c in calls]
     stop = "tool_use" if calls else "end_turn"
     if not body.get("stream"):
@@ -155,7 +155,7 @@ def serve_anthropic(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, A
     sse(h, "message_start", {"type": "message_start", "message": {
         "id": "msg_" + replay.ident(), "type": "message", "role": "assistant", "model": model, "content": [],
         "stop_reason": None, "stop_sequence": None, "usage": {"input_tokens": 100, "output_tokens": 1}}})
-    if line:
+    if step:
         replay.wait(THINK)
     for i, (kind, value) in enumerate(blocks):
         if kind == "text":
@@ -178,15 +178,15 @@ def serve_openai(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, Any]
     # A request for structured output, such as the thread's title, isn't a
     # turn of the session.
     if (body.get("text") or {}).get("format"):
-        line, text = None, json.dumps({"title": replay.title})
+        step, text = None, json.dumps({"title": replay.title})
     else:
-        line = replay.next()
-        text = (said(line) or "") if line else ""
-    item = codex_item(line, replay.ident()) if line and line["agent"] != "reply" else None
+        step = replay.next()
+        text = (said(step) or "") if step else ""
+    item = codex_item(step, replay.ident()) if step and step["agent"] != "reply" else None
     rid = "resp_" + replay.ident()
     h.send_response(200); h.send_header("content-type", "text/event-stream"); h.send_header("cache-control", "no-cache"); h.end_headers()
     sse(h, "response.created", {"type": "response.created", "response": {"id": rid}})
-    if line:
+    if step:
         replay.wait(THINK)
     index = 0
     if text:

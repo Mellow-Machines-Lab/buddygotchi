@@ -27,32 +27,32 @@ run stops with it.
 
 ## One script, three parts
 
-A script is one list of lines, each by one of three: the agent, you, or
+A script is one list of steps, each by one of three: the agent, you, or
 Boop's brain. They happen in order, and three things keep them so:
 
 ```
  demo/NAME.jsonl ──► Boop --headless --demo NAME.jsonl --live
                        │  you and the brain: a poke, talk, an answer, each in turn
-                       │  the agent's lines: waits for the agent's own hooks for each
-                       │  writes the line due now to its cursor file
+                       │  the agent's steps: waits for the agent's own hooks for each
+                       │  writes the step due now to its cursor file
                        ▼
-                   cursor ──► in the terminal, the replay server: each model reply waits for its line
-                          └─► in the app, the gate: each of the agent's tool calls waits for its line
+                   cursor ──► in the terminal, the replay server: each model reply waits for its step
+                          └─► in the app, the gate: each of the agent's tool calls waits for its step
  real claude / codex ── real hooks ──► Boop (AGENT_HOOKS_SOCKET) ──► board
 ```
 
-- **Boop plays the script.** With `--live`, the agent's lines aren't sent
+- **Boop plays the script.** With `--live`, the agent's steps aren't sent
   by Boop, as `make demo` does, but waited for: each ends when the agent's
   own hook for it arrives (a tool's end, the turn's end). Then Boop does
-  the lines after it, the person's and the brain's, and moves on. A hook
+  the steps after it, the person's and the brain's, and moves on. A hook
   the script doesn't have passes by, and if the agent leaves a step out,
   the next step's hook moves the script on to it.
 - **One pacing point a mode.** In the terminal the replay server gives
-  each reply only when its line is due, so no tool call can come early.
+  each reply only when its step is due, so no tool call can come early.
   In the app, where the model is real, **the gate**
   (`internal/tools/session/gate.py`) does it: one hook of the demo's own,
   in the project's settings beside Boop's, that before each tool call
-  finds the call's line and waits until Boop's cursor says it's due.
+  finds the call's step and waits until Boop's cursor says it's due.
   Either way the agent can't run ahead of the talk and pokes before a step.
   The gate never holds a call for good: one the script doesn't have goes
   at once, and so does any call when the cursor stops moving for 90 s. It
@@ -61,7 +61,7 @@ Boop's brain. They happen in order, and three things keep them so:
   - In the terminal (`IN=simulated-claude-terminal` or `IN=simulated-codex-terminal`), the real agent's model is
     a local server (`model.py`) that speaks Anthropic's Messages API to
     Claude Code and OpenAI's Responses API to Codex, streamed, and gives
-    the script's next reply when its line is due, in that agent's own
+    the script's next reply when its step is due, in that agent's own
     tools. A title request gets the script's title and costs no reply. The
     tool types the prompt and allows what the agent asks, after the
     script's seconds (`term.py` runs the agent in a pty shown here).
@@ -102,7 +102,7 @@ won't. `make -C internal tools-test` holds the landing project to its
 story.
 
 **When an agent changes,** a new Claude Code or Codex can name a tool, a
-hook or a dialog differently: `boop.log` says which line was left out or
+hook or a dialog differently: `boop.log` says which step was left out or
 waited for, and `gate.log` and `requests/` what the agent did. Tested with
 Claude Code 2.1.282 (replayed, and a real model performing `/demo` from the
 command line) and Codex 0.153.4 (replayed).

@@ -142,7 +142,7 @@ void test_every_design_has_a_timeline() {
 
 // The bank's voice-first mix, by state: the quiet states
 // are silent; needs you's knocks end in the ding, and it, the finish and
-// an error play on their first loop only and never duck under a line;
+// an error play on their first loop only and never duck under a `say`;
 // routine designs sound a few of their contacts, picked afresh each loop.
 // Each design's voice window is where the bank puts it.
 void test_each_state_sounds_as_the_bank_says() {
@@ -220,10 +220,10 @@ void test_an_effect_plays_its_clip_once() {
   TEST_ASSERT_INT_WITHIN(int(normal / 50), int(normal / 2), int(fast));
 }
 
-// Under a line, effects are a quarter as loud, the bank's
+// Under a `say`, effects are a quarter as loud, the bank's
 // level, but needs you's, the finish's and an error's never are: the design
 // decides, not the clip.
-void test_a_line_turns_effects_down_but_not_the_attention_cues() {
+void test_a_say_turns_effects_down_but_not_the_needs_you_cues() {
   TEST_ASSERT_INT_WITHIN(2, peak(mixed(effect("key"))) / 4, peak(mixed(effect("key"), true)));
   voice::Effect ding = effect("alertDing");
   ding.duck = false;
@@ -276,7 +276,7 @@ void test_a_working_design_sounds_every_loop() {
   TEST_ASSERT_FALSE(same(loopEvents(sc, 1), loopEvents(sc, 0)) && same(loopEvents(sc, 2), loopEvents(sc, 0)));
 }
 
-// The finish, needs you, an error and the other one-shots play their sounds
+// The finish, needs you, an error and the rules' other reactions play their sounds
 // on their first loop only.
 void test_entry_designs_sound_once() {
   for (Mood m : {Mood::kProud, Mood::kWounded}) {
@@ -292,11 +292,11 @@ void test_entry_designs_sound_once() {
 }
 
 // The needs-you arc's cues play over the design's, once each, at their
-// times on the request's clock and at their gain and pitch
+// times on the needs-you's clock and at their gain and pitch
 // (render/pixel/sign.h, kArcCues): a swipe as the sway starts, knocks that
 // grow with the picture (one as it sways, two mid-sway, three as it
 // shakes, four at the height of it), each group louder and higher, the
-// brake at the stare and the slide as the sign goes back up. A new request
+// brake at the stare and the slide as the sign goes back up. A new needs-you
 // plays them again.
 void test_the_needs_you_arc_cues_once_each() {
   render::pixel::PixelFace face;
@@ -308,7 +308,7 @@ void test_the_needs_you_arc_cues_once_each() {
     source.mood = Mood::kCalm, source.look = state;
     face.sync(source, context, t);
   };
-  // A request at `from`: its clock starts there.
+  // A needs-you at `from`: its clock starts there.
   auto heard = [&](uint32_t from, uint32_t to) {
     look(SceneState::kNeedsYou, from);
     face.alert(from, false);
@@ -363,7 +363,7 @@ void test_the_needs_you_arc_cues_once_each() {
   TEST_ASSERT_EQUAL_STRING("brake", cues[11].clip);
   TEST_ASSERT_EQUAL_UINT32(render::Arc::kGiveUpAt, cues[12].at);
   TEST_ASSERT_EQUAL_STRING("slide", cues[12].clip);
-  // Another state stops the arc; the next request starts it over.
+  // Another state stops the arc; the next needs-you starts it over.
   look(SceneState::kIdle, 35000);
   voice::FxEvent due[render::Face::kMaxCues];
   bool changed;
@@ -461,7 +461,7 @@ int main() {
   RUN_TEST(test_every_design_has_a_timeline);
   RUN_TEST(test_each_state_sounds_as_the_bank_says);
   RUN_TEST(test_an_effect_plays_its_clip_once);
-  RUN_TEST(test_a_line_turns_effects_down_but_not_the_attention_cues);
+  RUN_TEST(test_a_say_turns_effects_down_but_not_the_needs_you_cues);
   RUN_TEST(test_voices_and_stopping);
   RUN_TEST(test_a_working_design_sounds_every_loop);
   RUN_TEST(test_entry_designs_sound_once);

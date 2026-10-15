@@ -1,5 +1,5 @@
-// LinkKit alone, around the turn (linkkit/SPEC.md §2, §3, §5, §7, §9):
-// lines, hello, the links, `ev`, the kit's dbg.* messages, and the lamp
+// LinkKit alone, around the queue (linkkit/SPEC.md §2, §3, §5, §7, §9):
+// messages, hello, the links, `ev`, the kit's dbg.* messages, and the lamp
 // example the README walks through. A fake app; nothing of any real app's.
 #include <unity.h>
 
@@ -32,7 +32,7 @@ static void test_the_limits() {
   TEST_ASSERT_EQUAL_UINT32(60000, linkkit::kThawMs);
 }
 
-// §2: a line that isn't a JSON object with a `t`, or of a type the device
+// §2: a message that isn't a JSON object with a `t`, or of a type the device
 // doesn't know, is ignored, and unknown fields too; `state` is the app's
 // whole map, untouched.
 static void test_lines_the_kit_ignores() {
@@ -50,9 +50,9 @@ static void test_lines_the_kit_ignores() {
   TEST_ASSERT_EQUAL(1, int(r.app.started.size()));
 }
 
-// §3, §5: hello answers a host's first line on a link (any type but
+// §3, §5: hello answers a host's first message on a link (any type but
 // dbg.*): its kit fields, then the app's. Over Bluetooth, the first
-// line since connecting; not the connect itself.
+// message since connecting; not the connect itself.
 static void test_hello_answers_the_hosts_first_line() {
   Rig r;
   const std::string hello = "{\"t\":\"hello\",\"kit\":1,\"app\":\"fake\",\"id\":\"dev-0001\",\"fw\":\"1.2.3\",\"does\":[\"say\",\"show\",\"beep\"],\"x\":1}\n";
@@ -69,7 +69,7 @@ static void test_hello_answers_the_hosts_first_line() {
   r.bleLine("{\"t\":\"state\"}");
   TEST_ASSERT_EQUAL(1, count(r.ble.text, "\"hello\""));
   r.kit.disconnected();
-  r.kit.connected();  // a new connection: hello again on its first line
+  r.kit.connected();  // a new connection: hello again on its first message
   r.bleLine("{\"t\":\"state\"}");
   TEST_ASSERT_EQUAL(2, count(r.ble.text, "\"hello\""));
 }
@@ -87,7 +87,7 @@ static void test_hello_says_its_boot() {
 }
 
 // §5: USB is live while the host has spoken there in the last 30 s; its
-// first line after 30 s of silence gets a hello again.
+// first message after 30 s of silence gets a hello again.
 static void test_usb_hello_again_after_30_s_of_silence() {
   Rig r;
   r.usbLine("{\"t\":\"state\"}");
@@ -104,7 +104,7 @@ static void test_usb_hello_again_after_30_s_of_silence() {
 // §3, §5: a host's own hello asks for the device's, on that link, even
 // while the device still counts the link as live: a host relaunched
 // within 30 s over USB, or one taking over a Bluetooth link the system
-// kept up, which the device never saw drop. As a first line it gets one
+// kept up, which the device never saw drop. As a first message it gets one
 // hello, not two.
 static void test_a_hosts_hello_asks_for_one() {
   Rig r;
@@ -129,7 +129,7 @@ static void test_a_hosts_hello_asks_for_one() {
   TEST_ASSERT_EQUAL(2, count(r.usb.text, "\"hello\""));
 }
 
-// §3, §2: a hello too long for one line would be dropped whole on the
+// §3, §2: a hello longer than 512 bytes would be dropped whole on the
 // way, so the host would never hear it. The app's fields are left out,
 // or, when even the kit's don't fit, none goes; dbg.ping says how long
 // the whole one is.
@@ -219,7 +219,7 @@ static void test_does_is_capped_at_32() {
   TEST_ASSERT_TRUE(has(usb.text, ended(1, "skipped", "unknown")));
 }
 
-// §5: 30 s with no line from the host: it's gone. A Bluetooth link is to
+// §5: 30 s with no message from the host: it's gone. A Bluetooth link is to
 // be dropped (and again 30 s later if that didn't take), and USB is no
 // longer live.
 static void test_the_host_is_gone_after_30_s() {
@@ -265,14 +265,14 @@ static void test_ev_goes_on_every_live_link() {
   r.app.k().emit("hold", nullptr, nullptr, true);
   TEST_ASSERT_TRUE(r.ble.text.empty());
   TEST_ASSERT_EQUAL_STRING("{\"t\":\"ev\",\"kind\":\"hold\"}\n", r.usb.text.c_str());
-  // §2: a line never goes out longer than 512 bytes.
+  // §2: a message never goes out longer than 512 bytes.
   std::string big = "{\"pad\":\"" + std::string(500, 'x') + "\"}";
   r.usb.text.clear();
   r.app.k().emit("big", nullptr, big.c_str(), true);
   TEST_ASSERT_TRUE(r.usb.text.empty());
 }
 
-// §2, §4: the app's words go on the line as JSON strings, so a quote, a
+// §2, §4: the app's words go in the message as JSON strings, so a quote, a
 // backslash or a control character in an `ev`'s kind or did, or in a
 // refusal's why, can't break it; an `ev`'s data goes as it is.
 static void test_the_apps_words_are_escaped() {
@@ -391,7 +391,7 @@ static void test_shot() {
   TEST_ASSERT_EQUAL_STRING("{\"t\":\"dbg.shot\",\"w\":2,\"h\":1,\"bytes\":2,\"crc\":3633523372}\naGk=\n", r.usb.text.c_str());
 }
 
-// §7: dbg.state: the app's fields, then the kit's clock, rx and turn.
+// §7: dbg.state: the app's fields, then the kit's clock, rx and queue.
 static void test_dbg_state() {
   Rig r;
   r.usbLine("{\"t\":\"state\"}");
@@ -412,8 +412,8 @@ static void test_the_apps_debug_messages() {
   TEST_ASSERT_EQUAL_STRING("{\"t\":\"dbg.fake\"}\n", r.usb.text.c_str());
 }
 
-// The app is attached and begun before the kit's first line, and ticked
-// after the turn's timers on every pass.
+// The app is attached and begun before the kit's first message, and
+// ticked after the queue's timers on every pass.
 static void test_the_app_is_begun_and_ticked() {
   Rig r;
   TEST_ASSERT_EQUAL(1, r.app.begun);
@@ -424,7 +424,7 @@ static void test_the_app_is_begun_and_ticked() {
 }
 
 // linkkit/device/README.md's lamp: its state, a blink that plays through,
-// one that waits its turn, and its own button cutting one.
+// one that waits in the queue, and its own button cutting one.
 static void test_the_lamp_example() {
   kitfake::Platform p;
   lamp::Lamp app;

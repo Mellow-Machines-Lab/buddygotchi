@@ -175,7 +175,7 @@ def summarise(launches: list[Launch], date: str) -> Day:
         brains: list[str] = []
         attn = None  # (agent, project, id) shown
         episode: NeedsYou | None = None
-        changed: MoodChange | None = None  # waiting for the mood action that made it
+        changed: MoodChange | None = None  # waiting for the mood output that made it
         seen_state = False
         events: dict[int, Line] = {}
         event_at: dict[int, int] = {}
@@ -210,7 +210,7 @@ def summarise(launches: list[Launch], date: str) -> Day:
                 attn = shown
                 now = body.get("mood")
                 if mood is not None and now != mood:
-                    # The mood action saves the mood, the state carries it
+                    # The mood output saves the mood, the state carries it
                     # at once, and the action's entry follows with its cause.
                     changed = MoodChange(t, mood, now, None if seen_state else "between launches")
                     if h:
@@ -219,7 +219,7 @@ def summarise(launches: list[Launch], date: str) -> Day:
                 mood, seen_state = now, True
             elif k == "sent" and (c := call(body)) and h:
                 # A `do`, or an older log's `moment`. The brain's is a
-                # reaction, counted from its react action below; an older
+                # reaction, counted from its react output below; an older
                 # log's rules' moment with a line is chatter.
                 if c["anim"] in FINISHES:
                     h.finishes += 1
@@ -315,7 +315,7 @@ def summarise(launches: list[Launch], date: str) -> Day:
 
 
 def cause(action: Line, events: dict[int, Line]) -> str:
-    """What made a mood action run: a forced pass or mood, or its event."""
+    """What made a mood output run: a forced pass or mood, or its event."""
     if action.get("by"):
         return f"forced from the {action['by']}"
     event = events.get(action.get("for"))

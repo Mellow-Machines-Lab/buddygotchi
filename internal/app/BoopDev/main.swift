@@ -13,7 +13,7 @@ let usages: [(command: String, text: String)] = [
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
-        pipeline, the real harness and actions, and Jev, each pass checked against what it should come to (the
+        pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
         checks. Needs Jev's key in BOOP_JEV_KEY and fails without it. --runs runs each scenario N times
         (default the scenario's own runs, else 3 for an always scenario and 1 for the rest); it passes only

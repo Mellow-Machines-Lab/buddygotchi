@@ -368,7 +368,7 @@ final class ViewTests: XCTestCase {
         next = events(rig.poke())[0]
         XCTAssertFalse(next.wakesBrain, "cut short by a tap, it's still in progress")
 
-        _ = react(to: next, MoodAction.actionName, started: false)
+        _ = react(to: next, MoodOutput.outputName, started: false)
         rig.wait(500)
         next = events(rig.poke())[0]
         XCTAssertTrue(next.wakesBrain, "the mood changed since")
@@ -430,7 +430,7 @@ final class ViewTests: XCTestCase {
         }
         let first = pipeline()
         rig = CoreRig()
-        first.agent(rig.event(.turnStart))  // and its starting one-shot's did, 2
+        first.agent(rig.event(.turnStart))  // and its starting reaction's did, 2
         let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
                                        data: ["for": 1, "by": "brain", "ok": true, "message": "Boop smiled."]))
         XCTAssertEqual(start.seq, 3)
@@ -454,7 +454,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(restarted.seq, 5, "seq goes on")
         XCTAssertEqual(second.transcript.lastSeq, 5)
         XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
-        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's one-shot")
+        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's reaction")
         rig.wait(1000)
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])

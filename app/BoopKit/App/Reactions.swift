@@ -4,13 +4,13 @@ import MellowHarness
 import LinkKit
 
 /// The brain's reactions on the device, until each ends.
-/// The device decides what plays when (linkkit/SPEC.md §4): each
-/// reaction goes out at once, a `do` that waits its turn there, and the
+/// The device decides what plays when (its queue, linkkit/SPEC.md §4):
+/// each reaction goes out at once, a `do` that waits in the queue there, and the
 /// link hands back how it came out, once. This
 /// reads that as its handle's end, holds a reaction your tap cut short in
 /// progress until the pokes stop, and keeps where a tap on the brain's
 /// finish opens its thread while the finish may still
-/// play, a link that drops for a moment included, since the device plays
+/// play, a link that drops briefly included, since the device plays
 /// on.
 ///
 /// On the runtime's queue and clock. Its bookkeeping is done before any
@@ -30,7 +30,7 @@ public final class Reactions {
 
     public init() {}
 
-    /// The finish sent as `id` at `now`, waiting up to `ttl` for its turn:
+    /// The finish sent as `id` at `now`, waiting up to `ttl` in the queue:
     /// a tap on it opens `thread`.
     public func sent(_ id: Int, opens thread: ThreadRef, ttl: Int, now: Int64) {
         opens[id] = (thread, now + Int64(ttl) + DeviceLink.answerGraceMs)

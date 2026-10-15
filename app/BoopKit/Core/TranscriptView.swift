@@ -477,11 +477,11 @@ public final class TranscriptView {
         run.reverse()
         // The pokes the run's reactions can answer: from the third in a row.
         let answering = Set(run.dropFirst(Self.answersRunFrom - 1).map(\.seq))
-        guard let reaction = log.lastDid(ReactAction.actionName, where: {
+        guard let reaction = log.lastDid(ReactOutput.outputName, where: {
             $0["open"]?.bool == true && $0.about.map(answering.contains) == true
         }) else { return false }
         guard log.ended(reaction.seq) == nil else { return false }
-        return log.count(Event.did, since: reaction) { $0.action == MoodAction.actionName && $0["ok"]?.bool == true } == 0
+        return log.count(Event.did, since: reaction) { $0.action == MoodOutput.outputName && $0["ok"]?.bool == true } == 0
     }
 
     /// Whether `e` ends a run of pokes: anything but another poke of the
@@ -579,7 +579,7 @@ public final class TranscriptView {
         // Boop started a reaction: the working heartbeat starts its wait
         // again, so it comes after a stretch of work with no reaction,
         // however many events woke the brain in it.
-        if let react = log.lastDid(ReactAction.actionName, where: { $0["open"]?.bool == true }),
+        if let react = log.lastDid(ReactOutput.outputName, where: { $0["open"]?.bool == true }),
            react.seq > reactSeen {
             reactSeen = react.seq
             nextWorkBeatAt = nil

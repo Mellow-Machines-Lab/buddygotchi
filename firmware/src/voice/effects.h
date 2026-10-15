@@ -17,7 +17,7 @@ struct FxEvent {
   uint8_t clip = 0;
   uint8_t gain = 255;     // 255 plays the clip as loud as a take
   uint16_t pitch = 1000;  // permille: 1000 plays the clip as made
-  // A line turns it down; never needs you's, the finish's or an error's.
+  // A `say` turns it down; never needs you's, the finish's or an error's.
   // Each event carries its own, since one batch can mix both.
   bool duck = true;
 };
@@ -27,8 +27,8 @@ struct Effect {
   int clip = -1;  // its index in the face's bank, for dbg.state
   uint8_t gain = 255;
   uint16_t pitch = 1000;
-  uint8_t vol = 6;   // 0–10, as Line::vol
-  bool duck = true;  // a line turns it down (FxEvent::duck)
+  uint8_t vol = 6;                   // 0–10, as Say::vol
+  bool duck = true;                  // a `say` turns it down (FxEvent::duck)
   const uint8_t* samples = nullptr;  // 11.025 kHz, unsigned 8-bit (voice/clips.h)
   uint32_t len = 0;
 };
@@ -36,7 +36,7 @@ struct Effect {
 class Effects {
  public:
   static constexpr int kVoices = 4;  // effects at once; a fifth replaces the oldest
-  static constexpr int kDuck = 64;   // of 256: under a line, a quarter as loud, the bank's level
+  static constexpr int kDuck = 64;   // of 256: under a `say`, a quarter as loud, the bank's level
 
   void play(const Effect& e);
   // Every effect fades out over 4 ms, so the cut doesn't click.
@@ -44,7 +44,7 @@ class Effects {
   bool playing() const;
   // Adds the effects into `out`, unsigned 8-bit samples at 22.05 kHz with
   // 128 as silence, turned down by kDuck while `duck`, but for those a
-  // line never turns down.
+  // `say` never turns down.
   void mix(uint8_t* out, size_t n, bool duck);
 
  private:

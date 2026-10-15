@@ -226,16 +226,16 @@ final class PresenceTests: XCTestCase {
     func testEveryFaceCanSayHello() throws {
         try requireVoice()
         let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
-        XCTAssertTrue(ReactAction.topics.map(\.name).contains("hello"))
+        XCTAssertTrue(ReactOutput.topics.map(\.name).contains("hello"))
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
-        for mood in MoodAction.moods.map(\.name) {
+        for mood in MoodOutput.moods.map(\.name) {
             XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {
-            let line = Voice.line(feeling: "glad", about: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
+            let line = Voice.say(feeling: "glad", about: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
             XCTAssertEqual(line.count, 2, "\(line.map(\.text))")
             XCTAssertEqual(line.first?.kind, .sound)
             XCTAssertTrue(greetings.contains(line.last?.text ?? ""), "\(line.map(\.text))")

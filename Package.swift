@@ -45,7 +45,7 @@ func excludingAllBut(_ kept: [String]) -> [String] {
 
 var packageTargets: [Target] = [
     // Everything that isn't the app shell: Adapters, Core, Harness, Brains,
-    // Actions, Voice, Memory, DeviceLink (Boop's vocabulary on LinkKit),
+    // Outputs, Voice, Memory, DeviceLink (Boop's vocabulary on LinkKit),
     // the hook installer (Install) and the Runtime that wires them together
     // (App) (documentation/architecture.html).
     .target(

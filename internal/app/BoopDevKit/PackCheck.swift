@@ -66,8 +66,8 @@ public struct PackCheck {
                 problems.append("mac/takes.tsv: take \(i + 1) isn't id, text, part, meaning, kind, mood, finish and ms")
             }
             let card = (try? Data(contentsOf: file("voice/voice.bin"))) ?? Data()
-            if rows.first.map(String.init) != Self.voicePackVersion(card) {
-                problems.append("mac/takes.tsv is version \(rows.first ?? "none"), and voice/voice.bin \(Self.voicePackVersion(card))")
+            if rows.first.map(String.init) != Self.voiceFileVersion(card) {
+                problems.append("mac/takes.tsv is version \(rows.first ?? "none"), and voice/voice.bin \(Self.voiceFileVersion(card))")
             }
         case (false, false): break
         }
@@ -100,9 +100,9 @@ public struct PackCheck {
         }
     }
 
-    /// The version in a voice pack's header (`voice/voice.bin`): its 16
+    /// The version in a voice file's header (`voice/voice.bin`): its 16
     /// bytes after the magic, NUL-padded.
-    public static func voicePackVersion(_ pack: Data) -> String {
+    public static func voiceFileVersion(_ pack: Data) -> String {
         pack.count < 24 ? "" : String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
     }
 }

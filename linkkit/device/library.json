@@ -1,7 +1,7 @@
 {
   "name": "linkkit",
   "version": "1.0.0",
-  "description": "LinkKit's device side: the host's lines, hello, the turn and the links (linkkit/SPEC.md). Pure C++17 and ArduinoJson 7, plus a NimBLE Nordic UART transport on the ESP32.",
+  "description": "LinkKit's device side: the host's messages, hello, the queue and the links (linkkit/SPEC.md). Pure C++17 and ArduinoJson 7, plus a NimBLE Nordic UART transport on the ESP32.",
   "keywords": "protocol, json, ble, serial",
   "license": "MIT",
   "frameworks": "*",

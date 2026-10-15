@@ -5,7 +5,7 @@ import LinkKit
 
 /// The harness evals (internal/EVALS.md): scenarios of hook-level steps on a
 /// virtual clock, run through a fresh core, the real harness and the real
-/// actions, each pass checked against what Jev should answer. They ask Jev,
+/// outputs, each pass checked against what Jev should answer. They ask Jev,
 /// so they need its key; `boopdev eval` fails without it. Tests run the same
 /// runner with a scripted brain.
 public struct Scenario: Sendable {
@@ -58,7 +58,7 @@ public struct Scenario: Sendable {
         /// didn't react.
         public var kind: Set<String>?
         /// A take Boop said, by its text as the bubble shows it (`Tsk...`):
-        /// the step passes when any of the line's takes is one of these;
+        /// the step passes when any of the `say`'s takes is one of these;
         /// with `some`, when it said anything; with `none`, when it said
         /// nothing.
         public var said: Set<String>?
@@ -212,7 +212,7 @@ public struct Scenario: Sendable {
         mood = try (o["mood"] as? String).map {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
             return $0
-        } ?? MoodAction.initial
+        } ?? MoodOutput.initial
         steps = try raw.enumerated().map { i, s in
             func badStep(_ why: String) -> Error { bad("step \(i + 1): \(why)") }
             guard let event = s["event"] as? String, Scenario.events.contains(event) else {
@@ -249,9 +249,9 @@ public struct Scenario: Sendable {
                 step.expect = Expectation(react: try set("react"), animation: try set("animation"), feeling: try set("feeling"), about: try set("about"),
                                           kind: try set("kind"), said: try set("said"), loops: try set("loops"),
                                           mood: try set("mood"), offered: try set("offered"))
-                for (key, values, known) in [("feeling", step.expect?.feeling, ReactAction.feelings.map(\.name)),
-                                             ("about", step.expect?.about, ReactAction.topics.map(\.name)),
-                                             ("kind", step.expect?.kind, ReactAction.kinds.map(\.name))] {
+                for (key, values, known) in [("feeling", step.expect?.feeling, ReactOutput.feelings.map(\.name)),
+                                             ("about", step.expect?.about, ReactOutput.topics.map(\.name)),
+                                             ("kind", step.expect?.kind, ReactOutput.kinds.map(\.name))] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -262,7 +262,7 @@ public struct Scenario: Sendable {
                     let unknown = (values ?? []).subtracting(graphMoods + (key == "react" ? ["none"] : []))
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not a mood") }
                 }
-                let finishes = ["none"] + ReactAction.animations.map(\.name)
+                let finishes = ["none"] + ReactOutput.animations.map(\.name)
                 guard (step.expect?.animation ?? []).isSubset(of: finishes) else {
                     throw badStep("expect.animation is one of \(finishes.joined(separator: ", "))")
                 }
@@ -320,7 +320,7 @@ public struct Eval {
         public var line: String
         public var expected: Scenario.Expectation
         /// What happened: the react.mood pick, the animation played, the
-        /// feeling, topic and kind picked, the line said and its takes, how
+        /// feeling, topic and kind picked, the `say` and its takes, how
         /// long the face held, the mood after.
         public var react: String?
         public var animation: String?
@@ -462,9 +462,9 @@ public struct Eval {
         let reactions = Reactions()
         let (harness, mood) = Runtime.harness(
             pipeline: pipeline, steering: steering, personality: { scenario.personality }, reactions: reactions,
-            queue: { moment, pending in
-                ending.said = moment.say?.text
-                ending.takes = moment.say?.takes.map(\.text) ?? []
+            queue: { reaction, pending in
+                ending.said = reaction.say?.text
+                ending.takes = reaction.say?.takes.map(\.text) ?? []
                 guard let end = ending.end else { return ending.open.append(pending) }
                 if let ended = Eval.ended(end) {
                     reactions.read(.ended(ended), pending).map(pending.finish)
@@ -476,13 +476,13 @@ public struct Eval {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
         }
-        func moodNow() -> String { home.sync { MoodAction.value(mood, harness.log.view(now: clock.now)) } }
+        func moodNow() -> String { home.sync { MoodOutput.value(mood, harness.log.view(now: clock.now)) } }
         home.sync {
             harness.use(brain)
             // The mood it starts in, as the dashboard would set it just before.
-            if scenario.mood != MoodAction.initial {
+            if scenario.mood != MoodOutput.initial {
                 harness.force(mood, by: Runtime.forcedBy) {
-                    MoodAction.change(mood, to: scenario.mood, log: harness.log.view(now: clock.now))
+                    MoodOutput.change(mood, to: scenario.mood, log: harness.log.view(now: clock.now))
                 }
             }
         }
@@ -497,7 +497,7 @@ public struct Eval {
             // Time passes a second at a time, as the app ticks, and what a
             // tick brings (a heartbeat) is answered then, as in the app.
             var last: Harness.Pass?
-            var lastSaid: String?  // the line its reaction said
+            var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
             func respond(_ views: [ViewEvent]) async {
                 for view in views where view.wakesBrain {
@@ -508,17 +508,17 @@ public struct Eval {
                     lastSaid = ending.said
                     lastTakes = ending.takes
                     last = record
-                    let ran = record.actions.contains { $0.name == ReactAction.actionName && $0.result.ok }
+                    let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
                     let answers = record.answers
                     timeline.append(Pass(
                         atMs: clock.now - start, line: view.line,
                         reaction: ran ? Reaction(face: answers["react.mood"]?.choice ?? "none",
-                                                 animation: ReactAction.animation(answers) ?? "none",
+                                                 animation: ReactOutput.animation(answers) ?? "none",
                                                  said: ending.said ?? "none") : nil,
-                        loops: ran ? ReactAction.holds[ReactAction.loops(answers) - 1].name : nil,
+                        loops: ran ? ReactOutput.holds[ReactOutput.loops(answers) - 1].name : nil,
                         mood: moodNow(), dropped: record.dropped,
-                        offered: record.questions.first { $0.key == MoodAction.actionName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodAction.actionName]?.choice))
+                        offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
+                        answer: answers[MoodOutput.outputName]?.choice))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
@@ -547,14 +547,14 @@ public struct Eval {
                 throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
             }
             let react = record.answers["react.mood"]?.choice
-            let ran = record.actions.contains { $0.name == ReactAction.actionName && $0.result.ok }
+            let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
             checks.append(Check(step: i + 1, line: record.line ?? "", expected: expect, react: react,
-                                animation: ran ? ReactAction.animation(record.answers) : nil,
-                                feeling: ran ? ReactAction.feeling(record.answers) : nil,
-                                about: ran ? ReactAction.about(record.answers) : nil,
-                                kind: ran ? ReactAction.kind(record.answers).rawValue : nil,
+                                animation: ran ? ReactOutput.animation(record.answers) : nil,
+                                feeling: ran ? ReactOutput.feeling(record.answers) : nil,
+                                about: ran ? ReactOutput.about(record.answers) : nil,
+                                kind: ran ? ReactOutput.kind(record.answers).rawValue : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [],
-                                loops: ran ? ReactAction.holds[ReactAction.loops(record.answers) - 1].name : nil,
+                                loops: ran ? ReactOutput.holds[ReactOutput.loops(record.answers) - 1].name : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs))
         }
@@ -566,7 +566,7 @@ public struct Eval {
     /// The whole-run checks (internal/EVALS.md §3) against a run's passes, the
     /// spans its turn worked and the mood it started in.
     static func judge(_ c: Scenario.Checks, timeline: [Pass], working: [(Int64, Int64)],
-                      start: String = MoodAction.initial) -> [RunCheck] {
+                      start: String = MoodOutput.initial) -> [RunCheck] {
         var out: [RunCheck] = []
         let played = timeline.filter { $0.reaction != nil }
         func clock(_ ms: Int64) -> String { "\(ms / 60_000)m\(String(format: "%02d", ms / 1000 % 60))s" }
@@ -623,7 +623,7 @@ public struct Eval {
             var before = start
             var wrong: String?
             for p in timeline where wrong == nil {
-                if p.dropped?.hasPrefix("jev: no usable answer for \(MoodAction.actionName)") == true {
+                if p.dropped?.hasPrefix("jev: no usable answer for \(MoodOutput.outputName)") == true {
                     wrong = "at \(clock(p.atMs)): no usable mood answer"
                 } else if p.dropped == nil, let answer = p.answer, !p.offered.contains(answer) {
                     wrong = "at \(clock(p.atMs)): answered \(answer), offered \(p.offered.joined(separator: "|"))"
@@ -666,7 +666,7 @@ public struct Eval {
     final class Ending: @unchecked Sendable {
         var end: Pending.End? = .done
         var open: [Pending] = []
-        /// The line the last pass's reaction said, if any, and its takes'
+        /// What the last pass's reaction said, if any, and its takes'
         /// texts.
         var said: String?
         var takes: [String] = []

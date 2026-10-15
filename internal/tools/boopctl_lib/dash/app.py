@@ -92,7 +92,7 @@ class StateView(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with VerticalScroll() as scroll:
-            scroll.border_title = "the state Jev read (s or Escape closes)"
+            scroll.border_title = "the prompt Jev read (s or Escape closes)"
             yield Static(Text(self.state))
 
 
@@ -142,7 +142,7 @@ class Dash(App[None]):
 
     def compose(self) -> ComposeResult:
         # Kept, since queries only search the screen on top, such as a picker.
-        self.face_view = Static("starting boop-sim…" if self.face else "no sim", id="face")
+        self.face_view = Static("starting the native simulator…" if self.face else "no sim", id="face")
         self.banner = Static(id="stale")
         self.facts = Static(id="facts")
         self.columns = {name: Static(id=name) for name in ("mood", "reflexes", "decided")}
@@ -185,7 +185,7 @@ class Dash(App[None]):
             self.board = Board()
             self.timeline.write(Text("— debug.jsonl started again: Boop restarted —", "yellow"), width=self.row_width())
         # At the start and after a restart the sim gets only the latest
-        # state, never old moments; after that, every line as it lands.
+        # state, never old reactions; after that, every line as it lands.
         catching_up = self.first or restarted
         live = self.face and self.look is None
         for line in lines:

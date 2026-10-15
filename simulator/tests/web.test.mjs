@@ -247,7 +247,7 @@ test('a recording plays into the board in order, and knows nothing of what its l
   assert.throws(() => new DemoPlayer(fake, { ...recording, version: 2 }), /version 2/);
 });
 
-test('a voice pack cut down to a demo is one the board plays from', { skip: needsVoice }, async () => {
+test('a voice file cut down to a demo is one the board plays from', { skip: needsVoice }, async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'bsim-voice-'));
   const recording = path.join(dir, 'demo.json'), small = path.join(dir, 'voice.bin');
   writeFileSync(recording, JSON.stringify({ takes: ['previous.go', 'previous.tsk'] }));

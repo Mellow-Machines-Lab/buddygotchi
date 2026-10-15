@@ -28,7 +28,7 @@ WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
 
 class Board:
-    """boop-sim --live, with its serial port opened as a tool opens a board's."""
+    """The native simulator, --live, with its serial port opened as a tool opens a board's."""
 
     def __init__(self, face: str = "pixel", **env: str) -> None:
         self.proc = subprocess.Popen([str(CORE), "--live"], stdout=subprocess.PIPE,
@@ -122,10 +122,10 @@ class CoreTests(unittest.TestCase):
         self.assertNotEqual(first["boot"], second["boot"])
 
     @unittest.skipUnless(VOICE.exists(), "the chosen character pack has no voice")
-    def test_a_line_plays_at_the_pace_a_dac_would(self) -> None:
+    def test_a_say_plays_at_the_pace_a_dac_would(self) -> None:
         board = self.board()
         self.assertEqual(board.request({"t": "dbg.ping"})["card"], "ok")
-        board.send({**WORKING, "base": "idle", "busy": 0})  # a quiet face: only the line sounds
+        board.send({**WORKING, "base": "idle", "busy": 0})  # a quiet face: only the `say` sounds
         board.pump(0.3)
         board.send({"t": "do", "id": 1, "name": "react", "play": "now", "args": {"say": {"take": "previous.go"}}})
         board.pump(3.0)
@@ -134,7 +134,7 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(out["ready"])
         self.assertEqual(out["lines"], 1)
         self.assertGreater(out["out_ms"], 100)
-        # The output's time for the line is the line's own length: the
+        # The output's time for the `say` is the `say`'s own length: the
         # board's takes check holds it within 10%.
         self.assertAlmostEqual(out["wall_ms"] / out["out_ms"], 1, delta=0.1)
         self.assertFalse(state["amp"], "the amp goes off about a second after the last sound")

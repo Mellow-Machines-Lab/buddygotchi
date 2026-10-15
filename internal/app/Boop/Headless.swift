@@ -118,10 +118,10 @@ enum Headless {
         // Ready at once, so a live agent may start while the device is
         // awaited; played once it's there.
         let player = runtime.home.sync {
-            runtime.demo(script, live: live, cursor: cursor, line: { line, agent in
-                let cause = line.cause(creature: runtime.name, agent: agent)
+            runtime.demo(script, live: live, cursor: cursor, step: { step, agent in
+                let cause = step.cause(creature: runtime.name, agent: agent)
                 if let cause { log.write("demo: \(cause.text)") }
-                recorder?.happened(cause, input: line.input)
+                recorder?.happened(cause, input: step.input)
             }, done: {
                 if let recorder, let file {
                     let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"

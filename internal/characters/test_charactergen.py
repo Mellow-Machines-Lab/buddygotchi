@@ -158,7 +158,7 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}], "studio": []})
 
     def test_staging_takes_the_packs_own_files_only(self):
-        """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice pack and the pack's sources."""
+        """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources."""
         pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
                          files=[("firmware/include/face.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
                                 ("steering/guide.md", ""), ("design/art.txt", "")])
