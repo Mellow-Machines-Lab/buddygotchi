@@ -18,8 +18,9 @@ from PIL import Image, ImageDraw, ImageFont
 REPO = Path(__file__).resolve().parents[3]
 OUT = REPO / "firmware" / "assets" / "fonts.h"
 OUT_GEL = REPO / "firmware" / "assets" / "fonts_gel.h"
-# Where `npm ci` in landing/ puts Geist Mono.
-TTF_DIR = REPO / "landing" / "node_modules" / "geist" / "dist" / "fonts" / "geist-mono"
+# The two weights it draws, from the geist npm package 1.7.2, with their
+# licence beside them.
+TTF_DIR = Path(__file__).resolve().parent / "geist-mono"
 # Drawn after '~' (0x7E), in this order; the renderer maps UTF-8 to them.
 EXTRAS = ["·"]
 # name, weight file, pixel size
@@ -64,10 +65,10 @@ def render(name: str, path: Path, size: int) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--ttf-dir", type=Path, default=TTF_DIR,
-                        help="where Geist Mono's .ttf files are (default: landing/'s node_modules, after `npm ci`)")
+                        help="where Geist Mono's .ttf files are (default: internal/tools/fontgen/geist-mono)")
     ttf_dir = parser.parse_args().ttf_dir
     if not (ttf_dir / FONTS[0][1]).exists():
-        raise SystemExit(f"Geist Mono not found in {ttf_dir}; run `npm ci` in landing/ or pass --ttf-dir")
+        raise SystemExit(f"Geist Mono not found in {ttf_dir}; pass --ttf-dir")
     for out, fonts in ((OUT, FONTS), (OUT_GEL, GEL_FONTS)):
         body = "\n\n".join(render(n, ttf_dir / f, s) for n, f, s in fonts)
         out.write_text(HEADER + body + "\n\n}  // namespace render\n")
