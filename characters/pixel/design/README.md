@@ -1,6 +1,6 @@
 # Pixel's design: the animation bank and mood graph
 
-Updated 2026-10-05. The code-based animation/SFX bank and approved mood-graph
+Updated 2026-10-15. The code-based animation/SFX bank and approved mood-graph
 handover. The bank is the one source of the device's designs and sounds:
 `facegen` runs its generator for the faces and `sfxgen` imports its
 timelines and synthesiser, so a change here changes the firmware once
@@ -14,7 +14,7 @@ they're rerun.
   app ships it as `app/BoopKit/Actions/MoodGraph.swift`, which a test
   holds to this file move for move.
 
-Boop's own design, in its private pack's `design/` (characters/CHARACTER.md),
+Boop's own design, in its pack's `design/` (characters/CHARACTER.md),
 is the rest: the voice bank and the gel slime.
 
 From the **repository root**, with Node.js:

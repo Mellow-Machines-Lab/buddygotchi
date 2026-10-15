@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-14. How we check that Boop works, including what's on its
+Updated 2026-10-15. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -31,10 +31,10 @@ the owner.
 CI (`.github/workflows/ci.yml`) runs what needs nothing on every push to
 `main` and every pull request: `make -C internal test` on macOS 26, and
 `make -C internal fw-test` (L0 for the firmware and LinkKit's device
-library), and the CYD's firmware built with the public Pixel pack
-(`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`). CI has no private
-pack, so the AMOLED's build there only checks that it stops early,
-saying it needs a gel face. The runner's Swift (Xcode 26.6) is older
+library), all as Boop, the default pack, and both boards' firmware: the
+CYD's with Pixel (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`)
+and the AMOLED's with Boop's gel face
+(`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`). The runner's Swift (Xcode 26.6) is older
 than the 6.4 Boop is written with, so code must compile on both, and a
 test that times the wall clock checks it only when `CI` isn't set.
 
@@ -172,7 +172,7 @@ both themes. The renderer may need access outside the shell sandbox for
 WebKit's subprocesses; it uses no runtime or Bluetooth.
 
 **The recorded voice bank.** The voice comes from it. It's in Boop's
-private pack, so only a checkout with that pack can run these two.
+pack.
 `node characters/boop/design/assets/boop-voice-v1/tools/check.mjs`
 validates the bank itself: every recording's hash, PCM format and level,
 the indexes, and its own reference selector; it's offline and never plays
@@ -215,7 +215,7 @@ launch the menu-bar app or run the whole eval.
 | `make -C internal faces` | Regenerates the faces (`characters/pixel/firmware/include/faces.h`, the Pixel pack's `characters/pixel/mac/faces.json` with the popover's faces and the designs' loops for the Mac, the frames `fw-test` checks, and the designs' list in `characters/pixel/tools/facegen/design/manifest.json`) from the animation bank (`characters/pixel/design/boop-sound-bank-v4/`), whose generator it runs with node. It stops if an older mood's design doesn't come out as it was captured, then draws each design at a dozen moments in Google Chrome and fails unless facegen's own drawing matches pixel for pixel in RGB565, a blended pixel within one step (8,256 frames of 729 scenes, 7 minutes or so). Then rerun sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual), with the first Python 3.10 or later on `PATH` (`firmware/tools/find-python.sh`, which `pio.sh` uses too); a venv that already works, such as a worktree's link to the main checkout's, is kept and its packages brought up to date. `internal/tools/boopctl` runs it on first run |
 | `make -C internal sim-test` | The simulator (`simulator/tests/`). Its core on the Mac in real time, driven over its serial port as a board is: drawing, a native face's panel, a new boot each power-on, sound at a DAC's pace, and the port (what nobody heard is forgotten, a long reply arrives whole). Then the page's server and its USB socket (`test_serve.py`): a second server leaves a live socket alone, a stale one is replaced, and SIGTERM or SIGHUP removes it. Then the same core as the browser runs it, built to WebAssembly (it needs Emscripten and Node): touch and BOOT, the card, the page's USB cable, a recording played back, and a demo's cut-down voice. The sound and card tests skip without a voice pack |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, the session tool's script reading, replay server, gate and `/demo` command, and the landing demo's edits against its project (`internal/tools/session/tests/`, which needs `node` for the last), `charactergen.py`'s staging and studio rules and `packs.py` (`internal/characters/`), and each character pack's own (`characters/<pack>/tests/tools/`: Boop's checks its copy of Pixel's face). boopctl reads the takes from the chosen pack's `voice/voice.bin` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: `boopctl`'s commands and link, the card copy (`test_card.py`), the dashboard (`test_dash.py`), the day's summary (`test_day.py`), the working day's script and report (`test_workday.py`), the pipeline check's order check and the result it still writes when it can't start (`test_e2e.py`), the webcam recorder on synthetic video, the session tool's script reading, replay server, gate and `/demo` command, and the landing demo's edits against its project (`internal/tools/session/tests/`, which needs `node` for the last), `charactergen.py`'s staging and studio rules (`internal/characters/`), and each character pack's own (`characters/<pack>/tests/tools/`: Boop's checks its copy of Pixel's face). boopctl reads the takes from the chosen pack's `voice/voice.bin` |
 
 **`internal/tools/boopctl`**, the board over USB, the simulator, the
 dashboard and the day's summary. `--port PORT` picks the serial port (default `$BOOP_PORT` or
@@ -277,15 +277,13 @@ commands go through the bridge.
 
 | Tool | What it does |
 | --- | --- |
-| `python3 characters/boop/tools/voicegen/voicegen.py [--packs DIR ...] [--card DIR] [--wav-dir DIR]` | With Boop's pack here, rebuilds the voice from the recorded bank, in about 4 s: the pack, `voice/voice.bin`, and the Mac's take table, `mac/takes.tsv`, the same in each character pack that has the voice (`--packs`; Boop's and Pixel's unless given), all checked in. `--card /Volumes/<card>` also copies the pack onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
-| `python3 characters/boop/tools/pixelsync/pixelsync.py [--check]` | With Boop's pack here, copies Pixel's face into it again: the firmware's pixel renderer, faces and sound effects, `mac/faces.json` and the studio's preview. `--check` copies nothing, says which of Boop's copies differ from Pixel's, and fails if any do |
+| `python3 characters/boop/tools/voicegen/voicegen.py [--packs DIR ...] [--card DIR] [--wav-dir DIR]` | Rebuilds the voice from the recorded bank, in about 4 s: the pack, `voice/voice.bin`, and the Mac's take table, `mac/takes.tsv`, the same in each character pack that has the voice (`--packs`; Boop's and Pixel's unless given), all checked in. `--card /Volumes/<card>` also copies the pack onto a microSD card in the Mac, as `boop/voice.bin`; `--wav-dir` writes every converted take as a WAV |
+| `python3 characters/boop/tools/pixelsync/pixelsync.py [--check]` | Copies Pixel's face into it again: the firmware's pixel renderer, faces and sound effects, `mac/faces.json` and the studio's preview. `--check` copies nothing, says which of Boop's copies differ from Pixel's, and fails if any do |
 | `node characters/pixel/tools/sfxgen/sfxgen.mjs [--wav-dir DIR]` | Rebuilds the sound effects, `characters/pixel/firmware/include/sfx.h`, from the animation bank's synthesiser and timelines, for the designs facegen lists, so after `make -C internal faces`; `--wav-dir` also writes every clip as a WAV |
 | `internal/tools/.venv/bin/python internal/tools/fontgen/fontgen.py [--ttf-dir DIR]` | Rebuilds the device's fonts, `firmware/assets/fonts.h`, and the gel's own, `fonts_gel.h`, from Geist Mono; the `.ttf` files are in `landing/node_modules` after `npm ci` there (the landing page's repository, cloned into `landing/`), by default |
 | `python3 characters/charactergen.py [--check] [PACK]`, `--stage [PACK]`, `--which` | Builds a character pack's generated files from its `character.json`: the firmware's `firmware/include/moods.h` ([CHARACTER.md](../characters/CHARACTER.md) §9), for PACK or every pack in `characters/`. Every form but `--which` also writes the [Character Studio](../characters/studio/README.md)'s `packs.js` and checks its data: the states against the board's, and that each pack's preview plays every mood and state (`--check` fails on a problem, the others warn; [CHARACTER.md](../characters/CHARACTER.md) §12). `--stage` lays the chosen pack out in `.character-build/`, as `firmware/tools/pio.sh` does before every build, and `--which` names it ([CHARACTER.md](../characters/CHARACTER.md) §2) |
-| `python3 characters/packs.py add NAME URL\|sync\|list\|remove NAME` | Installs character packs that live in repositories of their own, as untracked checkouts at `characters/NAME/` ([CHARACTER.md](../characters/CHARACTER.md) §2); `sync` checks every installed pack out in a new worktree. Its tests (`internal/characters/test_packs.py`, in `make -C internal tools-test`) run against throwaway repositories |
 | `internal/tools/.venv/bin/python characters/pixel/tools/facegen/facegen.py [--check]` | What `make -C internal faces` runs; without `--check` it skips the comparison with Chrome |
 | `internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [boop moods popover watch beacon]` | Makes the READMEs' GIFs and the popover's picture again, each from a real run: boop-sim's frames, `Boop --snapshots` (after `make build`), agent-hooks' `Examples/watch.sh` and `beacon listen` ([its README](tools/mediagen/README.md)) |
-| `python3 internal/tools/export/export.py OUT [--commit] [--report FILE]` | Lays out the public repository in OUT, without private character packs, and fails if any of a private pack's content (or anything key-like) got through ([CHARACTER.md](../characters/CHARACTER.md) §11). `--commit` makes OUT a one-commit repository; nothing is pushed |
 | `internal/tools/webcam/webcam.sh list\|record\|analyze` | The camera recorder ([its README](tools/webcam/README.md)); `boopctl cam` wraps it |
 | `internal/skills/doctor/doctor.sh` | Checks from inside an agent that its hooks reach Boop; `--headless` against a throwaway app |
 | `agent-hooks install\|remove\|status\|tail\|doctor` | agent-hooks' own command line, built in `agent-hooks/` with `swift build` (`agent-hooks --help`). `tail --sessions` prints every hook's event and each session's state as it changes. Give it a temporary `HOME` and `--home` together in tests, as for `boopdev hooks`: without `--keep-text` its install makes Boop's entries outdated |

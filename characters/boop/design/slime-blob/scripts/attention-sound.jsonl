@@ -1,0 +1,5 @@
+{"at":0,"type":"facts","facts":{"base":"working","attn":{"id":7,"agent":"codex","project":"sound check"}}}
+{"at":10000,"type":"mood","mood":"grumpy"}
+{"at":25000,"type":"mood","mood":"sad"}
+{"at":40000,"type":"mood","mood":"frightened"}
+{"at":60000,"type":"end"}

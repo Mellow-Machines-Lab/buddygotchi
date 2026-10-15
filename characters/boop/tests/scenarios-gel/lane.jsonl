@@ -1,0 +1,50 @@
+// The host's lane under the gel, drawn at the panel's own
+// size: the strip's working count, who needs you (a long name cut, and
+// how many more), whose turn the brain's finish was after its mark, and
+// the bubble in each of its fonts, the shortest line to the longest.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":3,"vol":0}
+{"clock":1504}
+{"shot":"working-count"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":2,"vol":0,"attn":{"agent":"claude","project":"buddygotchi","name":"Make the device answer every touch at once","more":2,"id":7}}
+{"clock":1504}
+{"shot":"needs-you-long-name"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
+{"t":"do","id":11,"name":"task_complete","args":{"outcome":"success","who":{"agent":"claude","thread":"fix-nav"}}}
+{"clock":504}
+{"shot":"finish-success"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"grumpy","busy":1,"vol":0}
+{"t":"do","id":12,"name":"task_complete","args":{"outcome":"failure","who":{"agent":"codex","thread":"landing-page-copy"}}}
+{"clock":504}
+{"shot":"finish-failure"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","vol":0}
+{"t":"do","id":13,"name":"reply_ready","args":{"who":{"agent":"claude","thread":"what does the turn do"}}}
+{"clock":504}
+{"shot":"finish-reply"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
+{"t":"do","name":"react","args":{"say":{"take":"previous.go"}}}
+{"clock":400}
+{"shot":"bubble-short"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
+{"t":"do","name":"react","args":{"say":{"take":"phase1.phrase.setback.technical-difficulties__sad__contained"}}}
+{"clock":400}
+{"shot":"bubble-longest-take"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","busy":1,"vol":0}
+{"t":"do","name":"react","args":{"say":{"take":"previous.tsk","then":"phase1.word.test.validate__annoyed__contained"}}}
+{"clock":400}
+{"shot":"bubble-two-takes"}

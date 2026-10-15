@@ -1,0 +1,17 @@
+{
+  "name": "Routine work leaves a calm Boop calm",
+  "case": "With the chatter personality, so every tool call reaches Boop, two quick turns go by: commands that pass, a plain request and a matter-of-fact finish each. Boop may react to everything, but none of it is a reason to leave calm: its mood holds all through, with no bouncing.",
+  "why": "characters/boop/steering/guide.md: never change the mood for a routine turn alone; characters/boop/steering/mood/calm.md: calm stays through routine turns and plain finishes. Staying is the mood question's first option, and no change is fine (MoodAction.options)",
+  "personality": "chatter",
+  "checks": {"mood_changes": "0"},
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "rename the config loader", "expect": {"mood": "calm"}},
+    {"event": "command", "at": "10s", "topic": "tests", "failed": false, "expect": {"mood": "calm"}},
+    {"event": "command", "at": "20s", "expect": {"mood": "calm"}},
+    {"event": "turn finished", "at": "30s", "message": "Renamed the config loader in 3 files.", "expect": {"mood": "calm"}},
+    {"event": "turn started", "at": "1m", "prompt": "tidy the imports"},
+    {"event": "command", "at": "1m10s", "expect": {"mood": "calm"}},
+    {"event": "command", "at": "1m20s", "topic": "build", "failed": false, "expect": {"mood": "calm"}},
+    {"event": "turn finished", "at": "1m30s", "message": "Tidied the imports; the build passes.", "expect": {"mood": "calm"}}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Quiet recovery of fictional fear stays on an ordinary edge.",
+  "case": "Quiet recovery of fictional fear stays on an ordinary edge.",
+  "why": "Opt-in graph v3 pacing and evidence",
+  "graph": "v3",
+  "mood": "frightened",
+  "checks": {
+    "moves_on_graph": true
+  },
+  "steps": [
+    {
+      "event": "said",
+      "at": "1m",
+      "expect": {
+        "mood": "frightened|scared|wounded|sad|crying"
+      },
+      "words": "All quiet now."
+    }
+  ]
+}

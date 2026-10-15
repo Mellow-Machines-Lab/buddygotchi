@@ -10,9 +10,8 @@ extension Personality {
 }
 
 /// The tests that need Boop's pack (its goldens, evals, voice, wording and
-/// moods) skip without it, as in the public repository, which has Pixel only
-/// (characters/CHARACTER.md §11). Each such class calls this in its
-/// setUpWithError.
+/// moods) skip when another pack is chosen (characters/CHARACTER.md §11).
+/// Each such class calls this in its setUpWithError.
 func requireBoopsPack() throws {
-    try XCTSkipUnless(CharacterPack.active.id == "boop", "needs Boop's character pack, which isn't here")
+    try XCTSkipUnless(CharacterPack.active.id == "boop", "needs Boop's character pack, and another is chosen")
 }

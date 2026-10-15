@@ -1,0 +1,12 @@
+{
+  "name": "A comeback still showing isn't made again when the turn finishes",
+  "case": "The agent's tests fail twice, then pass, and Boop is still showing its proud reaction to the fix when the turn finishes twenty seconds later. Boop doesn't make the same proud relief again for the finish: it stays quiet, or plays the finish as a success with a small face.",
+  "why": "characters/boop/steering/guide.md: don't repeat what Boop is still doing, which HISTORY marks (in progress). The pass's face, held over the working look, still holds when the turn finishes 20 s later, so the finish gets no second proud relief, only its own success",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "30s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "1m30s", "topic": "tests", "failed": true},
+    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false, "reaction": "in progress", "expect": {"react": "proud|happy|excited", "feeling": "glad"}},
+    {"event": "turn finished", "at": "2m50s", "expect": {"react": "none|happy|excited|calm|engaged|proud", "feeling": "none|glad"}}
+  ]
+}

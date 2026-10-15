@@ -1,0 +1,7381 @@
+{
+  "version": 1,
+  "status": "ALL DIRECTED BRIDGES TESTED; HOST GRAPH V3 OPT-IN",
+  "edges": [
+    {
+      "id": "calm->comfy",
+      "from": "calm",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->curious",
+      "from": "calm",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->engaged",
+      "from": "calm",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->pleased",
+      "from": "calm",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->tired",
+      "from": "calm",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->uneasy",
+      "from": "calm",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "calm",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->surprised",
+      "from": "calm",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "calm",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "calm->wounded",
+      "from": "calm",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "calm",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->calm",
+      "from": "comfy",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->lazy",
+      "from": "comfy",
+      "to": "lazy",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "lazy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->pleased",
+      "from": "comfy",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->shy",
+      "from": "comfy",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->affectionate",
+      "from": "comfy",
+      "to": "affectionate",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "affectionate",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->tired",
+      "from": "comfy",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "comfy",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "comfy->surprised",
+      "from": "comfy",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "comfy",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->comfy",
+      "from": "lazy",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "lazy",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->calm",
+      "from": "lazy",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "lazy",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->bored",
+      "from": "lazy",
+      "to": "bored",
+      "category": "ordinary",
+      "faceFrom": "lazy",
+      "faceTo": "bored",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->engaged",
+      "from": "lazy",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "lazy",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->tired",
+      "from": "lazy",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "lazy",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lazy->surprised",
+      "from": "lazy",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "lazy",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->lazy",
+      "from": "bored",
+      "to": "lazy",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "lazy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->calm",
+      "from": "bored",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->curious",
+      "from": "bored",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->annoyed",
+      "from": "bored",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->disappointed",
+      "from": "bored",
+      "to": "disappointed",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "disappointed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->amused",
+      "from": "bored",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->confused",
+      "from": "bored",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "bored",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "bored->excited",
+      "from": "bored",
+      "to": "excited",
+      "category": "dramatic",
+      "faceFrom": "bored",
+      "faceTo": "excited",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->comfy",
+      "from": "pleased",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->happy",
+      "from": "pleased",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->proud",
+      "from": "pleased",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->shy",
+      "from": "pleased",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->amused",
+      "from": "pleased",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->affectionate",
+      "from": "pleased",
+      "to": "affectionate",
+      "category": "ordinary",
+      "faceFrom": "pleased",
+      "faceTo": "affectionate",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->wounded",
+      "from": "pleased",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "pleased",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "pleased->surprised",
+      "from": "pleased",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "pleased",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->pleased",
+      "from": "happy",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->excited",
+      "from": "happy",
+      "to": "excited",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "excited",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->proud",
+      "from": "happy",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->curious",
+      "from": "happy",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->shy",
+      "from": "happy",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->amused",
+      "from": "happy",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "happy",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->sad",
+      "from": "happy",
+      "to": "sad",
+      "category": "dramatic",
+      "faceFrom": "happy",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "happy->surprised",
+      "from": "happy",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "happy",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->happy",
+      "from": "excited",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "excited",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->proud",
+      "from": "excited",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "excited",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->mischievous",
+      "from": "excited",
+      "to": "mischievous",
+      "category": "ordinary",
+      "faceFrom": "excited",
+      "faceTo": "mischievous",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->amused",
+      "from": "excited",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "excited",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->hopeful",
+      "from": "excited",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "excited",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->frightened",
+      "from": "excited",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "excited",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->angry",
+      "from": "excited",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "excited",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "excited->wounded",
+      "from": "excited",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "excited",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->calm",
+      "from": "curious",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->engaged",
+      "from": "curious",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->pleased",
+      "from": "curious",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->uneasy",
+      "from": "curious",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->surprised",
+      "from": "curious",
+      "to": "surprised",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->confused",
+      "from": "curious",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->skeptical",
+      "from": "curious",
+      "to": "skeptical",
+      "category": "ordinary",
+      "faceFrom": "curious",
+      "faceTo": "skeptical",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "curious->stunned",
+      "from": "curious",
+      "to": "stunned",
+      "category": "dramatic",
+      "faceFrom": "curious",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->calm",
+      "from": "engaged",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->curious",
+      "from": "engaged",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->determined",
+      "from": "engaged",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->pleased",
+      "from": "engaged",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->annoyed",
+      "from": "engaged",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->hopeful",
+      "from": "engaged",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->tired",
+      "from": "engaged",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "engaged",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "engaged->proud",
+      "from": "engaged",
+      "to": "proud",
+      "category": "dramatic",
+      "faceFrom": "engaged",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->engaged",
+      "from": "determined",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->proud",
+      "from": "determined",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->annoyed",
+      "from": "determined",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->irritated",
+      "from": "determined",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->whiny",
+      "from": "determined",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->hopeful",
+      "from": "determined",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "determined",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->angry",
+      "from": "determined",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "determined",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "determined->overwhelmed",
+      "from": "determined",
+      "to": "overwhelmed",
+      "category": "dramatic",
+      "faceFrom": "determined",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->pleased",
+      "from": "proud",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->happy",
+      "from": "proud",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->engaged",
+      "from": "proud",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->determined",
+      "from": "proud",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->mischievous",
+      "from": "proud",
+      "to": "mischievous",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "mischievous",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->amused",
+      "from": "proud",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "proud",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->wounded",
+      "from": "proud",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "proud",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "proud->embarrassed",
+      "from": "proud",
+      "to": "embarrassed",
+      "category": "dramatic",
+      "faceFrom": "proud",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->pleased",
+      "from": "mischievous",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "mischievous",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->excited",
+      "from": "mischievous",
+      "to": "excited",
+      "category": "ordinary",
+      "faceFrom": "mischievous",
+      "faceTo": "excited",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->proud",
+      "from": "mischievous",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "mischievous",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->shy",
+      "from": "mischievous",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "mischievous",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->amused",
+      "from": "mischievous",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "mischievous",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->surprised",
+      "from": "mischievous",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "mischievous",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "mischievous->embarrassed",
+      "from": "mischievous",
+      "to": "embarrassed",
+      "category": "dramatic",
+      "faceFrom": "mischievous",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->comfy",
+      "from": "shy",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->pleased",
+      "from": "shy",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->calm",
+      "from": "shy",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->wounded",
+      "from": "shy",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->affectionate",
+      "from": "shy",
+      "to": "affectionate",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "affectionate",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->embarrassed",
+      "from": "shy",
+      "to": "embarrassed",
+      "category": "ordinary",
+      "faceFrom": "shy",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "shy->happy",
+      "from": "shy",
+      "to": "happy",
+      "category": "dramatic",
+      "faceFrom": "shy",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->calm",
+      "from": "uncomfortable",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->uneasy",
+      "from": "uncomfortable",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->annoyed",
+      "from": "uncomfortable",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->whiny",
+      "from": "uncomfortable",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->disgusted",
+      "from": "uncomfortable",
+      "to": "disgusted",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "disgusted",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->confused",
+      "from": "uncomfortable",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "uncomfortable",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uncomfortable->scared",
+      "from": "uncomfortable",
+      "to": "scared",
+      "category": "dramatic",
+      "faceFrom": "uncomfortable",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->calm",
+      "from": "annoyed",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->engaged",
+      "from": "annoyed",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->irritated",
+      "from": "annoyed",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->whiny",
+      "from": "annoyed",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->speechless",
+      "from": "annoyed",
+      "to": "speechless",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "speechless",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->skeptical",
+      "from": "annoyed",
+      "to": "skeptical",
+      "category": "ordinary",
+      "faceFrom": "annoyed",
+      "faceTo": "skeptical",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->angry",
+      "from": "annoyed",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "annoyed",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "annoyed->wounded",
+      "from": "annoyed",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "annoyed",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->annoyed",
+      "from": "irritated",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "irritated",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->grumpy",
+      "from": "irritated",
+      "to": "grumpy",
+      "category": "ordinary",
+      "faceFrom": "irritated",
+      "faceTo": "grumpy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->determined",
+      "from": "irritated",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "irritated",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->whiny",
+      "from": "irritated",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "irritated",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->overwhelmed",
+      "from": "irritated",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "irritated",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->angry",
+      "from": "irritated",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "irritated",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "irritated->wounded",
+      "from": "irritated",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "irritated",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->irritated",
+      "from": "grumpy",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "grumpy",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->whiny",
+      "from": "grumpy",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "grumpy",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->determined",
+      "from": "grumpy",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "grumpy",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->angry",
+      "from": "grumpy",
+      "to": "angry",
+      "category": "ordinary",
+      "faceFrom": "grumpy",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->disgusted",
+      "from": "grumpy",
+      "to": "disgusted",
+      "category": "ordinary",
+      "faceFrom": "grumpy",
+      "faceTo": "disgusted",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->wounded",
+      "from": "grumpy",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "grumpy",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->sad",
+      "from": "grumpy",
+      "to": "sad",
+      "category": "dramatic",
+      "faceFrom": "grumpy",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "grumpy->frightened",
+      "from": "grumpy",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "grumpy",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->grumpy",
+      "from": "angry",
+      "to": "grumpy",
+      "category": "ordinary",
+      "faceFrom": "angry",
+      "faceTo": "grumpy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->irritated",
+      "from": "angry",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "angry",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->determined",
+      "from": "angry",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "angry",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->overwhelmed",
+      "from": "angry",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "angry",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->wounded",
+      "from": "angry",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "angry",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->sad",
+      "from": "angry",
+      "to": "sad",
+      "category": "dramatic",
+      "faceFrom": "angry",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "angry->frightened",
+      "from": "angry",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "angry",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->calm",
+      "from": "disappointed",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->bored",
+      "from": "disappointed",
+      "to": "bored",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "bored",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->sad",
+      "from": "disappointed",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->whiny",
+      "from": "disappointed",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->engaged",
+      "from": "disappointed",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->hopeful",
+      "from": "disappointed",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "disappointed",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disappointed->wounded",
+      "from": "disappointed",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "disappointed",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->disappointed",
+      "from": "sad",
+      "to": "disappointed",
+      "category": "ordinary",
+      "faceFrom": "sad",
+      "faceTo": "disappointed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->wounded",
+      "from": "sad",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "sad",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->whiny",
+      "from": "sad",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "sad",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->crying",
+      "from": "sad",
+      "to": "crying",
+      "category": "ordinary",
+      "faceFrom": "sad",
+      "faceTo": "crying",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->lonely",
+      "from": "sad",
+      "to": "lonely",
+      "category": "ordinary",
+      "faceFrom": "sad",
+      "faceTo": "lonely",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->angry",
+      "from": "sad",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "sad",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->determined",
+      "from": "sad",
+      "to": "determined",
+      "category": "dramatic",
+      "faceFrom": "sad",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "sad->happy",
+      "from": "sad",
+      "to": "happy",
+      "category": "dramatic",
+      "faceFrom": "sad",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "crying->sad",
+      "from": "crying",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "crying",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "crying->wounded",
+      "from": "crying",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "crying",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "crying->scared",
+      "from": "crying",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "crying",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "crying->overwhelmed",
+      "from": "crying",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "crying",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "crying->relieved",
+      "from": "crying",
+      "to": "relieved",
+      "category": "dramatic",
+      "faceFrom": "crying",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->annoyed",
+      "from": "whiny",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->determined",
+      "from": "whiny",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->wounded",
+      "from": "whiny",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->sad",
+      "from": "whiny",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->comfy",
+      "from": "whiny",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->lonely",
+      "from": "whiny",
+      "to": "lonely",
+      "category": "ordinary",
+      "faceFrom": "whiny",
+      "faceTo": "lonely",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->crying",
+      "from": "whiny",
+      "to": "crying",
+      "category": "dramatic",
+      "faceFrom": "whiny",
+      "faceTo": "crying",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "whiny->happy",
+      "from": "whiny",
+      "to": "happy",
+      "category": "dramatic",
+      "faceFrom": "whiny",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->whiny",
+      "from": "wounded",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->sad",
+      "from": "wounded",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->shy",
+      "from": "wounded",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->calm",
+      "from": "wounded",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->scared",
+      "from": "wounded",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->embarrassed",
+      "from": "wounded",
+      "to": "embarrassed",
+      "category": "ordinary",
+      "faceFrom": "wounded",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->angry",
+      "from": "wounded",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "wounded",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "wounded->crying",
+      "from": "wounded",
+      "to": "crying",
+      "category": "dramatic",
+      "faceFrom": "wounded",
+      "faceTo": "crying",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->calm",
+      "from": "uneasy",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->curious",
+      "from": "uneasy",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->uncomfortable",
+      "from": "uneasy",
+      "to": "uncomfortable",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "uncomfortable",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->scared",
+      "from": "uneasy",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->hopeful",
+      "from": "uneasy",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->skeptical",
+      "from": "uneasy",
+      "to": "skeptical",
+      "category": "ordinary",
+      "faceFrom": "uneasy",
+      "faceTo": "skeptical",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->surprised",
+      "from": "uneasy",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "uneasy",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "uneasy->frightened",
+      "from": "uneasy",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "uneasy",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->uneasy",
+      "from": "scared",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->frightened",
+      "from": "scared",
+      "to": "frightened",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->wounded",
+      "from": "scared",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->sad",
+      "from": "scared",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->overwhelmed",
+      "from": "scared",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->relieved",
+      "from": "scared",
+      "to": "relieved",
+      "category": "ordinary",
+      "faceFrom": "scared",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->angry",
+      "from": "scared",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "scared",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "scared->stunned",
+      "from": "scared",
+      "to": "stunned",
+      "category": "dramatic",
+      "faceFrom": "scared",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->scared",
+      "from": "frightened",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "frightened",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->wounded",
+      "from": "frightened",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "frightened",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->sad",
+      "from": "frightened",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "frightened",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->crying",
+      "from": "frightened",
+      "to": "crying",
+      "category": "ordinary",
+      "faceFrom": "frightened",
+      "faceTo": "crying",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->angry",
+      "from": "frightened",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "frightened",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->speechless",
+      "from": "frightened",
+      "to": "speechless",
+      "category": "dramatic",
+      "faceFrom": "frightened",
+      "faceTo": "speechless",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "frightened->relieved",
+      "from": "frightened",
+      "to": "relieved",
+      "category": "dramatic",
+      "faceFrom": "frightened",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->curious",
+      "from": "surprised",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->happy",
+      "from": "surprised",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->uneasy",
+      "from": "surprised",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->stunned",
+      "from": "surprised",
+      "to": "stunned",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->amused",
+      "from": "surprised",
+      "to": "amused",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->confused",
+      "from": "surprised",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "surprised",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->frightened",
+      "from": "surprised",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "surprised",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "surprised->angry",
+      "from": "surprised",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "surprised",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->surprised",
+      "from": "stunned",
+      "to": "surprised",
+      "category": "ordinary",
+      "faceFrom": "stunned",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->speechless",
+      "from": "stunned",
+      "to": "speechless",
+      "category": "ordinary",
+      "faceFrom": "stunned",
+      "faceTo": "speechless",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->scared",
+      "from": "stunned",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "stunned",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->baffled",
+      "from": "stunned",
+      "to": "baffled",
+      "category": "ordinary",
+      "faceFrom": "stunned",
+      "faceTo": "baffled",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->excited",
+      "from": "stunned",
+      "to": "excited",
+      "category": "dramatic",
+      "faceFrom": "stunned",
+      "faceTo": "excited",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "stunned->wounded",
+      "from": "stunned",
+      "to": "wounded",
+      "category": "dramatic",
+      "faceFrom": "stunned",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->stunned",
+      "from": "speechless",
+      "to": "stunned",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->annoyed",
+      "from": "speechless",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->calm",
+      "from": "speechless",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->wounded",
+      "from": "speechless",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->embarrassed",
+      "from": "speechless",
+      "to": "embarrassed",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->baffled",
+      "from": "speechless",
+      "to": "baffled",
+      "category": "ordinary",
+      "faceFrom": "speechless",
+      "faceTo": "baffled",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->angry",
+      "from": "speechless",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "speechless",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "speechless->sad",
+      "from": "speechless",
+      "to": "sad",
+      "category": "dramatic",
+      "faceFrom": "speechless",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->pleased",
+      "from": "amused",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "amused",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->happy",
+      "from": "amused",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "amused",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->mischievous",
+      "from": "amused",
+      "to": "mischievous",
+      "category": "ordinary",
+      "faceFrom": "amused",
+      "faceTo": "mischievous",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->proud",
+      "from": "amused",
+      "to": "proud",
+      "category": "ordinary",
+      "faceFrom": "amused",
+      "faceTo": "proud",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->excited",
+      "from": "amused",
+      "to": "excited",
+      "category": "ordinary",
+      "faceFrom": "amused",
+      "faceTo": "excited",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "amused->embarrassed",
+      "from": "amused",
+      "to": "embarrassed",
+      "category": "dramatic",
+      "faceFrom": "amused",
+      "faceTo": "embarrassed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->curious",
+      "from": "hopeful",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "hopeful",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->engaged",
+      "from": "hopeful",
+      "to": "engaged",
+      "category": "ordinary",
+      "faceFrom": "hopeful",
+      "faceTo": "engaged",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->determined",
+      "from": "hopeful",
+      "to": "determined",
+      "category": "ordinary",
+      "faceFrom": "hopeful",
+      "faceTo": "determined",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->pleased",
+      "from": "hopeful",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "hopeful",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->uneasy",
+      "from": "hopeful",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "hopeful",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->relieved",
+      "from": "hopeful",
+      "to": "relieved",
+      "category": "dramatic",
+      "faceFrom": "hopeful",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "hopeful->disappointed",
+      "from": "hopeful",
+      "to": "disappointed",
+      "category": "dramatic",
+      "faceFrom": "hopeful",
+      "faceTo": "disappointed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->calm",
+      "from": "relieved",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "relieved",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->comfy",
+      "from": "relieved",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "relieved",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->pleased",
+      "from": "relieved",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "relieved",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->tired",
+      "from": "relieved",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "relieved",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->hopeful",
+      "from": "relieved",
+      "to": "hopeful",
+      "category": "ordinary",
+      "faceFrom": "relieved",
+      "faceTo": "hopeful",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "relieved->happy",
+      "from": "relieved",
+      "to": "happy",
+      "category": "dramatic",
+      "faceFrom": "relieved",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->curious",
+      "from": "confused",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "confused",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->skeptical",
+      "from": "confused",
+      "to": "skeptical",
+      "category": "ordinary",
+      "faceFrom": "confused",
+      "faceTo": "skeptical",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->baffled",
+      "from": "confused",
+      "to": "baffled",
+      "category": "ordinary",
+      "faceFrom": "confused",
+      "faceTo": "baffled",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->uneasy",
+      "from": "confused",
+      "to": "uneasy",
+      "category": "ordinary",
+      "faceFrom": "confused",
+      "faceTo": "uneasy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->annoyed",
+      "from": "confused",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "confused",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->stunned",
+      "from": "confused",
+      "to": "stunned",
+      "category": "dramatic",
+      "faceFrom": "confused",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "confused->overwhelmed",
+      "from": "confused",
+      "to": "overwhelmed",
+      "category": "dramatic",
+      "faceFrom": "confused",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "baffled->confused",
+      "from": "baffled",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "baffled",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "baffled->speechless",
+      "from": "baffled",
+      "to": "speechless",
+      "category": "ordinary",
+      "faceFrom": "baffled",
+      "faceTo": "speechless",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "baffled->irritated",
+      "from": "baffled",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "baffled",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "baffled->overwhelmed",
+      "from": "baffled",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "baffled",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "baffled->stunned",
+      "from": "baffled",
+      "to": "stunned",
+      "category": "dramatic",
+      "faceFrom": "baffled",
+      "faceTo": "stunned",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->curious",
+      "from": "skeptical",
+      "to": "curious",
+      "category": "ordinary",
+      "faceFrom": "skeptical",
+      "faceTo": "curious",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->confused",
+      "from": "skeptical",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "skeptical",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->annoyed",
+      "from": "skeptical",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "skeptical",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->uncomfortable",
+      "from": "skeptical",
+      "to": "uncomfortable",
+      "category": "ordinary",
+      "faceFrom": "skeptical",
+      "faceTo": "uncomfortable",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->disgusted",
+      "from": "skeptical",
+      "to": "disgusted",
+      "category": "ordinary",
+      "faceFrom": "skeptical",
+      "faceTo": "disgusted",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "skeptical->surprised",
+      "from": "skeptical",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "skeptical",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->shy",
+      "from": "embarrassed",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "embarrassed",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->wounded",
+      "from": "embarrassed",
+      "to": "wounded",
+      "category": "ordinary",
+      "faceFrom": "embarrassed",
+      "faceTo": "wounded",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->disappointed",
+      "from": "embarrassed",
+      "to": "disappointed",
+      "category": "ordinary",
+      "faceFrom": "embarrassed",
+      "faceTo": "disappointed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->calm",
+      "from": "embarrassed",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "embarrassed",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->relieved",
+      "from": "embarrassed",
+      "to": "relieved",
+      "category": "ordinary",
+      "faceFrom": "embarrassed",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->angry",
+      "from": "embarrassed",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "embarrassed",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "embarrassed->amused",
+      "from": "embarrassed",
+      "to": "amused",
+      "category": "dramatic",
+      "faceFrom": "embarrassed",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "affectionate->pleased",
+      "from": "affectionate",
+      "to": "pleased",
+      "category": "ordinary",
+      "faceFrom": "affectionate",
+      "faceTo": "pleased",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "affectionate->comfy",
+      "from": "affectionate",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "affectionate",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "affectionate->happy",
+      "from": "affectionate",
+      "to": "happy",
+      "category": "ordinary",
+      "faceFrom": "affectionate",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "affectionate->shy",
+      "from": "affectionate",
+      "to": "shy",
+      "category": "ordinary",
+      "faceFrom": "affectionate",
+      "faceTo": "shy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "affectionate->surprised",
+      "from": "affectionate",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "affectionate",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lonely->whiny",
+      "from": "lonely",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "lonely",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lonely->sad",
+      "from": "lonely",
+      "to": "sad",
+      "category": "ordinary",
+      "faceFrom": "lonely",
+      "faceTo": "sad",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lonely->calm",
+      "from": "lonely",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "lonely",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lonely->affectionate",
+      "from": "lonely",
+      "to": "affectionate",
+      "category": "ordinary",
+      "faceFrom": "lonely",
+      "faceTo": "affectionate",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "lonely->happy",
+      "from": "lonely",
+      "to": "happy",
+      "category": "dramatic",
+      "faceFrom": "lonely",
+      "faceTo": "happy",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->calm",
+      "from": "tired",
+      "to": "calm",
+      "category": "ordinary",
+      "faceFrom": "tired",
+      "faceTo": "calm",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->lazy",
+      "from": "tired",
+      "to": "lazy",
+      "category": "ordinary",
+      "faceFrom": "tired",
+      "faceTo": "lazy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->exhausted",
+      "from": "tired",
+      "to": "exhausted",
+      "category": "ordinary",
+      "faceFrom": "tired",
+      "faceTo": "exhausted",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->comfy",
+      "from": "tired",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "tired",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->disappointed",
+      "from": "tired",
+      "to": "disappointed",
+      "category": "ordinary",
+      "faceFrom": "tired",
+      "faceTo": "disappointed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "tired->surprised",
+      "from": "tired",
+      "to": "surprised",
+      "category": "dramatic",
+      "faceFrom": "tired",
+      "faceTo": "surprised",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "exhausted->tired",
+      "from": "exhausted",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "exhausted",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "exhausted->overwhelmed",
+      "from": "exhausted",
+      "to": "overwhelmed",
+      "category": "ordinary",
+      "faceFrom": "exhausted",
+      "faceTo": "overwhelmed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "exhausted->whiny",
+      "from": "exhausted",
+      "to": "whiny",
+      "category": "ordinary",
+      "faceFrom": "exhausted",
+      "faceTo": "whiny",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "exhausted->comfy",
+      "from": "exhausted",
+      "to": "comfy",
+      "category": "ordinary",
+      "faceFrom": "exhausted",
+      "faceTo": "comfy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "exhausted->relieved",
+      "from": "exhausted",
+      "to": "relieved",
+      "category": "dramatic",
+      "faceFrom": "exhausted",
+      "faceTo": "relieved",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->confused",
+      "from": "overwhelmed",
+      "to": "confused",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "confused",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->baffled",
+      "from": "overwhelmed",
+      "to": "baffled",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "baffled",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->irritated",
+      "from": "overwhelmed",
+      "to": "irritated",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "irritated",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->scared",
+      "from": "overwhelmed",
+      "to": "scared",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "scared",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->tired",
+      "from": "overwhelmed",
+      "to": "tired",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "tired",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->exhausted",
+      "from": "overwhelmed",
+      "to": "exhausted",
+      "category": "ordinary",
+      "faceFrom": "overwhelmed",
+      "faceTo": "exhausted",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->frightened",
+      "from": "overwhelmed",
+      "to": "frightened",
+      "category": "dramatic",
+      "faceFrom": "overwhelmed",
+      "faceTo": "frightened",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "overwhelmed->angry",
+      "from": "overwhelmed",
+      "to": "angry",
+      "category": "dramatic",
+      "faceFrom": "overwhelmed",
+      "faceTo": "angry",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disgusted->uncomfortable",
+      "from": "disgusted",
+      "to": "uncomfortable",
+      "category": "ordinary",
+      "faceFrom": "disgusted",
+      "faceTo": "uncomfortable",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disgusted->skeptical",
+      "from": "disgusted",
+      "to": "skeptical",
+      "category": "ordinary",
+      "faceFrom": "disgusted",
+      "faceTo": "skeptical",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disgusted->annoyed",
+      "from": "disgusted",
+      "to": "annoyed",
+      "category": "ordinary",
+      "faceFrom": "disgusted",
+      "faceTo": "annoyed",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disgusted->grumpy",
+      "from": "disgusted",
+      "to": "grumpy",
+      "category": "ordinary",
+      "faceFrom": "disgusted",
+      "faceTo": "grumpy",
+      "status": "implemented",
+      "variants": [
+        "soft-retarget",
+        "gather-settle",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "context-and-pacing-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    },
+    {
+      "id": "disgusted->amused",
+      "from": "disgusted",
+      "to": "amused",
+      "category": "dramatic",
+      "faceFrom": "disgusted",
+      "faceTo": "amused",
+      "status": "implemented",
+      "variants": [
+        "recoil-compress",
+        "recoil-compress",
+        "blink-retarget"
+      ],
+      "preserve": [
+        "actor",
+        "rest-shape",
+        "material",
+        "spring-position",
+        "spring-velocity",
+        "activity-truth",
+        "pending-alert"
+      ],
+      "cue": "fresh-edge-specific-evidence-required",
+      "audio": "silent-by-default; material accent only on a permitted visible contact"
+    }
+  ]
+}

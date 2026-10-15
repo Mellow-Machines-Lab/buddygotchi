@@ -1,0 +1,3 @@
+/* Pixel's stage in the Character Studio. */
+.pixel-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.pixel-stage svg{display:block;width:100%;height:auto;image-rendering:pixelated}

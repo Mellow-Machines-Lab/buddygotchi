@@ -33,9 +33,9 @@ REPO = HERE.parent.parent
 def chosen_voice() -> Path:
     """The chosen character pack's voice (characters/CHARACTER.md §8): the
     pack is `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack), else Pixel."""
+    (.character-build/pack), else Boop."""
     staged = REPO / ".character-build" / "pack"
-    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "pixel")
+    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "boop")
     return Path(pack) / "voice" / "voice.bin"
 
 

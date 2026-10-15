@@ -1,0 +1,21 @@
+{
+  "name": "A brief surprise recovers through an ordinary neighbor after its short hold.",
+  "case": "A brief surprise recovers through an ordinary neighbor after its short hold.",
+  "why": "Opt-in graph v3 pacing and evidence",
+  "graph": "v3",
+  "mood": "surprised",
+  "checks": {
+    "moves_on_graph": true
+  },
+  "steps": [
+    {
+      "event": "said",
+      "at": "6s",
+      "expect": {
+        "offered": "surprised|curious",
+        "mood": "surprised|curious"
+      },
+      "words": "All quiet now."
+    }
+  ]
+}

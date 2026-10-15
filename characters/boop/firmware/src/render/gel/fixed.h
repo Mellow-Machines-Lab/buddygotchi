@@ -1,0 +1,142 @@
+// Signed Q24 arithmetic for the reference engine port. Runtime calculations
+// use integers on both native and ESP32; decimal constants fold at compile time.
+#pragma once
+#include <algorithm>
+#include <cstdint>
+namespace render::gel {
+class Fixed {
+ public:
+  static constexpr int bits = 24;
+  static constexpr int64_t scale = int64_t(1) << bits;
+  int64_t raw = 0;
+  constexpr Fixed() = default;
+  constexpr Fixed(int n) : raw(int64_t(n) * scale) {}
+  static constexpr Fixed fromRaw(int64_t n) {
+    Fixed x;
+    x.raw = n;
+    return x;
+  }
+  static constexpr Fixed decimal(double n) { return fromRaw(int64_t(n * scale + (n >= 0 ? .5 : -.5))); }
+  static constexpr Fixed ratio(int64_t n, int64_t d) { return fromRaw((n * scale + (n >= 0 ? d / 2 : -d / 2)) / d); }
+  int integer() const { return int(raw / scale); }
+  int floor() const { return int(raw / scale - (raw < 0 && raw % scale != 0)); }
+  constexpr Fixed operator-() const { return fromRaw(-raw); }
+  constexpr Fixed operator+(Fixed b) const { return fromRaw(raw + b.raw); }
+  constexpr Fixed operator-(Fixed b) const { return fromRaw(raw - b.raw); }
+  Fixed operator*(Fixed b) const {
+    int64_t a = raw, v = b.raw;
+    if ((a < 0 ? -a : a) < (v < 0 ? -v : v)) std::swap(a, v);
+    return fromRaw((a / scale) * v + (a % scale) * v / scale);
+  }
+  Fixed operator/(Fixed b) const {
+    const bool negative = (raw < 0) != (b.raw < 0);
+    uint64_t a = raw < 0 ? uint64_t(-raw) : uint64_t(raw), d = b.raw < 0 ? uint64_t(-b.raw) : uint64_t(b.raw);
+    if (!d) return {};
+    uint64_t whole = a / d, rem = a % d, frac = 0;
+    for (int i = 0; i < bits; ++i) {
+      rem *= 2;
+      frac <<= 1;
+      if (rem >= d) rem -= d, frac |= 1;
+    }
+    int64_t result = int64_t(whole * scale + frac);
+    return fromRaw(negative ? -result : result);
+  }
+  constexpr Fixed operator*(int n) const { return fromRaw(raw * n); }
+  constexpr Fixed operator/(int n) const { return fromRaw(raw / n); }
+  Fixed& operator+=(Fixed b) {
+    raw += b.raw;
+    return *this;
+  }
+  Fixed& operator-=(Fixed b) {
+    raw -= b.raw;
+    return *this;
+  }
+  Fixed& operator*=(Fixed b) {
+    *this = *this * b;
+    return *this;
+  }
+  constexpr bool operator<(Fixed b) const { return raw < b.raw; }
+  constexpr bool operator>(Fixed b) const { return raw > b.raw; }
+  constexpr bool operator<=(Fixed b) const { return raw <= b.raw; }
+  constexpr bool operator>=(Fixed b) const { return raw >= b.raw; }
+  constexpr bool operator==(Fixed b) const { return raw == b.raw; }
+  constexpr bool operator!=(Fixed b) const { return raw != b.raw; }
+};
+using F = Fixed;
+constexpr F operator+(int a, F b) { return F(a) + b; }
+constexpr F operator-(int a, F b) { return F(a) - b; }
+constexpr F operator*(int a, F b) { return b * a; }
+constexpr F q(double n) { return F::decimal(n); }
+inline F clamp(F x, F lo, F hi) { return x < lo ? lo : x > hi ? hi : x; }
+inline F abs(F x) { return x.raw < 0 ? -x : x; }
+inline F min(F a, F b) { return a < b ? a : b; }
+inline F max(F a, F b) { return a > b ? a : b; }
+inline F square(F x) { return x * x; }
+constexpr F pi = q(3.14159265358979323846);
+inline F sin(F x) {
+  x = F::fromRaw(x.raw % (pi.raw * 2));
+  if (x > pi) x -= pi * 2;
+  if (x < -pi) x += pi * 2;
+  if (x > pi / 2)
+    x = pi - x;
+  else if (x < -pi / 2)
+    x = -pi - x;
+  const F xx = x * x;
+  F result = x, term = x;
+  for (int n = 1; n < 9; ++n) {
+    term = -term * xx / ((2 * n) * (2 * n + 1));
+    result += term;
+  }
+  return result;
+}
+inline F cos(F x) { return sin(x + pi / 2); }
+inline F exp(F x) {
+  F result = 1, term = 1;
+  for (int n = 1; n < 24; ++n) {
+    term = term * x / n;
+    result += term;
+    if (!term.raw) break;
+  }
+  return result;
+}
+inline F sqrt(F x) {
+  if (x.raw <= 0) return {};
+  uint64_t n = uint64_t(x.raw) * F::scale, res = 0, bit = uint64_t(1) << 62;
+  while (bit > n) bit >>= 2;
+  while (bit) {
+    if (n >= res + bit)
+      n -= res + bit, res = (res >> 1) + bit;
+    else
+      res >>= 1;
+    bit >>= 2;
+  }
+  return F::fromRaw(int64_t(res));
+}
+inline F smooth(F x) {
+  x = clamp(x, 0, 1);
+  return x * x * (F(3) - x * 2);
+}
+struct Spring {
+  F x, v;
+};
+inline void integrate(Spring& m, F dt, F target, F frequency, F damping, F positionLimit, F velocityLimit) {
+  for (F left = dt; left > F(0);) {
+    F h = min(left, q(1.0 / 240));
+    m.v += (frequency * frequency * (target - m.x) - damping * m.v) * h;
+    m.x += m.v * h;
+    left -= h;
+  }
+  m.x = clamp(m.x, -positionLimit, positionLimit);
+  m.v = clamp(m.v, -velocityLimit, velocityLimit);
+}
+struct Random {
+  uint32_t state = 1729;
+  explicit Random(uint32_t seed = 1729) : state(seed) {}
+  uint32_t next() {
+    state = state * 1664525u + 1013904223u;
+    return state;
+  }
+  F unit() { return F::fromRaw(next() >> 8); }
+  int index(int n) { return int(uint64_t(next()) * unsigned(n) >> 32); }
+};
+}  // namespace render::gel

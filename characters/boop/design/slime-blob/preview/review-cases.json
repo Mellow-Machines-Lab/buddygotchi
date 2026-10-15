@@ -1,0 +1,347 @@
+{
+  "cases": [
+    {
+      "id": "happy.working",
+      "mood": "happy",
+      "state": "working",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 0,
+      "endMs": 8000
+    },
+    {
+      "id": "happy.terminal",
+      "mood": "happy",
+      "state": "terminal",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 8000,
+      "endMs": 16000
+    },
+    {
+      "id": "happy.needs_you",
+      "mood": "happy",
+      "state": "needs_you",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 16000,
+      "endMs": 24000
+    },
+    {
+      "id": "happy.task_complete.success",
+      "mood": "happy",
+      "state": "task_complete",
+      "outcome": "success",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 24000,
+      "endMs": 32000
+    },
+    {
+      "id": "happy.task_complete.failure",
+      "mood": "happy",
+      "state": "task_complete",
+      "outcome": "failure",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 32000,
+      "endMs": 40000
+    },
+    {
+      "id": "happy.asleep",
+      "mood": "happy",
+      "state": "asleep",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 40000,
+      "endMs": 48000
+    },
+    {
+      "id": "grumpy.working",
+      "mood": "grumpy",
+      "state": "working",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 48000,
+      "endMs": 56000
+    },
+    {
+      "id": "grumpy.terminal",
+      "mood": "grumpy",
+      "state": "terminal",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 56000,
+      "endMs": 64000
+    },
+    {
+      "id": "grumpy.needs_you",
+      "mood": "grumpy",
+      "state": "needs_you",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 64000,
+      "endMs": 72000
+    },
+    {
+      "id": "grumpy.task_complete.success",
+      "mood": "grumpy",
+      "state": "task_complete",
+      "outcome": "success",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 72000,
+      "endMs": 80000
+    },
+    {
+      "id": "grumpy.task_complete.failure",
+      "mood": "grumpy",
+      "state": "task_complete",
+      "outcome": "failure",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 80000,
+      "endMs": 88000
+    },
+    {
+      "id": "grumpy.asleep",
+      "mood": "grumpy",
+      "state": "asleep",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 88000,
+      "endMs": 96000
+    },
+    {
+      "id": "sad.working",
+      "mood": "sad",
+      "state": "working",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 96000,
+      "endMs": 104000
+    },
+    {
+      "id": "sad.terminal",
+      "mood": "sad",
+      "state": "terminal",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 104000,
+      "endMs": 112000
+    },
+    {
+      "id": "sad.needs_you",
+      "mood": "sad",
+      "state": "needs_you",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 112000,
+      "endMs": 120000
+    },
+    {
+      "id": "sad.task_complete.success",
+      "mood": "sad",
+      "state": "task_complete",
+      "outcome": "success",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 120000,
+      "endMs": 128000
+    },
+    {
+      "id": "sad.task_complete.failure",
+      "mood": "sad",
+      "state": "task_complete",
+      "outcome": "failure",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 128000,
+      "endMs": 136000
+    },
+    {
+      "id": "sad.asleep",
+      "mood": "sad",
+      "state": "asleep",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 136000,
+      "endMs": 144000
+    },
+    {
+      "id": "frightened.working",
+      "mood": "frightened",
+      "state": "working",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 144000,
+      "endMs": 152000
+    },
+    {
+      "id": "frightened.terminal",
+      "mood": "frightened",
+      "state": "terminal",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 152000,
+      "endMs": 160000
+    },
+    {
+      "id": "frightened.needs_you",
+      "mood": "frightened",
+      "state": "needs_you",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 160000,
+      "endMs": 168000
+    },
+    {
+      "id": "frightened.task_complete.success",
+      "mood": "frightened",
+      "state": "task_complete",
+      "outcome": "success",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 168000,
+      "endMs": 176000
+    },
+    {
+      "id": "frightened.task_complete.failure",
+      "mood": "frightened",
+      "state": "task_complete",
+      "outcome": "failure",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 176000,
+      "endMs": 184000
+    },
+    {
+      "id": "frightened.asleep",
+      "mood": "frightened",
+      "state": "asleep",
+      "script": "scripts/representative-matrix.jsonl",
+      "startMs": 184000,
+      "endMs": 192000
+    },
+    {
+      "id": "edge.calm-to-curious",
+      "from": "calm",
+      "to": "curious",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 0,
+      "startMs": 0,
+      "endMs": 6400,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.happy-to-excited",
+      "from": "happy",
+      "to": "excited",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 1,
+      "startMs": 6400,
+      "endMs": 12800,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.grumpy-to-sad",
+      "from": "grumpy",
+      "to": "sad",
+      "category": "dramatic",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 2,
+      "startMs": 12800,
+      "endMs": 19200,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.sad-to-crying",
+      "from": "sad",
+      "to": "crying",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 0,
+      "startMs": 19200,
+      "endMs": 25600,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.frightened-to-relieved",
+      "from": "frightened",
+      "to": "relieved",
+      "category": "dramatic",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 1,
+      "startMs": 25600,
+      "endMs": 32000,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.uneasy-to-frightened",
+      "from": "uneasy",
+      "to": "frightened",
+      "category": "dramatic",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 2,
+      "startMs": 32000,
+      "endMs": 38400,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.proud-to-wounded",
+      "from": "proud",
+      "to": "wounded",
+      "category": "dramatic",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 0,
+      "startMs": 38400,
+      "endMs": 44800,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.calm-to-surprised",
+      "from": "calm",
+      "to": "surprised",
+      "category": "dramatic",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 1,
+      "startMs": 44800,
+      "endMs": 51200,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.scared-to-frightened",
+      "from": "scared",
+      "to": "frightened",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 2,
+      "startMs": 51200,
+      "endMs": 57600,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.frightened-to-scared",
+      "from": "frightened",
+      "to": "scared",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 0,
+      "startMs": 57600,
+      "endMs": 64000,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.crying-to-sad",
+      "from": "crying",
+      "to": "sad",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 1,
+      "startMs": 64000,
+      "endMs": 70400,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.wounded-to-calm",
+      "from": "wounded",
+      "to": "calm",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 2,
+      "startMs": 70400,
+      "endMs": 76800,
+      "retargetMs": 1600
+    },
+    {
+      "id": "edge.calm-to-comfy",
+      "from": "calm",
+      "to": "comfy",
+      "category": "ordinary",
+      "script": "scripts/edge-review.jsonl",
+      "bridgeVariant": 0,
+      "startMs": 76800,
+      "endMs": 83200,
+      "retargetMs": 1600
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{"at":0,"type":"facts","facts":{"base":"working","act":"terminal","attn":null}}
+{"at":0,"type":"mood","mood":"grumpy"}
+{"at":320,"type":"perform","index":2}
+{"at":480,"type":"poke","x":-0.4,"y":0.2}
+{"at":560,"type":"facts","facts":{"base":"working","act":"searching","attn":null}}
+{"at":720,"type":"facts","facts":{"base":"working","act":"searching","attn":{"id":53,"agent":"codex","project":"slime"}}}
+{"at":880,"type":"mood","mood":"frightened"}
+{"at":1200,"type":"facts","facts":{"base":"working","act":"testing","attn":null}}
+{"at":2400,"type":"facts","facts":{"base":"idle","act":null,"attn":null}}
+{"at":3200,"type":"facts","facts":{"base":"asleep","act":null,"attn":null}}
+{"at":4000,"type":"facts","facts":{"base":"working","act":"planning","attn":null}}
+{"at":12000,"type":"end"}

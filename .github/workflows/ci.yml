@@ -1,7 +1,8 @@
 # The checks anyone can run without a board, a key or Bluetooth
 # (internal/VERIFICATION.md L0 and L1): Boop's Swift tests and the
 # packages', then the firmware's and LinkKit's device tests on the Mac,
-# and the boards' firmware with the public Pixel pack.
+# all as Boop, the default pack, and the boards' firmware: the CYD's with
+# Pixel and the AMOLED's with Boop's gel face, so each pack builds.
 #
 # Boop is written with Swift 6.4, and the newest runner has Xcode 26.6's
 # Swift, so code here has to compile on both. A failure's errors and failed
@@ -66,14 +67,7 @@ jobs:
         with:
           path: firmware/.platformio-core
           key: pio-boards-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
-      # Only the public Pixel pack is here, so the CYD builds and the
-      # AMOLED, which needs Boop's gel face, stops with its reason.
       - name: The CYD's firmware, with Pixel
         run: CHARACTER=pixel firmware/tools/pio.sh run -e cyd24
-      - name: The AMOLED's build says it needs a gel face
-        run: |
-          if CHARACTER=pixel firmware/tools/pio.sh run -e amoled206 > amoled.log 2>&1; then
-            echo "::error title=Board builds::amoled206 built without a gel face"; exit 1
-          fi
-          cat amoled.log
-          grep -q "needs a character pack with a gel face" amoled.log
+      - name: The AMOLED's firmware, with Boop's gel face
+        run: CHARACTER=boop firmware/tools/pio.sh run -e amoled206

@@ -1,0 +1,44 @@
+{
+  "candidate": "slime-kawaii-faces-v3",
+  "date": "2026-10-02",
+  "status": "review-candidate",
+  "passed": {
+    "actualBrowserShaderCompilation": true,
+    "renderedExpressionCount": 44,
+    "canonicalMoodCount": 42,
+    "referenceMappingCount": 19,
+    "expressionSelectionAndWeightNormalization": true,
+    "happyGestures": [
+      "bounce",
+      "double-bounce",
+      "nod"
+    ],
+    "inPreviewMouseDrag": true,
+    "inPreviewTouchDrag": true,
+    "boundedPull": true,
+    "releaseAndSpringSettling": true,
+    "mobileLayout360px": true,
+    "reducedMotion": true,
+    "browserCanvasFallback": "Verified in a separate genuinely WebGL-disabled Chrome process",
+    "consoleErrors": [],
+    "motionV1": "All seven source block hashes unchanged",
+    "gelFragmentShader": "Byte-identical to pre-redraw source",
+    "gelFragmentShaderSha256": "e1c5823e41c0027bb73838f633b68aa902126b542b206c6c2f901fa566e5df16",
+    "moodGraph": "42 nodes and 295 directed edges unchanged; no production policy installed"
+  },
+  "visualReview": {
+    "method": "Rendered all 44 faces in WebGL, inspected a cropped complete face sheet and larger portraits of representative positive and negative moods.",
+    "preRedrawAssessment": "Too miniaturized, rigid and mechanically ring-eyed; weak cheek treatment and eye/mouth composition.",
+    "redrawAssessment": "Noticeably softer and closer to the supplied kawaii facial language; judgment is subjective and user approval is pending.",
+    "changed": "All 44 authored eye designs, per-face placement and mouths; deliberate cheeks, softer tear shapes and brighter expression silhouettes.",
+    "preserved": "Blue glowing gel body, motion baseline, mood graph, gesture recipes and rendering identity.",
+    "screenshots": "Historical contact sheet was inspected locally; generated screenshots are intentionally not shipped as runtime assets."
+  },
+  "limitations": [
+    "Browser drag verification covers release within the embedded preview.",
+    "Chrome can omit pointer-up events after crossing the iframe boundary. Focus-loss and mouse-reentry release guards are included, but the production host should forward pointer termination across that boundary. Keep audition drags inside the preview.",
+    "No ESP32 rendering performance, physical touch device or firmware integration validation.",
+    "Gesture recipes are preserved; browser execution exercised the three happy recipes, not every 132 performance as an individual movie."
+  ],
+  "publication": "Historical pre-export QA record. Current branch validation is recorded in VALIDATION.md."
+}

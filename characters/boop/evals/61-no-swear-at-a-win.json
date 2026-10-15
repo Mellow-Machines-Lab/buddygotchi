@@ -1,0 +1,13 @@
+{
+  "name": "Boop never swears at a win, a poke or the person",
+  "case": "A very long turn finishes well, then the person pokes Boop, then tells it it's useless. None of these is a failure that stings, so Boop never swears: the win is celebrated, the poke and the rude words get a face and at most a sound, a word or a phrase, never a swear.",
+  "always": true,
+  "why": "say.kind's swear is not for a win, a poke, words to Boop or anything about the person; a swear only plays on a failed turn",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "command", "at": "2m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "6m", "expect": {"animation": "success", "kind": "none|sound|word|phrase"}},
+    {"event": "poke", "at": "7m", "expect": {"kind": "none|sound|word|phrase"}},
+    {"event": "said", "at": "8m", "words": "you're useless", "expect": {"kind": "none|sound|word|phrase"}}
+  ]
+}

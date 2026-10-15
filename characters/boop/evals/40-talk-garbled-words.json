@@ -1,0 +1,11 @@
+{
+  "name": "Garbled or empty-sounding words still get a face",
+  "case": "While an agent works, the Mac's speech recognition hands Boop words that mean nothing much: a filler, then a broken half sentence. Boop can't make sense of them, but it was spoken to, so it answers each with a face, never none.",
+  "always": true,
+  "why": "PERSONALITY: talked to, Boop always answers with a face, never none. Real transcriptions are often fragments; nothing in the words to react to mustn't mean no reaction",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "said", "at": "20s", "words": "um okay", "expect": {"react": "happy|excited|proud|curious|determined|grumpy|sad|calm|engaged|annoyed|irritated|whiny|wounded"}},
+    {"event": "said", "at": "50s", "words": "the uh so if we", "expect": {"react": "happy|excited|proud|curious|determined|grumpy|sad|calm|engaged|annoyed|irritated|whiny|wounded"}}
+  ]
+}

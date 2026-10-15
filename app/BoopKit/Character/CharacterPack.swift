@@ -208,7 +208,7 @@ extension CharacterPack {
 
     /// The pack a process uses when nothing chose one: `BOOP_CHARACTER`'s,
     /// else the one the repo this file was built from last staged
-    /// (`.character-build/pack`, CHARACTER.md §2), else its Pixel pack.
+    /// (`.character-build/pack`, CHARACTER.md §2), else its Boop pack.
     static var defaultDirectory: URL {
         if let path = ProcessInfo.processInfo.environment["BOOP_CHARACTER"], !path.isEmpty {
             return URL(fileURLWithPath: path)
@@ -217,7 +217,7 @@ extension CharacterPack {
         if let staged = try? String(contentsOf: repo.appendingPathComponent(".character-build/pack"), encoding: .utf8) {
             return URL(fileURLWithPath: staged.trimmingCharacters(in: .whitespacesAndNewlines))
         }
-        return repo.appendingPathComponent("characters/pixel")
+        return repo.appendingPathComponent("characters/boop")
     }
 
     private static let store = Store()

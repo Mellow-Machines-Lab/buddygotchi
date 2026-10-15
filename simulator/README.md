@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-14. A board with no board: the firmware's own code in a
+Updated 2026-10-15. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -13,7 +13,7 @@ brew install emscripten   # once: it builds the firmware for a browser
 make simulator            # builds it, then serves http://127.0.0.1:8206/
 ```
 
-Add `?face=gel` for Boop's own face (with Boop's pack installed) and
+Add `?face=gel` for Boop's own face and
 `?zoom=3` for a bigger one. It uses no Bluetooth, so an agent's shell may
 run it.
 
