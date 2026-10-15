@@ -269,7 +269,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodAction.value(mood, view()), "calm", "a new Boop starts calm")
         func offered() -> [String] { mood.questions(now: nil, log: view())[0].options.map(\.name) }
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
-        XCTAssertEqual(offered(), ["calm"] + MoodGraph.neighbours(of: "calm"), "staying, then calm's moves")
+        XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.all, "staying, then calm's moves")
         let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
         XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine."))
         for m in MoodGraph.moods {

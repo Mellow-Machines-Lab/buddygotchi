@@ -302,14 +302,21 @@ void test_the_needs_you_arc_cues_once_each() {
   render::pixel::PixelFace face;
   const voice::EffectClips& clips = face.clips();
   std::vector<std::pair<int, int>> pitches;  // each heard cue's gain and pitch
+  render::FaceContext context;
+  auto look = [&](SceneState state, uint32_t t) {
+    render::FaceSource source;
+    source.mood = Mood::kCalm, source.look = state;
+    face.sync(source, context, t);
+  };
+  // A request at `from`: its clock starts there.
   auto heard = [&](uint32_t from, uint32_t to) {
+    look(SceneState::kNeedsYou, from);
+    face.alert(from, false);
     std::vector<std::pair<uint32_t, std::string>> out;
     for (uint32_t t = from; t < to; t += 16) {
-      render::SceneShow s;
-      s.mood = Mood::kCalm, s.state = SceneState::kNeedsYou, s.t = t - from;
       voice::FxEvent due[render::Face::kMaxCues];
       bool changed;
-      int n = face.cues(&s, due, changed);
+      int n = face.cues(t, true, due, changed);
       for (int i = 0; i < n; ++i) {
         std::string name = clips.at(due[i].clip).name;
         if (name == "swipe" || name == "alertKnock" || name == "brake" || name == "slide") {
@@ -357,11 +364,10 @@ void test_the_needs_you_arc_cues_once_each() {
   TEST_ASSERT_EQUAL_UINT32(render::Arc::kGiveUpAt, cues[12].at);
   TEST_ASSERT_EQUAL_STRING("slide", cues[12].clip);
   // Another state stops the arc; the next request starts it over.
-  render::SceneShow idle;
-  idle.state = SceneState::kIdle;
+  look(SceneState::kIdle, 35000);
   voice::FxEvent due[render::Face::kMaxCues];
   bool changed;
-  face.cues(&idle, due, changed);
+  face.cues(35000, true, due, changed);
   auto again = heard(40000, 46000);
   int swipes = 0;
   for (const auto& e : again) swipes += e.second == "swipe" && e.first <= 5000 && e.first + 100 >= 5000;
