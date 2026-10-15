@@ -1028,14 +1028,14 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood and the two
+    /// characters/boop/steering/ has the guide, a file per mood, both natures and the two
     /// personalities. The static parts stay within their budgets, and the
     /// personalities' settings are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its two personalities and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["personality/boop.md", "personality/chatter.md"]).sorted())
+                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertEqual(Self.steering.personality(.default).rules, Personality.Rules(workBeatMs: 90_000...180_000, toolUses: .notable))
         XCTAssertEqual(Self.steering.personality(.chatter).rules, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))

@@ -15,6 +15,7 @@ What a pack holds, and what it must have:
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
 | `steering/guide.md` | yes | How it reads the moment, for the brain (§7) |
 | `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
+| `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board, and `include/moods.h`, which `charactergen.py` makes (§9) |
 | `mac/faces.json` | yes | The pixel face's timings and the popover's still faces (§9) |
@@ -132,6 +133,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
   steering/          what the brain reads (§7)
     guide.md
     personality/<name>.md
+    nature/sweet.md, cheeky.md
     mood/<mood>.md
   mac/               what the app reads at run time (§9)
     faces.json       the popover's face designs
@@ -269,6 +271,12 @@ What the brain reads, in plain Markdown, as now:
 - `personality/<name>.md` (one per name in `personalities`): who it is,
   with front matter for the view's rules (`working_heartbeat`,
   `tool_uses`).
+- `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
+  person chose at setup, saved in `long-term.md`. The chosen one goes
+  into the state right after the personality's PERSONALITY section,
+  whatever the personality: sweet is warm and gentle with failures,
+  cheeky playful and teasing, never mean to the person. A pack without
+  the file adds nothing; `boopdev check` notes a pack with only one.
 - `mood/<mood>.md` (one per mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
@@ -534,8 +542,8 @@ The app bundles the folder. How to write and play one:
    `studio` entry until you need them.
 2. Change the moods' meanings and moves (§5). Every pack has
    the same moods, so keep every one; its faces must draw them all.
-3. Rewrite `steering/guide.md` and `steering/personality/` in its voice,
-   and a `steering/mood/` file for each mood that needs one.
+3. Rewrite `steering/guide.md`, `steering/personality/` and `steering/nature/`
+   in its voice, and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.

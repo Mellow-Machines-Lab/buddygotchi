@@ -18,7 +18,8 @@ public struct PackCheck {
         }
         func has(_ path: String) -> Bool { FileManager.default.fileExists(atPath: directory.appendingPathComponent(path).path) }
 
-        // Steering: the guide and each personality, within the budgets.
+        // Steering: the guide and each personality, within the budgets, and
+        // the natures both or neither.
         do {
             let steering = try Steering(directory: directory.appendingPathComponent("steering"), pack: pack)
             for mood in pack.moods.map(\.id) where steering.files["mood/\(mood)"] == nil {
@@ -26,8 +27,13 @@ public struct PackCheck {
             }
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
-                    : path.hasPrefix("personality/") ? Steering.Budget.personality : Steering.Budget.mood
+                    : path.hasPrefix("personality/") ? Steering.Budget.personality
+                    : path.hasPrefix("nature/") ? Steering.Budget.nature : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
+            }
+            let natures = [LongTerm.Nature.sweet, .cheeky]
+            for n in natures where steering.nature(n) == nil && natures.contains(where: { steering.nature($0) != nil }) {
+                notes.append("steering/nature/\(n.rawValue).md is missing: a \(n.rawValue) creature gets no nature")
             }
         } catch {
             problems.append("\(error)")

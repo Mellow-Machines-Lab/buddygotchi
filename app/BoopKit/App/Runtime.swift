@@ -294,7 +294,7 @@ public final class Runtime: @unchecked Sendable {
         self.reactions = reactions
         (harness, mood) = Runtime.harness(
             pipeline: pipeline, steering: options.steering, personality: { personalityNow() }, reactions: reactions,
-            queue: { queued($0, $1) }, speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true })
+            queue: { queued($0, $1) }, speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true }, nature: longTerm.nature)
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
         // means a new launch. The read-back's own lines wait for it.
@@ -346,15 +346,16 @@ public final class Runtime: @unchecked Sendable {
 
     /// Boop's brain on MellowHarness's `Harness`: its outputs,
     /// mood then react, and the sections of Jev's
-    /// state: the guide with how to read the rest, PERSONALITY and
-    /// MOOD, then HISTORY, closed by how long Boop has been in its mood and
+    /// state: the guide with how to read the rest, PERSONALITY, what the
+    /// `nature` chosen at setup adds to it (the pack's `nature/` file, if
+    /// any), and MOOD, then HISTORY, closed by how long Boop has been in its mood and
     /// reaching back to the oldest working turn. The app's, and the evals',
     /// so the two can't drift apart. `queue` plays a reaction's moment,
     /// whose end `reactions` reads, and `speaks` says whether the device
     /// plays Voice's takes. The brain is the caller's to set (`harness.use`).
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceMoment, Pending) -> Void,
-                               speaks: @escaping () -> Bool = { true }) -> (harness: Harness, mood: Choice) {
+                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
         let h = pipeline.harness
         let core = pipeline.core
         let view = pipeline.view
@@ -378,6 +379,7 @@ public final class Runtime: @unchecked Sendable {
         h.output(react, openFor: ReactAction.openForMs, keepOpen: TranscriptView.heldByPokes)
         h.section { _ in steering.guide + "\n" + EventLine.reading + "\n" + EventLine.words }
         h.section { _ in steering.personality(personality()).text }
+        h.section { _ in nature.flatMap(steering.nature) }
         h.section { log in steering.mood(MoodAction.value(mood, log)) }
         h.closing { _, now, log in MoodAction.sinceLine(mood, log, at: now) }
         h.reachBack { _, now, log in view.workingSince(at: now, log) }

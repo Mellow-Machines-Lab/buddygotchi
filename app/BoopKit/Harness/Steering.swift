@@ -4,8 +4,8 @@ import MellowHarness
 /// Boop's steering: MellowHarness's
 /// folder of Markdown files, a copy of
 /// `characters/boop/steering/`: `guide.md`, which opens the state with no heading,
-/// `personality/*.md` and `mood/*.md`. A personality's front matter goes
-/// to the core, not to Jev.
+/// `personality/*.md`, `nature/*.md` (optional) and `mood/*.md`. A
+/// personality's front matter goes to the core, not to Jev.
 extension Steering {
     public struct PersonalityFile: Equatable, Sendable {
         public var rules: Personality.Rules
@@ -33,6 +33,11 @@ extension Steering {
         return PersonalityFile(rules: Personality.Rules(frontMatter: frontMatter[path] ?? ""), text: self[path])
     }
 
+    /// What the nature chosen at setup adds, right after PERSONALITY:
+    /// `nature/sweet.md` or `nature/cheeky.md`, or nil for a pack with no
+    /// file for it.
+    public func nature(_ nature: LongTerm.Nature) -> String? { files["nature/\(nature.rawValue)"] }
+
     /// The MOOD section for a mood, or the resting mood's for one Boop doesn't know.
     public func mood(_ name: String) -> String {
         files["mood/\(name)"] ?? self["mood/\(MoodAction.initial)"]
@@ -42,6 +47,7 @@ extension Steering {
     public enum Budget {
         public static let guide = 300
         public static let personality = 750
+        public static let nature = 150
         public static let mood = 175
     }
 
@@ -53,6 +59,9 @@ extension Steering {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
         for p in Personality.allCases {
             parts.append(("personality/\(p.rawValue)", Steering.tokens(personality(p).text), Budget.personality))
+        }
+        for n in [LongTerm.Nature.sweet, .cheeky] {
+            if let text = nature(n) { parts.append(("nature/\(n.rawValue)", Steering.tokens(text), Budget.nature)) }
         }
         for name in MoodAction.moods.map(\.name).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name)), Budget.mood))
