@@ -70,62 +70,6 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// What the menu bar shows.
-    public struct Status: Sendable {
-        /// Boop's name, from `long-term.md`.
-        public var name: String
-        /// What the device shows, and Boop's mood.
-        public var snapshot: StateSnapshot
-        /// Every session, for the popover's list.
-        public var sessions: [SessionSummary]
-        public var connected: Bool
-        /// What the device said of itself in its `hello`.
-        public var device: DeviceInfo?
-        /// Why the link can't look for the device (Bluetooth off), in the
-        /// transport's words, for the popover.
-        public var linkTrouble: String?
-        /// Why the device connected gets no reactions: its firmware doesn't
-        /// fit the app (linkkit/SPEC.md §6), in the link's words.
-        public var deviceTrouble: String?
-        public var personality: Personality
-        /// The brain as it runs: `jev:jev-latest`, or `none` without a key.
-        public var brain: String
-        /// Jev's key has been read, whether there was one or not. Until
-        /// then `brain` is `none` only because it isn't known yet.
-        public var keyRead: Bool
-        /// The brain failing, for the popover's notice.
-        public var brainTrouble: BrainTrouble?
-        /// The Mac's mic is on for push-to-talk.
-        public var listening: Bool
-        /// The face holds listening through the reply wait, after the mic stops.
-        public var faceListening: Bool
-        /// Why push-to-talk couldn't hear you, until the next try.
-        public var micTrouble: String?
-        /// Boop's XP and stage.
-        public var growth: Growth?
-
-        public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
-                    device: DeviceInfo?, linkTrouble: String? = nil, deviceTrouble: String? = nil, personality: Personality,
-                    brain: String, keyRead: Bool = true, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
-                    micTrouble: String? = nil, growth: Growth? = nil, faceListening: Bool? = nil) {
-            self.name = name
-            self.snapshot = snapshot
-            self.sessions = sessions
-            self.connected = connected
-            self.device = device
-            self.linkTrouble = linkTrouble
-            self.deviceTrouble = deviceTrouble
-            self.personality = personality
-            self.brain = brain
-            self.keyRead = keyRead
-            self.brainTrouble = brainTrouble
-            self.listening = listening
-            self.faceListening = faceListening ?? listening
-            self.micTrouble = micTrouble
-            self.growth = growth
-        }
-    }
-
     public enum OpenError: Error, CustomStringConvertible {
         case notSetUp, locked(String)
         public var description: String {
@@ -147,7 +91,7 @@ public final class Runtime: @unchecked Sendable {
     /// LinkKit's link to the device, in Boop's vocabulary (`BoopDevice`).
     public let link: DeviceLink
     /// The newest snapshot sent to the device.
-    public private(set) var latest: StateSnapshot?
+    public internal(set) var latest: StateSnapshot?
     /// Boop's name, from `long-term.md`.
     public let name: String
     public private(set) var settings: AppSettings
@@ -190,6 +134,14 @@ public final class Runtime: @unchecked Sendable {
     /// and whether the XP changed since the last status.
     let growth: GrowthStore
     var grew = false
+    /// The last `status` line written to `debug.jsonl`, without its time.
+    var lastStatus: String?
+    /// This launch's debug lines outside debug mode, for `saveReport`: in
+    /// debug mode the file has them.
+    let recent: DebugLog.Recent
+    /// Every `debug.jsonl` line goes through this: in debug mode written to
+    /// the file and printed readably, and otherwise kept in `recent`.
+    let emit: (String) -> Void
 
     /// After every change the menu bar might show. Called on `home`.
     public var onChange: ((Status) -> Void)?
@@ -311,7 +263,7 @@ public final class Runtime: @unchecked Sendable {
         // The view and the core pick up where the last launch left them.
         let read = home.sync { pipeline.readBack(now: now) }
         let logNow = transcript.view(now: now)
-        let questions = DebugLog.questions(Runtime.outputs(harness), log: logNow, at: now)
+        let questions = DebugLog.questions(harness.actions, log: logNow, at: now)
         emit(questions)
         launchOptions = DebugLog.options(questions)
         holding = false
@@ -388,10 +340,6 @@ public final class Runtime: @unchecked Sendable {
         h.reachBack { _, now, log in view.workingSince(at: now, log) }
         return (h, mood)
     }
-
-    /// The outputs registered on `h`, in order: for `debug.jsonl`'s
-    /// `questions` line.
-    static func outputs(_ h: Harness) -> [any Action] { h.actions }
 
     /// `debug.jsonl`'s lines from `pipeline`, to `emit`: its events
     /// and view events, and the passes the returned writer is handed.
@@ -471,147 +419,6 @@ public final class Runtime: @unchecked Sendable {
         run(pipeline.agent(event))
     }
 
-    /// The transport connected or dropped. On a drop the link fails every
-    /// reaction still waiting for its `ended`, which HISTORY then says
-    /// didn't happen, since that may never come. The
-    /// device plays on, though, and the link may be back a second later,
-    /// so a tap on a finish still playing still opens its thread.
-    func connection(_ up: Bool) {
-        let now = options.clock()
-        link.connection(up, now: now)
-        if !up { run(core.linkDown(at: now)) }
-        changed()
-    }
-
-    /// A line from the device: its `hello`, answered by the link with the
-    /// latest `state`; an `ev` (`deviceEvent`); how a `do` ended, which
-    /// the link hands to whoever asked for it, and which is logged here.
-    func device(_ line: String) {
-        let now = options.clock()
-        switch link.receive(line, now: now) {
-        case .ended(let ended):
-            options.log("device: do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
-            emit(DebugLog.ended(ended, at: now))
-            reactions.ended(ended.id)
-        default:
-            break
-        }
-        changed()
-    }
-
-    /// A tap, or BOOT's push-to-talk.
-    func deviceEvent(_ ev: DeviceEvent) {
-        let now = options.clock()
-        switch ev.kind {
-        case "tap":
-            if ev.did == "poked" || ev.did == "tap_spam" { onMoment?(0, DeviceMoment(anim: ev.did)) }
-            let finish = BoopDevice.finish(tapped: ev)
-            options.log("device: tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
-            // A poke. The device has already poked,
-            // cutting the animation playing but not a reaction's line or face;
-            // on the brain's finish that names whose turn it was it only
-            // dipped, and the tap opens that thread.
-            run(pipeline.poke(at: now, finish: finish.flatMap { reactions.opens(finish: $0) }))
-        case "talk_on", "talk_off":
-            options.log("device: \(ev.kind)")
-            // The device already shows `listening`.
-            run(core.listen(ev.kind == "talk_on", by: .device, at: now))
-        default:
-            break
-        }
-    }
-
-    /// A `{"dev":…}` line from the socket (VERIFICATION.md §2):
-    /// only with `devLines`. Nothing replies; what it did shows in
-    /// `debug.jsonl`.
-    func dev(_ data: Data) {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        switch object["dev"] as? String {
-        case "advance":
-            if let ms = (object["ms"] as? NSNumber)?.int64Value { advanceClock(ms) }
-        case "answer":
-            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy) }
-        case "mood":
-            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy) }
-        case "said":
-            // What push-to-talk heard, without a mic (VERIFICATION.md §2).
-            guard let words = object["words"] as? String else { return }
-            heard(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
-        case "tap":
-            tapped()
-        case "listen":
-            if let on = object["on"] as? Bool { listen(on) }
-        case "presence":
-            // The Mac's signals and idle time, headless only: the app
-            // reads the Mac's own.
-            guard options.idleMs == nil else { return }
-            if let ms = (object["idle_ms"] as? NSNumber)?.int64Value {
-                devIdleMs = max(0, ms)
-                options.log("dev: idle \(devIdleMs) ms")
-            }
-            if let signal = (object["signal"] as? String).flatMap(PresenceDetector.Signal.init(rawValue:)) {
-                options.log("dev: presence \(signal.rawValue)")
-                presenceSignal(signal)
-            }
-        case "report":
-            saveReport { _ in }
-        default:
-            break  // a dev line it doesn't know
-        }
-    }
-
-    // What the socket's dev lines do, and a demo's beats (`play`). `who`
-    // is which, for the log: `dev`, or `demo`.
-
-    /// Moves the clock on, where it can be moved (headless).
-    func advanceClock(_ ms: Int64, who: String = "dev") {
-        guard ms > 0, let advance = options.advance else { return }
-        advance(ms)
-        options.log("\(who): clock advanced \(ms) ms")
-        tick()
-    }
-
-    /// A forced pass: the actions keep their own rules. `by` is who the
-    /// pass is by, in the transcript.
-    func forcePass(_ choices: [String: String], by: String, who: String = "dev") {
-        options.log("\(who): forced pass → " + Harness.ActionRecord.names(harness.force(choices, by: by)))
-        changed()
-    }
-
-    /// The mood action's own change, which tells the device too.
-    func forceMood(_ to: String, by: String, who: String = "dev") {
-        let result = harness.force(mood, by: by) {
-            MoodAction.change(mood, to: to, log: harness.log.view(now: options.clock()))
-        }
-        options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
-        changed()
-    }
-
-    /// What push-to-talk heard, after `by`'s button, or nil for whoever's
-    /// turned the mic on last: an event that may wake the brain, whose
-    /// pass replies or ends `listening` (`passed`). `who` is `mic` for
-    /// the app's own.
-    func heard(_ words: String, by: Core.Talker?, who: String = "dev") {
-        let now = options.clock()
-        let step = pipeline.said(words, by: by ?? core.talk.by, at: now)
-        run(step)
-        run(core.heard(replyTo: step.waking.first?.seq, at: now))
-        options.log("\(who): said \(words.count) characters")
-    }
-
-    /// A tap on the device, without one.
-    func tapped(who: String = "dev") {
-        options.log("\(who): tap")
-        run(pipeline.poke(at: options.clock()))
-        changed()
-    }
-
-    /// The app's mic button: `who` is `app` for the app's own.
-    func listen(_ on: Bool, who: String = "dev") {
-        run(core.listen(on, by: .app, at: options.clock()))
-        options.log("\(who): listen \(on)")
-    }
-
     func tick() {
         let now = options.clock()
         core.setWallClock(options.wallClock(), at: now)
@@ -672,111 +479,6 @@ public final class Runtime: @unchecked Sendable {
         if stateChanged || grew { changed() }
     }
 
-    /// The core turned the Mac's mic on or off, after `by`'s button. On:
-    /// the device's own button already shows `listening`, which the mirror
-    /// shows too. Off: what the mic heard comes back to `said` or
-    /// `heardNothing`.
-    func mic(_ on: Bool, by: Core.Talker) {
-        options.log("talk: mic \(on ? "on" : "off") (\(by.rawValue))")
-        guard on else {
-            if onListen != nil { onListen?(false) } else { heardNothing() }
-            return
-        }
-        if by == .device { onMoment?(0, DeviceMoment(anim: BoopDevice.listening)) }
-        onListen?(true)
-    }
-
-    /// Who forces passes and actions, for no event: the dashboard's.
-    public static let forcedBy = "dashboard"
-
-    /// Boop's mood now, as the log has it.
-    var moodNow: String { MoodAction.value(mood, harness.log.view(now: options.clock())) }
-
-    /// Every pass the harness made: its app log line
-    /// (the brain's only), whether the brain is in trouble, its
-    /// `debug.jsonl` lines, and what it means for push-to-talk's reply.
-    func passed(_ pass: Harness.Pass) {
-        let now = options.clock()
-        if let line = Runtime.logLine(pass) { options.log(line) }
-        if pass.prompt != nil, pass.current {
-            // Only a pass that asked the brain in use says how it's doing.
-            (droppedInARow, trouble) = BrainTrouble.after(pass.error, previous: droppedInARow)
-        }
-        // The head is logged only when it changes; the pass, HISTORY and NOW.
-        debugWriter?.pass(pass, launchOptions: launchOptions, at: now)
-        // Push-to-talk's reply: a reaction is one, and a pass on what you
-        // said without one means none is coming.
-        run(core.passed(about: pass.event?.seq,
-                        reacted: pass.actions.contains { $0.name == ReactAction.actionName && $0.result.ok }, at: now))
-        changed()
-    }
-
-    /// The app log's line for a pass the brain was asked, or held back for:
-    /// its event's type and phase, the time and which actions returned
-    /// a result, never their messages. Nil for a forced pass.
-    static func logLine(_ pass: Harness.Pass) -> String? {
-        guard let e = pass.event else { return nil }
-        let result = pass.dropped.map { "dropped: \($0)" } ?? pass.held.map { "held: \($0)" }
-            ?? Harness.ActionRecord.names(pass.actions)
-        return "brain \(e.name) \(pass.latencyMs) ms → " + result
-    }
-
-
-    /// A snapshot for the device.
-    func show(_ snapshot: StateSnapshot) {
-        latest = snapshot
-        link.update(state: snapshot.fields, now: options.clock())
-    }
-
-    /// A rule's moment: sent at once, after the
-    /// `state` of the same input. A one-shot plays only if the device's turn
-    /// is free or resting (`if_free`): a brain reaction's line holding it
-    /// would be cut, and a late one-shot is worse than none, so the device
-    /// skips it then. The core has already left it out while something
-    /// needs you or `listening` shows. Push-to-talk's `listening` plays at
-    /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ moment: DeviceMoment) {
-        if let id = link.do(moment.name, args: moment.args, play: BoopDevice.play(moment.name), by: .rule,
-                            now: options.clock(), { _ in }) {
-            onMoment?(id, moment)
-        }
-    }
-
-    /// A reaction from the brain, sent at once to wait its turn on the
-    /// device (`next`, for up to 5 s), and its handle, ended once it's
-    /// known how it went (read Boop's way by `Reactions`): at once when it
-    /// can't be sent. On `home`.
-    func queue(_ moment: DeviceMoment, _ pending: Pending) {
-        let now = options.clock(), reactions = reactions
-        let id = link.do(moment.name, args: moment.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
-                         now: now) { outcome in
-            if let end = reactions.read(outcome, pending) { pending.finish(end) }
-        }
-        if let id { onMoment?(id, moment) }
-        if let id, let thread = moment.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
-    }
-
-    func changed() {
-        let now = options.clock()
-        let status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: core.sessionList(at: now),
-                            connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
-                            deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
-                            keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
-                            micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
-        grew = false
-        if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
-        onChange?(status)
-    }
-
-    /// The last `status` line written to `debug.jsonl`, without its time.
-    var lastStatus: String?
-    /// This launch's debug lines outside debug mode, for `saveReport`: in
-    /// debug mode the file has them.
-    let recent: DebugLog.Recent
-    /// Every `debug.jsonl` line goes through this: in debug mode written to
-    /// the file and printed readably, and otherwise kept in `recent`.
-    let emit: (String) -> Void
-
     func saveSettings(_ change: (inout AppSettings) -> Void) {
         change(&settings)
         do { try settings.save(to: options.stateDir) } catch { options.log("settings: can't save: \(error)") }
@@ -801,51 +503,10 @@ public final class Runtime: @unchecked Sendable {
         options.log("open: \(target.arguments.joined(separator: " ")) (\(by))" + (opened ? "" : ": open failed"))
     }
 
-    /// The app's mic button: start or stop listening.
-    public func setListening(_ on: Bool) {
-        home.async { [self] in listen(on, who: "app") }
-    }
-
-    /// What push-to-talk heard, once the mic is off.
-    public func said(_ words: String) {
-        home.async { [self] in heard(words, by: nil, who: "mic") }
-    }
-
-    /// The mic went off and heard nothing: no reply is coming.
-    public func heardNothing() {
-        home.async { [self] in
-            options.log("talk: heard nothing")
-            run(core.heardNothing(at: options.clock()))
-        }
-    }
-
-    /// The mic or speech recognition couldn't start, and why, for the
-    /// popover: `listening` ends at once, after either button.
-    public func micFailed(_ why: String) {
-        home.async { [self] in
-            options.log("talk: \(why)")
-            run(core.micFailed(why, at: options.clock()))
-            changed()
-        }
-    }
-
     /// A lock, unlock, sleep or wake from the Mac, for the presence
     /// detector.
     public func presence(_ signal: PresenceDetector.Signal) {
         home.async { [self] in presenceSignal(signal) }
-    }
-
-    /// The popover's "can't hear you" notice was dismissed.
-    public func dismissMicTrouble() {
-        home.async { [self] in
-            core.dismissMicTrouble()
-            changed()
-        }
-    }
-
-    /// Drops the device link and looks for the device again now.
-    public func reconnectDevice() {
-        link.transport?.reconnect()
     }
 
     public func setVolume(_ volume: Int) {
@@ -864,46 +525,6 @@ public final class Runtime: @unchecked Sendable {
             view.setRules(options.steering.personality(personality).rules)
             options.log("personality \(personality.rawValue)")
             changed()
-        }
-    }
-
-    /// Jev's key as Settings just saved it (nil when it was cleared);
-    /// `BOOP_JEV_KEY` still wins. Used from the next event.
-    public func reloadBrain(jevKey key: String?) {
-        home.async { [self] in
-            jevKey = .some(options.readJevKey { key })
-            useBrain()
-            changed()
-        }
-    }
-
-    /// The brain for Jev's key as far as it's been read. On `home`.
-    func useBrain() {
-        let brain = options.brain(jevKey ?? nil)
-        harness.use(brain)
-        pipeline.brain = brain != nil
-        trouble = nil
-        droppedInARow = 0
-        options.log("brain \(brain?.id ?? "none")" + (brain == nil ? ": no Jev key, so Boop does only its rule reactions" : ""))
-    }
-
-    /// Reads Jev's key off `home`: a Keychain prompt
-    /// there would stall every hook, tick and device line until it's
-    /// answered. Then the brain is built with it. On `home`.
-    func readJevKey() {
-        guard jevKey == nil else { return }
-        let read = options.readJevKey
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let key = read { Keychain.jevKey() }
-            self?.home.async { [weak self] in
-                // Settings may already have installed a brain while the
-                // startup read waited. Keep that brain too: rebuilding it
-                // would discard any pass it has in flight.
-                guard let self, jevKey == nil else { return }
-                jevKey = .some(key)
-                useBrain()
-                changed()
-            }
         }
     }
 
