@@ -1,0 +1,7 @@
+{
+  "name": "docs-site",
+  "private": true,
+  "scripts": {
+    "deploy": "node deploy.js"
+  }
+}

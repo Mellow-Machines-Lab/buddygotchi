@@ -4,9 +4,13 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "render/pixel/anim.h"
 #include "render/pixel/effect_track.h"
+#include "render/pixel/sign.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sounds.h"
 #include "voice/effects.h"
@@ -287,6 +291,58 @@ void test_entry_designs_sound_once() {
   }
 }
 
+// The needs-you arc's cues play over the design's, once each, at their
+// times on the request's clock (render/pixel/sign.h, kArcCues): a swipe as
+// the sway starts, three knocks as the shake does, the brake at the stare
+// and the slide as the sign goes back up. A new request plays them again.
+void test_the_needs_you_arc_cues_once_each() {
+  render::pixel::PixelFace face;
+  const voice::EffectClips& clips = face.clips();
+  auto heard = [&](uint32_t from, uint32_t to) {
+    std::vector<std::pair<uint32_t, std::string>> out;
+    for (uint32_t t = from; t < to; t += 16) {
+      render::SceneShow s;
+      s.mood = Mood::kCalm, s.state = SceneState::kNeedsYou, s.t = t - from;
+      voice::FxEvent due[render::Face::kMaxCues];
+      bool changed;
+      int n = face.cues(&s, due, changed);
+      for (int i = 0; i < n; ++i) {
+        std::string name = clips.at(due[i].clip).name;
+        if (name == "swipe" || name == "alertKnock" || name == "brake" || name == "slide") {
+          TEST_ASSERT_FALSE(due[i].duck);
+          out.push_back({t - from, name});
+        }
+      }
+    }
+    return out;
+  };
+  auto arc = heard(0, 30000);
+  const auto& cues = render::kArcCues;
+  // The design's own knocks may share the bank's clip; the arc's are the
+  // ones at the arc's times.
+  for (const render::ArcCue& c : cues) {
+    TEST_ASSERT_TRUE_MESSAGE(clips.index(c.clip) >= 0, c.clip);
+    int at = 0;
+    for (const auto& e : arc)
+      if (e.second == c.clip && e.first + render::pixel::EffectTrack::kLeadMs >= c.at && e.first <= c.at) ++at;
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, at, c.clip);
+  }
+  TEST_ASSERT_EQUAL_UINT32(5000, cues[0].at);
+  TEST_ASSERT_EQUAL_UINT32(12000, cues[1].at);
+  TEST_ASSERT_EQUAL_UINT32(17000, cues[4].at);
+  TEST_ASSERT_EQUAL_UINT32(22000, cues[5].at);
+  // Another state stops the arc; the next request starts it over.
+  render::SceneShow idle;
+  idle.state = SceneState::kIdle;
+  voice::FxEvent due[render::Face::kMaxCues];
+  bool changed;
+  face.cues(&idle, due, changed);
+  auto again = heard(40000, 46000);
+  int swipes = 0;
+  for (const auto& e : again) swipes += e.second == "swipe" && e.first <= 5000 && e.first + 100 >= 5000;
+  TEST_ASSERT_EQUAL_INT(1, swipes);
+}
+
 // Listening is silent, so nothing competes with your voice.
 void test_listening_is_silent() {
   for (int m = 0; m < render::pixelMoods(); ++m) {
@@ -379,6 +435,7 @@ int main() {
   RUN_TEST(test_a_working_design_sounds_every_loop);
   RUN_TEST(test_entry_designs_sound_once);
   RUN_TEST(test_listening_is_silent);
+  RUN_TEST(test_the_needs_you_arc_cues_once_each);
   RUN_TEST(test_a_short_loop_sounds_every_other_loop);
   RUN_TEST(test_a_change_of_design_starts_where_its_clock_is);
   RUN_TEST(test_a_stall_drops_late_events);

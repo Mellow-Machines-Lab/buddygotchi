@@ -39,19 +39,34 @@
 {"clock":123000}
 {"expect":{"screen":"needs_you","attn":{"name":"Thread name on \"needs.."},"alert":122200}}
 {"shot":"thread-name"}
-// The sign: settled, the head peeks over its top-left corner,
-// ducks at the end of each 4.2 s, then peeks over the top-right, then the
-// middle.
+// The sign: settled, the head peeks over its top-left corner.
 {"clock":124200}
 {"shot":"sign-left"}
-{"clock":127500}
+// The longer it waits, the harder it asks: it sways the sign from 5 s,
+// shakes it and waves a mitt from 12 s, lowers it and stares from 17 s.
+// The Mac sends the same request again now and then, which starts nothing
+// over.
+{"clock":129200}
+{"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}
+{"shot":"sign-sway"}
+{"clock":135200}
+{"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}
+{"shot":"sign-shake"}
+{"clock":140200}
+{"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}
+{"shot":"sign-stare"}
+// It gives up at 22 s and peeks for good: it ducks at the end of each
+// 4.2 s, then peeks over the top-right, then the middle.
+{"clock":148300}
+{"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}
 {"shot":"sign-ducking"}
-{"clock":128200}
+{"clock":149000}
 {"shot":"sign-right"}
-{"clock":132600}
+{"clock":153400}
+{"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}
 {"shot":"sign-middle"}
 // A name as long as the Mac sends, 47 bytes, fills the sign's three lines.
 {"t":"state","base":"working","attn":{"agent":"claude","project":"buddygotchi","name":"Thread name on \"needs you\" screen, with a sig..","more":0},"busy":1}
-{"clock":135000}
-{"expect":{"screen":"needs_you","attn":{"name":"Thread name on \"needs you\" screen, with a sig.."},"alert":132600}}
+{"clock":155800}
+{"expect":{"screen":"needs_you","attn":{"name":"Thread name on \"needs you\" screen, with a sig.."},"alert":153400}}
 {"shot":"sign-long-name"}

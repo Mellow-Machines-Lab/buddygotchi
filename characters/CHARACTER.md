@@ -384,6 +384,15 @@ and `src/` on the include path. It holds:
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
   carries that file until the palette is split from the art.
 
+Needs you is drawn on the request's own clock (`Face::designMs`, from
+the moment the request came), for as long as it waits, and the face's
+sound cues follow the same clock. So a pack can make it a performance
+that grows the longer you leave it, and the engine needs to know
+nothing about it. Pixel holds up a sign with who's asking and peeks over
+it, then sways it, shakes it and waves a mitt, then lowers it and stares
+at you, and at last gives up and peeks calmly (`render/pixel/sign.h`).
+Answer at any point and the face goes straight back to its look.
+
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
