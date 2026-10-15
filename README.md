@@ -45,24 +45,6 @@ with a screen is the body:
   </picture>
 </p>
 
-## See a demo
-
-Want to see Boop in action first? Clone the repo and run a short demo
-of Boop keeping an agent company (it needs `brew install emscripten`):
-
-```sh
-make demo                    # no board: Boop in a browser page
-make demo IN=claude          # no board: with your real Claude, in the Claude desktop app
-```
-
-With an ESP32 board flashed and plugged in over USB, share its port,
-then run the demo on it:
-
-```sh
-internal/tools/boopctl bridge                                    # in one terminal; leave it running
-make demo IN=claude BOARD=usb:/tmp/boop-bridge.sock              # in another
-```
-
 ## Get started
 
 ### What you need
@@ -111,8 +93,6 @@ Then tap the screen or press BOOT to poke it.
 | Flash the firmware (over USB) | `make flash` |
 | Run Boop in the menu bar | `make run` |
 | Try Boop with no board, in a browser (needs `brew install emscripten`) | `make simulator` ([simulator/README.md](simulator/README.md)) |
-| Watch a scripted demo in that browser board, by name | `make demo` (the landing story; `NAME=?` lists them) |
-| Watch a demo with a real agent, for videos | `make demo IN=claude` (the desktop app), `IN=simulated-claude-terminal` or `IN=simulated-codex-terminal`; every option, and on a real board: [internal/sessions/README.md](internal/sessions/README.md) |
 
 Start `make run` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's
