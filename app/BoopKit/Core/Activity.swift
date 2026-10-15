@@ -94,7 +94,7 @@ extension Core {
     func updateActs(_ now: Int64) {
         var working: [(s: Session, held: Timed?)] = []
         var kept: [String: Timed] = [:]
-        for (key, s) in sessions where s.needsSince == nil && isWorking(s, now) {
+        for (key, s) in sessions where s.needsSince == nil && tracker.isWorking(s, at: now) {
             let next = Core.settle(held[key], Core.activity(s, now), now: now, refresh: true)
             kept[key] = next
             working.append((s, next))

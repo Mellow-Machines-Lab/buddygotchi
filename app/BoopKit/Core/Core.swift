@@ -29,9 +29,9 @@ public final class Core {
         public var seed: UInt64
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
-        /// app starts each launch somewhere random (`Core.randomFirstAsk`),
-        /// so a request can't share `attn.id` with one the device still
-        /// shows from the last launch.
+        /// app starts each launch somewhere random
+        /// (`SessionTracker.randomFirstRequest`), so a request can't share
+        /// `attn.id` with one the device still shows from the last launch.
         public var firstAsk = 0
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1) {
@@ -53,8 +53,6 @@ public final class Core {
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
     var sessions: [String: Session] { tracker.sessions }
-    /// The last request's number: they count up from `config.firstAsk`.
-    var lastAsk: Int { tracker.lastRequest }
     var rng: SplitMix64
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
@@ -439,14 +437,8 @@ public final class Core {
 
     // MARK: - Reading
 
-    /// The sessions in the order the popover lists them: those that need
-    /// you (oldest first), then working, then idle.
-    func grouped(at now: Int64) -> (waiting: [Session], working: [Session], idle: [Session]) {
-        tracker.grouped(at: now)
-    }
-
     public func snapshot(at now: Int64) -> StateSnapshot {
-        let (waiting, working, _) = grouped(at: now)
+        let (waiting, working, _) = tracker.grouped(at: now)
         let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
         let attn = waiting.first.map {
             StateSnapshot.Attention(
@@ -487,10 +479,11 @@ public final class Core {
         return choices[rng.int(in: 0...(choices.count - 1))]
     }
 
-    /// Every session, for the popover's list. The device doesn't
-    /// get these.
+    /// Every session, for the popover's list, in the tracker's order:
+    /// those that need you (oldest first), then working, then idle. The
+    /// device doesn't get these.
     public func sessionList(at now: Int64) -> [SessionSummary] {
-        let (waiting, working, idle) = grouped(at: now)
+        let (waiting, working, idle) = tracker.grouped(at: now)
         return waiting.map { SessionSummary($0, .waiting) } + working.map { SessionSummary($0, .working) }
             + idle.map { SessionSummary($0, .idle) }
     }
@@ -517,15 +510,8 @@ public final class Core {
     /// sees steady time.
     private func day(_ now: Int64) -> String { config.time.day(wall(now)) }
 
-    func isWorking(_ s: Session, _ now: Int64) -> Bool { tracker.isWorking(s, at: now) }
-
     /// Whether "needs you" shows: then no event's pass starts.
     public var needsYouShowing: Bool { tracker.needsYou }
-
-    /// A random place for a launch's request numbers to start, so
-    /// `attn.id` doesn't repeat one the device still shows from the last
-    /// launch.
-    public static func randomFirstAsk() -> Int { SessionTracker.randomFirstRequest() }
 
     /// The first activity of a new day, for the transcript's pruning.
     func startDayIfNew(_ now: Int64, _ fx: inout [CoreEffect]) {
@@ -552,7 +538,7 @@ public final class Core {
                                         facts: ["agent": .string(thread.agent)], at: now)))
             fx.append(.open(thread))
         }
-        if let waiting = grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread) }
+        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread) }
         if let finish { return open(finish, Core.openedFinished) }
         fx.append(.record(Event.did(Core.wiggled, for: seq, action: Core.wiggle, by: "rule", at: now)))
     }

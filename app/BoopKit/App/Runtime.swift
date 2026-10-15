@@ -224,7 +224,7 @@ public final class Runtime: @unchecked Sendable {
         personality = options.personality ?? settings.personality
         let rules = options.steering.personality(personality).rules
         var config = Core.Config(volume: settings.volume, time: options.time, seed: longTerm.seed ^ UInt64(now))
-        config.firstAsk = Core.randomFirstAsk()
+        config.firstAsk = SessionTracker.randomFirstRequest()
         let places = self.places
         // The launch's read-back prunes the transcript, so today isn't a new day.
         core = Core(config: config, lastActiveDay: today, place: places.place)

@@ -1678,7 +1678,7 @@ final class RuntimeTests: XCTestCase {
             dir = URL(fileURLWithPath: "/tmp/boop-rt-\(UUID().uuidString.prefix(8))")
             defer { try? FileManager.default.removeItem(at: dir) }
             let runtime = try makeRuntime(FakeTransport())
-            firsts.insert(runtime.core.lastAsk)
+            firsts.insert(runtime.core.tracker.lastRequest)
         }
         XCTAssertGreaterThan(firsts.count, 1, "random")
         XCTAssertTrue(firsts.allSatisfy { (0..<Int(Int32.max)).contains($0) })
