@@ -100,8 +100,8 @@ class StudioRuleTests(unittest.TestCase):
         self.firmware = self.dir / "types.cpp"
         write(self.firmware, 'constexpr const char* kStateNames[2] = {"idle", "working"};')
 
-    def pack(self, name, moods, studio=None, files=()):
-        character = {"id": name, "name": name.title(), "default_mood": moods[0]["id"], "moods": moods}
+    def pack(self, name, moods, studio=None, files=(), **extra):
+        character = {"id": name, "name": name.title(), "default_mood": moods[0]["id"], "moods": moods, **extra}
         if studio is not None:
             character["studio"] = studio
         write(self.dir / name / "character.json", character)
@@ -157,10 +157,48 @@ class StudioRuleTests(unittest.TestCase):
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
-        self.assertEqual([n for n in staged if not n.startswith("firmware-test/")],
+        self.assertEqual([n for n in staged if not n.startswith(("firmware-test/", "staged/"))],
                          ["firmware/include/moods.h", "pack", "packs/solo/character.json", "packs/solo/mac/takes.tsv",
                           "packs/solo/steering/guide.md"])
-        self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(pack))
+        self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(gen.STAGE / "staged" / "solo"))
+        self.assertEqual(gen.own_folder(gen.STAGE / "staged" / "solo"), pack.resolve())
+
+    def test_staging_takes_what_a_pack_uses(self):
+        """CHARACTER.md §6: a pack that uses another's share is staged with the share's files, linked from that pack."""
+        self.pack("lender", [{"id": "calm"}], files=[("voice/voice.bin", "v"), ("mac/takes.tsv", "t"), ("firmware/include/art.h", "a")],
+                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}, "art": {"files": ["firmware/include/art.h"]}})
+        pack = self.pack("user", [{"id": "calm"}], files=[("firmware/include/moods.h", ""), ("mac/mirror/index.html", "")],
+                         uses={"voice": "lender", "art": "lender"})
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        self.assertEqual(gen.stage(pack), 0)
+        view = gen.STAGE / "staged" / "user"
+        self.assertEqual((view / "voice" / "voice.bin").resolve(), (self.dir / "lender" / "voice" / "voice.bin").resolve())
+        self.assertEqual((view / "mac" / "takes.tsv").read_text(), "t")
+        self.assertTrue((view / "mac" / "mirror" / "index.html").exists())
+        self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h"])
+        self.assertEqual((gen.STAGE / "packs" / "user" / "mac" / "takes.tsv").read_text(), "t")
+        self.assertFalse((gen.STAGE / "packs" / "user" / "voice").exists())
+
+    def test_what_a_pack_uses_must_be_there(self):
+        """A share from no pack, one the pack doesn't share, a file it lacks, or one the user has itself fails."""
+        self.pack("lender", [{"id": "calm"}], files=[("mac/takes.tsv", "t")],
+                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}})
+        pack = self.pack("user", [{"id": "calm"}], files=[("mac/takes.tsv", "")],
+                         uses={"voice": "lender", "face": "lender", "art": "nobody"})
+        self.assertEqual(gen.used(pack)[1], ["lender's voice names voice/voice.bin, which it doesn't have",
+                                             "has mac/takes.tsv of its own, and uses lender's (voice)",
+                                             "uses face from lender, which doesn't share it",
+                                             "uses art from nobody, which isn't a pack beside it"])
+
+    def test_the_studio_shows_the_previews_a_pack_uses(self):
+        """A share's studio entries show on the pack that uses it, with paths into the pack that shares them."""
+        self.pack("lender", [{"id": "calm"}], [{"id": "face", "scripts": ["studio/a.js"]}], files=[("studio/a.js", "")],
+                  shares={"face": {"files": [], "studio": ["face"]}})
+        user = self.pack("user", [{"id": "calm"}], uses={"face": "lender"})
+        self.assertEqual(self.problems(user), [])
+        data = gen.studio_data([user], user, self.studio)
+        self.assertEqual(data["packs"]["user"]["studio"], [{"id": "face", "scripts": ["../lender/studio/a.js"], "styles": [], "wears": {}}])
 
     def test_the_pack_in_use(self):
         """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
@@ -178,12 +216,17 @@ class StudioRuleTests(unittest.TestCase):
             self.addCleanup(setattr, gen, "CHARACTERS", characters)
             self.assertEqual(gen.in_use(), other)  # nothing staged: the chosen one
             gen.stage(staged)
-            self.assertEqual(gen.in_use(), staged)  # .character waits for the next stage
+            view = gen.STAGE / "staged" / "staged"
+            self.assertEqual(gen.in_use(), view)  # .character waits for the next stage
             os.environ["CHARACTER"] = "other"
             self.assertEqual(gen.in_use(), other)
+            os.environ["CHARACTER"] = "staged"
+            self.assertEqual(gen.in_use(), view)  # the environment's pack, staged
             del os.environ["CHARACTER"]
             os.environ["BOOP_CHARACTER"] = str(other)
             self.assertEqual(gen.in_use(), other.resolve())
+            os.environ["BOOP_CHARACTER"] = str(view)
+            self.assertEqual(gen.chosen(), staged.resolve())  # a staged pack's folder chooses its own
 
 
 if __name__ == "__main__":

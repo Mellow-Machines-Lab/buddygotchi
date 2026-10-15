@@ -54,7 +54,7 @@ let usage = """
 /// boopdev, so one build plays any pack's demo.
 func bundledCharacter() -> CharacterPack {
     if let path = ProcessInfo.processInfo.environment["BOOP_CHARACTER"], !path.isEmpty {
-        do { return try CharacterPack(directory: URL(fileURLWithPath: path).standardizedFileURL) } catch { fail("BOOP_CHARACTER: \(error)") }
+        do { return try CharacterPack(directory: CharacterPack.staged(URL(fileURLWithPath: path).standardizedFileURL)) } catch { fail("BOOP_CHARACTER: \(error)") }
     }
     guard let packs = Bundle.module.url(forResource: "packs", withExtension: nil),
           let url = (try? FileManager.default.contentsOfDirectory(at: packs, includingPropertiesForKeys: [.isDirectoryKey]))?

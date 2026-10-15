@@ -10,6 +10,25 @@
       "about": "Reacts to what stands out, and stays quiet otherwise."
     }
   ],
+  "shares": {
+    "pixel_face": {
+      "files": [
+        "firmware/include/faces.h",
+        "firmware/include/sfx.h",
+        "firmware/src/render/pixel",
+        "mac/faces.json"
+      ],
+      "studio": [
+        "pixel"
+      ]
+    },
+    "voice": {
+      "files": [
+        "voice/voice.bin",
+        "mac/takes.tsv"
+      ]
+    }
+  },
   "moods": [
     {
       "id": "calm",

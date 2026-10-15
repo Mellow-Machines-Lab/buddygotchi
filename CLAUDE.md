@@ -137,8 +137,9 @@ from here:
   every character shares stay in buddygotchi.
 - Anything that's the slime's own, its words, art, sounds and evals,
   goes in Boop's pack, `characters/boop/`, and so do the voice's
-  recordings. Pixel's go in `characters/pixel/`. Each pack has its own
-  copy of the built voice, so a voice change touches both.
+  recordings. Pixel's go in `characters/pixel/`, and so does the built
+  voice, which Boop's pack uses with Pixel's face
+  ([CHARACTER.md](characters/CHARACTER.md) §6).
 - A change that spans repositories lands package first, then
   buddygotchi's side, so buddygotchi never depends on something that
   isn't pushed.

@@ -16,7 +16,10 @@ import XCTest
 final class GoldenStateTests: XCTestCase {
     override func setUpWithError() throws { try requirePack("boop") }
 
-    static let folder = CharacterPack.active.directory.appendingPathComponent("tests/golden-states")
+    /// In the pack's own folder, where recording writes: the staged pack's
+    /// files are links to it.
+    static let folder = CharacterPack.active.directory.appendingPathComponent("character.json").resolvingSymlinksInPath()
+        .deletingLastPathComponent().appendingPathComponent("tests/golden-states")
 
     /// Answers from NOW's line alone, the same every time: a failure moves
     /// the mood a step and gets an annoyed face, a win a happy one, a poke a

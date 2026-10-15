@@ -48,19 +48,23 @@ final class CharacterPackTests: XCTestCase {
         }
     }
 
-    /// CHARACTER.md §3: a pack stands alone. Boop's and Pixel's each have
-    /// every file the engine reads in their own folder: the pixel face's
-    /// mac/faces.json, the voice's table and its pack.
-    func testEachPackStandsAlone() throws {
+    /// CHARACTER.md §6: a pack stands alone or names what it uses. Pixel's
+    /// has every file the engine reads in its own folder: the pixel face's
+    /// mac/faces.json, the voice's table and its pack. Boop's has none of
+    /// them, and uses Pixel's; the staged pack has them all.
+    func testEachPackStandsAloneOrNamesWhatItUses() throws {
         try requirePack("boop")
-        let boop = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/boop"))
+        let boopFolder = Self.repo.appendingPathComponent("characters/boop")
+        let boop = try CharacterPack(directory: boopFolder)
         let pixel = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/pixel"))
         XCTAssertEqual(pixel.moods.map(\.id), boop.moods.map(\.id))
         XCTAssertEqual(pixel.startupMood, "happy")
-        for pack in [boop, pixel] {
-            for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
-                XCTAssertTrue(FileManager.default.fileExists(atPath: pack.directory.appendingPathComponent(path).path), "\(pack.id) \(path)")
-            }
+        let used = Dictionary(uniqueKeysWithValues: PackCheck.used(boopFolder))
+        for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: pixel.directory.appendingPathComponent(path).path), "pixel \(path)")
+            XCTAssertFalse(FileManager.default.fileExists(atPath: boopFolder.appendingPathComponent(path).path), "boop \(path)")
+            XCTAssertEqual(used[path]?.path, pixel.directory.appendingPathComponent(path).path, path)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: CharacterPack.active.directory.appendingPathComponent(path).path), "staged \(path)")
         }
         // Pixel's moves are Boop's, for now.
         for m in pixel.moods { XCTAssertEqual(m.moves, boop.byId[m.id]?.moves, m.id) }

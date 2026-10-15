@@ -31,8 +31,8 @@ tools save the clips its studio entry names (`captures`) into `DIR`.
 ## What's on the page
 
 - **Pack**, when there's more than one here, and the **characters** for
-  it: each preview the pack declares (Boop's pack shows its gel slime
-  and its copy of the pixel face). Switching keeps the mood and state,
+  it: each preview the pack declares or uses (Boop's pack shows its gel slime
+  and Pixel's pixel face). Switching keeps the mood and state,
   so the same moment can be compared on both.
 - **Mood**: the pack's moods in their families, each with the colour its
   studio entry gives the family. When a character has no art of its own

@@ -5,23 +5,23 @@ takes, each a word, a sound, a phrase or a swear performed in one mood.
 Every take in its manifest is read from its robot-soft WAV (8-bit,
 11.025 kHz), the near-silence around it trimmed, saturated and normalised
 so it's as loud on the small speaker, and stored as 8-bit unsigned
-samples. Two files come out, the same in every character pack that has
-this voice (PACKS: Boop's and Pixel's, each with a copy of its own, both
-checked in); rerun this whenever the bank or a mapping changes:
+samples. Two files come out, into one character pack, Pixel's (PACK_DIR),
+checked in there; Boop's pack uses Pixel's voice (characters/CHARACTER.md
+§6). Rerun this whenever the bank or a mapping changes:
 
     python3 characters/boop/tools/voicegen/voicegen.py [--card /Volumes/CARD] [--wav-dir DIR]
 
-- <pack>/voice/voice.bin: the pack the board plays from its SD card
+- voice/voice.bin: the pack the board plays from its SD card
   (at /boop/voice.bin): every take's samples, bubble text
   and mouth (open or shut every 20 ms), found by id. `--card` also copies
   it onto a mounted card.
-- <pack>/mac/takes.tsv (characters/CHARACTER.md §8): each take's id,
+- mac/takes.tsv (characters/CHARACTER.md §8): each take's id,
   text, part and answer, kind, the moods it plays in, the finish it needs
   and its length, which the Mac picks from, and the pack's version, which
   the board reports.
 
-The recordings stay here, in Boop's pack; a character pack holds only the
-two built files.
+The recordings stay here, in Boop's pack; Pixel's holds only the two
+built files, so it stands alone.
 
 Every take answers one of the brain's two questions: how Boop feels
 (`say.feeling`) or what NOW is about (`say.about`),
@@ -56,8 +56,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
 BANK = REPO / "characters" / "boop" / "design" / "assets" / "boop-voice-v1"
-# The character packs that have this voice, each with its own copy.
-PACKS = [REPO / "characters" / "boop", REPO / "characters" / "pixel"]
+# The character pack the voice is built into; any other uses it from there.
+PACK_DIR = REPO / "characters" / "pixel"
 PACK, TABLE = "voice/voice.bin", "mac/takes.tsv"  # in a character pack
 # TEMPORARY: the moods with no takes of their own, and the one each borrows.
 BORROWS = json.loads((REPO / "characters" / "pixel" / "tools" / "borrowed.json").read_text())["borrows"]
@@ -260,8 +260,8 @@ def write_table(ver: str, takes: list[dict]) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--packs", type=Path, nargs="+", default=PACKS, metavar="DIR",
-                    help="the character packs to write it into (default: Boop's and Pixel's)")
+    ap.add_argument("--pack", type=Path, default=PACK_DIR, metavar="DIR",
+                    help="the character pack to write it into (default: Pixel's)")
     ap.add_argument("--card", type=Path, help="also copy the pack onto the card mounted here, as boop/voice.bin")
     ap.add_argument("--wav-dir", type=Path, help="also write every converted take as a WAV here")
     args = ap.parse_args()
@@ -281,10 +281,9 @@ def main() -> None:
         mouths.append(mo)
     ver = version(takes, clips, mouths)
     table = write_table(ver, takes)
-    for pack in args.packs:
-        write_pack(pack / PACK, ver, takes, clips, mouths)
-        (pack / TABLE).write_text(table)
-    built = args.packs[0] / PACK
+    write_pack(args.pack / PACK, ver, takes, clips, mouths)
+    (args.pack / TABLE).write_text(table)
+    built = args.pack / PACK
     if args.card:
         # Through voice.tmp, as the board copies one: a copy cut short
         # leaves the last pack, not a short one the board takes for whole.
@@ -304,7 +303,7 @@ def main() -> None:
     ms = [t["ms"] for t in takes]
     where = f", copied to {args.card / CARD_PATH}" if args.card else ""
     print(f"voicegen: {len(takes)} takes, version {ver}, {built.stat().st_size} B pack "
-          f"({min(ms)}–{max(ms)} ms) → {PACK} and {TABLE} in {', '.join(p.name for p in args.packs)}{where}")
+          f"({min(ms)}–{max(ms)} ms) → {PACK} and {TABLE} in {args.pack.name}{where}")
     if args.card:
         print("voicegen: put the card back in the board and press its reset button: it mounts the card only at boot")
 

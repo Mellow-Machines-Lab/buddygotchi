@@ -13,8 +13,8 @@ startup mood. --check only checks that they're fresh, and fails if one
 isn't.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
-root for the builds to read (§2). firmware/tools/pio.sh runs it before
-every PlatformIO build.
+root for the builds to read (§2), with what it uses from other packs (§6).
+firmware/tools/pio.sh runs it before every PlatformIO build.
 
 --which prints the folder of the pack in use: the one everything that runs
 after a build reads (in_use()).
@@ -28,9 +28,10 @@ fails on a problem with any of them; --stage and the first form only warn.
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
 folder in the repo's .character file, and characters/boop/. Staging
-writes the chosen pack's folder in .character-build/pack, the one pointer
-to it; the pack in use is the one the environment chooses, else that one,
-else the chosen one (nothing staged yet).
+writes the staged pack's folder in .character-build/pack, the one pointer
+to it; the pack in use is the one the environment chooses (staged, if it's
+the one staged), else the staged one, else the chosen one (nothing staged
+yet).
 """
 from __future__ import annotations
 
@@ -50,29 +51,44 @@ FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
 
+def own_folder(folder: Path) -> Path:
+    """A pack's own folder: the folder itself, or for the staged pack, whose
+    files are links into its own, the folder its character.json is in."""
+    return (folder / "character.json").resolve().parent if (folder / "character.json").exists() else folder.resolve()
+
+
 def chosen() -> Path:
     if os.environ.get("BOOP_CHARACTER"):
-        return Path(os.environ["BOOP_CHARACTER"]).resolve()
+        return own_folder(Path(os.environ["BOOP_CHARACTER"]))
     if os.environ.get("CHARACTER"):
         return CHARACTERS / os.environ["CHARACTER"]
     saved = ROOT / ".character"
     if saved.exists() and saved.read_text().strip():
         name = saved.read_text().strip()
-        return (ROOT / name).resolve() if "/" in name else CHARACTERS / name
+        return own_folder(ROOT / name) if "/" in name else CHARACTERS / name
     return CHARACTERS / "boop"
+
+
+def staged() -> Path | None:
+    """The staged pack, which .character-build/pack names, if there is one."""
+    pointer = STAGE / "pack"
+    if pointer.exists() and pointer.read_text().strip():
+        return Path(pointer.read_text().strip())
+    return None
 
 
 def in_use() -> Path:
     """The pack the tools, tests and simulator read: one the environment
     chooses ($BOOP_CHARACTER or $CHARACTER), else the one last staged
-    (.character-build/pack), else the chosen one. The Swift and C++ code
-    keeps the same rule by reading the environment and the pointer."""
+    (.character-build/pack), else the chosen one. A pack that is the one
+    staged is read staged, with what it uses from other packs (§6). The
+    Swift and C++ code keeps the same rule by reading the environment and
+    the pointer."""
+    last = staged()
     if os.environ.get("BOOP_CHARACTER") or os.environ.get("CHARACTER"):
-        return chosen()
-    pointer = STAGE / "pack"
-    if pointer.exists() and pointer.read_text().strip():
-        return Path(pointer.read_text().strip())
-    return chosen()
+        pack = chosen()
+        return last if last and (last / "character.json").exists() and own_folder(last) == pack.resolve() else pack
+    return last or chosen()
 
 
 def camel(mood: str) -> str:
@@ -155,6 +171,53 @@ def load(pack: Path) -> dict:
     return json.loads((pack / "character.json").read_text())
 
 
+def used(pack: Path, character: dict | None = None) -> tuple[dict[str, Path], list[str]]:
+    """What a pack takes from others (§6): each path its `uses` brings in,
+    with that file or folder in the pack that shares it, and what's wrong
+    with them. `uses` names, for each share, the pack beside this one whose
+    `shares` lists the share's files. A pack takes another's own files
+    only, never what that one uses, and never a path it has itself."""
+    character = load(pack) if character is None else character
+    paths, problems = {}, []
+    for share, name in character.get("uses", {}).items():
+        provider = pack.parent / name
+        if not (provider / "character.json").is_file():
+            problems.append(f"uses {share} from {name}, which isn't a pack beside it")
+            continue
+        listed = load(provider).get("shares", {}).get(share)
+        if listed is None:
+            problems.append(f"uses {share} from {name}, which doesn't share it")
+            continue
+        for rel in listed.get("files", []):
+            if not (provider / rel).exists():
+                problems.append(f"{name}'s {share} names {rel}, which it doesn't have")
+            elif (pack / rel).exists():
+                problems.append(f"has {rel} of its own, and uses {name}'s ({share})")
+            else:
+                paths[rel] = provider / rel
+    return paths, problems
+
+
+def files_in(folder: Path) -> dict[str, Path]:
+    """Every file in a folder or a file itself, by its path in it."""
+    if folder.is_file():
+        return {"": folder}
+    return {p.relative_to(folder).as_posix(): p for p in sorted(folder.rglob("*"))
+            if p.is_file() and ".git" not in p.relative_to(folder).parts}
+
+
+def overlay(dest: Path, own: Path, extra: dict[str, Path]) -> None:
+    """Lays dest out as own's files plus extra's (path: its file or folder),
+    each file a link to its source in folders of their own: Foundation
+    won't list a folder through a link to it."""
+    files = files_in(own)
+    for rel, src in extra.items():
+        files.update({f"{rel}/{inner}".rstrip("/"): path for inner, path in files_in(src).items()})
+    for rel, src in files.items():
+        (dest / rel).parent.mkdir(parents=True, exist_ok=True)
+        (dest / rel).symlink_to(src.resolve())
+
+
 def previews(character: dict) -> list[dict]:
     """The pack's studio entries (§12), one for each preview it brings."""
     return [dict(e) for e in character.get("studio", [])]
@@ -198,7 +261,7 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
     for pack in packs:
         character = load(pack)
         entries = previews(character)
-        names = [e.get("id") for e in entries]
+        names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)]]
         if None in names or len(names) != len(set(names)):
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
@@ -246,16 +309,29 @@ def files(entry: dict) -> list[str]:
     return entry.get("scripts", []) + entry.get("styles", []) + [entry[k] for k in ("icon", "captures") if entry.get(k)]
 
 
+def shared_previews(pack: Path, character: dict) -> list[tuple[Path, dict]]:
+    """The studio entries a pack takes with what it uses (§6): each share's
+    `studio` ids, with the pack that shares them."""
+    out = []
+    for share, name in character.get("uses", {}).items():
+        provider = pack.parent / name
+        if (provider / "character.json").is_file():
+            ids = load(provider).get("shares", {}).get(share, {}).get("studio", [])
+            out += [(provider, e) for e in previews(load(provider)) if e.get("id") in ids]
+    return out
+
+
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
     """The studio page's data: the engine's states and, for each pack, its
-    moods and its studio entries, with paths from the page."""
+    moods and its studio entries, its own and those it uses, with paths
+    from the page."""
     data = {"chosen": chosen_pack.name, "states": states(studio), "packs": {}}
     for pack in packs:
         character = load(pack)
-        entries = previews(character)
-        for entry in entries:
-            borrows = wears(pack, entry)
-            here = lambda name: Path(os.path.relpath(pack / name, studio)).as_posix()
+        entries = [(pack, e) for e in previews(character)] + shared_previews(pack, character)
+        for home, entry in entries:
+            borrows = wears(home, entry)
+            here = lambda name, home=home: Path(os.path.relpath(home / name, studio)).as_posix()
             for key in ("scripts", "styles"):
                 entry[key] = [here(name) for name in entry.get(key, [])]
             if entry.get("icon"):
@@ -266,7 +342,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
             "name": character["name"],
             "default_mood": character["default_mood"],
             "moods": [{k: m[k] for k in ("id", "meaning", "family") if k in m} for m in character["moods"]],
-            "studio": entries,
+            "studio": [entry for _, entry in entries],
         }
     return data
 
@@ -292,7 +368,7 @@ def write_studio(pack: Path, check: bool) -> int:
 
 def build(pack: Path, check: bool) -> int:
     character = load(pack)
-    problems = mood_problems(character, universal_moods())
+    problems = mood_problems(character, universal_moods()) + used(pack, character)[1]
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
     if problems:
@@ -311,32 +387,41 @@ def build(pack: Path, check: bool) -> int:
 
 
 def stage(pack: Path) -> int:
-    """The pack's firmware files (.character-build/firmware/); the pack as
-    the Mac app bundles it, with what the app reads and no more
-    (.character-build/packs/, that pack alone); and the pointer to the
-    pack's folder (.character-build/pack), where the tests, boopdev and the
-    device tools find the rest, the voice pack among it."""
+    """The pack staged (.character-build/staged/<name>/): its own files and
+    what it uses from other packs (§6), as links, the one folder the tests,
+    boopdev and the device tools read, and the pointer to it
+    (.character-build/pack); from it, the firmware's files
+    (.character-build/firmware/), and the pack as the Mac app bundles it,
+    with what the app reads and no more (.character-build/packs/, that
+    pack alone)."""
+    paths, problems = used(pack)
+    for problem in problems:
+        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
+    if problems:
+        return 1
     STAGE.mkdir(exist_ok=True)
-    for old in ("firmware", "packs"):
+    for old in ("staged", "firmware", "packs"):
         if (STAGE / old).exists():
             shutil.rmtree(STAGE / old)
-    if (pack / "firmware").is_dir():
-        shutil.copytree(pack / "firmware", STAGE / "firmware")
-    shutil.copytree(pack, STAGE / "packs" / pack.name,
+    view = STAGE / "staged" / pack.name
+    overlay(view, pack, paths)
+    if (view / "firmware").is_dir():
+        shutil.copytree(view / "firmware", STAGE / "firmware")
+    shutil.copytree(view, STAGE / "packs" / pack.name,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
                                                   "studio"))
-    # The firmware's test suites: the engine's, then the pack's own
+    # The firmware's test suites: the engine's, then the staged pack's
     # (tests/firmware/test_*), linked so an edit lands in the real file.
     tests = STAGE / "firmware-test"
     if tests.exists():
         shutil.rmtree(tests)
     tests.mkdir(parents=True)
-    for folder in [ROOT / "internal" / "firmware" / "test", pack / "tests" / "firmware"]:
+    for folder in [ROOT / "internal" / "firmware" / "test", view / "tests" / "firmware"]:
         for suite in sorted(folder.glob("test_*")) if folder.is_dir() else []:
             if (tests / suite.name).is_symlink():
                 (tests / suite.name).unlink()
             (tests / suite.name).symlink_to(suite.resolve())
-    (STAGE / "pack").write_text(f"{pack}\n")
+    (STAGE / "pack").write_text(f"{view}\n")
     return 0
 
 

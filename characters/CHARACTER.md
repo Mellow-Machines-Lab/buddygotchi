@@ -18,9 +18,9 @@ What a pack holds, and what it must have:
 | `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board, and `include/moods.h`, which `charactergen.py` makes (§9) |
-| `mac/faces.json` | yes | The pixel face's timings and the popover's still faces (§9) |
+| `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
 | `mac/mirror/` | no | A web page the popover shows as the face (§9) |
-| `mac/takes.tsv` and `voice/voice.bin` | no, both or neither | Its recorded voice (§8) |
+| `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
@@ -78,7 +78,7 @@ along.
 Two packs come with the engine's repo, and both are public:
 - **`characters/boop/`**, the default: Boop's own, the gel slime, with
   its prompts, evals and goldens, and what its art and voice are made
-  from.
+  from. It uses Pixel's face and voice (§6).
 - **`characters/pixel/`**, with Pixel Boop's faces and sound effects,
   plain prompts and a recorded voice. It's the example to copy. Its art
   and the voice cover 13 of the moods for now; each of the others borrows
@@ -96,17 +96,19 @@ The first of these wins:
 3. `characters/boop/`.
 
 `python3 characters/charactergen.py --stage` lays the chosen pack out in
-`.character-build/` at the repo root (also ignored): the pack's
-`firmware/`, the folder the app bundles (`packs/`, that pack alone), and
-`pack`, the one pointer to the pack's own folder. The builds read only
-from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
+`.character-build/` at the repo root (also ignored): `staged/<name>/`,
+the staged pack, its own files and those it uses from another pack (§6),
+each a link to the file in its pack; `pack`, the one pointer to it; and
+from it, the pack's `firmware/` and the folder the app bundles
+(`packs/`, that pack alone). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
 and `make build` before every app build. The app bundles only what it
 reads of the pack (not its firmware, voice pack, tools or tests).
 
 Everything that runs after a build, the tests, `boopdev`, the device
 tools and the simulator, reads the **pack in use**: the one the
-environment chooses (`BOOP_CHARACTER` or `CHARACTER`), else the one
-`pack` points to, else the chosen one (nothing staged yet). So a change
+environment chooses (`BOOP_CHARACTER` or `CHARACTER`), staged if it's
+the one staged, else the one `pack` points to, else the chosen one
+(nothing staged yet). So a change
 to `.character` waits for the next stage. `charactergen.py` keeps this
 rule (`in_use()`), and `--which` prints its answer; the Python tools
 import it, the shell and Node call `--which`, the Swift tests read the
@@ -213,6 +215,8 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
 | `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
+| `uses` | no | What it takes from another pack: each share's name, and the pack that has it (§6) |
+| `shares` | no | What it lends: each share's name, with its `files` and its `studio` previews (§6) |
 
 Unknown keys are ignored, so a newer pack still loads in an older engine.
 
@@ -243,24 +247,45 @@ mood, the dramatic ones saying they need a fresh, big event; pacing, how
 long a mood holds and when it fades, is the steering's (§7). Pixel's
 moves are a copy of Boop's for now.
 
-## 6. A pack stands alone
+## 6. A pack stands alone or names what it uses
 
-A pack is self-contained. The engine reads every file of a pack from the
-pack's own folder, and never falls back to another pack's. Two packs
-that share something each carry a copy, and each copy can change without
-the other.
+A pack has every file the engine reads in its own folder, or names the
+pack it takes some of them from. The engine never knows: it reads the
+staged pack (§2), where staging has laid them out together, and never
+falls back to another pack on its own.
 
-Boop's pack shares two things with Pixel's, and has its own copy of
-both:
+A pack that lends files lists them in `shares`, by a name for each
+share: the files and folders it takes in, and the studio previews that
+show it (§12). A pack that takes them names each share it uses, and the
+pack beside it in the same folder that has it, in `uses`. Pixel's
+shares its face and its voice, and Boop's uses both:
 
-- **The pixel face**, which Boop wears on the CYD (on the AMOLED it
-  brings its own, the gel slime): the firmware's pixel renderer, faces
-  and sound effects, `mac/faces.json`, and the studio's preview of the
-  face. They're Pixel's built files as they are.
-  `characters/boop/tools/pixelsync/pixelsync.py` copies them again when
-  Pixel's change and Boop should follow, and its `--check`, which the
-  pack's tests run, says which differ.
-- **The voice** (§8).
+```json
+"shares": {
+  "pixel_face": {
+    "files": ["firmware/include/faces.h", "firmware/include/sfx.h", "firmware/src/render/pixel", "mac/faces.json"],
+    "studio": ["pixel"]
+  },
+  "voice": {
+    "files": ["voice/voice.bin", "mac/takes.tsv"]
+  }
+}
+```
+
+```json
+"uses": {
+  "pixel_face": "pixel",
+  "voice": "pixel"
+}
+```
+
+So the pixel face, which Boop wears on the CYD (on the AMOLED it brings
+its own, the gel slime), and the voice (§8) are in Pixel's pack only,
+and change for both at once. A pack takes only the lender's own files,
+not what the lender uses in turn, and never a file it has itself.
+`charactergen.py` refuses a share that isn't there, or a file it names
+that isn't, and `boopdev check` reads a pack's files as staging lays
+them out.
 
 ## 7. Steering
 
@@ -293,11 +318,13 @@ plays in, a feeling, a topic and a kind:
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take. Its
   first line holds the pack's version, the same one the board reports.
 
-Both are built files and checked in. Pixel's pack and Boop's each have a
-copy of the same voice, 2,722 takes. What they're built from stays out
-of both: the recordings, and voicegen, the tool that turns them into the
-two files, are kept in Boop's pack, and one run of it writes
-both packs' copies.
+A pack may have them, or use another's (§6). Both are built files and
+checked in. The one voice there is, 2,722 takes, is in Pixel's pack,
+and Boop's uses it. What it's built from stays out of Pixel's: the
+recordings, and voicegen, the tool that turns them into the two files,
+are kept in Boop's pack, and write into Pixel's. So Pixel's pack needs
+nothing of Boop's, and Boop's needs Pixel's for its face and its voice,
+one way only.
 
 A pack without a voice leaves both out. The brain is then never asked
 what to say (`react` drops its `say.*` questions), and reactions play
@@ -417,7 +444,7 @@ and `src/` on the include path. It holds:
   on the AMOLED.
 - Today, every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
-  carries that file until the palette is split from the art.
+  carries that file, or uses it, until the palette is split from the art.
 
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
@@ -518,9 +545,9 @@ Pixel's:
 - `captures`: optional, a JSON file of `{"cases": [{"id": ...}]}`, the
   only clip names the studio's server will save for the pack.
 
-Boop's pack has two entries: `boop`, its gel slime, and
-`pixel`, its copy of the pixel face, which wears the borrowed art its
-copy of Pixel's table says. `charactergen.py` writes the page's data
+A pack also shows the previews of each share it uses (§6). So Boop's
+shows two: its own, `boop`, its gel slime, and Pixel's, `pixel`, which
+comes with the pixel face. `charactergen.py` writes the page's data
 (`characters/studio/packs.js`) from the packs, and `--check` fails when
 a declared file is missing or a preview wears a mood the pack doesn't
 have.

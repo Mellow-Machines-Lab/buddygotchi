@@ -74,8 +74,9 @@ public struct CharacterPackError: Error, CustomStringConvertible {
 extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
     /// a pack: a key missing, moods that aren't the universal ones, or a
-    /// move or default mood that isn't one. A pack stands alone:
-    /// everything it has is in its own folder.
+    /// move or default mood that isn't one. Everything the pack has is in
+    /// the one folder: the staged pack's has what it uses from other packs
+    /// too.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
         let data: Data
@@ -155,19 +156,34 @@ extension CharacterPack {
     /// `CHARACTER`'s in `characters/`, else the one the repo this file was
     /// built from last staged (`.character-build/pack`). Every build stages
     /// first, so there's always one; without it, loading fails and says
-    /// where it looked.
+    /// where it looked. A chosen pack that's the one staged is read staged,
+    /// with what it uses from other packs.
     static var defaultDirectory: URL {
         let env = ProcessInfo.processInfo.environment
         if let path = env["BOOP_CHARACTER"], !path.isEmpty {
-            return URL(fileURLWithPath: path)
+            return staged(URL(fileURLWithPath: path))
         }
-        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../..").standardizedFileURL
         if let name = env["CHARACTER"], !name.isEmpty {
-            return repo.appendingPathComponent("characters").appendingPathComponent(name)
+            return staged(repo.appendingPathComponent("characters").appendingPathComponent(name))
         }
         let pointer = repo.appendingPathComponent(".character-build/pack")
         guard let staged = try? String(contentsOf: pointer, encoding: .utf8) else { return pointer }
         return URL(fileURLWithPath: staged.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    /// The repo this file was built from.
+    private static let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("../../..").standardizedFileURL
+
+    /// The staged pack (`.character-build/pack` names it) when it's
+    /// `folder`'s, its files links into the pack's own, with what the pack
+    /// uses from other packs; else `folder` as it is.
+    public static func staged(_ folder: URL) -> URL {
+        let pointer = repo.appendingPathComponent(".character-build/pack")
+        guard let text = try? String(contentsOf: pointer, encoding: .utf8) else { return folder }
+        let staged = URL(fileURLWithPath: text.trimmingCharacters(in: .whitespacesAndNewlines))
+        func own(_ url: URL) -> String { url.appendingPathComponent("character.json").resolvingSymlinksInPath().path }
+        return FileManager.default.fileExists(atPath: own(staged)) && own(staged) == own(folder) ? staged : folder
     }
 
     private static let store = Store()

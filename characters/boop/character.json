@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "default_mood": "calm",
   "startup_mood": "happy",
+  "uses": {
+    "pixel_face": "pixel",
+    "voice": "pixel"
+  },
   "personalities": [
     {
       "id": "boop",
@@ -905,20 +909,6 @@
           "colour": "#a0896b"
         }
       }
-    },
-    {
-      "id": "pixel",
-      "label": "Pixel Boop",
-      "about": "CYD board",
-      "icon": "studio/pixel/icon.svg",
-      "scripts": [
-        "studio/pixel/boop-runtime.js",
-        "studio/pixel/adapter.js"
-      ],
-      "styles": [
-        "studio/pixel/adapter.css"
-      ],
-      "wears": "studio/pixel/borrowed.json"
     }
   ]
 }
