@@ -38,9 +38,11 @@ class CLITests(unittest.TestCase):
 
     def test_the_commands_are_the_documented_ones(self):
         self.assertEqual(self.subcommands(), COMMANDS)
-        table = (cli.REPO / "internal" / "VERIFICATION.md").read_text()
+        doc = (cli.REPO / "internal" / "VERIFICATION.md").read_text()
+        start = doc.index("- `internal/tools/boopctl`:")
+        listed = doc[start:doc.index("\n- ", start + 1)]
         for command in COMMANDS:
-            self.assertTrue(f"| `{command}" in table, f"VERIFICATION.md §2 doesn't list boopctl {command}")
+            self.assertTrue(f"`{command}`" in listed, f"VERIFICATION.md §2 doesn't list boopctl {command}")
 
     def test_every_command_has_help(self):
         for command in COMMANDS:
