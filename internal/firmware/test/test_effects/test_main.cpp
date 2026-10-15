@@ -292,12 +292,16 @@ void test_entry_designs_sound_once() {
 }
 
 // The needs-you arc's cues play over the design's, once each, at their
-// times on the request's clock (render/pixel/sign.h, kArcCues): a swipe as
-// the sway starts, three knocks as the shake does, the brake at the stare
-// and the slide as the sign goes back up. A new request plays them again.
+// times on the request's clock and at their gain and pitch
+// (render/pixel/sign.h, kArcCues): a swipe as the sway starts, knocks that
+// grow with the picture (one as it sways, two mid-sway, three as it
+// shakes, four at the height of it), each group louder and higher, the
+// brake at the stare and the slide as the sign goes back up. A new request
+// plays them again.
 void test_the_needs_you_arc_cues_once_each() {
   render::pixel::PixelFace face;
   const voice::EffectClips& clips = face.clips();
+  std::vector<std::pair<int, int>> pitches;  // each heard cue's gain and pitch
   auto heard = [&](uint32_t from, uint32_t to) {
     std::vector<std::pair<uint32_t, std::string>> out;
     for (uint32_t t = from; t < to; t += 16) {
@@ -311,6 +315,7 @@ void test_the_needs_you_arc_cues_once_each() {
         if (name == "swipe" || name == "alertKnock" || name == "brake" || name == "slide") {
           TEST_ASSERT_FALSE(due[i].duck);
           out.push_back({t - from, name});
+          pitches.push_back({due[i].gain, due[i].pitch});
         }
       }
     }
@@ -327,10 +332,30 @@ void test_the_needs_you_arc_cues_once_each() {
       if (e.second == c.clip && e.first + render::pixel::EffectTrack::kLeadMs >= c.at && e.first <= c.at) ++at;
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, at, c.clip);
   }
-  TEST_ASSERT_EQUAL_UINT32(5000, cues[0].at);
-  TEST_ASSERT_EQUAL_UINT32(12000, cues[1].at);
-  TEST_ASSERT_EQUAL_UINT32(17000, cues[4].at);
-  TEST_ASSERT_EQUAL_UINT32(22000, cues[5].at);
+  // The arc's knocks, in groups by the gap before them: 1, 2, 3, 4, each
+  // group louder and higher than the last.
+  std::vector<int> groups, gains, tones;
+  uint32_t last = 0;
+  for (size_t i = 0; i < arc.size(); ++i) {
+    if (arc[i].second != "alertKnock" || arc[i].first < render::Arc::kSwayAt) continue;  // not the design's own
+    if (groups.empty() || arc[i].first - last > 1000) {
+      groups.push_back(0), gains.push_back(pitches[i].first), tones.push_back(pitches[i].second);
+    }
+    ++groups.back();
+    TEST_ASSERT_EQUAL_INT(gains.back(), pitches[i].first);
+    TEST_ASSERT_EQUAL_INT(tones.back(), pitches[i].second);
+    last = arc[i].first;
+  }
+  TEST_ASSERT_EQUAL_INT(4, int(groups.size()));
+  for (int g = 0; g < 4; ++g) TEST_ASSERT_EQUAL_INT(g + 1, groups[g]);
+  for (int g = 1; g < 4; ++g) TEST_ASSERT_TRUE(gains[g] > gains[g - 1] && tones[g] > tones[g - 1]);
+  TEST_ASSERT_EQUAL_UINT32(render::Arc::kSwayAt, cues[0].at);
+  TEST_ASSERT_EQUAL_STRING("swipe", cues[0].clip);
+  TEST_ASSERT_EQUAL_UINT32(render::Arc::kShakeAt, cues[4].at);
+  TEST_ASSERT_EQUAL_UINT32(render::Arc::kStareAt, cues[11].at);
+  TEST_ASSERT_EQUAL_STRING("brake", cues[11].clip);
+  TEST_ASSERT_EQUAL_UINT32(render::Arc::kGiveUpAt, cues[12].at);
+  TEST_ASSERT_EQUAL_STRING("slide", cues[12].clip);
   // Another state stops the arc; the next request starts it over.
   render::SceneShow idle;
   idle.state = SceneState::kIdle;

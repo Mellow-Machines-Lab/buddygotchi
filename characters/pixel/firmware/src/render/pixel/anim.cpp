@@ -118,7 +118,7 @@ int PixelFace::cues(const SceneShow* s, voice::FxEvent* out, bool& changed) {
     const int clip = clips().index(c.clip);
     if (clip < 0 || n >= Face::kMaxCues) continue;
     voice::FxEvent e;
-    e.clip = uint8_t(clip), e.gain = c.gain, e.duck = false;
+    e.clip = uint8_t(clip), e.gain = c.gain, e.pitch = c.pitch, e.duck = false;
     out[n++] = e;
   }
   if (until > arcCovered_) arcCovered_ = until;

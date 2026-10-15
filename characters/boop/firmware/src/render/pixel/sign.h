@@ -42,20 +42,31 @@ struct Arc {
 };
 
 // The arc's sounds: a clip from the face's bank (by name) at a time from
-// the request, over the needs-you design's own. Never ducked, like needs
-// you's.
+// the request, at a gain (255 as loud as a take) and a pitch (permille),
+// over the needs-you design's own. They grow with the picture: a soft
+// knock as it starts to sway, two higher ones mid-sway, three louder and
+// higher as it shakes, a burst at the height of it, then the brake into
+// the stare. Never ducked, like needs you's.
 struct ArcCue {
   uint32_t at;
   const char* clip;
   uint8_t gain;
+  uint16_t pitch = 1000;
 };
 constexpr ArcCue kArcCues[] = {
-    {Arc::kSwayAt, "swipe", 200},              // it starts to sway the sign
-    {Arc::kShakeAt, "alertKnock", 255},        // the shake: knock,
-    {Arc::kShakeAt + 450, "alertKnock", 255},  // knock,
-    {Arc::kShakeAt + 900, "alertKnock", 255},  // knock
-    {Arc::kStareAt, "brake", 230},             // and it stops dead
-    {Arc::kGiveUpAt, "slide", 220},            // the sign goes back up
+    {Arc::kSwayAt, "swipe", 200},                    // it starts to sway the sign and wave
+    {Arc::kSwayAt + 300, "alertKnock", 170},         // knock
+    {Arc::kSwayAt + 3500, "alertKnock", 190, 1060},  // knock, knock
+    {Arc::kSwayAt + 3800, "alertKnock", 190, 1060},
+    {Arc::kShakeAt, "alertKnock", 225, 1120},  // the shake: knock, knock, knock
+    {Arc::kShakeAt + 250, "alertKnock", 225, 1120},
+    {Arc::kShakeAt + 500, "alertKnock", 225, 1120},
+    {Arc::kShakeAt + 2500, "alertKnock", 255, 1200},  // the height of it: a burst
+    {Arc::kShakeAt + 2650, "alertKnock", 255, 1200},
+    {Arc::kShakeAt + 2800, "alertKnock", 255, 1200},
+    {Arc::kShakeAt + 2950, "alertKnock", 255, 1200},
+    {Arc::kStareAt, "brake", 230},   // and it stops dead
+    {Arc::kGiveUpAt, "slide", 200},  // the sign goes back up
 };
 
 struct Sign {
