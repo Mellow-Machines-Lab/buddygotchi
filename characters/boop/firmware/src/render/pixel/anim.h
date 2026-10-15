@@ -34,7 +34,7 @@ class PixelFace final : public Face {
   bool blinking(uint32_t t) const override;
   SceneShow show(uint32_t t, uint32_t playMs, bool mouthOpen, int dy) const override;
   bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const Strip&, bool) override;
-  int cues(const SceneShow* s, voice::FxEvent* out, bool& changed) override { return fx_.follow(s, out, changed); }
+  int cues(const SceneShow* s, voice::FxEvent* out, bool& changed) override;
 
  private:
   uint32_t blinkGap(linkkit::Rng& rng) const;
@@ -48,6 +48,10 @@ class PixelFace final : public Face {
   uint32_t switchAt_ = 0, blinkAt_ = 0, nextBlink_ = 0;
   uint8_t last_[int(SceneState::kCount)] = {};
   EffectTrack fx_;
+  // The needs-you arc's cues (kArcCues) before this, on the request's clock,
+  // are handled; off while the face isn't needs you.
+  bool arcOn_ = false;
+  uint32_t arcCovered_ = 0;
   uint64_t drawnKey_ = 0;
   bool drawnSign_ = false;
   SignPose drawnPose_{};

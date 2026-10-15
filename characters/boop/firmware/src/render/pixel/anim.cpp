@@ -101,6 +101,29 @@ uint32_t PixelFace::holdMs(Mood mood, int loops, uint32_t t) const {
   uint32_t into = designMs(t) % loop;
   return loop - into + uint32_t(loops - 1) * loop;
 }
+// The design's sounds, then the needs-you arc's on the request's clock
+// (show's t, which Device sets to designMs): each cue once, as the clock
+// reaches it, and one that late dropped, as the design's are. A new request
+// starts the clock over, and so the cues.
+int PixelFace::cues(const SceneShow* s, voice::FxEvent* out, bool& changed) {
+  int n = fx_.follow(s, out, changed);
+  if (!s || s->state != SceneState::kNeedsYou) {
+    arcOn_ = false;
+    return n;
+  }
+  if (!arcOn_ || s->t + EffectTrack::kLeadMs < arcCovered_) arcOn_ = true, arcCovered_ = s->t;
+  const uint32_t until = s->t + EffectTrack::kLeadMs;
+  for (const ArcCue& c : kArcCues) {
+    if (c.at < arcCovered_ || c.at >= until || c.at + EffectTrack::kLateMs < s->t) continue;
+    const int clip = clips().index(c.clip);
+    if (clip < 0 || n >= Face::kMaxCues) continue;
+    voice::FxEvent e;
+    e.clip = uint8_t(clip), e.gain = c.gain, e.pitch = c.pitch, e.duck = false;
+    out[n++] = e;
+  }
+  if (until > arcCovered_) arcCovered_ = until;
+  return n;
+}
 bool PixelFace::blinking(uint32_t t) const { return blink_ && within(t, blinkAt_, kBlinkMs); }
 SceneShow PixelFace::show(uint32_t t, uint32_t playMs, bool mouthOpen, int dy) const {
   SceneShow s;

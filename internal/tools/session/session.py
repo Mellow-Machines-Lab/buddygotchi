@@ -118,8 +118,8 @@ def clean_env() -> Dict[str, str]:
             if not k.startswith(("CLAUDE", "CODEX", "ANTHROPIC", "OPENAI", "AGENT_HOOKS", "BOOP_JEV"))}
 
 
-def make_workspace(source: Path, root: Path) -> Path:
-    ws = root / "shortcuts"
+def make_workspace(source: Path, root: Path, name: str) -> Path:
+    ws = root / name
     shutil.copytree(source, ws)
     for argv in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-qm", "Start"]):
         scripts.git(ws, *argv)
@@ -302,7 +302,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             sys.exit(f"session: Boop stopped before the script started; see {root}/boop.log")
         log(f"boop: playing {path.name}, board {link}")
 
-        ws = make_workspace(source, root)
+        ws = make_workspace(source, root, s.project)
         if args.ui == "desktop":
             gate = f"/usr/bin/python3 {GATE} --script {path} --cursor {cursor.path}"
             settings = {"env": {"AGENT_HOOKS_SOCKET": boop_sock}, "permissions": permissions(s),

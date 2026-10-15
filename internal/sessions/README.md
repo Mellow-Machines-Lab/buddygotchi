@@ -91,7 +91,11 @@ Each run keeps its logs in its `/tmp/boop-session-*` folder:
 
 `NAME/workspace/` here is the project the script's agent works in: its
 files, and tests that give the story's results when the script's edits are
-made (`hello`, `landing`). A real model reads what it runs, so the
+made (`hello`, `landing`), or that runs the command it asks you about
+(`hanging`, whose story is the wait before you allow it). Its copy is
+named after the script's title (`deploy-the-docs`), as the player with
+no agent names its project, so the board's sign says the same either way.
+A real model reads what it runs, so the
 project and the script must agree, and the script must say only what's
 true: a reviewer asked to say "nothing else changed" when something did
 won't. `make -C internal tools-test` holds the landing project to its
