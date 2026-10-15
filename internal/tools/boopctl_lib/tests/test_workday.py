@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from boopctl_lib import workday  # noqa: E402
+from pack import needs_voice  # noqa: E402
 
 
 class DayTests(unittest.TestCase):
@@ -152,6 +153,7 @@ class ReportTests(unittest.TestCase):
             path.write_text("\n".join(lines) + "\n")
             self.assertEqual([r["finish"] for r in workday.summarize(path)["reactions"]], ["success", None])
 
+    @needs_voice
     def test_the_takes_are_the_actions_and_a_reaction_that_said_nothing_is_none(self) -> None:
         """What a reaction said is the takes its action's start records:
         Voice picks a take for the meaning, so the answers can't say which."""

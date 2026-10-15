@@ -422,7 +422,7 @@ public struct Eval {
     let brain: any Brain
     let steering: Steering
 
-    /// Every entry of every run, for `boopdev watch`.
+    /// Every entry of every run, one JSON line each, as debug mode writes them.
     public var debugLog: URL?
 
     public init(brain: any Brain, steering: Steering) {

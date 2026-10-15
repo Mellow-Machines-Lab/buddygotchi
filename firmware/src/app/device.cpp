@@ -130,7 +130,12 @@ int Device::does(const char* const*& names) const {
 }
 
 // The voice pack on the card, which the Mac checks before it sends takes.
-void Device::hello(JsonObject extra) { extra["voice"] = voice::assetsVersion(); extra["face"] = b_.face().name(); }
+void Device::hello(JsonObject extra) {
+  extra["voice"] = voice::assetsVersion();
+  extra["face"] = b_.face().name();
+  extra["pack"] = render::kPackId;  // the character pack it was built with
+  extra["pack_version"] = render::kPackVersion;
+}
 
 void Device::begin() {
   b_.reset(0, kit().rng());

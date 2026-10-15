@@ -76,12 +76,12 @@ simulator:
 #   simulated-claude-terminal  Claude Code in this terminal, its replies
 #                              replayed from the script
 #   simulated-codex-terminal   the same with Codex
-# An agent keeps in step with the script (internal/sessions/README.md);
-# BOARD=usb:SOCKET plays it on a board on a USB bridge.
+# An agent keeps in step with the script (internal/sessions/README.md).
+# BOARD=usb:SOCKET plays it on a board on a USB bridge in any of them.
 DEMO_RUN := internal/tools/session/session.py run $(or $(NAME),landing) --board $(or $(BOARD),sim)
 demo:
 	@case "$(IN)" in \
-	  "") simulator/tools/demo.sh $(or $(NAME),landing) $(or $(FACE),pixel) ;; \
+	  "") BOARD=$(BOARD) simulator/tools/demo.sh $(or $(NAME),landing) $(or $(FACE),pixel) ;; \
 	  claude) $(DEMO_RUN) --ui desktop ;; \
 	  simulated-claude-terminal) $(DEMO_RUN) --agent claude ;; \
 	  simulated-codex-terminal) $(DEMO_RUN) --agent codex ;; \

@@ -108,7 +108,6 @@ extension DeviceMoment {
 }
 
 final class DeviceLinkTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
     /// The device's `hello` says who it is and which voice
     /// pack its card has; a tap names the brain's finish it landed on, when
@@ -132,7 +131,8 @@ final class DeviceLinkTests: XCTestCase {
     /// the protocol's order, every string escaped. A brain reaction with no
     /// animation is `react`, and still has a `say`: the reply that ends
     /// push-to-talk's listening. The longest one fits in a line.
-    func testDoLinesMatchTheProtocol() {
+    func testDoLinesMatchTheProtocol() throws {
+        try requireVoice()
         XCTAssertEqual(DeviceMoment(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(DeviceMoment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
@@ -164,7 +164,8 @@ final class DeviceLinkTests: XCTestCase {
     /// from before the kit says `status` where a `hello` would be, which
     /// Boop spots itself (the kit leaves that to the app): it still gets
     /// its `state` but no `do`, and the popover says to flash it.
-    func testTheLinkTakesBoopsFirmware() {
+    func testTheLinkTakesBoopsFirmware() throws {
+        try requireVoice()
         let transport = FakeTransport()
         transport.start(onLine: { _ in }, onConnection: { _ in })
         let link = BoopDevice.link(transport)
@@ -248,6 +249,30 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheVoice, true)
         link.receive(hello(nil), now: 500)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheVoice, true, "firmware that doesn't say")
+    }
+
+    /// characters/CHARACTER.md §10: a board built with another character
+    /// pack, or another version of it, says so in its hello, and the log
+    /// says so. Firmware that doesn't say counts as the app's.
+    func testABoardWithAnotherPackSaysSo() {
+        let lines = Lines()
+        let link = BoopDevice.link(FakeTransport())
+        link.onHello = { DeviceInfo($0).logLines.forEach(lines.add) }
+        link.connection(true, now: 0)
+        func hello(_ pack: String?, _ version: String = CharacterPack.active.version) -> String {
+            String(FakeTransport.hello.dropLast()) + (pack.map { #","pack":"\#($0)","pack_version":"\#(version)"}"# } ?? "}")
+        }
+        link.receive(hello(CharacterPack.active.id), now: 100)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.pack, DeviceInfo.appPack)
+        link.receive(hello("other"), now: 200)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false)
+        XCTAssertTrue(lines.all.contains("device: its firmware is built with the other \(CharacterPack.active.version) character pack, "
+                                         + "the app runs \(DeviceInfo.appPack): some of its faces won't match the app's moods"), "\(lines.all)")
+        link.receive(hello(CharacterPack.active.id, "9.9.9"), now: 300)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false, "another version")
+        link.receive(hello(nil), now: 400)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true, "firmware that doesn't say")
     }
 
     /// The widest name the Mac sends: 47 bytes that JSON escapes to two

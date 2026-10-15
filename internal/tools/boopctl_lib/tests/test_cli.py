@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "characters" / "pix
 from boopctl_lib import cli, common  # noqa: E402
 from facegen import facegen  # noqa: E402
 from fake_board import FakeBoard  # noqa: E402
+from pack import needs_voice  # noqa: E402
 
 COMMANDS = ["ping", "state", "shot", "send", "play", "takes", "card", "sim", "run", "perf", "latency", "soak", "e2e",
             "bridge", "cam", "dash", "day", "workday", "calibrate"]
@@ -49,6 +50,7 @@ class CLITests(unittest.TestCase):
                 self.assertEqual(done.exception.code, 0)
                 self.assertIn("usage: boopctl", out.getvalue())
 
+    @needs_voice
     def test_the_hand_driven_commands_parse(self):
         parse = cli.build_parser().parse_args
         self.assertEqual(parse(["play", "cheer", "--take", "previous.yay"]).take, "previous.yay")
@@ -119,6 +121,7 @@ class PlayTests(unittest.TestCase):
         with self.assertRaisesRegex(cli.DeviceError, "task_complete --outcome failure"):
             self.play("cheer", "--outcome", "failure")
 
+    @needs_voice
     def test_play_sends_a_take(self):  # `say` is {"take": id}
         self.assertEqual(self.play("cheer", "--take", "new.d15")[0], 0)
         self.assertEqual(self.args()[0]["say"], {"take": "new.d15"})
@@ -282,6 +285,7 @@ class SoakCutShortTests(unittest.TestCase):
     minutes it ran and the heap so far, fails, and leaves --out holding
     every sample it took (VERIFICATION.md L2)."""
 
+    @needs_voice
     def test_a_soak_cut_short_keeps_what_it_saw(self):
         class Clock:
             now = 0.0
@@ -476,6 +480,7 @@ class PerfTests(unittest.TestCase):
         self.assertFalse(self.perf(20, 52000, face="gel", draw_us=41000)["ok"])  # its draw alone is over 40 ms
 
 
+@needs_voice
 class TakesTests(unittest.TestCase):
     """The takes boopctl plays are the board's, from the voice pack on its
     card (the chosen character pack's voice/voice.bin)."""
@@ -518,6 +523,7 @@ class SoakTests(unittest.TestCase):
     """The soak's requests, and how it holds the board to one `ended` for
     each reaction (linkkit/SPEC.md §3–4)."""
 
+    @needs_voice
     def test_reactions_are_waited_requests_with_loops(self):
         import random
         rng = random.Random(1)

@@ -797,16 +797,20 @@ public enum EventLine {
     }
 
     /// How to read HISTORY and NOW: Boop's own
-    /// words for MellowHarness's layout, after the guide.
-    public static let reading = """
-        How to read HISTORY and NOW:
-        - HISTORY is oldest first. Each line says how long ago it happened.
-          Lines indented under it add to it: an agent's last message, then
-          what Boop did. A line of what Boop did ending in (in progress)
-          hasn't finished yet.
-        - NOW is what to react to. Its last line is what Boop already did on
-          its own, by reflex.
-        """
+    /// words for MellowHarness's layout, after the guide, with the pack's
+    /// name for the creature.
+    public static var reading: String {
+        let name = CharacterPack.active.name
+        return """
+            How to read HISTORY and NOW:
+            - HISTORY is oldest first. Each line says how long ago it happened.
+              Lines indented under it add to it: an agent's last message, then
+              what \(name) did. A line of what \(name) did ending in (in progress)
+              hasn't finished yet.
+            - NOW is what to react to. Its last line is what \(name) already did on
+              its own, by reflex.
+            """
+    }
 
     /// The words the lines use, as the guide explains them after how to
     /// read the layout. Kept here, next to the lines.

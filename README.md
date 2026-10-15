@@ -153,3 +153,7 @@ useful on its own:
 
 - **[architecture.html](https://htmlpreview.github.io/?https://github.com/Mellow-Machines-Lab/buddygotchi/blob/main/documentation/architecture.html)**:
   how Boop fits together, following one finished turn through every piece.
+- **[characters/CHARACTER.md](characters/CHARACTER.md)**: what a
+  character pack holds, and how to make your own.
+- **[characters/DEMOS.md](characters/DEMOS.md)**: how to write a demo
+  and play it in the browser, on a board or with a real agent.

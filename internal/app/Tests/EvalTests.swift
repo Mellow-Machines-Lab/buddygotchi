@@ -8,16 +8,22 @@ import XCTest
 /// read, each step reaches the core, and each pass is checked. The evals
 /// themselves ask Jev (`boopdev eval`).
 final class EvalTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
-    static let scenarios = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../characters/boop/evals").standardizedFileURL
+    /// Boop's eval scenarios, which these tests read: Boop's pack's own.
+    static func scenarios() throws -> URL {
+        try requirePack("boop")
+        return CharacterPack.active.directory.appendingPathComponent("evals")
+    }
 
     func testEveryScenarioReads() throws {
-        let all = try Scenario.load(directory: Self.scenarios)
+        let all = try Scenario.load(directory: try Self.scenarios())
         XCTAssertGreaterThanOrEqual(all.count, 7)
         XCTAssertTrue(all.allSatisfy { !$0.story.isEmpty }, "every scenario says its case in plain words")
         XCTAssertTrue(all.contains { $0.always }, "some scenarios are Boop's character")
         XCTAssertTrue(all.contains { $0.steps.contains { $0.session == "s2" } }, "a step can be another session's")
+    }
+
+    func testRangesAndDurationsRead() {
         XCTAssertEqual(Scenario.range("1-3"), 1...3)
         XCTAssertEqual(Scenario.range("2-"), 2...Int.max)
         XCTAssertEqual(Scenario.range("-4"), 0...4)
@@ -32,7 +38,7 @@ final class EvalTests: XCTestCase {
     /// EVALS.md §1: v3 cases load, reach real questions, and enforce the
     /// selected graph with an offline brain. This is not a Jev evaluation.
     func testV3ScenariosExerciseTheVersionedHost() async throws {
-        let scenarios = try Scenario.load(directory: Self.scenarios).filter { $0.graph == .v3 }
+        let scenarios = try Scenario.load(directory: try Self.scenarios()).filter { $0.graph == .v3 }
         XCTAssertEqual(scenarios.count, 4)
         for scenario in scenarios {
             let brain = ScriptedBrain(always: ["mood": scenario.mood, "react.mood": "none"].mapValues { Answer(choice: $0, probabilities: [$0: 1]) })
@@ -62,7 +68,7 @@ final class EvalTests: XCTestCase {
             }
             return ["mood": a(mood), "react.mood": a("none"), "say.feeling": a("none")]
         }
-        let scenario = try Scenario(file: Self.scenarios.appendingPathComponent("04-tests-fight-back.json"))
+        let scenario = try Scenario(file: try Self.scenarios().appendingPathComponent("04-tests-fight-back.json"))
         let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
         XCTAssertEqual(result.checks.count, 4)
         XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
@@ -88,7 +94,7 @@ final class EvalTests: XCTestCase {
         }
         let eval = Eval(brain: brain, steering: RuntimeTests.steering)
         for (file, shown) in [("11-comeback-still-showing.json", true), ("12-comeback-that-didnt-happen.json", false)] {
-            _ = try await eval.run(try Scenario(file: Self.scenarios.appendingPathComponent(file)))
+            _ = try await eval.run(try Scenario(file: try Self.scenarios().appendingPathComponent(file)))
             let finish = try XCTUnwrap(states.all.last)
             XCTAssertEqual(finish.contains("\n  Boop made a proud face, held once. (in progress)\n"), shown, finish)
             XCTAssertEqual(finish.contains("after failing.\n  Boop made"), shown, "one that didn't happen isn't shown: \(finish)")
@@ -115,7 +121,7 @@ final class EvalTests: XCTestCase {
             return [:]
         }
         _ = try await Eval(brain: brain, steering: RuntimeTests.steering)
-            .run(try Scenario(file: Self.scenarios.appendingPathComponent("27-agent-gives-up.json")))
+            .run(try Scenario(file: try Self.scenarios().appendingPathComponent("27-agent-gives-up.json")))
         XCTAssertTrue(states.all.first?.contains("\n  You asked: \"fix the login redirect\"") == true, states.all.first ?? "no pass")
         XCTAssertTrue(states.all.last?.contains("\n  Its last message: \"I couldn't get the login working.") == true, states.all.last ?? "no pass")
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","prompt":"hi","expect":{"react":"none"}}]}"#, "step 1: prompt is only"),
@@ -135,7 +141,7 @@ final class EvalTests: XCTestCase {
     /// A brain that stays quiet fails what should react, and the report
     /// says what was wanted and what came.
     func testAQuietBrainFailsAndTheReportSaysWhy() async throws {
-        let scenario = try Scenario(file: Self.scenarios.appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
+        let scenario = try Scenario(file: try Self.scenarios().appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
         let result = try await Eval(brain: ScriptedBrain(always: [:]), steering: RuntimeTests.steering).run(scenario)
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
@@ -167,7 +173,7 @@ final class EvalTests: XCTestCase {
     /// the file says; and what a run costs is its passes, counted with the
     /// scripted brain before Jev is asked anything.
     func testRunsAndTheirCost() async throws {
-        let all = try Scenario.load(directory: Self.scenarios)
+        let all = try Scenario.load(directory: try Self.scenarios())
         let always = try XCTUnwrap(all.first { $0.always && $0.runs == nil })
         let tuning = try XCTUnwrap(all.first { !$0.always && $0.runs == nil })
         XCTAssertEqual(Eval.runs(always), 3)
@@ -175,7 +181,7 @@ final class EvalTests: XCTestCase {
         let busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
         XCTAssertEqual(Eval.runs(busy), 1, "53 says runs 1: the code already holds its moves to the graph")
         // 05's four pokes, a second apart then a turn start: a pass each.
-        let pokes = try Scenario(file: Self.scenarios.appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
+        let pokes = try Scenario(file: try Self.scenarios().appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
         let requests = try await Eval.requests(pokes, steering: RuntimeTests.steering)
         XCTAssertEqual(requests, 4)
     }
@@ -255,7 +261,7 @@ final class EvalTests: XCTestCase {
         }
         let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
         XCTAssertTrue(states.all.first?.contains("MOOD\nGrumpy.") == true, "the first pass reads grumpy's file")
-        XCTAssertTrue(states.all.first?.contains("\nBoop has been grumpy for 2 min.\n") == true,
+        XCTAssertTrue(states.all.first?.contains("\n\(creature) has been grumpy for 2 min.\n") == true,
                       "and knows how long, as if the dashboard set it at the start: \(states.all.first ?? "")")
         XCTAssertTrue(result.checks[0].passed, result.checks[0].summary)
         XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.neighbours(of: "irritated"))

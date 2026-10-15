@@ -7,7 +7,6 @@ import XCTest
 
 /// The view: raw events folded into what the brain hears.
 final class ViewTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
     var rig = CoreRig()
 
@@ -229,24 +228,24 @@ final class ViewTests: XCTestCase {
     func testPokes() {
         XCTAssertEqual(TranscriptView.inARowMs, 3000)
         let one = events(rig.poke())
-        XCTAssertEqual(one.map(\.line), ["You poked Boop."])
+        XCTAssertEqual(one.map(\.line), ["You poked \(creature)."])
         XCTAssertEqual(one.map(\.name), ["poke"])
         XCTAssertTrue(one[0].wakesBrain)
-        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["Boop wiggled on its own."])
+        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["\(creature) wiggled on its own."])
         XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.by), ["rule"])
         var last: [ViewEvent] = []
         for _ in 0..<3 { rig.wait(1000); last = events(rig.poke()) }
-        XCTAssertEqual(last.map(\.line), ["You poked Boop 4 times in a row."])
+        XCTAssertEqual(last.map(\.line), ["You poked \(creature) 4 times in a row."])
         XCTAssertEqual(last[0].facts["in_a_row"], .int(4))
         XCTAssertTrue(last[0].wakesBrain, "no limit")
         rig.wait(3000)
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop."], "3 s apart starts again")
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked \(creature)."], "3 s apart starts again")
         // While something needs you there's no wiggle: the tap opens the
         // thread, and doesn't wake the brain.
         hook(.turnStart)
         hook(.needsYou, tool: "Bash")
         let seen = events(rig.poke())
-        XCTAssertEqual(rig.pipeline.viewEvent(seen[0].id)?.did.map(\.message), ["Boop opened the thread that needs you on the Mac."])
+        XCTAssertEqual(rig.pipeline.viewEvent(seen[0].id)?.did.map(\.message), ["\(creature) opened the thread that needs you on the Mac."])
         XCTAssertFalse(seen[0].wakesBrain)
     }
 
@@ -256,7 +255,7 @@ final class ViewTests: XCTestCase {
     /// words that are only space make no view event.
     func testWhatYouSay() throws {
         let said = events(rig.said("are the tests\npassing yet?"))
-        XCTAssertEqual(said.map(\.line), [#"You said to Boop: "are the tests passing yet?""#])
+        XCTAssertEqual(said.map(\.line), [#"You said to \#(creature): "are the tests passing yet?""#])
         XCTAssertEqual(said.map(\.name), ["talk"])
         XCTAssertTrue(said[0].wakesBrain)
         XCTAssertEqual(said[0].passPriority, 2, "it goes ahead of a finish waiting")
@@ -269,7 +268,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(raw.specificType, "device")
 
         let long = try XCTUnwrap(events(rig.said(String(repeating: "a", count: 2500), by: .app)).first)
-        XCTAssertEqual(long.line.count, #"You said to Boop: """#.count + EventLine.messageMax)
+        XCTAssertEqual(long.line.count, #"You said to \#(creature): """#.count + EventLine.messageMax)
         XCTAssertTrue(long.line.hasSuffix(#"…""#))
         XCTAssertEqual(rig.pipeline.transcript.events.last?["words"]?.string?.count, 2000)
         XCTAssertEqual(long.facts["by"], "app")
@@ -322,7 +321,7 @@ final class ViewTests: XCTestCase {
                                       data: ["for": .int(Int64(seq)), "by": "brain", "outcome": why == nil ? "done" : "failed",
                                              "why": why.map { .string($0) } ?? .null]))
         }
-        let answering = "Boop is answering these pokes"
+        let answering = "\(creature) is answering these pokes"
         // A reaction a tap cut short stays open while the pokes go on
         // (`Reactions`).
         let single = events(rig.poke())[0]

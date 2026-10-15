@@ -96,8 +96,7 @@ For a demo through a real agent, which drives the page live from the
 agent's own hooks, see `make demo IN=…`
 ([internal/sessions/README.md](../internal/sessions/README.md)).
 
-A character pack's demo ([characters/CHARACTER.md](../characters/CHARACTER.md)
-§13) is a script the Mac app plays. The app can't run in a browser, so
+A character pack's demo ([characters/DEMOS.md](../characters/DEMOS.md)) is a script the Mac app plays. The app can't run in a browser, so
 the page plays a **recording** of it: every line the app sent the board,
 with when, so the firmware in the page does what it did, with no app
 behind it. The screen is still the firmware's own drawing, and you can

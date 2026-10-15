@@ -21,7 +21,6 @@ extension CoreRig {
 // MARK: - What the agents are doing
 
 final class CoreActivityTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
     /// A running call shows what it does, in working's
     /// place: its tool and topic decide, and a `Task` or `Agent` call

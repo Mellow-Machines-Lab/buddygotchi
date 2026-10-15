@@ -13,7 +13,6 @@ final class ParityTests: XCTestCase {
     var dir: URL!
 
     override func setUpWithError() throws {
-        try requireBoopsPack()
         // Unix socket paths must stay under 104 bytes.
         dir = URL(fileURLWithPath: "/tmp/boop-par-\(UUID().uuidString.prefix(8))")
     }
@@ -22,8 +21,7 @@ final class ParityTests: XCTestCase {
         if let dir { try? FileManager.default.removeItem(at: dir) }
     }
 
-    static let steering = try! Steering(directory: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        .appendingPathComponent("../../../characters/boop/steering").standardizedFileURL)
+    static let steering = try! Steering(directory: CharacterPack.active.directory.appendingPathComponent("steering"))
     /// The state directory main left (Fixtures/parity-upgrade): its
     /// transcript, two days of main's lines, and its `mood` file, proud,
     /// from a change 29 hours before the relaunch at `t`.
@@ -158,7 +156,8 @@ final class ParityTests: XCTestCase {
         XCTAssertEqual(grumpy.dids, 1)
         XCTAssertEqual(logged.mood, "happy", "the log's own change wins")
         XCTAssertEqual(logged.dids, 1, "and nothing is added")
-        XCTAssertEqual(cheerful.mood, "happy")
+        // An old name the pack keeps as an alias reads as its mood (Boop's cheerful is happy).
+        XCTAssertEqual(cheerful.mood, CharacterPack.active.aliases["cheerful"] ?? CharacterPack.active.defaultMood)
         XCTAssertEqual(sulky.mood, "calm")
         XCTAssertEqual(sulky.notes, ["mood: the mood file says sulky, which isn't a mood; reading it as calm"])
         XCTAssertEqual(calm.dids, 0)
@@ -178,7 +177,7 @@ final class ParityTests: XCTestCase {
     func testATapCutReactionOutlastsReactsOpenForWhileThePokesGoOn() {
         XCTAssertEqual(ReactAction.openForMs, 90_000)
         let rig = CoreRig()
-        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: Self.steering, personality: { .boop }, queue: { _, _ in })
+        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
         func poke() -> Event {
             rig.poke()
             return h.log.events.last { $0.type == .poke }!

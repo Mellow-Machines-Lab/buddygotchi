@@ -7,7 +7,7 @@ import SwiftUI
 /// bar read as the same creature.
 enum FaceMood: Hashable {
     case asleep, idle, working, needsYou, happy
-    /// Setup's preview of a cheeky Boop: the proud face's smirk.
+    /// Setup's preview of a cheeky Boop.
     case cheeky
     /// Boop couldn't start: the menu bar's crossed eyes, so it never passes
     /// for napping.
@@ -46,22 +46,30 @@ struct BoopFace: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.stillMotion) private var still
 
-    /// The design the tile shows: setup's sweet and cheeky previews are the
-    /// happy and the proud idle faces.
+    /// The design the tile shows. Asleep and setup's previews are the
+    /// pack's startup mood's: the engine names no mood of its own.
     private var key: String {
-        switch mood {
-        case .asleep, .stopped: "happy/asleep"
+        let startup = CharacterPack.active.startupMood
+        return switch mood {
+        case .asleep, .stopped: "\(startup)/asleep"
         case .idle: "\(MoodGraph.pixelFallback(design))/idle"
         case .working: "\(MoodGraph.pixelFallback(design))/working"
         case .needsYou: "\(MoodGraph.pixelFallback(design))/needs_you"
-        case .happy: "happy/idle"
-        case .cheeky: "proud/idle"
+        case .happy, .cheeky: "\(startup)/idle"
         }
+    }
+
+    /// The key's face, else its mood's idle one, else the startup mood's,
+    /// else any: a pack's faces.json may not have every look.
+    private static func face(_ key: String) -> (open: [FaceRect], shut: [FaceRect]) {
+        let mood = key.split(separator: "/").first.map(String.init) ?? ""
+        return faces[key] ?? faces["\(mood)/idle"] ?? faces["\(CharacterPack.active.startupMood)/idle"]
+            ?? faces.sorted { $0.key < $1.key }.first?.value ?? (open: [], shut: [])
     }
 
     var body: some View {
         let key = key
-        let face = Self.faces[key] ?? Self.faces["happy/idle"]!
+        let face = Self.face(key)
         let rects = blink ? face.shut : face.open
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)

@@ -17,7 +17,6 @@ final class RuntimeTests: XCTestCase {
     let opened = Lines()
 
     override func setUpWithError() throws {
-        try requireBoopsPack()
         // Unix socket paths must stay under 104 bytes.
         dir = URL(fileURLWithPath: "/tmp/boop-rt-\(UUID().uuidString.prefix(8))")
     }
@@ -26,8 +25,7 @@ final class RuntimeTests: XCTestCase {
         if let dir { try? FileManager.default.removeItem(at: dir) }
     }
 
-    static let steeringDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        .appendingPathComponent("../../../characters/boop/steering").standardizedFileURL
+    static let steeringDir = CharacterPack.active.directory.appendingPathComponent("steering")
     static let steering = try! Steering(directory: steeringDir)
 
     /// A runtime whose brain is `brain` once the key reads, or none.
@@ -99,6 +97,7 @@ final class RuntimeTests: XCTestCase {
     /// The automatic hello reply must never send a gel
     /// mood name to a pixel board, even on a transport reused without a drop.
     func testFaceCapabilityMapsTheFirstReplyAndEveryReconnect() throws {
+        try requirePack("boop")  // a mood the pixel face doesn't draw: frightened
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
         let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, busy: 0, vol: 6)
@@ -128,6 +127,7 @@ final class RuntimeTests: XCTestCase {
     /// that says gel gets gel's from the very first `state` it's answered
     /// with. LinkKit's own rule judges which fit.
     func testOnlyAHelloTheLinkTakesIsAnsweredInGel() throws {
+        try requirePack("boop")  // a mood the pixel face doesn't draw: frightened
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
         let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, busy: 0, vol: 6)
@@ -269,7 +269,7 @@ final class RuntimeTests: XCTestCase {
                     && $0.contains(#""mood":"excited""#)
             }
         }
-        XCTAssertEqual(AppSettings.load(from: dir).personality, .boop)
+        XCTAssertEqual(AppSettings.load(from: dir).personality, .default)
     }
 
     /// The agents' work earns XP as it happens, which
@@ -400,6 +400,7 @@ final class RuntimeTests: XCTestCase {
     /// change reaches the transcript, the device's state, and the next
     /// pass's MOOD.
     func testAPassMumblesAndChangesTheMood() throws {
+        try requireVoice()
         let transport = FakeTransport()
         let lines = DebugLines()
         var options = try options(transport, brain: ScriptedBrain(id: "scripted", always: [
@@ -433,10 +434,12 @@ final class RuntimeTests: XCTestCase {
         // The state's head is logged again only when it changes.
         let heads = logged("head")
         XCTAssertEqual(heads.count, 2)
-        XCTAssertTrue(heads[0].contains("Calm. Boop is settled"), "the first pass read calm")
-        XCTAssertTrue(heads[1].contains("Annoyed. Boop is mildly put out"), "the next reads the new mood's file")
+        // A mood file's first line, after its MOOD heading.
+        func opening(_ mood: String) -> String { String(Self.steering.mood(mood).split(separator: "\n")[1].prefix(24)) }
+        XCTAssertTrue(heads[0].contains(opening("calm")), "the first pass read calm")
+        XCTAssertTrue(heads[1].contains(opening("annoyed")), "the next reads the new mood's file")
         XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.mood == "grumpy"
-                          && passes()[1].contains(#"Boop made a grumpy face, held once, and said \"\#($0.text)\"."#) },
+                          && passes()[1].contains(#"\#(creature) made a grumpy face, held once, and said \"\#($0.text)\"."#) },
                       "HISTORY shows what the actions did")
         XCTAssertFalse(lines.lock.withLock { lines.log.contains { $0.contains("PERSONALITY") } }, "the state stays out of boop.log")
     }
@@ -550,7 +553,7 @@ final class RuntimeTests: XCTestCase {
         let fresh = try String(contentsOf: debugLog, encoding: .utf8)
         XCTAssertTrue(fresh.hasPrefix(#"{"questions":"#) && !fresh.contains(#"{"seq":1}"#),
                       "each launch starts afresh, with the questions first")
-        XCTAssertEqual(file(), lastLaunch, "in place, so a boopdev watch on it sees it start again")
+        XCTAssertEqual(file(), lastLaunch, "in place, so the dashboard following it sees it start again")
         try XCTAssertEqual(String(contentsOf: DebugLog.kept(1, of: debugLog), encoding: .utf8), "{\"seq\":1}\n",
                        "the last launch's lines are kept as debug.1.jsonl")
 
@@ -568,16 +571,18 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(printed.contains { $0.hasPrefix("▸ ") && $0.contains(" turn start: claude started turn 1") }, "\(printed)")
         let pass = try XCTUnwrap(printed.first { $0.hasPrefix("  pass scripted") })
         XCTAssertTrue(pass.contains("react.mood excited 1.00"), pass)
-        XCTAssertTrue(pass.contains("    │ You are the mind of Boop"), "the first state in full")
-        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: Boop made an excited face, held once, and said \"") }, "\(printed)")
-        let word = String(started.dropFirst("  … react: Boop made an excited face, held once, and said \"".count).dropLast(2))
-        XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "start" && $0.mood == "excited" }, "a start take: \(word)")
+        XCTAssertTrue(pass.contains("    │ You are the mind of \(creature)"), "the first state in full")
+        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(creature) made an excited face, held once") }, "\(printed)")
+        if !Take.all.isEmpty {  // a pack with a voice says a start take with it
+            let word = String(started.dropFirst("  … react: \(creature) made an excited face, held once, and said \"".count).dropLast(2))
+            XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "start" && $0.mood == "excited" }, "a start take: \(word)")
+        }
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
                       "the fake device never connected: \(printed)")
         let p = try XCTUnwrap(debugLines().compactMap { $0["pass"] as? [String: Any] }.first)
         XCTAssertTrue((p["state"] as? String)?.hasPrefix("HISTORY (") == true)
-        XCTAssertTrue((debugLines().first { $0["head"] != nil }?["head"] as? String)?.hasPrefix("You are the mind of Boop") == true)
-        XCTAssertEqual(p["questions"] as? [String], ["mood", "react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"])
+        XCTAssertTrue((debugLines().first { $0["head"] != nil }?["head"] as? String)?.hasPrefix("You are the mind of \(creature)") == true)
+        XCTAssertEqual(p["questions"] as? [String], askedKeys)
 
         // A bug report in debug mode copies the file's lines: none are kept
         // in memory beside it.
@@ -798,14 +803,14 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
                        ["calm"] + MoodGraph.neighbours(of: "calm"), "staying calm, then calm's moves")
-        XCTAssertEqual(questions.map { $0["key"] as? String }, ["mood", "react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"])
-        XCTAssertEqual(questions.map { $0["action"] as? String }, ["mood", "react", "react", "react", "react", "react", "react"])
-        XCTAssertEqual(questions[1]["text"] as? String, "How should Boop react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
+        XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
+        XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
+        XCTAssertEqual(questions[1]["text"] as? String, "How should \(creature) react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a face, "
-                       + "or HISTORY shows Boop still making the one it calls for (in progress).")
-        XCTAssertEqual(none["not_for"] as? String, "Anything PERSONALITY's Examples react to that Boop isn't already doing.")
+                       + "or HISTORY shows \(creature) still making the one it calls for (in progress).")
+        XCTAssertEqual(none["not_for"] as? String, "Anything PERSONALITY's Examples react to that \(creature) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.
@@ -870,6 +875,7 @@ final class RuntimeTests: XCTestCase {
     /// does, device included; each is recorded for no event, by the
     /// dashboard.
     func testTheDashboardsDevLines() throws {
+        try requireVoice()
         let transport = FakeTransport()
         var options = try options(transport, readJevKey: { _ in nil })
         options.debug = true
@@ -897,11 +903,11 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual((pass["answers"] as? [String: [String: Any]])?["react.mood"]?["p"] as? [String: Double], ["grumpy": 1])
         let actions = debugActions().filter { $0.actionPhase != .end && $0["by"] == "dashboard" }
         let worked = try XCTUnwrap(actions.first?["message"]?.string)
-        XCTAssertTrue(Take.all.contains { worked == "Boop made a grumpy face, held once, and said \"\($0.text)\"." && $0.meaning == "work"
+        XCTAssertTrue(Take.all.contains { worked == "\(creature) made a grumpy face, held once, and said \"\($0.text)\"." && $0.meaning == "work"
             && $0.mood == "grumpy" }, worked)
-        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["Boop's mood changed: calm → grumpy.",
-                                                              "Boop's mood changed: grumpy → happy.",
-                                                              "Boop's mood changed: happy → excited."])
+        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(creature)'s mood changed: calm → grumpy.",
+                                                              "\(creature)'s mood changed: grumpy → happy.",
+                                                              "\(creature)'s mood changed: happy → excited."])
         XCTAssertEqual(actions.map(\.actionName), ["react", "mood", "mood", "mood"])
         for action in actions { XCTAssertEqual(action["for"], .null) }
         let moods = lines.compactMap { ($0["sent"] as? [String: Any])?["mood"] as? String }
@@ -1055,6 +1061,7 @@ final class RuntimeTests: XCTestCase {
     /// personalities. The static parts stay within their budgets, and the
     /// personalities' settings are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
+        try requirePack("boop")  // its two personalities and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["guide.md", "guide-v3.md"] + MoodGraphV3.moods.map { "mood/\($0).md" }
                                + MoodGraph.moods.map { "mood-v3/\($0).md" }
@@ -1062,10 +1069,10 @@ final class RuntimeTests: XCTestCase {
         let v3 = try Steering(directory: Self.steeringDir, version: .v3)
         XCTAssertEqual(v3.overBudget(version: .v3), [])
         XCTAssertEqual(Self.steering.overBudget(), [])
-        XCTAssertEqual(Self.steering.personality(.boop).rules, Personality.Rules(workBeatMs: 90_000...180_000, toolUses: .notable))
+        XCTAssertEqual(Self.steering.personality(.default).rules, Personality.Rules(workBeatMs: 90_000...180_000, toolUses: .notable))
         XCTAssertEqual(Self.steering.personality(.chatter).rules, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
-        XCTAssertTrue(Self.steering.personality(.boop).text.hasPrefix("PERSONALITY\n"))
+        XCTAssertTrue(Self.steering.personality(.default).text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
     }
 
@@ -1076,7 +1083,7 @@ final class RuntimeTests: XCTestCase {
         let old = #"{"mode":"calm","brain":"jev","classifier":"rules","writer":"none","volume":3,"focus":true,"away":true,"awaySince":"2026-09-20","finished":148,"projects":["jetpack"]}"#
         try Data(old.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
         let settings = AppSettings.load(from: dir)
-        XCTAssertEqual(settings.personality, .boop)
+        XCTAssertEqual(settings.personality, .default)
         XCTAssertEqual(settings.volume, 3)
         try settings.save(to: dir)
         let text = try String(contentsOf: dir.appendingPathComponent(AppSettings.file), encoding: .utf8)
@@ -1098,9 +1105,10 @@ final class RuntimeTests: XCTestCase {
     /// The personality is saved; a missing or unknown one
     /// is boop.
     func testSettingsKeepThePersonality() throws {
+        try requirePack("boop")  // its two personalities and its steering
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let cases: [(String, Personality)] = [(#"{"personality":"chatter"}"#, .chatter), (#"{"personality":"loud"}"#, .boop),
-                                              (#"{}"#, .boop)]
+        let cases: [(String, Personality)] = [(#"{"personality":"chatter"}"#, .chatter), (#"{"personality":"loud"}"#, .default),
+                                              (#"{}"#, .default)]
         for (json, p) in cases {
             try Data(json.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
             XCTAssertEqual(AppSettings.load(from: dir).personality, p, json)
@@ -1114,12 +1122,13 @@ final class RuntimeTests: XCTestCase {
     /// A new personality takes effect from the next event,
     /// its rules included, and is saved.
     func testANewPersonalityTakesEffectAtOnce() throws {
+        try requirePack("boop")  // its two personalities and its steering
         let runtime = try makeRuntime(FakeTransport())
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("started as boop") { runtime.home.sync { statuses.last?.personality == .boop } }
+        eventually("started as boop") { runtime.home.sync { statuses.last?.personality == .default } }
         runtime.setPersonality(.chatter)
         eventually("chatter now") { runtime.home.sync { statuses.last?.personality == .chatter } }
         XCTAssertEqual(runtime.home.sync { runtime.view.rules.toolUses }, .all)
@@ -1346,7 +1355,6 @@ final class RuntimeTests: XCTestCase {
     /// with a long loop fails here rather than in HISTORY: wounded's 13 s
     /// idle, held four times, is 52 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
-        XCTAssertEqual(MoodAction.moods.count, 13)
         let held = Int64(ReactAction.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
             MoodAction.moods.map(\.name).flatMap { mood in
@@ -1357,7 +1365,7 @@ final class RuntimeTests: XCTestCase {
         let latestVoice = longest { FaceLoops.voiceMs(mood: $0, state: $1, variant: $2) }
         // A line joins two takes only within `Voice.maxLineMs`; one take
         // plays alone whatever its length.
-        let longestLine = max(Int64(Voice.maxLineMs), Int64(Take.all.map(\.ms).max()!))
+        let longestLine = max(Int64(Voice.maxLineMs), Int64(Take.all.map(\.ms).max() ?? 0))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
         let behaviour = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../firmware/src/app/behaviour.h").standardizedFileURL, encoding: .utf8)
@@ -1714,23 +1722,23 @@ final class RuntimeTests: XCTestCase {
     func testHistoryClosesWithTheMoodsTime() throws {
         let clock = VirtualClock(1_790_000_000_000)
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView(), clock: Harness.Clock(now: { clock.now }))
-        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, personality: { .boop }, queue: { _, _ in })
+        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
         func log() -> LogView { harness.log.view(now: clock.now) }
         func closing() -> String? { MoodAction.sinceLine(mood, log(), at: clock.now) }
         func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodAction.change(mood, to: to, log: log()) } }
         XCTAssertNil(closing(), "calm says nothing")
         change("grumpy")
         clock.now += 30_000
-        XCTAssertEqual(closing(), "Boop has been grumpy for under a minute.")
+        XCTAssertEqual(closing(), "\(creature) has been grumpy for under a minute.")
         clock.now += 2 * 60_000
-        XCTAssertEqual(closing(), "Boop has been grumpy for 2 min.", "whole minutes, as HISTORY's")
+        XCTAssertEqual(closing(), "\(creature) has been grumpy for 2 min.", "whole minutes, as HISTORY's")
         let relaunched = Pipeline(core: Core(config: .init()), view: TranscriptView(), transcript: harness.log,
                                   clock: Harness.Clock(now: { clock.now }))
-        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, personality: { .boop }, queue: { _, _ in })
-        XCTAssertEqual(MoodAction.sinceLine(again, log(), at: clock.now), "Boop has been grumpy for 2 min.",
+        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        XCTAssertEqual(MoodAction.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
                        "the mood and its time are the log's, so a relaunch keeps both")
         change("happy")
-        XCTAssertEqual(closing(), "Boop has been happy for under a minute.", "happy is a mood like any other")
+        XCTAssertEqual(closing(), "\(creature) has been happy for under a minute.", "happy is a mood like any other")
         change("calm")
         XCTAssertNil(closing(), "back to calm")
     }

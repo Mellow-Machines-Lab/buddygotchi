@@ -241,7 +241,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     s = scripts.load(path)
     source = SESSIONS / args.name / "workspace"
     if not source.is_dir():
-        sys.exit(f"session: no project for {args.name} at {source}")
+        sys.exit(f"session: no project for {args.name}: make {source.relative_to(REPO)}/ with the files "
+                 "the script's agent reads, edits and runs")
     if args.ui == "desktop" and args.agent != "claude":
         sys.exit("session: the desktop app runs Claude Code: --ui desktop is for --agent claude")
     if args.agent == "codex" and any(l["agent"] == "review" for l in s.agent_lines()):
@@ -290,7 +291,8 @@ def cmd_run(args: argparse.Namespace) -> int:
             cwd=REPO, env=env, stdout=open(root / "boop.log", "w"), stderr=subprocess.STDOUT)
         cursor = Cursor(state / "demo-cursor", boop)
         if not wait_socket(boop_sock, 10):
-            sys.exit(f"session: Boop didn't start; see {root}/boop.log")
+            # Most often a script line the pack can't play: Boop says which.
+            sys.exit(f"session: Boop didn't start:\n{(root / 'boop.log').read_text()[-2000:]}")
         # Boop starts the script once the board says hello (line 0 due);
         # nothing of the agent's starts before.
         if link != "none":

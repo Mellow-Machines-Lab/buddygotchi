@@ -34,7 +34,7 @@ public enum CoreEffect: Equatable, Sendable {
     /// something needs you.
     case open(ThreadRef)
 
-    /// The effect on one line, for `boopdev replay` and debug mode.
+    /// The effect on one line, for replays and debug mode.
     public var summary: String {
         switch self {
         case .state(let s): "state " + s.jsonLine

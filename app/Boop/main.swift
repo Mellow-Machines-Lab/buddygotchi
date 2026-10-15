@@ -35,8 +35,8 @@ let usage = """
            --debug prints everything to this terminal as it happens: each hook and the raw event Boop made
                of it, every line sent to the device, and every view event, pass (with Jev's whole state) and
                action. The events, view events and passes also go to DIR/debug.jsonl, started afresh each
-               launch, with the lines sent to the device, status changes and the questions (boopdev watch
-               and boopctl dash read it). The last 10 launches' files are kept as DIR/debug.1.jsonl (the latest) to
+               launch, with the lines sent to the device, status changes and the questions (boopctl dash
+               reads it). The last 10 launches' files are kept as DIR/debug.1.jsonl (the latest) to
                debug.10.jsonl, and boopctl day sums them all up by the hour. Jev's state never reaches boop.log.
            Headless, or with --debug, the hook socket also takes {"dev":…} lines from boopctl dash: "answer"
                (a forced pass) and "mood"; and for push-to-talk with no mic, "listen" (the app's button,
@@ -50,7 +50,12 @@ let usage = """
 
 /// The character pack bundled with the app: the one `make build` staged
 /// (characters/CHARACTER.md §2), which the bundle's `packs/chosen` names.
+/// `BOOP_CHARACTER`, a pack's folder, comes first, as for the tests and
+/// boopdev, so one build plays any pack's demo.
 func bundledCharacter() -> CharacterPack {
+    if let path = ProcessInfo.processInfo.environment["BOOP_CHARACTER"], !path.isEmpty {
+        do { return try CharacterPack(directory: URL(fileURLWithPath: path).standardizedFileURL) } catch { fail("BOOP_CHARACTER: \(error)") }
+    }
     guard let packs = Bundle.module.url(forResource: "packs", withExtension: nil),
           let chosen = try? String(contentsOf: packs.appendingPathComponent("chosen"), encoding: .utf8) else {
         fail("the character pack is missing from the app: build it with make build, which stages it")

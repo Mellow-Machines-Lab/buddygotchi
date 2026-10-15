@@ -14,4 +14,4 @@
 {"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}}
 {"agent": "reply", "text": "Shortcuts are in, and the deploy went through.", "after": 7}
 {"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}}
-{"brain": {}, "mood": "proud", "after": 10, "note": "A good day's work"}
+{"mood": "proud", "after": 10, "note": "A good day's work"}

@@ -1,4 +1,5 @@
-"""The studio's data rules in characters/charactergen.py (characters/CHARACTER.md §12)."""
+"""The studio's data rules in characters/charactergen.py (characters/CHARACTER.md §12), and
+the board's states where the spec and the packs name them (§9)."""
 import importlib.util
 import json
 import shutil
@@ -26,6 +27,35 @@ class RepoTests(unittest.TestCase):
 
     def test_every_pack_here_is_clean(self):
         self.assertEqual(gen.studio_problems(gen.local_packs()), [])
+        self.assertEqual(gen.state_problems(gen.local_packs()), [])
+
+
+class StateRuleTests(unittest.TestCase):
+    """CHARACTER.md §9 and a pack's mac/faces.json list the board's states."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.firmware = self.dir / "types.cpp"
+        write(self.firmware, 'constexpr const char* kStateNames[2] = {"idle", "poked"};')
+        self.spec = self.dir / "CHARACTER.md"
+        write(self.spec, "### Every state a face is asked for\n\n| `idle` | x |\n| `poked` | x |\n\n### What else\n| `other` | x |\n")
+
+    def problems(self, *packs):
+        return gen.state_problems(list(packs), self.firmware, self.spec)
+
+    def test_the_spec_lists_every_state(self):
+        self.assertEqual(self.problems(), [])
+        write(self.firmware, 'constexpr const char* kStateNames[3] = {"idle", "poked", "asleep"};')
+        [problem] = self.problems()
+        self.assertIn("missing ['asleep']", problem)
+
+    def test_a_packs_faces_have_a_row_for_each_state(self):
+        pack = self.dir / "pal"
+        write(pack / "mac" / "faces.json", {"moods": ["calm"], "states": ["idle", "poked"], "designs": {"calm": [[], []]}})
+        self.assertEqual(self.problems(pack), [])
+        write(pack / "mac" / "faces.json", {"moods": ["calm"], "states": ["poked", "idle"], "designs": {"calm": [[]]}})
+        self.assertEqual(len(self.problems(pack)), 2)
 
 
 class StudioRuleTests(unittest.TestCase):

@@ -4,7 +4,7 @@ import Foundation
 
 /// Replays recorded hook payloads through the same field picking as
 /// `agent-hook` (with Boop's `--keep-text`), the adapter and a fresh core,
-/// on a virtual clock. Used by `boopdev replay` and by tests.
+/// on a virtual clock. Used by the evals and the tests.
 public struct Replay {
     /// A payload, a `{"wait_ms": N}` line that waits, or an
     /// `{"advance_ms": N}` line that jumps a live app's clock; on the virtual

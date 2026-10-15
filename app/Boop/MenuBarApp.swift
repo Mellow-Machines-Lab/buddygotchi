@@ -234,6 +234,14 @@ final class AppModel: ObservableObject {
         if let why = status.deviceTrouble {
             return DeviceState(connected: true, trouble: true, short: "Wrong firmware", detail: "Connected \(over), but \(why).")
         }
+        // Its firmware has another character pack's faces: it works, but
+        // draws its startup mood for a mood it doesn't have.
+        if let pack = status.device?.pack, status.device?.hasThePack == false {
+            return DeviceState(connected: true, trouble: true, short: "Other character",
+                               detail: "Connected \(over), but the board was built with the \(pack) character pack, "
+                                   + "and the app runs \(DeviceInfo.appPack), so some faces won't match. "
+                                   + "Flash the board with the app's character pack.")
+        }
         // Its card's voice isn't the app's, so it gets no takes.
         // `none` is no card, one it can't read, or no pack on it.
         if let voice = status.device?.voice, status.device?.hasTheVoice == false {

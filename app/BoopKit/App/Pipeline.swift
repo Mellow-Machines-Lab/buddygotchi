@@ -60,7 +60,7 @@ public final class Pipeline {
         options.heading = { wall in "\(time.clock(wall)), \(time.weekday(wall))" }
         options.loop = loop
         let input = inputTime
-        harness = Harness(name: "Boop", brain: nil, log: transcript,
+        harness = Harness(name: CharacterPack.active.name, brain: nil, log: transcript,
                           clock: clock ?? Harness.Clock(now: { input.now }), queue: queue, options: options, note: note)
         view.register(on: harness) { core.needsYouBlock }
         harness.on("*") { [weak self] e in

@@ -1,6 +1,6 @@
 # J1: one Claude Code session through the whole pipeline (VERIFICATION.md L4).
 # Lines with "expect" are boopctl e2e checkpoints on the device's dbg.state;
-# "advance_ms" jumps the headless app's clock. boopdev replay skips the one
+# "advance_ms" jumps the headless app's clock. Replay skips the one
 # and treats the other as time passing.
 {"hook_event_name": "SessionStart", "session_id": "e2e-claude-1", "cwd": "/tmp/jetpack", "source": "startup"}
 {"hook_event_name": "UserPromptSubmit", "session_id": "e2e-claude-1", "cwd": "/tmp/jetpack", "prompt": "PRIVATE_PROMPT_7001 fix the flaky test"}

@@ -40,13 +40,13 @@ extension MoodGraph {
     public static func moves(for version: Version) -> [String: Moves] {
         version == .v3 ? MoodGraphV3.nodes.mapValues(\.moves) : moves
     }
-    /// The retained mood standing in for a v3 one: what a pixel device
-    /// draws, and whose voice a reaction's takes are in, since the takes were
-    /// recorded in the retained moods only. Never a change to
-    /// the logical mood. A retained mood stands for itself: a pack with no
-    /// `moods_v2` has only retained moods, each with the resting mood as
-    /// its v3 fallback.
+    /// The mood a pixel device draws for `mood`, and whose voice a
+    /// reaction's takes are in: the mood itself if the pixel face draws it
+    /// (`FaceLoops.moods`, else the retained moods for a pack with no pixel
+    /// face), else the first its `fallback`s lead to that it draws, else
+    /// the resting mood. Never a change to the logical mood. The takes were
+    /// recorded in the pixel face's moods only.
     public static func pixelFallback(_ mood: String) -> String {
-        moods.contains(mood) ? mood : MoodGraphV3.nodes[mood]?.fallback ?? MoodAction.initial
+        CharacterPack.active.mood(mood, drawnFrom: FaceLoops.moods.isEmpty ? moods : FaceLoops.moods)
     }
 }

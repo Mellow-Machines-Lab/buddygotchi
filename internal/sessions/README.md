@@ -1,7 +1,7 @@
 # Demos with a real agent
 
-Updated 2026-10-14. A character pack's demo script
-([characters/CHARACTER.md](../../characters/CHARACTER.md) §13), played
+Updated 2026-10-15. A character pack's demo script
+([characters/DEMOS.md](../../characters/DEMOS.md)), played
 through a real Claude Code or Codex with Boop watching, for recording
 videos. The same script `make demo` plays with no agent: here the agent
 really reads, edits and runs things in a fresh copy of a small project,

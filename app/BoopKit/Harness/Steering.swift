@@ -14,14 +14,13 @@ extension Steering {
     }
 
     /// Reads a steering folder, and throws if the guide or any personality
-    /// or mood its character pack has is missing (the active pack's, unless
-    /// another is given). v3 also needs `guide-v3` and, for a pack with
-    /// `moods_v2` (Boop's), a `mood-v3/` file for each of those.
+    /// its character pack has is missing (the active pack's, unless another
+    /// is given). A mood's file is optional: a mood without one reads as
+    /// the resting mood's (`mood(_:)`). v3 also needs `guide-v3` and, for a
+    /// pack with `moods_v2` (Boop's), a `mood-v3/` file for each of those.
     public init(directory: URL, version: MoodGraph.Version = .v2, pack: CharacterPack = .active) throws {
         try self.init(folder: directory)
-        let moods = version == .v3 ? pack.moods.map(\.id) : pack.v2Names
         let needed = ["guide"] + (version == .v3 ? ["guide-v3"] : []) + pack.personalities.map { "personality/\($0)" }
-            + moods.map { "mood/\($0)" }
         let overrides = version == .v3 && !pack.moodsV2.isEmpty ? pack.moodsV2.map { "mood-v3/\($0.id)" } : []
         for path in needed + overrides where files[path] == nil {
             throw SteeringError("\(path).md is missing from \(directory.path)")

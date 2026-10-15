@@ -31,6 +31,7 @@ from boopctl_lib.dash import feed  # noqa: E402
 from boopctl_lib.dash.feed import STALE_S, Board, Follower, clock, kind  # noqa: E402
 from boopctl_lib.scenario import GOLDEN  # noqa: E402
 from old_logs import as_do  # noqa: E402
+from pack import needs_voice  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "headless-debug.jsonl"
 COLUMNS = Path(__file__).parent / "fixtures" / "dash-columns.jsonl"
@@ -68,7 +69,7 @@ def board_after(lines: list[dict]) -> tuple[Board, list[tuple[str, str]]]:
 
 
 class FeedTests(unittest.TestCase):
-    """The fixture: boopdev replay of the e2e Claude session into
+    """The fixture: a replay of the e2e Claude session into
     `Boop --headless --debug --brain scripted`, then the dashboard's dev
     lines and a few more hooks, rewritten into today's lines."""
 
@@ -342,6 +343,10 @@ class ColumnsTests(unittest.TestCase):
             self.assertEqual(feed.said(["new.d15", "topic.x"]), "new.d15 topic.x")
             self.assertEqual(feed.say_text({"take": "new.d15", "then": "topic.x"}), "(new.d15, topic.x)")
             self.assertEqual(feed.say_text({}), "no take")
+
+    @needs_voice
+    def test_takes_with_the_voice_pack(self):
+        """With the pack's voice, a line reads as its words, and a take it lacks as none."""
         self.assertEqual(feed.say_text({"take": "banana"}), "no take")
         self.assertTrue(feed.say_text({"take": "new.d15"}).endswith("” (new.d15)"))
 
@@ -378,6 +383,7 @@ class ColumnsTests(unittest.TestCase):
         self.assertEqual(self.texts(board.decided_column())[1:3], ["  happy 1.00 · no word",
                                                                    "  ✗ didn't happen: something needs you"])
 
+    @needs_voice
     def test_what_is_showing(self):
         """Boop now's `showing`: a reaction until its settle, a reflex for
         SHOWING_MS after it, else the look."""
@@ -637,6 +643,7 @@ class AppTests(unittest.TestCase):
     """The app through Textual's pilot: its panes from the fixture, and every
     key."""
 
+    @needs_voice
     def test_the_panes_and_keys(self):
         with mock.patch.object(controls, "CONFIRM_S", 60):  # the pilot's pauses add up
             asyncio.run(self.drive())
@@ -758,6 +765,7 @@ class ReactionKeysTests(unittest.TestCase):
     """A reaction is `react.mood` and `react.animation`; older logs name
     the face `react`."""
 
+    @needs_voice
     def test_the_face_and_its_finish(self) -> None:
         from boopctl_lib.dash.feed import choice, picks_text, reaction_text
         a = lambda c, p=1.0: {"choice": c, "p": {c: p}}  # noqa: E731

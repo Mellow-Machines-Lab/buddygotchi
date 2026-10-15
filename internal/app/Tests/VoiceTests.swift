@@ -1,16 +1,11 @@
 import Foundation
 import XCTest
 @testable import BoopKit
+import BoopDevKit
 
 extension Take {
     /// A real take by id, for tests.
     static func named(_ id: String) -> Take { Take.all.first { $0.id == id }! }
-}
-
-/// The version in a voice pack's header: its 16 bytes after the magic,
-/// NUL-padded.
-func voicePackVersion(_ pack: Data) -> String {
-    String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
 }
 
 extension DeviceMoment.Say {
@@ -26,9 +21,7 @@ extension DeviceMoment.Say {
 /// The recorded voice, which Boop's pack and Pixel's each have a copy of
 /// (characters/CHARACTER.md §8): these run with either.
 final class VoiceTests: XCTestCase {
-    override func setUpWithError() throws {
-        try XCTSkipUnless(!Take.all.isEmpty, "needs a character pack with a voice")
-    }
+    override func setUpWithError() throws { try requireVoice() }
 
     let moods = MoodAction.moods.map(\.name)
 
@@ -78,7 +71,7 @@ final class VoiceTests: XCTestCase {
     func testThePackHasEveryTake() throws {
         let pack = try Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("voice/voice.bin"))
         XCTAssertEqual(pack.prefix(8), Data("BOOPVOX1".utf8))
-        XCTAssertEqual(voicePackVersion(pack), Take.packVersion, "rerun voicegen")
+        XCTAssertEqual(PackCheck.voicePackVersion(pack), Take.packVersion, "rerun voicegen")
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }

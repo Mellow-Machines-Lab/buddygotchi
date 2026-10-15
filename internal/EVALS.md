@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-05. How we check that Jev decides as Boop should: short
+Updated 2026-10-15. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's actions,
 each pass checked against what it should come to.
@@ -145,8 +145,9 @@ how many scenarios passed in every run, and how many known gaps failed, and the 
 deadline. It exits 1 if any
 scenario failed that isn't a known gap.
 Every event, view event and pass of every run goes to a file of its own
-in `/tmp/boop-eval` (files over a day old are cleared), which
-`boopdev watch FILE` prints.
+in `/tmp/boop-eval` (files over a day old are cleared), one JSON
+object a line, each pass with its whole state. `--timeline` prints every
+pass as the eval runs.
 
 `EvalTests` checks the runner without Jev: every scenario file reads and
 has a case, a scripted brain that answers as `04-tests-fight-back` wants
