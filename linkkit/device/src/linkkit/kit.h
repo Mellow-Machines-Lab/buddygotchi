@@ -135,8 +135,6 @@ class App {
   }
   // Once per loop pass, after advance: read inputs, draw.
   virtual void tick(uint32_t t) { (void)t; }
-  // No line from the host on any link for kHostGoneMs (§5).
-  virtual void hostGone() {}
 
   // ---- dbg.* over USB (§7)
   // A dbg.* type the kit doesn't handle: true if it's the app's, which
@@ -282,7 +280,6 @@ class Kit {
   Rng rng_;
   LinkState links_[3];
   Link lastLink_ = Link::kNone;
-  bool hostHere_ = false;  // a host spoke within kHostGoneMs
   uint32_t dbgReal_ = 0;   // real time of the last dbg.* line
   bool toolFrozen_ = false;
   uint32_t rxState_ = 0, rxDo_ = 0;

@@ -1,6 +1,6 @@
 # LinkKit: the device library
 
-Updated 2026-10-11. The C++ half of LinkKit, for the small device a host
+Updated 2026-10-15. The C++ half of LinkKit, for the small device a host
 app drives: it reads the host's lines, keeps track of the links, sends
 `hello`, decides when each `do` plays (the turn), routes `ev` and answers
 the kit's `dbg.*` messages, all as [../SPEC.md](../SPEC.md) says. What the
@@ -29,7 +29,9 @@ It never includes an app's headers: its build fails if it does
 The board (or a simulator) owns three things: a `Platform` (a millisecond
 counter, the device's id and firmware version), your `App`, and a `Kit`
 made from both. It feeds the kit every line from each link and calls
-`tick()` once per loop pass; the kit calls your app back.
+`tick()` once per loop pass; the kit calls your app back. `handleLine`
+returns true for a `dbg.*` line: tick before the next line, since tools
+time their input and clock steps against ticks.
 
 | Your app's hook | When the kit calls it |
 | --- | --- |
@@ -40,7 +42,6 @@ made from both. It feeds the kit every line from each link and calls
 | `onDo(call, t)` | The call holds the turn, busy: play it. `call.args` is yours, `call.key` is what you report with |
 | `advance(t)`, `nextDue(from, to, at)` | Time moves on (in order). `nextDue` says when you'll rest or end the holder by yourself, so a call waiting starts at that exact millisecond |
 | `tick(t)` | Once per pass, after `advance`: read inputs, draw |
-| `hostGone()` | No line from the host for 30 s |
 | `debug(type, msg, from)`, `ping(obj)`, `state(obj, t)`, `reset()`, `shot(s, t)` | Your `dbg.*` types, your vitals and `dbg.state` fields, `dbg.reset`, and the frame `dbg.shot` sends |
 
 And what your app calls on `kit()`, from inside any hook: `rest(key)`
@@ -141,8 +142,8 @@ void setup() {
   if (ble.begin("Lamp", "lamp")) kit.setOut(linkkit::Link::kBle, &ble);  // Lamp-XXXX
 }
 void loop() {
-  while (Serial.available())
-    if (line.feed(char(Serial.read()))) kit.handleLine(line.line(), line.length(), linkkit::Link::kUsb);
+  while (Serial.available())  // every line waiting, until a dbg.* one
+    if (line.feed(char(Serial.read())) && kit.handleLine(line.line(), line.length(), linkkit::Link::kUsb)) break;
   ble.poll(kit);  // connects, drops a quiet link, and one line from Bluetooth
   kit.tick();
 }

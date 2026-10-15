@@ -25,7 +25,7 @@ USB:
 ```json
 {"t":"state","base":"working","mood":"calm","busy":1,"vol":6}
 {"t":"do","id":44,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success"}}
-{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","does":["react","starting","listening"],"voice":"1aace295d219"}
+{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","boot":"5d0e19a3","does":["react","starting","listening"],"voice":"1aace295d219"}
 {"t":"ev","kind":"tap","did":"poked"}
 {"t":"ev","kind":"ended","data":{"id":44,"how":"cut","why":"tap"}}
 ```

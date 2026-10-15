@@ -49,7 +49,7 @@ Tools also send `dbg.*` messages over USB (§7).
 ### `hello`: device → host
 
 ```json
-{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","does":["react","starting","listening"],"voice":"1aace295d219"}
+{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","boot":"5d0e19a3","does":["react","starting","listening"],"voice":"1aace295d219"}
 ```
 
 | Field | Meaning |
@@ -149,7 +149,8 @@ queue in order of arrival.
   host). A report for an id that isn't the holder, or has already ended,
   is ignored: each `do` gets exactly one `ended`.
 - **At most 4 calls wait.** A fifth ends the oldest waiting as `skipped`,
-  `full`.
+  `full`. A call whose `args` the device can't keep while it waits (they'd
+  take a whole line once written again) ends `skipped`, `full` at once.
 - **Same id again.** A `do` whose id matches a call still holding or
   waiting comes from a later launch of the host (ids never repeat within a
   launch): the old call is forgotten without an `ended`, and the new one
@@ -170,7 +171,7 @@ queue in order of arrival.
 | `cut` | the app's | The app cut it: `tap`, `needs_you` |
 | `skipped` | `late` | It waited longer than its `ttl` |
 | `skipped` | `busy` | It was `if_free` and the turn was busy |
-| `skipped` | `full` | Too many calls were waiting |
+| `skipped` | `full` | Too many calls were waiting, or there was no room to keep its `args` while it waited |
 | `skipped` | `unknown` | The device doesn't have that name |
 | `skipped` | `reset` | A tool sent `dbg.reset` while it waited |
 | `skipped` | the app's | The app's `refuse` or `dropWaiting` |
@@ -185,7 +186,7 @@ queue in order of arrival.
 | The device hears a host's `hello`, or its first line on a link it didn't count as live (any type but `dbg.*`) | It sends `hello` on that link, once for a first line that is a `hello` |
 | The host gets a `hello` | It answers with its latest `state`, so a device that rebooted catches up at once |
 | While the link is up | The host sends `state` on every change and at least every 10 s. The device sends `hello` again when something in it changes, and 60 s after the last one on the link the host last spoke on |
-| 30 s with no line from the host | The device treats the host as gone: it tells the app, and drops a Bluetooth link so it can advertise again |
+| 30 s with no line from the host | The device treats the host as gone: USB is no longer live, and it drops a Bluetooth link so it can advertise again |
 | The link drops | The host ends every `do` still waiting for its `ended` as failed (the device may play on) |
 | A `hello` whose `boot` differs from the last one the host heard | The device restarted and forgot every request: the host ends each still waiting as failed (`the device restarted`) at once, rather than at its give-up time, below. The host keeps the last `boot` across links, so a restart over a link that stayed up, or one that dropped, is caught either way |
 | No `ended` by a `do`'s `ttl` (5000 ms for `now` and `if_free`) plus 60 s after it was sent | The host gives up on it as failed: a line was lost. Only the `ended` stops that wait (resting never reaches the host), so a call that may play longer than its `ttl` plus 60 s must end sooner, or be split into several calls |
@@ -219,10 +220,10 @@ gets none. The kit handles five, and an app adds its own.
 
 | Request | Reply |
 | --- | --- |
-| `{"t":"dbg.ping"}` | `{"t":"dbg.ping","kit":1,"fw":…,"up":ms,…}` plus the app's vitals, and `hello_long` (the whole `hello`'s length) when the `hello` doesn't fit in a line (§3) |
+| `{"t":"dbg.ping"}` | `{"t":"dbg.ping","kit":1,"fw":…,"up":ms,"link":…,"ble":…,"name":…}` plus the app's vitals, and `hello_long` (the whole `hello`'s length) when the `hello` doesn't fit in a line (§3). `up` is ms since power-on; `link` the link the host last spoke on (`usb`, `ble` or `none`); `ble` the Bluetooth radio (`off`, `idle`, `adv` or `conn`); `name` the name it advertises, missing when none |
 | `{"t":"dbg.state"}` | `{"t":"dbg.state",…,"clock":{"now":T,"frozen":bool},"rx":{"state":N,"do":N},"turn":{…}}`: the app's fields first, then the kit's clock, the `state` and `do` lines it has read, and the turn (below) |
 | `{"t":"dbg.clock","freeze":T}`, `{"step":MS}`, `{"run":true}` | `{"t":"dbg.clock","now":T,"frozen":bool}`. A frozen clock runs again by itself after 60 s with no `dbg.*` |
-| `{"t":"dbg.shot"}` | The app's current frame, when it draws one |
+| `{"t":"dbg.shot"}` | `{"t":"dbg.shot","w":W,"h":H,"bytes":N,"crc":C}`, then one line of the frame's N bytes in base64, C their CRC-32. What the bytes are is the app's (Boop's: a palette and an index per pixel, or RGB565 pixels). An app that draws no frame sends 0 for each, and an empty line |
 | `{"t":"dbg.reset"}` | `{"t":"dbg.reset"}`, after §4's reset and the app's own |
 
 `dbg.state`'s `turn` is `{"holder":{"id":44,"name":"say","resting":false},"waiting":[{"id":45,"name":"show","left_ms":3200},{"id":null,"name":"beep","left_ms":4200}]}`,

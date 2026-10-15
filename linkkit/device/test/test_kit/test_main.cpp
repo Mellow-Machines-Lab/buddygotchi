@@ -219,9 +219,9 @@ static void test_does_is_capped_at_32() {
   TEST_ASSERT_TRUE(has(usb.text, ended(1, "skipped", "unknown")));
 }
 
-// §5: 30 s with no line from the host: it's gone. The app hears it once,
-// and a Bluetooth link is to be dropped (and again 30 s later if that
-// didn't take).
+// §5: 30 s with no line from the host: it's gone. A Bluetooth link is to
+// be dropped (and again 30 s later if that didn't take), and USB is no
+// longer live.
 static void test_the_host_is_gone_after_30_s() {
   Rig r;
   r.platform.real = 1000;
@@ -229,25 +229,21 @@ static void test_the_host_is_gone_after_30_s() {
   TEST_ASSERT_FALSE(r.kit.shouldDrop());
   r.bleLine("{\"t\":\"state\"}");
   r.platform.real = 1000 + 29999;
-  r.kit.tick();
-  TEST_ASSERT_EQUAL(0, r.app.gone);
   TEST_ASSERT_FALSE(r.kit.shouldDrop());
   r.platform.real = 1000 + 30000;
-  r.kit.tick();
-  r.kit.tick();
-  TEST_ASSERT_EQUAL(1, r.app.gone);
   TEST_ASSERT_TRUE(r.kit.shouldDrop());
   TEST_ASSERT_FALSE(r.kit.shouldDrop());
   r.platform.real = 1000 + 60000;
   TEST_ASSERT_TRUE(r.kit.shouldDrop());
-  r.usbLine("{\"t\":\"dbg.ping\"}");  // a tool isn't the host
-  TEST_ASSERT_EQUAL(1, r.app.gone);
-  r.usbLine("{\"t\":\"state\"}");  // back, then gone again
-  r.platform.real = 1000 + 60000 + 30000;
-  r.kit.tick();
-  TEST_ASSERT_EQUAL(2, r.app.gone);
   r.kit.disconnected();
   TEST_ASSERT_FALSE(r.kit.shouldDrop());
+  r.usbLine("{\"t\":\"dbg.ping\"}");  // a tool isn't the host
+  TEST_ASSERT_FALSE(r.kit.live(Link::kUsb));
+  r.usbLine("{\"t\":\"state\"}");
+  r.platform.real = 1000 + 60000 + 29999;
+  TEST_ASSERT_TRUE(r.kit.live(Link::kUsb));
+  r.platform.real = 1000 + 60000 + 30000;
+  TEST_ASSERT_FALSE(r.kit.live(Link::kUsb));
 }
 
 // §3, §5: an app's ev goes on every live link; one from input a tool

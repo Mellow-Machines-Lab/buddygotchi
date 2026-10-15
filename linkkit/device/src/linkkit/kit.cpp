@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <initializer_list>
 
 #include "linkkit/codec.h"
 
@@ -201,7 +200,6 @@ bool Kit::heard(Link from, uint32_t real) {
   l.heard = true;
   l.heardReal = l.quietReal = real;
   lastLink_ = from;
-  hostHere_ = true;
   if (!wasLive) sendHello(from);
   return !wasLive;
 }
@@ -233,14 +231,6 @@ void Kit::tick() {
     sendHello(lastLink_);
   }
   if (toolFrozen_ && real - dbgReal_ >= kThawMs) clock_.run(real), toolFrozen_ = false;
-  if (hostHere_) {
-    bool here = false;
-    for (Link l : {Link::kUsb, Link::kBle}) {
-      const LinkState& s = links_[int(l)];
-      here |= s.heard && real - s.heardReal < kHostGoneMs;
-    }
-    if (!here) hostHere_ = false, app_.hostGone();
-  }
   const uint32_t t = now();
   advanceTo(t);
   app_.tick(t);

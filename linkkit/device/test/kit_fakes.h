@@ -58,7 +58,7 @@ class App : public linkkit::App {
   std::vector<Started> started;
   std::vector<uint32_t> refused;  // keys refuse was asked about
   std::vector<uint32_t> advanced;
-  int states = 0, ticks = 0, resets = 0, gone = 0, begun = 0;
+  int states = 0, ticks = 0, resets = 0, begun = 0;
   std::string lastState;
 
   linkkit::Kit& k() { return kit(); }
@@ -110,7 +110,6 @@ class App : public linkkit::App {
     return found;
   }
   void tick(uint32_t) override { ++ticks; }
-  void hostGone() override { ++gone; }
   bool debug(const char* type, JsonObjectConst, linkkit::Link from) override {
     if (std::strcmp(type, "dbg.fake")) return false;
     kit().reply(from, "{\"t\":\"dbg.fake\"}", 16);
