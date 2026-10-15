@@ -586,7 +586,7 @@ public final class Runtime: @unchecked Sendable {
         case "report":
             saveReport { _ in }
         default:
-            break  // such as boopdev replay's probe
+            break  // a dev line it doesn't know
         }
     }
 

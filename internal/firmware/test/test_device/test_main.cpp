@@ -243,8 +243,8 @@ static int count(const std::string& s, const char* needle) {
 
 // linkkit/SPEC.md §3, §5: Boop's hello, sent in answer
 // to the Mac's first line on a link, not at connect, then every 60 s on
-// the Mac's link. It names the voice pack on its card, which the Mac
-// checks, and fits in one line.
+// the Mac's link. It names the voice pack on its card and the character
+// pack it was built with, which the Mac checks, and fits in one line.
 static void test_hello_on_the_first_line_and_every_minute() {
   NEEDS_VOICE_PACK();
   Rig r;
@@ -256,7 +256,8 @@ static void test_hello_on_the_first_line_and_every_minute() {
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
                           "\"listening\",\"stop_listening\",\"poked\",\"tap_spam\"],\"voice\":\"") +
-                      voice::assetsVersion() + "\",\"face\":\"pixel\"}\n";
+                      voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
+                      "\",\"pack_version\":\"" + render::kPackVersion + "\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
   TEST_ASSERT_EQUAL_STRING(hello.c_str(), r.ble.text.c_str());
   TEST_ASSERT_TRUE(hello.size() - 1 <= linkkit::kMaxLine);

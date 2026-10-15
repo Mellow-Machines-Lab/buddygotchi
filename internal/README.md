@@ -13,7 +13,7 @@ tests, evals, dev tools and skills.
 | Path | What it is |
 | --- | --- |
 | `app/Boop/` | `Headless.swift` and `Snapshots.swift`: the sources of `Boop --headless` and `Boop --snapshots`, which are compiled into the shipped `Boop` target |
-| `app/BoopDevKit/` | A library for `boopdev` and the tests: the harness evals (`Eval/`, [EVALS.md](EVALS.md)) and hook replay (`Replay.swift`) |
+| `app/BoopDevKit/` | A library for `boopdev` and the tests: the harness evals (`Eval/`, [EVALS.md](EVALS.md)), hook replay (`Replay.swift`) and the character pack check (`PackCheck.swift`, `boopdev check`) |
 | `app/BoopDev/` | `boopdev`, the developer CLI ([VERIFICATION.md](VERIFICATION.md) §2) |
 | `app/Tests/` | Boop's Swift unit tests (`BoopTests`) and their fixtures. The packages' tests are in each package, under `swift test` (`agent-hooks/Tests/`, `mellowharness/Tests/`, `linkkit/Tests/`); the hook fixtures are agent-hooks' (`agent-hooks/Tests/AgentHooksTests/Fixtures/`), and only the pipeline check's are here (`Fixtures/hooks/e2e/`) |
 | `app/TestSupport/XCTestShim/` | A stand-in XCTest for Command Line Tools, which has none |

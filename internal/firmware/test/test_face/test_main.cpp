@@ -82,7 +82,7 @@ static void test_every_anim_has_a_name_and_ends() {
   }
 }
 
-// characters/CHARACTER.md §9: the pack's 42 moods, by the
+// characters/CHARACTER.md §9: the pack's moods, by the
 // names the Mac sends; the pixel designs draw thirteen, by name, in faces.h's
 // order; a missing or unknown one is the startup mood, happy.
 static void test_every_mood_has_a_name() {
@@ -93,7 +93,7 @@ static void test_every_mood_has_a_name() {
   TEST_ASSERT_EQUAL_INT(13, render::pixelMoods());
   for (int i = 0; i < 13; ++i) TEST_ASSERT_EQUAL_STRING(names[i], moodName(render::pixelMood(i)));
   TEST_ASSERT_EQUAL_STRING("happy", moodName(render::kStartupMood));
-  for (const char* other : {"cheerful", "sleepy", "", "Happy", "Calm"}) {
+  for (const char* other : {"cheerful", "no_such_mood", "", "Happy", "Calm"}) {
     TEST_ASSERT_TRUE_MESSAGE(moodFromName(other) == Mood::kHappy, other);
     Mood m = Mood::kSad;
     TEST_ASSERT_FALSE_MESSAGE(parseMood(other, m), other);

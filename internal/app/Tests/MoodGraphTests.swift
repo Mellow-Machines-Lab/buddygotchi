@@ -5,6 +5,8 @@ import XCTest
 /// The mood graph: the owner's approved moves
 /// between Boop's 13 moods.
 final class MoodGraphTests: XCTestCase {
+    // Pixel's graph, which Boop's pack keeps as its v2.
+    override func setUpWithError() throws { try requirePack("pixel", "boop") }
     /// `MoodGraph` is the owner's approved graph,
     /// characters/pixel/design/boop-mood-spectrum-v2/mood-graph.json, move for
     /// move and in its order: 13 moods in the device's order, 98 moves, at

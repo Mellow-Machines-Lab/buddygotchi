@@ -7,7 +7,7 @@ import LinkKit
 /// (`event`), every view event (`view`) and every pass with the state and
 /// questions it sent (`pass`, with the state's unchanging head in a `head`
 /// line only when it changes), one JSON line each, and the same lines
-/// readably, for the terminal (`Boop --debug`) and `boopdev watch`. Four
+/// readably, for the terminal (`Boop --debug`). Four
 /// more kinds of line are for the dashboard: `questions`, `sent`, `ended`
 /// and `status`.
 public enum DebugLog {
@@ -249,7 +249,7 @@ public enum DebugLog {
 
     /// Keeps a copy of the last launch's lines (`keptLaunches`, the oldest
     /// let go), then empties the file, so each launch starts afresh. In
-    /// place, so a `boopdev watch` or the dashboard already following it
+    /// place, so the dashboard already following it
     /// sees it start again.
     public static func start(_ url: URL) {
         let fm = FileManager.default
@@ -286,14 +286,6 @@ public enum DebugLog {
         var head = ""
 
         public init() {}
-
-        /// Takes lines without printing them, for `boopdev watch --new`,
-        /// which starts at the file's end: only the latest `head` line of
-        /// them counts, so the first pass still prints the head in force.
-        public func skip(_ lines: Data) {
-            guard let head = lines.split(separator: 0x0A).last(where: { $0.starts(with: DebugLog.headLine) }) else { return }
-            _ = readable(String(decoding: head, as: UTF8.self))
-        }
 
         /// Nil for a line it doesn't print: the dashboard's (boop.log says
         /// how each `do` ended), `head` (the first pass prints the latest

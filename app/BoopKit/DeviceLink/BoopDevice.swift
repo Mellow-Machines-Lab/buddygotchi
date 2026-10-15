@@ -70,27 +70,42 @@ public struct DeviceInfo: Equatable, Sendable {
     public var voice: String?
     public enum Face: String, Sendable { case pixel, gel }
     public var face: Face
+    /// The character pack its firmware was built with, as `id version`
+    /// (`pixel 0.1.0`), or nil from firmware that doesn't say.
+    public var pack: String?
 
-    public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel) {
+    public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel, pack: String? = nil) {
         self.id = id
         self.fw = fw
         self.voice = voice
         self.face = face
+        self.pack = pack
     }
 
     public init(_ hello: Hello) {
+        let pack = hello.fields["pack"]?.string.map { "\($0) \(hello.fields["pack_version"]?.string ?? "")" }
         self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string,
-                  face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel)
+                  face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack)
     }
 
     /// Whether it plays the takes the app picks from: its card has the
     /// same pack as `Take.all`, or it doesn't say.
     public var hasTheVoice: Bool { voice.map { $0 == Take.packVersion } ?? true }
 
+    /// The app's character pack, as `pack` names one.
+    public static var appPack: String { "\(CharacterPack.active.id) \(CharacterPack.active.version)" }
+
+    /// Whether its firmware was built with the app's character pack, or it
+    /// doesn't say. With another, it still works: a mood it doesn't have
+    /// draws its startup mood, and the voice has a check of its own.
+    public var hasThePack: Bool { pack.map { $0 == Self.appPack } ?? true }
+
     /// What the log says when it says hello: who it is, and when its
-    /// card's voice isn't the app's.
+    /// character pack or its card's voice isn't the app's.
     var logLines: [String] {
-        ["device: \(id) firmware \(fw)" + (voice.map { " voice \($0)" } ?? "")]
+        ["device: \(id) firmware \(fw)" + (pack.map { " pack \($0)" } ?? "") + (voice.map { " voice \($0)" } ?? "")]
+            + (hasThePack ? [] : ["device: its firmware is built with the \(pack!) character pack, the app runs "
+                                  + "\(Self.appPack): some of its faces won't match the app's moods"])
             + (hasTheVoice ? [] : ["device: its card's voice is \(voice!), the app's \(Take.packVersion): "
                                    + "Boop says nothing until they match"])
     }

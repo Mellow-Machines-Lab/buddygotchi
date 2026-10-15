@@ -49,16 +49,19 @@ extension Take {
         guard let text = try? String(contentsOf: file, encoding: .utf8) else { return ("", []) }
         let lines = text.split(separator: "\n").filter { !$0.hasPrefix("#") }
         guard let version = lines.first else { return ("", []) }
-        return (String(version), lines.dropFirst().map(Take.init(row:)))
+        return (String(version), lines.dropFirst().compactMap(Take.init(parsing:)))
     }()
 
     /// A take from its line in the table: id, text, part, meaning, kind,
     /// mood, finish (empty for any) and milliseconds, tab separated.
     /// voicegen writes the table, and VoiceTests reads it back against the
     /// pack, so a bad line can't ship.
-    init(row: Substring) {
+    init(row: Substring) { self = Take(parsing: row)! }
+
+    /// A take from its line in the table, or nil for a line that isn't one.
+    public init?(parsing row: Substring) {
         let f = row.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-        self.init(id: f[0], text: f[1], part: Part(rawValue: f[2])!, meaning: f[3], kind: Kind(rawValue: f[4])!,
-                  mood: f[5], finish: f[6].isEmpty ? nil : f[6], ms: Int(f[7])!)
+        guard f.count == 8, let part = Part(rawValue: f[2]), let kind = Kind(rawValue: f[4]), let ms = Int(f[7]) else { return nil }
+        self.init(id: f[0], text: f[1], part: part, meaning: f[3], kind: kind, mood: f[5], finish: f[6].isEmpty ? nil : f[6], ms: ms)
     }
 }

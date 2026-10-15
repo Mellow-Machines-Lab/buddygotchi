@@ -78,7 +78,7 @@ Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone oth
 StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
 
 struct SceneShow {
-  Mood mood = Mood::kHappy;
+  Mood mood = kStartupMood;
   SceneState state = SceneState::kIdle;
   uint8_t variant = 0;  // from 0; one out of range draws the first
   uint32_t t = 0;       // ms since the scene started

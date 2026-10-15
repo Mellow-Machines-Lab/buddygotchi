@@ -65,6 +65,16 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problem(#"{"agent": "edit", "file": "a.js"}"#).contains("an edit needs a file, old and new"))
         XCTAssertTrue(problem(#"{"brain": "happy"}"#).contains("brain is question keys to choices"))
         XCTAssertTrue(problem("{\"you\": \"poke\"}\n{\"demo\": 1}").contains("the header comes first"))
+        // A mistyped key or a value of the wrong type would otherwise be left out quietly.
+        XCTAssertTrue(problem(#"{"agent": "prompt", "text": "Go", "afer": 2}"#).contains("demo.jsonl:1: an agent line has no key afer"))
+        XCTAssertTrue(problem(#"{"you": "poke", "after": "2"}"#).contains("demo.jsonl:1: after is a number"))
+        XCTAssertTrue(problem(#"{"agent": "run", "cmd": "make", "fails": "yes"}"#).contains("fails is true or false"))
+        XCTAssertTrue(problem(#"{"mood": "calm", "say": "hi"}"#).contains("a brain line has no key say"))
+    }
+
+    /// A mood alone is the brain's line: `{"mood": "proud"}`.
+    func testAMoodAloneIsTheBrainsLine() throws {
+        XCTAssertEqual(try DemoScript(#"{"mood": "proud"}"#).lines[0].what, .brain([:], mood: "proud"))
     }
 
     /// Pins the words a watcher reads for each kind of line.
@@ -136,26 +146,21 @@ final class DemoTests: XCTestCase {
         ])
     }
 
-    /// The character pack's own demos play in its own words: every answer
-    /// is to a question the brain is asked, with a choice it's offered, and
-    /// every mood is one the pack has.
-    func testThePacksDemosAnswerWhatTheBrainIsAsked() throws {
-        try XCTSkipUnless(!CharacterPack.active.demos.isEmpty, "the pack \(CharacterPack.active.id) has no demo")
-        var offered = Dictionary(uniqueKeysWithValues: ReactAction.asked.map { ($0.key, Set($0.options.map(\.name))) })
-        offered["react.mood", default: []].formUnion(CharacterPack.active.moods.map(\.id))
-        for url in CharacterPack.active.demos {
-            let name = url.lastPathComponent
-            let script = try DemoScript(contentsOf: url)
-            XCTAssertFalse(script.lines.isEmpty, name)
-            for line in script.lines {
-                guard case .brain(let answers, let mood) = line.what else { continue }
-                for (key, choice) in answers {
-                    XCTAssertTrue(offered[key]?.contains(choice) == true, "\(name):\(line.number): \(key) has no choice \(choice)")
-                }
-                if let mood {
-                    XCTAssertTrue(CharacterPack.active.moods.contains { $0.id == mood }, "\(name):\(line.number): no mood \(mood)")
-                }
-            }
-        }
+    /// Every pack's demos are checked against their pack by PackCheck
+    /// (CharacterPackTests); this is what it finds in a bad one.
+    func testAScriptThePackCantPlaySaysWhere() throws {
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"brain": {"react.mood": "jolly", "say.kind": "word", "react.dance": "yes"}}
+            {"mood": "ecstatic"}
+            {"brain": {"react.mood": "none", "say.kind": "wrod"}, "mood": "calm"}
+            """)
+        let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
+        let problems = script.problems(for: pack)
+        XCTAssertEqual(problems.count, 4, "\(problems)")
+        XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
+        XCTAssertTrue(problems[1].hasPrefix("line 2: react.mood has no choice jolly; it has none, happy"))
+        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
+        XCTAssertTrue(problems[3].hasPrefix("line 4: say.kind has no choice wrod"))
     }
 }

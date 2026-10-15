@@ -6,7 +6,8 @@ import XCTest
 @testable import BoopKit
 
 final class MoodPolicyTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
+    // v3's mood policy, on Boop's 42 moods.
+    override func setUpWithError() throws { try requirePack("boop") }
 
     func testV3GraphAndFallbacksMatchTheSource() throws {
         let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent()

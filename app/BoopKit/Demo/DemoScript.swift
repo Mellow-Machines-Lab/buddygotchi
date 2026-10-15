@@ -29,7 +29,12 @@ import Foundation
 /// - `you` lines are what the person does: `poke`, and `talk` (the button
 ///   held `hold` seconds, then `text` heard).
 /// - `brain` lines are the creature's brain's answers to its questions,
-///   about the line above, and `mood` its mood.
+///   about the line above, and `mood` its mood. `{"mood": "proud"}`
+///   alone is a brain line too.
+///
+/// A key a line doesn't take, or a value of the wrong type, is refused
+/// with its line number, and `problems(for:)` finds the answers and moods
+/// a pack can't play (characters/DEMOS.md).
 ///
 /// The lines happen in order. Any line may say how long `after` the one
 /// before it ends; an `agent` line also how long it `takes`. Who plays
@@ -117,6 +122,25 @@ public struct DemoScript: Sendable {
             }
             func number(_ key: String) -> Double? { (o[key] as? NSNumber)?.doubleValue }
             func string(_ key: String) -> String? { o[key] as? String }
+            // A key the line's kind doesn't take, or a value of the wrong
+            // type, is a mistake: it would otherwise be left out quietly.
+            let kind = o["demo"] != nil ? "demo" : ["agent", "you", "brain"].first { o[$0] != nil } ?? (o["mood"] != nil ? "brain" : "")
+            if let keys = Self.keys[kind] {
+                if let bad = o.keys.sorted().first(where: { !keys.contains($0) && !Self.anyLine.contains($0) }) {
+                    let called = ["demo": "the header", "agent": "an agent line", "you": "a you line"][kind] ?? "a brain line"
+                    throw Problem(description: "\(here): \(called) has no key \(bad); it takes \((keys + Self.anyLine).sorted().joined(separator: ", "))")
+                }
+                for (key, value) in o {
+                    let isBool = (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } == true
+                    let ok = switch key {
+                    case "after", "takes", "ask", "hold", "demo": value is NSNumber && !isBool
+                    case "fails": isBool
+                    case "brain": value is [String: String]
+                    default: value is String
+                    }
+                    if !ok { throw Problem(description: "\(here): \(key) is \(Self.type(of: key))") }
+                }
+            }
             if o["demo"] != nil {
                 guard lines.isEmpty else { throw Problem(description: "\(here): the header comes first") }
                 title = string("title") ?? ""
@@ -153,11 +177,8 @@ public struct DemoScript: Sendable {
                     what = .talk(words, hold: number("hold") ?? 1.5)
                 default: throw Problem(description: "\(here): you is poke or talk")
                 }
-            } else if o["brain"] != nil {
-                guard let answers = o["brain"] as? [String: String] else {
-                    throw Problem(description: "\(here): brain is question keys to choices")
-                }
-                what = .brain(answers, mood: string("mood"))
+            } else if o["brain"] != nil || o["mood"] != nil {
+                what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
             } else {
                 throw Problem(description: "\(here): a line is by the agent, you or the brain")
             }
@@ -172,6 +193,24 @@ public struct DemoScript: Sendable {
                               note: string("note"), number: index + 1))
         }
         self.init(title: title, agent: agent, lines: lines)
+    }
+
+    /// The keys each kind of line takes, besides `anyLine`'s.
+    static let keys: [String: [String]] = [
+        "demo": ["demo", "title", "agent"],
+        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "by", "takes"],
+        "you": ["you", "text", "hold"],
+        "brain": ["brain", "mood"],
+    ]
+    static let anyLine = ["after", "note"]
+
+    static func type(of key: String) -> String {
+        switch key {
+        case "after", "takes", "ask", "hold", "demo": "a number"
+        case "fails": "true or false"
+        case "brain": "question keys to choices, both strings"
+        default: "a string"
+        }
     }
 
     public init(title: String = "", agent: String = "claude", lines: [Line]) {
@@ -215,5 +254,34 @@ extension DemoScript.Line {
         }
         guard let note else { return found }
         return DemoScript.Cause(kind: found?.kind ?? "note", text: note)
+    }
+}
+
+extension DemoScript {
+    /// What in the script `pack` can't play, each with its line: an answer
+    /// to a question the brain is never asked, a choice it isn't offered,
+    /// or a mood the pack doesn't have. Empty when every line plays. A
+    /// pack with no voice takes `say.*` answers and leaves them out
+    /// (characters/CHARACTER.md §8), so one script plays with or without.
+    public func problems(for pack: CharacterPack = .active) -> [String] {
+        var offered = Dictionary(uniqueKeysWithValues: ReactAction.questions.map { ($0.key, $0.options.map(\.name)) })
+        offered["react.mood"] = ["none"] + pack.faces.map(\.name)
+        var found: [String] = []
+        for line in lines {
+            guard case .brain(let answers, let mood) = line.what else { continue }
+            for (key, choice) in answers.sorted(by: { $0.key < $1.key }) {
+                guard let choices = offered[key] else {
+                    found.append("line \(line.number): the brain is never asked \(key); it's asked \(offered.keys.sorted().joined(separator: ", "))")
+                    continue
+                }
+                if !choices.contains(choice) {
+                    found.append("line \(line.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
+                }
+            }
+            if let mood, !pack.v2Names.contains(mood) {
+                found.append("line \(line.number): \(pack.id) has no mood \(mood); it has \(pack.v2Names.joined(separator: ", "))")
+            }
+        }
+        return found
     }
 }

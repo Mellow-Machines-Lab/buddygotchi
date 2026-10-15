@@ -10,7 +10,6 @@ private let minute: Int64 = 60_000
 /// Here and away: the presence detector decides,
 /// the view pairs what it decided, and only coming back wakes the brain.
 final class PresenceTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
     /// A detector ticked once a second, as the runtime does, with the Mac's
     /// idle time counting up from the last input.
@@ -224,7 +223,8 @@ final class PresenceTests: XCTestCase {
     /// offered, every face has four or more of its takes, all greetings,
     /// and a glad sound then hello, as boop's Example asks, is a sound and
     /// a greeting in a happy face.
-    func testEveryFaceCanSayHello() {
+    func testEveryFaceCanSayHello() throws {
+        try requireVoice()
         let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
         XCTAssertTrue(ReactAction.topics.map(\.name).contains("hello"))
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
@@ -264,7 +264,7 @@ final class PresenceRuntimeTests: XCTestCase {
     var dir: URL!
 
     override func setUpWithError() throws {
-        try requireBoopsPack()
+        try requirePack("boop")
         dir = URL(fileURLWithPath: "/tmp/boop-presence-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }

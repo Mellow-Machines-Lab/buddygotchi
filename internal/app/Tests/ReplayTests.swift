@@ -4,7 +4,7 @@ import XCTest
 @testable import BoopDevKit
 @testable import BoopKit
 
-/// `boopdev replay` on the fixtures prints the expected `state` snapshots
+/// Replaying the fixtures prints the expected `state` snapshots
 /// and rules' one-shots.
 final class ReplayTests: XCTestCase {
     /// Each snapshot as `+time base attn waiting`, e.g. `+3.0s idle claude/jetpack 1`,

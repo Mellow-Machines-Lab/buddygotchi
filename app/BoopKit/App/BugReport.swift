@@ -11,7 +11,7 @@ extension Runtime {
     /// afterwards what Boop saw and did, in a new folder under
     /// `bug-reports/`. `debug.jsonl` is this launch's debug lines, debug
     /// mode or not (`recent`, or in debug mode the file's end, up to
-    /// `DebugLog.Recent.maxBytes`), which `boopdev watch` reads; `boop.log`
+    /// `DebugLog.Recent.maxBytes`); `boop.log`
     /// is the log's end; `settings.json` is copied;
     /// `about.json` is the versions and the status now. Calls `done` on
     /// `home` with the folder, or nil if it couldn't be made.

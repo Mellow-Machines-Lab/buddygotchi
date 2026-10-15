@@ -64,7 +64,8 @@ public struct CharacterPack: Sendable {
     public let moodsV2: [Mood]
 
     // Derived once, since the mood action reads them on every pass.
-    let v2Names: [String]
+    /// The moods the v2 graph and the pixel face go by: `moods_v2`, else `moods`.
+    public let v2Names: [String]
     let v2Options: [Option]
     let v3Options: [Option]
     let faces: [Option]
@@ -75,13 +76,22 @@ public struct CharacterPack: Sendable {
 
 extension CharacterPack {
     /// The pack's demo, if it has one: `demo/demo.jsonl` (`DemoScript`,
-    /// CHARACTER.md §13).
+    /// characters/DEMOS.md).
     public var demo: URL? { demo(named: "demo") }
 
     /// One of the pack's demos by name, `demo/<name>.jsonl`, if it has it.
     public func demo(named name: String) -> URL? {
         let url = directory.appendingPathComponent("demo/\(name).jsonl")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// The mood a face that draws only `drawn` shows for `mood`: the mood
+    /// itself, else the first its `fallback`s lead to that the face draws,
+    /// else the resting mood.
+    public func mood(_ mood: String, drawnFrom drawn: [String]) -> String {
+        var at = mood, seen: Set<String> = []
+        while !drawn.contains(at), seen.insert(at).inserted, let next = nodesV3[at]?.fallback { at = next }
+        return drawn.contains(at) ? at : defaultMood
     }
 
     /// Every demo the pack has, `demo/*.jsonl`, by name.
@@ -147,6 +157,12 @@ extension CharacterPack {
         moods = try moodList("moods")
         moodsV2 = try moodList("moods_v2")
         guard !moods.isEmpty else { throw CharacterPackError("\(source): moods is empty") }
+        guard !personalities.isEmpty else { throw CharacterPackError("\(source): personalities is empty") }
+        // The board reports the id, and the firmware names each mood in code.
+        guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
+        for m in moods + moodsV2 where m.id.wholeMatch(of: /[a-z][a-z0-9_]*/) == nil {
+            throw CharacterPackError("\(source): mood \(m.id) isn't a lower-case letter, then lower case, digits and _")
+        }
 
         for (key, list) in [("moods", moods), ("moods_v2", moodsV2)] {
             let names = Set(list.map(\.id))

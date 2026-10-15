@@ -1,69 +1,48 @@
 # Characters: the pack spec
 
-Updated 2026-10-15. **Draft.** This is the contract a character pack
-meets so that any character can be dropped into the engine. The
-split plan moves Boop's
-character behind this spec phase by phase. Each phase updates this page
-with what it delivers.
+Updated 2026-10-15. The contract a character pack meets, so that any
+character can be dropped into the engine. The engine never knows *who*
+the creature is: the pack says its moods, how it looks and sounds, and
+who it is. Choose a pack (§2), and the Mac app, the board's firmware and
+the simulator all use it.
 
-**What works so far.**
-- **The Mac** reads its moods from the chosen pack's `character.json`
-  (§4–5): `CharacterPack`, in `app/BoopKit/Character/`. The app bundles
-  that pack and loads it at start; the tests and `boopdev` take
-  `BOOP_CHARACTER`, else the pack the repo last staged (§2).
-- **The firmware** takes its mood list from the pack's generated
-  `firmware/include/moods.h` (§9), which `firmware/platformio.ini` puts
-  on the include path.
-- **A pack stands alone** (§6). Everything the engine reads of a pack is
-  in the pack's own folder, and nothing is looked for in another pack.
-  `characters/pixel/` holds the Pixel pack: its moods, with plain
-  wording of its own, the pixel face and the voice. Boop's pack has its
-  own copy of what the two share.
-- **The Mac reads the rest of a pack at run time** from the pack's
-  folder (`CharacterPack.directory`):
-  - its steering (`steering/`, §7)
-  - its voice's take table (`mac/takes.tsv`, §8)
-  - the pixel face's designs (`mac/faces.json`, §9), which facegen writes
-  - Boop's slime mirror (`mac/mirror/`, §9), which slimegen writes
-  The app bundles those folders and `character.json`.
+## At a glance
 
-- **The firmware's faces are the packs'.** Pixel's code and art are in
-  `characters/pixel/firmware/`, the gel slime's in
-  `characters/boop/firmware/`. The chosen pack is staged into
-  `.character-build/` (§2), and the firmware builds from there.
+What a pack holds, and what it must have:
 
-- **The Mac app follows the same choice.** `make build` stages the
-  chosen pack, with what the app reads and no more (not its firmware or
-  its voice pack), into `.character-build/packs/`, which the app
-  bundles; its `chosen` file names the pack the app loads. The tests,
-  `boopdev` and the device tools use the staged choice
-  (`.character-build/pack`, the pack's own folder).
-- **Each pack holds what it's made from,** but for the voice. Pixel's
-  `design/` (the animation bank and mood graph) and `tools/` (facegen,
-  sfxgen). Boop's `design/` (the gel slime, and the voice's
-  recordings), `tools/` (slimegen, gel-trace, voicegen, which writes
-  both packs' voice files, and pixelsync, which copies Pixel's face into
-  Boop's pack), `evals/` and `tests/` (its golden states and the gel
-  face's simulator scenarios and goldens).
-- **Each pack can show itself in the Character Studio** (§12),
-  `characters/studio/`: Pixel's preview is its animation bank, and
-  Boop's pack has two, its gel slime and its copy of the pixel face.
+| Path | Must have | What it is |
+| --- | --- | --- |
+| `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
+| `steering/guide.md` | yes | How it reads the moment, for the brain (§7) |
+| `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
+| `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
+| `firmware/` | yes | Its faces' code and art for the board, and `include/moods.h`, which `charactergen.py` makes (§9) |
+| `mac/faces.json` | yes | The pixel face's timings and the popover's still faces (§9) |
+| `mac/mirror/` | no | A web page the popover shows as the face (§9) |
+| `mac/takes.tsv` and `voice/voice.bin` | no, both or neither | Its recorded voice (§8) |
+| `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
+| `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
+| `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
+| `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
-- **Pixel stands on its own.** It has its own steering (a guide, its
-  one personality and a file for each of its 13 moods), plain wording
-  written for it, and the voice. `CHARACTER=pixel make app` builds the
-  app as Pixel, and `CHARACTER=pixel make -C internal fw-test` runs the
-  firmware's tests as Pixel. Personalities are the pack's, not a fixed
-  list. The brain's questions and lines name the creature by the pack's
-  `name`, so Boop's read as before.
-- **A pack's tests join the run.** `--stage` links the engine's
-  suites and the pack's `tests/firmware/test_*` into
-  `.character-build/firmware-test/`, which is `platformio.ini`'s
-  `test_dir`. `make -C internal tools-test` runs the Python tests in a
-  pack's `tests/tools/`.
+To make one, copy Pixel's (§14). To check one:
 
-The board's report (§10) comes in a later phase. Today a pack's AMOLED
-build needs a gel face, which only Boop's pack has.
+```sh
+make build && .build/debug/boopdev check            # every pack in characters/
+.build/debug/boopdev check path/to/pack             # one pack, anywhere
+```
+
+`boopdev check` reads a pack as the engine does: `character.json`, the
+steering, the faces' files, the voice, every demo, and the generated
+files (`charactergen.py --check`). A pack that passes plugs in. Then
+build the firmware with it, to check its faces:
+`CHARACTER=<name> make -C internal fw-test`. The engine's own Swift tests
+(`make -C internal test`) run on whichever pack is chosen, using its
+name, moods and steering. They drive the creature with Pixel's mood names
+(`calm`, `grumpy`, `excited` and the rest), so a pack that keeps those
+names runs them all. A test of one pack's own content (Boop's evals,
+goldens and 42 moods) skips for any other pack, and a test that plays
+recorded takes skips for a pack with no voice; each says why.
 
 ## 1. The idea
 
@@ -118,7 +97,15 @@ The first of these wins:
 `--stage` lays it out in `.character-build/` at the repo root (also
 ignored): the pack's `firmware/`, the folders the app bundles, and the
 pack's own path. The builds read only from there.
-`firmware/tools/pio.sh` stages before every PlatformIO run.
+`firmware/tools/pio.sh` stages before every PlatformIO run, and `make
+build` before every app build. The app bundles only what it reads of the
+pack (not its firmware, voice pack, tools or tests), and the tests,
+`boopdev` and the device tools read the chosen pack's own folder.
+`Boop` itself also takes `BOOP_CHARACTER` when it starts, so one build
+can play any pack's demo. Staging also links the pack's own firmware
+tests (`tests/firmware/test_*`) beside the engine's, so
+`make -C internal fw-test` runs both; `make -C internal tools-test` runs
+the Python tests in a pack's `tests/tools/`.
 
 The Mac reads its pack when it starts, so switching means restarting.
 The board's face is compiled into its firmware, so switching faces means
@@ -211,8 +198,6 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 13 moods:
 | `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | The mood list, in order (§5). Its order is the firmware's `Mood` order |
 | `outcomes` | no | Which moods a big finish may jump to, by kind (§5) |
-| `growth` | no | The six growth stages' names. The engine's plain defaults otherwise |
-| `natures` | no | The two answers to setup's one question (sweet or cheeky). The engine's plain defaults otherwise |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
 
 Unknown keys are ignored, so a newer pack still loads in an older engine.
@@ -305,45 +290,119 @@ with no takes of its own speaks in its `fallback`'s.
 
 ## 9. Faces
 
+A face is what the board draws and the sounds it makes. The engine says
+*what* to show: a mood and a state. The face decides how that looks.
+
+### Every state a face is asked for
+
+The engine asks a face for any of the pack's moods (§5) with any of
+these 22 states. A face must answer for all of them, in every mood it
+draws. It may draw the same design for several: the pixel face has art
+for all 22, and the gel face maps some to others in its own code
+(`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
+and `charactergen.py --check` holds this table to them.
+
+**Looks** last until the next one. They show when no moment plays.
+
+| State | When it shows | Sent by |
+| --- | --- | --- |
+| `idle` | Agents are open, and none is working | the Mac |
+| `asleep` | No agent sessions at all | the Mac |
+| `working` | An agent works, with nothing more specific to show | the Mac |
+| `planning` | An agent is planning | the Mac |
+| `terminal` | An agent runs a shell command | the Mac |
+| `tool_use` | An agent uses a tool, such as an edit | the Mac |
+| `searching` | An agent searches the web | the Mac |
+| `analyzing` | An agent reads or searches files | the Mac |
+| `testing` | An agent runs tests | the Mac |
+| `delegating` | An agent hands work to a helper | the Mac |
+| `waiting` | A tool takes its time; nothing is asked of you | the Mac |
+| `needs_you` | An agent waits for your approval or answer on the Mac | the Mac |
+| `no_app` | The board has lost the Mac | the board |
+
+**Moments** play once over the look, or `loops` times (1 to 6), then go.
+
+| State | When it plays | Sent by |
+| --- | --- | --- |
+| `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller) | the Mac |
+| `task_complete` | A turn ends; `outcome` is `success` or `failure` | the Mac (the brain) |
+| `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
+| `stopped` | A turn is interrupted | the Mac |
+| `error` | A tool fails (the task may still succeed) | the Mac |
+| `helper_return` | A helper agent comes back | the Mac |
+| `poked` | A tap on the screen | the board |
+| `tap_spam` | The third tap in a row, and each after | the board |
+| `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |
+
+A state a face doesn't know draws `idle`. A moment whose design has no
+length (`loopMs` of 0) plays nothing.
+
+**A reaction** (`react`, the brain's) is no state of its own: the face
+draws the look in another mood for a moment, and the voice may speak.
+
+### What else a face does
+
+The engine's interface is `render::Face` (`firmware/src/render/face.h`).
+Besides drawing each mood and state, a face:
+
+- **Has variations.** A state may have several designs, numbered from 1.
+  The Mac picks one, and a moment's facts (`outcome`, `ctx`) pick among
+  them. A face says how many it has (`variants`).
+- **Times them.** Each design's loop length (`loopMs`), which sets how
+  long a moment plays, and its voice window (`voiceMs`), when a line may
+  start.
+- **Moves with the engine.** It blinks, opens its mouth while the voice
+  speaks (`mouthOpen`), and presses down under a finger (`dy`).
+- **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
+  bottom 48 px are the engine's: the status strip (who needs you, how
+  many sessions work, a finished turn's tick or cross) and the speech
+  bubble. The face calls `drawLane` to draw them.
+- **Makes its own sounds.** A bank of clips (`clips`) and when each plays
+  (`cues`). The engine mixes them under the voice.
+- **Has a name** for the board's `hello` (`name`), and says which moods
+  it draws (`supportsMood`). The Mac sends a mood the face doesn't draw
+  as the first of its `fallback`s that it does (§5), else the resting
+  mood.
+
+### The pack's files
+
 **On the board.** The staged `firmware/` (§2) is part of the firmware's
 build. `firmware/platformio.ini` compiles its `src/` and puts `include/`
-and `src/` on the include path. It provides:
+and `src/` on the include path. It holds:
 
 - `include/moods.h`: `enum class Mood`, in `character.json`'s order,
   with `kMoodCount`, `kStartupMood` and `kMoodNames`.
-  `characters/charactergen.py` generates it from
-  `character.json`, and it's never edited by hand. Engine code may assume
-  nothing else about moods. A face looks a mood up by its name, never its
+  `characters/charactergen.py` makes it from `character.json`; never
+  edit it by hand. Engine code assumes nothing else about moods: no mood
+  name is in the engine. A face looks a mood up by its name, never its
   number (the pixel face with `render::pixelIndex`).
-- One or more faces behind `render::Face`,
-  and `render::makeFace()` in `src/render/make_face.cpp`, which picks one
-  by the board's build flags. Pixel's always makes the pixel face. Boop's
-  replaces it and makes the gel face on the AMOLED.
+- One or more faces behind `render::Face`, and `render::makeFace()` in
+  `src/render/make_face.cpp`, which picks one by the board's build
+  flags. Pixel's always makes the pixel face. Boop's makes the gel face
+  on the AMOLED.
 - Today, every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
   carries that file until the palette is split from the art.
-- Each face's sound effects (`Face::clips()`).
-- Each face's name for the board's `hello`, and the moods it draws. A
-  face may draw only some moods: the rest draw their `fallback`.
-
-A state the face has no design for draws a broader one: what the agents
-are doing → `working` → `idle`. A one-shot it has no design for plays
-nothing. A pack that draws idle, working and needs you is complete.
 
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
-- `moods` and `states`, in the designs' order
-- `designs`: each design's loop length, voice window and host fact, the
-  numbers `faces.h` and `sfx.h` give the board, which the core times
-  moments and picks variations by. The host facts are task_complete's
-  `outcome` (`success`, `failure`) and starting's `ctx` (`new_task`,
-  `session`, `continuation`, `compacted`, the last an agent's context made
-  smaller mid-work). A fact no design is for plays any of the state's
-  designs
-- `box`, `colors` and `faces`: the popover's still face per mood and look
+
+- `moods` and `states`: the moods it draws, and the 22 states above, in
+  the designs' order.
+- `designs`: for each mood, a row for each state, with each variation's
+  loop length (`ms`), voice window (`voice_ms`) and fact (`outcome` or
+  `ctx`). The board has the same numbers (`faces.h`, `sfx.h`). The Mac
+  times moments and picks variations by them. A fact no design is for
+  plays any of the state's designs.
+- `box`, `colors` and `faces`: the popover's still faces, each as
+  `<mood>/<look>` for `idle`, `working` and `needs_you`, and
+  `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.
 
 `mac/mirror/`, if present, is a web page the popover shows instead, fed
 the same state the board gets (the gel slime has one).
+
+Today a pack's AMOLED build needs a gel face, which only Boop's pack
+has. Pixel's face is for the CYD board.
 
 Faces are code for now: both of today's faces implement `render::Face`
 in C++. A picture-based face is planned, with frames per state and mood
@@ -351,15 +410,21 @@ drawn by an engine renderer, so a character can be drawn with no code.
 
 ## 10. Who's on the board
 
-The board's `hello` names its pack's `id` and `version`
-beside its `face` and `voice`. When the
-Mac's pack isn't the board's, the Mac:
+The board's `hello` names the pack its firmware was built with, beside
+its `face` and its card's `voice`: `"pack":"boop","pack_version":"0.1.0"`
+(`kPackId` and `kPackVersion` in the generated `moods.h`). So keep the id
+to 24 characters and the version to 16: `hello` must fit in one line.
 
-- sends only moods both packs have
-- sends nothing to say
-- says so in the popover
+When that isn't the Mac's pack, another id or another version, the Mac:
 
-It never sends a mood or take the board can't play.
+- says so in its log, and in the popover ("Other character"), until the
+  board is flashed with the app's pack
+- keeps working: the board draws its startup mood for a mood it doesn't
+  have, and plays a reaction whose face it doesn't have in the look's
+  mood
+- speaks only when the card's voice is the app's (§8), a check of its own
+
+Firmware too old to name its pack counts as the Mac's.
 
 ## 11. Licence
 
@@ -369,8 +434,8 @@ pack from elsewhere brings its own.
 
 Every pack builds and tests on its own. With another pack chosen
 (`CHARACTER=pixel`):
-- The Swift tests that need Boop's pack (its goldens, evals, wording
-  and moods) skip, saying so (`requireBoopsPack()`).
+- The Swift tests of Boop's pack's own content (its goldens, evals and
+  42 moods) skip, saying so (`requirePack("boop")`); the rest run.
 - The tests that play takes run on that pack's voice. With a pack that
   has none they skip (`NEEDS_VOICE_PACK()` in the firmware's).
 
@@ -425,83 +490,34 @@ from the packs, and `--check` fails when a declared file is missing or
 a preview can't play one of a pack's moods in some state, itself or
 through its `fallback`.
 
-## 13. A demo (optional)
+## 13. Demos (optional)
 
-A pack can carry a demo: a scripted stretch of work for its creature to
-live through, `demo/demo.jsonl`, and more beside it as
-`demo/<name>.jsonl`: Pixel's `landing.jsonl` is the story the landing
-page plays (mellowmachines.com). The engine plays one through the same
-doors as real work (`Runtime.play`, `app/BoopKit/Demo/`), so the rules do
-what they always do; and the script says how the creature reacts, in the
-pack's own moods and words. That's why it's the pack's: the engine has the
-player, and the character has the story. The app bundles the folder.
-
-A script is one list of lines, each by one of three: the agent, the
-person (`you`), or the creature's brain. One JSON object a line; a line
-starting `//` is a comment, and the first may be a header,
-`{"demo": 1, "title": "…"}`. From Pixel's `landing.jsonl`:
-
-```json
-{"agent": "prompt", "text": "Add keyboard shortcuts to the editor. Keep typing and focus behavior intact."}
-{"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
-{"you": "poke", "after": 1.5, "note": "You poke Pixel hello"}
-{"agent": "read", "file": "src/editor.js", "say": "I'll start by reading how the editor and its commands fit together.", "after": 2}
-{"you": "talk", "text": "You suck at this. You've got to up your game!", "hold": 2, "after": 1}
-{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "phrase"}, "mood": "determined", "after": 0.75}
-{"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests", "fails": true, "say": "Now the tests.", "after": 2, "takes": 3}
-```
-
-| A line | Is |
-| --- | --- |
-| `agent` | What the agent does: `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's `old` and `new`), `run` (a `cmd`, what it's `about`, whether it `fails`, and `ask`: it asks you first, and you allow it after that many seconds), `review` (a subagent, its `task` and `prompt`), `reply` (`text` that ends the turn). `say` is what it says before it acts; `"by": "reviewer"` is the subagent's own |
-| `you` | `poke`, or `talk`: the button held `hold` seconds (1.5), then `text` heard |
-| `brain` | The brain's answers about the line above, as forced answers to its questions: `react.mood` (a mood's face, or `none`), `react.animation` (`success`, `failure` or `reply`, for a turn that finished), `react.loops`, and for a pack with a voice `say.feeling`, `say.about` and `say.kind` (§8). `mood` sets the mood |
-
-The lines happen in order, each `after` the one before it ends (the
-defaults are about as long as each takes), and an `agent` line `takes`
-its own time. Any line may carry a `note`: what happened, in words for
-whoever is watching, in place of the words the engine makes of it.
-
-Who plays the agent is the only thing that changes. With no agent
-(`--demo`), the player sends the hooks the agent would, so the story plays
-by itself: this is what the simulator's page records. With a live one
-(`--demo … --live`), a real Claude Code or Codex does the work, and the
-player waits for its own hooks for each `agent` line, so the person's and
-the brain's lines keep to its pace ([internal/sessions/README.md](../internal/sessions/README.md)).
-A demo plays with no brain: a moment with no `brain` line gets what the
-rules do and nothing more, so put the brain's lines where real Boop's
-brain would be asked (a turn starting or ending, a poke, talk, a check
-failing or passing again), and keep the agent's words true to what it
-does: a real model won't say what isn't.
-
-`DemoTests` holds each of the chosen pack's demos to its pack: every answer is to
-a question the brain is asked, with a choice it's offered, and every
-mood is one the pack has.
-
-```sh
-.build/debug/Boop --headless --state-dir /tmp/boop-demo --demo pack                     # play it, with no device
-simulator/tools/record-demo.sh pixel                                                    # record it for the simulator's page
-BOOP_CHARACTER=characters/pixel .build/debug/Boop --headless --state-dir /tmp/boop-demo-landing --demo pack:landing   # Pixel's demo/landing.jsonl
-make demo NAME=landing                                                                  # watch it in the simulator's page
-make demo NAME=landing IN=claude                                                        # with the real Claude, in the desktop app
-```
-
-The second plays it on the simulator's board and keeps every line the
-board was sent, with when and what was happening
-([simulator/README.md](../simulator/README.md), Demos): the page plays
-that back into the firmware itself, with no app behind it.
+A pack can carry demos: scripted stretches of work for its creature to
+live through, `demo/<name>.jsonl`. Pixel's `landing.jsonl` is the story
+the landing page plays (mellowmachines.com). A demo is the pack's because
+the creature's reactions in it are in the pack's own moods and words: the
+engine has the player (`app/BoopKit/Demo/`), and the pack has the story.
+The app bundles the folder. How to write and play one:
+[DEMOS.md](DEMOS.md).
 
 ## 14. Making your own
 
-1. Copy `characters/pixel/` to `characters/<yours>/` and set `id` and
-   `name` in `character.json`.
-2. Change the moods: their names, meanings and moves. Write a
-   `steering/mood/` file for each.
-3. Rewrite `steering/personality/` and `guide.md` in its voice.
+1. Copy `characters/pixel/` to `characters/<yours>/`, and set `id` and
+   `name` in `character.json`. Leave out `design/`, `tools/` and the
+   `studio` entry until you need them.
+2. Change the moods: their names, meanings and moves (§5). A new mood
+   that Pixel's face doesn't draw needs a `fallback` that it does.
+3. Rewrite `steering/guide.md` and `steering/personality/` in its voice,
+   and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
-   its voice too, or leave out `voice/` and `mac/takes.tsv` for a
-   creature that doesn't speak.
-5. `make build CHARACTER=<yours>`, then flash with the same.
-6. Optionally, write it a demo (§13).
-7. Optionally, give it a studio entry (§12) and look at every mood and
-   state in `characters/studio/index.html`.
+   its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
+   that doesn't speak.
+5. Run `characters/charactergen.py characters/<yours>` to make
+   `firmware/include/moods.h`, then `make build` and
+   `.build/debug/boopdev check`.
+6. Try it: `CHARACTER=<yours> make demo NAME=hello` plays Pixel's short
+   demo, which the copy carries, in the simulator's page.
+7. Flash it: `make flash CHARACTER=<yours>`.
+8. Optionally, write it demos ([DEMOS.md](DEMOS.md)), and give it a
+   studio entry (§12) to look at every mood and state in
+   `characters/studio/index.html`.

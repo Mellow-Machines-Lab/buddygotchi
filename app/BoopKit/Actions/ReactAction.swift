@@ -194,12 +194,14 @@ public final class ReactAction: Action {
         return questions
     }
 
-    /// The questions, built once: none of them changes. A character pack
-    /// with no voice is never asked what to say (characters/CHARACTER.md
-    /// §8): it has no `say.*` questions.
-    static let asked: [Question] = {
+    /// The questions asked: a character pack with no voice is never asked
+    /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
+    static let asked: [Question] = Take.all.isEmpty ? questions.filter { !$0.key.hasPrefix("say.") } : questions
+
+    /// Every question, built once: none of them changes.
+    static let questions: [Question] = {
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
-        let all = [
+        return [
             Question(key: "react.mood", text: "How should \(CharacterPack.active.name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
@@ -221,7 +223,6 @@ public final class ReactAction: Action {
             Question(key: "say.kind", text: "If \(CharacterPack.active.name) says something, how big is it?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactAction.kinds),
         ]
-        return Take.all.isEmpty ? all.filter { !$0.key.hasPrefix("say.") } : all
     }()
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> ActionResult? {

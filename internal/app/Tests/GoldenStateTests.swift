@@ -14,10 +14,9 @@ import XCTest
 /// `BOOP_GOLDEN_RECORD=1 BOOP_TEST_FILTER=Golden .build/debug/BoopTests`,
 /// and the diff shows what changed.
 final class GoldenStateTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
+    override func setUpWithError() throws { try requirePack("boop") }
 
-    static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        .appendingPathComponent("../../../characters/boop/tests/golden-states").standardizedFileURL
+    static let folder = CharacterPack.active.directory.appendingPathComponent("tests/golden-states")
 
     /// Answers from NOW's line alone, the same every time: a failure moves
     /// the mood a step and gets an annoyed face, a win a happy one, a poke a
@@ -88,7 +87,7 @@ final class GoldenStateTests: XCTestCase {
             return try GoldenStateTests.brain.script(state, questions)
         }
         let eval = Eval(brain: brain, steering: RuntimeTests.steering)
-        let scenarios = try Scenario.load(directory: EvalTests.scenarios)
+        let scenarios = try Scenario.load(directory: try EvalTests.scenarios())
         XCTAssertGreaterThanOrEqual(scenarios.count, 60)
         if record { try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true) }
         var passes = 0

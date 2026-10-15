@@ -1409,7 +1409,6 @@ final class CoreNeedsYouTests: XCTestCase {
 // MARK: - You and Boop
 
 final class CoreYouAndBoopTests: XCTestCase {
-    override func setUpWithError() throws { try requireBoopsPack() }
 
     /// A poke is the rules' alone to react to: they
     /// record the device's wiggle as an action under it, and the brain
@@ -1419,7 +1418,7 @@ final class CoreYouAndBoopTests: XCTestCase {
     func testAPokeWigglesByRuleAndReachesTheBrain() {
         let rig = CoreRig()
         let fx = rig.poke()
-        XCTAssertEqual(woke(fx), ["You poked Boop."])
+        XCTAssertEqual(woke(fx), ["You poked \(creature)."])
         XCTAssertEqual(rig.ruleActions, ["wiggle"])
         XCTAssertEqual(states(fx), [], "the rules add no moment: the device has already wiggled")
         XCTAssertEqual(opened(fx), [])
@@ -1543,10 +1542,10 @@ final class CoreYouAndBoopTests: XCTestCase {
             lines += woke(rig.poke())
             rig.wait(900)
         }
-        XCTAssertEqual(lines, ["You poked Boop.", "You poked Boop 2 times in a row.", "You poked Boop 3 times in a row.",
-                               "You poked Boop 4 times in a row."])
+        XCTAssertEqual(lines, ["You poked \(creature).", "You poked \(creature) 2 times in a row.", "You poked \(creature) 3 times in a row.",
+                               "You poked \(creature) 4 times in a row."])
         rig.wait(2100)
-        XCTAssertEqual(woke(rig.poke()), ["You poked Boop."], "3 s after the last")
+        XCTAssertEqual(woke(rig.poke()), ["You poked \(creature)."], "3 s after the last")
         var fx = Fx()
         for _ in 0..<20 { fx += rig.poke() }
         XCTAssertEqual(woke(fx).count, 20, "no limit")

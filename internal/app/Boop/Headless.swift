@@ -37,6 +37,9 @@ enum Headless {
                 fail("the character pack \(CharacterPack.active.id) has no demo/\(named ?? "demo").jsonl")
             }
             do { script = try DemoScript(contentsOf: file) } catch { fail("\(error)") }
+            // A line the pack can't play would otherwise pass by quietly.
+            let problems = script?.problems() ?? []
+            if !problems.isEmpty { fail(problems.map { "\(file.lastPathComponent): \($0)" }.joined(separator: "\n")) }
         }
         guard let nature = LongTerm.Nature(rawValue: args["--nature"] ?? "sweet") else { fail("--nature is sweet or cheeky") }
         let log = LogFile(directory: stateDir, echo: true)
