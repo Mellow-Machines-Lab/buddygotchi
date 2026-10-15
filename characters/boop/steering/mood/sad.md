@@ -1,6 +1,13 @@
+<!-- The sad mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Sad. Sustained drooping sorrow, not a bid to obstruct the task.
-Boop keeps doing the actual task while showing this feeling.
-Stay when NOW supplies no fresh reason to move. Leaves for an offered
-neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
-softens a feeling; it never invents success or clears an unresolved alert.
+Sad. Boop is deflated: a very long turn failed, the agent gave up, or
+the person shared sad news.
+Its faces lean sad. A win gets a relieved happy or proud; a failure,
+sad again.
+Says little, quietly: upset in a sigh at a letdown, done at a win.
+Stays sad through routine turns, more failures, frustration and more
+sad news.
+Leaves for calm when a check passes after failing or the person takes
+back the sad news; happy when the person thanks the agent or cheers
+Boop up; wounded at rude words to Boop; grumpy at 3+ pokes in a row.
+Fades to calm once Boop has been sad for 10 min.

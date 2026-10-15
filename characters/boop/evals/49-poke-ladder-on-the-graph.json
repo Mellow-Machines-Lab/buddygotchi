@@ -1,12 +1,12 @@
 {
   "name": "Pokes climb Boop's mood one step at a time",
-  "case": "Boop is calm when the person pokes it once, twice and three times in a row, a second apart. The first poke moves its mood one step, to curious or pleased, and it holds through the next two, a second apart, since a mood holds at least half a minute: never a move the mood graph doesn't have.",
+  "case": "Boop is calm when the person pokes it once, twice and three times in a row, a second apart. Each poke moves its mood one step: first curious or happy, then annoyed, then irritated or grumpy, and never a move the mood graph doesn't have.",
   "always": true,
-  "why": "The one mood graph (2026-10-15): a mood moves one step along its pack's moves and holds at least 30 s (MoodPolicy), so pokes a second apart move it once. characters/boop/steering/mood/: a poke moves calm to curious or happy, two in a row to annoyed, three to irritated or grumpy (a jump a barrage earns); the mood question offers only the mood's moves",
+  "why": "characters/boop/steering/mood/: a poke moves calm to curious or happy, two in a row to annoyed, three to irritated or grumpy (a jump a barrage earns); the mood question offers only the mood's moves",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "poke", "at": "0s", "expect": {"offered": "calm|comfy|curious|engaged|pleased|tired|uneasy", "mood": "curious|pleased"}},
-    {"event": "poke", "at": "1s", "expect": {"mood": "curious|pleased"}},
-    {"event": "poke", "at": "2s", "expect": {"mood": "curious|pleased"}}
+    {"event": "poke", "at": "0s", "expect": {"offered": "calm|comfy|curious|engaged|pleased|tired|uneasy|happy|annoyed|surprised|wounded|excited|sad", "mood": "curious|happy"}},
+    {"event": "poke", "at": "1s", "expect": {"mood": "annoyed"}},
+    {"event": "poke", "at": "2s", "expect": {"mood": "irritated|grumpy"}}
   ]
 }

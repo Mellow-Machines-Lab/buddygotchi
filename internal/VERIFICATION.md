@@ -146,18 +146,15 @@ These are simulator/host checks; hardware throughput and speaker review are
 separate checks. The temporary Phase 8 fixture has been removed.
 
 **Slime host generation.** `node characters/boop/tools/slimegen/slimegen.mjs`
-regenerates Boop's mood graph and pacing in `characters/boop/character.json`, the offline Mac mirror resources, and the
+regenerates Boop's moods' meanings and families in `characters/boop/character.json`, the offline Mac mirror resources, and the
 firmware gel catalogs, vector art and sampled material mesh; add
-`--check` for freshness only. Swift
-`MoodPolicyTests` cover topology, pacing boundaries, evidence identity (a
-decision's own pass never using up its event through a real harness pass,
-and the copies-only check matching a whole-log scan on a long log), the
-mood question offering exactly the policy's moves, and every mood's
-reaction speaking in takes of its own mood. `MoodGraphTests` hold every
-pack's moods to the universal list and its graph to one the policy can
-walk. Runtime tests check that every hello and reconnect gets the mood
-itself. Scenarios 66–69 are prepared for interleaved A/B Jev runs when
-the owner provides the key. Scripted tests cannot substitute for those
+`--check` for freshness only. `MoodGraphTests` hold every pack's moods
+to the universal list and its graph to one the steering can walk, every
+mood fading to the resting mood by ordinary moves; `HarnessTests`' mood
+test holds the mood question to staying and exactly the mood's moves.
+Runtime tests check that every hello and reconnect gets the mood itself.
+Scenarios 68 and 69 are prepared for interleaved A/B Jev runs when the
+owner provides the key. Scripted tests cannot substitute for those
 judgments.
 
 `node characters/boop/tools/slimegen/check-mirror.mjs` checks transient clearing,

@@ -761,7 +761,7 @@ final class RuntimeTests: XCTestCase {
         let questions = try XCTUnwrap(lines.first?["questions"] as? [[String: Any]], "the questions come first")
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
-                       ["calm"], "staying calm: at launch nothing fresh offers a move (MoodPolicy)")
+                       ["calm"] + MoodGraph.moves["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(creature) react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
@@ -838,10 +838,6 @@ final class RuntimeTests: XCTestCase {
         let transport = FakeTransport()
         var options = try options(transport, readJevKey: { _ in nil })
         options.debug = true
-        // A steady clock the dashboard can move on, past a mood's dwell.
-        let ahead = Ahead(), steady = options.clock
-        options.clock = { steady() + ahead.ms }
-        options.advance = { ahead.ms += $0 }
         let runtime = try Runtime(options)
         try runtime.start()
         defer { runtime.stop() }
@@ -855,11 +851,8 @@ final class RuntimeTests: XCTestCase {
         eventually("grumpy") { runtime.home.sync { runtime.moodNow == "grumpy" } }
         dev(#"{"dev":"mood","mood":"happy"}"#)
         eventually("happy, off the graph") { runtime.home.sync { runtime.moodNow == "happy" } }
-        let back = try XCTUnwrap(MoodPolicy.recovery(from: "happy"))
-        dev(#"{"dev":"answer","answers":{"mood":"\#(back)"}}"#)
-        dev(#"{"dev":"advance","ms":30001}"#)
-        dev(#"{"dev":"answer","answers":{"mood":"\#(back)"}}"#)
-        eventually("\(back), happy's step back once its dwell is up") { runtime.home.sync { runtime.moodNow == back } }
+        dev(#"{"dev":"answer","answers":{"mood":"excited"}}"#)
+        eventually("excited, a move from happy") { runtime.home.sync { runtime.moodNow == "excited" } }
 
         let lines = debugLines()
         let pass = try XCTUnwrap(lines.compactMap { $0["pass"] as? [String: Any] }.first)
@@ -873,11 +866,11 @@ final class RuntimeTests: XCTestCase {
             && $0.moods.contains("grumpy") }, worked)
         XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(creature)'s mood changed: calm → grumpy.",
                                                               "\(creature)'s mood changed: grumpy → happy.",
-                                                              "\(creature)'s mood changed: happy → \(back)."])
+                                                              "\(creature)'s mood changed: happy → excited."])
         XCTAssertEqual(actions.map(\.actionName), ["react", "mood", "mood", "mood"])
         for action in actions { XCTAssertEqual(action["for"], .null) }
         let moods = lines.compactMap { ($0["sent"] as? [String: Any])?["mood"] as? String }
-        XCTAssertEqual(moods.reduce(into: [String]()) { if $0.last != $1 { $0.append($1) } }, ["calm", "grumpy", "happy", back],
+        XCTAssertEqual(moods.reduce(into: [String]()) { if $0.last != $1 { $0.append($1) } }, ["calm", "grumpy", "happy", "excited"],
                        "the device hears each change in a state")
         // One `questions` line, the launch's; a pass whose options differ
         // from it names the ones it asked, such as the mood's moves once it
@@ -886,7 +879,7 @@ final class RuntimeTests: XCTestCase {
         let passes = lines.compactMap { $0["pass"] as? [String: Any] }
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
-        XCTAssertEqual(moved, ["mood": ["happy", back]], "a pass with nothing fresh is offered only the step back")
+        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.moves["happy"]!.all])
     }
 
     /// BOOT held and let go turns the mic on and off; with
@@ -1828,10 +1821,6 @@ final class DebugLines: @unchecked Sendable {
     var log: [String] = []
     var printed: [String] = []
 }
-
-/// How far a test has moved its runtime's clock on, in ms. Not nested in
-/// a test: the shim's runner generator would take it for the test class.
-final class Ahead: @unchecked Sendable { var ms: Int64 = 0 }
 
 /// Lines gathered from any thread, for tests.
 final class Lines: @unchecked Sendable {

@@ -7,12 +7,13 @@ checks freshness without writing. No dependencies, device or network.
 
 The slime design's `emotion-graph.json` is the source for Boop's moods
 in its character pack, `characters/boop/character.json`
-([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key
-(ordered adjacency, meanings, families and brief markers)
-and `pacing` (provisional host pacing). It rewrites only those two keys,
-and keeps any key a mood has that the design doesn't set, such as
-`quiet_never` and `face`. The design's pixel `fallback`s aren't written:
-every pack has every mood.
+([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key, each mood's
+id, meaning and family, in the design's order. It keeps every other key,
+and any key a mood has that the design doesn't set, such as `face`; a
+mood's `moves` are the pack's own, and the design's edges seed only a
+mood the pack doesn't have yet. The design's pixel `fallback`s, `brief`
+markers and `hostPolicy` aren't written: every pack has every mood, and
+pacing is the steering's.
 The same tool bundles the reference engine, WebGL/Canvas renderer and a
 silent adapter into Boop's character pack, `characters/boop/mac/mirror/`. The shipped files have no
 dependency on this tool at runtime. `check-mirror.mjs` checks interruption and

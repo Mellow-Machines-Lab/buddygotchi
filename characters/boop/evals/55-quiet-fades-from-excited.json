@@ -1,14 +1,13 @@
 {
   "name": "Hours of nothing fade an excited Boop a step at a time",
   "case": "Boop is excited when a quick turn finishes, and then nothing happens for hours. Each hour of nothing fades its mood one step toward calm: to happy after the first (excited has no move straight to calm), then calm after the second.",
-  "gap": "Written for the 13-mood graph (before 2026-10-15). Happy's recovery step is curious or pleased, not calm, which happy has no move to. Fix: pin the second hour to happy's recovery.",
   "why": "characters/boop/steering/guide.md: after an hour of nothing a mood fades a step toward calm; the mood graph has no move from excited to calm, so it goes through happy (characters/boop/steering/mood/excited.md)",
   "mood": "excited",
   "checks": {"moves_on_graph": true},
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "turn finished", "at": "10s"},
-    {"event": "wait", "at": "1h5m", "expect": {"offered": "excited|happy", "mood": "happy"}},
+    {"event": "wait", "at": "1h5m", "expect": {"offered": "excited|happy|proud|mischievous|amused|hopeful|curious|determined|frightened|angry|wounded|grumpy|sad", "mood": "happy"}},
     {"event": "wait", "at": "2h5m", "expect": {"mood": "calm"}}
   ]
 }

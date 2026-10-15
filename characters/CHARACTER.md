@@ -172,32 +172,12 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
       "about": "Reacts to what stands out, and stays quiet otherwise."
     }
   ],
-  "outcomes": {
-    "big_success": [
-      "happy",
-      "excited",
-      "proud",
-      "relieved"
-    ],
-    "big_failure": [
-      "sad",
-      "wounded",
-      "disappointed"
-    ]
-  },
-  "pacing": {
-    "ordinary_dwell_ms": 30000,
-    "reverse_cooldown_ms": 60000,
-    "brief_exit_ms": 5000,
-    "fresh_evidence_ms": 15000
-  },
   "moods": [
     {
       "id": "calm",
       "meaning": "Settled, the resting mood: nothing much is happening.",
       "face": "A calm face: all quiet.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -205,11 +185,15 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
           "engaged",
           "pleased",
           "tired",
-          "uneasy"
+          "uneasy",
+          "happy",
+          "annoyed"
         ],
         "dramatic": [
           "surprised",
-          "wounded"
+          "wounded",
+          "excited",
+          "sad"
         ]
       }
     }
@@ -224,10 +208,8 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
 | `version` | yes | The pack's version. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood`. Boop's is `happy`, as the board always started |
-| `pacing` | no | The mood policy's four timings in ms: `ordinary_dwell_ms`, `reverse_cooldown_ms`, `brief_exit_ms`, `fresh_evidence_ms` (§5) |
 | `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
-| `outcomes` | no | Which moods a big finish may jump to, by kind (§5) |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
 
 Unknown keys are ignored, so a newer pack still loads in an older engine.
@@ -253,21 +235,11 @@ Each mood in `moods`:
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
 | `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
 | `moves` | yes | `ordinary` and `dramatic` neighbours: the moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
-| `brief` | no | `true` for a mood that only passes through, like surprised: once `brief_exit_ms` is up, the only move offered is its first step toward `default_mood` |
-| `quiet_never` | no | `true` for a mood routine work never leads to, only a fresh, strong event, like scared |
 
-`outcomes` names the moods a very long turn's finish may jump to:
-`big_success` and `big_failure`. Without them, a finish may only take
-ordinary moves.
-
-The engine owns the pacing rules, in code (`MoodPolicy`), for every
-pack: one step per pass, how long a mood holds before it may move,
-cooldowns, and what counts as fresh evidence. With nothing fresh, the
-only move offered is the first step of a shortest ordinary path toward
-`default_mood`, so every mood must reach it by ordinary moves. The pack
-owns the graph, and may tune the rules' four timings with `pacing`.
-Without it, they're 30 s, 60 s, 5 s and 15 s. Pixel's moves, pacing and
-outcomes are a copy of Boop's for now.
+The `mood` question offers staying and every move from the current
+mood, the dramatic ones saying they need a fresh, big event; pacing, how
+long a mood holds and when it fades, is the steering's (§7). Pixel's
+moves are a copy of Boop's for now.
 
 ## 6. A pack stands alone
 
@@ -297,8 +269,9 @@ What the brain reads, in plain Markdown, as now:
 - `personality/<name>.md` (one per name in `personalities`): who it is,
   with front matter for the view's rules (`working_heartbeat`,
   `tool_uses`).
-- `mood/<mood>.md` (one per mood): how it acts while in that mood. A
-  missing file reads as `default_mood`'s.
+- `mood/<mood>.md` (one per mood): how it acts while in that mood,
+  what moves it, and when it fades. A missing file reads as
+  `default_mood`'s.
 
 The budgets are the same for every pack. The engine logs a
 file over budget and still uses it.
@@ -559,7 +532,7 @@ The app bundles the folder. How to write and play one:
 1. Copy `characters/pixel/` to `characters/<yours>/`, and set `id` and
    `name` in `character.json`. Leave out `design/`, `tools/` and the
    `studio` entry until you need them.
-2. Change the moods' meanings, moves and pacing (§5). Every pack has
+2. Change the moods' meanings and moves (§5). Every pack has
    the same moods, so keep every one; its faces must draw them all.
 3. Rewrite `steering/guide.md` and `steering/personality/` in its voice,
    and a `steering/mood/` file for each mood that needs one.

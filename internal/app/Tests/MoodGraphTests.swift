@@ -6,10 +6,10 @@ import XCTest
 /// universal moods, and its own moves between them.
 final class MoodGraphTests: XCTestCase {
     /// Each pack in characters/ has exactly the universal moods, and its
-    /// moves are a graph the mood policy can walk: no move to itself, each
-    /// move once, at most eight from a mood, and every mood reachable from
-    /// every other by ordinary moves alone, so every mood, a brief one
-    /// included, has a recovery step toward the resting mood.
+    /// moves are a graph the steering can walk: no move to itself, each
+    /// move once, and every mood reachable from every other by ordinary
+    /// moves alone, so every mood, a brief one included, can fade a step
+    /// at a time to the resting mood.
     func testEveryPacksGraphIsWalkable() throws {
         let folder = CharacterPackTests.repo.appendingPathComponent("characters")
         let packs = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
@@ -19,7 +19,6 @@ final class MoodGraphTests: XCTestCase {
             let pack = try CharacterPack(directory: dir)
             XCTAssertEqual(Set(pack.moods.map(\.id)), Set(CharacterPack.universalMoods), pack.id)
             let moves = pack.byId.mapValues(\.moves)
-            XCTAssertLessThanOrEqual(moves.values.map(\.all.count).max()!, 8, pack.id)
             for (mood, m) in moves {
                 XCTAssertFalse(m.all.contains(mood), "\(pack.id): staying isn't a move: \(mood)")
                 XCTAssertEqual(Set(m.all).count, m.all.count, "\(pack.id): each move once: \(mood)")

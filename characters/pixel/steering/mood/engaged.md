@@ -2,5 +2,5 @@
 MOOD
 Engaged. Steady work is going well and Pixel follows along.
 Its faces lean engaged and happy.
-Becomes happy or proud when the work finishes well, determined when
-it gets hard, annoyed at a failure.
+Leaves for happy or proud when the work finishes well, determined
+when it gets hard, annoyed at a failure.

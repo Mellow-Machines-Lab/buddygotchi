@@ -35,13 +35,13 @@ final class EvalTests: XCTestCase {
         XCTAssertNil(Scenario.ms("5x"))
     }
 
-    /// EVALS.md §1: the mood policy's cases load, reach real questions,
-    /// and hold the graph's pacing with an offline brain that always picks
+    /// EVALS.md §1: the cases that start in a mood off the 13 load, reach
+    /// real questions, and pass with an offline brain that always keeps
     /// the mood they start in. This is not a Jev evaluation.
-    func testThePolicyScenariosHoldThePacing() async throws {
-        let names = ["66-brief-surprise-recovers", "67-routine-failure-no-fear", "68-quiet-recovery-from-fear", "69-new-work-from-comfy"]
+    func testTheQuietScenariosPassWithABrainThatStays() async throws {
+        let names = ["68-quiet-recovery-from-fear", "69-new-work-from-comfy"]
         let scenarios = try Scenario.load(directory: try Self.scenarios()).filter { s in names.contains { s.file.hasPrefix($0) } }
-        XCTAssertEqual(scenarios.count, 4)
+        XCTAssertEqual(scenarios.count, 2)
         for scenario in scenarios {
             let brain = ScriptedBrain(always: ["mood": scenario.mood, "react.mood": "none"].mapValues { Answer(choice: $0, probabilities: [$0: 1]) })
             let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
@@ -65,7 +65,7 @@ final class EvalTests: XCTestCase {
                 return ["mood": a("proud"), "react.mood": a("proud"), "say.feeling": a("glad")]
             }
             if now.contains("failed") {
-                return ["mood": a(mood == "calm" ? "engaged" : "determined"), "react.mood": a("determined"),
+                return ["mood": a(mood == "calm" ? "annoyed" : "determined"), "react.mood": a("determined"),
                         "say.about": a("tests"), "say.kind": a("word")]
             }
             return ["mood": a(mood), "react.mood": a("none"), "say.feeling": a("none")]
@@ -74,7 +74,7 @@ final class EvalTests: XCTestCase {
         let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
         XCTAssertEqual(result.checks.count, 4)
         XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
-        XCTAssertEqual(result.checks[0].mood, "engaged", "calm moves a step, to engaged")
+        XCTAssertEqual(result.checks[0].mood, "annoyed", "calm moves a step, to annoyed")
         XCTAssertEqual(result.checks[2].about, "tests")
         let said = try XCTUnwrap(result.checks[2].said)
         XCTAssertTrue(Take.all.contains { $0.text == said && $0.meaning == "tests" && $0.moods.contains("determined") }, "determined's: \(said)")
@@ -148,7 +148,7 @@ final class EvalTests: XCTestCase {
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
         XCTAssertEqual(report.first, "FAIL  05-pokes-glad-miffed-grumpy.json  Pokes make Boop curious, then miffed, then fed up")
-        XCTAssertTrue(report[1].contains("wanted react curious|excited|happy, animation none, mood curious|pleased; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
+        XCTAssertTrue(report[1].contains("wanted react curious|excited|happy, animation none, mood curious|happy; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
         XCTAssertEqual(Eval.summary([[result]]), "0/1 passed")
     }
 
@@ -247,11 +247,10 @@ final class EvalTests: XCTestCase {
     /// EVALS.md §3: a scenario may start in any mood (`mood`, as the
     /// dashboard would set it just before), and a step may check exactly
     /// what its pass's mood question offered (`offered`): staying, and the
-    /// mood's moves the policy offers then (fresh work, no strong event:
-    /// the ordinary ones).
+    /// mood's moves on the graph.
     func testAScenarioStartsInItsMoodAndChecksWhatWasOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("start-mood-\(UUID().uuidString).json")
-        let grumpy = (["grumpy"] + MoodGraph.moves["grumpy"]!.ordinary).joined(separator: "|")
+        let grumpy = (["grumpy"] + MoodGraph.moves["grumpy"]!.all).joined(separator: "|")
         try Data(#"{"name":"n","case":"c","why":"w","mood":"grumpy","steps":[{"event":"turn started","at":"2m","expect":{"offered":"\#(grumpy)","mood":"irritated"}},{"event":"turn finished","at":"3m","expect":{"offered":"calm|happy"}}]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
@@ -267,9 +266,9 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(states.all.first?.contains("\n\(creature) has been grumpy for 2 min.\n") == true,
                       "and knows how long, as if the dashboard set it at the start: \(states.all.first ?? "")")
         XCTAssertTrue(result.checks[0].passed, result.checks[0].summary)
-        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.moves["irritated"]!.ordinary)
+        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.moves["irritated"]!.all)
         XCTAssertFalse(result.checks[1].passed)
-        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.moves["irritated"]!.ordinary).sorted().joined(separator: "|")),
+        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.moves["irritated"]!.all).sorted().joined(separator: "|")),
                       result.checks[1].summary)
         XCTAssertTrue(result.checks[1].summary.contains("wanted offered calm|happy; got react none"), result.checks[1].summary)
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","mood":"sulky","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "mood is one of"),
@@ -294,7 +293,7 @@ final class EvalTests: XCTestCase {
     /// never leaves the graph.
     func testMovesOnGraphCatchesAnAnswerThatWasntOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("on-graph-\(UUID().uuidString).json")
-        try Data(#"{"name":"n","case":"c","why":"w","checks":{"moves_on_graph":true},"steps":[{"event":"poke","at":"0s"},{"event":"poke","at":"31s"}]}"#.utf8)
+        try Data(#"{"name":"n","case":"c","why":"w","checks":{"moves_on_graph":true},"steps":[{"event":"poke","at":"0s"},{"event":"poke","at":"1s"}]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         let scenario = try Scenario(file: file)

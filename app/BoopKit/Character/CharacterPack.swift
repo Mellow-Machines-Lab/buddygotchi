@@ -21,19 +21,6 @@ public struct CharacterPack: Sendable {
         public let faceNotFor: String?
         public let moves: MoodGraph.Moves
         public let family: String?
-        /// Only passes through: once its short exit time is up, the only
-        /// move offered is one step toward the resting mood (MoodPolicy).
-        public let brief: Bool
-        /// Never reached from routine work, only from a fresh, strong event.
-        public let quietNever: Bool
-    }
-
-    /// The mood policy's timings, in ms (CHARACTER.md §5).
-    public struct Pacing: Sendable, Equatable {
-        public var ordinaryDwellMs: Int64 = 30_000
-        public var reverseCooldownMs: Int64 = 60_000
-        public var briefExitMs: Int64 = 5_000
-        public var freshEvidenceMs: Int64 = 15_000
     }
 
     /// The pack's folder: its steering, and what the app reads at run time.
@@ -51,10 +38,6 @@ public struct CharacterPack: Sendable {
     public let personalities: [String]
     /// What each personality does, in one line, for Settings.
     public let personalityAbout: [String: String]
-    /// The moods a very long turn's finish may jump to: `big_success` and
-    /// `big_failure`.
-    public let outcomes: [String: [String]]
-    public let pacing: Pacing
     /// Every universal mood (`universalMoods`), in the pack's order.
     public let moods: [Mood]
 
@@ -62,7 +45,6 @@ public struct CharacterPack: Sendable {
     let options: [Option]
     let faces: [Option]
     let byId: [String: Mood]
-    let quietNever: Set<String>
 }
 
 extension CharacterPack {
@@ -92,7 +74,7 @@ public struct CharacterPackError: Error, CustomStringConvertible {
 extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
     /// a pack: a key missing, moods that aren't the universal ones, or a
-    /// move, outcome or default mood that isn't one. A pack stands alone:
+    /// move or default mood that isn't one. A pack stands alone:
     /// everything it has is in its own folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
@@ -122,16 +104,6 @@ extension CharacterPack {
             guard let p = item as? [String: Any], let id = p["id"] as? String, let about = p["about"] as? String else { return nil }
             return (id, about)
         }, uniquingKeysWith: { a, _ in a })
-        outcomes = json["outcomes"] as? [String: [String]] ?? [:]
-        var pacing = Pacing()
-        if let p = json["pacing"] as? [String: Any] {
-            func ms(_ key: String) -> Int64? { (p[key] as? NSNumber)?.int64Value }
-            pacing.ordinaryDwellMs = ms("ordinary_dwell_ms") ?? pacing.ordinaryDwellMs
-            pacing.reverseCooldownMs = ms("reverse_cooldown_ms") ?? pacing.reverseCooldownMs
-            pacing.briefExitMs = ms("brief_exit_ms") ?? pacing.briefExitMs
-            pacing.freshEvidenceMs = ms("fresh_evidence_ms") ?? pacing.freshEvidenceMs
-        }
-        self.pacing = pacing
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         guard !personalities.isEmpty else { throw CharacterPackError("\(source): personalities is empty") }
         // The board reports the id, and the firmware names each mood in code.
@@ -150,14 +122,10 @@ extension CharacterPack {
         }
         guard names.contains(defaultMood) else { throw CharacterPackError("\(source): default_mood \(defaultMood) isn't a mood") }
         guard names.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a mood") }
-        for (kind, list) in outcomes {
-            for m in list where !names.contains(m) { throw CharacterPackError("\(source): outcomes.\(kind) names \(m), which isn't a mood") }
-        }
 
         options = moods.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
         faces = moods.map { m in m.face.map { Option(m.id, $0, notFor: m.faceNotFor) } ?? Option(m.id, m.meaning, notFor: m.notFor) }
         byId = Dictionary(uniqueKeysWithValues: moods.map { ($0.id, $0) })
-        quietNever = Set(moods.filter(\.quietNever).map(\.id))
     }
 
     static func mood(_ m: [String: Any], in source: String) throws -> Mood {
@@ -168,8 +136,7 @@ extension CharacterPack {
         return Mood(id: id, meaning: meaning, notFor: m["not_for"] as? String,
                     face: m["face"] as? String, faceNotFor: m["face_not_for"] as? String,
                     moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
-                    family: m["family"] as? String,
-                    brief: m["brief"] as? Bool ?? false, quietNever: m["quiet_never"] as? Bool ?? false)
+                    family: m["family"] as? String)
     }
 }
 

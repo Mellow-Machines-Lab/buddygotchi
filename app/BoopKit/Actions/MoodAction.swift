@@ -5,9 +5,8 @@ import MellowHarness
 /// Jev's state is the mood's file from the next pass, and the device gets
 /// it in the next `state` (the runtime's rule on the change). Jev can only
 /// keep the mood or move it one step along the mood graph (`MoodGraph`):
-/// those are all it's offered, and MoodPolicy offers only the moves the
-/// pack's pacing allows now. Which offered move fits NOW is the steering's
-/// to say.
+/// those are all it's offered. Which offered move fits NOW, and how soon,
+/// is the steering's to say.
 public enum MoodAction {
     public static let actionName = "mood"
 
@@ -42,11 +41,10 @@ public enum MoodAction {
     /// The `mood` question's options for `mood`: stay, then each of its
     /// neighbours with its meaning, the dramatic ones also saying they're a
     /// jump. Nothing else: Jev never sees a move the graph doesn't have.
-    /// `allowed` narrows the graph's moves to those offered now (MoodPolicy).
-    public static func options(from mood: String, allowed: MoodGraph.Moves? = nil) -> [Option] {
+    public static func options(from mood: String) -> [Option] {
         let moods = moods
         let meaning = { (name: String) in moods.first { $0.name == name }! }
-        let moves = allowed ?? MoodGraph.mood(mood)?.moves ?? MoodGraph.mood(initial)!.moves
+        let moves = MoodGraph.mood(mood)?.moves ?? MoodGraph.mood(initial)!.moves
         return [Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine.")]
             + moves.ordinary.map(meaning)
             + moves.dramatic.map(meaning).map { o in
@@ -55,16 +53,13 @@ public enum MoodAction {
     }
 
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay and
-    /// the moves MoodPolicy offers from the mood it has (`options(from:)`),
-    /// and the line a change shows.
+    /// every move from the mood it has (`options(from:)`), and the line a
+    /// change shows.
     public static func choice() -> Choice {
         Choice(name: actionName, start: initial, question: "After NOW, what is \(CharacterPack.active.name)'s mood?",
                about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                said: { from, to in "\(CharacterPack.active.name)'s mood changed: \(from) → \(to)." },
-               options: { current, event, log in
-                   let current = known(current)
-                   return options(from: current, allowed: MoodPolicy.destinations(from: current, event: event, log: log))
-               })
+               options: { current, _, _ in options(from: known(current)) })
     }
 
     /// The mood as the log has it: the choice's value, read as the resting

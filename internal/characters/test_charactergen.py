@@ -54,12 +54,11 @@ class MoodRuleTests(unittest.TestCase):
         self.assertEqual(gen.mood_problems(self.character(["calm", "sad", "glad", "sad"]), self.UNIVERSAL),
                          ["moods names a mood twice"])
 
-    def test_moves_outcomes_and_defaults_name_moods(self):
-        c = self.character(["calm", "sad", "glad"], startup_mood="giddy", outcomes={"big_success": ["glad", "giddy"]})
+    def test_moves_and_defaults_name_moods(self):
+        c = self.character(["calm", "sad", "glad"], startup_mood="giddy")
         c["moods"][0]["moves"] = {"ordinary": ["sad"], "dramatic": ["sulky"]}
         self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
-                         ["calm leads to sulky, which isn't a mood", "startup_mood giddy isn't a mood",
-                          "outcomes.big_success names giddy, which isn't a mood"])
+                         ["calm leads to sulky, which isn't a mood", "startup_mood giddy isn't a mood"])
 
 
 class StateRuleTests(unittest.TestCase):

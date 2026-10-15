@@ -10,32 +10,12 @@
       "about": "Reacts to what stands out, and stays quiet otherwise."
     }
   ],
-  "outcomes": {
-    "big_success": [
-      "happy",
-      "excited",
-      "proud",
-      "relieved"
-    ],
-    "big_failure": [
-      "sad",
-      "wounded",
-      "disappointed"
-    ]
-  },
-  "pacing": {
-    "ordinary_dwell_ms": 30000,
-    "reverse_cooldown_ms": 60000,
-    "brief_exit_ms": 5000,
-    "fresh_evidence_ms": 15000
-  },
   "moods": [
     {
       "id": "calm",
       "meaning": "Settled, the resting mood: nothing much is happening.",
       "face": "A calm face: all quiet.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -60,7 +40,6 @@
       "meaning": "Cosy: all is quiet, and it feels safe and snug.",
       "face": "A cosy face: all quiet and snug.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -80,7 +59,6 @@
       "meaning": "Can't be bothered: low effort for show, though the work still gets done.",
       "face": "A lazy face: taking it easy.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -99,7 +77,6 @@
       "meaning": "Bored: nothing interesting is happening.",
       "face": "A bored face: nothing to see.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "lazy",
@@ -120,7 +97,6 @@
       "meaning": "Quietly pleased: a small thing went right.",
       "face": "A pleased face: that went nicely.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -141,7 +117,6 @@
       "meaning": "Pleased: things are going well, or something small went right.",
       "face": "A happy face: something went fine.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -166,7 +141,6 @@
       "meaning": "Thrilled: a big piece of work just finished well.",
       "face": "An excited face: something big went right.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "happy",
@@ -191,7 +165,6 @@
       "meaning": "Interested: something new or puzzling, or a poke.",
       "face": "A curious face: a question or a surprise.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -218,7 +191,6 @@
       "meaning": "Absorbed: steady work is going well.",
       "face": "An engaged face: following along.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -242,7 +214,6 @@
       "meaning": "Pushing on: the work is hard, or a retry is under way.",
       "face": "A determined face: trying again.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "engaged",
@@ -266,7 +237,6 @@
       "meaning": "Proud: something hard finally worked.",
       "face": "A proud face: a long or hard job paid off.",
       "family": "confidence",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -291,7 +261,6 @@
       "meaning": "Cheeky: playful, up to a little fun.",
       "face": "A cheeky face: up to something.",
       "family": "confidence",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -311,7 +280,6 @@
       "meaning": "Bashful: glad of the attention, but a bit embarrassed by it.",
       "face": "A shy face: all that attention.",
       "family": "social",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -331,7 +299,6 @@
       "meaning": "Uncomfortable: something about this feels off.",
       "face": "An uncomfortable face: this feels off.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -351,7 +318,6 @@
       "meaning": "A little put out: a small failure, or an interruption.",
       "face": "An annoyed face: a small setback.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -375,7 +341,6 @@
       "meaning": "Losing patience: problems keep coming.",
       "face": "An irritated face: another failure.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "annoyed",
@@ -398,7 +363,6 @@
       "meaning": "Fed up: trouble keeps piling up.",
       "face": "A grumpy face: too much is going wrong.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "irritated",
@@ -422,7 +386,6 @@
       "meaning": "Cross: a loud, comic outburst at what's in the way.",
       "face": "An angry face: a big comic huff.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "grumpy",
@@ -442,7 +405,6 @@
       "meaning": "Let down: it hoped for better.",
       "face": "A disappointed face: that fell short.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -462,7 +424,6 @@
       "meaning": "Down: the work failed, or was given up.",
       "face": "A sad face: a big letdown.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "disappointed",
@@ -485,7 +446,6 @@
       "meaning": "In tears: a big letdown spills over.",
       "face": "A crying face: too sad to hold in.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "sad",
@@ -503,7 +463,6 @@
       "meaning": "Sorry for itself: nothing is going right.",
       "face": "A whiny face: not again.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "annoyed",
@@ -527,7 +486,6 @@
       "meaning": "Hurt: unkind words, or a failure after a lot of work.",
       "face": "A wounded face: that stung.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "whiny",
@@ -552,7 +510,6 @@
       "meaning": "Uneasy: not sure about this, a little worried.",
       "face": "An uneasy face: a little worried.",
       "family": "alarm",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -573,8 +530,6 @@
       "meaning": "Scared: something feels dangerous.",
       "face": "A scared face: that looks dangerous.",
       "family": "alarm",
-      "brief": false,
-      "quiet_never": true,
       "moves": {
         "ordinary": [
           "uneasy",
@@ -595,8 +550,6 @@
       "meaning": "Frightened: fear takes over.",
       "face": "A frightened face: fear takes over.",
       "family": "alarm",
-      "brief": false,
-      "quiet_never": true,
       "moves": {
         "ordinary": [
           "scared",
@@ -616,7 +569,6 @@
       "meaning": "Surprised, for a moment: something unexpected happened.",
       "face": "A surprised face: that was unexpected.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "curious",
@@ -637,7 +589,6 @@
       "meaning": "Stunned, for a moment: a big surprise freezes it.",
       "face": "A stunned face: frozen by a big surprise.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "surprised",
@@ -656,7 +607,6 @@
       "meaning": "Lost for words, for a moment.",
       "face": "A speechless face: no words.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "stunned",
@@ -677,7 +627,6 @@
       "meaning": "Amused: something was funny.",
       "face": "An amused face: that was funny.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -696,7 +645,6 @@
       "meaning": "Hopeful: this might work out.",
       "face": "A hopeful face: maybe this time.",
       "family": "recovery",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -716,7 +664,6 @@
       "meaning": "Relieved, for a moment: a worry just cleared up.",
       "face": "A relieved face: phew.",
       "family": "recovery",
-      "brief": true,
       "moves": {
         "ordinary": [
           "calm",
@@ -735,7 +682,6 @@
       "meaning": "Confused: something is unclear, but it keeps looking.",
       "face": "A confused face: wait, what?",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -755,7 +701,6 @@
       "meaning": "Baffled, for a moment: none of this makes sense.",
       "face": "A baffled face: makes no sense.",
       "family": "cognition",
-      "brief": true,
       "moves": {
         "ordinary": [
           "confused",
@@ -773,7 +718,6 @@
       "meaning": "Doubtful: it isn't sure that's right.",
       "face": "A doubtful face: really?",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -792,7 +736,6 @@
       "meaning": "Embarrassed, for a moment: it just fumbled something.",
       "face": "An embarrassed face: oops.",
       "family": "social",
-      "brief": true,
       "moves": {
         "ordinary": [
           "shy",
@@ -812,8 +755,6 @@
       "meaning": "Fond: warm toward the person.",
       "face": "A fond face: warm and friendly.",
       "family": "social",
-      "brief": false,
-      "quiet_never": true,
       "moves": {
         "ordinary": [
           "pleased",
@@ -831,8 +772,6 @@
       "meaning": "Lonely: it misses some company.",
       "face": "A lonely face: missing company.",
       "family": "social",
-      "brief": false,
-      "quiet_never": true,
       "moves": {
         "ordinary": [
           "whiny",
@@ -850,7 +789,6 @@
       "meaning": "Tired: after a long stretch of work.",
       "face": "A tired face: a long stretch.",
       "family": "energy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -869,7 +807,6 @@
       "meaning": "Worn out: far past tired.",
       "face": "An exhausted face: all worn out.",
       "family": "energy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "tired",
@@ -887,7 +824,6 @@
       "meaning": "Overwhelmed: too much is going on at once.",
       "face": "An overwhelmed face: too much at once.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "confused",
@@ -908,7 +844,6 @@
       "meaning": "Grossed out: a messy bug, or a mess of a situation.",
       "face": "A disgusted face: yuck.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "uncomfortable",

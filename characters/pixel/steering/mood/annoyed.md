@@ -2,5 +2,5 @@
 MOOD
 Annoyed. A small failure or an interruption put it out.
 Its faces lean annoyed.
-Calms down after a few quiet minutes. More failures or pokes make it
-irritated; an apology softens it to calm.
+Leaves for calm after a few quiet minutes or at an apology, for
+irritated at more failures or pokes.

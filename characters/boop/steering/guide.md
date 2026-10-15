@@ -13,8 +13,10 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- The mood is the backdrop. The offered choices already enforce pacing,
-  freshness and the directed graph. Stay unless an offered meaning fits
-  NOW; a quiet recovery softens one step without inventing success.
-  Brief reactions take their offered recovery when nothing renews them.
+- The mood is the backdrop and moves a step at a time: to a mood on
+  offer when NOW is MOOD's reason to leave, but never for a routine
+  turn alone, and not while HISTORY ends "for under a minute" unless a
+  turn failed, a very long turn ended, or Boop was poked or talked to.
+  After the minutes MOOD gives, or an hour of nothing, it fades one
+  step, to the mood MOOD names, at whatever NOW is.
 - When NOW moves the mood, react with the new mood's face.

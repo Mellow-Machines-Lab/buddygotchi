@@ -1,7 +1,6 @@
 {
   "name": "Sad news makes Boop sad and keeps it so, until it's taken back",
   "case": "No agent is working. The person tells Boop their dog died this morning: Boop turns sad at once, with a sad or hurt face. Half a minute later they say they miss him so much, and Boop stays sad: more sad news is no reason to cheer up. Then they laugh that they were only kidding and the dog is fine, and Boop's mood switches straight away, out of sad to calm or happy, with a face that isn't sad.",
-  "gap": "Written for the 13-mood graph (before 2026-10-15). Calm has no move to sad, and sad news isn't a strong event MoodPolicy lets jump. Fix: re-pin the moods, or make sad news strong.",
   "why": "The owner's brief of 2026-09-29: talked to, Boop's mood follows what's said, quickly and by context. characters/boop/steering/mood/: sad news the person shares moves most moods to sad (a jump from calm); sad.md stays through more of it and leaves for calm when the person takes it back, or happy when they cheer Boop up. PERSONALITY: talked to, sad at sad news",
   "steps": [
     {"event": "said", "at": "5s", "words": "my dog died this morning", "expect": {"react": "sad|wounded", "mood": "sad"}},

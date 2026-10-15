@@ -14,31 +14,11 @@
       "about": "For debugging: reacts to everything, over the top, and chatters while agents work."
     }
   ],
-  "outcomes": {
-    "big_success": [
-      "happy",
-      "excited",
-      "proud",
-      "relieved"
-    ],
-    "big_failure": [
-      "sad",
-      "wounded",
-      "disappointed"
-    ]
-  },
-  "pacing": {
-    "ordinary_dwell_ms": 30000,
-    "reverse_cooldown_ms": 60000,
-    "brief_exit_ms": 5000,
-    "fresh_evidence_ms": 15000
-  },
   "moods": [
     {
       "id": "calm",
       "meaning": "Awake, settled neutrality, without announcing success.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -63,7 +43,6 @@
       "id": "comfy",
       "meaning": "Positive low-energy contentment; safe and comfortable rather than disengaged.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -82,7 +61,6 @@
       "id": "lazy",
       "meaning": "Comically reluctant and low-effort in presentation, while still performing the real task correctly.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -100,7 +78,6 @@
       "id": "bored",
       "meaning": "Under-stimulated, not distressed and not a task failure.",
       "family": "settled",
-      "brief": false,
       "moves": {
         "ordinary": [
           "lazy",
@@ -120,7 +97,6 @@
       "id": "pleased",
       "meaning": "The warm everyday positive baseline: quietly delighted with itself.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -140,7 +116,6 @@
       "id": "happy",
       "meaning": "Clear uncomplicated delight, stronger than pleased but not frantic.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -165,7 +140,6 @@
       "id": "excited",
       "meaning": "Delight becomes energetic anticipation and barely contained celebration.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "happy",
@@ -190,7 +164,6 @@
       "id": "curious",
       "meaning": "Interested in uncertainty; actively investigates without being worried.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -218,7 +191,6 @@
       "id": "engaged",
       "meaning": "Productively absorbed; performing rather than struggling.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -243,7 +215,6 @@
       "id": "determined",
       "meaning": "Focused effort under challenge, not anger.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "engaged",
@@ -268,7 +239,6 @@
       "id": "proud",
       "meaning": "Earned theatrical self-satisfaction; the core overconfident show-off.",
       "family": "confidence",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -293,7 +263,6 @@
       "id": "mischievous",
       "meaning": "Playful cheekiness, not permission to misbehave or sabotage work.",
       "family": "confidence",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -312,7 +281,6 @@
       "id": "shy",
       "meaning": "Bashful positive exposure: pleased but embarrassed by attention.",
       "family": "social",
-      "brief": false,
       "moves": {
         "ordinary": [
           "comfy",
@@ -331,7 +299,6 @@
       "id": "uncomfortable",
       "meaning": "Unease or aversive discomfort in the character's performance, without diagnosing illness or hardware faults.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -350,7 +317,6 @@
       "id": "annoyed",
       "meaning": "Restrained displeasure, still controlled.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -374,7 +340,6 @@
       "id": "irritated",
       "meaning": "Agitation starts to leak through the composure.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "annoyed",
@@ -398,7 +363,6 @@
       "id": "grumpy",
       "meaning": "Sustained theatrical bad temper: disgruntled but still doing the work, not a refusal or user-directed attack.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "irritated",
@@ -423,7 +387,6 @@
       "id": "angry",
       "meaning": "An overt comic outburst directed at a prop or obstacle; stronger and more eruptive than grumpy, without harm or user-directed abuse.",
       "family": "frustration",
-      "brief": false,
       "moves": {
         "ordinary": [
           "grumpy",
@@ -442,7 +405,6 @@
       "id": "disappointed",
       "meaning": "Expectations fall short; a small visible letdown before sadness.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -461,7 +423,6 @@
       "id": "sad",
       "meaning": "Sustained drooping sorrow, not a bid to obstruct the task.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "disappointed",
@@ -485,7 +446,6 @@
       "id": "crying",
       "meaning": "Sadness becomes a visible tearful outpouring; theatrical, not guilt-inducing.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "sad",
@@ -502,7 +462,6 @@
       "id": "whiny",
       "meaning": "An outward protest or plea for sympathy; not simply a weaker sad.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "annoyed",
@@ -526,7 +485,6 @@
       "id": "wounded",
       "meaning": "Hurt makes bravado withdraw; display label Hurt, stable legacy ID wounded.",
       "family": "sadness",
-      "brief": false,
       "moves": {
         "ordinary": [
           "whiny",
@@ -551,7 +509,6 @@
       "id": "uneasy",
       "meaning": "Uncertainty feels uncomfortable but has not become overt fear.",
       "family": "alarm",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -571,7 +528,6 @@
       "id": "scared",
       "meaning": "Overt fear with some ability to look around and act.",
       "family": "alarm",
-      "brief": false,
       "moves": {
         "ordinary": [
           "uneasy",
@@ -585,14 +541,12 @@
           "angry",
           "stunned"
         ]
-      },
-      "quiet_never": true
+      }
     },
     {
       "id": "frightened",
       "meaning": "Fear overwhelms composure; can turn into withdrawal, hurt or defensive anger.",
       "family": "alarm",
-      "brief": false,
       "moves": {
         "ordinary": [
           "scared",
@@ -605,14 +559,12 @@
           "speechless",
           "relieved"
         ]
-      },
-      "quiet_never": true
+      }
     },
     {
       "id": "surprised",
       "meaning": "A brief unexpected-event reaction, not inherently positive or negative.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "curious",
@@ -632,7 +584,6 @@
       "id": "stunned",
       "meaning": "A larger surprise produces a temporary freeze; sheet label Shook.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "surprised",
@@ -650,7 +601,6 @@
       "id": "speechless",
       "meaning": "A temporary lost-for-words reaction; its cause can be surprise, discomfort or annoyance.",
       "family": "surprise",
-      "brief": true,
       "moves": {
         "ordinary": [
           "stunned",
@@ -670,7 +620,6 @@
       "id": "amused",
       "meaning": "Playful enjoyment at something funny; humor rather than plain delight or gloating.",
       "family": "joy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -688,7 +637,6 @@
       "id": "hopeful",
       "meaning": "Positive anticipation despite uncertainty; confidence in a possibility, not a claim of success.",
       "family": "recovery",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -707,7 +655,6 @@
       "id": "relieved",
       "meaning": "A known obstruction or tense moment has actually resolved; release rather than a victory claim.",
       "family": "recovery",
-      "brief": true,
       "moves": {
         "ordinary": [
           "calm",
@@ -725,7 +672,6 @@
       "id": "confused",
       "meaning": "Something is unclear but Boop is still exploring; uncertainty without alarm.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -744,7 +690,6 @@
       "id": "baffled",
       "meaning": "Comically cannot make sense of the evidence; stronger cognitive bewilderment, not terror.",
       "family": "cognition",
-      "brief": true,
       "moves": {
         "ordinary": [
           "confused",
@@ -761,7 +706,6 @@
       "id": "skeptical",
       "meaning": "Questioning an uncertain explanation with comic side-eye; an evidence stance, not automatic hostility.",
       "family": "cognition",
-      "brief": false,
       "moves": {
         "ordinary": [
           "curious",
@@ -779,7 +723,6 @@
       "id": "embarrassed",
       "meaning": "A fresh own mistake or conspicuous social fumble dents Boop's bravado; distinct from shy pleasure.",
       "family": "social",
-      "brief": true,
       "moves": {
         "ordinary": [
           "shy",
@@ -798,7 +741,6 @@
       "id": "affectionate",
       "meaning": "Gentle appreciative warmth toward a consenting interaction, without guilt or dependence.",
       "family": "social",
-      "brief": false,
       "moves": {
         "ordinary": [
           "pleased",
@@ -809,14 +751,12 @@
         "dramatic": [
           "surprised"
         ]
-      },
-      "quiet_never": true
+      }
     },
     {
       "id": "lonely",
       "meaning": "A brief fictional longing-for-company performance, only in an opted-in or explicitly social context.",
       "family": "social",
-      "brief": false,
       "moves": {
         "ordinary": [
           "whiny",
@@ -827,14 +767,12 @@
         "dramatic": [
           "happy"
         ]
-      },
-      "quiet_never": true
+      }
     },
     {
       "id": "tired",
       "meaning": "Low-energy acting after sustained fictional effort; not real system battery or human fatigue.",
       "family": "energy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "calm",
@@ -852,7 +790,6 @@
       "id": "exhausted",
       "meaning": "A dramatically spent performance, visibly stronger than tired, without reducing task correctness.",
       "family": "energy",
-      "brief": false,
       "moves": {
         "ordinary": [
           "tired",
@@ -869,7 +806,6 @@
       "id": "overwhelmed",
       "meaning": "Incoming complexity or activity exceeds Boop's fictional composure; distinct from low-energy exhaustion.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "confused",
@@ -889,7 +825,6 @@
       "id": "disgusted",
       "meaning": "Comic aversion to a messy bug or situation; never contempt for a person or group.",
       "family": "strain",
-      "brief": false,
       "moves": {
         "ordinary": [
           "uncomfortable",

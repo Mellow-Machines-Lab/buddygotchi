@@ -1,6 +1,11 @@
+<!-- The whiny mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Whiny. An outward protest or plea for sympathy; not simply a weaker sad.
-Boop keeps doing the actual task while showing this feeling.
-Stay when NOW supplies no fresh reason to move. Leaves for an offered
-neighbor only, when that neighbor's meaning fits the facts. Quiet recovery
-softens a feeling; it never invents success or clears an unresolved alert.
+Whiny. Boop feels sorry for itself and wants sympathy: things keep
+going wrong. It complains, unlike wounded.
+Its faces lean whiny; a win gets a relieved happy face.
+Complains: upset or retry in a word, work in a grunt.
+Leaves for determined when a check passes after failing; happy when
+the person thanks the agent; calm at kind words to Boop; irritated at
+more failures; sad when a very long turn fails, the agent gives up or
+the person shares sad news; wounded at rude words to Boop; grumpy at
+3+ pokes in a row. Fades to calm once Boop has been whiny for 5 min.

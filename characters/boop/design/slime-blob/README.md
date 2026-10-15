@@ -211,11 +211,13 @@ Boop's Mood output; do not change MellowHarness's generic multiple-choice
 machinery or mistake `hold` for a mood asset.
 
 The graph's dwell, reversal and brief-reaction values are **provisional
-design values**. The opt-in host policy now installs a tested selection
-from those ranges, while v2 remains default. A brief surprised/stunned/speechless
-reaction needs a justified outgoing recovery edge; it cannot teleport to
-a remembered mood or be trapped by a long stable-mood cooldown. Implement
-and test these exemptions before turning on the expanded graph.
+design values**, and the shipping host doesn't enforce them: its mood
+question offers staying and every move the pack lists from the current
+mood, the dramatic ones marked as jumps, and the steering's prose carries
+the pacing (characters/CHARACTER.md §5). Steps 3 and 4 above are this
+design's proposal, not what ships. A brief surprised/stunned/speechless
+reaction still needs a justified outgoing recovery edge, which its
+steering names as the mood it fades to.
 
 The graph is a character-engineering design, not a validated psychology
 instrument or a detector of the user's emotions. Research provenance is

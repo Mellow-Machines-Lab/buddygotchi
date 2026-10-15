@@ -247,32 +247,30 @@ final class HarnessTests: XCTestCase {
 
     /// The pack's moods, in its order; a new Boop starts calm, the resting
     /// mood; the `mood` question offers, on every pass, staying in the
-    /// mood the log has and the moves MoodPolicy allows then, each with its
-    /// mood's meaning, the dramatic ones also saying they need a fresh, big
-    /// event. Staying is nothing to do, and so is an answer not offered;
-    /// any move is a change in the log, which is the mood from then on, and
-    /// MOOD with it. It's MellowHarness's `Choice`.
+    /// mood the log has and exactly that mood's moves on the graph, each
+    /// with its mood's meaning, the dramatic ones also saying they need a
+    /// fresh, big event. Staying is nothing to do, and so is an answer the
+    /// graph doesn't have from the mood; any move is a change in the log,
+    /// which is the mood from then on, and MOOD with it, however recently it
+    /// last changed (how long a mood lasts is the steering's call). It's
+    /// MellowHarness's `Choice`.
     func testMood() throws {
         XCTAssertEqual(MoodAction.moods.map(\.name), CharacterPack.active.moods.map(\.id))
         XCTAssertEqual(MoodAction.moods.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodAction.initial, "calm")
         let log = Transcript.log()
         let mood = MoodAction.choice()
-        var now: Int64 = 1
-        var poke: Event?
-        func view() -> LogView { log.view(now: now) }
+        func view() -> LogView { log.view(now: 1) }
         func run(_ answers: Answers) -> ActionResult? {
-            let result = mood.run(answers, now: poke, log: view())
-            if let result { log.append(Event.did(result.message, for: nil, action: mood.name, by: "brain", facts: result.facts), now: now) }
+            let result = mood.run(answers, now: nil, log: view())
+            if let result { log.append(Event.did(result.message, for: nil, action: mood.name, by: "brain", facts: result.facts), now: 1) }
             return result
         }
         XCTAssertEqual(MoodAction.value(mood, view()), "calm", "a new Boop starts calm")
-        func offered() -> [String] { mood.questions(now: poke, log: view())[0].options.map(\.name) }
+        func offered() -> [String] { mood.questions(now: nil, log: view())[0].options.map(\.name) }
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
-        XCTAssertEqual(offered(), ["calm"], "with nothing fresh, the resting mood has nowhere to go")
-        poke = log.append(Event(source: "device", kind: "poke"), now: now)
-        XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.ordinary, "a poke: calm's ordinary moves")
-        let stay = try XCTUnwrap(mood.questions(now: poke, log: view())[0].options.first)
+        XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
+        let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
         XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine."))
         for m in MoodGraph.moods {
             let options = MoodAction.options(from: m)
@@ -292,25 +290,21 @@ final class HarnessTests: XCTestCase {
         XCTAssertNil(run(["mood": a("sulky")]), "not a mood")
         XCTAssertNil(run([:]), "no answer")
         XCTAssertEqual(MoodAction.value(mood, view()), "calm")
-        XCTAssertEqual(run(["mood": a("pleased")]),
-                       .done("\(creature)'s mood changed: calm → pleased.", facts: ["from": "calm", "to": "pleased"]))
-        XCTAssertEqual(offered(), ["pleased"], "a new mood holds for its dwell")
-        XCTAssertNil(run(["mood": a("happy")]), "so nothing moves it straight after")
-        now += 30_001
-        poke = log.append(Event(source: "device", kind: "poke"), now: now)
-        XCTAssertEqual(offered(), ["pleased"] + MoodGraph.moves["pleased"]!.ordinary.filter { !CharacterPack.active.quietNever.contains($0) },
-                       "the next pass is offered pleased's ordinary moves, but those routine work never earns")
-        XCTAssertEqual(run(["mood": a("happy")])?.message, "\(creature)'s mood changed: pleased → happy.")
-        XCTAssertEqual(MoodAction.value(mood, view()), "happy", "the latest change in the log")
-        XCTAssertEqual(MoodAction.value(MoodAction.choice(), view()), "happy", "so it survives a restart")
-        log.append(Event.did("\(creature)'s mood changed: happy → delighted.", for: nil, action: mood.name, by: "brain",
-                             facts: ["from": "happy", "to": "delighted"]), now: now)
+        XCTAssertEqual(run(["mood": a("annoyed")]),
+                       .done("\(creature)'s mood changed: calm → annoyed.", facts: ["from": "calm", "to": "annoyed"]))
+        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.moves["annoyed"]!.all, "the next pass is offered annoyed's moves")
+        XCTAssertEqual(run(["mood": a("grumpy")])?.message, "\(creature)'s mood changed: annoyed → grumpy.", "straight after, a jump too")
+        XCTAssertNil(run(["mood": a("happy")]), "grumpy never moves straight to happy")
+        XCTAssertNil(run(["mood": a("excited")]), "nor to excited")
+        XCTAssertEqual(MoodAction.value(mood, view()), "grumpy", "the latest change in the log")
+        XCTAssertEqual(MoodAction.value(MoodAction.choice(), view()), "grumpy", "so it survives a restart")
+        log.append(Event.did("\(creature)'s mood changed: grumpy → delighted.", for: nil, action: mood.name, by: "brain",
+                             facts: ["from": "grumpy", "to": "delighted"]), now: 1)
         XCTAssertEqual(MoodAction.value(mood, view()), "calm", "one that isn't a mood reads as calm")
     }
 
     /// The mood the dashboard sets changes as Jev's does,
-    /// device included, to any of the moods, off the graph and its pacing
-    /// too; and it's
+    /// device included, to any of the moods, off the graph too; and it's
     /// told why when it can't: the mood it already is, or one that isn't a
     /// mood.
     func testAForcedMoodChangesItAsJevsDoes() throws {
@@ -326,16 +320,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(change("grumpy"), .failed("already grumpy"))
         XCTAssertEqual(change("sulky"), .failed("sulky isn't a mood"))
         XCTAssertEqual(MoodAction.value(mood, harness.log.view(now: 1)), "grumpy")
-        XCTAssertEqual(harness.force(["mood": "irritated"], by: Runtime.forcedBy).map(\.result.message), [],
-                       "Jev's is held to the policy: the new mood holds for its dwell")
-        XCTAssertEqual(change("proud")?.message, "\(creature)'s mood changed: grumpy → proud.", "the dashboard's isn't")
+        XCTAssertEqual(harness.force(["mood": "proud"], by: Runtime.forcedBy).map(\.result.message),
+                       ["\(creature)'s mood changed: grumpy → proud."], "Jev's, right after")
         XCTAssertEqual(told, ["grumpy", "proud"], "the device hears each change")
     }
 
     /// Each mood's file says where it leaves for, and
-    /// names only moods it can move to.
+    /// names only moods it can move to, in every pack.
     func testEachMoodLeavesOnlyForItsNeighbours() throws {
-        try requirePack("boop")  // how Boop's mood files are written
         for mood in MoodGraph.moods {
             let text = RuntimeTests.steering.mood(mood)
             XCTAssertTrue(text.hasPrefix("MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())."), mood)

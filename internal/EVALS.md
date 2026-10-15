@@ -5,14 +5,13 @@ scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's actions,
 each pass checked against what it should come to.
 
-Every scenario runs on the pack's one mood graph, with its pacing
-(`MoodPolicy`, characters/CHARACTER.md §5): a mood moves one step a
-pass, holds at least 30 s, and with nothing fresh only steps back toward
-calm. Scenarios 66–69 cover new-family starts, a brief recovery and a
-routine failure with no dramatic jump; a unit test runs them with a
-scripted brain. Run steering comparisons interleaved A/B when the owner
-supplies `BOOP_JEV_KEY`; their presence and scripted execution do not
-claim Jev passed.
+Every scenario runs on the pack's one mood graph (characters/CHARACTER.md
+§5): the mood question offers staying and every move from the mood, and
+how long a mood holds is the steering's. Scenarios 68 and 69 start in
+moods outside the first 13, fear and comfy; a unit test runs them with a
+scripted brain that stays. Run steering comparisons interleaved A/B when
+the owner supplies `BOOP_JEV_KEY`; their presence and scripted execution
+do not claim Jev passed.
 
 ## 1. What an eval is
 
@@ -74,7 +73,7 @@ a scenario holds wherever more than one answer is right:
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the line's takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `loops` | How long the face held, Jev's `react.loops` pick (`once` to `four times`), or `none` when `react` didn't react |
 | `mood` | Boop's mood after the pass |
-| `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and the moves the mood policy offers it then, so a scenario can pin the graph and its pacing |
+| `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
 
 A step fails if its pass was dropped (late, or an error), or if any
 expectation doesn't hold. A step with `expect` that wakes no pass stops
@@ -235,7 +234,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`, `69`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -259,14 +258,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it's taken back, when it switches (`58`), and a plain question
   softens nothing (`59`). And work that finished while you were away
   from the Mac is celebrated as it ends, never replayed when you're
-  back, when Boop cheers to see you (`65`).
+  back, when Boop cheers to see you (`65`). And moods outside the first
+  13: quiet takes a frightened Boop at most an ordinary step (`68`), and
+  new work moves a comfy one only to a mood on offer (`69`).
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
-  says why the steering can't get there alone. And the scenarios written
-  for the 13-mood graph whose moods the one graph and its pacing can't
-  reach (`26`, `27`, `50`, `51`, `55`–`58`): each `gap` says which move
-  is missing and what would fix it. The always scenarios that met the
-  same wall (`04`, `05`, `16`, `23`, `36`, `49`) were re-pinned to the
-  moods the graph reaches, their faces unchanged.
+  says why the steering can't get there alone.
 
 A new decision or a change to the steering files gets a scenario that
 shows it. Run the scenarios it touches with `--only` while you work, and

@@ -32,7 +32,8 @@ final class CharacterPackTests: XCTestCase {
     }
 
     /// CHARACTER.md §5: Boop's moods are the slime design's host graph, in
-    /// its order, with its timings (slimegen writes them).
+    /// its order, with its meanings (slimegen writes them), and every edge
+    /// the design draws is one of the pack's moves.
     func testBoopsMoodsAreTheSlimeDesigns() throws {
         try requirePack("boop")
         let file = Self.repo.appendingPathComponent("characters/boop/design/slime-blob/emotion-graph.json")
@@ -42,21 +43,9 @@ final class CharacterPackTests: XCTestCase {
         for (id, n) in nodes {
             let mood = try XCTUnwrap(MoodGraph.mood(id))
             XCTAssertEqual(mood.meaning, n["meaning"] as? String, id)
-            XCTAssertEqual(mood.moves.ordinary, n["ordinary"] as? [String], id)
-            XCTAssertEqual(mood.moves.dramatic, n["dramatic"] as? [String], id)
+            let drawn = Set((n["ordinary"] as? [String] ?? []) + (n["dramatic"] as? [String] ?? []))
+            XCTAssertTrue(drawn.isSubset(of: mood.moves.all), "\(id): \(drawn.subtracting(mood.moves.all).sorted())")
         }
-        let policy = try XCTUnwrap(graph["hostPolicy"] as? [String: Any])
-        XCTAssertEqual(MoodGraph.pacing.ordinaryDwellMs, (policy["ordinaryDwellMs"] as? NSNumber)?.int64Value)
-        XCTAssertEqual(MoodGraph.pacing.freshEvidenceMs, (policy["freshEvidenceMs"] as? NSNumber)?.int64Value)
-    }
-
-    /// A very long turn's finish may jump to these, and
-    /// routine work never leads to fear, loneliness or affection.
-    func testBoopsOutcomesAndQuietMoods() throws {
-        try requirePack("boop")
-        XCTAssertEqual(Set(CharacterPack.active.outcomes["big_success"] ?? []), ["happy", "excited", "proud", "relieved"])
-        XCTAssertEqual(Set(CharacterPack.active.outcomes["big_failure"] ?? []), ["sad", "wounded", "disappointed"])
-        XCTAssertEqual(CharacterPack.active.quietNever, ["scared", "frightened", "lonely", "affectionate"])
     }
 
     /// CHARACTER.md §3: a pack stands alone. Boop's and Pixel's each have
@@ -73,10 +62,8 @@ final class CharacterPackTests: XCTestCase {
                 XCTAssertTrue(FileManager.default.fileExists(atPath: pack.directory.appendingPathComponent(path).path), "\(pack.id) \(path)")
             }
         }
-        // Pixel's moves and pacing are Boop's, for now.
+        // Pixel's moves are Boop's, for now.
         for m in pixel.moods { XCTAssertEqual(m.moves, boop.byId[m.id]?.moves, m.id) }
-        XCTAssertEqual(pixel.pacing, boop.pacing)
-        XCTAssertEqual(pixel.outcomes, boop.outcomes)
     }
 
     /// CHARACTER.md §7, §8: Pixel stands on its own. Its steering has the

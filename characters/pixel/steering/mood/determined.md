@@ -2,5 +2,5 @@
 MOOD
 Determined. The work is hard and the agent keeps going.
 Its faces lean determined and engaged.
-Becomes proud when the hard part works, engaged when work runs
+Leaves for proud when the hard part works, engaged when work runs
 smoothly again, irritated if failures keep coming.

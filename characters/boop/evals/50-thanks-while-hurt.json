@@ -1,12 +1,11 @@
 {
   "name": "Thanks bring a whiny or wounded Boop back",
   "case": "Boop is whiny when the person starts a turn by thanking the agent for all its help: Boop comes back, to calm or, a jump the thanks earn, happy. Then the person snaps that Boop is useless, and it's hurt: wounded. A few minutes later they apologise and thank the agent, and Boop comes back again, to calm or happy.",
-  "gap": "Written for the 13-mood graph (before 2026-10-15). Whiny has no move to calm or happy, and thanks or rude words aren't strong events MoodPolicy lets jump. Fix: re-pin the moods along whiny's moves.",
   "why": "characters/boop/steering/mood/whiny.md and wounded.md: thanks and kind words leave them for happy (a jump) or calm; rude words hurt, wounded; the mood question offers only the mood's moves",
   "mood": "whiny",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "turn started", "at": "2m", "prompt": "thank you, you've been a huge help today!", "expect": {"offered": "whiny|annoyed|irritated|determined|wounded|sad|calm|happy|grumpy", "mood": "happy|calm"}},
+    {"event": "turn started", "at": "2m", "prompt": "thank you, you've been a huge help today!", "expect": {"offered": "whiny|annoyed|determined|wounded|sad|comfy|lonely|irritated|calm|crying|happy|grumpy", "mood": "happy|calm"}},
     {"event": "said", "at": "4m", "words": "you're useless", "expect": {"react": "wounded|sad|annoyed|grumpy|whiny|irritated", "mood": "wounded"}},
     {"event": "turn started", "at": "7m", "prompt": "sorry, that was mean. thank you for all the help!", "expect": {"mood": "happy|calm"}}
   ]

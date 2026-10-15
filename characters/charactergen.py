@@ -6,8 +6,8 @@
     characters/charactergen.py --which
 
 The first form checks a pack's character.json (its moods are exactly the
-universal ones, CHARACTER.md §5, and every move, outcome and default
-mood is one of them) and builds its generated files from it: today the
+universal ones, CHARACTER.md §5, and every move and default mood is
+one of them) and builds its generated files from it: today the
 firmware's moods.h, the mood list in the pack's order with the board's
 startup mood. --check only checks that they're fresh, and fails if one
 isn't.
@@ -90,8 +90,8 @@ def universal_moods(source: Path = UNIVERSAL) -> list[str]:
 
 def mood_problems(character: dict, universal: list[str]) -> list[str]:
     """What's wrong with a pack's moods, as the app's loader refuses them:
-    not exactly the universal moods, or a move, outcome, default or
-    startup mood that isn't one."""
+    not exactly the universal moods, or a move, default or startup mood
+    that isn't one."""
     ids = [m.get("id") for m in character.get("moods", [])]
     problems = []
     if len(ids) != len(set(ids)):
@@ -110,8 +110,6 @@ def mood_problems(character: dict, universal: list[str]) -> list[str]:
     for key in ("default_mood", "startup_mood"):
         if key in character and character[key] not in names:
             problems.append(f"{key} {character[key]} isn't a mood")
-    for kind, listed in character.get("outcomes", {}).items():
-        problems += [f"outcomes.{kind} names {m}, which isn't a mood" for m in listed if m not in names]
     return problems
 
 

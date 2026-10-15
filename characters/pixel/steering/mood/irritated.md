@@ -2,5 +2,5 @@
 MOOD
 Irritated. Problems keep coming.
 Its faces lean irritated and annoyed.
-Softens to annoyed after a few quiet minutes; more trouble makes it
-grumpy.
+Leaves for annoyed after a few quiet minutes, for grumpy at more
+trouble.
