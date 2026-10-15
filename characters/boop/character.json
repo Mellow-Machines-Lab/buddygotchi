@@ -46,11 +46,15 @@
           "engaged",
           "pleased",
           "tired",
-          "uneasy"
+          "uneasy",
+          "happy",
+          "annoyed"
         ],
         "dramatic": [
           "surprised",
-          "wounded"
+          "wounded",
+          "excited",
+          "sad"
         ]
       },
       "face": "A calm face: all is well, and nothing stands out."
@@ -144,11 +148,15 @@
           "proud",
           "curious",
           "shy",
-          "amused"
+          "amused",
+          "calm",
+          "engaged",
+          "annoyed"
         ],
         "dramatic": [
           "sad",
-          "surprised"
+          "surprised",
+          "wounded"
         ]
       },
       "face": "A happy face: pleased, a turn went fine or a small win."
@@ -164,12 +172,16 @@
           "proud",
           "mischievous",
           "amused",
-          "hopeful"
+          "hopeful",
+          "curious",
+          "determined"
         ],
         "dramatic": [
           "frightened",
           "angry",
-          "wounded"
+          "wounded",
+          "grumpy",
+          "sad"
         ]
       },
       "face": "An excited face: something big just went right."
@@ -187,10 +199,16 @@
           "uneasy",
           "surprised",
           "confused",
-          "skeptical"
+          "skeptical",
+          "happy",
+          "excited",
+          "determined",
+          "annoyed"
         ],
         "dramatic": [
-          "stunned"
+          "stunned",
+          "wounded",
+          "sad"
         ]
       },
       "face": "A curious face: a poke, a question, or something new or puzzling.",
@@ -209,10 +227,13 @@
           "pleased",
           "annoyed",
           "hopeful",
-          "tired"
+          "tired",
+          "happy",
+          "proud"
         ],
         "dramatic": [
-          "proud"
+          "excited",
+          "sad"
         ]
       },
       "face": "An engaged face: following work that's going well.",
@@ -234,7 +255,10 @@
         ],
         "dramatic": [
           "angry",
-          "overwhelmed"
+          "overwhelmed",
+          "excited",
+          "grumpy",
+          "sad"
         ]
       },
       "face": "A determined face: a check failed and the agent is trying again, or long work goes on.",
@@ -252,11 +276,15 @@
           "engaged",
           "determined",
           "mischievous",
-          "amused"
+          "amused",
+          "excited",
+          "annoyed"
         ],
         "dramatic": [
           "wounded",
-          "embarrassed"
+          "embarrassed",
+          "grumpy",
+          "sad"
         ]
       },
       "face": "A proud face: something long or hard just finished, or finally worked."
@@ -330,11 +358,14 @@
           "irritated",
           "whiny",
           "speechless",
-          "skeptical"
+          "skeptical",
+          "determined"
         ],
         "dramatic": [
           "angry",
-          "wounded"
+          "wounded",
+          "grumpy",
+          "sad"
         ]
       },
       "face": "An annoyed face: a small failure, or poked twice in a row, a little miffed."
@@ -354,7 +385,10 @@
         ],
         "dramatic": [
           "angry",
-          "wounded"
+          "wounded",
+          "calm",
+          "sad",
+          "proud"
         ]
       },
       "face": "An irritated face: a turn that failed, or failures or pokes that keep coming.",
@@ -371,12 +405,15 @@
           "whiny",
           "determined",
           "angry",
-          "disgusted"
+          "disgusted",
+          "annoyed"
         ],
         "dramatic": [
           "wounded",
           "sad",
-          "frightened"
+          "frightened",
+          "calm",
+          "proud"
         ]
       },
       "face": "A grumpy face: Boop is poked three or more times in a row, or failures pile up on failures.",
@@ -431,12 +468,14 @@
           "wounded",
           "whiny",
           "crying",
-          "lonely"
+          "lonely",
+          "calm"
         ],
         "dramatic": [
           "angry",
           "determined",
-          "happy"
+          "happy",
+          "grumpy"
         ]
       },
       "face": "A sad face: a very long turn ended failed, or the agent gave up, stuck.",
@@ -471,11 +510,14 @@
           "wounded",
           "sad",
           "comfy",
-          "lonely"
+          "lonely",
+          "irritated",
+          "calm"
         ],
         "dramatic": [
           "crying",
-          "happy"
+          "happy",
+          "grumpy"
         ]
       },
       "face": "A whiny face: things keep going wrong, and Boop feels sorry for itself."
@@ -492,11 +534,15 @@
           "shy",
           "calm",
           "scared",
-          "embarrassed"
+          "embarrassed",
+          "annoyed"
         ],
         "dramatic": [
           "angry",
-          "crying"
+          "crying",
+          "happy",
+          "determined",
+          "grumpy"
         ]
       },
       "face": "A wounded face: rude words to Boop, or a big failure after a lot of work."

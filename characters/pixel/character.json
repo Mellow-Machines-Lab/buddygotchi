@@ -43,11 +43,15 @@
           "engaged",
           "pleased",
           "tired",
-          "uneasy"
+          "uneasy",
+          "happy",
+          "annoyed"
         ],
         "dramatic": [
           "surprised",
-          "wounded"
+          "wounded",
+          "excited",
+          "sad"
         ]
       }
     },
@@ -145,11 +149,15 @@
           "proud",
           "curious",
           "shy",
-          "amused"
+          "amused",
+          "calm",
+          "engaged",
+          "annoyed"
         ],
         "dramatic": [
           "sad",
-          "surprised"
+          "surprised",
+          "wounded"
         ]
       }
     },
@@ -165,12 +173,16 @@
           "proud",
           "mischievous",
           "amused",
-          "hopeful"
+          "hopeful",
+          "curious",
+          "determined"
         ],
         "dramatic": [
           "frightened",
           "angry",
-          "wounded"
+          "wounded",
+          "grumpy",
+          "sad"
         ]
       }
     },
@@ -188,10 +200,16 @@
           "uneasy",
           "surprised",
           "confused",
-          "skeptical"
+          "skeptical",
+          "happy",
+          "excited",
+          "determined",
+          "annoyed"
         ],
         "dramatic": [
-          "stunned"
+          "stunned",
+          "wounded",
+          "sad"
         ]
       }
     },
@@ -209,10 +227,13 @@
           "pleased",
           "annoyed",
           "hopeful",
-          "tired"
+          "tired",
+          "happy",
+          "proud"
         ],
         "dramatic": [
-          "proud"
+          "excited",
+          "sad"
         ]
       }
     },
@@ -233,7 +254,10 @@
         ],
         "dramatic": [
           "angry",
-          "overwhelmed"
+          "overwhelmed",
+          "excited",
+          "grumpy",
+          "sad"
         ]
       }
     },
@@ -250,11 +274,15 @@
           "engaged",
           "determined",
           "mischievous",
-          "amused"
+          "amused",
+          "excited",
+          "annoyed"
         ],
         "dramatic": [
           "wounded",
-          "embarrassed"
+          "embarrassed",
+          "grumpy",
+          "sad"
         ]
       }
     },
@@ -331,11 +359,14 @@
           "irritated",
           "whiny",
           "speechless",
-          "skeptical"
+          "skeptical",
+          "determined"
         ],
         "dramatic": [
           "angry",
-          "wounded"
+          "wounded",
+          "grumpy",
+          "sad"
         ]
       }
     },
@@ -355,7 +386,10 @@
         ],
         "dramatic": [
           "angry",
-          "wounded"
+          "wounded",
+          "calm",
+          "sad",
+          "proud"
         ]
       }
     },
@@ -371,12 +405,15 @@
           "whiny",
           "determined",
           "angry",
-          "disgusted"
+          "disgusted",
+          "annoyed"
         ],
         "dramatic": [
           "wounded",
           "sad",
-          "frightened"
+          "frightened",
+          "calm",
+          "proud"
         ]
       }
     },
@@ -432,12 +469,14 @@
           "wounded",
           "whiny",
           "crying",
-          "lonely"
+          "lonely",
+          "calm"
         ],
         "dramatic": [
           "angry",
           "determined",
-          "happy"
+          "happy",
+          "grumpy"
         ]
       }
     },
@@ -472,11 +511,14 @@
           "wounded",
           "sad",
           "comfy",
-          "lonely"
+          "lonely",
+          "irritated",
+          "calm"
         ],
         "dramatic": [
           "crying",
-          "happy"
+          "happy",
+          "grumpy"
         ]
       }
     },
@@ -493,11 +535,15 @@
           "shy",
           "calm",
           "scared",
-          "embarrassed"
+          "embarrassed",
+          "annoyed"
         ],
         "dramatic": [
           "angry",
-          "crying"
+          "crying",
+          "happy",
+          "determined",
+          "grumpy"
         ]
       }
     },

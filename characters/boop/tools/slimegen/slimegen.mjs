@@ -13,11 +13,13 @@ const g=JSON.parse(fs.readFileSync(path.join(root,'characters/boop/design/slime-
 if(process.argv.includes('--help')) {console.log('node characters/boop/tools/slimegen/slimegen.mjs [--check]\nGenerate the host graph, offline Mac mirror and native gel catalogs from the slime catalog.');process.exit(0);}
 // The host graph goes into Boop's character pack (characters/CHARACTER.md
 // §4-5): its `moods` and `pacing`. Other keys, and keys a mood has that the
-// design doesn't set (`quiet_never`, `face`), are kept as they are. The
+// design doesn't set (`quiet_never`, `face`), are kept as they are. A mood's
+// `moves` are the pack's own: the design's edges are what the gel draws a
+// transition for, and they seed a mood the pack doesn't have yet. The
 // design's pixel `fallback` stays in the design: a pack has every mood.
 const characterPath='characters/boop/character.json';
 const character=JSON.parse(fs.readFileSync(path.join(root,characterPath)));
-const owned=['id','meaning','family','brief','moves'];
+const owned=['id','meaning','family','brief'];
 const before=new Map((character.moods||[]).map(m=>[m.id,m]));
 character.pacing={ordinary_dwell_ms:g.hostPolicy.ordinaryDwellMs,reverse_cooldown_ms:g.hostPolicy.reverseCooldownMs,brief_exit_ms:g.hostPolicy.briefExitMs,fresh_evidence_ms:g.hostPolicy.freshEvidenceMs};
 character.moods=Object.entries(g.nodes).map(([id,n])=>({id,meaning:n.meaning,family:n.family,brief:n.brief,moves:{ordinary:n.ordinary,dramatic:n.dramatic},
