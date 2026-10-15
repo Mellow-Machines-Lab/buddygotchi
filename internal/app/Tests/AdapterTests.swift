@@ -59,10 +59,10 @@ final class AdapterTests: XCTestCase {
                          hook)
         }
         XCTAssertEqual(Adapter.event(from: line("claude", "Notification", kind: "permission_prompt"))?.jsonLine,
-                       #"{"seq":0,"at":7,"source":"claude","kind":"tool_wait","data":{"cwd":"/w/landing","for":"permission","notice":"permission_prompt","session":"s1","specific_type":"Notification"}}"#)
-        XCTAssertEqual(Adapter.event(from: line("claude", "Elicitation"))?["for"], "input")
-        XCTAssertEqual(Adapter.event(from: line("claude", "Notification", kind: "elicitation_dialog"))?["for"], "input")
-        XCTAssertEqual(Adapter.event(from: line("codex", "PermissionRequest", tool: "shell"))?["for"], "permission")
+                       #"{"seq":0,"at":7,"source":"claude","kind":"tool_wait","data":{"asking":"permission","cwd":"/w/landing","notice":"permission_prompt","session":"s1","specific_type":"Notification"}}"#)
+        XCTAssertEqual(Adapter.event(from: line("claude", "Elicitation"))?["asking"], "input")
+        XCTAssertEqual(Adapter.event(from: line("claude", "Notification", kind: "elicitation_dialog"))?["asking"], "input")
+        XCTAssertEqual(Adapter.event(from: line("codex", "PermissionRequest", tool: "shell"))?["asking"], "permission")
     }
 
     /// Every event carries its thread's name, for the
@@ -172,7 +172,7 @@ final class AdapterTests: XCTestCase {
         let start = try XCTUnwrap(Adapter.event(from: line("claude", "PreToolUse", tool: "Bash", topic: "tests")))
         XCTAssertEqual(start.fields, ["tool": "Bash", "topic": "tests"])
         let asking = try XCTUnwrap(Adapter.event(from: line("claude", "PermissionRequest", tool: "Bash")))
-        XCTAssertEqual(asking.fields, ["tool": "Bash", "for": "permission"])
+        XCTAssertEqual(asking.fields, ["tool": "Bash", "asking": "permission"])
         let failed = try XCTUnwrap(Adapter.event(from: line("claude", "StopFailure", error: "rate_limit")))
         XCTAssertEqual(failed["error"], "rate_limit")
         XCTAssertEqual(Adapter.event(from: line("claude", "StopFailure", error: "weird thing"))?["error"], "other")
@@ -302,6 +302,19 @@ final class AdapterTests: XCTestCase {
         event.seq = 3
         let read = try XCTUnwrap(Event(jsonLine: event.jsonLine))
         XCTAssertEqual(AgentEvent(read), full)
+        XCTAssertNil(read["for"], "`for` is the seq an event answers, MellowHarness's `about`")
+    }
+
+    /// Older transcripts kept what a request asks for under `for`: a
+    /// string there still reads as it, and a seq there isn't one.
+    func testAnOlderTranscriptsStringForReadsAsAsking() throws {
+        let old = #"{"seq":17,"ts":1,"source":"claude","type":"tool","phase":"wait","specific_type":"PermissionRequest","session":"b1","cwd":"/w","data":{"for":"permission","tool":"Bash"}}"#
+        let read = try XCTUnwrap(AgentEvent(try XCTUnwrap(Event.legacy(old))))
+        XCTAssertEqual(read.asking, .permission)
+        let answering = Event(ts: 1, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
+                              session: "s", data: ["for": 3])
+        let answers = try XCTUnwrap(AgentEvent(answering))
+        XCTAssertNil(answers.asking)
     }
 
     /// Boop's installer counts the entries Boop wrote before

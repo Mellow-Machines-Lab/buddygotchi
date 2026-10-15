@@ -125,7 +125,7 @@ final class CoreRig {
             let asNotice = notice ?? (tool == nil)
             if asNotice { data["notice"] = .string(noticeKind ?? "permission_prompt") }
             let input = asNotice ? data["notice"]?.string == "elicitation_dialog" : tool == nil
-            data["for"] = .string(input ? "input" : "permission")
+            data["asking"] = .string(input ? "input" : "permission")
             specific = asNotice ? "Notification" : tool == nil ? "Elicitation" : "PermissionRequest"
         case .subagentStart: (type, phase, specific) = (.subagent, .start, "SubagentStart")
         case .subagentEnd: (type, phase, specific) = (.subagent, .end, "SubagentStop")

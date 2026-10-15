@@ -352,16 +352,10 @@ internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl
 
 Jev is stochastic, so run each side of a change at least twice. Warm it
 up on new steering first with a whole `boopdev eval --runs 1
---no-budget`, as the runs below did (one scenario warms only the moods
-it passes through): its first passes
-on text it hasn't seen could go over the deadline, then 1.25 s, and drop, 13 and
-19 of the first 30 in the runs of
-2026-09-28, which has the
-numbers the mood is tuned to today; the reactions' are in
-the second pass and
-its check. A few can drop in a run that is
-warm too (2 and 8 in the check's reruns),
-so compare runs by their dropped passes as well.
+--no-budget` (one scenario warms only the moods it passes through): its
+first passes on text it hasn't seen can go over the deadline (1500 ms,
+MellowHarness's `Harness.Options.deadlineMs`) and drop. A few can drop in
+a run that is warm too, so compare runs by their dropped passes as well.
 
 `internal/tools/boopctl_lib/tests/test_workday.py` checks the day and
 the report without the app (`make -C internal tools-test`).

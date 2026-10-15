@@ -5,7 +5,8 @@ import MellowHarness
 /// Boop's side of agent-hooks: a hook line becomes an
 /// `AgentEvent` there, and a raw event here, with the hook's name as
 /// `specific_type` and the event's facts as `data`. The facts keep their
-/// names, so the transcript reads as it always has.
+/// names, but what a request asks for is `asking`: `for` is the seq an
+/// event answers.
 public enum Adapter {
     /// The raw event for a hook line, or nil for hooks agent-hooks ignores.
     /// Its `at` is when the app received it, or the line's own time.
@@ -28,7 +29,7 @@ extension Event {
         put("topic", e.topic)
         if let failed = e.failed { data["failed"] = .bool(failed) }
         put("error", e.error)
-        put("for", e.asking?.rawValue)
+        put("asking", e.asking?.rawValue)
         put("notice", e.notice)
         put("outcome", e.outcome?.rawValue)
         put("message", e.message)
@@ -53,9 +54,18 @@ extension AgentEvent {
                   app: e["app"]?.string, appSession: e["app_session"]?.string, mode: e["mode"]?.string,
                   source: e["source"]?.string, prompt: e["prompt"]?.string, tool: e["tool"]?.string,
                   toolUseID: e["tool_use_id"]?.string, topic: e["topic"]?.string, failed: e["failed"]?.bool,
-                  error: e["error"]?.string, asking: e["for"]?.string.flatMap(Asking.init(rawValue:)),
+                  error: e["error"]?.string, asking: e.asking,
                   notice: e["notice"]?.string, outcome: e["outcome"]?.string.flatMap(Outcome.init(rawValue:)),
                   message: e["message"]?.string)
+    }
+}
+
+extension Event {
+    /// What an agent's request asks for. Older transcripts kept it under
+    /// `for`, which is now only the seq an event answers, so a string
+    /// `for` still reads as it.
+    var asking: AgentEvent.Asking? {
+        (self["asking"]?.string ?? self["for"]?.string).flatMap(AgentEvent.Asking.init(rawValue:))
     }
 }
 

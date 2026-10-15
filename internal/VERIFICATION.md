@@ -29,14 +29,21 @@ the owner.
 | L6 Owner | Bluetooth, touch, sound, real agents, how it feels | The owner |
 
 CI (`.github/workflows/ci.yml`) runs what needs nothing on every push to
-`main` and every pull request: `make -C internal test` on macOS 26, and
-`make -C internal fw-test` (L0 for the firmware and LinkKit's device
-library), all as Boop, the default pack, and both boards' firmware: the
-CYD's with Pixel (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`)
-and the AMOLED's with Boop's gel face
-(`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`). The runner's Swift (Xcode 26.6) is older
-than the 6.4 Boop is written with, so code must compile on both, and a
-test that times the wall clock checks it only when `CI` isn't set.
+`main` and every pull request: `make -C internal test` on macOS 26;
+the Python tests that need only the standard library, on the Mac's own
+Python 3.9 (`python3 characters/charactergen.py --check`, and the
+`unittest` suites in `internal/characters/`,
+`internal/tools/session/tests/` and each pack's `tests/tools/`: the
+part of `make -C internal tools-test` without boopctl's venv or the
+webcam recorder); `make -C internal fw-test` (L0 for the firmware and
+LinkKit's device library), all as Boop, the default pack; and both
+boards' firmware: the CYD's with Pixel
+(`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`) and the AMOLED's
+with Boop's gel face (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).
+`Package.swift` needs Swift 6.2 or later (its `swift-tools-version`).
+Boop is developed with Swift 6.4, and the runner's Swift (Xcode 26.6)
+is older, so code must compile on both, and a test that times the wall
+clock checks it only when `CI` isn't set.
 
 ## 2. The tools
 
@@ -679,7 +686,7 @@ waits to be sure the finger lifted.
 | Agent event → pixel (the reactive loop: hook → rule → `state` or a rule's one-shot, never waiting for the brain) | < 200 ms p95 | This table; `make -C internal e2e` fails over it (L4) |
 | An input or a Mac message → the frame showing it (the device's reflex loop: tap feedback, blinks, what plays when, the needs-you alert, never waiting for the Mac) | A press 80 ms p95 (100 at worst), a tap's release to its poke 80 ms, a `state` or a `do` 100 ms, on the device | `LATENCY_BUDGETS` in `internal/tools/boopctl_lib/`; `boopctl latency` on the board (L2), and `test_device`'s `test_the_redraw_cap_doesnt_delay_a_press` |
 | Hook client | Single-digit ms. Connecting and writing share 50 ms for each app listening, then it gives up on it; it exits within 1 s whatever happens. It reads at most 256 KB and keeps fields of at most 200 characters | `HookSocket.send` and `agent-hook`'s `main.swift` in `agent-hooks/Sources/` |
-| Hook entry timeout | 5 s in the agent's settings; never reached | `HookInstaller.timeout` in `agent-hooks/Sources/AgentHooks/` |
+| Hook entry timeout | 3 s in the agent's settings; never reached | `HookInstaller.timeout` in `agent-hooks/Sources/AgentHooks/` |
 | Hook server | A connection is read until it closes, is quiet for 200 ms, or reaches 64 KB | `HookServer` in `agent-hooks/Sources/AgentHooks/` |
 | Brain, per pass (the deliberative loop, which never blocks the reactive one) | Jev's answer within 1.5 s, one retry included; a late answer is dropped | `deadlineMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
 | A brain reaction's wait for its turn | 5 s on the device (its `ttl`), then the device skips it | `BoopDevice.reactionTTL` in `app/BoopKit/DeviceLink/BoopDevice.swift` |

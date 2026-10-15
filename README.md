@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black?logo=apple">
-  <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white">
+  <img alt="Swift 6.2 or later" src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white">
   <img alt="ESP32" src="https://img.shields.io/badge/board-ESP32-E7352C?logo=espressif&logoColor=white">
   <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
 </p>

@@ -81,11 +81,8 @@ public final class Reactions {
             case (.cut, let why): return .failed("cut short" + (why.flatMap { cutBy[$0] }.map { ": " + $0 } ?? ""))
             case (.skipped, "late"): return .failed("waited too long")
             case (.skipped, BoopDevice.micOn): return .failed("the mic went on")
-            // Boop's own refusals, worded as main said any skip.
-            case (.skipped, nil), (.skipped, "needs_you"), (.skipped, BoopDevice.listening), (.skipped, "no_app"),
-                 (.skipped, "not_listening"), (.skipped, "nothing"):
-                return .failed("something needed you")
-            case (.skipped, let why?): return .failed("skipped: " + why)
+            case (.skipped, let why?): return .failed(skippedBy[why] ?? "skipped: " + why)
+            case (.skipped, nil): return .failed("skipped")
             }
         case .failed(let failure):
             // No device connected, the device disconnected, or it never
@@ -97,4 +94,14 @@ public final class Reactions {
     /// What cut a reaction short, as its end says it; a tap's holds it
     /// until the pokes stop, and `reset` is a tool's.
     static let cutBy = ["now": "something newer played", "needs_you": "something needed you"]
+
+    /// Why the board's behaviour refused a reaction, as its end says it:
+    /// HISTORY tells the brain what really happened.
+    static let skippedBy = [
+        "needs_you": "something needed you",
+        BoopDevice.listening: "it was listening to you",
+        "not_listening": "it wasn't listening",
+        "no_app": "the board hadn't heard from the Mac",
+        "nothing": "it had nothing it could play",
+    ]
 }

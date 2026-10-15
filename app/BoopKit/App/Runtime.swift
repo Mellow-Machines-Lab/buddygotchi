@@ -281,9 +281,6 @@ public final class Runtime: @unchecked Sendable {
             if line.hasPrefix(#"{"t":"state""#) { lastState = line }
             log("link \(sender == .brain ? "brain" : "rules") → " + line)
         }
-        // Who the device is, when it first says hello on a link or says
-        // something new.
-        link.onHello = { hello in DeviceInfo(hello).logLines.forEach(log) }
 
         let now = options.clock()
         personality = options.personality ?? settings.personality
@@ -345,6 +342,8 @@ public final class Runtime: @unchecked Sendable {
         // The device's taps and push-to-talk; the link leaves out those of
         // a device whose firmware doesn't fit.
         link.onEvent = { [weak self] ev in self?.deviceEvent(ev) }
+        // A hello (the first on a link, or one that says something new):
+        // log who the device is, and show it what's true now.
         link.onHello = { [weak self] hello in
             DeviceInfo(hello).logLines.forEach(log)
             if let self, let latest = self.latest { self.show(latest) }

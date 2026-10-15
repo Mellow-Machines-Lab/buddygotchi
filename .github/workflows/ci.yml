@@ -1,12 +1,14 @@
 # The checks anyone can run without a board, a key or Bluetooth
 # (internal/VERIFICATION.md L0 and L1): Boop's Swift tests and the
-# packages', then the firmware's and LinkKit's device tests on the Mac,
+# packages', the Python tests that need only the standard library, then
+# the firmware's and LinkKit's device tests on the Mac,
 # all as Boop, the default pack, and the boards' firmware: the CYD's with
 # Pixel and the AMOLED's with Boop's gel face, so each pack builds.
 #
-# Boop is written with Swift 6.4, and the newest runner has Xcode 26.6's
-# Swift, so code here has to compile on both. A failure's errors and failed
-# tests also show as annotations on the run, readable without signing in.
+# Package.swift needs Swift 6.2 or later. Boop is developed with Swift 6.4,
+# and the newest runner has Xcode 26.6's, which is older, so code here has
+# to compile on both. A failure's errors and failed tests also show as
+# annotations on the run, readable without signing in.
 name: CI
 
 on:
@@ -35,6 +37,29 @@ jobs:
         run: |
           sed 's/\x1b\[[0-9;]*m//g' test.log | grep -E "error:|✘|FAIL|failed" | sort -u | head -20 |
             while IFS= read -r line; do echo "::error title=Swift tests::$line"; done
+
+  python:
+    name: Python tests
+    # The tests that need only the standard library, on the Mac's own
+    # Python (3.9), which the build's scripts are kept to. boopctl's need
+    # its venv, the webcam recorder's build a Swift fixture, and the
+    # simulator's need PlatformIO, Emscripten and Node, so they're left out.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+      - run: /usr/bin/python3 --version
+      - name: Every pack's generated files are fresh
+        run: /usr/bin/python3 characters/charactergen.py --check
+      - name: charactergen's tests
+        run: /usr/bin/python3 -m unittest discover -s internal/characters
+      - name: The demo session's tests
+        run: /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
+      - name: Each pack's tool tests
+        run: |
+          for tests in characters/*/tests/tools; do
+            [ -d "$tests" ] || continue
+            /usr/bin/python3 -m unittest discover -s "$tests" || exit 1
+          done
 
   firmware:
     name: Firmware tests

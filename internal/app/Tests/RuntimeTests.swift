@@ -1267,7 +1267,7 @@ final class RuntimeTests: XCTestCase {
 
         let skipped = try react()
         device(FakeTransport.ended(try XCTUnwrap(skipped.id), "skipped"))
-        XCTAssertEqual(end(of: skipped.seq), .failed("something needed you"))
+        XCTAssertEqual(end(of: skipped.seq), .failed("skipped"))
 
         let silent = try react()
         let giveUp = clock.now + Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs
@@ -1299,11 +1299,13 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(end(.cut, nil), .failed("cut short"))
         XCTAssertEqual(end(.skipped, "late"), .failed("waited too long"))
         XCTAssertEqual(end(.skipped, "mic_on"), .failed("the mic went on"))
-        for why in ["listening", "no_app", "not_listening", "nothing"] {
-            XCTAssertEqual(end(.skipped, why), .failed("something needed you"), why)
-        }
+        // The board's own refusals (its behaviour's admit), each in true words.
         XCTAssertEqual(end(.skipped, "needs_you"), .failed("something needed you"))
-        XCTAssertEqual(end(.skipped, nil), .failed("something needed you"))
+        XCTAssertEqual(end(.skipped, "listening"), .failed("it was listening to you"))
+        XCTAssertEqual(end(.skipped, "not_listening"), .failed("it wasn't listening"))
+        XCTAssertEqual(end(.skipped, "no_app"), .failed("the board hadn't heard from the Mac"))
+        XCTAssertEqual(end(.skipped, "nothing"), .failed("it had nothing it could play"))
+        XCTAssertEqual(end(.skipped, nil), .failed("skipped"))
         XCTAssertEqual(end(.skipped, "busy"), .failed("skipped: busy"))
         XCTAssertEqual(Reactions.end(.failed(.disconnected)), .failed("the device disconnected"))
         XCTAssertEqual(Reactions.end(.failed(.notConnected)), .failed("no device connected"))
@@ -1680,7 +1682,7 @@ final class RuntimeTests: XCTestCase {
         config.firstAsk = Int(Int32.max)
         let core = Core(config: config)
         core.handle(Event(ts: 1000, source: .claude, type: .tool, phase: .wait, specificType: "PermissionRequest",
-                          session: "s", cwd: "/w/landing", data: ["tool": "Bash", "for": "permission"]))
+                          session: "s", cwd: "/w/landing", data: ["tool": "Bash", "asking": "permission"]))
         XCTAssertEqual(core.snapshot(at: 1000).attn?.id, 1, "back to 1, never 0")
     }
 
