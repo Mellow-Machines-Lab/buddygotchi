@@ -117,10 +117,11 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 
 NOW (14:02, Wednesday)
 claude is still working on "landing", a long turn.
@@ -128,6 +129,7 @@ Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 2 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 
@@ -137,6 +139,7 @@ Boop did nothing on its own.
 === pass 4
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 4 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 1 min ago: claude is still working on "landing", a very long turn.
@@ -148,6 +151,7 @@ Boop did nothing on its own.
 === pass 5
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 6 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 3 min ago: claude is still working on "landing", a very long turn.
@@ -161,6 +165,7 @@ Boop did nothing on its own.
 === pass 6
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 8 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 5 min ago: claude is still working on "landing", a very long turn.
@@ -176,6 +181,7 @@ Boop did nothing on its own.
 === pass 7
 HISTORY (oldest first; indented lines add to the line above)
 12 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 10 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 7 min ago: claude is still working on "landing", a very long turn.
@@ -193,6 +199,7 @@ Boop did nothing on its own.
 === pass 8
 HISTORY (oldest first; indented lines add to the line above)
 15 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 12 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 9 min ago: claude is still working on "landing", a very long turn.
@@ -212,6 +219,7 @@ Boop did nothing on its own.
 === pass 9
 HISTORY (oldest first; indented lines add to the line above)
 18 min ago: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 15 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 12 min ago: claude is still working on "landing", a very long turn.

@@ -520,7 +520,12 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("PreToolUse", tool: "Bash"), to: socketPath))
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
-        eventually("the pass in debug.jsonl") { self.debugLines().contains { ($0["event"] as? [String: Any])?["kind"] as? String == "did" } }
+        eventually("the pass in debug.jsonl") {
+            self.debugLines().contains {
+                let e = $0["event"] as? [String: Any]
+                return e?["kind"] as? String == "did" && (e?["data"] as? [String: Any])?["by"] as? String == "brain"
+            }
+        }
         let log = lines.lock.withLock { lines.log }
         let printed = lines.lock.withLock { lines.printed }
         XCTAssertTrue(log.contains("hook: claude SessionStart s1 → session start SessionStart claude s1"), "\(log)")

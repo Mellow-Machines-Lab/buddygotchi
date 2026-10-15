@@ -118,11 +118,12 @@ Boop has been whiny for 2 min.
 NOW (14:02, Wednesday)
 claude started turn 1 on "landing".
   You asked: "thank you, you've been a huge help today!"
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
   You asked: "thank you, you've been a huge help today!"
+  Boop reacted to the new turn on its own.
 Boop has been whiny for 4 min.
 
 NOW (14:04, Wednesday)
@@ -132,6 +133,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
   You asked: "thank you, you've been a huge help today!"
+  Boop reacted to the new turn on its own.
 2 min ago: You said to Boop: "you're useless"
   Boop made a proud face, held once, and said "Slowly".
 Boop has been whiny for 6 min.
@@ -143,6 +145,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
   You asked: "thank you, you've been a huge help today!"
+  Boop reacted to the new turn on its own.
 3 min ago: You said to Boop: "you're useless"
   Boop made a proud face, held once, and said "Slowly".
 just now: claude is still working on "landing", a long turn.
@@ -152,4 +155,4 @@ Boop has been whiny for 7 min.
 NOW (14:07, Wednesday)
 claude started turn 2 on "landing".
   You asked: "sorry, that was mean. thank you for all the help!"
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.

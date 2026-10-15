@@ -9,7 +9,9 @@ import MellowHarness
 /// What it does by rule it records as `action`
 /// events: "needs you" showing and ending, and a poke (the `wiggle`
 /// action, by its older name: the device plays its poke), or while
-/// something needs you, the thread it opens (`open_thread`). It also
+/// something needs you, the thread it opens (`open_thread`), and each
+/// one-shot it plays (`starting`, `stopped`, `error`, `helper_return`),
+/// as a `did` named after it. It also
 /// keeps push-to-talk (`Talk`): when the mic
 /// goes on and off and when `listening` ends, recorded as `listen` events
 /// that make no line. What the brain hears is the view's; everything
@@ -157,7 +159,7 @@ public final class Core {
         var fx: [CoreEffect] = []
         let shot = take(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
-        if let shot { play(shot, now, &fx) }
+        if let shot { play(shot, for: event.seq, now, &fx) }
         publish(now, &fx)
         return fx
     }
@@ -255,8 +257,10 @@ public final class Core {
     /// variation at random, never the one it played last: not while
     /// something needs you or `listening` holds the screen, and the error
     /// one-shot at most once every `errorEveryMs`. The device also skips
-    /// it while a brain reaction holds its turn (`if_free`).
-    func play(_ shot: DeviceMoment, _ now: Int64, _ fx: inout [CoreEffect]) {
+    /// it while a brain reaction holds its turn (`if_free`). Recorded as a
+    /// `did` named after it, for the event `seq` that played it, as the
+    /// poke's `wiggle` is, so the brain hears that Boop already reacted.
+    func play(_ shot: DeviceMoment, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
         guard let anim = shot.anim, !needsYouShowing, !showsListening(at: now) else { return }
         if anim == Core.error {
             if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
@@ -267,6 +271,27 @@ public final class Core {
                                           avoiding: lastVariant[anim], &rng)
         lastVariant[anim] = moment.variant
         fx.append(.moment(moment))
+        fx.append(.record(Event.did(Core.played(moment), for: seq, action: anim, by: "rule",
+                                    facts: moment.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)))
+    }
+
+    /// What a one-shot's `did` says Boop did: `Boop reacted to the error on
+    /// its own.`
+    static func played(_ shot: DeviceMoment) -> String {
+        let what = switch shot.anim {
+        case Core.starting?:
+            switch shot.ctx {
+            case "session": "the new session"
+            case "continuation": "the session resuming"
+            case "compacted": "the compacted context"
+            default: "the new turn"
+            }
+        case Core.stopped?: "the stop"
+        case Core.error?: "the error"
+        case Core.helperReturn?: "the helper coming back"
+        default: "it"
+        }
+        return "\(CharacterPack.active.name) reacted to \(what) on its own."
     }
 
     /// A tap on the device, recorded as the poke `seq`, on the brain's

@@ -42,7 +42,7 @@ struct Fx: Equatable, ExpressibleByArrayLiteral {
 
 extension ViewEvent {
     /// What the rules did about it, as far as the view event has it when
-    /// it's made: a turn's never has any.
+    /// it's made: a turn's start has its `starting` one-shot.
     var reaction: String? { did.first { $0.by == "rule" }?.message }
 }
 
@@ -287,7 +287,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(states(fx).last?.base, "working")
         XCTAssertEqual(states(fx).last?.busy, 1)
         XCTAssertEqual(woke(fx), [#"claude started turn 1 on "landing"."#])
-        XCTAssertNil(events(fx).first?.reaction)
+        XCTAssertEqual(events(fx).first?.reaction, "\(CharacterPack.active.name) reacted to the new turn on its own.")
     }
 
     /// No rule celebrates a finish, whatever its length.
@@ -1435,7 +1435,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.needsYou, tool: "Bash")
         let needed = rig.poke()
         XCTAssertEqual(woke(needed), [], "the tap opens the thread; it doesn't wake the brain")
-        XCTAssertEqual(rig.ruleActions, ["wiggle", "needs_you start", "open_thread"], "no wiggle")
+        XCTAssertEqual(rig.ruleActions, ["wiggle", "starting", "needs_you start", "open_thread"], "no wiggle")
     }
 
     /// A tap while something needs you opens the thread
@@ -1849,8 +1849,8 @@ final class CoreRulesTests: XCTestCase {
         let rig = CoreRig()
         XCTAssertEqual(states(rig.send(.sessionStart, session: "a", project: "notes")).map(\.base), ["idle"])
         let fx = rig.send(.sessionStart, session: "b", project: "jetpack")
-        XCTAssertEqual(fx.effects.filter { if case .moment = $0 { false } else { true } }, [.sessions],
-                       "the same snapshot, and a new list (and the start's one-shot)")
+        XCTAssertEqual(fx.effects.filter { switch $0 { case .moment, .record: false; default: true } }, [.sessions],
+                       "the same snapshot, and a new list (and the start's one-shot, and its record)")
         XCTAssertEqual(rig.send(.sessionEnd, session: "b", project: "jetpack").effects, [.sessions])
         XCTAssertEqual(rig.wait(5000).effects, [], "nothing changed")
         XCTAssertEqual(rig.state.waiting, 0)

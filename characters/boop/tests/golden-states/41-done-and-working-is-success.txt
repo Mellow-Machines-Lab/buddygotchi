@@ -118,11 +118,12 @@ HISTORY (oldest first; indented lines add to the line above)
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
   You asked: "fix the failing date test and push"
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "landing".
   You asked: "fix the failing date test and push"
+  Boop reacted to the new turn on its own.
 
 NOW (14:01, Wednesday)
 claude finished turn 1 on "landing": done, a long turn, 1 tool call.

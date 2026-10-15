@@ -221,11 +221,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(asked.map(\.line), [#"claude needs you on "fix-nav" (landing)."#])
         XCTAssertEqual(asked.map(\.name), ["tool wait"])
         XCTAssertFalse(asked[0].wakesBrain)
-        XCTAssertEqual(rig.ruleActions, ["needs_you start"])
+        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start"])
         XCTAssertFalse(hook(.turnStart, session: "s2").first!.wakesBrain, "something needs you")
         XCTAssertFalse(events(rig.poke()).first!.wakesBrain, "a poke opens the thread instead")
         hook(.activity, tool: "Bash")
-        XCTAssertEqual(rig.ruleActions, ["needs_you start", "open_thread", "needs_you end"], "answered")
+        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start", "open_thread", "needs_you end"], "answered")
         XCTAssertTrue(hook(.turnStart, session: "s3").first!.wakesBrain)
         rig.pipeline.brain = false
         XCTAssertFalse(hook(.turnStart, session: "s4").first!.wakesBrain, "no key")
@@ -430,36 +430,36 @@ final class ViewTests: XCTestCase {
         }
         let first = pipeline()
         rig = CoreRig()
-        first.agent(rig.event(.turnStart))
+        first.agent(rig.event(.turnStart))  // and its starting one-shot's did, 2
         let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
                                        data: ["for": 1, "by": "brain", "ok": true, "message": "Boop smiled."]))
-        XCTAssertEqual(start.seq, 2)
+        XCTAssertEqual(start.seq, 3)
         first.agent(rig.event(.turnEnd))
         let old = dir.appendingPathComponent("2026-09-01.jsonl")
         try "{}\n".write(to: old, atomically: true, encoding: .utf8)
 
         let file = dir.appendingPathComponent(time.day(rig.now) + ".jsonl")
         let lines = try String(contentsOf: file, encoding: .utf8).split(separator: "\n")
-        XCTAssertEqual(lines.count, 3)
+        XCTAssertEqual(lines.count, 4)
         XCTAssertTrue(lines[0].hasPrefix(#"{"seq":1,"at":"#), String(lines[0]))
-        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":4,"at":"#).write(to: file, atomically: true, encoding: .utf8)
+        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":5,"at":"#).write(to: file, atomically: true, encoding: .utf8)
 
         let second = pipeline()
         var recorded: [Event] = []
         second.onRecord = { recorded.append($0) }
-        XCTAssertEqual(second.readBack(now: rig.now), 3, "the torn line is skipped")
+        XCTAssertEqual(second.readBack(now: rig.now), 4, "the torn line is skipped")
         XCTAssertFalse(FileManager.default.fileExists(atPath: old.path), "past 14 days")
         let restarted = try XCTUnwrap(recorded.last)
         XCTAssertEqual(restarted.data["why"], .string(Harness.restarted))
-        XCTAssertEqual(restarted.seq, 4, "seq goes on")
-        XCTAssertEqual(second.transcript.lastSeq, 4)
-        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4], "the last day stays in memory, the end included")
-        XCTAssertEqual(second.views.first?.did, [], "a reaction that can't end now isn't shown")
+        XCTAssertEqual(restarted.seq, 5, "seq goes on")
+        XCTAssertEqual(second.transcript.lastSeq, 5)
+        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
+        XCTAssertEqual(second.views.first?.did.map(\.by), ["rule"], "a reaction that can't end now isn't shown; the one-shot is")
         rig.wait(1000)
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])
         let third = pipeline()
-        XCTAssertEqual(third.readBack(now: rig.now), 5, "the torn line was ended, so the next launch's aren't glued to it")
+        XCTAssertEqual(third.readBack(now: rig.now), 7, "the torn line was ended, so the next launch's aren't glued to it")
     }
 
     /// A write a full disk cut short inside a multi-byte

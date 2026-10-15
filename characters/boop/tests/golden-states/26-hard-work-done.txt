@@ -121,11 +121,12 @@ Boop has been engaged for under a minute.
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
   You asked: "migrate the user table to the new schema"
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
   You asked: "migrate the user table to the new schema"
+  Boop reacted to the new turn on its own.
 Boop has been engaged for 2 min.
 
 NOW (14:02, Wednesday)
@@ -135,6 +136,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
   You asked: "migrate the user table to the new schema"
+  Boop reacted to the new turn on its own.
 1 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 Boop has been engaged for 4 min.

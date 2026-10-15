@@ -440,6 +440,44 @@ final class CoreOneShotTests: XCTestCase {
         XCTAssertEqual(shots(rig.send(.subagentEnd, subagent: "bg")), [], "after the turn ended")
     }
 
+    /// Every one-shot the rules play is recorded as a `did` named after
+    /// it, by rule, for the event that played it, as the poke's `wiggle`
+    /// is, so HISTORY and NOW say Boop already reacted. One the rules
+    /// leave out records nothing.
+    func testEachOneShotIsRecorded() {
+        let rig = CoreRig()
+        let name = CharacterPack.active.name
+        func did(_ fx: Fx) -> [String] {
+            let seq = rig.pipeline.transcript.events.last { $0.agent != nil }!.seq
+            return rig.pipeline.transcript.view(now: rig.now).dids(for: seq)
+                .map { "\($0.action ?? "") \($0["by"]?.string ?? "") \($0["message"]?.string ?? "")" }
+        }
+        XCTAssertEqual(did(rig.send(.sessionStart, source: "resume")),
+                       ["starting rule \(name) reacted to the session resuming on its own."])
+        XCTAssertEqual(rig.pipeline.transcript.events.last?["ctx"], "continuation")
+        XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule \(name) reacted to the new session on its own."])
+        XCTAssertEqual(did(rig.send(.sessionStart, session: "s3", source: "compact")),
+                       ["starting rule \(name) reacted to the compacted context on its own."])
+        let start = rig.send(.turnStart)
+        XCTAssertEqual(did(start), ["starting rule \(name) reacted to the new turn on its own."])
+        XCTAssertEqual(events(start).first?.reaction, "\(name) reacted to the new turn on its own.", "shown under its line")
+        rig.send(.activity, tool: "Bash", topic: "tests", id: "1")
+        let failed = rig.send(.activity, tool: "Bash", topic: "tests", failed: true, id: "1", error: "exit_code")
+        XCTAssertEqual(did(failed), ["error rule \(name) reacted to the error on its own."])
+        XCTAssertEqual(events(failed).first?.reaction, "\(name) reacted to the error on its own.")
+        rig.send(.activity, tool: "Bash", id: "2")
+        XCTAssertEqual(did(rig.send(.activity, tool: "Bash", failed: true, id: "2", error: "exit_code")), [],
+                       "within 30 s of the last error: not played, not recorded")
+        rig.send(.subagentStart, subagent: "h1")
+        XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")),
+                       ["helper_return rule \(name) reacted to the helper coming back on its own."])
+        rig.send(.activity, tool: "Bash", id: "3")
+        XCTAssertEqual(did(rig.send(.turnStopped, tool: "Bash")), ["stopped rule \(name) reacted to the stop on its own."])
+        rig.send(.turnStart, session: "s2")
+        rig.send(.needsYou, session: "s2", tool: "Bash")
+        XCTAssertEqual(did(rig.send(.turnStart)), [], "needs you shows: no one-shot")
+    }
+
     /// No one-shot while something needs you or while
     /// `listening` holds the screen, from any session; the event that
     /// answers a request plays its own.

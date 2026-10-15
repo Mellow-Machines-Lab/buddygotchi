@@ -117,10 +117,11 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:00, Wednesday)
 claude started turn 1 on "landing".
-Boop did nothing on its own.
+Boop reacted to the new turn on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 
 NOW (14:00, Wednesday)
 You said to Boop: "um okay"
@@ -128,6 +129,7 @@ Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
+  Boop reacted to the new turn on its own.
 just now: You said to Boop: "um okay"
   Boop made a proud face, held once, and said "Slowly".
 
