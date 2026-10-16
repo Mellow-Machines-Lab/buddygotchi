@@ -193,18 +193,19 @@ public final class TranscriptView {
     /// The kinds with lines that never wake the brain.
     public static let quiet = ["presence_start", "needs_you_start"]
 
-    /// Registers Boop's lines, wakes, holds and heartbeats on `h`.
+    /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
+    /// a harness its runtime let go of may still tick once, and does nothing.
     /// `needsYou` says why nothing but what you said may wake the brain now
     /// (something needs you), or nil.
     public func register(on h: Harness, needsYou: @escaping () -> String?) {
         for (kind, wake) in Self.wakes {
-            h.input(kind, wake: wake) { [unowned self] e, log in line(e, log) }
-            h.hold(kind) { [unowned self] e, log in hold(e, log, needsYou: needsYou) }
+            h.input(kind, wake: wake) { [weak self] e, log in self?.line(e, log) }
+            h.hold(kind) { [weak self] e, log in self?.hold(e, log, needsYou: needsYou) }
         }
         for kind in Self.quiet {
-            h.input(kind) { [unowned self] e, log in line(e, log) }
+            h.input(kind) { [weak self] e, log in self?.line(e, log) }
         }
-        h.tick { [unowned self] now, log in heartbeat(at: now, log) }
+        h.tick { [weak self] now, log in self?.heartbeat(at: now, log) }
     }
 
     /// Why `e` may not wake the brain now, or nil if it may:

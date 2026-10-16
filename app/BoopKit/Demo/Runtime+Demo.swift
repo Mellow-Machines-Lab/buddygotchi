@@ -50,7 +50,10 @@ public final class DemoPlayer: @unchecked Sendable {
     let script: DemoScript
     let live: Bool
     let cursor: URL?
-    unowned let runtime: Runtime
+    /// Weak: a step waiting to play when its runtime is let go of (a test
+    /// ending, the app quitting) does nothing.
+    weak var runtimeIfAny: Runtime?
+    var runtime: Runtime { runtimeIfAny! }
     let heardStep: @Sendable (DemoScript.Step, String) -> Void
     let done: @Sendable () -> Void
     var index = 0
@@ -70,7 +73,7 @@ public final class DemoPlayer: @unchecked Sendable {
         self.script = script
         self.live = live
         self.cursor = cursor
-        self.runtime = runtime
+        self.runtimeIfAny = runtime
         self.heardStep = heardStep
         self.done = done
     }
@@ -84,7 +87,10 @@ public final class DemoPlayer: @unchecked Sendable {
 
     var home: DispatchQueue { runtime.home }
     func later(_ seconds: Double, _ work: @escaping () -> Void) {
-        home.asyncAfter(deadline: .now() + max(0, seconds), execute: work)
+        home.asyncAfter(deadline: .now() + max(0, seconds)) { [weak self] in
+            guard self?.runtimeIfAny != nil else { return }
+            work()
+        }
     }
 
     func publish(_ n: Int) {
