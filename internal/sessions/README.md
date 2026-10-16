@@ -65,11 +65,11 @@ Boop's brain. They happen in order, and three things keep them so:
     context holds more than its config's `model_auto_compact_token_limit`,
     so the reply before the compact says so. Either agent then asks the
     model for a summary, which gets the step's `summary` and doesn't
-    count as a turn, and goes on with the next step. For a script with a
-    compact, Claude Code runs its classic renderer (`"tui": "default"`):
-    its default fullscreen one keeps the conversation on the screen
-    through a compaction, and the classic one clears it to its
-    "Conversation compacted" line.
+    count as a turn, and goes on with the next step. Every demo runs
+    Claude Code's classic renderer (`"tui": "default"`), so every clip
+    looks the same; it also clears the screen at a compaction to its
+    "Conversation compacted" line, where the default fullscreen one keeps
+    the conversation on the screen.
   - In the Claude desktop app (`IN=claude`), the app sets its own model
     address, so the model can't be replayed: your real Claude performs the
     script openly instead, as a `/demo` command in the project, word for

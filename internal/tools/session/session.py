@@ -157,12 +157,11 @@ def setup_agent(agent: str, home: Path, ws: Path, base_url: str, s: scripts.Scri
         path = home / ".claude" / "settings.json"
         settings = json.loads(path.read_text())
         settings["permissions"] = permissions(s)
-        # Claude Code's fullscreen renderer, its default, keeps the
-        # conversation on the screen through a compaction; the classic one
-        # clears it to its "Conversation compacted" line, which is the
-        # moment a script with a compact shows.
-        if any(l["agent"] == "compact" for l in s.agent_steps()):
-            settings["tui"] = "default"
+        # Every demo runs Claude Code's classic renderer, so every clip
+        # looks the same: its fullscreen one, the default, also keeps the
+        # conversation on the screen through a compaction, where the
+        # classic one clears it to its "Conversation compacted" line.
+        settings["tui"] = "default"
         path.write_text(json.dumps(settings, indent=2))
         (home / ".claude.json").write_text(json.dumps({
             "hasCompletedOnboarding": True, "theme": "dark", "numStartups": 5, "autoUpdates": False,
