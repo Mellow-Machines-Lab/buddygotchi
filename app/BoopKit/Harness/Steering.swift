@@ -38,9 +38,10 @@ extension Steering {
     /// file for it.
     public func nature(_ nature: LongTerm.Nature) -> String? { files["nature/\(nature.rawValue)"] }
 
-    /// The MOOD section for a mood, or the resting mood's for one Boop doesn't know.
-    public func mood(_ name: String) -> String {
-        files["mood/\(name)"] ?? self["mood/\(MoodOutput.initial)"]
+    /// The MOOD section for a mood, or the resting mood's for one Boop
+    /// doesn't know: `pack`'s, whose steering this is.
+    public func mood(_ name: String, in pack: CharacterPack = .active) -> String {
+        files["mood/\(name)"] ?? self["mood/\(pack.defaultMood)"]
     }
 
     /// Budgets in tokens.
@@ -55,16 +56,16 @@ extension Steering {
     public static func tokens(_ text: String) -> Int { (text.utf8.count + 3) / 4 }
 
     /// Parts over their budget, as `part: N > budget`; empty when all fit.
-    public func overBudget() -> [String] {
+    public func overBudget(in pack: CharacterPack = .active) -> [String] {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
-        for p in Personality.allCases {
+        for p in pack.personalities.map({ Personality($0, in: pack) }) {
             parts.append(("personality/\(p.rawValue)", Steering.tokens(personality(p).text), Budget.personality))
         }
         for n in [LongTerm.Nature.sweet, .cheeky] {
             if let text = nature(n) { parts.append(("nature/\(n.rawValue)", Steering.tokens(text), Budget.nature)) }
         }
-        for name in MoodOutput.moods.map(\.name).sorted() {
-            parts.append(("mood/\(name)", Steering.tokens(mood(name)), Budget.mood))
+        for name in pack.moods.map(\.id).sorted() {
+            parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))
         }
         return parts.filter { $0.1 > $0.2 }.map { "\($0.0): \($0.1) > \($0.2)" }
     }

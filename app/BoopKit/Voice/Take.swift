@@ -40,16 +40,18 @@ extension Take {
     /// The version of the voice file these takes are in, as the board
     /// reports it: the character pack's `mac/takes.tsv`'s
     /// (characters/CHARACTER.md §8), or "" for a pack with no voice.
-    public static var voiceVersion: String { table.version }
+    public static var voiceVersion: String { table().version }
 
     /// Every take the board has, in the bank's order; none for a pack with
     /// no voice.
-    public static var all: [Take] { table.takes }
+    public static var all: [Take] { table().takes }
 
-    /// The active character pack's take table, each pack's read the first
-    /// time it's used.
-    private static var table: (version: String, takes: [Take]) {
-        tables.get(CharacterPack.active.directory) { directory in
+    /// Every take of `pack`'s voice.
+    public static func all(in pack: CharacterPack) -> [Take] { table(pack).takes }
+
+    /// A pack's take table, each read the first time it's used.
+    private static func table(_ pack: CharacterPack = .active) -> (version: String, takes: [Take]) {
+        tables.get(pack.directory) { directory in
             let file = directory.appendingPathComponent("mac/takes.tsv")
             guard let text = try? String(contentsOf: file, encoding: .utf8) else { return ("", []) }
             let lines = text.split(separator: "\n").filter { !$0.hasPrefix("#") }

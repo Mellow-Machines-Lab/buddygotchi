@@ -144,25 +144,15 @@ extension CharacterPack {
 }
 
 extension CharacterPack {
-    /// The character whose work runs now: the buddy's pack while one
-    /// buddy's work runs (`run(_:)`), else the process's, the one `use(_:)`
-    /// set, else the pack at `BOOP_CHARACTER`, else the one the repo last
-    /// staged. It stops the process if that one doesn't load: nothing works
-    /// without moods.
-    public static var active: CharacterPack { inScope ?? store.get() }
+    /// The process's character: the one `use(_:)` set, else the pack at
+    /// `BOOP_CHARACTER`, else the one the repo last staged. It stops the
+    /// process if that one doesn't load: nothing works without moods. A
+    /// buddy of another pack is handed its own.
+    public static var active: CharacterPack { store.get() }
 
     /// Sets the process's character. Call it once, before anything reads
     /// `active`.
     public static func use(_ character: CharacterPack) { store.set(character) }
-
-    /// The pack `run(_:)` put in scope, on this thread or task.
-    @TaskLocal static var inScope: CharacterPack?
-
-    /// Runs `body` with this pack as `active`: one buddy's work (its brain
-    /// pass, its rules, its reactions) reads its own pack, name and moods.
-    public func run<R>(_ body: () throws -> R) rethrows -> R {
-        try CharacterPack.$inScope.withValue(self, operation: body)
-    }
 
     /// The same pack under another name: two buddies running one pack
     /// need two names.

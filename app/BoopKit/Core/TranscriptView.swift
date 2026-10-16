@@ -216,23 +216,13 @@ public final class TranscriptView {
     /// run is in progress, with the mood unchanged.
     public func hold(_ e: Event, _ log: LogView, needsYou: () -> String?) -> String? {
         if let type = e.type, !Self.wakesWhileNeeded.contains(type), let why = needsYou() { return why }
-        if e.type == .reacted, Self.repliesInARow(e, log) > Buddy.maxRepliesInARow {
+        if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
         return nil
-    }
-
-    /// How many buddy reactions in a row `e` makes, counting back to the
-    /// last event of another kind that wakes the brain.
-    static func repliesInARow(_ e: Event, _ log: LogView) -> Int {
-        var count = 1
-        for p in log.events.reversed() where p.seq < e.seq {
-            if p.type == .reacted { count += 1 } else if wakes[p.kind] != nil { break }
-        }
-        return count
     }
 
     /// Whether the kinds `keeps` names have lines: turns'
@@ -274,18 +264,16 @@ public final class TranscriptView {
     }
 
     /// The buddies when there are several (`Buddy`), for whose lines are
-    /// whose: set once, before the first event.
-    public var buddies: [Buddy] = []
+    /// whose: the pipeline sets them, before the first event.
+    var buddies: [Buddy] = []
 
     /// The name of the buddy `e` is about, else the character's.
-    func name(_ e: Event) -> String {
-        Buddy.of(e).flatMap { id in buddies.first { $0.id == id }?.name } ?? CharacterPack.active.name
-    }
+    func name(_ e: Event) -> String { buddies.first { $0.id == e.buddy }?.name ?? CharacterPack.active.name }
 
     /// With several buddies, an agent's line, or "needs you"'s, says whose
     /// agent it is.
     func whose(_ line: Line?, _ e: Event) -> Line? {
-        guard var line, buddies.count > 1, e.agent != nil || e.type == .needsYou, Buddy.of(e) != nil else { return line }
+        guard var line, buddies.count > 1, e.agent != nil || e.type == .needsYou, e.buddy != nil else { return line }
         line.text += " (\(name(e))'s agent)"
         return line
     }
@@ -488,7 +476,7 @@ public final class TranscriptView {
     func poke(_ e: Event) -> Line {
         let now = e.at
         noteActivity(now)
-        let who = Buddy.of(e) ?? ""
+        let who = e.buddy ?? ""
         var pokes = fold.pokes[who] ?? []
         if let last = pokes.last, now - last >= Self.inARowMs { pokes.removeAll() }
         pokes.append(now)
@@ -508,14 +496,14 @@ public final class TranscriptView {
     /// `heldByPokes`).
     public func pokesAnswered(_ e: Event, _ log: LogView) -> Bool {
         var run: [Event] = [e]
-        for p in log.all(Event.kind(.poke, nil)).reversed() where p.seq < e.seq && Buddy.of(p) == Buddy.of(e) {
+        for p in log.all(Event.kind(.poke, nil)).reversed() where p.seq < e.seq {
             guard run.last!.at - p.at < Self.inARowMs else { break }
-            run.append(p)
+            if p.buddy == e.buddy { run.append(p) }
         }
         run.reverse()
         // The pokes the run's reactions can answer: from the third in a row.
         let answering = Set(run.dropFirst(Self.answersRunFrom - 1).map(\.seq))
-        let mine = { (d: Event) in d["voice"]?.string == Buddy.of(e) }
+        let mine = { (d: Event) in d.buddy == e.buddy }
         guard let reaction = log.lastDid(ReactOutput.outputName, where: {
             $0["open"]?.bool == true && $0.about.map(answering.contains) == true && mine($0)
         }) else { return false }
@@ -561,7 +549,7 @@ public final class TranscriptView {
     /// What you said to Boop on push-to-talk. Words
     /// that are only whitespace make no line.
     func talk(_ e: Event) -> Line? {
-        guard let words = e["words"]?.string, let line = EventLine.said(words, to: Buddy.of(e) == nil && buddies.count > 1
+        guard let words = e["words"]?.string, let line = EventLine.said(words, to: e.buddy == nil && buddies.count > 1
                                                                                      ? EventLine.everyone(buddies) : name(e)) else { return nil }
         noteActivity(e.at)
         return Line(line, facts: ["words": .string(words), "by": .string(e.specificType)])
@@ -813,11 +801,10 @@ public enum EventLine {
     }
 
     /// How to read HISTORY and NOW: Boop's own
-    /// words for MellowHarness's layout, after the guide, with the pack's
-    /// name for the creature.
-    public static var reading: String {
-        let name = CharacterPack.active.name
-        return """
+    /// words for MellowHarness's layout, after the guide, with the
+    /// creature's name.
+    public static func reading(_ name: String = CharacterPack.active.name) -> String {
+        """
             How to read HISTORY and NOW:
             - HISTORY is oldest first. Each line says how long ago it happened.
               Lines indented under it add to it: an agent's last message, then
@@ -830,7 +817,7 @@ public enum EventLine {
 
     /// The words the lines use, as the guide explains them after how to
     /// read the layout. Kept here, next to the lines.
-    public static let words = """
+    public static func words(_ name: String = CharacterPack.active.name) -> String { """
         - claude and codex are the person's coding agents.
         - A thread is one conversation with an agent, named after its workspace:
           "fix-nav" (landing) is the thread fix-nav in the project landing.
@@ -839,12 +826,13 @@ public enum EventLine {
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
           long (5 minutes or more).
-        - "You said to \(CharacterPack.active.name)" quotes the person talking to \(CharacterPack.active.name). It can't talk
+        - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
           hours or more).
         """
+    }
 
     public static func needsYou(agent: String, thread: String) -> String {
         "\(agent) needs you on \(thread)."

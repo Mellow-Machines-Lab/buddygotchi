@@ -78,20 +78,26 @@ func bundledSteering(_ pack: CharacterPack = .active) -> Steering {
     do { return try Steering(directory: url, pack: pack) } catch { fail("\(pack.id)'s steering folder is broken: \(error)") }
 }
 
+/// The transport for `link`: over Bluetooth, the first board it finds, or
+/// the one named `only`.
+func transport(_ link: LinkSetting, only: String? = nil, log: LogFile) -> Transport? {
+    switch link {
+    case .bluetooth: BLETransport(prefix: BoopDevice.blePrefix, only: only, log: { log.write((only.map { "\($0): " } ?? "") + $0) })
+    case .usb(let path): SocketTransport(path: path)
+    case .none: nil
+    }
+}
+
 /// The runtime's options on `stateDir`: the device over `link`, the log in
 /// `log`, in debug mode everything printed to the terminal, and with
 /// `devLines` the dashboard's `{"dev":…}` lines taken. The menu-bar app and `--headless` both start from these.
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
-    let transport: Transport? = switch link {
     // The board over Bluetooth, or a simulator running on this Mac, when
     // Settings is told to use it.
-    case .bluetooth: DeviceChooser(board: BLETransport(prefix: BoopDevice.blePrefix, log: { log.write($0) }),
-                                   log: { log.write($0) })
-    case .usb(let path): SocketTransport(path: path)
-    case .none: nil
-    }
-    var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: transport, steering: bundledSteering())
+    let board = transport(link, log: log)
+    var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath,
+                                  link: board.map { DeviceChooser(board: $0, log: { log.write($0) }) }, steering: bundledSteering())
     // Several buddies: each its own board, over Bluetooth the one its
     // `board` names, else its own link in `links`, in order.
     if buddies.count > 1 {
@@ -99,12 +105,8 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
             let buddy: Buddy
             do { buddy = try setting.buddy(bundled: bundledPacks, among: buddies) } catch { fail("buddy \(setting.place): \(error)") }
             let own = i < links.count ? links[i] : link == .bluetooth ? .bluetooth : .none
-            let transport: Transport? = switch own {
-            case .bluetooth: BLETransport(prefix: BoopDevice.blePrefix, only: setting.advertised, log: { log.write("\(setting.place): " + $0) })
-            case .usb(let path): SocketTransport(path: path)
-            case .none: nil
-            }
-            return Runtime.BuddyOptions(buddy: buddy, link: transport, steering: bundledSteering(buddy.pack))
+            return Runtime.BuddyOptions(buddy: buddy, link: transport(own, only: setting.board.flatMap(BoopDevice.advertised), log: log),
+                                        steering: bundledSteering(buddy.pack))
         }
     }
     options.log = { log.write($0) }

@@ -17,6 +17,12 @@ public struct Personality: RawRepresentable, Hashable, Sendable {
 
     private init(named name: String) { rawValue = name }
 
+    /// `name` if `pack` has it, else `pack`'s first: a buddy of another
+    /// pack speaks its own personality of the same name.
+    public init(_ name: String, in pack: CharacterPack) {
+        rawValue = pack.personalities.contains(name) ? name : pack.personalities.first ?? "default"
+    }
+
     /// The pack's personalities, in its order.
     public static var allCases: [Personality] { CharacterPack.active.personalities.map(Personality.init(named:)) }
 

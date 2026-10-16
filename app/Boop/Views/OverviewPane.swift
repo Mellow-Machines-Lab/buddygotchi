@@ -178,7 +178,7 @@ struct OverviewPane: View {
                         Circle().fill(b.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)
                         Text(b.name).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
                     }
-                    .help("\(b.name), on the \(b.place ?? "desk"): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
+                    .help("\(b.name), on the \(b.id): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
                 }
             }
             .fixedSize()

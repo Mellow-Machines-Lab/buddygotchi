@@ -405,6 +405,16 @@ def bundle(view: Path, name: str) -> None:
                                                   "studio"))
 
 
+def checked_pack(pack: Path) -> tuple[dict, dict[str, Path]] | None:
+    """A pack's character.json and what it uses from other packs (§6), or
+    None, its problems printed, for a pack that can't be staged."""
+    character = load(pack)
+    problems = pack_problems(pack, character)
+    for problem in problems:
+        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
+    return None if problems else (character, used(pack, character)[0])
+
+
 def stage(pack: Path) -> int:
     """The pack staged (.character-build/staged/<name>/): its own files and
     what it uses from other packs (§6), as links, the one folder the tests,
@@ -412,15 +422,12 @@ def stage(pack: Path) -> int:
     (.character-build/pack); from it, the firmware's files
     (.character-build/firmware/) with the generated moods.h, and the pack
     as the Mac app bundles it, with what the app reads and no more
-    (.character-build/packs/<name>/), beside every other pack in characters/
+    (.character-build/packs/<name>/), beside every other pack beside it
     for buddies that run one, with packs/chosen naming this one."""
-    character = load(pack)
-    paths = used(pack, character)[0]
-    problems = pack_problems(pack, character)
-    for problem in problems:
-        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
-    if problems:
+    checked = checked_pack(pack)
+    if checked is None:
         return 1
+    character, paths = checked
     STAGE.mkdir(exist_ok=True)
     for old in ("staged", "firmware", "packs"):
         if (STAGE / old).exists():
@@ -468,13 +475,10 @@ def firmware_to(pack: Path, dest: Path) -> int:
     lays them out, and nothing else: the staged pack and the pack in use
     stay as they are. For a second build beside the staged one (the
     simulator's page with a board for each pack)."""
-    character = load(pack)
-    paths = used(pack, character)[0]
-    problems = pack_problems(pack, character)
-    for problem in problems:
-        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
-    if problems:
+    checked = checked_pack(pack)
+    if checked is None:
         return 1
+    character, paths = checked
     if dest.exists():
         shutil.rmtree(dest)
     overlay(dest / "view", pack, paths)

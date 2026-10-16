@@ -42,9 +42,9 @@ extension Runtime {
 
         /// One of several buddies, as the popover lists it.
         public struct BuddyStatus: Sendable, Equatable {
+            /// Where it sits.
             public var id: String
             public var name: String
-            public var place: String?
             /// What its device shows, and its mood.
             public var snapshot: StateSnapshot
             public var connected: Bool
@@ -75,17 +75,15 @@ extension Runtime {
 
     func changed() {
         let now = options.clock()
-        var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { $0.core.sessionList(at: now) },
+        var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { core($0).sessionList(at: now) },
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
-        if !buddies.isEmpty {
-            status.buddies = rigs.compactMap { rig in
-                rig.buddy.map { b in
-                    Status.BuddyStatus(id: b.id, name: b.name, place: b.place, snapshot: rig.latest ?? rig.run { rig.core.snapshot(at: now) },
-                                connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init))
-                }
+        if pipeline.several {
+            status.buddies = rigs.map { rig in
+                Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),
+                                   connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init))
             }
         }
         grew = false

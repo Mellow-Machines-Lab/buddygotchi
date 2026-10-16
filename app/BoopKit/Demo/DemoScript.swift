@@ -148,7 +148,7 @@ public struct DemoScript: Sendable {
                     case "after", "takes", "ask", "hold", "minutes", "demo": value is NSNumber && !isBool
                     case "fails": isBool
                     case "brain": value is [String: String]
-                    case "buddies": value is [[String: String]]
+                    case "buddies": value is [Any]
                     default: value is String
                     }
                     if !ok { throw Problem(description: "\(here): \(key) is \(Self.type(of: key))") }
@@ -159,14 +159,14 @@ public struct DemoScript: Sendable {
                 title = string("title") ?? ""
                 agent = string("agent") ?? "claude"
                 guard ["claude", "codex"].contains(agent) else { throw Problem(description: "\(here): agent is claude or codex") }
-                for b in o["buddies"] as? [[String: String]] ?? [] {
-                    guard let place = b["place"], let pack = b["pack"], Set(b.keys).isSubset(of: ["place", "pack", "agent", "name"]),
-                          ["claude", "codex"].contains(b["agent"] ?? "claude"), !buddies.contains(where: { $0.place == place }) else {
-                        throw Problem(description: "\(here): each buddy has a place and a pack, and maybe an agent (claude or codex) and a name, each place once")
+                if let list = o["buddies"] {
+                    // As settings.json has them (`BuddySetting`).
+                    guard let read = try? JSONDecoder().decode([BuddySetting].self, from: JSONSerialization.data(withJSONObject: list)) else {
+                        throw Problem(description: "\(here): each buddy has a place and a pack, and maybe agents and a name")
                     }
-                    buddies.append(BuddySetting(place: place, pack: pack, agents: [b["agent"] ?? "claude"], name: b["name"]))
+                    if let problem = BuddySetting.problem(read) { throw Problem(description: "\(here): \(problem)") }
+                    buddies = read
                 }
-                if buddies.count == 1 { throw Problem(description: "\(here): buddies are two or more") }
                 continue
             }
             let what: Step.What
@@ -239,7 +239,7 @@ public struct DemoScript: Sendable {
         case "after", "takes", "ask", "hold", "minutes", "demo": "a number"
         case "fails": "true or false"
         case "brain": "question keys to choices, both strings"
-        case "buddies": "a list of buddies, each place, pack, agent and name as strings"
+        case "buddies": "a list of buddies, as settings.json has them"
         default: "a string"
         }
     }
@@ -254,7 +254,7 @@ public struct DemoScript: Sendable {
     /// The agent whose hooks the buddy `buddy`'s steps are: its own, else
     /// the script's.
     public func agent(of buddy: String?) -> String {
-        buddies.first { $0.place == buddy }?.agents.first ?? agent
+        buddies.first { $0.place == buddy }?.agents?.first ?? agent
     }
 }
 
@@ -303,7 +303,7 @@ extension DemoScript {
     /// pack with no voice takes `say.*` answers and leaves them out
     /// (characters/CHARACTER.md §8), so one script plays with or without.
     public func problems(for pack: CharacterPack = .active) -> [String] {
-        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions.map { ($0.key, $0.options.map(\.name)) })
+        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
         offered["react.mood"] = ["none"] + pack.faces.map(\.name)
         var found: [String] = []
         for step in steps {

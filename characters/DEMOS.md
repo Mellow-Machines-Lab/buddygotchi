@@ -78,13 +78,14 @@ demo with its line number. So does a brain answer the pack can't play.
 buddies side by side, each a board with its own pack, and each step
 with `"buddy": PLACE` is that buddy's: its agent's step, a poke on its
 board, talk to it alone, or its brain's answers. A step with no `buddy`
-is the first's, and talk with none goes to them all. Each buddy names
-its `place`, its `pack`, the `agent` whose hooks its steps are (`claude`
-or `codex`, in a session of its own) and maybe its `name`. Boop's
+is the first's, and talk with none goes to them all. Each buddy is
+written as `settings.json`'s `buddies` are: its `place`, its `pack`,
+its `agents` (the first is whose hooks its steps are, `claude` by
+default, in a session of its own) and maybe its `name`. Boop's
 `not-my-turn.jsonl` is one:
 
 ```json
-{"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agent": "claude"}, {"place": "right", "pack": "boop", "agent": "codex"}]}
+{"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
 {"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
 {"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
 ```

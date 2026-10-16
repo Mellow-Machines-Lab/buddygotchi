@@ -26,10 +26,11 @@ final class BuddiesTests: XCTestCase {
         XCTAssertEqual(parsed, [BuddySetting(place: "left", pack: "pixel", agents: ["claude"]),
                                 BuddySetting(place: "right", pack: "boop", agents: ["codex"], name: "Bo")])
         XCTAssertNil(BuddySetting.parse("left:pixel,left:boop"), "a place once")
-        XCTAssertNil(BuddySetting.parse("left"), "a place and a pack")
+        XCTAssertNil(BuddySetting.parse("left:pixel"), "two or more")
+        XCTAssertNil(BuddySetting.parse("left:pixel:copilot,right:boop"), "agents Boop knows")
         // The board's id is lower case and its advertised name upper case,
         // after the same two bytes of its Bluetooth address.
-        XCTAssertEqual(BuddySetting(place: "left", pack: "pixel", board: "b00p-54fe").advertised, "Boop-54FE")
+        XCTAssertEqual(BoopDevice.advertised("b00p-54fe"), "Boop-54FE")
         // Two buddies of one pack get their places after its name.
         let twins = try XCTUnwrap(BuddySetting.parse("left:pixel,right:pixel"))
         let names = try twins.map { try $0.buddy(bundled: nil, among: twins).name }
@@ -38,8 +39,7 @@ final class BuddiesTests: XCTestCase {
 
     func testASessionGoesToTheBuddyWatchingItsAgentElseTheLeastBusy() throws {
         let pixel = try CharacterPack.named(id: "pixel")
-        let buddies = [Buddy(id: "left", pack: pixel, place: "left", agents: ["claude"]),
-                       Buddy(id: "right", pack: pixel, place: "right")]
+        let buddies = [Buddy(id: "left", pack: pixel, agents: ["claude"]), Buddy(id: "right", pack: pixel)]
         let binding = BuddyBinding()
         func event(_ agent: Agent, _ session: String) -> Event {
             Event(at: 1, source: .init(agent), type: .turn, phase: .start, specificType: "UserPromptSubmit", session: session)
@@ -57,10 +57,10 @@ final class BuddiesTests: XCTestCase {
 
     func testEachBuddyAnswersItsOwnEventFirstAndTheOthersReactions() {
         let pack = CharacterPack.active
-        let all = ["left", "middle", "right"].map { Buddy(id: $0, pack: pack, place: $0) }
-        var e = Event(at: 1, source: .claude, type: .turn, phase: .end, specificType: "Stop", data: ["buddy": "right"])
+        let all = ["left", "middle", "right"].map { Buddy(id: $0, pack: pack) }
+        var e = Event(at: 1, source: .claude, type: .turn, phase: .end, specificType: "Stop", buddy: "right")
         XCTAssertEqual(Runtime.speakers(e, all), ["right", "left", "middle"])
-        e = Event(at: 1, source: .boop, type: .reacted, specificType: "brain", data: ["buddy": "middle"])
+        e = Event(at: 1, source: .boop, type: .reacted, specificType: "brain", buddy: "middle")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "right"], "a reaction wakes only the others")
         e = Event(at: 1, source: .clock, type: .heartbeat, specificType: "quiet")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "middle", "right"])
@@ -68,6 +68,7 @@ final class BuddiesTests: XCTestCase {
 
     /// Two buddies on one transcript, end to end: each agent's events go to
     /// its buddy, tagged; each buddy gets a pass of its own, its own first,
+    /// the others answering its reaction to a small event,
     /// whose prompt opens with whom it answers for; each plays on its own
     /// board; and each hears the other's reaction, until the failsafe
     /// (`Buddy.maxRepliesInARow`, 10) stops a chain no outside event
@@ -101,18 +102,27 @@ final class BuddiesTests: XCTestCase {
 
         let events = runtime.home.sync { Array(runtime.harness.log.view(now: runtime.options.clock()).events) }
         let start = try XCTUnwrap(events.first { $0.kind == "turn_start" })
-        XCTAssertEqual(Buddy.of(start), "right", "codex's session goes to the buddy that watches codex")
+        XCTAssertEqual(start.buddy, "right", "codex's session goes to the buddy that watches codex")
         let passes = events.filter { $0.kind == Event.pass && $0["for"]?.int != nil }
         let onStart = passes.filter { $0["for"]?.int == Int64(start.seq) }.map { $0["voice"]?.string }
-        XCTAssertEqual(onStart, ["right", "left"], "its own buddy answers first")
         let reacted = events.filter { $0.type == .reacted }
-        XCTAssertEqual(reacted.first.flatMap(Buddy.of), "right")
+        // Its own buddy answers first. A turn's start is a small event, so
+        // once Boop has reacted to it Pixel answers that reaction, which
+        // HISTORY shows under it, rather than the start again.
+        XCTAssertEqual(onStart, ["right"])
+        let pixelsFirst = passes.first { $0["voice"]?.string == "left" }
+        XCTAssertEqual(pixelsFirst?["for"]?.int, reacted.first.map { Int64($0.seq) })
+        XCTAssertEqual(reacted.first?.buddy, "right")
         XCTAssertTrue(reacted.first?["message"]?.string?.hasPrefix("Boop made") == true, "\(reacted.first?.data ?? [:])")
         XCTAssertTrue(reacted.contains { $0["message"]?.string?.hasPrefix("Pixel made") == true })
+        // Each reply is one more in its chain, and past the failsafe a
+        // reaction no longer wakes the others.
         let held = passes.compactMap { $0["held"]?.string }
         XCTAssertEqual(Set(held), ["the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"])
-        let answered = passes.filter { p in p["held"] == nil && reacted.contains { $0.seq == Int(p["for"]?.int ?? 0) } }
-        XCTAssertEqual(answered.count, Buddy.maxRepliesInARow, "they answer each other this often, and no more")
+        let chains = reacted.compactMap { $0["chain"]?.int }
+        XCTAssertEqual(chains.max(), Int64(Buddy.maxRepliesInARow + 1), "the reply past the failsafe is logged, and wakes nobody")
+        let answeredChains = passes.filter { $0["held"] == nil }.compactMap { p in reacted.first { $0.seq == Int(p["for"]?.int ?? 0) }?["chain"]?.int }
+        XCTAssertEqual(answeredChains.max(), Int64(Buddy.maxRepliesInARow), "they answer each other this often, and no more")
 
         // Each buddy's prompt opens with whom it answers for.
         let heads = try String(contentsOf: runtime.debugLogURL, encoding: .utf8).split(separator: "\n")
@@ -138,7 +148,7 @@ final class BuddiesTests: XCTestCase {
         let runtime = try Runtime(options)
         let step = runtime.home.sync { runtime.pipeline.poke(at: runtime.options.clock(), buddy: "right") }
         let poke = try XCTUnwrap(step.recorded.first)
-        XCTAssertEqual(Buddy.of(poke), "right")
+        XCTAssertEqual(poke.buddy, "right")
         XCTAssertEqual(runtime.home.sync { runtime.harness.line(poke.seq)?.text }, "You poked Boop.")
         XCTAssertEqual(step.recorded.last?["message"]?.string, "Boop wiggled on its own.", "its own core, in its own name")
     }

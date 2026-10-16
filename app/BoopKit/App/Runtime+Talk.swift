@@ -11,24 +11,21 @@ extension Runtime {
     /// the app's to them all.
     func heard(_ words: String, by: Core.Talker?, who: String = "dev", to buddy: String? = nil) {
         let now = options.clock()
-        let by = by ?? listener.core.talk.by
+        let by = by ?? core(listener ?? rigs[0]).talk.by
         let to = buddy.map(rig) ?? (by == .device ? listener : nil)
-        let step = pipeline.said(words, by: by, buddy: to?.id, at: now)
+        let step = pipeline.said(words, by: by, buddy: to?.tag, at: now)
         run(step)
         for rig in to.map({ [$0] }) ?? rigs {
-            run(rig.run { rig.core.heard(replyTo: step.waking.first?.seq, at: now) }, on: rig)
+            run(core(rig).heard(replyTo: step.waking.first?.seq, at: now), on: rig)
         }
         options.log("\(who): said \(words.count) characters")
     }
 
-    /// The buddy whose board's button last turned the mic on, else the
-    /// first.
-    var listener: Rig { rigs.first { $0.core.talk.by == .device && $0.core.talk.mic != nil } ?? rigs.first { $0.core.talk.by == .device } ?? rigs[0] }
-
     /// The app's mic button, which every buddy listens to: `who` is `app`
     /// for the app's own.
     func listen(_ on: Bool, who: String = "dev", buddy: String? = nil) {
-        for rig in buddy.map({ [rig($0)] }) ?? rigs { run(rig.run { rig.core.listen(on, by: .app, at: options.clock()) }, on: rig) }
+        listener = nil
+        for rig in buddy.map({ [rig($0)] }) ?? rigs { run(core(rig).listen(on, by: .app, at: options.clock()), on: rig) }
         options.log("\(who): listen \(on)")
     }
 
@@ -63,7 +60,7 @@ extension Runtime {
     public func heardNothing() {
         home.async { [self] in
             options.log("talk: heard nothing")
-            for rig in rigs { run(rig.run { rig.core.heardNothing(at: options.clock()) }, on: rig) }
+            for rig in rigs { run(core(rig).heardNothing(at: options.clock()), on: rig) }
         }
     }
 
@@ -72,7 +69,7 @@ extension Runtime {
     public func micFailed(_ why: String) {
         home.async { [self] in
             options.log("talk: \(why)")
-            for rig in rigs { run(rig.run { rig.core.micFailed(why, at: options.clock()) }, on: rig) }
+            for rig in rigs { run(core(rig).micFailed(why, at: options.clock()), on: rig) }
             changed()
         }
     }
@@ -80,7 +77,7 @@ extension Runtime {
     /// The popover's "can't hear you" notice was dismissed.
     public func dismissMicTrouble() {
         home.async { [self] in
-            for rig in rigs { rig.core.dismissMicTrouble() }
+            for rig in rigs { core(rig).dismissMicTrouble() }
             changed()
         }
     }

@@ -14,13 +14,14 @@ public enum MoodOutput {
     /// `Boop has been proud for 7 min.`, so
     /// the mood files' minutes need no sums. Nil while calm, the resting
     /// mood every other fades toward, and before any change in the log.
-    public static func sinceLine(_ mood: Choice, _ log: LogView, at now: Int64) -> String? {
+    /// `name` is whose mood it is.
+    public static func sinceLine(_ mood: Choice, _ log: LogView, at now: Int64, name: String = CharacterPack.active.name) -> String? {
         let current = value(mood, log)
-        guard current != initial, let latest = mood.latest(log) else { return nil }
+        guard current != mood.start, let latest = mood.latest(log) else { return nil }
         let at = latest.at
         let ms = now - at
         let span = ms < 60_000 ? "under a minute" : ms < 60 * 60_000 ? "\(ms / 60_000) min" : "\(ms / 3_600_000) h"
-        return "\(CharacterPack.active.name) has been \(current) for \(span)."
+        return "\(name) has been \(current) for \(span)."
     }
 
     /// Each mood and its meaning, the `mood` question's criterion, in the
@@ -41,10 +42,10 @@ public enum MoodOutput {
     /// The `mood` question's options for `mood`: stay, then each of its
     /// neighbours with its meaning, the dramatic ones also saying they're a
     /// jump. Nothing else: Jev never sees a move the graph doesn't have.
-    public static func options(from mood: String) -> [Option] {
-        let moods = moods
+    public static func options(from mood: String, in pack: CharacterPack = .active) -> [Option] {
+        let moods = pack.options
         let meaning = { (name: String) in moods.first { $0.name == name }! }
-        let moves = MoodGraph.mood(mood)?.moves ?? MoodGraph.mood(initial)!.moves
+        let moves = MoodGraph.mood(mood, in: pack)?.moves ?? MoodGraph.mood(pack.defaultMood, in: pack)!.moves
         return [Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine.")]
             + moves.ordinary.map(meaning)
             + moves.dramatic.map(meaning).map { o in
@@ -54,20 +55,20 @@ public enum MoodOutput {
 
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay and
     /// every move from the mood it has (`options(from:)`), and the line a
-    /// change shows.
-    public static func choice(voice: String? = nil, pack: CharacterPack? = nil) -> Choice {
-        let pack = pack ?? .active
-        return Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
+    /// change shows. With a `voice`, it's that buddy's, in its `pack`.
+    public static func choice(voice: String? = nil, pack: CharacterPack = .active) -> Choice {
+        Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
                       about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                       said: { from, to in "\(pack.name)'s mood changed: \(from) → \(to)." },
-                      options: { current, _, _ in pack.run { options(from: known(current)) } })
+                      options: { current, _, _ in options(from: MoodGraph.mood(current) != nil ? current : pack.defaultMood, in: pack) })
     }
 
-    /// The mood as the log has it: the choice's value, read as the resting
-    /// mood if it isn't one of the moods.
-    public static func value(_ mood: Choice, _ log: LogView) -> String { known(mood.value(log)) }
-
-    static func known(_ word: String) -> String { MoodGraph.mood(word) != nil ? word : initial }
+    /// The mood as the log has it: the choice's value, read as its resting
+    /// mood (the choice's start) if it isn't one of the moods.
+    public static func value(_ mood: Choice, _ log: LogView) -> String {
+        let word = mood.value(log)
+        return MoodGraph.mood(word) != nil ? word : mood.start
+    }
 
     /// Changes the mood now to any of the moods, off the graph, with a
     /// result for the current mood or one that isn't a mood: the dashboard

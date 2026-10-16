@@ -131,7 +131,7 @@ enum Headless {
         // awaited; played once it's there.
         let player = runtime.home.sync {
             runtime.demo(script, live: live, cursor: cursor, step: { step, agent in
-                let cause = step.cause(creature: runtime.name(of: step.buddy), agent: agent)
+                let cause = step.cause(creature: (runtime.buddies.first { $0.id == step.buddy }?.name ?? runtime.name), agent: agent)
                 if let cause { log.write("demo: \(cause.text)") }
                 recorder?.happened(cause, input: step.input)
             }, done: {

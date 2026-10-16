@@ -61,9 +61,9 @@ public final class Runtime: @unchecked Sendable {
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
-        /// Several buddies side by side, each on its own board with its
-        /// own pack: then `link` and `steering` go unused. Empty, or one,
-        /// runs the one buddy on `link` with `steering`, as Boop always has.
+        /// The buddies, each on its own board with its own pack. Empty runs
+        /// the one buddy, the process's character, on `link` with
+        /// `steering`, as Boop always has.
         public var buddies: [BuddyOptions] = []
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
@@ -92,9 +92,9 @@ public final class Runtime: @unchecked Sendable {
     /// it went idle.
     public let home = DispatchQueue(label: "boop.home", qos: .userInitiated, autoreleaseFrequency: .workItem)
     public let options: Options
-    /// Each buddy as it runs, the first, or only, first.
+    /// Each buddy's board as it runs, the first first.
     var rigs: [Rig] = []
-    /// The buddies, when there are several; empty for one.
+    /// The buddies, the first first.
     public var buddies: [Buddy] { pipeline.buddies }
     /// LinkKit's link to the first buddy's device, in Boop's vocabulary
     /// (`BoopDevice`).
@@ -108,7 +108,7 @@ public final class Runtime: @unchecked Sendable {
     /// saved one, unless this run overrides it.
     public private(set) var personality: Personality
     /// The first buddy's core.
-    var core: Core { rigs[0].core }
+    var core: Core { pipeline.core }
     let view: TranscriptView
     let pipeline: Pipeline
     /// MellowHarness's `Harness`: Boop's brain.
@@ -140,8 +140,10 @@ public final class Runtime: @unchecked Sendable {
     /// The first buddy's transport's `trouble` as the status last had it.
     var linkTrouble: String? { rigs[0].linkTrouble }
     /// Whether the Mac's mic is on, which several buddies' cores may ask
-    /// for at once.
+    /// for at once, and the buddy whose board's button turned it on last:
+    /// what it hears is said to that one.
     var micOn = false
+    var listener: Rig?
     /// Boop's XP and stage, counted from each event as it's logged,
     /// and whether the XP changed since the last status.
     let growth: GrowthStore
@@ -224,28 +226,15 @@ public final class Runtime: @unchecked Sendable {
         personality = options.personality ?? settings.personality
         let rules = options.steering.personality(personality).rules
         let places = self.places
-        // One buddy, untagged, or several, each its own board and core.
-        let plans: [BuddyOptions?] = options.buddies.count > 1 ? options.buddies : [options.buddies.first].map { $0 }
-        let all = plans.compactMap { $0?.buddy }
-        let several = all.count > 1
-        let (saved, time) = (settings, options.time)
-        rigs = plans.enumerated().map { i, plan in
-            let transport = plan?.link ?? (options.buddies.isEmpty ? options.link : nil)
-            let link = BoopDevice.link(transport, log: log)
-            var config = Core.Config(volume: saved.volume, time: time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i))
-            config.firstAsk = SessionTracker.randomFirstRequest()
-            // The launch's read-back prunes the transcript, so today isn't a new day.
-            let core = Core(config: config, lastActiveDay: today, place: places.place)
-            core.setWallClock(wall, at: wallAt)
-            return Rig(buddy: several ? plan?.buddy : nil, link: link, transport: transport, core: core,
-                       steering: plan?.steering ?? options.steering)
-        }
+        let plans = options.buddies.isEmpty
+            ? [BuddyOptions(buddy: .only(), link: options.link, steering: options.steering)] : options.buddies
+        let several = plans.count > 1
+        rigs = plans.map { Rig($0, tag: several ? $0.buddy.id : nil, log: log) }
         for rig in rigs {
             // boop.log leaves out a `state` sent again unchanged (the keepalive,
             // a reply to `hello`), which debug.jsonl keeps.
             var lastState: String?
-            let sent = options.onDeviceLine
-            let whose = rig.buddy.map { " \($0.id)" } ?? ""
+            let sent = options.onDeviceLine, whose = Runtime.whose(rig)
             rig.link.onSend = { line, sender in
                 sent?(line)
                 emit(DebugLog.sent(line, by: sender, at: clock()))
@@ -253,50 +242,43 @@ public final class Runtime: @unchecked Sendable {
                 if line.hasPrefix(#"{"t":"state""#) { lastState = line }
                 log("link\(whose) \(sender == .brain ? "brain" : "rules") → " + line)
             }
+            for over in rig.steering.overBudget(in: rig.buddy.pack) { log("steering\(whose): over budget: \(over)") }
+        }
+        // Each buddy's core, its own seed apart. The launch's read-back
+        // prunes the transcript, so today isn't a new day.
+        let volume = settings.volume
+        let cores = plans.enumerated().map { i, plan in
+            var config = Core.Config(volume: volume, time: options.time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i),
+                                     pack: plan.buddy.pack)
+            config.firstAsk = SessionTracker.randomFirstRequest()
+            let core = Core(config: config, lastActiveDay: today, place: places.place)
+            core.setWallClock(wall, at: wallAt)
+            return (plan.buddy, core)
         }
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
-        if several { view.buddies = all }
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
                                         time: options.time, note: log)
-        pipeline = Pipeline(core: rigs[0].core, view: view, transcript: transcript, time: options.time,
+        pipeline = Pipeline(cores, view: view, transcript: transcript, time: options.time,
                             clock: Harness.Clock(now: options.clock, wall: options.wallClock), queue: home, note: log)
-        if several { pipeline.run(all, cores: rigs.dropFirst().map(\.core)) }
         pipeline.brain = false  // until Jev's key is read
-        for rig in rigs {
-            for over in rig.run({ rig.steering.overBudget() }) { log("steering\(rig.buddy.map { " \($0.id)" } ?? ""): over budget: \(over)") }
-        }
+        harness = pipeline.harness
 
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var personalityNow: () -> Personality = { .default }
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
-        harness = pipeline.harness
         let rigs = self.rigs
-        if several {
-            for b in all { harness.voice(Harness.Voice(id: b.id, name: b.name)) }
-            harness.speakers { e, _ in Runtime.speakers(e, all) }
-        }
-        for rig in rigs {
-            let link = rig.link
-            // Another buddy speaks its pack's personality of the same name,
-            // or its first.
-            let own: () -> Personality = rig === rigs[0] ? { personalityNow() }
-                : { rig.run { Personality(rawValue: personalityNow().rawValue) ?? .default } }
-            rig.mood = Runtime.brain(on: harness, buddy: rig.buddy, among: all, steering: rig.steering, view: view,
-                                     core: rig.core, personality: own, reactions: rig.reactions,
-                                     queue: { queued(rig, $0, $1) },
-                                     speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                                     nature: rig === rigs[0] ? longTerm.nature : nil)
-        }
-        if several {
-            harness.closing { _, now, log, voice in
-                let rig = rigs.first { $0.id == voice?.id } ?? rigs[0]
-                return rig.run { MoodOutput.sinceLine(rig.mood, log, at: now) }
-            }
-        } else {
-            harness.closing { [mood = rigs[0].mood!] _, now, log in MoodOutput.sinceLine(mood, log, at: now) }
-        }
-        harness.reachBack { [view] _, now, log in view.workingSince(at: now, log) }
+        let moods = Runtime.brain(pipeline, rigs.map { rig in
+            let link = rig.link, pack = rig.buddy.pack
+            // Each buddy speaks its own pack's personality of the saved
+            // name, or its first. Only the first is the one long-term.md
+            // set up.
+            return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
+                        reactions: rig.reactions, queue: { queued(rig, $0, $1) },
+                        speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
+                        nature: rig === rigs[0] ? longTerm.nature : nil)
+        })
+        for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
         // means a new launch. The read-back's own lines wait for it.
@@ -328,15 +310,15 @@ public final class Runtime: @unchecked Sendable {
             // The core reads the mood where the mood output keeps it. Weak:
             // the harness holds the core.
             let mood = rig.mood!
-            rig.core.mood = { [weak harness = self.harness] in
-                rig.run { harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? MoodOutput.initial }
+            core(rig).mood = { [weak harness = self.harness] in
+                harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? mood.start
             }
             // The device's taps and push-to-talk; the link leaves out those
             // of a device whose firmware doesn't fit.
             rig.link.onEvent = { [weak self] ev in self?.deviceEvent(ev, on: rig) }
             // A hello (the first on a link, or one that says something new):
             // log who the device is, and show it what's true now.
-            let whose = rig.buddy.map { "\($0.id): " } ?? ""
+            let whose = rig.tag.map { "\($0): " } ?? ""
             rig.link.onHello = { [weak self] hello in
                 DeviceInfo(hello).logLines.forEach { log(whose + $0) }
                 if let self, let latest = rig.latest { self.show(latest, on: rig) }
@@ -345,8 +327,8 @@ public final class Runtime: @unchecked Sendable {
         // A pass can change a mood, which its device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
-            let rig = rig(e["voice"]?.string)
-            run(rig.run { rig.core.moodChanged(at: options.clock()) }, on: rig)
+            let rig = rig(e.buddy)
+            run(core(rig).moodChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
@@ -356,25 +338,16 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// Boop's brain on MellowHarness's `Harness`: its outputs,
-    /// mood then react, and the sections of Jev's
-    /// state: the guide with how to read the rest, PERSONALITY, what the
-    /// `nature` chosen at setup adds to it (the pack's `nature/` file, if
-    /// any), and MOOD, then HISTORY, closed by how long Boop has been in its mood and
-    /// reaching back to the oldest working turn. The app's, and the evals',
-    /// so the two can't drift apart. `queue` plays a reaction,
-    /// whose end `reactions` reads, and `speaks` says whether the device
-    /// plays Voice's takes. The brain is the caller's to set (`harness.use`).
+    /// Boop's brain for one buddy, the process's character (`brain`): the
+    /// evals' and the tests'. `queue` plays a reaction, whose end
+    /// `reactions` reads, and `speaks` says whether the device plays
+    /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
-        let h = pipeline.harness
-        let view = pipeline.view
-        let mood = brain(on: h, buddy: nil, among: [], steering: steering, view: view, core: pipeline.core,
-                         personality: personality, reactions: reactions, queue: queue, speaks: speaks, nature: nature)
-        h.closing { _, now, log in MoodOutput.sinceLine(mood, log, at: now) }
-        h.reachBack { _, now, log in view.workingSince(at: now, log) }
-        return (h, mood)
+        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
+                        queue: queue, speaks: speaks, nature: nature)
+        return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
     /// `debug.jsonl`'s lines from `pipeline`, to `emit`: its events
@@ -424,7 +397,7 @@ public final class Runtime: @unchecked Sendable {
             run(pipeline.tick(at: options.clock()))
             changed()
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
-                        + "link \(rigs.map { ($0.buddy.map { "\($0.id) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
+                        + "link \(rigs.map { ($0.tag.map { "\($0) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
                         + "personality \(personality.rawValue), "
                         + "mood \(moodNow), brain \(harness.brain?.id ?? "none (reading Jev's key)")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
@@ -492,7 +465,7 @@ public final class Runtime: @unchecked Sendable {
     /// Carries out a core's effects from a call outside the pipeline: the
     /// first buddy's, or `rig`'s.
     func run(_ effects: [CoreEffect], on rig: Rig? = nil) {
-        run(pipeline.effects(effects, buddy: rig?.id, at: options.clock()))
+        run(pipeline.effects(effects, buddy: rig?.tag, at: options.clock()))
     }
 
     /// Carries out what an input did: the core's
@@ -556,7 +529,7 @@ public final class Runtime: @unchecked Sendable {
 
     public func setVolume(_ volume: Int) {
         home.async { [self] in
-            for rig in rigs { run(rig.core.setVolume(volume, at: options.clock()), on: rig) }
+            for rig in rigs { run(core(rig).setVolume(volume, at: options.clock()), on: rig) }
             saveSettings { $0.volume = core.config.volume }
         }
     }

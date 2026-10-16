@@ -2,9 +2,8 @@ import Foundation
 import LinkKit
 import MellowHarness
 
-// The buddies: each board's link, core, mood and reactions, and how the
-// brain answers for each. One buddy runs as Boop always has: nothing in
-// the transcript names it.
+// The buddies: each board's link and reactions, and how the brain answers
+// for each. One buddy runs as Boop always has: nothing names it.
 extension Runtime {
     /// One buddy to run: who it is, its board, and its steering.
     public struct BuddyOptions {
@@ -19,15 +18,14 @@ extension Runtime {
         }
     }
 
-    /// One buddy as it runs: its board's link, its own core, which hears
-    /// only its own agents, its mood and its reactions on the board. On
-    /// `home`.
+    /// One buddy's board as it runs: its link, its reactions there and its
+    /// mood. Its core is the pipeline's. On `home`.
     final class Rig: @unchecked Sendable {
-        /// Nil for the only buddy, which nothing tags.
-        let buddy: Buddy?
+        let buddy: Buddy
+        /// Its tag in the transcript: its id with several buddies, nil for one.
+        let tag: String?
         let link: DeviceLink
         let transport: Transport?
-        let core: Core
         let steering: Steering
         let reactions = Reactions()
         var mood: Choice!
@@ -36,98 +34,108 @@ extension Runtime {
         /// The transport's `trouble` as the status last had it.
         var linkTrouble: String?
 
-        init(buddy: Buddy?, link: DeviceLink, transport: Transport?, core: Core, steering: Steering) {
-            self.buddy = buddy
-            self.link = link
-            self.transport = transport
-            self.core = core
-            self.steering = steering
+        init(_ options: BuddyOptions, tag: String?, log: @escaping (String) -> Void) {
+            buddy = options.buddy
+            self.tag = tag
+            transport = options.link
+            link = BoopDevice.link(options.link, log: log)
+            steering = options.steering
         }
-
-        var id: String? { buddy?.id }
-
-        /// `body` with this buddy's pack in scope.
-        func run<R>(_ body: () -> R) -> R { buddy?.pack.run(body) ?? body() }
     }
 
-    /// What the buddy `id` is called: the first's, or the only one's, name
-    /// from `long-term.md`.
-    public func name(of id: String?) -> String { id.flatMap { id in buddies.first { $0.id == id }?.name } ?? name }
+    /// The rig of the buddy tagged `tag`, the first's for none.
+    func rig(_ tag: String?) -> Rig { rigs.first { $0.tag == tag } ?? rigs[0] }
+
+    /// A rig's core.
+    func core(_ rig: Rig) -> Core { pipeline.core(rig.buddy.id) }
 
     /// Every buddy's board has said who it is: those with no link aside.
     public var helloFromEvery: Bool { rigs.allSatisfy { $0.transport == nil || $0.link.hello != nil } }
 
-    /// The rig of the buddy `id`, the first's for none or one it doesn't run.
-    func rig(_ id: String?) -> Rig { id.flatMap { id in rigs.first { $0.id == id } } ?? rigs[0] }
+    /// ` left`: which buddy, for the log; nothing for the only one.
+    static func whose(_ rig: Rig) -> String { rig.tag.map { " \($0)" } ?? "" }
 
-    /// The buddies as MellowHarness's voices hear them: with several, each
-    /// event is answered by its own buddy first, then the others; a buddy's
-    /// reaction by the others only.
+    /// The buddies as MellowHarness's voices hear them: each event is
+    /// answered by its own buddy first, then the others; a buddy's reaction
+    /// by the others only.
     static func speakers(_ e: Event, _ buddies: [Buddy]) -> [String] {
         let ids = buddies.map(\.id)
-        guard let own = Buddy.of(e), ids.contains(own) else { return ids }
+        guard let own = e.buddy, ids.contains(own) else { return ids }
         let others = ids.filter { $0 != own }
         return e.type == .reacted ? others : [own] + others
     }
 
-    /// Registers one buddy's brain on `h`: its mood and react outputs and
-    /// its prompt's sections, the guide with how to read the rest,
-    /// PERSONALITY, what its `nature` adds, and MOOD. With several buddies
-    /// (`voice` set) they're its voice's alone, and its prompt opens with
-    /// whom it answers for (`Buddy.header`). Returns its mood.
-    static func brain(on h: Harness, buddy: Buddy?, among all: [Buddy], steering: Steering, view: TranscriptView,
-                      core: Core, personality: @escaping () -> Personality, reactions: Reactions,
-                      queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
-                      nature: LongTerm.Nature?) -> Choice {
-        let voice = buddy?.id
-        func scope<R>(_ body: () -> R) -> R { buddy?.pack.run(body) ?? body() }
-        let mood = MoodOutput.choice(voice: voice, pack: buddy?.pack)
-        // A reaction your tap cut short is in progress while the pokes go
-        // on, and done once anything else happens.
-        // A reaction's end, MellowHarness's own event, never stops the pokes.
-        // The rule holds the log, not the harness, which holds the rule.
-        let transcript = h.log
-        h.on("*") { e in
-            guard !reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
-            reactions.pokesStopped()
+    /// One buddy's part of the brain: what `brain` registers for it.
+    public struct Mind {
+        public var buddy: Buddy
+        public var steering: Steering
+        public var personality: () -> Personality
+        public var reactions: Reactions
+        public var queue: (DeviceReaction, Pending) -> Void
+        public var speaks: () -> Bool
+        public var nature: LongTerm.Nature?
+
+        public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
+                    queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool, nature: LongTerm.Nature?) {
+            self.buddy = buddy
+            self.steering = steering
+            self.personality = personality
+            self.reactions = reactions
+            self.queue = queue
+            self.speaks = speaks
+            self.nature = nature
         }
-        let react = scope {
-            ReactOutput(queue: queue, blocked: { core.reactionBlock }, who: { [weak h] now in
+    }
+
+    /// Boop's brain on the pipeline's harness, the app's and the evals', so
+    /// the two can't drift apart: for each buddy its outputs, mood then
+    /// react, and the sections of Jev's state: the guide with how to read
+    /// the rest, PERSONALITY, what the `nature` chosen at setup adds to it
+    /// (the pack's `nature/` file, if any), and MOOD; then HISTORY, closed
+    /// by how long the buddy has been in its mood and reaching back to the
+    /// oldest working turn. With several buddies each is a voice: its own
+    /// outputs and sections, and a prompt that opens with whom it answers
+    /// for (`Buddy.header`). Returns each buddy's mood. The brain is the
+    /// caller's to set (`harness.use`).
+    public static func brain(_ pipeline: Pipeline, _ minds: [Mind]) -> [Choice] {
+        let h = pipeline.harness, view = pipeline.view, all = pipeline.buddies
+        if pipeline.several {
+            for b in all { h.voice(Harness.Voice(id: b.id, name: b.name)) }
+            h.speakers { e, _ in Runtime.speakers(e, all) }
+        }
+        let moods = minds.map { m -> Choice in
+            let voice = pipeline.tag(m.buddy.id), pack = m.buddy.pack, core = pipeline.core(m.buddy.id)
+            let mood = MoodOutput.choice(voice: voice, pack: pack)
+            // A reaction your tap cut short is in progress while the pokes
+            // go on, and done once anything else happens. A reaction's end,
+            // MellowHarness's own event, never stops the pokes. The rule
+            // holds the log, not the harness, which holds the rule.
+            let transcript = h.log
+            h.on("*") { e in
+                guard !m.reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
+                m.reactions.pokesStopped()
+            }
+            let react = ReactOutput(queue: m.queue, blocked: { core.reactionBlock }, who: { [weak h] now in
                 // Weak: the harness holds this output.
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
                 return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
-            }, speaks: speaks, seed: buddy.map { $0.id.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0)
+            }, speaks: m.speaks, pack: pack, voice: voice)
+            h.output(mood)
+            h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+            let mine = { (asked: Harness.Voice?) in asked?.id == voice }
+            if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
+            h.section { _, v in mine(v) ? m.steering.guide + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil }
+            h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
+            h.section { _, v in mine(v) ? m.nature.flatMap(m.steering.nature) : nil }
+            h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
+            return mood
         }
-        let mine = { (asked: Harness.Voice?) in asked?.id == voice }
-        h.output(mood, voice: voice)
-        h.output(buddy == nil ? react : Scoped(react, buddy), voice: voice, openFor: ReactOutput.openForMs,
-                 keepOpen: TranscriptView.heldByPokes)
-        if let buddy { h.section { _, v in mine(v) ? Buddy.header(for: buddy, among: all) : nil } }
-        h.section { _, v in mine(v) ? scope { steering.guide + "\n" + EventLine.reading + "\n" + EventLine.words } : nil }
-        h.section { _, v in mine(v) ? steering.personality(personality()).text : nil }
-        h.section { _, v in mine(v) ? nature.flatMap(steering.nature) : nil }
-        h.section { log, v in mine(v) ? scope { steering.mood(MoodOutput.value(mood, log)) } : nil }
-
-        return mood
-    }
-
-    /// An output run with its buddy's pack in scope, so its questions and
-    /// what it did name that buddy.
-    final class Scoped: Output {
-        let inner: any Output
-        let buddy: Buddy?
-        init(_ inner: any Output, _ buddy: Buddy?) {
-            self.inner = inner
-            self.buddy = buddy
+        h.closing { _, now, log, v in
+            let i = minds.firstIndex { pipeline.tag($0.buddy.id) == v?.id } ?? 0
+            return MoodOutput.sinceLine(moods[i], log, at: now, name: minds[i].buddy.name)
         }
-
-        var name: String { inner.name }
-        func questions(now: Event?, log: LogView) -> [Question] {
-            buddy?.pack.run { inner.questions(now: now, log: log) } ?? inner.questions(now: now, log: log)
-        }
-        func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
-            buddy?.pack.run { inner.run(answers, now: now, log: log) } ?? inner.run(answers, now: now, log: log)
-        }
+        h.reachBack { _, now, log in view.workingSince(at: now, log) }
+        return moods
     }
 }

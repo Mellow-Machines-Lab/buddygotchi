@@ -188,6 +188,12 @@ class InUse(Exception):
     """Another simulator has the port or the socket."""
 
 
+def unwire(ours: dict) -> None:
+    """Removes every socket this server made that's still its own."""
+    for socket_path, made in ours.items():
+        remove_if_ours(socket_path, made)
+
+
 def remove_if_ours(path: str, ours: tuple) -> None:
     """Removes the socket only if it's still the one this server made: a
     newer simulator's, made after a stale one was taken, stays."""
@@ -336,8 +342,7 @@ def main() -> int:
             ours[socket_path] = wired[path].serve(socket_path)
     except InUse as e:
         server.server_close()
-        for socket_path, made in ours.items():
-            remove_if_ours(socket_path, made)
+        unwire(ours)
         print(f"simulator: {e}", file=sys.stderr)
         return 1
 
@@ -363,8 +368,7 @@ def main() -> int:
         pass
     finally:
         server.server_close()
-        for socket_path, made in ours.items():
-            remove_if_ours(socket_path, made)
+        unwire(ours)
     return 0
 
 

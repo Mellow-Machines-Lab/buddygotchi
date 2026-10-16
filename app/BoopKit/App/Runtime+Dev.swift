@@ -61,7 +61,7 @@ extension Runtime {
     /// transcript.
     func forcePass(_ choices: [String: String], by: String, who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)
-        let ran = rig.run { harness.force(choices, by: by, voice: rig.id) }
+        let ran = harness.force(choices, by: by, voice: rig.tag)
         options.log("\(who): forced pass\(Runtime.whose(rig)) → " + Harness.OutputRecord.names(ran))
         changed()
     }
@@ -70,9 +70,7 @@ extension Runtime {
     /// device too.
     func forceMood(_ to: String, by: String, who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)
-        let result = rig.run {
-            harness.force(rig.mood, by: by) { MoodOutput.change(rig.mood, to: to, log: harness.log.view(now: options.clock())) }
-        }
+        let result = harness.force(rig.mood, by: by) { MoodOutput.change(rig.mood, to: to, log: harness.log.view(now: options.clock())) }
         options.log("\(who): mood\(Runtime.whose(rig)) \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
         changed()
     }
@@ -81,7 +79,7 @@ extension Runtime {
     func tapped(who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)
         options.log("\(who): tap\(Runtime.whose(rig))")
-        run(pipeline.poke(at: options.clock(), buddy: rig.id))
+        run(pipeline.poke(at: options.clock(), buddy: rig.tag))
         changed()
     }
 
