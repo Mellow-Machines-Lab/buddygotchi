@@ -1851,6 +1851,76 @@ final class RuntimeTests: XCTestCase {
         }
         XCTAssertEqual(forced, ["curious"])
     }
+
+    /// With no agent, a compact sends what each agent sends once it has
+    /// compacted its context: Claude's `SessionStart` with the source
+    /// `compact`, Codex's `PostCompact`. Either is a session start whose
+    /// context was compacted, which the rules play as `starting` with the
+    /// ctx `compacted`, while the turn goes on working.
+    func testADemoWithNoAgentCompactsAsClaudeDoes() throws { try compactsWithNoAgent("claude") }
+    func testADemoWithNoAgentCompactsAsCodexDoes() throws { try compactsWithNoAgent("codex") }
+
+    func compactsWithNoAgent(_ agent: String) throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let script = try DemoScript("""
+            {"demo": 1, "title": "The wall", "agent": "\(agent)"}
+            {"agent": "prompt", "text": "Go", "after": 0}
+            {"agent": "compact", "after": 0, "takes": 0.1}
+            {"agent": "reply", "text": "Done.", "after": 30}
+            """)
+        runtime.home.sync { runtime.play(script) }
+        eventually("\(agent): the compacted card") { transport.dos("starting").contains { $0.contains(#""ctx":"compacted""#) } }
+        let starts = runtime.home.sync {
+            runtime.harness.log.events.filter { $0.kind == Event.kind(.session, .start) }
+                .map { "\($0.specificType) \($0["source"]?.string ?? "")" }
+        }
+        XCTAssertEqual(starts, ["SessionStart startup", agent == "claude" ? "SessionStart compact" : "PostCompact compact"], agent)
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).base }, "working",
+                       "\(agent): the turn goes on")
+    }
+
+    /// A live demo's compact waits for the agent to say it compacted: a
+    /// session start that isn't one passes by.
+    func testALiveDemoWaitsForClaudesCompaction() throws { try waitsForTheCompaction("claude", ("SessionStart", "compact")) }
+    func testALiveDemoWaitsForCodexsCompaction() throws { try waitsForTheCompaction("codex", ("PostCompact", nil)) }
+
+    func waitsForTheCompaction(_ agent: String, _ compacted: (hook: String, source: String?)) throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"agent": "compact"}
+            {"brain": {"react.mood": "confused"}, "after": 0}
+            {"agent": "reply", "text": "Done."}
+            """)
+        let cursor = dir.appendingPathComponent("demo-cursor-\(agent)")
+        runtime.home.sync { runtime.play(script, live: true, cursor: cursor) }
+        func settle() { runtime.home.sync {}; Thread.sleep(forTimeInterval: 0.1); runtime.home.sync {} }
+        func due() -> String? { (try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        func hook(_ name: String, source: String? = nil) {
+            runtime.home.sync {
+                var line = HookLine(agent: agent, hook: name, session: "s1", cwd: "/tmp/notes", ts: 0)
+                line.source = source
+                runtime.hook(line, received: 0)
+            }
+            settle()
+        }
+        settle()
+        hook("UserPromptSubmit")
+        XCTAssertEqual(due(), "1", "\(agent): the compact is due")
+        hook("SessionStart", source: "resume")
+        XCTAssertEqual(due(), "1", "\(agent): a session start that isn't a compaction passes by")
+        hook(compacted.hook, source: compacted.source)
+        XCTAssertEqual(due(), "3", "\(agent): compacted, and the brain's answer done")
+        let forced = runtime.home.sync {
+            runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
+                .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
+        }
+        XCTAssertEqual(forced, ["confused"], agent)
+    }
 }
 
 /// What a runtime in debug mode logged and printed. Not nested in a test:

@@ -10,6 +10,15 @@ agent does for real.
 
 Requests that aren't a turn of the session, such as an agent asking a
 model for a title, get the script's title and don't use up a step.
+
+A compact step is the context filling up, and the agent compacts it for
+real. Claude Code compacts when the API says the prompt is too long: the
+request after the step before gets that answer, once the compact is due.
+Codex compacts when a reply says the context holds more tokens than its
+limit (`CODEX_COMPACT_LIMIT`, which the session tool sets in its config):
+the reply before the compact says so. Either then asks the model for a
+summary of the conversation, which gets the step's `summary`, and goes on
+with the next step.
 """
 from __future__ import annotations
 
@@ -31,6 +40,23 @@ CHARS_PER_SECOND = 90.0
 THINK = 0.8
 # How much faster than that it all goes: tests set it high.
 SPEED = 1.0
+
+# What an agent's request for a summary of the conversation says when it
+# compacts it: Claude Code's, then Codex's.
+SUMMARY_ASKS = ("create a detailed summary of the conversation", "CONTEXT CHECKPOINT COMPACTION")
+# The summary when a compact step doesn't give one, or the agent compacts
+# when the script has no compact.
+SUMMARY = "The work so far is in the files. Go on with the task from where it was."
+# Seconds an agent's compaction takes when its step doesn't say, as
+# DemoScript's default.
+COMPACTING = 2.0
+# The tokens Codex's context may hold before it compacts. The reply before
+# a compact says it holds more.
+CODEX_COMPACT_LIMIT = 200_000
+# The API's answer to a prompt longer than the model's context, which
+# Claude Code meets by compacting the conversation.
+TOO_LONG = {"type": "error", "error": {"type": "invalid_request_error",
+                                       "message": "prompt is too long: 1000001 tokens > 1000000 maximum"}}
 
 
 def claude_call(l: Dict[str, Any], workspace: str, tools: List[str]) -> Tuple[str, Dict[str, Any]]:
@@ -109,6 +135,12 @@ class Replay:
     def next(self, thread: str = "main") -> Optional[Dict[str, Any]]:
         with self.lock:
             queue = self.queues[thread]
+            # A turn where a compact is due: the agent went on without
+            # compacting, so the script does too.
+            while queue and queue[0]["agent"] == "compact":
+                self.log(f"model: the agent didn't compact at step {queue[0]['n']}; going on")
+                queue.pop(0)
+                self.served += 1
             if not queue:
                 self.log("model: the script has no more replies; ending the turn")
                 return None
@@ -117,6 +149,41 @@ class Replay:
         self.due(step["n"])
         self.log(f"model: reply {self.served} of {self.total} (step {step['n']}, {thread})")
         return step
+
+    def compacts_next(self) -> bool:
+        """Whether the main thread's next step is a compact."""
+        with self.lock:
+            queue = self.queues["main"]
+            return bool(queue) and queue[0]["agent"] == "compact"
+
+    def wall(self) -> bool:
+        """Whether this turn's request meets a full context: once, when the
+        next step is a compact, after waiting until it's due."""
+        with self.lock:
+            queue = self.queues["main"]
+            if not queue or queue[0]["agent"] != "compact" or queue[0].get("walled"):
+                return False
+            step = queue[0]
+            step["walled"] = True
+        self.due(step["n"])
+        self.log(f"model: the context is full (step {step['n']})")
+        return True
+
+    def summary(self) -> Tuple[Optional[Dict[str, Any]], str]:
+        """The answer to a request for a summary: the compact step due, if
+        it's next, and its summary. One the script has no compact for
+        costs no step."""
+        with self.lock:
+            queue = self.queues["main"]
+            step = queue.pop(0) if queue and queue[0]["agent"] == "compact" else None
+            if step:
+                self.served += 1
+        if not step:
+            self.log("model: a summary the script has no compact for")
+            return None, SUMMARY
+        self.due(step["n"])
+        self.log(f"model: the summary, reply {self.served} of {self.total} (step {step['n']})")
+        return step, step.get("summary") or SUMMARY
 
     @staticmethod
     def wait(seconds: float) -> None:
@@ -130,6 +197,17 @@ class Replay:
         return [" ".join(words[i:i + 3]) + (" " if i + 3 < len(words) else "") for i in range(0, len(words), 3)]
 
 
+def asks_for_summary(body: Dict[str, Any]) -> bool:
+    """Whether a request is the agent asking for a summary of the
+    conversation, to compact it: its last message, the person's, says so."""
+    items = body.get("messages") or body.get("input") or []
+    last = next((i for i in reversed(items) if isinstance(i, dict) and i.get("role") == "user"), {})
+    content = last.get("content", "")
+    text = content if isinstance(content, str) else " ".join(
+        b.get("text", "") for b in content if isinstance(b, dict))
+    return any(ask in text for ask in SUMMARY_ASKS)
+
+
 def sse(handler: BaseHTTPRequestHandler, name: str, data: Dict[str, Any]) -> None:
     handler.wfile.write(f"event: {name}\ndata: {json.dumps(data)}\n\n".encode())
     handler.wfile.flush()
@@ -139,9 +217,23 @@ def serve_anthropic(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, A
     tools = [t.get("name") for t in body.get("tools") or []]
     model = body.get("model", "claude")
     # A turn of the session offers tools; a title or a probe doesn't.
-    step = replay.next(replay.thread(body)) if tools and (body.get("max_tokens") or 2) > 1 else None
-    text = (said(step) or "") if step else replay.title
-    calls = [claude_call(step, replay.workspace, tools)] if step and step["agent"] != "reply" else []
+    turn = bool(tools) and (body.get("max_tokens") or 2) > 1
+    summary = asks_for_summary(body)
+    if summary:
+        step, words = replay.summary()
+        # Claude Code keeps what's in the summary tags.
+        text, calls = f"<analysis>\nWhere the work stands.\n</analysis>\n\n<summary>\n{words}\n</summary>", []
+        pause = (step or {}).get("takes", COMPACTING)
+    else:
+        if turn and replay.thread(body) == "main" and replay.wall():
+            data = json.dumps(TOO_LONG).encode()
+            h.send_response(400); h.send_header("content-type", "application/json")
+            h.send_header("content-length", str(len(data))); h.end_headers(); h.wfile.write(data)
+            return
+        step = replay.next(replay.thread(body)) if turn else None
+        text = (said(step) or "") if step else replay.title
+        calls = [claude_call(step, replay.workspace, tools)] if step and step["agent"] != "reply" else []
+        pause = THINK if step else 0
     blocks: List[Tuple[str, Any]] = ([("text", text)] if text else []) + [("tool", c) for c in calls]
     stop = "tool_use" if calls else "end_turn"
     if not body.get("stream"):
@@ -155,12 +247,12 @@ def serve_anthropic(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, A
     sse(h, "message_start", {"type": "message_start", "message": {
         "id": "msg_" + replay.ident(), "type": "message", "role": "assistant", "model": model, "content": [],
         "stop_reason": None, "stop_sequence": None, "usage": {"input_tokens": 100, "output_tokens": 1}}})
-    if step:
-        replay.wait(THINK)
+    replay.wait(pause)
     for i, (kind, value) in enumerate(blocks):
         if kind == "text":
             sse(h, "content_block_start", {"type": "content_block_start", "index": i, "content_block": {"type": "text", "text": ""}})
-            for piece in replay.chunks(value):
+            # A summary, which nobody reads as it streams, comes at once.
+            for piece in [value] if summary else replay.chunks(value):
                 sse(h, "content_block_delta", {"type": "content_block_delta", "index": i, "delta": {"type": "text_delta", "text": piece}})
                 replay.wait(len(piece) / CHARS_PER_SECOND)
         else:
@@ -177,24 +269,31 @@ def serve_anthropic(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, A
 def serve_openai(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, Any]) -> None:
     # A request for structured output, such as the thread's title, isn't a
     # turn of the session.
+    tokens, summary = 100, False
     if (body.get("text") or {}).get("format"):
-        step, text = None, json.dumps({"title": replay.title})
+        step, text, pause = None, json.dumps({"title": replay.title}), 0.0
+    elif asks_for_summary(body):
+        (step, text), summary = replay.summary(), True
+        pause = (step or {}).get("takes", COMPACTING)
     else:
         step = replay.next()
         text = (said(step) or "") if step else ""
-    item = codex_item(step, replay.ident()) if step and step["agent"] != "reply" else None
+        pause = THINK if step else 0.0
+        # The reply before a compact fills the context past Codex's limit.
+        if step and replay.compacts_next():
+            tokens = CODEX_COMPACT_LIMIT + 1000
+    item = codex_item(step, replay.ident()) if step and not summary and step["agent"] != "reply" else None
     rid = "resp_" + replay.ident()
     h.send_response(200); h.send_header("content-type", "text/event-stream"); h.send_header("cache-control", "no-cache"); h.end_headers()
     sse(h, "response.created", {"type": "response.created", "response": {"id": rid}})
-    if step:
-        replay.wait(THINK)
+    replay.wait(pause)
     index = 0
     if text:
         mid = "msg_" + replay.ident()
         message = {"type": "message", "id": mid, "role": "assistant", "content": [{"type": "output_text", "text": text}]}
         sse(h, "response.output_item.added", {"type": "response.output_item.added", "output_index": index,
                                               "item": dict(message, content=[])})
-        for piece in replay.chunks(text):
+        for piece in [text] if summary else replay.chunks(text):
             sse(h, "response.output_text.delta", {"type": "response.output_text.delta", "item_id": mid, "output_index": index,
                                                   "content_index": 0, "delta": piece})
             replay.wait(len(piece) / CHARS_PER_SECOND)
@@ -204,7 +303,8 @@ def serve_openai(h: BaseHTTPRequestHandler, replay: Replay, body: Dict[str, Any]
         sse(h, "response.output_item.done", {"type": "response.output_item.done", "output_index": index, "item": item})
         replay.wait(0.3)
     sse(h, "response.completed", {"type": "response.completed", "response": {"id": rid, "usage": {
-        "input_tokens": 100, "input_tokens_details": None, "output_tokens": 50, "output_tokens_details": None, "total_tokens": 150}}})
+        "input_tokens": tokens, "input_tokens_details": None, "output_tokens": 50, "output_tokens_details": None,
+        "total_tokens": tokens + 50}}})
 
 
 def start(replay: Replay, port: int = 0) -> ThreadingHTTPServer:

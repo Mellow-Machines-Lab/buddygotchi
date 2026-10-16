@@ -153,7 +153,8 @@ public final class DemoPlayer: @unchecked Sendable {
     // MARK: A live agent
 
     /// The hook that ends an agent step: its turn's start, a tool's end of
-    /// the right kind, the reviewer's start or report, or the turn's end.
+    /// the right kind, the reviewer's start or report, the session's start
+    /// once its context is compacted, or the turn's end.
     func endOf(_ a: DemoScript.Step.Agent) -> (HookLine) -> Bool {
         func toolEnd(_ kinds: Set<ToolKind>) -> (HookLine) -> Bool {
             { Mapping.kind(of: $0).map { $0 == (.tool, .end) } == true && kinds.contains(ToolKind.of($0.tool ?? "")) }
@@ -165,6 +166,8 @@ public final class DemoPlayer: @unchecked Sendable {
         case .edit: return toolEnd([.edit])
         case .run: return toolEnd([.shell])
         case .review: return { $0.hook == "SubagentStart" }
+        // Claude's `SessionStart` with the source `compact`, Codex's `PostCompact`.
+        case .compact: return { Mapping.event(from: $0)?.source == Mapping.compacted }
         case .reply: return a.byReviewer ? { $0.hook == "SubagentStop" } : { $0.hook == "Stop" }
         }
     }
@@ -265,6 +268,17 @@ public final class DemoPlayer: @unchecked Sendable {
             later(0.2) { [self] in
                 send("SubagentStart")
                 send("PostToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
+                finish()
+            }
+        case .compact:
+            // What each agent sends once it has compacted, its compaction
+            // taking the step's seconds.
+            later(step.takes) { [self] in
+                if codex {
+                    send("PostCompact")
+                } else {
+                    send("SessionStart") { $0.source = Mapping.compacted }
+                }
                 finish()
             }
         case .reply:

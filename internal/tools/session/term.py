@@ -65,6 +65,12 @@ class Terminal:
 
     @staticmethod
     def size() -> tuple:
+        """The agent's screen: `DEMO_ROWS` × `DEMO_COLS` if set, for a
+        recording the same size every time, else this terminal's, else
+        40 × 120."""
+        fixed = os.environ.get("DEMO_ROWS", ""), os.environ.get("DEMO_COLS", "")
+        if all(v.isdigit() and int(v) > 0 for v in fixed):
+            return int(fixed[0]), int(fixed[1])
         try:
             rows, cols, _, _ = struct.unpack("HHHH", fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, b"\0" * 8))
             if rows and cols:

@@ -1,9 +1,10 @@
 """The session tool's own tests: demo scripts read as the agent's side,
 each reply becomes each agent's tools, the replay server speaks both APIs
-as the agents read them and waits for the script, the gate holds a call
-until its step is due, and the landing demo's edits still fit its project
-and give its story's test results. None of it runs an agent; `make
-session` does."""
+as the agents read them and waits for the script, a compact makes each
+agent compact and gets its summary, the gate holds a call until its step
+is due, and the landing and context-wall demos' edits still fit their
+projects and give their stories' test results. None of it runs an agent;
+`make demo IN=…` does."""
 from __future__ import annotations
 
 import json
@@ -14,6 +15,8 @@ import tempfile
 import threading
 import time
 import unittest
+import unittest.mock
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -24,6 +27,7 @@ import gate  # noqa: E402
 import model  # noqa: E402
 import script as scripts  # noqa: E402
 import session  # noqa: E402
+import term  # noqa: E402
 
 SESSIONS = HERE.parents[3] / "internal" / "sessions"
 
@@ -53,7 +57,7 @@ class ScriptTests(unittest.TestCase):
             replies = s.replies()
             self.assertTrue(replies, folder.name)
             for l in replies:
-                if l["agent"] != "reply":
+                if l["agent"] not in ("reply", "compact"):
                     self.assertTrue(model.claude_call(l, "/ws", ["Read", "Edit", "Bash", "Agent"]), f"{folder.name}: {l}")
 
     def test_steps_are_numbered_as_boop_counts_them(self):
@@ -85,6 +89,22 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual("keyboard-shortcuts", scripts.load(scripts.find("landing")).project)
         self.assertEqual("a-b-2", scripts.Script(path=Path("x.jsonl"), title=" A, b--2! ").project)
         self.assertEqual("project", scripts.Script(path=Path("x.jsonl"), title="").project)
+
+    def test_a_compact_plays_only_where_the_model_is_replayed(self):
+        # A real model can't be made to fill its context on cue.
+        s = scripts.load(scripts.find("context-wall"))
+        self.assertIn("IN=simulated-claude-terminal", session.refusal(s, "claude", "desktop"))
+        self.assertIsNone(session.refusal(s, "claude", "terminal"))
+        self.assertIsNone(session.refusal(s, "codex", "terminal"))
+        self.assertIn("no subagents", session.refusal(scripts.load(scripts.find("landing")), "codex", "terminal"))
+
+    def test_the_agents_screen_can_be_fixed_for_a_recording(self):
+        sizes = []
+        for rows, cols in (("30", "100"), ("", "100"), ("x", "y")):
+            with unittest.mock.patch.dict("os.environ", {"DEMO_ROWS": rows, "DEMO_COLS": cols}):
+                sizes.append(term.Terminal.size())
+        self.assertEqual(sizes[0], (30, 100))
+        self.assertEqual(sizes[1], sizes[2], "else this terminal's, or 40 × 120")
 
     def test_the_demo_command_is_the_scripts_replies_in_order(self):
         s = scripts.load(scripts.find("landing"))
@@ -205,6 +225,66 @@ class ServerTests(unittest.TestCase):
         self.assertEqual((run["name"], args["cmd"], args["sandbox_permissions"]), ("exec_command", "npm run setup", "require_escalated"))
         self.assertIn("*** Update File: src/a.js\n@@\n-a\n+b\n", edit["input"])
 
+    # Claude Code's request for a summary when it compacts, as 2.1.282 words it.
+    CLAUDE_SUMMARY = ("CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.\n\nYour task is to create a detailed "
+                      "summary of the conversation so far, paying close attention to the user's explicit requests")
+    # Codex's, as 0.153.4 words it.
+    CODEX_SUMMARY = "You are performing a CONTEXT CHECKPOINT COMPACTION. Create a handoff summary for another LLM"
+
+    def test_claude_meets_a_full_context_then_gets_the_summary_then_goes_on(self):
+        asked = []
+        replay, url, _ = self.serve([
+            {"n": 1, "agent": "edit", "file": "a.js", "old": "a", "new": "b"},
+            {"n": 2, "agent": "compact", "summary": "The edit is in."},
+            {"n": 3, "agent": "run", "cmd": "npm test", "say": "Now the tests."},
+        ], due=asked.append)
+        turn = {"stream": True, "max_tokens": 1000, "tools": [{"name": "Bash"}], "messages": [{"role": "user", "content": "go"}]}
+        post(url + "/v1/messages", turn)
+        # The request after the edit: the context is full, once the compact is due.
+        with self.assertRaises(urllib.error.HTTPError) as wall:
+            post(url + "/v1/messages", turn)
+        self.assertEqual(wall.exception.code, 400)
+        self.assertIn("prompt is too long", json.loads(wall.exception.read())["error"]["message"])
+        self.assertEqual((asked, replay.served), ([1, 2], 1), "the compact was due, and isn't served yet")
+        summary = dict(turn, messages=[{"role": "user", "content": [{"type": "text", "text": self.CLAUDE_SUMMARY}]}])
+        events = post(url + "/v1/messages", summary)
+        text = "".join(e["delta"]["text"] for e in events if e.get("delta", {}).get("type") == "text_delta")
+        self.assertIn("<summary>\nThe edit is in.\n</summary>", text)
+        self.assertNotIn("tool_use", [e.get("content_block", {}).get("type") for e in events], "a summary is text only")
+        self.assertEqual(replay.served, 2, "the summary is the compact's")
+        events = post(url + "/v1/messages", turn)
+        self.assertEqual([json.loads(e["delta"]["partial_json"]) for e in events if e.get("delta", {}).get("type") == "input_json_delta"],
+                         [{"command": "npm test", "description": "npm test"}], "then the next step")
+
+    def test_a_summary_the_script_has_no_compact_for_costs_nothing(self):
+        replay, url, _ = self.serve([{"n": 1, "agent": "reply", "text": "Done."}])
+        events = post(url + "/v1/messages", {"stream": True, "max_tokens": 1000, "tools": [{"name": "Bash"}],
+                                             "messages": [{"role": "user", "content": self.CLAUDE_SUMMARY}]})
+        text = "".join(e["delta"]["text"] for e in events if e.get("delta", {}).get("type") == "text_delta")
+        self.assertIn(model.SUMMARY, text)
+        self.assertEqual(replay.served, 0)
+
+    def test_an_agent_that_doesnt_compact_moves_the_script_on(self):
+        replay, url, lines = self.serve([{"n": 1, "agent": "compact"}, {"n": 2, "agent": "reply", "text": "Done."}])
+        self.assertEqual(replay.next()["n"], 2)
+        self.assertIn("model: the agent didn't compact at step 1; going on", lines)
+
+    def test_codex_hears_its_context_is_past_its_limit_then_gets_the_summary(self):
+        replay, url, _ = self.serve([
+            {"n": 1, "agent": "run", "cmd": "npm test"},
+            {"n": 2, "agent": "compact", "summary": "The tests ran."},
+            {"n": 3, "agent": "reply", "text": "Done."},
+        ])
+        usage = lambda events: [e["response"]["usage"] for e in events if e["type"] == "response.completed"][0]
+        self.assertGreater(usage(post(url + "/v1/responses", {"input": [], "stream": True}))["total_tokens"],
+                           model.CODEX_COMPACT_LIMIT, "the reply before the compact fills the context")
+        summary = post(url + "/v1/responses", {"stream": True, "input": [
+            {"type": "message", "role": "user", "content": [{"type": "input_text", "text": self.CODEX_SUMMARY}]}]})
+        done = [e["item"] for e in summary if e["type"] == "response.output_item.done"]
+        self.assertEqual([i["content"][0]["text"] for i in done], ["The tests ran."], "text only")
+        self.assertLess(usage(summary)["total_tokens"], model.CODEX_COMPACT_LIMIT)
+        self.assertEqual(replay.served, 2)
+
     def test_a_subagent_gets_its_own_replies(self):
         replay, url, _ = self.serve([
             {"n": 1, "agent": "review", "task": "Review", "prompt": "Review the diff", "say": "Sending a reviewer."},
@@ -239,6 +319,31 @@ class LandingProjectTests(unittest.TestCase):
                 run = subprocess.run(["node", "test/shortcuts.test.js"], cwd=ws, capture_output=True, text=True)
                 results.append((run.returncode, run.stdout.strip().split("\n")[-1]))
         self.assertEqual(results, [(1, "5 passed, 1 failed"), (0, "6 passed, 0 failed")])
+
+
+@unittest.skipUnless(shutil.which("node"), "needs node")
+class ContextWallProjectTests(unittest.TestCase):
+    def test_the_tests_fail_four_then_two_then_none(self):
+        """The story: the discount and tax tests fail, the discount edit
+        leaves the two tax tests failing, and the tax edit passes them
+        all."""
+        s = scripts.load(scripts.find("context-wall"))
+        runs = [l for l in s.agent_steps() if l["agent"] == "run"]
+        self.assertEqual([l.get("fails", False) for l in runs], [True, True, False])
+        with tempfile.TemporaryDirectory() as d:
+            ws = Path(d) / "ws"
+            shutil.copytree(SESSIONS / "context-wall" / "workspace", ws)
+            results = []
+            for l in s.agent_steps():
+                if l["agent"] == "edit":
+                    path = ws / l["file"]
+                    text = path.read_text()
+                    self.assertEqual(text.count(l["old"]), 1, f"line {l['number']}: old isn't there once")
+                    path.write_text(text.replace(l["old"], l["new"]))
+                elif l["agent"] == "run":
+                    run = subprocess.run(["node", "test/invoice.test.js"], cwd=ws, capture_output=True, text=True)
+                    results.append((run.returncode, run.stdout.strip().split("\n")[-1]))
+        self.assertEqual(results, [(1, "2 passed, 4 failed"), (1, "4 passed, 2 failed"), (0, "6 passed, 0 failed")])
 
 
 if __name__ == "__main__":

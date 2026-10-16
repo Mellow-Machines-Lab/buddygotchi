@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-15. A board with no board: the firmware's own code in a
+Updated 2026-10-16. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -130,8 +130,8 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `needs_you`, `tap`, `talk`, `done`,
-  `failed`, `stopped` or `note`.
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `talk`,
+  `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one.
 

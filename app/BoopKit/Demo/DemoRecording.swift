@@ -115,6 +115,7 @@ public final class DemoRecorder: @unchecked Sendable {
             case "task_complete": return "\(name) \(args["outcome"] as? String == "failure" ? "slumps" : "celebrates")\(says)"
             case "reply_ready": return "\(name) perks up\(says)"
             case "error": return "\(name) winces"
+            case Core.starting where args["ctx"] as? String == "compacted": return "\(name) shows that the context was compacted"
             case BoopDevice.listening: return "\(name) listens"
             default: return nil
             }

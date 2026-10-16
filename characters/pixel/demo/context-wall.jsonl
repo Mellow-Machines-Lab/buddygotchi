@@ -1,0 +1,24 @@
+// Under a minute, for a short: "The context wall". Claude is deep in a task, its terminal
+// full of work, when its context fills up. Claude Code compacts the conversation (the screen
+// clears to its "Conversation compacted" line), Pixel shows its COMPACTED card and then looks
+// lost for a moment (where was I?); Claude picks up where it left off, adds the tax, the tests
+// pass, and Pixel cheers. The compact is real with a replayed agent: Claude Code or Codex compacts
+// for itself (characters/DEMOS.md). The project is internal/sessions/context-wall/workspace/.
+{"demo": 1, "title": "Invoice discounts and tax"}
+{"agent": "prompt", "text": "The invoice tests for discount codes and sales tax fail. Make them pass."}
+{"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
+{"agent": "read", "file": "test/invoice.test.js", "say": "I'll start with what the tests expect of the totals."}
+{"agent": "read", "file": "src/invoice.js", "say": "And how the totals are worked out now."}
+{"agent": "run", "cmd": "npm test", "about": "Run the invoice tests", "fails": true, "takes": 2.5, "say": "Let me see which tests fail before I change anything."}
+{"brain": {"react.mood": "determined", "say.about": "tests", "say.kind": "word"}, "mood": "determined"}
+{"agent": "edit", "file": "src/invoice.js", "old": "// What the customer pays.\nfunction total(invoice) {\n  return subtotal(invoice.lines);\n}", "new": "// Discount codes, and the share of the subtotal each takes off.\nconst CODES = { SAVE10: 0.1, SAVE25: 0.25 };\n\n// The discount a code gives on an amount, in whole cents. An unknown code\n// is a mistake, so it throws rather than charge full price quietly.\nfunction discount(amount, code) {\n  if (!code) return 0;\n  if (!(code in CODES)) throw new Error(`Unknown discount code: ${code}`);\n  return Math.round(amount * CODES[code]);\n}\n\n// What the customer pays: the subtotal, less any discount.\nfunction total(invoice) {\n  const amount = subtotal(invoice.lines);\n  return amount - discount(amount, invoice.code);\n}", "takes": 1.5, "say": "Four tests fail: the two for discount codes and the two for tax, since total() only adds up the lines. I'll start with the codes: a table of them, and a discount() that takes a code's share off the subtotal in whole cents. An unknown code throws, so nobody pays full price by mistake."}
+{"agent": "run", "cmd": "npm test", "about": "Run the invoice tests", "fails": true, "takes": 2.5, "say": "Now the tests again."}
+// The wall: the context is full, and the agent compacts it.
+{"agent": "compact", "summary": "The user asked to make the failing invoice tests for discount codes and sales tax pass. src/invoice.js now has a CODES table (SAVE10, SAVE25), a discount() that throws on an unknown code, and total() takes the discount off the subtotal. The last test run had 4 passing and the 2 sales tax tests failing. Next: add sales tax to total(), on what's left after the discount, rounded to the nearest cent, then run npm test.", "after": 1.5, "takes": 3}
+// Pixel's compacted card plays out first (3.5 s on its determined face), then: where was I?
+{"brain": {"react.mood": "confused", "say.about": "looking", "say.kind": "sound"}, "mood": "confused", "after": 3.5}
+{"agent": "edit", "file": "src/invoice.js", "old": "// What the customer pays: the subtotal, less any discount.\nfunction total(invoice) {\n  const amount = subtotal(invoice.lines);\n  return amount - discount(amount, invoice.code);\n}", "new": "// What the customer pays: the subtotal, less any discount, plus sales tax\n// on what's left, rounded to the nearest cent.\nfunction total(invoice) {\n  const amount = subtotal(invoice.lines);\n  const discounted = amount - discount(amount, invoice.code);\n  const tax = Math.round(discounted * (invoice.taxRate || 0));\n  return discounted + tax;\n}", "after": 2, "takes": 1.5, "say": "The discount tests pass, and the two tax tests still fail. Tax goes on what's left after the discount, rounded to the nearest cent, so it comes last in total()."}
+{"agent": "run", "cmd": "npm test", "about": "Run the invoice tests", "takes": 2.5, "say": "Now the tests."}
+{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}, "mood": "happy"}
+{"agent": "reply", "takes": 2, "text": "All six invoice tests pass. SAVE10 and SAVE25 take 10% and 25% off the subtotal, an unknown code throws, and sales tax goes on what's left after the discount, rounded to the nearest cent."}
+{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}, "mood": "proud"}
