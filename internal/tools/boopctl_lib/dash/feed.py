@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from boopctl_lib.common import RULE_ONE_SHOTS, Take, call, take
+from boopctl_lib.common import RULE_REACTIONS, Take, call, take
 from boopctl_lib.device import DeviceError
 
 Line = dict[str, Any]
@@ -22,7 +22,7 @@ STALE_S = 15
 # A view event written this soon after a reflex's `sent` line is what set it
 # off: the app sends to the device first, then records the view event.
 TRIGGER_MS = 1000
-# A rule's one-shot, a tap's poke or a line counts as what's showing for
+# A rule's reaction, a tap's poke or a `say` counts as what's showing for
 # this long.
 SHOWING_MS = 4000
 
@@ -134,8 +134,8 @@ def action_end(event: Line) -> Line | None:
 
 
 def _takes(ids: list[str]) -> list[Take | None] | None:
-    """The takes with these ids, None for one the voice pack lacks; None
-    with no voice pack here."""
+    """The takes with these ids, None for one the voice file lacks; None
+    with no voice file here."""
     try:
         return [take(i) for i in ids]
     except DeviceError:
@@ -144,7 +144,7 @@ def _takes(ids: list[str]) -> list[Take | None] | None:
 
 def said(ids: list[str] | None) -> str | None:
     """What a reaction said: its takes' texts, the feeling's then the
-    topic's, or their ids with no voice pack here; None for
+    topic's, or their ids with no voice file here; None for
     no line."""
     if not ids:
         return None
@@ -175,8 +175,8 @@ class Board:
         self.reflexes: list[Line] = []
         self.decided: list[Line] = []
         self._pass_for: dict[int | None, Line] = {}  # the latest decided row by its event (None: forced)
-        self._decided_by_action: dict[int, Line] = {}  # a decided row by its react action's seq
-        self._reflex: tuple[int, str] | None = None  # the latest one-shot, poke or chatter: (time, what)
+        self._decided_by_action: dict[int, Line] = {}  # a decided row by its react output's seq
+        self._reflex: tuple[int, str] | None = None  # the latest rule reaction, poke or chatter: (time, what)
 
     def apply(self, line: Line) -> tuple[str, str] | None:
         """Takes one line, and returns its timeline row as (style, text), or
@@ -261,8 +261,8 @@ class Board:
         if c := call(msg):
             if by == "rule":
                 what = None
-                if c["anim"] in RULE_ONE_SHOTS:
-                    # The rules' one-shots: the view event
+                if c["anim"] in RULE_REACTIONS:
+                    # The rules' reactions: the view event
                     # recorded right after names what set it off.
                     fact = c.get("ctx") or c.get("outcome")
                     what = c["anim"] + (f" ({fact})" if fact else "")
@@ -291,8 +291,8 @@ class Board:
 
     def _ended(self, ended: Line) -> tuple[str, str]:
         """How the device said a `do` went (linkkit/SPEC.md §4). The device
-        decides what plays, so a rule's one-shot it skipped (`busy`, while
-        a reaction held its turn) is marked on its reflex: it didn't
+        decides what plays, so a rule's reaction it skipped (`busy`, while
+        a brain reaction played) is marked on its reflex: it didn't
         happen."""
         how, why = ended.get("how"), ended.get("why")
         said = f"⇠ do {ended.get('id')} {how}" + (f" ({why})" if why else "")
@@ -318,7 +318,7 @@ class Board:
 
     def _event(self, view: Line, at: int) -> None:
         """A view event of a request that waits on you names the needs-you
-        strip just sent before it; any view event names a rule's one-shot
+        strip just sent before it; any view event names a rule's reaction
         just sent before it."""
         waiting = [r for r in self.reflexes[-3:] if r["trigger"] is None and at - r["at"] <= TRIGGER_MS]
         match = next((r for r in waiting if r.get("rule")), None)
@@ -572,7 +572,7 @@ def state_text(s: Line) -> str:
 def say_text(say: Line) -> str:
     """A line as the board plays it: its takes' words, and their ids (the
     feeling's, then the topic's), or just the ids with no voice
-    pack here. `no take` for a line without a take the pack has."""
+    pack here. `no take` for a `say` without a take the pack has."""
     ids = [i for i in (say.get("take"), say.get("then")) if i]
     found = _takes(ids)
     if found is None:

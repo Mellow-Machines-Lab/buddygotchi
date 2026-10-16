@@ -1,4 +1,4 @@
-"""`boopctl card`: the voice pack copied onto the card over `dbg.card`,
+"""`boopctl card`: the voice file copied onto the card over `dbg.card`,
 against the simulator's card folder."""
 from __future__ import annotations
 

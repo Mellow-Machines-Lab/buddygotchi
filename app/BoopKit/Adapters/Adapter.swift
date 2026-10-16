@@ -5,7 +5,8 @@ import MellowHarness
 /// Boop's side of agent-hooks: a hook line becomes an
 /// `AgentEvent` there, and a raw event here, with the hook's name as
 /// `specific_type` and the event's facts as `data`. The facts keep their
-/// names, so the transcript reads as it always has.
+/// names, but what a request asks for is `asking`: `for` is the seq an
+/// event answers.
 public enum Adapter {
     /// The raw event for a hook line, or nil for hooks agent-hooks ignores.
     /// Its `at` is when the app received it, or the line's own time.
@@ -14,30 +15,52 @@ public enum Adapter {
     }
 }
 
+/// An agent's event and the transcript's raw event are one JSON object
+/// apart: `AgentEvent`'s `Codable` form, whose keys `data` keeps, but for
+/// the few the raw event holds itself (its agent is its `source`, its kind
+/// and phase its `kind`, its time its `at`) and two names of Boop's own:
+/// the hook is `specific_type`, and the subagent's type `agent_type`.
+enum AgentEventJSON {
+    /// The keys `data` doesn't keep.
+    static let envelope = ["agent", "kind", "phase", "at"]
+    /// agent-hooks' name for a key, and the transcript's.
+    static let renamed = [("hook", "specific_type"), ("subagent_type", "agent_type")]
+
+    /// `e`'s facts, by the transcript's names, for `data`.
+    static func data(_ e: AgentEvent) -> [String: JSONValue] {
+        guard let json = try? JSONEncoder().encode(e), case .object(var o)? = try? JSONValue(
+            foundation: JSONSerialization.jsonObject(with: json)) else { return [:] }
+        for key in envelope { o[key] = nil }
+        for (theirs, ours) in renamed { o[ours] = o.removeValue(forKey: theirs) }
+        return o
+    }
+
+    /// The agent's event `data` keeps, with its envelope's facts. What a
+    /// request asks for was `for` in older transcripts, which is now only
+    /// the seq an event answers, so a string `for` still reads as it. A
+    /// request or an outcome agent-hooks doesn't know reads as none, and a
+    /// missing hook as `""`, as they always did.
+    static func event(_ data: [String: JSONValue], agent: Agent, kind: String, phase: String, at: Int64) -> AgentEvent? {
+        var o = data
+        for (theirs, ours) in renamed { o[theirs] = o.removeValue(forKey: ours) }
+        if o["asking"] == nil, case .string(let asking)? = o["for"] { o["asking"] = .string(asking) }
+        if o["asking"]?.string.flatMap(AgentEvent.Asking.init(rawValue:)) == nil { o["asking"] = nil }
+        if o["outcome"]?.string.flatMap(AgentEvent.Outcome.init(rawValue:)) == nil { o["outcome"] = nil }
+        if o["hook"] == nil { o["hook"] = "" }
+        o["agent"] = .string(agent.rawValue)
+        o["kind"] = .string(kind)
+        o["phase"] = .string(phase)
+        o["at"] = .int(at)
+        guard let json = try? JSONSerialization.data(withJSONObject: JSONValue.object(o).foundation) else { return nil }
+        return try? JSONDecoder().decode(AgentEvent.self, from: json)
+    }
+}
+
 extension Event {
     /// An agent's event as the transcript keeps it.
     public init(_ e: AgentEvent) {
-        var data: [String: JSONValue] = [:]
-        func put(_ key: String, _ value: String?) { if let value { data[key] = .string(value) } }
-        put("agent_type", e.subagentType)
-        put("mode", e.mode)
-        put("source", e.source)
-        put("prompt", e.prompt)
-        put("tool", e.tool)
-        put("tool_use_id", e.toolUseID)
-        put("topic", e.topic)
-        if let failed = e.failed { data["failed"] = .bool(failed) }
-        put("error", e.error)
-        put("for", e.asking?.rawValue)
-        put("notice", e.notice)
-        put("outcome", e.outcome?.rawValue)
-        put("message", e.message)
-        put("name", e.name)
-        put("app", e.app)
-        put("app_session", e.appSession)
-        self.init(ts: e.at, source: Source(e.agent), type: Kind(rawValue: e.kind.rawValue)!,
-                  phase: Phase(rawValue: e.phase.rawValue), specificType: e.hook, session: e.session,
-                  subagent: e.subagent, cwd: e.cwd, data: data)
+        self.init(at: e.at, source: Source(e.agent), type: Kind(rawValue: e.kind.rawValue)!,
+                  phase: Phase(rawValue: e.phase.rawValue), specificType: e.hook, data: AgentEventJSON.data(e))
     }
 }
 
@@ -46,16 +69,11 @@ extension AgentEvent {
     /// any other: the core and the view fold agents' events from the
     /// transcript with agent-hooks' session bookkeeping.
     public init?(_ e: Event) {
-        guard let agent = e.agent, let session = e.session, let phase = e.phase.flatMap({ Phase(rawValue: $0.rawValue) }),
-              let kind = e.type.flatMap({ Kind(rawValue: $0.rawValue) }) else { return nil }
-        self.init(agent: agent, kind: kind, phase: phase, hook: e.specificType, session: session, at: e.ts,
-                  subagent: e.subagent, subagentType: e["agent_type"]?.string, cwd: e.cwd, name: e["name"]?.string,
-                  app: e["app"]?.string, appSession: e["app_session"]?.string, mode: e["mode"]?.string,
-                  source: e["source"]?.string, prompt: e["prompt"]?.string, tool: e["tool"]?.string,
-                  toolUseID: e["tool_use_id"]?.string, topic: e["topic"]?.string, failed: e["failed"]?.bool,
-                  error: e["error"]?.string, asking: e["for"]?.string.flatMap(Asking.init(rawValue:)),
-                  notice: e["notice"]?.string, outcome: e["outcome"]?.string.flatMap(Outcome.init(rawValue:)),
-                  message: e["message"]?.string)
+        guard let agent = e.agent, e.session != nil, let phase = e.phase, let kind = e.type,
+              Kind(rawValue: kind.rawValue) != nil,
+              let read = AgentEventJSON.event(e.data, agent: agent, kind: kind.rawValue, phase: phase.rawValue, at: e.at)
+        else { return nil }
+        self = read
     }
 }
 

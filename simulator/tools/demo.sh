@@ -10,8 +10,8 @@
 # whenever the script is newer than its recording or FRESH=1, it records
 # the demo (record-demo.sh, as long as the demo runs); then it serves the
 # page (make simulator) and opens the demo in a browser. Ctrl-C stops it.
-# NAME=? lists the demos there are. BOARD=usb:SOCKET plays it live on a
-# board on a USB bridge instead (internal/tools/boopctl bridge), and stops
+# 'NAME=?' (quoted, for zsh) lists the demos there are. BOARD=usb:SOCKET plays it live on a
+# board on a USB bridge instead (.build/debug/linkkit-bridge), and stops
 # when it's over.
 set -eu
 cd "$(dirname "$0")/../.."

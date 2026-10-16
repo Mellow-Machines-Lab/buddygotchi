@@ -4,10 +4,6 @@ Updated 2026-10-15. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
-**Being built.** What's below works. Still to come: simulated Bluetooth,
-an inspector for the lines and the turn, and the device-level checks run
-against it as a matter of course.
-
 ```sh
 brew install emscripten   # once: it builds the firmware for a browser
 make simulator            # builds it, then serves http://127.0.0.1:8206/
@@ -30,19 +26,21 @@ the next launch starts with the board (`DeviceChooser`, in
 ```
                         ┌─ boop-sim.wasm ── the page (web/): <boop-simulator>
  simulator/core/ ───────┤
- the simulated board    └─ boop-sim ─────── the Mac: tests, tools, CI, with no browser
+ the simulated board    └─ native build ─── the Mac: tests, tools, CI, with no browser
 ```
 
 **The core** (`core/`) is the firmware's portable code (`render/`, `app/`
 and `voice/`) and LinkKit's device library, with a stand-in for the
-hardware (`sim_hal.h`). Both builds run the same `Board` (`board.h`), so
+hardware (`sim_hal.h`). It takes USB's messages as the firmware's loop
+does: in order, with a `dbg.*` message ending the batch, so the messages
+after it wait for the next pass. Both builds run the same `Board` (`board.h`), so
 they show the same board:
 
 | Build | By | Runs | For |
 | --- | --- | --- | --- |
 | `boop-sim.wasm` | `web/build.sh` (Emscripten) | In the page, which calls it for each pass of the board's loop and each chunk of sound | The page, here and embedded in a site |
-| `boop-sim --live` | PlatformIO's `native` env | A process in real time, its USB a serial port, with nobody looking at it | Tests, `boopctl` and CI, with no browser |
-| `boop-sim` | The same | Frozen at 0, moved only by `dbg.*` lines | `boopctl sim` and the golden pictures ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L1) |
+| `firmware/.pio/build/native/program --live` | PlatformIO's `native` env (`firmware/tools/pio.sh run -e native`) | A process in real time, its USB a serial port, with nobody looking at it | Tests, `boopctl` and CI, with no browser |
+| `firmware/.pio/build/native/program` | The same | Frozen at 0, moved only by `dbg.*` messages | `boopctl sim` and the golden pictures ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L1) |
 
 Power off ends the board and power on makes a new one, so nothing the
 firmware knew survives and each power-on has a new boot ID, as on a real
@@ -60,7 +58,7 @@ A generic one, not the CYD or the AMOLED board:
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
 | Light | The dot under the screen, in the LED's colour |
 | Backlight | The screen dims as the firmware dims it |
-| Card | A voice pack: the page fetches one (`voice="…"`), and it can be ejected and put back. On the Mac, the chosen character pack's voice (its `voice/voice.bin`), or with `BOOP_SIM_CARD=DIR` a folder that is the card, where `dbg.card` copies a pack as on a board |
+| Card | A voice file: the page fetches one (`voice="…"`), and it can be ejected and put back. On the Mac, the chosen character pack's voice file (its `voice/voice.bin`), or with `BOOP_SIM_CARD=DIR` a folder that is the card, where `dbg.card` copies a voice file as on a board |
 | Power, reset | Power off and Reset. The card stays in its slot through both |
 
 ## The page
@@ -79,47 +77,33 @@ local page, in `web/dist/`:
 | `face` | `pixel` (the default) or `gel` |
 | `zoom` | How many times as big the screen is drawn (2 for the pixel face, 1 for a native one), shrunk to fit a narrower page |
 | `native` | A native face's panel, `WxH` |
-| `voice` | A voice pack to fetch for the card |
-| `usb` | A WebSocket that is the board's USB cable, one line a message each way |
+| `voice` | A voice file to fetch for the card |
+| `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
 | `demo` | A recording to play (below). The board's face is then the recording's |
 
 The element's `board` (once it has fired `ready`) is the board itself:
-`send(line)` is a host's line on USB, and it fires `line` for each the
+`send(line)` is a host's message on USB, and it fires `line` for each the
 board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}`,
 whenever one changes) and `power`. The script knows nothing of what the
-board's lines mean: they pass through it.
+board's messages mean: they pass through it.
 
 ## Demos
 
-For a demo through a real agent, which drives the page live from the
-agent's own hooks, see `make demo IN=…`
-([internal/sessions/README.md](../internal/sessions/README.md)).
-
-A character pack's demo ([characters/DEMOS.md](../characters/DEMOS.md)) is a script the Mac app plays. The app can't run in a browser, so
-the page plays a **recording** of it: every line the app sent the board,
-with when, so the firmware in the page does what it did, with no app
-behind it. The screen is still the firmware's own drawing, and you can
-still poke it.
-
-```sh
-make demo                   # Pixel's demo/landing.jsonl: the landing page's story
-make demo NAME=demo         # a pack's demo/demo.jsonl
-make demo FACE=gel          # on Boop's own face
-make demo NAME=?            # lists the demos there are
-```
-
-`make demo` (`tools/demo.sh`) finds `demo/NAME.jsonl` in the chosen
-pack, else in the one pack that has it, and plays everything as that
-pack. It records the demo the first time, and again when the script
-changes or with `FRESH=1`; then it serves the page and opens
-`http://127.0.0.1:8206/?demo=pixel-landing` (the face, then the name).
+`make demo` shows a character pack's demo here
+([characters/DEMOS.md](../characters/DEMOS.md)). A demo is a script the
+Mac app plays, and the app can't run in a browser, so the page plays a
+**recording** of it: every message the app sent the board, with when,
+so the firmware in the page does what it did, with no app behind it.
+The screen is still the firmware's own drawing, and you can still poke
+it. The page opens at `http://127.0.0.1:8206/?demo=pixel-landing` (the
+face, then the name).
 
 `tools/record-demo.sh` plays the script through the real headless app
 (`Boop --headless --demo pack:NAME --record FILE`) with the Mac build's
 board as its device, and takes as long as the demo runs. Into
 `web/dist/demo/` go `<face>-NAME.json`, the recording, and
-`<face>-NAME-voice.bin`, a voice pack with only the takes it says
+`<face>-NAME-voice.bin`, a voice file with only the takes it says
 (`tools/voice_subset.py`: about 70 KB for a minute's demo, where the whole
 voice is 29 MB).
 
@@ -137,14 +121,14 @@ A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
 }
 ```
 
-`takes` lists the takes it says, for its voice pack. An event is one or
+`takes` lists the takes it says, for its voice file. An event is one or
 more of:
 
-- **`line`:** sent to the board as it was.
-- **`effect`:** what the creature does at that line, in words, when it's
+- **`line`:** a message, sent to the board as it was.
+- **`effect`:** what the creature does at that message, in words, when it's
   something to see: `Boop makes a curious face and says “…”`,
   `Boop shows that it needs you`. The recorder writes them, since it knows
-  what the lines mean and the page doesn't.
+  what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
   `prompt`, `tool`, `tool_failed`, `needs_you`, `tap`, `talk`, `done`,
   `failed`, `stopped` or `note`.
@@ -158,16 +142,16 @@ gone.
 
 ## USB
 
-The board's USB carries LinkKit's lines
+The board's USB carries LinkKit's messages
 ([linkkit/SPEC.md](../linkkit/SPEC.md)) and `dbg.*`, and nothing about
 them differs from a board's.
 
 **The page's**, served by `make simulator` (`web/serve.py`), is a Unix
-socket that keeps a bridge's rules, `/tmp/boop-sim-usb.sock`: every whole
-line from the board goes to every client, and every whole line from a
-client goes to the board whole. So the tools and the Mac app reach the
-board in the browser as they reach one on a bridge
-([internal/VERIFICATION.md](../internal/VERIFICATION.md) L4):
+socket, `/tmp/boop-sim-usb.sock`, that keeps a bridge's rules
+([linkkit/SPEC.md](../linkkit/SPEC.md) §8). A client's message longer
+than a message may be is dropped whole, as a board drops it. So the
+tools and the Mac app reach the board in the browser as they reach one
+on a bridge ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L4):
 
 ```sh
 BOOP_BRIDGE=/tmp/boop-sim-usb.sock internal/tools/boopctl ping
@@ -227,10 +211,11 @@ make -C internal sim-test
 - **`tests/test_core.py`**, the Mac build in real time, driven over its
   serial port as a board is: it says hello and draws by itself, a native
   face fills the panel it's given, every power-on is a new boot, and a
-  line plays at the pace a DAC would (the output's time within 10% of
-  the line's length, as the boards' takes check holds them). Of the port:
+  `say` plays at the pace a DAC would (the output's time within 10% of
+  the `say`'s length, as the boards' takes check holds them). Of the port:
   it's a serial port at the path asked for, what nobody heard is
-  forgotten, and a long reply arrives whole.
+  forgotten, a long reply arrives whole, and a debug message ends a batch
+  of messages that arrive together.
 - **`tests/test_serve.py`**, the page's server and its socket, on a free
   port and a socket of its own: a second server leaves a live socket
   alone, whichever port it's given; a stale socket is replaced, and a
@@ -239,10 +224,18 @@ make -C internal sim-test
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing, a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
-  line's sound asked for a chunk at a time, and the card staying in its
-  slot through a reset. Then the page's cable carrying whole lines both
-  ways, a 900 KB one among them; a recording played into a board in
-  order; and a voice pack cut down to a demo's takes that the board plays
+  `say`'s sound asked for a chunk at a time, and the card staying in its
+  slot through a reset. Then the page's cable carrying whole messages both
+  ways, a 900 KB one among them, and keeping a bridge's rules: a client
+  that stops reading dropped while another hears every message, and a
+  client's message over 512 bytes dropped whole; a recording played into a board in
+  order; and a voice file cut down to a demo's takes that the board plays
   from.
 
-The sound and card tests need the chosen pack to have a voice, and skip without one.
+The sound and card tests need the chosen pack to have a voice file, and skip without one.
+
+## Not yet
+
+Simulated Bluetooth, an inspector for the messages and the queue, and
+the device-level checks (L2) run against the simulator as a matter of
+course.

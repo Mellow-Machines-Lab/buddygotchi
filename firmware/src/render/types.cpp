@@ -9,18 +9,6 @@ constexpr const char* kStateNames[22] = {
 const char* const kOutcomes[] = {"", "success", "failure"};
 const char* const kCtxs[] = {"", "new_task", "session", "continuation", "compacted"};
 }  // namespace
-Anim animFromName(const char* name) {
-  if (!name) return Anim::kNone;
-  for (int i = 1; i < int(Anim::kCount); ++i) {
-    if (!std::strcmp(name, animName(Anim(i)))) return Anim(i);
-  }
-  return Anim::kNone;
-}
-
-const char* animName(Anim a) {
-  return a != Anim::kNone && int(a) < int(Anim::kCount) ? stateName(animState(a)) : "none";
-}
-
 Mood moodFromName(const char* name) {
   Mood m = kStartupMood;
   parseMood(name, m);
@@ -37,21 +25,29 @@ bool parseMood(const char* name, Mood& out) {
 
 const char* moodName(Mood m) { return kMoodNames[int(m) < kMoodCount ? int(m) : int(kStartupMood)]; }
 
-const char* stateName(SceneState s) { return kStateNames[int(s) < int(SceneState::kCount) ? int(s) : 0]; }
+const char* stateName(SceneState s) {
+  if (s == SceneState::kNone) return "none";
+  return kStateNames[int(s) < int(SceneState::kCount) ? int(s) : 0];
+}
 
-SceneState animState(Anim a) {
-  switch (a) {
-    case Anim::kTaskComplete: return SceneState::kTaskComplete;
-    case Anim::kReplyReady: return SceneState::kReplyReady;
-    case Anim::kStarting: return SceneState::kStarting;
-    case Anim::kStopped: return SceneState::kStopped;
-    case Anim::kError: return SceneState::kError;
-    case Anim::kHelperReturn: return SceneState::kHelperReturn;
-    case Anim::kPoked: return SceneState::kPoked;
-    case Anim::kTapSpam: return SceneState::kTapSpam;
-    case Anim::kListening: return SceneState::kListening;
-    default: return SceneState::kIdle;
+bool isReaction(SceneState s) {
+  switch (s) {
+    case SceneState::kTaskComplete:
+    case SceneState::kReplyReady:
+    case SceneState::kStarting:
+    case SceneState::kStopped:
+    case SceneState::kError:
+    case SceneState::kHelperReturn:
+    case SceneState::kPoked:
+    case SceneState::kTapSpam:
+    case SceneState::kListening: return true;
+    default: return false;
   }
+}
+
+SceneState reactionFromName(const char* name) {
+  const SceneState s = stateFromName(name);
+  return name && isReaction(s) ? s : SceneState::kNone;
 }
 
 SceneState stateFromName(const char* name) {

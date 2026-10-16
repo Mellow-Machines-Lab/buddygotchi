@@ -14,20 +14,20 @@ public enum DebugLog {
     public static let fileName = "debug.jsonl"
 
     /// `{"<kind>":<json>,"received_at_ms":N}`. `json` goes in as it is, so
-    /// `sent` carries the device's line verbatim.
+    /// `sent` carries the device's message verbatim.
     static func line(_ kind: String, _ json: String, at ms: Int64) -> String {
         "{\"\(kind)\":\(json),\"received_at_ms\":\(ms)}"
     }
 
-    /// A line sent to the device, verbatim, and who sent it: `brain` for
+    /// A message sent to the device, verbatim, and who sent it: `brain` for
     /// the brain's reactions, `rule` for everything else, the link's own
-    /// lines (every `state`, the `hello` ask) among them.
+    /// messages (every `state`, the `hello` ask) among them.
     public static func sent(_ json: String, by sender: DeviceLink.Sender, at ms: Int64) -> String {
         "{\"sent\":\(json),\"by\":\"\(sender == .brain ? "brain" : "rule")\",\"received_at_ms\":\(ms)}"
     }
 
     /// How the device said a `do` ended (linkkit/SPEC.md §4), so the tools
-    /// can tell a one-shot or a finish it skipped from one it played:
+    /// can tell a rule reaction or a finish it skipped from one it played:
     /// `{"ended":{"id":N,"how":"skipped","why":"busy"},…}`.
     public static func ended(_ e: Ended, at ms: Int64) -> String {
         var ended: [String: Any] = ["id": e.id, "how": e.how.rawValue]
@@ -85,13 +85,13 @@ public enum DebugLog {
         Harness.json(answers).foundation as? [String: Any] ?? [:]
     }
 
-    /// The file's first line at every launch: every action's questions,
+    /// The file's first line at every launch: every output's questions,
     /// which the dashboard builds its pickers from. A pass line names the
     /// options it asked where they differ (`pass`'s `options`).
-    public static func questions(_ actions: [any Action], log: LogView, at ms: Int64) -> String {
-        line("questions", Event.json(actions.flatMap { action in
-            action.questions(now: nil, log: log).map { q in
-                ["action": action.name, "key": q.key, "text": q.text,
+    public static func questions(_ outputs: [any Output], log: LogView, at ms: Int64) -> String {
+        line("questions", Event.json(outputs.flatMap { output in
+            output.questions(now: nil, log: log).map { q in
+                ["action": output.name, "key": q.key, "text": q.text,
                  "options": q.options.map { ["name": $0.name, "what": $0.what, "not_for": $0.notFor ?? NSNull()] as [String: Any] }]
                     as [String: Any]
             }
@@ -111,7 +111,7 @@ public enum DebugLog {
         return out
     }
 
-    /// What the device lines don't carry: the personality, the brain, the
+    /// What the device messages don't carry: the personality, the brain, the
     /// sessions, whether the device is connected and Boop's stage (a
     /// `state` carries the mood; the XP, which moves with every tool call,
     /// stays out). Nil when it's the same as `last`; the runtime writes only
@@ -327,7 +327,7 @@ public enum DebugLog {
                 }
                 return out
             }
-            if let raw = o["event"] as? [String: Any], let e = Event(json: raw) ?? Event.legacy(JSONLine.encode(raw)) {
+            if let raw = o["event"] as? [String: Any], let e = Event(json: raw) {
                 let by = e["by"]?.string == "rule" || e.type == .needsYou ? " (rule)" : ""
                 if e.type == .needsYou {
                     return e.phase == .end ? "  · \(Core.needsYou)\(by) ended" + (e["why"]?.string.map { ": \($0)" } ?? "")

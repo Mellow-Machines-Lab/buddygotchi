@@ -377,18 +377,18 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Engaged. Boop is in the flow, following steady work. At ease: nothing
+has failed.
+Its faces lean engaged; a failure gets a determined face.
+Says work: a word or grunt.
+Stays engaged while the work goes on, through routine finishes.
+Leaves for determined when a very long turn works on, a check fails or
+the person sounds frustrated; proud when a check passes after failing
+or a long turn's hard work is done; happy at kind words to Boop;
+curious at a poke; annoyed at a failed turn; excited when a very long
+turn finishes done; sad when a very long turn fails, the agent gives
+up or the person shares sad news. Once Boop has been engaged for 5
+min, fades to calm at anything but work going on.
 
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
@@ -398,9 +398,9 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 2 min ago: claude started turn 2 on "docs" (landing).
 1 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
-Boop has been happy for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:06, Wednesday)
 claude started turn 3 on "docs" (landing).
@@ -414,10 +414,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 2 min ago: claude started turn 2 on "docs" (landing).
 2 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 just now: claude started turn 3 on "docs" (landing).
-Boop has been happy for 2 min.
+Boop has been engaged for 2 min.
 
 NOW (14:06, Wednesday)
 claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
@@ -526,16 +526,17 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Excited. Boop is thrilled: a big win just happened.
-Its faces lean excited; a failure gets a determined face.
-Says start in a word at a start, and glad in a phrase at a big
-win.
-Stays excited through more wins and thanks.
-Leaves for proud when a check passes after failing; determined at a
-failed check or when the person sounds frustrated; grumpy when a turn
-finishes failed; sad when a very long turn fails, the agent gives up
-or the person shares sad news. Fades to happy once Boop has been
-excited for 5 min.
+Curious. Boop is intrigued: a poke, or something new said to it.
+Its faces lean curious; a win gets a happy face, a failure annoyed.
+Says looking in a sound at questions and anything new, tickled at
+pokes.
+Leaves for happy at a win or kind words to Boop; excited when a very
+long turn finishes done or the person thanks the agent; engaged while
+a turn works on; determined when the person sounds frustrated; annoyed
+at a failed check or turn, or 2 pokes in a row; sad when a very long
+turn fails, the agent gives up or the person shares sad news; wounded
+at rude words to Boop. Fades to calm once Boop has been curious for 2
+min.
 
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
@@ -545,13 +546,13 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 4 min ago: claude started turn 2 on "docs" (landing).
 3 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 2 min ago: claude started turn 3 on "docs" (landing).
 1 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
-Boop has been excited for 1 min.
+Boop has been curious for 1 min.
 
 NOW (14:08, Wednesday)
 claude started turn 4 on "docs" (landing).
@@ -565,14 +566,14 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 4 min ago: claude started turn 2 on "docs" (landing).
 4 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 2 min ago: claude started turn 3 on "docs" (landing).
 2 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 just now: claude started turn 4 on "docs" (landing).
-Boop has been excited for 2 min.
+Boop has been curious for 2 min.
 
 NOW (14:08, Wednesday)
 claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
@@ -681,17 +682,18 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Proud. Boop is pleased with itself: something hard-won worked.
-Its faces lean proud, a little smug; a failure gets a determined face,
-but the pride holds. A turn ending just after its fix is no new win.
-Says done at a win, glad in a phrase at a big one, glad in a sound
-at kind words.
-Stays proud through routine turns and a failed check.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; determined when the person sounds frustrated;
-annoyed at 2 pokes in a row; grumpy when a turn finishes failed; sad
-when a very long turn fails or the person shares sad news; wounded at
-rude words to Boop. Fades to happy once Boop has been proud for 5 min.
+Engaged. Boop is in the flow, following steady work. At ease: nothing
+has failed.
+Its faces lean engaged; a failure gets a determined face.
+Says work: a word or grunt.
+Stays engaged while the work goes on, through routine finishes.
+Leaves for determined when a very long turn works on, a check fails or
+the person sounds frustrated; proud when a check passes after failing
+or a long turn's hard work is done; happy at kind words to Boop;
+curious at a poke; annoyed at a failed turn; excited when a very long
+turn finishes done; sad when a very long turn fails, the agent gives
+up or the person shares sad news. Once Boop has been engaged for 5
+min, fades to calm at anything but work going on.
 
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 1 on "landing".
@@ -701,17 +703,17 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 5 min ago: claude started turn 2 on "docs" (landing).
 5 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 3 min ago: claude started turn 3 on "docs" (landing).
 3 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 1 min ago: claude started turn 4 on "docs" (landing).
 1 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
-Boop has been proud for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:09, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -725,19 +727,19 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 6 min ago: claude started turn 2 on "docs" (landing).
 5 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 4 min ago: claude started turn 3 on "docs" (landing).
 3 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 2 min ago: claude started turn 4 on "docs" (landing).
 1 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 just now: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
-Boop has been proud for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:10, Wednesday)
 claude started turn 5 on "docs" (landing).
@@ -751,20 +753,20 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 6 min ago: claude started turn 2 on "docs" (landing).
 6 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 4 min ago: claude started turn 3 on "docs" (landing).
 4 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 2 min ago: claude started turn 4 on "docs" (landing).
 2 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 just now: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
 just now: claude started turn 5 on "docs" (landing).
-Boop has been proud for 2 min.
+Boop has been engaged for 2 min.
 
 NOW (14:10, Wednesday)
 claude finished turn 5 on "docs" (landing): done, a short turn, no tool calls.
@@ -873,16 +875,17 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Excited. Boop is thrilled: a big win just happened.
-Its faces lean excited; a failure gets a determined face.
-Says start in a word at a start, and glad in a phrase at a big
-win.
-Stays excited through more wins and thanks.
-Leaves for proud when a check passes after failing; determined at a
-failed check or when the person sounds frustrated; grumpy when a turn
-finishes failed; sad when a very long turn fails, the agent gives up
-or the person shares sad news. Fades to happy once Boop has been
-excited for 5 min.
+Curious. Boop is intrigued: a poke, or something new said to it.
+Its faces lean curious; a win gets a happy face, a failure annoyed.
+Says looking in a sound at questions and anything new, tickled at
+pokes.
+Leaves for happy at a win or kind words to Boop; excited when a very
+long turn finishes done or the person thanks the agent; engaged while
+a turn works on; determined when the person sounds frustrated; annoyed
+at a failed check or turn, or 2 pokes in a row; sad when a very long
+turn fails, the agent gives up or the person shares sad news; wounded
+at rude words to Boop. Fades to calm once Boop has been curious for 2
+min.
 
 HISTORY (oldest first; indented lines add to the line above)
 12 min ago: claude started turn 1 on "landing".
@@ -892,23 +895,23 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 8 min ago: claude started turn 2 on "docs" (landing).
 7 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 6 min ago: claude started turn 3 on "docs" (landing).
 5 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 4 min ago: claude started turn 4 on "docs" (landing).
 3 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 2 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
 2 min ago: claude started turn 5 on "docs" (landing).
 1 min ago: claude finished turn 5 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: proud → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Eep! Done".
-Boop has been excited for 1 min.
+Boop has been curious for 1 min.
 
 NOW (14:12, Wednesday)
 claude started turn 6 on "docs" (landing).
@@ -922,24 +925,24 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 8 min ago: claude started turn 2 on "docs" (landing).
 8 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 6 min ago: claude started turn 3 on "docs" (landing).
 6 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 4 min ago: claude started turn 4 on "docs" (landing).
 4 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 2 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
 2 min ago: claude started turn 5 on "docs" (landing).
 2 min ago: claude finished turn 5 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: proud → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Eep! Done".
 just now: claude started turn 6 on "docs" (landing).
-Boop has been excited for 2 min.
+Boop has been curious for 2 min.
 
 NOW (14:12, Wednesday)
 claude finished turn 6 on "docs" (landing): done, a short turn, no tool calls.
@@ -1048,17 +1051,18 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Proud. Boop is pleased with itself: something hard-won worked.
-Its faces lean proud, a little smug; a failure gets a determined face,
-but the pride holds. A turn ending just after its fix is no new win.
-Says done at a win, glad in a phrase at a big one, glad in a sound
-at kind words.
-Stays proud through routine turns and a failed check.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; determined when the person sounds frustrated;
-annoyed at 2 pokes in a row; grumpy when a turn finishes failed; sad
-when a very long turn fails or the person shares sad news; wounded at
-rude words to Boop. Fades to happy once Boop has been proud for 5 min.
+Engaged. Boop is in the flow, following steady work. At ease: nothing
+has failed.
+Its faces lean engaged; a failure gets a determined face.
+Says work: a word or grunt.
+Stays engaged while the work goes on, through routine finishes.
+Leaves for determined when a very long turn works on, a check fails or
+the person sounds frustrated; proud when a check passes after failing
+or a long turn's hard work is done; happy at kind words to Boop;
+curious at a poke; annoyed at a failed turn; excited when a very long
+turn finishes done; sad when a very long turn fails, the agent gives
+up or the person shares sad news. Once Boop has been engaged for 5
+min, fades to calm at anything but work going on.
 
 HISTORY (oldest first; indented lines add to the line above)
 14 min ago: claude started turn 1 on "landing".
@@ -1068,27 +1072,27 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 10 min ago: claude started turn 2 on "docs" (landing).
 9 min ago: claude finished turn 2 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Cleared".
 8 min ago: claude started turn 3 on "docs" (landing).
 7 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 6 min ago: claude started turn 4 on "docs" (landing).
 5 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 4 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
 4 min ago: claude started turn 5 on "docs" (landing).
 3 min ago: claude finished turn 5 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: proud → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Eep! Done".
 2 min ago: claude started turn 6 on "docs" (landing).
 1 min ago: claude finished turn 6 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Haa... Finish".
-Boop has been proud for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:14, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -1097,25 +1101,25 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 3 on "docs" (landing).
 8 min ago: claude finished turn 3 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finished".
 7 min ago: claude started turn 4 on "docs" (landing).
 6 min ago: claude finished turn 4 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Finish".
 5 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Hup".
 5 min ago: claude started turn 5 on "docs" (landing).
 4 min ago: claude finished turn 5 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: proud → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Eep! Done".
 3 min ago: claude started turn 6 on "docs" (landing).
 2 min ago: claude finished turn 6 on "docs" (landing): done, a short turn, no tool calls.
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Haa... Finish".
 just now: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr...".
-Boop has been proud for 2 min.
+Boop has been engaged for 2 min.
 
 NOW (14:15, Wednesday)
 claude finished turn 1 on "landing": done, a very long turn, no tool calls.

@@ -2,7 +2,7 @@
 // every timing checked to the millisecond.
 #include <unity.h>
 
-#include "pack_file.h"  // internal/firmware/
+#include "voice_file.h"  // internal/firmware/
 
 #include <cstdio>
 #include <cstring>
@@ -21,24 +21,22 @@ void tearDown() {}
 
 using app::Behaviour;
 using app::Model;
-using app::MomentIn;
-using app::Screen;
-using render::Anim;
+using app::ReactionIn;
 using render::SceneShow;
 using render::SceneState;
 using render::loopMs;
 
 namespace {
 
-// A take with a known length (a line speaks for its take's
+// A take with a known length (a `say` speaks for its take's
 // length, and its bubble stays kBubbleReadMs longer).
 constexpr const char* kGo = "previous.go";  // 7042 samples: 638 ms
 constexpr uint32_t kGoMs = 638;
 
-// A call from the Mac as LinkKit hands it over (linkkit/SPEC.md §4):
-// admitted (the kit's refuse), then played. True when its line plays;
-// false when it was refused or has no line.
-bool onMoment(Behaviour& b, const MomentIn& in, uint32_t t) { return !b.admit(in, t) && b.play(in, t); }
+// A reaction from the Mac as LinkKit hands it over (linkkit/SPEC.md §4):
+// admitted (the kit's refuse), then played. True when its `say` plays;
+// false when it was refused or has no `say`.
+bool onReaction(Behaviour& b, const ReactionIn& in, uint32_t t) { return !b.admit(in, t) && b.play(in, t); }
 
 struct Rig {
   Behaviour b;
@@ -50,31 +48,31 @@ struct Rig {
     b.advance(t, rng);
   }
   void state(Model m) { b.onState(m, t); }
-  void moment(Anim a) {
-    MomentIn m;
+  void react(SceneState a) {
+    ReactionIn m;
     m.anim = a;
-    onMoment(b, m, t);
+    onReaction(b, m, t);
   }
   // A line on its own: take `id` ("Go", 638 ms, by default); null for a
   // `say` with no take.
   bool say(const char* id = kGo) {
-    MomentIn m;
+    ReactionIn m;
     m.said = true, m.take = voice::takeIndex(id);
-    return onMoment(b, m, t);
+    return onReaction(b, m, t);
   }
   // stop_listening.
   void stop() {
-    MomentIn m;
+    ReactionIn m;
     m.empty = true;
-    onMoment(b, m, t);
+    onReaction(b, m, t);
   }
   void talkOn() { b.talkOn(t, rng); }
   void talkOff() { b.talkOff(t); }
-  Anim anim() {
+  SceneState anim() {
     uint32_t left;
-    return b.moment(t, left);
+    return b.reaction(t, left);
   }
-  // When needs you's performance last started for a new request.
+  // When needs you's performance last started for a new needs-you.
   std::string alert() {
     uint32_t at;
     return b.alerted(at) ? "alert@" + std::to_string(at) : "";
@@ -104,15 +102,21 @@ void keepAlive(Rig& r, const Model& m, uint32_t to) {
   r.at(to);
 }
 
+// The face screen: the look is neither no app nor needs you.
+bool onFace(const Behaviour& b, uint32_t t) {
+  const SceneState look = b.look(t);
+  return look != SceneState::kNoApp && look != SceneState::kNeedsYou;
+}
+
 }  // namespace
 
-// A look's variations take turns. Each
+// A look's variations rotate. Each
 // shows at least render::pixel::PixelFace::kTurnMinMs, then each end of its loop moves
 // to another (never itself) or plays another loop, and the move blinks
 // and starts the new one's clock. The Mac's same state again doesn't
 // start them over; its new variation does. Needs you and a finish hold the
 // variation showing.
-static void test_the_looks_variations_take_turns() {
+static void test_the_looks_variations_rotate() {
   Rig r;
   Model m = base("working");
   m.variant = 2;
@@ -158,11 +162,11 @@ static void test_the_looks_variations_take_turns() {
   r.state(m);
   r.at(r.t + 20000);
   shown = r.b.lookVariant();
-  MomentIn c;
-  c.anim = Anim::kTaskComplete, c.loops = Behaviour::kMaxLoops;
-  onMoment(r.b, c, r.t);
+  ReactionIn c;
+  c.anim = SceneState::kTaskComplete, c.loops = Behaviour::kMaxLoops;
+  onReaction(r.b, c, r.t);
   uint32_t left;
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   for (uint32_t t = r.t, end = r.t + left; t < end; t += 100) {
     r.at(t);
     TEST_ASSERT_EQUAL(shown, r.b.lookVariant());
@@ -170,13 +174,13 @@ static void test_the_looks_variations_take_turns() {
 }
 
 // The performance, with its knocks and ding, once when
-// a request starts, amber at half until it's answered, and nothing grows
+// a needs-you starts, amber at half until it's answered, and nothing grows
 // or nudges while it waits.
 static void test_needs_you_alerts_once_and_stays_amber() {
   Rig r;
   r.at(1000);
   r.state(attn());
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   TEST_ASSERT_EQUAL_STRING("alert@1000", r.alert().c_str());
   TEST_ASSERT_EQUAL_HEX32(0x805800, r.b.led(r.t));
   TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));
@@ -187,7 +191,7 @@ static void test_needs_you_alerts_once_and_stays_amber() {
   first.eyesShut = false;
   for (uint32_t t = 20000; t <= 300000; t += 10000) {
     r.at(t);
-    r.state(attn());  // the same request: the performance doesn't play again
+    r.state(attn());  // the same needs-you: the performance doesn't play again
     TEST_ASSERT_EQUAL_STRING("alert@1000", r.alert().c_str());
     TEST_ASSERT_EQUAL_HEX32(0x805800, r.b.led(t));
     TEST_ASSERT_EQUAL_HEX32(0x805800, r.b.led(t + 5000));
@@ -195,7 +199,7 @@ static void test_needs_you_alerts_once_and_stays_amber() {
     now.eyesShut = false;  // blinks go on
     TEST_ASSERT_TRUE(render::sceneFrame(first) == render::sceneFrame(now));  // nothing else moves
   }
-  // A different request plays the performance again, from its start.
+  // A different needs-you plays the performance again, from its start.
   r.state(attn("other"));
   TEST_ASSERT_EQUAL_STRING("alert@300000", r.alert().c_str());
   TEST_ASSERT_EQUAL_UINT32(0, r.b.designMs(r.t));
@@ -203,11 +207,11 @@ static void test_needs_you_alerts_once_and_stays_amber() {
   TEST_ASSERT_EQUAL_UINT32(400, r.b.show(r.t).t);
 }
 
-// A different request shown alerts once more, even with
+// A different needs-you shown alerts once more, even with
 // the same agent and project (two worktrees of one repo): the Mac numbers
-// each request in `attn.id`. More waiting behind it, a
+// each needs-you in `attn.id`. More waiting behind it, a
 // resent state, or a Mac too old to send a number, doesn't.
-static void test_a_different_request_with_the_same_names_alerts() {
+static void test_a_different_needs_you_with_the_same_names_alerts() {
   Rig r;
   r.at(1000);
   Model a = attn();
@@ -223,9 +227,9 @@ static void test_a_different_request_with_the_same_names_alerts() {
   r.at(3000);
   Model b = attn();
   b.attnId = 8;
-  r.state(b);  // the first answered: the other request is shown
+  r.state(b);  // the first answered: the other needs-you is shown
   TEST_ASSERT_EQUAL_STRING("alert@3000", r.alert().c_str());
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   r.at(4000);
   r.state(attn());  // no number: agent and project alone, as before
   r.at(5000);
@@ -234,7 +238,7 @@ static void test_a_different_request_with_the_same_names_alerts() {
 }
 
 // A tap while something needs you is the press dip
-// only, with no moment, and it stays amber.
+// only, with no reaction, and it stays amber.
 static void test_tap_during_needs_you_is_only_the_dip_and_stays_amber() {
   Rig r;
   r.state(attn());
@@ -245,54 +249,54 @@ static void test_tap_during_needs_you_is_only_the_dip_and_stays_amber() {
   TEST_ASSERT_EQUAL_INT(before.dy + Behaviour::kPressPx, r.b.show(r.t).dy);  // the press shows
   r.b.pressUp();
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  TEST_ASSERT_EQUAL(0u, r.b.momentSeq());
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, r.b.screen(r.t));
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_EQUAL(0u, r.b.reactionSeq());
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   keepAlive(r, attn(), 125000);
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   TEST_ASSERT_EQUAL_HEX32(0x805800, r.b.led(r.t));
   TEST_ASSERT_EQUAL_STRING("alert@0", r.alert().c_str());
 }
 
 // Answered on the Mac, the face blinks back to the
-// base look with no moment.
+// base look with no reaction.
 static void test_answering_on_the_mac_blinks_back() {
   Rig r;
   r.state(attn());
   r.at(5000);
   r.state(base("working"));
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  TEST_ASSERT_EQUAL(Screen::kFace, r.b.screen(r.t));
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_TRUE(onFace(r.b, r.t));
   TEST_ASSERT_EQUAL_HEX32(0, r.b.led(r.t));
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWorking);
   TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);  // a blink hides the switch
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWorking);
-  TEST_ASSERT_EQUAL(0u, r.b.momentSeq());
+  TEST_ASSERT_EQUAL(0u, r.b.reactionSeq());
 }
 
 // While something needs you, no animation plays and no
-// line shows.
-static void test_attention_wins_over_moments() {
+// `say` shows.
+static void test_needs_you_wins_over_reactions() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("working"));
-  r.moment(Anim::kTaskComplete);
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  r.react(SceneState::kTaskComplete);
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   r.at(100);
-  r.state(attn());  // attention cuts the finish
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  r.moment(Anim::kTaskComplete);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  r.moment(Anim::kPoked);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  TEST_ASSERT_FALSE(r.say());  // a line on its own is ignored
+  r.state(attn());  // needs you cuts the finish
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  r.react(SceneState::kTaskComplete);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  r.react(SceneState::kPoked);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_FALSE(r.say());  // a `say` on its own is ignored
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  MomentIn say;
-  say.anim = Anim::kTaskComplete, say.said = true, say.take = voice::takeIndex(kGo);
-  TEST_ASSERT_FALSE(onMoment(r.b, say, r.t));
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  ReactionIn say;
+  say.anim = SceneState::kTaskComplete, say.said = true, say.take = voice::takeIndex(kGo);
+  TEST_ASSERT_FALSE(onReaction(r.b, say, r.t));
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  // A line that was showing goes when something starts needing you.
+  // A `say` that was showing goes when something starts needing you.
   Rig m;
   m.state(base("idle"));
   TEST_ASSERT_TRUE(m.say());
@@ -305,13 +309,13 @@ static void test_attention_wins_over_moments() {
 // ends) or a poke shows the needs-you design behind a blink of
 // kBlendMs, and the design's clock starts at the change.
 static void test_changes_mid_motion_blink_into_the_new_design() {
-  const Anim anims[] = {Anim::kTaskComplete, Anim::kPoked};
+  const SceneState anims[] = {SceneState::kTaskComplete, SceneState::kPoked};
   const char* const bases[] = {"working", "idle"};
   for (int i = 0; i < 2; ++i) {
     for (uint32_t when : {300u, 650u}) {
       Rig r;
       r.state(base(bases[i]));
-      r.moment(anims[i]);
+      r.react(anims[i]);
       r.at(when);
       r.state(attn());
       SceneShow s = r.b.show(r.t);
@@ -334,20 +338,20 @@ static int designOf(const SceneShow& s) { return render::sceneOf(s.mood, s.state
 // (render::eyesClosed).
 static bool hidden(const SceneShow& s) { return s.eyesShut && render::eyesClosed(s); }
 
-// A brain's reaction: a line with a mood, held for
+// A brain's reaction: a `say` with a mood, held for
 // `loops` loops of the design it's drawn in.
-static MomentIn reaction(render::Mood mood, int loops = 2) {
-  MomentIn m;
+static ReactionIn reaction(render::Mood mood, int loops = 2) {
+  ReactionIn m;
   m.take = voice::takeIndex(kGo);
   m.expr = true, m.mood = mood, m.loops = loops;
   return m;
 }
 
 // An animation from the Mac, of `loops`, in the mood `mood` if it's given
-// one (else Boop's), with a line when `take` names one.
-static MomentIn animated(Anim a, int variant = 0, const char* take = nullptr, bool expr = false,
+// one (else Boop's), with a `say` when `take` names one.
+static ReactionIn animated(SceneState a, int variant = 0, const char* take = nullptr, bool expr = false,
                          render::Mood mood = render::Mood::kHappy, int loops = 1) {
-  MomentIn m;
+  ReactionIn m;
   m.anim = a, m.variant = uint8_t(variant), m.loops = loops;
   m.said = take != nullptr, m.take = voice::takeIndex(take);
   m.expr = expr, m.mood = mood;
@@ -356,12 +360,12 @@ static MomentIn animated(Anim a, int variant = 0, const char* take = nullptr, bo
 
 // Every way round: whatever state Boop is in, whatever is playing, and
 // whatever arrives (any message or input), the design just after the
-// change is the design just before it, at the same moment of its clock, or
+// change is the design just before it, at the same instant of its clock, or
 // else the eyes are shut, and show shut, to hide the switch. The states
 // span the first pack's moods and the new moods' flip-books and what the
 // agents are doing; what plays includes a reaction's borrowed face, a
-// finish in a mood, a one-shot and a poke; what arrives the same, a finish
-// with its line, a reply and a mood change.
+// finish in a mood, a rule's reaction and a poke; what arrives the same, a finish
+// with its `say`, a reply and a mood change.
 static void test_no_change_ever_cuts_hard() {
   using render::Mood;
   Model busy3 = base("working");
@@ -387,9 +391,9 @@ static void test_no_change_ever_cuts_hard() {
   const int kStates = int(sizeof(states) / sizeof(states[0]));
   enum Playing {
     kNothing, kCheer, kWiggle, kSay, kCheerSay, kNoApp, kReaction, kMoodyCheer, kListening, kReplyWait,
-    kOneShot, kCalmReaction, kFinishLine, kPlayingCount
+    kRuleReaction, kCalmReaction, kFinishLine, kPlayingCount
   };
-  const int kEvents = kStates + 14;  // every state, then the moments and inputs
+  const int kEvents = kStates + 14;  // every state, then the reactions and inputs
   int checked = 0;
   for (int from = 0; from < kStates; ++from) {
     for (int playing = 0; playing < kPlayingCount; ++playing) {
@@ -399,22 +403,22 @@ static void test_no_change_ever_cuts_hard() {
           r.state(states[from]);
           r.at(500);
           switch (playing) {
-            case kCheer: r.moment(Anim::kTaskComplete); break;
+            case kCheer: r.react(SceneState::kTaskComplete); break;
             case kWiggle: r.b.tap(r.t, r.rng); break;
             case kSay: r.say(); break;
-            case kCheerSay: onMoment(r.b, animated(Anim::kTaskComplete, 0, kGo), r.t); break;
+            case kCheerSay: onReaction(r.b, animated(SceneState::kTaskComplete, 0, kGo), r.t); break;
             case kNoApp: r.at(500 + Behaviour::kNoAppMs); break;
-            case kReaction: onMoment(r.b, reaction(Mood::kSad), r.t); break;
-            case kMoodyCheer: onMoment(r.b, animated(Anim::kTaskComplete, 1, nullptr, true, Mood::kExcited, 2), r.t); break;
+            case kReaction: onReaction(r.b, reaction(Mood::kSad), r.t); break;
+            case kMoodyCheer: onReaction(r.b, animated(SceneState::kTaskComplete, 1, nullptr, true, Mood::kExcited, 2), r.t); break;
             case kListening: r.talkOn(); break;
             case kReplyWait:
               r.talkOn();
               r.at(900);
               r.talkOff();
               break;
-            case kOneShot: r.moment(Anim::kStarting); break;
-            case kCalmReaction: onMoment(r.b, reaction(Mood::kCalm), r.t); break;
-            case kFinishLine: onMoment(r.b, animated(Anim::kTaskComplete, 3, "new.d14", true, Mood::kWhiny), r.t); break;
+            case kRuleReaction: r.react(SceneState::kStarting); break;
+            case kCalmReaction: onReaction(r.b, reaction(Mood::kCalm), r.t); break;
+            case kFinishLine: onReaction(r.b, animated(SceneState::kTaskComplete, 3, "new.d14", true, Mood::kWhiny), r.t); break;
             default: break;
           }
           r.at(r.t + when);
@@ -423,19 +427,19 @@ static void test_no_change_ever_cuts_hard() {
             r.state(states[event]);
           } else {
             switch (event - kStates) {
-              case 0: r.moment(Anim::kTaskComplete); break;
+              case 0: r.react(SceneState::kTaskComplete); break;
               case 1: r.b.tap(r.t, r.rng); break;
               case 2: r.say(); break;
-              case 3: r.moment(Anim::kPoked); break;
-              case 4: onMoment(r.b, reaction(Mood::kProud, 3), r.t); break;
+              case 3: r.react(SceneState::kPoked); break;
+              case 4: onReaction(r.b, reaction(Mood::kProud, 3), r.t); break;
               case 5: r.talkOn(); break;
               case 6: r.talkOff(); break;
               case 7: r.stop(); break;
-              case 8: r.moment(Anim::kListening); break;
-              case 9: onMoment(r.b, animated(Anim::kTaskComplete, 2, nullptr, true, Mood::kCurious, 3), r.t); break;
-              case 10: r.moment(Anim::kError); break;
-              case 11: onMoment(r.b, animated(Anim::kReplyReady, 1, kGo, true, Mood::kAnnoyed), r.t); break;
-              case 12: onMoment(r.b, reaction(Mood::kWounded), r.t); break;
+              case 8: r.react(SceneState::kListening); break;
+              case 9: onReaction(r.b, animated(SceneState::kTaskComplete, 2, nullptr, true, Mood::kCurious, 3), r.t); break;
+              case 10: r.react(SceneState::kError); break;
+              case 11: onReaction(r.b, animated(SceneState::kReplyReady, 1, kGo, true, Mood::kAnnoyed), r.t); break;
+              case 12: onReaction(r.b, reaction(Mood::kWounded), r.t); break;
               default: {
                 Model m = r.b.model();
                 m.mood = Mood::kEngaged;
@@ -463,9 +467,9 @@ static void test_no_change_ever_cuts_hard() {
 
 // Over time: as whatever plays runs out on its own (a finish's loops, a
 // reaction's borrowed face at its loop boundary, over a look, over the
-// finish or across a look change, a poke, a one-shot, a line, a finish
-// held on for its line, the Mac going quiet), the face never cuts hard.
-// From one 20 ms frame to the next the design goes on at the same moment of
+// finish or across a look change, a poke, a rule's reaction, a `say`, a finish
+// held on for its `say`, the Mac going quiet), the face never cuts hard.
+// From one 20 ms frame to the next the design goes on at the same instant of
 // its clock, or the eyes are shut and show shut. An animation's design
 // starting over at each of its loop boundaries is its clock going on, and
 // so is resting on its last frame.
@@ -482,7 +486,7 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
   const Model states[] = {base("idle"), grumpyWorking, proudIdle, base("asleep"), calmWorking, whinyTesting};
   enum Playing {
     kCheer1, kCheer3, kMoodyCheer, kReaction, kSameMood, kLongReaction, kOverCheer, kAcrossLook, kCheerEnds,
-    kWiggle, kSay, kQuiet, kOneShot, kFinishLine, kNewMoodReaction, kPlayingCount
+    kWiggle, kSay, kQuiet, kRuleReaction, kFinishLine, kNewMoodReaction, kPlayingCount
   };
   int frames = 0;
   for (const Model& m : states) {
@@ -490,36 +494,36 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
       Rig r;
       r.state(m);
       r.at(777);
-      MomentIn cheer;
-      cheer.anim = Anim::kTaskComplete;
+      ReactionIn cheer;
+      cheer.anim = SceneState::kTaskComplete;
       switch (playing) {
-        case kCheer1: onMoment(r.b, cheer, r.t); break;
-        case kCheer3: cheer.loops = 3, onMoment(r.b, cheer, r.t); break;
+        case kCheer1: onReaction(r.b, cheer, r.t); break;
+        case kCheer3: cheer.loops = 3, onReaction(r.b, cheer, r.t); break;
         case kMoodyCheer:
           cheer.loops = 2, cheer.expr = true, cheer.mood = Mood::kSad;
-          onMoment(r.b, cheer, r.t);
+          onReaction(r.b, cheer, r.t);
           break;
-        case kReaction: onMoment(r.b, reaction(Mood::kExcited, 2), r.t); break;
-        case kSameMood: onMoment(r.b, reaction(m.mood, 2), r.t); break;
-        case kLongReaction: onMoment(r.b, reaction(Mood::kCurious, 6), r.t); break;
+        case kReaction: onReaction(r.b, reaction(Mood::kExcited, 2), r.t); break;
+        case kSameMood: onReaction(r.b, reaction(m.mood, 2), r.t); break;
+        case kLongReaction: onReaction(r.b, reaction(Mood::kCurious, 6), r.t); break;
         case kOverCheer:
-          cheer.loops = 2, onMoment(r.b, cheer, r.t);
+          cheer.loops = 2, onReaction(r.b, cheer, r.t);
           r.at(r.t + 700);
-          onMoment(r.b, reaction(Mood::kDetermined, 1), r.t);
+          onReaction(r.b, reaction(Mood::kDetermined, 1), r.t);
           break;
         case kAcrossLook:
-          onMoment(r.b, reaction(Mood::kSad, 3), r.t);
+          onReaction(r.b, reaction(Mood::kSad, 3), r.t);
           break;
         case kCheerEnds:  // a reaction late in the finish holds past its end
-          onMoment(r.b, cheer, r.t);
+          onReaction(r.b, cheer, r.t);
           r.at(r.t + 1900);
-          onMoment(r.b, reaction(Mood::kHappy, 2), r.t);
+          onReaction(r.b, reaction(Mood::kHappy, 2), r.t);
           break;
         case kWiggle: r.b.tap(r.t, r.rng); break;
         case kSay: r.say(); break;
-        case kOneShot: r.moment(Anim::kHelperReturn); break;
-        case kFinishLine: onMoment(r.b, animated(Anim::kTaskComplete, 4, "new.d20", true, Mood::kGrumpy), r.t); break;
-        case kNewMoodReaction: onMoment(r.b, reaction(Mood::kIrritated, 2), r.t); break;
+        case kRuleReaction: r.react(SceneState::kHelperReturn); break;
+        case kFinishLine: onReaction(r.b, animated(SceneState::kTaskComplete, 4, "new.d20", true, Mood::kGrumpy), r.t); break;
+        case kNewMoodReaction: onReaction(r.b, reaction(Mood::kIrritated, 2), r.t); break;
         default: break;
       }
       SceneShow before = r.b.show(r.t);
@@ -558,7 +562,7 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
 // No app holds however long the Mac stays away, even
 // past the 24.9 days where the clock's differences wrap, and whatever had
 // finished stays finished when they come round again at 49.7 days: the
-// no-app design, no old line, press dip or backlight fade.
+// no-app design, no old `say`, press dip or backlight fade.
 static void test_no_app_holds_for_weeks() {
   NEEDS_VOICE_PACK();
   Rig r;
@@ -569,7 +573,7 @@ static void test_no_app_holds_for_weeks() {
   r.at(1100);
   r.b.pressUp();
   r.at(Behaviour::kNoAppMs);
-  TEST_ASSERT_EQUAL(Screen::kNoApp, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
   const uint32_t start = Behaviour::kNoAppMs + 200;
   r.at(start);
   const SceneShow noApp = r.b.show(start);
@@ -584,12 +588,12 @@ static void test_no_app_holds_for_weeks() {
   // The no-app design repeats every loop.
   const uint64_t loop = render::loopMs(render::Mood::kHappy, SceneState::kNoApp);
   walk(start + loop * ((1ull << 31) / loop + 1));  // past 2^31 ms, on a whole loop after the switch to no app
-  TEST_ASSERT_EQUAL(Screen::kNoApp, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
   TEST_ASSERT_TRUE(render::sceneFrame(noApp) == render::sceneFrame(r.b.show(r.t)));
   TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  walk(0x100000000ull + 1150);  // 2^32 ms after the release, 150 after the line started
+  walk(0x100000000ull + 1150);  // 2^32 ms after the release, 150 after the `say` started
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  // No line's bubble or mouth, no press, no blink: only the design.
+  // No `say`'s bubble or mouth, no press, no blink: only the design.
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kNoApp);
   TEST_ASSERT_FALSE(s.mouthOpen);
@@ -597,9 +601,9 @@ static void test_no_app_holds_for_weeks() {
   TEST_ASSERT_EQUAL_INT(0, s.dy);
   walk(0x100000000ull + Behaviour::kNoAppMs + 50);  // 2^32 ms after the dimming began
   TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  TEST_ASSERT_EQUAL(Screen::kNoApp, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
   r.state(base("idle"));
-  TEST_ASSERT_EQUAL(Screen::kFace, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(onFace(r.b, r.t));
 }
 
 // ---- Push-to-talk ----------------------------------------------------------
@@ -613,7 +617,7 @@ static void test_push_to_talk_listens_then_waits() {
   m.mood = render::Mood::kGrumpy;
   r.state(m);
   r.talkOn();
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kListening);
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kListening);
@@ -622,10 +626,10 @@ static void test_push_to_talk_listens_then_waits() {
   r.at(2000);
   const SceneShow held = r.b.show(r.t);
   TEST_ASSERT_EQUAL_UINT32(2000 % loopMs(render::Mood::kGrumpy, SceneState::kListening, held.variant), held.t);
-  const uint32_t seq = r.b.momentSeq();
+  const uint32_t seq = r.b.reactionSeq();
   r.talkOff();
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
-  TEST_ASSERT_EQUAL(seq, r.b.momentSeq());  // the same moment
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
+  TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());  // the same reaction
   const SceneShow after = r.b.show(r.t);
   TEST_ASSERT_TRUE(after.state == held.state && after.variant == held.variant && after.t == held.t);
   TEST_ASSERT_FALSE(after.eyesShut);  // no blend
@@ -633,7 +637,7 @@ static void test_push_to_talk_listens_then_waits() {
 
 // Listening holds until the reply. Another animation (a
 // finish, a poke) doesn't replace it, and a tap shows only the press dip.
-// Any moment with a `say` is the reply: it ends listening, then plays as
+// Any reaction with a `say` is the reply: it ends listening, then plays as
 // it would have, its finish and its face included.
 static void test_listening_holds_until_the_reply() {
   NEEDS_VOICE_PACK();
@@ -642,90 +646,90 @@ static void test_listening_holds_until_the_reply() {
   r.talkOn();
   r.at(500);
   r.b.tap(r.t, r.rng);  // a touch while BOOT is held
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   r.at(1000);
   r.talkOff();
   r.at(2000);
-  const uint32_t seq = r.b.momentSeq();
-  r.moment(Anim::kTaskComplete);
-  r.moment(Anim::kPoked);
+  const uint32_t seq = r.b.reactionSeq();
+  r.react(SceneState::kTaskComplete);
+  r.react(SceneState::kPoked);
   r.b.tap(r.t, r.rng);
   uint32_t left;
-  TEST_ASSERT_EQUAL(Anim::kListening, r.b.moment(r.t, left));
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.b.reaction(r.t, left));
   TEST_ASSERT_EQUAL_UINT32(Behaviour::kReplyWaitMs - 1000, left);  // the wait runs on
-  TEST_ASSERT_EQUAL(seq, r.b.momentSeq());
-  MomentIn skipped;  // a call the Mac waits on, refused: the kit skips it
-  skipped.anim = Anim::kTaskComplete, skipped.call = 7;
+  TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());
+  ReactionIn skipped;  // a reaction the Mac waits on, refused: the kit skips it
+  skipped.anim = SceneState::kTaskComplete, skipped.key = 7;
   TEST_ASSERT_EQUAL_STRING("listening", r.b.admit(skipped, r.t));
-  app::Ended e;
-  TEST_ASSERT_FALSE(r.b.takeEnded(e));
-  // The brain's reply: a finish with a line in proud's face, its line at
+  app::PlayedOut e;
+  TEST_ASSERT_FALSE(r.b.takePlayedOut(e));
+  // The brain's reply: a finish with a `say` in proud's face, its `say` at
   // the design's voice window.
-  MomentIn reply;
-  reply.anim = Anim::kTaskComplete, reply.said = true, reply.take = voice::takeIndex(kGo);
-  reply.expr = true, reply.mood = render::Mood::kProud, reply.call = 8;
-  TEST_ASSERT_TRUE(onMoment(r.b, reply, r.t));
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  ReactionIn reply;
+  reply.anim = SceneState::kTaskComplete, reply.said = true, reply.take = voice::takeIndex(kGo);
+  reply.expr = true, reply.mood = render::Mood::kProud, reply.key = 8;
+  TEST_ASSERT_TRUE(onReaction(r.b, reply, r.t));
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  TEST_ASSERT_TRUE(r.b.lineAhead(r.t));
+  TEST_ASSERT_TRUE(r.b.sayAhead(r.t));
   render::Mood mood;
   TEST_ASSERT_TRUE(r.b.expression(r.t, mood) && mood == render::Mood::kProud);
-  TEST_ASSERT_FALSE(r.b.takeEnded(e));  // it plays
+  TEST_ASSERT_FALSE(r.b.takePlayedOut(e));  // it plays
   r.at(r.t + render::pixel::score(render::pixelIndex(render::Mood::kProud), int(SceneState::kTaskComplete), 0).voiceMs);
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
-  // A line on its own ends it too, and plays over the look.
+  // A `say` on its own ends it too, and plays over the look.
   Rig s;
   s.state(base("idle"));
   s.talkOn();
   s.at(700);
   TEST_ASSERT_TRUE(s.say());
-  TEST_ASSERT_EQUAL(Anim::kNone, s.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, s.anim());
   TEST_ASSERT_NOT_NULL(s.b.bubble(s.t));
   TEST_ASSERT_TRUE(s.b.show(s.t).state == SceneState::kIdle);
 }
 
-// While something needs you, listening is the one moment
+// While something needs you, listening is the one reaction
 // that plays; one showing when needs you starts plays on. The reply can't
 // show, but it ends listening.
 static void test_listening_plays_while_something_needs_you() {
   Rig a;
   a.state(attn());
   a.talkOn();
-  TEST_ASSERT_EQUAL(Anim::kListening, a.anim());
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, a.b.screen(a.t));
+  TEST_ASSERT_EQUAL(SceneState::kListening, a.anim());
+  TEST_ASSERT_TRUE(a.b.look(a.t) == SceneState::kNeedsYou);
   TEST_ASSERT_TRUE(a.b.show(a.t).state == SceneState::kListening);
   a.at(500);
-  a.moment(Anim::kTaskComplete);
-  TEST_ASSERT_EQUAL(Anim::kListening, a.anim());
+  a.react(SceneState::kTaskComplete);
+  TEST_ASSERT_EQUAL(SceneState::kListening, a.anim());
   TEST_ASSERT_FALSE(a.say());
-  TEST_ASSERT_EQUAL(Anim::kNone, a.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, a.anim());
   TEST_ASSERT_NULL(a.b.bubble(a.t));
   TEST_ASSERT_TRUE(a.b.show(a.t).state == SceneState::kNeedsYou);
-  // The Mac's own listening plays too, and survives a new request.
+  // The Mac's own listening plays too, and survives a new needs-you.
   Rig m;
   m.state(base("idle"));
-  m.moment(Anim::kListening);
+  m.react(SceneState::kListening);
   m.at(300);
   m.state(attn());
-  TEST_ASSERT_EQUAL(Anim::kListening, m.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, m.anim());
   m.at(400);
   m.state(attn("jetpack"));
-  TEST_ASSERT_EQUAL(Anim::kListening, m.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, m.anim());
   m.stop();
-  TEST_ASSERT_EQUAL(Anim::kNone, m.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, m.anim());
 }
 
 // stop_listening (empty) ends listening and does nothing
-// else. It never ends a finish, a poke or a line.
-static void test_the_empty_moment_ends_only_listening() {
+// else. It never ends a finish, a poke or a `say`.
+static void test_the_empty_reaction_ends_only_listening() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("idle"));
-  r.moment(Anim::kListening);  // from the Mac: its own mic is on
+  r.react(SceneState::kListening);  // from the Mac: its own mic is on
   r.at(4000);
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);  // blending back
   // After the release, too.
   r.at(r.t + 1000);
@@ -734,26 +738,26 @@ static void test_the_empty_moment_ends_only_listening() {
   r.talkOff();
   r.at(r.t + 2000);
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   // Nothing playing: nothing happens.
-  const uint32_t seq = r.b.momentSeq();
+  const uint32_t seq = r.b.reactionSeq();
   r.at(r.t + 1000);
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  TEST_ASSERT_EQUAL(seq, r.b.momentSeq());
-  // A finish, a poke and a line carry on.
-  r.moment(Anim::kTaskComplete);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());
+  // A finish, a poke and a `say` carry on.
+  r.react(SceneState::kTaskComplete);
   r.at(r.t + 100);
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
-  r.moment(Anim::kPoked);
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
+  r.react(SceneState::kPoked);
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   r.at(r.t + 1000);
   TEST_ASSERT_TRUE(r.say());
   r.stop();
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
-  TEST_ASSERT_EQUAL(seq + 3, r.b.momentSeq());  // finish, poke, line; the stops add none
+  TEST_ASSERT_EQUAL(seq + 3, r.b.reactionSeq());  // finish, poke, `say`; the stops add none
 }
 
 // Listening lasts at most kListenMs (30 s) of talking and
@@ -769,12 +773,12 @@ static void test_push_to_talk_timeouts() {
   keepAlive(r, m, 3000);
   r.talkOff();
   uint32_t left;
-  TEST_ASSERT_EQUAL(Anim::kListening, r.b.moment(r.t, left));
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.b.reaction(r.t, left));
   TEST_ASSERT_EQUAL_UINT32(8000, left);
   keepAlive(r, m, 3000 + 7999);
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   r.at(3000 + 8000);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());  // no reply came
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());  // no reply came
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kIdle);
   TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);
   // BOOT's own 30 s cap is a release: 8 s more for the reply.
@@ -784,32 +788,32 @@ static void test_push_to_talk_timeouts() {
   keepAlive(c, m, 30000);
   c.talkOff();
   keepAlive(c, m, 30000 + 7999);
-  TEST_ASSERT_EQUAL(Anim::kListening, c.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, c.anim());
   c.at(38000);
-  TEST_ASSERT_EQUAL(Anim::kNone, c.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, c.anim());
   c.talkOff();  // a late release has nothing to wait on
-  TEST_ASSERT_EQUAL(Anim::kNone, c.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, c.anim());
   // The Mac's listening, with no release on the device, holds 38 s at most.
   Rig k;
   k.state(m);
-  k.moment(Anim::kListening);
-  TEST_ASSERT_EQUAL(Anim::kListening, k.b.moment(k.t, left));
+  k.react(SceneState::kListening);
+  TEST_ASSERT_EQUAL(SceneState::kListening, k.b.reaction(k.t, left));
   TEST_ASSERT_EQUAL_UINT32(38000, left);
   // Held on the device while the Mac listens: the same face, time topped up.
   k.at(5000);
-  const uint32_t seq = k.b.momentSeq();
+  const uint32_t seq = k.b.reactionSeq();
   k.talkOn();
-  TEST_ASSERT_EQUAL(seq, k.b.momentSeq());
-  TEST_ASSERT_EQUAL(Anim::kListening, k.b.moment(k.t, left));
+  TEST_ASSERT_EQUAL(seq, k.b.reactionSeq());
+  TEST_ASSERT_EQUAL(SceneState::kListening, k.b.reaction(k.t, left));
   TEST_ASSERT_EQUAL_UINT32(38000, left);
   k.talkOff();
-  TEST_ASSERT_EQUAL(Anim::kListening, k.b.moment(k.t, left));
+  TEST_ASSERT_EQUAL(SceneState::kListening, k.b.reaction(k.t, left));
   TEST_ASSERT_EQUAL_UINT32(8000, left);
 }
 
 // Which variation of listening shows is picked at random,
 // never the last one; a `variant` the Mac sends is shown as it says.
-static void test_listening_takes_turns_between_variations() {
+static void test_listening_rotates_its_variations() {
   TEST_ASSERT_EQUAL_INT(3, render::variants(render::Mood::kHappy, SceneState::kListening));
   Rig r;
   r.state(base("idle"));
@@ -826,37 +830,37 @@ static void test_listening_takes_turns_between_variations() {
     r.at(r.t + 1000);
   }
   for (bool s : seen) TEST_ASSERT_TRUE(s);
-  MomentIn m;
-  m.anim = Anim::kListening, m.variant = 2;
-  onMoment(r.b, m, r.t);
+  ReactionIn m;
+  m.anim = SceneState::kListening, m.variant = 2;
+  onReaction(r.b, m, r.t);
   TEST_ASSERT_EQUAL_INT(2, r.b.show(r.t).variant);
-  TEST_ASSERT_NOT_EQUAL(2, r.b.pick(Anim::kListening, render::Mood::kHappy, 0, render::Outcome::kNone, render::StartCtx::kNone, r.rng));
+  TEST_ASSERT_NOT_EQUAL(2, r.b.pick(SceneState::kListening, render::Mood::kHappy, 0, render::Outcome::kNone, render::StartCtx::kNone, r.rng));
 }
 
 // The finish plays its loops of the mood's task-complete
-// design, one unless the moment says more, with no light; a new moment
+// design, one unless the reaction says more, with no light; a new reaction
 // replaces the one playing.
-static void test_moments_end_and_replace() {
+static void test_reactions_end_and_replace() {
   Rig r;
   r.state(base("idle"));
-  r.moment(Anim::kTaskComplete);
+  r.react(SceneState::kTaskComplete);
   const uint32_t loop = loopMs(render::Mood::kHappy, SceneState::kTaskComplete);
   r.at(loop - 1);
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   TEST_ASSERT_EQUAL_HEX32(0, r.b.led(r.t));
   TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));
   TEST_ASSERT_EQUAL_STRING("", r.alert().c_str());
   r.at(loop);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
-  r.moment(Anim::kTaskComplete);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  r.react(SceneState::kTaskComplete);
   r.at(r.t + 10);
-  r.moment(Anim::kPoked);  // a new moment replaces the old one
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  r.react(SceneState::kPoked);  // a new reaction replaces the old one
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   const uint32_t start = r.t, poke = loopMs(render::Mood::kHappy, SceneState::kPoked);
   r.at(start + poke - 1);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   r.at(start + poke);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
 }
 
 // An animation's `loops` is how many times its design
@@ -868,45 +872,45 @@ static void test_a_cheer_plays_its_loops() {
   m.mood = render::Mood::kProud;
   r.state(m);
   r.at(1000);
-  MomentIn in;
-  in.anim = Anim::kTaskComplete, in.loops = 3;
-  onMoment(r.b, in, r.t);
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.loops = 3;
+  onReaction(r.b, in, r.t);
   const uint32_t loop = loopMs(render::Mood::kProud, SceneState::kTaskComplete);
   uint32_t left;
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.b.moment(r.t, left));
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.b.reaction(r.t, left));
   TEST_ASSERT_EQUAL_UINT32(3 * loop, left);
   TEST_ASSERT_EQUAL_UINT32(loop - 1, r.b.show(1000 + loop - 1).t);
   SceneShow s = r.b.show(1000 + loop + 100);
   TEST_ASSERT_TRUE(s.state == SceneState::kTaskComplete);
   TEST_ASSERT_EQUAL_UINT32(100, s.t);  // the design starts over
   r.at(1000 + 3 * loop - 1);
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   r.at(1000 + 3 * loop);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   // Drawn in a reaction's mood, the finish's loops are that mood's design's.
   r.at(20000);
   r.state(m);
   in.loops = 1, in.expr = true, in.mood = render::Mood::kSad;
-  onMoment(r.b, in, r.t);
-  r.b.moment(r.t, left);
+  onReaction(r.b, in, r.t);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kSad, SceneState::kTaskComplete), left);
-  MomentIn w;  // the dashboard's poke too
-  w.anim = Anim::kPoked, w.loops = 4;
-  onMoment(r.b, w, r.t);
-  r.b.moment(r.t, left);
+  ReactionIn w;  // the dashboard's poke too
+  w.anim = SceneState::kPoked, w.loops = 4;
+  onReaction(r.b, w, r.t);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(4 * loopMs(render::Mood::kProud, SceneState::kPoked), left);
 }
 
-// The bubble shows the take's text, the line speaks for the
+// The bubble shows the take's text, the `say` speaks for the
 // take's length, and the mouth is an "o" while the take is loud (its mouth
 // frames, voice::mouthOpen), shut once it's said.
 static void test_a_take_moves_the_mouth() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("idle"));
-  MomentIn m;
+  ReactionIn m;
   m.said = true, m.take = voice::takeIndex(kGo);
-  TEST_ASSERT_TRUE(onMoment(r.b, m, r.t));
+  TEST_ASSERT_TRUE(onReaction(r.b, m, r.t));
   TEST_ASSERT_EQUAL_STRING("Go", r.b.bubble(r.t));
   TEST_ASSERT_EQUAL(m.take, r.b.take());
   TEST_ASSERT_TRUE(r.b.speaking(kGoMs - 1));  // 7042 samples at 11.025 kHz
@@ -922,21 +926,21 @@ static void test_a_take_moves_the_mouth() {
   TEST_ASSERT_NOT_NULL(r.b.bubble(kGoMs + 500));
 }
 
-// A line of two takes shows both words, speaks for both
+// A `say` of two takes shows both words, speaks for both
 // and the gap between them, and moves the mouth for each.
-static void test_a_line_of_two_takes() {
+static void test_a_say_of_two_takes() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("idle"));
-  MomentIn m;
+  ReactionIn m;
   m.said = true, m.take = voice::takeIndex("previous.tsk");
   m.then = voice::takeIndex("phase1.word.test.test__annoyed__contained");
-  TEST_ASSERT_TRUE(onMoment(r.b, m, r.t));
+  TEST_ASSERT_TRUE(onReaction(r.b, m, r.t));
   TEST_ASSERT_EQUAL_STRING("Tsk... Test", r.b.bubble(r.t));
   const uint32_t ms = 1377 + voice::kJoinGapMs + 868;
   TEST_ASSERT_TRUE(r.b.speaking(ms - 1));
   TEST_ASSERT_FALSE(r.b.speaking(ms));
-  for (uint32_t t = 0; t < ms; t += 7) TEST_ASSERT_EQUAL(voice::lineMouthOpen(m.take, m.then, t), r.b.show(t).mouthOpen);
+  for (uint32_t t = 0; t < ms; t += 7) TEST_ASSERT_EQUAL(voice::sayMouthOpen(m.take, m.then, t), r.b.show(t).mouthOpen);
   TEST_ASSERT_NOT_NULL(r.b.bubble(ms + Behaviour::kBubbleReadMs - 1));
   TEST_ASSERT_NULL(r.b.bubble(ms + Behaviour::kBubbleReadMs));
 }
@@ -948,16 +952,16 @@ static uint32_t firstOpen(const char* id) {
   return t;
 }
 
-// A line on its own plays over whatever
+// A `say` on its own plays over whatever
 // face is showing and doesn't change it. The bubble stays for the take
 // and 1.2 s to read.
-static void test_a_line_alone_plays_over_the_face() {
+static void test_a_say_alone_plays_over_the_face() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("working"));
   r.at(1000);
   TEST_ASSERT_TRUE(r.say());
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWorking);
   TEST_ASSERT_TRUE(r.b.speaking(1000 + kGoMs - 1));
   TEST_ASSERT_FALSE(r.b.speaking(1000 + kGoMs));
@@ -970,29 +974,29 @@ static void test_a_line_alone_plays_over_the_face() {
 
   // Over a finish, the finish keeps its own timing.
   r.at(10000);
-  r.moment(Anim::kTaskComplete);
+  r.react(SceneState::kTaskComplete);
   r.at(10500);
   r.say();
   uint32_t left;
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.b.moment(r.t, left));
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.b.reaction(r.t, left));
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kHappy, SceneState::kTaskComplete) - 500, left);
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
-  // A tap's poke replaces the moment's animation; the line plays on.
+  // A tap's poke replaces the reaction's animation; the `say` plays on.
   r.at(10600);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
 
   // A `say` with no take is nothing.
   Rig e;
   e.state(base("idle"));
   TEST_ASSERT_FALSE(e.say(nullptr));
-  TEST_ASSERT_EQUAL(0u, e.b.momentSeq());
+  TEST_ASSERT_EQUAL(0u, e.b.reactionSeq());
 }
 
-// A face on its own (a mood, no animation, no line) plays
-// that face for its loops, exactly as a face with a line would, and a
-// moment the Mac waits on ends done when it's over. A line playing plays
+// A face on its own (a mood, no animation, no `say`) plays
+// that face for its loops, exactly as a face with a `say` would, and a
+// reaction the Mac waits on ends done when it's over. A `say` playing plays
 // on under it. While something needs you, or with no app, it's skipped.
 static std::string ended(Rig& r);
 static void test_a_face_alone_plays_its_loops() {
@@ -1000,11 +1004,11 @@ static void test_a_face_alone_plays_its_loops() {
   Rig r;
   r.state(base("idle"));
   r.at(1000);
-  MomentIn f;
-  f.expr = true, f.mood = render::Mood::kProud, f.loops = 2, f.call = 30;
+  ReactionIn f;
+  f.expr = true, f.mood = render::Mood::kProud, f.loops = 2, f.key = 30;
   const uint32_t loop = loopMs(render::Mood::kProud, SceneState::kIdle, r.b.lookVariant());
   const uint32_t end = r.t + loop - r.b.designMs(r.t) % loop + loop;
-  TEST_ASSERT_FALSE(onMoment(r.b, f, r.t));  // no line
+  TEST_ASSERT_FALSE(onReaction(r.b, f, r.t));  // no `say`
   render::Mood e;
   TEST_ASSERT_TRUE(r.b.expression(r.t, e) && e == render::Mood::kProud);
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kProud);
@@ -1016,26 +1020,26 @@ static void test_a_face_alone_plays_its_loops() {
   r.at(end);
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
   TEST_ASSERT_EQUAL_STRING("30 done", ended(r).c_str());
-  // Under a line playing, the line plays on.
+  // Under a `say` playing, the `say` plays on.
   r.at(20000);
   r.say();
-  const uint32_t seq = r.b.momentSeq();
-  f.call = 31;
-  onMoment(r.b, f, r.t);
-  TEST_ASSERT_EQUAL(seq, r.b.momentSeq());
+  const uint32_t seq = r.b.reactionSeq();
+  f.key = 31;
+  onReaction(r.b, f, r.t);
+  TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());
   TEST_ASSERT_EQUAL_STRING("Go", r.b.bubble(r.t));
   TEST_ASSERT_TRUE(r.b.expression(r.t, e));
   // Skipped while something needs you, and with no app.
   r.at(30000);
   r.state(attn());
   ended(r);
-  f.call = 32;
+  f.key = 32;
   TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(f, r.t));  // the kit skips it
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
   Rig n;
   n.at(Behaviour::kNoAppMs);
-  f.call = 33;
+  f.key = 33;
   TEST_ASSERT_EQUAL_STRING("no_app", n.b.admit(f, n.t));
   TEST_ASSERT_FALSE(n.b.expression(n.t, e));
   TEST_ASSERT_EQUAL_STRING("", ended(n).c_str());
@@ -1074,15 +1078,15 @@ void checkGaps(const std::vector<uint32_t>& starts, uint32_t from, uint32_t lo, 
 // Idle and working life is blinks only, every 2–6 s idle,
 // 2–5 s working, however many agents are busy. Asleep, as with no app,
 // never blinks.
-// A moment's `mood` is its expression. With no animation,
-// the look is drawn in that mood for the moment's loops of the design it's
+// A reaction's `mood` is its expression. With no animation,
+// the look is drawn in that mood for the reaction's loops of the design it's
 // drawn in, ending on a loop boundary of that design's clock (so the first
-// loop ends at the next boundary), and at least as long as the line and
+// loop ends at the next boundary), and at least as long as the `say` and
 // its bubble; then it goes back to the state's mood behind a blink. A look
-// change meanwhile keeps the expression and its end; a new moment, a tap
+// change meanwhile keeps the expression and its end; a new reaction, a tap
 // or "needs you" ends it.
-static MomentIn expressive(render::Mood mood, const char* take = kGo, int loops = 1) {
-  MomentIn m;
+static ReactionIn expressive(render::Mood mood, const char* take = kGo, int loops = 1) {
+  ReactionIn m;
   m.said = take != nullptr, m.take = voice::takeIndex(take);
   m.expr = true, m.mood = mood, m.loops = loops;
   return m;
@@ -1095,7 +1099,7 @@ static void test_an_expression_holds_its_loops() {
   r.state(m);
   const uint32_t loop = loopMs(render::Mood::kProud, SceneState::kWorking);
   r.at(1000);
-  TEST_ASSERT_TRUE(onMoment(r.b, expressive(render::Mood::kProud), r.t));
+  TEST_ASSERT_TRUE(onReaction(r.b, expressive(render::Mood::kProud), r.t));
   render::Mood e;
   TEST_ASSERT_TRUE(r.b.expression(r.t, e));
   TEST_ASSERT_TRUE(e == render::Mood::kProud);
@@ -1121,10 +1125,10 @@ static void test_an_expression_holds_its_loops() {
   TEST_ASSERT_TRUE(s.eyesShut);  // behind a blink
 
   // Three loops, from partway into one: to the third boundary of the
-  // look's clock, which a turn of its variations may have started over.
+  // look's clock, which a change of variation may have started over.
   r.at(2 * loop + 300);
   r.state(m);
-  onMoment(r.b, expressive(render::Mood::kProud, kGo, 3), r.t);
+  onReaction(r.b, expressive(render::Mood::kProud, kGo, 3), r.t);
   const uint32_t turned = loopMs(render::Mood::kProud, SceneState::kWorking, r.b.lookVariant());
   const uint32_t third = r.t + turned - r.b.designMs(r.t) % turned + 2 * turned;
   r.at(third - 1);
@@ -1132,11 +1136,11 @@ static void test_an_expression_holds_its_loops() {
   r.at(third);
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
 
-  // A line longer than its loop: the face holds as long as it plays.
+  // A `say` longer than its loop: the face holds as long as it plays.
   r.at(6 * loop);
   r.state(m);
-  MomentIn in = expressive(render::Mood::kExcited, "new.d20");  // "Mwahaha...", 2434 ms
-  onMoment(r.b, in, r.t);
+  ReactionIn in = expressive(render::Mood::kExcited, "new.d20");  // "Mwahaha...", 2434 ms
+  onReaction(r.b, in, r.t);
   const uint32_t end = r.t + 2434 + Behaviour::kBubbleReadMs;
   TEST_ASSERT_TRUE(end - r.t > loopMs(render::Mood::kExcited, SceneState::kWorking));
   r.at(end - 1);
@@ -1151,23 +1155,23 @@ static void test_an_expression_over_the_cheer_and_across_a_look_change() {
   m.mood = render::Mood::kCurious;
   r.state(m);
   r.at(1000);
-  r.moment(Anim::kTaskComplete);  // a finish with no face, in curious
+  r.react(SceneState::kTaskComplete);  // a finish with no face, in curious
   const uint32_t cheer = loopMs(render::Mood::kCurious, SceneState::kTaskComplete);
   const uint32_t proud = loopMs(render::Mood::kProud, SceneState::kTaskComplete);
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kCurious);
   r.at(1200);
-  m.base = SceneState::kIdle;  // the turn is over
+  m.base = SceneState::kIdle;  // the agent's turn is over
   r.state(m);
-  onMoment(r.b, expressive(render::Mood::kProud), r.t);  // Jev: proud
+  onReaction(r.b, expressive(render::Mood::kProud), r.t);  // Jev: proud
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kTaskComplete);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kProud);
   TEST_ASSERT_EQUAL_UINT32(200, s.t);  // the finish keeps its clock
   uint32_t left;
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.b.moment(r.t, left));
-  TEST_ASSERT_EQUAL_UINT32(cheer - 200, left);  // a line doesn't cut the finish
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.b.reaction(r.t, left));
+  TEST_ASSERT_EQUAL_UINT32(cheer - 200, left);  // a `say` doesn't cut the finish
   // The face holds one loop of the finish's design in proud, on the
-  // finish's clock: to 1000 + proud's loop, after the line (1200 + 638 +
+  // finish's clock: to 1000 + proud's loop, after the `say` (1200 + 638 +
   // 1200). A finish's variation loops alike in every mood, so the finish
   // ends then too.
   TEST_ASSERT_TRUE(1200 + kGoMs + Behaviour::kBubbleReadMs < 1000 + proud);
@@ -1186,7 +1190,7 @@ static void test_an_expression_over_the_cheer_and_across_a_look_change() {
   Rig l;
   l.state(base("working"));
   l.at(1000);
-  onMoment(l.b, expressive(render::Mood::kProud), l.t);
+  onReaction(l.b, expressive(render::Mood::kProud), l.t);
   l.at(1500);
   l.state(base("idle"));
   s = l.b.show(l.t);
@@ -1198,14 +1202,14 @@ static void test_an_expression_over_the_cheer_and_across_a_look_change() {
   l.at(working);
   TEST_ASSERT_TRUE(l.b.show(l.t).mood == render::Mood::kHappy);
 
-  // With an animation in the same moment, it lasts the longer of the two:
+  // With an animation in the same reaction, it lasts the longer of the two:
   // here the finish, a loop of excited's design.
   Rig a;
   a.state(base("idle"));
   a.at(1000);
-  MomentIn in = expressive(render::Mood::kExcited);
-  in.anim = Anim::kTaskComplete;
-  onMoment(a.b, in, a.t);
+  ReactionIn in = expressive(render::Mood::kExcited);
+  in.anim = SceneState::kTaskComplete;
+  onReaction(a.b, in, a.t);
   const uint32_t excited = loopMs(render::Mood::kExcited, SceneState::kTaskComplete);
   TEST_ASSERT_TRUE(kGoMs + Behaviour::kBubbleReadMs < excited);
   a.at(1000 + excited - 1);
@@ -1214,9 +1218,9 @@ static void test_an_expression_over_the_cheer_and_across_a_look_change() {
   TEST_ASSERT_TRUE(a.b.show(a.t).mood == render::Mood::kHappy);
   // An animation alone with a mood: as long as it plays.
   a.at(10000);
-  MomentIn poke;
-  poke.anim = Anim::kPoked, poke.expr = true, poke.mood = render::Mood::kSad;
-  onMoment(a.b, poke, a.t);
+  ReactionIn poke;
+  poke.anim = SceneState::kPoked, poke.expr = true, poke.mood = render::Mood::kSad;
+  onReaction(a.b, poke, a.t);
   const uint32_t sadPoke = loopMs(render::Mood::kSad, SceneState::kPoked);
   a.at(10000 + sadPoke - 1);
   TEST_ASSERT_TRUE(a.b.show(a.t).mood == render::Mood::kSad);
@@ -1224,38 +1228,38 @@ static void test_an_expression_over_the_cheer_and_across_a_look_change() {
   TEST_ASSERT_TRUE(a.b.show(a.t).mood == render::Mood::kHappy);
 }
 
-static void test_an_expression_ends_with_its_moment() {
+static void test_an_expression_ends_with_its_reaction() {
   NEEDS_VOICE_PACK();
   render::Mood e;
-  // A new line without a mood replaces the line, and the expression.
+  // A new `say` without a mood replaces the `say`, and the expression.
   Rig r;
   r.state(base("working"));
   r.at(1000);
-  onMoment(r.b, expressive(render::Mood::kGrumpy), r.t);
+  onReaction(r.b, expressive(render::Mood::kGrumpy), r.t);
   r.at(1500);
   r.say();
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kHappy);
   // A tap's poke doesn't: the poke is drawn in the reaction's mood.
   r.at(5000);
-  onMoment(r.b, expressive(render::Mood::kSad), r.t);
+  onReaction(r.b, expressive(render::Mood::kSad), r.t);
   r.at(5100);
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_TRUE(r.b.expression(r.t, e) && e == render::Mood::kSad);
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kSad);
   // "Needs you" stops the line, and the expression with it.
   r.at(9000);
-  onMoment(r.b, expressive(render::Mood::kExcited), r.t);
+  onReaction(r.b, expressive(render::Mood::kExcited), r.t);
   r.at(9100);
   r.state(attn());
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kNeedsYou);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kHappy);
-  // While something needs you, a moment with a mood plays nothing and
+  // While something needs you, a reaction with a mood plays nothing and
   // borrows no face.
   r.at(9500);
-  TEST_ASSERT_FALSE(onMoment(r.b, expressive(render::Mood::kGrumpy), r.t));
+  TEST_ASSERT_FALSE(onReaction(r.b, expressive(render::Mood::kGrumpy), r.t));
   TEST_ASSERT_FALSE(r.b.expression(r.t, e));
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kHappy);
   // No expression: the state's mood, as before.
@@ -1269,38 +1273,41 @@ static void test_an_expression_ends_with_its_moment() {
   TEST_ASSERT_TRUE(n.b.show(n.t).mood == render::Mood::kDetermined);
 }
 
-// A call from the Mac ends exactly once, when no part of
-// it plays any more (the line and its bubble, an animation, the borrowed
+// A reaction from the Mac ends exactly once, when no part of
+// it plays any more (the `say` and its bubble, an animation, the borrowed
 // face): done when it played out, or when only the face it holds after
-// its line was ended early; cut, and by what, when a tap's poke, a newer
-// call, "needs you" or dbg.reset stopped its animation or its line. (One
+// its `say` was ended early; cut, and by what, when a tap's poke or
+// "needs you" stopped its animation or its line. A newer call or
+// dbg.reset gives no reason: the kit has already ended the one playing
+// then. Only the reaction that last played is followed: a newer reaction is the
+// kit's holder, so the one it replaced is the kit's to have ended. (One
 // none of which would play is refused, and the kit skips it; the kit
-// passes on only the holder's end: test_device, test_turn.)
+// passes on only the end of the one playing: test_device, test_queue.)
 static std::string ended(Rig& r) {
   std::string out;
-  app::Ended e;
-  while (r.b.takeEnded(e)) {
+  app::PlayedOut e;
+  while (r.b.takePlayedOut(e)) {
     if (!out.empty()) out += ", ";
-    out += std::to_string(e.call) + (e.by == app::CutBy::kNone ? " done" : " cut");
+    out += std::to_string(e.key) + (e.by == app::CutBy::kNone ? " done" : " cut");
     if (const char* by = app::cutByName(e.by)) out += std::string(" by ") + by;
   }
   return out;
 }
 
-static MomentIn waited(uint32_t id, const char* take = kGo) {
-  MomentIn m = expressive(render::Mood::kProud, take);
-  m.call = id;
+static ReactionIn waited(uint32_t id, const char* take = kGo) {
+  ReactionIn m = expressive(render::Mood::kProud, take);
+  m.key = id;
   return m;
 }
 
-static void test_a_waited_moment_says_how_it_ended() {
+static void test_a_waited_reaction_says_how_it_ended() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.state(base("idle"));  // the idle design's clock from 0
   r.at(1000);
-  TEST_ASSERT_TRUE(onMoment(r.b, waited(7), r.t));
-  // Its line is over at 1000 + 638 + 1.2 s, and its face at the idle
-  // design's next boundary, or with the line if that's later.
+  TEST_ASSERT_TRUE(onReaction(r.b, waited(7), r.t));
+  // Its `say` is over at 1000 + 638 + 1.2 s, and its face at the idle
+  // design's next boundary, or with the `say` if that's later.
   const uint32_t look = loopMs(render::Mood::kProud, SceneState::kIdle);
   uint32_t end = (1000 / look + 1) * look;
   if (end < 1000 + kGoMs + Behaviour::kBubbleReadMs) end = 1000 + kGoMs + Behaviour::kBubbleReadMs;
@@ -1316,20 +1323,20 @@ static void test_a_waited_moment_says_how_it_ended() {
   // Over a finish that isn't part of it: its face holds a loop
   // of the finish's design in proud, on the finish's clock, and the finish
   // plays on as it would have.
-  r.moment(Anim::kTaskComplete);
+  r.react(SceneState::kTaskComplete);
   r.at(10500);
-  onMoment(r.b, waited(8), r.t);
+  onReaction(r.b, waited(8), r.t);
   r.at(10500 + kGoMs + Behaviour::kBubbleReadMs);
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   r.at(10000 + loopMs(render::Mood::kProud, SceneState::kTaskComplete));
   TEST_ASSERT_EQUAL_STRING("8 done", ended(r).c_str());
-  // A finish the Mac waits on plays on under a newer line, which doesn't
+  // A finish the Mac waits on plays on under a newer `say`, which doesn't
   // stop it: done when the finish is.
   r.at(20000);
-  MomentIn cheer;
-  cheer.anim = Anim::kTaskComplete, cheer.call = 9;
-  onMoment(r.b, cheer, r.t);
+  ReactionIn cheer;
+  cheer.anim = SceneState::kTaskComplete, cheer.key = 9;
+  onReaction(r.b, cheer, r.t);
   r.at(20500);
   r.say();
   const uint32_t cheered = 20000 + loopMs(render::Mood::kHappy, SceneState::kTaskComplete);
@@ -1338,36 +1345,37 @@ static void test_a_waited_moment_says_how_it_ended() {
   r.at(cheered);
   TEST_ASSERT_EQUAL_STRING("9 done", ended(r).c_str());
 
-  // A tap's poke doesn't cut its line or face: it
+  // A tap's poke doesn't cut its `say` or face: it
   // plays out, done.
   {
     Rig p;
     p.state(base("idle"));
     p.at(1000);
-    onMoment(p.b, waited(10), p.t);
+    onReaction(p.b, waited(10), p.t);
     p.at(1100);
     p.b.tap(p.t, p.rng);
     TEST_ASSERT_EQUAL_STRING("", ended(p).c_str());
     p.at(1000 + 2 * look + kGoMs + Behaviour::kBubbleReadMs);
     TEST_ASSERT_EQUAL_STRING("10 done", ended(p).c_str());
   }
-  // Cut short: by a newer moment (a finish, a line, the Mac's next), and
-  // by "needs you".
+  // Replaced by a newer reaction (a finish, a `say`, the Mac's next): over
+  // at once, with no reason, since the kit already cut it. Cut short by
+  // "needs you".
   r.at(30000);
   r.state(base("idle"));  // no app would skip them
   r.at(31000);
-  onMoment(r.b, waited(11), r.t);
-  r.moment(Anim::kTaskComplete);
-  TEST_ASSERT_EQUAL_STRING("11 cut by now", ended(r).c_str());
+  onReaction(r.b, waited(11), r.t);
+  r.react(SceneState::kTaskComplete);
+  TEST_ASSERT_EQUAL_STRING("11 done", ended(r).c_str());
   r.at(35000);
-  onMoment(r.b, waited(12), r.t);
+  onReaction(r.b, waited(12), r.t);
   r.at(35100);
   r.say();
-  TEST_ASSERT_EQUAL_STRING("12 cut by now", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("12 done", ended(r).c_str());
   r.at(40000);
-  onMoment(r.b, waited(13), r.t);
-  onMoment(r.b, waited(14), r.t);
-  TEST_ASSERT_EQUAL_STRING("13 cut by now", ended(r).c_str());
+  onReaction(r.b, waited(13), r.t);
+  onReaction(r.b, waited(14), r.t);
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());  // the kit ended 13 when 14 started
   r.at(40100);
   r.state(attn());
   TEST_ASSERT_EQUAL_STRING("14 cut by needs_you", ended(r).c_str());
@@ -1376,9 +1384,9 @@ static void test_a_waited_moment_says_how_it_ended() {
   TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(waited(15), r.t));
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
 
-  // Its face holds on after its line is over. A newer
-  // moment or "needs you" then ends it at once, but doesn't cut the
-  // moment: it was seen and heard, so it's done. A tap's poke plays in it.
+  // Its face holds on after its `say` is over. A newer
+  // reaction or "needs you" then ends it at once, but doesn't cut the
+  // reaction: it was seen and heard, so it's done. A tap's poke plays in it.
   Rig h;
   Model hm = base("idle");
   hm.variant = 1;  // the idle design's second variation, a long loop, its clock from 0
@@ -1389,7 +1397,7 @@ static void test_a_waited_moment_says_how_it_ended() {
     Rig p;
     p.state(hm);
     p.at(1000);
-    onMoment(p.b, waited(17), p.t);
+    onReaction(p.b, waited(17), p.t);
     p.at(1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
     TEST_ASSERT_TRUE(p.t < idle);
     TEST_ASSERT_NULL(p.b.bubble(p.t));
@@ -1402,7 +1410,7 @@ static void test_a_waited_moment_says_how_it_ended() {
   }
   h.at(2 * idle + 1000);
   h.state(hm);
-  onMoment(h.b, waited(18), h.t);
+  onReaction(h.b, waited(18), h.t);
   h.at(2 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   TEST_ASSERT_NULL(h.b.bubble(h.t));
   TEST_ASSERT_EQUAL_STRING("", ended(h).c_str());
@@ -1410,21 +1418,21 @@ static void test_a_waited_moment_says_how_it_ended() {
   TEST_ASSERT_EQUAL_STRING("18 done", ended(h).c_str());
   h.at(4 * idle + 1000);
   h.state(hm);
-  onMoment(h.b, waited(19), h.t);
+  onReaction(h.b, waited(19), h.t);
   h.at(4 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
-  h.moment(Anim::kTaskComplete);
+  h.react(SceneState::kTaskComplete);
   TEST_ASSERT_EQUAL_STRING("19 done", ended(h).c_str());
   h.at(6 * idle + 1000);
   h.state(hm);
-  onMoment(h.b, waited(20), h.t);
+  onReaction(h.b, waited(20), h.t);
   h.at(6 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
-  h.say();  // a newer line
+  h.say();  // a newer `say`
   TEST_ASSERT_EQUAL_STRING("20 done", ended(h).c_str());
-  // During its bubble, after the take, it's still its line, which a tap
+  // During its bubble, after the take, it's still its `say`, which a tap
   // doesn't cut.
   h.at(8 * idle + 1000);
   h.state(hm);
-  onMoment(h.b, waited(21), h.t);
+  onReaction(h.b, waited(21), h.t);
   h.at(8 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs - 1);
   TEST_ASSERT_NOT_NULL(h.b.bubble(h.t));
   h.b.tap(h.t, h.rng);
@@ -1432,38 +1440,40 @@ static void test_a_waited_moment_says_how_it_ended() {
   TEST_ASSERT_EQUAL_STRING("", ended(h).c_str());
   h.at(9 * idle + 1000);
   TEST_ASSERT_EQUAL_STRING("21 done", ended(h).c_str());
-  // The Mac's next reaction, sent once this one's line has played:
-  // it replaces the face held for its loops, and
-  // this one is done.
+  // The Mac's next reaction, sent once this one's `say` has played:
+  // it replaces the face held for its loops, and this one is done, as the
+  // kit said when the next started.
   h.at(10 * idle + 1000);
   h.state(hm);
-  MomentIn held = expressive(render::Mood::kProud, kGo, 4);  // held four times
-  held.call = 22;
-  onMoment(h.b, held, h.t);
+  ReactionIn held = expressive(render::Mood::kProud, kGo, 4);  // held four times
+  held.key = 22;
+  onReaction(h.b, held, h.t);
   h.at(10 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   TEST_ASSERT_NULL(h.b.bubble(h.t));
   TEST_ASSERT_TRUE(h.b.expression(h.t, face));
-  MomentIn next = expressive(render::Mood::kGrumpy);
-  next.call = 23;
-  TEST_ASSERT_TRUE(onMoment(h.b, next, h.t));
-  TEST_ASSERT_EQUAL_STRING("22 done", ended(h).c_str());
+  ReactionIn next = expressive(render::Mood::kGrumpy);
+  next.key = 23;
+  TEST_ASSERT_TRUE(onReaction(h.b, next, h.t));
+  TEST_ASSERT_EQUAL_STRING("", ended(h).c_str());  // 23 is followed now
+  TEST_ASSERT_FALSE(h.b.expression(h.t, face) && face == render::Mood::kProud);
   TEST_ASSERT_NOT_NULL(h.b.bubble(h.t));
   TEST_ASSERT_TRUE(h.b.expression(h.t, face));
   TEST_ASSERT_EQUAL(render::Mood::kGrumpy, face);
 
-  // dbg.reset forgets the moment, which the Mac is still told of.
+  // dbg.reset forgets the reaction, and what it owes: the kit has already
+  // told the Mac.
   r.at(50000);
   r.state(base("idle"));
-  onMoment(r.b, waited(16), r.t);
+  onReaction(r.b, waited(16), r.t);
   r.b.reset(r.t, r.rng);
-  TEST_ASSERT_EQUAL_STRING("16 cut by reset", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
 
-  // A moment with no id never ends out loud.
+  // A reaction with no id never ends out loud.
   Rig n;
   n.state(base("idle"));
   n.say();
   n.b.tap(n.t, n.rng);
-  n.moment(Anim::kTaskComplete);
+  n.react(SceneState::kTaskComplete);
   n.at(10000);
   TEST_ASSERT_EQUAL_STRING("", ended(n).c_str());
 }
@@ -1476,12 +1486,12 @@ static void test_the_clock_going_back_starts_the_look_over() {
   Rig r;
   r.state(base("idle"));
   r.at(9001);
-  MomentIn in;
-  in.anim = Anim::kHelperReturn, in.loops = 2;
-  onMoment(r.b, in, r.t);
-  TEST_ASSERT_EQUAL(Anim::kHelperReturn, r.anim());
+  ReactionIn in;
+  in.anim = SceneState::kHelperReturn, in.loops = 2;
+  onReaction(r.b, in, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kHelperReturn, r.anim());
   r.at(4201);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_EQUAL_UINT32(0, r.b.designMs(r.t));
   r.at(4301);
   TEST_ASSERT_EQUAL_UINT32(100, r.b.designMs(r.t));
@@ -1507,7 +1517,7 @@ static void test_asleep_breathes_and_never_blinks() {
     r.at(t);
     TEST_ASSERT_FALSE(r.b.blinking(t));
     // Breathing is the asleep design's own 8 s breath,
-    // looked at before its loop ends and its variations may take turns.
+    // looked at before its loop ends and its variations may rotate.
     if (t != 8989) continue;
     TEST_ASSERT_TRUE(r.b.show(1000).state == SceneState::kAsleep);
     TEST_ASSERT_TRUE(render::sceneFrame(r.b.show(1000)) != render::sceneFrame(r.b.show(3000)));
@@ -1547,7 +1557,7 @@ static void test_each_look_shows_its_design_in_the_mood() {
   m.mood = render::Mood::kDetermined;
   r.state(m);
   r.at(1000);
-  r.moment(Anim::kTaskComplete);
+  r.react(SceneState::kTaskComplete);
   r.at(1500);
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kTaskComplete);
@@ -1581,41 +1591,41 @@ static void test_taps_poke_and_a_run_spams() {
   r.at(1000);
   r.b.tap(r.t, r.rng);
   SceneShow s = r.b.show(r.t);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   TEST_ASSERT_TRUE(s.state == SceneState::kPoked);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kHappy);
   TEST_ASSERT_EQUAL_UINT32(0, s.t);
   TEST_ASSERT_TRUE(s.eyesShut && render::eyesClosed(s));
   uint32_t left;
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kHappy, SceneState::kPoked), left);  // once
   TEST_ASSERT_EQUAL_INT(1, r.b.taps());
   // The second, just inside 3 s, is in the run, and pokes again.
   r.at(1000 + Behaviour::kTapRunMs - 1);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   TEST_ASSERT_EQUAL_INT(2, r.b.taps());
   // The third plays tap_spam, and so does each one after it in the run.
   for (int i = 3; i <= 6; ++i) {
     r.at(r.t + 1000);
     r.b.tap(r.t, r.rng);
-    TEST_ASSERT_EQUAL(Anim::kTapSpam, r.anim());
+    TEST_ASSERT_EQUAL(SceneState::kTapSpam, r.anim());
     TEST_ASSERT_EQUAL_INT(i, r.b.taps());
     s = r.b.show(r.t);
     TEST_ASSERT_TRUE(s.state == SceneState::kTapSpam && s.t == 0 && s.eyesShut);
   }
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kHappy, SceneState::kTapSpam), left);
   // 3 s after the last: a new run, which pokes.
   r.at(r.t + Behaviour::kTapRunMs);
   r.state(m);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   TEST_ASSERT_EQUAL_INT(1, r.b.taps());
   // Played once, the look comes back, behind a blink.
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   r.at(r.t + left);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kWorking && s.eyesShut);
 }
@@ -1623,21 +1633,21 @@ static void test_taps_poke_and_a_run_spams() {
 // A mood with several poked or tap_spam designs plays one
 // at random each time, never the one it played last; the poke is drawn in
 // Boop's mood.
-static void test_taps_take_turns_between_variations() {
-  for (Anim a : {Anim::kPoked, Anim::kTapSpam}) {
+static void test_taps_rotate_their_variations() {
+  for (SceneState a : {SceneState::kPoked, SceneState::kTapSpam}) {
     Rig r;
     Model m = base("idle");
     m.mood = render::Mood::kCalm;
     r.state(m);
-    const int n = render::variants(render::Mood::kCalm, render::animState(a));
+    const int n = render::variants(render::Mood::kCalm, a);
     TEST_ASSERT_EQUAL_INT(3, n);
     int last = -1;
     bool seen[3] = {};
     for (int i = 0; i < 60; ++i) {
-      r.at(r.t + (a == Anim::kPoked ? Behaviour::kTapRunMs : 100));
+      r.at(r.t + (a == SceneState::kPoked ? Behaviour::kTapRunMs : 100));
       r.state(m);  // the Mac's keepalive
       r.b.tap(r.t, r.rng);
-      if (a == Anim::kTapSpam && i < 2) continue;  // the run's first two poke
+      if (a == SceneState::kTapSpam && i < 2) continue;  // the run's first two poke
       TEST_ASSERT_EQUAL(a, r.anim());
       SceneShow s = r.b.show(r.t);
       TEST_ASSERT_TRUE(s.mood == render::Mood::kCalm);
@@ -1658,30 +1668,30 @@ static void test_a_held_face_counts_taps_but_only_dips() {
   r.b.tap(r.t, r.rng);
   r.at(1500);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_EQUAL_INT(2, r.b.taps());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
   r.state(base("idle"));  // answered on the Mac
   r.at(2000);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kTapSpam, r.anim());  // the third in the run
+  TEST_ASSERT_EQUAL(SceneState::kTapSpam, r.anim());  // the third in the run
   // Listening.
   Rig l;
   l.state(base("idle"));
   l.talkOn();
   l.at(500);
   l.b.tap(l.t, l.rng);
-  TEST_ASSERT_EQUAL(Anim::kListening, l.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, l.anim());
   TEST_ASSERT_EQUAL_INT(1, l.b.taps());
   // No app.
   Rig n;
   n.state(base("idle"));
   n.at(Behaviour::kNoAppMs);
-  const uint32_t seq = n.b.momentSeq();
+  const uint32_t seq = n.b.reactionSeq();
   n.b.tap(n.t, n.rng);
-  TEST_ASSERT_EQUAL(Screen::kNoApp, n.b.screen(n.t));
+  TEST_ASSERT_TRUE(n.b.look(n.t) == SceneState::kNoApp);
   TEST_ASSERT_TRUE(n.b.show(n.t).state == SceneState::kNoApp);
-  TEST_ASSERT_EQUAL(seq, n.b.momentSeq());
+  TEST_ASSERT_EQUAL(seq, n.b.reactionSeq());
 }
 
 // With no state for 30 s the device shows the no-app
@@ -1694,10 +1704,10 @@ static void test_no_app_at_30s_and_reconnect_blinks_back() {
   m.busy = 2;
   r.state(m);
   r.at(30999);
-  TEST_ASSERT_EQUAL(Screen::kNeedsYou, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).agent);
   r.at(31000);
-  TEST_ASSERT_EQUAL(Screen::kNoApp, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);
   TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));  // dimming over kBlendMs
   TEST_ASSERT_TRUE(r.b.backlight(r.t + render::pixel::PixelFace::kBlendMs / 2) < 255);
@@ -1715,7 +1725,7 @@ static void test_no_app_at_30s_and_reconnect_blinks_back() {
   r.at(40000);
   r.state(base("idle"));
   r.state(base("idle"));
-  TEST_ASSERT_EQUAL(Screen::kFace, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(onFace(r.b, r.t));
   TEST_ASSERT_FALSE(r.b.blinking(r.t));
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kIdle);
@@ -1735,11 +1745,11 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
   Model m = base("idle");
   m.busy = 1;
   r.state(m);
-  MomentIn in;
-  in.anim = Anim::kTaskComplete;
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete;
   in.whoAgent = "codex";
   in.whoThread = "fix-nav";
-  onMoment(r.b, in, r.t);
+  onReaction(r.b, in, r.t);
   render::Strip strip = r.b.strip(r.t);
   TEST_ASSERT_EQUAL_STRING("codex", strip.doneAgent);
   TEST_ASSERT_EQUAL_STRING("fix-nav", strip.doneThread);
@@ -1747,29 +1757,29 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
   TEST_ASSERT_NULL(strip.agent);
   TEST_ASSERT_EQUAL(1, strip.busy);
   uint32_t left;
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   r.at(r.t + left - 1);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
   r.at(r.t + 1);
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);  // gone with the finish
-  onMoment(r.b, in, r.t);
+  onReaction(r.b, in, r.t);
   r.b.tap(r.t, r.rng);  // a tap's poke replaces it
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
   r.at(r.t + 5000);
-  r.moment(Anim::kTaskComplete);  // no `who`
+  r.react(SceneState::kTaskComplete);  // no `who`
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
   // A failure, and a reply.
   in.variant = 4;  // happy's failed finish
   TEST_ASSERT_TRUE(render::variantOutcome(render::Mood::kHappy, SceneState::kTaskComplete, 4) ==
                    render::Outcome::kFailure);
-  onMoment(r.b, in, r.t);
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_TRUE(r.b.strip(r.t).doneOutcome == render::Outcome::kFailure);
-  in.anim = Anim::kReplyReady, in.variant = 0;
-  onMoment(r.b, in, r.t);
+  in.anim = SceneState::kReplyReady, in.variant = 0;
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
   TEST_ASSERT_TRUE(r.b.strip(r.t).doneOutcome == render::Outcome::kNone);
-  in.anim = Anim::kStarting;  // not a finish: nobody's named
-  onMoment(r.b, in, r.t);
+  in.anim = SceneState::kStarting;  // not a finish: nobody's named
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
 }
 
@@ -1780,37 +1790,37 @@ static void test_a_tap_on_a_named_finish_opens_its_thread() {
   Rig r;
   r.at(1000);
   r.state(base("idle"));
-  MomentIn in;
-  in.anim = Anim::kTaskComplete;
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete;
   in.whoAgent = "claude";
   in.whoThread = "fix-nav";
-  in.call = 9, in.id = 9;
-  onMoment(r.b, in, r.t);
+  in.key = 9, in.id = 9;
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_EQUAL_UINT32(9, r.b.finishShown(r.t));
   r.at(r.t + 100);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
   r.at(r.t + 100);
   r.b.tap(r.t, r.rng);
   uint32_t left;
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   r.at(r.t + left);
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));  // over
   TEST_ASSERT_EQUAL_STRING("9 done", ended(r).c_str());
   r.at(r.t + 5000);
-  in.call = 0, in.id = 0;  // one the Mac doesn't wait on
-  onMoment(r.b, in, r.t);
+  in.key = 0, in.id = 0;  // one the Mac doesn't wait on
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   r.at(r.t + 5000);
-  in.call = 10, in.id = 10, in.whoAgent = nullptr, in.whoThread = nullptr;  // names nobody
-  onMoment(r.b, in, r.t);
+  in.key = 10, in.id = 10, in.whoAgent = nullptr, in.whoThread = nullptr;  // names nobody
+  onReaction(r.b, in, r.t);
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
 }
 
 static void test_press_shows_within_20ms() {
@@ -1823,7 +1833,7 @@ static void test_press_shows_within_20ms() {
   TEST_ASSERT_TRUE(r.b.pressEasing(516));  // and the redraw cap lets it through
 }
 
-// ---- What the agents are doing, the one-shots and the finish -----------
+// ---- What the agents are doing, the rules' reactions and the finish -----------
 
 // While working, `act` draws what the
 // agents are doing in working's place, in the mood, from the Mac's
@@ -1868,10 +1878,10 @@ static void test_an_act_shows_in_workings_place() {
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
 }
 
-// An activity's variations take turns at
+// An activity's variations rotate at
 // loop ends like working's, when the mood has more than one; with one,
 // it plays on.
-static void test_an_acts_variations_take_turns() {
+static void test_an_acts_variations_rotate() {
   Rig r;
   Model m = base("working");
   m.act = SceneState::kSearching, m.mood = render::Mood::kWounded;
@@ -1900,43 +1910,43 @@ static void test_an_acts_variations_take_turns() {
   }
 }
 
-// The rules' one-shots (starting,
+// The rules' reactions (starting,
 // stopped, error, helper_return) play their design once in Boop's mood,
 // from its start behind a blink, then the look comes back behind another.
 // They carry no id, so no `ended` goes back.
-static void test_a_rules_one_shot_plays_once() {
-  for (Anim a : {Anim::kStarting, Anim::kStopped, Anim::kError, Anim::kHelperReturn}) {
+static void test_a_rules_reaction_plays_once() {
+  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn}) {
     for (render::Mood mood : {render::Mood::kHappy, render::Mood::kCalm}) {
       Rig r;
       Model m = base("working");
       m.act = SceneState::kTerminal, m.mood = mood;
       r.state(m);
       r.at(1000);
-      MomentIn in;
-      in.anim = a, in.variant = uint8_t(render::variants(mood, render::animState(a)) - 1);
-      TEST_ASSERT_FALSE(onMoment(r.b, in, r.t));  // no line
+      ReactionIn in;
+      in.anim = a, in.variant = uint8_t(render::variants(mood, a) - 1);
+      TEST_ASSERT_FALSE(onReaction(r.b, in, r.t));  // no `say`
       SceneShow s = r.b.show(r.t);
-      TEST_ASSERT_TRUE(s.state == render::animState(a) && s.mood == mood && s.variant == in.variant);
+      TEST_ASSERT_TRUE(s.state == a && s.mood == mood && s.variant == in.variant);
       TEST_ASSERT_TRUE(s.t == 0 && s.eyesShut && render::eyesClosed(s));
-      const uint32_t loop = loopMs(mood, render::animState(a), in.variant);
+      const uint32_t loop = loopMs(mood, a, in.variant);
       r.at(1000 + loop - 1);
       TEST_ASSERT_EQUAL(a, r.anim());
       TEST_ASSERT_EQUAL_UINT32(loop - 1, r.b.show(r.t).t);
       r.at(1000 + loop);
-      TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+      TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
       s = r.b.show(r.t);
       TEST_ASSERT_TRUE(s.state == SceneState::kTerminal && s.eyesShut && render::eyesClosed(s));
-      app::Ended e;
-      TEST_ASSERT_FALSE(r.b.takeEnded(e));
+      app::PlayedOut e;
+      TEST_ASSERT_FALSE(r.b.takePlayedOut(e));
     }
   }
 }
 
 // An animation's variation is the Mac's when it's one of
-// its design's for the moment's facts (a finish's outcome, a start's
+// its design's for the reaction's facts (a finish's outcome, a start's
 // context); otherwise the device picks one of those at random, never the
 // one it showed last.
-static void test_a_moment_plays_a_fitting_variation() {
+static void test_a_reaction_plays_a_fitting_variation() {
   using render::Mood;
   using render::Outcome;
   using render::StartCtx;
@@ -1945,131 +1955,131 @@ static void test_a_moment_plays_a_fitting_variation() {
   calm.mood = Mood::kCalm;
   r.state(calm);
   // Happy's starts: one each for a new task, a session and carrying on.
-  TEST_ASSERT_EQUAL_INT(1, r.b.pick(Anim::kStarting, Mood::kHappy, 2, Outcome::kNone, StartCtx::kSession, r.rng));
-  TEST_ASSERT_EQUAL_INT(1, r.b.pick(Anim::kStarting, Mood::kHappy, 1, Outcome::kNone, StartCtx::kSession, r.rng));
-  TEST_ASSERT_EQUAL_INT(1, r.b.pick(Anim::kStarting, Mood::kHappy, 0, Outcome::kNone, StartCtx::kSession, r.rng));
-  TEST_ASSERT_EQUAL_INT(2, r.b.pick(Anim::kStarting, Mood::kHappy, 9, Outcome::kNone, StartCtx::kContinuation, r.rng));
+  TEST_ASSERT_EQUAL_INT(1, r.b.pick(SceneState::kStarting, Mood::kHappy, 2, Outcome::kNone, StartCtx::kSession, r.rng));
+  TEST_ASSERT_EQUAL_INT(1, r.b.pick(SceneState::kStarting, Mood::kHappy, 1, Outcome::kNone, StartCtx::kSession, r.rng));
+  TEST_ASSERT_EQUAL_INT(1, r.b.pick(SceneState::kStarting, Mood::kHappy, 0, Outcome::kNone, StartCtx::kSession, r.rng));
+  TEST_ASSERT_EQUAL_INT(2, r.b.pick(SceneState::kStarting, Mood::kHappy, 9, Outcome::kNone, StartCtx::kContinuation, r.rng));
   // Without a context, any; the Mac's first among them.
-  TEST_ASSERT_EQUAL_INT(0, r.b.pick(Anim::kStarting, Mood::kHappy, 1, Outcome::kNone, StartCtx::kNone, r.rng));
+  TEST_ASSERT_EQUAL_INT(0, r.b.pick(SceneState::kStarting, Mood::kHappy, 1, Outcome::kNone, StartCtx::kNone, r.rng));
   // Happy's finishes: four successes, and a failure, the fifth.
-  TEST_ASSERT_EQUAL_INT(4, r.b.pick(Anim::kTaskComplete, Mood::kHappy, 0, Outcome::kFailure, StartCtx::kNone, r.rng));
-  TEST_ASSERT_EQUAL_INT(4, r.b.pick(Anim::kTaskComplete, Mood::kHappy, 2, Outcome::kFailure, StartCtx::kNone, r.rng));
-  TEST_ASSERT_EQUAL_INT(2, r.b.pick(Anim::kTaskComplete, Mood::kHappy, 3, Outcome::kSuccess, StartCtx::kNone, r.rng));
-  // Calm's starts for a new task, the first three of nine, picked in turn:
+  TEST_ASSERT_EQUAL_INT(4, r.b.pick(SceneState::kTaskComplete, Mood::kHappy, 0, Outcome::kFailure, StartCtx::kNone, r.rng));
+  TEST_ASSERT_EQUAL_INT(4, r.b.pick(SceneState::kTaskComplete, Mood::kHappy, 2, Outcome::kFailure, StartCtx::kNone, r.rng));
+  TEST_ASSERT_EQUAL_INT(2, r.b.pick(SceneState::kTaskComplete, Mood::kHappy, 3, Outcome::kSuccess, StartCtx::kNone, r.rng));
+  // Calm's starts for a new task, the first three of nine, picked in order:
   // never the one shown last, and all of them.
   bool seen[9] = {};
   int last = -1;
   for (int i = 0; i < 60; ++i) {
-    MomentIn in;
-    in.anim = Anim::kStarting;
+    ReactionIn in;
+    in.anim = SceneState::kStarting;
     in.variant = r.b.pick(in.anim, Mood::kCalm, 0, Outcome::kNone, StartCtx::kNewTask, r.rng);
     TEST_ASSERT_TRUE(render::variantCtx(Mood::kCalm, SceneState::kStarting, in.variant) == StartCtx::kNewTask);
     TEST_ASSERT_NOT_EQUAL(last, in.variant);
     last = in.variant, seen[in.variant] = true;
     r.at(r.t + 100);
-    onMoment(r.b, in, r.t);
+    onReaction(r.b, in, r.t);
   }
   TEST_ASSERT_TRUE(seen[0] && seen[1] && seen[2]);
   // Calm's failed finishes, likewise.
   last = -1;
   for (int i = 0; i < 30; ++i) {
-    MomentIn in;
-    in.anim = Anim::kTaskComplete;
+    ReactionIn in;
+    in.anim = SceneState::kTaskComplete;
     in.variant = r.b.pick(in.anim, Mood::kCalm, 1, Outcome::kFailure, StartCtx::kNone, r.rng);  // 1 is a success
     TEST_ASSERT_TRUE(render::variantOutcome(Mood::kCalm, SceneState::kTaskComplete, in.variant) == Outcome::kFailure);
     TEST_ASSERT_NOT_EQUAL(last, in.variant);
     last = in.variant;
     r.at(r.t + 100);
-    onMoment(r.b, in, r.t);
+    onReaction(r.b, in, r.t);
   }
   // One to choose from: no roll.
   app::Rng a, b;
-  r.b.pick(Anim::kReplyReady, Mood::kHappy, 0, Outcome::kNone, StartCtx::kNone, a);
+  r.b.pick(SceneState::kReplyReady, Mood::kHappy, 0, Outcome::kNone, StartCtx::kNone, a);
   TEST_ASSERT_EQUAL_UINT32(b.next(), a.next());
 }
 
 // A brain's face with no animation that comes during a
-// one-shot or a poke plays over it without cutting it: the one-shot's
+// rule's reaction or a poke plays over it without cutting it: the rule's reaction's
 // design, drawn in the brain's mood, on its own clock, which ends when it
 // would have.
-static void test_a_face_plays_over_a_one_shot() {
+static void test_a_face_plays_over_a_rules_reaction() {
   NEEDS_VOICE_PACK();
-  for (Anim a : {Anim::kError, Anim::kPoked}) {
+  for (SceneState a : {SceneState::kError, SceneState::kPoked}) {
     Rig r;
     r.state(base("working"));
     r.at(1000);
-    MomentIn in;
+    ReactionIn in;
     in.anim = a;
-    onMoment(r.b, in, r.t);
-    const uint32_t loop = loopMs(render::Mood::kHappy, render::animState(a));
+    onReaction(r.b, in, r.t);
+    const uint32_t loop = loopMs(render::Mood::kHappy, a);
     r.at(1500);
-    const uint32_t seq = r.b.momentSeq();
-    TEST_ASSERT_TRUE(onMoment(r.b, expressive(render::Mood::kGrumpy), r.t));
-    TEST_ASSERT_EQUAL(seq + 1, r.b.momentSeq());  // the line only
+    const uint32_t seq = r.b.reactionSeq();
+    TEST_ASSERT_TRUE(onReaction(r.b, expressive(render::Mood::kGrumpy), r.t));
+    TEST_ASSERT_EQUAL(seq + 1, r.b.reactionSeq());  // the `say` only
     SceneShow s = r.b.show(r.t);
-    TEST_ASSERT_TRUE(s.state == render::animState(a) && s.mood == render::Mood::kGrumpy);
+    TEST_ASSERT_TRUE(s.state == a && s.mood == render::Mood::kGrumpy);
     TEST_ASSERT_EQUAL_UINT32(500, s.t);
     uint32_t left;
-    TEST_ASSERT_EQUAL(a, r.b.moment(r.t, left));
+    TEST_ASSERT_EQUAL(a, r.b.reaction(r.t, left));
     TEST_ASSERT_EQUAL_UINT32(loop - 500, left);
     TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
   }
 }
 
-// None of the one-shots plays while something needs
+// None of the rules' reactions plays while something needs
 // you or listening waits for the reply.
-static void test_no_one_shot_while_the_face_is_held() {
-  for (Anim a : {Anim::kStarting, Anim::kStopped, Anim::kError, Anim::kHelperReturn, Anim::kReplyReady}) {
+static void test_no_rules_reaction_while_the_face_is_held() {
+  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn, SceneState::kReplyReady}) {
     Rig r;
     r.state(attn());
-    MomentIn in;
-    in.anim = a, in.call = 3;
+    ReactionIn in;
+    in.anim = a, in.key = 3;
     TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(in, r.t));  // the kit skips it
-    TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+    TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
     TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
     TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
     Rig l;
     l.state(base("idle"));
     l.talkOn();
-    in.call = 0;
-    onMoment(l.b, in, l.t);
-    TEST_ASSERT_EQUAL(Anim::kListening, l.anim());
+    in.key = 0;
+    onReaction(l.b, in, l.t);
+    TEST_ASSERT_EQUAL(SceneState::kListening, l.anim());
   }
 }
 
-// Only the reply ends listening: a call
-// with a `say` (a take or none), or stop_listening. A one-shot, a finish
+// Only the reply ends listening: a reaction
+// with a `say` (a take or none), or stop_listening. A rule's reaction, a finish
 // or a poke with no `say` and a face on its own leave it be.
 static void test_only_the_reply_ends_listening() {
   Rig r;
   r.state(base("idle"));
   r.talkOn();
-  const uint32_t seq = r.b.momentSeq();
-  for (Anim a : {Anim::kStarting, Anim::kStopped, Anim::kError, Anim::kHelperReturn, Anim::kTaskComplete,
-                 Anim::kReplyReady, Anim::kPoked, Anim::kTapSpam}) {
-    MomentIn in;
+  const uint32_t seq = r.b.reactionSeq();
+  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn, SceneState::kTaskComplete,
+                 SceneState::kReplyReady, SceneState::kPoked, SceneState::kTapSpam}) {
+    ReactionIn in;
     in.anim = a;
-    onMoment(r.b, in, r.t);
-    TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+    onReaction(r.b, in, r.t);
+    TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   }
-  MomentIn face;  // a mood and nothing else
+  ReactionIn face;  // a mood and nothing else
   face.expr = true, face.mood = render::Mood::kProud;
-  onMoment(r.b, face, r.t);
-  MomentIn unknown;  // an animation the device doesn't know reads as none, and isn't empty
-  onMoment(r.b, unknown, r.t);
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
-  TEST_ASSERT_EQUAL(seq, r.b.momentSeq());
-  MomentIn said;  // a `say` with no take is still the reply
+  onReaction(r.b, face, r.t);
+  ReactionIn unknown;  // an animation the device doesn't know reads as none, and isn't empty
+  onReaction(r.b, unknown, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
+  TEST_ASSERT_EQUAL(seq, r.b.reactionSeq());
+  ReactionIn said;  // a `say` with no take is still the reply
   said.said = true;
-  onMoment(r.b, said, r.t);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  onReaction(r.b, said, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   r.talkOn();
   r.stop();
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
 }
 
 // What shows, first first: no app, listening, needs you,
-// a tap's poke and the moments, then the look.
+// a tap's poke and the reactions, then the look.
 static void test_what_shows_first() {
   Rig r;
   Model m = base("working");
@@ -2077,32 +2087,32 @@ static void test_what_shows_first() {
   r.state(m);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kTesting);  // 5. the look
   r.at(1000);
-  r.moment(Anim::kStarting);
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kStarting);  // 4. a moment
+  r.react(SceneState::kStarting);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kStarting);  // 4. a reaction
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kPoked);  // 4. a poke replaces it
-  r.moment(Anim::kError);
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kError);  // and a moment the poke
+  r.react(SceneState::kError);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kError);  // and a reaction the poke
   r.state(attn());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);  // 3. needs you cuts them
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   r.b.tap(r.t, r.rng);
-  r.moment(Anim::kStopped);
+  r.react(SceneState::kStopped);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
   r.talkOn();
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kListening);  // 2. listening over needs you
   r.at(1000 + Behaviour::kNoAppMs);
-  TEST_ASSERT_EQUAL(Anim::kListening, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);  // 1. no app over all of it
-  TEST_ASSERT_EQUAL(Screen::kNoApp, r.b.screen(r.t));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
 }
 
-// A line that comes with an animation starts at its design's
+// A `say` that comes with an animation starts at its design's
 // voice window (render::pixel::Score::voiceMs), bubble and mouth alike, and the
-// animation holds on at least until the line and its bubble are over,
-// resting on its last frame, rather than the line being hurried. The
-// expression holds as long. A line on its own starts at once.
-static void test_a_finishs_line_waits_for_its_voice_window() {
+// animation holds on at least until the `say` and its bubble are over,
+// resting on its last frame, rather than the `say` being hurried. The
+// expression holds as long. A `say` on its own starts at once.
+static void test_a_finishs_say_waits_for_its_voice_window() {
   NEEDS_VOICE_PACK();
   using render::Mood;
   Rig r;
@@ -2110,21 +2120,21 @@ static void test_a_finishs_line_waits_for_its_voice_window() {
   m.mood = Mood::kGrumpy;
   r.state(m);
   r.at(1000);
-  MomentIn in;
-  in.anim = Anim::kTaskComplete, in.variant = 4;  // grumpy's failed finish
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.variant = 4;  // grumpy's failed finish
   in.said = true, in.take = voice::takeIndex("new.d20");  // "Mwahaha...", 2434 ms
-  in.expr = true, in.mood = Mood::kGrumpy, in.call = 5;
+  in.expr = true, in.mood = Mood::kGrumpy, in.key = 5;
   const uint32_t voice = render::pixel::score(render::pixelIndex(Mood::kGrumpy), int(SceneState::kTaskComplete), 4).voiceMs;
   const uint32_t loop = loopMs(Mood::kGrumpy, SceneState::kTaskComplete, 4);
   uint32_t line = 2434 + Behaviour::kBubbleReadMs;
   TEST_ASSERT_TRUE(voice > 0 && voice + line > loop);  // it doesn't fit: the hold stretches
-  TEST_ASSERT_TRUE(onMoment(r.b, in, r.t));
+  TEST_ASSERT_TRUE(onReaction(r.b, in, r.t));
   uint32_t left;
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(voice + line, left);
   r.at(1000 + voice - 1);
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  TEST_ASSERT_TRUE(r.b.lineAhead(r.t));
+  TEST_ASSERT_TRUE(r.b.sayAhead(r.t));
   TEST_ASSERT_FALSE(r.b.speaking(r.t));
   TEST_ASSERT_FALSE(r.b.show(r.t).mouthOpen);
   r.at(1000 + voice);
@@ -2137,27 +2147,27 @@ static void test_a_finishs_line_waits_for_its_voice_window() {
   TEST_ASSERT_TRUE(s.state == SceneState::kTaskComplete && s.mood == Mood::kGrumpy);
   TEST_ASSERT_EQUAL_UINT32(loop - 1, s.t);
   r.at(1000 + voice + line - 1);
-  TEST_ASSERT_EQUAL(Anim::kTaskComplete, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
   r.at(1000 + voice + line);
-  TEST_ASSERT_EQUAL(Anim::kNone, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_NULL(r.b.bubble(r.t));
   render::Mood face;
   TEST_ASSERT_FALSE(r.b.expression(r.t, face));
   TEST_ASSERT_EQUAL_STRING("5 done", ended(r).c_str());
-  // A line that fits ends first: the animation plays its loops, and the
+  // A `say` that fits ends first: the animation plays its loops, and the
   // strip comes back once the bubble goes.
   r.state(m);
-  in.anim = Anim::kReplyReady, in.variant = 0, in.call = 6;
+  in.anim = SceneState::kReplyReady, in.variant = 0, in.key = 6;
   in.take = voice::takeIndex(kGo);
   line = kGoMs + Behaviour::kBubbleReadMs;
   in.whoAgent = "codex", in.whoThread = "landing";
-  onMoment(r.b, in, r.t);
+  onReaction(r.b, in, r.t);
   const uint32_t reply = render::pixel::score(render::pixelIndex(Mood::kGrumpy), int(SceneState::kReplyReady), 0).voiceMs;
   const uint32_t replyLoop = loopMs(Mood::kGrumpy, SceneState::kReplyReady);
   TEST_ASSERT_TRUE(reply + line < replyLoop);
-  r.b.moment(r.t, left);
+  r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(replyLoop, left);
   const uint32_t at = r.t;
   r.at(at + reply + line);
@@ -2165,18 +2175,18 @@ static void test_a_finishs_line_waits_for_its_voice_window() {
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
   r.at(at + replyLoop);
   TEST_ASSERT_EQUAL_STRING("6 done", ended(r).c_str());
-  // Tapped before its line: the poke replaces the finish, which was cut,
-  // but the line still plays at its window, over the poke. (One that
+  // Tapped before its `say`: the poke replaces the finish, which was cut,
+  // but the `say` still plays at its window, over the poke. (One that
   // names whose turn it was isn't poked: the tap opens that thread.)
   r.at(at + replyLoop + 1000);
   r.state(m);
-  in.call = 7, in.whoAgent = nullptr, in.whoThread = nullptr;
-  onMoment(r.b, in, r.t);
+  in.key = 7, in.whoAgent = nullptr, in.whoThread = nullptr;
+  onReaction(r.b, in, r.t);
   const uint32_t tapped = r.t;
   r.at(r.t + 100);
   r.b.tap(r.t, r.rng);
-  TEST_ASSERT_EQUAL(Anim::kPoked, r.anim());
-  TEST_ASSERT_TRUE(r.b.lineAhead(r.t));
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
+  TEST_ASSERT_TRUE(r.b.sayAhead(r.t));
   r.at(tapped + reply);
   TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
@@ -2297,7 +2307,7 @@ static void test_gestures_send_the_right_inputs() {
   TEST_ASSERT_EQUAL(r.count("\"t\":\"ev\""), r.count(kTap) + r.count(kTalkOn) + r.count(kTalkOff));
 }
 
-// A long touch during needs you is a tap too: the squash, and no moment.
+// A long touch during needs you is a tap too: the squash, and no reaction.
 static void test_a_long_touch_during_needs_you_is_a_tap() {
   DevRig r;
   r.line("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"codex\",\"project\":\"landing\"}}");
@@ -2314,12 +2324,12 @@ static void test_a_long_touch_during_needs_you_is_a_tap() {
 
 int main() {
   UNITY_BEGIN();
-  if (!packfile::open()) std::printf("no voice pack: the chosen character pack has none\n");
+  if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
-  RUN_TEST(test_a_different_request_with_the_same_names_alerts);
+  RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);
   RUN_TEST(test_answering_on_the_mac_blinks_back);
-  RUN_TEST(test_attention_wins_over_moments);
+  RUN_TEST(test_needs_you_wins_over_reactions);
   RUN_TEST(test_changes_mid_motion_blink_into_the_new_design);
   RUN_TEST(test_no_app_holds_for_weeks);
   RUN_TEST(test_no_change_ever_cuts_hard);
@@ -2327,37 +2337,37 @@ int main() {
   RUN_TEST(test_push_to_talk_listens_then_waits);
   RUN_TEST(test_listening_holds_until_the_reply);
   RUN_TEST(test_listening_plays_while_something_needs_you);
-  RUN_TEST(test_the_empty_moment_ends_only_listening);
+  RUN_TEST(test_the_empty_reaction_ends_only_listening);
   RUN_TEST(test_push_to_talk_timeouts);
-  RUN_TEST(test_listening_takes_turns_between_variations);
-  RUN_TEST(test_moments_end_and_replace);
+  RUN_TEST(test_listening_rotates_its_variations);
+  RUN_TEST(test_reactions_end_and_replace);
   RUN_TEST(test_a_cheer_plays_its_loops);
   RUN_TEST(test_a_take_moves_the_mouth);
-  RUN_TEST(test_a_line_of_two_takes);
-  RUN_TEST(test_a_line_alone_plays_over_the_face);
+  RUN_TEST(test_a_say_of_two_takes);
+  RUN_TEST(test_a_say_alone_plays_over_the_face);
   RUN_TEST(test_a_face_alone_plays_its_loops);
   RUN_TEST(test_an_expression_holds_its_loops);
   RUN_TEST(test_an_expression_over_the_cheer_and_across_a_look_change);
-  RUN_TEST(test_an_expression_ends_with_its_moment);
-  RUN_TEST(test_a_waited_moment_says_how_it_ended);
+  RUN_TEST(test_an_expression_ends_with_its_reaction);
+  RUN_TEST(test_a_waited_reaction_says_how_it_ended);
   RUN_TEST(test_the_clock_going_back_starts_the_look_over);
   RUN_TEST(test_life_is_blinks_at_their_pace);
   RUN_TEST(test_asleep_breathes_and_never_blinks);
   RUN_TEST(test_taps_poke_and_a_run_spams);
-  RUN_TEST(test_taps_take_turns_between_variations);
+  RUN_TEST(test_taps_rotate_their_variations);
   RUN_TEST(test_a_held_face_counts_taps_but_only_dips);
   RUN_TEST(test_an_act_shows_in_workings_place);
-  RUN_TEST(test_an_acts_variations_take_turns);
-  RUN_TEST(test_a_rules_one_shot_plays_once);
-  RUN_TEST(test_a_moment_plays_a_fitting_variation);
-  RUN_TEST(test_a_face_plays_over_a_one_shot);
-  RUN_TEST(test_no_one_shot_while_the_face_is_held);
+  RUN_TEST(test_an_acts_variations_rotate);
+  RUN_TEST(test_a_rules_reaction_plays_once);
+  RUN_TEST(test_a_reaction_plays_a_fitting_variation);
+  RUN_TEST(test_a_face_plays_over_a_rules_reaction);
+  RUN_TEST(test_no_rules_reaction_while_the_face_is_held);
   RUN_TEST(test_only_the_reply_ends_listening);
   RUN_TEST(test_what_shows_first);
-  RUN_TEST(test_a_finishs_line_waits_for_its_voice_window);
+  RUN_TEST(test_a_finishs_say_waits_for_its_voice_window);
   RUN_TEST(test_flip_books_blink_by_themselves);
   RUN_TEST(test_each_look_shows_its_design_in_the_mood);
-  RUN_TEST(test_the_looks_variations_take_turns);
+  RUN_TEST(test_the_looks_variations_rotate);
   RUN_TEST(test_no_app_at_30s_and_reconnect_blinks_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);

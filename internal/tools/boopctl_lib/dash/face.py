@@ -1,4 +1,4 @@
-"""The device's face in the terminal: boop-sim, fed
+"""The device's face in the terminal: the native simulator, fed
 the lines the app sends, screenshotted a dozen times a second and drawn
 with half blocks at exactly 1/3 scale, the face's 3-px grid."""
 from __future__ import annotations
@@ -68,7 +68,7 @@ def render(shot: tuple[list[int], bytes, tuple[int, int]]) -> Text:
 
 
 class SimFace:
-    """boop-sim in a thread of its own, which alone touches it: lines queued
+    """The native simulator in a thread of its own, which alone touches it: lines queued
     with `send` reach it in order, and each frame is handed to `on_frame`
     (from that thread) as drawn text."""
 
@@ -112,4 +112,4 @@ class SimFace:
                         self.on_frame(render(shot))
                     time.sleep(max(0.0, 1 / FPS - (time.monotonic() - started)))
         except (DeviceError, OSError, ValueError) as exc:
-            self.on_error(f"boop-sim stopped: {exc}")
+            self.on_error(f"the native simulator stopped: {exc}")

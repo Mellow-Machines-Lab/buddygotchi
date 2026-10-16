@@ -4,13 +4,13 @@ import MellowHarness
 import LinkKit
 
 /// The brain's reactions on the device, until each ends.
-/// The device decides what plays when (linkkit/SPEC.md §4): each
-/// reaction goes out at once, a `do` that waits its turn there, and the
+/// The device decides what plays when (its queue, linkkit/SPEC.md §4):
+/// each reaction goes out at once, a `do` that waits in the queue there, and the
 /// link hands back how it came out, once. This
 /// reads that as its handle's end, holds a reaction your tap cut short in
 /// progress until the pokes stop, and keeps where a tap on the brain's
 /// finish opens its thread while the finish may still
-/// play, a link that drops for a moment included, since the device plays
+/// play, a link that drops briefly included, since the device plays
 /// on.
 ///
 /// On the runtime's queue and clock. Its bookkeeping is done before any
@@ -30,7 +30,7 @@ public final class Reactions {
 
     public init() {}
 
-    /// The finish sent as `id` at `now`, waiting up to `ttl` for its turn:
+    /// The finish sent as `id` at `now`, waiting up to `ttl` in the queue:
     /// a tap on it opens `thread`.
     public func sent(_ id: Int, opens thread: ThreadRef, ttl: Int, now: Int64) {
         opens[id] = (thread, now + Int64(ttl) + DeviceLink.answerGraceMs)
@@ -81,11 +81,8 @@ public final class Reactions {
             case (.cut, let why): return .failed("cut short" + (why.flatMap { cutBy[$0] }.map { ": " + $0 } ?? ""))
             case (.skipped, "late"): return .failed("waited too long")
             case (.skipped, BoopDevice.micOn): return .failed("the mic went on")
-            // Boop's own refusals, worded as main said any skip.
-            case (.skipped, nil), (.skipped, "needs_you"), (.skipped, BoopDevice.listening), (.skipped, "no_app"),
-                 (.skipped, "not_listening"), (.skipped, "nothing"):
-                return .failed("something needed you")
-            case (.skipped, let why?): return .failed("skipped: " + why)
+            case (.skipped, let why?): return .failed(skippedBy[why] ?? "skipped: " + why)
+            case (.skipped, nil): return .failed("skipped")
             }
         case .failed(let failure):
             // No device connected, the device disconnected, or it never
@@ -97,4 +94,14 @@ public final class Reactions {
     /// What cut a reaction short, as its end says it; a tap's holds it
     /// until the pokes stop, and `reset` is a tool's.
     static let cutBy = ["now": "something newer played", "needs_you": "something needed you"]
+
+    /// Why the board's behaviour refused a reaction, as its end says it:
+    /// HISTORY tells the brain what really happened.
+    static let skippedBy = [
+        "needs_you": "something needed you",
+        BoopDevice.listening: "it was listening to you",
+        "not_listening": "it wasn't listening",
+        "no_app": "the board hadn't heard from the Mac",
+        "nothing": "it had nothing it could play",
+    ]
 }

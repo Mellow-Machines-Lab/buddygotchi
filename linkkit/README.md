@@ -25,7 +25,7 @@ flowchart LR
 - ✉️ **Four JSON messages.** The Mac says how things are (`state`) and
   asks for things to play (`do`). The device says who it is (`hello`)
   and what happened (`ev`).
-- 🎬 **The device decides when.** Requests wait their turn behind
+- 🎬 **The device decides when.** Each `do` waits in a queue behind
   whatever's playing, and every one gets exactly one answer: done, cut
   or skipped.
 - 🔌 **Bluetooth or USB, same messages.** A USB bridge shares the board
@@ -60,7 +60,7 @@ The device library's README has a whole lamp that fits on a page.
 
 ## Learn more
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)**: the four messages, the turn,
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**: the four messages, the queue,
   and driving a lamp from Swift.
 - **[device/README.md](device/README.md)**: the C++ side, and how your
   app plugs into it.

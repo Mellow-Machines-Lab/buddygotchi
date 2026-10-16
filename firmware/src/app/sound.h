@@ -22,11 +22,11 @@ class Sound {
   // come a few times a second, so it doesn't switch on and off between them.
   static constexpr int kAmpHold = 44;
 
-  // Effects neither replace nor hush a line: they mix under it.
+  // Effects neither replace nor hush a `say`: they mix under it.
   enum class Kind : uint8_t { kSay, kHush, kEffect, kStopEffects };
   struct Cmd {
     Kind kind;
-    voice::Line line;
+    voice::Say say;
     voice::Effect effect;
   };
 
@@ -46,7 +46,7 @@ class Sound {
 
   // The output started: dbg.state's audio.out.ready.
   void ready();
-  // From the sound's task only: a line or an effect to start or stop, and
+  // From the sound's task only: a `say` or an effect to start or stop, and
   // one chunk made and written. The task never lets the output run dry:
   // silence when there's nothing to say.
   void apply(const Cmd& c);
@@ -55,14 +55,14 @@ class Sound {
   AudioOut stats();
 
  private:
-  // The line being played, for its timeline. Writes return at the output's
-  // pace, so the time between the write before the line and the write that
+  // The `say` being played, for its timeline. Writes return at the output's
+  // pace, so the time between the write before the `say` and the write that
   // finished it is how long the output took to play those chunks.
   struct Current {
-    bool line = false;
+    bool saying = false;
     int take = -1;
     uint32_t planMs = 0;
-    uint32_t samples = 0;  // line samples rendered
+    uint32_t samples = 0;  // `say` samples rendered
     uint32_t chunks = 0;   // chunks they span
     int64_t startUs = 0;
   };

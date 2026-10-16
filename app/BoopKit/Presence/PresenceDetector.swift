@@ -78,7 +78,7 @@ public struct PresenceDetector {
             away = false
             let why = cleared?.rawValue ?? "input"
             cleared = nil
-            return Event(ts: now, source: .mac, type: .presence, phase: .end, specificType: why)
+            return Event(at: now, source: .mac, type: .presence, phase: .end, specificType: why)
         }
         if let at = lockedAt, now - at >= config.lockAwayMs {
             return goAway(Signal.locked.rawValue, since: min(at, lastInput), at: now)
@@ -95,7 +95,7 @@ public struct PresenceDetector {
     mutating func goAway(_ why: String, since: Int64, at now: Int64) -> Event {
         away = true
         cleared = nil
-        return Event(ts: now, source: .mac, type: .presence, phase: .start, specificType: why,
+        return Event(at: now, source: .mac, type: .presence, phase: .start, specificType: why,
                      data: ["since": .int(since)])
     }
 }

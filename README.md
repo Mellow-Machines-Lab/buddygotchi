@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black?logo=apple">
-  <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white">
+  <img alt="Swift 6.2 or later" src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white">
   <img alt="ESP32" src="https://img.shields.io/badge/board-ESP32-E7352C?logo=espressif&logoColor=white">
   <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
 </p>
@@ -32,7 +32,7 @@ it never approves, denies or blocks anything an agent does.
 > [let us know →](https://tally.so/r/ZjprM5?src=readme)
 
 <p align="center">
-  <img src="documentation/media/moods.gif" width="720" alt="Eight of Boop's 13 moods reacting: excited, proud, curious, calm, grumpy, sad, tired and wounded">
+  <img src="documentation/media/moods.gif" width="720" alt="Eight moods on the pixel face, each labelled: excited, proud, curious, calm, grumpy, sad, tired and wounded">
 </p>
 
 A menu-bar app on your Mac does the thinking, and a cheap ESP32 board
@@ -52,7 +52,7 @@ with a screen is the body:
 | You need | Why |
 | --- | --- |
 | 💻 **A Mac** | macOS 26 or later, with Command Line Tools (`xcode-select --install`) |
-| 🐍 **Python 3.10 or later** | For flashing the board, unless you already have PlatformIO's `pio`. The Mac's own is 3.9, so `brew install python`. PlatformIO installs itself |
+| 🐍 **A newer Python** | For flashing the board, unless you already have PlatformIO's `pio`: `brew install python` ([why](firmware/README.md#build-and-flash)). PlatformIO installs itself |
 | 🟨 **A board** | One of the two below, and a USB cable that carries data |
 | 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks Boop's reactions. It needs a key from TypeSafe, which may cost money. Without one, Boop still shows what your agents are doing and when you're needed, but doesn't react or celebrate. Add it in Boop's Settings |
 
@@ -86,6 +86,12 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
 
 Then tap the screen or press BOOT to poke it.
 
+**Which character.** A clone runs Boop, the repository's own character:
+the gel slime on the AMOLED board, and a pixel face on the CYD. Pixel is
+the plain example character, for the CYD only. To run it, put `pixel` in
+a file named `.character` at the repository's root before you flash and
+run ([characters/CHARACTER.md](characters/CHARACTER.md) §2).
+
 ### Everyday commands
 
 | To | Run |
@@ -116,7 +122,7 @@ Codex:
 .build/debug/boopdev hooks remove --home ~
 ```
 
-Run `make build` first if `.build/` is gone.
+Run `make app` first if `.build/` is gone.
 
 ## Built from open packages
 

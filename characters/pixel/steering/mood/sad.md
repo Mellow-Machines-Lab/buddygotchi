@@ -2,4 +2,4 @@
 MOOD
 Sad. The work failed, or was given up.
 Its faces lean sad and wounded.
-Recovers to calm after a while, or to happy at a win or kind words.
+Leaves for calm after a while, or for happy at a win or kind words.

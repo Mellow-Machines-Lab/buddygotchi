@@ -33,7 +33,7 @@ class BoardHal : public app::Hal {
   uint32_t heapFree() override;
   uint32_t heapMin() override;
   bool ampOn() override;
-  void say(const voice::Line& l) override;
+  void say(const voice::Say& l) override;
   void hush() override;
   void effect(const voice::Effect& e) override;
   void stopEffects() override;
@@ -42,9 +42,9 @@ class BoardHal : public app::Hal {
   const char* bleState() override;
   const char* bleName() override;
   const char* cardState() override;
-  bool packBegin(bool keep, uint32_t& have, const char*& why) override;
-  bool packAppend(const uint8_t* d, size_t n, uint32_t& have) override;
-  bool packEnd(uint32_t size, uint32_t crc, const char*& why) override;
+  bool copyBegin(bool keep, uint32_t& have, const char*& why) override;
+  bool copyAppend(const uint8_t* d, size_t n, uint32_t& have) override;
+  bool copyEnd(uint32_t size, uint32_t crc, const char*& why) override;
   const char* fwVersion() override;
   uint32_t bootId() override;
   const char* gitSha() override;

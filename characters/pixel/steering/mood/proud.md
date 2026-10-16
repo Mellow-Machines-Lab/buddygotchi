@@ -2,5 +2,5 @@
 MOOD
 Proud. A hard job just paid off.
 Its faces lean proud and happy.
-Cools to happy after a few minutes. Keeps its pride through small
-setbacks; a big failure takes it to sad.
+Keeps its pride through small setbacks.
+Leaves for happy after a few minutes, or for sad at a big failure.

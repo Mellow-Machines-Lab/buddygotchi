@@ -1,8 +1,8 @@
 # LinkKit: the device library
 
-Updated 2026-10-11. The C++ half of LinkKit, for the small device a host
-app drives: it reads the host's lines, keeps track of the links, sends
-`hello`, decides when each `do` plays (the turn), routes `ev` and answers
+Updated 2026-10-15. The C++ half of LinkKit, for the small device a host
+app drives: it reads the host's messages, keeps track of the links, sends
+`hello`, decides when each `do` plays (the queue), routes `ev` and answers
 the kit's `dbg.*` messages, all as [../SPEC.md](../SPEC.md) says. What the
 device draws, plays and says is yours: you write an app that plugs into
 it. Boop's firmware is one; a lamp that fits on a page is below.
@@ -17,8 +17,8 @@ It never includes an app's headers: its build fails if it does
 
 | File (`src/linkkit/`) | What |
 | --- | --- |
-| `kit.h`, `kit.cpp` | `Kit`, `App`, `Platform`, `Call`: the protocol and the turn |
-| `limits.h` | The spec's numbers (§9): 512-byte lines, 4 waiting, `ttl` 5000 and 1–60000, 60 s `hello`, 30 s host gone |
+| `kit.h`, `kit.cpp` | `Kit`, `App`, `Platform`, `Do`: the protocol and the queue |
+| `limits.h` | The spec's numbers (§9): 512-byte messages, 4 waiting, `ttl` 5000 and 1–60000, 60 s `hello`, 30 s host gone |
 | `line_reader.h`, `packets.h` | Lines out of a byte stream, and lines into Bluetooth packets |
 | `clock.h` | The device clock tools freeze and step (`dbg.clock`), and randomness reseeded with it (from the boot id on a running device's power-on) |
 | `codec.h`, `codec.cpp` | CRC-32 and base64, for `dbg.shot` and an app's own debug messages |
@@ -29,28 +29,29 @@ It never includes an app's headers: its build fails if it does
 The board (or a simulator) owns three things: a `Platform` (a millisecond
 counter, the device's id and firmware version), your `App`, and a `Kit`
 made from both. It feeds the kit every line from each link and calls
-`tick()` once per loop pass; the kit calls your app back.
+`tick()` once per loop pass; the kit calls your app back. `handleLine`
+returns true for a `dbg.*` message: tick before the next line, since tools
+time their input and clock steps against ticks.
 
 | Your app's hook | When the kit calls it |
 | --- | --- |
 | `name()`, `does(names)`, `hello(extra)` | For `hello`: `app`, the `do` names you play, your own fields |
 | `begin()` | Once, attached, with the clock at 0 |
 | `onState(state, t)` | Every `state`: your whole map |
-| `refuse(call, t)` | A call is about to take the turn: return a short reason to skip it, or null |
-| `onDo(call, t)` | The call holds the turn, busy: play it. `call.args` is yours, `call.key` is what you report with |
-| `advance(t)`, `nextDue(from, to, at)` | Time moves on (in order). `nextDue` says when you'll rest or end the holder by yourself, so a call waiting starts at that exact millisecond |
+| `refuse(d, t)` | A `do` is about to start playing: return a short reason to skip it, or null |
+| `onDo(d, t)` | The `do` starts playing, busy: play it. `d.args` is yours, `d.key` is what you report with |
+| `advance(t)`, `nextDue(from, to, at)` | Time moves on (in order). `nextDue` says when you'll rest or end the `do` playing by yourself, so a `do` waiting starts at that exact millisecond |
 | `tick(t)` | Once per pass, after `advance`: read inputs, draw |
-| `hostGone()` | No line from the host for 30 s |
 | `debug(type, msg, from)`, `ping(obj)`, `state(obj, t)`, `reset()`, `shot(s, t)` | Your `dbg.*` types, your vitals and `dbg.state` fields, `dbg.reset`, and the frame `dbg.shot` sends |
 
 And what your app calls on `kit()`, from inside any hook: `rest(key)`
-(the holder may be replaced now), `ended(key, how, why)` (it's over),
-`cut(why)` (you cut the holder: a button, a tap), `dropWaiting(why, only)`
-(every call waiting, or only those from link `only`),
+(the `do` playing may be replaced now), `ended(key, how, why)` (it's over),
+`cut(why)` (you cut the `do` playing: a button, a tap), `dropWaiting(why, only)`
+(every `do` waiting, or only those from link `only`),
 `emit(kind, did, data, injected)` (an `ev` to every live link, or only to
 USB for a tool's injected input), `helloChanged()`, `reply(link, text, n)`
 for your `dbg.*` replies, and `now()`, `rng()`, `frozen()`. A report for
-a key that doesn't hold the turn is ignored, so each `do` gets exactly
+a key that isn't playing is ignored, so each `do` gets exactly
 one `ended` however your layers overlap.
 
 ### A lamp
@@ -74,8 +75,8 @@ class Lamp : public linkkit::App {
 
   void onState(JsonObjectConst state, uint32_t) override { level_ = state["level"] | 0; }
 
-  // Busy while it blinks: a `next` blink waits its turn, a `now` one cuts it.
-  void onDo(const linkkit::Call& c, uint32_t t) override {
+  // Busy while it blinks: a `next` blink waits in the queue, a `now` one cuts it.
+  void onDo(const linkkit::Do& c, uint32_t t) override {
     int times = c.args["times"] | 1;
     times = times < 1 ? 1 : times > 10 ? 10 : times;
     blinking_ = c.key;
@@ -96,7 +97,7 @@ class Lamp : public linkkit::App {
   }
 
   // The lamp's own button: the device does this itself, so it doesn't
-  // take the turn; it cuts the blink and tells the host.
+  // go through the queue; it cuts the blink and tells the host.
   void press() {
     if (blinking_) kit().cut("button"), blinking_ = 0;
     kit().emit("press", "stopped", nullptr, false);
@@ -105,7 +106,7 @@ class Lamp : public linkkit::App {
 
  private:
   uint8_t level_ = 0, light_ = 0;
-  uint32_t blinking_ = 0;  // the call blinking, 0 for none
+  uint32_t blinking_ = 0;  // the `do` blinking, 0 for none
   uint32_t until_ = 0, at_ = 0;
 };
 
@@ -141,9 +142,9 @@ void setup() {
   if (ble.begin("Lamp", "lamp")) kit.setOut(linkkit::Link::kBle, &ble);  // Lamp-XXXX
 }
 void loop() {
-  while (Serial.available())
-    if (line.feed(char(Serial.read()))) kit.handleLine(line.line(), line.length(), linkkit::Link::kUsb);
-  ble.poll(kit);  // connects, drops a quiet link, and one line from Bluetooth
+  while (Serial.available())  // every message waiting, until a dbg.* one
+    if (line.feed(char(Serial.read())) && kit.handleLine(line.line(), line.length(), linkkit::Link::kUsb)) break;
+  ble.poll(kit);  // connects, drops a quiet link, and one message from Bluetooth
   kit.tick();
 }
 ```
@@ -153,17 +154,18 @@ A host sends `{"t":"state","level":40}`, the lamp answers `hello`, and
 then `{"t":"ev","kind":"ended","data":{"id":1,"how":"done"}}`. A second
 `blink` sent meanwhile waits and starts the millisecond the first ends.
 
-## The turn, from the app's side
+## The queue, from the app's side
 
-A call holds the turn from `onDo` until you `ended` it (or the kit ends
-it: a `now` call cuts it while busy, `dbg.reset`). Call `rest(key)` when
-the part that matters is over: from then anything may replace it, and it
+A `do` plays from `onDo` until you `ended` it (or the kit ends it: a
+`now` one cuts it while busy, `dbg.reset`). Call `rest(key)` when the
+part that matters is over: from then anything may replace it, and it
 ends `done`. Things the device does on its own (a tap's reflex, a held
-button) don't take the turn; cut the holder only when you actually cut
-it. `refuse` is asked right before a call would take the turn, so it can
-look at what's on screen then; it may change your own state (Boop's reply
-ends listening even when it's refused). Queued calls keep their own copy
-of `args` (512 bytes each, 2 KB in all), parsed again when they start.
+button) don't go through the queue; cut the `do` playing only when you
+actually cut it. `refuse` is asked right before a `do` would start
+playing, so it can look at what's on screen then; it may change your own
+state (Boop's reply ends listening even when it's refused). `do`s
+waiting keep their own copy of `args` (512 bytes each, 2 KB in all),
+parsed again when they start.
 
 ## Building and testing
 
@@ -180,8 +182,8 @@ Boop's firmware does that in both its envs, the board's and the Mac's
 (its unit tests and simulator).
 
 The library tests on its own, on the Mac, from its own PlatformIO
-project (`platformio.ini` here, which apps don't use): `test/test_turn`
-(every rule of §4), `test/test_kit` (lines, `hello`, links, `ev`, the
+project (`platformio.ini` here, which apps don't use): `test/test_queue`
+(every rule of §4), `test/test_kit` (messages, `hello`, links, `ev`, the
 app's words escaped, `dbg.*`, the lamp) and `test/test_helpers` (lines
 out of bytes and into Bluetooth packets, CRC-32 and base64, the clock),
 with a fake platform and app (`test/kit_fakes.h`):

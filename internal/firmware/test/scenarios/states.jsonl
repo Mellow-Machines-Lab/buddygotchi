@@ -16,8 +16,8 @@
 // One it doesn't know is working's design.
 {"t":"state","base":"working","act":"juggling","mood":"calm","busy":1}
 {"expect":{"act":null}}
-// The rules' one-shots play once in Boop's mood, the
-// variation the Mac names when it's one for the call's context, then
+// The rules' reactions play once in Boop's mood, the
+// variation the Mac names when it's one for the reaction's context, then
 // the look comes back behind a blink. Starting a new task, happy, over
 // testing: its 3.8 s design.
 {"clock":10000}
@@ -66,7 +66,7 @@
 {"clock":41500}
 {"shot":"helper-return-wounded"}
 // None plays while something needs you, or while listening waits for the
-// reply, which a one-shot never ends.
+// reply, which a rule's reaction never ends.
 {"clock":50000}
 {"t":"state","base":"working","busy":1,"attn":{"agent":"claude","project":"landing","more":0}}
 {"t":"do","name":"error","play":"now","args":{"variant":1}}

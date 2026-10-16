@@ -5,7 +5,7 @@
   "mood": "whiny",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "turn started", "at": "2m", "prompt": "thank you, you've been a huge help today!", "expect": {"offered": "whiny|annoyed|irritated|determined|wounded|sad|calm|happy|grumpy", "mood": "happy|calm"}},
+    {"event": "turn started", "at": "2m", "prompt": "thank you, you've been a huge help today!", "expect": {"offered": "whiny|annoyed|determined|wounded|sad|comfy|lonely|irritated|calm|crying|happy|grumpy", "mood": "happy|calm"}},
     {"event": "said", "at": "4m", "words": "you're useless", "expect": {"react": "wounded|sad|annoyed|grumpy|whiny|irritated", "mood": "wounded"}},
     {"event": "turn started", "at": "7m", "prompt": "sorry, that was mean. thank you for all the help!", "expect": {"mood": "happy|calm"}}
   ]

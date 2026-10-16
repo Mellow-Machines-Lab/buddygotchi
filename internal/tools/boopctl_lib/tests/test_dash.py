@@ -188,13 +188,13 @@ class FeedTests(unittest.TestCase):
 class ColumnsTests(unittest.TestCase):
     """The three columns, newest first, from
     `tests/fixtures/dash-columns.jsonl`. It was recorded from a real run
-    (a headless app whose USB link is a boop-sim, a forced mood, the e2e
+    (a headless app whose USB link is the native simulator, a forced mood, the e2e
     Claude session, a forced reaction that played, a forced pass that chose
     none, a cheer from the dashboard, and four taps on the sim's screen,
     then a poke streak), then edited, since the scripted brain answers
     everything at probability 1: the first pass's mood and the turn end's
     reaction, word and hold were given other probabilities, and the pass for
-    the failed deploy was made a dropped one, its reaction's action, moment
+    the failed deploy was made a dropped one, its reaction's output, its `moment`
     and settle taken out. It was recorded before the raw transcript, and
     rewritten into today's lines, so its lines keep that run's words."""
 
@@ -211,7 +211,7 @@ class ColumnsTests(unittest.TestCase):
         dashboard, or the launch; and the pokes' pass sitting out, as that run's did."""
         mood = self.texts(self.board.mood_column())
         changes = [line for line in fixture_lines(COLUMNS) if line.get("sent", {}).get("t") == "state"]
-        self.assertEqual(mood[0], f"happy since {clock(self.at[4])}", "the state sent with the mood action")
+        self.assertEqual(mood[0], f"happy since {clock(self.at[4])}", "the state sent with the mood output")
         poked = next(line for line in fixture_lines(COLUMNS) if line.get("pass", {}).get("for") == 31)
         self.assertEqual(mood[2], f"{clock(poked['received_at_ms'])} · mood sat out: You poked Boop 4 times in 3 s.")
         self.assertEqual(mood[3:6], [f"{clock(self.at[4])} grumpy → happy", '  ▸ claude started turn 1 on "jetpack".',
@@ -221,7 +221,7 @@ class ColumnsTests(unittest.TestCase):
 
     def test_the_automatic_reactions(self):
         """Each reflex with what set it off: the cheer and its turn end, the
-        alert and the request, the taps' wiggles the board plays itself, the
+        needs you and the request, the taps' wiggles the board plays itself, the
         working chatter, and a cheer the dashboard played, with no event."""
         rows = self.board.reflex_column()
         reflex = self.texts(rows)
@@ -241,8 +241,8 @@ class ColumnsTests(unittest.TestCase):
         self.assertEqual(reflex[-1], '  ▸ claude needs you on "jetpack".')
         self.assertEqual(rows[-2][0], "attn")
 
-    def test_a_rules_one_shot_and_the_activity(self):
-        """A rule's one-shot, in an older log's `moment` (test_the_macs_requests
+    def test_a_rules_reaction_and_the_activity(self):
+        """A rule's reaction, in an older log's `moment` (test_what_the_mac_sends
         has today's `do`), is named by the view event recorded right after
         it, never "played from the dashboard", and the working look shows
         its activity (`act`)."""
@@ -260,9 +260,9 @@ class ColumnsTests(unittest.TestCase):
         self.assertIn(("sent", "→ state working (terminal) calm · busy 1 · vol 6"), rows)
         self.assertEqual(dict(board.facts(t + 60_000))["showing"], "its terminal look")
 
-    def test_the_macs_requests(self):
-        """What the Mac sends since the device took turns: a rule's
-        one-shot is a reflex named by the view event right after it, as
+    def test_what_the_mac_sends(self):
+        """What the Mac sends since the device kept a queue: a rule's
+        rule reaction is a reflex named by the view event right after it, as
         before; the Talk button's listening is one; the brain's finish
         isn't; and push-to-talk ending with no reply shows nothing, even as
         the first line."""
@@ -289,10 +289,10 @@ class ColumnsTests(unittest.TestCase):
         self.assertIn(("sent", f"→ do task_complete + say {feed.say_text({'take': 'new.d15'})}"), rows)
         self.assertEqual(dict(board.facts(t + 1000))["showing"], "listening")
 
-    def test_a_one_shot_the_device_skipped(self):
+    def test_a_rule_reaction_the_device_skipped(self):
         """linkkit/SPEC.md §4: the device decides what plays, and says so
-        (`ended`): a rule's one-shot it skipped while a reaction held its
-        turn is marked on its reflex, and one it played isn't."""
+        (`ended`): a rule's reaction it skipped while a brain reaction played
+        is marked on its reflex, and one it played isn't."""
         t = 1_790_550_800_000
         sent = lambda at, id, name: {"sent": {"t": "do", "id": id, "name": name, "play": "if_free"},  # noqa: E731
                                      "by": "rule", "received_at_ms": at}
@@ -338,15 +338,15 @@ class ColumnsTests(unittest.TestCase):
         self.assertFalse([r for r in self.texts(board.reflex_column()) if "cheer" in r])
 
     def test_takes_with_no_voice_pack(self):
-        """With no voice pack here, what a line said reads as its takes' ids."""
-        with mock.patch.object(feed, "take", side_effect=feed.DeviceError("no voice pack")):
+        """With no voice file here, what a `say` said reads as its takes' ids."""
+        with mock.patch.object(feed, "take", side_effect=feed.DeviceError("no voice file")):
             self.assertEqual(feed.said(["new.d15", "topic.x"]), "new.d15 topic.x")
             self.assertEqual(feed.say_text({"take": "new.d15", "then": "topic.x"}), "(new.d15, topic.x)")
             self.assertEqual(feed.say_text({}), "no take")
 
     @needs_voice
     def test_takes_with_the_voice_pack(self):
-        """With the pack's voice, a line reads as its words, and a take it lacks as none."""
+        """With the pack's voice, a `say` reads as its words, and a take it lacks as none."""
         self.assertEqual(feed.say_text({"take": "banana"}), "no take")
         self.assertTrue(feed.say_text({"take": "new.d15"}).endswith("” (new.d15)"))
 
@@ -535,9 +535,9 @@ class ControlsTests(unittest.TestCase):
         self.assertEqual(latest["base"], "working", "the app's state is left alone")
 
     def test_a_preview_reaction_says_its_take(self):
-        """As the react action sends it, played `now` so
+        """As the react output sends it, played `now` so
         it replaces what the sim shows; a finish react.animation picks is
-        its animation with its outcome (ReactAction.finish)."""
+        its animation with its outcome (ReactOutput.finish)."""
         line = controls.preview_reaction("grumpy", "new.d14", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
                                 "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})
@@ -659,7 +659,7 @@ class AppTests(unittest.TestCase):
                 await pilot.pause()
                 self.assertTrue(face.running)
                 latest = next(line["sent"] for line in reversed(fixture_lines()) if line.get("sent", {}).get("t") == "state")
-                self.assertEqual(face.restarts, [latest], "the sim starts on the latest state, and no old moments")
+                self.assertEqual(face.restarts, [latest], "the sim starts on the latest state, and no old reactions")
                 self.assertEqual(face.sent, [])
                 self.assertRegex(plain(app.query_one("#facts")), r"mood +happy")
                 # The fixture is days old: no live log, so the board's link isn't a fact.
@@ -689,7 +689,8 @@ class AppTests(unittest.TestCase):
                         await pilot.press(*["down"] * down, "enter")
                     await pilot.pause()
 
-                await pick("m", 5)  # grumpy
+                from boopctl_lib.common import MOODS
+                await pick("m", MOODS.index("grumpy"))
                 await pick("r", 6, 4, 0)  # grumpy, again, none
                 got = server.wait(2)
                 self.assertEqual(got, [{"dev": "mood", "mood": "grumpy"},
@@ -711,7 +712,7 @@ class AppTests(unittest.TestCase):
                 await pick("p", 1)
                 self.assertEqual(face.sent[-1]["base"], "working")
                 self.assertIn("PREVIEW: working", app.query_one("#face").border_title)
-                await pick("m", 6)  # sad: the mood's faces, on the sim only
+                await pick("m", MOODS.index("sad"))  # the mood's faces, on the sim only
                 self.assertEqual((face.sent[-1]["base"], face.sent[-1]["mood"]), ("working", "sad"))
                 self.assertEqual(len(server.wait(3, timeout=0.3)), 2, "nothing went to the app")
                 with log.open("a") as f:
@@ -750,7 +751,7 @@ class AppTests(unittest.TestCase):
                 sent_before = len(face.sent)
                 app.poll()
                 self.assertEqual(face.restarts[-1]["base"], "idle", "the new app's latest state")
-                self.assertEqual(len(face.sent), sent_before, "and none of its moments")
+                self.assertEqual(len(face.sent), sent_before, "and none of its reactions")
                 self.assertIn("Boop restarted", " ".join(strip.text for strip in app.query_one("#timeline").lines))
                 await pilot.press("q")
             self.assertFalse(face.running)

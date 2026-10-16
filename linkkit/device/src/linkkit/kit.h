@@ -1,13 +1,13 @@
-// LinkKit's device side (linkkit/SPEC.md): reads the host's lines, keeps
-// track of the links, sends hello, runs the turn (§4) and answers the
+// LinkKit's device side (linkkit/SPEC.md): reads the host's messages, keeps
+// track of the links, sends hello, runs the queue (§4) and answers the
 // kit's dbg.* messages (§7). What the device draws, plays and says is the
 // app's: it plugs in as a linkkit::App, and the kit calls it.
 //
 // Pure C++17 and ArduinoJson 7. Single-threaded: the platform calls
 // handleLine, tick and the link events from one loop, and the app calls
 // the kit back only from inside its own hooks. Fixed-size tables, and no
-// heap beyond one JsonDocument per line handled and per queued call
-// started.
+// heap beyond one JsonDocument per line handled and per `do` started
+// from the queue.
 #pragma once
 #include <ArduinoJson.h>
 
@@ -19,18 +19,19 @@
 
 namespace linkkit {
 
-// The two links a device has (§8). Both carry the same lines; dbg.* only
+// The two links a device has (§8). Both carry the same messages; dbg.*
+// only
 // works over USB.
 enum class Link : uint8_t { kNone, kUsb, kBle };
 const char* linkName(Link l);  // "usb", "ble" or "none"
 
 // A do's `play` (§4).
 enum class Play : uint8_t { kNow, kNext, kIfFree };
-// How a call ended (§4), and the name `ended` gives it.
+// How a `do` ended (§4), and the name `ended` gives it.
 enum class How : uint8_t { kDone, kCut, kSkipped };
 const char* howName(How h);
 
-// Where lines go: USB serial, a Bluetooth link, a test's capture.
+// Where messages go: USB serial, a Bluetooth link, a test's capture.
 struct Out {
   virtual ~Out() = default;
   virtual void write(const char* s, size_t n) = 0;
@@ -53,7 +54,7 @@ struct Platform {
 };
 
 // A `do` as the app sees it (§3).
-struct Call {
+struct Do {
   uint32_t key = 0;        // unique since boot, never 0: what the app reports with
   int32_t id = 0;          // the host's id, 1..kMaxId; 0 when it had none (no `ended`)
   uint8_t what = 0;        // its name's index in the app's does()
@@ -74,14 +75,15 @@ struct Shot {
   size_t size[2] = {0, 0};
 };
 
-// What the turn looks like (dbg.state's `turn`, and for tests).
-struct TurnView {
-  bool held = false;  // a call holds the turn
+// What the queue looks like (dbg.state's `turn`, and for tests): the `do`
+// playing at its head, then the ones waiting behind it.
+struct QueueView {
+  bool held = false;  // a `do` is playing
   uint32_t key = 0;
   int32_t id = 0;
   const char* name = "";
   bool resting = false;
-  int waiting = 0;  // calls waiting, oldest first below
+  int waiting = 0;  // `do`s waiting, oldest first below
   struct Waiting {
     uint32_t key;
     int32_t id;
@@ -101,9 +103,10 @@ class App {
   // ---- hello (§3)
   virtual const char* name() const = 0;  // hello.app
   // hello.does: the do names it plays, at most kMaxDoes, as a static
-  // array; the kit hands each call its index in it (Call::what).
+  // array; the kit hands each `do` its index in it (Do::what).
   virtual int does(const char* const*& names) const = 0;
-  // The app's own hello fields. The whole hello must fit in one line.
+  // The app's own hello fields. The whole hello must fit in kMaxLine
+  // bytes.
   virtual void hello(JsonObject extra) { (void)extra; }
   // The kit is attached (kit() works) and its clock is at 0.
   virtual void begin() {}
@@ -111,32 +114,30 @@ class App {
   // ---- the host's messages
   // A `state`: the app's whole map, sent every time (§3).
   virtual void onState(JsonObjectConst state, uint32_t t) = 0;
-  // A call is about to take the turn: a short lower-case reason ([a-z_],
-  // §4) skips it (`skipped`, that reason) and leaves the holder alone;
-  // null lets it play. It may change the app's own state.
-  virtual const char* refuse(const Call& c, uint32_t t) {
+  // A `do` is about to start playing: a short lower-case reason ([a-z_],
+  // §4) skips it (`skipped`, that reason) and leaves the one playing
+  // alone; null lets it play. It may change the app's own state.
+  virtual const char* refuse(const Do& c, uint32_t t) {
     (void)c, (void)t;
     return nullptr;
   }
-  // The call holds the turn, busy: play it. Report back with the kit's
+  // The `do` starts playing, busy: play it. Report back with the kit's
   // rest, ended and cut, now or later.
-  virtual void onDo(const Call& c, uint32_t t) = 0;
+  virtual void onDo(const Do& c, uint32_t t) = 0;
 
   // ---- time: always called in order of t (a tool may move the clock back)
   // Moves to t, handling the app's own timers.
   virtual void advance(uint32_t t) { (void)t; }
   // The first instant after `from`, at most `to`, at which the app will
-  // rest or end the holder by itself, so a call waiting starts at that
-  // exact millisecond; false for none. Without it the line moves at the
-  // next tick.
+  // rest or end the `do` playing by itself, so a `do` waiting starts at
+  // that exact millisecond; false for none. Without it the queue moves at
+  // the next tick.
   virtual bool nextDue(uint32_t from, uint32_t to, uint32_t& at) {
     (void)from, (void)to, (void)at;
     return false;
   }
   // Once per loop pass, after advance: read inputs, draw.
   virtual void tick(uint32_t t) { (void)t; }
-  // No line from the host on any link for kHostGoneMs (§5).
-  virtual void hostGone() {}
 
   // ---- dbg.* over USB (§7)
   // A dbg.* type the kit doesn't handle: true if it's the app's, which
@@ -147,7 +148,7 @@ class App {
   }
   virtual void ping(JsonObject reply) { (void)reply; }             // dbg.ping's vitals
   virtual void state(JsonObject reply, uint32_t t) { (void)reply, (void)t; }  // dbg.state's fields
-  // dbg.reset, after the turn's: forget the host's state (the clock is at 0).
+  // dbg.reset, after the queue's: forget the host's state (the clock is at 0).
   virtual void reset() {}
   // dbg.shot: the current frame; false when the app draws none.
   virtual bool shot(Shot& s, uint32_t t) {
@@ -182,11 +183,11 @@ class Kit {
   // event: a host is there while it has spoken in the last kHostGoneMs.
   void connected();
   void disconnected();
-  // True when the Bluetooth host has sent no line for kHostGoneMs of real
+  // True when the Bluetooth host has sent no message for kHostGoneMs of real
   // time: let the link go so the device advertises again (§5). Then true
   // again only after another kHostGoneMs.
   bool shouldDrop();
-  // Once per loop pass: hello's repeat, the clock's thaw, the turn's
+  // Once per loop pass: hello's repeat, the clock's thaw, the queue's
   // timers, then the app's tick.
   void tick();
 
@@ -197,22 +198,22 @@ class Kit {
   // on a running board it starts from bootId, so each power-on differs.
   Rng& rng() { return rng_; }
 
-  // The turn (§4). A report for a key that doesn't hold the turn is ignored.
-  // A `why` is a short lower-case word ([a-z_]); the line escapes it anyway.
-  void rest(uint32_t key);  // the holder may be replaced now
-  // The holder is over: done, or cut (why says by what).
+  // The queue (§4). A report for a key that isn't playing is ignored.
+  // A `why` is a short lower-case word ([a-z_]); the message escapes it anyway.
+  void rest(uint32_t key);  // the `do` playing may be replaced now
+  // The `do` playing is over: done, or cut (why says by what).
   void ended(uint32_t key, How how = How::kDone, const char* why = nullptr);
-  void cut(const char* why);  // the app cuts the holder
-  // Every waiting call ends skipped, or only those that came in on
+  void cut(const char* why);  // the app cuts the `do` playing
+  // Every waiting `do` ends skipped, or only those that came in on
   // `only`: the host an input reached, when the input went to one link.
   void dropWaiting(const char* why, Link only = Link::kNone);
-  TurnView turn() const;
+  QueueView queue() const;
 
   // Device → host. An `ev` of the app's `kind` (never "ended"), with what
   // the device already did about it and its details as a JSON object's
   // text (either may be null). `kind` and `did` are escaped as JSON
-  // strings; `data` goes on the line as it is, so it must be an object's
-  // JSON. A line longer than kMaxLine isn't sent. It goes on every live
+  // strings; `data` goes in the message as it is, so it must be an object's
+  // JSON. A message longer than kMaxLine isn't sent. It goes on every live
   // link, or only over USB when a tool injected the input behind it (§3, §5).
   void emit(const char* kind, const char* did, const char* data, bool injected);
   // Something in hello changed: send it again on the host's link.
@@ -221,7 +222,7 @@ class Kit {
   // than kMaxLine goes out with the kit's fields only, or not at all when
   // even those don't fit, and dbg.ping reports the length as `hello_long`.
   size_t helloLength();
-  // One line to `to`, such as the reply to an app's dbg.* message.
+  // One message to `to`, such as the reply to an app's dbg.* message.
   void reply(Link to, const char* text, size_t n);
   // The link the host last spoke on, and whether a link is live: for
   // Bluetooth, connected; for USB, spoken on in the last kHostGoneMs.
@@ -258,9 +259,9 @@ class Kit {
   void fillHello(JsonDocument& d, bool kitOnly);
   void sendHello(Link to);
   void onDoLine(JsonObjectConst msg, Link from, uint32_t t);
-  void offer(const Call& c, uint32_t t);
-  void take(const Call& c, uint32_t t);
-  void enqueue(const Call& c, uint32_t t);
+  void offer(const Do& c, uint32_t t);
+  void take(const Do& c, uint32_t t);
+  void enqueue(const Do& c, uint32_t t);
   void pump(uint32_t t);
   void expire(uint32_t t);
   void advanceTo(uint32_t t);
@@ -273,7 +274,7 @@ class Kit {
   void sendState(Link to);
   void sendShot(Link to);
   void sendClock(Link to, JsonObjectConst msg, uint32_t real);
-  void resetTurn();
+  void resetQueue();
   const char* nameOf(uint8_t what) const { return what < nDoes_ ? does_[what] : ""; }
 
   Platform& platform_;
@@ -282,7 +283,6 @@ class Kit {
   Rng rng_;
   LinkState links_[3];
   Link lastLink_ = Link::kNone;
-  bool hostHere_ = false;  // a host spoke within kHostGoneMs
   uint32_t dbgReal_ = 0;   // real time of the last dbg.* line
   bool toolFrozen_ = false;
   uint32_t rxState_ = 0, rxDo_ = 0;
@@ -295,7 +295,7 @@ class Kit {
   Holder holder_;
   Waiting waiting_[kMaxWaiting];
   int nWaiting_ = 0;
-  char args_[kMaxWaiting][kMaxLine];  // queued calls' args, as JSON
+  char args_[kMaxWaiting][kMaxLine];  // waiting `do`s' args, as JSON
   uint8_t slotsUsed_ = 0;             // a bit per slot of args_
   uint32_t stepped_ = 0;              // the last instant the app was moved to
   bool pumping_ = false;

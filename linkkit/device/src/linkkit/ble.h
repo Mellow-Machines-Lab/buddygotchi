@@ -30,7 +30,7 @@ class Ble : public Out {
   // to the kit. Returns true if it handled a line.
   bool poll(Kit& kit);
 
-  // Replies and device → host lines, sent as notifications.
+  // Replies and device → host messages, sent as notifications.
   void write(const char* s, size_t n) override;
 
   const char* state() const;                  // "off", "idle", "adv" or "conn"

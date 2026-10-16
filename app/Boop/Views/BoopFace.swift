@@ -2,7 +2,7 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// Which look the little face shows. The Mac never plays Boop's moments;
+/// Which look the little face shows. The Mac never plays Boop's reactions;
 /// this is just enough of the device's face that the popover and the menu
 /// bar read as the same creature.
 enum FaceMood: Hashable {
@@ -39,7 +39,7 @@ enum FaceMood: Hashable {
 struct BoopFace: View {
     var mood: FaceMood
     /// Boop's mood, which picks the set of designs.
-    var design: String = MoodAction.initial
+    var design: String = MoodOutput.initial
     var size: CGFloat
 
     @ViewState private var blink = false
@@ -52,9 +52,9 @@ struct BoopFace: View {
         let startup = CharacterPack.active.startupMood
         return switch mood {
         case .asleep, .stopped: "\(startup)/asleep"
-        case .idle: "\(MoodGraph.pixelFallback(design))/idle"
-        case .working: "\(MoodGraph.pixelFallback(design))/working"
-        case .needsYou: "\(MoodGraph.pixelFallback(design))/needs_you"
+        case .idle: "\(design)/idle"
+        case .working: "\(design)/working"
+        case .needsYou: "\(design)/needs_you"
         case .happy, .cheeky: "\(startup)/idle"
         }
     }

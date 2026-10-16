@@ -1,7 +1,7 @@
-// A reaction's face: a call's `mood` draws the look in
+// A reaction's face: its `mood` draws the look in
 // that mood for its `loops` of the design, ending on a loop boundary, and
-// at least while its line plays; then the face blinks back to the
-// state's mood. The lines are Voice's (`boopdev voice`).
+// at least while its `say` plays; then the face blinks back to the
+// state's mood. The takes are Voice's (`boopdev voice`).
 // Happy and working, the tests fail: grumpy, once, with "Hrr...".
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","busy":1,"variant":3}
@@ -10,7 +10,7 @@
 {"expect":{"mood":"happy","expr":"grumpy","audio":{"playing":true,"take":"new.d12"}}}
 {"clock":1400}
 {"shot":"working-grumpy"}
-// The line is over after its take's 900 ms and 1.2 s to read it, at
+// The `say` is over after its take's 900 ms and 1.2 s to read it, at
 // 3100. The face holds to the end of the loop of grumpy's working design
 // (the third variation's 4.4 s) that the working clock, from 0, is in.
 {"clock":3100}
@@ -22,7 +22,7 @@
 {"clock":4750}
 {"shot":"working-happy-again"}
 // Curious: a finish with no face (the dashboard's), in curious, then
-// a proud line over it borrows proud's finish.
+// a proud `say` over it borrows proud's finish.
 {"clock":10000}
 {"t":"state","base":"idle","mood":"curious"}
 {"t":"do","name":"task_complete","play":"now","args":{"outcome":"success","variant":1}}
@@ -46,7 +46,7 @@
 {"expect":{"moment":null,"expr":null,"mood":"curious"}}
 {"clock":16560}
 {"shot":"idle-curious"}
-// An unknown mood is ignored: the state's mood, and the line plays.
+// An unknown mood is ignored: the state's mood, and the `say` plays.
 {"clock":20000}
 {"t":"state","base":"idle","mood":"curious"}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.oi"},"mood":"cheerful"}}
@@ -56,7 +56,7 @@
 {"clock":30000}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.go"},"mood":"grumpy"}}
 {"expect":{"screen":"needs_you","expr":null,"audio":{"take":null}}}
-// A face on its own, no line: proud for its two loops of the idle design
+// A face on its own, no `say`: proud for its two loops of the idle design
 // it's drawn in (proud's first, 1 s), from the look's start at 40000.
 {"clock":40000}
 {"t":"state","base":"idle","mood":"curious"}

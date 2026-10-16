@@ -161,7 +161,7 @@ struct SettingsPane: View {
     private func about(_ personality: Personality) -> String { personality.about ?? "" }
 
     /// What Boop does without a brain, if it has none:
-    /// the rules' looks and one-shots, but no reaction or mood change.
+    /// the rules' looks and reactions, but no brain reaction or mood change.
     private var brainNote: String? {
         guard model.noKey else { return nil }
         return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood."

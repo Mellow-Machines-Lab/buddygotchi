@@ -1,6 +1,6 @@
 // A lamp on LinkKit: about the smallest app worth the name, and the one
 // linkkit/device/README.md walks through. Its `state` is {"level":0-255};
-// it plays one call, `blink`, which blinks the light `times` times
+// it plays one `do`, `blink`, which blinks the light `times` times
 // (1-10, 200 ms each) and ends `done`, or `cut` when the lamp's own
 // button is pressed. The unit tests run it (test/test_kit).
 #pragma once
@@ -23,8 +23,8 @@ class Lamp : public linkkit::App {
 
   void onState(JsonObjectConst state, uint32_t) override { level_ = state["level"] | 0; }
 
-  // Busy while it blinks: a `next` blink waits its turn, a `now` one cuts it.
-  void onDo(const linkkit::Call& c, uint32_t t) override {
+  // Busy while it blinks: a `next` blink waits in the queue, a `now` one cuts it.
+  void onDo(const linkkit::Do& c, uint32_t t) override {
     int times = c.args["times"] | 1;
     times = times < 1 ? 1 : times > 10 ? 10 : times;
     blinking_ = c.key;
@@ -45,7 +45,7 @@ class Lamp : public linkkit::App {
   }
 
   // The lamp's own button: the device does this itself, so it doesn't
-  // take the turn; it cuts the blink and tells the host.
+  // go through the queue; it cuts the blink and tells the host.
   void press() {
     if (blinking_) kit().cut("button"), blinking_ = 0;
     kit().emit("press", "stopped", nullptr, false);
@@ -54,7 +54,7 @@ class Lamp : public linkkit::App {
 
  private:
   uint8_t level_ = 0, light_ = 0;
-  uint32_t blinking_ = 0;  // the call blinking, 0 for none
+  uint32_t blinking_ = 0;  // the `do` blinking, 0 for none
   uint32_t until_ = 0, at_ = 0;
 };
 

@@ -74,16 +74,15 @@ static void test_one_face_vocabulary_and_latest_facts() {
   app::Behaviour b(std::make_unique<GelFace>());
   b.reset(0, rng);
   TEST_ASSERT_EQUAL_STRING("gel", b.face().name());
-  TEST_ASSERT_TRUE(b.face().supportsMood(Mood::kFrightened));
-  pixel::PixelFace pixel;
-  TEST_ASSERT_FALSE(pixel.supportsMood(Mood::kFrightened));
+  // Every face draws every mood: the pixel face's frightened wears wounded's designs.
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kWounded), render::pixelIndex(Mood::kFrightened));
   app::Model m;
   m.mood = Mood::kFrightened;
   m.base = SceneState::kWorking;
   m.act = SceneState::kTerminal;
   b.onState(m, 0);
-  app::MomentIn in;
-  in.anim = Anim::kTaskComplete;
+  app::ReactionIn in;
+  in.anim = SceneState::kTaskComplete;
   in.outcome = Outcome::kFailure;
   in.id = 42;
   in.variant = b.pick(in.anim, m.mood, 255, in.outcome, StartCtx::kNone, rng);
@@ -136,7 +135,7 @@ static void test_histories_stay_off_the_heap() {
     for (int k = 0; k < 40; ++k) e->step(t += 16);
     e->setFacts(Facts{});
     Request r;
-    r.anim = i % 2 ? Anim::kPoked : Anim::kTaskComplete, r.hasId = true, r.id = "moment-" + std::to_string(i);
+    r.anim = i % 2 ? SceneState::kPoked : SceneState::kTaskComplete, r.hasId = true, r.id = "moment-" + std::to_string(i);
     r.outcome = Outcome::kSuccess, r.hold = true;
     e->oneShot(r);
     for (int k = 0; k < 40; ++k) e->step(t += 16);
@@ -163,10 +162,10 @@ static void test_grid_voice_lead_and_late_cues() {
   c.attention = true;
   c.attentionId = 9;
   f.sync(s, c, 0);
-  for (uint32_t t = 16; t <= 4800; t += 16) f.step(t, rng, 1);
+  for (uint32_t t = 16; t <= 4800; t += 16) f.step(t, rng);
   voice::FxEvent cues[Face::kMaxCues];
   bool changed = false;
-  TEST_ASSERT_EQUAL_INT(0, f.cues(nullptr, cues, changed));
+  TEST_ASSERT_EQUAL_INT(0, f.cues(4800, false, cues, changed));
 }
 static void test_external_source_holds_without_repeating_reveal() {
   auto e = std::make_unique<Engine>();
@@ -176,7 +175,7 @@ static void test_external_source_holds_without_repeating_reveal() {
   e->setFacts(f);
   e->step(0);
   Request req;
-  req.anim = Anim::kTaskComplete;
+  req.anim = SceneState::kTaskComplete;
   req.outcome = Outcome::kSuccess;
   req.hasId = true;
   req.id = "held";
@@ -222,7 +221,7 @@ static void test_interrupted_alert_signals_exactly_once() {
       };
       run(after);
       Request mic;
-      mic.anim = Anim::kListening;
+      mic.anim = SceneState::kListening;
       mic.hasId = true;
       mic.id = "mic";
       if (timeout)
@@ -285,7 +284,7 @@ static void test_face_and_props_move_without_jumps() {
   for (uint32_t t = 16; t <= 3200; t += 16) {
     if (t == 160 || t == 1600) {
       Request mic;
-      mic.anim = Anim::kListening;
+      mic.anim = SceneState::kListening;
       mic.hasId = true;
       mic.id = "mic" + std::to_string(t);
       mic.stop = t == 1600;
@@ -342,9 +341,8 @@ static void test_each_cue_carries_its_own_duck() {
       s.look = SceneState::kNeedsYou;
       f.sync(s, c, t);
     }
-    f.step(t, rng, 1);
-    const SceneShow show = f.show(t, 0, false, 0);
-    int n = f.cues(&show, cues, changed);
+    f.step(t, rng);
+    int n = f.cues(t, true, cues, changed);
     for (int i = 0; i < n; ++i) {
       if (t < 9600) {
         TEST_ASSERT_TRUE(cues[i].duck);
@@ -365,14 +363,14 @@ static void test_pick_is_pure_and_started_commits_it() {
   GelFace f;
   f.reset(0, rng);
   const uint32_t before = f.engine().random.state;
-  const uint8_t first = f.pick(Anim::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng);
+  const uint8_t first = f.pick(SceneState::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng);
   TEST_ASSERT_EQUAL_UINT8(first,
-                          f.pick(Anim::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng));
+                          f.pick(SceneState::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng));
   TEST_ASSERT_EQUAL_UINT32(before, f.engine().random.state);
-  f.started(Anim::kTaskComplete, Mood::kGrumpy, first, Outcome::kSuccess, StartCtx::kNone);
+  f.started(SceneState::kTaskComplete, Mood::kGrumpy, first, Outcome::kSuccess, StartCtx::kNone);
   TEST_ASSERT_TRUE(f.engine().random.state != before);
   // The shuffle bag never repeats a take straight away.
-  TEST_ASSERT_TRUE(first != f.pick(Anim::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng));
+  TEST_ASSERT_TRUE(first != f.pick(SceneState::kTaskComplete, Mood::kGrumpy, 0, Outcome::kSuccess, StartCtx::kNone, rng));
 }
 // After a reset the engine draws from the reference traces'
 // seed, so the board and the simulator choose alike; a board's power-on
@@ -475,10 +473,10 @@ static void test_tracked_clear_matches_full_clear() {
     f.attention.on = SceneState(state) == SceneState::kNeedsYou;
     e->setFacts(f);
     Request r;
-    r.anim = animFromName(stateName(SceneState(state)));
+    r.anim = reactionFromName(stateName(SceneState(state)));
     r.hasId = true;
     r.id = std::to_string(state);
-    if (r.anim != Anim::kNone) e->oneShot(r);
+    if (r.anim != SceneState::kNone) e->oneShot(r);
     e->setMood(state % slime::kProfiles);
     e->step(state * 1600 + 1504);
     full.invalidate();
@@ -614,12 +612,12 @@ static void test_kept_cards_and_lanes_match_a_fresh_frame() {
       f.attention = {};
       e->setFacts(f);
       Request r;
-      r.anim = Anim::kTaskComplete, r.hasId = true, r.id = "9", r.outcome = Outcome::kSuccess, r.hold = true;
+      r.anim = SceneState::kTaskComplete, r.hasId = true, r.id = "9", r.outcome = Outcome::kSuccess, r.hold = true;
       e->oneShot(r);
     } else if (i == 260) {
       e->clearTransient();
       Request r;
-      r.anim = Anim::kStarting, r.hasId = true, r.id = "10", r.hold = true;
+      r.anim = SceneState::kStarting, r.hasId = true, r.id = "10", r.hold = true;
       e->oneShot(r);
     }
     e->step(t += 33);

@@ -27,7 +27,7 @@ linkkit::Ble ble;
 app::Device* device = nullptr;
 linkkit::Kit* kit = nullptr;
 
-// Lines are handled for at most this long before the next frame is drawn.
+// Messages are handled for at most this long before the next frame is drawn.
 constexpr uint32_t kLinesUs = 8000;
 #ifdef BOOP_GEL_PROFILE
 // The board's frame timings, printed once a second with the face's own.
@@ -101,8 +101,8 @@ void setup() {
 }
 
 void loop() {
-  // Every line waiting, then one frame. Drawing between lines (up to 31 ms a
-  // frame) let a burst overflow the 2 KB receive buffers and lose lines. A
+  // Every message waiting, then one frame. Drawing between messages (up to 31 ms a
+  // frame) let a burst overflow the 2 KB receive buffers and lose messages. A
   // debug message ends the batch, since tests order it against ticks; each
   // reply still reflects every message before it.
   bool busy = false, debug = false;

@@ -19,7 +19,7 @@ constexpr int kI2cScl = 14;
 constexpr int kTouchIrq = 38;   // low while there's a touch to report
 constexpr int kTouchReset = 9;  // low is reset
 
-// The microSD slot, on SPI3: the voice pack (board/card.cpp).
+// The microSD slot, on SPI3: the voice file (board/card.cpp).
 constexpr int kCardSpiBus = 1;  // HSPI in Arduino's S3 numbering: SPI3, as SPI2 is the screen's
 constexpr int kCardSclk = 2;
 constexpr int kCardMiso = 3;

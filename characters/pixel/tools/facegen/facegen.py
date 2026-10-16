@@ -7,11 +7,17 @@ bank's own generator (bank.mjs, beside this) to write every design's SVG into
 build/, which git ignores, and lists the designs in design/manifest.json. It
 reads each SVG as rectangles and step-wise timings and writes
 the Pixel pack's characters/pixel/firmware/include/faces.h, plus the frames the firmware test checks the device's
-player against (internal/firmware/test/test_scene/frames.h), and the Pixel
+player against (the pack's tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
 faces the Mac's popover shows, and each design's loop length and host fact
 for the Mac, which faces.h has too, so both sides time a moment's loops
 alike.
+
+The bank draws 13 moods; a pack has every universal mood (its
+character.json's). Until the rest have art, each wears one of the 13's
+designs, as the pack's temporary table, characters/pixel/tools/borrowed.json,
+says: faces.h names every mood and the drawn mood it wears, which point
+at the same designs, and faces.json gives each mood its drawn mood's.
 
 The bank's SVGs come in three dialects: V2, the first pack's (`boop-motion`,
 and needs you's `alert-motion`); V3, the older moods' newer states
@@ -52,8 +58,10 @@ MANIFEST = DESIGN / "manifest.json"
 BUILD = HERE / "build"  # the bank's SVGs, made afresh each run (ignored by git)
 BANK = REPO / "characters" / "pixel" / "design" / "boop-sound-bank-v4"
 OUT = REPO / "characters" / "pixel" / "firmware" / "include" / "faces.h"
-FRAMES = REPO / "internal" / "firmware" / "test" / "test_scene" / "frames.h"
+FRAMES = REPO / "characters" / "pixel" / "tests" / "firmware" / "test_scene" / "frames.h"
 FACES_JSON = REPO / "characters" / "pixel" / "mac" / "faces.json"
+PACK = REPO / "characters" / "pixel" / "character.json"
+BORROWED = HERE.parent / "borrowed.json"  # TEMPORARY: see its "why"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 NS = "{http://www.w3.org/2000/svg}"
 W, H = 320, 240
@@ -67,6 +75,11 @@ MOODS = ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad",
 STATES = ["idle", "working", "needs_you", "task_complete", "asleep", "no_app", "listening",
           "starting", "planning", "terminal", "tool_use", "searching", "analyzing", "testing",
           "delegating", "helper_return", "waiting", "reply_ready", "error", "stopped", "poked", "tap_spam"]
+# Every mood the pack has, in its order, and the drawn mood whose designs
+# each wears: itself, or the one the temporary table lends it.
+NAMES = [m["id"] for m in json.loads(PACK.read_text())["moods"]]
+WEARS = {name: json.loads(BORROWED.read_text())["borrows"].get(name, name) for name in NAMES}
+assert set(MOODS) <= set(NAMES) and set(WEARS.values()) <= set(MOODS), "every mood wears a drawn one"
 # The host fact a design is for, as faces.h numbers it (render::Outcome,
 # render::StartCtx): task_complete's outcome and starting's context; none for any.
 OUTCOMES = [None, "success", "failure"]
@@ -922,10 +935,16 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         f"constexpr int kMaxGroups = {max_groups};",
         f"constexpr int kSceneCount = {len(scenes)};",
         "",
-        "// The moods the designs draw, by name (render::pixelIndex looks the pack's",
-        "// moods up here), and the states in render::SceneState's order.",
+        "// The moods the designs draw, and the states in render::SceneState's order.",
         f"constexpr int kMoodCount = {len(MOODS)};",
         f"constexpr const char* kMoodNames[{len(MOODS)}] = {{" + ", ".join(f'"{m}"' for m in MOODS) + "};",
+        "// Every mood the pack has, by name (render::pixelIndex looks the pack's",
+        "// moods up here), and the drawn mood (kMoodNames) whose designs it wears.",
+        "// TEMPORARY: a mood the bank doesn't draw yet borrows one, by",
+        "// characters/pixel/tools/borrowed.json.",
+        f"constexpr int kNameCount = {len(NAMES)};",
+        f"constexpr const char* kNames[{len(NAMES)}] = {{" + ", ".join(f'"{m}"' for m in NAMES) + "};",
+        f"constexpr uint8_t kWears[{len(NAMES)}] = {{" + ", ".join(str(MOODS.index(WEARS[m])) for m in NAMES) + "};",
         f"constexpr int kStateCount = {len(STATES)};",
         f"constexpr const char* kStateNames[{len(STATES)}] = {{" + ", ".join(f'"{s}"' for s in STATES) + "};",
         f"constexpr int kMaxVariants = {maxv};",
@@ -1042,7 +1061,11 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
     `colors`, `faces`), and each mood, state and variation's loop length,
     voice window and host fact (`designs`): the numbers faces.h and sfx.h
     give the device."""
-    box, colors, faces = tile_faces(scenes, table)
+    box, colors, drawn = tile_faces(scenes, table)
+    # Each mood's tiles are its drawn mood's; asleep is happy's alone.
+    faces = {f"{name}/{key.split('/')[1]}": drawn[key] for name in NAMES for key in drawn
+             if key.split("/")[0] == WEARS[name] and not key.endswith("/asleep")}
+    faces["happy/asleep"] = drawn["happy/asleep"]
 
     def design(m: int, st: int, v: int) -> dict:
         o, c, w = meta[(m, st, v)]
@@ -1054,10 +1077,10 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
         return d
 
     data = {
-        "moods": MOODS,
+        "moods": NAMES,
         "states": STATES,
-        "designs": {mood: [[design(m, st, v) for v in range(counts[(m, st)])] for st in range(len(STATES))]
-                    for m, mood in enumerate(MOODS)},
+        "designs": {name: [[design(m, st, v) for v in range(counts[(m, st)])] for st in range(len(STATES))]
+                    for name in NAMES for m in [MOODS.index(WEARS[name])]},
         "box": list(box),
         "colors": colors,
         "faces": {k: {"open": o, "shut": s} for k, (o, s) in faces.items()},

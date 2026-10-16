@@ -377,18 +377,18 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Engaged. Boop is in the flow, following steady work. At ease: nothing
+has failed.
+Its faces lean engaged; a failure gets a determined face.
+Says work: a word or grunt.
+Stays engaged while the work goes on, through routine finishes.
+Leaves for determined when a very long turn works on, a check fails or
+the person sounds frustrated; proud when a check passes after failing
+or a long turn's hard work is done; happy at kind words to Boop;
+curious at a poke; annoyed at a failed turn; excited when a very long
+turn finishes done; sad when a very long turn fails, the agent gives
+up or the person shares sad news. Once Boop has been engaged for 5
+min, fades to calm at anything but work going on.
 
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
@@ -401,9 +401,9 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
-Boop has been happy for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:03, Wednesday)
 claude started turn 3 on "landing".
@@ -421,11 +421,11 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 just now: claude started turn 3 on "landing".
   You asked: "what does the retry helper do?"
-Boop has been happy for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:03, Wednesday)
 claude finished turn 3 on "landing": done, a short turn, no tool calls.
@@ -535,16 +535,17 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Excited. Boop is thrilled: a big win just happened.
-Its faces lean excited; a failure gets a determined face.
-Says start in a word at a start, and glad in a phrase at a big
-win.
-Stays excited through more wins and thanks.
-Leaves for proud when a check passes after failing; determined at a
-failed check or when the person sounds frustrated; grumpy when a turn
-finishes failed; sad when a very long turn fails, the agent gives up
-or the person shares sad news. Fades to happy once Boop has been
-excited for 5 min.
+Curious. Boop is intrigued: a poke, or something new said to it.
+Its faces lean curious; a win gets a happy face, a failure annoyed.
+Says looking in a sound at questions and anything new, tickled at
+pokes.
+Leaves for happy at a win or kind words to Boop; excited when a very
+long turn finishes done or the person thanks the agent; engaged while
+a turn works on; determined when the person sounds frustrated; annoyed
+at a failed check or turn, or 2 pokes in a row; sad when a very long
+turn fails, the agent gives up or the person shares sad news; wounded
+at rude words to Boop. Fades to calm once Boop has been curious for 2
+min.
 
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
@@ -557,15 +558,15 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 2 min ago: claude started turn 3 on "landing".
   You asked: "what does the retry helper do?"
 1 min ago: claude finished turn 3 on "landing": done, a short turn, no tool calls.
   Its last message: "It retries a request up to three times with a growing delay."
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
-Boop has been excited for 1 min.
+Boop has been curious for 1 min.
 
 NOW (14:05, Wednesday)
 claude started turn 4 on "landing".
@@ -583,17 +584,17 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 2 min ago: claude started turn 3 on "landing".
   You asked: "what does the retry helper do?"
 1 min ago: claude finished turn 3 on "landing": done, a short turn, no tool calls.
   Its last message: "It retries a request up to three times with a growing delay."
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
 just now: claude started turn 4 on "landing".
   You asked: "bump the version to 1.4.0"
-Boop has been excited for 1 min.
+Boop has been curious for 1 min.
 
 NOW (14:05, Wednesday)
 claude finished turn 4 on "landing": done, a short turn, no tool calls.
@@ -703,17 +704,18 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Proud. Boop is pleased with itself: something hard-won worked.
-Its faces lean proud, a little smug; a failure gets a determined face,
-but the pride holds. A turn ending just after its fix is no new win.
-Says done at a win, glad in a phrase at a big one, glad in a sound
-at kind words.
-Stays proud through routine turns and a failed check.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; determined when the person sounds frustrated;
-annoyed at 2 pokes in a row; grumpy when a turn finishes failed; sad
-when a very long turn fails or the person shares sad news; wounded at
-rude words to Boop. Fades to happy once Boop has been proud for 5 min.
+Engaged. Boop is in the flow, following steady work. At ease: nothing
+has failed.
+Its faces lean engaged; a failure gets a determined face.
+Says work: a word or grunt.
+Stays engaged while the work goes on, through routine finishes.
+Leaves for determined when a very long turn works on, a check fails or
+the person sounds frustrated; proud when a check passes after failing
+or a long turn's hard work is done; happy at kind words to Boop;
+curious at a poke; annoyed at a failed turn; excited when a very long
+turn finishes done; sad when a very long turn fails, the agent gives
+up or the person shares sad news. Once Boop has been engaged for 5
+min, fades to calm at anything but work going on.
 
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
@@ -726,21 +728,21 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 5 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 4 min ago: claude started turn 3 on "landing".
   You asked: "what does the retry helper do?"
 3 min ago: claude finished turn 3 on "landing": done, a short turn, no tool calls.
   Its last message: "It retries a request up to three times with a growing delay."
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
 2 min ago: claude started turn 4 on "landing".
   You asked: "bump the version to 1.4.0"
 1 min ago: claude finished turn 4 on "landing": done, a short turn, no tool calls.
   Its last message: "Bumped the version to 1.4.0."
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Complete".
-Boop has been proud for 1 min.
+Boop has been engaged for 1 min.
 
 NOW (14:07, Wednesday)
 claude started turn 5 on "landing".
@@ -758,23 +760,23 @@ HISTORY (oldest first; indented lines add to the line above)
   You asked: "add a test for fetchUser"
 5 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
   Its last message: "Added a test for fetchUser; the tests pass."
-  Boop's mood changed: curious → happy.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Validate".
 4 min ago: claude started turn 3 on "landing".
   You asked: "what does the retry helper do?"
 4 min ago: claude finished turn 3 on "landing": done, a short turn, no tool calls.
   Its last message: "It retries a request up to three times with a growing delay."
-  Boop's mood changed: happy → excited.
+  Boop's mood changed: engaged → curious.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
 2 min ago: claude started turn 4 on "landing".
   You asked: "bump the version to 1.4.0"
 2 min ago: claude finished turn 4 on "landing": done, a short turn, no tool calls.
   Its last message: "Bumped the version to 1.4.0."
-  Boop's mood changed: excited → proud.
+  Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Mm-hm Complete".
 just now: claude started turn 5 on "landing".
   You asked: "update the changelog"
-Boop has been proud for 2 min.
+Boop has been engaged for 2 min.
 
 NOW (14:07, Wednesday)
 claude finished turn 5 on "landing": done, a short turn, no tool calls.

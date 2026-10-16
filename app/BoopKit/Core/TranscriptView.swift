@@ -27,9 +27,6 @@ public struct ViewEvent: Equatable, Sendable {
     /// Whether it wakes the brain: its kind's `wake`, a brain, and nothing
     /// holding it back when it came.
     public var wakesBrain: Bool
-    /// Its kind's `wake`: a finished turn 1, what
-    /// you said 2, the rest 0.
-    public var passPriority = 0
     /// The thread it's about, as the view keys threads; nil for pokes,
     /// what you said and idle heartbeats.
     public var about: String?
@@ -63,21 +60,16 @@ public struct ViewEvent: Equatable, Sendable {
 /// is a function of the log up to its event: the agents' lines need each
 /// thread's turn so far (which turn, how long, its tool calls, failure
 /// runs), which a fold of the log keeps (`Fold`), caught up to whatever
-/// event it's asked about, so its answer depends on the log alone. The
-/// rest look back at the log. Touched only on the runtime's queue.
+/// event it's asked about, so its answer depends on the log alone. Its
+/// sessions are agent-hooks' `SessionTracker`, as the core's are, fed the
+/// same events and run to the same times, so the two agree; the fold adds
+/// only what each turn did. The rest look back at the log. Touched only on
+/// the runtime's queue.
 public final class TranscriptView {
-    /// One agent session, as the lines name it: its `Turn`, as the core
-    /// keeps it too, and what the turn did.
-    struct Thread {
-        var agent: Agent
-        var id: String
-        var project = "unknown"
-        var workspace: String?
-        let order: Int
-        var lastEventAt: Int64
-        /// Turns started since the fold first saw the thread.
-        var turns = 0
-        var turn = Turn()
+    /// What a thread's turn did, which the session table doesn't keep:
+    /// its tool calls, topics and checks, and each check's failures in a
+    /// row.
+    struct Counts {
         /// This turn's tool calls, and how many failed.
         var tools = 0
         var toolsFailed = 0
@@ -90,22 +82,39 @@ public final class TranscriptView {
         var check: (topic: String, failed: Bool)?
         /// Failures in a row of each check topic, across turns.
         var failRuns: [String: Int] = [:]
-        /// "Needs you" shows for it (the core's `needs_you` events), and
-        /// whether its last event asked for you: silent for the safety
-        /// net's 10 minutes after that, it isn't working.
-        var waiting = false
-        var asked = false
+    }
+
+    /// A thread as the lines name it: its session's agent, project and
+    /// workspace, and the turn it's on.
+    struct Thread {
+        var agent: Agent
+        var id: String
+        var project = "unknown"
+        var workspace: String?
+        var turn = 0
 
         var name: String { workspace ?? project }
-        var key: String { SessionFold.key(agent, id) }
+
+        init(_ s: SessionTracker.Session) {
+            self.init(agent: s.agent, id: s.id)
+            project = s.project
+            workspace = s.workspace
+            turn = s.turn.number
+        }
+
+        /// A session the fold doesn't hold.
+        init(agent: Agent, id: String) {
+            self.agent = agent
+            self.id = id
+        }
     }
 
     /// Everything the lines need from the log so far, folded in order:
     /// a cache of a function of the log, never saved.
     struct Fold {
-        var threads: [String: Thread] = [:]
-        /// Which sessions ended, and the order threads were first seen in.
-        var sessions = SessionFold()
+        /// The sessions, and what each one's turn did.
+        var sessions: SessionTracker
+        var counts: [String: Counts] = [:]
         /// The run of pokes going on.
         var pokes: [Int64] = []
         /// The away you haven't come back from: its
@@ -117,13 +126,15 @@ public final class TranscriptView {
         var heartbeats = 0
         /// The last event folded.
         var at = 0
+
+        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place) }
     }
 
     /// The personality's settings: how often the working heartbeat comes
     /// and which tool uses wake the brain.
     public private(set) var rules: Personality.Rules
     let place: (String) -> Place
-    var fold = Fold()
+    var fold: Fold
     /// How many times the fold started over, asked about an event it had
     /// already folded (tests): never in the loop, whose transforms come in
     /// order, and a start over would miss what has aged out of memory.
@@ -141,6 +152,7 @@ public final class TranscriptView {
                 place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
         self.rules = rules
         self.place = place
+        fold = Fold(place: place)
         rng = SplitMix64(seed: seed)
     }
 
@@ -181,18 +193,19 @@ public final class TranscriptView {
     /// The kinds with lines that never wake the brain.
     public static let quiet = ["presence_start", "needs_you_start"]
 
-    /// Registers Boop's lines, wakes, holds and heartbeats on `h`.
+    /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
+    /// a harness its runtime let go of may still tick once, and does nothing.
     /// `needsYou` says why nothing but what you said may wake the brain now
     /// (something needs you), or nil.
     public func register(on h: Harness, needsYou: @escaping () -> String?) {
         for (kind, wake) in Self.wakes {
-            h.input(kind, wake: wake) { [unowned self] e, log in line(e, log) }
-            h.hold(kind) { [unowned self] e, log in hold(e, log, needsYou: needsYou) }
+            h.input(kind, wake: wake) { [weak self] e, log in self?.line(e, log) }
+            h.hold(kind) { [weak self] e, log in self?.hold(e, log, needsYou: needsYou) }
         }
         for kind in Self.quiet {
-            h.input(kind) { [unowned self] e, log in line(e, log) }
+            h.input(kind) { [weak self] e, log in self?.line(e, log) }
         }
-        h.tick { [unowned self] now, log in heartbeat(at: now, log) }
+        h.tick { [weak self] now, log in self?.heartbeat(at: now, log) }
     }
 
     /// Why `e` may not wake the brain now, or nil if it may:
@@ -227,7 +240,7 @@ public final class TranscriptView {
     /// hasn't: all of them from the start again if it's past there.
     func catchUp(before seq: Int, _ log: LogView) {
         if fold.at >= seq {
-            fold = Fold()
+            fold = Fold(place: place)
             refolds += 1
         }
         for e in log.events(after: fold.at) where e.seq < seq { _ = take(e) }
@@ -242,229 +255,188 @@ public final class TranscriptView {
     /// folded in.
     public func line(_ e: Event, _ log: LogView) -> Line? {
         catchUp(before: e.seq, log)
-        return take(e)?.line
+        return take(e)
     }
 
-    /// What folding an event made: its line, the events it came from and
-    /// the thread it's about.
-    struct Made {
-        var line: Line
-        var from: [Int]
-        var about: String?
-    }
-
-    /// Folds one event and returns what it made, if it has a line.
-    func take(_ e: Event) -> Made? {
+    /// Folds one event and returns its line, if it has one. The sessions'
+    /// timers run to every event's time first, as the core's replay runs
+    /// them.
+    func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
+        if let a = AgentEvent(e) { return agentEvent(a) }
+        advance(to: e.at)
         switch e.type {
-        case .session?, .turn?, .tool?, .subagent?: return agentEvent(e)
+        case .session?, .turn?, .tool?, .subagent?: return nil
         case .poke?: return poke(e)
         case .talk?: return talk(e)
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)
-        case nil: return nil
+        case .listen?, nil: return nil
         }
     }
 
     // MARK: Agents
 
-    func agentEvent(_ e: Event) -> Made? {
-        // The session bookkeeping is agent-hooks', as the core's is:
-        // it reads the event as agent-hooks has it.
-        guard let a = AgentEvent(e), let agent = e.agent, let session = e.session else { return nil }
-        let step = SessionFold.step(a)
-        let now = e.ts
-        let key = SessionFold.key(agent, session)
-        // Threads silent for a day are let go, as the core lets their
-        // sessions go: one that comes back starts again from turn 0.
-        for (k, t) in fold.threads where SessionFold.forgotten(t.lastEventAt, at: now) { fold.threads[k] = nil }
-        fold.sessions.forgetEnds(at: now)
-        guard fold.sessions.admits(a, step, key: key, known: fold.threads[key] != nil) else { return nil }
-        var t = fold.threads[key] ?? newThread(agent, session, now)
-        if t.turn.isStaleNotice(a, step) { return nil }
-        if let cwd = e.cwd, !t.waiting {
-            let place = self.place(cwd)
-            if place.project != "unknown" {
-                t.project = place.project
-                t.workspace = place.workspace
-            }
+    /// Runs the sessions' timers due by `now` (`sparing`'s Codex request
+    /// isn't shown: its event comes first), and lets go of what the turns
+    /// of the sessions they forgot did.
+    func advance(to now: Int64, sparing: String? = nil) {
+        fold.sessions.advance(to: now, sparing: sparing)
+        if fold.counts.keys.contains(where: { fold.sessions.sessions[$0] == nil }) {
+            fold.counts = fold.counts.filter { fold.sessions.sessions[$0.key] != nil }
         }
+    }
+
+    func agentEvent(_ a: AgentEvent) -> Line? {
+        let step = SessionFold.step(a)
+        let now = a.at
+        let key = a.key
+        advance(to: now, sparing: key)
+        let before = fold.sessions.sessions[key]
+        // A hook that landed after its session ended, or a stale idle
+        // notice, doesn't count.
+        guard let change = fold.sessions.handle(a) else { return nil }
         noteActivity(now)
+        guard let s = fold.sessions.sessions[key] else {
+            fold.counts[key] = nil
+            return nil
+        }
         // A request, and a subagent's start, end or its own turn-level
         // hook, don't move the thread's turn; only the rules care.
-        if step == .needsYou {
-            t.lastEventAt = now
-            t.asked = true
-            fold.threads[key] = t
-            return nil
-        }
-        if SessionFold.subagentsOwn(a, step) {
-            fold.threads[key] = t
-            return nil
-        }
-        t.lastEventAt = now
-        t.asked = false
+        if step == .needsYou || SessionFold.subagentsOwn(a, step) { return nil }
+        let t = Thread(s)
+        var c = fold.counts[key] ?? Counts()
+        defer { fold.counts[key] = c }
 
         switch step {
         case .turnStart:
-            t.turn.prompted(at: now)
-            t.topic = nil
-            t.turns += 1
-            resetCounts(&t)
-            fold.threads[key] = t
-            let prompt = e["prompt"]?.string
-            return made(e, Line(EventLine.turnStart(agent: agent.rawValue, turn: t.turns, thread: threadLine(t)),
-                                notes: prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
-                                facts: ["thread": threadFacts(t), "prompt": .of(prompt)]), about: key)
+            c.topic = nil
+            resetCounts(&c)
+            return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
+                        notes: a.prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
+                        facts: ["thread": threadFacts(t), "prompt": .of(a.prompt)])
         case .activity:
-            let tool = e["tool"]?.string
-            let done = e.phase == .end && tool != nil
-            var topic = e["topic"]?.string
-            var late = false
+            var topic = a.topic
             var line: Line?
-            if done {
+            if case .callEnded = change {
                 // A result may come without its call's topic: it's the
                 // `PreToolUse`'s. One that landed after its turn ended
                 // counts, but the turn stays over.
-                let started: ToolStart?
-                (started, late) = t.turn.callEnded(a)
+                let started = before?.turn.callStart(for: a)
                 if topic == nil { topic = started?.topic }
-                line = toolDone(&t, e, tool: tool, topic: topic, started: started?.at)
-            } else if tool != nil {
-                t.turn.callStarted(a)
+                line = toolDone(&c, t, a, topic: topic, started: started?.at)
             }
             // A turn a call opens has counts of its own.
-            if !late && t.turn.openTurn(a) { resetCounts(&t) }
-            if let topic { t.topic = topic }
-            if let topic, let failed = e["failed"]?.bool, TranscriptView.checks.contains(topic) { t.check = (topic, failed) }
-            fold.threads[key] = t
-            return line.map { made(e, $0, about: key) }
+            if before?.turn.startedAt == nil, s.turn.startedAt != nil { resetCounts(&c) }
+            if let topic { c.topic = topic }
+            if let topic, let failed = a.failed, TranscriptView.checks.contains(topic) { c.check = (topic, failed) }
+            return line
         case .turnEnd, .turnFailed, .turnStopped:
             // A finish with no turn open (a second `Stop`, one after the
             // turn stopped, or the first Boop hears from a session)
             // finishes nothing the fold saw.
-            guard let started = t.turn.endTurn(at: now) else {
-                fold.threads[key] = t
-                return nil
-            }
-            let check = t.check
-            t.check = nil
-            fold.threads[key] = t
+            guard case .turnEnded(_, endedTurn: true) = change, let started = before?.turn.startedAt else { return nil }
+            let check = c.check
+            c.check = nil
             // A turn the fold joined partway (it never saw a prompt) isn't
             // told: it can't say how long it ran or what it did.
-            guard t.turns > 0 else { return nil }
+            guard t.turn > 0 else { return nil }
             let outcome: String
             switch step {
             case .turnFailed: outcome = "failed"
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
-            return made(e, turnEnded(t, e, outcome: outcome, error: step == .turnFailed ? e["error"]?.string : nil,
-                                     message: step == .turnEnd ? e["message"]?.string : nil, lengthMs: max(0, now - started)),
-                        about: key)
-        case .sessionEnd:
-            fold.threads[key] = nil
-            fold.sessions.end(key, at: now)
-            return nil
-        case .sessionStart:
-            fold.threads[key] = t
-            return nil
-        case .needsYou, .subagentStart, .subagentEnd:
+            return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
+                             message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
+        case .sessionStart, .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
             return nil
         }
-    }
-
-    func made(_ e: Event, _ line: Line, from: [Int]? = nil, about: String? = nil) -> Made {
-        Made(line: line, from: from ?? [e.seq], about: about)
-    }
-
-    func newThread(_ agent: Agent, _ id: String, _ now: Int64) -> Thread {
-        Thread(agent: agent, id: id, order: fold.sessions.takeOrder(), lastEventAt: now)
     }
 
     /// A turn starting, with a prompt or opened by a call: what it did
     /// starts from nothing, so a check from before it, such as a
     /// background helper's after the last `Stop`, isn't its outcome.
-    func resetCounts(_ t: inout Thread) {
-        t.tools = 0
-        t.toolsFailed = 0
-        t.topicStates = []
-        t.comeback = nil
-        t.check = nil
+    func resetCounts(_ c: inout Counts) {
+        c.tools = 0
+        c.toolsFailed = 0
+        c.topicStates = []
+        c.comeback = nil
+        c.check = nil
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
     /// notable, or for every one with `tool_uses: all`.
-    func toolDone(_ t: inout Thread, _ e: Event, tool: String?, topic: String?, started: Int64?) -> Line? {
-        let failed = e["failed"]?.bool
-        let tookMs = started.map { max(0, e.ts - $0) }
-        t.tools += 1
-        if failed == true { t.toolsFailed += 1 }
+    func toolDone(_ c: inout Counts, _ t: Thread, _ a: AgentEvent, topic: String?, started: Int64?) -> Line? {
+        let failed = a.failed
+        let tookMs = started.map { max(0, a.at - $0) }
+        c.tools += 1
+        if failed == true { c.toolsFailed += 1 }
 
         var failedBefore = 0
         var notable = false
         if let topic {
             if TranscriptView.checks.contains(topic), let failed {
-                failedBefore = t.failRuns[topic] ?? 0
+                failedBefore = c.failRuns[topic] ?? 0
                 if failed {
-                    t.failRuns[topic] = failedBefore + 1
+                    c.failRuns[topic] = failedBefore + 1
                     notable = true
                 } else {
-                    t.failRuns[topic] = 0
+                    c.failRuns[topic] = 0
                     if failedBefore > 0 {
                         notable = true
-                        t.comeback = topic
+                        c.comeback = topic
                     }
                 }
-                setTopic(&t, topic, failed ? "failing" : "passing")
+                setTopic(&c, topic, failed ? "failing" : "passing")
             } else if topic == "docs" {
-                setTopic(&t, topic, "edited")
+                setTopic(&c, topic, "edited")
             }
         }
-        guard TranscriptView.keeps(e.type, e.phase, notable: notable, allToolEnds: rules.toolUses == .all) else { return nil }
-        let category = EventLine.category(ToolKind.of(tool))
+        guard TranscriptView.keeps(.tool, .end, notable: notable, allToolEnds: rules.toolUses == .all) else { return nil }
+        let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
         let text = notable
             ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!)
             : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
-            "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(tool),
-            "tool_use_id": .of(e["tool_use_id"]?.string), "topic": .of(topic), "result": .string(result),
-            "error": .of(e["error"]?.string), "failed_before": .int(Int64(failedBefore)),
+            "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
+            "tool_use_id": .of(a.toolUseID), "topic": .of(topic), "result": .string(result),
+            "error": .of(a.error), "failed_before": .int(Int64(failedBefore)),
         ]
         if let tookMs {
             facts["took"] = .string(Band.length(ms: tookMs))
             facts["took_ms"] = .int(tookMs)
         }
-        if e.subagent != nil, let type = e["agent_type"]?.string { facts["subagent"] = .string(type) }
+        if a.subagent != nil, let type = a.subagentType { facts["subagent"] = .string(type) }
         return Line(text, facts: facts)
     }
 
-    func setTopic(_ t: inout Thread, _ topic: String, _ state: String) {
-        if let i = t.topicStates.firstIndex(where: { $0.topic == topic }) {
-            t.topicStates[i].state = state
+    func setTopic(_ c: inout Counts, _ topic: String, _ state: String) {
+        if let i = c.topicStates.firstIndex(where: { $0.topic == topic }) {
+            c.topicStates[i].state = state
         } else {
-            t.topicStates.append((topic, state))
+            c.topicStates.append((topic, state))
         }
     }
 
-    func turnEnded(_ t: Thread, _ e: Event, outcome: String, error: String?, message: String?, lengthMs: Int64) -> Line {
+    func turnEnded(_ t: Thread, _ c: Counts, outcome: String, error: String?, message: String?, lengthMs: Int64) -> Line {
         var topicFacts: [String: JSONValue] = [:]
-        for (topic, state) in t.topicStates { topicFacts[topic] = .string(state) }
-        let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turns, thread: threadLine(t), outcome: outcome,
-                                     lengthMs: lengthMs, tools: t.tools)
+        for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
+        let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
+                                     lengthMs: lengthMs, tools: c.tools)
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
-                            "tools": .int(Int64(t.tools)), "tools_failed": .int(Int64(t.toolsFailed)),
-                            "topics": .object(topicFacts), "comeback": .of(t.comeback), "message": .of(message)])
+                            "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
+                            "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
 
     /// The thread's facts.
     func threadFacts(_ t: Thread) -> JSONValue {
         [
-            "name": .string(t.name), "agent": .string(t.agent.rawValue), "turn": .int(Int64(t.turns)),
+            "name": .string(t.name), "agent": .string(t.agent.rawValue), "turn": .int(Int64(t.turn)),
             "project": .string(t.project), "workspace": .of(t.workspace), "session": .string(t.id),
         ]
     }
@@ -480,15 +452,14 @@ public final class TranscriptView {
 
     /// A poke, with how many came in a row: each within `inARowMs` of the
     /// one before.
-    func poke(_ e: Event) -> Made {
-        let now = e.ts
+    func poke(_ e: Event) -> Line {
+        let now = e.at
         noteActivity(now)
         if let last = fold.pokes.last, now - last >= Self.inARowMs { fold.pokes.removeAll() }
         fold.pokes.append(now)
         let count = fold.pokes.count
         let seconds = max(1, Int((now - fold.pokes[0] + 999) / 1000))
-        return made(e, Line(EventLine.poke(inARow: count),
-                            facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))]))
+        return Line(EventLine.poke(inARow: count), facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to
@@ -501,28 +472,32 @@ public final class TranscriptView {
     public func pokesAnswered(_ e: Event, _ log: LogView) -> Bool {
         var run: [Event] = [e]
         for p in log.all(Event.kind(.poke, nil)).reversed() where p.seq < e.seq {
-            guard run.last!.ts - p.ts < Self.inARowMs else { break }
+            guard run.last!.at - p.at < Self.inARowMs else { break }
             run.append(p)
         }
         run.reverse()
         // The pokes the run's reactions can answer: from the third in a row.
         let answering = Set(run.dropFirst(Self.answersRunFrom - 1).map(\.seq))
-        guard let reaction = log.lastDid(ReactAction.actionName, where: {
+        guard let reaction = log.lastDid(ReactOutput.outputName, where: {
             $0["open"]?.bool == true && $0.about.map(answering.contains) == true
         }) else { return false }
         guard log.ended(reaction.seq) == nil else { return false }
-        return log.count(Event.did, since: reaction) { $0.action == MoodAction.actionName && $0["ok"]?.bool == true } == 0
+        return log.count(Event.did, since: reaction) { $0.action == MoodOutput.outputName && $0["ok"]?.bool == true } == 0
     }
 
     /// Whether `e` ends a run of pokes: anything but another poke of the
-    /// run (within `inARowMs` of the one before), "needs you", or
-    /// MellowHarness's own events. Then the reactions a tap cut short end as
-    /// done: `log` is the log before `e`.
+    /// run (within `inARowMs` of the one before), "needs you",
+    /// push-to-talk's `listen` records, or MellowHarness's own events. Then
+    /// the reactions a tap cut short end as done: `log` is the log before
+    /// `e`.
     public static func stopsThePokes(_ e: Event, _ log: LogView) -> Bool {
-        guard let type = e.type, type != .needsYou else { return false }
+        guard let type = e.type, !passesThePokes.contains(type) else { return false }
         guard type == .poke else { return true }
-        return log.last(Event.kind(.poke, nil)).map { e.ts - $0.ts >= inARowMs } ?? true
+        return log.last(Event.kind(.poke, nil)).map { e.at - $0.at >= inARowMs } ?? true
     }
+
+    /// The core's records that a run of pokes goes on through.
+    static let passesThePokes: Set<Event.Kind> = [.needsYou, .listen]
 
     /// Whether the reaction `did` is one your tap cut short that the pokes
     /// still hold: a poke came after it, and no
@@ -534,11 +509,11 @@ public final class TranscriptView {
     public static func heldByPokes(_ did: Event, _ log: LogView) -> Bool {
         let after = log.events(after: did.seq)
         guard let cut = after.firstIndex(where: { $0.type == .poke }) else { return false }
-        var lastPoke = after[cut].ts
+        var lastPoke = after[cut].at
         for e in after[after.index(after: cut)...] {
-            guard let type = e.type, type != .needsYou else { continue }
-            guard type == .poke, e.ts - lastPoke < inARowMs else { return false }
-            lastPoke = e.ts
+            guard let type = e.type, !passesThePokes.contains(type) else { continue }
+            guard type == .poke, e.at - lastPoke < inARowMs else { return false }
+            lastPoke = e.at
         }
         return true
     }
@@ -547,10 +522,10 @@ public final class TranscriptView {
 
     /// What you said to Boop on push-to-talk. Words
     /// that are only whitespace make no line.
-    func talk(_ e: Event) -> Made? {
+    func talk(_ e: Event) -> Line? {
         guard let words = e["words"]?.string, let line = EventLine.said(words) else { return nil }
-        noteActivity(e.ts)
-        return made(e, Line(line, facts: ["words": .string(words), "by": .string(e.specificType)]))
+        noteActivity(e.at)
+        return Line(line, facts: ["words": .string(words), "by": .string(e.specificType)])
     }
 
     // MARK: Here and away
@@ -565,35 +540,35 @@ public final class TranscriptView {
     /// You stepping away or coming back, as the presence detector decided:
     /// the view only pairs them. A back with no away
     /// before it makes no line.
-    func presence(_ e: Event) -> Made? {
+    func presence(_ e: Event) -> Line? {
         if e.phase == .start {
-            let since = e["since"]?.int ?? e.ts
+            let since = e["since"]?.int ?? e.at
             fold.awaySince = (e.seq, since)
-            return made(e, Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)]))
+            return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
         }
         guard let away = fold.awaySince else { return nil }
         fold.awaySince = nil
-        noteActivity(e.ts)
-        let ms = max(0, e.ts - away.at)
-        return made(e, Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)]),
-                    from: [away.seq, e.seq])
+        noteActivity(e.at)
+        let ms = max(0, e.at - away.at)
+        return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
     }
 
     // MARK: Heartbeats
 
-    /// Whether a thread is working at `now`: a turn open, nothing asked of
-    /// you, and an event within the hour, or within the core's safety net
-    /// if its last event asked for you.
-    func isWorking(_ t: Thread, _ now: Int64) -> Bool {
-        t.turn.startedAt != nil && !t.waiting
-            && now - t.lastEventAt < (t.asked ? SessionFold.safetyNetMs : SessionFold.staleWorkMs)
+    /// The sessions working on a turn at `now`: working, as agent-hooks
+    /// groups them and the core shows them, their timers run to then, with
+    /// a turn open. A background helper working on after the main agent's
+    /// `Stop` is no turn, so no working heartbeat speaks of it.
+    func working(at now: Int64) -> [SessionTracker.Session] {
+        advance(to: now)
+        return fold.sessions.grouped(at: now).working.filter { $0.turn.startedAt != nil }
     }
 
     /// When the oldest turn still working began, or nil: HISTORY reaches
     /// back at least that far.
     public func workingSince(at now: Int64, _ log: LogView) -> Int64? {
         catchUp(log)
-        return fold.threads.values.filter { isWorking($0, now) }.compactMap(\.turn.startedAt).min()
+        return working(at: now).compactMap(\.turn.startedAt).min()
     }
 
     /// A heartbeat, if one is due at `now`, for MellowHarness to
@@ -605,12 +580,12 @@ public final class TranscriptView {
         // Boop started a reaction: the working heartbeat starts its wait
         // again, so it comes after a stretch of work with no reaction,
         // however many events woke the brain in it.
-        if let react = log.lastDid(ReactAction.actionName, where: { $0["open"]?.bool == true }),
+        if let react = log.lastDid(ReactOutput.outputName, where: { $0["open"]?.bool == true }),
            react.seq > reactSeen {
             reactSeen = react.seq
             nextWorkBeatAt = nil
         }
-        let working = fold.threads.values.contains { isWorking($0, now) }
+        let working = !working(at: now).isEmpty
         if working, let gap = rules.workBeatMs {
             guard let due = nextWorkBeatAt else {
                 nextWorkBeatAt = now + Int64(rng.int(in: gap))
@@ -618,50 +593,43 @@ public final class TranscriptView {
             }
             guard now >= due else { return nil }
             nextWorkBeatAt = now + Int64(rng.int(in: gap))
-            return Event(ts: now, source: .clock, type: .heartbeat, specificType: "working")
+            return Event(at: now, source: .clock, type: .heartbeat, specificType: "working")
         }
         nextWorkBeatAt = nil
         guard !working, let last = fold.lastActivityAt, (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else {
             return nil
         }
-        return Event(ts: now, source: .clock, type: .heartbeat, specificType: "idle")
+        return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
     }
 
-    func heartbeat(_ e: Event) -> Made? {
-        let now = e.ts
-        let working = fold.threads.values.filter { isWorking($0, now) }
-        if let t = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
-            let ms = max(0, now - (t.turn.startedAt ?? now))
-            return made(e, Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
-                                facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(t.topic)]),
-                        about: t.key)
+    func heartbeat(_ e: Event) -> Line? {
+        let now = e.at
+        let working = working(at: now)
+        if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
+            let t = Thread(s)
+            let ms = max(0, now - (s.turn.startedAt ?? now))
+            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
+                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(fold.counts[s.key]?.topic)])
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
         guard hours > 0 else { return nil }
         fold.heartbeats = Int(hours)
-        return made(e, Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)]))
+        return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
     }
 
     // MARK: Needs you
 
-    /// "Needs you" showing or clearing (the core's): showing is a line.
-    func needs(_ e: Event) -> Made? {
-        guard let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session else { return nil }
-        let key = SessionFold.key(agent, session)
-        var t = fold.threads[key] ?? newThread(agent, session, e.ts)
-        guard e.phase == .start else {
-            t.waiting = false
-            if fold.threads[key] != nil { fold.threads[key] = t }
-            return nil
-        }
-        t.waiting = true
-        fold.threads[key] = t
+    /// "Needs you" showing (the core's) is a line; its clearing isn't.
+    /// Whether a session waits is the fold's own sessions', not these
+    /// records'.
+    func needs(_ e: Event) -> Line? {
+        guard e.phase == .start, let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)),
+              let session = e.session else { return nil }
+        let t = fold.sessions.sessions[SessionFold.key(agent, session)].map(Thread.init) ?? Thread(agent: agent, id: session)
         // The request's own event is a tool call's wait; "needs you"
         // showing is when it has a line, after Codex's grace.
-        let asked = e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq]
-        return made(e, Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)]),
-                    from: asked, about: key)
+        return Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
     }
 
     // MARK: Reading
@@ -678,17 +646,18 @@ public final class TranscriptView {
         return SessionFold.key(agent, id)
     }
 
-    /// The agent and the name of the thread `key` names, as its lines name
-    /// it: its workspace, else its project.
-    public func who(about key: String, _ log: LogView) -> (agent: String, thread: String)? {
+    /// The thread `key` names: its agent, its name as its agent's app shows
+    /// it once an event brought one, else as its lines name it (its
+    /// workspace, else its project), and where it opens on the Mac.
+    public func who(about key: String, _ log: LogView) -> (agent: String, thread: String, opens: ThreadRef)? {
         catchUp(log)
-        return fold.threads[key].map { ($0.agent.rawValue, $0.name) }
+        return fold.sessions.sessions[key].map { ($0.agent.rawValue, $0.name ?? Thread($0).name, $0.thread) }
     }
 
-    /// The threads as the fold has them, caught up to `log` (tests).
-    func threads(_ log: LogView) -> [String: Thread] {
+    /// The sessions as the fold has them, caught up to `log` (tests).
+    func sessions(_ log: LogView) -> [String: SessionTracker.Session] {
         catchUp(log)
-        return fold.threads
+        return fold.sessions.sessions
     }
 
     /// A `ViewEvent` for `e` and its line, for what an input reports.
@@ -698,8 +667,8 @@ public final class TranscriptView {
         let from = type == .needsYou ? (e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq])
             : type == .presence && e.phase == .end ? [log.last(Event.kind(.presence, .start))?.seq, e.seq].compactMap { $0 }
             : [e.seq]
-        return ViewEvent(id: e.seq, type: shownType, phase: shownPhase, from: from, ts: e.ts, line: line.text, notes: line.notes,
-                         wakesBrain: wakes, passPriority: Self.wakes[e.kind] ?? 0,
+        return ViewEvent(id: e.seq, type: shownType, phase: shownPhase, from: from, ts: e.at, line: line.text, notes: line.notes,
+                         wakesBrain: wakes,
                          about: Self.about(e, facts: line.facts),
                          facts: line.facts)
     }

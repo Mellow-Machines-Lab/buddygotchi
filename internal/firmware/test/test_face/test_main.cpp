@@ -14,7 +14,7 @@
 #include "render/screens.h"
 #include "render/pixel/sign.h"
 #include "voice/player.h"
-#include "pack_file.h"  // internal/firmware/
+#include "voice_file.h"  // internal/firmware/
 
 using namespace render;
 
@@ -56,29 +56,33 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
 
 // The animations, each by its design's state's name, and
 // nothing else: the brain's finish (task_complete, reply_ready), the rules'
-// one-shots (starting, stopped, error, helper_return), a tap's (poked,
+// rules' reactions (starting, stopped, error, helper_return), a tap's (poked,
 // tap_spam) and listening. The older names ("cheer", "wiggle") are gone
-// with the moment message. Each plays its own design, and every design
+// with the reaction message. Each plays its own design, and every design
 // has a loop.
 static void test_every_anim_has_a_name_and_ends() {
-  TEST_ASSERT_EQUAL_INT(10, int(Anim::kCount));  // with kNone
   const char* names[] = {"task_complete", "reply_ready", "starting", "stopped", "error",
                          "helper_return", "poked",       "tap_spam", "listening"};
-  for (int i = 1; i < int(Anim::kCount); ++i) {
-    Anim a = Anim(i);
-    TEST_ASSERT_EQUAL_STRING(names[i - 1], animName(a));
-    TEST_ASSERT_TRUE(animFromName(animName(a)) == a);
-    TEST_ASSERT_EQUAL_STRING(animName(a), stateName(animState(a)));  // its own design
+  int reactions = 0;
+  for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isReaction(SceneState(i));
+  TEST_ASSERT_EQUAL_INT(9, reactions);
+  for (const char* name : names) {
+    const SceneState a = reactionFromName(name);
+    TEST_ASSERT_TRUE_MESSAGE(isReaction(a), name);
+    TEST_ASSERT_EQUAL_STRING(name, stateName(a));  // its own design
   }
-  TEST_ASSERT_TRUE(animFromName("cheer") == Anim::kNone);
-  TEST_ASSERT_TRUE(animFromName("wiggle") == Anim::kNone);
+  TEST_ASSERT_FALSE(isReaction(SceneState::kNone));
+  TEST_ASSERT_EQUAL_STRING("none", stateName(SceneState::kNone));
+  TEST_ASSERT_TRUE(reactionFromName("cheer") == SceneState::kNone);
+  TEST_ASSERT_TRUE(reactionFromName("wiggle") == SceneState::kNone);
+  TEST_ASSERT_TRUE(reactionFromName(nullptr) == SceneState::kNone);
   for (int m = 0; m < render::pixelMoods(); ++m) {
     for (int s = 0; s < int(SceneState::kCount); ++s) TEST_ASSERT_TRUE(loopMs(render::pixelMood(m), SceneState(s)) > 0);
   }
   for (const char* gone : {"dance", "oops", "side_eye", "stretch", "yawn", "zip", "gobble", "rumble", "levelup",
                            "happy", "proud", "smug", "curious", "sleepy", "worried", "sulky", "love", "nod",
                            "thinking", "shrug", "idle", "working", "terminal", "needs_you", "no_app", "none"}) {
-    TEST_ASSERT_TRUE_MESSAGE(animFromName(gone) == Anim::kNone, gone);
+    TEST_ASSERT_TRUE_MESSAGE(reactionFromName(gone) == SceneState::kNone, gone);
   }
 }
 
@@ -92,6 +96,10 @@ static void test_every_mood_has_a_name() {
                          "calm",  "engaged", "annoyed", "irritated", "whiny",      "wounded"};
   TEST_ASSERT_EQUAL_INT(13, render::pixelMoods());
   for (int i = 0; i < 13; ++i) TEST_ASSERT_EQUAL_STRING(names[i], moodName(render::pixelMood(i)));
+  // Every mood is drawn: the others wear one of the thirteen (faces.h's kWears).
+  for (int i = 0; i < int(Mood::kCount); ++i) TEST_ASSERT_TRUE_MESSAGE(render::pixelIndex(Mood(i)) >= 0, moodName(Mood(i)));
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kCalm), render::pixelIndex(Mood::kComfy));
+  TEST_ASSERT_EQUAL_INT(render::pixelIndex(Mood::kWounded), render::pixelIndex(Mood::kFrightened));
   TEST_ASSERT_EQUAL_STRING("happy", moodName(render::kStartupMood));
   for (const char* other : {"cheerful", "no_such_mood", "", "Happy", "Calm"}) {
     TEST_ASSERT_TRUE_MESSAGE(moodFromName(other) == Mood::kHappy, other);
@@ -193,7 +201,7 @@ static void test_the_strip_says_who_needs_you() {
 }
 
 // The bubble shows the take's text, in amber, centred;
-// every take's text in the card's pack fits whole inside the margins, in
+// every take's text in the card's voice file fits whole inside the margins, in
 // the large font or else the small one ("Technical difficulties" is the
 // widest), and only text too long for the bubble ends "..".
 static void test_the_bubble_fits_every_take() {
@@ -216,18 +224,18 @@ static void test_the_bubble_fits_every_take() {
     }
     return n;
   };
-  if (!packfile::open()) TEST_FAIL_MESSAGE("no voice pack: the chosen character pack has none");
-  // Each take's text from the pack's index: a 64-byte header with the count
+  if (!voicefile::open()) TEST_FAIL_MESSAGE("no voice file: the chosen character pack has none");
+  // Each take's text from the voice file's index: a 64-byte header with the count
   // at 24 and the index at 32, then 128-byte records, the text at 72.
   uint8_t h[64];
-  TEST_ASSERT_TRUE(packfile::source().read(0, h, sizeof(h)));
+  TEST_ASSERT_TRUE(voicefile::source().read(0, h, sizeof(h)));
   auto u32 = [](const uint8_t* p) { return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24; };
   const uint32_t count = u32(h + 24), indexAt = u32(h + 32);
   TEST_ASSERT_EQUAL_UINT32(2722, count);
   const int room = kWidth - 2 * 12 - 2 * (10 + 2);  // the margins, the padding and the outline
   for (uint32_t i = 0; i < count; ++i) {
     char text[37] = {};
-    TEST_ASSERT_TRUE(packfile::source().read(indexAt + i * 128 + 72, text, 36));
+    TEST_ASSERT_TRUE(voicefile::source().read(indexAt + i * 128 + 72, text, 36));
     // Whole: it fits the room in one font or the other, so nothing cuts it.
     const Font& f = stringWidth(kLarge, text) <= room ? kLarge : kSmall;
     TEST_ASSERT_TRUE_MESSAGE(stringWidth(f, text) <= room, text);

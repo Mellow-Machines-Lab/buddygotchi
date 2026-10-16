@@ -6,32 +6,32 @@ extension Runtime {
     /// Who a demo's answers and moods are by, in the transcript and the log.
     public static let demoBy = "demo"
 
-    /// After a demo's last line, time for what it starts to play out.
+    /// After a demo's last step, time for what it starts to play out.
     public static let demoTail = 6.0
 
-    /// Readies a demo script (`DemoScript`) to play: its lines in order,
+    /// Readies a demo script (`DemoScript`) to play: its steps in order,
     /// each when the one before it has ended, from `start()` on. The
-    /// person's lines are a poke and talk as the socket's dev lines make
-    /// them, and the brain's are a forced pass, so the actions keep their
+    /// person's steps are a poke and talk as the socket's dev messages make
+    /// them, and the brain's are a forced pass, so the outputs keep their
     /// own rules.
     ///
-    /// The agent's lines are the only ones that differ. With no agent
-    /// (`live` false), the player is the agent: it sends each line's hooks
+    /// The agent's steps are the only ones that differ. With no agent
+    /// (`live` false), the player is the agent: it sends each step's hooks
     /// as the agent would, through the same door as real ones. With a live
-    /// one, it waits for the agent's own hooks for each line, so the rest
+    /// one, it waits for the agent's own hooks for each step, so the rest
     /// keeps to the agent's pace however fast or slow it goes; a hook the
     /// script doesn't have passes by. It hears them from now on, so an
     /// agent may start before `start()`, while the device is awaited.
     ///
-    /// `cursor`, if given, is a file that holds the number of the line
-    /// due now (from 0): -1 until `start()`, and the number of lines once
-    /// it's over, for whatever keeps a live agent in step. `line` hears
-    /// each line as it happens, with the agent's name, and `done` the end,
+    /// `cursor`, if given, is a file that holds the number of the step
+    /// due now (from 0): -1 until `start()`, and the number of steps once
+    /// it's over, for whatever keeps a live agent in step. `step` hears
+    /// each step as it happens, with the agent's name, and `done` the end,
     /// both on `home`.
     public func demo(_ script: DemoScript, live: Bool = false, cursor: URL? = nil,
-                     line: @escaping @Sendable (DemoScript.Line, _ agent: String) -> Void = { _, _ in },
+                     step: @escaping @Sendable (DemoScript.Step, _ agent: String) -> Void = { _, _ in },
                      done: @escaping @Sendable () -> Void = {}) -> DemoPlayer {
-        let player = DemoPlayer(script: script, live: live, cursor: cursor, runtime: self, heardLine: line, done: done)
+        let player = DemoPlayer(script: script, live: live, cursor: cursor, runtime: self, heardStep: step, done: done)
         demoHeard = live ? { [player] in player.heard($0) } : nil
         player.publish(-1)
         return player
@@ -39,24 +39,27 @@ extension Runtime {
 
     /// Readies a demo and plays it at once.
     public func play(_ script: DemoScript, live: Bool = false, cursor: URL? = nil,
-                     line: @escaping @Sendable (DemoScript.Line, _ agent: String) -> Void = { _, _ in },
+                     step: @escaping @Sendable (DemoScript.Step, _ agent: String) -> Void = { _, _ in },
                      done: @escaping @Sendable () -> Void = {}) {
-        demo(script, live: live, cursor: cursor, line: line, done: done).start()
+        demo(script, live: live, cursor: cursor, step: step, done: done).start()
     }
 }
 
-/// Walks a script's lines in order on the runtime's home queue.
+/// Walks a script's steps in order on the runtime's home queue.
 public final class DemoPlayer: @unchecked Sendable {
     let script: DemoScript
     let live: Bool
     let cursor: URL?
-    unowned let runtime: Runtime
-    let heardLine: @Sendable (DemoScript.Line, String) -> Void
+    /// Weak: a step waiting to play when its runtime is let go of (a test
+    /// ending, the app quitting) does nothing.
+    weak var runtimeIfAny: Runtime?
+    var runtime: Runtime { runtimeIfAny! }
+    let heardStep: @Sendable (DemoScript.Step, String) -> Void
     let done: @Sendable () -> Void
     var index = 0
-    /// The agent's hooks since the last one a line was waiting for.
+    /// The agent's hooks since the last one a step was waiting for.
     var hooks: [HookLine] = []
-    /// The agent line waiting for its hook, and what to do when it comes.
+    /// The agent step waiting for its hook, and what to do when it comes.
     var waiting: (matches: (HookLine) -> Bool, then: () -> Void)?
     /// The agent playing the script's: the script's, until a live one's
     /// hooks say who it is.
@@ -66,25 +69,28 @@ public final class DemoPlayer: @unchecked Sendable {
     var calls = 0
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
-         heardLine: @escaping @Sendable (DemoScript.Line, String) -> Void, done: @escaping @Sendable () -> Void) {
+         heardStep: @escaping @Sendable (DemoScript.Step, String) -> Void, done: @escaping @Sendable () -> Void) {
         self.script = script
         self.live = live
         self.cursor = cursor
-        self.runtime = runtime
-        self.heardLine = heardLine
+        self.runtimeIfAny = runtime
+        self.heardStep = heardStep
         self.done = done
     }
 
     /// Plays the script, on `home`.
     public func start() {
-        runtime.options.log("demo: \(script.lines.count) lines\(live ? ", with a live agent" : "")")
+        runtime.options.log("demo: \(script.steps.count) steps\(live ? ", with a live agent" : "")")
         if !live { send("SessionStart") { $0.source = "startup" } }
         next()
     }
 
     var home: DispatchQueue { runtime.home }
     func later(_ seconds: Double, _ work: @escaping () -> Void) {
-        home.asyncAfter(deadline: .now() + max(0, seconds), execute: work)
+        home.asyncAfter(deadline: .now() + max(0, seconds)) { [weak self] in
+            guard self?.runtimeIfAny != nil else { return }
+            work()
+        }
     }
 
     func publish(_ n: Int) {
@@ -92,10 +98,10 @@ public final class DemoPlayer: @unchecked Sendable {
         try? "\(n)\n".write(to: cursor, atomically: true, encoding: .utf8)
     }
 
-    /// The next line, `after` the one before ended; the end, after the last.
+    /// The next step, `after` the one before ended; the end, after the last.
     func next() {
-        guard index < script.lines.count else {
-            publish(script.lines.count)
+        guard index < script.steps.count else {
+            publish(script.steps.count)
             later(Runtime.demoTail) { [self] in
                 runtime.options.log("demo: over")
                 runtime.demoHeard = nil
@@ -103,29 +109,29 @@ public final class DemoPlayer: @unchecked Sendable {
             }
             return
         }
-        let line = script.lines[index]
-        // A live agent's line is due at once: the agent keeps its own pace.
-        let wait: Double = if case .agent = line.what, live { 0 } else { line.after }
+        let step = script.steps[index]
+        // A live agent's step is due at once: the agent keeps its own pace.
+        let wait: Double = if case .agent = step.what, live { 0 } else { step.after }
         later(wait) { [self] in
             publish(index)
-            perform(line) { [self] in
+            perform(step) { [self] in
                 index += 1
                 next()
             }
         }
     }
 
-    func perform(_ line: DemoScript.Line, then: @escaping () -> Void) {
-        switch line.what {
+    func perform(_ step: DemoScript.Step, then: @escaping () -> Void) {
+        switch step.what {
         case .poke:
-            heardLine(line, agent)
+            heardStep(step, agent)
             runtime.tapped(who: Runtime.demoBy)
             then()
         case .talk(let words, let hold):
-            heardLine(line, agent)
+            heardStep(step, agent)
             runtime.listen(true, who: Runtime.demoBy)
             later(hold) { [self] in
-                runtime.said(words, by: .app, who: Runtime.demoBy)
+                runtime.heard(words, by: .app, who: Runtime.demoBy)
                 then()
             }
         case .brain(let answers, let mood):
@@ -135,20 +141,20 @@ public final class DemoPlayer: @unchecked Sendable {
         case .agent(let a):
             if live {
                 waitFor(endOf(a)) { [self] in
-                    heardLine(line, agent)
+                    heardStep(step, agent)
                     then()
                 }
             } else {
-                act(a, line: line, then: then)
+                act(a, step: step, then: then)
             }
         }
     }
 
     // MARK: A live agent
 
-    /// The hook that ends an agent line: its turn's start, a tool's end of
+    /// The hook that ends an agent step: its turn's start, a tool's end of
     /// the right kind, the reviewer's start or report, or the turn's end.
-    func endOf(_ a: DemoScript.Line.Agent) -> (HookLine) -> Bool {
+    func endOf(_ a: DemoScript.Step.Agent) -> (HookLine) -> Bool {
         func toolEnd(_ kinds: Set<ToolKind>) -> (HookLine) -> Bool {
             { Mapping.kind(of: $0).map { $0 == (.tool, .end) } == true && kinds.contains(ToolKind.of($0.tool ?? "")) }
         }
@@ -171,8 +177,8 @@ public final class DemoPlayer: @unchecked Sendable {
         waiting = (matches, then)
     }
 
-    /// A hook from the live agent: the end of the line waiting for one, or
-    /// kept until a line does. If it ends one of the next agent lines
+    /// A hook from the live agent: the end of the step waiting for one, or
+    /// kept until a step does. If it ends one of the next agent steps
     /// instead, the agent left out the ones before it (a step it skipped,
     /// or a call it was refused): the script goes on from there, without
     /// what came between, rather than wait for good.
@@ -184,24 +190,24 @@ public final class DemoPlayer: @unchecked Sendable {
             hooks.removeAll()
             return w.then()
         }
-        let ahead = script.lines.indices.dropFirst(index + 1).filter {
-            if case .agent = script.lines[$0].what { true } else { false }
+        let ahead = script.steps.indices.dropFirst(index + 1).filter {
+            if case .agent = script.steps[$0].what { true } else { false }
         }.prefix(Self.lookahead)
         guard let j = ahead.first(where: { j in
-            if case .agent(let a) = script.lines[j].what { return endOf(a)(hook) }
+            if case .agent(let a) = script.steps[j].what { return endOf(a)(hook) }
             return false
         }) else { return hooks.append(hook) }
-        runtime.options.log("demo: the agent left out lines \(script.lines[index].number)–\(script.lines[j - 1].number); going on")
+        runtime.options.log("demo: the agent left out steps \(script.steps[index].number)–\(script.steps[j - 1].number); going on")
         waiting = nil
         hooks.removeAll()
         index = j
         publish(index)
-        heardLine(script.lines[j], agent)
+        heardStep(script.steps[j], agent)
         index += 1
         next()
     }
 
-    /// How many agent lines ahead a hook may end, for the script to skip to it.
+    /// How many agent steps ahead a hook may end, for the script to skip to it.
     static let lookahead = 3
 
     // MARK: No agent: the player is it
@@ -218,16 +224,16 @@ public final class DemoPlayer: @unchecked Sendable {
         return String(s).split(separator: "-").joined(separator: "-").ifEmpty("project")
     }
 
-    func act(_ a: DemoScript.Line.Agent, line: DemoScript.Line, then: @escaping () -> Void) {
+    func act(_ a: DemoScript.Step.Agent, step: DemoScript.Step, then: @escaping () -> Void) {
         calls += 1
         let codex = script.agent == "codex"
         let id = "t\(calls)"
-        let finish = { [self] in heardLine(line, agent); then() }
+        let finish = { [self] in heardStep(step, agent); then() }
         func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil) {
             let call = { (l: inout HookLine) in l.tool = name; l.toolUseID = id; l.topic = topic }
             send("PreToolUse", call)
             let ends = { [self] in
-                later(line.takes) { [self] in
+                later(step.takes) { [self] in
                     send(fails && !codex ? "PostToolUseFailure" : "PostToolUse") {
                         call(&$0)
                         if fails { $0.toolError = "exit_code" }
@@ -262,7 +268,7 @@ public final class DemoPlayer: @unchecked Sendable {
                 finish()
             }
         case .reply:
-            later(line.takes) { [self] in
+            later(step.takes) { [self] in
                 if a.byReviewer {
                     send("SubagentStop")
                 } else {

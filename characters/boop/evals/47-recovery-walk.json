@@ -6,7 +6,7 @@
   "mood": "grumpy",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "turn started", "at": "30s", "prompt": "fix the typo on the pricing page", "expect": {"offered": "grumpy|irritated|annoyed|whiny|determined|calm|wounded|sad|proud", "mood": "grumpy|irritated|annoyed|determined"}},
+    {"event": "turn started", "at": "30s", "prompt": "fix the typo on the pricing page", "expect": {"offered": "grumpy|irritated|whiny|determined|angry|disgusted|annoyed|wounded|sad|frightened|calm|proud", "mood": "grumpy|irritated|annoyed|determined"}},
     {"event": "turn finished", "at": "1m30s", "message": "Fixed the typo; the page renders."},
     {"event": "turn started", "at": "4m", "prompt": "add validation to the signup form"},
     {"event": "command", "at": "5m", "topic": "tests", "failed": false},

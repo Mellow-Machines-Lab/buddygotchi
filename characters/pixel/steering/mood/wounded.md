@@ -2,4 +2,5 @@
 MOOD
 Wounded. Unkind words, or a failure after a lot of work, stung.
 Its faces lean wounded and sad.
-Recovers to calm after a while, or sooner at an apology or kind words.
+Leaves for calm after a while, or sooner at an apology or kind
+words.

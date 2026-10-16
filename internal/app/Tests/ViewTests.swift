@@ -151,11 +151,12 @@ final class ViewTests: XCTestCase {
         let failed = hook(.turnFailed, workspace: nil, error: "rate_limit").first
         XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a short turn, no tool calls."#)
         XCTAssertEqual(failed?.facts["error"], "rate_limit")
-        XCTAssertEqual(failed?.passPriority, 1, "a finish keeps its pass while it waits")
+        XCTAssertEqual(TranscriptView.wakes[failed!.name.replacingOccurrences(of: " ", with: "_")], 1,
+                       "a finish keeps its pass while it waits")
         rig.wait(30_000)
         let start = hook(.turnStart, workspace: nil).first
         XCTAssertEqual(start?.line, #"claude started turn 2 on "landing"."#)
-        XCTAssertEqual(start?.passPriority, 0)
+        XCTAssertEqual(TranscriptView.wakes[start!.name.replacingOccurrences(of: " ", with: "_")], 0)
         rig.wait(90_000)
         let stopped = hook(.turnStopped, workspace: nil, tool: "Bash")
         XCTAssertEqual(stopped.first?.line, #"claude finished turn 2 on "landing": stopped, a long turn, no tool calls."#)
@@ -188,6 +189,28 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(hook(.turnStart).first?.line, #"claude started turn 1 on "fix-nav" (landing)."#, "back, from turn 1")
     }
 
+    /// The view's sessions are agent-hooks' `SessionTracker`, as the core's
+    /// are, so the working heartbeat comes only while the core shows the
+    /// session working. Here a request waits, a subagent's call goes on
+    /// beside it, and then the safety net's 10 silent minutes expire the
+    /// request: the session is idle, and no working heartbeat says
+    /// otherwise. Before, the view kept a fold of its own, which counted
+    /// the safety net from the request only, and so worked on for the
+    /// hour.
+    func testTheViewWorksOnlyWhenTheCoreDoes() {
+        rig = CoreRig(seed: 7, rules: .chatty)
+        hook(.turnStart)
+        hook(.activity, tool: "Bash", id: "t1")
+        hook(.needsYou, tool: "Bash")
+        rig.wait(1000)
+        rig.send(.activity, subagent: "a1", tool: "Read", id: "r1")
+        XCTAssertNotNil(rig.state.attn, "the subagent's call doesn't answer the request")
+        rig.wait(SessionFold.safetyNetMs)
+        XCTAssertEqual(rig.state.base, "idle")
+        XCTAssertEqual(workBeats(rig.wait(20 * 60_000)), [], "no working heartbeat")
+        XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
+    }
+
     /// Nothing but what you say wakes the brain while
     /// something needs you, a poke included (the tap opens the thread),
     /// and nothing with no brain; the view events still come.
@@ -198,11 +221,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(asked.map(\.line), [#"claude needs you on "fix-nav" (landing)."#])
         XCTAssertEqual(asked.map(\.name), ["tool wait"])
         XCTAssertFalse(asked[0].wakesBrain)
-        XCTAssertEqual(rig.ruleActions, ["needs_you start"])
+        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start"])
         XCTAssertFalse(hook(.turnStart, session: "s2").first!.wakesBrain, "something needs you")
         XCTAssertFalse(events(rig.poke()).first!.wakesBrain, "a poke opens the thread instead")
         hook(.activity, tool: "Bash")
-        XCTAssertEqual(rig.ruleActions, ["needs_you start", "open_thread", "needs_you end"], "answered")
+        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start", "open_thread", "needs_you end"], "answered")
         XCTAssertTrue(hook(.turnStart, session: "s3").first!.wakesBrain)
         rig.pipeline.brain = false
         XCTAssertFalse(hook(.turnStart, session: "s4").first!.wakesBrain, "no key")
@@ -258,7 +281,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(said.map(\.line), [#"You said to \#(creature): "are the tests passing yet?""#])
         XCTAssertEqual(said.map(\.name), ["talk"])
         XCTAssertTrue(said[0].wakesBrain)
-        XCTAssertEqual(said[0].passPriority, 2, "it goes ahead of a finish waiting")
+        XCTAssertEqual(TranscriptView.wakes[said[0].name], 2, "it goes ahead of a finish waiting")
         XCTAssertNil(said[0].about)
         XCTAssertEqual(said[0].facts["words"], "are the tests\npassing yet?")
         XCTAssertEqual(said[0].facts["by"], "device")
@@ -312,12 +335,12 @@ final class ViewTests: XCTestCase {
     func testAPokeWaitsWhileItsRunIsBeingAnswered() {
         XCTAssertEqual(TranscriptView.answersRunFrom, 3)
         func react(to poke: ViewEvent, _ name: String = "react", started: Bool = true) -> Int {
-            rig.pipeline.record(Event.action(ts: rig.now, phase: started ? .start : nil,
+            rig.pipeline.record(Event.action(at: rig.now, phase: started ? .start : nil,
                                       name: name, data: ["for": .int(Int64(poke.seq)), "by": "brain", "ok": true,
                                                                  "message": "Boop did it."])).seq
         }
         func end(_ seq: Int, _ why: String? = nil) {
-            rig.pipeline.record(Event.action(ts: rig.now, phase: .end, name: "react",
+            rig.pipeline.record(Event.action(at: rig.now, phase: .end, name: "react",
                                       data: ["for": .int(Int64(seq)), "by": "brain", "outcome": why == nil ? "done" : "failed",
                                              "why": why.map { .string($0) } ?? .null]))
         }
@@ -345,7 +368,7 @@ final class ViewTests: XCTestCase {
         next = events(rig.poke())[0]
         XCTAssertFalse(next.wakesBrain, "cut short by a tap, it's still in progress")
 
-        _ = react(to: next, MoodAction.actionName, started: false)
+        _ = react(to: next, MoodOutput.outputName, started: false)
         rig.wait(500)
         next = events(rig.poke())[0]
         XCTAssertTrue(next.wakesBrain, "the mood changed since")
@@ -407,36 +430,36 @@ final class ViewTests: XCTestCase {
         }
         let first = pipeline()
         rig = CoreRig()
-        first.agent(rig.event(.turnStart))
-        let start = first.record(Event.action(ts: rig.now, phase: .start, name: "react",
+        first.agent(rig.event(.turnStart))  // and its starting reaction's did, 2
+        let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
                                        data: ["for": 1, "by": "brain", "ok": true, "message": "Boop smiled."]))
-        XCTAssertEqual(start.seq, 2)
+        XCTAssertEqual(start.seq, 3)
         first.agent(rig.event(.turnEnd))
         let old = dir.appendingPathComponent("2026-09-01.jsonl")
         try "{}\n".write(to: old, atomically: true, encoding: .utf8)
 
         let file = dir.appendingPathComponent(time.day(rig.now) + ".jsonl")
         let lines = try String(contentsOf: file, encoding: .utf8).split(separator: "\n")
-        XCTAssertEqual(lines.count, 3)
+        XCTAssertEqual(lines.count, 4)
         XCTAssertTrue(lines[0].hasPrefix(#"{"seq":1,"at":"#), String(lines[0]))
-        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":4,"at":"#).write(to: file, atomically: true, encoding: .utf8)
+        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":5,"at":"#).write(to: file, atomically: true, encoding: .utf8)
 
         let second = pipeline()
         var recorded: [Event] = []
         second.onRecord = { recorded.append($0) }
-        XCTAssertEqual(second.readBack(now: rig.now), 3, "the torn line is skipped")
+        XCTAssertEqual(second.readBack(now: rig.now), 4, "the torn line is skipped")
         XCTAssertFalse(FileManager.default.fileExists(atPath: old.path), "past 14 days")
         let restarted = try XCTUnwrap(recorded.last)
         XCTAssertEqual(restarted.data["why"], .string(Harness.restarted))
-        XCTAssertEqual(restarted.seq, 4, "seq goes on")
-        XCTAssertEqual(second.transcript.lastSeq, 4)
-        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4], "the last day stays in memory, the end included")
-        XCTAssertEqual(second.views.first?.did, [], "a reaction that can't end now isn't shown")
+        XCTAssertEqual(restarted.seq, 5, "seq goes on")
+        XCTAssertEqual(second.transcript.lastSeq, 5)
+        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
+        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's reaction")
         rig.wait(1000)
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])
         let third = pipeline()
-        XCTAssertEqual(third.readBack(now: rig.now), 5, "the torn line was ended, so the next launch's aren't glued to it")
+        XCTAssertEqual(third.readBack(now: rig.now), 7, "the torn line was ended, so the next launch's aren't glued to it")
     }
 
     /// A write a full disk cut short inside a multi-byte
@@ -501,13 +524,13 @@ final class ViewTests: XCTestCase {
         let relaunched = needs(second.tick(at: rig.now))
         XCTAssertEqual(relaunched.map(\.phase), [.end], "Codex's request ends, and no request starts again")
         XCTAssertEqual(relaunched.first?.data["why"], "nothing for 10 minutes")
-        XCTAssertEqual(second.threads["codex/c1"]?.waiting, false)
+        XCTAssertNil(second.threads["codex/c1"]?.needsSince, "the view's sessions agree")
         let shown = second.core.snapshot(at: rig.now)
         XCTAssertEqual(shown.attn?.agent, "claude", "its request still waits")
         XCTAssertEqual(shown.busy, 1, "s2 still works")
         let answered = second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         XCTAssertEqual(needs(answered).map(\.phase), [.end])
-        XCTAssertEqual(second.threads["claude/s1"]?.waiting, false, "the view hears it end")
+        XCTAssertNil(second.threads["claude/s1"]?.needsSince, "the view folds the answer too")
         XCTAssertEqual(second.core.snapshot(at: rig.now).busy, 2, "s1 works again")
         XCTAssertNotNil(second.view.workingSince(at: rig.now, second.transcript.view(now: rig.now)))
     }
@@ -515,11 +538,11 @@ final class ViewTests: XCTestCase {
     /// A relaunch takes which requests were shown from the transcript's
     /// `needs_you` records, not from folding the sessions again with this
     /// launch's rules (`replay`): where the two disagree, the
-    /// first publish records what's missing, so the core and the view
-    /// agree. Here a launch whose core started empty, as every launch's
-    /// did before 2026-09-29, never recorded the end of a request
-    /// answered after it; before, no launch ever did, and the view kept
-    /// the thread waiting until its next request.
+    /// first publish records what's missing, so the transcript says what
+    /// the sessions do. Here a launch whose core started empty, as every
+    /// launch's did before 2026-09-29, never recorded the end of a request
+    /// answered after it. The view folds the sessions itself, so it never
+    /// waited on that end.
     func testARelaunchTakesTheRequestsShownFromTheTranscript() throws {
         let dir = tempDir("boop-tr")
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -541,11 +564,10 @@ final class ViewTests: XCTestCase {
         rig.now += 1000
         let third = pipeline()
         third.readBack(now: rig.now)
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, true, "no end in the transcript")
+        XCTAssertNil(third.threads["claude/s1"]?.needsSince, "the view folds the answer, with no end in the transcript")
         let ended = needs(third.tick(at: rig.now))
         XCTAssertEqual(ended.map(\.phase), [.end])
         XCTAssertEqual(ended.first?.data["outcome"], "done")
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, false, "the view hears it end")
         XCTAssertNil(third.core.snapshot(at: rig.now).attn)
     }
 
@@ -580,7 +602,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(ended.map(\.phase), [.end])
         XCTAssertEqual(ended.first?.data["outcome"], "failed")
         XCTAssertEqual(ended.first?.data["why"], "nothing for 10 minutes")
-        XCTAssertEqual(third.threads["claude/s1"]?.waiting, false, "the view hears it end")
+        XCTAssertNil(third.threads["claude/s1"]?.needsSince, "the view's sessions agree")
     }
 
     /// A session's first event each day carries its

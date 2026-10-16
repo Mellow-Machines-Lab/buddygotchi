@@ -104,7 +104,7 @@ public final class Pipeline {
     /// without what its session already has (`Core.unrepeated`).
     @discardableResult
     public func agent(_ event: Event) -> Step {
-        input(at: event.ts) {
+        input(at: event.at) {
             let e = harness.emit(core.unrepeated(event))
             run(core.handle(e))
         }
@@ -116,7 +116,7 @@ public final class Pipeline {
     @discardableResult
     public func poke(at now: Int64, finish: ThreadRef? = nil) -> Step {
         input(at: now) {
-            let e = harness.emit(Event(ts: now, source: .device, type: .poke, specificType: "input"))
+            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input"))
             run(core.poke(at: now, seq: e.seq, finish: finish))
         }
     }
@@ -129,7 +129,7 @@ public final class Pipeline {
     public func said(_ words: String, by: Core.Talker, at now: Int64) -> Step {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
-            harness.emit(Event(ts: now, source: .mic, type: .talk, specificType: by.rawValue, data: ["words": .string(cut)]))
+            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, data: ["words": .string(cut)]))
         }
     }
 
@@ -138,7 +138,7 @@ public final class Pipeline {
     /// core's. Only a back wakes the brain.
     @discardableResult
     public func presence(_ event: Event) -> Step {
-        input(at: event.ts) { harness.emit(event) }
+        input(at: event.at) { harness.emit(event) }
     }
 
     /// The core's timers, then the harness's tick: a heartbeat if one is
@@ -149,14 +149,6 @@ public final class Pipeline {
             run(core.tick(at: now))
             harness.tick()
         }
-    }
-
-    /// Logs an event nothing else acts on, such as an action's.
-    @discardableResult
-    public func record(_ event: Event) -> Event {
-        var logged = event
-        _ = input(at: max(inputTime.now, event.at)) { logged = harness.emit(event) }
-        return logged
     }
 
     /// The core's effects from a call outside the inputs above (the mood
@@ -185,20 +177,6 @@ public final class Pipeline {
         return read.count
     }
 
-    /// Whether you're away from the Mac, as the log has it:
-    /// the presence detector starts from this at launch.
-    public var away: Bool { view.away(transcript.view(now: inputTime.now)) }
-
-    /// The event `seq` with its line and what the rules did about it, as
-    /// it stands now; nil for one with no line.
-    public func viewEvent(_ seq: Int) -> ViewEvent? {
-        guard let e = transcript.event(seq), let line = harness.line(seq),
-              var v = view.view(e, line, wakes: false, log: transcript.view(before: e)) else { return nil }
-        v.wakesBrain = harness.wakes(e) && whyNotWake(e) == nil
-        v.did = shown(dids: seq, transcript.view(now: inputTime.now))
-        return v
-    }
-
     /// What was done about the event `seq` as HISTORY shows it
     /// (`LogView.shown`): what's done or in
     /// progress, not what failed or ended failed.
@@ -208,11 +186,8 @@ public final class Pipeline {
         }
     }
 
-    /// The threads as the view has them now (tests).
-    var threads: [String: TranscriptView.Thread] { view.threads(transcript.view(now: inputTime.now)) }
-
-    /// Every event with a line in the log, oldest first.
-    public var views: [ViewEvent] { transcript.events.compactMap { viewEvent($0.seq) } }
+    /// The sessions as the view has them now (tests).
+    var threads: [String: SessionTracker.Session] { view.sessions(transcript.view(now: inputTime.now)) }
 
     /// Why an event may not wake the brain now, or nil if it may: it needs
     /// a brain, and the view's holds.

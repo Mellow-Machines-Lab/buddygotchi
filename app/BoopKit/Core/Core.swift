@@ -5,13 +5,17 @@ import MellowHarness
 /// The core: plain rules with no queue. It reads the
 /// session table agent-hooks keeps (`SessionTracker`) and
 /// decides which visual the device shows, what the
-/// agents are doing included (`act`), and which one-shots the rules play.
+/// agents are doing included (`act`), and which reactions the rules play.
 /// What it does by rule it records as `action`
 /// events: "needs you" showing and ending, and a poke (the `wiggle`
 /// action, by its older name: the device plays its poke), or while
-/// something needs you, the thread it opens (`open_thread`). What the
-/// brain hears is the view's; everything expressive
-/// is the brain's.
+/// something needs you, the thread it opens (`open_thread`), and each
+/// reaction it plays (`starting`, `stopped`, `error`, `helper_return`),
+/// as a `did` named after it. It also
+/// keeps push-to-talk (`Talk`): when the mic
+/// goes on and off and when `listening` ends, recorded as `listen` events
+/// that make no line. What the brain hears is the view's; everything
+/// expressive is the brain's.
 ///
 /// It's a pure state machine: every call takes the time and returns effects
 /// for the app to carry out. Call `tick` about once a second for the timers.
@@ -21,16 +25,13 @@ import MellowHarness
 public final class Core {
     public struct Config: Sendable {
         public var volume: Int
-        /// Boop's mood, which the mood action sets
-        /// and every `state` carries.
-        public var mood = MoodAction.initial
         public var time: LocalTime
         public var seed: UInt64
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
-        /// app starts each launch somewhere random (`Core.randomFirstAsk`),
-        /// so a request can't share `attn.id` with one the device still
-        /// shows from the last launch.
+        /// app starts each launch somewhere random
+        /// (`SessionTracker.randomFirstRequest`), so a request can't share
+        /// `attn.id` with one the device still shows from the last launch.
         public var firstAsk = 0
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1) {
@@ -44,12 +45,14 @@ public final class Core {
     typealias Session = SessionTracker.Session
 
     public private(set) var config: Config
+    /// Boop's mood now, which every `state` carries and the rules'
+    /// reactions are drawn in: the runtime reads it from the transcript,
+    /// where the mood output keeps it. The resting mood until it's set.
+    var mood: () -> String = { MoodOutput.initial }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
     var sessions: [String: Session] { tracker.sessions }
-    /// The last request's number: they count up from `config.firstAsk`.
-    var lastAsk: Int { tracker.lastRequest }
     var rng: SplitMix64
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
@@ -66,7 +69,7 @@ public final class Core {
     /// working session's, held.
     var shownAct: Timed?
     var held: [String: Timed] = [:]
-    /// When the rules last played the error one-shot: at most one every
+    /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
     /// The wall clock less the steady one, for days and times of day.
@@ -74,6 +77,11 @@ public final class Core {
     /// The sessions "needs you" showed for when last published, for their
     /// `needs_you` actions.
     var shownNeeds: [String: (agent: Agent, id: String)] = [:]
+    /// The sessions whose request the tracker's safety net expired, until
+    /// the `needs_you` end that says so is recorded, or the next start.
+    var expired: Set<String> = []
+    /// Why a request the safety net expired cleared.
+    static let expiredWhy = "nothing for 10 minutes"
 
     // Push-to-talk.
     /// Who turned the Mac's mic on: the device's BOOT button or the app's
@@ -84,11 +92,41 @@ public final class Core {
     /// After the mic goes off, the device holds `listening` this long at
     /// most for the reply (firmware `kListenHoldMs`).
     public static let replyWaitMs: Int64 = 8000
+
+    /// Push-to-talk as the core keeps it, its one owner: the runtime turns
+    /// the mic on and off and plays what the core says, and the popover
+    /// shows a copy.
+    public struct Talk: Equatable, Sendable {
+        /// While the Mac's mic is on: who turned it on, and when.
+        public struct Mic: Equatable, Sendable {
+            public var by: Talker
+            public var since: Int64
+        }
+
+        public var mic: Mic?
+        /// Whose button turned the mic on last: what it hears is theirs.
+        public var by: Talker = .app
+        /// Once the mic is off, until when the device still shows
+        /// `listening` waiting for the reply; nil once it's over.
+        public var replyUntil: Int64?
+        /// The `seq` of what you said, while its reply may still come: the
+        /// first pass on it or on anything newer ends `listening` unless
+        /// it reacted, which is the reply.
+        public var replyFor: Int?
+        /// Why push-to-talk couldn't hear you, until the next try.
+        public var trouble: String?
+    }
+
+    public private(set) var talk = Talk()
     /// While the Mac's mic is on: who turned it on, and when.
-    public private(set) var listening: (by: Talker, since: Int64)?
-    /// Once the mic is off, until when the device still shows `listening`
-    /// waiting for the reply; nil once it's over.
-    var replyUntil: Int64?
+    public var listening: Talk.Mic? { talk.mic }
+
+    /// Why listening started, waited or ended, as its records say.
+    public enum ListenWhy {
+        public static let released = "released", limit = "limit", linkDown = "link down", replied = "replied",
+                          noReply = "no reply", heardNothing = "heard nothing", micFailed = "mic failed",
+                          timedOut = "timed out"
+    }
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -101,19 +139,12 @@ public final class Core {
         rng = SplitMix64(seed: config.seed)
     }
 
-    /// The thread's name as its agent's app shows it, for the session `key`
-    /// names (the view's keys are the same), or nil.
-    public func name(about key: String) -> String? { sessions[key]?.name }
-
-    /// Where the session `key` names opens on the Mac, or nil.
-    public func thread(about key: String) -> ThreadRef? { sessions[key]?.thread }
-
-    /// The rules' one-shots.
+    /// The rules' reactions.
     public static let starting = "starting", stopped = "stopped", error = "error", helperReturn = "helper_return"
-    /// The failed calls that play the error one-shot: a command that
+    /// The failed calls that play the error reaction: a command that
     /// exited with an error or timed out, never a request you denied.
-    static let errorClasses: Set<String> = ["exit_code", "timeout"]
-    /// The error one-shot plays at most once in this long.
+    static let errorClasses: Set<String> = [ToolError.exitCode, ToolError.timeout]
+    /// The error reaction plays at most once in this long.
     public static let errorEveryMs: Int64 = 30_000
 
     // MARK: - Inputs
@@ -123,11 +154,11 @@ public final class Core {
     @discardableResult
     public func handle(_ event: Event) -> [CoreEffect] {
         guard let agentEvent = AgentEvent(event) else { return [] }
-        let now = event.ts
+        let now = event.at
         var fx: [CoreEffect] = []
-        let shot = take(agentEvent, ref: event.seq)
+        let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
-        if let shot { play(shot, now, &fx) }
+        if let reaction { play(reaction, for: event.seq, now, &fx) }
         publish(now, &fx)
         return fx
     }
@@ -140,8 +171,8 @@ public final class Core {
     /// reads back only the last days' files.
     func unrepeated(_ event: Event) -> Event {
         guard let agent = event.agent, let session = event.session,
-              let s = sessions[SessionFold.key(agent, session)], !SessionFold.forgotten(s.lastEventAt, at: event.ts),
-              config.time.day(s.lastEventAt) == config.time.day(event.ts) else { return event }
+              let s = sessions[SessionFold.key(agent, session)], !SessionFold.forgotten(s.lastEventAt, at: event.at),
+              config.time.day(s.lastEventAt) == config.time.day(event.at) else { return event }
         var event = event
         for (key, held) in [("name", s.name), ("app", s.app), ("app_session", s.appSession)]
         where held != nil && event[key]?.string == held {
@@ -156,37 +187,40 @@ public final class Core {
     /// `handle` takes it, and the timers run at every event's time, as the
     /// last launch's ticks did when they recorded something. What the
     /// rules did then is recorded already, so nothing is carried out.
-    /// Which requests were shown is what the `needs_you` records say, as
-    /// the view has it: where the sessions folded again disagree, the
-    /// first publish records the start or end that's missing, with why a
-    /// request the read-back cleared did.
+    /// Which requests were shown is what the `needs_you` records say:
+    /// where the sessions folded again disagree (a launch that missed an
+    /// end, or ran the timers at other times), the first publish records
+    /// the start or end that's missing, with why a request the read-back
+    /// cleared did.
     public func replay(_ event: Event) {
         if let agentEvent = AgentEvent(event) {
-            _ = take(agentEvent, ref: event.seq)
+            _ = fold(agentEvent, ref: event.seq)
             return
         }
-        advance(to: event.ts)
+        advance(to: event.at)
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
             shownNeeds[key] = event.phase == .start ? (agent, session) : nil
-            if event.phase == .start { tracker.clearedWhy[key] = nil }
+            if event.phase == .start { expired.remove(key) }
         }
     }
 
     /// An agent's event folded into the session table, the timers due by
-    /// its time run first: the one-shot it plays, if any.
+    /// its time run first: the reaction it plays, if any.
     /// `ref` is its `seq`, which a request it starts keeps.
-    private func take(_ event: AgentEvent, ref: Int) -> DeviceMoment? {
+    private func fold(_ event: AgentEvent, ref: Int) -> DeviceReaction? {
         let key = event.key
+        // The timers due by the event's time first, to hear what they did.
+        advance(to: event.at, sparing: key)
         guard let change = tracker.handle(event, ref: ref) else { return nil }
         let now = event.at
         switch change {
         case .sessionStarted(let source):
-            return DeviceMoment(anim: Core.starting, ctx: Core.startCtx(source: source))
+            return DeviceReaction(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
-            return DeviceMoment(anim: Core.starting, ctx: "new_task")
+            return DeviceReaction(anim: Core.starting, ctx: "new_task")
         case .callEnded(let call, let late):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
@@ -194,46 +228,67 @@ public final class Core {
             if !late, failed, event.error.map(Core.errorClasses.contains) == true {
                 // A command that failed or timed out, not a request you
                 // denied.
-                return DeviceMoment(anim: Core.error)
+                return DeviceReaction(anim: Core.error)
             }
             if !late, !failed, let call, Core.act(call) == .delegating, !call.sawSubagent {
                 // A helper's call returned, from hooks that don't say when
                 // helpers start: its `SubagentStop` can't.
-                return DeviceMoment(anim: Core.helperReturn)
+                return DeviceReaction(anim: Core.helperReturn)
             }
             return nil
         case .turnEnded(let outcome, let endedTurn):
-            // Only a stop that ends a turn plays its one-shot: Claude's idle
+            // Only a stop that ends a turn plays its reaction: Claude's idle
             // notice after a turn that finished doesn't.
             held[key] = nil
-            return outcome == .stopped && endedTurn ? DeviceMoment(anim: Core.stopped) : nil
+            return outcome == .stopped && endedTurn ? DeviceReaction(anim: Core.stopped) : nil
         case .subagentEnded(let returned):
             // A helper Boop saw start returns, while its turn goes on.
-            return returned ? DeviceMoment(anim: Core.helperReturn) : nil
+            return returned ? DeviceReaction(anim: Core.helperReturn) : nil
         case .sessionEnded:
             held[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .other:
+        case .callStarted, .asked, .subagentStarted, .requestExpired, .other:
             return nil
         }
     }
 
-    /// A rule's one-shot, in Boop's mood with a
+    /// A rule's reaction, in Boop's mood with a
     /// variation at random, never the one it played last: not while
     /// something needs you or `listening` holds the screen, and the error
-    /// one-shot at most once every `errorEveryMs`. The device also skips
-    /// it while a brain reaction holds its turn (`if_free`).
-    func play(_ shot: DeviceMoment, _ now: Int64, _ fx: inout [CoreEffect]) {
-        guard let anim = shot.anim, !needsYouShowing, !showsListening(at: now) else { return }
+    /// reaction at most once every `errorEveryMs`. The device also skips
+    /// it while a brain reaction plays (`if_free`). Recorded as a
+    /// `did` named after it, for the event `seq` that played it, as the
+    /// poke's `wiggle` is, so the brain hears that Boop already reacted.
+    func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         if anim == Core.error {
             if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
             lastErrorAt = now
         }
-        var moment = shot
-        moment.variant = Core.pickVariant(mood: config.mood, state: anim, ctx: shot.ctx,
-                                          avoiding: lastVariant[anim], &rng)
-        lastVariant[anim] = moment.variant
-        fx.append(.moment(moment))
+        var reaction = rule
+        reaction.variant = Core.pickVariant(mood: mood(), state: anim, ctx: rule.ctx,
+                                            avoiding: lastVariant[anim], &rng)
+        lastVariant[anim] = reaction.variant
+        fx.append(.reaction(reaction))
+        var did = Event.did(Core.played(reaction) ?? "", for: seq, action: anim, by: "rule",
+                            facts: reaction.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+        if Core.played(reaction) == nil { did.data["message"] = nil }
+        fx.append(.record(did))
+    }
+
+    /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
+    /// reacted to the error on its own.` None for `starting`: every turn
+    /// starts with it, so the brain hears the start itself and nothing
+    /// more, and the log alone keeps that it played.
+    static func played(_ reaction: DeviceReaction) -> String? {
+        let what: String
+        switch reaction.anim {
+        case Core.stopped?: what = "the stop"
+        case Core.error?: what = "the error"
+        case Core.helperReturn?: what = "the helper coming back"
+        default: return nil
+        }
+        return "\(CharacterPack.active.name) reacted to \(what) on its own."
     }
 
     /// A tap on the device, recorded as the poke `seq`, on the brain's
@@ -251,38 +306,93 @@ public final class Core {
 
     /// Push-to-talk: start or stop listening, after the device's BOOT
     /// button (`talk_on`, `talk_off`), which already shows `listening`, or
-    /// the app's mic button, for which the runtime has the device show it.
+    /// the app's mic button, for which the device is told to show it.
     @discardableResult
     public func listen(_ on: Bool, by talker: Talker = .app, at now: Int64) -> [CoreEffect] {
-        var fx: [CoreEffect] = []
-        advance(to: now)
-        startDayIfNew(now, &fx)
-        if on { startListening(by: talker, now, &fx) } else { stopListening(now, &fx) }
-        publish(now, &fx)
-        return fx
+        talkInput(now) { fx in
+            if on { startListening(by: talker, now, &fx) } else { stopListening(ListenWhy.released, now, &fx) }
+        }
     }
 
     /// The link to the device dropped, so its button's release can't
     /// arrive: stop listening now. The app's mic button carries on.
     @discardableResult
     public func linkDown(at now: Int64) -> [CoreEffect] {
-        var fx: [CoreEffect] = []
-        if listening?.by == .device { stopListening(now, &fx) }
-        return fx
+        talkStep { fx in
+            if talk.mic?.by == .device { stopListening(ListenWhy.linkDown, now, &fx) }
+        }
     }
 
-    /// The device stopped showing `listening`: the reply went out, or the
-    /// runtime ended it with `stop_listening` because none is coming, or
-    /// the mic couldn't start.
-    public func listeningEnded() {
-        listening = nil
-        replyUntil = nil
+    /// What the mic heard was recorded as said, the event `seq` if it
+    /// wakes the brain: its reply may come. With nothing to wake, none is
+    /// coming, so `listening` ends now.
+    @discardableResult
+    public func heard(replyTo seq: Int?, at now: Int64) -> [CoreEffect] {
+        talkStep { fx in
+            if let seq { talk.replyFor = seq } else { endListening(ListenWhy.noReply, now, &fx) }
+        }
+    }
+
+    /// The mic went off and heard nothing: no reply is coming.
+    @discardableResult
+    public func heardNothing(at now: Int64) -> [CoreEffect] {
+        talkStep { fx in endListening(ListenWhy.heardNothing, now, &fx) }
+    }
+
+    /// The mic or speech recognition couldn't start: `listening` ends at
+    /// once, and `why` stays for the popover until the next try.
+    @discardableResult
+    public func micFailed(_ why: String, at now: Int64) -> [CoreEffect] {
+        talkStep { fx in
+            talk.trouble = why
+            endListening(ListenWhy.micFailed, now, &fx, facts: ["trouble": .string(why)])
+        }
+    }
+
+    /// The popover's "can't hear you" notice was dismissed.
+    public func dismissMicTrouble() { talk.trouble = nil }
+
+    /// A pass is over, about the event `seq` (nil for a forced one), and
+    /// whether it started a reaction. A reaction ends `listening`: it's
+    /// the reply, and the device ends it as it plays. The first pass on
+    /// what you said or on anything newer that didn't react means none is
+    /// coming, so `listening` ends now.
+    @discardableResult
+    public func passed(about seq: Int?, reacted: Bool, at now: Int64) -> [CoreEffect] {
+        talkStep { fx in
+            let answered = talk.replyFor.map { r in seq.map { $0 >= r } ?? false } ?? false
+            if answered { talk.replyFor = nil }
+            if reacted {
+                endListening(ListenWhy.replied, now, &fx, stop: false)
+            } else if answered {
+                endListening(ListenWhy.noReply, now, &fx)
+            }
+        }
     }
 
     /// Whether the device shows `listening` at `now`: the mic is on, or it
     /// went off and the reply hasn't come yet.
     public func showsListening(at now: Int64) -> Bool {
-        listening != nil || replyUntil.map { now < $0 } == true
+        talk.mic != nil || talk.replyUntil.map { now < $0 } == true
+    }
+
+    /// One push-to-talk input: the timers first, then `body`'s rules,
+    /// then what the device shows.
+    private func talkInput(_ now: Int64, _ body: (inout [CoreEffect]) -> Void) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        startDayIfNew(now, &fx)
+        body(&fx)
+        publish(now, &fx)
+        return fx
+    }
+
+    /// The rest of push-to-talk's steps change nothing the device's
+    /// `state` shows: only their records and reactions.
+    private func talkStep(_ body: (inout [CoreEffect]) -> Void) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        body(&fx)
+        return fx
     }
 
     @discardableResult
@@ -293,12 +403,10 @@ public final class Core {
         return fx
     }
 
-    /// The mood the log has at launch, before anything is published.
-    public func restore(mood: String) { config.mood = mood }
-
-    /// The mood action saved a new mood: the next `state` carries it.
-    public func setMood(_ mood: String, at now: Int64) -> [CoreEffect] {
-        config.mood = mood
+    /// The mood output saved a new mood (`mood` reads it): a `state`
+    /// carries it at once.
+    @discardableResult
+    public func moodChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx
@@ -310,15 +418,18 @@ public final class Core {
         wallOffsetMs = wallMs - now
     }
 
-    /// Timers: the Codex grace period, the safety net and the mic's 30 s
-    /// limit.
+    /// Timers: the Codex grace period, the safety net, the mic's 30 s
+    /// limit and the reply's 8 s wait.
     @discardableResult
     public func tick(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
-        if let l = listening, now - l.since >= Self.listenLimitMs {
+        if let mic = talk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
-            stopListening(now, &fx)
+            stopListening(ListenWhy.limit, now, &fx)
+        } else if talk.mic == nil, let until = talk.replyUntil, now >= until {
+            // The device stopped holding `listening` for the reply on its own.
+            endListening(ListenWhy.timedOut, now, &fx, stop: false)
         }
         publish(now, &fx)
         return fx
@@ -326,14 +437,8 @@ public final class Core {
 
     // MARK: - Reading
 
-    /// The sessions in the order the popover lists them: those that need
-    /// you (oldest first), then working, then idle.
-    func grouped(at now: Int64) -> (waiting: [Session], working: [Session], idle: [Session]) {
-        tracker.grouped(at: now)
-    }
-
     public func snapshot(at now: Int64) -> StateSnapshot {
-        let (waiting, working, _) = grouped(at: now)
+        let (waiting, working, _) = tracker.grouped(at: now)
         let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
         let attn = waiting.first.map {
             StateSnapshot.Attention(
@@ -344,7 +449,7 @@ public final class Core {
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
-        var snapshot = StateSnapshot(base: base, act: act, mood: config.mood, attn: attn, busy: working.count,
+        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
                                      vol: config.volume, variant: 1)
         if shown.visual == snapshot.visual { snapshot.variant = shown.variant }
         return snapshot
@@ -368,16 +473,17 @@ public final class Core {
     /// and the harness may later.
     public static func pickVariant(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
                                    avoiding last: Int?, _ rng: inout SplitMix64) -> Int {
-        let fit = FaceLoops.variants(mood: MoodGraph.pixelFallback(mood), state: state, outcome: outcome, ctx: ctx)
+        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx)
         let choices = fit.filter { $0 != last }
         guard !choices.isEmpty else { return fit.first ?? 1 }
         return choices[rng.int(in: 0...(choices.count - 1))]
     }
 
-    /// Every session, for the popover's list. The device doesn't
-    /// get these.
+    /// Every session, for the popover's list, in the tracker's order:
+    /// those that need you (oldest first), then working, then idle. The
+    /// device doesn't get these.
     public func sessionList(at now: Int64) -> [SessionSummary] {
-        let (waiting, working, idle) = grouped(at: now)
+        let (waiting, working, idle) = tracker.grouped(at: now)
         return waiting.map { SessionSummary($0, .waiting) } + working.map { SessionSummary($0, .working) }
             + idle.map { SessionSummary($0, .idle) }
     }
@@ -392,7 +498,7 @@ public final class Core {
     /// mic is on, since a reaction would end `listening` before you've
     /// finished.
     public var reactionBlock: String? {
-        needsYouBlock ?? (listening != nil ? "the mic is on" : nil)
+        needsYouBlock ?? (talk.mic != nil ? "the mic is on" : nil)
     }
 
     // MARK: - Rules
@@ -404,15 +510,8 @@ public final class Core {
     /// sees steady time.
     private func day(_ now: Int64) -> String { config.time.day(wall(now)) }
 
-    func isWorking(_ s: Session, _ now: Int64) -> Bool { tracker.isWorking(s, at: now) }
-
     /// Whether "needs you" shows: then no event's pass starts.
     public var needsYouShowing: Bool { tracker.needsYou }
-
-    /// A random place for a launch's request numbers to start, so
-    /// `attn.id` doesn't repeat one the device still shows from the last
-    /// launch.
-    public static func randomFirstAsk() -> Int { SessionTracker.randomFirstRequest() }
 
     /// The first activity of a new day, for the transcript's pruning.
     func startDayIfNew(_ now: Int64, _ fx: inout [CoreEffect]) {
@@ -439,26 +538,58 @@ public final class Core {
                                         facts: ["agent": .string(thread.agent)], at: now)))
             fx.append(.open(thread))
         }
-        if let waiting = grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread) }
+        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread) }
         if let finish { return open(finish, Core.openedFinished) }
         fx.append(.record(Event.did(Core.wiggled, for: seq, action: Core.wiggle, by: "rule", at: now)))
     }
 
+    /// Turns the mic on, if it's off, recorded as `listen_start`. After the
+    /// app's button the device is told to show `listening` at once (its own
+    /// button already does), which drops the reactions waiting there,
+    /// since one would end it.
     func startListening(by talker: Talker, _ now: Int64, _ fx: inout [CoreEffect]) {
-        guard listening == nil else { return }
-        listening = (talker, now)
-        replyUntil = nil
+        guard talk.mic == nil else { return }
+        talk = Talk(mic: Talk.Mic(by: talker, since: now), by: talker)
+        recordListen(.start, now, &fx)
+        if talker == .app { fx.append(.reaction(DeviceReaction(anim: BoopDevice.listening))) }
         fx.append(.listen(true, by: talker))
     }
 
-    /// Turns the mic off, if it's on. The device holds `listening` for the
-    /// reply until the runtime says it's over (`listeningEnded`), or
-    /// `replyWaitMs` at most.
-    func stopListening(_ now: Int64, _ fx: inout [CoreEffect]) {
-        guard let l = listening else { return }
-        listening = nil
-        replyUntil = now + Self.replyWaitMs
-        fx.append(.listen(false, by: l.by))
+    /// Turns the mic off, if it's on, recorded as `listen_wait`: the device
+    /// holds `listening` for the reply until the core ends it
+    /// (`endListening`), or `replyWaitMs` at most.
+    func stopListening(_ why: String, _ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let mic = talk.mic else { return }
+        talk.mic = nil
+        talk.replyUntil = now + Self.replyWaitMs
+        recordListen(.wait, now, &fx, data: ["why": .string(why)])
+        fx.append(.listen(false, by: mic.by))
+    }
+
+    /// Ends `listening`: with `stop`, the device is told so with
+    /// `stop_listening`, which ends nothing else and does nothing where
+    /// `listening` already ended. Recorded as `listen_end` only when it
+    /// hadn't ended yet: as timed out once the reply's wait is over.
+    func endListening(_ why: String, _ now: Int64, _ fx: inout [CoreEffect], stop: Bool = true,
+                      facts: [String: JSONValue] = [:]) {
+        if talk.mic != nil || talk.replyUntil != nil {
+            let late = talk.mic == nil && talk.replyUntil.map { now >= $0 } == true
+            var data = facts
+            data["why"] = .string(late ? ListenWhy.timedOut : why)
+            recordListen(.end, now, &fx, data: data)
+        }
+        talk.mic = nil
+        talk.replyUntil = nil
+        if stop { fx.append(.reaction(DeviceReaction(anim: BoopDevice.stopListening))) }
+    }
+
+    /// A `listen_start`, `listen_wait` or `listen_end` record: the core's,
+    /// by rule, for whose button (`device` or `app`). Log-only: no line.
+    func recordListen(_ phase: Event.Phase, _ now: Int64, _ fx: inout [CoreEffect], data: [String: JSONValue] = [:]) {
+        var data = data
+        data["by"] = "rule"
+        fx.append(.record(Event(at: now, source: .boop, type: .listen, phase: phase, specificType: talk.by.rawValue,
+                                data: data)))
     }
 
     /// The rule actions' names and messages.
@@ -471,21 +602,24 @@ public final class Core {
 
     /// Runs the session table's timers due by `now`: a
     /// Codex request past its grace shows, the safety net, and forgetting.
-    func advance(to now: Int64) {
-        tracker.advance(to: now)
+    /// Each request the safety net expires is kept for its `needs_you` end.
+    /// `sparing`'s Codex request isn't shown: its event comes first.
+    func advance(to now: Int64, sparing: String? = nil) {
+        for (key, change) in tracker.advance(to: now, sparing: sparing) where change == .requestExpired {
+            expired.insert(key)
+        }
     }
 
     /// "Needs you" starting or clearing for a session, as a rule action:
-    /// the view says who needs you from it, and knows while nothing may
-    /// wake the brain. A session gone while it
+    /// the view says who needs you from its start. A session gone while it
     /// waited clears too.
     func recordNeeds(_ now: Int64, _ fx: inout [CoreEffect]) {
         let showing = sessions.filter { $0.value.needsSince != nil }
         for (key, s) in showing.sorted(by: { ($0.value.needsSince!, $0.value.request) < ($1.value.needsSince!, $1.value.request) })
         where shownNeeds[key] == nil {
             shownNeeds[key] = (s.agent, s.id)
-            tracker.clearedWhy[key] = nil
-            fx.append(.record(Event(ts: now, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou,
+            expired.remove(key)
+            fx.append(.record(Event(at: now, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou,
                                     session: s.id,
                                     data: ["for": s.requestRef.map { .int(Int64($0)) } ?? .null, "by": "rule",
                                            "agent": .string(s.agent.rawValue), "ok": true,
@@ -493,11 +627,11 @@ public final class Core {
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
-            let why = tracker.clearedWhy.removeValue(forKey: key) ?? (sessions[key] == nil ? "the session ended" : nil)
+            let why = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended" : nil
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
-            fx.append(.record(Event(ts: now, source: .boop, type: .needsYou, phase: .end, specificType: Core.needsYou,
+            fx.append(.record(Event(at: now, source: .boop, type: .needsYou, phase: .end, specificType: Core.needsYou,
                                     session: was.id, data: data)))
         }
     }
@@ -506,10 +640,10 @@ public final class Core {
         recordNeeds(now, &fx)
         updateActs(now)
         var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: MoodGraph.pixelFallback(config.mood), state: snapshot.visual) {
+        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual) {
             // A new visual, or a new mood with fewer variations of it than
             // the one showing: a variation of it at random.
-            shown = (snapshot.visual, Core.pickVariant(mood: config.mood, state: snapshot.visual,
+            shown = (snapshot.visual, Core.pickVariant(mood: snapshot.mood, state: snapshot.visual,
                                                          avoiding: lastVariant[snapshot.visual], &rng))
             lastVariant[snapshot.visual] = shown.variant
             snapshot.variant = shown.variant
@@ -518,7 +652,7 @@ public final class Core {
         defer { lastSessions = sessions }
         if snapshot != lastPublished {
             lastPublished = snapshot
-            // The picture changes before any moment plays on top of it.
+            // The picture changes before any reaction plays on top of it.
             fx.insert(.state(snapshot), at: 0)
         } else if sessions != lastSessions {
             fx.insert(.sessions, at: 0)

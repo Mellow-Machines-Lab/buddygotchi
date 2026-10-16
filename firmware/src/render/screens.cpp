@@ -56,7 +56,7 @@ void drawBox(Canvas& c, int w) {
   c.fillRect(kWidth / 2 - L, top - 2 * L, 2 * L, L, uint8_t(ink));
 }
 
-// The line's text in its bubble, which takes the whole lane: the text
+// The `say`'s text in its bubble, which takes the whole lane: the text
 // centred in the large font, or the small one when it doesn't fit (20
 // characters do; the longest take is 22), cut to fit the room.
 void drawBubble(Canvas& c, const char* text) {
@@ -101,7 +101,7 @@ void drawStrip(Canvas& c, const Strip& s) {
   // colour: the finish's names get a black band to be read on.
   if (s.doneAgent) c.fillRect(0, kStripTop, kWidth, kHeight - kStripTop, kBlack);
   // The divider, only over bare glass: an older mood's working look draws
-  // its props down into the lane, and the line mustn't cut through them.
+  // its props down into the lane, and the divider mustn't cut through them.
   uint8_t* divider = c.pixels() + kStripTop * kWidth;
   for (int x = kMargin; x < kWidth - kMargin; ++x) {
     if (divider[x] == kBlack) divider[x] = inkAt(kInkDim, kLevels);

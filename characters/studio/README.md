@@ -1,6 +1,6 @@
 # Character Studio
 
-Updated 2026-10-11. One page for looking at and listening to any
+Updated 2026-10-15. One page for looking at and listening to any
 character pack: pick a pack, a mood and a state, and the stage plays what
 the device would. The page belongs to the engine and names no character.
 Each pack that wants a preview declares one in its `character.json`
@@ -10,11 +10,11 @@ its moods, their meanings and the states.
 ## Open it
 
 The page reads `packs.js`, which `characters/charactergen.py` writes on
-every run (`make build` runs it) for the packs in this checkout. Git
+every run but `--which` (`make build` stages, which writes it) for the packs in this checkout. Git
 ignores it. From the repository root:
 
 ```sh
-python3 characters/charactergen.py
+python3 characters/charactergen.py --check
 ```
 
 Then open [index.html](index.html) in a browser. It works from `file://`
@@ -31,13 +31,14 @@ tools save the clips its studio entry names (`captures`) into `DIR`.
 ## What's on the page
 
 - **Pack**, when there's more than one here, and the **characters** for
-  it: each preview the pack declares (Boop's pack shows its gel slime
-  and its copy of the pixel face). Switching keeps the mood and state,
+  it: each preview the pack declares or uses (Boop's pack shows its gel slime
+  and Pixel's pixel face). Switching keeps the mood and state,
   so the same moment can be compared on both.
 - **Mood**: the pack's moods in their families, each with the colour its
-  studio entry gives the family. When a character has no art for a mood,
-  its chip is dashed with an arrow, and the stage plays the mood the
-  arrow names: the mood's `fallback`, the one the app uses.
+  studio entry gives the family. When a character has no art of its own
+  for a mood, its chip is dashed with an arrow, and the stage plays the
+  mood the arrow names: the one its studio entry's `wears` file says it
+  wears, as its faces do.
 - **State**: the engine's states ([states.json](states.json)), grouped,
   each with a sentence. Task complete adds a success or failure choice;
   starting adds new task, new session or continuing.
@@ -61,9 +62,8 @@ packs' `character.json` files and `states.json`, and
 - `states.json` doesn't list the board's states (the firmware's
   `kStateNames`), each once;
 - a file a studio entry names doesn't exist;
-- a character can't play one of the pack's moods in some state, even
-  through the mood's `fallback`. A pack's `coverage` file says which
-  pairs it has art for; without one, it has them all.
+- a character's `wears` file lends or borrows a mood the pack doesn't
+  have. Without one, a character has art for every mood.
 
 The other forms only warn. The rules' tests are in
 `internal/characters/` (`make -C internal tools-test`).
@@ -91,7 +91,7 @@ The instance has:
 
 | Call | What it does |
 | --- | --- |
-| `select({mood, face, state, outcome, context, variant})` | Shows that scene and returns `{variants, caption}`: the variation picker's labels and a line under the title. `mood` is what this character plays, its fallback already applied |
+| `select({mood, face, state, outcome, context, variant})` | Shows that scene and returns `{variants, caption}`: the variation picker's labels and a line under the title. `mood` is what this character plays: the mood it wears, already applied |
 | `status()` | The line under the stage |
 | `setSound()` | Applies `ctx.sound` and `ctx.volume` |
 | `destroy()` | Removes what it added to the stage and the drawer |

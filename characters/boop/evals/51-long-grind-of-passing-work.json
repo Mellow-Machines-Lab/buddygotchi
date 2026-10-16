@@ -1,7 +1,7 @@
 {
   "name": "A long grind of good work is engaged or determined, excited only at its end",
   "case": "The agent works on one turn for sixteen minutes, its tests passing along the way. Boop follows the work, engaged, and as it grinds on, determined, but it isn't excited while the work is still going. When the turn finishes well, that's a big moment: a success, and Boop turns excited or proud.",
-  "why": "characters/boop/steering/mood/calm.md and engaged.md: a long turn working on leaves calm for engaged, a very long one engaged for determined; excited is for a very long turn done (MoodAction.moods)",
+  "why": "characters/boop/steering/mood/calm.md and engaged.md: a long turn working on leaves calm for engaged, a very long one engaged for determined; excited is for a very long turn done (MoodOutput.moods)",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "2m", "topic": "tests", "failed": false},

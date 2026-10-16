@@ -1,8 +1,8 @@
-"""Links to the board (USB serial at 460800 baud) and to boop-sim: one JSON
+"""Links to the board (USB serial at 460800 baud) and to the native simulator: one JSON
 message per line in each direction.
 
 Only one process may hold the port. A lock file in /tmp makes concurrent
-boopctl commands wait their turn instead of corrupting each other's lines.
+boopctl commands wait for each other instead of corrupting each other's messages.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import json
 import os
 import re
 import socket
+import stat
 import struct
 import subprocess
 import time
@@ -28,6 +29,28 @@ PORT_PATTERNS = ("/dev/cu.usbserial-*", "/dev/cu.wchusbserial*", "/dev/cu.usbmod
 
 class DeviceError(Exception):
     pass
+
+
+def bridge_path() -> str:
+    """Where a USB bridge shares the board: `$BOOP_BRIDGE`, else where
+    `linkkit-bridge` shares it by default, in this user's own temporary
+    folder (linkkit/SPEC.md §8)."""
+    tmp = os.environ.get("TMPDIR") or "/tmp"
+    return os.environ.get("BOOP_BRIDGE") or os.path.join(tmp, "linkkit-bridge.sock")
+
+
+def bridge_running(path: str | None = None) -> bool:
+    """Whether a bridge answers on `path` (bridge_path() by default)."""
+    path = path or bridge_path()
+    try:
+        if not stat.S_ISSOCK(os.stat(path).st_mode):
+            return False
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(0.3)
+            s.connect(path)
+        return True
+    except OSError:
+        return False
 
 
 def list_ports() -> list[str]:
@@ -58,7 +81,7 @@ def port_holder(port: str) -> str:
 
 
 class Link:
-    """One JSON message per line in each direction: the board or boop-sim."""
+    """One JSON message per line in each direction: the board or the native simulator."""
 
     timeout = 3.0
     # The CH340 at 460800 baud on macOS now and then drops a run of bytes
@@ -205,9 +228,9 @@ class Link:
 
 
 class Sim(Link):
-    """boop-sim as a subprocess: the device core on the Mac."""
+    """The native simulator as a subprocess: the device core on the Mac."""
 
-    name = "boop-sim"
+    name = "the native simulator"
 
     def __init__(self, program: str) -> None:
         super().__init__()
@@ -239,17 +262,15 @@ class Sim(Link):
 
 
 class Device(Link):
-    """A locked, open serial connection to the board, or, while
-    `boopctl bridge` runs, a connection to the bridge's socket."""
+    """A locked, open serial connection to the board, or, while a bridge
+    (`linkkit-bridge`) shares it, a connection to the bridge's socket."""
 
-    def __init__(self, port: str | None = None, direct: bool = False) -> None:
+    def __init__(self, port: str | None = None) -> None:
         super().__init__()
         self._ser: serial.Serial | None = None
         self._sock: socket.socket | None = None
         self._lock_fd: int | None = None
-        from boopctl_lib.bridge import bridge_path, bridge_running
-
-        self._bridged = not direct and not port and bridge_running()
+        self._bridged = not port and bridge_running()
         if self._bridged:
             self.port = bridge_path()
             self.name = f"the board through the bridge on {self.port}"

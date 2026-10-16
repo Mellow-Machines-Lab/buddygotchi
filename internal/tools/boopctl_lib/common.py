@@ -7,6 +7,7 @@ import json
 import os
 import socket
 import struct
+import sys
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -22,23 +23,23 @@ REPO = Path(__file__).resolve().parents[3]
 MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_text())["moods"]
 
 # The animations a `do` plays by name:
-# the brain's finish, the rules' one-shots and a tap's, each its design's
-# state.
-ANIMS = ["task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "poked", "tap_spam"]
+# the brain's finish and the rules' reactions, each its design's state. A
+# tap's (poked, tap_spam) the device plays itself, never by name.
+ANIMS = ["task_complete", "reply_ready", "starting", "stopped", "error", "helper_return"]
 # Every name Boop's device plays, its `hello.does`:
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
 DOES = ["react", "task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "listening",
-        "stop_listening", "poked", "tap_spam"]
-# The `do` names that play no animation: a face and a line, and ending
+        "stop_listening"]
+# The `do` names that play no animation: a face and a `say`, and ending
 # push-to-talk.
 NO_ANIM = {"react", "stop_listening"}
-# The older names of two animations, which older logs have and `boopctl
-# play` still takes; the device doesn't know them: `cheer` is
-# task_complete's success, `wiggle` is poked.
-OLD_ANIMS = {"cheer": "task_complete", "wiggle": "poked"}
-# The one-shots the rules send, never the brain.
-RULE_ONE_SHOTS = {"starting", "stopped", "error", "helper_return"}
+# The older name of an animation, which older logs have and `boopctl
+# play` still takes; the device doesn't know it: `cheer` is
+# task_complete's success.
+OLD_ANIMS = {"cheer": "task_complete"}
+# The reactions the rules send, never the brain.
+RULE_REACTIONS = {"starting", "stopped", "error", "helper_return"}
 # The animations that play a turn's finish: the brain's
 # task_complete and reply_ready, and their older names in older logs (the
 # cheer).
@@ -47,16 +48,16 @@ FINISHES |= {old for old, anim in OLD_ANIMS.items() if anim in FINISHES}
 # The facts that pick an animation's variations.
 OUTCOMES = ["success", "failure"]
 CTXS = ["new_task", "session", "continuation", "compacted"]
-# How long the Mac lets a `next` wait for its turn (the kit's default,
+# How long the Mac lets a `next` wait in the queue (the kit's default,
 # linkkit/SPEC.md §3).
 TTL_MS = 5000
 
 
 def do(name: str, play: str = "now", id: int | None = None, ttl: int | None = None, **args: Any) -> dict[str, Any]:
-    """A request to play `name` (linkkit/SPEC.md §3 `do`), with Boop's
+    """A `do` to play `name` (linkkit/SPEC.md §3), with Boop's
     fields (`say`, `mood`, `loops`, `variant`, `outcome`, `ctx`) in `args`.
     The tools play `now` by default, so each replaces the last at once, as
-    every moment did before the device took turns; a request with no `id`
+    every reaction did before the device kept a queue; a `do` with no `id`
     plays but gets no `ended`, and only the ones a tool waits on have one."""
     msg: dict[str, Any] = {"t": "do"}
     if id is not None:
@@ -71,10 +72,10 @@ def do(name: str, play: str = "now", id: int | None = None, ttl: int | None = No
 
 def call(msg: dict[str, Any]) -> dict[str, Any] | None:
     """What a message to the device asks it to play, in one shape for the
-    tools that read the lines the Mac sent: its `name`, its `anim` (None for
-    a face or a line alone), `id`, `play`, and Boop's fields (`say`, `mood`,
+    tools that read the messages the Mac sent: its `name`, its `anim` (None for
+    a face or a `say` alone), `id`, `play`, and Boop's fields (`say`, `mood`,
     `loops`, `variant`, `outcome`, `ctx`, `who`) as they are. A `do`, or in
-    logs from before the device took turns a `moment`, which played at
+    logs from before the device kept a queue a `moment`, which played at
     once; None for anything else."""
     if msg.get("t") == "do":
         args = msg.get("args") if isinstance(msg.get("args"), dict) else {}
@@ -99,18 +100,19 @@ def ended(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def chosen_pack() -> Path:
-    """The character pack in use, as the Swift tests and the simulator
-    take it: `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack, characters/CHARACTER.md §2), else Boop."""
-    if os.environ.get("BOOP_CHARACTER"):
-        return Path(os.environ["BOOP_CHARACTER"])
-    staged = REPO / ".character-build" / "pack"
-    return Path(staged.read_text().strip()) if staged.exists() else REPO / "characters" / "boop"
+    """The character pack in use, by charactergen's one rule
+    (characters/CHARACTER.md §2)."""
+    sys.path.insert(0, str(REPO / "characters"))
+    try:
+        import charactergen
+    finally:
+        sys.path.pop(0)
+    return charactergen.in_use()
 
 
 # The chosen pack's voice, the file a board's card has as boop/voice.bin
 # (characters/CHARACTER.md §8).
-PACK = chosen_pack() / "voice" / "voice.bin"
+VOICE_FILE = chosen_pack() / "voice" / "voice.bin"
 
 
 @dataclass(frozen=True)
@@ -124,14 +126,14 @@ class Take:
 
 @cache
 def takes() -> tuple[Take, ...]:
-    """The takes in the voice pack the board plays from its card
+    """The takes in the voice file the board plays from its card
     (the chosen character pack's voice/voice.bin), by id."""
-    if not PACK.exists():
-        raise DeviceError(f"no voice pack at {PACK}: the chosen character pack has no voice")
-    data = PACK.read_bytes()
+    if not VOICE_FILE.exists():
+        raise DeviceError(f"no voice file at {VOICE_FILE}: the chosen character pack has no voice")
+    data = VOICE_FILE.read_bytes()
     magic, _, count, size, index, rate, _ = struct.unpack_from("<8s16sIIIII", data)
     if magic != b"BOOPVOX1":
-        raise DeviceError(f"{PACK} isn't a voice pack")
+        raise DeviceError(f"{VOICE_FILE} isn't a voice file")
     out = []
     for i in range(count):
         rec = data[index + i * size:index + (i + 1) * size]

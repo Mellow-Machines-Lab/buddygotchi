@@ -4,7 +4,8 @@ import MellowHarness
 
 /// Boop's view of an event: what MellowHarness's event
 /// holds for Boop. An agent's hook, a poke, what
-/// you said, away and back, a heartbeat and "needs you" are each a type,
+/// you said, away and back, a heartbeat, "needs you" and push-to-talk's
+/// listening are each a type,
 /// and a type with a lifetime a phase: the event's `kind` is the two
 /// together (`tool_end`, `poke`). The source's own name for it, the
 /// session, subagent and working directory are in `data`. MellowHarness's own
@@ -28,6 +29,10 @@ extension Event {
         case session, turn, tool, subagent, poke, talk, presence, heartbeat
         /// "Needs you" showing for a session, and clearing: the core's.
         case needsYou = "needs_you"
+        /// Push-to-talk's listening: the Mac's mic going on (`start`), off
+        /// with the reply still to come (`wait`), and listening over
+        /// (`end`). The core's, and log-only: no line, no wake.
+        case listen
     }
 
     /// Where in its life a thing with a start and an end is: a tool call
@@ -39,25 +44,19 @@ extension Event {
     /// The `data` keys Boop's own fields take.
     static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd"]
 
-    public init(seq: Int = 0, ts: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
+    public init(seq: Int = 0, at: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
                 session: String? = nil, subagent: String? = nil, cwd: String? = nil, data: [String: JSONValue] = [:]) {
         var data = data
         data["specific_type"] = .string(specificType)
         if let session { data["session"] = .string(session) }
         if let subagent { data["subagent"] = .string(subagent) }
         if let cwd { data["cwd"] = .string(cwd) }
-        self.init(seq: seq, at: ts, source: source.rawValue, kind: Event.kind(type, phase), data: data)
+        self.init(seq: seq, at: at, source: source.rawValue, kind: Event.kind(type, phase), data: data)
     }
 
     /// A type and phase's `kind`: `tool_end`, `poke`.
     public static func kind(_ type: Kind, _ phase: Phase?) -> String {
         phase.map { "\(type.rawValue)_\($0.rawValue)" } ?? type.rawValue
-    }
-
-    /// When it happened, in unix milliseconds: its `at`.
-    public var ts: Int64 {
-        get { at }
-        set { at = newValue }
     }
 
     /// Where it came from, for one of Boop's sources.
@@ -110,47 +109,6 @@ extension Event {
 
     /// `value` as JSON, keys sorted: a string comes back quoted.
     static func json(_ value: Any) -> String { JSONLine.encode(value) }
-
-    /// A transcript line from before MellowHarness:
-    /// `ts`, `type`, `phase`, `specific_type`, `session`, `subagent` and
-    /// `cwd` at the top, and actions as a type of their own. Read so a
-    /// launch just after the change picks up where the last one left.
-    public static func legacy(_ line: some StringProtocol) -> Event? {
-        guard let o = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
-              let seq = (o["seq"] as? NSNumber)?.intValue, let ts = (o["ts"] as? NSNumber)?.int64Value,
-              let source = o["source"] as? String, let type = o["type"] as? String,
-              let specific = o["specific_type"] as? String else { return nil }
-        var data = (o["data"] as? [String: Any] ?? [:]).mapValues { JSONValue(foundation: $0) }
-        let phase = o["phase"] as? String
-        if type == "action" {
-            if specific == Core.needsYou {
-                if let session = o["session"] as? String { data["session"] = .string(session) }
-                data["specific_type"] = .string(specific)
-                return Event(seq: seq, at: ts, source: Source.boop.rawValue,
-                             kind: phase == "end" ? "needs_you_end" : "needs_you_start", data: data)
-            }
-            data["action"] = .string(specific)
-            if phase == "end" { return Event(seq: seq, at: ts, source: Event.harness, kind: Event.ended, data: data) }
-            // A mood change said what it changed from and to only in its
-            // message; the mood is its latest `to` now.
-            if specific == MoodAction.actionName, let message = data["message"]?.string,
-               let said = message.range(of: "'s mood changed: "), message.hasSuffix(".") {
-                // "<name>'s mood changed: from → to.", the name the character's.
-                let parts = message[said.upperBound...].dropLast().components(separatedBy: " → ")
-                if parts.count == 2 {
-                    data["from"] = .string(parts[0])
-                    data["to"] = .string(parts[1])
-                }
-            }
-            if phase == "start" { data["open"] = true }
-            return Event(seq: seq, at: ts, source: Event.harness, kind: Event.did, data: data)
-        }
-        data["specific_type"] = .string(specific)
-        for key in ["session", "subagent", "cwd"] {
-            if let value = o[key] as? String { data[key] = .string(value) }
-        }
-        return Event(seq: seq, at: ts, source: source, kind: phase.map { "\(type)_\($0)" } ?? type, data: data)
-    }
 }
 
 /// Numbers named, so no brain has to compare them.

@@ -21,7 +21,7 @@ constexpr int kTouchMiso = 39;
 constexpr int kTouchCs = 33;
 constexpr int kTouchIrq = 36;  // low while pressed
 
-// The microSD slot, on SPI3 (VSPI): the voice pack (board/card.cpp).
+// The microSD slot, on SPI3 (VSPI): the voice file (board/card.cpp).
 constexpr int kCardSpiBus = 3;  // VSPI in Arduino's numbering
 constexpr int kCardSclk = 18;
 constexpr int kCardMiso = 19;

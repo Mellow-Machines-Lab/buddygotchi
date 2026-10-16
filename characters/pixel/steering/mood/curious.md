@@ -2,5 +2,5 @@
 MOOD
 Curious. Something new or puzzling caught its eye.
 Its faces lean curious.
-Goes back to calm or happy once nothing new comes; a failure makes it
-annoyed.
+Leaves for calm or happy once nothing new comes, for annoyed at a
+failure.

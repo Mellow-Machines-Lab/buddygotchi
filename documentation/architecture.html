@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-13.</p>
+  <p class="small">Updated 2026-10-15.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -209,15 +209,15 @@ Boop did nothing on its own.</pre></div>
       </li>
       <li class="link"><div class="wire"><span>the sentence, with recent history</span></div></li>
       <li class="hop">
-        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality and rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't.</p></div>
+        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality, the nature you chose at setup (sweet or cheeky) and its rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't.</p></div>
         <div class="pay"><span class="what">Two of the questions (options trimmed), and the answers</span>
 <pre>After NOW, what is Boop's mood?
   calm      Stay calm: NOW is no reason MOOD gives to leave it…
-  happy     Good spirits: work is going well, or a win just came…
-  excited   Thrilled: a very long turn finished done…
-            not for: a shorter turn finishing…
+  comfy     Positive low-energy contentment; safe and comfortable…
+  curious   Interested in uncertainty; actively investigates…
+  engaged   Productively absorbed; performing rather than struggling.
   …
-react.mood: none | happy | excited | proud | curious | …
+react.mood: none | calm | comfy | lazy | bored | pleased | …
 
 mood calm · react.mood excited · react.animation success
 react.loops once · say.feeling none · say.about start · say.kind word</pre>
@@ -225,7 +225,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       </li>
       <li class="link"><div class="wire"><span>Jev's answers</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>Actions and Voice</b><p><code>mood</code> keeps or changes Boop's mood. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
+        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
         <div class="pay"><span class="what"><code>do</code> to the device: play this when you can</span>
 <pre>{
   "t": "do",
@@ -251,7 +251,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
     <span class="label">LinkKit (linkkit/)</span>
     <ol class="hops">
       <li class="hop">
-        <div class="box c"><b>LinkKit</b><p>Carries the messages over Bluetooth or USB. On the board it plays one request at a time: a <code>next</code> request waits for the current one to finish, up to its <code>ttl</code> (5 s here), then plays.</p></div>
+        <div class="box c"><b>LinkKit</b><p>Carries the messages over Bluetooth or USB. On the board it keeps the queue: one <code>do</code> plays at a time, and a <code>next</code> waits for the one playing to finish, up to its <code>ttl</code> (5 s here), then plays.</p></div>
         <div class="pay"><span class="what"><code>ended</code> back to the Mac, once per <code>do</code></span>
   <pre>{
   "t": "ev",
@@ -279,32 +279,32 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
 
   <h3>Three speeds</h3>
   <div class="scroll"><table>
-    <thead><tr><th>Loop</th><th>Runs on</th><th>Handles</th><th>Never waits for</th></tr></thead>
+    <thead><tr><th>Speed</th><th>Runs on</th><th>Handles</th><th>Never waits for</th></tr></thead>
     <tbody>
-      <tr><td>Reflex (instant)</td><td>The device</td><td>Reacting to taps, blinking, the alert when an agent needs you, the order requests play in</td><td>The Mac</td></tr>
-      <tr><td>Reactive (fast)</td><td>The Mac's rules</td><td>A hook changing the screen, or a short animation a rule plays</td><td>Jev</td></tr>
+      <tr><td>Reflex (instant)</td><td>The device</td><td>Reacting to taps, blinking, showing that an agent needs you, the queue (the order reactions play in)</td><td>The Mac</td></tr>
+      <tr><td>Reactive (fast)</td><td>The Mac's rules</td><td>A hook changing the screen, or a rule's reaction</td><td>Jev</td></tr>
       <tr><td>Deliberative (slow)</td><td>MellowHarness and Jev</td><td>Every mood change and reaction, including to a finished turn</td><td>Nothing, and nothing waits for it</td></tr>
     </tbody>
   </table></div>
-  <p class="small">Each loop's time budget is in <a href="../internal/VERIFICATION.md">internal/VERIFICATION.md</a> §8.</p>
+  <p class="small">Each speed's time budget is in <a href="../internal/VERIFICATION.md">internal/VERIFICATION.md</a> §8.</p>
 </section>
 
 
 <section id="joins">
   <h2>Where the pieces join</h2>
-  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>.</p>
+  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>, which is split by job over six files in <code>app/BoopKit/App/</code>: <code>Runtime.swift</code>, and <code>Runtime+Brain</code>, <code>+Device</code>, <code>+Talk</code>, <code>+Status</code> and <code>+Dev</code>.</p>
   <div class="scroll"><table>
     <thead><tr><th>From → to</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
       <tr><td>agent-hooks → Boop</td><td><code>Adapter.event(from:)</code>, <code>Runtime.hook</code></td><td>Each hook line becomes an <code>AgentEvent</code>, kept as a MellowHarness <code>Event</code> with its facts in <code>data</code></td></tr>
-      <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' short animations</td></tr>
-      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is logged and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, and <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
+      <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' reactions</td></tr>
+      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is written to the transcript and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's, so the two agree. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>
-      <tr><td>Boop → LinkKit (a rule's short animation)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, skipped while one of Jev's reactions is playing</td></tr>
-      <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactAction</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>
+      <tr><td>Boop → LinkKit (a rule's reaction)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, and skipped unless nothing plays on the device or what plays is resting. The core records each one it plays, so the next prompt says Boop already reacted on its own (a turn's <code>starting</code> is recorded but left out of the prompt). Push-to-talk's <code>listening</code> after the app's mic button is <code>play: now</code></td></tr>
+      <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactOutput</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>
       <tr><td>Boop → which device</td><td><code>DeviceChooser</code></td><td>The board over Bluetooth, or, while one runs on this Mac and Settings is told to use it, the simulator (<code>simulator/</code>: the firmware's own code in a web page) over its USB socket. Nothing above the transport knows which</td></tr>
-      <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>, or another in <code>demo/</code>) comes in through the same doors as real work: the agent's hooks as hooks (sent by the player, or with <code>--live</code> a real agent's, which the rest keeps to), a poke as the device's, talk as the mic's; the brain's lines are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>
-      <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline; <code>talk_on</code> and <code>talk_off</code> drive push-to-talk</td></tr>
+      <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>, or another in <code>demo/</code>) comes in through the same doors as real work: the agent's hooks as hooks (sent by the player, or with <code>--live</code> a real agent's, which the rest keeps to), a poke as the device's, talk as the mic's; the brain's steps are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>
+      <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline; <code>talk_on</code> and <code>talk_off</code> go to the core, which keeps push-to-talk, as it does for the app's mic button: it says when the Mac's mic goes on and off and when <code>listening</code> ends, records each step as a <code>listen</code> event with no sentence, and the runtime carries it out</td></tr>
     </tbody>
   </table></div>
 </section>

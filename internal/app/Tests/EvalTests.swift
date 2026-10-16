@@ -35,11 +35,13 @@ final class EvalTests: XCTestCase {
         XCTAssertNil(Scenario.ms("5x"))
     }
 
-    /// EVALS.md §1: v3 cases load, reach real questions, and enforce the
-    /// selected graph with an offline brain. This is not a Jev evaluation.
-    func testV3ScenariosExerciseTheVersionedHost() async throws {
-        let scenarios = try Scenario.load(directory: try Self.scenarios()).filter { $0.graph == .v3 }
-        XCTAssertEqual(scenarios.count, 4)
+    /// EVALS.md §1: the cases that start in a mood off the 13 load, reach
+    /// real questions, and pass with an offline brain that always keeps
+    /// the mood they start in. This is not a Jev evaluation.
+    func testTheQuietScenariosPassWithABrainThatStays() async throws {
+        let names = ["68-quiet-recovery-from-fear", "69-new-work-from-comfy"]
+        let scenarios = try Scenario.load(directory: try Self.scenarios()).filter { s in names.contains { s.file.hasPrefix($0) } }
+        XCTAssertEqual(scenarios.count, 2)
         for scenario in scenarios {
             let brain = ScriptedBrain(always: ["mood": scenario.mood, "react.mood": "none"].mapValues { Answer(choice: $0, probabilities: [$0: 1]) })
             let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
@@ -49,7 +51,7 @@ final class EvalTests: XCTestCase {
 
     /// A brain that answers the way the scenario wants passes it, which
     /// checks that every expected step wakes the brain and that the mood and
-    /// what Boop said are read as the actions leave them. A reaction's moment goes
+    /// what Boop said are read as the outputs leave them. A reaction goes
     /// nowhere and counts as played at once, so HISTORY shows it plainly
     /// (EVALS.md §1).
     func testTheTestsFightBackWithAnAgreeableBrain() async throws {
@@ -75,7 +77,7 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(result.checks[0].mood, "annoyed", "calm moves a step, to annoyed")
         XCTAssertEqual(result.checks[2].about, "tests")
         let said = try XCTUnwrap(result.checks[2].said)
-        XCTAssertTrue(Take.all.contains { $0.text == said && $0.meaning == "tests" && $0.mood == "determined" }, "determined's: \(said)")
+        XCTAssertTrue(Take.all.contains { $0.text == said && $0.meaning == "tests" && $0.moods.contains("determined") }, "determined's: \(said)")
         XCTAssertEqual(result.checks[2].mood, "determined")
         XCTAssertEqual(result.checks[3].mood, "proud", "2 minutes after the last failure: no rule holds a mood")
         let last = try XCTUnwrap(states.all.last)
@@ -248,7 +250,7 @@ final class EvalTests: XCTestCase {
     /// mood's moves on the graph.
     func testAScenarioStartsInItsMoodAndChecksWhatWasOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("start-mood-\(UUID().uuidString).json")
-        let grumpy = (["grumpy"] + MoodGraph.neighbours(of: "grumpy")).joined(separator: "|")
+        let grumpy = (["grumpy"] + MoodGraph.moves["grumpy"]!.all).joined(separator: "|")
         try Data(#"{"name":"n","case":"c","why":"w","mood":"grumpy","steps":[{"event":"turn started","at":"2m","expect":{"offered":"\#(grumpy)","mood":"irritated"}},{"event":"turn finished","at":"3m","expect":{"offered":"calm|happy"}}]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
@@ -264,9 +266,9 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(states.all.first?.contains("\n\(creature) has been grumpy for 2 min.\n") == true,
                       "and knows how long, as if the dashboard set it at the start: \(states.all.first ?? "")")
         XCTAssertTrue(result.checks[0].passed, result.checks[0].summary)
-        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.neighbours(of: "irritated"))
+        XCTAssertEqual(result.checks[1].offered, ["irritated"] + MoodGraph.moves["irritated"]!.all)
         XCTAssertFalse(result.checks[1].passed)
-        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.neighbours(of: "irritated")).sorted().joined(separator: "|")),
+        XCTAssertTrue(result.checks[1].summary.hasSuffix(", offered " + (["irritated"] + MoodGraph.moves["irritated"]!.all).sorted().joined(separator: "|")),
                       result.checks[1].summary)
         XCTAssertTrue(result.checks[1].summary.contains("wanted offered calm|happy; got react none"), result.checks[1].summary)
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","mood":"sulky","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "mood is one of"),
@@ -287,7 +289,7 @@ final class EvalTests: XCTestCase {
 
     /// EVALS.md §3: `moves_on_graph` fails a run whose mood answer wasn't
     /// one it was offered, and passes one that only stays or moves along
-    /// the graph; the mood action takes nothing else, so the mood itself
+    /// the graph; the mood output takes nothing else, so the mood itself
     /// never leaves the graph.
     func testMovesOnGraphCatchesAnAnswerThatWasntOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("on-graph-\(UUID().uuidString).json")
@@ -298,16 +300,16 @@ final class EvalTests: XCTestCase {
         let offGraph = ScriptedBrain(always: ["mood": Answer(choice: "grumpy", probabilities: ["grumpy": 1])])
         let wrong = try await Eval(brain: offGraph, steering: RuntimeTests.steering).run(scenario)
         XCTAssertFalse(wrong.passed)
-        XCTAssertEqual(wrong.timeline.map(\.mood), ["calm", "calm"], "the mood action took nothing off the graph")
-        XCTAssertTrue(wrong.runChecks.first?.detail.hasPrefix("at 0m00s: answered grumpy, offered calm|happy|curious") == true,
+        XCTAssertEqual(wrong.timeline.map(\.mood), ["calm", "calm"], "the mood output took nothing off the graph")
+        XCTAssertTrue(wrong.runChecks.first?.detail.hasPrefix("at 0m00s: answered grumpy, offered calm|comfy|curious") == true,
                       wrong.runChecks.first?.detail ?? "")
         let steps = ScriptedBrain { _, questions in
             let options = questions.first { $0.key == "mood" }!.options.map(\.name)
-            let pick = options.contains("curious") && options[0] == "calm" ? "curious" : options.contains("annoyed") ? "annoyed" : options[0]
+            let pick = options.contains("curious") && options[0] == "calm" ? "curious" : options.contains("skeptical") ? "skeptical" : options[0]
             return ["mood": Answer(choice: pick, probabilities: [pick: 1])]
         }
         let right = try await Eval(brain: steps, steering: RuntimeTests.steering).run(scenario)
         XCTAssertTrue(right.passed, right.runChecks.map(\.summary).joined(separator: "\n"))
-        XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → annoyed")
+        XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → skeptical")
     }
 }

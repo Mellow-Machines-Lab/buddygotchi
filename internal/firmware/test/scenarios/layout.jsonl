@@ -14,7 +14,7 @@
 {"clock":31400}
 {"shot":"strip-no-app"}
 // The longest needs-you line on the sign, once it gives up asking (22 s
-// in), with the Mac sending the same request again now and then.
+// in), with the Mac sending the same needs-you again now and then.
 {"clock":32000}
 {"t":"state","base":"working","busy":12,"attn":{"agent":"gemini-cli","project":"a-very-long-project-n..","more":9}}
 {"clock":44000}

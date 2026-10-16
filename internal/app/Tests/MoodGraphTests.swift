@@ -2,47 +2,55 @@ import Foundation
 import XCTest
 @testable import BoopKit
 
-/// The mood graph: the owner's approved moves
-/// between Boop's 13 moods.
+/// The mood graph (characters/CHARACTER.md §5): every pack has the
+/// universal moods, and its own moves between them.
 final class MoodGraphTests: XCTestCase {
-    // Pixel's graph, which Boop's pack keeps as its v2.
-    override func setUpWithError() throws { try requirePack("pixel", "boop") }
-    /// `MoodGraph` is the owner's approved graph,
-    /// characters/pixel/design/boop-mood-spectrum-v2/mood-graph.json, move for
-    /// move and in its order: 13 moods in the device's order, 98 moves, at
-    /// most eight from any mood, and every mood reachable from every other
-    /// by ordinary moves alone.
-    func testTheMoodGraphIsTheOwnersGraph() throws {
-        let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../characters/pixel/design/boop-mood-spectrum-v2/mood-graph.json").standardizedFileURL
-        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-        let nodes = try XCTUnwrap(json["nodes"] as? [String: [String: [String]]])
-        XCTAssertEqual(Set(nodes.keys), Set(MoodGraph.moods))
-        for (mood, moves) in nodes {
-            XCTAssertEqual(MoodGraph.moves[mood], MoodGraph.Moves(ordinary: moves["ordinary"]!, dramatic: moves["dramatic"]!), mood)
-        }
-        XCTAssertEqual(Set(MoodGraph.moves.keys), Set(MoodGraph.moods))
-        XCTAssertEqual(Set((json["retainedArtMoods"] as? [String] ?? []) + (json["newArtMoods"] as? [String] ?? [])),
-                       Set(MoodGraph.moods))
-        XCTAssertEqual(MoodGraph.moves.values.map(\.all.count).reduce(0, +), 98)
-        XCTAssertLessThanOrEqual(MoodGraph.moves.values.map(\.all.count).max()!, 8)
-        for (mood, moves) in MoodGraph.moves {
-            XCTAssertFalse(moves.all.contains(mood), "staying isn't a move: \(mood)")
-            XCTAssertEqual(Set(moves.all).count, moves.all.count, "each move once: \(mood)")
-        }
-        // Strongly connected on ordinary moves.
-        for from in MoodGraph.moods {
-            var seen: Set<String> = [from], queue = [from]
-            while let m = queue.popLast() {
-                for n in MoodGraph.moves[m]!.ordinary where seen.insert(n).inserted { queue.append(n) }
+    /// Each pack in characters/ has exactly the universal moods, and its
+    /// moves are a graph the steering can walk: no move to itself, each
+    /// move once, and every mood reachable from every other by ordinary
+    /// moves alone, so every mood, a brief one included, can fade a step
+    /// at a time to the resting mood.
+    func testEveryPacksGraphIsWalkable() throws {
+        let folder = CharacterPackTests.repo.appendingPathComponent("characters")
+        let packs = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("character.json").path) }
+        XCTAssertFalse(packs.isEmpty)
+        for dir in packs {
+            let pack = try CharacterPack(directory: dir)
+            XCTAssertEqual(Set(pack.moods.map(\.id)), Set(CharacterPack.universalMoods), pack.id)
+            let moves = pack.byId.mapValues(\.moves)
+            for (mood, m) in moves {
+                XCTAssertFalse(m.all.contains(mood), "\(pack.id): staying isn't a move: \(mood)")
+                XCTAssertEqual(Set(m.all).count, m.all.count, "\(pack.id): each move once: \(mood)")
             }
-            XCTAssertEqual(seen, Set(MoodGraph.moods), "every mood from \(from) by ordinary moves")
+            for from in moves.keys {
+                var seen: Set<String> = [from], queue = [from]
+                while let m = queue.popLast() {
+                    for n in moves[m]!.ordinary where seen.insert(n).inserted { queue.append(n) }
+                }
+                XCTAssertEqual(seen, Set(CharacterPack.universalMoods), "\(pack.id): every mood from \(from) by ordinary moves")
+            }
         }
-        XCTAssertTrue(MoodGraph.isMove(from: "grumpy", to: "sad"))
-        XCTAssertTrue(MoodGraph.moves["grumpy"]!.dramatic.contains("sad"))
-        XCTAssertFalse(MoodGraph.moves["grumpy"]!.dramatic.contains("irritated"))
-        XCTAssertFalse(MoodGraph.isMove(from: "excited", to: "calm"), "excited goes through happy")
-        XCTAssertFalse(MoodGraph.isMove(from: "grumpy", to: "grumpy"))
-        XCTAssertFalse(MoodGraph.isMove(from: "sulky", to: "calm"))
+    }
+
+    /// The active pack's graph is what `MoodGraph` reads, and a word that
+    /// isn't a mood has none.
+    func testMoodGraphReadsTheActivePack() {
+        XCTAssertEqual(MoodGraph.moods, CharacterPack.active.moods.map(\.id))
+        XCTAssertEqual(Set(MoodGraph.moves.keys), Set(MoodGraph.moods))
+        for m in CharacterPack.active.moods { XCTAssertEqual(MoodGraph.moves[m.id], m.moves) }
+        XCTAssertNil(MoodGraph.mood("sulky"), "not a mood")
+        XCTAssertNil(MoodGraph.moves["sulky"], "not a mood")
+    }
+
+    /// The universal list is one literal of quoted names, which
+    /// characters/charactergen.py reads from its file.
+    func testTheUniversalListIsWhatCharactergenReads() throws {
+        let file = CharacterPackTests.repo.appendingPathComponent("app/BoopKit/Character/Moods.swift")
+        let text = try String(contentsOf: file, encoding: .utf8)
+        let body = try XCTUnwrap(text.range(of: #"universalMoods = \[([^\]]*)\]"#, options: .regularExpression).map { String(text[$0]) })
+        let names = body.matches(of: /"([a-z_]+)"/).map { String($0.1) }
+        XCTAssertEqual(names, CharacterPack.universalMoods)
+        XCTAssertEqual(Set(names).count, 42)
     }
 }

@@ -20,8 +20,9 @@ constexpr int kMaxVariants = 12;  // faces.h checks it
 int variants(Mood m, SceneState s);
 
 // The moods the designs draw, by name (faces.h's), whatever the character
-// pack's order: pixelIndex(m) is m's place among them, -1 for one they
-// don't draw; pixelMood(i) is the i-th of the pixelMoods().
+// pack's order: pixelIndex(m) is the place among them of the one m wears
+// (faces.h's kWears), -1 for a mood faces.h doesn't name; pixelMood(i) is
+// the i-th of the pixelMoods().
 int pixelMoods();
 int pixelIndex(Mood m);
 Mood pixelMood(int i);

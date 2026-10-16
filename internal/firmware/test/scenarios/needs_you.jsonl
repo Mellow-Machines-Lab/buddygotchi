@@ -1,5 +1,5 @@
 // Needs you: who, +N more, its performance once per
-// request, amber at half until it's answered, then back to the base look.
+// needs-you, amber at half until it's answered, then back to the base look.
 {"clock":0}
 {"t":"state","base":"working","busy":2}
 {"clock":1000}
@@ -9,7 +9,7 @@
 {"shot":"blend"}
 {"clock":1500}
 {"shot":"needs-you"}
-// The same request again doesn't play it again, and nothing grows.
+// The same needs-you again doesn't play it again, and nothing grows.
 {"clock":20000}
 {"t":"state","base":"working","attn":{"agent":"codex","project":"landing","more":0},"busy":1}
 {"clock":40000}
@@ -23,7 +23,7 @@
 {"clock":121000}
 {"expect":{"screen":"needs_you","led":"#805800","alert":1000}}
 {"shot":"plus-one-more"}
-// A different request plays it once more. Its project, a-very-long-project-name,
+// A different needs-you plays it once more. Its project, a-very-long-project-name,
 // comes cut by the Mac to 23 bytes ending "..".
 {"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","more":0},"busy":1}
 {"clock":122000}
@@ -44,7 +44,7 @@
 {"shot":"sign-left"}
 // The longer it waits, the harder it asks: it sways the sign from 5 s,
 // shakes it and waves a mitt from 12 s, lowers it and stares from 17 s.
-// The Mac sends the same request again now and then, which starts nothing
+// The Mac sends the same needs-you again now and then, which starts nothing
 // over.
 {"clock":129200}
 {"t":"state","base":"working","attn":{"agent":"claude","project":"a-very-long-project-n..","name":"Thread name on \"needs..","more":0},"busy":1}

@@ -68,7 +68,7 @@
 {"expect":{"screen":"needs_you","moment":{"anim":"listening"},"last_input":{"k":"talk_on","at":29600}}}
 {"clock":29760}
 {"shot":"needs-you-listening"}
-// A line can't play while something needs you, but as the reply it
+// A `say` can't play while something needs you, but as the reply it
 // ends listening.
 {"clock":29900}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.go"}}}

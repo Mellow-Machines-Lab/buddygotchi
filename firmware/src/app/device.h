@@ -1,6 +1,6 @@
 // Boop on LinkKit: the app the kit calls (linkkit/device/src/linkkit/kit.h).
 // It reads Boop's `state` and `do` args, says when a
-// call may play and when it rests or ends, recognises gestures, plays
+// reaction may play and when it rests or ends, recognises gestures, plays
 // the voice and draws. What Boop does is decided by Behaviour. Pure C++:
 // the board and the simulator run the same code behind a small Hal.
 #pragma once
@@ -32,14 +32,15 @@ constexpr const char* kIdPrefix = "b00p";
 // MAC to take it from: the simulator and the tests.
 constexpr const char* kDefaultDeviceId = "b00p-0000";
 
-// What the sound output did (dbg.state `audio.out`): lines finished, and
-// the last line's timeline as planned, as rendered and as the DAC took it.
+// What the sound output did (dbg.state `audio.out`): `say`s finished
+// (`lines`), and the last one's timeline as planned, as rendered and as the
+// DAC took it.
 struct AudioOut {
   bool ready = false;   // there's a DAC and it started
   bool playing = false;
   uint32_t lines = 0;
-  int take = -1;        // the last line's first take (voice/player.h)
-  uint32_t planMs = 0;  // the line's length
+  int take = -1;        // the last `say`'s first take (voice/player.h)
+  uint32_t planMs = 0;  // the `say`'s length
   uint32_t outMs = 0;   // samples rendered, at 22.05 kHz
   uint32_t wallMs = 0;  // time the DAC took to play them; 0 where there's no DAC
   bool cut = false;     // stopped early (hushed or replaced)
@@ -73,30 +74,30 @@ struct Hal : linkkit::Platform {
   virtual uint32_t heapMin() { return 0; }
   virtual bool ampOn() { return false; }
   // Sound. The board plays on the DAC; the default drops it.
-  virtual void say(const voice::Line& l) { (void)l; }
+  virtual void say(const voice::Say& l) { (void)l; }
   virtual void hush() {}
   // The face's sound effects: one to play now, and stopping
   // every one playing.
   virtual void effect(const voice::Effect& e) { (void)e; }
   virtual void stopEffects() {}
   virtual AudioOut audioOut() { return {}; }
-  // The microSD card that holds the voice pack, for dbg.ping's `card`;
+  // The microSD card that holds the voice file, for dbg.ping's `card`;
   // the simulator's is a file.
   virtual const char* cardState() { return "none"; }
-  // Copying a new voice pack onto the card over USB (`dbg.card`):
+  // Copying a new voice file onto the card over USB (`dbg.card`):
   // a file begun afresh, or kept to go on where an earlier copy
   // stopped, then appended to, then checked against its size and CRC-32
-  // and swapped in for the pack, which reopens. `have` is how many bytes
+  // and swapped in for the voice file, which reopens. `have` is how many bytes
   // it holds. With no card they fail, and `why` says so.
-  virtual bool packBegin(bool keep, uint32_t& have, const char*& why) {
+  virtual bool copyBegin(bool keep, uint32_t& have, const char*& why) {
     (void)keep, have = 0, why = "no card";
     return false;
   }
-  virtual bool packAppend(const uint8_t* d, size_t n, uint32_t& have) {
+  virtual bool copyAppend(const uint8_t* d, size_t n, uint32_t& have) {
     (void)d, (void)n, have = 0;
     return false;
   }
-  virtual bool packEnd(uint32_t size, uint32_t crc, const char*& why) {
+  virtual bool copyEnd(uint32_t size, uint32_t crc, const char*& why) {
     (void)size, (void)crc, why = "no card";
     return false;
   }
@@ -107,16 +108,16 @@ class Device : public linkkit::App {
  public:
   // A panel touch ends after this long without contact, in real ms.
   static constexpr uint32_t kTouchReleaseMs = 50;
-  // A reaction rests this long after its line and bubble,
-  // so the next reaction or a rule's one-shot doesn't follow it at once:
-  // the same pause the Mac left between them before the device took turns.
+  // A reaction rests this long after its `say` and bubble,
+  // so the next one, the brain's or a rule's, doesn't follow it at once:
+  // the same pause the Mac left between them before the device had the queue.
   static constexpr uint32_t kReactGapMs = 500;
 
   // `pixels` is the kWidth × kHeight canvas buffer, allocated by the
   // caller. A linkkit::Kit made with this app then drives it.
   Device(Hal& hal, uint8_t* pixels);
   ~Device() override;
-  // The native surfaces the face draws into in turn, whose frames the
+  // The native surfaces the face draws into alternately, whose frames the
   // board presents instead of the canvas; null when the
   // face draws the canvas.
   render::SurfacePair* frames() { return native_ && native_->ready() ? native_.get() : nullptr; }
@@ -157,8 +158,8 @@ class Device : public linkkit::App {
   void hello(JsonObject extra) override;
   void begin() override;
   void onState(JsonObjectConst state, uint32_t t) override;
-  const char* refuse(const linkkit::Call& c, uint32_t t) override;
-  void onDo(const linkkit::Call& c, uint32_t t) override;
+  const char* refuse(const linkkit::Do& c, uint32_t t) override;
+  void onDo(const linkkit::Do& c, uint32_t t) override;
   void advance(uint32_t t) override;
   bool nextDue(uint32_t from, uint32_t to, uint32_t& at) override;
   void tick(uint32_t t) override;
@@ -174,22 +175,17 @@ class Device : public linkkit::App {
     uint32_t at = 0;
     int x = -1, y = -1;
   };
-  // The call refuse() last parsed, for onDo, which follows at once.
-  struct Parsed {
-    uint32_t key = 0;
-    MomentIn in;
-  };
-
-  MomentIn parse(const linkkit::Call& c);
-  void drain();  // Behaviour's ends, to the kit
+  ReactionIn parse(const linkkit::Do& c);
+  void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   void tapped(uint32_t t, bool injected);  // a tap, from BOOT or the panel
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();
-  bool startLine(uint32_t t);
+  bool startSay(uint32_t t);
   void followSound(uint32_t t);
-  Screen screenAt(uint32_t t) const { return pattern_ ? Screen::kPattern : b_.screen(t); }
+  // dbg.state's `screen`: the test pattern, no app, needs you or the face.
+  const char* screenName(uint32_t t) const;
 
   Hal& hal_;
   render::Canvas canvas_;
@@ -198,14 +194,18 @@ class Device : public linkkit::App {
   std::unique_ptr<render::SurfacePair> native_;
   Behaviour b_;
   ButtonGesture boot_;
-  Parsed parsed_;
-  // The holder's rest: a reaction rests kReactGapMs after
-  // its line and bubble have played, restKey_ at restAt_; 0 when none is due.
+  // The reaction refuse() last parsed (ReactionIn::key is its key), for onDo,
+  // which follows at once: parsing again would pick its variation again.
+  ReactionIn parsed_;
+  // The rest of the reaction playing: a `react` rests kReactGapMs after
+  // its `say` and bubble have played, restKey_ at restAt_; 0 when none is due.
   uint32_t restKey_ = 0;
   uint32_t restAt_ = 0;
 
-  Screen screen_ = Screen::kFace;
   bool pattern_ = false;  // dbg.pattern until the next state
+  // "No app" showing at the last tick, under no pattern: when it starts
+  // with no message, so the frame isn't otherwise dirty.
+  bool noApp_ = false;
   int patternFill_ = -1;  // a solid dbg.pattern screen, or -1
   int targetX_ = -1, targetY_ = -1;  // a calibration target on dbg.pattern, or -1
   uint32_t drawnT_ = 0;   // the time of the last frame
@@ -228,7 +228,7 @@ class Device : public linkkit::App {
   bool touchInjected_ = false;  // it's dbg.touch's, not the panel's
   uint32_t touchSeenReal_ = 0;
 
-  // A line is playing, and the moment (Behaviour::momentSeq) whose line
+  // A `say` is playing, and the reaction (Behaviour::reactionSeq) whose `say`
   // has started or been dropped: a newer one's starts when its bubble shows.
   bool saying_ = false;
   uint32_t saidSeq_ = 0;

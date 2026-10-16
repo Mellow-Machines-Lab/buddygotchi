@@ -5,7 +5,7 @@
   "why": "characters/boop/steering/mood/: a poke moves calm to curious or happy, two in a row to annoyed, three to irritated or grumpy (a jump a barrage earns); the mood question offers only the mood's moves",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "poke", "at": "0s", "expect": {"offered": "calm|happy|curious|engaged|annoyed|excited|wounded|sad", "mood": "curious|happy"}},
+    {"event": "poke", "at": "0s", "expect": {"offered": "calm|comfy|curious|engaged|pleased|tired|uneasy|happy|annoyed|surprised|wounded|excited|sad", "mood": "curious|happy"}},
     {"event": "poke", "at": "1s", "expect": {"mood": "annoyed"}},
     {"event": "poke", "at": "2s", "expect": {"mood": "irritated|grumpy"}}
   ]

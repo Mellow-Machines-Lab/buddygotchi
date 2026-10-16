@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from boopctl_lib import scenario, workday
-from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, PACK, REPO, RULE_ONE_SHOTS, TTL_MS, Take, do,
+from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, do,
                                 ended, restarted, take, takes)
 from boopctl_lib.device import Device, DeviceError, Sim
 from boopctl_lib.image import diff, save_shot
@@ -37,10 +37,10 @@ def cmd_ping(args: argparse.Namespace) -> int:
 
 
 def cmd_card(args: argparse.Namespace) -> int:
-    """Copies the voice pack onto the board's card over USB."""
+    """Copies the voice file onto the board's card over USB."""
     from boopctl_lib import card
     with Device(args.port) as dev:
-        return card.copy(dev, Path(args.pack), force=args.force, fresh=args.fresh)
+        return card.copy(dev, Path(args.voice), force=args.force, fresh=args.fresh)
 
 
 def cmd_state(args: argparse.Namespace) -> int:
@@ -70,7 +70,7 @@ def cmd_shot(args: argparse.Namespace) -> int:
 
 def cmd_dash(args: argparse.Namespace) -> int:
     """The live dashboard, on the app's debug.jsonl and
-    hook socket; its face is boop-sim, built from this checkout."""
+    hook socket; its face is the native simulator, built from this checkout."""
     from boopctl_lib.dash.app import run
 
     state = Path(args.state_dir).expanduser() if args.state_dir else EVERYDAY_STATE
@@ -118,7 +118,7 @@ def build_sim() -> None:
     result = subprocess.run([str(PIO), "run", "-e", "native"], capture_output=True, text=True)
     if result.returncode != 0:
         sys.stderr.write(result.stdout[-4000:] + result.stderr[-2000:])
-        raise DeviceError("building boop-sim failed")
+        raise DeviceError("building the native simulator failed")
 
 
 def pick(names: list[str]) -> list[Path]:
@@ -126,7 +126,7 @@ def pick(names: list[str]) -> list[Path]:
 
 
 def sim_all(paths: list[Path]) -> tuple[int, dict[str, Path]]:
-    """Plays scenarios in boop-sim. Returns (failures, scenario → shot dir)."""
+    """Plays scenarios in the native simulator. Returns (failures, scenario → shot dir)."""
     build_sim()
     failures, dirs = 0, {}
     for path in paths:
@@ -197,15 +197,16 @@ def frame_us(sample: dict, overlapped: bool) -> int:
     return sample["draw_us"] + sample["push_us"]
 
 
-# perf --scenes (internal/VERIFICATION.md §8): each scene's state, the `do` it repeats
-# every 2 s (None for none), and the frames a second its slowest second
-# must reach (None: reported only). A detailed expression and needs you
+# perf --scenes (internal/VERIFICATION.md §8): each scene's state, the
+# request it repeats every 2 s (None for none: a `do`, or a BOOT tap for
+# a poke), and the frames a second its slowest second must reach (None:
+# reported only). A detailed expression and needs you
 # may draw a little slower than working.
 WORKING = {"t": "state", "base": "working", "act": "terminal", "mood": "happy", "busy": 1}
 PERF_SCENES = [
     ("working", WORKING, None, 30),
     ("attention", {**WORKING, "attn": {"id": 5000, "agent": "codex", "project": "perf"}}, None, 28),
-    ("pokes", WORKING, "poked", None),
+    ("pokes", WORKING, {"t": "dbg.press", "ms": 100}, None),
     ("frightened", {**WORKING, "mood": "frightened"}, None, 28),
     ("asleep", {"t": "state", "base": "asleep", "mood": "happy"}, None, None),
 ]
@@ -237,7 +238,7 @@ def perf_scenes(args: argparse.Namespace) -> int:
     the first of each scene left out as its change: frames a second, draw,
     push and the loop's wait, pixels sent, the face's stages, the least
     internal heap and PSRAM, DAC errors and the worst frame-to-frame time.
-    Muted; with --sound, a line plays every 3 s wherever nothing needs you,
+    Muted; with --sound, a `say` plays every 3 s wherever nothing needs you,
     for the DAC under load."""
     vol = 6 if args.sound else 0
     report: dict = {"seconds": args.seconds, "sound": args.sound, "scenes": {}}
@@ -255,7 +256,7 @@ def perf_scenes(args: argparse.Namespace) -> int:
                     dev.send({**state, "vol": vol})
                     next_state += 2  # as the Mac repeats it
                 if repeat and elapsed >= next_do:
-                    dev.send(do(repeat))
+                    dev.request(repeat)
                     next_do += 2
                 if say and "attn" not in state and elapsed >= next_line:
                     dev.send(do("react", say={"take": say}))
@@ -382,20 +383,20 @@ def clock_offset(dev: "Device", rng: random.Random, pings: int) -> tuple[float, 
 def latency_stimulus(kind: str, i: int, rng: random.Random) -> dict:
     """One input or message whose way to the panel the board times: a BOOT
     tap or a touch (each a press and then its tap, 100 ms later), the i-th
-    `state`, each changing the mood from the last, or a poke played `now`."""
+    `state`, each changing the mood from the last, or a rule reaction played `now`."""
     if kind == "boot":
         return {"t": "dbg.press", "ms": 100}
     if kind == "touch":
         return {"t": "dbg.touch", "x": rng.randint(40, 280), "y": rng.randint(30, 180), "ms": 100}
     if kind == "state":
         return {"t": "state", "base": "working", "busy": 1, "mood": MOODS[i % 2], "vol": 0}
-    return do("poked")
+    return do("starting")
 
 
 def cmd_latency(args: argparse.Namespace) -> int:
     """Times how long the board takes from an input or a Mac message to
     the frame that shows it (dbg.latency; internal/VERIFICATION.md §8):
-    BOOT taps, touches, mood changes and pokes, each sent at a random moment
+    BOOT taps, touches, mood changes and `do`s, each sent at a random moment
     of the board's frame, one at a time. The board stamps each when it reads
     it and when the frame that shows it has been sent. Pinging first gives
     the board's clock against this one, so a press, a state and a do count
@@ -487,21 +488,18 @@ def soak_say(rng: random.Random) -> dict:
 
 
 def soak_play(name: str) -> dict:
-    """How a `do` of `name` asks for its turn: the rules'
-    one-shots only when the turn is free, a poke or a spam at once as the
-    tools send them, a finish or a line waiting its turn for up to 5 s, as
-    the Mac sends the brain's."""
-    if name in RULE_ONE_SHOTS:
+    """How a `do` of `name` asks to play: the rules'
+    reactions only when nothing plays, a finish or a `say` waiting in the
+    queue for up to 5 s, as the Mac sends the brain's."""
+    if name in RULE_REACTIONS:
         return {"play": "if_free"}
-    if name in ("poked", "tap_spam"):
-        return {"play": "now"}
     return {"play": "next", "ttl": TTL_MS}
 
 
 def soak_do(rng: random.Random) -> dict:
-    """An animation, a line, or both, which the soak doesn't wait on, each
-    asking for its turn as it would from the Mac or a tool (soak_play): a
-    finish with its outcome and loops (1–3), a one-shot, a poke, a line."""
+    """An animation, a `say`, or both, which the soak doesn't wait on, each
+    asking to play as it would from the Mac or a tool (soak_play): a
+    finish with its outcome and loops (1–3), a rule reaction, a `say`."""
     name = rng.choice(ANIMS) if rng.random() < 0.7 else "react"
     args: dict = {}
     if name == "task_complete":
@@ -515,8 +513,8 @@ def soak_do(rng: random.Random) -> dict:
 
 
 def soak_reaction(rng: random.Random, call_id: int) -> dict:
-    """A brain reaction, which the Mac waits on: a line in a mood's face,
-    held for its loops (1–6, as the device takes them), waiting its turn for
+    """A brain reaction, which the Mac waits on: a `say` in a mood's face,
+    held for its loops (1–6, as the device takes them), waiting in the queue for
     up to 5 s, with an `id` the board answers with one `ended`
     (linkkit/SPEC.md §3–4)."""
     return do("react", id=call_id, play="next", ttl=TTL_MS,
@@ -541,8 +539,8 @@ def ended_report(ids: list[int], heard: list[dict], excused: int) -> dict:
     `ended`'s data (`common.ended`): each id exactly once (linkkit/SPEC.md
     §4). Done, cut or skipped are all answers: a reaction that waited too
     long behind another (`skipped (late)`) is one the Mac would have dropped
-    too. A `do` line the board never got has none, and an `ended` that lost
-    bytes on the way back can't be read, so up to `excused` (lines lost
+    too. A `do` the board never got has none, and an `ended` that lost
+    bytes on the way back can't be read, so up to `excused` (messages lost
     either way) may be missing. A name the board doesn't play (`skipped
     (unknown)`) is a mismatch with its `hello.does`, and fails."""
     counts: dict[int, int] = {}
@@ -660,7 +658,7 @@ def cmd_soak(args: argparse.Namespace) -> int:
             return 1
         # Stuck? Calm snapshots must bring back the plain face once the
         # last press (held ≤ 3 s, then listening waits ≤ 8 s for a reply)
-        # and the last `do` are over: one may wait 5 s for its turn, and a
+        # and the last `do` are over: one may wait 5 s in the queue, and a
         # reaction's face can hold 6 loops of a 9 s design.
         calm = {"t": "state", "base": "idle", "busy": 0, "vol": args.vol}
         settle_by = time.monotonic() + 75
@@ -725,12 +723,6 @@ def cmd_e2e(args: argparse.Namespace) -> int:
     return e2e.main(Path(args.out), args.brain, args.port, args.fixture or None, args.clip, args.camera)
 
 
-def cmd_bridge(args: argparse.Namespace) -> int:
-    from boopctl_lib.bridge import bridge_path, serve
-
-    return serve(args.port, args.socket or bridge_path(), quiet=args.quiet)
-
-
 # Hearing and watching Boop by hand: takes and play drive the board over
 # USB the way the Mac would, and read dbg.state to say whether it happened.
 # The Mac app, if it's connected over Bluetooth, keeps sending its own
@@ -760,9 +752,9 @@ def show_state(dev: Device, vol: int, base: str = "idle", attn: dict | None = No
     dev.send(msg)
 
 
-def play_line(dev: Device, say: dict) -> tuple[int, dict, bool]:
-    """Plays one line on its own and waits up to 6 s for the board to
-    finish it. Returns how many lines finished meanwhile (1 when it played),
+def play_say(dev: Device, say: dict) -> tuple[int, dict, bool]:
+    """Plays one `say` on its own and waits up to 6 s for the board to
+    finish it. Returns how many finished meanwhile (1 when it played),
     the last dbg.state, and whether the amp was on at any point."""
     before = dev.request({"t": "dbg.state"})["audio"]["out"]["lines"]
     dev.send(do("react", say=say))
@@ -780,7 +772,7 @@ def check_take(dev: Device, t: Take) -> dict:
     """Plays one take and checks `audio.out` in dbg.state against it: the
     take, and the time the DAC took within 10% of the take's length (L2).
     Waits up to 6 s for it to finish."""
-    finished, st, amp_seen = play_line(dev, {"take": t.id})
+    finished, st, amp_seen = play_say(dev, {"take": t.id})
     out = st["audio"]["out"]
     played = finished > 0
     r = {"take": t.id, "text": t.text, "plan_ms": t.ms, "played": played,
@@ -818,7 +810,7 @@ def chosen_takes(only: str | None) -> list[Take]:
 def cmd_takes(args: argparse.Namespace) -> int:
     """For hearing Boop by hand, and L2's voice check: every take (or those
     --only picks) in turn on its own, each checked with check_take. Then
-    checks that a muted line moves the mouth and plays nothing.
+    checks that a muted take moves the mouth and plays nothing.
     --board-volume and --levels play one take instead (take_at_board_volume,
     take_levels)."""
     chosen = chosen_takes(args.only)
@@ -880,7 +872,7 @@ def take_levels(args: argparse.Namespace, t: Take) -> int:
         for i in range(args.rounds):
             for vol in args.levels:
                 show_state(dev, vol)
-                finished, st, _ = play_line(dev, {"take": t.id})
+                finished, st, _ = play_say(dev, {"take": t.id})
                 out = st["audio"]["out"] if finished else None
                 missed += out is None or out["cut"]
                 print(f"round {i + 1} vol {vol:2} {t.text!r}: "
@@ -895,17 +887,17 @@ def cmd_play(args: argparse.Namespace) -> int:
     an animation from the set, --loops times, with --take
     a take over it (from the design's voice window), as a `do` played `now`
     so it replaces whatever plays; `needs`, a fake "needs you"
-    (play_needs); or the bring-up `pattern`. `cheer` and `wiggle` are the
-    older names of task_complete's success and poked, which the device no
-    longer knows: they're sent by today's."""
+    (play_needs); or the bring-up `pattern`. `cheer` is the older name of
+    task_complete's success, which the device no longer knows: it's sent
+    by today's."""
     if (args.take or args.loops or args.outcome or args.ctx or args.variant) and args.what in ("needs", "pattern"):
         raise DeviceError(f"play {args.what} takes no --take, --loops, --outcome, --ctx or --variant")
     if args.what == "cheer" and args.outcome == "failure":
         raise DeviceError("cheer is task_complete's success: play task_complete --outcome failure")
-    # Checked here, not by argparse: reading the voice pack to list the
+    # Checked here, not by argparse: reading the voice file to list the
     # choices would stop every command, --help included, without one.
     if args.take and take(args.take) is None:
-        raise DeviceError(f"no take {args.take!r} in the voice pack (`boopctl takes` lists them)")
+        raise DeviceError(f"no take {args.take!r} in the voice file (`boopctl takes` lists them)")
     if args.what == "pattern":
         with Device(args.port) as dev:
             dev.request({"t": "dbg.pattern"})
@@ -983,7 +975,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("play", help="play an animation (with --take, a take over it), a fake needs-you "
                                     "with its ding, or the bring-up pattern")
     p.add_argument("what", choices=ANIMS + list(OLD_ANIMS) + ["needs", "pattern"],
-                   help=", ".join(ANIMS) + " (or the older cheer, task_complete's success, and wiggle, poked); "
+                   help=", ".join(ANIMS) + " (or the older cheer, task_complete's success); "
                         "needs; pattern")
     p.add_argument("--take", metavar="ID",
                    help="a take over it, by id (`boopctl takes` lists them)")
@@ -1014,10 +1006,11 @@ def build_parser() -> argparse.ArgumentParser:
                      help="compare volumes by ear: the first take at each level in turn, --rounds times")
     p.add_argument("--rounds", type=int, default=6, help="with --levels (default 6)")
     p.set_defaults(func=cmd_takes)
-    p = sub.add_parser("card", help="copy the voice pack onto the board's microSD card over USB, unless it has it; "
-                                    "goes on where a cut-off copy stopped; slow, hours for the whole pack, where a card "
+    p = sub.add_parser("card", help="copy the voice file onto the board's microSD card over USB, unless it has it; "
+                                    "goes on where a cut-off copy stopped; slow, hours for the whole file, where a card "
                                     "reader takes seconds (copy the file to the card's boop/voice.bin)")
-    p.add_argument("--pack", default=str(PACK), help="the pack (default: the chosen character pack's voice/voice.bin)")
+    p.add_argument("--voice", default=str(VOICE_FILE), metavar="FILE",
+                   help="the voice file (default: the chosen character pack's voice/voice.bin)")
     p.add_argument("--force", action="store_true", help="copy even when the card has this version")
     p.add_argument("--fresh", action="store_true", help="start again rather than go on from an earlier copy")
     p.set_defaults(func=cmd_card)
@@ -1036,7 +1029,7 @@ def build_parser() -> argparse.ArgumentParser:
     how.add_argument("--motion", action="store_true")
     how.add_argument("--scenes", action="store_true",
                      help="the amoled206_profile build's timings, scene by scene, against their budgets")
-    p.add_argument("--sound", action="store_true", help="with --scenes: a line every 3 s, for the DAC under load")
+    p.add_argument("--sound", action="store_true", help="with --scenes: a `say` every 3 s, for the DAC under load")
     p.set_defaults(func=cmd_perf)
     p = sub.add_parser("latency", help="time inputs and Mac messages to the frame that shows them, against "
                                        "their budgets")
@@ -1066,10 +1059,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="first film a 10 s Claude session on the webcam (authorised runs only; §6)")
     p.add_argument("--camera", help="with --clip: the camera id (default: $BOOP_CAMERA or the built-in one)")
     p.set_defaults(func=cmd_e2e)
-    p = sub.add_parser("bridge", help="own the serial port and share it on a Unix socket")
-    p.add_argument("--socket", help="socket path (default: $BOOP_BRIDGE or /tmp/boop-bridge.sock)")
-    p.add_argument("--quiet", action="store_true")
-    p.set_defaults(func=cmd_bridge)
     p = sub.add_parser("cam", help="webcam helpers (opt-in; internal/VERIFICATION.md §6)")
     p.add_argument("action", choices=["frame", "pattern", "clip"])
     p.add_argument("name", nargs="?", help="clip: idle, needs_you, cheer or tap")

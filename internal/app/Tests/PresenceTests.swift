@@ -71,7 +71,7 @@ final class PresenceTests: XCTestCase {
         let away = try XCTUnwrap(rig.made.first)
         XCTAssertEqual(away.from, .mac)
         XCTAssertEqual(away.type, .presence)
-        XCTAssertEqual(away.ts, lockedAt + 10 * minute)
+        XCTAssertEqual(away.at, lockedAt + 10 * minute)
         XCTAssertEqual(away["since"]?.int, rig.lastInput, "when you last touched the Mac, not when it was noticed")
         XCTAssertTrue(rig.detector.away)
 
@@ -178,11 +178,11 @@ final class PresenceTests: XCTestCase {
     func testTheViewPairsAnAwayWithItsBack() throws {
         let rig = CoreRig()
         func away(since: Int64) -> [ViewEvent] {
-            events(rig.note(Fx(rig.pipeline.presence(Event(ts: rig.now, source: .mac, type: .presence, phase: .start,
+            events(rig.note(Fx(rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start,
                                                             specificType: "locked", data: ["since": .int(since)])))))
         }
         func back() -> [ViewEvent] {
-            events(rig.note(Fx(rig.pipeline.presence(Event(ts: rig.now, source: .mac, type: .presence, phase: .end,
+            events(rig.note(Fx(rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .end,
                                                             specificType: "unlocked")))))
         }
 
@@ -226,16 +226,16 @@ final class PresenceTests: XCTestCase {
     func testEveryFaceCanSayHello() throws {
         try requireVoice()
         let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
-        XCTAssertTrue(ReactAction.topics.map(\.name).contains("hello"))
+        XCTAssertTrue(ReactOutput.topics.map(\.name).contains("hello"))
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
-        for mood in MoodAction.moods.map(\.name) {
-            XCTAssertGreaterThanOrEqual(hello.filter { $0.mood == mood }.count, 4, mood)
+        for mood in MoodOutput.moods.map(\.name) {
+            XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {
-            let line = Voice.line(feeling: "glad", about: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
+            let line = Voice.say(feeling: "glad", about: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
             XCTAssertEqual(line.count, 2, "\(line.map(\.text))")
             XCTAssertEqual(line.first?.kind, .sound)
             XCTAssertTrue(greetings.contains(line.last?.text ?? ""), "\(line.map(\.text))")
@@ -248,9 +248,9 @@ final class PresenceTests: XCTestCase {
         let rig = CoreRig()
         rig.poke()
         rig.wait(30 * minute)
-        rig.pipeline.presence(Event(ts: rig.now, source: .mac, type: .presence, phase: .start, specificType: "idle",
+        rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start, specificType: "idle",
                                     data: ["since": .int(rig.now - 30 * minute)]))
-        rig.pipeline.presence(Event(ts: rig.now + 1000, source: .mac, type: .presence, phase: .end, specificType: "input"))
+        rig.pipeline.presence(Event(at: rig.now + 1000, source: .mac, type: .presence, phase: .end, specificType: "input"))
         let beats = { (fx: Fx) in events(fx).filter { $0.type == .heartbeat } }
         XCTAssertEqual(beats(rig.wait(40 * minute)), [], "an hour since the poke, but not since you came back")
         XCTAssertEqual(beats(rig.wait(21 * minute)).map(\.line), ["Nothing has happened for 1 hour."])

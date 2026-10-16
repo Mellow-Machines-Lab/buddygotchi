@@ -9,7 +9,7 @@ import Foundation
 /// The file is one JSON object a line; a line starting `//` is a comment.
 /// The first may be a header, `{"demo": 1, "title": "…", "agent": "claude"}`
 /// (the agent the script's hooks are from: `claude`, the default, or
-/// `codex`). Each other line is one thing, by one of the three:
+/// `codex`). Every other line is a step: one thing, by one of the three:
 ///
 ///     {"agent": "prompt", "text": "Add keyboard shortcuts"}
 ///     {"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
@@ -19,32 +19,32 @@ import Foundation
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
 ///     {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
 ///
-/// - `agent` lines are what the agent does, in words both agents share:
+/// - `agent` steps are what the agent does, in words both agents share:
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
 ///   `old` and `new`), `run` (a `cmd`, what it's `about`, whether it
 ///   `fails`, and `ask`: the agent asks you first, and you allow it after
 ///   that many seconds), `review` (a subagent, its `task` and `prompt`), and
 ///   `reply` (`text` that ends the turn). `say` is what the agent says
 ///   before it acts. `"by": "reviewer"` is the subagent's own.
-/// - `you` lines are what the person does: `poke`, and `talk` (the button
+/// - `you` steps are what the person does: `poke`, and `talk` (the button
 ///   held `hold` seconds, then `text` heard).
-/// - `brain` lines are the creature's brain's answers to its questions,
-///   about the line above, and `mood` its mood. `{"mood": "proud"}`
-///   alone is a brain line too.
+/// - `brain` steps are the creature's brain's answers to its questions,
+///   about the step above, and `mood` its mood. `{"mood": "proud"}`
+///   alone is a brain step too.
 ///
-/// A key a line doesn't take, or a value of the wrong type, is refused
+/// A key a step doesn't take, or a value of the wrong type, is refused
 /// with its line number, and `problems(for:)` finds the answers and moods
 /// a pack can't play (characters/DEMOS.md).
 ///
-/// The lines happen in order. Any line may say how long `after` the one
-/// before it ends; an `agent` line also how long it `takes`. Who plays
+/// The steps happen in order. Any step may say how long `after` the one
+/// before it ends; an `agent` step also how long it `takes`. Who plays
 /// the agent is the player's choice (`Runtime.play`): with no agent, it
 /// sends the hooks the agent would; with a live one, it waits for the
-/// agent's own. Either way the person's and the brain's lines keep to the
-/// agent's. Any line may carry a `note`: what happened, in words for
-/// whoever is watching, in place of the words the line makes.
+/// agent's own. Either way the person's and the brain's steps keep to the
+/// agent's. Any step may carry a `note`: what happened, in words for
+/// whoever is watching, in place of the words the step makes.
 public struct DemoScript: Sendable {
-    public struct Line: Sendable {
+    public struct Step: Sendable {
         public enum What: Sendable, Equatable {
             case agent(Agent)
             case poke
@@ -52,7 +52,7 @@ public struct DemoScript: Sendable {
             case brain([String: String], mood: String?)
         }
 
-        /// An `agent` line.
+        /// An `agent` step.
         public struct Agent: Sendable, Equatable {
             public enum Does: String, Sendable, CaseIterable {
                 case prompt, read, edit, run, review, reply
@@ -75,22 +75,22 @@ public struct DemoScript: Sendable {
             /// A review's task and prompt.
             public var task: String?
             public var prompt: String?
-            /// The subagent's line, not the main thread's.
+            /// The subagent's step, not the main thread's.
             public var byReviewer = false
         }
 
         public var what: What
-        /// Seconds after the line before ends.
+        /// Seconds after the step before ends.
         public var after: Double
-        /// Seconds an agent line takes, with no agent to take them.
+        /// Seconds an agent step takes, with no agent to take them.
         public var takes: Double
         public var note: String?
         /// Its line number in the file.
         public var number: Int
     }
 
-    /// What a line was, for whoever is watching: a kind, for an icon, and
-    /// a line of plain words.
+    /// What a step was, for whoever is watching: a kind, for an icon, and
+    /// plain words.
     public struct Cause: Sendable, Equatable, Codable {
         public var kind: String
         public var text: String
@@ -99,7 +99,7 @@ public struct DemoScript: Sendable {
     public var title: String
     /// Whose hooks the script's are: `claude` or `codex`.
     public var agent: String
-    public var lines: [Line]
+    public var steps: [Step]
 
     public struct Problem: Error, CustomStringConvertible {
         public var description: String
@@ -112,7 +112,7 @@ public struct DemoScript: Sendable {
 
     public init(_ text: String, named name: String = "the demo") throws {
         var title = "", agent = "claude"
-        var lines: [Line] = []
+        var steps: [Step] = []
         for (index, raw) in text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty || line.hasPrefix("//") { continue }
@@ -122,13 +122,13 @@ public struct DemoScript: Sendable {
             }
             func number(_ key: String) -> Double? { (o[key] as? NSNumber)?.doubleValue }
             func string(_ key: String) -> String? { o[key] as? String }
-            // A key the line's kind doesn't take, or a value of the wrong
+            // A key the step's kind doesn't take, or a value of the wrong
             // type, is a mistake: it would otherwise be left out quietly.
             let kind = o["demo"] != nil ? "demo" : ["agent", "you", "brain"].first { o[$0] != nil } ?? (o["mood"] != nil ? "brain" : "")
             if let keys = Self.keys[kind] {
-                if let bad = o.keys.sorted().first(where: { !keys.contains($0) && !Self.anyLine.contains($0) }) {
-                    let called = ["demo": "the header", "agent": "an agent line", "you": "a you line"][kind] ?? "a brain line"
-                    throw Problem(description: "\(here): \(called) has no key \(bad); it takes \((keys + Self.anyLine).sorted().joined(separator: ", "))")
+                if let bad = o.keys.sorted().first(where: { !keys.contains($0) && !Self.anyStep.contains($0) }) {
+                    let called = ["demo": "the header", "agent": "an agent step", "you": "a you step"][kind] ?? "a brain step"
+                    throw Problem(description: "\(here): \(called) has no key \(bad); it takes \((keys + Self.anyStep).sorted().joined(separator: ", "))")
                 }
                 for (key, value) in o {
                     let isBool = (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } == true
@@ -142,18 +142,18 @@ public struct DemoScript: Sendable {
                 }
             }
             if o["demo"] != nil {
-                guard lines.isEmpty else { throw Problem(description: "\(here): the header comes first") }
+                guard steps.isEmpty else { throw Problem(description: "\(here): the header comes first") }
                 title = string("title") ?? ""
                 agent = string("agent") ?? "claude"
                 guard ["claude", "codex"].contains(agent) else { throw Problem(description: "\(here): agent is claude or codex") }
                 continue
             }
-            let what: Line.What
+            let what: Step.What
             if let does = string("agent") {
-                guard let kind = Line.Agent.Does(rawValue: does) else {
-                    throw Problem(description: "\(here): agent is one of \(Line.Agent.Does.allCases.map(\.rawValue).joined(separator: ", "))")
+                guard let kind = Step.Agent.Does(rawValue: does) else {
+                    throw Problem(description: "\(here): agent is one of \(Step.Agent.Does.allCases.map(\.rawValue).joined(separator: ", "))")
                 }
-                var a = Line.Agent(does: kind)
+                var a = Step.Agent(does: kind)
                 a.text = string("text"); a.say = string("say"); a.file = string("file")
                 a.old = string("old"); a.new = string("new"); a.cmd = string("cmd"); a.about = string("about")
                 a.fails = o["fails"] as? Bool ?? false
@@ -180,7 +180,7 @@ public struct DemoScript: Sendable {
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
             } else {
-                throw Problem(description: "\(here): a line is by the agent, you or the brain")
+                throw Problem(description: "\(here): a step is by the agent, you or the brain")
             }
             let defaults: (after: Double, takes: Double) = switch what {
             case .agent(let a) where a.does == .prompt: (1, 0)
@@ -189,20 +189,20 @@ public struct DemoScript: Sendable {
             case .poke, .talk: (0.8, 0)
             case .brain: (0.3, 0)
             }
-            lines.append(Line(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
+            steps.append(Step(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
                               note: string("note"), number: index + 1))
         }
-        self.init(title: title, agent: agent, lines: lines)
+        self.init(title: title, agent: agent, steps: steps)
     }
 
-    /// The keys each kind of line takes, besides `anyLine`'s.
+    /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
         "demo": ["demo", "title", "agent"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "by", "takes"],
         "you": ["you", "text", "hold"],
         "brain": ["brain", "mood"],
     ]
-    static let anyLine = ["after", "note"]
+    static let anyStep = ["after", "note"]
 
     static func type(of key: String) -> String {
         switch key {
@@ -213,21 +213,21 @@ public struct DemoScript: Sendable {
         }
     }
 
-    public init(title: String = "", agent: String = "claude", lines: [Line]) {
+    public init(title: String = "", agent: String = "claude", steps: [Step]) {
         self.title = title
         self.agent = agent
-        self.lines = lines
+        self.steps = steps
     }
 }
 
-extension DemoScript.Line {
-    /// What the person does to the device itself at this line, for
+extension DemoScript.Step {
+    /// What the person does to the device itself at this step, for
     /// whoever replays it: a tap is a finger on its screen, which the
     /// device reacts to by itself.
     public var input: String? { what == .poke ? "tap" : nil }
 
-    /// What happened, for whoever is watching: the line's `note`, else words
-    /// made from the line. Nil for a line nobody would see as something
+    /// What happened, for whoever is watching: the step's `note`, else words
+    /// made from the step. Nil for a step nobody would see as something
     /// happening (the brain's).
     public func cause(creature name: String, agent: String) -> DemoScript.Cause? {
         let who = agent.prefix(1).uppercased() + agent.dropFirst()
@@ -260,26 +260,26 @@ extension DemoScript.Line {
 extension DemoScript {
     /// What in the script `pack` can't play, each with its line: an answer
     /// to a question the brain is never asked, a choice it isn't offered,
-    /// or a mood the pack doesn't have. Empty when every line plays. A
+    /// or a mood the pack doesn't have. Empty when every step plays. A
     /// pack with no voice takes `say.*` answers and leaves them out
     /// (characters/CHARACTER.md §8), so one script plays with or without.
     public func problems(for pack: CharacterPack = .active) -> [String] {
-        var offered = Dictionary(uniqueKeysWithValues: ReactAction.questions.map { ($0.key, $0.options.map(\.name)) })
+        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions.map { ($0.key, $0.options.map(\.name)) })
         offered["react.mood"] = ["none"] + pack.faces.map(\.name)
         var found: [String] = []
-        for line in lines {
-            guard case .brain(let answers, let mood) = line.what else { continue }
+        for step in steps {
+            guard case .brain(let answers, let mood) = step.what else { continue }
             for (key, choice) in answers.sorted(by: { $0.key < $1.key }) {
                 guard let choices = offered[key] else {
-                    found.append("line \(line.number): the brain is never asked \(key); it's asked \(offered.keys.sorted().joined(separator: ", "))")
+                    found.append("line \(step.number): the brain is never asked \(key); it's asked \(offered.keys.sorted().joined(separator: ", "))")
                     continue
                 }
                 if !choices.contains(choice) {
-                    found.append("line \(line.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
+                    found.append("line \(step.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
                 }
             }
-            if let mood, !pack.v2Names.contains(mood) {
-                found.append("line \(line.number): \(pack.id) has no mood \(mood); it has \(pack.v2Names.joined(separator: ", "))")
+            if let mood, !pack.moods.map(\.id).contains(mood) {
+                found.append("line \(step.number): \(pack.id) has no mood \(mood); it has \(pack.moods.map(\.id).joined(separator: ", "))")
             }
         }
         return found

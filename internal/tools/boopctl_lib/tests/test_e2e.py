@@ -1,8 +1,8 @@
 """boopctl e2e's order check (internal/VERIFICATION.md L4) on a made-up app
 log: a brain reaction comes after the rules' reaction, and the device's
-`ended` says how it went: waiting its turn behind another's line, or being
+`ended` says how it went: waiting in the queue behind another's `say`, or being
 skipped for waiting too long, is fine; being cut short by the brain's own
-next request, or a name the device doesn't play, isn't. And e2e and soak
+next reaction, or a name the device doesn't play, isn't. And e2e and soak
 --pipeline when the run can't start. Needs no board or app."""
 import contextlib
 import io

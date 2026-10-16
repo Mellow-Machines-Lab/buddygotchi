@@ -222,7 +222,7 @@ class SmallDayTests(unittest.TestCase):
             {"questions": [], "received_at_ms": at("09:00:00")}, status(at("09:00:00"), True), state(at("09:00:00")),
             event(at("09:05:00"), 1, "turn start"),
             a_pass(at("09:05:01"), 2, 1, mood="grumpy", react="grumpy"),
-            state(at("09:05:01"), mood="grumpy"),  # the mood action's state goes out before its entry
+            state(at("09:05:01"), mood="grumpy"),  # the mood output's state goes out before its entry
             action(at("09:05:01"), 3, 1, "mood", message="Boop's mood changed: happy → grumpy."),
             action(at("09:05:01"), 4, 1, "react", pending=True),
             settle(at("09:05:03"), 5, 4, "done"),
@@ -295,7 +295,7 @@ class SmallDayTests(unittest.TestCase):
 class RuleTests(unittest.TestCase):
     def test_finishes_are_the_brains_task_complete_and_reply_ready(self):
         """A finish is task_complete or reply_ready; a reaction with no
-        animation and a rule's one-shot aren't. The rules' requests aren't
+        animation and a rule's reaction aren't. The rules' requests aren't
         chatter."""
         do = lambda t, by, name, play="next", **args: {  # noqa: E731
             "sent": {"t": "do", "id": t % 1000, "name": name, "play": play, "args": args}, "by": by, "received_at_ms": t}
@@ -336,7 +336,7 @@ class RuleTests(unittest.TestCase):
     def test_finishes_in_logs_from_before_do(self):
         """Older logs sent a `moment`: a finish is task_complete or
         reply_ready, and a cheer in logs from before them; a rule's
-        one-shot isn't one."""
+        rule reaction isn't one."""
         moment = lambda t, **m: {"sent": {"t": "moment", **m}, "received_at_ms": t}
         d = day.summarise([launch(
             state(at("09:00:00")),

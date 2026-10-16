@@ -19,6 +19,7 @@ import base64
 import errno
 import hashlib
 import os
+import select
 import signal
 import socket
 import stat
@@ -30,28 +31,31 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
-def chosen_voice() -> Path:
-    """The chosen character pack's voice (characters/CHARACTER.md §8): the
-    pack is `BOOP_CHARACTER`'s, else the one last staged
-    (.character-build/pack), else Boop."""
-    staged = REPO / ".character-build" / "pack"
-    pack = os.environ.get("BOOP_CHARACTER") or (staged.read_text().strip() if staged.exists() else REPO / "characters" / "boop")
-    return Path(pack) / "voice" / "voice.bin"
+sys.path.insert(0, str(REPO / "simulator" / "tools"))
+from voice_subset import chosen_voice  # noqa: E402  the pack in use's voice
+sys.path.pop(0)
 
 
-# A write to a client that can't finish within this long drops the client,
-# so one that stops reading can't stall the board's lines to the others for
-# longer (the host's own rule for a stuck bridge, linkkit/SPEC.md §8).
-SEND_TIMEOUT_S = 0.25
+# A client this far behind on the board's lines (it stopped reading) is
+# dropped, so it can't stall them to the others; and a line from a client
+# longer than this is dropped whole, as the board drops it (linkkit/SPEC.md
+# §8, §9). The board's own lines may be longer: a screenshot's is.
+MAX_BEHIND = 4 * 1024 * 1024
+MAX_LINE = 512
 
 
 class Cable:
-    """The board's lines to every client, and the clients' to the board."""
+    """The board's lines to every client, and the clients' to the board,
+    by a bridge's rules (linkkit/SPEC.md §8). One thread serves the
+    clients and never waits on one: each has its own backlog, sent as it
+    reads."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.board = None  # the page's WebSocket: a callable that sends one line
-        self.clients = set()
+        self.backlog = {}  # each client's lines it hasn't read yet
+        self.wake_r, self.wake_w = os.pipe()  # wakes the clients' thread for new lines
+        os.set_blocking(self.wake_w, False)
 
     def plug(self, send) -> None:
         with self.lock:
@@ -73,19 +77,11 @@ class Cable:
 
     def to_clients(self, line: bytes) -> None:
         with self.lock:
-            clients = list(self.clients)
-        for client in clients:
-            try:
-                client.sendall(line + b"\n")
-            except OSError:
-                self.drop(client)
-
-    def drop(self, client: socket.socket) -> None:
-        with self.lock:
-            self.clients.discard(client)
+            for out in self.backlog.values():
+                out.extend(line + b"\n")
         try:
-            client.close()
-        except OSError:
+            os.write(self.wake_w, b"x")
+        except BlockingIOError:  # already woken
             pass
 
     def serve(self, path: str) -> tuple:
@@ -116,36 +112,70 @@ class Cable:
         made = os.lstat(path)
         ours = (made.st_dev, made.st_ino)
 
-        def client(conn: socket.socket) -> None:
-            try:
-                conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, struct.pack("ll", 0, int(SEND_TIMEOUT_S * 1e6)))
-            except OSError:
-                # macOS refuses it (EINVAL) once the client has hung up: one gone before it's heard.
+        def clients() -> None:
+            server.setblocking(False)
+            partial = {}  # what each client has sent since its last newline; None while dropping a long line
+
+            def drop(conn: socket.socket) -> None:
+                with self.lock:
+                    self.backlog.pop(conn, None)
+                partial.pop(conn, None)
                 conn.close()
-                return
-            with self.lock:
-                self.clients.add(conn)
-            buf = b""
-            try:
-                while True:
-                    data = conn.recv(65536)
-                    if not data:
-                        break
-                    buf += data
-                    while b"\n" in buf:
-                        line, buf = buf.split(b"\n", 1)
-                        if line:
-                            self.to_board(line)
-            except OSError:
-                pass
-            self.drop(conn)
 
-        def accept() -> None:
             while True:
-                conn, _ = server.accept()
-                threading.Thread(target=client, args=(conn,), daemon=True).start()
+                with self.lock:
+                    behind = [c for c, out in self.backlog.items() if len(out) > MAX_BEHIND]
+                    waiting = [c for c, out in self.backlog.items() if out and c not in behind]
+                for conn in behind:
+                    drop(conn)
+                readable, writable, _ = select.select([server, self.wake_r, *partial], waiting, [])
+                for conn in writable:
+                    with self.lock:
+                        out = self.backlog.get(conn)
+                        try:
+                            del out[:conn.send(out)]
+                        except BlockingIOError:
+                            pass
+                        except OSError:
+                            out = None
+                    if out is None:
+                        drop(conn)
+                for r in readable:
+                    if r is server:
+                        try:
+                            conn, _ = server.accept()
+                        except BlockingIOError:
+                            continue
+                        conn.setblocking(False)
+                        partial[conn] = b""
+                        with self.lock:
+                            self.backlog[conn] = bytearray()
+                    elif r == self.wake_r:
+                        os.read(self.wake_r, 4096)
+                    elif r in partial:
+                        try:
+                            data = r.recv(65536)
+                        except BlockingIOError:
+                            continue
+                        except OSError:
+                            data = b""
+                        if not data:
+                            drop(r)
+                            continue
+                        *lines, rest = data.split(b"\n")
+                        for line in lines:
+                            if partial[r] is not None and len(partial[r]) + len(line) <= MAX_LINE:
+                                line, partial[r] = partial[r] + line, b""
+                                if line:
+                                    self.to_board(line)
+                            else:
+                                partial[r] = b""
+                        if partial[r] is not None:
+                            partial[r] += rest
+                            if len(partial[r]) > MAX_LINE:
+                                partial[r] = None  # dropped whole, up to its newline
 
-        threading.Thread(target=accept, daemon=True).start()
+        threading.Thread(target=clients, daemon=True).start()
         return ours
 
 
@@ -221,7 +251,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8206, help="the page's port on 127.0.0.1 (8206)")
     parser.add_argument("--socket", default="/tmp/boop-sim-usb.sock", help="the board's USB, as a bridge's socket (/tmp/boop-sim-usb.sock)")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
-    parser.add_argument("--voice", default=str(chosen_voice()), help="the voice pack on the board's card (the chosen character pack's, if it has one)")
+    parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()
     if not (Path(args.dist) / "boop-sim.wasm").exists():
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)

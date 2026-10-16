@@ -42,7 +42,7 @@ bool begin() {
 
 bool write(const uint8_t* chunk) {
   if (dac_continuous_write(dac, const_cast<uint8_t*>(chunk), kChunk, nullptr, kWriteTimeoutMs) == ESP_OK) return true;
-  // Wedged anyway: restart the DAC so the next line can play.
+  // Wedged anyway: restart the DAC so the next `say` can play.
   dac_continuous_disable(dac);
   dac_continuous_enable(dac);
   return false;

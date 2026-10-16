@@ -5,11 +5,11 @@ import XCTest
 @testable import BoopKit
 
 /// Replaying the fixtures prints the expected `state` snapshots
-/// and rules' one-shots.
+/// and rules' reactions.
 final class ReplayTests: XCTestCase {
     /// Each snapshot as `+time base attn waiting`, e.g. `+3.0s idle claude/jetpack 1`,
     /// counting 1 + `attn.more` waiting, with `/act` after the base while
-    /// there's one (`+2.0s working/terminal - 0`); each rule's one-shot as
+    /// there's one (`+2.0s working/terminal - 0`); each rule's reaction as
     /// `+time name`, with its `ctx` (`+1.0s starting new_task`).
     func summary(_ fixture: String, agent: String) throws -> [String] {
         let path = HookFixtures.agentHooks.appendingPathComponent(fixture).path
@@ -19,7 +19,7 @@ final class ReplayTests: XCTestCase {
             let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(parts[2].utf8)) as? [String: Any])
             if parts[1] == "do" {
                 let args = object["args"] as? [String: Any] ?? [:]
-                XCTAssertNil(args["mood"], "a rule's one-shot has no face of the brain's")
+                XCTAssertNil(args["mood"], "a rule's reaction has no face of the brain's")
                 return ([parts[0], object["name"] as? String ?? "-"] + [args["ctx"] as? String].compactMap { $0 })
                     .joined(separator: " ")
             }
@@ -124,10 +124,10 @@ final class ReplayTests: XCTestCase {
     }
 
     /// One Claude session through every activity
-    /// and every one-shot of the rules: plan mode, a read, a web search,
+    /// and every reaction of the rules: plan mode, a read, a web search,
     /// a shell read, an edit, failing tests, a helper sent off and back, a
     /// build that goes quiet, Esc, then a resume and a new task.
-    func testAClaudeSessionShowsEveryActivityAndOneShot() throws {
+    func testAClaudeSessionShowsEveryActivityAndRuleReaction() throws {
         let got = try summary("claude-code/synthetic/states.jsonl", agent: "claude")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
@@ -207,6 +207,6 @@ final class ReplayTests: XCTestCase {
         XCTAssertFalse(lines.contains { $0.hasPrefix("# skipped") })
         XCTAssertTrue(lines.contains { $0.contains("view turn end") && $0.contains(": done, a ") })
         XCTAssertTrue(lines.contains { $0.contains(": failed, a ") })
-        XCTAssertFalse(lines.contains { $0.contains(#"do {"name":"stopped""#) }, "a failed turn has no one-shot")
+        XCTAssertFalse(lines.contains { $0.contains(#"do {"name":"stopped""#) }, "a failed turn has no rule reaction")
     }
 }

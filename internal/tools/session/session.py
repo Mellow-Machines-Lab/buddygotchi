@@ -9,7 +9,7 @@ NAME is a character pack's demo script, `demo/NAME.jsonl` (the same one
 the project its agent works in, copied fresh for every run.
 
 Boop plays the script (`Boop --headless --demo SCRIPT --live`): it does the
-person's and the brain's lines, and waits for the agent's own hooks for the
+person's and the brain's steps, and waits for the agent's own hooks for the
 agent's, so everything keeps in step. The agent is real:
 
 - In this terminal (`--ui terminal`, the default), the real Claude Code or
@@ -22,7 +22,7 @@ agent's, so everything keeps in step. The agent is real:
 
 In the app, where the model can't be held, the project's settings add one
 hook of the demo's own, the gate (gate.py), which holds each tool call
-until the script reaches its line; in the terminal the replay server holds
+until the script reaches its step; in the terminal the replay server holds
 each reply the same way. The agent's hooks go to the run's Boop alone
 (`AGENT_HOOKS_SOCKET`), by Boop's own installer in the terminal and by the
 project's settings in the app. The board is the simulator's page, or a
@@ -131,7 +131,7 @@ def permissions(s: scripts.Script) -> Dict[str, List[str]]:
     and asks, in any mode, about the commands the script asks about."""
     allow = {"Read", "Edit", "Agent", "Task"}
     ask = set()
-    for l in s.agent_lines():
+    for l in s.agent_steps():
         if l["agent"] == "run":
             (ask if "ask" in l else allow).add(f"Bash({l['cmd']})")
             # A subagent words its own commands (`git -C DIR diff`): a
@@ -192,7 +192,7 @@ trust_level = "trusted"
 
 
 class Cursor:
-    """Boop's cursor file: the number of the script's line due now."""
+    """Boop's cursor file: the number of the script's step due now."""
 
     def __init__(self, path: Path, boop: subprocess.Popen):
         self.path, self.boop = path, boop
@@ -202,7 +202,7 @@ class Cursor:
         return scripts.cursor_at(self.path)
 
     def wait(self, n: int, nag: Optional[str] = None) -> bool:
-        """Until line `n` is due, saying `nag` every 30 s meanwhile; false
+        """Until step `n` is due, saying `nag` every 30 s meanwhile; false
         if Boop stopped first."""
         asked = time.time()
         while self.at < n:
@@ -223,16 +223,16 @@ def drive(agent: str, s: scripts.Script, term: Terminal, cursor: Cursor, log: Lo
     if not cursor.wait(prompt["n"]):
         return
     time.sleep(0.5)
-    log(f"you: the prompt (line {prompt['n']})")
+    log(f"you: the prompt (step {prompt['n']})")
     term.type(prompt["text"])
     text, key = DIALOGS[agent]
-    for l in [l for l in s.agent_lines() if "ask" in l]:
+    for l in [l for l in s.agent_steps() if "ask" in l]:
         mark = term.mark()
         if not cursor.wait(l["n"]) or not term.wait_for(text, since=mark, timeout=180):
-            log(f"you: no request for line {l['n']}")
+            log(f"you: no request for step {l['n']}")
             continue
         time.sleep(l["ask"])
-        log(f"you: allow line {l['n']}")
+        log(f"you: allow step {l['n']}")
         term.press(key)
 
 
@@ -245,7 +245,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                  "the script's agent reads, edits and runs")
     if args.ui == "desktop" and args.agent != "claude":
         sys.exit("session: the desktop app runs Claude Code: --ui desktop is for --agent claude")
-    if args.agent == "codex" and any(l["agent"] == "review" for l in s.agent_lines()):
+    if args.agent == "codex" and any(l["agent"] == "review" for l in s.agent_steps()):
         sys.exit(f"session: {args.name} sends a reviewer, and Codex has no subagents here: try --agent claude")
     if args.ui == "terminal" and shutil.which(args.agent) is None:
         sys.exit(f"session: {args.agent} isn't on PATH")
@@ -291,9 +291,9 @@ def cmd_run(args: argparse.Namespace) -> int:
             cwd=REPO, env=env, stdout=open(root / "boop.log", "w"), stderr=subprocess.STDOUT)
         cursor = Cursor(state / "demo-cursor", boop)
         if not wait_socket(boop_sock, 10):
-            # Most often a script line the pack can't play: Boop says which.
+            # Most often a script step the pack can't play: Boop says which.
             sys.exit(f"session: Boop didn't start:\n{(root / 'boop.log').read_text()[-2000:]}")
-        # Boop starts the script once the board says hello (line 0 due);
+        # Boop starts the script once the board says hello (step 0 due);
         # nothing of the agent's starts before.
         if link != "none":
             print("session: waiting for the board…", file=sys.stderr)
@@ -351,8 +351,8 @@ def cmd_run(args: argparse.Namespace) -> int:
             except subprocess.TimeoutExpired:
                 child.kill()
     reached = max(0, cursor.at) if cursor else 0
-    whole = reached >= len(s.lines)
-    print(f"\nsession: {'done' if whole else 'stopped'}: line {min(reached, len(s.lines))} of {len(s.lines)}; logs in {root}",
+    whole = reached >= len(s.steps)
+    print(f"\nsession: {'done' if whole else 'stopped'}: step {min(reached, len(s.steps))} of {len(s.steps)}; logs in {root}",
           file=sys.stderr)
     return 0 if whole else 1
 

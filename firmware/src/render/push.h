@@ -1,5 +1,5 @@
 // How a native face's frames reach the panel: two surfaces
-// it draws into in turn, what of each new frame to send, and the quarter
+// it draws into alternately, what of each new frame to send, and the quarter
 // turn into the panel's windows. Pure C++: the AMOLED's display.cpp sends
 // what this plans from a task of its own, and the native tests apply the
 // same windows to a model panel.
@@ -40,7 +40,7 @@ struct PanelWindow {
 // edge (board/config.h's kTopOnPanelLeft).
 PanelWindow packBand(const Surface& s, int band, Span span, bool topOnLeft, uint16_t* out);
 
-// Two native surfaces a face draws into in turn: the next
+// Two native surfaces a face draws into alternately: the next
 // frame goes into back() while the board sends front(), the frame the
 // panel shows or is being sent. Each surface keeps its own written spans,
 // so each clears what it held two frames ago. The surfaces' pixels belong

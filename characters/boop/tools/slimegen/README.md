@@ -1,23 +1,26 @@
 # Slime asset generator
 
-Updated 2026-10-05.
+Updated 2026-10-15.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
 
-The slime design's `emotion-graph.json` is the source for v3's moods in
-Boop's character pack, `characters/boop/character.json`
-([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key
-(ordered adjacency, meanings, families, pixel fallbacks and brief markers)
-and `pacing` (provisional host pacing). It rewrites only those two keys,
-and keeps any key a mood has that the design doesn't set, such as
-`quiet_never`.
+The slime design's `emotion-graph.json` is the source for Boop's moods
+in its character pack, `characters/boop/character.json`
+([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key, each mood's
+id, meaning and family, in the design's order. It keeps every other key,
+and any key a mood has that the design doesn't set, such as `face`; a
+mood's `moves` are the pack's own, and the design's edges seed only a
+mood the pack doesn't have yet. The design's pixel `fallback`s, `brief`
+markers and `hostPolicy` aren't written: every pack has every mood, and
+pacing is the steering's.
 The same tool bundles the reference engine, WebGL/Canvas renderer and a
 silent adapter into Boop's character pack, `characters/boop/mac/mirror/`. The shipped files have no
 dependency on this tool at runtime. `check-mirror.mjs` checks interruption and
 resource policy, and runs the generated `slime.js` on stubs to check its
-drawing: none while the popover is closed, at most 60 frames a second while
-it is open, and the renderer's supersampling tiers. Edit
+drawing: none while the popover is closed, a frame at once when it opens,
+60 frames a second while it is open on a 120 Hz display as on a 60 Hz
+one, and the renderer's supersampling tiers. Edit
 `mirror.mjs` or the design's `render/` sources, never `slime.js`, and
 regenerate. `check-headless.py --output FILE` exercises the real scripted
 app against an isolated synthetic gel USB peer. Add `--native` to connect it

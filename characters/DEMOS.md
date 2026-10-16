@@ -13,9 +13,10 @@ Claude in the desktop app. The script is the same in each.
 
 1. Make `characters/<pack>/demo/<name>.jsonl`. Copy a short one to
    start, such as `characters/pixel/demo/hello.jsonl`.
-2. Write one line for each thing that happens (below).
+2. Write one step, a line of the file, for each thing that happens
+   (below).
 3. Check it: `.build/debug/boopdev check` (after `make build`). It
-   names each line the pack can't play, and the choices it can.
+   names each step the pack can't play, and the choices it can.
 4. Watch it: `make demo NAME=<name>`.
 
 This is all of `hello.jsonl`:
@@ -31,16 +32,16 @@ This is all of `hello.jsonl`:
 {"brain": {"react.mood": "proud", "react.animation": "success", "say.about": "done", "say.kind": "word"}, "mood": "proud"}
 ```
 
-## Lines
+## Steps
 
-Each line is one JSON object. A line that starts with `//` is a comment.
-The first line may be a header: `{"demo": 1, "title": "…"}`, and
+Each line of the file is one JSON object. A line that starts with `//`
+is a comment. The first line may be a header: `{"demo": 1, "title": "…"}`, and
 `"agent": "codex"` if the script is Codex's (Claude is the default).
 
-Every other line is by one of three: the agent, you, or the creature's
-brain.
+Every other line is a step, by one of three: the agent, you, or the
+creature's brain.
 
-| Line | What it does | Keys |
+| Step | What it does | Keys |
 | --- | --- | --- |
 | `{"agent": "prompt"}` | You give the agent its task | `text` |
 | `{"agent": "read"}` | The agent reads a file | `file` |
@@ -50,31 +51,31 @@ brain.
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text` |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
-| `{"brain": {…}}` | How the creature reacts to the line above | the answers; `mood` sets its mood |
+| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
-On any agent line, `say` is what the agent says before it acts, and
-`"by": "reviewer"` makes it the subagent's line.
+On any agent step, `say` is what the agent says before it acts, and
+`"by": "reviewer"` makes it the subagent's step.
 
-**Timing.** Lines happen in order. `after` is how many seconds a line
-waits after the one before it ends. An agent line also `takes` some
+**Timing.** Steps happen in order. `after` is how many seconds a step
+waits after the one before it ends. An agent step also `takes` some
 seconds. Without them, each takes about as long as it would.
 
-**Captions.** Any line can have a `note`: words for the viewer that
-replace the words Boop makes from the line ("You poke Pixel three times
+**Captions.** Any step can have a `note`: words for the viewer that
+replace the words Boop makes from the step ("You poke Pixel three times
 while it's busy").
 
-A key that a line doesn't take, or a value of the wrong type, stops the
-demo with the line's number. So does a brain answer the pack can't play.
+A key that a step doesn't take, or a value of the wrong type, stops the
+demo with its line number. So does a brain answer the pack can't play.
 
 ## The brain's answers
 
 A demo has no real brain. The creature does only what the rules do
-(working, needs you, done) and what the script's brain lines say. Put a
-brain line where a real brain would be asked: a turn that starts or
+(working, needs you, done) and what the script's brain steps say. Put a
+brain step where a real brain would be asked: a turn that starts or
 ends, a poke, talk, or a check that fails or passes.
 
-A brain line answers the questions that the real brain gets:
+A brain step answers the questions that the real brain gets:
 
 | Key | Choices |
 | --- | --- |
@@ -84,42 +85,45 @@ A brain line answers the questions that the real brain gets:
 | `say.feeling`, `say.about`, `say.kind` | what it says; only a pack with a voice says it |
 
 The choices and what each means are in
-`app/BoopKit/Actions/ReactAction.swift`. `boopdev check` lists them when
+`app/BoopKit/Outputs/ReactOutput.swift`. `boopdev check` lists them when
 an answer is wrong. A pack with no voice ignores the `say.*` answers, so
 one script plays with or without a voice.
 
 ## Play it
 
 ```sh
-make demo NAME=?                                       # list the demos
+make demo 'NAME=?'                                     # list the demos (quoted for zsh)
 make demo NAME=hello                                   # the simulator's page, no agent
-make demo NAME=hello BOARD=usb:/tmp/boop-bridge.sock   # a real board, no agent
+make demo NAME=hello FACE=gel                          # the same, on Boop's gel face
+make demo NAME=hello BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, no agent
 make demo NAME=hello IN=simulated-claude-terminal      # Claude Code in this terminal, replies replayed
-make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex
+make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex (no reviewer steps: Codex has no subagents here)
 make demo NAME=hello IN=claude                         # your real Claude, in the Claude desktop app
 ```
 
 - **A real board** needs the bridge first:
-  `internal/tools/boopctl bridge` in another terminal. Quit the menu-bar
+  `.build/debug/linkkit-bridge` in another terminal. Quit the menu-bar
   app, so that only one app talks to the board. `BOARD` works with every
   `IN` too.
 - **With no agent,** Boop plays the agent: it sends the hooks that the
   agent would send, at the script's times.
 - **With an agent,** the agent goes at its own pace. Boop waits for the
-  agent's own hook for each agent line, then plays your lines and the
+  agent's own hook for each agent step, then plays your steps and the
   brain's after it. How this works:
   [internal/sessions/README.md](../internal/sessions/README.md).
 - `make demo` plays the demo as its pack. If two packs have a demo with
-  the same name, choose one with `CHARACTER=<pack>`.
+  the same name, choose one with `CHARACTER=<pack>`. With no `NAME`, it
+  plays `landing`.
 
 ## The same every time
 
 - **The simulator's page plays a recording.** The first time, `make
-  demo` plays the script through the real app and records every line the
-  board gets. The page then plays that recording, so each viewing is the
+  demo` plays the script through the real app and records every message
+  the board gets. The page then plays that recording, so each viewing is the
   same. It records again when the script changes, or with `FRESH=1`.
-  This is what the landing page shows.
-- **A board or an agent plays live.** The lines come in the same order,
+  This is what the landing page shows. The recording's format is in
+  [simulator/README.md](../simulator/README.md), Demos.
+- **A board or an agent plays live.** The steps come in the same order,
   each at its time or at the agent's pace.
 - **In the terminal, the agent's model is replayed** from the script, so
   it says and does what the script says.
@@ -129,8 +133,8 @@ make demo NAME=hello IN=claude                         # your real Claude, in th
 
 ## A project for a real agent
 
-With `IN=…`, a real Claude Code or Codex does the work in a fresh copy of
-`internal/sessions/<name>/workspace/`. Make that folder with the files the
-script's agent reads, edits and runs, and with tests that give the
-script's results (`hello`, `landing` and `hanging` are examples). With no `IN`, a
-demo needs no project.
+With `IN=…`, the agent works in a fresh copy of
+`internal/sessions/<name>/workspace/`: the files the script's agent
+reads, edits and runs, and tests that give the script's results. How to
+make one: [internal/sessions/README.md](../internal/sessions/README.md),
+A demo's project. With no `IN`, a demo needs no project.

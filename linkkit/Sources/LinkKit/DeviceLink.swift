@@ -6,18 +6,17 @@ import Foundation
 ///
 /// - `state`: sent on every change, at once when the link comes up, in
 ///   answer to every `hello`, and again once 10 s have passed (`tick`).
-///   One too long for a line is never sent (SPEC.md §2): the last that
+///   One longer than 512 bytes is never sent (SPEC.md §2): the last that
 ///   fit stands.
 /// - `hello`: asked for (the host's bare `{"t":"hello"}`, SPEC.md §3) when
 ///   the link comes up, and again every 10 s until one comes, since a
 ///   device that still counts the host as there (an app relaunched within
 ///   30 s, or one taking over a Bluetooth link macOS kept) doesn't say it
 ///   unasked. Checked against the kit's version and the app's name. A
-///   device that doesn't fit (a `kit` other than 1, another app, or
-///   firmware the app finds too old, `incompatible`) still gets `state`, so
-///   a device flashed while the link stays up hears the host and says its
-///   new `hello`, but no `do`, and its `ev`s are dropped: `trouble` says
-///   why.
+///   device that doesn't fit (a `kit` other than 1, or another app) still
+///   gets `state`, so a device flashed while the link stays up hears the
+///   host and says its new `hello`, but no `do`, and its `ev`s are
+///   dropped: `trouble` says why.
 /// - `do`: each gets an id and exactly one `Outcome`: the device's
 ///   `ended`, or a failure here (no link, no hello yet, a name the device
 ///   doesn't play, the link dropping, no answer by its `ttl` plus 60 s).
@@ -45,13 +44,13 @@ public final class DeviceLink {
     /// A `state` goes out at least this often (SPEC.md §5).
     public static let keepaliveMs: Int64 = 10_000
     /// A `do` with no `ended` this long after its `ttl` has passed is given
-    /// up: a line was lost (SPEC.md §5).
+    /// up: a message was lost (SPEC.md §5).
     public static let answerGraceMs: Int64 = 60_000
 
-    /// Who asked for a line, passed to `onSend` as it is (a debug log's
+    /// Who asked for a message, passed to `onSend` as it is (a debug log's
     /// tracing): the link makes nothing of it. The app names its own
     /// senders (`by:` on `do`, `app` when it doesn't say); the link's own
-    /// lines are `link`.
+    /// messages are `link`.
     public struct Sender: Hashable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible {
         public let name: String
         public init(_ name: String) { self.name = name }
@@ -60,7 +59,7 @@ public final class DeviceLink {
 
         /// A `do` whose app didn't say who asked for it.
         public static let app: Sender = "app"
-        /// The link's own lines: every `state` (the link decides when one
+        /// The link's own messages: every `state` (the link decides when one
         /// goes out) and its ask for the device's `hello`.
         public static let link: Sender = "link"
     }
@@ -69,8 +68,7 @@ public final class DeviceLink {
     /// doesn't fit this app. `description` says it in plain words, with
     /// what to do.
     public enum Trouble: Equatable, Sendable, CustomStringConvertible {
-        /// Firmware older than the host: its `kit` is below 1 or missing,
-        /// or the app finds it too old (`incompatible`).
+        /// Firmware older than the host: its `kit` is below 1 or missing.
         case tooOld
         /// A `kit` newer than the host speaks.
         case tooNew
@@ -98,7 +96,7 @@ public final class DeviceLink {
         case incompatible
         /// The name isn't in the device's `hello.does`. Nothing was sent.
         case unknownName
-        /// The line would be longer than 512 bytes, which the device drops.
+        /// The message would be longer than 512 bytes, which the device drops.
         /// Nothing was sent.
         case tooLong
         /// The link dropped while it waited for its `ended`. The device
@@ -107,7 +105,7 @@ public final class DeviceLink {
         /// No `ended` came by its `ttl` plus 60 s.
         case noAnswer
         /// The device restarted while it waited (a `hello` with a new
-        /// `boot`): it has forgotten the request.
+        /// `boot`): it has forgotten the `do`.
         case restarted
 
         public var description: String {
@@ -144,7 +142,7 @@ public final class DeviceLink {
     /// fits or hasn't said. It still gets `state`. Cleared when the link
     /// drops or a `hello` that fits comes.
     public private(set) var trouble: Trouble?
-    /// The app's latest `state` fields that fit in a line.
+    /// The app's latest `state` fields that fit in a message.
     public private(set) var state: JSONObject?
 
     /// Every `ev` but `ended`, from a device that fits: while `trouble` is
@@ -156,11 +154,11 @@ public final class DeviceLink {
     /// The link came up or dropped. On a drop, after every waiting `do`
     /// has failed.
     public var onConnection: ((Bool) -> Void)?
-    /// Every line sent, with who asked for it.
+    /// Every message sent, with who asked for it.
     public var onSend: ((String, Sender) -> Void)?
 
     let log: (String) -> Void
-    /// `state` as a line, and the last one sent and when.
+    /// `state` as a message, and the last one sent and when.
     var stateLine: String?
     var lastSentLine: String?
     var lastSentAt: Int64?
@@ -195,11 +193,11 @@ public final class DeviceLink {
 
     // MARK: - State
 
-    /// The app's `state` fields, in the order they go on the line. Sent
-    /// only if the line differs from the last one sent. Give the link one
+    /// The app's `state` fields, in the order they go in the message.
+    /// Sent only if it differs from the last one sent. Give the link one
     /// from the start: the device says `hello` only once it hears the host
     /// (SPEC.md §5), and until then every `do` fails. Fields too long for a
-    /// line are never sent, since the device would drop them whole
+    /// message are never sent, since the device would drop them whole
     /// (SPEC.md §2): logged once, and the last that fit stands.
     public func update(state fields: JSONObject, now: Int64) {
         let line = Wire.state(fields)
@@ -240,7 +238,7 @@ public final class DeviceLink {
     /// Asks the device for its `hello` while the link is up and it hasn't
     /// said one, fitting or not (SPEC.md §3). The device answers the host's
     /// `hello` with its own on that link, and only once if the ask is also
-    /// the first line it hears from the host, so the ask goes before a
+    /// the first message it hears from the host, so the ask goes before a
     /// `state` (SPEC.md §5).
     func askHello(now: Int64) {
         guard connected, hello == nil, trouble == nil else { return }
@@ -251,8 +249,8 @@ public final class DeviceLink {
     // MARK: - Do
 
     /// Asks the device to play `name`, one of its `hello.does`, with the
-    /// app's `args`. `ttl` (1–60000 ms) is how long a `next` may wait for
-    /// the turn; `now` and `if_free` don't wait, and the line leaves it out.
+    /// app's `args`. `ttl` (1–60000 ms) is how long a `next` may wait in
+    /// the queue; `now` and `if_free` don't wait, and the message leaves it out.
     ///
     /// `completion` runs exactly once: with the device's `ended`, or a
     /// failure. When the `do` can't be sent it runs before this returns,
@@ -295,10 +293,10 @@ public final class DeviceLink {
 
     // MARK: - From the device
 
-    /// A line from the device. Answers `hello` with the latest `state`,
+    /// A message from the device. Answers `hello` with the latest `state`,
     /// finishes the `do` an `ended` names, and passes other `ev`s to
-    /// `onEvent`. Returns what the line was, for the owner's log, and for
-    /// the app to read a line the kit doesn't know (`.other`).
+    /// `onEvent`. Returns what the message was, for the owner's log, and
+    /// for the app to read a message the kit doesn't know (`.other`).
     @discardableResult
     public func receive(_ line: String, now: Int64) -> Wire.Message {
         let message = Wire.decode(line)
@@ -359,18 +357,6 @@ public final class DeviceLink {
 
     // MARK: - Trouble
 
-    /// The app found that the device doesn't fit in a way the kit can't
-    /// see, such as its own firmware from before the kit, which says
-    /// something else where a `hello` would be (SPEC.md §6 leaves that to
-    /// the app): too old, by default. As for a `hello` that doesn't fit:
-    /// it's the `trouble`, logged once, what waits fails, and the device
-    /// still gets the latest `state`, now, but no `do`. A drop or a
-    /// `hello` that fits clears it.
-    public func incompatible(_ why: Trouble = .tooOld, now: Int64) {
-        meetTrouble(why)
-        sendState(now: now)
-    }
-
     /// Why a `hello` doesn't fit (SPEC.md §6), or nil when it does.
     func problem(with hello: Hello) -> Trouble? {
         guard let kit = hello.kit, kit >= Wire.kit else { return .tooOld }
@@ -382,11 +368,11 @@ public final class DeviceLink {
     /// The device doesn't fit: it gets no `do`, and what waited on it
     /// fails. Logged once for each new reason, with who said the `hello`
     /// that didn't fit.
-    func meetTrouble(_ why: Trouble, from misfit: Hello? = nil) {
+    func meetTrouble(_ why: Trouble, from misfit: Hello) {
         hello = nil
         if trouble != why {
             trouble = why
-            log("device link: " + (misfit.flatMap { $0.id.isEmpty ? nil : "\($0.id) firmware \($0.fw): " } ?? "") + why.description)
+            log("device link: " + (misfit.id.isEmpty ? "" : "\(misfit.id) firmware \(misfit.fw): ") + why.description)
         }
         for w in takeWaiting() { w.completion(.failed(.incompatible)) }
     }

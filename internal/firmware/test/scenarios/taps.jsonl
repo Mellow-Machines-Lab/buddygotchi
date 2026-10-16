@@ -63,7 +63,7 @@
 {"expect":{"screen":"needs_you","moment":null,"last_input":{"k":"tap","at":30100}}}
 // A barrage gets one answer, and the taps after it don't cut it short:
 // each tap still plays its poke, drawn in the
-// reaction's mood, while the reaction's line plays on over it.
+// reaction's mood, while the reaction's `say` plays on over it.
 {"clock":40000}
 {"t":"state","base":"idle"}
 {"input":{"press":"tap"}}
@@ -86,7 +86,7 @@
 {"input":{"press":"tap"}}
 {"clock":42000}
 {"expect":{"moment":{"anim":"tap_spam"},"expr":"grumpy","audio":{"take":"new.d12"}}}
-// Its line is over after the take's 898 ms and 1.2 s to read it.
+// Its `say` is over after the take's 898 ms and 1.2 s to read it.
 {"clock":43397}
 {"expect":{"expr":"grumpy","audio":{"take":"new.d12"}}}
 {"clock":43398}

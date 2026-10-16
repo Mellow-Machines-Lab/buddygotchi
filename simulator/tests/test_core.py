@@ -8,6 +8,7 @@ import json
 import os
 import select
 import subprocess
+import sys
 import tempfile
 import time
 import tty
@@ -17,15 +18,17 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 CORE = REPO / "firmware" / ".pio" / "build" / "native" / "program"
-# The chosen character pack's voice, as the core takes it (core/file_card.h).
-STAGED = REPO / ".character-build" / "pack"
-VOICE = Path(STAGED.read_text().strip() if STAGED.exists() else REPO / "characters" / "boop") / "voice" / "voice.bin"
+# The voice of the character pack in use, as the core takes it (core/file_card.h).
+sys.path.insert(0, str(REPO / "simulator" / "tools"))
+from voice_subset import chosen_voice  # noqa: E402
+sys.path.pop(0)
+VOICE = chosen_voice()
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
 
 class Board:
-    """boop-sim --live, with its serial port opened as a tool opens a board's."""
+    """The native simulator, --live, with its serial port opened as a tool opens a board's."""
 
     def __init__(self, face: str = "pixel", **env: str) -> None:
         self.proc = subprocess.Popen([str(CORE), "--live"], stdout=subprocess.PIPE,
@@ -119,10 +122,10 @@ class CoreTests(unittest.TestCase):
         self.assertNotEqual(first["boot"], second["boot"])
 
     @unittest.skipUnless(VOICE.exists(), "the chosen character pack has no voice")
-    def test_a_line_plays_at_the_pace_a_dac_would(self) -> None:
+    def test_a_say_plays_at_the_pace_a_dac_would(self) -> None:
         board = self.board()
         self.assertEqual(board.request({"t": "dbg.ping"})["card"], "ok")
-        board.send({**WORKING, "base": "idle", "busy": 0})  # a quiet face: only the line sounds
+        board.send({**WORKING, "base": "idle", "busy": 0})  # a quiet face: only the `say` sounds
         board.pump(0.3)
         board.send({"t": "do", "id": 1, "name": "react", "play": "now", "args": {"say": {"take": "previous.go"}}})
         board.pump(3.0)
@@ -131,7 +134,7 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(out["ready"])
         self.assertEqual(out["lines"], 1)
         self.assertGreater(out["out_ms"], 100)
-        # The output's time for the line is the line's own length: the
+        # The output's time for the `say` is the `say`'s own length: the
         # board's takes check holds it within 10%.
         self.assertAlmostEqual(out["wall_ms"] / out["out_ms"], 1, delta=0.1)
         self.assertFalse(state["amp"], "the amp goes off about a second after the last sound")
@@ -163,6 +166,17 @@ class CoreTests(unittest.TestCase):
         board.request({"t": "dbg.touch", "x": 160, "y": 120, "ms": 100})
         board.pump(0.6)
         self.assertIn("tap", board.events())
+
+    def test_a_debug_line_ends_the_batch(self) -> None:
+        # As on the board, lines that arrive together are handled in order
+        # until a dbg.* line, and the rest wait for the next tick: so the
+        # press below is read before dbg.state, which then shows it.
+        board = self.board()
+        os.write(board.serial, b'{"t":"dbg.press","ms":300}\n{"t":"dbg.state"}\n')
+        board.pump(0.3)
+        state = [m for m in board.lines() if m["t"] == "dbg.state"]
+        self.assertEqual(len(state), 1)
+        self.assertTrue(state[0]["boot"], "the tick between the lines read the press")
 
     def test_a_long_reply_arrives_whole(self) -> None:
         # A screenshot is far more than the port holds at once: the board

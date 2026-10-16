@@ -1,4 +1,4 @@
-// A platform and an app for testing the kit alone (test_turn, test_kit):
+// A platform and an app for testing the kit alone (test_queue, test_kit):
 // nothing of any real app's. The app records what the kit asks of it, and the test
 // scripts its answers.
 #pragma once
@@ -42,11 +42,11 @@ class App : public linkkit::App {
   std::vector<const char*> names = {"say", "show", "beep"};
 
   // Scripted answers.
-  const char* refuseWith = nullptr;          // refuse's answer for every call
+  const char* refuseWith = nullptr;          // refuse's answer for every `do`
   std::vector<std::string> refuseNames;       // or only for these names ("no")
-  bool restAtStart = false;                   // rest each call as it starts
-  bool endAtStart = false;                    // end each call as it starts
-  bool endHolderInRefuse = false;             // refuse ends the holder, as Boop's reply ends listening
+  bool restAtStart = false;                   // rest each `do` as it starts
+  bool endAtStart = false;                    // end each `do` as it starts
+  bool endHolderInRefuse = false;             // refuse ends the one playing, as Boop's reply ends listening
   // Timers the app keeps: rest or end `key` at `at`.
   struct Timer {
     uint32_t key, at;
@@ -58,7 +58,7 @@ class App : public linkkit::App {
   std::vector<Started> started;
   std::vector<uint32_t> refused;  // keys refuse was asked about
   std::vector<uint32_t> advanced;
-  int states = 0, ticks = 0, resets = 0, gone = 0, begun = 0;
+  int states = 0, ticks = 0, resets = 0, begun = 0;
   std::string lastState;
 
   linkkit::Kit& k() { return kit(); }
@@ -75,14 +75,14 @@ class App : public linkkit::App {
     lastState.clear();
     serializeJson(s, lastState);
   }
-  const char* refuse(const linkkit::Call& c, uint32_t) override {
+  const char* refuse(const linkkit::Do& c, uint32_t) override {
     refused.push_back(c.key);
-    if (endHolderInRefuse) kit().ended(kit().turn().key);
+    if (endHolderInRefuse) kit().ended(kit().queue().key);
     for (const std::string& n : refuseNames)
       if (n == c.name) return "no";
     return refuseWith;
   }
-  void onDo(const linkkit::Call& c, uint32_t t) override {
+  void onDo(const linkkit::Do& c, uint32_t t) override {
     std::string args;
     serializeJson(c.args, args);
     started.push_back({c.key, c.id, c.name, t, args, c.play});
@@ -110,7 +110,6 @@ class App : public linkkit::App {
     return found;
   }
   void tick(uint32_t) override { ++ticks; }
-  void hostGone() override { ++gone; }
   bool debug(const char* type, JsonObjectConst, linkkit::Link from) override {
     if (std::strcmp(type, "dbg.fake")) return false;
     kit().reply(from, "{\"t\":\"dbg.fake\"}", 16);
@@ -166,7 +165,7 @@ inline int count(const std::string& s, const std::string& needle) {
   for (size_t at = s.find(needle); at != std::string::npos; at = s.find(needle, at + 1)) ++n;
   return n;
 }
-// The `ended` line for id, as the kit sends it.
+// The `ended` message for id, as the kit sends it.
 inline std::string ended(int id, const char* how, const char* why = nullptr) {
   std::string s = "{\"t\":\"ev\",\"kind\":\"ended\",\"data\":{\"id\":" + std::to_string(id) + ",\"how\":\"" + how + "\"";
   if (why) s += std::string(",\"why\":\"") + why + "\"";

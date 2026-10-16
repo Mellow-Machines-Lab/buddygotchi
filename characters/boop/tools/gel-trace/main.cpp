@@ -249,12 +249,12 @@ static void event(Engine& e, JsonVariantConst v) {
     r.id = scalar(j["id"]);
     r.stop = name == "stop_listening";
     r.say = !j["args"]["say"].isNull();
-    r.anim = animFromName(name.c_str());
+    r.anim = reactionFromName(name.c_str());
     auto args = j["args"];
     r.expression = expressionFromName(args["mood"]);
     r.loops = args["loops"] | 1;
-    r.outcome = r.anim == Anim::kTaskComplete ? outcomeFromName(args["outcome"]) : Outcome::kNone;
-    r.ctx = r.anim == Anim::kStarting ? ctxFromName(args["ctx"]) : StartCtx::kNone;
+    r.outcome = r.anim == SceneState::kTaskComplete ? outcomeFromName(args["outcome"]) : Outcome::kNone;
+    r.ctx = r.anim == SceneState::kStarting ? ctxFromName(args["ctx"]) : StartCtx::kNone;
     r.hold = j["hold"] | false;
     int variant = args["variant"] | -1;
     r.variant = variant >= 0 && variant <= 2 ? variant : -1;

@@ -19,7 +19,7 @@ from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 COMMANDS = ["ping", "state", "shot", "send", "play", "takes", "card", "sim", "run", "perf", "latency", "soak", "e2e",
-            "bridge", "cam", "dash", "day", "workday", "calibrate"]
+            "cam", "dash", "day", "workday", "calibrate"]
 
 
 def firmware_names(path: str, start: str, item: str = r'"(\w+)"', end: str = "};") -> list:
@@ -38,9 +38,11 @@ class CLITests(unittest.TestCase):
 
     def test_the_commands_are_the_documented_ones(self):
         self.assertEqual(self.subcommands(), COMMANDS)
-        table = (cli.REPO / "internal" / "VERIFICATION.md").read_text()
+        doc = (cli.REPO / "internal" / "VERIFICATION.md").read_text()
+        start = doc.index("- `internal/tools/boopctl`:")
+        listed = doc[start:doc.index("\n- ", start + 1)]
         for command in COMMANDS:
-            self.assertTrue(f"| `{command}" in table, f"VERIFICATION.md §2 doesn't list boopctl {command}")
+            self.assertTrue(f"`{command}`" in listed, f"VERIFICATION.md §2 doesn't list boopctl {command}")
 
     def test_every_command_has_help(self):
         for command in COMMANDS:
@@ -91,16 +93,16 @@ class PlayTests(unittest.TestCase):
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["determined"])
         self.play("cheer", "--mood", "wounded")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["wounded"])
-        self.play("wiggle")
+        self.play("starting")
         self.assertEqual([m["mood"] for m in self.board.sent if m["t"] == "state"], ["happy"])
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             cli.build_parser().parse_args(["play", "cheer", "--mood", "cheerful"])
 
     def test_the_moods_are_the_devices(self):
-        """The moods boopctl sends are facegen's, which it writes into the
-        Pixel pack's faces.h, in the device's order."""
-        self.assertEqual(cli.MOODS, facegen.MOODS)
-        self.assertEqual(cli.MOODS, firmware_names("../../characters/pixel/firmware/include/faces.h", "kMoodNames["))
+        """The moods boopctl sends are facegen's, every mood the Pixel pack
+        has, which it writes into the pack's faces.h, in the pack's order."""
+        self.assertEqual(cli.MOODS, facegen.NAMES)
+        self.assertEqual(cli.MOODS, firmware_names("../../characters/pixel/firmware/include/faces.h", "kNames["))
 
     def test_play_sends_just_the_animation_now(self):
         """A `do` with the animation's name, played `now` so it replaces
@@ -109,15 +111,13 @@ class PlayTests(unittest.TestCase):
         for anim in cli.ANIMS:
             self.assertEqual(self.play(anim), (0, [anim]))
             self.assertEqual(self.dos(), [{"t": "do", "name": anim, "play": "now"}])
-        self.assertEqual(self.play("task_complete", playing="poked")[0], 1, "something else playing")
+        self.assertEqual(self.play("task_complete", playing="starting")[0], 1, "something else playing")
 
     def test_the_older_names_are_sent_by_todays(self):
-        """The device no longer knows `cheer` or `wiggle`: play sends
-        task_complete's success and poked."""
+        """The device no longer knows `cheer`: play sends task_complete's
+        success."""
         self.assertEqual(self.play("cheer"), (0, ["task_complete"]))
         self.assertEqual(self.args(), [{"outcome": "success"}])
-        self.assertEqual(self.play("wiggle"), (0, ["poked"]))
-        self.assertEqual(self.args(), [{}])
         with self.assertRaisesRegex(cli.DeviceError, "task_complete --outcome failure"):
             self.play("cheer", "--outcome", "failure")
 
@@ -136,15 +136,16 @@ class PlayTests(unittest.TestCase):
 
     def test_the_animations_are_the_devices(self):
         """The names boopctl plays are the device's own, the names of the
-        states whose designs they play (firmware/src/render/scene.cpp
-        animState; faces.h names them), and all of them are in Boop's
-        `hello.does`. The older two are play's own, sent by today's names."""
+        states whose designs they play (firmware/src/render/types.cpp
+        isReaction; faces.h names them), and all of them are in Boop's
+        `hello.does`, but for a tap's, which the device plays itself. The
+        older one is play's own, sent by today's name."""
         names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
         self.assertEqual(names, facegen.STATES)
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
-        plays = firmware_names("render/types.cpp", "SceneState animState(Anim a) {",
-                               r"case Anim::k\w+:\s*return SceneState::(k\w+);", end="\n}\n")
-        self.assertEqual(cli.ANIMS + ["listening"], [states[s] for s in plays])
+        plays = firmware_names("render/types.cpp", "bool isReaction(SceneState s) {", r"case SceneState::(k\w+):",
+                               end="\n}\n")
+        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
         self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
         self.assertTrue(set(cli.OLD_ANIMS.values()) <= set(cli.ANIMS))
@@ -155,7 +156,7 @@ class PlayTests(unittest.TestCase):
         are the tools' NO_ANIM."""
         names = firmware_names("app/device.cpp", "kDoNames[kDoCount] =")
         self.assertEqual(common.DOES, names)
-        anims = firmware_names("app/device.cpp", "kDoAnims[kDoCount] =", r"render::Anim::k(\w+)")
+        anims = firmware_names("app/device.cpp", "kDoAnims[kDoCount] =", r"render::SceneState::k(\w+)")
         self.assertEqual(len(anims), len(names))
         self.assertEqual(common.NO_ANIM, {n for n, a in zip(names, anims) if a == "None"})
 
@@ -169,14 +170,14 @@ class PlayTests(unittest.TestCase):
 
 
 class WireTests(unittest.TestCase):
-    """The requests the tools send and read (linkkit/SPEC.md §3), and
+    """The `do`s the tools send and read (linkkit/SPEC.md §3), and
     the older logs' moments read the same way."""
 
     def test_a_do_as_the_tools_send_it(self):
         self.assertEqual(json.dumps(common.do("react", id=44, play="next", ttl=5000, mood="calm")),
                          '{"t": "do", "id": 44, "name": "react", "play": "next", "ttl": 5000, "args": {"mood": "calm"}}',
                          "in the vocabulary's order")
-        self.assertEqual(common.do("poked"), {"t": "do", "name": "poked", "play": "now"}, "now, no id, no args")
+        self.assertEqual(common.do("starting"), {"t": "do", "name": "starting", "play": "now"}, "now, no id, no args")
 
     def test_what_a_request_asks(self):
         call = common.call
@@ -482,7 +483,7 @@ class PerfTests(unittest.TestCase):
 
 @needs_voice
 class TakesTests(unittest.TestCase):
-    """The takes boopctl plays are the board's, from the voice pack on its
+    """The takes boopctl plays are the board's, from the voice file on its
     card (the chosen character pack's voice/voice.bin)."""
 
     def test_the_takes_are_the_boards(self):
@@ -516,7 +517,7 @@ class TakesTests(unittest.TestCase):
         r = cli.check_take(board, t)
         self.assertTrue(r["ok"], r)
         self.assertIn({"t": "do", "name": "react", "play": "now", "args": {"say": {"take": "previous.go"}}}, board.sent,
-                      "a line on its own: a reaction with no face, played at once")
+                      "a `say` on its own: a reaction with no face, played at once")
 
 
 class SoakTests(unittest.TestCase):
@@ -540,12 +541,12 @@ class SoakTests(unittest.TestCase):
         self.assertTrue(finishes)
         self.assertTrue(all(1 <= a["loops"] <= 3 and a["outcome"] in cli.OUTCOMES for a in finishes))
         self.assertTrue(all(m["args"]["ctx"] in cli.CTXS for m in dos if m["name"] == "starting"))
-        self.assertTrue(all(m["args"]["say"] is not None for m in dos if m["name"] == "react"), "a line says something")
+        self.assertTrue(all(m["args"]["say"] is not None for m in dos if m["name"] == "react"), "a react says something")
         self.assertFalse(any("id" in m or "mood" in m.get("args", {}) for m in dos), "the rest aren't waited on")
-        # Each asks for its turn as the Mac or a tool would.
+        # Each asks to play as the Mac or a tool would.
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
         self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
-                                 "helper_return": ("if_free", None), "poked": ("now", None), "tap_spam": ("now", None),
+                                 "helper_return": ("if_free", None),
                                  "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "react": ("next", 5000)})
 
     def test_each_reaction_ends_once(self):
@@ -555,7 +556,7 @@ class SoakTests(unittest.TestCase):
         self.assertEqual(r["ended_how"], {"done": 1, "cut (tap)": 1, "skipped": 1})
         self.assertFalse(cli.ended_report([1, 2, 3], ended + [ended[0]], 0)["ended_ok"])  # twice
         self.assertFalse(cli.ended_report([1, 2], ended, 0)["ended_ok"])  # an id never sent
-        # A missing one only when a line was lost on the way.
+        # A missing one only when a message was lost on the way.
         self.assertFalse(cli.ended_report([1, 2, 3, 4], ended, 0)["ended_ok"])
         self.assertTrue(cli.ended_report([1, 2, 3, 4], ended, 1)["ended_ok"])
         self.assertEqual(cli.ended_report([1, 2, 3, 4], ended, 1)["ended_missing"], [4])

@@ -92,7 +92,7 @@ enum Snapshots {
                 // A card with another pack than the app's, and no card or pack: no voice.
                 shot("settings-old-voice", model(installer, status: status(voice: "0123456789abcdef")), pane: .settings)
                 shot("settings-no-voice", model(installer, status: status(voice: "none")), pane: .settings)
-                // Firmware from before LinkKit: the looks, but no reactions (linkkit/SPEC.md §6).
+                // Firmware too old for the kit: the looks, but no reactions (linkkit/SPEC.md §6).
                 shot("settings-old-firmware", model(installer, status: status(deviceTrouble: "the device's firmware is too old for this app: flash it")),
                      pane: .settings)
 
@@ -166,7 +166,7 @@ enum Snapshots {
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
                        connected: Bool = true, personality: Personality = .default,
                        name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
-                       mood: String = MoodAction.initial, brainTrouble: BrainTrouble? = nil,
+                       mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: String? = nil, deviceTrouble: String? = nil,
                        growth: Growth? = Growth(xp: 1_340)) -> Runtime.Status {
@@ -251,7 +251,7 @@ enum Snapshots {
             ("listening", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], listening: true))),
             ("cant-hear", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           micTrouble: "Allow Boop in System Settings → Privacy & Security → Microphone."))),
-            // No card, or no voice pack on it.
+            // No card, or no voice file on it.
             ("no-voice", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]], voice: "none"))),
             // Bluetooth refused at the first launch's prompt.
             ("no-bluetooth", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],

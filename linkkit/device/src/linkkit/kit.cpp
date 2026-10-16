@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <initializer_list>
 
 #include "linkkit/codec.h"
 
@@ -26,9 +25,9 @@ Play playFrom(const char* s) {
   return Play::kNext;  // missing or unknown (§3)
 }
 
-// Builds one line of at most kMaxLine bytes, escaping the app's strings as
-// JSON, so a quote or a backslash in an `ev`'s kind, its did or a `why`
-// can't break the line. A line that wouldn't fit is never sent: len() is 0.
+// Builds one message of at most kMaxLine bytes, escaping the app's strings
+// as JSON, so a quote or a backslash in an `ev`'s kind, its did or a `why`
+// can't break it. A message that wouldn't fit is never sent: len() is 0.
 class LineOut {
  public:
   LineOut& raw(const char* s) {
@@ -177,7 +176,7 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
   } else if (!std::strcmp(t, "dbg.clock")) {
     sendClock(from, msg, real);
   } else if (!std::strcmp(t, "dbg.reset")) {
-    resetTurn();
+    resetQueue();
     clock_.freeze(0);
     toolFrozen_ = true;
     rng_.seed(0);
@@ -191,7 +190,7 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
   return debug;
 }
 
-// §5: the host's first line on a link it wasn't live on (for Bluetooth,
+// §5: the host's first message on a link it wasn't live on (for Bluetooth,
 // its first since connecting) gets a hello, on that link. Returns true
 // when it sent one. A host the device still counts as live (relaunched
 // within 30 s, or taking over a link) asks with its own hello instead.
@@ -201,7 +200,6 @@ bool Kit::heard(Link from, uint32_t real) {
   l.heard = true;
   l.heardReal = l.quietReal = real;
   lastLink_ = from;
-  hostHere_ = true;
   if (!wasLive) sendHello(from);
   return !wasLive;
 }
@@ -233,14 +231,6 @@ void Kit::tick() {
     sendHello(lastLink_);
   }
   if (toolFrozen_ && real - dbgReal_ >= kThawMs) clock_.run(real), toolFrozen_ = false;
-  if (hostHere_) {
-    bool here = false;
-    for (Link l : {Link::kUsb, Link::kBle}) {
-      const LinkState& s = links_[int(l)];
-      here |= s.heard && real - s.heardReal < kHostGoneMs;
-    }
-    if (!here) hostHere_ = false, app_.hostGone();
-  }
   const uint32_t t = now();
   advanceTo(t);
   app_.tick(t);
@@ -271,7 +261,7 @@ size_t Kit::helloLength() {
   return measureJson(d);
 }
 
-// A hello too long for one line would be dropped whole on the way (§2),
+// A hello longer than kMaxLine would be dropped whole on the way (§2),
 // so the host would never hear it: the app's fields are left out, and
 // when even the kit's don't fit, none goes. dbg.ping says `hello_long`.
 void Kit::sendHello(Link to) {
@@ -308,11 +298,11 @@ void Kit::emit(const char* kind, const char* did, const char* data, bool injecte
   if (live(Link::kUsb)) reply(Link::kUsb, line.text(), n);
 }
 
-// ---- The turn (§4) -------------------------------------------------------
+// ---- The queue (§4) ------------------------------------------------------
 
 void Kit::onDoLine(JsonObjectConst msg, Link from, uint32_t t) {
   ++rxDo_;
-  Call c;
+  Do c;
   c.key = ++lastKey_ ? lastKey_ : ++lastKey_;  // never 0, even after it wraps
   c.id = int32_t(intIn(msg["id"], 1, kMaxId));
   c.play = playFrom(msg["play"]);
@@ -320,7 +310,7 @@ void Kit::onDoLine(JsonObjectConst msg, Link from, uint32_t t) {
   c.ttl = ttl ? uint32_t(ttl) : kDefaultTtlMs;
   c.from = from;
   c.args = msg["args"].as<JsonObjectConst>();
-  // Same id again: a later launch of the host's. The old call is
+  // Same id again: a later launch of the host's. The old `do` is
   // forgotten without an `ended`.
   if (c.id) forgetId(c.id);
   const char* name = msg["name"] | "";
@@ -334,7 +324,7 @@ void Kit::onDoLine(JsonObjectConst msg, Link from, uint32_t t) {
   offer(c, t);
 }
 
-void Kit::offer(const Call& c, uint32_t t) {
+void Kit::offer(const Do& c, uint32_t t) {
   const bool free = (!held_ || holder_.resting) && nWaiting_ == 0;
   switch (c.play) {
     case Play::kNow: return take(c, t);
@@ -343,9 +333,9 @@ void Kit::offer(const Call& c, uint32_t t) {
   }
 }
 
-// First the app may refuse it; otherwise it replaces the holder (a resting
-// one is done, a busy one cut by it) and plays.
-void Kit::take(const Call& c, uint32_t t) {
+// First the app may refuse it; otherwise it replaces the `do` playing (a
+// resting one is done, a busy one cut by it) and plays.
+void Kit::take(const Do& c, uint32_t t) {
   if (const char* why = app_.refuse(c, t)) return sendEnded(c.id, c.from, How::kSkipped, why);
   if (held_) endHolder(holder_.resting ? How::kDone : How::kCut, holder_.resting ? nullptr : "now");
   held_ = true;
@@ -353,9 +343,9 @@ void Kit::take(const Call& c, uint32_t t) {
   app_.onDo(c, t);
 }
 
-void Kit::enqueue(const Call& c, uint32_t t) {
+void Kit::enqueue(const Do& c, uint32_t t) {
   // Args too long to keep (only numbers can grow, written again, past the
-  // line they came in on) leave no room to wait.
+  // message they came in on) leave no room to wait.
   if (measureJson(c.args) >= kMaxLine) return sendEnded(c.id, c.from, How::kSkipped, "full");
   if (nWaiting_ == kMaxWaiting) {  // the oldest makes room
     sendEnded(waiting_[0].id, waiting_[0].from, How::kSkipped, "full");
@@ -381,8 +371,8 @@ void Kit::forgetId(int32_t id) {
   }
 }
 
-// The line moves whenever the holder rests or ends: the oldest waiting
-// call still inside its ttl tries to take the turn.
+// The queue moves whenever the `do` playing rests or ends: the oldest
+// waiting `do` still inside its ttl tries to start.
 void Kit::pump(uint32_t t) {
   if (pumping_) return;  // a hook reported: the loop below carries on
   pumping_ = true;
@@ -396,7 +386,7 @@ void Kit::pump(uint32_t t) {
     JsonDocument doc;  // owns the args while the hooks run
     deserializeJson(doc, args_[w.slot], w.len);
     removeWaiting(0);
-    Call c;
+    Do c;
     c.key = w.key, c.id = w.id, c.what = w.what, c.name = nameOf(w.what);
     c.play = Play::kNext, c.ttl = w.ttl, c.from = w.from;
     c.args = doc.as<JsonObjectConst>();
@@ -416,10 +406,10 @@ void Kit::expire(uint32_t t) {
   }
 }
 
-// Moves the app, and the turn with it, to t. While calls wait, it stops at
-// every instant one would be late or the app will rest or end the holder,
-// so the line moves at its exact millisecond, whatever steps the clock
-// takes.
+// Moves the app, and the queue with it, to t. While `do`s wait, it stops
+// at every instant one would be late or the app will rest or end the one
+// playing, so the queue moves at its exact millisecond, whatever steps the
+// clock takes.
 void Kit::advanceTo(uint32_t t) {
   if (after(stepped_, t)) stepped_ = t;  // the clock went back: no history to replay
   for (int guard = 0; nWaiting_ > 0 && guard < 64; ++guard) {
@@ -472,7 +462,7 @@ void Kit::endHolder(How how, const char* why) {
   sendEnded(holder_.id, holder_.from, how, how == How::kDone ? nullptr : why);
 }
 
-// Exactly one per call with an id, on the link its do came in on.
+// Exactly one per `do` with an id, on the link it came in on.
 void Kit::sendEnded(int32_t id, Link to, How how, const char* why) {
   if (id <= 0) return;
   LineOut line;
@@ -482,13 +472,13 @@ void Kit::sendEnded(int32_t id, Link to, How how, const char* why) {
   if (line.len()) reply(to, line.text(), line.len());
 }
 
-void Kit::resetTurn() {
+void Kit::resetQueue() {
   if (held_) endHolder(How::kCut, "reset");
   dropWaiting("reset");
 }
 
-TurnView Kit::turn() const {
-  TurnView v;
+QueueView Kit::queue() const {
+  QueueView v;
   v.held = held_;
   if (held_) v.key = holder_.key, v.id = holder_.id, v.name = nameOf(holder_.what), v.resting = holder_.resting;
   const uint32_t t = now();
@@ -496,7 +486,7 @@ TurnView Kit::turn() const {
   for (int i = 0; i < nWaiting_; ++i) {
     const Waiting& w = waiting_[i];
     int32_t left = int32_t(w.at + w.ttl - t);
-    v.wait[i] = TurnView::Waiting{w.key, w.id, nameOf(w.what), left > 0 ? uint32_t(left) : 0};
+    v.wait[i] = QueueView::Waiting{w.key, w.id, nameOf(w.what), left > 0 ? uint32_t(left) : 0};
   }
   return v;
 }
@@ -533,8 +523,8 @@ void Kit::sendState(Link to) {
   d["clock"]["frozen"] = clock_.frozen();
   d["rx"]["state"] = rxState_;
   d["rx"]["do"] = rxDo_;
-  const TurnView v = turn();
-  JsonObject turn = d["turn"].to<JsonObject>();
+  const QueueView v = queue();
+  JsonObject turn = d["turn"].to<JsonObject>();  // the queue, under its old key
   if (v.held) {
     JsonObject h = turn["holder"].to<JsonObject>();
     if (v.id) h["id"] = v.id;
@@ -561,7 +551,7 @@ void Kit::sendState(Link to) {
   out->write("\n", 1);
 }
 
-// A header line, then one base64 line of the app's bytes.
+// A header message, then one base64 line of the app's bytes.
 void Kit::sendShot(Link to) {
   Out* out = links_[int(to)].out;
   if (!out) return;

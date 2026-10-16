@@ -2,4 +2,4 @@
 MOOD
 Whiny. Nothing is going right and it feels sorry for itself.
 Its faces lean whiny and sad.
-Recovers to calm after a while, or to happy at a win.
+Leaves for calm after a while, or for happy at a win.

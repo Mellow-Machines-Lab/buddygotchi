@@ -12,14 +12,18 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../../.
 const g=JSON.parse(fs.readFileSync(path.join(root,'characters/boop/design/slime-blob/emotion-graph.json')));
 if(process.argv.includes('--help')) {console.log('node characters/boop/tools/slimegen/slimegen.mjs [--check]\nGenerate the host graph, offline Mac mirror and native gel catalogs from the slime catalog.');process.exit(0);}
 // The host graph goes into Boop's character pack (characters/CHARACTER.md
-// §4-5): its `moods` and `pacing`. Other keys, and keys a mood has that the
-// design doesn't set (`quiet_never`), are kept as they are.
+// §4-5): its `moods`' ids, meanings and families. Other keys, and keys a mood
+// has that the design doesn't set (`face`), are kept as they are. A mood's
+// `moves` are the pack's own: the design's edges are what the gel draws a
+// transition for, and they seed a mood the pack doesn't have yet. The
+// design's pixel `fallback` stays in the design: a pack has every mood. Its
+// `hostPolicy` and `brief` markers stay in the design too: the pack's pacing
+// is its steering's.
 const characterPath='characters/boop/character.json';
 const character=JSON.parse(fs.readFileSync(path.join(root,characterPath)));
-const owned=['id','meaning','family','fallback','brief','moves'];
+const owned=['id','meaning','family'];
 const before=new Map((character.moods||[]).map(m=>[m.id,m]));
-character.pacing={ordinary_dwell_ms:g.hostPolicy.ordinaryDwellMs,reverse_cooldown_ms:g.hostPolicy.reverseCooldownMs,brief_exit_ms:g.hostPolicy.briefExitMs,fresh_evidence_ms:g.hostPolicy.freshEvidenceMs};
-character.moods=Object.entries(g.nodes).map(([id,n])=>({id,meaning:n.meaning,family:n.family,fallback:n.fallback,brief:n.brief,moves:{ordinary:n.ordinary,dramatic:n.dramatic},
+character.moods=Object.entries(g.nodes).map(([id,n])=>({id,meaning:n.meaning,family:n.family,moves:{ordinary:n.ordinary,dramatic:n.dramatic},
   ...Object.fromEntries(Object.entries(before.get(id)||{}).filter(([k])=>!owned.includes(k)))}));
 const outputs = new Map([[characterPath,JSON.stringify(character,null,2)+'\n'],['characters/boop/firmware/include/slime.h',firmwareCatalog(root)]]);
 const design=path.join(root,'characters/boop/design/slime-blob');

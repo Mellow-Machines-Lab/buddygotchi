@@ -21,7 +21,7 @@ void BoardHal::beginBoard() {
   digitalWrite(pins::kAmpEnable, HIGH);  // amp off by default (active low)
   pinMode(pins::kMainButton, INPUT_PULLUP);
   touchBegin();
-  cardBegin();  // the voice pack; dbg.ping's `card` says whether it's there
+  cardBegin();  // the voice file; dbg.ping's `card` says whether it's there
   for (int pin : {pins::kLedRed, pins::kLedGreen, pins::kLedBlue}) {
     ledcAttach(pin, kLedHz, kLedBits);
     ledChannel(pin, 0);

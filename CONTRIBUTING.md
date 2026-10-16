@@ -10,8 +10,8 @@ You need macOS 26 or later and Command Line Tools. Xcode works but isn't
 needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
 (`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
-snapshots) also need Python 3.10 or later, newer than the Mac's own
-(`brew install python`). The simulator's page also needs Emscripten, to
+snapshots) also need a newer Python than the Mac's own
+(`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page also needs Emscripten, to
 build the firmware for a browser, and Node, to test it
 (`brew install emscripten node`). Making the faces again
 (`make -C internal faces`) needs Node and Google Chrome, and takes

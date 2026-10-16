@@ -1,6 +1,6 @@
 # Boop voice bank v1 — agent integration handoff
 
-Updated 2026-09-29. **Recorded audition assets, not a production voice engine.**
+Updated 2026-10-15. **Recorded audition assets, not a production voice engine.**
 Robot Minion 1 only: voice ID `rErOatUrNIU3vfNcLl6Z`, generation model `eleven_v4`.
 This package sits beside the V4 animation bank; it does not change the app, firmware,
 mood graph, generic harness, or approval rules. Publication is not listening approval.
@@ -92,8 +92,9 @@ filenames to guess. Always resolve through the manifest.
 6. **Play one whole take**, normally. Rarely join two compatible units as below.
    Use the animation clock and protected-cue windows, not independent timers.
 
-Mood selection is a separate decision governed by the
-[approved graph](../../../../pixel/design/boop-mood-spectrum-v2/HANDOVER.md). A voice selection must not
+Mood selection is a separate decision governed by the pack's mood graph
+(characters/CHARACTER.md §5; its history in the
+[13-mood handover](../../../../pixel/design/boop-mood-spectrum-v2/HANDOVER.md)). A voice selection must not
 reset mood on a tool/state change or bypass graph traversal for more sound variety.
 
 ### Actual reference command

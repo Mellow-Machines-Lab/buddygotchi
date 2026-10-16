@@ -4,11 +4,11 @@ import MellowHarness
 import LinkKit
 
 /// What the core decided. The app hands each effect to the part that carries
-/// it out: snapshots and the rules' one-shots to the device link, what it
+/// it out: snapshots and the rules' reactions to the device link, what it
 /// did by rule to the transcript, and a new day to the transcript's
 /// pruning. The core itself never builds speech, writes files or talks to
 /// the device: everything Boop says, and every face but the look and the
-/// rules' one-shots, is the brain's.
+/// rules' reactions, is the brain's.
 public enum CoreEffect: Equatable, Sendable {
     /// A new snapshot, sent because something on it changed.
     case state(StateSnapshot)
@@ -25,11 +25,13 @@ public enum CoreEffect: Equatable, Sendable {
     case newDay(date: String)
     /// Push-to-talk: turn the Mac's mic on or off, after `by`'s button.
     case listen(Bool, by: Core.Talker)
-    /// A rule's one-shot for the device, after the
+    /// A rule's reaction for the device, after the
     /// snapshot of the same input: `starting`, `stopped`, `error` or
-    /// `helper_return`, which plays only if the device's turn is free
-    /// (`if_free`) and which no brain waits on.
-    case moment(DeviceMoment)
+    /// `helper_return`, or push-to-talk's `stop_listening`, which play only
+    /// if nothing is playing on the device (`if_free`) and which no brain
+    /// waits on; or push-to-talk's `listening` after the app's mic button, which
+    /// plays at once (`BoopDevice.play`).
+    case reaction(DeviceReaction)
     /// Open a thread on the Mac, in the app it runs in: a tap while
     /// something needs you.
     case open(ThreadRef)
@@ -42,7 +44,7 @@ public enum CoreEffect: Equatable, Sendable {
         case .record(let e): "record " + e.summary
         case .newDay(let date): "new-day \(date)"
         case .listen(let on, let by): "listen \(on ? "on" : "off") (\(by.rawValue))"
-        case .moment(let m): "do " + JSONObject([("name", .string(m.name)), ("args", .object(m.args))]).json
+        case .reaction(let m): "do " + JSONObject([("name", .string(m.name)), ("args", .object(m.args))]).json
         case .open(let t): "open \(t.agent) \(t.session)"
         }
     }

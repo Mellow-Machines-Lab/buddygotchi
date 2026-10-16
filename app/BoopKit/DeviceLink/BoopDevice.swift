@@ -3,7 +3,7 @@ import LinkKit
 
 /// Boop's vocabulary on LinkKit (linkkit/SPEC.md is the
 /// protocol under it): what Boop calls its device, the names it plays
-/// beside the moments' own (`DeviceMoment`), and what its `hello` and taps
+/// beside the reactions' own (`DeviceReaction`), and what its `hello` and taps
 /// mean to the app. The link itself, with its ids, `ended`s and transports,
 /// is LinkKit's `DeviceLink`.
 public enum BoopDevice {
@@ -14,32 +14,20 @@ public enum BoopDevice {
     /// Push-to-talk's face after the Mac's Talk button, and its end when no
     /// reply is coming.
     public static let listening = "listening", stopListening = "stop_listening"
+    /// When a rule's reaction plays: push-to-talk's `listening` at once,
+    /// cutting what plays, and the rest only if nothing else plays: a late
+    /// rule reaction is worse than none.
+    public static func play(_ name: String) -> Wire.Play { name == listening ? .now : .ifFree }
     /// Why the device drops the reactions waiting when push-to-talk starts:
     /// a reaction would end `listening`.
     public static let micOn = "mic_on"
-    /// How long a brain reaction may wait on the device for its turn: a
+    /// How long a brain reaction may wait in the device's queue: a
     /// late reaction is worse than none.
     public static let reactionTTL = 5000
 
     /// The link to Boop's device over `transport`, or to none.
     public static func link(_ transport: Transport?, log: @escaping (String) -> Void = { _ in }) -> DeviceLink {
         DeviceLink(app: app, transport: transport, log: log)
-    }
-
-    /// The face a `hello` line says the device draws, for
-    /// the `state` the link sends in answer, which goes out inside
-    /// `receive`, before `onHello`; nil for any other line. A `hello` the
-    /// link turns away (another `kit` or `app`, linkkit/SPEC.md §6) means
-    /// pixel. LinkKit's rule for which fit isn't public, so a link with no
-    /// transport, which sends nothing, judges the line: the rule itself,
-    /// never a copy that could drift from it.
-    public static func face(saying line: String) -> DeviceInfo.Face? {
-        // Every device line passes through here: only a hello, which comes
-        // on connect and once a minute, is worth a link to judge it.
-        guard case .hello = Wire.decode(line) else { return nil }
-        let judge = link(nil)
-        guard case .hello = judge.receive(line, now: 0) else { return nil }
-        return judge.hello.map { DeviceInfo($0).face } ?? .pixel
     }
 
     /// The `do` id of the brain's finish a tap landed on, when the device
@@ -49,15 +37,6 @@ public enum BoopDevice {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }
         return on
     }
-
-    /// Who Boop's firmware from before LinkKit says it is, in the `status`
-    /// it sends where a `hello` would be; nil for any
-    /// other line. Such firmware is too old for the app (`DeviceLink.Trouble.tooOld`),
-    /// which the app spots itself (linkkit/SPEC.md §6).
-    public static func fromBeforeTheKit(_ line: String) -> DeviceInfo? {
-        guard let o = JSON.parse(line)?.object, o["t"]?.string == "status" else { return nil }
-        return DeviceInfo(id: o["id"]?.string ?? "", fw: o["fw"]?.string ?? "", voice: o["voice"]?.string)
-    }
 }
 
 /// What Boop's device says of itself in its `hello`.
@@ -65,9 +44,11 @@ public struct DeviceInfo: Equatable, Sendable {
     /// `b00p-7f3a`: which Boop this body is.
     public var id: String
     public var fw: String
-    /// The version of the voice pack on its card, `none`
+    /// The version of the voice file on its card, `none`
     /// with no card or none readable, or nil from firmware that doesn't say.
     public var voice: String?
+    /// Which face it draws: the popover mirrors the gel one, and a demo
+    /// recording says which it was made on. Every face draws every mood.
     public enum Face: String, Sendable { case pixel, gel }
     public var face: Face
     /// The character pack its firmware was built with, as `id version`
@@ -90,7 +71,7 @@ public struct DeviceInfo: Equatable, Sendable {
 
     /// Whether it plays the takes the app picks from: its card has the
     /// same pack as `Take.all`, or it doesn't say.
-    public var hasTheVoice: Bool { voice.map { $0 == Take.packVersion } ?? true }
+    public var hasTheVoice: Bool { voice.map { $0 == Take.voiceVersion } ?? true }
 
     /// The app's character pack, as `pack` names one.
     public static var appPack: String { "\(CharacterPack.active.id) \(CharacterPack.active.version)" }
@@ -106,7 +87,7 @@ public struct DeviceInfo: Equatable, Sendable {
         ["device: \(id) firmware \(fw)" + (pack.map { " pack \($0)" } ?? "") + (voice.map { " voice \($0)" } ?? "")]
             + (hasThePack ? [] : ["device: its firmware is built with the \(pack!) character pack, the app runs "
                                   + "\(Self.appPack): some of its faces won't match the app's moods"])
-            + (hasTheVoice ? [] : ["device: its card's voice is \(voice!), the app's \(Take.packVersion): "
+            + (hasTheVoice ? [] : ["device: its card's voice is \(voice!), the app's \(Take.voiceVersion): "
                                    + "Boop says nothing until they match"])
     }
 }
@@ -131,8 +112,8 @@ public enum LinkSetting: Equatable, Sendable {
 }
 
 extension DeviceLink.Sender {
-    /// Who asked for a line, for `debug.jsonl`'s `by` and boop.log: the
-    /// core's rules (every `state`, the one-shots, push-to-talk), or the
+    /// Who sent a message, for `debug.jsonl`'s `by` and boop.log: the
+    /// core's rules (every `state`, the reactions, push-to-talk), or the
     /// brain's reactions.
     public static let rule: Self = "rule"
     public static let brain: Self = "brain"

@@ -309,7 +309,7 @@ final class CoreActivityTests: XCTestCase {
         let fewer = FaceLoops.count(mood: few, state: "terminal")
         try XCTSkipUnless(FaceLoops.count(mood: many, state: "terminal") > fewer, "every mood has as many terminal looks")
         let rig = CoreRig(seed: 7)
-        _ = rig.core.setMood(many, at: rig.now)
+        _ = rig.setMood(many)
         var n = 0
         repeat {
             rig.send(.turnEnd)
@@ -319,41 +319,41 @@ final class CoreActivityTests: XCTestCase {
         } while rig.state.variant <= fewer && n < 50
         XCTAssertEqual(rig.state.visual, "terminal")
         XCTAssertGreaterThan(rig.state.variant, fewer, "a variation \(few) hasn't")
-        let fx = rig.core.setMood(few, at: rig.now)
+        let fx = rig.setMood(few)
         XCTAssertEqual(states(fx).last?.visual, "terminal")
         XCTAssertTrue((1...fewer).contains(rig.state.variant), "\(rig.state.variant) of \(fewer)")
     }
 }
 
-// MARK: - The rules' one-shots
+// MARK: - The rules' reactions
 
-final class CoreOneShotTests: XCTestCase {
+final class CoreRuleReactionTests: XCTestCase {
     /// A session starting plays starting, fresh (startup,
     /// clear), carrying on (resume) or with its context compacted
-    /// (compact), and a prompt plays it for a new task: a one-shot of the rules', with no face of the brain's,
-    /// which plays only if the device's turn is free.
+    /// (compact), and a prompt plays it for a new task: a reaction of the rules', with no face of the brain's,
+    /// which plays only if nothing plays on the device.
     func testStartsPlayStarting() {
         for (source, ctx) in [("startup", "session"), ("clear", "session"), ("resume", "continuation"),
                               ("compact", "compacted"), (nil, "session")] {
             let rig = CoreRig()
             let fx = rig.send(.sessionStart, source: source)
-            XCTAssertEqual(shots(fx), ["starting \(ctx)"], source ?? "no source")
-            let moment = moments(fx)[0]
-            XCTAssertNil(moment.mood)
-            XCTAssertTrue(FaceLoops.variants(mood: MoodAction.initial, state: "starting", ctx: ctx).contains(moment.variant ?? 0))
+            XCTAssertEqual(reactionNames(fx), ["starting \(ctx)"], source ?? "no source")
+            let reaction = deviceReactions(fx)[0]
+            XCTAssertNil(reaction.mood)
+            XCTAssertTrue(FaceLoops.variants(mood: MoodOutput.initial, state: "starting", ctx: ctx).contains(reaction.variant ?? 0))
         }
         let rig = CoreRig()
         let fx = rig.send(.turnStart)
-        let start = moments(fx)
+        let start = deviceReactions(fx)
         XCTAssertEqual(start.count, 1)
         let variant = start[0].variant ?? 0
-        XCTAssertTrue(FaceLoops.variants(mood: MoodAction.initial, state: "starting", ctx: "new_task").contains(variant))
+        XCTAssertTrue(FaceLoops.variants(mood: MoodOutput.initial, state: "starting", ctx: "new_task").contains(variant))
         XCTAssertEqual(start[0].line(id: 1, play: .ifFree),
                        #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"variant":"# + "\(variant)" + #","ctx":"new_task"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
-        XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
-        XCTAssertEqual(shots(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
-        XCTAssertEqual(shots(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
+        XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
+        XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
+        XCTAssertEqual(reactionNames(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
     }
 
     /// An interrupt that ends a turn plays stopped: Esc
@@ -364,24 +364,24 @@ final class CoreOneShotTests: XCTestCase {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", id: "b")
-        XCTAssertEqual(shots(rig.send(.turnStopped, tool: "Bash")), ["stopped"])
+        XCTAssertEqual(reactionNames(rig.send(.turnStopped, tool: "Bash")), ["stopped"])
         rig.wait(61_000)
-        XCTAssertEqual(shots(rig.send(.turnStopped, notice: true)), [], "the notice after it: the turn is over")
+        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "the notice after it: the turn is over")
         rig.send(.turnStart)
         rig.wait(10_000)
-        XCTAssertEqual(shots(rig.send(.turnStopped, notice: true)), [], "from before the prompt")
+        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "from before the prompt")
         rig.wait(60_000)
-        XCTAssertEqual(shots(rig.send(.turnStopped, notice: true)), ["stopped"], "Esc between calls, a minute on")
+        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), ["stopped"], "Esc between calls, a minute on")
         rig.send(.turnStart)
         rig.wait(5000)
         rig.send(.turnEnd)
         rig.wait(60_000)
-        XCTAssertEqual(shots(rig.send(.turnStopped, notice: true)), [], "Claude sat at its prompt after finishing")
+        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "Claude sat at its prompt after finishing")
 
         let codex = CoreRig()
         codex.send(.turnStart, .codex)
-        XCTAssertEqual(shots(codex.send(.turnStopped, .codex)), ["stopped"])
-        XCTAssertEqual(shots(codex.send(.turnStopped, .codex)), [], "no turn open")
+        XCTAssertEqual(reactionNames(codex.send(.turnStopped, .codex)), ["stopped"])
+        XCTAssertEqual(reactionNames(codex.send(.turnStopped, .codex)), [], "no turn open")
     }
 
     /// A command that fails with an exit
@@ -395,7 +395,7 @@ final class CoreOneShotTests: XCTestCase {
         rig.send(.turnStart)
         func fail(_ error: String, _ id: String) -> [String] {
             rig.send(.activity, tool: "Bash", id: id)
-            return shots(rig.send(.activity, tool: "Bash", failed: true, id: id, error: error))
+            return reactionNames(rig.send(.activity, tool: "Bash", failed: true, id: id, error: error))
         }
         XCTAssertEqual(fail("exit_code", "1"), ["error"])
         rig.wait(29_999)
@@ -406,16 +406,16 @@ final class CoreOneShotTests: XCTestCase {
         XCTAssertEqual(fail("denied", "4"), [], "you said no")
         XCTAssertEqual(fail("other", "5"), [])
         rig.send(.activity, tool: "Bash", id: "6")
-        XCTAssertEqual(shots(rig.send(.activity, tool: "Bash", failed: false, id: "6")), [])
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: false, id: "6")), [])
         rig.send(.activity, tool: "Bash", id: "7")
         rig.send(.turnStopped, tool: "Bash")
-        XCTAssertEqual(shots(rig.send(.activity, tool: "Bash", failed: true, id: "7", error: "exit_code")), [],
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: true, id: "7", error: "exit_code")), [],
                        "landed after the stop")
 
         let codex = CoreRig()
         codex.send(.turnStart, .codex)
         codex.send(.activity, .codex, tool: "shell")
-        XCTAssertEqual(shots(codex.send(.activity, .codex, tool: "shell", done: true)), [])
+        XCTAssertEqual(reactionNames(codex.send(.activity, .codex, tool: "shell", done: true)), [])
     }
 
     /// A helper Boop saw start plays helper_return when
@@ -428,51 +428,89 @@ final class CoreOneShotTests: XCTestCase {
         rig.send(.turnStart)
         rig.send(.activity, tool: "Agent", id: "A")
         rig.send(.subagentStart, subagent: "h1")
-        XCTAssertEqual(shots(rig.send(.subagentEnd, subagent: "h1")), ["helper_return"])
-        XCTAssertEqual(shots(rig.send(.activity, tool: "Agent", id: "A", done: true)), [], "not twice")
-        XCTAssertEqual(shots(rig.send(.subagentEnd, subagent: "h2")), [], "never seen starting")
+        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "h1")), ["helper_return"])
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Agent", id: "A", done: true)), [], "not twice")
+        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "h2")), [], "never seen starting")
         rig.send(.activity, tool: "Task", id: "T")
-        XCTAssertEqual(shots(rig.send(.activity, tool: "Task", id: "T", done: true)), ["helper_return"], "older hooks")
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", id: "T", done: true)), ["helper_return"], "older hooks")
         rig.send(.activity, tool: "Task", id: "F")
-        XCTAssertEqual(shots(rig.send(.activity, tool: "Task", failed: true, id: "F", error: "other")), [], "it failed")
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", failed: true, id: "F", error: "other")), [], "it failed")
         rig.send(.subagentStart, subagent: "bg")
         rig.send(.turnEnd)
-        XCTAssertEqual(shots(rig.send(.subagentEnd, subagent: "bg")), [], "after the turn ended")
+        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "bg")), [], "after the turn ended")
     }
 
-    /// No one-shot while something needs you or while
+    /// Every reaction the rules play is recorded as a `did` named after
+    /// it, by rule, for the event that played it, as the poke's `wiggle`
+    /// is, so HISTORY and NOW say Boop already reacted. One the rules
+    /// leave out records nothing.
+    func testEachRuleReactionIsRecorded() {
+        let rig = CoreRig()
+        let name = CharacterPack.active.name
+        func did(_ fx: Fx) -> [String] {
+            let seq = rig.pipeline.transcript.events.last { $0.agent != nil }!.seq
+            return rig.pipeline.transcript.view(now: rig.now).dids(for: seq)
+                .map { "\($0.action ?? "") \($0["by"]?.string ?? "") \($0["message"]?.string ?? "")" }
+        }
+        XCTAssertEqual(did(rig.send(.sessionStart, source: "resume")),
+                       ["starting rule "])
+        XCTAssertEqual(rig.pipeline.transcript.events.last?["ctx"], "continuation")
+        XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule "])
+        XCTAssertEqual(did(rig.send(.sessionStart, session: "s3", source: "compact")),
+                       ["starting rule "])
+        let start = rig.send(.turnStart)
+        XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
+        XCTAssertNil(events(start).first?.reaction, "not shown under its line")
+        rig.send(.activity, tool: "Bash", topic: "tests", id: "1")
+        let failed = rig.send(.activity, tool: "Bash", topic: "tests", failed: true, id: "1", error: "exit_code")
+        XCTAssertEqual(did(failed), ["error rule \(name) reacted to the error on its own."])
+        XCTAssertEqual(events(failed).first?.reaction, "\(name) reacted to the error on its own.")
+        rig.send(.activity, tool: "Bash", id: "2")
+        XCTAssertEqual(did(rig.send(.activity, tool: "Bash", failed: true, id: "2", error: "exit_code")), [],
+                       "within 30 s of the last error: not played, not recorded")
+        rig.send(.subagentStart, subagent: "h1")
+        XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")),
+                       ["helper_return rule \(name) reacted to the helper coming back on its own."])
+        rig.send(.activity, tool: "Bash", id: "3")
+        XCTAssertEqual(did(rig.send(.turnStopped, tool: "Bash")), ["stopped rule \(name) reacted to the stop on its own."])
+        rig.send(.turnStart, session: "s2")
+        rig.send(.needsYou, session: "s2", tool: "Bash")
+        XCTAssertEqual(did(rig.send(.turnStart)), [], "needs you shows: no rule reaction")
+    }
+
+    /// No rule reaction while something needs you or while
     /// `listening` holds the screen, from any session; the event that
     /// answers a request plays its own.
-    func testNoOneShotWhileSomethingHoldsTheScreen() {
+    func testNoRuleReactionWhileSomethingHoldsTheScreen() {
         let rig = CoreRig()
         rig.send(.turnStart, session: "a")
         rig.send(.activity, session: "a", tool: "Bash", id: "b")
         rig.send(.needsYou, session: "a", tool: "Bash")
-        XCTAssertEqual(shots(rig.send(.turnStart, session: "b")), [], "needs you shows")
-        XCTAssertEqual(shots(rig.send(.sessionStart, session: "c")), [])
-        XCTAssertEqual(shots(rig.send(.activity, session: "a", tool: "Bash", failed: true, id: "b", error: "exit_code")),
+        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "b")), [], "needs you shows")
+        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "c")), [])
+        XCTAssertEqual(reactionNames(rig.send(.activity, session: "a", tool: "Bash", failed: true, id: "b", error: "exit_code")),
                        ["error"], "it ran, and answered the request")
         rig.talk(true)
-        XCTAssertEqual(shots(rig.send(.turnStart, session: "c")), [], "the mic is on")
+        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "c")), [], "the mic is on")
         rig.talk(false)
-        XCTAssertEqual(shots(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
-        rig.core.listeningEnded()
-        XCTAssertEqual(shots(rig.send(.turnStart, session: "d")), ["starting new_task"])
+        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
+        rig.passed(reacted: true)
+        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "d")), ["starting new_task"])
     }
 
-    /// Each one-shot is drawn in Boop's mood, a
+    /// Each rule reaction is drawn in Boop's mood, a
     /// variation at random among those for its context, never the one it
     /// played last when there's another.
-    func testOneShotsTakeTheMoodsVariations() {
+    func testRuleReactionsTakeTheMoodsVariations() {
         let rig = CoreRig(seed: 5)
-        _ = rig.core.setMood("calm", at: rig.now)
+        _ = rig.setMood("calm")
         let fit = FaceLoops.variants(mood: "calm", state: "starting", ctx: "new_task")
         var last: Int?
         for _ in 0..<12 {
-            let moment = moments(rig.send(.turnStart))[0]
-            XCTAssertTrue(fit.contains(moment.variant ?? 0), "\(String(describing: moment.variant)) of \(fit)")
-            if fit.count > 1 { XCTAssertNotEqual(moment.variant, last) }
-            last = moment.variant
+            let reaction = deviceReactions(rig.send(.turnStart))[0]
+            XCTAssertTrue(fit.contains(reaction.variant ?? 0), "\(String(describing: reaction.variant)) of \(fit)")
+            if fit.count > 1 { XCTAssertNotEqual(reaction.variant, last) }
+            last = reaction.variant
             rig.send(.turnEnd)
         }
     }

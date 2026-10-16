@@ -13,7 +13,7 @@ let usages: [(command: String, text: String)] = [
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
-        pipeline, the real harness and actions, and Jev, each pass checked against what it should come to (the
+        pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
         checks. Needs Jev's key in BOOP_JEV_KEY and fails without it. --runs runs each scenario N times
         (default the scenario's own runs, else 3 for an always scenario and 1 for the rest); it passes only
@@ -29,7 +29,7 @@ let usages: [(command: String, text: String)] = [
     ("check", """
     boopdev check [PACK…]
         Checks character packs as the engine reads them (characters/CHARACTER.md): character.json, the
-        steering, the faces' files, the voice and every demo script, then the generated files and the
+        steering, the faces' files, the voice and every demo script, then its moods, what it uses and the
         studio (characters/charactergen.py --check). PACK is a pack's folder; without one, every pack in
         the repo's characters/. Prints each problem, which stops a pack from working, and each note,
         which doesn't. Exits 1 on a problem.
@@ -240,7 +240,7 @@ func check(_ raw: [String]) {
         for p in found.problems { print("  problem: \(p)") }
         for n in found.notes { print("  note: \(n)") }
     }
-    // The generated files and the studio, as charactergen.py checks them.
+    // The moods, what the pack uses and the studio, as charactergen.py checks them.
     fflush(stdout)
     if let repo {
         for each in args.words.isEmpty ? [nil] : packs.map(Optional.some) {

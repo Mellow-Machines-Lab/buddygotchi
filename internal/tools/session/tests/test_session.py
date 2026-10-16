@@ -1,7 +1,7 @@
 """The session tool's own tests: demo scripts read as the agent's side,
 each reply becomes each agent's tools, the replay server speaks both APIs
 as the agents read them and waits for the script, the gate holds a call
-until its line is due, and the landing demo's edits still fit its project
+until its step is due, and the landing demo's edits still fit its project
 and give its story's test results. None of it runs an agent; `make
 session` does."""
 from __future__ import annotations
@@ -56,7 +56,7 @@ class ScriptTests(unittest.TestCase):
                 if l["agent"] != "reply":
                     self.assertTrue(model.claude_call(l, "/ws", ["Read", "Edit", "Bash", "Agent"]), f"{folder.name}: {l}")
 
-    def test_lines_are_numbered_as_boop_counts_them(self):
+    def test_steps_are_numbered_as_boop_counts_them(self):
         with tempfile.TemporaryDirectory() as d:
             s = scripts.load(write(Path(d), [
                 "// a comment", '{"demo": 1, "title": "T"}', "",
@@ -65,10 +65,10 @@ class ScriptTests(unittest.TestCase):
                 '{"agent": "run", "cmd": "git diff", "by": "reviewer"}',
                 '{"agent": "reply", "text": "Done."}',
             ]))
-        self.assertEqual([l["n"] for l in s.lines], [0, 1, 2, 3, 4], "from 0, without the header and comments")
+        self.assertEqual([l["n"] for l in s.steps], [0, 1, 2, 3, 4], "from 0, without the header and comments")
         self.assertEqual(s.title, "T")
         self.assertEqual([(l["n"], l["agent"]) for l in s.replies()], [(2, "read"), (3, "run"), (4, "reply")],
-                         "the agent's lines after the prompt")
+                         "the agent's steps after the prompt")
         self.assertEqual([scripts.said(l) for l in s.replies()], ["Reading.", None, "Done."])
 
     def test_claude_asks_only_about_what_the_script_asks_about(self):
@@ -92,13 +92,13 @@ class ScriptTests(unittest.TestCase):
         main = [l for l in s.replies() if l.get("by") != "reviewer"]
         self.assertEqual(text.count("### Step "), len(main))
         said = [scripts.said(l) for l in main if scripts.said(l)]
-        self.assertEqual(sorted(said, key=text.index), said, "the lines are out of order")
+        self.assertEqual(sorted(said, key=text.index), said, "the steps are out of order")
         # The reviewer doesn't see /demo: its part is in its own prompt.
         self.assertIn("This is part of a scripted demo: Run exactly `git diff`", text)
 
 
 class GateTests(unittest.TestCase):
-    LINES = [
+    STEPS = [
         {"n": 0, "agent": "prompt", "text": "Go"},
         {"n": 1, "agent": "read", "file": "src/a.js"},
         {"n": 2, "you": "poke"},
@@ -107,17 +107,17 @@ class GateTests(unittest.TestCase):
         {"n": 5, "agent": "run", "cmd": "npm test"},
     ]
 
-    def test_a_call_is_the_first_line_from_the_one_due_that_names_it(self):
-        line = lambda call, since: gate.line_for(call, self.LINES, since)
-        self.assertEqual(line({"tool_name": "Read", "tool_input": {"file_path": "/ws/src/a.js"}}, 0), 1)
-        self.assertEqual(line({"tool_name": "Bash", "tool_input": {"command": "npm test"}}, 0), 3)
-        self.assertEqual(line({"tool_name": "Bash", "tool_input": {"command": "npm test"}}, 4), 5, "the second run")
-        self.assertEqual(line({"tool_name": "Agent", "tool_input": {"prompt": "x"}}, 0), 4)
-        self.assertIsNone(line({"tool_name": "Bash", "tool_input": {"command": "ls"}}, 0), "not in the script")
+    def test_a_call_is_the_first_step_from_the_one_due_that_names_it(self):
+        step = lambda call, since: gate.step_for(call, self.STEPS, since)
+        self.assertEqual(step({"tool_name": "Read", "tool_input": {"file_path": "/ws/src/a.js"}}, 0), 1)
+        self.assertEqual(step({"tool_name": "Bash", "tool_input": {"command": "npm test"}}, 0), 3)
+        self.assertEqual(step({"tool_name": "Bash", "tool_input": {"command": "npm test"}}, 4), 5, "the second run")
+        self.assertEqual(step({"tool_name": "Agent", "tool_input": {"prompt": "x"}}, 0), 4)
+        self.assertIsNone(step({"tool_name": "Bash", "tool_input": {"command": "ls"}}, 0), "not in the script")
 
-    def test_it_holds_a_call_until_its_line_is_due(self):
+    def test_it_holds_a_call_until_its_step_is_due(self):
         with tempfile.TemporaryDirectory() as d:
-            path = write(Path(d), [json.dumps({k: v for k, v in l.items() if k != "n"}) for l in self.LINES])
+            path = write(Path(d), [json.dumps({k: v for k, v in l.items() if k != "n"}) for l in self.STEPS])
             cursor = Path(d) / "demo-cursor"
             cursor.write_text("0\n")
             run = subprocess.Popen([sys.executable, str(HERE.parent / "gate.py"), "--script", str(path), "--cursor", str(cursor)],
@@ -125,10 +125,10 @@ class GateTests(unittest.TestCase):
             run.stdin.write(json.dumps({"tool_name": "Bash", "tool_input": {"command": "npm test"}}))
             run.stdin.close()
             time.sleep(0.6)
-            self.assertIsNone(run.poll(), "line 3 isn't due")
+            self.assertIsNone(run.poll(), "step 3 isn't due")
             cursor.write_text("3\n")
             self.assertEqual(run.wait(5), 0, "it lets the call run")
-            self.assertIn("Bash: line 3, held", (Path(d) / "gate.log").read_text())
+            self.assertIn("Bash: step 3, held", (Path(d) / "gate.log").read_text())
 
     def test_it_never_holds_for_good(self):
         with tempfile.TemporaryDirectory() as d:
@@ -177,7 +177,7 @@ class ServerTests(unittest.TestCase):
         text = "".join(e["delta"]["text"] for e in events if e.get("delta", {}).get("type") == "text_delta")
         self.assertEqual(text, "Done.")
 
-    def test_a_reply_waits_for_its_line(self):
+    def test_a_reply_waits_for_its_step(self):
         due = threading.Event()
         asked = []
         replay, url, _ = self.serve([{"n": 7, "agent": "reply", "text": "Now."}], due=lambda n: (asked.append(n), due.wait(5)))
@@ -186,7 +186,7 @@ class ServerTests(unittest.TestCase):
             "stream": True, "tools": [{"name": "Read"}], "messages": [{"role": "user", "content": "go"}]})))
         t.start()
         time.sleep(0.3)
-        self.assertEqual((asked, got), ([7], []), "held until line 7 is due")
+        self.assertEqual((asked, got), ([7], []), "held until step 7 is due")
         due.set()
         t.join(5)
         self.assertTrue(got)
@@ -225,7 +225,7 @@ class LandingProjectTests(unittest.TestCase):
         """The story: the first version fails only the nested-editable
         test, and the fix passes them all."""
         s = scripts.load(scripts.find("landing"))
-        edits = [l for l in s.agent_lines() if l["agent"] == "edit"]
+        edits = [l for l in s.agent_steps() if l["agent"] == "edit"]
         self.assertEqual(len(edits), 2)
         with tempfile.TemporaryDirectory() as d:
             ws = Path(d) / "ws"

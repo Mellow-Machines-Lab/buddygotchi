@@ -222,25 +222,20 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:00, Wednesday)
 You poked Boop 2 times in a row.
@@ -363,11 +358,11 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 
 NOW (14:00, Wednesday)
@@ -477,33 +472,28 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 just now: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:00, Wednesday)
 You poked Boop 4 times in a row.
@@ -626,19 +616,19 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 
 NOW (14:01, Wednesday)
@@ -748,41 +738,36 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:01, Wednesday)
 You poked Boop 2 times in a row.
@@ -905,27 +890,27 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 
 NOW (14:01, Wednesday)
@@ -1035,49 +1020,44 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 just now: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:01, Wednesday)
 You poked Boop 4 times in a row.
@@ -1200,35 +1180,35 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 2 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 2 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 2 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 
 NOW (14:02, Wednesday)
@@ -1338,57 +1318,52 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 2 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 2 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 2 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Patience".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:02, Wednesday)
 You poked Boop 2 times in a row.
@@ -1511,43 +1486,43 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 2 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 2 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 2 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Patience".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Boop Gently".
 
 NOW (14:02, Wednesday)
@@ -1657,65 +1632,60 @@ Examples:
   → happy, glad in a sound, then hello, twice
 
 MOOD
-Happy. Boop is in good spirits: things are going well.
-Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad and done at wins, glad in a sound at a comeback, tickled
-at a poke.
-Stays happy through plain finishes, questions and routine work.
-Leaves for excited when a very long turn finishes done or the person
-thanks the agent; proud when a check passes after failing or a long
-turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
+Boop keeps doing the actual task while showing this feeling.
+React only to what NOW establishes; never invent danger, success or failure.
+Stay when there is no fresh reason to move. Pick only an offered neighbor.
+Repeated descriptions of one event are not new evidence.
+Leaves for an offered neighbor when its meaning fits the facts.
+Fades to calm once Boop has been comfy for 5 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 2 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 2 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 2 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 1 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 1 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 1 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 1 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 just now: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Patience".
 just now: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Boop Gently".
 just now: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Oh Piano".
-Boop has been happy for under a minute.
+Boop has been comfy for under a minute.
 
 NOW (14:02, Wednesday)
 You poked Boop 4 times in a row.
@@ -1838,51 +1808,51 @@ person shares sad news; wounded at rude words to Boop.
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 6 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 6 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 6 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 4 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 4 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 4 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 4 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 3 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Patience".
 3 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Boop Gently".
 3 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Oh Piano".
 3 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 
 NOW (14:06, Wednesday)
@@ -1892,51 +1862,51 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Piano".
 6 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Busy".
 6 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Piano".
 6 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Oh Steady".
 5 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Tickles Careful".
 5 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Work".
 5 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Boop Easy".
 5 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 4 min ago: You poked Boop.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Patience".
 4 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Boop Gently".
 4 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: calm → happy.
+  Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Oh Piano".
 4 min ago: You poked Boop 4 times in a row.
   Boop wiggled on its own.
-  Boop's mood changed: happy → calm.
+  Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Tickles Busy".
 just now: claude started turn 1 on "landing".
 

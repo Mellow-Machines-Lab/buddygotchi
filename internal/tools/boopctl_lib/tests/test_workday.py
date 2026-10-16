@@ -259,7 +259,7 @@ class ReportTests(unittest.TestCase):
             return {"type": "turn", "phase": "end", "facts": {"outcome": "done", "tools_failed": 0, **facts}}
         self.assertEqual(workday.classify(end(length_ms=59_000)), "short")
         self.assertEqual(workday.classify(end(length_ms=60_000)), "minutes")
-        # A turn of 5 minutes or more is a big moment.
+        # A turn of 5 minutes or more is notable.
         self.assertEqual(workday.classify(end(length_ms=5 * 60_000 - 1)), "minutes")
         self.assertEqual(workday.classify(end(length_ms=5 * 60_000)), "notable")
         # The line says only the outcome and length, so failures along the way don't count.
@@ -389,13 +389,13 @@ class FakeDeviceTests(unittest.TestCase):
         read(5)
         self.assertEqual(got[0], {"t": "hello", "kit": 1, "app": "boop", "id": "b00p-fake", "fw": "workday",
                                   "does": ["react", "task_complete", "reply_ready", "starting", "stopped", "error",
-                                           "helper_return", "listening", "stop_listening", "poked", "tap_spam"]},
+                                           "helper_return", "listening", "stop_listening"]},
                          "once for the app's first line, its hello; no voice, so the app's lines are taken as played")
         self.assertEqual(got[1:], [{"t": "ev", "kind": "ended", "data": {"id": 558386701, "how": "done"}},
                                    {"t": "ev", "kind": "ended", "data": {"id": 558386702, "how": "done"}},
                                    got[0],
                                    {"t": "ev", "kind": "tap", "did": "poked"}])
-        self.assertEqual(device.reactions, 1, "the brain's finish; the rules' one-shot isn't a reaction")
+        self.assertEqual(device.reactions, 1, "the brain's finish; the rules' reaction isn't a reaction")
 
 
 if __name__ == "__main__":

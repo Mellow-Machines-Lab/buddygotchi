@@ -1,6 +1,6 @@
 """The pipeline check (internal/VERIFICATION.md L4): hook → app → USB → device.
 
-Starts `boopctl bridge` and a headless app with throwaway state, sends each
+Starts `linkkit-bridge` and a headless app with throwaway state, sends each
 fixture's payloads through the real `agent-hook`, run as Boop installs it
 (`--keep-text`), and checks the device's `dbg.state` at every checkpoint.
 Latency is hook launch to the device having received the new `state` (its
@@ -78,11 +78,10 @@ class Run:
             shutil.rmtree(self.root)
         self.root.mkdir(parents=True)
         self.out.mkdir(parents=True, exist_ok=True)
-        for name in ("Boop", "agent-hook"):
+        for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
                 raise DeviceError(f"no {BIN / name}; run make build")
-        bridge = [str(REPO / "internal" / "tools" / "boopctl")] + (["--port", self.port] if self.port else [])
-        bridge += ["bridge", "--socket", self.bridge_sock, "--quiet"]
+        bridge = [str(BIN / "linkkit-bridge"), "--socket", self.bridge_sock] + (["--port", self.port] if self.port else [])
         self.bridge = subprocess.Popen(bridge, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.app.wait_for(lambda: os.path.exists(self.bridge_sock), 10, "the bridge's socket")
         self.app.start()
@@ -97,7 +96,7 @@ class Run:
         if (code := self.app.stop()) is not None:
             self.say(f"Boop exit {code}")
         if self.bridge and self.bridge.poll() is None:
-            self.say(f"boopctl exit {stop_proc(self.bridge)}")
+            self.say(f"linkkit-bridge exit {stop_proc(self.bridge)}")
         self.bridge = None
 
     # Steps
@@ -205,20 +204,20 @@ KEPT_WORDS = {"PRIVATE_PROMPT", "PRIVATE_CLOSING"}
 def order(log: str) -> list[dict[str, Any]]:
     """Every brain reaction sent in an app log, in order: when it was sent,
     how long after the rules' reaction to the last hook, how the device said
-    it ended, whether the next request sent was the brain's or a rule's
-    (`next_by`), and whose `now` request came next (`now_by`), the only kind
+    it ended, whether the next reaction sent was the brain's or a rule's
+    (`next_by`), and whose `now` came next (`now_by`), the only kind
     that cuts a busy one short.
 
     With --debug the app logs `hook: …` for each hook and `link rules → …` or
-    `link brain → …` for each line sent to the device (a `state` sent again
+    `link brain → …` for each message sent to the device (a `state` sent again
     unchanged, such as the keepalive, only the first time), and always
     `device: do N ended HOW (WHY)` for the device's `ended` (linkkit/SPEC.md
     §4)."""
     stamp = re.compile(r"^(\d\d):(\d\d):(\d\d)\.(\d\d\d) (.*)$")
     ended_line = re.compile(r"^device: do (\d+) ended (\w+)(?: \((\w+)\))?$")
-    how_ended: dict[int, str] = {}  # how each request ended, by id: "done", "cut (tap)"
+    how_ended: dict[int, str] = {}  # how each `do` ended, by id: "done", "cut (tap)"
     reactions: list[dict[str, Any]] = []
-    # The reactions still waiting to learn who sent the next request, and
+    # The reactions still waiting to learn who sent the next reaction, and
     # the next `now`.
     no_next: list[dict[str, Any]] = []
     no_now: list[dict[str, Any]] = []
@@ -265,8 +264,8 @@ def order(log: str) -> list[dict[str, Any]]:
 
 # How a brain reaction may end without anything being wrong (linkkit/SPEC.md
 # §4): played through; cut by a tap, something needing you, a `now` from
-# someone else or a reset; or skipped because it waited its turn past its
-# ttl, behind another's line (the Mac used to drop those before sending), or
+# someone else or a reset; or skipped because it waited in the queue past its
+# ttl, behind another's `say` (the Mac used to drop those before sending), or
 # the device refused it (`nothing` when none of it would play). `skipped
 # (unknown)` means the device doesn't play that name, and a `now` of the
 # brain's own never cuts it: those fail.
@@ -278,9 +277,9 @@ def check_order(run: Any) -> dict[str, Any]:
     """The brain's reactions come after the rules' reaction, and each gets
     the device's `ended` (linkkit/SPEC.md §4). The device queues the brain's
     reactions (`next`, up to 5 s), so a reaction that waited behind
-    another's line, or was skipped for waiting too long, is fine; one the
-    brain's own next request cut short isn't (the next waits until the
-    line has played), nor is one the device didn't know. Each fixture ends
+    another's `say`, or was skipped for waiting too long, is fine; one the
+    brain's own next reaction cut short isn't (the next waits until the
+    one playing has played), nor is one the device didn't know. Each fixture ends
     with seconds to spare, so every brain reaction has its `ended` by then."""
     answers = order(run.app.log_text())
     # The log is written in order, so a brain line after the rules' line came

@@ -3,7 +3,7 @@
 The app sets its own model address for every Claude Code it starts, so its
 model can't be replayed. Instead the real model performs the script,
 openly: the run's copy of the project gets a `/demo` command that is the
-script's agent lines, word for word (`script`), and settings that send that
+script's agent steps, word for word (`script`), and settings that send that
 session's hooks to the run's Boop and add the gate (`prepare`). Both go
 into the project's first commit, since the app runs each session in a git
 worktree of its own. The session opens through the app's link,
@@ -45,7 +45,7 @@ def fence(text: str) -> str:
 
 
 def call_words(l: Dict[str, Any], prompt: str = "") -> str:
-    """An agent line's tool call, as an exact instruction."""
+    """An agent step's tool call, as an exact instruction."""
     does = l["agent"]
     if does == "read":
         return f"Use the Read tool on `{l['file']}`."
@@ -59,7 +59,7 @@ def call_words(l: Dict[str, Any], prompt: str = "") -> str:
 
 
 def script(replies: List[Dict[str, Any]], title: str) -> str:
-    """The script's agent lines as the `/demo` command: what to say and
+    """The script's agent steps as the `/demo` command: what to say and
     which tool to call, in order, word for word. The person runs it,
     knowing it's a demo; nothing in it is hidden."""
     reviewer = [l for l in replies if l.get("by") == "reviewer"]

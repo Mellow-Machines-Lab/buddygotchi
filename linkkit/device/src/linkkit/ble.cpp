@@ -107,7 +107,7 @@ bool Ble::poll(Kit& kit) {
     out_.clear();
     if (up) {
       connected_ = true;
-      kit.connected();  // the host's first line gets the hello
+      kit.connected();  // the host's first message gets the hello
     }
   }
   if (connected_) {

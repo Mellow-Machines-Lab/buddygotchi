@@ -5,7 +5,8 @@ import MellowHarness
 import os
 
 /// `Boop --headless`: the whole runtime with isolated state, no UI and no
-/// Bluetooth. The device, if any, is reached through `boopctl bridge`.
+/// Bluetooth. The device, if any, is reached through a USB bridge
+/// (`linkkit-bridge`) or the simulator's socket.
 enum Headless {
     static func run(_ args: Arguments) -> Never {
         guard let dir = args["--state-dir"] else { fail("--headless needs --state-dir\n" + usage) }
@@ -117,10 +118,10 @@ enum Headless {
         // Ready at once, so a live agent may start while the device is
         // awaited; played once it's there.
         let player = runtime.home.sync {
-            runtime.demo(script, live: live, cursor: cursor, line: { line, agent in
-                let cause = line.cause(creature: runtime.name, agent: agent)
+            runtime.demo(script, live: live, cursor: cursor, step: { step, agent in
+                let cause = step.cause(creature: runtime.name, agent: agent)
                 if let cause { log.write("demo: \(cause.text)") }
-                recorder?.happened(cause, input: line.input)
+                recorder?.happened(cause, input: step.input)
             }, done: {
                 if let recorder, let file {
                     let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"
