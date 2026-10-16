@@ -99,7 +99,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -226,7 +226,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.
@@ -364,7 +364,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -493,7 +493,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.
@@ -627,7 +627,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Engaged. Boop is in the flow, following steady work. At ease: nothing
@@ -788,7 +788,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.
@@ -1043,7 +1043,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Engaged. Boop is in the flow, following steady work. At ease: nothing
@@ -1196,7 +1196,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.
@@ -1352,7 +1352,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Engaged. Boop is in the flow, following steady work. At ease: nothing

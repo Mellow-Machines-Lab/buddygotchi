@@ -99,7 +99,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Grumpy. Boop is fed up: turns failed, or pokes kept coming.
@@ -222,7 +222,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Irritated. Boop's patience is fraying: failures or pokes keep coming.
@@ -348,7 +348,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Annoyed. Boop is mildly put out: one thing failed, or 2 pokes.
@@ -479,7 +479,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -611,7 +611,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.

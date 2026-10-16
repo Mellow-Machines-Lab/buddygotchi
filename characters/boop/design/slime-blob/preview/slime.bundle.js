@@ -11,7 +11,7 @@ const {eye,target}=__load(28);
 const {createProps}=__load(31);
 const {createPlayer}=__load(32);
 const {createReview}=__load(33);
-const oneShotStates=['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','listening'];
+const oneShotStates=['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','listening'];
 
 function create({root,stage,onChange=()=>{}}) {
   const catalog=window.SlimeCatalog,profiles=catalog.expressions,expressions=Object.keys(profiles);
@@ -796,10 +796,11 @@ const stateFamilies=Object.freeze({
   planning:'desk',working:'desk',terminal:'desk',tool_use:'desk',searching:'desk',
   analyzing:'desk',testing:'desk',delegating:'helpers',helper_return:'helpers',
   waiting:'desk',needs_you:'alert',reply_ready:'result',task_complete:'result',
-  error:'result',stopped:'result',poked:'touch',tap_spam:'touch'
+  error:'result',stopped:'result',poked:'touch',tap_spam:'touch',
+  wake_up:'start'
 });
 const acts=new Set(['planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting']);
-const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','react']);
+const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','react']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const text=value=>typeof value==='string'?value:'';
 const attentionTuple=attn=>JSON.stringify([attn.id??0,attn.agent,attn.project]);
@@ -906,7 +907,7 @@ const {resultRecipe,statusResultRecipe}=__load(18);
 const {restRecipe}=__load(19);
 const {idleRecipe}=__load(20);
 const {listenRecipe}=__load(21);
-const {startRecipe}=__load(22);
+const {startRecipe,wakeRecipe}=__load(22);
 const {helpersRecipe}=__load(23);
 const {touchRecipe}=__load(24);
 const {recoveryGesture}=__load(15);
@@ -951,6 +952,7 @@ function createScenes({rand,reduced,profiles}) {
     }else if(route.state==='task_complete')recipe=resultRecipe(route.outcome,variant,mood,profile);
     else if(route.family==='result')recipe=statusResultRecipe(route.state,variant,mood,profile);
     else if(route.state==='starting')recipe=startRecipe(route.ctx,variant,mood,profile);
+    else if(route.state==='wake_up')recipe=wakeRecipe(variant,mood,profile);
     else if(route.family==='helpers')recipe=helpersRecipe(route.state,variant,mood,profile);
     else if(route.family==='touch')recipe=touchRecipe(route.state,variant);
     else if(route.state==='listening')recipe=listenRecipe(variant);
@@ -1149,7 +1151,7 @@ const sceneConstants=Object.freeze({
 });
 const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
   'tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready',
-  'task_complete','error','stopped','poked','tap_spam']);
+  'task_complete','error','stopped','poked','tap_spam','wake_up']);
 
 return {sceneConstants,implementedStates};
 },
@@ -1328,7 +1330,19 @@ function startRecipe(ctx,variant,mood='calm',profile=null) {
     label:ctx==='new_task'?'NEW TASK':ctx==='continuation'?'RESUME':ctx==='compacted'?'COMPACTED':'START'};
 }
 
-return {startRecipe};
+// wake_up: the person back at the Mac after a long break. The start family's
+// body without its card: a stretch up and forward (a presentation beat), then
+// a soft settle, and the mood's own recovery.
+function wakeRecipe(variant,mood='calm',profile=null) {
+  const traits=profile?profileTraits(profile):sceneMood(mood),stretch={kind:'start_reveal',side:0,strength:traits.gain};
+  const settle=side=>({kind:'body_contact',side,strength:.35});
+  const beats=[[[560,stretch],[1180,settle(0)]],[[760,stretch],[1240,settle(1)],[1420,settle(-1)]],
+    [[900,stretch],[1500,{...stretch,strength:traits.gain*.7}]]][variant];
+  return {duration:sceneConstants.cycleMs[variant],intent:['yawn and stretch up','stretch, then shake awake','slow double stretch'][variant],
+    lean:traits.lean,contacts:beats.map(([at,beat])=>({at:at+traits.delayMs,...beat}))};
+}
+
+return {startRecipe,wakeRecipe};
 },
 23:()=>{
 const {sceneConstants}=__load(13);

@@ -536,13 +536,15 @@ class ControlsTests(unittest.TestCase):
 
     def test_a_preview_reaction_says_its_take(self):
         """As the react output sends it, played `now` so
-        it replaces what the sim shows; a finish react.animation picks is
-        its animation with its outcome (ReactOutput.finish)."""
+        it replaces what the sim shows; what react.animation picks is
+        its scene, with a finish's outcome (ReactOutput.scenes)."""
         line = controls.preview_reaction("grumpy", "new.d14", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
                                 "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})
         face = controls.preview_reaction("proud", None, 1, "success")
         self.assertEqual((face["name"], face["args"]["outcome"]), ("task_complete", "success"))
+        woke = controls.preview_reaction("happy", None, 1, "wake up")
+        self.assertEqual((woke["name"], "outcome" in woke["args"]), ("wake_up", False))
         self.assertEqual(face["args"]["say"], {}, "saying nothing still sends a say, as react does")
         self.assertEqual(controls.preview_reaction("sad", None, 1, "failure")["args"]["outcome"], "failure")
         reply = controls.preview_reaction("curious", None, 2, "reply")

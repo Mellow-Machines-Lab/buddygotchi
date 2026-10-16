@@ -120,7 +120,8 @@
       "error",
       "stopped",
       "poked",
-      "tap_spam"
+      "tap_spam",
+      "wake_up"
     ],
     "hostFacts": {
       "startContext": [

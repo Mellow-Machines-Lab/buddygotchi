@@ -634,7 +634,7 @@ def reaction(p: dict[str, Any]) -> dict[str, Any]:
     """A reaction's face, finish (success, failure or reply; None for a
     face alone) and hold, from its pass's answers as the dashboard reads
     them (dash/feed.py). What it said is the takes its action recorded."""
-    return {"face": feed.choice(p, feed.FACE) or "?", "finish": feed.finish(p),
+    return {"face": feed.choice(p, feed.FACE) or "?", "finish": feed.animation(p),
             "held": feed.choice(p, "react.loops") or "once"}
 
 

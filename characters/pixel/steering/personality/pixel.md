@@ -18,4 +18,6 @@ Examples:
   one, a sad face for a big one.
 - A poke: a curious face. Pokes that keep coming: annoyed, then grumpy.
 - Thanks or kind words: a happy face.
+- You back at the Mac after a long break: a happy face, and it wakes up
+  for you.
 - A turn starting, a tool call, a check passing mid-turn: no face.

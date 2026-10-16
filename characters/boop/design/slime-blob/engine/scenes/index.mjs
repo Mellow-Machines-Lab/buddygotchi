@@ -6,7 +6,7 @@ import {resultRecipe,statusResultRecipe} from './result.mjs';
 import {restRecipe} from './rest.mjs';
 import {idleRecipe} from './idle.mjs';
 import {listenRecipe} from './listen.mjs';
-import {startRecipe} from './start.mjs';
+import {startRecipe,wakeRecipe} from './start.mjs';
 import {helpersRecipe} from './helpers.mjs';
 import {touchRecipe} from './touch.mjs';
 import {recoveryGesture} from './profile.mjs';
@@ -52,6 +52,7 @@ export function createScenes({rand,reduced,profiles}) {
     }else if(route.state==='task_complete')recipe=resultRecipe(route.outcome,variant,mood,profile);
     else if(route.family==='result')recipe=statusResultRecipe(route.state,variant,mood,profile);
     else if(route.state==='starting')recipe=startRecipe(route.ctx,variant,mood,profile);
+    else if(route.state==='wake_up')recipe=wakeRecipe(variant,mood,profile);
     else if(route.family==='helpers')recipe=helpersRecipe(route.state,variant,mood,profile);
     else if(route.family==='touch')recipe=touchRecipe(route.state,variant);
     else if(route.state==='listening')recipe=listenRecipe(variant);

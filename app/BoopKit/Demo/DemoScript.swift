@@ -16,6 +16,7 @@ import Foundation
 ///     {"you": "poke"}
 ///     {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading the editor."}
 ///     {"you": "talk", "text": "You suck at this!", "hold": 2}
+///     {"you": "back", "minutes": 600}
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
 ///     {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
 ///
@@ -26,8 +27,9 @@ import Foundation
 ///   that many seconds), `review` (a subagent, its `task` and `prompt`), and
 ///   `reply` (`text` that ends the turn). `say` is what the agent says
 ///   before it acts. `"by": "reviewer"` is the subagent's own.
-/// - `you` steps are what the person does: `poke`, and `talk` (the button
-///   held `hold` seconds, then `text` heard).
+/// - `you` steps are what the person does: `poke`, `talk` (the button
+///   held `hold` seconds, then `text` heard), and `back`: back at the Mac
+///   after `minutes` away (`Runtime.cameBack`).
 /// - `brain` steps are the creature's brain's answers to its questions,
 ///   about the step above, and `mood` its mood. `{"mood": "proud"}`
 ///   alone is a brain step too.
@@ -49,6 +51,8 @@ public struct DemoScript: Sendable {
             case agent(Agent)
             case poke
             case talk(String, hold: Double)
+            /// Back at the Mac after this many ms away.
+            case back(ms: Int64)
             case brain([String: String], mood: String?)
         }
 
@@ -133,7 +137,7 @@ public struct DemoScript: Sendable {
                 for (key, value) in o {
                     let isBool = (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } == true
                     let ok = switch key {
-                    case "after", "takes", "ask", "hold", "demo": value is NSNumber && !isBool
+                    case "after", "takes", "ask", "hold", "minutes", "demo": value is NSNumber && !isBool
                     case "fails": isBool
                     case "brain": value is [String: String]
                     default: value is String
@@ -175,7 +179,11 @@ public struct DemoScript: Sendable {
                 case "talk":
                     guard let words = string("text") else { throw Problem(description: "\(here): talk needs text") }
                     what = .talk(words, hold: number("hold") ?? 1.5)
-                default: throw Problem(description: "\(here): you is poke or talk")
+                case "back":
+                    let minutes = number("minutes") ?? 60
+                    guard minutes > 0 else { throw Problem(description: "\(here): a back's minutes are more than 0") }
+                    what = .back(ms: Int64(minutes * 60_000))
+                default: throw Problem(description: "\(here): you is poke, talk or back")
                 }
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
@@ -186,7 +194,7 @@ public struct DemoScript: Sendable {
             case .agent(let a) where a.does == .prompt: (1, 0)
             case .agent(let a) where a.does == .run: (1, 2)
             case .agent: (1, 0.6)
-            case .poke, .talk: (0.8, 0)
+            case .poke, .talk, .back: (0.8, 0)
             case .brain: (0.3, 0)
             }
             steps.append(Step(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
@@ -199,14 +207,14 @@ public struct DemoScript: Sendable {
     static let keys: [String: [String]] = [
         "demo": ["demo", "title", "agent"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "by", "takes"],
-        "you": ["you", "text", "hold"],
+        "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
     static let anyStep = ["after", "note"]
 
     static func type(of key: String) -> String {
         switch key {
-        case "after", "takes", "ask", "hold", "demo": "a number"
+        case "after", "takes", "ask", "hold", "minutes", "demo": "a number"
         case "fails": "true or false"
         case "brain": "question keys to choices, both strings"
         default: "a string"
@@ -235,6 +243,7 @@ extension DemoScript.Step {
         switch what {
         case .poke: found = .init(kind: "tap", text: "You poke \(name)")
         case .talk(let words, _): found = .init(kind: "talk", text: "You say “\(words)”")
+        case .back(let ms): found = .init(kind: "back", text: "You come back to the Mac after a \(Band.away(ms: ms)) break")
         case .brain: found = nil
         case .agent(let a):
             let actor = a.byReviewer ? "The reviewer" : who

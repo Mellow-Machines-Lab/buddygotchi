@@ -114,6 +114,7 @@ public final class DemoRecorder: @unchecked Sendable {
                 return "\(name) makes \("aeiou".contains(face.prefix(1)) ? "an" : "a") \(face) face\(says)"
             case "task_complete": return "\(name) \(args["outcome"] as? String == "failure" ? "slumps" : "celebrates")\(says)"
             case "reply_ready": return "\(name) perks up\(says)"
+            case "wake_up": return "\(name) stretches and yawns\(says)"
             case "error": return "\(name) winces"
             case BoopDevice.listening: return "\(name) listens"
             default: return nil

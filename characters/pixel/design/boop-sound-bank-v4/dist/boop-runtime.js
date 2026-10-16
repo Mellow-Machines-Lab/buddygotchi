@@ -193,9 +193,11 @@ const {renderNeedsYou}=load("needs-you.mjs");
 const {renderStateScene,stateScore}=load("state-art.mjs");
 const {quietMix,routineEvents}=load("quiet-mix.mjs");
 const {renderMoodScene,moodScore}=load("mood-art.mjs");
+const {renderWakeScene,wakeScore}=load("wake-art.mjs");
 function makeScene(id){
   const asset=getAsset(id);
   if(asset.renderer==='mood-v4')return {asset,svg:renderMoodScene(asset),score:quietMix(asset,moodScore(asset))};
+  if(asset.renderer==='wake-v1')return {asset,svg:renderWakeScene(asset),score:quietMix(asset,wakeScore(asset))};
   if(asset.renderer==='state-v3')return {asset,svg:renderStateScene(asset),score:quietMix(asset,stateScore(asset))};
   const svg=asset.state==='needs_you'?renderNeedsYou(asset):syncKeyboard(renderVariation(asset.mood,asset.state,asset.variation,asset.name),asset);
   return {asset,svg,score:quietMix(asset,composeScore(asset,svg))};
@@ -236,8 +238,9 @@ return {makeScene,cueSeed,synthesizeCue,sceneEvents,renderSceneAudio,chooseVaria
 "catalog.mjs":()=>{
 const {catalog:legacyCatalog}=load("legacy-catalog.mjs");
 const {moodAdditions,newMoods}=load("mood-catalog.mjs");
+const {wakeAdditions}=load("wake-art.mjs");
 const moods=['happy','excited','proud','curious','determined','grumpy','sad',...newMoods];
-const catalog=[...legacyCatalog,...moodAdditions];
+const catalog=[...legacyCatalog,...moodAdditions,...wakeAdditions];
 function getAsset(id){const asset=catalog.find(a=>a.id===id);if(!asset)throw new Error('Unknown Boop variation: '+id);return asset;}
 
 return {moods,catalog,getAsset};},
@@ -361,7 +364,7 @@ function moodPlan(a){
 
 function eye(x,y,w,h,c=P.ink){const hw=(w-4)/2,hh=(h-4)/2;return slab(x,y,hw,hh,c)+slab(x+hw+4,y,hw,hh,c)+slab(x,y+hh+4,hw,hh,c)+slab(x+hw+4,y+hh+4,hw,hh,c);}
 function brow(x,y,ascending,c=P.ink){return [0,1,2].map(i=>rect(x+i*12,y+(ascending?2-i:i)*3,12,4,c)).join('');}
-function face(a,s,blink=false){
+function moodFace(a,s,blink=false){
  const m=a.mood,quiet=a.sharedQuiet,success=a.outcome==='success',ink=success?P.dark:P.ink,bg=success?P.gold:P.black;
  let eyes='',lips='',decor='',gaze=s===0?0:[0,-3,2,-2,3,0,-1,2,0][s];
  if(quiet||blink){eyes=slab(66,88,42,6,ink)+slab(212,88,42,6,ink);lips=rect(149,123,22,4,ink);}
@@ -561,6 +564,7 @@ function background(a,s){
  const colors=[P.gold,'#FFD14A','#FFC54A','#FFBA4A','#FFC54A','#FFD14A',P.gold,'#FFD84A',P.gold];
  return rect(0,0,320,192,colors[s])+[0,1,2,3,4].map(i=>rect(((i*76+s*12)%380)-30,13+(i%3)*48,36,9,'#EDAE26')).join('');
 }
+// One group per distinct drawing of a flip-book's steps, shown at their times.
 function frames(a,plan,draw,part){
  const drawings=plan.steps.slice(0,-1).map((step,i)=>({art:draw(step),i})),unique=[...new Set(drawings.map(x=>x.art))];
  return group(unique.map(art=>{
@@ -569,12 +573,17 @@ function frames(a,plan,draw,part){
   return group(`<animate attributeName="opacity" values="${values.join(';')}" keyTimes="${plan.steps.map(x=>round(x.at/a.seconds)).join(';')}" dur="${a.seconds}s" repeatCount="indefinite" calcMode="discrete"/>`+art,`opacity="${indexes.includes(0)?1:0}" data-step="${indexes.join(',')}"`);
  }).join(''),`data-part="${part}"`);
 }
+// A flip-book scene's SVG: its motion, its still for reduced motion, and the
+// lane at the bottom left to the host's text. `desc` comes before the shared words.
+function sceneSvg(a,id,desc,art,still){
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" id="${id}" data-mood="${a.mood}" data-state="${a.state}" data-action="${a.action}" data-loop-seconds="${a.seconds}" data-text-top="192" role="img" aria-labelledby="${id}-title ${id}-desc" shape-rendering="crispEdges" overflow="hidden"><title id="${id}-title">${safe(a.mood+' · '+a.name)}</title><desc id="${id}-desc">${safe(desc)} Loopable pixel animation; procedural synchronized SFX; bottom 48 pixels reserved for host text.</desc><defs><clipPath id="${id}-clip"><rect width="320" height="192"/></clipPath></defs><style>#${id} .still{display:none}@media(prefers-reduced-motion:reduce){#${id}:not([data-motion="on"]) .motion{display:none}#${id}:not([data-motion="on"]) .still{display:inline}}</style><rect width="320" height="240" fill="#000000"/><g clip-path="url(#${id}-clip)"><g class="motion">${art}</g><g class="still">${still}</g></g><g data-part="reserved-text-zone"/></svg>`;
+}
 function renderMoodScene(a){
  const plan=moodPlan(a),id='boop-v4-'+a.id.replaceAll('.','-');
- const art=frames(a,plan,e=>background(a,e.stage),'mood-background')+frames(a,plan,e=>face(a,e.stage,e.stage===8),'mood-face')+frames(a,plan,e=>props(a,e),'mood-action');
+ const art=frames(a,plan,e=>background(a,e.stage),'mood-background')+frames(a,plan,e=>moodFace(a,e.stage,e.stage===8),'mood-face')+frames(a,plan,e=>props(a,e),'mood-action');
  const stillStep={stage:a.state==='needs_you'?6:a.state==='task_complete'||a.state==='error'?5:0};
- const still=background(a,stillStep.stage)+face(a,0)+props(a,stillStep);
- return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" id="${id}" data-mood="${a.mood}" data-state="${a.state}" data-action="${a.action}" data-loop-seconds="${a.seconds}" data-text-top="192" role="img" aria-labelledby="${id}-title ${id}-desc" shape-rendering="crispEdges" overflow="hidden"><title id="${id}-title">${safe(a.mood+' · '+a.name)}</title><desc id="${id}-desc">${safe(a.caption+' '+moodProfiles[a.mood].character)} Loopable pixel animation; procedural synchronized SFX; bottom 48 pixels reserved for host text.</desc><defs><clipPath id="${id}-clip"><rect width="320" height="192"/></clipPath></defs><style>#${id} .still{display:none}@media(prefers-reduced-motion:reduce){#${id}:not([data-motion="on"]) .motion{display:none}#${id}:not([data-motion="on"]) .still{display:inline}}</style><rect width="320" height="240" fill="#000000"/><g clip-path="url(#${id}-clip)"><g class="motion">${art}</g><g class="still">${still}</g></g><g data-part="reserved-text-zone"/></svg>`;
+ const still=background(a,stillStep.stage)+moodFace(a,0)+props(a,stillStep);
+ return sceneSvg(a,id,a.caption+' '+moodProfiles[a.mood].character,art,still);
 }
 function moodScore(a){
  const plan=moodPlan(a),profile=moodProfiles[a.mood];
@@ -583,9 +592,11 @@ function moodScore(a){
  return {id:a.id,seconds:a.seconds,policy:plan.policy,intervalSeconds:plan.intervalSeconds,character:profile.character,description:a.caption+' Sparse code-generated material effects, no speech or music bed.',events,tailSeconds:round(Math.max(0,...events.map(e=>e.at+effects[e.effect].duration-a.seconds)))};
 }
 // When speech may enter over a scene, in seconds: .12 s after its last
-// attention cue ends for needs_you, task_complete and error, else .45 s.
+// attention cue ends for needs_you, task_complete and error, at the score's
+// own voiceSeconds when it has one (wake_up's, once awake), else .45 s.
 // The quiet mix keeps those states' cues, so the score may be mixed or not.
 function voiceStart(state,score){
+ if(score.voiceSeconds!==undefined)return score.voiceSeconds;
  return protectedSoundStates.includes(state)?Math.max(0,...score.events.map(e=>e.at+effects[e.effect].duration))+.12:.45;
 }
 function voiceWindows(a){
@@ -593,7 +604,7 @@ function voiceWindows(a){
  return {suggested: true,duckRoutineSfx:!protectedScene,earliestEntry:round(start),latestExit:round(a.seconds-.25),fitsWithinCycle:start<a.seconds-.25,note:'Candidate entry/exit bounds, not a generated recording. If the take does not fit, extend the host hold or follow after the animation; never speed up speech to force it.'};
 }
 
-return {moodPlan,renderMoodScene,moodScore,voiceStart,voiceWindows};},
+return {round,safe,slab,pad,moodPlan,moodFace,frames,sceneSvg,renderMoodScene,moodScore,voiceStart,voiceWindows};},
 "mood-catalog.mjs":()=>{
 // Six new characters. No mood aliases and no externally selected intensity.
 const newMoods=['calm','engaged','annoyed','irritated','whiny','wounded'];
@@ -1558,7 +1569,7 @@ function stateScore(asset){
 return {pixelText,statePlan,renderStateScene,stateScore};},
 "state-catalog.mjs":()=>{
 const {moods}=load("visual/base.mjs");
-const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam'];
+const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up'];
 const sustainedStates=['working','idle','asleep','no_app','planning','terminal','tool_use','searching','analyzing','testing','waiting'];
 // Seven named characters, not a new intensity axis. Timing is authored per mood.
 const acting={
@@ -2787,4 +2798,110 @@ function listeningScene(ctx){
   return group(path("M234 163h12v6h12v7h13v34h-13v6h-12v7h-12v-19h-30v-13h30Z",amber)+rect(262,180,5,26,palette.black)+rect(201,188,9,18,light)+rect(222,215,5,13,gray),'data-part="listening-trumpet"');
 }
 
-return {sceneSpecs,activeNames,activeCaptions,grumpyTiming,grumpyActing,drawWorkScene,requestScene,completionScene,listeningScene};}};const cache={};function load(id){if(!cache[id]){if(!modules[id])throw new Error('Missing module '+id);cache[id]=modules[id]();}return cache[id];}return {...load('bank.mjs'),...load('catalog.mjs'),...load('player.mjs'),...load('state-catalog.mjs'),...load('mood-catalog.mjs'),...load('mood-art.mjs'),states:load('state-catalog.mjs').stateOrder};})();
+return {sceneSpecs,activeNames,activeCaptions,grumpyTiming,grumpyActing,drawWorkScene,requestScene,completionScene,listeningScene};},
+"wake-art.mjs":()=>{
+const {palette:P,rect,path,block,group,at,star,face:baseFace}=load("visual/base.mjs");
+const {acting}=load("state-catalog.mjs");
+const {moodProfiles,newMoods}=load("mood-catalog.mjs");
+const {moodFace,frames,sceneSvg,round,pad}=load("mood-art.mjs");
+const {effects}=load("audio/effects.mjs");
+// wake_up: you're back at the Mac after a long break, and Boop wakes up for
+// you. One flip-book for all 13 drawn moods: the eyes droop, a big yawn with
+// both mitts up, a long stretch (a joint creaks), a little shake, then the
+// mood's own face, awake, with a hop and its own flourish, and a blink. It
+// starts and ends on the mood's resting face, so it plays over any look.
+
+const oldMoods=Object.keys(acting);
+// A mood's pace, gain, pitch and character: the older moods' acting, or the
+// newer ones' profile.
+const profile=mood=>acting[mood]??moodProfiles[mood];
+const hop={happy:6,excited:10,proud:4,curious:4,determined:3,grumpy:2,sad:1,calm:2,engaged:4,annoyed:1,irritated:3,whiny:2,wounded:1};
+// What each mood does once it's awake: sparkles, a huff, or a tear; or
+// nothing, its face says it.
+const flourish={happy:'sparkle',excited:'sparkle',proud:'sparkle',grumpy:'huff',annoyed:'huff',irritated:'huff',sad:'tear',whiny:'tear',wounded:'tear'};
+
+const wakeAdditions=[...oldMoods,...newMoods].map(mood=>({
+ id:`${mood}.wake_up.01`,mood,state:'wake_up',variation:1,action:'stretch-yawn',name:'Good morning',
+ caption:'Eyes droop, a big yawn with both mitts up, a long stretch and a shake, then awake in the mood with a hop.',
+ seconds:Number((5.6*profile(mood).pace).toFixed(3)),
+ renderer:'wake-v1',approval:'Review candidate'
+}));
+
+// Each step is one pose and the contact sound that goes with it, if any.
+function wakePlan(a){
+ const steps=[],add=(u,pose,effect=null,gain=.5)=>steps.push({at:round(u*a.seconds),pose,effect,gain});
+ add(0,'home');add(.08,'droop');add(.18,'inhale');add(.30,'yawn');add(.42,'stretch','creak',.34);add(.56,'release');
+ add(.66,'shake-left');add(.71,'shake-right');add(.76,'shake-left');
+ add(.84,'awake',flourish[a.mood]==='sparkle'?'sprinkle':'pop',.42);add(.93,'blink');add(.98,'home');add(1,'home');
+ // A line said over it starts once Boop is awake, not mid-yawn.
+ return {steps,voiceAt:steps.find(s=>s.pose==='awake').at,policy:'entry',intervalSeconds:0};
+}
+
+// The sleepy faces are shared: the mood comes back when Boop wakes. `y` lines
+// them up with the mood's own face (the newer moods sit a little higher).
+const sleepyEyes={
+ heavy:y=>block(68,94+y,40,16)+block(212,94+y,40,16),
+ squeeze:y=>[[0,0],[12,8],[24,16],[12,24],[0,32]].map(([dx,dy])=>rect(72+dx,82+y+dy,12,8)+rect(236-dx,82+y+dy,12,8)).join(''),
+ shut:y=>block(68,99+y,40,5)+block(212,99+y,40,5)
+};
+const sleepyMouth={
+ o:y=>path(`M152 ${128+y}h16v16h-16Zm4 4v8h8v-8Z`,P.ink),
+ yawn:y=>block(140,120+y,40,42)+rect(146,126+y,28,30,P.dark)+rect(150,148+y,20,8,P.cheek),
+ wide:y=>block(136,114+y,48,50)+rect(142,120+y,36,38,P.dark)+rect(148,150+y,24,8,P.cheek),
+ mm:y=>rect(150,134+y,20,4)+rect(146,130+y,4,4)+rect(170,130+y,4,4)
+};
+function sleepyFace(eyes,mouth,y){
+ const cheeks=[51,69,237,255].map(x=>block(x,124+y,14,9,P.cheek)).join('');
+ return group(sleepyEyes[eyes](y)+group(sleepyMouth[mouth](y),'data-part="mouth"')+cheeks,'data-part="face"');
+}
+// The mood's own face, at rest, or blinking: the older moods' from the
+// first pack's face, the newer ones' from their flip-books.
+function ownFace(mood,blink){
+ if(!oldMoods.includes(mood))return moodFace({mood,state:'wake_up'},0,blink);
+ const ctx={mood,state:'idle',quiet:false,complete:false,motion:false,ink:P.ink,bg:P.black,cheek:P.cheek};
+ if(blink)ctx.eyeOverride=block(68,99,40,5,P.ink)+block(212,99,40,5,P.ink);
+ const art=baseFace(ctx);
+ return blink?art.replace('data-part="face"','data-part="face" data-blink="1"'):art;
+}
+// Where the face sits in each pose; awake, it hops by its mood's own height.
+const offsets={home:[0,0],droop:[0,4],inhale:[0,2],yawn:[0,-4],stretch:[0,-8],release:[0,2],'shake-left':[-5,0],'shake-right':[5,0],blink:[0,0]};
+function faceFor(a,pose){
+ const y=oldMoods.includes(a.mood)?0:-6,[dx,dy]=pose==='awake'?[0,-hop[a.mood]]:offsets[pose];
+ const art={home:()=>ownFace(a.mood,false),awake:()=>ownFace(a.mood,false),blink:()=>ownFace(a.mood,true),
+  droop:()=>sleepyFace('heavy','o',y),inhale:()=>sleepyFace('squeeze','o',y),yawn:()=>sleepyFace('squeeze','yawn',y),
+  stretch:()=>sleepyFace('squeeze','wide',y),release:()=>sleepyFace('shut','mm',y),
+  'shake-left':()=>sleepyFace('shut','mm',y),'shake-right':()=>sleepyFace('shut','mm',y)}[pose]();
+ return at(dx,dy,art);
+}
+// The mitts, the yawn's tear and the waking flourish, around the face.
+function props(a,pose){
+ switch(pose){
+  case 'inhale':return pad(40,138)+pad(252,138);
+  case 'yawn':return pad(48,24)+pad(244,24);
+  case 'stretch':return pad(26,8)+pad(266,8)+rect(64,40,6,6,P.dim)+rect(250,40,6,6,P.dim)+rect(58,52,4,4,P.dim)+rect(258,52,4,4,P.dim);
+  case 'release':return pad(44,92)+pad(248,92)+rect(114,108,6,6,P.lightWater);
+  case 'shake-left':case 'shake-right':{const k=pose==='shake-left'?-1:1;return rect(160+k*112,70,6,6,P.dim)+rect(160+k*120,86,4,4,P.dim)+rect(160+k*112,102,6,6,P.dim);}
+  case 'awake':{
+   const f=flourish[a.mood];
+   if(f==='sparkle')return star(36,36,16,P.amber)+star(266,30,16,P.amber)+star(280,62,8,P.amber);
+   if(f==='huff')return rect(196,140,6,6,P.dim)+rect(206,134,6,6,P.dim)+rect(214,144,4,4,P.dim);
+   if(f==='tear')return rect(84,120,6,6,P.blue)+rect(86,132,4,4,P.lightWater);
+   return '';
+  }
+  default:return '';
+ }
+}
+function renderWakeScene(a){
+ const plan=wakePlan(a),id='boop-wake-'+a.id.replaceAll('.','-');
+ const art=frames(a,plan,s=>faceFor(a,s.pose),'wake-face')+frames(a,plan,s=>props(a,s.pose),'wake-action');
+ const still=faceFor(a,'awake')+props(a,'awake');
+ return sceneSvg(a,id,a.caption,art,still);
+}
+function wakeScore(a){
+ const plan=wakePlan(a),pace=profile(a.mood);
+ const events=plan.steps.flatMap((s,i)=>s.effect?[{at:s.at,effect:s.effect,gain:round(s.gain*pace.gain),pitch:pace.pitch,label:`${a.action} · ${s.pose}`,sync:{part:'wake-action',step:i,pose:s.pose}}]:[]);
+ for(const e of events)if(!effects[e.effect])throw new Error('Missing effect '+e.effect);
+ return {id:a.id,seconds:a.seconds,policy:plan.policy,intervalSeconds:plan.intervalSeconds,voiceSeconds:plan.voiceAt,character:pace.character,description:a.caption+' A creak on the stretch and a pop as it wakes; no speech or music bed.',events,tailSeconds:round(Math.max(0,...events.map(e=>e.at+effects[e.effect].duration-a.seconds)))};
+}
+
+return {wakeAdditions,wakePlan,renderWakeScene,wakeScore};}};const cache={};function load(id){if(!cache[id]){if(!modules[id])throw new Error('Missing module '+id);cache[id]=modules[id]();}return cache[id];}return {...load('bank.mjs'),...load('catalog.mjs'),...load('player.mjs'),...load('state-catalog.mjs'),...load('mood-catalog.mjs'),...load('mood-art.mjs'),states:load('state-catalog.mjs').stateOrder};})();

@@ -340,4 +340,21 @@ final class PresenceRuntimeTests: XCTestCase {
         XCTAssertEqual(presence(runtime).last, "end input")
         runtime.stop()
     }
+
+    /// A demo's `back` is a break of its length at once: the away the
+    /// detector would have made that long before, and the back, both the
+    /// demo's. The view hears the break's band, as from a real one.
+    func testADemosBackIsABreakOfItsLength() throws {
+        let clock = VirtualClock(presenceT0)
+        let runtime = try makeRuntime(clock: clock)
+        let script = try DemoScript(#"{"you": "back", "minutes": 600, "after": 0}"#)
+        runtime.home.sync { runtime.play(script, live: true) }
+        for _ in 0..<20 where presence(runtime).count < 2 { Thread.sleep(forTimeInterval: 0.05) }
+        XCTAssertEqual(presence(runtime), ["start demo", "end demo"])
+        let back = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
+        XCTAssertEqual(back.line, "You came back to the Mac after a very long break.")
+        XCTAssertFalse(runtime.home.sync { runtime.pipeline.away }, "back, not away")
+        XCTAssertNil(back.about, "a back is about no thread, so a wake-up for it names nobody's turn")
+        runtime.stop()
+    }
 }

@@ -8,7 +8,7 @@ struct FacegenFrame {
   uint8_t mood, state, variant;
   uint32_t t, crc;
 };
-static const FacegenFrame kFacegenFrames[8256] = {
+static const FacegenFrame kFacegenFrames[8410] = {
   {0, 0, 0, 0, 0x311ff377u},  // happy idle 1
   {0, 0, 0, 150, 0x311ff377u},  // happy idle 1
   {0, 0, 0, 420, 0x311ff377u},  // happy idle 1
@@ -520,6 +520,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {0, 21, 0, 5500, 0x7b76eed3u},  // happy tap_spam 1
   {0, 21, 0, 7300, 0x171f551au},  // happy tap_spam 1
   {0, 21, 0, 9900, 0x14cc0cc7u},  // happy tap_spam 1
+  {0, 22, 0, 0, 0x646f5b40u},  // happy wake_up 1
+  {0, 22, 0, 150, 0x646f5b40u},  // happy wake_up 1
+  {0, 22, 0, 420, 0x646f5b40u},  // happy wake_up 1
+  {0, 22, 0, 700, 0xcd09ecfdu},  // happy wake_up 1
+  {0, 22, 0, 1100, 0xf1dc0b42u},  // happy wake_up 1
+  {0, 22, 0, 1650, 0xf1dc0b42u},  // happy wake_up 1
+  {0, 22, 0, 2300, 0xf81f62f2u},  // happy wake_up 1
+  {0, 22, 0, 3100, 0x12da14a6u},  // happy wake_up 1
+  {0, 22, 0, 4200, 0x0ab8da25u},  // happy wake_up 1
+  {0, 22, 0, 5500, 0x646f5b40u},  // happy wake_up 1
+  {0, 22, 0, 7300, 0xf81f62f2u},  // happy wake_up 1
+  {0, 22, 0, 9900, 0x182ae580u},  // happy wake_up 1
   {1, 0, 0, 0, 0x5672d5f6u},  // excited idle 1
   {1, 0, 0, 150, 0x5672d5f6u},  // excited idle 1
   {1, 0, 0, 420, 0x5672d5f6u},  // excited idle 1
@@ -960,6 +972,17 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {1, 21, 0, 5500, 0xa91248f2u},  // excited tap_spam 1
   {1, 21, 0, 7300, 0x6b350bb7u},  // excited tap_spam 1
   {1, 21, 0, 9900, 0x601811a4u},  // excited tap_spam 1
+  {1, 22, 0, 0, 0x5672d5f6u},  // excited wake_up 1
+  {1, 22, 0, 150, 0x5672d5f6u},  // excited wake_up 1
+  {1, 22, 0, 420, 0xcd09ecfdu},  // excited wake_up 1
+  {1, 22, 0, 700, 0xcd09ecfdu},  // excited wake_up 1
+  {1, 22, 0, 1100, 0xf1dc0b42u},  // excited wake_up 1
+  {1, 22, 0, 1650, 0xf81f62f2u},  // excited wake_up 1
+  {1, 22, 0, 2300, 0x12da14a6u},  // excited wake_up 1
+  {1, 22, 0, 4200, 0xd872efcau},  // excited wake_up 1
+  {1, 22, 0, 5500, 0xf1dc0b42u},  // excited wake_up 1
+  {1, 22, 0, 7300, 0x182ae580u},  // excited wake_up 1
+  {1, 22, 0, 9900, 0xf1dc0b42u},  // excited wake_up 1
   {2, 0, 0, 0, 0x17143c96u},  // proud idle 1
   {2, 0, 0, 150, 0x17143c96u},  // proud idle 1
   {2, 0, 0, 420, 0x17143c96u},  // proud idle 1
@@ -1080,9 +1103,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {2, 2, 1, 9900, 0x6c712b44u},  // proud needs_you 2
   {2, 2, 2, 0, 0x4918de93u},  // proud needs_you 3
   {2, 2, 2, 150, 0x4918de93u},  // proud needs_you 3
-  {2, 2, 2, 420, 0xf56c7aabu},  // proud needs_you 3
+  {2, 2, 2, 420, 0x4dc095a1u},  // proud needs_you 3
   {2, 2, 2, 700, 0x4918de93u},  // proud needs_you 3
-  {2, 2, 2, 1100, 0x3230c1e2u},  // proud needs_you 3
+  {2, 2, 2, 1100, 0x8a9c2ee8u},  // proud needs_you 3
   {2, 2, 2, 1650, 0x26d8addcu},  // proud needs_you 3
   {2, 2, 2, 2300, 0xf19270cdu},  // proud needs_you 3
   {2, 2, 2, 3100, 0xa1046bbfu},  // proud needs_you 3
@@ -1416,6 +1439,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {2, 21, 0, 5500, 0x2f6dac1fu},  // proud tap_spam 1
   {2, 21, 0, 7300, 0xcc28d941u},  // proud tap_spam 1
   {2, 21, 0, 9900, 0x2f6dac1fu},  // proud tap_spam 1
+  {2, 22, 0, 0, 0xfe08b7b1u},  // proud wake_up 1
+  {2, 22, 0, 150, 0xfe08b7b1u},  // proud wake_up 1
+  {2, 22, 0, 420, 0xfe08b7b1u},  // proud wake_up 1
+  {2, 22, 0, 700, 0xcd09ecfdu},  // proud wake_up 1
+  {2, 22, 0, 1100, 0xcd09ecfdu},  // proud wake_up 1
+  {2, 22, 0, 1650, 0xf1dc0b42u},  // proud wake_up 1
+  {2, 22, 0, 2300, 0xf81f62f2u},  // proud wake_up 1
+  {2, 22, 0, 3100, 0x12da14a6u},  // proud wake_up 1
+  {2, 22, 0, 4200, 0x182ae580u},  // proud wake_up 1
+  {2, 22, 0, 5500, 0x9298a3b3u},  // proud wake_up 1
+  {2, 22, 0, 7300, 0xcd09ecfdu},  // proud wake_up 1
+  {2, 22, 0, 9900, 0x6ff875c6u},  // proud wake_up 1
   {3, 0, 0, 0, 0xf8e58699u},  // curious idle 1
   {3, 0, 0, 150, 0xf8e58699u},  // curious idle 1
   {3, 0, 0, 420, 0xf8e58699u},  // curious idle 1
@@ -1869,6 +1904,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {3, 21, 0, 5500, 0xb5b00b2eu},  // curious tap_spam 1
   {3, 21, 0, 7300, 0xc8d47cb5u},  // curious tap_spam 1
   {3, 21, 0, 9900, 0xe2b5a4d6u},  // curious tap_spam 1
+  {3, 22, 0, 0, 0xf8e58699u},  // curious wake_up 1
+  {3, 22, 0, 150, 0xf8e58699u},  // curious wake_up 1
+  {3, 22, 0, 420, 0xf8e58699u},  // curious wake_up 1
+  {3, 22, 0, 700, 0xcd09ecfdu},  // curious wake_up 1
+  {3, 22, 0, 1100, 0xf1dc0b42u},  // curious wake_up 1
+  {3, 22, 0, 1650, 0xf1dc0b42u},  // curious wake_up 1
+  {3, 22, 0, 2300, 0xf81f62f2u},  // curious wake_up 1
+  {3, 22, 0, 3100, 0x12da14a6u},  // curious wake_up 1
+  {3, 22, 0, 4200, 0x182ae580u},  // curious wake_up 1
+  {3, 22, 0, 5500, 0xb1570033u},  // curious wake_up 1
+  {3, 22, 0, 7300, 0xf1dc0b42u},  // curious wake_up 1
+  {3, 22, 0, 9900, 0x6ff875c6u},  // curious wake_up 1
   {4, 0, 0, 0, 0xceee6c8eu},  // determined idle 1
   {4, 0, 0, 150, 0xceee6c8eu},  // determined idle 1
   {4, 0, 0, 420, 0xceee6c8eu},  // determined idle 1
@@ -2322,6 +2369,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {4, 21, 0, 5500, 0x55ec0889u},  // determined tap_spam 1
   {4, 21, 0, 7300, 0xea84fc64u},  // determined tap_spam 1
   {4, 21, 0, 9900, 0x55ec0889u},  // determined tap_spam 1
+  {4, 22, 0, 0, 0xceee6c8eu},  // determined wake_up 1
+  {4, 22, 0, 150, 0xceee6c8eu},  // determined wake_up 1
+  {4, 22, 0, 420, 0xcd09ecfdu},  // determined wake_up 1
+  {4, 22, 0, 700, 0xcd09ecfdu},  // determined wake_up 1
+  {4, 22, 0, 1100, 0xf1dc0b42u},  // determined wake_up 1
+  {4, 22, 0, 1650, 0xf81f62f2u},  // determined wake_up 1
+  {4, 22, 0, 2300, 0x12da14a6u},  // determined wake_up 1
+  {4, 22, 0, 3100, 0x6ff875c6u},  // determined wake_up 1
+  {4, 22, 0, 4200, 0x182ae580u},  // determined wake_up 1
+  {4, 22, 0, 5500, 0xceee6c8eu},  // determined wake_up 1
+  {4, 22, 0, 7300, 0xf81f62f2u},  // determined wake_up 1
+  {4, 22, 0, 9900, 0x55d5111fu},  // determined wake_up 1
   {5, 0, 0, 0, 0x006cd810u},  // grumpy idle 1
   {5, 0, 0, 150, 0x006cd810u},  // grumpy idle 1
   {5, 0, 0, 420, 0x006cd810u},  // grumpy idle 1
@@ -2415,8 +2474,8 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {5, 2, 0, 9900, 0x3bc07708u},  // grumpy needs_you 1
   {5, 2, 1, 0, 0x3bc07708u},  // grumpy needs_you 2
   {5, 2, 1, 150, 0x3bc07708u},  // grumpy needs_you 2
-  {5, 2, 1, 420, 0x7d98047au},  // grumpy needs_you 2
-  {5, 2, 1, 1100, 0xc1fdbaceu},  // grumpy needs_you 2
+  {5, 2, 1, 420, 0x5d286014u},  // grumpy needs_you 2
+  {5, 2, 1, 1100, 0x3ec10ae0u},  // grumpy needs_you 2
   {5, 2, 1, 1650, 0xd210048eu},  // grumpy needs_you 2
   {5, 2, 1, 2300, 0xb6d72b34u},  // grumpy needs_you 2
   {5, 2, 1, 3100, 0x412d2e57u},  // grumpy needs_you 2
@@ -2759,230 +2818,254 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {5, 21, 0, 5500, 0xc2d8c522u},  // grumpy tap_spam 1
   {5, 21, 0, 7300, 0x98448ff2u},  // grumpy tap_spam 1
   {5, 21, 0, 9900, 0xe0a22efbu},  // grumpy tap_spam 1
-  {6, 0, 0, 0, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 150, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 420, 0x4fec5874u},  // sad idle 1
-  {6, 0, 0, 700, 0x3e8c4926u},  // sad idle 1
-  {6, 0, 0, 1100, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 1650, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 2300, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 3100, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 4200, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 5500, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 7300, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 0, 9900, 0x3247f9bfu},  // sad idle 1
-  {6, 0, 1, 0, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 150, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 420, 0x4fec5874u},  // sad idle 2
-  {6, 0, 1, 700, 0x3e8c4926u},  // sad idle 2
-  {6, 0, 1, 1100, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 1650, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 2300, 0x18fb795du},  // sad idle 2
-  {6, 0, 1, 3100, 0x18fb795du},  // sad idle 2
-  {6, 0, 1, 4200, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 5500, 0x3247f9bfu},  // sad idle 2
-  {6, 0, 1, 7300, 0xe0e66591u},  // sad idle 2
-  {6, 0, 1, 9900, 0xe0e66591u},  // sad idle 2
-  {6, 0, 2, 0, 0x3247f9bfu},  // sad idle 3
-  {6, 0, 2, 150, 0x3247f9bfu},  // sad idle 3
-  {6, 0, 2, 420, 0x3247f9bfu},  // sad idle 3
-  {6, 0, 2, 700, 0x3e8c4926u},  // sad idle 3
-  {6, 0, 2, 1100, 0x3247f9bfu},  // sad idle 3
-  {6, 0, 2, 1650, 0xa1460271u},  // sad idle 3
-  {6, 0, 2, 2300, 0xa1460271u},  // sad idle 3
-  {6, 0, 2, 3100, 0x69abfd81u},  // sad idle 3
-  {6, 0, 2, 4200, 0xc4c63a98u},  // sad idle 3
-  {6, 0, 2, 5500, 0xc4c63a98u},  // sad idle 3
-  {6, 0, 2, 7300, 0x05f0ac22u},  // sad idle 3
-  {6, 1, 0, 0, 0x9849dd38u},  // sad working 1
-  {6, 1, 0, 700, 0xf6448453u},  // sad working 1
-  {6, 1, 1, 0, 0x6cc4aaa9u},  // sad working 2
-  {6, 1, 2, 0, 0xbfd91f44u},  // sad working 3
-  {6, 1, 2, 150, 0xbfd91f44u},  // sad working 3
-  {6, 1, 2, 420, 0xdaebdba4u},  // sad working 3
-  {6, 1, 2, 1100, 0xe5bdc9d3u},  // sad working 3
-  {6, 1, 2, 1650, 0x51027a74u},  // sad working 3
-  {6, 1, 2, 2300, 0x566d47b9u},  // sad working 3
-  {6, 1, 2, 3100, 0xce94161cu},  // sad working 3
-  {6, 1, 2, 4200, 0x0168f123u},  // sad working 3
-  {6, 1, 2, 7300, 0x566d47b9u},  // sad working 3
-  {6, 1, 2, 9900, 0xa0124d6fu},  // sad working 3
-  {6, 1, 3, 0, 0x44254653u},  // sad working 4
-  {6, 1, 4, 0, 0x1e16055bu},  // sad working 5
-  {6, 2, 0, 0, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 150, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 420, 0x844a5042u},  // sad needs_you 1
-  {6, 2, 0, 1100, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 1650, 0xf2902974u},  // sad needs_you 1
-  {6, 2, 0, 3100, 0xf635c078u},  // sad needs_you 1
-  {6, 2, 0, 4200, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 5500, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 7300, 0xf7801b91u},  // sad needs_you 1
-  {6, 2, 0, 9900, 0x0974ddaeu},  // sad needs_you 1
-  {6, 2, 1, 0, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 150, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 420, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 700, 0x01e365e9u},  // sad needs_you 2
-  {6, 2, 1, 1100, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 1650, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 2300, 0x9c6b550fu},  // sad needs_you 2
-  {6, 2, 1, 3100, 0x5125ad72u},  // sad needs_you 2
-  {6, 2, 1, 4200, 0xae836bb0u},  // sad needs_you 2
-  {6, 2, 1, 5500, 0x844a5042u},  // sad needs_you 2
-  {6, 2, 1, 7300, 0xf7801b91u},  // sad needs_you 2
-  {6, 2, 1, 9900, 0xf4d95b04u},  // sad needs_you 2
-  {6, 2, 2, 0, 0xf7801b91u},  // sad needs_you 3
-  {6, 2, 2, 150, 0xf7801b91u},  // sad needs_you 3
-  {6, 2, 2, 420, 0xf7801b91u},  // sad needs_you 3
+  {5, 22, 0, 0, 0x006cd810u},  // grumpy wake_up 1
+  {5, 22, 0, 150, 0x006cd810u},  // grumpy wake_up 1
+  {5, 22, 0, 420, 0xcd09ecfdu},  // grumpy wake_up 1
+  {5, 22, 0, 700, 0xcd09ecfdu},  // grumpy wake_up 1
+  {5, 22, 0, 1100, 0xf1dc0b42u},  // grumpy wake_up 1
+  {5, 22, 0, 1650, 0xf81f62f2u},  // grumpy wake_up 1
+  {5, 22, 0, 2300, 0x12da14a6u},  // grumpy wake_up 1
+  {5, 22, 0, 3100, 0x0ab8da25u},  // grumpy wake_up 1
+  {5, 22, 0, 4200, 0x006cd810u},  // grumpy wake_up 1
+  {5, 22, 0, 5500, 0xf1dc0b42u},  // grumpy wake_up 1
+  {5, 22, 0, 7300, 0x0ab8da25u},  // grumpy wake_up 1
+  {5, 22, 0, 9900, 0xf81f62f2u},  // grumpy wake_up 1
+  {6, 0, 0, 0, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 150, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 420, 0xfc1c5461u},  // sad idle 1
+  {6, 0, 0, 700, 0x8d7c4533u},  // sad idle 1
+  {6, 0, 0, 1100, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 1650, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 2300, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 3100, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 4200, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 5500, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 7300, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 0, 9900, 0x81b7f5aau},  // sad idle 1
+  {6, 0, 1, 0, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 150, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 420, 0xfc1c5461u},  // sad idle 2
+  {6, 0, 1, 700, 0x8d7c4533u},  // sad idle 2
+  {6, 0, 1, 1100, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 1650, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 2300, 0xab0b7548u},  // sad idle 2
+  {6, 0, 1, 3100, 0xab0b7548u},  // sad idle 2
+  {6, 0, 1, 4200, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 5500, 0x81b7f5aau},  // sad idle 2
+  {6, 0, 1, 7300, 0x53166984u},  // sad idle 2
+  {6, 0, 1, 9900, 0x53166984u},  // sad idle 2
+  {6, 0, 2, 0, 0x81b7f5aau},  // sad idle 3
+  {6, 0, 2, 150, 0x81b7f5aau},  // sad idle 3
+  {6, 0, 2, 420, 0x81b7f5aau},  // sad idle 3
+  {6, 0, 2, 700, 0x8d7c4533u},  // sad idle 3
+  {6, 0, 2, 1100, 0x81b7f5aau},  // sad idle 3
+  {6, 0, 2, 1650, 0x95f9df2du},  // sad idle 3
+  {6, 0, 2, 2300, 0x95f9df2du},  // sad idle 3
+  {6, 0, 2, 3100, 0x5d1420ddu},  // sad idle 3
+  {6, 0, 2, 4200, 0xcbdc63f7u},  // sad idle 3
+  {6, 0, 2, 5500, 0xcbdc63f7u},  // sad idle 3
+  {6, 0, 2, 7300, 0x79687490u},  // sad idle 3
+  {6, 1, 0, 0, 0x970c6b5cu},  // sad working 1
+  {6, 1, 0, 700, 0x0561adaeu},  // sad working 1
+  {6, 1, 1, 0, 0xc8355708u},  // sad working 2
+  {6, 1, 2, 0, 0x1cea1796u},  // sad working 3
+  {6, 1, 2, 150, 0x1cea1796u},  // sad working 3
+  {6, 1, 2, 420, 0x79d8d376u},  // sad working 3
+  {6, 1, 2, 1100, 0x468ec101u},  // sad working 3
+  {6, 1, 2, 1650, 0xf23172a6u},  // sad working 3
+  {6, 1, 2, 2300, 0x7dcdced4u},  // sad working 3
+  {6, 1, 2, 3100, 0xe5349f71u},  // sad working 3
+  {6, 1, 2, 4200, 0x21f42d46u},  // sad working 3
+  {6, 1, 2, 7300, 0x7dcdced4u},  // sad working 3
+  {6, 1, 2, 9900, 0x808e910au},  // sad working 3
+  {6, 1, 3, 0, 0x4b57672cu},  // sad working 4
+  {6, 1, 4, 0, 0x936e0b05u},  // sad working 5
+  {6, 2, 0, 0, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 150, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 420, 0xc9081dd5u},  // sad needs_you 1
+  {6, 2, 0, 1100, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 1650, 0xe1e01c83u},  // sad needs_you 1
+  {6, 2, 0, 3100, 0x9c052af9u},  // sad needs_you 1
+  {6, 2, 0, 4200, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 5500, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 7300, 0xbac25606u},  // sad needs_you 1
+  {6, 2, 0, 9900, 0x44369039u},  // sad needs_you 1
+  {6, 2, 1, 0, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 150, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 420, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 700, 0x1293501eu},  // sad needs_you 2
+  {6, 2, 1, 1100, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 1650, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 2300, 0xf65bbf8eu},  // sad needs_you 2
+  {6, 2, 1, 3100, 0xda051962u},  // sad needs_you 2
+  {6, 2, 1, 4200, 0xe3c12627u},  // sad needs_you 2
+  {6, 2, 1, 5500, 0xc9081dd5u},  // sad needs_you 2
+  {6, 2, 1, 7300, 0xbac25606u},  // sad needs_you 2
+  {6, 2, 1, 9900, 0x9ee9b185u},  // sad needs_you 2
+  {6, 2, 2, 0, 0xbac25606u},  // sad needs_you 3
+  {6, 2, 2, 150, 0xbac25606u},  // sad needs_you 3
+  {6, 2, 2, 420, 0xbac25606u},  // sad needs_you 3
   {6, 2, 2, 700, 0x3b4dede5u},  // sad needs_you 3
-  {6, 2, 2, 1100, 0xfab9862eu},  // sad needs_you 3
-  {6, 2, 2, 1650, 0xf7801b91u},  // sad needs_you 3
-  {6, 2, 2, 2300, 0xf7801b91u},  // sad needs_you 3
-  {6, 2, 2, 3100, 0x458d2082u},  // sad needs_you 3
-  {6, 2, 2, 4200, 0x8e45c54eu},  // sad needs_you 3
-  {6, 2, 2, 5500, 0xf7801b91u},  // sad needs_you 3
+  {6, 2, 2, 1100, 0xc5b41daeu},  // sad needs_you 3
+  {6, 2, 2, 1650, 0xbac25606u},  // sad needs_you 3
+  {6, 2, 2, 2300, 0xbac25606u},  // sad needs_you 3
+  {6, 2, 2, 3100, 0x2fbdca03u},  // sad needs_you 3
+  {6, 2, 2, 4200, 0x21c3d96au},  // sad needs_you 3
+  {6, 2, 2, 5500, 0xbac25606u},  // sad needs_you 3
   {6, 2, 2, 7300, 0xc9e9c574u},  // sad needs_you 3
-  {6, 2, 2, 9900, 0x319e7a84u},  // sad needs_you 3
-  {6, 3, 0, 0, 0x583aa5c5u},  // sad task_complete 1
-  {6, 3, 0, 150, 0x583aa5c5u},  // sad task_complete 1
-  {6, 3, 0, 420, 0x5b50db91u},  // sad task_complete 1
-  {6, 3, 0, 1100, 0x29e0f04fu},  // sad task_complete 1
-  {6, 3, 0, 1650, 0x12c5bf70u},  // sad task_complete 1
-  {6, 3, 0, 2300, 0x8287ca85u},  // sad task_complete 1
-  {6, 3, 0, 3100, 0x660a9e1eu},  // sad task_complete 1
-  {6, 3, 0, 5500, 0x9548989au},  // sad task_complete 1
-  {6, 3, 0, 9900, 0x3fc9fe91u},  // sad task_complete 1
-  {6, 3, 1, 0, 0x79784c47u},  // sad task_complete 2
-  {6, 3, 1, 150, 0x79784c47u},  // sad task_complete 2
-  {6, 3, 1, 420, 0xe7dd22f5u},  // sad task_complete 2
+  {6, 2, 2, 9900, 0x5bae9005u},  // sad needs_you 3
+  {6, 3, 0, 0, 0x38ba2769u},  // sad task_complete 1
+  {6, 3, 0, 150, 0x38ba2769u},  // sad task_complete 1
+  {6, 3, 0, 420, 0x3bd0593du},  // sad task_complete 1
+  {6, 3, 0, 1100, 0x496072e3u},  // sad task_complete 1
+  {6, 3, 0, 1650, 0x72453ddcu},  // sad task_complete 1
+  {6, 3, 0, 2300, 0xd3e11f7cu},  // sad task_complete 1
+  {6, 3, 0, 3100, 0x17950fe1u},  // sad task_complete 1
+  {6, 3, 0, 5500, 0x050c1816u},  // sad task_complete 1
+  {6, 3, 0, 9900, 0x4e566f6eu},  // sad task_complete 1
+  {6, 3, 1, 0, 0xe93ccccbu},  // sad task_complete 2
+  {6, 3, 1, 150, 0xe93ccccbu},  // sad task_complete 2
+  {6, 3, 1, 420, 0x7799a279u},  // sad task_complete 2
   {6, 3, 1, 700, 0x2de9229cu},  // sad task_complete 2
-  {6, 3, 1, 1100, 0xf4fa7b84u},  // sad task_complete 2
-  {6, 3, 1, 1650, 0xd1554667u},  // sad task_complete 2
-  {6, 3, 1, 2300, 0x69eea6e7u},  // sad task_complete 2
-  {6, 3, 1, 3100, 0x0a13f009u},  // sad task_complete 2
-  {6, 3, 1, 5500, 0xfc325fbeu},  // sad task_complete 2
-  {6, 3, 1, 7300, 0x79784c47u},  // sad task_complete 2
-  {6, 3, 1, 9900, 0x290b2f81u},  // sad task_complete 2
-  {6, 3, 2, 0, 0x5003c9d1u},  // sad task_complete 3
-  {6, 3, 2, 150, 0x5003c9d1u},  // sad task_complete 3
-  {6, 3, 2, 420, 0x7b6b16c2u},  // sad task_complete 3
-  {6, 3, 2, 700, 0x573e463cu},  // sad task_complete 3
-  {6, 3, 2, 1100, 0xb95d4339u},  // sad task_complete 3
-  {6, 3, 2, 1650, 0x01fa392eu},  // sad task_complete 3
-  {6, 3, 2, 2300, 0x8038efceu},  // sad task_complete 3
-  {6, 3, 2, 3100, 0x4918ca34u},  // sad task_complete 3
-  {6, 3, 2, 5500, 0x9d84be85u},  // sad task_complete 3
-  {6, 3, 2, 7300, 0xb95d4339u},  // sad task_complete 3
-  {6, 3, 2, 9900, 0x43474d69u},  // sad task_complete 3
-  {6, 3, 3, 0, 0xdb13168bu},  // sad task_complete 4
-  {6, 3, 3, 150, 0xa902421eu},  // sad task_complete 4
-  {6, 3, 3, 420, 0x3939b8d0u},  // sad task_complete 4
-  {6, 3, 3, 1100, 0xb2392c14u},  // sad task_complete 4
-  {6, 3, 3, 2300, 0xfc1c97f8u},  // sad task_complete 4
-  {6, 3, 3, 4200, 0x0de8aed2u},  // sad task_complete 4
-  {6, 3, 3, 5500, 0x9816d426u},  // sad task_complete 4
-  {6, 3, 3, 7300, 0xf7dfd393u},  // sad task_complete 4
-  {6, 3, 3, 9900, 0xc975fd85u},  // sad task_complete 4
-  {6, 3, 4, 0, 0xc8828b07u},  // sad task_complete 5
-  {6, 3, 4, 150, 0xca6be4cbu},  // sad task_complete 5
-  {6, 3, 4, 700, 0xc31ebe27u},  // sad task_complete 5
-  {6, 3, 4, 1100, 0x48bc33d8u},  // sad task_complete 5
-  {6, 3, 4, 1650, 0x75aa1ba9u},  // sad task_complete 5
-  {6, 3, 4, 2300, 0xd06a2aa8u},  // sad task_complete 5
-  {6, 3, 4, 3100, 0x40646bf0u},  // sad task_complete 5
-  {6, 3, 4, 4200, 0x92e4b104u},  // sad task_complete 5
-  {6, 3, 4, 5500, 0xe7a1693cu},  // sad task_complete 5
-  {6, 6, 0, 0, 0xbed6fa8eu},  // sad listening 1
-  {6, 6, 0, 150, 0xbed6fa8eu},  // sad listening 1
-  {6, 6, 0, 420, 0xbed6fa8eu},  // sad listening 1
-  {6, 6, 0, 700, 0xbed6fa8eu},  // sad listening 1
-  {6, 6, 0, 1100, 0x5a7b31dfu},  // sad listening 1
-  {6, 6, 0, 1650, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 0, 2300, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 0, 3100, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 0, 4200, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 0, 5500, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 0, 7300, 0x5a7b31dfu},  // sad listening 1
-  {6, 6, 0, 9900, 0xda22c4e1u},  // sad listening 1
-  {6, 6, 1, 0, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 150, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 420, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 700, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 1100, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 1650, 0xaeb326c9u},  // sad listening 2
-  {6, 6, 1, 2300, 0xaeb326c9u},  // sad listening 2
-  {6, 6, 1, 3100, 0x008a6c06u},  // sad listening 2
-  {6, 6, 1, 4200, 0x008a6c06u},  // sad listening 2
-  {6, 6, 1, 5500, 0x008a6c06u},  // sad listening 2
-  {6, 6, 1, 7300, 0xe677dc94u},  // sad listening 2
-  {6, 6, 1, 9900, 0x008a6c06u},  // sad listening 2
-  {6, 6, 2, 0, 0x03691977u},  // sad listening 3
-  {6, 6, 2, 150, 0x03691977u},  // sad listening 3
-  {6, 6, 2, 420, 0x03691977u},  // sad listening 3
-  {6, 6, 2, 700, 0xce2f7b77u},  // sad listening 3
-  {6, 6, 2, 1100, 0xc592c7fdu},  // sad listening 3
-  {6, 6, 2, 1650, 0x67d628f2u},  // sad listening 3
-  {6, 6, 2, 2300, 0x3204e590u},  // sad listening 3
-  {6, 6, 2, 3100, 0x09bbd4b8u},  // sad listening 3
-  {6, 6, 2, 4200, 0xdb364578u},  // sad listening 3
-  {6, 6, 2, 5500, 0x04b267d5u},  // sad listening 3
-  {6, 6, 2, 7300, 0x03691977u},  // sad listening 3
-  {6, 6, 2, 9900, 0x09bbd4b8u},  // sad listening 3
-  {6, 7, 0, 0, 0xef9aacedu},  // sad starting 1
-  {6, 7, 0, 420, 0x20140a89u},  // sad starting 1
-  {6, 7, 1, 0, 0xef9aacedu},  // sad starting 2
-  {6, 7, 1, 420, 0x20140a89u},  // sad starting 2
-  {6, 7, 2, 0, 0xef9aacedu},  // sad starting 3
-  {6, 7, 2, 420, 0x20140a89u},  // sad starting 3
-  {6, 7, 3, 0, 0xef9aacedu},  // sad starting 4
-  {6, 7, 3, 420, 0x20140a89u},  // sad starting 4
-  {6, 8, 0, 0, 0x169cb533u},  // sad planning 1
-  {6, 9, 0, 0, 0x1b76c9a7u},  // sad terminal 1
-  {6, 9, 0, 420, 0xc88f97feu},  // sad terminal 1
-  {6, 10, 0, 0, 0xbd1a98d4u},  // sad tool_use 1
-  {6, 10, 0, 9900, 0x87035eecu},  // sad tool_use 1
-  {6, 11, 0, 0, 0xd3cf4cbbu},  // sad searching 1
-  {6, 12, 0, 0, 0xc330f743u},  // sad analyzing 1
-  {6, 13, 0, 0, 0x5465af8au},  // sad testing 1
-  {6, 13, 0, 9900, 0x4c423292u},  // sad testing 1
-  {6, 14, 0, 0, 0x5a9807c9u},  // sad delegating 1
-  {6, 14, 0, 9900, 0xbb0370c6u},  // sad delegating 1
-  {6, 14, 1, 0, 0xaffcb018u},  // sad delegating 2
-  {6, 15, 0, 0, 0xba3989c0u},  // sad helper_return 1
-  {6, 15, 0, 1650, 0xb2e6328bu},  // sad helper_return 1
-  {6, 15, 1, 0, 0x89153b08u},  // sad helper_return 2
-  {6, 16, 0, 0, 0xb6623591u},  // sad waiting 1
-  {6, 16, 0, 150, 0xb48b5a5du},  // sad waiting 1
-  {6, 16, 0, 420, 0x64dc802bu},  // sad waiting 1
-  {6, 16, 0, 1100, 0x7f25f582u},  // sad waiting 1
-  {6, 16, 0, 2300, 0x1429f16du},  // sad waiting 1
-  {6, 16, 0, 3100, 0xb8b385f8u},  // sad waiting 1
-  {6, 16, 0, 4200, 0x42f7ac72u},  // sad waiting 1
-  {6, 17, 0, 0, 0x2bc7b589u},  // sad reply_ready 1
-  {6, 17, 0, 1650, 0x26e2a5b4u},  // sad reply_ready 1
-  {6, 18, 0, 0, 0x28d607dfu},  // sad error 1
-  {6, 18, 0, 420, 0xff8b204eu},  // sad error 1
-  {6, 19, 0, 0, 0x5b0dfe07u},  // sad stopped 1
-  {6, 19, 0, 1650, 0x21953ca0u},  // sad stopped 1
-  {6, 20, 0, 0, 0x161dfe1bu},  // sad poked 1
-  {6, 20, 0, 150, 0x14f491d7u},  // sad poked 1
-  {6, 20, 0, 700, 0xf3a5228du},  // sad poked 1
-  {6, 20, 0, 1100, 0xdd4e2d06u},  // sad poked 1
-  {6, 20, 0, 1650, 0x868585d3u},  // sad poked 1
-  {6, 20, 0, 2300, 0x49dfa84au},  // sad poked 1
-  {6, 20, 0, 3100, 0x0c23b3e7u},  // sad poked 1
-  {6, 20, 0, 4200, 0x1db800a0u},  // sad poked 1
-  {6, 20, 0, 7300, 0x3613cbf5u},  // sad poked 1
-  {6, 20, 0, 9900, 0xb8b134bdu},  // sad poked 1
-  {6, 21, 0, 0, 0x161dfe1bu},  // sad tap_spam 1
-  {6, 21, 0, 150, 0x14f491d7u},  // sad tap_spam 1
-  {6, 21, 0, 420, 0x33302576u},  // sad tap_spam 1
-  {6, 21, 0, 700, 0x08309662u},  // sad tap_spam 1
-  {6, 21, 0, 1650, 0x731c3445u},  // sad tap_spam 1
-  {6, 21, 0, 2300, 0xdcbcb264u},  // sad tap_spam 1
-  {6, 21, 0, 4200, 0xd03f68b5u},  // sad tap_spam 1
-  {6, 21, 0, 5500, 0x4ea4e29fu},  // sad tap_spam 1
-  {6, 21, 0, 9900, 0x818f6eacu},  // sad tap_spam 1
+  {6, 3, 1, 1100, 0x13eddc60u},  // sad task_complete 2
+  {6, 3, 1, 1650, 0x3642e183u},  // sad task_complete 2
+  {6, 3, 1, 2300, 0x7903a91au},  // sad task_complete 2
+  {6, 3, 1, 3100, 0x75dc48abu},  // sad task_complete 2
+  {6, 3, 1, 5500, 0x6c76df32u},  // sad task_complete 2
+  {6, 3, 1, 7300, 0xe93ccccbu},  // sad task_complete 2
+  {6, 3, 1, 9900, 0x39e6207cu},  // sad task_complete 2
+  {6, 3, 2, 0, 0x46c44eb7u},  // sad task_complete 3
+  {6, 3, 2, 150, 0x46c44eb7u},  // sad task_complete 3
+  {6, 3, 2, 420, 0x6dac91a4u},  // sad task_complete 3
+  {6, 3, 2, 700, 0x41f9c15au},  // sad task_complete 3
+  {6, 3, 2, 1100, 0xb6471a56u},  // sad task_complete 3
+  {6, 3, 2, 1650, 0x0ee06041u},  // sad task_complete 3
+  {6, 3, 2, 2300, 0x8f22b6a1u},  // sad task_complete 3
+  {6, 3, 2, 3100, 0x2aca215au},  // sad task_complete 3
+  {6, 3, 2, 5500, 0x0dc03e09u},  // sad task_complete 3
+  {6, 3, 2, 7300, 0xb6471a56u},  // sad task_complete 3
+  {6, 3, 2, 9900, 0x2095a607u},  // sad task_complete 3
+  {6, 3, 3, 0, 0xb88ee859u},  // sad task_complete 4
+  {6, 3, 3, 150, 0xe28e520bu},  // sad task_complete 4
+  {6, 3, 3, 420, 0xcb9c523au},  // sad task_complete 4
+  {6, 3, 3, 1100, 0xe5e0d2c4u},  // sad task_complete 4
+  {6, 3, 3, 2300, 0xc8dfaf59u},  // sad task_complete 4
+  {6, 3, 3, 4200, 0xd0905e77u},  // sad task_complete 4
+  {6, 3, 3, 5500, 0x6b65e0b5u},  // sad task_complete 4
+  {6, 3, 3, 7300, 0x0918ff2du},  // sad task_complete 4
+  {6, 3, 3, 9900, 0xe184abe8u},  // sad task_complete 4
+  {6, 3, 4, 0, 0xab1f75d5u},  // sad task_complete 5
+  {6, 3, 4, 150, 0x49cdcfbcu},  // sad task_complete 5
+  {6, 3, 4, 700, 0xd3558cf2u},  // sad task_complete 5
+  {6, 3, 4, 1100, 0x88ea80e2u},  // sad task_complete 5
+  {6, 3, 4, 1650, 0x3c94fbfau},  // sad task_complete 5
+  {6, 3, 4, 2300, 0x1ff2c521u},  // sad task_complete 5
+  {6, 3, 4, 3100, 0x3641a22du},  // sad task_complete 5
+  {6, 3, 4, 4200, 0x63f152b1u},  // sad task_complete 5
+  {6, 3, 4, 5500, 0xfbc3775cu},  // sad task_complete 5
+  {6, 6, 0, 0, 0x8b3777a5u},  // sad listening 1
+  {6, 6, 0, 150, 0x8b3777a5u},  // sad listening 1
+  {6, 6, 0, 420, 0x8b3777a5u},  // sad listening 1
+  {6, 6, 0, 700, 0x8b3777a5u},  // sad listening 1
+  {6, 6, 0, 1100, 0x26e3e96du},  // sad listening 1
+  {6, 6, 0, 1650, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 0, 2300, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 0, 3100, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 0, 4200, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 0, 5500, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 0, 7300, 0x26e3e96du},  // sad listening 1
+  {6, 6, 0, 9900, 0x69d2c8f4u},  // sad listening 1
+  {6, 6, 1, 0, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 150, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 420, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 700, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 1100, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 1650, 0xeaea88a2u},  // sad listening 2
+  {6, 6, 1, 2300, 0xeaea88a2u},  // sad listening 2
+  {6, 6, 1, 3100, 0xb37a6013u},  // sad listening 2
+  {6, 6, 1, 4200, 0xb37a6013u},  // sad listening 2
+  {6, 6, 1, 5500, 0xb37a6013u},  // sad listening 2
+  {6, 6, 1, 7300, 0x97e84d6bu},  // sad listening 2
+  {6, 6, 1, 9900, 0xb37a6013u},  // sad listening 2
+  {6, 6, 2, 0, 0xb0991562u},  // sad listening 3
+  {6, 6, 2, 150, 0xb0991562u},  // sad listening 3
+  {6, 6, 2, 420, 0xb0991562u},  // sad listening 3
+  {6, 6, 2, 700, 0x7ddf7762u},  // sad listening 3
+  {6, 6, 2, 1100, 0x81cb6996u},  // sad listening 3
+  {6, 6, 2, 1650, 0x33f3f9dau},  // sad listening 3
+  {6, 6, 2, 2300, 0x662134b8u},  // sad listening 3
+  {6, 6, 2, 3100, 0xba4bd8adu},  // sad listening 3
+  {6, 6, 2, 4200, 0x68c6496du},  // sad listening 3
+  {6, 6, 2, 5500, 0xb7426bc0u},  // sad listening 3
+  {6, 6, 2, 7300, 0xb0991562u},  // sad listening 3
+  {6, 6, 2, 9900, 0xba4bd8adu},  // sad listening 3
+  {6, 7, 0, 0, 0xaf251029u},  // sad starting 1
+  {6, 7, 0, 420, 0x4594a736u},  // sad starting 1
+  {6, 7, 1, 0, 0xaf251029u},  // sad starting 2
+  {6, 7, 1, 420, 0x4594a736u},  // sad starting 2
+  {6, 7, 2, 0, 0xaf251029u},  // sad starting 3
+  {6, 7, 2, 420, 0x4594a736u},  // sad starting 3
+  {6, 7, 3, 0, 0xaf251029u},  // sad starting 4
+  {6, 7, 3, 420, 0x4594a736u},  // sad starting 4
+  {6, 8, 0, 0, 0x562309f7u},  // sad planning 1
+  {6, 9, 0, 0, 0x36d5f9e6u},  // sad terminal 1
+  {6, 9, 0, 420, 0x7cde67bau},  // sad terminal 1
+  {6, 10, 0, 0, 0x8a9c4e5eu},  // sad tool_use 1
+  {6, 10, 0, 9900, 0x6da1808eu},  // sad tool_use 1
+  {6, 11, 0, 0, 0x9e155421u},  // sad searching 1
+  {6, 12, 0, 0, 0x838f4b87u},  // sad analyzing 1
+  {6, 13, 0, 0, 0xe23c1831u},  // sad testing 1
+  {6, 13, 0, 9900, 0x1a3a9cdcu},  // sad testing 1
+  {6, 14, 0, 0, 0x1a27bb0du},  // sad delegating 1
+  {6, 14, 0, 9900, 0xdf827f05u},  // sad delegating 1
+  {6, 14, 1, 0, 0xef430cdcu},  // sad delegating 2
+  {6, 15, 0, 0, 0xfa863504u},  // sad helper_return 1
+  {6, 15, 0, 1650, 0x18e13727u},  // sad helper_return 1
+  {6, 15, 1, 0, 0xc9aa87ccu},  // sad helper_return 2
+  {6, 16, 0, 0, 0xd5ffcb43u},  // sad waiting 1
+  {6, 16, 0, 150, 0x372d712au},  // sad waiting 1
+  {6, 16, 0, 420, 0x91bcd86fu},  // sad waiting 1
+  {6, 16, 0, 1100, 0x946d4704u},  // sad waiting 1
+  {6, 16, 0, 2300, 0x0a61032fu},  // sad waiting 1
+  {6, 16, 0, 3100, 0xd6688e81u},  // sad waiting 1
+  {6, 16, 0, 4200, 0x9f7507a4u},  // sad waiting 1
+  {6, 17, 0, 0, 0x6b78094du},  // sad reply_ready 1
+  {6, 17, 0, 1650, 0x685fc08du},  // sad reply_ready 1
+  {6, 18, 0, 0, 0x6869bb1bu},  // sad error 1
+  {6, 18, 0, 420, 0x8d27b90cu},  // sad error 1
+  {6, 19, 0, 0, 0x11b6eeecu},  // sad stopped 1
+  {6, 19, 0, 1650, 0x6f285999u},  // sad stopped 1
+  {6, 20, 0, 0, 0x758000c9u},  // sad poked 1
+  {6, 20, 0, 150, 0x9752baa0u},  // sad poked 1
+  {6, 20, 0, 700, 0xfbbf05b8u},  // sad poked 1
+  {6, 20, 0, 1100, 0x60dfd951u},  // sad poked 1
+  {6, 20, 0, 1650, 0xced8bb56u},  // sad poked 1
+  {6, 20, 0, 2300, 0xc9b3225eu},  // sad poked 1
+  {6, 20, 0, 3100, 0xb171d13cu},  // sad poked 1
+  {6, 20, 0, 4200, 0x94031633u},  // sad poked 1
+  {6, 20, 0, 7300, 0x04205ab9u},  // sad poked 1
+  {6, 20, 0, 9900, 0x9b7e06f1u},  // sad poked 1
+  {6, 21, 0, 0, 0x758000c9u},  // sad tap_spam 1
+  {6, 21, 0, 150, 0x9752baa0u},  // sad tap_spam 1
+  {6, 21, 0, 420, 0xd332508cu},  // sad tap_spam 1
+  {6, 21, 0, 700, 0xda22b154u},  // sad tap_spam 1
+  {6, 21, 0, 1650, 0x66053cfbu},  // sad tap_spam 1
+  {6, 21, 0, 2300, 0x75c6ad77u},  // sad tap_spam 1
+  {6, 21, 0, 4200, 0x1354f43au},  // sad tap_spam 1
+  {6, 21, 0, 5500, 0x9cb6c5a9u},  // sad tap_spam 1
+  {6, 21, 0, 9900, 0xca037eb9u},  // sad tap_spam 1
+  {6, 22, 0, 0, 0x08579de1u},  // sad wake_up 1
+  {6, 22, 0, 150, 0x08579de1u},  // sad wake_up 1
+  {6, 22, 0, 420, 0x08579de1u},  // sad wake_up 1
+  {6, 22, 0, 700, 0xcd09ecfdu},  // sad wake_up 1
+  {6, 22, 0, 1100, 0xcd09ecfdu},  // sad wake_up 1
+  {6, 22, 0, 1650, 0xf1dc0b42u},  // sad wake_up 1
+  {6, 22, 0, 2300, 0xf81f62f2u},  // sad wake_up 1
+  {6, 22, 0, 3100, 0x12da14a6u},  // sad wake_up 1
+  {6, 22, 0, 4200, 0x6ff875c6u},  // sad wake_up 1
+  {6, 22, 0, 5500, 0x182ae580u},  // sad wake_up 1
+  {6, 22, 0, 7300, 0x08579de1u},  // sad wake_up 1
+  {6, 22, 0, 9900, 0xf81f62f2u},  // sad wake_up 1
   {7, 0, 0, 0, 0xe5ed0af5u},  // calm idle 1
   {7, 0, 0, 150, 0xe5ed0af5u},  // calm idle 1
   {7, 0, 0, 420, 0xe5ed0af5u},  // calm idle 1
@@ -3911,6 +3994,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {7, 21, 2, 5500, 0x732ba595u},  // calm tap_spam 3
   {7, 21, 2, 7300, 0xe5ed0af5u},  // calm tap_spam 3
   {7, 21, 2, 9900, 0x8e2d0198u},  // calm tap_spam 3
+  {7, 22, 0, 0, 0xe5ed0af5u},  // calm wake_up 1
+  {7, 22, 0, 150, 0xe5ed0af5u},  // calm wake_up 1
+  {7, 22, 0, 420, 0xe5ed0af5u},  // calm wake_up 1
+  {7, 22, 0, 700, 0x5b033712u},  // calm wake_up 1
+  {7, 22, 0, 1100, 0x5b033712u},  // calm wake_up 1
+  {7, 22, 0, 1650, 0x0d03622du},  // calm wake_up 1
+  {7, 22, 0, 2300, 0x80e3b0c7u},  // calm wake_up 1
+  {7, 22, 0, 3100, 0xa0f8d12du},  // calm wake_up 1
+  {7, 22, 0, 4200, 0xb7b29611u},  // calm wake_up 1
+  {7, 22, 0, 5500, 0x9199db00u},  // calm wake_up 1
+  {7, 22, 0, 7300, 0xe5ed0af5u},  // calm wake_up 1
+  {7, 22, 0, 9900, 0xa0f8d12du},  // calm wake_up 1
   {8, 0, 0, 0, 0xfc1c671fu},  // engaged idle 1
   {8, 0, 0, 150, 0xfc1c671fu},  // engaged idle 1
   {8, 0, 0, 420, 0xfc1c671fu},  // engaged idle 1
@@ -4796,6 +4891,17 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {8, 21, 2, 5500, 0xfc1c671fu},  // engaged tap_spam 3
   {8, 21, 2, 7300, 0x1db42f7au},  // engaged tap_spam 3
   {8, 21, 2, 9900, 0xd17efc08u},  // engaged tap_spam 3
+  {8, 22, 0, 0, 0xfc1c671fu},  // engaged wake_up 1
+  {8, 22, 0, 150, 0xfc1c671fu},  // engaged wake_up 1
+  {8, 22, 0, 700, 0x5b033712u},  // engaged wake_up 1
+  {8, 22, 0, 1100, 0x0d03622du},  // engaged wake_up 1
+  {8, 22, 0, 1650, 0x80e3b0c7u},  // engaged wake_up 1
+  {8, 22, 0, 2300, 0xa0f8d12du},  // engaged wake_up 1
+  {8, 22, 0, 3100, 0xb7b29611u},  // engaged wake_up 1
+  {8, 22, 0, 4200, 0x9199db00u},  // engaged wake_up 1
+  {8, 22, 0, 5500, 0xfc1c671fu},  // engaged wake_up 1
+  {8, 22, 0, 7300, 0x80e3b0c7u},  // engaged wake_up 1
+  {8, 22, 0, 9900, 0x4ef6d8b2u},  // engaged wake_up 1
   {9, 0, 0, 0, 0xb4bc4c58u},  // annoyed idle 1
   {9, 0, 0, 150, 0xb4bc4c58u},  // annoyed idle 1
   {9, 0, 0, 420, 0xb4bc4c58u},  // annoyed idle 1
@@ -5679,6 +5785,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {9, 21, 2, 5500, 0x752499d4u},  // annoyed tap_spam 3
   {9, 21, 2, 7300, 0x752499d4u},  // annoyed tap_spam 3
   {9, 21, 2, 9900, 0x3844afffu},  // annoyed tap_spam 3
+  {9, 22, 0, 0, 0xb4bc4c58u},  // annoyed wake_up 1
+  {9, 22, 0, 150, 0xb4bc4c58u},  // annoyed wake_up 1
+  {9, 22, 0, 420, 0xb4bc4c58u},  // annoyed wake_up 1
+  {9, 22, 0, 700, 0x5b033712u},  // annoyed wake_up 1
+  {9, 22, 0, 1100, 0x5b033712u},  // annoyed wake_up 1
+  {9, 22, 0, 1650, 0x0d03622du},  // annoyed wake_up 1
+  {9, 22, 0, 2300, 0x80e3b0c7u},  // annoyed wake_up 1
+  {9, 22, 0, 3100, 0xa0f8d12du},  // annoyed wake_up 1
+  {9, 22, 0, 4200, 0x9199db00u},  // annoyed wake_up 1
+  {9, 22, 0, 5500, 0xe485f4c7u},  // annoyed wake_up 1
+  {9, 22, 0, 7300, 0x0d03622du},  // annoyed wake_up 1
+  {9, 22, 0, 9900, 0xb7b29611u},  // annoyed wake_up 1
   {10, 0, 0, 0, 0x829ab40du},  // irritated idle 1
   {10, 0, 0, 150, 0x829ab40du},  // irritated idle 1
   {10, 0, 0, 420, 0x829ab40du},  // irritated idle 1
@@ -6535,106 +6653,118 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {10, 21, 2, 5500, 0xc3f1a3efu},  // irritated tap_spam 3
   {10, 21, 2, 7300, 0x27b1ceb7u},  // irritated tap_spam 3
   {10, 21, 2, 9900, 0xa32ca68fu},  // irritated tap_spam 3
+  {10, 22, 0, 0, 0x829ab40du},  // irritated wake_up 1
+  {10, 22, 0, 150, 0x829ab40du},  // irritated wake_up 1
+  {10, 22, 0, 420, 0x5b033712u},  // irritated wake_up 1
+  {10, 22, 0, 700, 0x5b033712u},  // irritated wake_up 1
+  {10, 22, 0, 1100, 0x0d03622du},  // irritated wake_up 1
+  {10, 22, 0, 1650, 0x80e3b0c7u},  // irritated wake_up 1
+  {10, 22, 0, 2300, 0xa0f8d12du},  // irritated wake_up 1
+  {10, 22, 0, 3100, 0x9199db00u},  // irritated wake_up 1
+  {10, 22, 0, 4200, 0x69572e08u},  // irritated wake_up 1
+  {10, 22, 0, 5500, 0x0d03622du},  // irritated wake_up 1
+  {10, 22, 0, 7300, 0xb7b29611u},  // irritated wake_up 1
+  {10, 22, 0, 9900, 0x5b033712u},  // irritated wake_up 1
   {11, 0, 0, 0, 0xe9898445u},  // whiny idle 1
   {11, 0, 0, 150, 0xe9898445u},  // whiny idle 1
   {11, 0, 0, 420, 0xe9898445u},  // whiny idle 1
   {11, 0, 0, 700, 0xe9898445u},  // whiny idle 1
   {11, 0, 0, 1100, 0xe9898445u},  // whiny idle 1
-  {11, 0, 0, 1650, 0xb78a0e33u},  // whiny idle 1
-  {11, 0, 0, 2300, 0x563bc1edu},  // whiny idle 1
-  {11, 0, 0, 3100, 0x563bc1edu},  // whiny idle 1
-  {11, 0, 0, 4200, 0x7beba51bu},  // whiny idle 1
-  {11, 0, 0, 5500, 0x7e1e366au},  // whiny idle 1
-  {11, 0, 0, 7300, 0xc91cbd19u},  // whiny idle 1
+  {11, 0, 0, 1650, 0xd87d7b15u},  // whiny idle 1
+  {11, 0, 0, 2300, 0x53560e28u},  // whiny idle 1
+  {11, 0, 0, 3100, 0x53560e28u},  // whiny idle 1
+  {11, 0, 0, 4200, 0x25db5817u},  // whiny idle 1
+  {11, 0, 0, 5500, 0xc85145c5u},  // whiny idle 1
+  {11, 0, 0, 7300, 0xc3322d7du},  // whiny idle 1
   {11, 0, 0, 9900, 0xe9898445u},  // whiny idle 1
   {11, 0, 1, 0, 0xe9898445u},  // whiny idle 2
   {11, 0, 1, 150, 0xe9898445u},  // whiny idle 2
   {11, 0, 1, 420, 0xe9898445u},  // whiny idle 2
   {11, 0, 1, 700, 0xe9898445u},  // whiny idle 2
   {11, 0, 1, 1100, 0xe9898445u},  // whiny idle 2
-  {11, 0, 1, 1650, 0xb78a0e33u},  // whiny idle 2
-  {11, 0, 1, 2300, 0xb78a0e33u},  // whiny idle 2
-  {11, 0, 1, 3100, 0x563bc1edu},  // whiny idle 2
-  {11, 0, 1, 4200, 0x25e2556du},  // whiny idle 2
-  {11, 0, 1, 5500, 0x7beba51bu},  // whiny idle 2
-  {11, 0, 1, 7300, 0x7e1e366au},  // whiny idle 2
-  {11, 0, 1, 9900, 0x7a174812u},  // whiny idle 2
+  {11, 0, 1, 1650, 0xd87d7b15u},  // whiny idle 2
+  {11, 0, 1, 2300, 0xd87d7b15u},  // whiny idle 2
+  {11, 0, 1, 3100, 0x53560e28u},  // whiny idle 2
+  {11, 0, 1, 4200, 0x114a6a76u},  // whiny idle 2
+  {11, 0, 1, 5500, 0x25db5817u},  // whiny idle 2
+  {11, 0, 1, 7300, 0xc85145c5u},  // whiny idle 2
+  {11, 0, 1, 9900, 0x619919b6u},  // whiny idle 2
   {11, 0, 2, 0, 0xe9898445u},  // whiny idle 3
   {11, 0, 2, 150, 0xe9898445u},  // whiny idle 3
   {11, 0, 2, 420, 0xe9898445u},  // whiny idle 3
   {11, 0, 2, 700, 0xe9898445u},  // whiny idle 3
   {11, 0, 2, 1100, 0xe9898445u},  // whiny idle 3
-  {11, 0, 2, 1650, 0x6d35a21au},  // whiny idle 3
-  {11, 0, 2, 2300, 0xdba1e39eu},  // whiny idle 3
-  {11, 0, 2, 3100, 0xdba1e39eu},  // whiny idle 3
-  {11, 0, 2, 4200, 0x6f107368u},  // whiny idle 3
-  {11, 0, 2, 5500, 0x40f81048u},  // whiny idle 3
-  {11, 0, 2, 7300, 0xe6b1b8c9u},  // whiny idle 3
+  {11, 0, 2, 1650, 0x02c2d73cu},  // whiny idle 3
+  {11, 0, 2, 2300, 0xdecc2c5bu},  // whiny idle 3
+  {11, 0, 2, 3100, 0xdecc2c5bu},  // whiny idle 3
+  {11, 0, 2, 4200, 0x5bb84c73u},  // whiny idle 3
+  {11, 0, 2, 5500, 0x1ec8ed44u},  // whiny idle 3
+  {11, 0, 2, 7300, 0xec9f28adu},  // whiny idle 3
   {11, 0, 2, 9900, 0xab7ef722u},  // whiny idle 3
   {11, 1, 0, 0, 0x31aec01fu},  // whiny working 1
   {11, 1, 0, 150, 0x31aec01fu},  // whiny working 1
   {11, 1, 0, 420, 0x31aec01fu},  // whiny working 1
   {11, 1, 0, 700, 0x31aec01fu},  // whiny working 1
-  {11, 1, 0, 1100, 0x31228392u},  // whiny working 1
-  {11, 1, 0, 1650, 0x637eee6eu},  // whiny working 1
-  {11, 1, 0, 2300, 0x669d5dd9u},  // whiny working 1
-  {11, 1, 0, 5500, 0x5cdd3b9du},  // whiny working 1
-  {11, 1, 0, 7300, 0xd6465af5u},  // whiny working 1
-  {11, 1, 0, 9900, 0x08236098u},  // whiny working 1
+  {11, 1, 0, 1100, 0x0c6b3160u},  // whiny working 1
+  {11, 1, 0, 1650, 0x2f4e1ffeu},  // whiny working 1
+  {11, 1, 0, 2300, 0x2028a53bu},  // whiny working 1
+  {11, 1, 0, 5500, 0x4b90b374u},  // whiny working 1
+  {11, 1, 0, 7300, 0xeb0fe807u},  // whiny working 1
+  {11, 1, 0, 9900, 0xd1cd766bu},  // whiny working 1
   {11, 1, 1, 0, 0xb9d3ceaau},  // whiny working 2
   {11, 1, 1, 150, 0xb9d3ceaau},  // whiny working 2
   {11, 1, 1, 420, 0xb9d3ceaau},  // whiny working 2
   {11, 1, 1, 700, 0xb9d3ceaau},  // whiny working 2
-  {11, 1, 1, 1100, 0xdb179f3du},  // whiny working 2
-  {11, 1, 1, 1650, 0x5cc3a6f5u},  // whiny working 2
-  {11, 1, 1, 2300, 0xea93d9e1u},  // whiny working 2
-  {11, 1, 1, 3100, 0x6d573903u},  // whiny working 2
-  {11, 1, 1, 4200, 0x262fa31au},  // whiny working 2
-  {11, 1, 1, 5500, 0x4671de05u},  // whiny working 2
+  {11, 1, 1, 1100, 0xb4e0ea1bu},  // whiny working 2
+  {11, 1, 1, 1650, 0x3334d3d3u},  // whiny working 2
+  {11, 1, 1, 2300, 0xeffe1624u},  // whiny working 2
+  {11, 1, 1, 3100, 0x3367c40fu},  // whiny working 2
+  {11, 1, 1, 4200, 0x9060d0b5u},  // whiny working 2
+  {11, 1, 1, 5500, 0x5dff8fa1u},  // whiny working 2
   {11, 1, 1, 7300, 0xb9d3ceaau},  // whiny working 2
-  {11, 1, 1, 9900, 0xad27fcc8u},  // whiny working 2
+  {11, 1, 1, 9900, 0x0b578c25u},  // whiny working 2
   {11, 1, 2, 0, 0x2a008e55u},  // whiny working 3
   {11, 1, 2, 150, 0x2a008e55u},  // whiny working 3
   {11, 1, 2, 420, 0x2a008e55u},  // whiny working 3
   {11, 1, 2, 700, 0x2a008e55u},  // whiny working 3
-  {11, 1, 2, 1100, 0x581f1f65u},  // whiny working 3
-  {11, 1, 2, 1650, 0x728e5d39u},  // whiny working 3
-  {11, 1, 2, 2300, 0x728e5d39u},  // whiny working 3
-  {11, 1, 2, 3100, 0x85175600u},  // whiny working 3
-  {11, 1, 2, 4200, 0xb4d3b535u},  // whiny working 3
-  {11, 1, 2, 5500, 0x2d261ee8u},  // whiny working 3
+  {11, 1, 2, 1100, 0x1c8d4fb1u},  // whiny working 3
+  {11, 1, 2, 1650, 0x476ac19bu},  // whiny working 3
+  {11, 1, 2, 2300, 0x476ac19bu},  // whiny working 3
+  {11, 1, 2, 3100, 0xdb27ab0cu},  // whiny working 3
+  {11, 1, 2, 4200, 0x029cc69au},  // whiny working 3
+  {11, 1, 2, 5500, 0x27088e8cu},  // whiny working 3
   {11, 1, 2, 7300, 0x2a008e55u},  // whiny working 3
-  {11, 1, 2, 9900, 0x85175600u},  // whiny working 3
+  {11, 1, 2, 9900, 0xdb27ab0cu},  // whiny working 3
   {11, 1, 3, 0, 0xd89be8f2u},  // whiny working 4
   {11, 1, 3, 150, 0xd89be8f2u},  // whiny working 4
   {11, 1, 3, 420, 0xd89be8f2u},  // whiny working 4
   {11, 1, 3, 700, 0xd89be8f2u},  // whiny working 4
-  {11, 1, 3, 1100, 0x82a8cb95u},  // whiny working 4
-  {11, 1, 3, 1650, 0xa01435aau},  // whiny working 4
-  {11, 1, 3, 2300, 0xa01435aau},  // whiny working 4
-  {11, 1, 3, 3100, 0x4adee1bcu},  // whiny working 4
-  {11, 1, 3, 4200, 0xa7fc3e0bu},  // whiny working 4
-  {11, 1, 3, 5500, 0x3fb396e5u},  // whiny working 4
+  {11, 1, 3, 1100, 0xed5fbeb3u},  // whiny working 4
+  {11, 1, 3, 1650, 0xa579fa6fu},  // whiny working 4
+  {11, 1, 3, 2300, 0xa579fa6fu},  // whiny working 4
+  {11, 1, 3, 3100, 0x14ee1cb0u},  // whiny working 4
+  {11, 1, 3, 4200, 0x11b34da4u},  // whiny working 4
+  {11, 1, 3, 5500, 0x243dc741u},  // whiny working 4
   {11, 1, 3, 7300, 0xd89be8f2u},  // whiny working 4
-  {11, 1, 3, 9900, 0x4adee1bcu},  // whiny working 4
+  {11, 1, 3, 9900, 0x14ee1cb0u},  // whiny working 4
   {11, 1, 4, 0, 0x80020dc8u},  // whiny working 5
   {11, 1, 4, 150, 0x80020dc8u},  // whiny working 5
   {11, 1, 4, 420, 0x80020dc8u},  // whiny working 5
   {11, 1, 4, 700, 0x80020dc8u},  // whiny working 5
-  {11, 1, 4, 1100, 0xdf414c14u},  // whiny working 5
-  {11, 1, 4, 1650, 0xfbdcb25eu},  // whiny working 5
-  {11, 1, 4, 2300, 0x34d25913u},  // whiny working 5
-  {11, 1, 4, 3100, 0xf1b8952fu},  // whiny working 5
-  {11, 1, 4, 4200, 0xf4e569aeu},  // whiny working 5
-  {11, 1, 4, 5500, 0x96328844u},  // whiny working 5
+  {11, 1, 4, 1100, 0x84db2e66u},  // whiny working 5
+  {11, 1, 4, 1650, 0xfeb17d9bu},  // whiny working 5
+  {11, 1, 4, 2300, 0x31bf96d6u},  // whiny working 5
+  {11, 1, 4, 3100, 0xaf886823u},  // whiny working 5
+  {11, 1, 4, 4200, 0x42aa1a01u},  // whiny working 5
+  {11, 1, 4, 5500, 0xb94f2b2eu},  // whiny working 5
   {11, 1, 4, 7300, 0x6f807ddfu},  // whiny working 5
-  {11, 1, 4, 9900, 0x34d25913u},  // whiny working 5
+  {11, 1, 4, 9900, 0x31bf96d6u},  // whiny working 5
   {11, 2, 0, 0, 0xd559fb10u},  // whiny needs_you 1
   {11, 2, 0, 150, 0xd559fb10u},  // whiny needs_you 1
   {11, 2, 0, 420, 0xd559fb10u},  // whiny needs_you 1
-  {11, 2, 0, 700, 0x96b85359u},  // whiny needs_you 1
-  {11, 2, 0, 1100, 0x4ffb874eu},  // whiny needs_you 1
-  {11, 2, 0, 1650, 0xd36087bcu},  // whiny needs_you 1
+  {11, 2, 0, 700, 0x93d59c9cu},  // whiny needs_you 1
+  {11, 2, 0, 1100, 0x200cf268u},  // whiny needs_you 1
+  {11, 2, 0, 1650, 0xe7c8b8a7u},  // whiny needs_you 1
   {11, 2, 0, 2300, 0xb34d152fu},  // whiny needs_you 1
   {11, 2, 0, 3100, 0xb34d152fu},  // whiny needs_you 1
   {11, 2, 0, 4200, 0xb34d152fu},  // whiny needs_you 1
@@ -6643,9 +6773,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 2, 1, 0, 0xd559fb10u},  // whiny needs_you 2
   {11, 2, 1, 150, 0xd559fb10u},  // whiny needs_you 2
   {11, 2, 1, 420, 0xd559fb10u},  // whiny needs_you 2
-  {11, 2, 1, 700, 0x50fac751u},  // whiny needs_you 2
-  {11, 2, 1, 1100, 0x76f12a85u},  // whiny needs_you 2
-  {11, 2, 1, 1650, 0x45893f45u},  // whiny needs_you 2
+  {11, 2, 1, 700, 0x55970894u},  // whiny needs_you 2
+  {11, 2, 1, 1100, 0xba175651u},  // whiny needs_you 2
+  {11, 2, 1, 1650, 0x2a7e4a63u},  // whiny needs_you 2
   {11, 2, 1, 2300, 0xf98cd8c9u},  // whiny needs_you 2
   {11, 2, 1, 3100, 0xf98cd8c9u},  // whiny needs_you 2
   {11, 2, 1, 4200, 0xf98cd8c9u},  // whiny needs_you 2
@@ -6655,320 +6785,320 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 2, 2, 0, 0xd559fb10u},  // whiny needs_you 3
   {11, 2, 2, 150, 0xd559fb10u},  // whiny needs_you 3
   {11, 2, 2, 420, 0xd559fb10u},  // whiny needs_you 3
-  {11, 2, 2, 700, 0x60b3cb48u},  // whiny needs_you 3
-  {11, 2, 2, 1100, 0x6e1c9a2au},  // whiny needs_you 3
-  {11, 2, 2, 1650, 0x49e1a3eeu},  // whiny needs_you 3
-  {11, 2, 2, 2300, 0xf3a370feu},  // whiny needs_you 3
-  {11, 2, 2, 3100, 0xd997988fu},  // whiny needs_you 3
-  {11, 2, 2, 4200, 0x93179894u},  // whiny needs_you 3
-  {11, 2, 2, 5500, 0x93179894u},  // whiny needs_you 3
+  {11, 2, 2, 700, 0x766824f2u},  // whiny needs_you 3
+  {11, 2, 2, 1100, 0xd7034765u},  // whiny needs_you 3
+  {11, 2, 2, 1650, 0x17d15ee2u},  // whiny needs_you 3
+  {11, 2, 2, 2300, 0x45ec0351u},  // whiny needs_you 3
+  {11, 2, 2, 3100, 0x14a058c1u},  // whiny needs_you 3
+  {11, 2, 2, 4200, 0x8b3ae62eu},  // whiny needs_you 3
+  {11, 2, 2, 5500, 0x8b3ae62eu},  // whiny needs_you 3
   {11, 2, 2, 7300, 0x729f46aau},  // whiny needs_you 3
-  {11, 2, 2, 9900, 0xdf5e87f8u},  // whiny needs_you 3
+  {11, 2, 2, 9900, 0x816e7af4u},  // whiny needs_you 3
   {11, 3, 0, 0, 0x4ef19ad7u},  // whiny task_complete 1
   {11, 3, 0, 150, 0x4ef19ad7u},  // whiny task_complete 1
   {11, 3, 0, 420, 0x4ef19ad7u},  // whiny task_complete 1
   {11, 3, 0, 700, 0x4ef19ad7u},  // whiny task_complete 1
-  {11, 3, 0, 1100, 0xef57c933u},  // whiny task_complete 1
-  {11, 3, 0, 1650, 0xeb812efau},  // whiny task_complete 1
-  {11, 3, 0, 2300, 0xfac14c7bu},  // whiny task_complete 1
-  {11, 3, 0, 3100, 0x85c0dd4fu},  // whiny task_complete 1
-  {11, 3, 0, 4200, 0xab8819f2u},  // whiny task_complete 1
-  {11, 3, 0, 5500, 0x690f0608u},  // whiny task_complete 1
-  {11, 3, 0, 7300, 0xef57c933u},  // whiny task_complete 1
-  {11, 3, 0, 9900, 0x85c0dd4fu},  // whiny task_complete 1
+  {11, 3, 0, 1100, 0x80a0bc15u},  // whiny task_complete 1
+  {11, 3, 0, 1650, 0xeeece13fu},  // whiny task_complete 1
+  {11, 3, 0, 2300, 0xce697360u},  // whiny task_complete 1
+  {11, 3, 0, 3100, 0xdbf02043u},  // whiny task_complete 1
+  {11, 3, 0, 4200, 0x1dc76a5du},  // whiny task_complete 1
+  {11, 3, 0, 5500, 0xb4e65a46u},  // whiny task_complete 1
+  {11, 3, 0, 7300, 0x80a0bc15u},  // whiny task_complete 1
+  {11, 3, 0, 9900, 0xdbf02043u},  // whiny task_complete 1
   {11, 3, 1, 0, 0x4ef19ad7u},  // whiny task_complete 2
   {11, 3, 1, 150, 0x4ef19ad7u},  // whiny task_complete 2
   {11, 3, 1, 420, 0x4ef19ad7u},  // whiny task_complete 2
   {11, 3, 1, 700, 0x4ef19ad7u},  // whiny task_complete 2
-  {11, 3, 1, 1100, 0xdd47cd55u},  // whiny task_complete 2
-  {11, 3, 1, 1650, 0xc5b9a6adu},  // whiny task_complete 2
-  {11, 3, 1, 2300, 0x8857f1c7u},  // whiny task_complete 2
-  {11, 3, 1, 3100, 0x5c64c773u},  // whiny task_complete 2
-  {11, 3, 1, 4200, 0x1166d868u},  // whiny task_complete 2
-  {11, 3, 1, 5500, 0xaa64785du},  // whiny task_complete 2
+  {11, 3, 1, 1100, 0xb2b0b873u},  // whiny task_complete 2
+  {11, 3, 1, 1650, 0xc0d46968u},  // whiny task_complete 2
+  {11, 3, 1, 2300, 0xbcffcedcu},  // whiny task_complete 2
+  {11, 3, 1, 3100, 0x02543a7fu},  // whiny task_complete 2
+  {11, 3, 1, 4200, 0xa729abc7u},  // whiny task_complete 2
+  {11, 3, 1, 5500, 0x778d2413u},  // whiny task_complete 2
   {11, 3, 1, 7300, 0x4ef19ad7u},  // whiny task_complete 2
-  {11, 3, 1, 9900, 0x5c64c773u},  // whiny task_complete 2
+  {11, 3, 1, 9900, 0x02543a7fu},  // whiny task_complete 2
   {11, 3, 2, 0, 0x6d006b03u},  // whiny task_complete 3
   {11, 3, 2, 150, 0x6d006b03u},  // whiny task_complete 3
   {11, 3, 2, 420, 0x6d006b03u},  // whiny task_complete 3
   {11, 3, 2, 700, 0x6d006b03u},  // whiny task_complete 3
-  {11, 3, 2, 1100, 0x97aacdd8u},  // whiny task_complete 3
-  {11, 3, 2, 1650, 0x55130961u},  // whiny task_complete 3
-  {11, 3, 2, 2300, 0x55130961u},  // whiny task_complete 3
-  {11, 3, 2, 3100, 0x0d89a614u},  // whiny task_complete 3
-  {11, 3, 2, 4200, 0x0d89a614u},  // whiny task_complete 3
-  {11, 3, 2, 5500, 0x65787031u},  // whiny task_complete 3
+  {11, 3, 2, 1100, 0xf85db8feu},  // whiny task_complete 3
+  {11, 3, 2, 1650, 0x507ec6a4u},  // whiny task_complete 3
+  {11, 3, 2, 2300, 0x507ec6a4u},  // whiny task_complete 3
+  {11, 3, 2, 3100, 0x53b95b18u},  // whiny task_complete 3
+  {11, 3, 2, 4200, 0x53b95b18u},  // whiny task_complete 3
+  {11, 3, 2, 5500, 0x6f56e055u},  // whiny task_complete 3
   {11, 3, 2, 7300, 0x6d006b03u},  // whiny task_complete 3
-  {11, 3, 2, 9900, 0xed195da5u},  // whiny task_complete 3
+  {11, 3, 2, 9900, 0xd9b162beu},  // whiny task_complete 3
   {11, 3, 3, 0, 0x1541ec22u},  // whiny task_complete 4
   {11, 3, 3, 150, 0x1541ec22u},  // whiny task_complete 4
   {11, 3, 3, 420, 0x1541ec22u},  // whiny task_complete 4
   {11, 3, 3, 700, 0x1541ec22u},  // whiny task_complete 4
-  {11, 3, 3, 1100, 0x705c8583u},  // whiny task_complete 4
-  {11, 3, 3, 1650, 0xd4778b73u},  // whiny task_complete 4
-  {11, 3, 3, 2300, 0xe234deddu},  // whiny task_complete 4
-  {11, 3, 3, 3100, 0xe43ee098u},  // whiny task_complete 4
-  {11, 3, 3, 4200, 0x2af050bdu},  // whiny task_complete 4
+  {11, 3, 3, 1100, 0x1fabf0a5u},  // whiny task_complete 4
+  {11, 3, 3, 1650, 0xd11a44b6u},  // whiny task_complete 4
+  {11, 3, 3, 2300, 0xd69ce1c6u},  // whiny task_complete 4
+  {11, 3, 3, 3100, 0xba0e1d94u},  // whiny task_complete 4
+  {11, 3, 3, 4200, 0x9cbf2312u},  // whiny task_complete 4
   {11, 3, 3, 5500, 0x079fd62cu},  // whiny task_complete 4
-  {11, 3, 3, 7300, 0x705c8583u},  // whiny task_complete 4
-  {11, 3, 3, 9900, 0xe43ee098u},  // whiny task_complete 4
+  {11, 3, 3, 7300, 0x1fabf0a5u},  // whiny task_complete 4
+  {11, 3, 3, 9900, 0xba0e1d94u},  // whiny task_complete 4
   {11, 3, 4, 0, 0xf4252b7du},  // whiny task_complete 5
   {11, 3, 4, 150, 0xf4252b7du},  // whiny task_complete 5
   {11, 3, 4, 420, 0xf4252b7du},  // whiny task_complete 5
   {11, 3, 4, 700, 0xf4252b7du},  // whiny task_complete 5
-  {11, 3, 4, 1100, 0x4b519110u},  // whiny task_complete 5
-  {11, 3, 4, 1650, 0x8762b763u},  // whiny task_complete 5
-  {11, 3, 4, 2300, 0xd939ca4eu},  // whiny task_complete 5
-  {11, 3, 4, 3100, 0xaaf94216u},  // whiny task_complete 5
-  {11, 3, 4, 4200, 0x6225b45bu},  // whiny task_complete 5
-  {11, 3, 4, 5500, 0xe726a137u},  // whiny task_complete 5
+  {11, 3, 4, 1100, 0x24a6e436u},  // whiny task_complete 5
+  {11, 3, 4, 1650, 0x820f78a6u},  // whiny task_complete 5
+  {11, 3, 4, 2300, 0xed91f555u},  // whiny task_complete 5
+  {11, 3, 4, 3100, 0xf4c9bf1au},  // whiny task_complete 5
+  {11, 3, 4, 4200, 0xd46ac7f4u},  // whiny task_complete 5
+  {11, 3, 4, 5500, 0xfca8f093u},  // whiny task_complete 5
   {11, 3, 4, 7300, 0xf4252b7du},  // whiny task_complete 5
-  {11, 3, 4, 9900, 0xaaf94216u},  // whiny task_complete 5
+  {11, 3, 4, 9900, 0xf4c9bf1au},  // whiny task_complete 5
   {11, 3, 5, 0, 0xc81d7dc3u},  // whiny task_complete 6
   {11, 3, 5, 150, 0xc81d7dc3u},  // whiny task_complete 6
   {11, 3, 5, 420, 0xc81d7dc3u},  // whiny task_complete 6
   {11, 3, 5, 700, 0xc81d7dc3u},  // whiny task_complete 6
-  {11, 3, 5, 1100, 0x7769c7aeu},  // whiny task_complete 6
-  {11, 3, 5, 1650, 0x689255ecu},  // whiny task_complete 6
-  {11, 3, 5, 2300, 0x689255ecu},  // whiny task_complete 6
-  {11, 3, 5, 3100, 0x6f8949cfu},  // whiny task_complete 6
-  {11, 3, 5, 4200, 0x6f8949cfu},  // whiny task_complete 6
+  {11, 3, 5, 1100, 0x189eb288u},  // whiny task_complete 6
+  {11, 3, 5, 1650, 0x6dff9a29u},  // whiny task_complete 6
+  {11, 3, 5, 2300, 0x6dff9a29u},  // whiny task_complete 6
+  {11, 3, 5, 3100, 0x31b9b4c3u},  // whiny task_complete 6
+  {11, 3, 5, 4200, 0x31b9b4c3u},  // whiny task_complete 6
   {11, 3, 5, 5500, 0x9f262084u},  // whiny task_complete 6
   {11, 3, 5, 7300, 0xc81d7dc3u},  // whiny task_complete 6
-  {11, 3, 5, 9900, 0xe5019cf0u},  // whiny task_complete 6
+  {11, 3, 5, 9900, 0xd1a9a3ebu},  // whiny task_complete 6
   {11, 6, 0, 0, 0x84901e98u},  // whiny listening 1
   {11, 6, 0, 150, 0x84901e98u},  // whiny listening 1
   {11, 6, 0, 420, 0x84901e98u},  // whiny listening 1
   {11, 6, 0, 700, 0x84901e98u},  // whiny listening 1
-  {11, 6, 0, 1100, 0x3c1380fau},  // whiny listening 1
-  {11, 6, 0, 1650, 0xdda24f24u},  // whiny listening 1
-  {11, 6, 0, 2300, 0xae7bdba4u},  // whiny listening 1
-  {11, 6, 0, 3100, 0xf0722bd2u},  // whiny listening 1
-  {11, 6, 0, 4200, 0x428533d0u},  // whiny listening 1
-  {11, 6, 0, 5500, 0xf18ec6dbu},  // whiny listening 1
-  {11, 6, 0, 7300, 0x3c1380fau},  // whiny listening 1
-  {11, 6, 0, 9900, 0x5653f5dcu},  // whiny listening 1
+  {11, 6, 0, 1100, 0x53e4f5dcu},  // whiny listening 1
+  {11, 6, 0, 1650, 0xd8cf80e1u},  // whiny listening 1
+  {11, 6, 0, 2300, 0x9ad3e4bfu},  // whiny listening 1
+  {11, 6, 0, 3100, 0xae42d6deu},  // whiny listening 1
+  {11, 6, 0, 4200, 0x48aba3b4u},  // whiny listening 1
+  {11, 6, 0, 5500, 0xea00977fu},  // whiny listening 1
+  {11, 6, 0, 7300, 0x53e4f5dcu},  // whiny listening 1
+  {11, 6, 0, 9900, 0xe01c8673u},  // whiny listening 1
   {11, 6, 1, 0, 0x6ed14e63u},  // whiny listening 2
   {11, 6, 1, 150, 0x6ed14e63u},  // whiny listening 2
   {11, 6, 1, 420, 0x6ed14e63u},  // whiny listening 2
   {11, 6, 1, 700, 0x6ed14e63u},  // whiny listening 2
-  {11, 6, 1, 1100, 0x23a9a64fu},  // whiny listening 2
-  {11, 6, 1, 1650, 0xb9673620u},  // whiny listening 2
-  {11, 6, 1, 3100, 0x535d3814u},  // whiny listening 2
-  {11, 6, 1, 4200, 0x7fa7eba7u},  // whiny listening 2
-  {11, 6, 1, 5500, 0xf45a384eu},  // whiny listening 2
+  {11, 6, 1, 1100, 0x4c5ed369u},  // whiny listening 2
+  {11, 6, 1, 1650, 0xbc0af9e5u},  // whiny listening 2
+  {11, 6, 1, 3100, 0x0d6dc518u},  // whiny listening 2
+  {11, 6, 1, 4200, 0xc9e89808u},  // whiny listening 2
+  {11, 6, 1, 5500, 0xefd469eau},  // whiny listening 2
   {11, 6, 1, 7300, 0x6ed14e63u},  // whiny listening 2
-  {11, 6, 1, 9900, 0xb1c1fd11u},  // whiny listening 2
+  {11, 6, 1, 9900, 0x8569c20au},  // whiny listening 2
   {11, 6, 2, 0, 0x6ab7f7b9u},  // whiny listening 3
   {11, 6, 2, 150, 0x6ab7f7b9u},  // whiny listening 3
   {11, 6, 2, 420, 0x6ab7f7b9u},  // whiny listening 3
   {11, 6, 2, 700, 0x6ab7f7b9u},  // whiny listening 3
-  {11, 6, 2, 1100, 0x6cc92c3eu},  // whiny listening 3
-  {11, 6, 2, 1650, 0x0185bcd5u},  // whiny listening 3
-  {11, 6, 2, 2300, 0x0185bcd5u},  // whiny listening 3
-  {11, 6, 2, 3100, 0x51a7d513u},  // whiny listening 3
-  {11, 6, 2, 4200, 0x8cb319a9u},  // whiny listening 3
-  {11, 6, 2, 5500, 0xdd128138u},  // whiny listening 3
+  {11, 6, 2, 1100, 0x033e5918u},  // whiny listening 3
+  {11, 6, 2, 1650, 0x04e87310u},  // whiny listening 3
+  {11, 6, 2, 2300, 0x04e87310u},  // whiny listening 3
+  {11, 6, 2, 3100, 0x0f97281fu},  // whiny listening 3
+  {11, 6, 2, 4200, 0x3afc6a06u},  // whiny listening 3
+  {11, 6, 2, 5500, 0xd73c115cu},  // whiny listening 3
   {11, 6, 2, 7300, 0x6ab7f7b9u},  // whiny listening 3
-  {11, 6, 2, 9900, 0x51a7d513u},  // whiny listening 3
+  {11, 6, 2, 9900, 0x0f97281fu},  // whiny listening 3
   {11, 7, 0, 0, 0xd60f57d8u},  // whiny starting 1
   {11, 7, 0, 150, 0xd60f57d8u},  // whiny starting 1
   {11, 7, 0, 420, 0xd60f57d8u},  // whiny starting 1
   {11, 7, 0, 700, 0xd60f57d8u},  // whiny starting 1
-  {11, 7, 0, 1100, 0x62fa7c4eu},  // whiny starting 1
-  {11, 7, 0, 1650, 0xe2153b74u},  // whiny starting 1
-  {11, 7, 0, 2300, 0xb70fe4d8u},  // whiny starting 1
-  {11, 7, 0, 3100, 0x88d9d050u},  // whiny starting 1
-  {11, 7, 0, 4200, 0x275155a2u},  // whiny starting 1
-  {11, 7, 0, 5500, 0x293ee218u},  // whiny starting 1
-  {11, 7, 0, 7300, 0x62fa7c4eu},  // whiny starting 1
-  {11, 7, 0, 9900, 0x88d9d050u},  // whiny starting 1
+  {11, 7, 0, 1100, 0x0d0d0968u},  // whiny starting 1
+  {11, 7, 0, 1650, 0xe778f4b1u},  // whiny starting 1
+  {11, 7, 0, 2300, 0x0a60b361u},  // whiny starting 1
+  {11, 7, 0, 3100, 0xd6e92d5cu},  // whiny starting 1
+  {11, 7, 0, 4200, 0x911e260du},  // whiny starting 1
+  {11, 7, 0, 5500, 0x32b0b3bcu},  // whiny starting 1
+  {11, 7, 0, 7300, 0x0d0d0968u},  // whiny starting 1
+  {11, 7, 0, 9900, 0xd6e92d5cu},  // whiny starting 1
   {11, 7, 1, 0, 0x9c9a5fffu},  // whiny starting 2
   {11, 7, 1, 150, 0x9c9a5fffu},  // whiny starting 2
   {11, 7, 1, 420, 0x9c9a5fffu},  // whiny starting 2
   {11, 7, 1, 700, 0x9c9a5fffu},  // whiny starting 2
-  {11, 7, 1, 1100, 0xf91b1e98u},  // whiny starting 2
-  {11, 7, 1, 1650, 0x5bc6a7bcu},  // whiny starting 2
-  {11, 7, 1, 2300, 0x5bc6a7bcu},  // whiny starting 2
-  {11, 7, 1, 3100, 0xf46f698du},  // whiny starting 2
-  {11, 7, 1, 4200, 0x4aef642au},  // whiny starting 2
-  {11, 7, 1, 5500, 0x3041d07du},  // whiny starting 2
+  {11, 7, 1, 1100, 0x96ec6bbeu},  // whiny starting 2
+  {11, 7, 1, 1650, 0x6b4ff4dbu},  // whiny starting 2
+  {11, 7, 1, 2300, 0x6b4ff4dbu},  // whiny starting 2
+  {11, 7, 1, 3100, 0xaa5f9481u},  // whiny starting 2
+  {11, 7, 1, 4200, 0xfca01785u},  // whiny starting 2
+  {11, 7, 1, 5500, 0x2bcf81d9u},  // whiny starting 2
   {11, 7, 1, 7300, 0x9c9a5fffu},  // whiny starting 2
-  {11, 7, 1, 9900, 0xd65c37b9u},  // whiny starting 2
+  {11, 7, 1, 9900, 0xa3f8be12u},  // whiny starting 2
   {11, 7, 2, 0, 0xbdcc2509u},  // whiny starting 3
   {11, 7, 2, 150, 0xbdcc2509u},  // whiny starting 3
   {11, 7, 2, 420, 0xbdcc2509u},  // whiny starting 3
   {11, 7, 2, 700, 0xbdcc2509u},  // whiny starting 3
-  {11, 7, 2, 1100, 0x08cd26e2u},  // whiny starting 3
+  {11, 7, 2, 1100, 0x0df341c9u},  // whiny starting 3
   {11, 7, 2, 1650, 0x5c56b764u},  // whiny starting 3
   {11, 7, 2, 2300, 0x5c56b764u},  // whiny starting 3
-  {11, 7, 2, 3100, 0xea42a1dfu},  // whiny starting 3
-  {11, 7, 2, 4200, 0xf8ed8890u},  // whiny starting 3
-  {11, 7, 2, 5500, 0x9f7c4b5cu},  // whiny starting 3
+  {11, 7, 2, 3100, 0xb4725cd3u},  // whiny starting 3
+  {11, 7, 2, 4200, 0x4ea2fb3fu},  // whiny starting 3
+  {11, 7, 2, 5500, 0x9552db38u},  // whiny starting 3
   {11, 7, 2, 7300, 0xbdcc2509u},  // whiny starting 3
-  {11, 7, 2, 9900, 0xea42a1dfu},  // whiny starting 3
+  {11, 7, 2, 9900, 0xb4725cd3u},  // whiny starting 3
   {11, 7, 3, 0, 0xd60f57d8u},  // whiny starting 4
   {11, 7, 3, 150, 0xd60f57d8u},  // whiny starting 4
   {11, 7, 3, 420, 0xd60f57d8u},  // whiny starting 4
   {11, 7, 3, 700, 0xd60f57d8u},  // whiny starting 4
-  {11, 7, 3, 1100, 0x62fa7c4eu},  // whiny starting 4
-  {11, 7, 3, 1650, 0xd0ced996u},  // whiny starting 4
-  {11, 7, 3, 2300, 0x85d4063au},  // whiny starting 4
-  {11, 7, 3, 3100, 0xba0232b2u},  // whiny starting 4
-  {11, 7, 3, 4200, 0x158ab740u},  // whiny starting 4
-  {11, 7, 3, 5500, 0x293ee218u},  // whiny starting 4
-  {11, 7, 3, 7300, 0x62fa7c4eu},  // whiny starting 4
-  {11, 7, 3, 9900, 0xba0232b2u},  // whiny starting 4
+  {11, 7, 3, 1100, 0x0d0d0968u},  // whiny starting 4
+  {11, 7, 3, 1650, 0xd5a31653u},  // whiny starting 4
+  {11, 7, 3, 2300, 0x38bb5183u},  // whiny starting 4
+  {11, 7, 3, 3100, 0xe432cfbeu},  // whiny starting 4
+  {11, 7, 3, 4200, 0xa3c5c4efu},  // whiny starting 4
+  {11, 7, 3, 5500, 0x32b0b3bcu},  // whiny starting 4
+  {11, 7, 3, 7300, 0x0d0d0968u},  // whiny starting 4
+  {11, 7, 3, 9900, 0xe432cfbeu},  // whiny starting 4
   {11, 7, 4, 0, 0x9c9a5fffu},  // whiny starting 5
   {11, 7, 4, 150, 0x9c9a5fffu},  // whiny starting 5
   {11, 7, 4, 420, 0x9c9a5fffu},  // whiny starting 5
   {11, 7, 4, 700, 0x9c9a5fffu},  // whiny starting 5
-  {11, 7, 4, 1100, 0x709cff76u},  // whiny starting 5
-  {11, 7, 4, 1650, 0xd2414652u},  // whiny starting 5
-  {11, 7, 4, 2300, 0xd2414652u},  // whiny starting 5
-  {11, 7, 4, 3100, 0x7de88863u},  // whiny starting 5
-  {11, 7, 4, 4200, 0xc36885c4u},  // whiny starting 5
-  {11, 7, 4, 5500, 0xb9c63193u},  // whiny starting 5
+  {11, 7, 4, 1100, 0x1f6b8a50u},  // whiny starting 5
+  {11, 7, 4, 1650, 0xe2c81535u},  // whiny starting 5
+  {11, 7, 4, 2300, 0xe2c81535u},  // whiny starting 5
+  {11, 7, 4, 3100, 0x23d8756fu},  // whiny starting 5
+  {11, 7, 4, 4200, 0x7527f66bu},  // whiny starting 5
+  {11, 7, 4, 5500, 0xa2486037u},  // whiny starting 5
   {11, 7, 4, 7300, 0x9c9a5fffu},  // whiny starting 5
-  {11, 7, 4, 9900, 0x5fdbd657u},  // whiny starting 5
+  {11, 7, 4, 9900, 0x2a7f5ffcu},  // whiny starting 5
   {11, 7, 5, 0, 0xbdcc2509u},  // whiny starting 6
   {11, 7, 5, 150, 0xbdcc2509u},  // whiny starting 6
   {11, 7, 5, 420, 0xbdcc2509u},  // whiny starting 6
   {11, 7, 5, 700, 0xbdcc2509u},  // whiny starting 6
-  {11, 7, 5, 1100, 0x60274153u},  // whiny starting 6
+  {11, 7, 5, 1100, 0x65192678u},  // whiny starting 6
   {11, 7, 5, 1650, 0x34bcd0d5u},  // whiny starting 6
   {11, 7, 5, 2300, 0x34bcd0d5u},  // whiny starting 6
-  {11, 7, 5, 3100, 0x82a8c66eu},  // whiny starting 6
-  {11, 7, 5, 4200, 0x9007ef21u},  // whiny starting 6
-  {11, 7, 5, 5500, 0xf7962cedu},  // whiny starting 6
+  {11, 7, 5, 3100, 0xdc983b62u},  // whiny starting 6
+  {11, 7, 5, 4200, 0x26489c8eu},  // whiny starting 6
+  {11, 7, 5, 5500, 0xfdb8bc89u},  // whiny starting 6
   {11, 7, 5, 7300, 0xbdcc2509u},  // whiny starting 6
-  {11, 7, 5, 9900, 0x82a8c66eu},  // whiny starting 6
+  {11, 7, 5, 9900, 0xdc983b62u},  // whiny starting 6
   {11, 7, 6, 0, 0xd60f57d8u},  // whiny starting 7
   {11, 7, 6, 150, 0xd60f57d8u},  // whiny starting 7
   {11, 7, 6, 420, 0xd60f57d8u},  // whiny starting 7
   {11, 7, 6, 700, 0xd60f57d8u},  // whiny starting 7
-  {11, 7, 6, 1100, 0x62fa7c4eu},  // whiny starting 7
-  {11, 7, 6, 1650, 0x1c3ee917u},  // whiny starting 7
-  {11, 7, 6, 2300, 0x492436bbu},  // whiny starting 7
-  {11, 7, 6, 3100, 0x76f20233u},  // whiny starting 7
-  {11, 7, 6, 4200, 0xd97a87c1u},  // whiny starting 7
-  {11, 7, 6, 5500, 0x293ee218u},  // whiny starting 7
-  {11, 7, 6, 7300, 0x62fa7c4eu},  // whiny starting 7
-  {11, 7, 6, 9900, 0x76f20233u},  // whiny starting 7
+  {11, 7, 6, 1100, 0x0d0d0968u},  // whiny starting 7
+  {11, 7, 6, 1650, 0x195326d2u},  // whiny starting 7
+  {11, 7, 6, 2300, 0xf44b6102u},  // whiny starting 7
+  {11, 7, 6, 3100, 0x28c2ff3fu},  // whiny starting 7
+  {11, 7, 6, 4200, 0x6f35f46eu},  // whiny starting 7
+  {11, 7, 6, 5500, 0x32b0b3bcu},  // whiny starting 7
+  {11, 7, 6, 7300, 0x0d0d0968u},  // whiny starting 7
+  {11, 7, 6, 9900, 0x28c2ff3fu},  // whiny starting 7
   {11, 7, 7, 0, 0x9c9a5fffu},  // whiny starting 8
   {11, 7, 7, 150, 0x9c9a5fffu},  // whiny starting 8
   {11, 7, 7, 420, 0x9c9a5fffu},  // whiny starting 8
   {11, 7, 7, 700, 0x9c9a5fffu},  // whiny starting 8
-  {11, 7, 7, 1100, 0x8169ec24u},  // whiny starting 8
-  {11, 7, 7, 1650, 0x23b45500u},  // whiny starting 8
-  {11, 7, 7, 2300, 0x23b45500u},  // whiny starting 8
-  {11, 7, 7, 3100, 0x8c1d9b31u},  // whiny starting 8
-  {11, 7, 7, 4200, 0x329d9696u},  // whiny starting 8
-  {11, 7, 7, 5500, 0x483322c1u},  // whiny starting 8
+  {11, 7, 7, 1100, 0xee9e9902u},  // whiny starting 8
+  {11, 7, 7, 1650, 0x133d0667u},  // whiny starting 8
+  {11, 7, 7, 2300, 0x133d0667u},  // whiny starting 8
+  {11, 7, 7, 3100, 0xd22d663du},  // whiny starting 8
+  {11, 7, 7, 4200, 0x84d2e539u},  // whiny starting 8
+  {11, 7, 7, 5500, 0x53bd7365u},  // whiny starting 8
   {11, 7, 7, 7300, 0x9c9a5fffu},  // whiny starting 8
-  {11, 7, 7, 9900, 0xae2ec505u},  // whiny starting 8
+  {11, 7, 7, 9900, 0xdb8a4caeu},  // whiny starting 8
   {11, 7, 8, 0, 0xbdcc2509u},  // whiny starting 9
   {11, 7, 8, 150, 0xbdcc2509u},  // whiny starting 9
   {11, 7, 8, 420, 0xbdcc2509u},  // whiny starting 9
   {11, 7, 8, 700, 0xbdcc2509u},  // whiny starting 9
-  {11, 7, 8, 1100, 0x5f5eca4au},  // whiny starting 9
+  {11, 7, 8, 1100, 0x5a60ad61u},  // whiny starting 9
   {11, 7, 8, 1650, 0x0bc55bccu},  // whiny starting 9
   {11, 7, 8, 2300, 0x0bc55bccu},  // whiny starting 9
-  {11, 7, 8, 3100, 0xbdd14d77u},  // whiny starting 9
-  {11, 7, 8, 4200, 0xaf7e6438u},  // whiny starting 9
-  {11, 7, 8, 5500, 0xc8efa7f4u},  // whiny starting 9
+  {11, 7, 8, 3100, 0xe3e1b07bu},  // whiny starting 9
+  {11, 7, 8, 4200, 0x19311797u},  // whiny starting 9
+  {11, 7, 8, 5500, 0xc2c13790u},  // whiny starting 9
   {11, 7, 8, 7300, 0xbdcc2509u},  // whiny starting 9
-  {11, 7, 8, 9900, 0xbdd14d77u},  // whiny starting 9
+  {11, 7, 8, 9900, 0xe3e1b07bu},  // whiny starting 9
   {11, 7, 9, 0, 0xd60f57d8u},  // whiny starting 10
   {11, 7, 9, 150, 0xd60f57d8u},  // whiny starting 10
   {11, 7, 9, 420, 0xd60f57d8u},  // whiny starting 10
   {11, 7, 9, 700, 0xd60f57d8u},  // whiny starting 10
-  {11, 7, 9, 1100, 0x62fa7c4eu},  // whiny starting 10
-  {11, 7, 9, 1650, 0x45daed05u},  // whiny starting 10
-  {11, 7, 9, 2300, 0x10c032a9u},  // whiny starting 10
-  {11, 7, 9, 3100, 0x2f160621u},  // whiny starting 10
-  {11, 7, 9, 4200, 0x8cfb04efu},  // whiny starting 10
-  {11, 7, 9, 5500, 0x293ee218u},  // whiny starting 10
-  {11, 7, 9, 7300, 0x62fa7c4eu},  // whiny starting 10
-  {11, 7, 9, 9900, 0x2f160621u},  // whiny starting 10
+  {11, 7, 9, 1100, 0x0d0d0968u},  // whiny starting 10
+  {11, 7, 9, 1650, 0x40b722c0u},  // whiny starting 10
+  {11, 7, 9, 2300, 0xadaf6510u},  // whiny starting 10
+  {11, 7, 9, 3100, 0x7126fb2du},  // whiny starting 10
+  {11, 7, 9, 4200, 0x3ab47740u},  // whiny starting 10
+  {11, 7, 9, 5500, 0x32b0b3bcu},  // whiny starting 10
+  {11, 7, 9, 7300, 0x0d0d0968u},  // whiny starting 10
+  {11, 7, 9, 9900, 0x7126fb2du},  // whiny starting 10
   {11, 7, 10, 0, 0x9c9a5fffu},  // whiny starting 11
   {11, 7, 10, 150, 0x9c9a5fffu},  // whiny starting 11
   {11, 7, 10, 420, 0x9c9a5fffu},  // whiny starting 11
   {11, 7, 10, 700, 0x9c9a5fffu},  // whiny starting 11
-  {11, 7, 10, 1100, 0xd0956889u},  // whiny starting 11
-  {11, 7, 10, 1650, 0xcaddfb32u},  // whiny starting 11
-  {11, 7, 10, 2300, 0xcaddfb32u},  // whiny starting 11
-  {11, 7, 10, 3100, 0x65743503u},  // whiny starting 11
-  {11, 7, 10, 4200, 0xd791bf98u},  // whiny starting 11
-  {11, 7, 10, 5500, 0xa15a8cf3u},  // whiny starting 11
+  {11, 7, 10, 1100, 0xbf621dafu},  // whiny starting 11
+  {11, 7, 10, 1650, 0xfa54a855u},  // whiny starting 11
+  {11, 7, 10, 2300, 0xfa54a855u},  // whiny starting 11
+  {11, 7, 10, 3100, 0x3b44c80fu},  // whiny starting 11
+  {11, 7, 10, 4200, 0x61decc37u},  // whiny starting 11
+  {11, 7, 10, 5500, 0xbad4dd57u},  // whiny starting 11
   {11, 7, 10, 7300, 0x9c9a5fffu},  // whiny starting 11
-  {11, 7, 10, 9900, 0x47476b37u},  // whiny starting 11
+  {11, 7, 10, 9900, 0x32e3e29cu},  // whiny starting 11
   {11, 7, 11, 0, 0xbdcc2509u},  // whiny starting 12
   {11, 7, 11, 150, 0xbdcc2509u},  // whiny starting 12
   {11, 7, 11, 420, 0xbdcc2509u},  // whiny starting 12
   {11, 7, 11, 700, 0xbdcc2509u},  // whiny starting 12
-  {11, 7, 11, 1100, 0x7b9e72a1u},  // whiny starting 12
+  {11, 7, 11, 1100, 0x7ea0158au},  // whiny starting 12
   {11, 7, 11, 1650, 0x2f05e327u},  // whiny starting 12
   {11, 7, 11, 2300, 0x2f05e327u},  // whiny starting 12
-  {11, 7, 11, 3100, 0x9911f59cu},  // whiny starting 12
-  {11, 7, 11, 4200, 0x8bbedcd3u},  // whiny starting 12
-  {11, 7, 11, 5500, 0xec2f1f1fu},  // whiny starting 12
+  {11, 7, 11, 3100, 0xc7210890u},  // whiny starting 12
+  {11, 7, 11, 4200, 0x3df1af7cu},  // whiny starting 12
+  {11, 7, 11, 5500, 0xe6018f7bu},  // whiny starting 12
   {11, 7, 11, 7300, 0xbdcc2509u},  // whiny starting 12
-  {11, 7, 11, 9900, 0x9911f59cu},  // whiny starting 12
+  {11, 7, 11, 9900, 0xc7210890u},  // whiny starting 12
   {11, 8, 0, 0, 0xbc493eb1u},  // whiny planning 1
   {11, 8, 0, 150, 0xbc493eb1u},  // whiny planning 1
   {11, 8, 0, 420, 0xbc493eb1u},  // whiny planning 1
   {11, 8, 0, 700, 0xbc493eb1u},  // whiny planning 1
-  {11, 8, 0, 1100, 0x2720d4f0u},  // whiny planning 1
+  {11, 8, 0, 1100, 0x48d7a1d6u},  // whiny planning 1
   {11, 8, 0, 1650, 0x4a141994u},  // whiny planning 1
   {11, 8, 0, 2300, 0xa68ea9d9u},  // whiny planning 1
-  {11, 8, 0, 3100, 0x4ecc3474u},  // whiny planning 1
-  {11, 8, 0, 4200, 0xe8e4f3c0u},  // whiny planning 1
-  {11, 8, 0, 5500, 0x28bef816u},  // whiny planning 1
-  {11, 8, 0, 7300, 0x2720d4f0u},  // whiny planning 1
-  {11, 8, 0, 9900, 0xb4a1220au},  // whiny planning 1
+  {11, 8, 0, 3100, 0x10fcc978u},  // whiny planning 1
+  {11, 8, 0, 4200, 0xe2ca63a4u},  // whiny planning 1
+  {11, 8, 0, 5500, 0x3330a9b2u},  // whiny planning 1
+  {11, 8, 0, 7300, 0x48d7a1d6u},  // whiny planning 1
+  {11, 8, 0, 9900, 0x02ee51a5u},  // whiny planning 1
   {11, 8, 1, 0, 0x2fc0ff29u},  // whiny planning 2
   {11, 8, 1, 150, 0x2fc0ff29u},  // whiny planning 2
   {11, 8, 1, 420, 0x2fc0ff29u},  // whiny planning 2
   {11, 8, 1, 700, 0x2fc0ff29u},  // whiny planning 2
-  {11, 8, 1, 1100, 0xcbdad85au},  // whiny planning 2
+  {11, 8, 1, 1100, 0xdeb17112u},  // whiny planning 2
   {11, 8, 1, 1650, 0x77cc6f55u},  // whiny planning 2
-  {11, 8, 1, 3100, 0xc8e9ae72u},  // whiny planning 2
-  {11, 8, 1, 4200, 0x21b04315u},  // whiny planning 2
+  {11, 8, 1, 3100, 0x96d9537eu},  // whiny planning 2
+  {11, 8, 1, 4200, 0x97ff30bau},  // whiny planning 2
   {11, 8, 1, 5500, 0x16ada1d5u},  // whiny planning 2
   {11, 8, 1, 7300, 0x2fc0ff29u},  // whiny planning 2
-  {11, 8, 1, 9900, 0xe51751a1u},  // whiny planning 2
+  {11, 8, 1, 9900, 0x590654c1u},  // whiny planning 2
   {11, 8, 2, 0, 0xb1cc6b45u},  // whiny planning 3
   {11, 8, 2, 150, 0xb1cc6b45u},  // whiny planning 3
   {11, 8, 2, 420, 0xb1cc6b45u},  // whiny planning 3
   {11, 8, 2, 700, 0xb1cc6b45u},  // whiny planning 3
-  {11, 8, 2, 1100, 0xf2084a7au},  // whiny planning 3
+  {11, 8, 2, 1100, 0x9dff3f5cu},  // whiny planning 3
   {11, 8, 2, 1650, 0xfd68edf1u},  // whiny planning 3
   {11, 8, 2, 2300, 0xfd68edf1u},  // whiny planning 3
-  {11, 8, 2, 3100, 0x29639c40u},  // whiny planning 3
-  {11, 8, 2, 4200, 0x821baea2u},  // whiny planning 3
-  {11, 8, 2, 5500, 0x30348bcbu},  // whiny planning 3
+  {11, 8, 2, 3100, 0x7753614cu},  // whiny planning 3
+  {11, 8, 2, 4200, 0x3454dd0du},  // whiny planning 3
+  {11, 8, 2, 5500, 0xf1472d81u},  // whiny planning 3
   {11, 8, 2, 7300, 0xb1cc6b45u},  // whiny planning 3
-  {11, 8, 2, 9900, 0x29639c40u},  // whiny planning 3
+  {11, 8, 2, 9900, 0x7753614cu},  // whiny planning 3
   {11, 9, 0, 0, 0xab1fcd6eu},  // whiny terminal 1
   {11, 9, 0, 150, 0xab1fcd6eu},  // whiny terminal 1
   {11, 9, 0, 420, 0xab1fcd6eu},  // whiny terminal 1
   {11, 9, 0, 700, 0xab1fcd6eu},  // whiny terminal 1
-  {11, 9, 0, 1100, 0x8f6227ccu},  // whiny terminal 1
-  {11, 9, 0, 1650, 0x9da00c9bu},  // whiny terminal 1
-  {11, 9, 0, 2300, 0x6f145f92u},  // whiny terminal 1
-  {11, 9, 0, 5500, 0xb4af75c7u},  // whiny terminal 1
-  {11, 9, 0, 7300, 0x2f935a2bu},  // whiny terminal 1
-  {11, 9, 0, 9900, 0x975707dcu},  // whiny terminal 1
+  {11, 9, 0, 1100, 0xe09552eau},  // whiny terminal 1
+  {11, 9, 0, 1650, 0x98cdc35eu},  // whiny terminal 1
+  {11, 9, 0, 2300, 0x3ccbbb2eu},  // whiny terminal 1
+  {11, 9, 0, 5500, 0xaf212463u},  // whiny terminal 1
+  {11, 9, 0, 7300, 0x40642f0du},  // whiny terminal 1
+  {11, 9, 0, 9900, 0xc967fad0u},  // whiny terminal 1
   {11, 9, 1, 0, 0xda655455u},  // whiny terminal 2
   {11, 9, 1, 150, 0xda655455u},  // whiny terminal 2
   {11, 9, 1, 420, 0xda655455u},  // whiny terminal 2
   {11, 9, 1, 700, 0xda655455u},  // whiny terminal 2
-  {11, 9, 1, 1100, 0x08e78b9au},  // whiny terminal 2
-  {11, 9, 1, 1650, 0x08e78b9au},  // whiny terminal 2
+  {11, 9, 1, 1100, 0x0dd9ecb1u},  // whiny terminal 2
+  {11, 9, 1, 1650, 0x0dd9ecb1u},  // whiny terminal 2
   {11, 9, 1, 2300, 0x82949c29u},  // whiny terminal 2
-  {11, 9, 1, 3100, 0xebe5b8cdu},  // whiny terminal 2
-  {11, 9, 1, 4200, 0x9f6a3a7au},  // whiny terminal 2
+  {11, 9, 1, 3100, 0xb5d545c1u},  // whiny terminal 2
+  {11, 9, 1, 4200, 0x292549d5u},  // whiny terminal 2
   {11, 9, 1, 5500, 0xa7c7b4d8u},  // whiny terminal 2
   {11, 9, 1, 7300, 0xda655455u},  // whiny terminal 2
   {11, 9, 1, 9900, 0xfcebd6f8u},  // whiny terminal 2
@@ -6977,398 +7107,398 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 9, 2, 420, 0xb437065bu},  // whiny terminal 3
   {11, 9, 2, 700, 0xb437065bu},  // whiny terminal 3
   {11, 9, 2, 1100, 0xb437065bu},  // whiny terminal 3
-  {11, 9, 2, 2300, 0x8b26242cu},  // whiny terminal 3
+  {11, 9, 2, 2300, 0xce79ddafu},  // whiny terminal 3
   {11, 9, 2, 3100, 0x501f6f8au},  // whiny terminal 3
-  {11, 9, 2, 4200, 0x6ec03a9du},  // whiny terminal 3
-  {11, 9, 2, 5500, 0x445c28e2u},  // whiny terminal 3
+  {11, 9, 2, 4200, 0x30f0c791u},  // whiny terminal 3
+  {11, 9, 2, 5500, 0x4e72b886u},  // whiny terminal 3
   {11, 9, 2, 7300, 0xf6c0753cu},  // whiny terminal 3
-  {11, 9, 2, 9900, 0x8b26242cu},  // whiny terminal 3
+  {11, 9, 2, 9900, 0xce79ddafu},  // whiny terminal 3
   {11, 10, 0, 0, 0x20aadefau},  // whiny tool_use 1
   {11, 10, 0, 150, 0x20aadefau},  // whiny tool_use 1
   {11, 10, 0, 420, 0x20aadefau},  // whiny tool_use 1
   {11, 10, 0, 700, 0x20aadefau},  // whiny tool_use 1
-  {11, 10, 0, 1100, 0x3aa1988cu},  // whiny tool_use 1
-  {11, 10, 0, 1650, 0x4093edf9u},  // whiny tool_use 1
+  {11, 10, 0, 1100, 0x5556edaau},  // whiny tool_use 1
+  {11, 10, 0, 1650, 0x45fe223cu},  // whiny tool_use 1
   {11, 10, 0, 2300, 0xbdb15cd4u},  // whiny tool_use 1
-  {11, 10, 0, 3100, 0x95e8867bu},  // whiny tool_use 1
-  {11, 10, 0, 4200, 0xe8357ce1u},  // whiny tool_use 1
-  {11, 10, 0, 5500, 0xcc469464u},  // whiny tool_use 1
-  {11, 10, 0, 7300, 0x3aa1988cu},  // whiny tool_use 1
-  {11, 10, 0, 9900, 0xfed31f02u},  // whiny tool_use 1
+  {11, 10, 0, 3100, 0xcbd87b77u},  // whiny tool_use 1
+  {11, 10, 0, 4200, 0xe21bec85u},  // whiny tool_use 1
+  {11, 10, 0, 5500, 0xd7c8c5c0u},  // whiny tool_use 1
+  {11, 10, 0, 7300, 0x5556edaau},  // whiny tool_use 1
+  {11, 10, 0, 9900, 0x489c6cadu},  // whiny tool_use 1
   {11, 10, 1, 0, 0x5ff92c51u},  // whiny tool_use 2
   {11, 10, 1, 150, 0x5ff92c51u},  // whiny tool_use 2
   {11, 10, 1, 420, 0x5ff92c51u},  // whiny tool_use 2
   {11, 10, 1, 700, 0x5ff92c51u},  // whiny tool_use 2
-  {11, 10, 1, 1100, 0x792ad486u},  // whiny tool_use 2
-  {11, 10, 1, 1650, 0x645de1fcu},  // whiny tool_use 2
-  {11, 10, 1, 3100, 0xfcf98773u},  // whiny tool_use 2
-  {11, 10, 1, 4200, 0x66fe4c14u},  // whiny tool_use 2
-  {11, 10, 1, 5500, 0xc8c35662u},  // whiny tool_use 2
+  {11, 10, 1, 1100, 0x16dda1a0u},  // whiny tool_use 2
+  {11, 10, 1, 1650, 0x51b97d5eu},  // whiny tool_use 2
+  {11, 10, 1, 3100, 0xa2c97a7fu},  // whiny tool_use 2
+  {11, 10, 1, 4200, 0xd0b13fbbu},  // whiny tool_use 2
+  {11, 10, 1, 5500, 0xd34d07c6u},  // whiny tool_use 2
   {11, 10, 1, 7300, 0x5ff92c51u},  // whiny tool_use 2
-  {11, 10, 1, 9900, 0x0fd69537u},  // whiny tool_use 2
+  {11, 10, 1, 9900, 0x29adf820u},  // whiny tool_use 2
   {11, 10, 2, 0, 0x70119d2eu},  // whiny tool_use 3
   {11, 10, 2, 150, 0x70119d2eu},  // whiny tool_use 3
   {11, 10, 2, 420, 0x70119d2eu},  // whiny tool_use 3
   {11, 10, 2, 700, 0x70119d2eu},  // whiny tool_use 3
-  {11, 10, 2, 1100, 0xab7225f0u},  // whiny tool_use 3
-  {11, 10, 2, 1650, 0xd95a8b7fu},  // whiny tool_use 3
-  {11, 10, 2, 2300, 0xd95a8b7fu},  // whiny tool_use 3
-  {11, 10, 2, 3100, 0x6ff60e8au},  // whiny tool_use 3
-  {11, 10, 2, 4200, 0xbf23ce5du},  // whiny tool_use 3
-  {11, 10, 2, 5500, 0x45102b46u},  // whiny tool_use 3
+  {11, 10, 2, 1100, 0xc48550d6u},  // whiny tool_use 3
+  {11, 10, 2, 1650, 0xdc3744bau},  // whiny tool_use 3
+  {11, 10, 2, 2300, 0xdc3744bau},  // whiny tool_use 3
+  {11, 10, 2, 3100, 0x31c6f386u},  // whiny tool_use 3
+  {11, 10, 2, 4200, 0x096cbdf2u},  // whiny tool_use 3
+  {11, 10, 2, 5500, 0x4f3ebb22u},  // whiny tool_use 3
   {11, 10, 2, 7300, 0x70119d2eu},  // whiny tool_use 3
-  {11, 10, 2, 9900, 0x6ff60e8au},  // whiny tool_use 3
+  {11, 10, 2, 9900, 0x31c6f386u},  // whiny tool_use 3
   {11, 11, 0, 0, 0xfa75ad3cu},  // whiny searching 1
   {11, 11, 0, 150, 0xfa75ad3cu},  // whiny searching 1
   {11, 11, 0, 420, 0xfa75ad3cu},  // whiny searching 1
   {11, 11, 0, 700, 0xfa75ad3cu},  // whiny searching 1
-  {11, 11, 0, 1100, 0x5389d891u},  // whiny searching 1
-  {11, 11, 0, 1650, 0x66f1402fu},  // whiny searching 1
-  {11, 11, 0, 2300, 0x6800b579u},  // whiny searching 1
-  {11, 11, 0, 3100, 0x848aa1c9u},  // whiny searching 1
-  {11, 11, 0, 4200, 0xe71fef53u},  // whiny searching 1
-  {11, 11, 0, 5500, 0xf8c3591cu},  // whiny searching 1
-  {11, 11, 0, 7300, 0x5389d891u},  // whiny searching 1
-  {11, 11, 0, 9900, 0xef709576u},  // whiny searching 1
+  {11, 11, 0, 1100, 0x4552372bu},  // whiny searching 1
+  {11, 11, 0, 1650, 0xd5b1b0b2u},  // whiny searching 1
+  {11, 11, 0, 2300, 0x5ca88a62u},  // whiny searching 1
+  {11, 11, 0, 3100, 0xdaba5cc5u},  // whiny searching 1
+  {11, 11, 0, 4200, 0xed317f37u},  // whiny searching 1
+  {11, 11, 0, 5500, 0xe34d08b8u},  // whiny searching 1
+  {11, 11, 0, 7300, 0x4552372bu},  // whiny searching 1
+  {11, 11, 0, 9900, 0x593fe6d9u},  // whiny searching 1
   {11, 11, 1, 0, 0x72d1732fu},  // whiny searching 2
   {11, 11, 1, 150, 0x72d1732fu},  // whiny searching 2
   {11, 11, 1, 420, 0x72d1732fu},  // whiny searching 2
   {11, 11, 1, 700, 0x72d1732fu},  // whiny searching 2
-  {11, 11, 1, 1100, 0xf17b552bu},  // whiny searching 2
-  {11, 11, 1, 1650, 0xd1c0fe73u},  // whiny searching 2
-  {11, 11, 1, 3100, 0x9b0311d3u},  // whiny searching 2
-  {11, 11, 1, 4200, 0x45ca8f21u},  // whiny searching 2
-  {11, 11, 1, 5500, 0x0b1ffec2u},  // whiny searching 2
+  {11, 11, 1, 1100, 0x9e8c200du},  // whiny searching 2
+  {11, 11, 1, 1650, 0xd4ad31b6u},  // whiny searching 2
+  {11, 11, 1, 3100, 0xc533ecdfu},  // whiny searching 2
+  {11, 11, 1, 4200, 0xf385fc8eu},  // whiny searching 2
+  {11, 11, 1, 5500, 0x1091af66u},  // whiny searching 2
   {11, 11, 1, 7300, 0x72d1732fu},  // whiny searching 2
-  {11, 11, 1, 9900, 0x34aa59adu},  // whiny searching 2
+  {11, 11, 1, 9900, 0x000266b6u},  // whiny searching 2
   {11, 11, 2, 0, 0xcef62296u},  // whiny searching 3
   {11, 11, 2, 150, 0xcef62296u},  // whiny searching 3
   {11, 11, 2, 420, 0xcef62296u},  // whiny searching 3
   {11, 11, 2, 700, 0xcef62296u},  // whiny searching 3
-  {11, 11, 2, 1100, 0x096b4030u},  // whiny searching 3
-  {11, 11, 2, 1650, 0xbe1e854au},  // whiny searching 3
-  {11, 11, 2, 2300, 0xbe1e854au},  // whiny searching 3
-  {11, 11, 2, 3100, 0xba5eafe7u},  // whiny searching 3
-  {11, 11, 2, 4200, 0xc935a112u},  // whiny searching 3
-  {11, 11, 2, 5500, 0xf365572au},  // whiny searching 3
+  {11, 11, 2, 1100, 0xadd1c77eu},  // whiny searching 3
+  {11, 11, 2, 1650, 0x177848c0u},  // whiny searching 3
+  {11, 11, 2, 2300, 0x177848c0u},  // whiny searching 3
+  {11, 11, 2, 3100, 0xe46e52ebu},  // whiny searching 3
+  {11, 11, 2, 4200, 0x7f7ad2bdu},  // whiny searching 3
+  {11, 11, 2, 5500, 0x3e529764u},  // whiny searching 3
   {11, 11, 2, 7300, 0xcef62296u},  // whiny searching 3
-  {11, 11, 2, 9900, 0xba5eafe7u},  // whiny searching 3
+  {11, 11, 2, 9900, 0xe46e52ebu},  // whiny searching 3
   {11, 12, 0, 0, 0x11c50bbcu},  // whiny analyzing 1
   {11, 12, 0, 150, 0x11c50bbcu},  // whiny analyzing 1
   {11, 12, 0, 420, 0x11c50bbcu},  // whiny analyzing 1
   {11, 12, 0, 700, 0x11c50bbcu},  // whiny analyzing 1
-  {11, 12, 0, 1100, 0x6be2a951u},  // whiny analyzing 1
+  {11, 12, 0, 1100, 0x5c3ff8f7u},  // whiny analyzing 1
   {11, 12, 0, 1650, 0x07ce72a9u},  // whiny analyzing 1
   {11, 12, 0, 2300, 0xa7bb6915u},  // whiny analyzing 1
-  {11, 12, 0, 3100, 0xc717adf7u},  // whiny analyzing 1
-  {11, 12, 0, 4200, 0x8672b2f5u},  // whiny analyzing 1
-  {11, 12, 0, 5500, 0x267ae705u},  // whiny analyzing 1
-  {11, 12, 0, 7300, 0x6be2a951u},  // whiny analyzing 1
-  {11, 12, 0, 9900, 0x6ba2caf5u},  // whiny analyzing 1
+  {11, 12, 0, 3100, 0x992750fbu},  // whiny analyzing 1
+  {11, 12, 0, 4200, 0x8c5c2291u},  // whiny analyzing 1
+  {11, 12, 0, 5500, 0xd310fb57u},  // whiny analyzing 1
+  {11, 12, 0, 7300, 0x5c3ff8f7u},  // whiny analyzing 1
+  {11, 12, 0, 9900, 0xddedb95au},  // whiny analyzing 1
   {11, 12, 1, 0, 0x2ee986a0u},  // whiny analyzing 2
   {11, 12, 1, 150, 0x2ee986a0u},  // whiny analyzing 2
   {11, 12, 1, 420, 0x2ee986a0u},  // whiny analyzing 2
   {11, 12, 1, 700, 0x2ee986a0u},  // whiny analyzing 2
-  {11, 12, 1, 1100, 0xdd9717b5u},  // whiny analyzing 2
-  {11, 12, 1, 1650, 0x2ee92179u},  // whiny analyzing 2
-  {11, 12, 1, 3100, 0x4785bc45u},  // whiny analyzing 2
-  {11, 12, 1, 4200, 0xce964d7cu},  // whiny analyzing 2
-  {11, 12, 1, 5500, 0x514cd951u},  // whiny analyzing 2
+  {11, 12, 1, 1100, 0xb2606293u},  // whiny analyzing 2
+  {11, 12, 1, 1650, 0x2b84eebcu},  // whiny analyzing 2
+  {11, 12, 1, 3100, 0x19b54149u},  // whiny analyzing 2
+  {11, 12, 1, 4200, 0x78d93ed3u},  // whiny analyzing 2
+  {11, 12, 1, 5500, 0x4ac288f5u},  // whiny analyzing 2
   {11, 12, 1, 7300, 0x2ee986a0u},  // whiny analyzing 2
-  {11, 12, 1, 9900, 0x8024d99au},  // whiny analyzing 2
+  {11, 12, 1, 9900, 0xb48ce681u},  // whiny analyzing 2
   {11, 12, 2, 0, 0x8a9dac0bu},  // whiny analyzing 3
   {11, 12, 2, 150, 0x8a9dac0bu},  // whiny analyzing 3
   {11, 12, 2, 420, 0x8a9dac0bu},  // whiny analyzing 3
   {11, 12, 2, 700, 0x8a9dac0bu},  // whiny analyzing 3
-  {11, 12, 2, 1100, 0x8e8cc771u},  // whiny analyzing 3
+  {11, 12, 2, 1100, 0x985728cbu},  // whiny analyzing 3
   {11, 12, 2, 1650, 0xc8ebd631u},  // whiny analyzing 3
   {11, 12, 2, 2300, 0xc8ebd631u},  // whiny analyzing 3
-  {11, 12, 2, 3100, 0x865cddb4u},  // whiny analyzing 3
-  {11, 12, 2, 4200, 0x2bf6ed22u},  // whiny analyzing 3
-  {11, 12, 2, 5500, 0xb9c12a5au},  // whiny analyzing 3
+  {11, 12, 2, 3100, 0xd86c20b8u},  // whiny analyzing 3
+  {11, 12, 2, 4200, 0x9db99e8du},  // whiny analyzing 3
+  {11, 12, 2, 5500, 0xb3efba3eu},  // whiny analyzing 3
   {11, 12, 2, 7300, 0x8a9dac0bu},  // whiny analyzing 3
-  {11, 12, 2, 9900, 0x865cddb4u},  // whiny analyzing 3
+  {11, 12, 2, 9900, 0xd86c20b8u},  // whiny analyzing 3
   {11, 13, 0, 0, 0x40d72d10u},  // whiny testing 1
   {11, 13, 0, 150, 0x40d72d10u},  // whiny testing 1
   {11, 13, 0, 420, 0x40d72d10u},  // whiny testing 1
   {11, 13, 0, 700, 0x40d72d10u},  // whiny testing 1
-  {11, 13, 0, 1100, 0x1c7180dfu},  // whiny testing 1
-  {11, 13, 0, 1650, 0x9090e7deu},  // whiny testing 1
-  {11, 13, 0, 2300, 0xe60e8aadu},  // whiny testing 1
-  {11, 13, 0, 3100, 0x6c893f48u},  // whiny testing 1
-  {11, 13, 0, 4200, 0x63aa8fa2u},  // whiny testing 1
-  {11, 13, 0, 5500, 0xb77121bbu},  // whiny testing 1
-  {11, 13, 0, 7300, 0x1c7180dfu},  // whiny testing 1
-  {11, 13, 0, 9900, 0xabf58200u},  // whiny testing 1
+  {11, 13, 0, 1100, 0x7386f5f9u},  // whiny testing 1
+  {11, 13, 0, 1650, 0x95fd281bu},  // whiny testing 1
+  {11, 13, 0, 2300, 0xd2a6b5b6u},  // whiny testing 1
+  {11, 13, 0, 3100, 0x32b9c244u},  // whiny testing 1
+  {11, 13, 0, 4200, 0x69841fc6u},  // whiny testing 1
+  {11, 13, 0, 5500, 0xacff701fu},  // whiny testing 1
+  {11, 13, 0, 7300, 0x7386f5f9u},  // whiny testing 1
+  {11, 13, 0, 9900, 0x1dbaf1afu},  // whiny testing 1
   {11, 13, 1, 0, 0x73534481u},  // whiny testing 2
   {11, 13, 1, 150, 0x73534481u},  // whiny testing 2
   {11, 13, 1, 420, 0x73534481u},  // whiny testing 2
   {11, 13, 1, 700, 0x73534481u},  // whiny testing 2
-  {11, 13, 1, 1100, 0xcb1857f2u},  // whiny testing 2
-  {11, 13, 1, 1650, 0x1ca53c1bu},  // whiny testing 2
-  {11, 13, 1, 3100, 0xb300ae11u},  // whiny testing 2
-  {11, 13, 1, 4200, 0x0599814eu},  // whiny testing 2
-  {11, 13, 1, 5500, 0x90dc060eu},  // whiny testing 2
+  {11, 13, 1, 1100, 0xa4ef22d4u},  // whiny testing 2
+  {11, 13, 1, 1650, 0x46d0d37bu},  // whiny testing 2
+  {11, 13, 1, 3100, 0xed30531du},  // whiny testing 2
+  {11, 13, 1, 4200, 0xb3d6f2e1u},  // whiny testing 2
+  {11, 13, 1, 5500, 0x2361228bu},  // whiny testing 2
   {11, 13, 1, 7300, 0x73534481u},  // whiny testing 2
   {11, 13, 1, 9900, 0x9e5d321cu},  // whiny testing 2
   {11, 13, 2, 0, 0x54dc2c6fu},  // whiny testing 3
   {11, 13, 2, 150, 0x54dc2c6fu},  // whiny testing 3
   {11, 13, 2, 420, 0x54dc2c6fu},  // whiny testing 3
   {11, 13, 2, 700, 0x54dc2c6fu},  // whiny testing 3
-  {11, 13, 2, 1100, 0x9d1d9e59u},  // whiny testing 3
-  {11, 13, 2, 1650, 0xecdb8c1fu},  // whiny testing 3
-  {11, 13, 2, 2300, 0xecdb8c1fu},  // whiny testing 3
-  {11, 13, 2, 3100, 0x3f894230u},  // whiny testing 3
-  {11, 13, 2, 4200, 0x20f62bd8u},  // whiny testing 3
-  {11, 13, 2, 5500, 0x34c3bf38u},  // whiny testing 3
+  {11, 13, 2, 1100, 0xf2eaeb7fu},  // whiny testing 3
+  {11, 13, 2, 1650, 0xa465f7a1u},  // whiny testing 3
+  {11, 13, 2, 2300, 0xa465f7a1u},  // whiny testing 3
+  {11, 13, 2, 3100, 0x61b9bf3cu},  // whiny testing 3
+  {11, 13, 2, 4200, 0x96b95877u},  // whiny testing 3
+  {11, 13, 2, 5500, 0xf3daef12u},  // whiny testing 3
   {11, 13, 2, 7300, 0x54dc2c6fu},  // whiny testing 3
-  {11, 13, 2, 9900, 0x3f894230u},  // whiny testing 3
+  {11, 13, 2, 9900, 0x61b9bf3cu},  // whiny testing 3
   {11, 14, 0, 0, 0x5d2bd342u},  // whiny delegating 1
   {11, 14, 0, 150, 0x5d2bd342u},  // whiny delegating 1
   {11, 14, 0, 420, 0x5d2bd342u},  // whiny delegating 1
   {11, 14, 0, 700, 0x5d2bd342u},  // whiny delegating 1
-  {11, 14, 0, 1100, 0xac360791u},  // whiny delegating 1
-  {11, 14, 0, 1650, 0xfba41369u},  // whiny delegating 1
-  {11, 14, 0, 2300, 0xfe22a3a5u},  // whiny delegating 1
-  {11, 14, 0, 3100, 0xc16a7948u},  // whiny delegating 1
-  {11, 14, 0, 4200, 0x9fe5769cu},  // whiny delegating 1
-  {11, 14, 0, 5500, 0xc3923198u},  // whiny delegating 1
-  {11, 14, 0, 7300, 0xac360791u},  // whiny delegating 1
-  {11, 14, 0, 9900, 0x20108dc2u},  // whiny delegating 1
+  {11, 14, 0, 1100, 0xc3c172b7u},  // whiny delegating 1
+  {11, 14, 0, 1650, 0xcb2d400eu},  // whiny delegating 1
+  {11, 14, 0, 2300, 0xecf1f1a9u},  // whiny delegating 1
+  {11, 14, 0, 3100, 0x9f5a8444u},  // whiny delegating 1
+  {11, 14, 0, 4200, 0x95cbe6f8u},  // whiny delegating 1
+  {11, 14, 0, 5500, 0xd81c603cu},  // whiny delegating 1
+  {11, 14, 0, 7300, 0xc3c172b7u},  // whiny delegating 1
+  {11, 14, 0, 9900, 0x965ffe6du},  // whiny delegating 1
   {11, 14, 1, 0, 0x0bf88bd5u},  // whiny delegating 2
   {11, 14, 1, 150, 0x0bf88bd5u},  // whiny delegating 2
   {11, 14, 1, 420, 0x0bf88bd5u},  // whiny delegating 2
   {11, 14, 1, 700, 0x0bf88bd5u},  // whiny delegating 2
-  {11, 14, 1, 1100, 0x85e49861u},  // whiny delegating 2
+  {11, 14, 1, 1100, 0xea13ed47u},  // whiny delegating 2
   {11, 14, 1, 1650, 0x7b37ae6eu},  // whiny delegating 2
-  {11, 14, 1, 3100, 0x20482e87u},  // whiny delegating 2
-  {11, 14, 1, 4200, 0xe6f51cabu},  // whiny delegating 2
-  {11, 14, 1, 5500, 0xa3078eaau},  // whiny delegating 2
+  {11, 14, 1, 3100, 0x7e78d38bu},  // whiny delegating 2
+  {11, 14, 1, 4200, 0x50ba6f04u},  // whiny delegating 2
+  {11, 14, 1, 5500, 0xb889df0eu},  // whiny delegating 2
   {11, 14, 1, 7300, 0x0bf88bd5u},  // whiny delegating 2
   {11, 14, 1, 9900, 0xae89df47u},  // whiny delegating 2
   {11, 14, 2, 0, 0xb5f458cdu},  // whiny delegating 3
   {11, 14, 2, 150, 0xb5f458cdu},  // whiny delegating 3
   {11, 14, 2, 420, 0xb5f458cdu},  // whiny delegating 3
   {11, 14, 2, 700, 0xb5f458cdu},  // whiny delegating 3
-  {11, 14, 2, 1100, 0x4c003270u},  // whiny delegating 3
-  {11, 14, 2, 1650, 0x68ad4d90u},  // whiny delegating 3
-  {11, 14, 2, 2300, 0x68ad4d90u},  // whiny delegating 3
-  {11, 14, 2, 3100, 0xefe548b2u},  // whiny delegating 3
-  {11, 14, 2, 4200, 0xd44dcc91u},  // whiny delegating 3
-  {11, 14, 2, 5500, 0xc749ef5du},  // whiny delegating 3
+  {11, 14, 2, 1100, 0x262a1d4fu},  // whiny delegating 3
+  {11, 14, 2, 1650, 0xfa802034u},  // whiny delegating 3
+  {11, 14, 2, 2300, 0xfa802034u},  // whiny delegating 3
+  {11, 14, 2, 3100, 0xb1d5b5beu},  // whiny delegating 3
+  {11, 14, 2, 4200, 0x6202bf3eu},  // whiny delegating 3
+  {11, 14, 2, 5500, 0x0050bf77u},  // whiny delegating 3
   {11, 14, 2, 7300, 0xb5f458cdu},  // whiny delegating 3
-  {11, 14, 2, 9900, 0xefe548b2u},  // whiny delegating 3
+  {11, 14, 2, 9900, 0xb1d5b5beu},  // whiny delegating 3
   {11, 15, 0, 0, 0x169c0a71u},  // whiny helper_return 1
   {11, 15, 0, 150, 0x169c0a71u},  // whiny helper_return 1
   {11, 15, 0, 420, 0x169c0a71u},  // whiny helper_return 1
   {11, 15, 0, 700, 0x169c0a71u},  // whiny helper_return 1
-  {11, 15, 0, 1100, 0x63fe4ab3u},  // whiny helper_return 1
-  {11, 15, 0, 1650, 0x5549831eu},  // whiny helper_return 1
-  {11, 15, 0, 2300, 0xaa1720e2u},  // whiny helper_return 1
-  {11, 15, 0, 3100, 0x7c6ef741u},  // whiny helper_return 1
-  {11, 15, 0, 4200, 0x49de794au},  // whiny helper_return 1
-  {11, 15, 0, 5500, 0x3d8b0ad5u},  // whiny helper_return 1
-  {11, 15, 0, 7300, 0x63fe4ab3u},  // whiny helper_return 1
-  {11, 15, 0, 9900, 0x6868b708u},  // whiny helper_return 1
+  {11, 15, 0, 1100, 0x0c093f95u},  // whiny helper_return 1
+  {11, 15, 0, 1650, 0x50244cdbu},  // whiny helper_return 1
+  {11, 15, 0, 2300, 0xb8c472eeu},  // whiny helper_return 1
+  {11, 15, 0, 3100, 0x225e0a4du},  // whiny helper_return 1
+  {11, 15, 0, 4200, 0x43f0e92eu},  // whiny helper_return 1
+  {11, 15, 0, 5500, 0x26055b71u},  // whiny helper_return 1
+  {11, 15, 0, 7300, 0x0c093f95u},  // whiny helper_return 1
+  {11, 15, 0, 9900, 0xde27c4a7u},  // whiny helper_return 1
   {11, 15, 1, 0, 0xcffbf232u},  // whiny helper_return 2
   {11, 15, 1, 150, 0xcffbf232u},  // whiny helper_return 2
   {11, 15, 1, 420, 0xcffbf232u},  // whiny helper_return 2
   {11, 15, 1, 700, 0xcffbf232u},  // whiny helper_return 2
-  {11, 15, 1, 1100, 0x6400a3ddu},  // whiny helper_return 2
-  {11, 15, 1, 1650, 0xb4cde9a4u},  // whiny helper_return 2
-  {11, 15, 1, 3100, 0xb3c37129u},  // whiny helper_return 2
-  {11, 15, 1, 4200, 0x8936a8fau},  // whiny helper_return 2
-  {11, 15, 1, 5500, 0xa1a8ccdeu},  // whiny helper_return 2
+  {11, 15, 1, 1100, 0x0bf7d6fbu},  // whiny helper_return 2
+  {11, 15, 1, 1650, 0xd4a6d298u},  // whiny helper_return 2
+  {11, 15, 1, 3100, 0xedf38c25u},  // whiny helper_return 2
+  {11, 15, 1, 4200, 0x3f79db55u},  // whiny helper_return 2
+  {11, 15, 1, 5500, 0xba269d7au},  // whiny helper_return 2
   {11, 15, 1, 7300, 0xcffbf232u},  // whiny helper_return 2
-  {11, 15, 1, 9900, 0xdcd12f71u},  // whiny helper_return 2
+  {11, 15, 1, 9900, 0xce027d7du},  // whiny helper_return 2
   {11, 15, 2, 0, 0xb4b1e786u},  // whiny helper_return 3
   {11, 15, 2, 150, 0xb4b1e786u},  // whiny helper_return 3
   {11, 15, 2, 420, 0xb4b1e786u},  // whiny helper_return 3
   {11, 15, 2, 700, 0xb4b1e786u},  // whiny helper_return 3
-  {11, 15, 2, 1100, 0xde84d43eu},  // whiny helper_return 3
-  {11, 15, 2, 1650, 0xfc70cca0u},  // whiny helper_return 3
-  {11, 15, 2, 2300, 0xfc70cca0u},  // whiny helper_return 3
-  {11, 15, 2, 3100, 0x3eb15f3bu},  // whiny helper_return 3
-  {11, 15, 2, 4200, 0x1afd02c0u},  // whiny helper_return 3
-  {11, 15, 2, 5500, 0x66c78b5cu},  // whiny helper_return 3
+  {11, 15, 2, 1100, 0xa7a84ea2u},  // whiny helper_return 3
+  {11, 15, 2, 1650, 0xc9945002u},  // whiny helper_return 3
+  {11, 15, 2, 2300, 0xc9945002u},  // whiny helper_return 3
+  {11, 15, 2, 3100, 0x6081a237u},  // whiny helper_return 3
+  {11, 15, 2, 4200, 0xacb2716fu},  // whiny helper_return 3
+  {11, 15, 2, 5500, 0xabf04b12u},  // whiny helper_return 3
   {11, 15, 2, 7300, 0xb4b1e786u},  // whiny helper_return 3
-  {11, 15, 2, 9900, 0x3eb15f3bu},  // whiny helper_return 3
+  {11, 15, 2, 9900, 0x6081a237u},  // whiny helper_return 3
   {11, 16, 0, 0, 0x0a352dc8u},  // whiny waiting 1
   {11, 16, 0, 150, 0x0a352dc8u},  // whiny waiting 1
   {11, 16, 0, 420, 0x0a352dc8u},  // whiny waiting 1
   {11, 16, 0, 700, 0x0a352dc8u},  // whiny waiting 1
-  {11, 16, 0, 1100, 0x088058cfu},  // whiny waiting 1
-  {11, 16, 0, 1650, 0x088058cfu},  // whiny waiting 1
-  {11, 16, 0, 2300, 0xa5b62801u},  // whiny waiting 1
-  {11, 16, 0, 3100, 0x1ee7dcfcu},  // whiny waiting 1
-  {11, 16, 0, 4200, 0x98570c96u},  // whiny waiting 1
-  {11, 16, 0, 5500, 0x744722c8u},  // whiny waiting 1
-  {11, 16, 0, 7300, 0x4112c183u},  // whiny waiting 1
-  {11, 16, 0, 9900, 0x088058cfu},  // whiny waiting 1
+  {11, 16, 0, 1100, 0x67772de9u},  // whiny waiting 1
+  {11, 16, 0, 1650, 0x67772de9u},  // whiny waiting 1
+  {11, 16, 0, 2300, 0xa0dbe7c4u},  // whiny waiting 1
+  {11, 16, 0, 3100, 0x2a4fe3e7u},  // whiny waiting 1
+  {11, 16, 0, 4200, 0xc667f19au},  // whiny waiting 1
+  {11, 16, 0, 5500, 0xc2085167u},  // whiny waiting 1
+  {11, 16, 0, 7300, 0x5a9c9027u},  // whiny waiting 1
+  {11, 16, 0, 9900, 0x67772de9u},  // whiny waiting 1
   {11, 16, 1, 0, 0xea914d64u},  // whiny waiting 2
   {11, 16, 1, 150, 0xea914d64u},  // whiny waiting 2
   {11, 16, 1, 420, 0xea914d64u},  // whiny waiting 2
   {11, 16, 1, 700, 0xea914d64u},  // whiny waiting 2
   {11, 16, 1, 1100, 0xea914d64u},  // whiny waiting 2
-  {11, 16, 1, 1650, 0x68300275u},  // whiny waiting 2
-  {11, 16, 1, 2300, 0x1da43e4eu},  // whiny waiting 2
-  {11, 16, 1, 3100, 0xfa58592bu},  // whiny waiting 2
-  {11, 16, 1, 4200, 0x78f36c3au},  // whiny waiting 2
-  {11, 16, 1, 5500, 0xa1a43a2cu},  // whiny waiting 2
-  {11, 16, 1, 7300, 0xa5ad4454u},  // whiny waiting 2
+  {11, 16, 1, 1650, 0x07c77753u},  // whiny waiting 2
+  {11, 16, 1, 2300, 0x18c9f18bu},  // whiny waiting 2
+  {11, 16, 1, 3100, 0xcef06630u},  // whiny waiting 2
+  {11, 16, 1, 4200, 0x26c39136u},  // whiny waiting 2
+  {11, 16, 1, 5500, 0x17eb4983u},  // whiny waiting 2
+  {11, 16, 1, 7300, 0xbe2315f0u},  // whiny waiting 2
   {11, 16, 1, 9900, 0xea914d64u},  // whiny waiting 2
   {11, 16, 2, 0, 0x87e7f15bu},  // whiny waiting 3
   {11, 16, 2, 150, 0x87e7f15bu},  // whiny waiting 3
   {11, 16, 2, 420, 0x87e7f15bu},  // whiny waiting 3
   {11, 16, 2, 700, 0x87e7f15bu},  // whiny waiting 3
   {11, 16, 2, 1100, 0x87e7f15bu},  // whiny waiting 3
-  {11, 16, 2, 1650, 0x3be77737u},  // whiny waiting 3
-  {11, 16, 2, 2300, 0x17f98e24u},  // whiny waiting 3
-  {11, 16, 2, 3100, 0x17f98e24u},  // whiny waiting 3
-  {11, 16, 2, 4200, 0xe55cd880u},  // whiny waiting 3
-  {11, 16, 2, 5500, 0xf480c6f5u},  // whiny waiting 3
-  {11, 16, 2, 7300, 0x80f245b6u},  // whiny waiting 3
+  {11, 16, 2, 1650, 0x54100211u},  // whiny waiting 3
+  {11, 16, 2, 2300, 0x129441e1u},  // whiny waiting 3
+  {11, 16, 2, 3100, 0x129441e1u},  // whiny waiting 3
+  {11, 16, 2, 4200, 0xd1f4e79bu},  // whiny waiting 3
+  {11, 16, 2, 5500, 0xaab03bf9u},  // whiny waiting 3
+  {11, 16, 2, 7300, 0x8adcd5d2u},  // whiny waiting 3
   {11, 16, 2, 9900, 0xcda4d7e8u},  // whiny waiting 3
   {11, 17, 0, 0, 0xf0c4186fu},  // whiny reply_ready 1
   {11, 17, 0, 150, 0xf0c4186fu},  // whiny reply_ready 1
   {11, 17, 0, 420, 0xf0c4186fu},  // whiny reply_ready 1
   {11, 17, 0, 700, 0xf0c4186fu},  // whiny reply_ready 1
-  {11, 17, 0, 1100, 0x972e1617u},  // whiny reply_ready 1
-  {11, 17, 0, 1650, 0x1acc7a4eu},  // whiny reply_ready 1
-  {11, 17, 0, 2300, 0x8451ad8au},  // whiny reply_ready 1
-  {11, 17, 0, 3100, 0x5b4fbd3fu},  // whiny reply_ready 1
-  {11, 17, 0, 4200, 0xe9b8a53du},  // whiny reply_ready 1
-  {11, 17, 0, 5500, 0x613d8c13u},  // whiny reply_ready 1
-  {11, 17, 0, 7300, 0x972e1617u},  // whiny reply_ready 1
-  {11, 17, 0, 9900, 0x41b55a5du},  // whiny reply_ready 1
+  {11, 17, 0, 1100, 0xf8d96331u},  // whiny reply_ready 1
+  {11, 17, 0, 1650, 0x1fa1b58bu},  // whiny reply_ready 1
+  {11, 17, 0, 2300, 0xf67a8f47u},  // whiny reply_ready 1
+  {11, 17, 0, 3100, 0x057f4033u},  // whiny reply_ready 1
+  {11, 17, 0, 4200, 0xe3963559u},  // whiny reply_ready 1
+  {11, 17, 0, 5500, 0x7ab3ddb7u},  // whiny reply_ready 1
+  {11, 17, 0, 7300, 0xf8d96331u},  // whiny reply_ready 1
+  {11, 17, 0, 9900, 0xf7fa29f2u},  // whiny reply_ready 1
   {11, 17, 1, 0, 0x063c5ac3u},  // whiny reply_ready 2
   {11, 17, 1, 150, 0x063c5ac3u},  // whiny reply_ready 2
   {11, 17, 1, 420, 0x063c5ac3u},  // whiny reply_ready 2
   {11, 17, 1, 700, 0x063c5ac3u},  // whiny reply_ready 2
-  {11, 17, 1, 1100, 0x2d568f94u},  // whiny reply_ready 2
+  {11, 17, 1, 1100, 0x42a1fab2u},  // whiny reply_ready 2
   {11, 17, 1, 1650, 0x7730c1afu},  // whiny reply_ready 2
-  {11, 17, 1, 3100, 0x9930828au},  // whiny reply_ready 2
-  {11, 17, 1, 4200, 0xca26e507u},  // whiny reply_ready 2
-  {11, 17, 1, 5500, 0x93f6e15fu},  // whiny reply_ready 2
+  {11, 17, 1, 3100, 0xc7007f86u},  // whiny reply_ready 2
+  {11, 17, 1, 4200, 0x7c6996a8u},  // whiny reply_ready 2
+  {11, 17, 1, 5500, 0x8878b0fbu},  // whiny reply_ready 2
   {11, 17, 1, 7300, 0x063c5ac3u},  // whiny reply_ready 2
   {11, 17, 1, 9900, 0x116ace6eu},  // whiny reply_ready 2
   {11, 17, 2, 0, 0xf343c897u},  // whiny reply_ready 3
   {11, 17, 2, 150, 0xf343c897u},  // whiny reply_ready 3
   {11, 17, 2, 420, 0xf343c897u},  // whiny reply_ready 3
   {11, 17, 2, 700, 0xf343c897u},  // whiny reply_ready 3
-  {11, 17, 2, 1100, 0x217fc8c5u},  // whiny reply_ready 3
-  {11, 17, 2, 1650, 0x9c1ceb39u},  // whiny reply_ready 3
-  {11, 17, 2, 2300, 0x9c1ceb39u},  // whiny reply_ready 3
-  {11, 17, 2, 3100, 0x7f77c3e0u},  // whiny reply_ready 3
-  {11, 17, 2, 4200, 0x7cb3a8a0u},  // whiny reply_ready 3
-  {11, 17, 2, 5500, 0xedf71736u},  // whiny reply_ready 3
+  {11, 17, 2, 1100, 0x4e88bde3u},  // whiny reply_ready 3
+  {11, 17, 2, 1650, 0x997124fcu},  // whiny reply_ready 3
+  {11, 17, 2, 2300, 0x997124fcu},  // whiny reply_ready 3
+  {11, 17, 2, 3100, 0x21473eecu},  // whiny reply_ready 3
+  {11, 17, 2, 4200, 0xcafcdb0fu},  // whiny reply_ready 3
+  {11, 17, 2, 5500, 0xe7d98752u},  // whiny reply_ready 3
   {11, 17, 2, 7300, 0xf343c897u},  // whiny reply_ready 3
-  {11, 17, 2, 9900, 0x7f77c3e0u},  // whiny reply_ready 3
+  {11, 17, 2, 9900, 0x21473eecu},  // whiny reply_ready 3
   {11, 18, 0, 0, 0x55ed0164u},  // whiny error 1
   {11, 18, 0, 150, 0x55ed0164u},  // whiny error 1
   {11, 18, 0, 420, 0x55ed0164u},  // whiny error 1
   {11, 18, 0, 700, 0x55ed0164u},  // whiny error 1
-  {11, 18, 0, 1100, 0x37e479a0u},  // whiny error 1
-  {11, 18, 0, 1650, 0x7fc2e1eau},  // whiny error 1
-  {11, 18, 0, 2300, 0xa6c9719du},  // whiny error 1
-  {11, 18, 0, 3100, 0xd55ce345u},  // whiny error 1
-  {11, 18, 0, 4200, 0x2bf703fdu},  // whiny error 1
-  {11, 18, 0, 5500, 0xa8752ed2u},  // whiny error 1
-  {11, 18, 0, 7300, 0x37e479a0u},  // whiny error 1
-  {11, 18, 0, 9900, 0xbad9c2c0u},  // whiny error 1
+  {11, 18, 0, 1100, 0x58130c86u},  // whiny error 1
+  {11, 18, 0, 1650, 0x7aaf2e2fu},  // whiny error 1
+  {11, 18, 0, 2300, 0x92614e86u},  // whiny error 1
+  {11, 18, 0, 3100, 0x8b6c1e49u},  // whiny error 1
+  {11, 18, 0, 4200, 0x21d99399u},  // whiny error 1
+  {11, 18, 0, 5500, 0xb3fb7f76u},  // whiny error 1
+  {11, 18, 0, 7300, 0x58130c86u},  // whiny error 1
+  {11, 18, 0, 9900, 0x0c96b16fu},  // whiny error 1
   {11, 18, 1, 0, 0xf7ba9908u},  // whiny error 2
   {11, 18, 1, 150, 0xf7ba9908u},  // whiny error 2
   {11, 18, 1, 420, 0xf7ba9908u},  // whiny error 2
   {11, 18, 1, 700, 0xf7ba9908u},  // whiny error 2
-  {11, 18, 1, 1100, 0x8da44352u},  // whiny error 2
-  {11, 18, 1, 1650, 0xc9417e15u},  // whiny error 2
-  {11, 18, 1, 3100, 0xe8f45f31u},  // whiny error 2
-  {11, 18, 1, 4200, 0x8bf272fcu},  // whiny error 2
-  {11, 18, 1, 5500, 0xa52f8360u},  // whiny error 2
+  {11, 18, 1, 1100, 0xe2533674u},  // whiny error 2
+  {11, 18, 1, 1650, 0xfca5e2b7u},  // whiny error 2
+  {11, 18, 1, 3100, 0xb6c4a23du},  // whiny error 2
+  {11, 18, 1, 4200, 0x3dbd0153u},  // whiny error 2
+  {11, 18, 1, 5500, 0xbea1d2c4u},  // whiny error 2
   {11, 18, 1, 7300, 0xf7ba9908u},  // whiny error 2
-  {11, 18, 1, 9900, 0x607f5812u},  // whiny error 2
+  {11, 18, 1, 9900, 0x46043505u},  // whiny error 2
   {11, 18, 2, 0, 0xeea16ed5u},  // whiny error 3
   {11, 18, 2, 150, 0xeea16ed5u},  // whiny error 3
   {11, 18, 2, 420, 0xeea16ed5u},  // whiny error 3
   {11, 18, 2, 700, 0xeea16ed5u},  // whiny error 3
-  {11, 18, 2, 1100, 0x30322966u},  // whiny error 3
-  {11, 18, 2, 1650, 0xf0b69280u},  // whiny error 3
-  {11, 18, 2, 2300, 0xf0b69280u},  // whiny error 3
-  {11, 18, 2, 3100, 0xa8f14b7du},  // whiny error 3
-  {11, 18, 2, 4200, 0xd6b40d2du},  // whiny error 3
-  {11, 18, 2, 5500, 0xdfe823ffu},  // whiny error 3
+  {11, 18, 2, 1100, 0x5fc55c40u},  // whiny error 3
+  {11, 18, 2, 1650, 0xbea87e12u},  // whiny error 3
+  {11, 18, 2, 2300, 0xbea87e12u},  // whiny error 3
+  {11, 18, 2, 3100, 0xf6c1b671u},  // whiny error 3
+  {11, 18, 2, 4200, 0x60fb7e82u},  // whiny error 3
+  {11, 18, 2, 5500, 0xd5c6b39bu},  // whiny error 3
   {11, 18, 2, 7300, 0xeea16ed5u},  // whiny error 3
-  {11, 18, 2, 9900, 0xa8f14b7du},  // whiny error 3
+  {11, 18, 2, 9900, 0xf6c1b671u},  // whiny error 3
   {11, 19, 0, 0, 0x442c4838u},  // whiny stopped 1
   {11, 19, 0, 150, 0x442c4838u},  // whiny stopped 1
   {11, 19, 0, 420, 0x442c4838u},  // whiny stopped 1
   {11, 19, 0, 700, 0x442c4838u},  // whiny stopped 1
-  {11, 19, 0, 1100, 0x95e238b3u},  // whiny stopped 1
-  {11, 19, 0, 1650, 0x9aa28115u},  // whiny stopped 1
-  {11, 19, 0, 2300, 0x1d3f6f5cu},  // whiny stopped 1
-  {11, 19, 0, 3100, 0xe4ad7824u},  // whiny stopped 1
-  {11, 19, 0, 4200, 0x1165aeafu},  // whiny stopped 1
-  {11, 19, 0, 5500, 0x96a12d0du},  // whiny stopped 1
-  {11, 19, 0, 7300, 0x95e238b3u},  // whiny stopped 1
-  {11, 19, 0, 9900, 0x9930815fu},  // whiny stopped 1
+  {11, 19, 0, 1100, 0xfa154d95u},  // whiny stopped 1
+  {11, 19, 0, 1650, 0x9fcf4ed0u},  // whiny stopped 1
+  {11, 19, 0, 2300, 0xca787915u},  // whiny stopped 1
+  {11, 19, 0, 3100, 0xba9d8528u},  // whiny stopped 1
+  {11, 19, 0, 4200, 0x1b4b3ecbu},  // whiny stopped 1
+  {11, 19, 0, 5500, 0x8d2f7ca9u},  // whiny stopped 1
+  {11, 19, 0, 7300, 0xfa154d95u},  // whiny stopped 1
+  {11, 19, 0, 9900, 0x2f7ff2f0u},  // whiny stopped 1
   {11, 19, 1, 0, 0xd60f57d8u},  // whiny stopped 2
   {11, 19, 1, 150, 0xd60f57d8u},  // whiny stopped 2
   {11, 19, 1, 420, 0xd60f57d8u},  // whiny stopped 2
   {11, 19, 1, 700, 0xd60f57d8u},  // whiny stopped 2
-  {11, 19, 1, 1100, 0xbf8b7173u},  // whiny stopped 2
-  {11, 19, 1, 1650, 0x7c5bfca9u},  // whiny stopped 2
-  {11, 19, 1, 3100, 0x52e3c70fu},  // whiny stopped 2
-  {11, 19, 1, 4200, 0xbd30409fu},  // whiny stopped 2
-  {11, 19, 1, 5500, 0x9bf9355au},  // whiny stopped 2
+  {11, 19, 1, 1100, 0xd07c0455u},  // whiny stopped 2
+  {11, 19, 1, 1650, 0xff925f53u},  // whiny stopped 2
+  {11, 19, 1, 3100, 0x0cd33a03u},  // whiny stopped 2
+  {11, 19, 1, 4200, 0x0b7f3330u},  // whiny stopped 2
+  {11, 19, 1, 5500, 0x807764feu},  // whiny stopped 2
   {11, 19, 1, 7300, 0xd60f57d8u},  // whiny stopped 2
-  {11, 19, 1, 9900, 0xd1fb2cbbu},  // whiny stopped 2
+  {11, 19, 1, 9900, 0xf78041acu},  // whiny stopped 2
   {11, 19, 2, 0, 0xf1d83d5cu},  // whiny stopped 3
   {11, 19, 2, 150, 0xf1d83d5cu},  // whiny stopped 3
   {11, 19, 2, 420, 0xf1d83d5cu},  // whiny stopped 3
   {11, 19, 2, 700, 0xf1d83d5cu},  // whiny stopped 3
-  {11, 19, 2, 1100, 0xf3e253f5u},  // whiny stopped 3
-  {11, 19, 2, 1650, 0xca1f1f33u},  // whiny stopped 3
-  {11, 19, 2, 2300, 0xca1f1f33u},  // whiny stopped 3
-  {11, 19, 2, 3100, 0x0d21b5cfu},  // whiny stopped 3
-  {11, 19, 2, 4200, 0x0cfcb182u},  // whiny stopped 3
-  {11, 19, 2, 5500, 0xbcd7c35eu},  // whiny stopped 3
+  {11, 19, 2, 1100, 0x9c1526d3u},  // whiny stopped 3
+  {11, 19, 2, 1650, 0xcf72d0f6u},  // whiny stopped 3
+  {11, 19, 2, 2300, 0xcf72d0f6u},  // whiny stopped 3
+  {11, 19, 2, 3100, 0x531148c3u},  // whiny stopped 3
+  {11, 19, 2, 4200, 0xbab3c22du},  // whiny stopped 3
+  {11, 19, 2, 5500, 0xb6f9533au},  // whiny stopped 3
   {11, 19, 2, 7300, 0xf1d83d5cu},  // whiny stopped 3
-  {11, 19, 2, 9900, 0x0d21b5cfu},  // whiny stopped 3
+  {11, 19, 2, 9900, 0x531148c3u},  // whiny stopped 3
   {11, 20, 0, 0, 0xe9898445u},  // whiny poked 1
   {11, 20, 0, 150, 0xe9898445u},  // whiny poked 1
   {11, 20, 0, 420, 0xe9898445u},  // whiny poked 1
   {11, 20, 0, 700, 0xe9898445u},  // whiny poked 1
-  {11, 20, 0, 1100, 0x0874489au},  // whiny poked 1
-  {11, 20, 0, 1650, 0xaa1dc7e8u},  // whiny poked 1
-  {11, 20, 0, 2300, 0x21a2cd46u},  // whiny poked 1
-  {11, 20, 0, 3100, 0xcc072bfau},  // whiny poked 1
-  {11, 20, 0, 4200, 0x2fb60728u},  // whiny poked 1
-  {11, 20, 0, 5500, 0x32f610d3u},  // whiny poked 1
-  {11, 20, 0, 7300, 0x0874489au},  // whiny poked 1
-  {11, 20, 0, 9900, 0xf286b41du},  // whiny poked 1
+  {11, 20, 0, 1100, 0x67833dbcu},  // whiny poked 1
+  {11, 20, 0, 1650, 0x4d289924u},  // whiny poked 1
+  {11, 20, 0, 2300, 0xc45e19b1u},  // whiny poked 1
+  {11, 20, 0, 3100, 0x3223bd8eu},  // whiny poked 1
+  {11, 20, 0, 4200, 0x2598974cu},  // whiny poked 1
+  {11, 20, 0, 5500, 0x29784177u},  // whiny poked 1
+  {11, 20, 0, 7300, 0x67833dbcu},  // whiny poked 1
+  {11, 20, 0, 9900, 0x44c9c7b2u},  // whiny poked 1
   {11, 20, 1, 0, 0xe9898445u},  // whiny poked 2
   {11, 20, 1, 150, 0xe9898445u},  // whiny poked 2
   {11, 20, 1, 420, 0xe9898445u},  // whiny poked 2
   {11, 20, 1, 700, 0xe9898445u},  // whiny poked 2
-  {11, 20, 1, 1100, 0x05e71721u},  // whiny poked 2
-  {11, 20, 1, 1650, 0x95b8e8a1u},  // whiny poked 2
-  {11, 20, 1, 3100, 0x98aa672eu},  // whiny poked 2
-  {11, 20, 1, 4200, 0xcc732f78u},  // whiny poked 2
-  {11, 20, 1, 5500, 0xc87a5100u},  // whiny poked 2
+  {11, 20, 1, 1100, 0x6a106207u},  // whiny poked 2
+  {11, 20, 1, 1650, 0x728db66du},  // whiny poked 2
+  {11, 20, 1, 3100, 0x668ef15au},  // whiny poked 2
+  {11, 20, 1, 4200, 0x7a3c5cd7u},  // whiny poked 2
+  {11, 20, 1, 5500, 0xd3f400a4u},  // whiny poked 2
   {11, 20, 1, 7300, 0xe9898445u},  // whiny poked 2
-  {11, 20, 1, 9900, 0xd276eca0u},  // whiny poked 2
+  {11, 20, 1, 9900, 0x378a3857u},  // whiny poked 2
   {11, 20, 2, 0, 0xe9898445u},  // whiny poked 3
   {11, 20, 2, 150, 0xe9898445u},  // whiny poked 3
   {11, 20, 2, 420, 0xe9898445u},  // whiny poked 3
   {11, 20, 2, 700, 0xe9898445u},  // whiny poked 3
-  {11, 20, 2, 1100, 0x70206f74u},  // whiny poked 3
-  {11, 20, 2, 1650, 0x947390a1u},  // whiny poked 3
-  {11, 20, 2, 2300, 0x947390a1u},  // whiny poked 3
-  {11, 20, 2, 3100, 0x53028624u},  // whiny poked 3
-  {11, 20, 2, 4200, 0x2eb8559cu},  // whiny poked 3
-  {11, 20, 2, 5500, 0x5475acc4u},  // whiny poked 3
+  {11, 20, 2, 1100, 0x090cf5e8u},  // whiny poked 3
+  {11, 20, 2, 1650, 0x7346ce6du},  // whiny poked 3
+  {11, 20, 2, 2300, 0x7346ce6du},  // whiny poked 3
+  {11, 20, 2, 3100, 0xda2988bdu},  // whiny poked 3
+  {11, 20, 2, 4200, 0x3c24bcd5u},  // whiny poked 3
+  {11, 20, 2, 5500, 0x99426c8au},  // whiny poked 3
   {11, 20, 2, 7300, 0xe9898445u},  // whiny poked 3
-  {11, 20, 2, 9900, 0x53028624u},  // whiny poked 3
+  {11, 20, 2, 9900, 0xda2988bdu},  // whiny poked 3
   {11, 21, 0, 0, 0xe9898445u},  // whiny tap_spam 1
   {11, 21, 0, 150, 0xe9898445u},  // whiny tap_spam 1
   {11, 21, 0, 420, 0xe9898445u},  // whiny tap_spam 1
@@ -7376,7 +7506,7 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 21, 0, 1100, 0x0cba8282u},  // whiny tap_spam 1
   {11, 21, 0, 1650, 0x363cfedau},  // whiny tap_spam 1
   {11, 21, 0, 2300, 0x97ef1525u},  // whiny tap_spam 1
-  {11, 21, 0, 3100, 0xe9c71f06u},  // whiny tap_spam 1
+  {11, 21, 0, 3100, 0xd5a5b470u},  // whiny tap_spam 1
   {11, 21, 0, 4200, 0x526ee608u},  // whiny tap_spam 1
   {11, 21, 0, 5500, 0xb80fe67du},  // whiny tap_spam 1
   {11, 21, 0, 7300, 0x0cba8282u},  // whiny tap_spam 1
@@ -7385,13 +7515,13 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 21, 1, 150, 0xe9898445u},  // whiny tap_spam 2
   {11, 21, 1, 420, 0xe9898445u},  // whiny tap_spam 2
   {11, 21, 1, 700, 0xe9898445u},  // whiny tap_spam 2
-  {11, 21, 1, 1100, 0xf929e68cu},  // whiny tap_spam 2
-  {11, 21, 1, 1650, 0xc88f361bu},  // whiny tap_spam 2
-  {11, 21, 1, 3100, 0xa0d8026cu},  // whiny tap_spam 2
-  {11, 21, 1, 4200, 0x19de762fu},  // whiny tap_spam 2
-  {11, 21, 1, 5500, 0x03c82d78u},  // whiny tap_spam 2
+  {11, 21, 1, 1100, 0x96de93aau},  // whiny tap_spam 2
+  {11, 21, 1, 1650, 0xa4865646u},  // whiny tap_spam 2
+  {11, 21, 1, 3100, 0x9cbaa91au},  // whiny tap_spam 2
+  {11, 21, 1, 4200, 0xdd86c7b2u},  // whiny tap_spam 2
+  {11, 21, 1, 5500, 0x18467cdcu},  // whiny tap_spam 2
   {11, 21, 1, 7300, 0xe9898445u},  // whiny tap_spam 2
-  {11, 21, 1, 9900, 0xd4238549u},  // whiny tap_spam 2
+  {11, 21, 1, 9900, 0x167acb8cu},  // whiny tap_spam 2
   {11, 21, 2, 0, 0xe9898445u},  // whiny tap_spam 3
   {11, 21, 2, 150, 0xe9898445u},  // whiny tap_spam 3
   {11, 21, 2, 420, 0xe9898445u},  // whiny tap_spam 3
@@ -7404,6 +7534,18 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {11, 21, 2, 5500, 0x222a61a5u},  // whiny tap_spam 3
   {11, 21, 2, 7300, 0xe9898445u},  // whiny tap_spam 3
   {11, 21, 2, 9900, 0x4f73253au},  // whiny tap_spam 3
+  {11, 22, 0, 0, 0xe9898445u},  // whiny wake_up 1
+  {11, 22, 0, 150, 0xe9898445u},  // whiny wake_up 1
+  {11, 22, 0, 420, 0xe9898445u},  // whiny wake_up 1
+  {11, 22, 0, 700, 0x5b033712u},  // whiny wake_up 1
+  {11, 22, 0, 1100, 0x5b033712u},  // whiny wake_up 1
+  {11, 22, 0, 1650, 0x0d03622du},  // whiny wake_up 1
+  {11, 22, 0, 2300, 0x80e3b0c7u},  // whiny wake_up 1
+  {11, 22, 0, 3100, 0xa0f8d12du},  // whiny wake_up 1
+  {11, 22, 0, 4200, 0xb7b29611u},  // whiny wake_up 1
+  {11, 22, 0, 5500, 0x19634cf1u},  // whiny wake_up 1
+  {11, 22, 0, 7300, 0x5b033712u},  // whiny wake_up 1
+  {11, 22, 0, 9900, 0xa0f8d12du},  // whiny wake_up 1
   {12, 0, 0, 0, 0x459d1ca8u},  // wounded idle 1
   {12, 0, 0, 150, 0x459d1ca8u},  // wounded idle 1
   {12, 0, 0, 420, 0x459d1ca8u},  // wounded idle 1
@@ -7412,9 +7554,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 0, 0, 1650, 0x459d1ca8u},  // wounded idle 1
   {12, 0, 0, 2300, 0x408cd097u},  // wounded idle 1
   {12, 0, 0, 3100, 0xbaa2e37bu},  // wounded idle 1
-  {12, 0, 0, 4200, 0xb17d9db7u},  // wounded idle 1
+  {12, 0, 0, 4200, 0x3b0190c1u},  // wounded idle 1
   {12, 0, 0, 5500, 0xbbdba261u},  // wounded idle 1
-  {12, 0, 0, 7300, 0x601040a6u},  // wounded idle 1
+  {12, 0, 0, 7300, 0xbba6c5e6u},  // wounded idle 1
   {12, 0, 0, 9900, 0xab7ef722u},  // wounded idle 1
   {12, 0, 1, 0, 0x459d1ca8u},  // wounded idle 2
   {12, 0, 1, 150, 0x459d1ca8u},  // wounded idle 2
@@ -7425,9 +7567,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 0, 1, 2300, 0x408cd097u},  // wounded idle 2
   {12, 0, 1, 3100, 0xbaa2e37bu},  // wounded idle 2
   {12, 0, 1, 4200, 0xbaa2e37bu},  // wounded idle 2
-  {12, 0, 1, 5500, 0xb17d9db7u},  // wounded idle 2
+  {12, 0, 1, 5500, 0x3b0190c1u},  // wounded idle 2
   {12, 0, 1, 7300, 0xbbdba261u},  // wounded idle 2
-  {12, 0, 1, 9900, 0x601040a6u},  // wounded idle 2
+  {12, 0, 1, 9900, 0xbba6c5e6u},  // wounded idle 2
   {12, 0, 2, 0, 0x459d1ca8u},  // wounded idle 3
   {12, 0, 2, 150, 0x459d1ca8u},  // wounded idle 3
   {12, 0, 2, 420, 0x459d1ca8u},  // wounded idle 3
@@ -7439,7 +7581,7 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 0, 2, 4200, 0xe6fa8f78u},  // wounded idle 3
   {12, 0, 2, 5500, 0x9a374067u},  // wounded idle 3
   {12, 0, 2, 7300, 0x9a374067u},  // wounded idle 3
-  {12, 0, 2, 9900, 0x4fbd4576u},  // wounded idle 3
+  {12, 0, 2, 9900, 0x940bc036u},  // wounded idle 3
   {12, 1, 0, 0, 0x9dba58f2u},  // wounded working 1
   {12, 1, 0, 150, 0x9dba58f2u},  // wounded working 1
   {12, 1, 0, 420, 0x9dba58f2u},  // wounded working 1
@@ -7447,11 +7589,11 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 1, 0, 1100, 0x9dba58f2u},  // wounded working 1
   {12, 1, 0, 1650, 0x43ff3d80u},  // wounded working 1
   {12, 1, 0, 2300, 0x5496521au},  // wounded working 1
-  {12, 1, 0, 3100, 0xaa84afb8u},  // wounded working 1
+  {12, 1, 0, 3100, 0x20f8a2ceu},  // wounded working 1
   {12, 1, 0, 4200, 0xee4ba05eu},  // wounded working 1
-  {12, 1, 0, 5500, 0x35804299u},  // wounded working 1
+  {12, 1, 0, 5500, 0xee36c7d9u},  // wounded working 1
   {12, 1, 0, 7300, 0x9dba58f2u},  // wounded working 1
-  {12, 1, 0, 9900, 0xaa84afb8u},  // wounded working 1
+  {12, 1, 0, 9900, 0x20f8a2ceu},  // wounded working 1
   {12, 1, 1, 0, 0x01ee8dd1u},  // wounded working 2
   {12, 1, 1, 150, 0x01ee8dd1u},  // wounded working 2
   {12, 1, 1, 420, 0x01ee8dd1u},  // wounded working 2
@@ -7459,9 +7601,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 1, 1, 1100, 0x01ee8dd1u},  // wounded working 2
   {12, 1, 1, 1650, 0x04ff41eeu},  // wounded working 2
   {12, 1, 1, 2300, 0xfed17202u},  // wounded working 2
-  {12, 1, 1, 3100, 0x803e8541u},  // wounded working 2
+  {12, 1, 1, 3100, 0x0a428837u},  // wounded working 2
   {12, 1, 1, 4200, 0xee9772c6u},  // wounded working 2
-  {12, 1, 1, 5500, 0x355c9001u},  // wounded working 2
+  {12, 1, 1, 5500, 0xeeea1541u},  // wounded working 2
   {12, 1, 1, 7300, 0x075d4058u},  // wounded working 2
   {12, 1, 1, 9900, 0xfed17202u},  // wounded working 2
   {12, 1, 2, 0, 0x174814fbu},  // wounded working 3
@@ -7471,9 +7613,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 1, 2, 1100, 0x174814fbu},  // wounded working 3
   {12, 1, 2, 1650, 0x5236a685u},  // wounded working 3
   {12, 1, 2, 2300, 0x5236a685u},  // wounded working 3
-  {12, 1, 2, 3100, 0x79f751c8u},  // wounded working 3
+  {12, 1, 2, 3100, 0xf38b5cbeu},  // wounded working 3
   {12, 1, 2, 4200, 0xb957a965u},  // wounded working 3
-  {12, 1, 2, 5500, 0x48755899u},  // wounded working 3
+  {12, 1, 2, 5500, 0x93c3ddd9u},  // wounded working 3
   {12, 1, 2, 7300, 0x7509c620u},  // wounded working 3
   {12, 1, 2, 9900, 0x5236a685u},  // wounded working 3
   {12, 1, 3, 0, 0xbf23654fu},  // wounded working 4
@@ -7483,9 +7625,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 1, 3, 1100, 0xbf23654fu},  // wounded working 4
   {12, 1, 3, 1650, 0xd87f37d1u},  // wounded working 4
   {12, 1, 3, 2300, 0xb4f47aa1u},  // wounded working 4
-  {12, 1, 3, 3100, 0x7467855fu},  // wounded working 4
+  {12, 1, 3, 3100, 0xfe1b8829u},  // wounded working 4
   {12, 1, 3, 4200, 0x8439d9b4u},  // wounded working 4
-  {12, 1, 3, 5500, 0x67326cfbu},  // wounded working 4
+  {12, 1, 3, 5500, 0xbc84e9bbu},  // wounded working 4
   {12, 1, 3, 7300, 0xbf23654fu},  // wounded working 4
   {12, 1, 3, 9900, 0xb4f47aa1u},  // wounded working 4
   {12, 1, 4, 0, 0x154073dcu},  // wounded working 5
@@ -7495,9 +7637,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 1, 4, 1100, 0x154073dcu},  // wounded working 5
   {12, 1, 4, 1650, 0xf5090251u},  // wounded working 5
   {12, 1, 4, 2300, 0xf1b24afdu},  // wounded working 5
-  {12, 1, 4, 3100, 0x9d13b309u},  // wounded working 5
+  {12, 1, 4, 3100, 0x176fbe7fu},  // wounded working 5
   {12, 1, 4, 4200, 0x2f26c896u},  // wounded working 5
-  {12, 1, 4, 5500, 0xdbe239e8u},  // wounded working 5
+  {12, 1, 4, 5500, 0x0054bca8u},  // wounded working 5
   {12, 1, 4, 7300, 0x8cc10497u},  // wounded working 5
   {12, 1, 4, 9900, 0xf5090251u},  // wounded working 5
   {12, 2, 0, 0, 0x794d63fdu},  // wounded needs_you 1
@@ -7523,7 +7665,7 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 2, 1, 4200, 0xf98cd8c9u},  // wounded needs_you 2
   {12, 2, 1, 5500, 0xf98cd8c9u},  // wounded needs_you 2
   {12, 2, 1, 7300, 0xf98cd8c9u},  // wounded needs_you 2
-  {12, 2, 1, 9900, 0xae75fbc7u},  // wounded needs_you 2
+  {12, 2, 1, 9900, 0x2409f6b1u},  // wounded needs_you 2
   {12, 2, 2, 0, 0x794d63fdu},  // wounded needs_you 3
   {12, 2, 2, 150, 0x794d63fdu},  // wounded needs_you 3
   {12, 2, 2, 420, 0x794d63fdu},  // wounded needs_you 3
@@ -7531,7 +7673,7 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 2, 2, 1100, 0xa08a2e5fu},  // wounded needs_you 3
   {12, 2, 2, 1650, 0xa08a2e5fu},  // wounded needs_you 3
   {12, 2, 2, 2300, 0xeabcb3bcu},  // wounded needs_you 3
-  {12, 2, 2, 3100, 0x006f15edu},  // wounded needs_you 3
+  {12, 2, 2, 3100, 0xdbd990adu},  // wounded needs_you 3
   {12, 2, 2, 4200, 0x88bc2657u},  // wounded needs_you 3
   {12, 2, 2, 5500, 0x88bc2657u},  // wounded needs_you 3
   {12, 2, 2, 7300, 0x88bc2657u},  // wounded needs_you 3
@@ -7567,9 +7709,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 3, 2, 1100, 0x2bfdaf2du},  // wounded task_complete 3
   {12, 3, 2, 1650, 0xd8530643u},  // wounded task_complete 3
   {12, 3, 2, 2300, 0xd8530643u},  // wounded task_complete 3
-  {12, 3, 2, 3100, 0x06d3fd6au},  // wounded task_complete 3
+  {12, 3, 2, 3100, 0x8caff01cu},  // wounded task_complete 3
   {12, 3, 2, 4200, 0xfcce4563u},  // wounded task_complete 3
-  {12, 3, 2, 5500, 0xb93ad44cu},  // wounded task_complete 3
+  {12, 3, 2, 5500, 0x628c510cu},  // wounded task_complete 3
   {12, 3, 2, 7300, 0x2bfdaf2du},  // wounded task_complete 3
   {12, 3, 2, 9900, 0xd8530643u},  // wounded task_complete 3
   {12, 3, 3, 0, 0xba3b3568u},  // wounded task_complete 4
@@ -7603,9 +7745,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 3, 5, 1100, 0x6767a489u},  // wounded task_complete 6
   {12, 3, 5, 1650, 0xd076bc0fu},  // wounded task_complete 6
   {12, 3, 5, 2300, 0xd076bc0fu},  // wounded task_complete 6
-  {12, 3, 5, 3100, 0x6b93880du},  // wounded task_complete 6
+  {12, 3, 5, 3100, 0xe1ef857bu},  // wounded task_complete 6
   {12, 3, 5, 4200, 0x0e960abau},  // wounded task_complete 6
-  {12, 3, 5, 5500, 0xdcdcfd36u},  // wounded task_complete 6
+  {12, 3, 5, 5500, 0x076a7876u},  // wounded task_complete 6
   {12, 3, 5, 7300, 0x6767a489u},  // wounded task_complete 6
   {12, 3, 5, 9900, 0xd076bc0fu},  // wounded task_complete 6
   {12, 6, 0, 0, 0x7fd6e438u},  // wounded listening 1
@@ -7614,10 +7756,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 6, 0, 700, 0x7fd6e438u},  // wounded listening 1
   {12, 6, 0, 1650, 0x313b6db2u},  // wounded listening 1
   {12, 6, 0, 2300, 0x313b6db2u},  // wounded listening 1
-  {12, 6, 0, 3100, 0x3ae4137eu},  // wounded listening 1
-  {12, 6, 0, 5500, 0xeb89ce6fu},  // wounded listening 1
+  {12, 6, 0, 3100, 0xb0981e08u},  // wounded listening 1
+  {12, 6, 0, 5500, 0x303f4b2fu},  // wounded listening 1
   {12, 6, 0, 7300, 0x7fd6e438u},  // wounded listening 1
-  {12, 6, 0, 9900, 0x3ae4137eu},  // wounded listening 1
+  {12, 6, 0, 9900, 0xb0981e08u},  // wounded listening 1
   {12, 6, 1, 0, 0xc2c5d68eu},  // wounded listening 2
   {12, 6, 1, 150, 0xc2c5d68eu},  // wounded listening 2
   {12, 6, 1, 420, 0xc2c5d68eu},  // wounded listening 2
@@ -7625,9 +7767,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 6, 1, 1100, 0xc2c5d68eu},  // wounded listening 2
   {12, 6, 1, 1650, 0x2a37dad6u},  // wounded listening 2
   {12, 6, 1, 2300, 0x8b535434u},  // wounded listening 2
-  {12, 6, 1, 3100, 0x62cb46a6u},  // wounded listening 2
+  {12, 6, 1, 3100, 0xe8b74bd0u},  // wounded listening 2
   {12, 6, 1, 4200, 0x849a9749u},  // wounded listening 2
-  {12, 6, 1, 5500, 0xccda5f47u},  // wounded listening 2
+  {12, 6, 1, 5500, 0x176cda07u},  // wounded listening 2
   {12, 6, 1, 7300, 0x8fdb7e2fu},  // wounded listening 2
   {12, 6, 1, 9900, 0x8b535434u},  // wounded listening 2
   {12, 6, 2, 0, 0xc6a36f54u},  // wounded listening 3
@@ -7637,9 +7779,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 6, 2, 1100, 0xc6a36f54u},  // wounded listening 3
   {12, 6, 2, 1650, 0x412998cau},  // wounded listening 3
   {12, 6, 2, 2300, 0x412998cau},  // wounded listening 3
-  {12, 6, 2, 3100, 0xd48d29dcu},  // wounded listening 3
+  {12, 6, 2, 3100, 0x5ef124aau},  // wounded listening 3
   {12, 6, 2, 4200, 0xf8589949u},  // wounded listening 3
-  {12, 6, 2, 5500, 0x13ab771du},  // wounded listening 3
+  {12, 6, 2, 5500, 0xc81df25du},  // wounded listening 3
   {12, 6, 2, 7300, 0xc6a36f54u},  // wounded listening 3
   {12, 6, 2, 9900, 0x412998cau},  // wounded listening 3
   {12, 7, 0, 0, 0x7a1bcf35u},  // wounded starting 1
@@ -7649,11 +7791,11 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 0, 1100, 0x7a1bcf35u},  // wounded starting 1
   {12, 7, 0, 1650, 0x49909630u},  // wounded starting 1
   {12, 7, 0, 2300, 0x49909630u},  // wounded starting 1
-  {12, 7, 0, 3100, 0x424fe8fcu},  // wounded starting 1
+  {12, 7, 0, 3100, 0xc833e58au},  // wounded starting 1
   {12, 7, 0, 4200, 0x48e9d72au},  // wounded starting 1
-  {12, 7, 0, 5500, 0x932235edu},  // wounded starting 1
+  {12, 7, 0, 5500, 0x4894b0adu},  // wounded starting 1
   {12, 7, 0, 7300, 0x7a1bcf35u},  // wounded starting 1
-  {12, 7, 0, 9900, 0x424fe8fcu},  // wounded starting 1
+  {12, 7, 0, 9900, 0xc833e58au},  // wounded starting 1
   {12, 7, 1, 0, 0x308ec712u},  // wounded starting 2
   {12, 7, 1, 150, 0x308ec712u},  // wounded starting 2
   {12, 7, 1, 420, 0x308ec712u},  // wounded starting 2
@@ -7661,9 +7803,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 1, 1100, 0x308ec712u},  // wounded starting 2
   {12, 7, 1, 1650, 0xfbe51ba5u},  // wounded starting 2
   {12, 7, 1, 2300, 0x01cb2849u},  // wounded starting 2
-  {12, 7, 1, 3100, 0x0a145685u},  // wounded starting 2
+  {12, 7, 1, 3100, 0x80685bf3u},  // wounded starting 2
   {12, 7, 1, 4200, 0x00b26953u},  // wounded starting 2
-  {12, 7, 1, 5500, 0xdb798b94u},  // wounded starting 2
+  {12, 7, 1, 5500, 0x00cf0ed4u},  // wounded starting 2
   {12, 7, 1, 7300, 0xe9785bcdu},  // wounded starting 2
   {12, 7, 1, 9900, 0x01cb2849u},  // wounded starting 2
   {12, 7, 2, 0, 0xe18dfb97u},  // wounded starting 3
@@ -7673,9 +7815,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 2, 1100, 0xe18dfb97u},  // wounded starting 3
   {12, 7, 2, 1650, 0xe205c77au},  // wounded starting 3
   {12, 7, 2, 2300, 0xe205c77au},  // wounded starting 3
-  {12, 7, 2, 3100, 0xdf55f537u},  // wounded starting 3
+  {12, 7, 2, 3100, 0x5529f841u},  // wounded starting 3
   {12, 7, 2, 4200, 0x3bd5a4d4u},  // wounded starting 3
-  {12, 7, 2, 5500, 0xe01e4613u},  // wounded starting 3
+  {12, 7, 2, 5500, 0x3ba8c353u},  // wounded starting 3
   {12, 7, 2, 7300, 0x0f6e101du},  // wounded starting 3
   {12, 7, 2, 9900, 0xe205c77au},  // wounded starting 3
   {12, 7, 3, 0, 0x7a1bcf35u},  // wounded starting 4
@@ -7685,11 +7827,11 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 3, 1100, 0x7a1bcf35u},  // wounded starting 4
   {12, 7, 3, 1650, 0x7b4b74d2u},  // wounded starting 4
   {12, 7, 3, 2300, 0x7b4b74d2u},  // wounded starting 4
-  {12, 7, 3, 3100, 0x70940a1eu},  // wounded starting 4
+  {12, 7, 3, 3100, 0xfae80768u},  // wounded starting 4
   {12, 7, 3, 4200, 0x7a3235c8u},  // wounded starting 4
-  {12, 7, 3, 5500, 0xa1f9d70fu},  // wounded starting 4
+  {12, 7, 3, 5500, 0x7a4f524fu},  // wounded starting 4
   {12, 7, 3, 7300, 0x7a1bcf35u},  // wounded starting 4
-  {12, 7, 3, 9900, 0x70940a1eu},  // wounded starting 4
+  {12, 7, 3, 9900, 0xfae80768u},  // wounded starting 4
   {12, 7, 4, 0, 0x308ec712u},  // wounded starting 5
   {12, 7, 4, 150, 0x308ec712u},  // wounded starting 5
   {12, 7, 4, 420, 0x308ec712u},  // wounded starting 5
@@ -7697,9 +7839,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 4, 1100, 0x308ec712u},  // wounded starting 5
   {12, 7, 4, 1650, 0x7262fa4bu},  // wounded starting 5
   {12, 7, 4, 2300, 0x884cc9a7u},  // wounded starting 5
-  {12, 7, 4, 3100, 0x8393b76bu},  // wounded starting 5
+  {12, 7, 4, 3100, 0x09efba1du},  // wounded starting 5
   {12, 7, 4, 4200, 0x893588bdu},  // wounded starting 5
-  {12, 7, 4, 5500, 0x52fe6a7au},  // wounded starting 5
+  {12, 7, 4, 5500, 0x8948ef3au},  // wounded starting 5
   {12, 7, 4, 7300, 0x60ffba23u},  // wounded starting 5
   {12, 7, 4, 9900, 0x884cc9a7u},  // wounded starting 5
   {12, 7, 5, 0, 0xe18dfb97u},  // wounded starting 6
@@ -7709,9 +7851,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 5, 1100, 0xe18dfb97u},  // wounded starting 6
   {12, 7, 5, 1650, 0x8aefa0cbu},  // wounded starting 6
   {12, 7, 5, 2300, 0x8aefa0cbu},  // wounded starting 6
-  {12, 7, 5, 3100, 0xb7bf9286u},  // wounded starting 6
+  {12, 7, 5, 3100, 0x3dc39ff0u},  // wounded starting 6
   {12, 7, 5, 4200, 0x533fc365u},  // wounded starting 6
-  {12, 7, 5, 5500, 0x88f421a2u},  // wounded starting 6
+  {12, 7, 5, 5500, 0x5342a4e2u},  // wounded starting 6
   {12, 7, 5, 7300, 0x0f6e101du},  // wounded starting 6
   {12, 7, 5, 9900, 0x8aefa0cbu},  // wounded starting 6
   {12, 7, 6, 0, 0x7a1bcf35u},  // wounded starting 7
@@ -7721,11 +7863,11 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 6, 1100, 0x7a1bcf35u},  // wounded starting 7
   {12, 7, 6, 1650, 0xb7bb4453u},  // wounded starting 7
   {12, 7, 6, 2300, 0xb7bb4453u},  // wounded starting 7
-  {12, 7, 6, 3100, 0xbc643a9fu},  // wounded starting 7
+  {12, 7, 6, 3100, 0x361837e9u},  // wounded starting 7
   {12, 7, 6, 4200, 0xb6c20549u},  // wounded starting 7
-  {12, 7, 6, 5500, 0x6d09e78eu},  // wounded starting 7
+  {12, 7, 6, 5500, 0xb6bf62ceu},  // wounded starting 7
   {12, 7, 6, 7300, 0x7a1bcf35u},  // wounded starting 7
-  {12, 7, 6, 9900, 0xbc643a9fu},  // wounded starting 7
+  {12, 7, 6, 9900, 0x361837e9u},  // wounded starting 7
   {12, 7, 7, 0, 0x308ec712u},  // wounded starting 8
   {12, 7, 7, 150, 0x308ec712u},  // wounded starting 8
   {12, 7, 7, 420, 0x308ec712u},  // wounded starting 8
@@ -7733,9 +7875,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 7, 1100, 0x308ec712u},  // wounded starting 8
   {12, 7, 7, 1650, 0x8397e919u},  // wounded starting 8
   {12, 7, 7, 2300, 0x79b9daf5u},  // wounded starting 8
-  {12, 7, 7, 3100, 0x7266a439u},  // wounded starting 8
+  {12, 7, 7, 3100, 0xf81aa94fu},  // wounded starting 8
   {12, 7, 7, 4200, 0x78c09befu},  // wounded starting 8
-  {12, 7, 7, 5500, 0xa30b7928u},  // wounded starting 8
+  {12, 7, 7, 5500, 0x78bdfc68u},  // wounded starting 8
   {12, 7, 7, 7300, 0x910aa971u},  // wounded starting 8
   {12, 7, 7, 9900, 0x79b9daf5u},  // wounded starting 8
   {12, 7, 8, 0, 0xe18dfb97u},  // wounded starting 9
@@ -7745,9 +7887,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 8, 1100, 0xe18dfb97u},  // wounded starting 9
   {12, 7, 8, 1650, 0xb5962bd2u},  // wounded starting 9
   {12, 7, 8, 2300, 0xb5962bd2u},  // wounded starting 9
-  {12, 7, 8, 3100, 0x88c6199fu},  // wounded starting 9
+  {12, 7, 8, 3100, 0x02ba14e9u},  // wounded starting 9
   {12, 7, 8, 4200, 0x6c46487cu},  // wounded starting 9
-  {12, 7, 8, 5500, 0xb78daabbu},  // wounded starting 9
+  {12, 7, 8, 5500, 0x6c3b2ffbu},  // wounded starting 9
   {12, 7, 8, 7300, 0x0f6e101du},  // wounded starting 9
   {12, 7, 8, 9900, 0xb5962bd2u},  // wounded starting 9
   {12, 7, 9, 0, 0x7a1bcf35u},  // wounded starting 10
@@ -7757,11 +7899,11 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 9, 1100, 0x7a1bcf35u},  // wounded starting 10
   {12, 7, 9, 1650, 0xee5f4041u},  // wounded starting 10
   {12, 7, 9, 2300, 0xee5f4041u},  // wounded starting 10
-  {12, 7, 9, 3100, 0xe5803e8du},  // wounded starting 10
+  {12, 7, 9, 3100, 0x6ffc33fbu},  // wounded starting 10
   {12, 7, 9, 4200, 0xef26015bu},  // wounded starting 10
-  {12, 7, 9, 5500, 0x34ede39cu},  // wounded starting 10
+  {12, 7, 9, 5500, 0xef5b66dcu},  // wounded starting 10
   {12, 7, 9, 7300, 0x7a1bcf35u},  // wounded starting 10
-  {12, 7, 9, 9900, 0xe5803e8du},  // wounded starting 10
+  {12, 7, 9, 9900, 0x6ffc33fbu},  // wounded starting 10
   {12, 7, 10, 0, 0x308ec712u},  // wounded starting 11
   {12, 7, 10, 150, 0x308ec712u},  // wounded starting 11
   {12, 7, 10, 420, 0x308ec712u},  // wounded starting 11
@@ -7769,9 +7911,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 10, 1100, 0x308ec712u},  // wounded starting 11
   {12, 7, 10, 1650, 0x6afe472bu},  // wounded starting 11
   {12, 7, 10, 2300, 0x90d074c7u},  // wounded starting 11
-  {12, 7, 10, 3100, 0x9b0f0a0bu},  // wounded starting 11
+  {12, 7, 10, 3100, 0x1173077du},  // wounded starting 11
   {12, 7, 10, 4200, 0x91a935ddu},  // wounded starting 11
-  {12, 7, 10, 5500, 0x4a62d71au},  // wounded starting 11
+  {12, 7, 10, 5500, 0x91d4525au},  // wounded starting 11
   {12, 7, 10, 7300, 0x78630743u},  // wounded starting 11
   {12, 7, 10, 9900, 0x90d074c7u},  // wounded starting 11
   {12, 7, 11, 0, 0xe18dfb97u},  // wounded starting 12
@@ -7781,9 +7923,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 7, 11, 1100, 0xe18dfb97u},  // wounded starting 12
   {12, 7, 11, 1650, 0x91569339u},  // wounded starting 12
   {12, 7, 11, 2300, 0x91569339u},  // wounded starting 12
-  {12, 7, 11, 3100, 0xac06a174u},  // wounded starting 12
+  {12, 7, 11, 3100, 0x267aac02u},  // wounded starting 12
   {12, 7, 11, 4200, 0x4886f097u},  // wounded starting 12
-  {12, 7, 11, 5500, 0x934d1250u},  // wounded starting 12
+  {12, 7, 11, 5500, 0x48fb9710u},  // wounded starting 12
   {12, 7, 11, 7300, 0x0f6e101du},  // wounded starting 12
   {12, 7, 11, 9900, 0x91569339u},  // wounded starting 12
   {12, 8, 0, 0, 0x105da65cu},  // wounded planning 1
@@ -7792,10 +7934,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 8, 0, 700, 0x105da65cu},  // wounded planning 1
   {12, 8, 0, 1650, 0xef62598fu},  // wounded planning 1
   {12, 8, 0, 2300, 0xef62598fu},  // wounded planning 1
-  {12, 8, 0, 3100, 0xacd7c009u},  // wounded planning 1
-  {12, 8, 0, 5500, 0x21570e89u},  // wounded planning 1
+  {12, 8, 0, 3100, 0x26abcd7fu},  // wounded planning 1
+  {12, 8, 0, 5500, 0xfae18bc9u},  // wounded planning 1
   {12, 8, 0, 7300, 0x105da65cu},  // wounded planning 1
-  {12, 8, 0, 9900, 0xacd7c009u},  // wounded planning 1
+  {12, 8, 0, 9900, 0x26abcd7fu},  // wounded planning 1
   {12, 8, 1, 0, 0x2c42871eu},  // wounded planning 2
   {12, 8, 1, 150, 0x2c42871eu},  // wounded planning 2
   {12, 8, 1, 420, 0x2c42871eu},  // wounded planning 2
@@ -7803,9 +7945,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 8, 1, 1100, 0x2c42871eu},  // wounded planning 2
   {12, 8, 1, 1650, 0xfeb3312eu},  // wounded planning 2
   {12, 8, 1, 2300, 0xd2fe969au},  // wounded planning 2
-  {12, 8, 1, 3100, 0xa4367502u},  // wounded planning 2
+  {12, 8, 1, 3100, 0x2e4a7874u},  // wounded planning 2
   {12, 8, 1, 4200, 0xa9b8c4bfu},  // wounded planning 2
-  {12, 8, 1, 5500, 0x56275a6eu},  // wounded planning 2
+  {12, 8, 1, 5500, 0x8d91df2eu},  // wounded planning 2
   {12, 8, 1, 7300, 0x713eafd3u},  // wounded planning 2
   {12, 8, 1, 9900, 0xd2fe969au},  // wounded planning 2
   {12, 8, 2, 0, 0x1dd8f3a8u},  // wounded planning 3
@@ -7815,9 +7957,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 8, 2, 1100, 0x1dd8f3a8u},  // wounded planning 3
   {12, 8, 2, 1650, 0x052ae618u},  // wounded planning 3
   {12, 8, 2, 2300, 0x052ae618u},  // wounded planning 3
-  {12, 8, 2, 3100, 0xc3b4a113u},  // wounded planning 3
+  {12, 8, 2, 3100, 0x49c8ac65u},  // wounded planning 3
   {12, 8, 2, 4200, 0x7daaf8ebu},  // wounded planning 3
-  {12, 8, 2, 5500, 0xa6611a2cu},  // wounded planning 3
+  {12, 8, 2, 5500, 0x7dd79f6cu},  // wounded planning 3
   {12, 8, 2, 7300, 0x1dd8f3a8u},  // wounded planning 3
   {12, 8, 2, 9900, 0x052ae618u},  // wounded planning 3
   {12, 9, 0, 0, 0x070b5583u},  // wounded terminal 1
@@ -7827,20 +7969,20 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 9, 0, 1100, 0x070b5583u},  // wounded terminal 1
   {12, 9, 0, 1650, 0x36d1bc02u},  // wounded terminal 1
   {12, 9, 0, 2300, 0x14aedbd7u},  // wounded terminal 1
-  {12, 9, 0, 3100, 0x9743bf8du},  // wounded terminal 1
+  {12, 9, 0, 3100, 0x1d3fb2fbu},  // wounded terminal 1
   {12, 9, 0, 4200, 0x576700a6u},  // wounded terminal 1
-  {12, 9, 0, 5500, 0x992b16f8u},  // wounded terminal 1
+  {12, 9, 0, 5500, 0x429d93b8u},  // wounded terminal 1
   {12, 9, 0, 7300, 0x070b5583u},  // wounded terminal 1
-  {12, 9, 0, 9900, 0x9743bf8du},  // wounded terminal 1
+  {12, 9, 0, 9900, 0x1d3fb2fbu},  // wounded terminal 1
   {12, 9, 1, 0, 0x86248acbu},  // wounded terminal 2
   {12, 9, 1, 150, 0x86248acbu},  // wounded terminal 2
   {12, 9, 1, 420, 0x86248acbu},  // wounded terminal 2
   {12, 9, 1, 700, 0x86248acbu},  // wounded terminal 2
   {12, 9, 1, 1100, 0x86248acbu},  // wounded terminal 2
   {12, 9, 1, 2300, 0x3cc7ec37u},  // wounded terminal 2
-  {12, 9, 1, 3100, 0x3bdd3bcbu},  // wounded terminal 2
+  {12, 9, 1, 3100, 0xb1a136bdu},  // wounded terminal 2
   {12, 9, 1, 4200, 0x3a72bdc6u},  // wounded terminal 2
-  {12, 9, 1, 5500, 0x401b338eu},  // wounded terminal 2
+  {12, 9, 1, 5500, 0x9badb6ceu},  // wounded terminal 2
   {12, 9, 1, 7300, 0x5ac74f3au},  // wounded terminal 2
   {12, 9, 1, 9900, 0xf4ac486bu},  // wounded terminal 2
   {12, 9, 2, 0, 0x18239eb6u},  // wounded terminal 3
@@ -7861,10 +8003,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 10, 0, 700, 0x8cbe4617u},  // wounded tool_use 1
   {12, 10, 0, 1650, 0x636a48abu},  // wounded tool_use 1
   {12, 10, 0, 2300, 0x636a48abu},  // wounded tool_use 1
-  {12, 10, 0, 3100, 0x29a62287u},  // wounded tool_use 1
-  {12, 10, 0, 5500, 0xd42a0499u},  // wounded tool_use 1
+  {12, 10, 0, 3100, 0xa3da2ff1u},  // wounded tool_use 1
+  {12, 10, 0, 5500, 0x0f9c81d9u},  // wounded tool_use 1
   {12, 10, 0, 7300, 0x8cbe4617u},  // wounded tool_use 1
-  {12, 10, 0, 9900, 0x29a62287u},  // wounded tool_use 1
+  {12, 10, 0, 9900, 0xa3da2ff1u},  // wounded tool_use 1
   {12, 10, 1, 0, 0xf3edb4bcu},  // wounded tool_use 2
   {12, 10, 1, 150, 0xf3edb4bcu},  // wounded tool_use 2
   {12, 10, 1, 420, 0xf3edb4bcu},  // wounded tool_use 2
@@ -7872,9 +8014,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 10, 1, 1100, 0xf3edb4bcu},  // wounded tool_use 2
   {12, 10, 1, 1650, 0xf6fc7883u},  // wounded tool_use 2
   {12, 10, 1, 2300, 0xbd623f3fu},  // wounded tool_use 2
-  {12, 10, 1, 3100, 0x21907dc4u},  // wounded tool_use 2
+  {12, 10, 1, 3100, 0xabec70b2u},  // wounded tool_use 2
   {12, 10, 1, 4200, 0x40b19a35u},  // wounded tool_use 2
-  {12, 10, 1, 5500, 0x6de8130eu},  // wounded tool_use 2
+  {12, 10, 1, 5500, 0xb65e964eu},  // wounded tool_use 2
   {12, 10, 1, 7300, 0xa36e22bbu},  // wounded tool_use 2
   {12, 10, 1, 9900, 0xbd623f3fu},  // wounded tool_use 2
   {12, 10, 2, 0, 0x54c9f742u},  // wounded tool_use 3
@@ -7884,9 +8026,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 10, 2, 1100, 0x54c9f742u},  // wounded tool_use 3
   {12, 10, 2, 1650, 0x25ec62d9u},  // wounded tool_use 3
   {12, 10, 2, 2300, 0x25ec62d9u},  // wounded tool_use 3
-  {12, 10, 2, 3100, 0x798f1272u},  // wounded tool_use 3
+  {12, 10, 2, 3100, 0xf3f31f04u},  // wounded tool_use 3
   {12, 10, 2, 4200, 0x0123650eu},  // wounded tool_use 3
-  {12, 10, 2, 5500, 0x7144ab4cu},  // wounded tool_use 3
+  {12, 10, 2, 5500, 0xaaf22e0cu},  // wounded tool_use 3
   {12, 10, 2, 7300, 0x54c9f742u},  // wounded tool_use 3
   {12, 10, 2, 9900, 0x25ec62d9u},  // wounded tool_use 3
   {12, 11, 0, 0, 0xa1cf59f0u},  // wounded searching 1
@@ -7895,10 +8037,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 11, 0, 700, 0xa1cf59f0u},  // wounded searching 1
   {12, 11, 0, 1650, 0x91a74ceeu},  // wounded searching 1
   {12, 11, 0, 2300, 0x91a74ceeu},  // wounded searching 1
-  {12, 11, 0, 3100, 0xd9a0417au},  // wounded searching 1
-  {12, 11, 0, 5500, 0x2eee919cu},  // wounded searching 1
+  {12, 11, 0, 3100, 0x53dc4c0cu},  // wounded searching 1
+  {12, 11, 0, 5500, 0xf55814dcu},  // wounded searching 1
   {12, 11, 0, 7300, 0xa1cf59f0u},  // wounded searching 1
-  {12, 11, 0, 9900, 0xd9a0417au},  // wounded searching 1
+  {12, 11, 0, 9900, 0x53dc4c0cu},  // wounded searching 1
   {12, 11, 1, 0, 0x7fd9bb12u},  // wounded searching 2
   {12, 11, 1, 150, 0x7fd9bb12u},  // wounded searching 2
   {12, 11, 1, 420, 0x7fd9bb12u},  // wounded searching 2
@@ -7906,9 +8048,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 11, 1, 1100, 0x7fd9bb12u},  // wounded searching 2
   {12, 11, 1, 1650, 0xe1a618fcu},  // wounded searching 2
   {12, 11, 1, 2300, 0xa3918a3bu},  // wounded searching 2
-  {12, 11, 1, 3100, 0x512c2e87u},  // wounded searching 2
+  {12, 11, 1, 3100, 0xdb5023f1u},  // wounded searching 2
   {12, 11, 1, 4200, 0x2fb61811u},  // wounded searching 2
-  {12, 11, 1, 5500, 0x0a24783bu},  // wounded searching 2
+  {12, 11, 1, 5500, 0xd192fd7bu},  // wounded searching 2
   {12, 11, 1, 7300, 0xbcf9a96bu},  // wounded searching 2
   {12, 11, 1, 9900, 0xa3918a3bu},  // wounded searching 2
   {12, 11, 2, 0, 0xcd745aa1u},  // wounded searching 3
@@ -7918,9 +8060,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 11, 2, 1100, 0xcd745aa1u},  // wounded searching 3
   {12, 11, 2, 1650, 0x3efba59au},  // wounded searching 3
   {12, 11, 2, 2300, 0x3efba59au},  // wounded searching 3
-  {12, 11, 2, 3100, 0x0f1303ceu},  // wounded searching 3
+  {12, 11, 2, 3100, 0x856f0eb8u},  // wounded searching 3
   {12, 11, 2, 4200, 0xb487e199u},  // wounded searching 3
-  {12, 11, 2, 5500, 0xeeff3e7du},  // wounded searching 3
+  {12, 11, 2, 5500, 0x3549bb3du},  // wounded searching 3
   {12, 11, 2, 7300, 0xcd745aa1u},  // wounded searching 3
   {12, 11, 2, 9900, 0x3efba59au},  // wounded searching 3
   {12, 12, 0, 0, 0xbdd19351u},  // wounded analyzing 1
@@ -7929,10 +8071,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 12, 0, 700, 0xbdd19351u},  // wounded analyzing 1
   {12, 12, 0, 1650, 0x2532fb72u},  // wounded analyzing 1
   {12, 12, 0, 2300, 0x2532fb72u},  // wounded analyzing 1
-  {12, 12, 0, 3100, 0x4656668du},  // wounded analyzing 1
-  {12, 12, 0, 5500, 0xff8058afu},  // wounded analyzing 1
+  {12, 12, 0, 3100, 0xcc2a6bfbu},  // wounded analyzing 1
+  {12, 12, 0, 5500, 0x2436ddefu},  // wounded analyzing 1
   {12, 12, 0, 7300, 0xbdd19351u},  // wounded analyzing 1
-  {12, 12, 0, 9900, 0x4656668du},  // wounded analyzing 1
+  {12, 12, 0, 9900, 0xcc2a6bfbu},  // wounded analyzing 1
   {12, 12, 1, 0, 0x72a8583eu},  // wounded analyzing 2
   {12, 12, 1, 150, 0x72a8583eu},  // wounded analyzing 2
   {12, 12, 1, 420, 0x72a8583eu},  // wounded analyzing 2
@@ -7940,9 +8082,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 12, 1, 1100, 0x72a8583eu},  // wounded analyzing 2
   {12, 12, 1, 1650, 0x77b99401u},  // wounded analyzing 2
   {12, 12, 1, 2300, 0x1bff6b2cu},  // wounded analyzing 2
-  {12, 12, 1, 3100, 0xb8780080u},  // wounded analyzing 2
+  {12, 12, 1, 3100, 0x32040df6u},  // wounded analyzing 2
   {12, 12, 1, 4200, 0x899c6bf5u},  // wounded analyzing 2
-  {12, 12, 1, 5500, 0x7c478f62u},  // wounded analyzing 2
+  {12, 12, 1, 5500, 0xa7f10a22u},  // wounded analyzing 2
   {12, 12, 1, 7300, 0x75c01205u},  // wounded analyzing 2
   {12, 12, 1, 9900, 0x1bff6b2cu},  // wounded analyzing 2
   {12, 12, 2, 0, 0x268934e6u},  // wounded analyzing 3
@@ -7952,9 +8094,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 12, 2, 1100, 0x268934e6u},  // wounded analyzing 3
   {12, 12, 2, 1650, 0xaf37ceecu},  // wounded analyzing 3
   {12, 12, 2, 2300, 0xaf37ceecu},  // wounded analyzing 3
-  {12, 12, 2, 3100, 0x7d930321u},  // wounded analyzing 3
+  {12, 12, 2, 3100, 0xf7ef0e57u},  // wounded analyzing 3
   {12, 12, 2, 4200, 0x2ee755afu},  // wounded analyzing 3
-  {12, 12, 2, 5500, 0xb78151dfu},  // wounded analyzing 3
+  {12, 12, 2, 5500, 0x6c37d49fu},  // wounded analyzing 3
   {12, 12, 2, 7300, 0x268934e6u},  // wounded analyzing 3
   {12, 12, 2, 9900, 0xaf37ceecu},  // wounded analyzing 3
   {12, 13, 0, 0, 0x0f802daau},  // wounded testing 1
@@ -7963,10 +8105,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 13, 0, 700, 0x0f802daau},  // wounded testing 1
   {12, 13, 0, 1650, 0xf5f4c0a7u},  // wounded testing 1
   {12, 13, 0, 2300, 0xf5f4c0a7u},  // wounded testing 1
-  {12, 13, 0, 3100, 0x34239574u},  // wounded testing 1
-  {12, 13, 0, 5500, 0x5b147fa6u},  // wounded testing 1
+  {12, 13, 0, 3100, 0xbe5f9802u},  // wounded testing 1
+  {12, 13, 0, 5500, 0x80a2fae6u},  // wounded testing 1
   {12, 13, 0, 7300, 0x0f802daau},  // wounded testing 1
-  {12, 13, 0, 9900, 0x34239574u},  // wounded testing 1
+  {12, 13, 0, 9900, 0xbe5f9802u},  // wounded testing 1
   {12, 13, 1, 0, 0xdf47dc6cu},  // wounded testing 2
   {12, 13, 1, 150, 0xdf47dc6cu},  // wounded testing 2
   {12, 13, 1, 420, 0xdf47dc6cu},  // wounded testing 2
@@ -7974,9 +8116,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 13, 1, 1100, 0xdf47dc6cu},  // wounded testing 2
   {12, 13, 1, 1650, 0x65f516ecu},  // wounded testing 2
   {12, 13, 1, 2300, 0x5a93bcdfu},  // wounded testing 2
-  {12, 13, 1, 3100, 0x94045bccu},  // wounded testing 2
+  {12, 13, 1, 3100, 0x1e7856bau},  // wounded testing 2
   {12, 13, 1, 4200, 0x5beafdc5u},  // wounded testing 2
-  {12, 13, 1, 5500, 0x80211f02u},  // wounded testing 2
+  {12, 13, 1, 5500, 0x5b979a42u},  // wounded testing 2
   {12, 13, 1, 7300, 0x77685684u},  // wounded testing 2
   {12, 13, 1, 9900, 0x5a93bcdfu},  // wounded testing 2
   {12, 13, 2, 0, 0xf8c8b482u},  // wounded testing 3
@@ -7986,9 +8128,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 13, 2, 1100, 0xf8c8b482u},  // wounded testing 3
   {12, 13, 2, 1650, 0x6948fb45u},  // wounded testing 3
   {12, 13, 2, 2300, 0x6948fb45u},  // wounded testing 3
-  {12, 13, 2, 3100, 0x0c28359du},  // wounded testing 3
+  {12, 13, 2, 3100, 0x865438ebu},  // wounded testing 3
   {12, 13, 2, 4200, 0x203ed49cu},  // wounded testing 3
-  {12, 13, 2, 5500, 0x8d234d22u},  // wounded testing 3
+  {12, 13, 2, 5500, 0xce521f6du},  // wounded testing 3
   {12, 13, 2, 7300, 0xf8c8b482u},  // wounded testing 3
   {12, 13, 2, 9900, 0x6948fb45u},  // wounded testing 3
   {12, 14, 0, 0, 0xf13f4bafu},  // wounded delegating 1
@@ -7997,10 +8139,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 14, 0, 700, 0xf13f4bafu},  // wounded delegating 1
   {12, 14, 0, 1650, 0x85290148u},  // wounded delegating 1
   {12, 14, 0, 2300, 0x85290148u},  // wounded delegating 1
-  {12, 14, 0, 3100, 0x4ea2ea5cu},  // wounded delegating 1
-  {12, 14, 0, 5500, 0x36e98b23u},  // wounded delegating 1
+  {12, 14, 0, 3100, 0xc4dee72au},  // wounded delegating 1
+  {12, 14, 0, 5500, 0xed5f0e63u},  // wounded delegating 1
   {12, 14, 0, 7300, 0xf13f4bafu},  // wounded delegating 1
-  {12, 14, 0, 9900, 0x4ea2ea5cu},  // wounded delegating 1
+  {12, 14, 0, 9900, 0xc4dee72au},  // wounded delegating 1
   {12, 14, 1, 0, 0xa7ec1338u},  // wounded delegating 2
   {12, 14, 1, 150, 0xa7ec1338u},  // wounded delegating 2
   {12, 14, 1, 420, 0xa7ec1338u},  // wounded delegating 2
@@ -8008,9 +8150,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 14, 1, 1100, 0xa7ec1338u},  // wounded delegating 2
   {12, 14, 1, 1650, 0x4270fd6bu},  // wounded delegating 2
   {12, 14, 1, 2300, 0x58d3ecebu},  // wounded delegating 2
-  {12, 14, 1, 3100, 0x516cc0fbu},  // wounded delegating 2
+  {12, 14, 1, 3100, 0xdb10cd8du},  // wounded delegating 2
   {12, 14, 1, 4200, 0x141bba89u},  // wounded delegating 2
-  {12, 14, 1, 5500, 0x4c94b177u},  // wounded delegating 2
+  {12, 14, 1, 5500, 0x97223437u},  // wounded delegating 2
   {12, 14, 1, 7300, 0x8b015647u},  // wounded delegating 2
   {12, 14, 1, 9900, 0x58d3ecebu},  // wounded delegating 2
   {12, 14, 2, 0, 0x19e0c020u},  // wounded delegating 3
@@ -8020,9 +8162,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 14, 2, 1100, 0x19e0c020u},  // wounded delegating 3
   {12, 14, 2, 1650, 0x6c431244u},  // wounded delegating 3
   {12, 14, 2, 2300, 0x6c431244u},  // wounded delegating 3
-  {12, 14, 2, 3100, 0xed965f58u},  // wounded delegating 3
+  {12, 14, 2, 3100, 0x67ea522eu},  // wounded delegating 3
   {12, 14, 2, 4200, 0xa52e010du},  // wounded delegating 3
-  {12, 14, 2, 5500, 0x126ee87du},  // wounded delegating 3
+  {12, 14, 2, 5500, 0xc9d86d3du},  // wounded delegating 3
   {12, 14, 2, 7300, 0x19e0c020u},  // wounded delegating 3
   {12, 14, 2, 9900, 0x6c431244u},  // wounded delegating 3
   {12, 15, 0, 0, 0xba88929cu},  // wounded helper_return 1
@@ -8031,10 +8173,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 15, 0, 700, 0xba88929cu},  // wounded helper_return 1
   {12, 15, 0, 1650, 0x3bb64396u},  // wounded helper_return 1
   {12, 15, 0, 2300, 0x3bb64396u},  // wounded helper_return 1
-  {12, 15, 0, 3100, 0x1a97691bu},  // wounded helper_return 1
-  {12, 15, 0, 5500, 0xe0d284f5u},  // wounded helper_return 1
+  {12, 15, 0, 3100, 0x90eb646du},  // wounded helper_return 1
+  {12, 15, 0, 5500, 0x3b6401b5u},  // wounded helper_return 1
   {12, 15, 0, 7300, 0xba88929cu},  // wounded helper_return 1
-  {12, 15, 0, 9900, 0x1a97691bu},  // wounded helper_return 1
+  {12, 15, 0, 9900, 0x90eb646du},  // wounded helper_return 1
   {12, 15, 1, 0, 0x63ef6adfu},  // wounded helper_return 2
   {12, 15, 1, 150, 0x63ef6adfu},  // wounded helper_return 2
   {12, 15, 1, 420, 0x63ef6adfu},  // wounded helper_return 2
@@ -8042,9 +8184,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 15, 1, 1100, 0x63ef6adfu},  // wounded helper_return 2
   {12, 15, 1, 1650, 0x66fea6e0u},  // wounded helper_return 2
   {12, 15, 1, 2300, 0x9cd0950cu},  // wounded helper_return 2
-  {12, 15, 1, 3100, 0xaeea68a0u},  // wounded helper_return 2
+  {12, 15, 1, 3100, 0x249665d6u},  // wounded helper_return 2
   {12, 15, 1, 4200, 0xdca43ef6u},  // wounded helper_return 2
-  {12, 15, 1, 5500, 0x370b4a1au},  // wounded helper_return 2
+  {12, 15, 1, 5500, 0xecbdcf5au},  // wounded helper_return 2
   {12, 15, 1, 7300, 0x71a8d595u},  // wounded helper_return 2
   {12, 15, 1, 9900, 0x9cd0950cu},  // wounded helper_return 2
   {12, 15, 2, 0, 0x18a57f6bu},  // wounded helper_return 3
@@ -8054,9 +8196,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 15, 2, 1100, 0x18a57f6bu},  // wounded helper_return 3
   {12, 15, 2, 1650, 0xf0eed261u},  // wounded helper_return 3
   {12, 15, 2, 2300, 0xf0eed261u},  // wounded helper_return 3
-  {12, 15, 2, 3100, 0xab1d2740u},  // wounded helper_return 3
+  {12, 15, 2, 3100, 0x21612a36u},  // wounded helper_return 3
   {12, 15, 2, 4200, 0x0a38806fu},  // wounded helper_return 3
-  {12, 15, 2, 5500, 0xd1f362a8u},  // wounded helper_return 3
+  {12, 15, 2, 5500, 0x0a45e7e8u},  // wounded helper_return 3
   {12, 15, 2, 7300, 0x18a57f6bu},  // wounded helper_return 3
   {12, 15, 2, 9900, 0xf0eed261u},  // wounded helper_return 3
   {12, 16, 0, 0, 0xa621b525u},  // wounded waiting 1
@@ -8067,9 +8209,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 16, 0, 1650, 0xff86866bu},  // wounded waiting 1
   {12, 16, 0, 2300, 0xaea89a6fu},  // wounded waiting 1
   {12, 16, 0, 3100, 0xaea89a6fu},  // wounded waiting 1
-  {12, 16, 0, 4200, 0xdcd57031u},  // wounded waiting 1
+  {12, 16, 0, 4200, 0x56a97d47u},  // wounded waiting 1
   {12, 16, 0, 5500, 0x58670becu},  // wounded waiting 1
-  {12, 16, 0, 7300, 0x939da94au},  // wounded waiting 1
+  {12, 16, 0, 7300, 0x482b2c0au},  // wounded waiting 1
   {12, 16, 0, 9900, 0xa621b525u},  // wounded waiting 1
   {12, 16, 1, 0, 0x4685d589u},  // wounded waiting 2
   {12, 16, 1, 150, 0x4685d589u},  // wounded waiting 2
@@ -8079,9 +8221,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 16, 1, 1650, 0x9f36dcd1u},  // wounded waiting 2
   {12, 16, 1, 2300, 0xb9ba2a5au},  // wounded waiting 2
   {12, 16, 1, 3100, 0xb9ba2a5au},  // wounded waiting 2
-  {12, 16, 1, 4200, 0x6ec791f1u},  // wounded waiting 2
+  {12, 16, 1, 4200, 0xe4bb9c87u},  // wounded waiting 2
   {12, 16, 1, 5500, 0xb8c36b40u},  // wounded waiting 2
-  {12, 16, 1, 7300, 0x63088987u},  // wounded waiting 2
+  {12, 16, 1, 7300, 0xb8be0cc7u},  // wounded waiting 2
   {12, 16, 1, 9900, 0xa8663e03u},  // wounded waiting 2
   {12, 16, 2, 0, 0x2bf369b6u},  // wounded waiting 3
   {12, 16, 2, 150, 0x2bf369b6u},  // wounded waiting 3
@@ -8094,17 +8236,17 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 16, 2, 4200, 0xb69a2a2cu},  // wounded waiting 3
   {12, 16, 2, 5500, 0x929fc96fu},  // wounded waiting 3
   {12, 16, 2, 7300, 0x929fc96fu},  // wounded waiting 3
-  {12, 16, 2, 9900, 0xdb11e245u},  // wounded waiting 3
+  {12, 16, 2, 9900, 0x00a76705u},  // wounded waiting 3
   {12, 17, 0, 0, 0x5cd08082u},  // wounded reply_ready 1
   {12, 17, 0, 150, 0x5cd08082u},  // wounded reply_ready 1
   {12, 17, 0, 420, 0x5cd08082u},  // wounded reply_ready 1
   {12, 17, 0, 700, 0x5cd08082u},  // wounded reply_ready 1
   {12, 17, 0, 1650, 0x9a06fb5fu},  // wounded reply_ready 1
   {12, 17, 0, 2300, 0x9a06fb5fu},  // wounded reply_ready 1
-  {12, 17, 0, 3100, 0x91d98593u},  // wounded reply_ready 1
-  {12, 17, 0, 5500, 0x40b45882u},  // wounded reply_ready 1
+  {12, 17, 0, 3100, 0x1ba588e5u},  // wounded reply_ready 1
+  {12, 17, 0, 5500, 0x9b02ddc2u},  // wounded reply_ready 1
   {12, 17, 0, 7300, 0x5cd08082u},  // wounded reply_ready 1
-  {12, 17, 0, 9900, 0x91d98593u},  // wounded reply_ready 1
+  {12, 17, 0, 9900, 0x1ba588e5u},  // wounded reply_ready 1
   {12, 17, 1, 0, 0xaa28c22eu},  // wounded reply_ready 2
   {12, 17, 1, 150, 0xaa28c22eu},  // wounded reply_ready 2
   {12, 17, 1, 420, 0xaa28c22eu},  // wounded reply_ready 2
@@ -8112,9 +8254,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 17, 1, 1100, 0xaa28c22eu},  // wounded reply_ready 2
   {12, 17, 1, 1650, 0xeac2ea9eu},  // wounded reply_ready 2
   {12, 17, 1, 2300, 0x10ecd972u},  // wounded reply_ready 2
-  {12, 17, 1, 3100, 0x1b33a7beu},  // wounded reply_ready 2
+  {12, 17, 1, 3100, 0x914faac8u},  // wounded reply_ready 2
   {12, 17, 1, 4200, 0x11959868u},  // wounded reply_ready 2
-  {12, 17, 1, 5500, 0xca5e7aafu},  // wounded reply_ready 2
+  {12, 17, 1, 5500, 0x11e8ffefu},  // wounded reply_ready 2
   {12, 17, 1, 7300, 0xf85faaf6u},  // wounded reply_ready 2
   {12, 17, 1, 9900, 0x10ecd972u},  // wounded reply_ready 2
   {12, 17, 2, 0, 0x5f57507au},  // wounded reply_ready 3
@@ -8124,9 +8266,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 17, 2, 1100, 0x5f57507au},  // wounded reply_ready 3
   {12, 17, 2, 1650, 0x23a5bf3eu},  // wounded reply_ready 3
   {12, 17, 2, 2300, 0x23a5bf3eu},  // wounded reply_ready 3
-  {12, 17, 2, 3100, 0xe53bf835u},  // wounded reply_ready 3
+  {12, 17, 2, 3100, 0x6f47f543u},  // wounded reply_ready 3
   {12, 17, 2, 4200, 0x13c5d589u},  // wounded reply_ready 3
-  {12, 17, 2, 5500, 0xf33fe20cu},  // wounded reply_ready 3
+  {12, 17, 2, 5500, 0x2889674cu},  // wounded reply_ready 3
   {12, 17, 2, 7300, 0x5f57507au},  // wounded reply_ready 3
   {12, 17, 2, 9900, 0x23a5bf3eu},  // wounded reply_ready 3
   {12, 18, 0, 0, 0xfa97d82eu},  // wounded error 1
@@ -8135,10 +8277,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 18, 0, 700, 0xfa97d82eu},  // wounded error 1
   {12, 18, 0, 1650, 0x4d86c0a8u},  // wounded error 1
   {12, 18, 0, 2300, 0x4d86c0a8u},  // wounded error 1
-  {12, 18, 0, 3100, 0x285b6560u},  // wounded error 1
-  {12, 18, 0, 5500, 0xa8e38ff8u},  // wounded error 1
+  {12, 18, 0, 3100, 0xa2276816u},  // wounded error 1
+  {12, 18, 0, 5500, 0x73550ab8u},  // wounded error 1
   {12, 18, 0, 7300, 0xfa97d82eu},  // wounded error 1
-  {12, 18, 0, 9900, 0x285b6560u},  // wounded error 1
+  {12, 18, 0, 9900, 0xa2276816u},  // wounded error 1
   {12, 18, 1, 0, 0x58c04042u},  // wounded error 2
   {12, 18, 1, 150, 0x58c04042u},  // wounded error 2
   {12, 18, 1, 420, 0x58c04042u},  // wounded error 2
@@ -8146,9 +8288,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 18, 1, 1100, 0x58c04042u},  // wounded error 2
   {12, 18, 1, 1650, 0x7ffbb871u},  // wounded error 2
   {12, 18, 1, 2300, 0xefd158c4u},  // wounded error 2
-  {12, 18, 1, 3100, 0x54346cc6u},  // wounded error 2
+  {12, 18, 1, 3100, 0xde4861b0u},  // wounded error 2
   {12, 18, 1, 4200, 0x301ae80fu},  // wounded error 2
-  {12, 18, 1, 5500, 0xe2501f83u},  // wounded error 2
+  {12, 18, 1, 5500, 0x39e69ac3u},  // wounded error 2
   {12, 18, 1, 7300, 0xa4f3800cu},  // wounded error 2
   {12, 18, 1, 9900, 0xefd158c4u},  // wounded error 2
   {12, 18, 2, 0, 0x41dbb79fu},  // wounded error 3
@@ -8158,9 +8300,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 18, 2, 1100, 0x41dbb79fu},  // wounded error 3
   {12, 18, 2, 1650, 0xf6caaf19u},  // wounded error 3
   {12, 18, 2, 2300, 0xf6caaf19u},  // wounded error 3
-  {12, 18, 2, 3100, 0x4d2f9b1bu},  // wounded error 3
+  {12, 18, 2, 3100, 0xc753966du},  // wounded error 3
   {12, 18, 2, 4200, 0x0c67e67fu},  // wounded error 3
-  {12, 18, 2, 5500, 0xde2d11f3u},  // wounded error 3
+  {12, 18, 2, 5500, 0x059b94b3u},  // wounded error 3
   {12, 18, 2, 7300, 0x41dbb79fu},  // wounded error 3
   {12, 18, 2, 9900, 0xf6caaf19u},  // wounded error 3
   {12, 19, 0, 0, 0xe838d0d5u},  // wounded stopped 1
@@ -8169,10 +8311,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 19, 0, 700, 0xe838d0d5u},  // wounded stopped 1
   {12, 19, 0, 1650, 0x763ba383u},  // wounded stopped 1
   {12, 19, 0, 2300, 0x763ba383u},  // wounded stopped 1
-  {12, 19, 0, 3100, 0x3363ba8cu},  // wounded stopped 1
-  {12, 19, 0, 5500, 0x927122aau},  // wounded stopped 1
+  {12, 19, 0, 3100, 0xb91fb7fau},  // wounded stopped 1
+  {12, 19, 0, 5500, 0x49c7a7eau},  // wounded stopped 1
   {12, 19, 0, 7300, 0xe838d0d5u},  // wounded stopped 1
-  {12, 19, 0, 9900, 0x3363ba8cu},  // wounded stopped 1
+  {12, 19, 0, 9900, 0xb91fb7fau},  // wounded stopped 1
   {12, 19, 1, 0, 0x7a1bcf35u},  // wounded stopped 2
   {12, 19, 1, 150, 0x7a1bcf35u},  // wounded stopped 2
   {12, 19, 1, 420, 0x7a1bcf35u},  // wounded stopped 2
@@ -8180,9 +8322,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 19, 1, 1100, 0x7a1bcf35u},  // wounded stopped 2
   {12, 19, 1, 1650, 0x8de7cfe0u},  // wounded stopped 2
   {12, 19, 1, 2300, 0x3de95be1u},  // wounded stopped 2
-  {12, 19, 1, 3100, 0xffbdc448u},  // wounded stopped 2
+  {12, 19, 1, 3100, 0x75c1c93eu},  // wounded stopped 2
   {12, 19, 1, 4200, 0x15781e8cu},  // wounded stopped 2
-  {12, 19, 1, 5500, 0x5684f154u},  // wounded stopped 2
+  {12, 19, 1, 5500, 0x8d327414u},  // wounded stopped 2
   {12, 19, 1, 7300, 0xdf509420u},  // wounded stopped 2
   {12, 19, 1, 9900, 0x3de95be1u},  // wounded stopped 2
   {12, 19, 2, 0, 0x1c9b60d6u},  // wounded stopped 3
@@ -8192,9 +8334,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 19, 2, 1100, 0x1c9b60d6u},  // wounded stopped 3
   {12, 19, 2, 1650, 0x50d71108u},  // wounded stopped 3
   {12, 19, 2, 2300, 0x50d71108u},  // wounded stopped 3
-  {12, 19, 2, 3100, 0xed0e938eu},  // wounded stopped 3
+  {12, 19, 2, 3100, 0x67729ef8u},  // wounded stopped 3
   {12, 19, 2, 4200, 0xff218dadu},  // wounded stopped 3
-  {12, 19, 2, 5500, 0x1fdbba28u},  // wounded stopped 3
+  {12, 19, 2, 5500, 0xc46d3f68u},  // wounded stopped 3
   {12, 19, 2, 7300, 0x1c9b60d6u},  // wounded stopped 3
   {12, 19, 2, 9900, 0x50d71108u},  // wounded stopped 3
   {12, 20, 0, 0, 0x459d1ca8u},  // wounded poked 1
@@ -8203,10 +8345,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 20, 0, 700, 0x459d1ca8u},  // wounded poked 1
   {12, 20, 0, 1650, 0x672cb0cau},  // wounded poked 1
   {12, 20, 0, 2300, 0x672cb0cau},  // wounded poked 1
-  {12, 20, 0, 3100, 0xa4af8c2fu},  // wounded poked 1
-  {12, 20, 0, 5500, 0xb34b6478u},  // wounded poked 1
+  {12, 20, 0, 3100, 0xd6d654cbu},  // wounded poked 1
+  {12, 20, 0, 5500, 0x68fde138u},  // wounded poked 1
   {12, 20, 0, 7300, 0x459d1ca8u},  // wounded poked 1
-  {12, 20, 0, 9900, 0xa4af8c2fu},  // wounded poked 1
+  {12, 20, 0, 9900, 0xd6d654cbu},  // wounded poked 1
   {12, 20, 1, 0, 0x459d1ca8u},  // wounded poked 2
   {12, 20, 1, 150, 0x459d1ca8u},  // wounded poked 2
   {12, 20, 1, 420, 0x459d1ca8u},  // wounded poked 2
@@ -8214,9 +8356,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 20, 1, 1100, 0x459d1ca8u},  // wounded poked 2
   {12, 20, 1, 1650, 0xf2e1c985u},  // wounded poked 2
   {12, 20, 1, 2300, 0x8f9d2b2bu},  // wounded poked 2
-  {12, 20, 1, 3100, 0xfe115598u},  // wounded poked 2
+  {12, 20, 1, 3100, 0x8c688d7cu},  // wounded poked 2
   {12, 20, 1, 4200, 0x2786908cu},  // wounded poked 2
-  {12, 20, 1, 5500, 0xd863d8c1u},  // wounded poked 2
+  {12, 20, 1, 5500, 0x03d55d81u},  // wounded poked 2
   {12, 20, 1, 7300, 0xe07c89edu},  // wounded poked 2
   {12, 20, 1, 9900, 0x8f9d2b2bu},  // wounded poked 2
   {12, 20, 2, 0, 0x459d1ca8u},  // wounded poked 3
@@ -8226,9 +8368,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 20, 2, 1100, 0x459d1ca8u},  // wounded poked 3
   {12, 20, 2, 1650, 0xaee4f977u},  // wounded poked 3
   {12, 20, 2, 2300, 0xaee4f977u},  // wounded poked 3
-  {12, 20, 2, 3100, 0xbddc0153u},  // wounded poked 3
+  {12, 20, 2, 3100, 0xcfa5d9b7u},  // wounded poked 3
   {12, 20, 2, 4200, 0x5a0d11d3u},  // wounded poked 3
-  {12, 20, 2, 5500, 0xa3af4039u},  // wounded poked 3
+  {12, 20, 2, 5500, 0x7819c579u},  // wounded poked 3
   {12, 20, 2, 7300, 0x459d1ca8u},  // wounded poked 3
   {12, 20, 2, 9900, 0xaee4f977u},  // wounded poked 3
   {12, 21, 0, 0, 0x459d1ca8u},  // wounded tap_spam 1
@@ -8237,10 +8379,10 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 21, 0, 700, 0x459d1ca8u},  // wounded tap_spam 1
   {12, 21, 0, 1650, 0x4bdd90fcu},  // wounded tap_spam 1
   {12, 21, 0, 2300, 0x4bdd90fcu},  // wounded tap_spam 1
-  {12, 21, 0, 3100, 0xad932ea4u},  // wounded tap_spam 1
+  {12, 21, 0, 3100, 0x982463dcu},  // wounded tap_spam 1
   {12, 21, 0, 5500, 0x739cf9e4u},  // wounded tap_spam 1
   {12, 21, 0, 7300, 0x459d1ca8u},  // wounded tap_spam 1
-  {12, 21, 0, 9900, 0xad932ea4u},  // wounded tap_spam 1
+  {12, 21, 0, 9900, 0x982463dcu},  // wounded tap_spam 1
   {12, 21, 1, 0, 0x459d1ca8u},  // wounded tap_spam 2
   {12, 21, 1, 150, 0x459d1ca8u},  // wounded tap_spam 2
   {12, 21, 1, 420, 0x459d1ca8u},  // wounded tap_spam 2
@@ -8248,9 +8390,9 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 21, 1, 1100, 0x459d1ca8u},  // wounded tap_spam 2
   {12, 21, 1, 1650, 0xee08c1e8u},  // wounded tap_spam 2
   {12, 21, 1, 2300, 0x4058adbdu},  // wounded tap_spam 2
-  {12, 21, 1, 3100, 0x6ac95d78u},  // wounded tap_spam 2
+  {12, 21, 1, 3100, 0x41dbb08fu},  // wounded tap_spam 2
   {12, 21, 1, 4200, 0x31f497ffu},  // wounded tap_spam 2
-  {12, 21, 1, 5500, 0x3926aaabu},  // wounded tap_spam 2
+  {12, 21, 1, 5500, 0x337f8cdfu},  // wounded tap_spam 2
   {12, 21, 1, 7300, 0xc98b74b2u},  // wounded tap_spam 2
   {12, 21, 1, 9900, 0x4058adbdu},  // wounded tap_spam 2
   {12, 21, 2, 0, 0x459d1ca8u},  // wounded tap_spam 3
@@ -8265,4 +8407,16 @@ static const FacegenFrame kFacegenFrames[8256] = {
   {12, 21, 2, 5500, 0x6aeb665cu},  // wounded tap_spam 3
   {12, 21, 2, 7300, 0x459d1ca8u},  // wounded tap_spam 3
   {12, 21, 2, 9900, 0xb112cf1bu},  // wounded tap_spam 3
+  {12, 22, 0, 0, 0x459d1ca8u},  // wounded wake_up 1
+  {12, 22, 0, 150, 0x459d1ca8u},  // wounded wake_up 1
+  {12, 22, 0, 420, 0x459d1ca8u},  // wounded wake_up 1
+  {12, 22, 0, 700, 0x5b033712u},  // wounded wake_up 1
+  {12, 22, 0, 1100, 0x5b033712u},  // wounded wake_up 1
+  {12, 22, 0, 1650, 0x0d03622du},  // wounded wake_up 1
+  {12, 22, 0, 2300, 0x80e3b0c7u},  // wounded wake_up 1
+  {12, 22, 0, 3100, 0xa0f8d12du},  // wounded wake_up 1
+  {12, 22, 0, 4200, 0xb7b29611u},  // wounded wake_up 1
+  {12, 22, 0, 5500, 0xa3b46ed1u},  // wounded wake_up 1
+  {12, 22, 0, 7300, 0x459d1ca8u},  // wounded wake_up 1
+  {12, 22, 0, 9900, 0x80e3b0c7u},  // wounded wake_up 1
 };

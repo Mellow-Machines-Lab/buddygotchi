@@ -99,7 +99,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Excited. Boop is thrilled: a big win just happened.
@@ -228,7 +228,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Proud. Boop is pleased with itself: something hard-won worked.

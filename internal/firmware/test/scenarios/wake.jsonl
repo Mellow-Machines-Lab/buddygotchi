@@ -1,0 +1,22 @@
+// The brain's wake_up: you back at the Mac after a long break. It plays its
+// design in the brain's face and names nobody's turn. Its `say` waits until
+// the creature is awake, its voice window: 4.704 s into happy's 5.6 s
+// design. The design holds until the `say` and its bubble end, at
+// 4704 + 958 ("Yay") + 1200 = 6862 ms.
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm"}
+{"clock":1000}
+{"t":"do","id":21,"name":"wake_up","play":"now","args":{"variant":1,"say":{"take":"previous.yay"},"mood":"happy","loops":1}}
+{"expect":{"moment":{"anim":"wake_up","left_ms":6862,"variant":1},"expr":"happy","audio":{"playing":false,"take":null}}}
+// Mid-yawn: the mitts up, nothing said yet.
+{"clock":2700}
+{"shot":"yawn"}
+{"expect":{"audio":{"playing":false,"take":null}}}
+{"clock":5703}
+{"expect":{"audio":{"playing":false,"take":null}}}
+{"clock":5704}
+{"expect":{"audio":{"playing":true,"take":"previous.yay"}}}
+{"clock":5800}
+{"shot":"awake-hello"}
+{"clock":7900}
+{"expect":{"moment":null,"expr":null}}

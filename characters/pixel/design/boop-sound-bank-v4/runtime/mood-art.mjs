@@ -6,12 +6,12 @@ import {effects} from './audio/effects.mjs';
 import {protectedSoundStates} from './quiet-mix.mjs';
 
 const green='#83D99A',deep='#244634',amberDark='#352915';
-const round=x=>Number(x.toFixed(6));
-const safe=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+export const round=x=>Number(x.toFixed(6));
+export const safe=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 const text=(s,x,y,k=2,c=P.ink)=>pixelText(s,x,y,k,c);
 const centered=(s,y,k=2,c=P.ink)=>text(s,Math.round((320-(s.length*6-1)*k)/2),y,k,c);
-const slab=(x,y,w,h,c=P.ink)=>path(`M${x+4} ${y}h${w-8}v4h4v${h-8}h-4v4H${x+4}v-4h-4V${y+4}h4Z`,c);
-const pad=(x,y,w=28,h=20)=>slab(x,y,w,h,P.ink);
+export const slab=(x,y,w,h,c=P.ink)=>path(`M${x+4} ${y}h${w-8}v4h4v${h-8}h-4v4H${x+4}v-4h-4V${y+4}h4Z`,c);
+export const pad=(x,y,w=28,h=20)=>slab(x,y,w,h,P.ink);
 const cube=(x,y,s=20,c=P.blue)=>rect(x,y,s,s,c)+rect(x+4,y+4,s-8,4,P.ink)+rect(x+s-4,y+4,4,s-4,P.dim);
 const card=(s,y=155,c=P.blue)=>{const w=Math.max(112,(s.length*6-1)*2+20);return slab((320-w)/2,y,w,30,c)+centered(s,y+8,2,P.black);};
 const held=(s,y=155,c=P.blue)=>card(s,y,c)+pad(74,y+11,24,16)+pad(222,y+11,24,16);
@@ -82,7 +82,7 @@ export function moodPlan(a){
 
 function eye(x,y,w,h,c=P.ink){const hw=(w-4)/2,hh=(h-4)/2;return slab(x,y,hw,hh,c)+slab(x+hw+4,y,hw,hh,c)+slab(x,y+hh+4,hw,hh,c)+slab(x+hw+4,y+hh+4,hw,hh,c);}
 function brow(x,y,ascending,c=P.ink){return [0,1,2].map(i=>rect(x+i*12,y+(ascending?2-i:i)*3,12,4,c)).join('');}
-function face(a,s,blink=false){
+export function moodFace(a,s,blink=false){
  const m=a.mood,quiet=a.sharedQuiet,success=a.outcome==='success',ink=success?P.dark:P.ink,bg=success?P.gold:P.black;
  let eyes='',lips='',decor='',gaze=s===0?0:[0,-3,2,-2,3,0,-1,2,0][s];
  if(quiet||blink){eyes=slab(66,88,42,6,ink)+slab(212,88,42,6,ink);lips=rect(149,123,22,4,ink);}
@@ -282,7 +282,8 @@ function background(a,s){
  const colors=[P.gold,'#FFD14A','#FFC54A','#FFBA4A','#FFC54A','#FFD14A',P.gold,'#FFD84A',P.gold];
  return rect(0,0,320,192,colors[s])+[0,1,2,3,4].map(i=>rect(((i*76+s*12)%380)-30,13+(i%3)*48,36,9,'#EDAE26')).join('');
 }
-function frames(a,plan,draw,part){
+// One group per distinct drawing of a flip-book's steps, shown at their times.
+export function frames(a,plan,draw,part){
  const drawings=plan.steps.slice(0,-1).map((step,i)=>({art:draw(step),i})),unique=[...new Set(drawings.map(x=>x.art))];
  return group(unique.map(art=>{
   const indexes=drawings.filter(d=>d.art===art).map(d=>d.i);
@@ -290,12 +291,17 @@ function frames(a,plan,draw,part){
   return group(`<animate attributeName="opacity" values="${values.join(';')}" keyTimes="${plan.steps.map(x=>round(x.at/a.seconds)).join(';')}" dur="${a.seconds}s" repeatCount="indefinite" calcMode="discrete"/>`+art,`opacity="${indexes.includes(0)?1:0}" data-step="${indexes.join(',')}"`);
  }).join(''),`data-part="${part}"`);
 }
+// A flip-book scene's SVG: its motion, its still for reduced motion, and the
+// lane at the bottom left to the host's text. `desc` comes before the shared words.
+export function sceneSvg(a,id,desc,art,still){
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" id="${id}" data-mood="${a.mood}" data-state="${a.state}" data-action="${a.action}" data-loop-seconds="${a.seconds}" data-text-top="192" role="img" aria-labelledby="${id}-title ${id}-desc" shape-rendering="crispEdges" overflow="hidden"><title id="${id}-title">${safe(a.mood+' · '+a.name)}</title><desc id="${id}-desc">${safe(desc)} Loopable pixel animation; procedural synchronized SFX; bottom 48 pixels reserved for host text.</desc><defs><clipPath id="${id}-clip"><rect width="320" height="192"/></clipPath></defs><style>#${id} .still{display:none}@media(prefers-reduced-motion:reduce){#${id}:not([data-motion="on"]) .motion{display:none}#${id}:not([data-motion="on"]) .still{display:inline}}</style><rect width="320" height="240" fill="#000000"/><g clip-path="url(#${id}-clip)"><g class="motion">${art}</g><g class="still">${still}</g></g><g data-part="reserved-text-zone"/></svg>`;
+}
 export function renderMoodScene(a){
  const plan=moodPlan(a),id='boop-v4-'+a.id.replaceAll('.','-');
- const art=frames(a,plan,e=>background(a,e.stage),'mood-background')+frames(a,plan,e=>face(a,e.stage,e.stage===8),'mood-face')+frames(a,plan,e=>props(a,e),'mood-action');
+ const art=frames(a,plan,e=>background(a,e.stage),'mood-background')+frames(a,plan,e=>moodFace(a,e.stage,e.stage===8),'mood-face')+frames(a,plan,e=>props(a,e),'mood-action');
  const stillStep={stage:a.state==='needs_you'?6:a.state==='task_complete'||a.state==='error'?5:0};
- const still=background(a,stillStep.stage)+face(a,0)+props(a,stillStep);
- return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" id="${id}" data-mood="${a.mood}" data-state="${a.state}" data-action="${a.action}" data-loop-seconds="${a.seconds}" data-text-top="192" role="img" aria-labelledby="${id}-title ${id}-desc" shape-rendering="crispEdges" overflow="hidden"><title id="${id}-title">${safe(a.mood+' · '+a.name)}</title><desc id="${id}-desc">${safe(a.caption+' '+moodProfiles[a.mood].character)} Loopable pixel animation; procedural synchronized SFX; bottom 48 pixels reserved for host text.</desc><defs><clipPath id="${id}-clip"><rect width="320" height="192"/></clipPath></defs><style>#${id} .still{display:none}@media(prefers-reduced-motion:reduce){#${id}:not([data-motion="on"]) .motion{display:none}#${id}:not([data-motion="on"]) .still{display:inline}}</style><rect width="320" height="240" fill="#000000"/><g clip-path="url(#${id}-clip)"><g class="motion">${art}</g><g class="still">${still}</g></g><g data-part="reserved-text-zone"/></svg>`;
+ const still=background(a,stillStep.stage)+moodFace(a,0)+props(a,stillStep);
+ return sceneSvg(a,id,a.caption+' '+moodProfiles[a.mood].character,art,still);
 }
 export function moodScore(a){
  const plan=moodPlan(a),profile=moodProfiles[a.mood];
@@ -304,9 +310,11 @@ export function moodScore(a){
  return {id:a.id,seconds:a.seconds,policy:plan.policy,intervalSeconds:plan.intervalSeconds,character:profile.character,description:a.caption+' Sparse code-generated material effects, no speech or music bed.',events,tailSeconds:round(Math.max(0,...events.map(e=>e.at+effects[e.effect].duration-a.seconds)))};
 }
 // When speech may enter over a scene, in seconds: .12 s after its last
-// attention cue ends for needs_you, task_complete and error, else .45 s.
+// attention cue ends for needs_you, task_complete and error, at the score's
+// own voiceSeconds when it has one (wake_up's, once awake), else .45 s.
 // The quiet mix keeps those states' cues, so the score may be mixed or not.
 export function voiceStart(state,score){
+ if(score.voiceSeconds!==undefined)return score.voiceSeconds;
  return protectedSoundStates.includes(state)?Math.max(0,...score.events.map(e=>e.at+effects[e.effect].duration))+.12:.45;
 }
 export function voiceWindows(a){

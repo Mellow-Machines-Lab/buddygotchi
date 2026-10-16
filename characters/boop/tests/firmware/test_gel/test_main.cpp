@@ -394,18 +394,26 @@ static void test_a_power_on_seeds_the_engine_and_a_reset_restores_53() {
 // loopMs and voiceMs read.
 static void test_timing_comes_from_the_recipe_table() {
   GelFace f;
+  constexpr int kStates = int(SceneState::kCount);
   for (int p = 0; p < slime::kProfiles; ++p)
     for (int v = 0; v < 3; ++v) {
       const auto& done = slime::kRecipes[p][int(SceneState::kTaskComplete)][v];
       const auto& start = slime::kRecipes[p][int(SceneState::kStarting)][v];
-      for (int row : {22, 23}) TEST_ASSERT_TRUE(slime::kRecipes[p][row][v].duration == done.duration);
-      for (int row : {24, 25, 26, 27}) TEST_ASSERT_TRUE(slime::kRecipes[p][row][v].duration == start.duration);
+      for (int row : {kStates, kStates + 1}) TEST_ASSERT_TRUE(slime::kRecipes[p][row][v].duration == done.duration);
+      for (int row = kStates + 2; row < kStates + 6; ++row)
+        TEST_ASSERT_TRUE(slime::kRecipes[p][row][v].duration == start.duration);
+      // wake_up stretches in the start family's timing, with no card.
+      const auto& wake = slime::kRecipes[p][int(SceneState::kWakeUp)][v];
+      TEST_ASSERT_TRUE(wake.duration == start.duration);
+      TEST_ASSERT_NULL(wake.label);
+      TEST_ASSERT_EQUAL_UINT8(kStart, wake.contacts[0].kind);
     }
-  TEST_ASSERT_EQUAL_INT(22, recipeState(SceneState::kTaskComplete, Outcome::kSuccess, StartCtx::kNone));
-  TEST_ASSERT_EQUAL_INT(23, recipeState(SceneState::kTaskComplete, Outcome::kFailure, StartCtx::kNone));
-  TEST_ASSERT_EQUAL_INT(24, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kNewTask));
-  TEST_ASSERT_EQUAL_INT(26, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kContinuation));
-  TEST_ASSERT_EQUAL_INT(27, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kCompacted));
+  TEST_ASSERT_EQUAL_INT(kStates, recipeState(SceneState::kTaskComplete, Outcome::kSuccess, StartCtx::kNone));
+  TEST_ASSERT_EQUAL_INT(kStates + 1, recipeState(SceneState::kTaskComplete, Outcome::kFailure, StartCtx::kNone));
+  TEST_ASSERT_EQUAL_INT(kStates + 2, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kNewTask));
+  TEST_ASSERT_EQUAL_INT(kStates + 4, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kContinuation));
+  TEST_ASSERT_EQUAL_INT(kStates + 5, recipeState(SceneState::kStarting, Outcome::kNone, StartCtx::kCompacted));
+  TEST_ASSERT_EQUAL_INT(int(Family::kStart), int(family(SceneState::kWakeUp)));
   // Looks rest on one 3.2 s loop whatever the take.
   TEST_ASSERT_EQUAL_UINT32(3200, f.loopMs(Mood::kHappy, SceneState::kIdle, 2));
   // A finish's result reaches the strip (screens.cpp's tick or cross).
@@ -462,7 +470,7 @@ static void test_tracked_clear_matches_full_clear() {
   std::vector<uint16_t> a(502 * 410, 0xffff), b(a.size(), 0xffff);
   Surface tracked{502, 410, a.data()}, full{502, 410, b.data()};
   auto e = std::make_unique<Engine>();
-  for (int state = 0; state < 22; ++state) {
+  for (int state = 0; state < int(SceneState::kCount); ++state) {
     e->clearTransient();
     e->linkTimedOut(SceneState(state) == SceneState::kNoApp);
     Facts f;

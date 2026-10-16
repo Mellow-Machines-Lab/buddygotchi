@@ -378,6 +378,20 @@
       ],
       "audioPolicy": "first_only",
       "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "wake_up",
+      "scene": "start",
+      "kind": "one_shot",
+      "trigger": "The brain's reaction to the person back at the Mac after a long break; the mood comes with it.",
+      "visual": "Same body stretches up and forward, then settles; the start family without a card.",
+      "variations": [
+        "yawn-and-stretch",
+        "stretch-and-shake",
+        "slow-double-stretch"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
     }
   ]
 }
