@@ -33,6 +33,9 @@ extension Event {
         /// with the reply still to come (`wait`), and listening over
         /// (`end`). The core's, and log-only: no line, no wake.
         case listen
+        /// One buddy's reaction, which the other buddies hear: only with
+        /// several (`Buddy`).
+        case reacted
     }
 
     /// Where in its life a thing with a start and an end is: a tool call
@@ -42,7 +45,7 @@ extension Event {
     }
 
     /// The `data` keys Boop's own fields take.
-    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd"]
+    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd", "buddy"]
 
     public init(seq: Int = 0, at: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
                 session: String? = nil, subagent: String? = nil, cwd: String? = nil, data: [String: JSONValue] = [:]) {

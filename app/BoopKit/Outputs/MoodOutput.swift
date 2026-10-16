@@ -55,11 +55,12 @@ public enum MoodOutput {
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay and
     /// every move from the mood it has (`options(from:)`), and the line a
     /// change shows.
-    public static func choice() -> Choice {
-        Choice(name: outputName, start: initial, question: "After NOW, what is \(CharacterPack.active.name)'s mood?",
-               about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
-               said: { from, to in "\(CharacterPack.active.name)'s mood changed: \(from) → \(to)." },
-               options: { current, _, _ in options(from: known(current)) })
+    public static func choice(voice: String? = nil, pack: CharacterPack? = nil) -> Choice {
+        let pack = pack ?? .active
+        return Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
+                      about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
+                      said: { from, to in "\(pack.name)'s mood changed: \(from) → \(to)." },
+                      options: { current, _, _ in pack.run { options(from: known(current)) } })
     }
 
     /// The mood as the log has it: the choice's value, read as the resting

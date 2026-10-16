@@ -594,10 +594,10 @@ public final class Core {
 
     /// The rule actions' names and messages.
     public static let wiggle = "wiggle"
-    public static let wiggled = "\(CharacterPack.active.name) wiggled on its own."
+    public static var wiggled: String { "\(CharacterPack.active.name) wiggled on its own." }
     public static let openThread = "open_thread"
-    public static let openedThread = "\(CharacterPack.active.name) opened the thread that needs you on the Mac."
-    public static let openedFinished = "\(CharacterPack.active.name) opened the thread that finished on the Mac."
+    public static var openedThread: String { "\(CharacterPack.active.name) opened the thread that needs you on the Mac." }
+    public static var openedFinished: String { "\(CharacterPack.active.name) opened the thread that finished on the Mac." }
     public static let needsYou = "needs_you"
 
     /// Runs the session table's timers due by `now`: a

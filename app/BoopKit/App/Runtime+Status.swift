@@ -36,6 +36,20 @@ extension Runtime {
         public var micTrouble: String?
         /// Boop's XP and stage.
         public var growth: Growth?
+        /// Each buddy, when there are several; empty for one, which the
+        /// fields above are.
+        public var buddies: [BuddyStatus] = []
+
+        /// One of several buddies, as the popover lists it.
+        public struct BuddyStatus: Sendable, Equatable {
+            public var id: String
+            public var name: String
+            public var place: String?
+            /// What its device shows, and its mood.
+            public var snapshot: StateSnapshot
+            public var connected: Bool
+            public var device: DeviceInfo?
+        }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
                     device: DeviceInfo?, linkTrouble: String? = nil, deviceTrouble: String? = nil, personality: Personality,
@@ -61,11 +75,19 @@ extension Runtime {
 
     func changed() {
         let now = options.clock()
-        let status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: core.sessionList(at: now),
+        var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { $0.core.sessionList(at: now) },
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+        if !buddies.isEmpty {
+            status.buddies = rigs.compactMap { rig in
+                rig.buddy.map { b in
+                    Status.BuddyStatus(id: b.id, name: b.name, place: b.place, snapshot: rig.latest ?? rig.run { rig.core.snapshot(at: now) },
+                                connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init))
+                }
+            }
+        }
         grew = false
         if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)

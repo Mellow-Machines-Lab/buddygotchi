@@ -74,8 +74,12 @@ public final class DemoPlayer: @unchecked Sendable {
     /// The agent playing the script's: the script's, until a live one's
     /// hooks say who it is.
     lazy var agent = script.agent
-    /// With no agent: whether the main thread's turn is going.
-    var turnOpen = false
+    /// The agent a step is about: a live one's, else its buddy's agent's.
+    func agent(of step: DemoScript.Step) -> String { live ? agent : script.agent(of: step.buddy) }
+
+    /// With no agent: whether each buddy's agent's main thread's turn is
+    /// going (`""` for the only one).
+    var turnOpen: Set<String> = []
     var calls = 0
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
@@ -91,7 +95,11 @@ public final class DemoPlayer: @unchecked Sendable {
     /// Plays the script, on `home`.
     public func start() {
         runtime.options.log("demo: \(script.steps.count) steps\(live ? ", with a live agent" : "")")
-        if !live { send("SessionStart") { $0.source = "startup" } }
+        if !live {
+            for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
+                send("SessionStart", buddy: buddy) { $0.source = "startup" }
+            }
+        }
         next()
     }
 
@@ -134,14 +142,14 @@ public final class DemoPlayer: @unchecked Sendable {
     func perform(_ step: DemoScript.Step, then: @escaping () -> Void) {
         switch step.what {
         case .poke:
-            heardStep(step, agent)
-            runtime.tapped(who: Runtime.demoBy)
+            heardStep(step, agent(of: step))
+            runtime.tapped(who: Runtime.demoBy, buddy: step.buddy)
             then()
         case .talk(let words, let hold):
-            heardStep(step, agent)
-            runtime.listen(true, who: Runtime.demoBy)
+            heardStep(step, agent(of: step))
+            runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)
             later(hold) { [self] in
-                runtime.heard(words, by: .app, who: Runtime.demoBy)
+                runtime.heard(words, by: .app, who: Runtime.demoBy, to: step.buddy)
                 then()
             }
         case .back(let ms):
@@ -149,13 +157,13 @@ public final class DemoPlayer: @unchecked Sendable {
             runtime.cameBack(afterMs: ms)
             then()
         case .brain(let answers, let mood):
-            if !answers.isEmpty { runtime.forcePass(answers, by: Runtime.demoBy, who: Runtime.demoBy) }
-            if let mood { runtime.forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy) }
+            if !answers.isEmpty { runtime.forcePass(answers, by: Runtime.demoBy, who: Runtime.demoBy, buddy: step.buddy) }
+            if let mood { runtime.forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy, buddy: step.buddy) }
             then()
         case .agent(let a):
             if live {
                 waitFor(endOf(a)) { [self] in
-                    heardStep(step, agent)
+                    heardStep(step, agent(of: step))
                     then()
                 }
             } else {
@@ -216,7 +224,7 @@ public final class DemoPlayer: @unchecked Sendable {
         hooks.removeAll()
         index = j
         publish(index)
-        heardStep(script.steps[j], agent)
+        heardStep(script.steps[j], agent(of: script.steps[j]))
         index += 1
         next()
     }
@@ -226,9 +234,12 @@ public final class DemoPlayer: @unchecked Sendable {
 
     // MARK: No agent: the player is it
 
-    /// Sends a hook as the agent would, with `set`'s fields.
-    func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) {
-        var line = HookLine(agent: script.agent, hook: hook, session: "demo", cwd: "/demo/\(slug)", ts: runtime.options.wallClock())
+    /// Sends a hook as the agent would, the buddy `buddy`'s agent's (its
+    /// own session), with `set`'s fields.
+    func send(_ hook: String, buddy: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
+        let session = buddy.map { "demo-\($0)" } ?? "demo"
+        let cwd = "/demo/\(slug)" + (buddy.map { "-\($0)" } ?? "")
+        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd, ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
     }
@@ -240,9 +251,12 @@ public final class DemoPlayer: @unchecked Sendable {
 
     func act(_ a: DemoScript.Step.Agent, step: DemoScript.Step, then: @escaping () -> Void) {
         calls += 1
-        let codex = script.agent == "codex"
+        let buddy = step.buddy
+        let codex = script.agent(of: buddy) == "codex"
+        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, set) }
+        let open = buddy ?? ""
         let id = "t\(calls)"
-        let finish = { [self] in heardStep(step, agent); then() }
+        let finish = { [self] in heardStep(step, agent(of: step)); then() }
         func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil) {
             let call = { (l: inout HookLine) in l.tool = name; l.toolUseID = id; l.topic = topic }
             send("PreToolUse", call)
@@ -262,14 +276,14 @@ public final class DemoPlayer: @unchecked Sendable {
             }
         }
         // A turn ended (the reviewer's report starts a new one).
-        if a.does != .prompt, !a.byReviewer, !turnOpen {
+        if a.does != .prompt, !a.byReviewer, !turnOpen.contains(open) {
             send("UserPromptSubmit")
-            turnOpen = true
+            turnOpen.insert(open)
         }
         switch a.does {
         case .prompt:
             send("UserPromptSubmit") { $0.prompt = a.text ?? "" }
-            turnOpen = true
+            turnOpen.insert(open)
             finish()
         case .read: tool(codex ? "Bash" : "Read")
         case .edit: tool(codex ? "apply_patch" : "Edit")
@@ -287,7 +301,7 @@ public final class DemoPlayer: @unchecked Sendable {
                     send("SubagentStop")
                 } else {
                     send("Stop") { $0.message = a.text ?? "" }
-                    turnOpen = false
+                    turnOpen.remove(open)
                 }
                 finish()
             }

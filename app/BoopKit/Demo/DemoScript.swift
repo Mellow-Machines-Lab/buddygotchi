@@ -89,6 +89,10 @@ public struct DemoScript: Sendable {
         /// Seconds an agent step takes, with no agent to take them.
         public var takes: Double
         public var note: String?
+        /// With several buddies, whose step it is: its agent's, a poke or
+        /// talk on its board, its brain's answers. Nil for the first's,
+        /// and talk to them all.
+        public var buddy: String?
         /// Its line number in the file.
         public var number: Int
     }
@@ -104,6 +108,9 @@ public struct DemoScript: Sendable {
     /// Whose hooks the script's are: `claude` or `codex`.
     public var agent: String
     public var steps: [Step]
+    /// The buddies it plays on, when several: each with its place, pack,
+    /// the agent whose hooks its steps are, and name. Empty for one.
+    public var buddies: [BuddySetting] = []
 
     public struct Problem: Error, CustomStringConvertible {
         public var description: String
@@ -117,6 +124,7 @@ public struct DemoScript: Sendable {
     public init(_ text: String, named name: String = "the demo") throws {
         var title = "", agent = "claude"
         var steps: [Step] = []
+        var buddies: [BuddySetting] = []
         for (index, raw) in text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty || line.hasPrefix("//") { continue }
@@ -140,6 +148,7 @@ public struct DemoScript: Sendable {
                     case "after", "takes", "ask", "hold", "minutes", "demo": value is NSNumber && !isBool
                     case "fails": isBool
                     case "brain": value is [String: String]
+                    case "buddies": value is [[String: String]]
                     default: value is String
                     }
                     if !ok { throw Problem(description: "\(here): \(key) is \(Self.type(of: key))") }
@@ -150,6 +159,14 @@ public struct DemoScript: Sendable {
                 title = string("title") ?? ""
                 agent = string("agent") ?? "claude"
                 guard ["claude", "codex"].contains(agent) else { throw Problem(description: "\(here): agent is claude or codex") }
+                for b in o["buddies"] as? [[String: String]] ?? [] {
+                    guard let place = b["place"], let pack = b["pack"], Set(b.keys).isSubset(of: ["place", "pack", "agent", "name"]),
+                          ["claude", "codex"].contains(b["agent"] ?? "claude"), !buddies.contains(where: { $0.place == place }) else {
+                        throw Problem(description: "\(here): each buddy has a place and a pack, and maybe an agent (claude or codex) and a name, each place once")
+                    }
+                    buddies.append(BuddySetting(place: place, pack: pack, agents: [b["agent"] ?? "claude"], name: b["name"]))
+                }
+                if buddies.count == 1 { throw Problem(description: "\(here): buddies are two or more") }
                 continue
             }
             let what: Step.What
@@ -197,34 +214,47 @@ public struct DemoScript: Sendable {
             case .poke, .talk, .back: (0.8, 0)
             case .brain: (0.3, 0)
             }
+            let buddy = string("buddy")
+            if let buddy, !buddies.contains(where: { $0.place == buddy }) {
+                throw Problem(description: "\(here): buddy is one of the header's: \(buddies.map(\.place).joined(separator: ", "))")
+            }
             steps.append(Step(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
-                              note: string("note"), number: index + 1))
+                              note: string("note"), buddy: buddy, number: index + 1))
         }
         self.init(title: title, agent: agent, steps: steps)
+        self.buddies = buddies
     }
 
     /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
-        "demo": ["demo", "title", "agent"],
+        "demo": ["demo", "title", "agent", "buddies"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "by", "takes"],
         "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
-    static let anyStep = ["after", "note"]
+    static let anyStep = ["after", "note", "buddy"]
 
     static func type(of key: String) -> String {
         switch key {
         case "after", "takes", "ask", "hold", "minutes", "demo": "a number"
         case "fails": "true or false"
         case "brain": "question keys to choices, both strings"
+        case "buddies": "a list of buddies, each place, pack, agent and name as strings"
         default: "a string"
         }
     }
 
-    public init(title: String = "", agent: String = "claude", steps: [Step]) {
+    public init(title: String = "", agent: String = "claude", steps: [Step], buddies: [BuddySetting] = []) {
         self.title = title
         self.agent = agent
         self.steps = steps
+        self.buddies = buddies
+    }
+
+    /// The agent whose hooks the buddy `buddy`'s steps are: its own, else
+    /// the script's.
+    public func agent(of buddy: String?) -> String {
+        buddies.first { $0.place == buddy }?.agents.first ?? agent
     }
 }
 

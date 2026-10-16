@@ -81,6 +81,13 @@ local page, in `web/dist/`:
 | `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
 | `demo` | A recording to play (below). The board's face is then the recording's |
+| `board-id` | The board's id, its `hello`'s, so boards on one page differ (`b00p-0000` without it) |
+| `pack` | The character pack whose build it runs, `boop-sim-PACK.js` (below); the staged pack's `boop-sim.js` without it |
+
+`web/build.sh` builds the staged pack. `web/build.sh PACK` builds a
+pack by its name in `characters/` beside it, as `boop-sim-PACK.js` and
+`.wasm`, and leaves what's staged alone (`charactergen.py --firmware-to`),
+so two packs can run on one page: `<boop-simulator pack="pixel">`.
 
 The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
@@ -162,12 +169,27 @@ BOOP_BRIDGE=/tmp/boop-sim-usb.sock internal/tools/boopctl run     # every scenar
 Only this Mac can reach it: the page is served on 127.0.0.1 and the
 socket is its user's alone. The newest page to open is the board.
 
+**Several boards.** One server can give each of several boards its own
+cable: `--cable NAME=SOCKET`, once for each, in place of `--socket`. Each
+cable is a WebSocket at `/usb/NAME` and its own socket, and there's no
+`/usb`. The page shows them side by side with `?boards=NAME,NAME`, each
+with the id `b00p-NAME`, and `&packs=PACK,PACK` gives each board its
+pack's build and voice (`/voice/PACK.bin`):
+
+```sh
+python3 characters/charactergen.py --stage
+simulator/web/build.sh boop && simulator/web/build.sh pixel
+python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
+open 'http://127.0.0.1:8206/?boards=left,right&packs=boop,pixel'
+BOOP_BRIDGE=/tmp/boop-sim-right.sock internal/tools/boopctl ping
+```
+
 One simulator runs at a time. A second fails at once ("port 8206 is in
 use: is a simulator already running?") and leaves the first's socket
 alone, and so does one given another `--port` while something still
 answers on the socket. A socket nothing answers on is a stale one's, and
 the next simulator replaces it. Stopped by Ctrl-C, SIGTERM or SIGHUP (a
-closed terminal), the server removes its socket, unless a newer one has
+closed terminal), the server removes its sockets, unless a newer one has
 taken the path since; only a kill leaves it behind, for the next to
 replace (`tests/test_serve.py`).
 
@@ -199,7 +221,7 @@ Three things a cable does that the port does too:
 
 In its environment, or from the page's attributes: `BOOP_SIM_FACE` (`pixel` or `gel`),
 `BOOP_SIM_NATIVE` (`WxH`), `BOOP_SIM_ID` (the device's ID, `b00p-0000`
-without it), and on the Mac `BOOP_SIM_CARD` (the card's folder) and
+without it; the page's `board-id`), and on the Mac `BOOP_SIM_CARD` (the card's folder) and
 `BOOP_SIM_PORT`.
 
 ## Tests
@@ -220,15 +242,21 @@ make -C internal sim-test
   port and a socket of its own: a second server leaves a live socket
   alone, whichever port it's given; a stale socket is replaced, and a
   file that isn't a socket is left; SIGTERM and SIGHUP remove the
-  socket, but not a newer server's at the same path.
+  socket, but not a newer server's at the same path. With `--cable`, each
+  board has its own socket and no default one, all removed at the end; a
+  cable whose socket is live stops the server and takes back the sockets
+  it made; and a cable needs a name and a socket of its own.
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing, a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
   `say`'s sound asked for a chunk at a time, and the card staying in its
-  slot through a reset. Then the page's cable carrying whole messages both
+  slot through a reset. Boards side by side each say their own id, and
+  Pixel's build (`build.sh pixel`, which `sim-test` makes) says its pack.
+  Then the page's cable carrying whole messages both
   ways, a 900 KB one among them, and keeping a bridge's rules: a client
   that stops reading dropped while another hears every message, and a
-  client's message over 512 bytes dropped whole; a recording played into a board in
+  client's message over 512 bytes dropped whole; two cables, each page's
+  messages reaching its own socket and no other's; a recording played into a board in
   order; and a voice file cut down to a demo's takes that the board plays
   from.
 

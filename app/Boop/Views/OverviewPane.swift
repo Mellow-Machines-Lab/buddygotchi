@@ -168,8 +168,27 @@ struct OverviewPane: View {
     }
 
     /// Whether Boop's body is connected, as plain words, so it doesn't look
-    /// like a button. Which board it is stays out of sight.
-    private var deviceLine: some View {
+    /// like a button. Which board it is stays out of sight. With several
+    /// buddies, each one's name, its dot saying whether its board is there.
+    @ViewBuilder private var deviceLine: some View {
+        if let buddies = model.status?.buddies, !buddies.isEmpty {
+            HStack(spacing: 8) {
+                ForEach(buddies, id: \.id) { b in
+                    HStack(spacing: 4) {
+                        Circle().fill(b.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)
+                        Text(b.name).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                    }
+                    .help("\(b.name), on the \(b.place ?? "desk"): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
+                }
+            }
+            .fixedSize()
+            .padding(.trailing, 2)
+        } else {
+            oneDevice
+        }
+    }
+
+    private var oneDevice: some View {
         let device = model.device
         return HStack(spacing: 5) {
             Circle().fill(device.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)

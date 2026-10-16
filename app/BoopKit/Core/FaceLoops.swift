@@ -36,10 +36,14 @@ public enum FaceLoops {
         var designs: [String: [[Design]]] = [:]
     }
 
-    /// The face's table, read the first time it's used; empty for a pack
-    /// with no pixel face.
-    private static let table: Table = {
-        guard let data = try? Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("mac/faces.json")),
+    /// The active pack's face table, each pack's read the first time it's
+    /// used; empty for a pack with no pixel face.
+    private static var table: Table { tables.get(CharacterPack.active.directory, read) }
+
+    private static let tables = PackCache<Table>()
+
+    private static func read(_ directory: URL) -> Table {
+        guard let data = try? Data(contentsOf: directory.appendingPathComponent("mac/faces.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return Table() }
         var t = Table()
         t.moods = json["moods"] as? [String] ?? []
@@ -53,7 +57,7 @@ public enum FaceLoops {
             }
         }
         return t
-    }()
+    }
 
     /// `mood`'s designs for `state`, as the device reads them: the first
     /// mood's (happy's) for a mood it doesn't know, idle's for a state it

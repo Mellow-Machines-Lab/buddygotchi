@@ -3,6 +3,7 @@
 
     characters/charactergen.py --check [PACK]
     characters/charactergen.py --stage [PACK]
+    characters/charactergen.py --firmware-to=DIR [PACK]
     characters/charactergen.py --which
 
 --check checks a pack's character.json: its moods are exactly the
@@ -18,12 +19,16 @@ list in the pack's order with the board's startup mood. It checks the
 pack as --check does first. firmware/tools/pio.sh runs it before every
 PlatformIO build.
 
+--firmware-to=DIR lays out only the firmware's files for a pack, as
+--stage does, in DIR/firmware/, and changes nothing staged: for a second
+build beside the staged pack's (simulator/web/build.sh PACK).
+
 --which prints the folder of the pack in use: the one everything that runs
 after a build reads (in_use()).
 
-Every form but --which also checks the board's states where they're
-named (CHARACTER.md §9 and each pack's mac/faces.json), each pack's
-studio entry (§12), and writes characters/studio/packs.js, the studio
+Every form but --which and --firmware-to also checks the board's states
+where they're named (CHARACTER.md §9 and each pack's mac/faces.json), each
+pack's studio entry (§12), and writes characters/studio/packs.js, the studio
 page's data for the packs in this checkout, which git ignores. --check
 fails on a problem with any of them; --stage only warns.
 
@@ -42,6 +47,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -391,6 +397,14 @@ def check(pack: Path) -> int:
     return 1 if problems else 0
 
 
+def bundle(view: Path, name: str) -> None:
+    """A staged pack as the Mac app bundles it, with what the app reads and
+    no more: .character-build/packs/<name>/."""
+    shutil.copytree(view, STAGE / "packs" / name,
+                    ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
+                                                  "studio"))
+
+
 def stage(pack: Path) -> int:
     """The pack staged (.character-build/staged/<name>/): its own files and
     what it uses from other packs (§6), as links, the one folder the tests,
@@ -398,7 +412,8 @@ def stage(pack: Path) -> int:
     (.character-build/pack); from it, the firmware's files
     (.character-build/firmware/) with the generated moods.h, and the pack
     as the Mac app bundles it, with what the app reads and no more
-    (.character-build/packs/, that pack alone)."""
+    (.character-build/packs/<name>/), beside every other pack in characters/
+    for buddies that run one, with packs/chosen naming this one."""
     character = load(pack)
     paths = used(pack, character)[0]
     problems = pack_problems(pack, character)
@@ -412,13 +427,18 @@ def stage(pack: Path) -> int:
             shutil.rmtree(STAGE / old)
     view = STAGE / "staged" / pack.name
     overlay(view, pack, paths)
-    if (view / "firmware").is_dir():
-        shutil.copytree(view / "firmware", STAGE / "firmware")
-    (STAGE / "firmware" / "include").mkdir(parents=True, exist_ok=True)
-    (STAGE / "firmware" / "include" / "moods.h").write_text(moods_h(pack, character))
-    shutil.copytree(view, STAGE / "packs" / pack.name,
-                    ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
-                                                  "studio"))
+    firmware_from(view, pack, character, STAGE / "firmware")
+    bundle(view, pack.name)
+    # Every other pack beside it goes in the app too, for buddies that run
+    # another pack (CHARACTER.md §2). The chosen one is named in
+    # packs/chosen.
+    for other in sorted(p.parent for p in own_folder(pack).parent.glob("*/character.json")):
+        if other.resolve() == own_folder(pack) or pack_problems(other, load(other)):
+            continue
+        with tempfile.TemporaryDirectory() as temp:
+            overlay(Path(temp) / other.name, other, used(other)[0])
+            bundle(Path(temp) / other.name, other.name)
+    (STAGE / "packs" / "chosen").write_text(f"{pack.name}\n")
     # The firmware's test suites: the engine's, then the staged pack's
     # (tests/firmware/test_*), linked so an edit lands in the real file.
     tests = STAGE / "firmware-test"
@@ -431,6 +451,35 @@ def stage(pack: Path) -> int:
                 (tests / suite.name).unlink()
             (tests / suite.name).symlink_to(suite.resolve())
     (STAGE / "pack").write_text(f"{view}\n")
+    return 0
+
+
+def firmware_from(view: Path, pack: Path, character: dict, dest: Path) -> None:
+    """The firmware's files from a pack's staged view: its firmware/ folder
+    and the moods.h made from character.json."""
+    if (view / "firmware").is_dir():
+        shutil.copytree(view / "firmware", dest)
+    (dest / "include").mkdir(parents=True, exist_ok=True)
+    (dest / "include" / "moods.h").write_text(moods_h(pack, character))
+
+
+def firmware_to(pack: Path, dest: Path) -> int:
+    """Only the firmware's files for a pack, in dest/firmware/, as --stage
+    lays them out, and nothing else: the staged pack and the pack in use
+    stay as they are. For a second build beside the staged one (the
+    simulator's page with a board for each pack)."""
+    character = load(pack)
+    paths = used(pack, character)[0]
+    problems = pack_problems(pack, character)
+    for problem in problems:
+        print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
+    if problems:
+        return 1
+    if dest.exists():
+        shutil.rmtree(dest)
+    overlay(dest / "view", pack, paths)
+    firmware_from(dest / "view", pack, character, dest / "firmware")
+    shutil.rmtree(dest / "view")
     return 0
 
 
@@ -448,6 +497,9 @@ def main(argv: list[str]) -> int:
         return 0
     if "--stage" in argv:
         return stage(pack) | write_studio(pack, check=False)
+    to = [a.split("=", 1)[1] for a in argv if a.startswith("--firmware-to=")]
+    if to:
+        return firmware_to(pack, Path(to[0]).resolve())
     if "--check" not in argv:
         print(__doc__.strip().split("\n\n")[1], file=sys.stderr)
         return 2

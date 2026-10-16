@@ -10,56 +10,59 @@ extension Runtime {
     /// didn't happen, since that may never come. The
     /// device plays on, though, and the link may be back a second later,
     /// so a tap on a finish still playing still opens its thread.
-    func connection(_ up: Bool) {
+    func connection(_ up: Bool, on rig: Rig) {
         let now = options.clock()
-        link.connection(up, now: now)
-        if !up { run(core.linkDown(at: now)) }
+        rig.link.connection(up, now: now)
+        if !up { run(rig.run { rig.core.linkDown(at: now) }, on: rig) }
         changed()
     }
 
     /// A message from the device: its `hello`, answered by the link with the
     /// latest `state`; an `ev` (`deviceEvent`); how a `do` ended, which
     /// the link hands to whoever asked for it, and which is logged here.
-    func device(_ line: String) {
+    func device(_ line: String, on rig: Rig) {
         let now = options.clock()
-        switch link.receive(line, now: now) {
+        switch rig.run({ rig.link.receive(line, now: now) }) {
         case .ended(let ended):
-            options.log("device: do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
+            options.log("device\(Runtime.whose(rig)): do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
             emit(DebugLog.ended(ended, at: now))
-            reactions.ended(ended.id)
+            rig.reactions.ended(ended.id)
         default:
             break
         }
         changed()
     }
 
-    /// A tap, or BOOT's push-to-talk.
-    func deviceEvent(_ ev: DeviceEvent) {
+    /// A tap, or BOOT's push-to-talk, on `rig`'s board.
+    func deviceEvent(_ ev: DeviceEvent, on rig: Rig) {
         let now = options.clock()
         switch ev.kind {
         case "tap":
-            if ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did)) }
+            if rig === rigs[0], ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did)) }
             let finish = BoopDevice.finish(tapped: ev)
-            options.log("device: tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
+            options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
             // A poke. The device has already poked,
             // cutting the animation playing but not a reaction's `say` or face;
             // on the brain's finish that names whose turn it was it only
             // dipped, and the tap opens that thread.
-            run(pipeline.poke(at: now, finish: finish.flatMap { reactions.opens(finish: $0) }))
+            run(pipeline.poke(at: now, finish: finish.flatMap { rig.reactions.opens(finish: $0) }, buddy: rig.id))
         case "talk_on", "talk_off":
-            options.log("device: \(ev.kind)")
+            options.log("device\(Runtime.whose(rig)): \(ev.kind)")
             // The device already shows `listening`.
-            run(core.listen(ev.kind == "talk_on", by: .device, at: now))
+            run(rig.run { rig.core.listen(ev.kind == "talk_on", by: .device, at: now) }, on: rig)
         default:
             break
         }
     }
 
-    /// A snapshot for the device.
-    func show(_ snapshot: StateSnapshot) {
-        latest = snapshot
-        link.update(state: snapshot.fields, now: options.clock())
+    /// A snapshot for `rig`'s device.
+    func show(_ snapshot: StateSnapshot, on rig: Rig) {
+        rig.latest = snapshot
+        rig.link.update(state: snapshot.fields, now: options.clock())
     }
+
+    /// ` left`: which buddy's board, for the log; nothing for the only one.
+    static func whose(_ rig: Rig) -> String { rig.buddy.map { " \($0.id)" } ?? "" }
 
     /// A rule's reaction: sent at once, after the
     /// `state` of the same input. It plays only if nothing plays on the
@@ -68,9 +71,9 @@ extension Runtime {
     /// skips it then. The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ reaction: DeviceReaction) {
-        if let id = link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule,
-                            now: options.clock(), { _ in }) {
+    func playRule(_ reaction: DeviceReaction, on rig: Rig) {
+        if let id = rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule,
+                                now: options.clock(), { _ in }), rig === rigs[0] {
             onReaction?(id, reaction)
         }
     }
@@ -79,18 +82,28 @@ extension Runtime {
     /// queue (`next`, for up to 5 s), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
-    func queue(_ reaction: DeviceReaction, _ pending: Pending) {
-        let now = options.clock(), reactions = reactions
-        let id = link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
-                         now: now) { outcome in
-            if let end = reactions.read(outcome, pending) { pending.finish(end) }
+    func queue(_ reaction: DeviceReaction, _ pending: Pending, on rig: Rig) {
+        let now = options.clock(), reactions = rig.reactions
+        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+                             now: now) { outcome in
+            if let end = rig.run({ reactions.read(outcome, pending) }) { pending.finish(end) }
         }
-        if let id { onReaction?(id, reaction) }
+        if let id, rig === rigs[0] { onReaction?(id, reaction) }
         if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
     }
 
-    /// Drops the device link and looks for the device again now.
+    /// Drops the device links and looks for the devices again now.
     public func reconnectDevice() {
-        link.transport?.reconnect()
+        for rig in rigs { rig.link.transport?.reconnect() }
     }
+}
+
+// The first buddy's board, the only one's.
+extension Runtime {
+    func connection(_ up: Bool) { connection(up, on: rigs[0]) }
+    func device(_ line: String) { device(line, on: rigs[0]) }
+    func deviceEvent(_ ev: DeviceEvent) { deviceEvent(ev, on: rigs[0]) }
+    func show(_ snapshot: StateSnapshot) { show(snapshot, on: rigs[0]) }
+    func playRule(_ reaction: DeviceReaction) { playRule(reaction, on: rigs[0]) }
+    func queue(_ reaction: DeviceReaction, _ pending: Pending) { queue(reaction, pending, on: rigs[0]) }
 }

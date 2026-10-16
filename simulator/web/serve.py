@@ -10,6 +10,10 @@ goes to the board whole. So the Mac app (`Boop --link usb:SOCKET`) and
 reach one on a bridge. The page's end of it is a WebSocket at /usb, one
 line a message; the newest page to connect is the board.
 
+With `--cable NAME=SOCKET`, once for each, there are several boards, each
+with its own cable: a WebSocket at /usb/NAME and its socket, and no /usb.
+The page shows them side by side with ?boards=NAME,NAME.
+
 Only this Mac can reach it: the page is served on 127.0.0.1 and the socket
 is its user's alone. The standard library only, so it runs on the Mac's
 own Python.
@@ -19,6 +23,7 @@ import base64
 import errno
 import hashlib
 import os
+import re
 import select
 import signal
 import socket
@@ -32,7 +37,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 sys.path.insert(0, str(REPO / "simulator" / "tools"))
-from voice_subset import chosen_voice  # noqa: E402  the pack in use's voice
+from voice_subset import chosen_voice, pack_voice  # noqa: E402  the pack in use's voice, and any pack's
 sys.path.pop(0)
 
 
@@ -246,32 +251,66 @@ def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
     cable.unplug(send)
 
 
+# A cable's name, which is also the end of its WebSocket's path and, on the
+# page, of its board's id; and a pack's name in characters/.
+NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,15}")
+
+
+def cables(given: list, default_socket: str) -> dict:
+    """Each cable's WebSocket path and its socket: /usb and the default
+    socket with no --cable, else /usb/NAME for each NAME=SOCKET."""
+    if not given:
+        return {"/usb": default_socket}
+    paths = {}
+    for each in given:
+        name, _, path = each.partition("=")
+        if not NAME.fullmatch(name) or not path:
+            raise ValueError(f"--cable {each}: give NAME=SOCKET, the name in lowercase letters, digits, - and _")
+        if f"/usb/{name}" in paths or path in paths.values():
+            raise ValueError(f"--cable {each}: each cable needs its own name and socket")
+        paths[f"/usb/{name}"] = path
+    return paths
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--port", type=int, default=8206, help="the page's port on 127.0.0.1 (8206)")
     parser.add_argument("--socket", default="/tmp/boop-sim-usb.sock", help="the board's USB, as a bridge's socket (/tmp/boop-sim-usb.sock)")
+    parser.add_argument("--cable", action="append", default=[], metavar="NAME=SOCKET",
+                        help="a board of its own, its USB at /usb/NAME and SOCKET; once for each board, in place of --socket")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
     parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()
     if not (Path(args.dist) / "boop-sim.wasm").exists():
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)
         return 1
-    cable = Cable()
+    try:
+        sockets = cables(args.cable, args.socket)
+    except ValueError as e:
+        print(f"simulator: {e}", file=sys.stderr)
+        return 2
+    wired = {path: Cable() for path in sockets}
 
     class Page(SimpleHTTPRequestHandler):
         def __init__(self, *a, **k):
             super().__init__(*a, directory=args.dist, **k)
 
         def do_GET(self):
-            if self.path == "/usb" and self.headers.get("Upgrade", "").lower() == "websocket":
+            cable = wired.get(self.path)
+            if cable and self.headers.get("Upgrade", "").lower() == "websocket":
                 websocket(self, cable)
                 self.close_connection = True
                 return
             super().do_GET()
 
         def translate_path(self, path):
-            if path.split("?")[0] == "/voice.bin":
+            path = path.split("?")[0]
+            if path == "/voice.bin":
                 return args.voice
+            # /voice/PACK.bin: a pack's own voice, for a board built for it.
+            pack = re.fullmatch(r"/voice/(.+)\.bin", path)
+            if pack and NAME.fullmatch(pack[1]):
+                return str(pack_voice(pack[1]))
             return super().translate_path(path)
 
         def end_headers(self):
@@ -291,10 +330,14 @@ def main() -> int:
             raise
         print(f"simulator: port {args.port} is in use: is a simulator already running?", file=sys.stderr)
         return 1
+    ours = {}
     try:
-        ours = cable.serve(args.socket)
+        for path, socket_path in sockets.items():
+            ours[socket_path] = wired[path].serve(socket_path)
     except InUse as e:
         server.server_close()
+        for socket_path, made in ours.items():
+            remove_if_ours(socket_path, made)
         print(f"simulator: {e}", file=sys.stderr)
         return 1
 
@@ -305,8 +348,14 @@ def main() -> int:
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGHUP, stop)
-    print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (add ?face=gel for Boop's own face)")
-    print(f"its USB, as a bridge's socket: {args.socket}")
+    if args.cable:
+        names = ",".join(path.rsplit("/", 1)[1] for path in sockets)
+        print(f"Boop Simulator: http://127.0.0.1:{args.port}/?boards={names}   (add &packs=boop,pixel for a pack each)")
+        for path, socket_path in sockets.items():
+            print(f"{path.rsplit('/', 1)[1]}'s USB, as a bridge's socket: {socket_path}")
+    else:
+        print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (add ?face=gel for Boop's own face)")
+        print(f"its USB, as a bridge's socket: {args.socket}")
     sys.stdout.flush()
     try:
         server.serve_forever()
@@ -314,7 +363,8 @@ def main() -> int:
         pass
     finally:
         server.server_close()
-        remove_if_ours(args.socket, ours)
+        for socket_path, made in ours.items():
+            remove_if_ours(socket_path, made)
     return 0
 
 

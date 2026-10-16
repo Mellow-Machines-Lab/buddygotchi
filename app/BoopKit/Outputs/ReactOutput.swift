@@ -35,8 +35,13 @@ public final class ReactOutput: Output {
     /// Picks each finish's variation, never the last one of its animation.
     var variants = SplitMix64(seed: 0xB00B)
     var lastVariant: [String: Int] = [:]
+    /// `seed` sets its picks apart from another buddy's, so two don't say
+    /// the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
-                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true }) {
+                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true },
+                seed: UInt64 = 0) {
+        takes = SplitMix64(seed: 0x7A4E ^ seed)
+        variants = SplitMix64(seed: 0xB00B ^ seed)
         self.queue = queue
         self.blocked = blocked
         self.who = who
@@ -56,14 +61,14 @@ public final class ReactOutput: Output {
     /// How Boop can feel about NOW, in the order `say.feeling` offers them.
     /// Every feeling take has one, and every face has
     /// takes of each: tests check both, so all are offered.
-    public static let feelings = [
+    public static var feelings: [Option] { [
         Option("upset", "Something went wrong or let \(CharacterPack.active.name) down: a check or a turn failing, the agent stuck or giving up, rude words or sad news.",
                notFor: "A win, a poke, or work going on, however long."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, thanks or kind words.",
                notFor: "A failure, or work still going on."),
         Option("tickled", "Poked or teased: a poke, a tap, or playful words to \(CharacterPack.active.name).",
                notFor: "A failure, or the agent's work."),
-    ]
+    ] }
 
     /// What NOW can be about, in the order `say.about` offers them:
     /// each a topic NOW's line shows. Every topic take
@@ -183,10 +188,17 @@ public final class ReactOutput: Output {
 
     /// The questions asked: a character pack with no voice is never asked
     /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
-    static let asked: [Question] = Take.all.isEmpty ? questions.filter { !$0.key.hasPrefix("say.") } : questions
+    static var asked: [Question] { Take.all.isEmpty ? questions.filter { !$0.key.hasPrefix("say.") } : questions }
 
-    /// Every question, built once: none of them changes.
-    static let questions: [Question] = {
+    /// Every question, built once for each character: none of them changes.
+    static var questions: [Question] {
+        let pack = CharacterPack.active
+        return built.get(pack.directory.appendingPathComponent(pack.name)) { _ in makeQuestions() }
+    }
+
+    private static let built = PackCache<[Question]>()
+
+    private static func makeQuestions() -> [Question] {
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
         return [
             Question(key: "react.mood", text: "How should \(CharacterPack.active.name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
@@ -210,7 +222,7 @@ public final class ReactOutput: Output {
             Question(key: "say.kind", text: "If \(CharacterPack.active.name) says something, how big is it?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactOutput.kinds),
         ]
-    }()
+    }
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
         // 1. Does Jev want a reaction at all, and with which face?

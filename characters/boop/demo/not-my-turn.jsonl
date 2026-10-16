@@ -1,0 +1,25 @@
+// Two buddies, one desk: Pixel on the left watches Claude, Boop on the
+// right watches Codex. Claude's turn goes well and Codex's tests fail;
+// Pixel celebrates while Boop sulks and you poke it, until Codex gets its
+// own turn right. Each buddy reacts to its own agent first, then to the
+// other buddy.
+{"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agent": "claude"}, {"place": "right", "pack": "boop", "agent": "codex"}]}
+{"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
+{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
+{"agent": "prompt", "buddy": "right", "text": "Fix the flaky login test"}
+{"brain": {"react.mood": "determined", "say.about": "start", "say.kind": "word"}, "buddy": "right"}
+{"agent": "read", "buddy": "left", "file": "src/theme.css", "say": "Let me look at the theme first."}
+{"agent": "run", "buddy": "right", "cmd": "npm test", "about": "Run the tests", "fails": true, "takes": 1.5}
+{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed", "buddy": "right"}
+{"brain": {"react.mood": "amused", "say.feeling": "tickled", "say.kind": "sound"}, "buddy": "left", "after": 0.8}
+{"you": "poke", "buddy": "right", "after": 1.2}
+{"brain": {"react.mood": "grumpy", "say.feeling": "upset", "say.kind": "sound"}, "mood": "grumpy", "buddy": "right"}
+{"agent": "edit", "buddy": "left", "file": "src/theme.css", "old": ":root {", "new": ":root[data-theme=dark] {"}
+{"agent": "reply", "buddy": "left", "text": "Dark mode is in, with a toggle in the header."}
+{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}, "mood": "proud", "buddy": "left"}
+{"brain": {"react.mood": "disappointed", "say.feeling": "upset", "say.kind": "sound"}, "buddy": "right", "after": 1, "note": "Not my turn"}
+{"agent": "edit", "buddy": "right", "file": "test/login.test.js", "old": "await sleep(100)", "new": "await screen.findByText('Welcome')"}
+{"agent": "run", "buddy": "right", "cmd": "npm test", "about": "Run the tests", "takes": 1.5}
+{"agent": "reply", "buddy": "right", "text": "The login test waits for the page now, and passes."}
+{"brain": {"react.mood": "proud", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "word"}, "mood": "proud", "buddy": "right"}
+{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}, "buddy": "left", "after": 1}

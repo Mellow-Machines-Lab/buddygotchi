@@ -46,14 +46,19 @@ extension Take {
     /// no voice.
     public static var all: [Take] { table.takes }
 
-    /// The character pack's take table, read the first time it's used.
-    private static let table: (version: String, takes: [Take]) = {
-        let file = CharacterPack.active.directory.appendingPathComponent("mac/takes.tsv")
-        guard let text = try? String(contentsOf: file, encoding: .utf8) else { return ("", []) }
-        let lines = text.split(separator: "\n").filter { !$0.hasPrefix("#") }
-        guard let version = lines.first else { return ("", []) }
-        return (String(version), lines.dropFirst().compactMap(Take.init(parsing:)))
-    }()
+    /// The active character pack's take table, each pack's read the first
+    /// time it's used.
+    private static var table: (version: String, takes: [Take]) {
+        tables.get(CharacterPack.active.directory) { directory in
+            let file = directory.appendingPathComponent("mac/takes.tsv")
+            guard let text = try? String(contentsOf: file, encoding: .utf8) else { return ("", []) }
+            let lines = text.split(separator: "\n").filter { !$0.hasPrefix("#") }
+            guard let version = lines.first else { return ("", []) }
+            return (String(version), lines.dropFirst().compactMap(Take.init(parsing:)))
+        }
+    }
+
+    private static let tables = PackCache<(version: String, takes: [Take])>()
 
     /// A take from its line in the table: id, text, part, meaning, kind,
     /// moods (space separated), finish (empty for any) and milliseconds,

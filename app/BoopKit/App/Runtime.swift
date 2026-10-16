@@ -61,6 +61,10 @@ public final class Runtime: @unchecked Sendable {
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
+        /// Several buddies side by side, each on its own board with its
+        /// own pack: then `link` and `steering` go unused. Empty, or one,
+        /// runs the one buddy on `link` with `steering`, as Boop always has.
+        public var buddies: [BuddyOptions] = []
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -88,23 +92,29 @@ public final class Runtime: @unchecked Sendable {
     /// it went idle.
     public let home = DispatchQueue(label: "boop.home", qos: .userInitiated, autoreleaseFrequency: .workItem)
     public let options: Options
-    /// LinkKit's link to the device, in Boop's vocabulary (`BoopDevice`).
-    public let link: DeviceLink
-    /// The newest snapshot sent to the device.
-    public internal(set) var latest: StateSnapshot?
+    /// Each buddy as it runs, the first, or only, first.
+    var rigs: [Rig] = []
+    /// The buddies, when there are several; empty for one.
+    public var buddies: [Buddy] { pipeline.buddies }
+    /// LinkKit's link to the first buddy's device, in Boop's vocabulary
+    /// (`BoopDevice`).
+    public var link: DeviceLink { rigs[0].link }
+    /// The newest snapshot sent to the first buddy's device.
+    public var latest: StateSnapshot? { rigs[0].latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
     public private(set) var settings: AppSettings
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
     public private(set) var personality: Personality
-    let core: Core
+    /// The first buddy's core.
+    var core: Core { rigs[0].core }
     let view: TranscriptView
     let pipeline: Pipeline
     /// MellowHarness's `Harness`: Boop's brain.
     let harness: Harness
-    /// Boop's mood, MellowHarness's `Choice`.
-    let mood: Choice
+    /// The first buddy's mood, MellowHarness's `Choice`.
+    var mood: Choice { rigs[0].mood }
     /// Whether the brain has failed for long enough to say so,
     /// and how many passes that asked it have
     /// dropped in a row.
@@ -124,12 +134,14 @@ public final class Runtime: @unchecked Sendable {
     /// Jev's key, touched only on `home`: nil until read, and then the key
     /// or none. Until then no event wakes the brain.
     var jevKey: String??
-    /// The brain's reactions on the device until each ends: the device
-    /// decides when each plays.
-    let reactions: Reactions
-    /// The transport's `trouble` as the status last had it. It changes on
-    /// the transport's thread, so the tick looks.
-    var linkTrouble: String?
+    /// The brain's reactions on the first buddy's device until each ends:
+    /// the device decides when each plays.
+    var reactions: Reactions { rigs[0].reactions }
+    /// The first buddy's transport's `trouble` as the status last had it.
+    var linkTrouble: String? { rigs[0].linkTrouble }
+    /// Whether the Mac's mic is on, which several buddies' cores may ask
+    /// for at once.
+    var micOn = false
     /// Boop's XP and stage, counted from each event as it's logged,
     /// and whether the XP changed since the last status.
     let growth: GrowthStore
@@ -194,7 +206,6 @@ public final class Runtime: @unchecked Sendable {
         else { throw OpenError.notSetUp }
         name = longTerm.name
         settings = AppSettings.load(from: options.stateDir)
-        link = BoopDevice.link(options.link, log: log)
         let recent = DebugLog.Recent()
         self.recent = recent
         let debugLog = options.debug ? debugLogURL : nil
@@ -208,45 +219,84 @@ public final class Runtime: @unchecked Sendable {
         }
         self.emit = emit
         let clock = options.clock
-        // boop.log leaves out a `state` sent again unchanged (the keepalive,
-        // a reply to `hello`), which debug.jsonl keeps.
-        var lastState: String?
-        let sent = options.onDeviceLine
-        link.onSend = { line, sender in
-            sent?(line)
-            emit(DebugLog.sent(line, by: sender, at: clock()))
-            guard debugLog != nil, line != lastState else { return }
-            if line.hasPrefix(#"{"t":"state""#) { lastState = line }
-            log("link \(sender == .brain ? "brain" : "rules") → " + line)
-        }
 
         let now = options.clock()
         personality = options.personality ?? settings.personality
         let rules = options.steering.personality(personality).rules
-        var config = Core.Config(volume: settings.volume, time: options.time, seed: longTerm.seed ^ UInt64(now))
-        config.firstAsk = SessionTracker.randomFirstRequest()
         let places = self.places
-        // The launch's read-back prunes the transcript, so today isn't a new day.
-        core = Core(config: config, lastActiveDay: today, place: places.place)
-        core.setWallClock(wall, at: wallAt)
+        // One buddy, untagged, or several, each its own board and core.
+        let plans: [BuddyOptions?] = options.buddies.count > 1 ? options.buddies : [options.buddies.first].map { $0 }
+        let all = plans.compactMap { $0?.buddy }
+        let several = all.count > 1
+        let (saved, time) = (settings, options.time)
+        rigs = plans.enumerated().map { i, plan in
+            let transport = plan?.link ?? (options.buddies.isEmpty ? options.link : nil)
+            let link = BoopDevice.link(transport, log: log)
+            var config = Core.Config(volume: saved.volume, time: time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i))
+            config.firstAsk = SessionTracker.randomFirstRequest()
+            // The launch's read-back prunes the transcript, so today isn't a new day.
+            let core = Core(config: config, lastActiveDay: today, place: places.place)
+            core.setWallClock(wall, at: wallAt)
+            return Rig(buddy: several ? plan?.buddy : nil, link: link, transport: transport, core: core,
+                       steering: plan?.steering ?? options.steering)
+        }
+        for rig in rigs {
+            // boop.log leaves out a `state` sent again unchanged (the keepalive,
+            // a reply to `hello`), which debug.jsonl keeps.
+            var lastState: String?
+            let sent = options.onDeviceLine
+            let whose = rig.buddy.map { " \($0.id)" } ?? ""
+            rig.link.onSend = { line, sender in
+                sent?(line)
+                emit(DebugLog.sent(line, by: sender, at: clock()))
+                guard debugLog != nil, line != lastState else { return }
+                if line.hasPrefix(#"{"t":"state""#) { lastState = line }
+                log("link\(whose) \(sender == .brain ? "brain" : "rules") → " + line)
+            }
+        }
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
+        if several { view.buddies = all }
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
                                         time: options.time, note: log)
-        pipeline = Pipeline(core: core, view: view, transcript: transcript, time: options.time,
+        pipeline = Pipeline(core: rigs[0].core, view: view, transcript: transcript, time: options.time,
                             clock: Harness.Clock(now: options.clock, wall: options.wallClock), queue: home, note: log)
+        if several { pipeline.run(all, cores: rigs.dropFirst().map(\.core)) }
         pipeline.brain = false  // until Jev's key is read
-        for over in options.steering.overBudget() { log("steering: over budget: \(over)") }
+        for rig in rigs {
+            for over in rig.run({ rig.steering.overBudget() }) { log("steering\(rig.buddy.map { " \($0.id)" } ?? ""): over budget: \(over)") }
+        }
 
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var personalityNow: () -> Personality = { .default }
-        var queued: (DeviceReaction, Pending) -> Void = { _, _ in }
-        let link = self.link
-        let reactions = Reactions()
-        self.reactions = reactions
-        (harness, mood) = Runtime.harness(
-            pipeline: pipeline, steering: options.steering, personality: { personalityNow() }, reactions: reactions,
-            queue: { queued($0, $1) }, speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true }, nature: longTerm.nature)
+        var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
+        harness = pipeline.harness
+        let rigs = self.rigs
+        if several {
+            for b in all { harness.voice(Harness.Voice(id: b.id, name: b.name)) }
+            harness.speakers { e, _ in Runtime.speakers(e, all) }
+        }
+        for rig in rigs {
+            let link = rig.link
+            // Another buddy speaks its pack's personality of the same name,
+            // or its first.
+            let own: () -> Personality = rig === rigs[0] ? { personalityNow() }
+                : { rig.run { Personality(rawValue: personalityNow().rawValue) ?? .default } }
+            rig.mood = Runtime.brain(on: harness, buddy: rig.buddy, among: all, steering: rig.steering, view: view,
+                                     core: rig.core, personality: own, reactions: rig.reactions,
+                                     queue: { queued(rig, $0, $1) },
+                                     speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
+                                     nature: rig === rigs[0] ? longTerm.nature : nil)
+        }
+        if several {
+            harness.closing { _, now, log, voice in
+                let rig = rigs.first { $0.id == voice?.id } ?? rigs[0]
+                return rig.run { MoodOutput.sinceLine(rig.mood, log, at: now) }
+            }
+        } else {
+            harness.closing { [mood = rigs[0].mood!] _, now, log in MoodOutput.sinceLine(mood, log, at: now) }
+        }
+        harness.reachBack { [view] _, now, log in view.workingSince(at: now, log) }
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
         // means a new launch. The read-back's own lines wait for it.
@@ -260,7 +310,8 @@ public final class Runtime: @unchecked Sendable {
             values = try KeyValueStore(directory: nil)
         }
         growth = GrowthStore(values, log: log)
-        // The view and the core pick up where the last launch left them.
+        // The view and the cores pick up where the last launch left them.
+        let pipeline = self.pipeline
         let read = home.sync { pipeline.readBack(now: now) }
         let logNow = transcript.view(now: now)
         let questions = DebugLog.questions(harness.outputs, log: logNow, at: now)
@@ -271,25 +322,31 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
-        // The core reads the mood where the mood output keeps it. Weak: the
-        // harness holds the core.
-        let mood = self.mood
-        core.mood = { [weak harness = self.harness] in harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? MoodOutput.initial }
         personalityNow = { [weak self] in self?.personality ?? .default }
-        queued = { [weak self] reaction, pending in self?.queue(reaction, pending) }
-        // The device's taps and push-to-talk; the link leaves out those of
-        // a device whose firmware doesn't fit.
-        link.onEvent = { [weak self] ev in self?.deviceEvent(ev) }
-        // A hello (the first on a link, or one that says something new):
-        // log who the device is, and show it what's true now.
-        link.onHello = { [weak self] hello in
-            DeviceInfo(hello).logLines.forEach(log)
-            if let self, let latest = self.latest { self.show(latest) }
+        queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
+        for rig in rigs {
+            // The core reads the mood where the mood output keeps it. Weak:
+            // the harness holds the core.
+            let mood = rig.mood!
+            rig.core.mood = { [weak harness = self.harness] in
+                rig.run { harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? MoodOutput.initial }
+            }
+            // The device's taps and push-to-talk; the link leaves out those
+            // of a device whose firmware doesn't fit.
+            rig.link.onEvent = { [weak self] ev in self?.deviceEvent(ev, on: rig) }
+            // A hello (the first on a link, or one that says something new):
+            // log who the device is, and show it what's true now.
+            let whose = rig.buddy.map { "\($0.id): " } ?? ""
+            rig.link.onHello = { [weak self] hello in
+                DeviceInfo(hello).logLines.forEach { log(whose + $0) }
+                if let self, let latest = rig.latest { self.show(latest, on: rig) }
+            }
         }
-        // A pass can change the mood, which the device and the menu bar show.
+        // A pass can change a mood, which its device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
-            run(core.moodChanged(at: options.clock()))
+            let rig = rig(e["voice"]?.string)
+            run(rig.run { rig.core.moodChanged(at: options.clock()) }, on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
@@ -312,30 +369,9 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
         let h = pipeline.harness
-        let core = pipeline.core
         let view = pipeline.view
-        let mood = MoodOutput.choice()
-        // A reaction your tap cut short is in progress while the pokes go
-        // on, and done once anything else happens.
-        // A reaction's end, MellowHarness's own event, never stops the pokes.
-        // The rule holds the log, not the harness, which holds the rule.
-        let transcript = h.log
-        h.on("*") { e in
-            guard !reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
-            reactions.pokesStopped()
-        }
-        let react = ReactOutput(queue: queue, blocked: { core.reactionBlock }, who: { [weak h] now in
-            // Weak: the harness holds this output.
-            guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
-                  let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
-            return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
-        }, speaks: speaks)
-        h.output(mood)
-        h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
-        h.section { _ in steering.guide + "\n" + EventLine.reading + "\n" + EventLine.words }
-        h.section { _ in steering.personality(personality()).text }
-        h.section { _ in nature.flatMap(steering.nature) }
-        h.section { log in steering.mood(MoodOutput.value(mood, log)) }
+        let mood = brain(on: h, buddy: nil, among: [], steering: steering, view: view, core: pipeline.core,
+                         personality: personality, reactions: reactions, queue: queue, speaks: speaks, nature: nature)
         h.closing { _, now, log in MoodOutput.sinceLine(mood, log, at: now) }
         h.reachBack { _, now, log in view.workingSince(at: now, log) }
         return (h, mood)
@@ -365,9 +401,11 @@ public final class Runtime: @unchecked Sendable {
         let server = HookServer(path: options.socketPath, onLine: onLine, onOther: options.devLines ? onOther : nil)
         try server.start()
         self.server = server
-        options.link?.start(
-            onLine: { [weak self] line in self?.home.async { self?.device(line) } },
-            onConnection: { [weak self] up in self?.home.async { self?.connection(up) } })
+        for rig in rigs {
+            rig.transport?.start(
+                onLine: { [weak self] line in self?.home.async { self?.device(line, on: rig) } },
+                onConnection: { [weak self] up in self?.home.async { self?.connection(up, on: rig) } })
+        }
         // A menu-bar app with its popover closed is a candidate for App Nap,
         // which coalesces timers; the 10 s keepalive must beat the device's
         // 30 s no-app timeout. This doesn't keep the Mac awake.
@@ -386,7 +424,8 @@ public final class Runtime: @unchecked Sendable {
             run(pipeline.tick(at: options.clock()))
             changed()
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
-                        + "link \(options.link?.name ?? "none"), personality \(personality.rawValue), "
+                        + "link \(rigs.map { ($0.buddy.map { "\($0.id) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
+                        + "personality \(personality.rawValue), "
                         + "mood \(moodNow), brain \(harness.brain?.id ?? "none (reading Jev's key)")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
         }
@@ -400,7 +439,7 @@ public final class Runtime: @unchecked Sendable {
         activity = nil
         server?.stop()
         server = nil
-        options.link?.stop()
+        for rig in rigs { rig.transport?.stop() }
     }
 
     // MARK: Inputs (on `home`)
@@ -425,13 +464,17 @@ public final class Runtime: @unchecked Sendable {
         run(pipeline.tick(at: now))
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
-        link.tick(now: now)
-        reactions.tick(now: now)
-        let trouble = link.transport?.trouble
-        if trouble != linkTrouble {
-            linkTrouble = trouble
-            changed()
+        var troubled = false
+        for rig in rigs {
+            rig.link.tick(now: now)
+            rig.reactions.tick(now: now)
+            let trouble = rig.link.transport?.trouble
+            if trouble != rig.linkTrouble {
+                rig.linkTrouble = trouble
+                troubled = true
+            }
         }
+        if troubled { changed() }
     }
 
     /// You stepped away or came back, as the detector decided: recorded,
@@ -446,9 +489,10 @@ public final class Runtime: @unchecked Sendable {
         if let e = presence.signal(signal, at: options.clock()) { recordPresence(e) }
     }
 
-    /// Carries out the core's effects from a call outside the pipeline.
-    func run(_ effects: [CoreEffect]) {
-        run(pipeline.effects(effects, at: options.clock()))
+    /// Carries out a core's effects from a call outside the pipeline: the
+    /// first buddy's, or `rig`'s.
+    func run(_ effects: [CoreEffect], on rig: Rig? = nil) {
+        run(pipeline.effects(effects, buddy: rig?.id, at: options.clock()))
     }
 
     /// Carries out what an input did: the core's
@@ -456,10 +500,11 @@ public final class Runtime: @unchecked Sendable {
     /// for each view event that wakes the brain.
     func run(_ step: Pipeline.Step) {
         var stateChanged = false
-        for effect in step.effects {
+        for (buddy, effect) in step.tagged {
+            let rig = rig(buddy)
             switch effect {
             case .state(let snapshot):
-                show(snapshot)
+                show(snapshot, on: rig)
                 stateChanged = true
             case .sessions:
                 stateChanged = true
@@ -471,7 +516,7 @@ public final class Runtime: @unchecked Sendable {
                 mic(on, by: by)
                 stateChanged = true
             case .reaction(let reaction):
-                playRule(reaction)
+                playRule(reaction, on: rig)
             case .open(let thread):
                 open(thread, by: "tap")
             }
@@ -511,7 +556,7 @@ public final class Runtime: @unchecked Sendable {
 
     public func setVolume(_ volume: Int) {
         home.async { [self] in
-            run(core.setVolume(volume, at: options.clock()))
+            for rig in rigs { run(rig.core.setVolume(volume, at: options.clock()), on: rig) }
             saveSettings { $0.volume = core.config.volume }
         }
     }
