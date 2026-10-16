@@ -13,7 +13,9 @@ PIO := firmware/tools/pio.sh
 # and linkkit, which use Swift Testing and so run under `swift test`, each
 # in a build folder of its own. That build now and then fails with "plugin
 # for module 'TestingMacros' not found", a toolchain flake, so that
-# failure alone is tried again, up to eight tries in all.
+# failure alone is tried again, up to eight tries in all. One test at a
+# time: MellowHarness's loop tests wait on the brain's real deadline, which
+# a busy CI runner's parallel tests can starve.
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
 test:
@@ -21,7 +23,7 @@ test:
 	cd $(ROOT) && .build/debug/BoopTests
 	for pkg in $(SWIFT_PACKAGES); do \
 	  cd $(ROOT)/$$pkg && mkdir -p .build && for try in 1 2 3 4 5 6 7 8; do \
-	    swift test --scratch-path .build/tests > .build/test.log 2>&1; status=$$?; cat .build/test.log; \
+	    swift test --no-parallel --scratch-path .build/tests > .build/test.log 2>&1; status=$$?; cat .build/test.log; \
 	    [ $$status -eq 0 ] && break; \
 	    grep -q "plugin for module 'TestingMacros' not found" .build/test.log || exit $$status; \
 	    [ $$try -eq 8 ] && exit 1; \

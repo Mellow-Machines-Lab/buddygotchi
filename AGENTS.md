@@ -71,7 +71,7 @@ make -C internal test                                 # Swift unit tests: Boop's
   XCTest shim's runner and builds the package in one `swift build`, then
   runs `.build/debug/BoopTests`. Then it runs the three packages' own
   tests, which use Swift Testing, as
-  `swift test --scratch-path .build/tests` in `agent-hooks/`,
+  `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`,
   `mellowharness/` and `linkkit/` in turn, retrying the "TestingMacros"
   toolchain flake ([internal/VERIFICATION.md](internal/VERIFICATION.md) §2). LinkKit's device library has no
   Swift: its own tests (`linkkit/device/test/`) run after the firmware's
