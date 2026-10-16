@@ -1869,7 +1869,7 @@ final class RuntimeTests: XCTestCase {
         let script = try DemoScript("""
             {"demo": 1, "title": "The wall", "agent": "\(agent)"}
             {"agent": "prompt", "text": "Go", "after": 0}
-            {"agent": "compact", "after": 0, "takes": 0.1}
+            {"agent": "compact", "summary": "Where it was.", "after": 0, "takes": 0.1}
             {"agent": "reply", "text": "Done.", "after": 30}
             """)
         runtime.home.sync { runtime.play(script) }
@@ -1892,7 +1892,7 @@ final class RuntimeTests: XCTestCase {
         let runtime = try makeRuntime(FakeTransport())
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
-            {"agent": "compact"}
+            {"agent": "compact", "summary": "Where it was."}
             {"brain": {"react.mood": "confused"}, "after": 0}
             {"agent": "reply", "text": "Done."}
             """)

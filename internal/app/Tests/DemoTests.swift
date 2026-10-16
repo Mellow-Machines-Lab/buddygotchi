@@ -80,7 +80,7 @@ final class DemoTests: XCTestCase {
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
             {"agent": "compact", "summary": "The tax is in; the tests are next.", "note": "The wall"}
-            {"agent": "compact"}
+            {"agent": "compact", "summary": "Where it was."}
             {"agent": "run", "cmd": "npm test"}
             {"agent": "reply", "text": "Done."}
             """)
@@ -97,11 +97,10 @@ final class DemoTests: XCTestCase {
             }
         }
         let prompt = #"{"agent": "prompt", "text": "Go"}"#, reply = #"{"agent": "reply", "text": "Done."}"#
-        XCTAssertTrue(problem(#"{"agent": "compact"}"#).contains("demo.jsonl:1: a compact comes in a turn"))
-        XCTAssertTrue(problem("\(prompt)\n\(reply)\n{\"agent\": \"compact\"}\n\(reply)").contains("demo.jsonl:3: a compact comes in a turn"))
-        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\"}").contains("demo.jsonl:2: a compact needs a step of the agent's after it"))
-        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\", \"say\": \"Full!\"}\n\(reply)").contains("a compact says nothing"))
-        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\", \"by\": \"reviewer\"}\n\(reply)").contains("a compact is the main thread's"))
+        let compact = #""agent": "compact", "summary": "Where it was.""#
+        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\"}\n\(reply)").contains("demo.jsonl:2: a compact needs the summary"))
+        XCTAssertTrue(problem("\(prompt)\n{\(compact), \"say\": \"Full!\"}\n\(reply)").contains("a compact says nothing"))
+        XCTAssertTrue(problem("\(prompt)\n{\(compact), \"by\": \"reviewer\"}\n\(reply)").contains("a compact is the main thread's"))
         XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\", \"summary\": 3}\n\(reply)").contains("summary is a string"))
     }
 
@@ -124,7 +123,7 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm run setup", "about": "Install the runner", "ask": 3}"#),
                            .init(kind: "needs_you", text: "Claude asks to install the runner, and you allow it"))
         try XCTAssertEqual(cause(#"{"agent": "review", "task": "Review the diff"}"#), .init(kind: "tool", text: "Claude sends a reviewer: Review the diff"))
-        try XCTAssertEqual(DemoScript("{\"agent\": \"prompt\", \"text\": \"Go\"}\n{\"agent\": \"compact\"}\n{\"agent\": \"reply\", \"text\": \"Done.\"}")
+        try XCTAssertEqual(DemoScript("{\"agent\": \"prompt\", \"text\": \"Go\"}\n{\"agent\": \"compact\", \"summary\": \"S\"}\n{\"agent\": \"reply\", \"text\": \"Done.\"}")
             .steps[1].cause(creature: "Pip", agent: "codex"), .init(kind: "compact", text: "Codex's context is full: it compacts the conversation"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "ok", "by": "reviewer"}"#), .init(kind: "tool", text: "The reviewer reports back"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "Done."}"#), .init(kind: "done", text: "Claude finishes"))

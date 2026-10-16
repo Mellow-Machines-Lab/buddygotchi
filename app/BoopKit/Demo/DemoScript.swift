@@ -173,6 +173,7 @@ public struct DemoScript: Sendable {
                 case .run: if a.cmd == nil { throw Problem(description: "\(here): a run needs a cmd") }
                 case .review: if a.task == nil { throw Problem(description: "\(here): a review needs a task") }
                 case .compact:
+                    if a.summary == nil { throw Problem(description: "\(here): a compact needs the summary its model writes") }
                     // The model says nothing at the wall: the context is
                     // full before it can.
                     if a.say != nil { throw Problem(description: "\(here): a compact says nothing; put the words on the step after it") }
@@ -202,31 +203,7 @@ public struct DemoScript: Sendable {
             steps.append(Step(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
                               note: string("note"), number: index + 1))
         }
-        try Self.checkCompacts(steps, named: name)
         self.init(title: title, agent: agent, steps: steps)
-    }
-
-    /// A compact is the context filling up in the middle of a turn: the
-    /// agent compacts it and goes on. So it comes after the prompt and
-    /// before the turn's reply, with more of the turn after it.
-    static func checkCompacts(_ steps: [Step], named name: String) throws {
-        let main = steps.compactMap { step -> (Step, Step.Agent)? in
-            guard case .agent(let a) = step.what, !a.byReviewer else { return nil }
-            return (step, a)
-        }
-        var open = false
-        for (i, (step, a)) in main.enumerated() {
-            switch a.does {
-            case .prompt: open = true
-            case .reply: open = false
-            case .compact:
-                guard open else { throw Problem(description: "\(name):\(step.number): a compact comes in a turn: after the prompt, before the reply") }
-                guard i + 1 < main.count, main[i + 1].1.does != .prompt else {
-                    throw Problem(description: "\(name):\(step.number): a compact needs a step of the agent's after it, to go on with")
-                }
-            default: break
-            }
-        }
     }
 
     /// The keys each kind of step takes, besides `anyStep`'s.

@@ -54,10 +54,7 @@ Boop's brain. They happen in order, and three things keep them so:
     tools. A title request gets the script's title and costs no reply. The
     tool types the prompt and allows what the agent asks, after the
     script's seconds (`term.py` runs the agent in a pty shown here).
-    The pty is this terminal's size, or `DEMO_ROWS` × `DEMO_COLS` when
-    both are set, for recordings of the same size every time
-    (`DEMO_ROWS=40 DEMO_COLS=120 make demo NAME=… IN=…`; size your
-    terminal to match).
+    The pty is this terminal's size: size it before you record.
   - **A compact** is real in the terminal: the agent compacts its own
     conversation. Claude Code compacts when the API answers that the
     prompt is too long, so once the compact is due the replay server

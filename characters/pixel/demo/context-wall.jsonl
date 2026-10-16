@@ -15,8 +15,8 @@
 {"agent": "run", "cmd": "npm test", "about": "Run the invoice tests", "fails": true, "takes": 2.5, "say": "Now the tests again."}
 // The wall: the context is full, and the agent compacts it.
 {"agent": "compact", "summary": "The user asked to make the failing invoice tests for discount codes and sales tax pass. src/invoice.js now has a CODES table (SAVE10, SAVE25), a discount() that throws on an unknown code, and total() takes the discount off the subtotal. The last test run had 4 passing and the 2 sales tax tests failing. Next: add sales tax to total(), on what's left after the discount, rounded to the nearest cent, then run npm test.", "after": 1.5, "takes": 3}
-// Pixel's compacted card plays out first (3.5 s on its determined face), then: where was I?
-{"brain": {"react.mood": "confused", "say.about": "looking", "say.kind": "sound"}, "mood": "confused", "after": 3.5}
+// Then: where was I? The board plays the reaction once its compacted card is over.
+{"brain": {"react.mood": "confused", "say.about": "looking", "say.kind": "sound"}}
 {"agent": "edit", "file": "src/invoice.js", "old": "// What the customer pays: the subtotal, less any discount.\nfunction total(invoice) {\n  const amount = subtotal(invoice.lines);\n  return amount - discount(amount, invoice.code);\n}", "new": "// What the customer pays: the subtotal, less any discount, plus sales tax\n// on what's left, rounded to the nearest cent.\nfunction total(invoice) {\n  const amount = subtotal(invoice.lines);\n  const discounted = amount - discount(amount, invoice.code);\n  const tax = Math.round(discounted * (invoice.taxRate || 0));\n  return discounted + tax;\n}", "after": 2, "takes": 1.5, "say": "The discount tests pass, and the two tax tests still fail. Tax goes on what's left after the discount, rounded to the nearest cent, so it comes last in total()."}
 {"agent": "run", "cmd": "npm test", "about": "Run the invoice tests", "takes": 2.5, "say": "Now the tests."}
 {"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}, "mood": "happy"}

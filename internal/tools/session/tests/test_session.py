@@ -98,14 +98,6 @@ class ScriptTests(unittest.TestCase):
         self.assertIsNone(session.refusal(s, "codex", "terminal"))
         self.assertIn("no subagents", session.refusal(scripts.load(scripts.find("landing")), "codex", "terminal"))
 
-    def test_the_agents_screen_can_be_fixed_for_a_recording(self):
-        sizes = []
-        for rows, cols in (("30", "100"), ("", "100"), ("x", "y")):
-            with unittest.mock.patch.dict("os.environ", {"DEMO_ROWS": rows, "DEMO_COLS": cols}):
-                sizes.append(term.Terminal.size())
-        self.assertEqual(sizes[0], (30, 100))
-        self.assertEqual(sizes[1], sizes[2], "else this terminal's, or 40 × 120")
-
     def test_the_demo_command_is_the_scripts_replies_in_order(self):
         s = scripts.load(scripts.find("landing"))
         text = desktop.script(s.replies(), s.title)
@@ -245,7 +237,7 @@ class ServerTests(unittest.TestCase):
             post(url + "/v1/messages", turn)
         self.assertEqual(wall.exception.code, 400)
         self.assertIn("prompt is too long", json.loads(wall.exception.read())["error"]["message"])
-        self.assertEqual((asked, replay.served), ([1, 2], 1), "the compact was due, and isn't served yet")
+        self.assertEqual((asked, replay.served), ([1, 2], 2), "the compact was due, and is under way")
         summary = dict(turn, messages=[{"role": "user", "content": [{"type": "text", "text": self.CLAUDE_SUMMARY}]}])
         events = post(url + "/v1/messages", summary)
         text = "".join(e["delta"]["text"] for e in events if e.get("delta", {}).get("type") == "text_delta")
@@ -257,12 +249,11 @@ class ServerTests(unittest.TestCase):
                          [{"command": "npm test", "description": "npm test"}], "then the next step")
 
     def test_a_summary_the_script_has_no_compact_for_costs_nothing(self):
-        replay, url, _ = self.serve([{"n": 1, "agent": "reply", "text": "Done."}])
-        events = post(url + "/v1/messages", {"stream": True, "max_tokens": 1000, "tools": [{"name": "Bash"}],
-                                             "messages": [{"role": "user", "content": self.CLAUDE_SUMMARY}]})
-        text = "".join(e["delta"]["text"] for e in events if e.get("delta", {}).get("type") == "text_delta")
-        self.assertIn(model.SUMMARY, text)
+        replay, url, lines = self.serve([{"n": 1, "agent": "reply", "text": "Done."}])
+        post(url + "/v1/messages", {"stream": True, "max_tokens": 1000, "tools": [{"name": "Bash"}],
+                                    "messages": [{"role": "user", "content": self.CLAUDE_SUMMARY}]})
         self.assertEqual(replay.served, 0)
+        self.assertIn("model: a summary the script has no compact for", lines)
 
     def test_an_agent_that_doesnt_compact_moves_the_script_on(self):
         replay, url, lines = self.serve([{"n": 1, "agent": "compact"}, {"n": 2, "agent": "reply", "text": "Done."}])
@@ -299,51 +290,40 @@ class ServerTests(unittest.TestCase):
         self.assertEqual((said(main), said(sub)), ("I'll wait for it.", "Looks good."))
 
 
-@unittest.skipUnless(shutil.which("node"), "needs node")
-class LandingProjectTests(unittest.TestCase):
-    def test_the_edits_fit_and_the_tests_fail_then_pass(self):
-        """The story: the first version fails only the nested-editable
-        test, and the fix passes them all."""
-        s = scripts.load(scripts.find("landing"))
-        edits = [l for l in s.agent_steps() if l["agent"] == "edit"]
-        self.assertEqual(len(edits), 2)
-        with tempfile.TemporaryDirectory() as d:
-            ws = Path(d) / "ws"
-            shutil.copytree(SESSIONS / "landing" / "workspace", ws)
-            results = []
-            for edit in edits:
-                path = ws / edit["file"]
+
+def play_project(case: unittest.TestCase, name: str, tests: str) -> list:
+    """Plays a script's edits on a copy of its project, running `tests`
+    with node at each `npm test` step: each run's exit code and last line."""
+    s = scripts.load(scripts.find(name))
+    with tempfile.TemporaryDirectory() as d:
+        ws = Path(d) / "ws"
+        shutil.copytree(SESSIONS / name / "workspace", ws)
+        results = []
+        for l in s.agent_steps():
+            if l["agent"] == "edit":
+                path = ws / l["file"]
                 text = path.read_text()
-                self.assertEqual(text.count(edit["old"]), 1, f"line {edit['number']}: old isn't there once")
-                path.write_text(text.replace(edit["old"], edit["new"]))
-                run = subprocess.run(["node", "test/shortcuts.test.js"], cwd=ws, capture_output=True, text=True)
+                case.assertEqual(text.count(l["old"]), 1, f"line {l['number']}: old isn't there once")
+                path.write_text(text.replace(l["old"], l["new"]))
+            elif l.get("cmd") == "npm test":
+                run = subprocess.run(["node", tests], cwd=ws, capture_output=True, text=True)
                 results.append((run.returncode, run.stdout.strip().split("\n")[-1]))
-        self.assertEqual(results, [(1, "5 passed, 1 failed"), (0, "6 passed, 0 failed")])
+        return results
 
 
 @unittest.skipUnless(shutil.which("node"), "needs node")
-class ContextWallProjectTests(unittest.TestCase):
-    def test_the_tests_fail_four_then_two_then_none(self):
-        """The story: the discount and tax tests fail, the discount edit
-        leaves the two tax tests failing, and the tax edit passes them
-        all."""
-        s = scripts.load(scripts.find("context-wall"))
-        runs = [l for l in s.agent_steps() if l["agent"] == "run"]
-        self.assertEqual([l.get("fails", False) for l in runs], [True, True, False])
-        with tempfile.TemporaryDirectory() as d:
-            ws = Path(d) / "ws"
-            shutil.copytree(SESSIONS / "context-wall" / "workspace", ws)
-            results = []
-            for l in s.agent_steps():
-                if l["agent"] == "edit":
-                    path = ws / l["file"]
-                    text = path.read_text()
-                    self.assertEqual(text.count(l["old"]), 1, f"line {l['number']}: old isn't there once")
-                    path.write_text(text.replace(l["old"], l["new"]))
-                elif l["agent"] == "run":
-                    run = subprocess.run(["node", "test/invoice.test.js"], cwd=ws, capture_output=True, text=True)
-                    results.append((run.returncode, run.stdout.strip().split("\n")[-1]))
-        self.assertEqual(results, [(1, "2 passed, 4 failed"), (1, "4 passed, 2 failed"), (0, "6 passed, 0 failed")])
+class ProjectTests(unittest.TestCase):
+    def test_landing_fails_one_then_passes(self):
+        """The first version fails only the nested-editable test, and the
+        fix passes them all."""
+        self.assertEqual(play_project(self, "landing", "test/shortcuts.test.js"),
+                         [(1, "5 passed, 1 failed"), (0, "6 passed, 0 failed")])
+
+    def test_the_context_wall_fails_four_then_two_then_none(self):
+        """The discount and tax tests fail, the discount edit leaves the
+        two tax tests failing, and the tax edit passes them all."""
+        self.assertEqual(play_project(self, "context-wall", "test/invoice.test.js"),
+                         [(1, "2 passed, 4 failed"), (1, "4 passed, 2 failed"), (0, "6 passed, 0 failed")])
 
 
 if __name__ == "__main__":

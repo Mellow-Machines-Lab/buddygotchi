@@ -265,8 +265,9 @@ const char* Device::refuse(const Do& c, uint32_t t) {
 // it may be replaced: a
 // `react` half a second after its `say` and bubble have played, or 1.7 s
 // in for a face with no `say` (it ends sooner if nothing of it plays by
-// then); a finish never, until it's over; the rules' reactions, a poke and
-// listening at once; stop_listening is over as it starts. The Mac's
+// then); a finish and the compacted start never, until they're over; the
+// rules' other reactions, a poke and listening at once; stop_listening is
+// over as it starts. The Mac's
 // `listening` drops the reactions its own host has waiting in the queue.
 void Device::onDo(const Do& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
@@ -294,6 +295,11 @@ void Device::onDo(const Do& c, uint32_t t) {
       break;
     case kStopListening:
       kit().ended(c.key);
+      break;
+    case kStarting:
+      // The compacted card is news to read: it holds, as a finish does,
+      // until it has played. Any other start is over as it starts.
+      if (mo.ctx != render::StartCtx::kCompacted) kit().rest(c.key);
       break;
     default:
       kit().rest(c.key);
