@@ -54,5 +54,12 @@ One thing that will surprise you:
 The dashboard shows the face, Boop's mood, its automatic reactions and the
 ones Jev decided, and can force any mood or reaction.
 
+When Boop does something that looks wrong, or misses something, click
+the ladybug in the popover (⌘B). Boop saves what it is doing now and did
+this launch, debug mode or not, in a new folder under `bug-reports/` in
+its state directory, and asks what you saw. Save copies the folder's path
+and your note, to paste to an agent; the folder's `README.md` says what
+each file holds.
+
 How each level of checking works, from unit tests to the board, is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md).

@@ -3,7 +3,7 @@ import BoopKit
 import SwiftUI
 
 /// The popover. One 360 pt column on warm paper; Overview,
-/// Settings and Setup all open inside it.
+/// Settings, Setup and a bug report's note all open inside it.
 struct PopoverView: View {
     @ObservedObject var model: AppModel
     var onClose: () -> Void = {}
@@ -23,6 +23,7 @@ struct PopoverView: View {
                 case .overview: OverviewPane(model: model, maxHeight: limit - 44)
                 case .settings: SettingsPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
                 case .setup: SetupPane(model: model)
+                case .report: ReportPane(model: model)
                 }
             }
             .transition(.opacity)
@@ -56,7 +57,7 @@ struct PopoverView: View {
                     }
                     .keyboardShortcut("b", modifiers: .command)
                     .disabled(model.status == nil)  // Boop isn't running (or not yet)
-                    .help("Save a bug report: what Boop saw and did this launch, to hand to an agent")
+                    .help("Save a bug report: what Boop is doing now and did this launch, with a note, to hand to an agent")
                     .accessibilityLabel("Save a bug report")
                 } else if model.pane == .settings {
                     // The versions, where Settings would be.

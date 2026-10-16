@@ -23,7 +23,16 @@ enum MenuBarApp {
 }
 
 enum Pane: Equatable {
-    case overview, settings, setup
+    case overview, settings, setup, report
+}
+
+/// A bug report on its way: saved at the click, so it holds the moment,
+/// and its note written after.
+struct ReportDraft {
+    /// The report's folder, once saved.
+    var dir: URL?
+    var failed = false
+    var note = ""
 }
 
 /// What the person has chosen so far in setup. It lives in the model, so
@@ -63,6 +72,7 @@ final class AppModel: ObservableObject {
     /// hold their loops still until it opens again.
     @Published var shown = false
     @Published var setup = SetupDraft()
+    @Published var report: ReportDraft?
     @Published var status: Runtime.Status?
     let slime = SlimeFeed()
     @Published var hooks: [Agent: HookInstaller.Health] = [:]
@@ -264,17 +274,31 @@ final class AppModel: ObservableObject {
         runtime?.setPersonality(personality)
     }
 
-    /// Saves a bug report, shows it in Finder and
-    /// copies its path, to hand to an agent.
+    /// Saves a bug report now, then asks what you saw.
     func saveReport() {
+        report = ReportDraft()
+        pane = .report
         runtime?.saveReport { dir in
             Task { @MainActor in
-                guard let dir else { return }
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(dir.path, forType: .string)
-                NSWorkspace.shared.activateFileViewerSelecting([dir])
+                self.report?.dir = dir
+                self.report?.failed = dir == nil
             }
         }
+    }
+
+    /// Adds the note to the report (none with `withNote` false), copies
+    /// what to hand an agent, and shows the report in Finder.
+    func finishReport(withNote: Bool) {
+        defer {
+            report = nil
+            pane = .overview
+        }
+        guard let dir = report?.dir else { return }
+        let note = withNote ? report?.note ?? "" : ""
+        do { try Runtime.addNote(note, to: dir) } catch { runtime?.options.log("report: can't save the note: \(error)") }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Runtime.reportPrompt(dir, note: note), forType: .string)
+        NSWorkspace.shared.activateFileViewerSelecting([dir])
     }
 
     /// What "Boop couldn't start" says, in plain words; the log keeps the
