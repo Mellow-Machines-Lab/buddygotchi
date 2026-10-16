@@ -1,4 +1,4 @@
-// All 22 gel states, plus explicit failure and neutral finish.
+// All 23 gel states, plus explicit failure and neutral finish.
 // The error and failure shots wait 200 ms longer, for their card to finish rising.
 {"t":"dbg.reset"}
 {"clock":0}
@@ -141,3 +141,9 @@
 {"t":"do","id":124,"name":"starting","args":{"ctx":"compacted"}}
 {"clock":1504}
 {"shot":"starting_compacted"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":125,"name":"wake_up","args":{}}
+{"clock":1504}
+{"shot":"wake_up"}

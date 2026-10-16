@@ -1,6 +1,6 @@
 # VideoG Slime Blob — colleague handover
 
-Updated 2026-10-15. Imported from `VideoG-Slime-Blob` and integrated on
+Updated 2026-10-16. Imported from `VideoG-Slime-Blob` and integrated on
 `main`: this engine is the reference the AMOLED's gel face ports and the
 Mac's popover bundles. This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
@@ -70,7 +70,7 @@ consumes credits.
 | Acting | Three authored gesture recipes per expression; recipes share primitives | Tune every recipe in motion, layer activity choreography |
 | Drag | Bounded local surface pull, face follows body, release wobble | Host-boundary termination and real touchscreen QA |
 | Mood topology | Complete design graph and 295 tested directed bridges, three variants each | Host eligibility/pacing, Jev choices, production enum migration |
-| Activity/state | All 22 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes | Physical board measurements/review |
+| Activity/state | All 23 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes | Physical board measurements/review |
 | Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library | Speaker review and physical audio latency |
 
 **Coverage is earned by execution.** The preview has all scene families, an

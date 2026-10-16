@@ -45,6 +45,7 @@ enum class SceneState : uint8_t {
   kStopped,
   kPoked,
   kTapSpam,
+  kWakeUp,
   kCount,
   kNone = 0xFF
 };
@@ -53,7 +54,8 @@ enum class SceneState : uint8_t {
 const char* stateName(SceneState s);
 SceneState stateFromName(const char* name);  // kIdle if missing or unknown
 // The reactions' animations: the brain's finish (task_complete, a turn done
-// or failed; reply_ready, an answer or a question back), the rules'
+// or failed; reply_ready, an answer or a question back) and its wake_up
+// (you back at the Mac after a long break), the rules'
 // reactions (starting, stopped, error, helper_return), a tap's (poked, and
 // tap_spam from the third in a row) and push-to-talk's listening, until
 // the reply.

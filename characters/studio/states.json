@@ -33,6 +33,9 @@
     {"label": "Touch", "states": [
       {"id": "poked", "about": "Someone tapped it."},
       {"id": "tap_spam", "label": "Tap spam", "about": "Lots of taps in a row."}
+    ]},
+    {"label": "You", "states": [
+      {"id": "wake_up", "label": "Wake up", "about": "You are back at the Mac after a long break, so it stretches, yawns and wakes up for you."}
     ]}
   ],
   "facts": {

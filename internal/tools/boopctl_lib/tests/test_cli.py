@@ -547,7 +547,8 @@ class SoakTests(unittest.TestCase):
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
         self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
                                  "helper_return": ("if_free", None),
-                                 "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "react": ("next", 5000)})
+                                 "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
+                                 "react": ("next", 5000)})
 
     def test_each_reaction_ends_once(self):
         ended = [{"id": 1, "how": "done"}, {"id": 2, "how": "cut", "why": "tap"}, {"id": 3, "how": "skipped"}]

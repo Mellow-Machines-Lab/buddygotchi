@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-15. The contract a character pack meets, so that any
+Updated 2026-10-16. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -352,8 +352,8 @@ A face is what the board draws and the sounds it makes. The engine says
 ### Every state a face is asked for
 
 The engine asks a face for any of the pack's moods (§5) with any of
-these 22 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
-for all 22, and the gel face maps some to others in its own code
+these 23 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
+for all 23, and the gel face maps some to others in its own code
 (`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
 and `charactergen.py --check` holds this table to them.
 
@@ -383,6 +383,7 @@ the brain's, a rule's, or the board's own.
 | `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller) | the Mac |
 | `task_complete` | A turn ends; `outcome` is `success` or `failure` | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
+| `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |

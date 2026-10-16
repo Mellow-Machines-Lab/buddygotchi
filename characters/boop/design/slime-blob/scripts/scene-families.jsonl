@@ -90,4 +90,10 @@
 {"at":91200,"type":"mood","mood":"speechless"}
 {"at":91200,"type":"facts","facts":{"base":"working"}}
 {"at":91200,"type":"oneShot","moment":{"id":"family-19","name":"task_complete","args":{"outcome":"unknown"}}}
-{"at":96000,"type":"end"}
+{"at":96000,"type":"linkTimedOut","value":false}
+{"at":96000,"type":"oneShot","moment":{"id":"stop-20","name":"stop_listening"}}
+{"at":96000,"type":"mood","mood":"pleased"}
+{"at":96000,"type":"facts","facts":{"base":"asleep"}}
+{"at":97600,"type":"facts","facts":{"base":"idle"}}
+{"at":97600,"type":"oneShot","moment":{"id":"family-20","name":"wake_up","args":{"mood":"happy"}}}
+{"at":103200,"type":"end"}

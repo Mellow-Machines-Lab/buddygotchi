@@ -84,11 +84,11 @@ static void test_every_scene_matches_facegen() {
 // have the first pack's (three a state, working five), one or two of each
 // newer state and four starts (one a context); the six new ones three of
 // each, twelve starts (three a context)
-// and six finishes (three a result). Asleep and with no app, Boop looks the
-// same in every older mood, and in every new one.
+// and six finishes (three a result). Every mood has one wake-up. Asleep and
+// with no app, Boop looks the same in every older mood, and in every new one.
 static void test_variations_and_shared_designs() {
-  const int older[] = {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1};
-  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+  const int older[] = {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1};
+  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1};
   for (int m = 0; m < pixelMoods(); ++m) {
     for (int s = 0; s < int(SceneState::kCount); ++s) {
       int n = variants(render::pixelMood(m), SceneState(s));

@@ -8,7 +8,7 @@ import {createProps} from '../render/props.mjs';
 import {createPlayer} from '../sound/player.mjs';
 import {createReview} from './review.mjs';
 
-const oneShotStates=['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','listening'];
+const oneShotStates=['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','listening'];
 
 function create({root,stage,onChange=()=>{}}) {
   const catalog=window.SlimeCatalog,profiles=catalog.expressions,expressions=Object.keys(profiles);

@@ -63,7 +63,7 @@ async function checkFullFamilyConstants(createSlime, catalog) {
   const { deskRecipe } = await import('../engine/scenes/desk.mjs');
   const { helpersRecipe } = await import('../engine/scenes/helpers.mjs');
   const { listenRecipe } = await import('../engine/scenes/listen.mjs');
-  const { startRecipe } = await import('../engine/scenes/start.mjs');
+  const { startRecipe, wakeRecipe } = await import('../engine/scenes/start.mjs');
   const { touchRecipe } = await import('../engine/scenes/touch.mjs');
   const { createScenes } = await import('../engine/scenes/index.mjs');
   const { createRouter } = await import('../engine/router.mjs');
@@ -95,6 +95,11 @@ async function checkFullFamilyConstants(createSlime, catalog) {
     assert.equal(listen.lean, [0.022, -0.012, 0.008][variant], `${FULL_SPEC}: listening pose targets`);
     assert.equal(listen.pulseCycles, [2, 1, 3][variant], `${FULL_SPEC}: listening pulse rhythms`);
     assert.equal(startRecipe('session', variant).contacts[0].at, [520, 820, 1080][variant], `${FULL_SPEC}: start reveal timings`);
+    const wake = wakeRecipe(variant, 'calm');
+    assert.deepEqual(wake.contacts.map(contact => [contact.at, contact.kind]), [[[560, 'start_reveal'], [1180, 'body_contact']],
+      [[760, 'start_reveal'], [1240, 'body_contact'], [1420, 'body_contact']], [[900, 'start_reveal'], [1500, 'start_reveal']]][variant],
+      `${FULL_SPEC}: wake_up stretches, then settles`);
+    assert.equal(wake.label, undefined, `${FULL_SPEC}: wake_up shows no card`);
     for (const state of ['delegating', 'helper_return']) {
       const helpers = helpersRecipe(state, variant);
       assert.deepEqual(helpers.contacts.map(contact => contact.at), state === 'helper_return' ? [[680], [960], [1240]][variant]
@@ -218,6 +223,7 @@ function validateMatrixFrame(frame, sample, context) {
     `${FULL_SPEC}: ${context} cannot invent a test outcome`);
   if (['waiting', 'listening'].includes(state)) assert.equal(frame.contacts.length, 0,
     `${FULL_SPEC}: ${context} remains attentive without contact cues`);
+  if (state === 'wake_up') assert.equal(frame.props.start.visible, 0, `${FULL_SPEC}: ${context} stretches without a start card`);
   if (state === 'starting' && frame.props.start.visible) assert.equal(frame.props.start.label,
     { new_task: 'NEW TASK', session: 'START', continuation: 'RESUME', compacted: 'COMPACTED' }[args.ctx], `${FULL_SPEC}: factual start card wording`);
   if (['reply_ready', 'error', 'stopped'].includes(state) && frame.props.result.visible) {
@@ -240,10 +246,10 @@ export async function checkFullMatrix() {
   await checkProfileContract();
   await checkFullFamilyConstants(createSlime, catalog);
   assert.equal(canonicalMoods.length, 42, `${FULL_SPEC}: canonical mood count`);
-  assert.equal(states.length, 22, `${FULL_SPEC}: factual state count`);
-  assert.equal(fullMatrixCells.length, 924, `${FULL_SPEC}: every canonical mood/state cell is required`);
+  assert.equal(states.length, 23, `${FULL_SPEC}: factual state count`);
+  assert.equal(fullMatrixCells.length, 966, `${FULL_SPEC}: every canonical mood/state cell is required`);
   const { implementedStates } = await import('../engine/scenes/constants.mjs');
-  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 22 scenes have implementations`);
+  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 23 scenes have implementations`);
   const verified = new Set();
   let frameCount = 0, variantsChecked = 0, factCasesChecked = 0, quietAliases = 0;
   for (const mood of canonicalMoods) for (const definition of states) {
@@ -519,14 +525,14 @@ function checkRouting(createSlime, catalog) {
   d.slime.oneShot({ id: 3, name: 'react', args: { say: {} } }); expect('needs_you', 'empty say ends listening');
   d.slime.setFacts({ base: 'working' }); expect('working', 'full snapshot without attn clears attention');
   let id = 10;
-  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam']) {
+  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam', 'wake_up']) {
     const single = driver(createSlime, catalog);
     single.slime.setFacts({ base: 'working' });
     single.slime.oneShot({ id: id++, name, args: { outcome: 'failure', ctx: 'continuation', loops: 1 } });
     route(single, name); visited.add(name);
   }
   const planned = JSON.parse(fs.readFileSync(path.join(root, 'state-plan.json'), 'utf8')).states.map(state => state.id);
-  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 22 existing state IDs from current facts`);
+  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 23 existing state IDs from current facts`);
   const stopped = driver(createSlime, catalog);
   stopped.slime.oneShot({ id: 1, name: 'task_complete', args: { outcome: 'failure' } }); route(stopped, 'task_complete');
   stopped.slime.oneShot({ id: 2, name: 'stop_listening' }); route(stopped, 'task_complete', 'stop_listening does not end unrelated moments');
@@ -909,13 +915,13 @@ export async function checkScenes({ coverageOnly = false } = {}) {
     traceFrames: representativeCases.length * CASE_MS / STEP_MS + 1, matrixFrames: matrix.frames,
     activeVariants: matrix.variants, factualCases: matrix.factCases, quietAliases: matrix.quietAliases, longWork,
     ownerReview: 'Representative art approved at Q1; full matrix has executed engineering evidence',
-    scope: '42 canonical moods × 22 factual states; sound, graph bridges and production ports checked separately' };
+    scope: '42 canonical moods × 23 factual states; sound, graph bridges and production ports checked separately' };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--help') {
-    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 924 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:924 verified cells} for the builder.');
+    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 966 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:966 verified cells} for the builder.');
   } else if (args.length > 0 && !(args.length === 1 && args[0] === '--coverage')) {
     console.error('Unknown arguments; use --help'); process.exitCode = 1;
   } else {

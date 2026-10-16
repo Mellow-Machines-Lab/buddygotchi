@@ -2,13 +2,13 @@
 import {deskRecipe} from '../../design/slime-blob/engine/scenes/desk.mjs';
 import {alertRecipe} from '../../design/slime-blob/engine/scenes/alert.mjs';
 import {resultRecipe,statusResultRecipe} from '../../design/slime-blob/engine/scenes/result.mjs';
-import {startRecipe} from '../../design/slime-blob/engine/scenes/start.mjs';
+import {startRecipe,wakeRecipe} from '../../design/slime-blob/engine/scenes/start.mjs';
 import {helpersRecipe} from '../../design/slime-blob/engine/scenes/helpers.mjs';
 import {touchRecipe} from '../../design/slime-blob/engine/scenes/touch.mjs';
 import {listenRecipe} from '../../design/slime-blob/engine/scenes/listen.mjs';
 import {restRecipe} from '../../design/slime-blob/engine/scenes/rest.mjs';
 import {idleRecipe} from '../../design/slime-blob/engine/scenes/idle.mjs';
-export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam'];
+export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam','wake_up'];
 const kinds=['key_contact','screen_knock','body_contact','alert_reveal','success_reveal','failure_reveal','result_reveal','start_reveal','helper_reveal','reply_ready_reveal','error_reveal','stopped_reveal'];
 export function recipes(profiles,q,t){
  const specs=[...states.map(state=>({state})),{state:'task_complete',outcome:'success'},{state:'task_complete',outcome:'failure'},...['new_task','session','continuation','compacted'].map(ctx=>({state:'starting',ctx}))];
@@ -28,6 +28,7 @@ export function recipes(profiles,q,t){
    else if(state==='task_complete')r=resultRecipe(outcome||null,v,p.mood,p);
    else if(['reply_ready','error','stopped'].includes(state))r=statusResultRecipe(state,v,p.mood,p);
    else if(state==='starting')r=startRecipe(ctx||null,v,p.mood,p);
+   else if(state==='wake_up')r=wakeRecipe(v,p.mood,p);
    else if(['delegating','helper_return'].includes(state))r=helpersRecipe(state,v,p.mood,p);
    else if(['poked','tap_spam'].includes(state))r=touchRecipe(state,v);
    else if(state==='listening')r=listenRecipe(v);

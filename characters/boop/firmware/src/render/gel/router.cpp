@@ -45,7 +45,8 @@ Family family(SceneState s) {
     case SceneState::kNoApp: return Family::kRest;
     case SceneState::kIdle: return Family::kIdle;
     case SceneState::kListening: return Family::kListen;
-    case SceneState::kStarting: return Family::kStart;
+    case SceneState::kStarting:
+    case SceneState::kWakeUp: return Family::kStart;
     case SceneState::kDelegating:
     case SceneState::kHelperReturn: return Family::kHelpers;
     case SceneState::kNeedsYou: return Family::kAlert;

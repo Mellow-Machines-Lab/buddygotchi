@@ -55,17 +55,17 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
 }
 
 // The animations, each by its design's state's name, and
-// nothing else: the brain's finish (task_complete, reply_ready), the rules'
-// rules' reactions (starting, stopped, error, helper_return), a tap's (poked,
-// tap_spam) and listening. The older names ("cheer", "wiggle") are gone
+// nothing else: the brain's finish (task_complete, reply_ready) and wake_up,
+// the rules' reactions (starting, stopped, error, helper_return), a tap's
+// (poked, tap_spam) and listening. The older names ("cheer", "wiggle") are gone
 // with the reaction message. Each plays its own design, and every design
 // has a loop.
 static void test_every_anim_has_a_name_and_ends() {
-  const char* names[] = {"task_complete", "reply_ready", "starting", "stopped", "error",
-                         "helper_return", "poked",       "tap_spam", "listening"};
+  const char* names[] = {"task_complete", "reply_ready", "starting",  "stopped", "error",
+                         "helper_return", "poked",       "tap_spam",  "wake_up", "listening"};
   int reactions = 0;
   for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isReaction(SceneState(i));
-  TEST_ASSERT_EQUAL_INT(9, reactions);
+  TEST_ASSERT_EQUAL_INT(10, reactions);
   for (const char* name : names) {
     const SceneState a = reactionFromName(name);
     TEST_ASSERT_TRUE_MESSAGE(isReaction(a), name);
@@ -110,15 +110,15 @@ static void test_every_mood_has_a_name() {
   TEST_ASSERT_TRUE(moodFromName(nullptr) == Mood::kHappy);
 }
 
-// The designs' 22 states by name, in faces.h's order, the
+// The designs' 23 states by name, in faces.h's order, the
 // first seven keeping their numbers; a missing or unknown one is idle.
 static void test_every_state_has_a_name() {
-  TEST_ASSERT_EQUAL_INT(22, int(SceneState::kCount));
+  TEST_ASSERT_EQUAL_INT(23, int(SceneState::kCount));
   const char* names[] = {"idle",      "working",   "needs_you",  "task_complete", "asleep",  "no_app",
                          "listening", "starting",  "planning",   "terminal",      "tool_use", "searching",
                          "analyzing", "testing",   "delegating", "helper_return", "waiting", "reply_ready",
-                         "error",     "stopped",   "poked",      "tap_spam"};
-  for (int i = 0; i < 22; ++i) {
+                         "error",     "stopped",   "poked",      "tap_spam",      "wake_up"};
+  for (int i = 0; i < int(sizeof names / sizeof names[0]); ++i) {
     TEST_ASSERT_EQUAL_STRING(names[i], stateName(SceneState(i)));
     TEST_ASSERT_TRUE(stateFromName(names[i]) == SceneState(i));
   }

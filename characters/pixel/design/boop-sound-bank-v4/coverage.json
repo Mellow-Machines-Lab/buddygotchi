@@ -1,8 +1,8 @@
 {
   "moods": 13,
-  "states": 22,
-  "pairs": 286,
-  "total": 795,
+  "states": 23,
+  "pairs": 299,
+  "total": 808,
   "preservedV3": 308,
   "newPerformances": 480,
   "newMoods": [
@@ -44,7 +44,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "excited": {
       "no_app": 3,
@@ -68,7 +69,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "proud": {
       "no_app": 3,
@@ -92,7 +94,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "curious": {
       "no_app": 3,
@@ -116,7 +119,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "determined": {
       "no_app": 3,
@@ -140,7 +144,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "grumpy": {
       "no_app": 3,
@@ -164,7 +169,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "sad": {
       "no_app": 3,
@@ -188,7 +194,8 @@
       "error": 1,
       "stopped": 1,
       "poked": 1,
-      "tap_spam": 1
+      "tap_spam": 1,
+      "wake_up": 1
     },
     "calm": {
       "no_app": 3,
@@ -212,7 +219,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     },
     "engaged": {
       "no_app": 3,
@@ -236,7 +244,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     },
     "annoyed": {
       "no_app": 3,
@@ -260,7 +269,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     },
     "irritated": {
       "no_app": 3,
@@ -284,7 +294,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     },
     "whiny": {
       "no_app": 3,
@@ -308,7 +319,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     },
     "wounded": {
       "no_app": 3,
@@ -332,7 +344,8 @@
       "error": 3,
       "stopped": 3,
       "poked": 3,
-      "tap_spam": 3
+      "tap_spam": 3,
+      "wake_up": 1
     }
   }
 }

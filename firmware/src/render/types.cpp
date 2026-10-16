@@ -2,10 +2,11 @@
 #include <cstring>
 namespace render {
 namespace {
-constexpr const char* kStateNames[22] = {
-    "idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",  "listening",  "starting",
-    "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing", "delegating", "helper_return",
-    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam"};
+constexpr const char* kStateNames[] = {
+    "idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",   "listening",  "starting",
+    "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing",  "delegating", "helper_return",
+    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam", "wake_up"};
+static_assert(sizeof kStateNames / sizeof kStateNames[0] == int(SceneState::kCount), "a name for every state");
 const char* const kOutcomes[] = {"", "success", "failure"};
 const char* const kCtxs[] = {"", "new_task", "session", "continuation", "compacted"};
 }  // namespace
@@ -34,6 +35,7 @@ bool isReaction(SceneState s) {
   switch (s) {
     case SceneState::kTaskComplete:
     case SceneState::kReplyReady:
+    case SceneState::kWakeUp:
     case SceneState::kStarting:
     case SceneState::kStopped:
     case SceneState::kError:

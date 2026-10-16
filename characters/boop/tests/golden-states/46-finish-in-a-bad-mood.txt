@@ -99,7 +99,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Sad. Boop is deflated: a very long turn failed, the agent gave up, or
@@ -232,7 +232,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Wounded. Boop is hurt and withdraws: rude words, or a big failure
@@ -358,7 +358,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Whiny. Boop feels sorry for itself and wants sympathy: things keep
@@ -488,7 +488,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Annoyed. Boop is mildly put out: one thing failed, or 2 pokes.
@@ -625,7 +625,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -763,7 +763,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.

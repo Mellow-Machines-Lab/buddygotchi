@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-15. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-16. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -37,7 +37,8 @@ approval or equivalence of the C++ port.
 The scene check exercises all routing IDs separately from choreography
 coverage. Its representative script covers 24 cases in 20 distinct cells;
 full-matrix checks execute every canonical mood/state cell, all three active
-variants, all start contexts and completion outcomes, plus a
+variants, all start contexts and completion outcomes, a wake-up with no
+start card, plus a
 ten-minute work run, attention identity, alerts interrupted at every stage
 (each request knocks and confirms exactly once), drag interruption, quiet rest,
 latest-facts recovery and truthful success/failure. The builder runs the
