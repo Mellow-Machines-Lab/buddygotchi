@@ -48,6 +48,7 @@ One thing that will surprise you:
 | --- | --- |
 | Run Boop and print everything it sees and decides | `make debug` |
 | Watch and poke it live, in a second terminal beside `make debug` | `make dash` |
+| Work with no board: two Boops on two simulators that your agents reach, and four windows on their logs, transcripts and Jev's passes (`BRAIN=scripted` with no `BOOP_JEV_KEY`) | `make dev-dashboard` |
 | See what it did on the latest day `make debug` logged, and why (`DATE=YYYY-MM-DD` for another) | `make day` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
 

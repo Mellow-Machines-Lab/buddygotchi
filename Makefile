@@ -1,7 +1,7 @@
 # Boop v1. Run from the repo root. See README.md and internal/VERIFICATION.md.
 # The development targets (tests, simulator, tools) are in internal/Makefile:
 # make -C internal <target>.
-.PHONY: build app run debug dash day simulator demo flash eval clean
+.PHONY: build app run debug dash day simulator dev-dashboard demo flash eval clean
 
 PIO := firmware/tools/pio.sh
 
@@ -64,6 +64,15 @@ simulator:
 	python3 characters/charactergen.py --stage
 	simulator/web/build.sh
 	python3 simulator/web/serve.py
+
+# Two Boops on two simulators, for working with no board: two pages in the
+# browser, each with its own headless app that your agents' hooks reach,
+# and four read-only Terminal windows: each app's log, both transcripts, and
+# Jev's passes (internal/tools/devdash.py). BRAIN (jev with BOOP_JEV_KEY,
+# else scripted) and FACE (pixel or gel) pick. Ctrl-C stops it all.
+dev-dashboard: app
+	simulator/web/build.sh
+	/usr/bin/python3 internal/tools/devdash.py up $(if $(BRAIN),--brain $(BRAIN)) $(if $(FACE),--face $(FACE))
 
 # A pack's demo by name (characters/DEMOS.md): NAME (landing), and IN for
 # where you watch an agent play it, none by default.

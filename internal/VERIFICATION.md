@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-15. How we check that Boop works, including what's on its
+Updated 2026-10-16. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -65,6 +65,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make dash` | `boopctl dash`, for the app `make debug` started |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
 | `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md)). No Bluetooth, so agents may run it |
+| `make dev-dashboard` | `internal/tools/devdash.py up`: two simulators' pages (ports 8216 and 8217), a `Boop --headless --debug` on each with its state in `/tmp/boop-dev/A` and `B`, both listed where agents' hooks send until it stops, and four Terminal windows that only read (`devdash.py follow A`, `B`, `transcript`, `jev`). `BRAIN` (jev with `BOOP_JEV_KEY`, else scripted) and `FACE` pick. No Bluetooth, so agents may run it, with `AGENT_HOOKS_DIR` set to a scratch folder |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
@@ -87,6 +88,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   (`e2e`), the webcam (`cam`), and the debug logs (`dash`, `day`,
   `workday`). `--port` picks the serial port; without it, while a bridge
   runs (below), commands go through the bridge.
+- `internal/tools/devdash.py`: `make dev-dashboard`'s processes (`up`) and
+  its read-only windows (`follow`), on the Mac's own Python.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
   (character packs, [CHARACTER.md](../characters/CHARACTER.md)) and
   `hooks` (Boop's hook installer, against any `--home`).
