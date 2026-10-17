@@ -26,7 +26,9 @@ public struct CharacterPack: Sendable {
     /// The pack's folder: its steering, and what the app reads at run time.
     public let directory: URL
     public let id: String
-    public let name: String
+    /// What the creature is called: the pack's name, or a buddy's own
+    /// (`named(_:)`).
+    public internal(set) var name: String
     public let version: String
     /// The resting mood: a new state folder starts in it, every mood fades
     /// toward it, and a word that isn't a mood reads as it.
@@ -144,12 +146,33 @@ extension CharacterPack {
 extension CharacterPack {
     /// The process's character: the one `use(_:)` set, else the pack at
     /// `BOOP_CHARACTER`, else the one the repo last staged. It stops the
-    /// process if that one doesn't load: nothing works without moods.
+    /// process if that one doesn't load: nothing works without moods. A
+    /// buddy of another pack is handed its own.
     public static var active: CharacterPack { store.get() }
 
     /// Sets the process's character. Call it once, before anything reads
     /// `active`.
     public static func use(_ character: CharacterPack) { store.set(character) }
+
+    /// The same pack under another name: two buddies running one pack
+    /// need two names.
+    public func named(_ name: String) -> CharacterPack {
+        var copy = self
+        copy.name = name
+        return copy
+    }
+
+    /// The pack with `id` beside the process's: in the app's bundle, which
+    /// holds every pack, or in the repo's `characters/` (read staged when
+    /// it's the one staged), for the tests and headless runs.
+    public static func named(id: String, bundled: URL? = nil) throws -> CharacterPack {
+        if active.id == id { return active }
+        let folders = [bundled?.appendingPathComponent(id), staged(repo.appendingPathComponent("characters").appendingPathComponent(id))]
+        for case let folder? in folders where FileManager.default.fileExists(atPath: folder.appendingPathComponent("character.json").path) {
+            return try CharacterPack(directory: folder)
+        }
+        throw CharacterPackError("no character pack \(id): it isn't in the app or in characters/")
+    }
 
     /// The pack a process uses when nothing chose one, by charactergen's
     /// rule for the pack in use (CHARACTER.md §2): `BOOP_CHARACTER`'s, else
@@ -206,5 +229,21 @@ extension CharacterPack {
         }
 
         func set(_ c: CharacterPack) { lock.withLock { character = c } }
+    }
+}
+
+/// What's read from a pack's files, read once per pack: several buddies
+/// may run different packs in one process.
+final class PackCache<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String: Value] = [:]
+
+    func get(_ directory: URL, _ read: (URL) -> Value) -> Value {
+        lock.withLock {
+            if let value = values[directory.path] { return value }
+            let value = read(directory)
+            values[directory.path] = value
+            return value
+        }
     }
 }

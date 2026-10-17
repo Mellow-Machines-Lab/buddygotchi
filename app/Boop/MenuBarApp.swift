@@ -420,7 +420,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // In debug mode the dashboard can drive `make debug`; plain `make
         // run` stays deaf to it.
         var options = runtimeOptions(stateDir: stateDir, socketPath: stateDir.appendingPathComponent("boop.sock").path,
-                                     link: model.link, debug: debug, devLines: debug, log: log)
+                                     link: model.link, debug: debug, devLines: debug, log: log,
+                                     buddies: AppSettings.load(from: stateDir).buddies)
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs

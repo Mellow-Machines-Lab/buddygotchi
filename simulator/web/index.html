@@ -3,25 +3,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Boop Simulator</title>
 <style>
-  body { margin: 0; padding: 16px; box-sizing: border-box; min-height: 100vh; display: grid; place-items: center; background: #121212; }
+  body { margin: 0; padding: 16px; box-sizing: border-box; min-height: 100vh; display: flex; flex-wrap: wrap; gap: 24px;
+         align-items: center; justify-content: center; background: #121212; }
 </style>
 <!-- The local page (make simulator): one board with its controls. ?face=gel for Boop's own face;
-     ?demo=pixel-landing plays a recorded demo, the face then its name (simulator/tools/record-demo.sh). -->
+     ?demo=pixel-landing plays a recorded demo, the face then its name (simulator/tools/record-demo.sh).
+     ?boards=left,right is a board for each of serve.py's cables (--cable NAME=SOCKET), side by side,
+     each with the id b00p-NAME; &packs=boop,pixel gives each its pack's build (build.sh PACK) and voice. -->
 <script type="module">
   import './boop-simulator.js';
-  const board = document.createElement('boop-simulator');
   const ask = new URLSearchParams(location.search);
-  board.setAttribute('face', ask.get('face') || 'pixel');
-  if (ask.get('zoom')) board.setAttribute('zoom', ask.get('zoom'));
-  if (ask.get('demo')) {
-    // A recording is its own app: no cable, and the small voice it was cut with.
-    board.setAttribute('demo', `demo/${ask.get('demo')}.json`);
-    board.setAttribute('voice', `demo/${ask.get('demo')}-voice.bin`);
+  const make = () => {
+    const board = document.createElement('boop-simulator');
+    board.setAttribute('face', ask.get('face') || 'pixel');
+    if (ask.get('zoom')) board.setAttribute('zoom', ask.get('zoom'));
+    board.setAttribute('controls', '');
+    return board;
+  };
+  if (ask.get('boards')) {
+    const packs = (ask.get('packs') || '').split(',');
+    window.simulators = ask.get('boards').split(',').map((name, i) => {
+      const board = make();
+      board.setAttribute('board-id', `b00p-${name}`);
+      board.setAttribute('usb', `ws://${location.host}/usb/${name}`);
+      if (packs[i]) board.setAttribute('pack', packs[i]);
+      board.setAttribute('voice', packs[i] ? `voice/${packs[i]}.bin` : 'voice.bin');
+      document.body.append(board);
+      return board;
+    });
   } else {
-    board.setAttribute('voice', 'voice.bin');
-    board.setAttribute('usb', `ws://${location.host}/usb`);
+    const board = make();
+    if (ask.get('demo')) {
+      // A recording is its own app: no cable, and the small voice it was cut with.
+      board.setAttribute('demo', `demo/${ask.get('demo')}.json`);
+      board.setAttribute('voice', `demo/${ask.get('demo')}-voice.bin`);
+    } else {
+      board.setAttribute('voice', 'voice.bin');
+      board.setAttribute('usb', `ws://${location.host}/usb`);
+    }
+    document.body.append(board);
+    window.simulator = board;
   }
-  board.setAttribute('controls', '');
-  document.body.append(board);
-  window.simulator = board;
 </script>

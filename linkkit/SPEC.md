@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-10-15. The contract between a host (a Mac app) and a small
+Updated 2026-10-16. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -246,8 +246,14 @@ a message came in on.
   host, notified). The device is the peripheral and advertises as
   `<Prefix>-XXXX`, the prefix the app's. It asks for a 247-byte MTU and
   cuts notifications to MTU − 3.
-  - The link has no pairing or encryption, and the host takes the first
-    device whose name has its prefix. So anyone in range can connect to a
+  - `XXXX` is the last two bytes of the device's Bluetooth MAC in
+    uppercase hex, the same two bytes as its `hello.id` (§3) in lowercase
+    after the app's id prefix: `Boop-54FE` says `"id":"b00p-54fe"`.
+  - The host takes the first device whose name has its prefix, or, told
+    one device's whole name, only that one. Several hosts, or one host
+    with a link per device, each named for its own, never take each
+    other's device.
+  - The link has no pairing or encryption. So anyone in range can connect to a
     device and send it messages, and a device that takes the name hears the
     host's. Send nothing over it you wouldn't show on the screen; `dbg.*`
     messages are refused over Bluetooth (§7).

@@ -1,6 +1,7 @@
 """The simulator's server and its USB socket (web/serve.py): a second copy
-leaves the first's socket alone, a stale socket is replaced, and a server
-stopped by a signal takes its socket with it. Each test runs its own servers
+leaves the first's socket alone, a stale socket is replaced, a server
+stopped by a signal takes its socket with it, and with --cable each board
+has a socket of its own. Each test runs its own servers
 on a free port and a socket of its own, never the everyday ones."""
 from __future__ import annotations
 
@@ -60,8 +61,8 @@ class ServeSocket(unittest.TestCase):
                 os.unlink(path)
         os.rmdir(self.dir)
 
-    def start(self, port: int) -> subprocess.Popen:
-        proc = subprocess.Popen([sys.executable, str(SERVE), "--port", str(port), "--socket", self.socket,
+    def start(self, port: int, *usb: str) -> subprocess.Popen:
+        proc = subprocess.Popen([sys.executable, str(SERVE), "--port", str(port), *(usb or ("--socket", self.socket)),
                                  "--dist", self.dist, "--voice", os.devnull],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.procs.append(proc)
@@ -131,6 +132,38 @@ class ServeSocket(unittest.TestCase):
             self.assertTrue(answers(self.socket))
         finally:
             newer.close()
+
+    def test_each_cable_has_its_own_socket_and_takes_it_away(self) -> None:
+        left, right = os.path.join(self.dir, "l.sock"), os.path.join(self.dir, "r.sock")
+        proc = self.start(free_port(), "--cable", f"left={left}", "--cable", f"right={right}")
+        self.assertIn("?boards=left,right", proc.stdout.readline().decode())
+        self.assertIn(left, proc.stdout.readline().decode())
+        self.assertIn(right, proc.stdout.readline().decode())
+        self.assertTrue(answers(left) and answers(right))
+        self.assertFalse(os.path.lexists(self.socket), "no default cable beside them")
+        proc.send_signal(signal.SIGTERM)
+        self.assertEqual(proc.wait(timeout=10), 0)
+        self.assertFalse(os.path.lexists(left) or os.path.lexists(right))
+
+    def test_a_cable_whose_socket_is_live_stops_it_and_leaves_no_other(self) -> None:
+        first = self.running(free_port())
+        mine = os.path.join(self.dir, "m.sock")
+        proc = self.start(free_port(), "--cable", f"mine={mine}", "--cable", f"theirs={self.socket}")
+        self.assertEqual(proc.wait(timeout=10), 1)
+        self.assertIn("is a simulator already running?", proc.stderr.read().decode())
+        self.assertFalse(os.path.lexists(mine), "the socket it made first is gone again")
+        self.assertIsNone(first.poll())
+        self.assertTrue(answers(self.socket))
+
+    def test_a_cable_needs_a_name_and_a_socket_of_its_own(self) -> None:
+        other = os.path.join(self.dir, "o.sock")
+        for cables in (["Left=" + other], ["left"], ["left=" + other, "left=" + self.socket],
+                       ["left=" + other, "right=" + other], ["a/b=" + other]):
+            with self.subTest(cables=cables):
+                proc = self.start(free_port(), *[arg for c in cables for arg in ("--cable", c)])
+                self.assertEqual(proc.wait(timeout=10), 2)
+                self.assertIn("--cable", proc.stderr.read().decode())
+                self.assertFalse(os.path.lexists(other))
 
 
 if __name__ == "__main__":

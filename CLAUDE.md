@@ -71,7 +71,7 @@ make -C internal test                                 # Swift unit tests: Boop's
   XCTest shim's runner and builds the package in one `swift build`, then
   runs `.build/debug/BoopTests`. Then it runs the three packages' own
   tests, which use Swift Testing, as
-  `swift test --scratch-path .build/tests` in `agent-hooks/`,
+  `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`,
   `mellowharness/` and `linkkit/` in turn, retrying the "TestingMacros"
   toolchain flake ([internal/VERIFICATION.md](internal/VERIFICATION.md) §2). LinkKit's device library has no
   Swift: its own tests (`linkkit/device/test/`) run after the firmware's
@@ -234,6 +234,7 @@ keep their names.
 | speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack |
 | needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
+| buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
 | personality, nature | The pack's personality file, and the person's sweet or cheeky choice laid over it (characters/CHARACTER.md §7) | |
 
 ## Architecture rules

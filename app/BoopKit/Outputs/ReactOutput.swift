@@ -15,6 +15,12 @@ import MellowHarness
 public final class ReactOutput: Output {
     public static let outputName = "react"
     public let name = ReactOutput.outputName
+    /// Whose reactions: its character, and the buddy's voice when there
+    /// are several.
+    let pack: CharacterPack
+    public let voice: String?
+    /// Its questions, built once: none of them changes.
+    let asked: [Question]
     /// Sends a brain reaction, which waits in the device's queue behind
     /// whatever is playing, with the handle to end once the device says how
     /// it ended, or once it never will.
@@ -35,8 +41,17 @@ public final class ReactOutput: Output {
     /// Picks each finish's variation, never the last one of its animation.
     var variants = SplitMix64(seed: 0xB00B)
     var lastVariant: [String: Int] = [:]
+    /// With a `voice`, a buddy's: its picks are its own, so two buddies
+    /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
-                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true }) {
+                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true },
+                pack: CharacterPack = .active, voice: String? = nil) {
+        let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
+        takes = SplitMix64(seed: 0x7A4E ^ seed)
+        variants = SplitMix64(seed: 0xB00B ^ seed)
+        self.pack = pack
+        self.voice = voice
+        asked = Self.asked(in: pack)
         self.queue = queue
         self.blocked = blocked
         self.who = who
@@ -56,19 +71,21 @@ public final class ReactOutput: Output {
     /// How Boop can feel about NOW, in the order `say.feeling` offers them.
     /// Every feeling take has one, and every face has
     /// takes of each: tests check both, so all are offered.
-    public static let feelings = [
-        Option("upset", "Something went wrong or let \(CharacterPack.active.name) down: a check or a turn failing, the agent stuck or giving up, rude words or sad news.",
+    public static var feelings: [Option] { feelings(of: CharacterPack.active.name) }
+    static func feelings(of name: String) -> [Option] { [
+        Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, rude words or sad news.",
                notFor: "A win, a poke, or work going on, however long."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, thanks or kind words.",
                notFor: "A failure, or work still going on."),
-        Option("tickled", "Poked or teased: a poke, a tap, or playful words to \(CharacterPack.active.name).",
+        Option("tickled", "Poked or teased: a poke, a tap, or playful words to \(name).",
                notFor: "A failure, or the agent's work."),
-    ]
+    ] }
 
     /// What NOW can be about, in the order `say.about` offers them:
     /// each a topic NOW's line shows. Every topic take
     /// has one, and every face has takes of each, as for `feelings`.
-    public static let topics = [
+    public static var topics: [Option] { topics(of: CharacterPack.active.name) }
+    static func topics(of name: String) -> [Option] { [
         Option("start", "A turn starting: off it goes.", notFor: "Work going on, or a turn that finished."),
         Option("helpers", "The agent starting a subagent: helpers sent off."),
         Option("helper back", "A subagent finishing: a helper back with its report."),
@@ -85,37 +102,39 @@ public final class ReactOutput: Output {
         Option("stopped", "A turn stopped: interrupted, or the agent giving up.", notFor: "A turn that finished done."),
         Option("waiting", "Waiting: a long command, or the agent waiting on something slow.",
                notFor: "Something that needs the person: the ding says that."),
-        Option("quiet", "Nothing going on: a quiet check-in, or words to \(CharacterPack.active.name) about nothing in particular."),
+        Option("quiet", "Nothing going on: a quiet check-in, or words to \(name) about nothing in particular."),
         Option("hello", "The person back at the Mac after a break: a hello.",
-               notFor: "Anything else: a poke, words to \(CharacterPack.active.name), a turn starting."),
-    ]
+               notFor: "Anything else: a poke, words to \(name), a turn starting."),
+    ] }
 
     /// How big what it says is, plainest first:
     /// with none of the kind asked for, Voice takes the nearest one, but
     /// never a swear unless one was asked for.
-    public static let kinds = [
+    public static var kinds: [Option] { kinds(of: CharacterPack.active.name) }
+    static func kinds(of name: String) -> [Option] { [
         Option("sound", "A noise with no word: a huff, a grunt, a gasp. The usual."),
         Option("word", "One word that names the moment.", notFor: "A routine check-in."),
         Option("phrase", "A little catchphrase, for a moment worth remembering, now and then.",
                notFor: "Routine work, or a small win or failure."),
         Option("swear", "A swear, at a failure that really stings.",
-               notFor: "A win, a poke, words to \(CharacterPack.active.name), or anything about the person."),
-    ]
+               notFor: "A win, a poke, words to \(name), or anything about the person."),
+    ] }
 
     /// The animations a reaction can play in its face: a
     /// turn's finish, judged from what NOW says, or a wake-up when you come
     /// back from a long break. No rule plays either, so the brain judges
     /// each one.
-    public static let animations = [
+    public static var animations: [Option] { animations(of: CharacterPack.active.name) }
+    static func animations(of name: String) -> [Option] { [
         Option("success", "NOW's line says a turn finished, done, and its last message, if any, says the work is done and working.",
                notFor: "A check that passed while the turn goes on, a turn that finished failed, a message saying it couldn't finish or something is broken, or only an answer or a question back."),
         Option("failure", "NOW's line says a turn finished, failed; or finished done, but its last message says the agent couldn't finish or something is broken.",
                notFor: "A check that failed while the turn goes on, or a turn done whose message says the work is working."),
         Option("reply", "NOW's line says a turn finished, done, and its last message only answers something or asks something back, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
-        Option("wake up", "NOW's line says you came back to the Mac after a long or very long break: \(CharacterPack.active.name) stretches, yawns and wakes up for you.",
-               notFor: "A short break, a turn, a poke, or words to \(CharacterPack.active.name)."),
-    ]
+        Option("wake up", "NOW's line says you came back to the Mac after a long or very long break: \(name) stretches, yawns and wakes up for you.",
+               notFor: "A short break, a turn, a poke, or words to \(name)."),
+    ] }
 
     /// The animation `react.animation` picked, or nil for none, a missing
     /// answer or one the device doesn't play.
@@ -179,42 +198,45 @@ public final class ReactOutput: Output {
         answers["say.kind"].flatMap { Take.Kind(rawValue: $0.choice) } ?? .sound
     }
 
-    public func questions(now: Event?, log: LogView) -> [Question] { Self.asked }
+    public func questions(now: Event?, log: LogView) -> [Question] { asked }
 
     /// The questions asked: a character pack with no voice is never asked
     /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
-    static let asked: [Question] = Take.all.isEmpty ? questions.filter { !$0.key.hasPrefix("say.") } : questions
+    static func asked(in pack: CharacterPack) -> [Question] {
+        Take.all(in: pack).isEmpty ? questions(in: pack).filter { !$0.key.hasPrefix("say.") } : questions(in: pack)
+    }
 
-    /// Every question, built once: none of them changes.
-    static let questions: [Question] = {
+    /// Every question, for `pack`'s character.
+    static func questions(in pack: CharacterPack = .active) -> [Question] {
+        let name = pack.name
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
         return [
-            Question(key: "react.mood", text: "How should \(CharacterPack.active.name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
+            Question(key: "react.mood", text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
-                                          + "or HISTORY shows \(CharacterPack.active.name) still making the one it calls for (in progress).",
-                                      notFor: "Anything PERSONALITY's Examples react to that \(CharacterPack.active.name) isn't already doing.")]
-                         + ReactOutput.expressions),
-            Question(key: "react.animation", text: "If \(CharacterPack.active.name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, or you back after a long break?",
+                                          + "or HISTORY shows \(name) still making the one it calls for (in progress).",
+                                      notFor: "Anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
+                         + pack.faces),
+            Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, or you back after a long break?",
                      about: "the NOW section", judgeBy: "NOW's line and the agent's last message under it",
-                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, or you back after a long break. A turn starting, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(CharacterPack.active.name), a short break and a stopped turn all get none.")]
-                         + ReactOutput.animations),
-            Question(key: "react.loops", text: "If \(CharacterPack.active.name) reacts, how long does it hold the face?", about: "the NOW section",
+                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, or you back after a long break. A turn starting, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(name), a short break and a stopped turn all get none.")]
+                         + ReactOutput.animations(of: name)),
+            Question(key: "react.loops", text: "If \(name) reacts, how long does it hold the face?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactOutput.holds),
-            Question(key: "say.feeling", text: "If \(CharacterPack.active.name) reacts, how does it feel about NOW? It says so first, in its face's mood.",
+            Question(key: "say.feeling", text: "If \(name) reacts, how does it feel about NOW? It says so first, in its face's mood.",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactOutput.feelings),
-            Question(key: "say.about", text: "If \(CharacterPack.active.name) reacts, what is NOW about? It names it after the feeling, in its face's mood.",
+                     options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactOutput.feelings(of: name)),
+            Question(key: "say.about", text: "If \(name) reacts, what is NOW about? It names it after the feeling, in its face's mood.",
                      about: "the NOW section", judgeBy: "NOW's line",
-                     options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactOutput.topics),
-            Question(key: "say.kind", text: "If \(CharacterPack.active.name) says something, how big is it?", about: "the NOW section",
-                     judgeBy: byBoth, options: ReactOutput.kinds),
+                     options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactOutput.topics(of: name)),
+            Question(key: "say.kind", text: "If \(name) says something, how big is it?", about: "the NOW section",
+                     judgeBy: byBoth, options: ReactOutput.kinds(of: name)),
         ]
-    }()
+    }
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
         // 1. Does Jev want a reaction at all, and with which face?
-        guard let choice = answers["react.mood"]?.choice, Self.expressions.contains(where: { $0.name == choice }) else {
+        guard let choice = answers["react.mood"]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
             return nil
         }
         // 2. This output's own rules.
@@ -225,7 +247,7 @@ public final class ReactOutput: Output {
         let loops = Self.loops(answers)
         let pick = Self.animation(answers)
         let said = !speaks() ? [] : Voice.say(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
-                                               face: choice, finish: pick, avoiding: lastWords, rng: &takes)
+                                               face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes)
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)
         var reaction = DeviceReaction(say: say, mood: choice, loops: loops)
@@ -234,7 +256,7 @@ public final class ReactOutput: Output {
             // Its scene, a variation of it for a finish's outcome in the
             // face's design (never the last one), and the thread NOW is
             // about, if any: a turn's finish names whose turn it was.
-            let variant = Core.pickVariant(mood: choice, state: anim, outcome: outcome, avoiding: lastVariant[anim], &variants)
+            let variant = Core.pickVariant(mood: choice, state: anim, outcome: outcome, avoiding: lastVariant[anim], in: pack, &variants)
             lastVariant[anim] = variant
             reaction.anim = anim
             reaction.outcome = outcome
@@ -245,8 +267,8 @@ public final class ReactOutput: Output {
         queue(reaction, pending)
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
-        let did = pick.map { "\(CharacterPack.active.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
-            ?? "\(CharacterPack.active.name) made \(Self.article(choice)) \(choice) face"
+        let did = pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
+            ?? "\(pack.name) made \(Self.article(choice)) \(choice) face"
         // The takes' ids in order, for the tools to say what it said.
         return .started(did + ", held \(Self.holds[loops - 1].name)" + (say.text.map { ", and said \"\($0)\"." } ?? "."), pending,
                         facts: ["takes": .array(said.map { .string($0.id) })])

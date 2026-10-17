@@ -20,8 +20,9 @@ extension Runtime {
         debugWriter?.pass(pass, launchOptions: launchOptions, at: now)
         // Push-to-talk's reply: a reaction is one, and a pass on what you
         // said without one means none is coming.
-        run(core.passed(about: pass.event?.seq,
-                        reacted: pass.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }, at: now))
+        let rig = rig(pass.voice)
+        let reaction = pass.outputs.first { $0.name == ReactOutput.outputName && $0.result.ok }
+        run(core(rig).passed(about: pass.event?.seq, reacted: reaction != nil, at: now), on: rig)
         changed()
     }
 

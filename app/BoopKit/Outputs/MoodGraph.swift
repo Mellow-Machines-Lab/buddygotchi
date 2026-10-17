@@ -21,7 +21,7 @@ public enum MoodGraph {
     }
 
     /// One mood as the pack has it, or nil for a word that isn't a mood.
-    public static func mood(_ id: String) -> CharacterPack.Mood? { CharacterPack.active.byId[id] }
+    public static func mood(_ id: String, in pack: CharacterPack = .active) -> CharacterPack.Mood? { pack.byId[id] }
 
     /// Each mood's moves.
     public static var moves: [String: Moves] { CharacterPack.active.byId.mapValues(\.moves) }

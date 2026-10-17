@@ -24,9 +24,10 @@ const WORKING = { t: 'state', base: 'working', mood: 'calm', busy: 1, vol: 6 };
 const QUIET = { ...WORKING, base: 'idle', busy: 0 };  // a face that makes no sound of its own
 const GO = { t: 'do', id: 1, name: 'react', play: 'now', args: { say: { take: 'previous.go' } } };
 
-/// The core, with what the page's script does around it.
-async function board(face = 'pixel', env = {}) {
-  const { default: make } = await import(path.join(dist, 'boop-sim.js'));
+/// The core, with what the page's script does around it. `build` is a
+/// build in dist/: the staged pack's, or one pack's (build.sh PACK).
+async function board(face = 'pixel', env = {}, build = 'boop-sim.js') {
+  const { default: make } = await import(path.join(dist, build));
   const core = await make();
   const setenv = core.cwrap('sim_env', null, ['string', 'string']);
   const usb = core.cwrap('sim_usb', null, ['string']);
@@ -98,6 +99,21 @@ test('a native face fills the panel it is given', { skip }, async () => {
   small.send(WORKING);
   await small.run(300);
   assert.deepEqual([...new Set(small.frames.map(String))], ['400,300']);
+});
+
+// Boards side by side (the page's ?boards=…) each say their own id, and a
+// board built for one pack (build.sh PACK) says that pack, beside the staged one.
+test('boards side by side differ: each its own id, and its own pack', { skip }, async () => {
+  const left = await board('pixel', { BOOP_SIM_ID: 'b00p-left' }), right = await board('pixel', { BOOP_SIM_ID: 'b00p-right' });
+  const [l, r] = [await left.request({ t: 'hello' }), await right.request({ t: 'hello' })];
+  assert.deepEqual([l.id, r.id], ['b00p-left', 'b00p-right']);
+  assert.equal((await (await board()).request({ t: 'hello' })).id, 'b00p-0000', 'the id with none given');
+  if (!existsSync(path.join(dist, 'boop-sim-pixel.js'))) return;  // only the staged pack is built
+  const pixel = await board('gel', {}, 'boop-sim-pixel.js');
+  const hello = await pixel.request({ t: 'hello' });
+  assert.deepEqual([hello.pack, hello.face], ['pixel', 'pixel'], "Pixel's build, which has only the pixel face");
+  const { Board } = await import(path.join(dist, 'boop-simulator.js'));
+  await assert.rejects(Board.make({ pack: '../x' }), /no pack called/);
 });
 
 test('a touch is a tap however soon it lifts, and power-on is a new boot', { skip }, async () => {
@@ -218,6 +234,42 @@ test('the cable never waits on a client, and drops a line too long for the board
   page.close();
   tool.destroy();
   stuck.destroy();
+});
+
+// serve.py --cable NAME=SOCKET, once for each board: each page's cable at
+// /usb/NAME leads to its own socket and no other's, and there's no /usb.
+test('several cables, each its own board and socket', { skip }, async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
+  const sockets = { left: path.join(dir, 'l.sock'), right: path.join(dir, 'r.sock') };
+  const port = 19206 + Math.floor(Math.random() * 1000);
+  const server = spawn('python3', [path.join(repo, 'simulator/web/serve.py'), '--port', String(port), '--dist', dist,
+    ...Object.entries(sockets).flatMap(([name, socket]) => ['--cable', `${name}=${socket}`])]);
+  t.after(() => server.kill());
+  for (let i = 0; i < 100 && !Object.values(sockets).every(existsSync); i++) await sleep(50);
+  const ends = {};
+  for (const [name, socket] of Object.entries(sockets)) {
+    const page = new WebSocket(`ws://127.0.0.1:${port}/usb/${name}`);
+    await new Promise((ok, no) => { page.onopen = ok; page.onerror = no; });
+    const tool = net.connect(socket);
+    await new Promise(ok => tool.on('connect', ok));
+    const end = ends[name] = { page, tool, heardByPage: [], heardByTool: [] };
+    page.onmessage = e => end.heardByPage.push(String(e.data));
+    tool.on('data', d => end.heardByTool.push(...String(d).split('\n').filter(Boolean)));
+  }
+  await sleep(100);
+  for (const name of Object.keys(sockets)) {
+    ends[name].tool.write(`{"t":"to ${name}"}\n`);
+    ends[name].page.send(`{"t":"from ${name}"}`);
+  }
+  for (let i = 0; i < 100 && !Object.values(ends).every(e => e.heardByPage.length && e.heardByTool.length); i++) await sleep(50);
+  await sleep(100);
+  for (const name of Object.keys(sockets)) {
+    assert.deepEqual(ends[name].heardByPage, [`{"t":"to ${name}"}`]);
+    assert.deepEqual(ends[name].heardByTool, [`{"t":"from ${name}"}`]);
+  }
+  const plain = new WebSocket(`ws://127.0.0.1:${port}/usb`);
+  assert.equal(await new Promise(ok => { plain.onopen = () => ok('open'); plain.onerror = () => ok('refused'); }), 'refused');
+  for (const end of Object.values(ends)) { end.page.close(); end.tool.destroy(); }
 });
 
 test('a recording plays into the board in order, and knows nothing of what its lines mean', { skip }, async () => {

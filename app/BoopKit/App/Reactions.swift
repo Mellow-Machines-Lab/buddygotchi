@@ -18,7 +18,7 @@ import LinkKit
 public final class Reactions {
     /// How a reaction your tap cut short reads while the pokes go on, in
     /// the logs: the eval's steps say it so (EVALS.md §1).
-    public static let tapCut = "cut short: you tapped \(CharacterPack.active.name)"
+    public static var tapCut: String { "cut short: you tapped \(CharacterPack.active.name)" }
 
     /// The handles of reactions your tap cut short: in progress while the
     /// pokes go on, so the pokes after it don't get it again, and done

@@ -74,6 +74,34 @@ while it's busy").
 A key that a step doesn't take, or a value of the wrong type, stops the
 demo with its line number. So does a brain answer the pack can't play.
 
+**Two buddies or more.** A header with `buddies` plays on several
+buddies side by side, each a board with its own pack, and each step
+with `"buddy": PLACE` is that buddy's: its agent's step, a poke on its
+board, talk to it alone, or its brain's answers. A step with no `buddy`
+is the first's, and talk with none goes to them all. Each buddy is
+written as `settings.json`'s `buddies` are: its `place`, its `pack`,
+its `agents` (the first is whose hooks its steps are, `claude` by
+default, in a session of its own) and maybe its `name`. Boop's
+`not-my-turn.jsonl` is one:
+
+```json
+{"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
+{"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
+{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
+```
+
+Play it headless on two simulated boards, each on its own cable
+([simulator/README.md](../simulator/README.md)):
+
+```sh
+python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
+# open http://127.0.0.1:8206/?boards=left,right&packs=pixel,boop
+.build/debug/Boop --headless --state-dir /tmp/two --demo pack:not-my-turn \
+    --links usb:/tmp/boop-sim-left.sock,usb:/tmp/boop-sim-right.sock
+```
+
+A live agent plays only a script of one buddy.
+
 ## The brain's answers
 
 A demo has no real brain. The creature does only what the rules do

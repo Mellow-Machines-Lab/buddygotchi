@@ -10,10 +10,10 @@ import Foundation
 /// pack.
 public enum FaceLoops {
     /// The moods the pixel designs draw, in faces.h's order.
-    public static var moods: [String] { table.moods }
+    public static var moods: [String] { table().moods }
 
     /// The designs' states, in the device's order (`render::SceneState`).
-    public static var states: [String] { table.states }
+    public static var states: [String] { table().states }
 
     /// One design: its loop length, its voice window's start (a `say`
     /// that comes with its animation starts no sooner), and the host fact
@@ -28,7 +28,7 @@ public enum FaceLoops {
 
     /// By mood, each state's designs in `states`' order, one a variation:
     /// a mood and state's variations are numbered from 1.
-    public static var designs: [String: [[Design]]] { table.designs }
+    public static var designs: [String: [[Design]]] { table().designs }
 
     private struct Table: Sendable {
         var moods: [String] = []
@@ -36,10 +36,14 @@ public enum FaceLoops {
         var designs: [String: [[Design]]] = [:]
     }
 
-    /// The face's table, read the first time it's used; empty for a pack
-    /// with no pixel face.
-    private static let table: Table = {
-        guard let data = try? Data(contentsOf: CharacterPack.active.directory.appendingPathComponent("mac/faces.json")),
+    /// A pack's face table, each read the first time it's used; empty for
+    /// a pack with no pixel face.
+    private static func table(_ pack: CharacterPack = .active) -> Table { tables.get(pack.directory, read) }
+
+    private static let tables = PackCache<Table>()
+
+    private static func read(_ directory: URL) -> Table {
+        guard let data = try? Data(contentsOf: directory.appendingPathComponent("mac/faces.json")),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return Table() }
         var t = Table()
         t.moods = json["moods"] as? [String] ?? []
@@ -53,28 +57,30 @@ public enum FaceLoops {
             }
         }
         return t
-    }()
+    }
 
     /// `mood`'s designs for `state`, as the device reads them: the first
     /// mood's (happy's) for a mood it doesn't know, idle's for a state it
     /// doesn't; one empty design for a pack with no pixel face.
-    static func row(mood: String, state: String) -> [Design] {
-        guard let first = moods.first, let row = designs[mood] ?? designs[first], !row.isEmpty else {
+    static func row(mood: String, state: String, in pack: CharacterPack = .active) -> [Design] {
+        let t = table(pack)
+        guard let first = t.moods.first, let row = t.designs[mood] ?? t.designs[first], !row.isEmpty else {
             return [Design(ms: 0, voiceMs: 0, outcome: nil, ctx: nil)]
         }
-        let designs = row[states.firstIndex(of: state) ?? 0]
+        let designs = row[t.states.firstIndex(of: state) ?? 0]
         return designs.isEmpty ? [Design(ms: 0, voiceMs: 0, outcome: nil, ctx: nil)] : designs
     }
 
     /// How many variations `mood` has for `state`.
-    public static func count(mood: String, state: String) -> Int {
-        row(mood: mood, state: state).count
+    public static func count(mood: String, state: String, in pack: CharacterPack = .active) -> Int {
+        row(mood: mood, state: state, in: pack).count
     }
 
     /// The variations (from 1) of `mood`'s `state` for an outcome and a
     /// context, nil matching any; all of them when none match.
-    public static func variants(mood: String, state: String, outcome: String? = nil, ctx: String? = nil) -> [Int] {
-        let row = row(mood: mood, state: state)
+    public static func variants(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
+                                in pack: CharacterPack = .active) -> [Int] {
+        let row = row(mood: mood, state: state, in: pack)
         let fit = row.indices.filter { i in
             (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx)
         }.map { $0 + 1 }

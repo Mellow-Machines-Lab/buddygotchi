@@ -33,6 +33,9 @@ extension Event {
         /// with the reply still to come (`wait`), and listening over
         /// (`end`). The core's, and log-only: no line, no wake.
         case listen
+        /// One buddy's reaction, which the other buddies hear: only with
+        /// several (`Buddy`).
+        case reacted
     }
 
     /// Where in its life a thing with a start and an end is: a tool call
@@ -42,12 +45,14 @@ extension Event {
     }
 
     /// The `data` keys Boop's own fields take.
-    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd"]
+    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd", "voice"]
 
     public init(seq: Int = 0, at: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
-                session: String? = nil, subagent: String? = nil, cwd: String? = nil, data: [String: JSONValue] = [:]) {
+                session: String? = nil, subagent: String? = nil, cwd: String? = nil, buddy: String? = nil,
+                data: [String: JSONValue] = [:]) {
         var data = data
         data["specific_type"] = .string(specificType)
+        if let buddy { data["voice"] = .string(buddy) }
         if let session { data["session"] = .string(session) }
         if let subagent { data["subagent"] = .string(subagent) }
         if let cwd { data["cwd"] = .string(cwd) }
@@ -80,6 +85,9 @@ extension Event {
     /// The Claude subagent it came from, by `agent_id`.
     public var subagent: String? { data["subagent"]?.string }
     public var cwd: String? { data["cwd"]?.string }
+    /// With several buddies, the one it's about (`Buddy`): its voice, in
+    /// MellowHarness's word, the key its own `did`s and passes take too.
+    public var buddy: String? { data["voice"]?.string }
 
     /// The agent it came from, for an agent's event.
     public var agent: Agent? { Agent(rawValue: source) }
