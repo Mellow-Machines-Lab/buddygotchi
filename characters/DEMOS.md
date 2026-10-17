@@ -48,6 +48,7 @@ creature's brain.
 | `{"agent": "edit"}` | The agent edits a file | `file`, `old`, `new` |
 | `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds) |
 | `{"agent": "review"}` | The agent sends a subagent | `task`, `prompt` |
+| `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text` |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
@@ -57,6 +58,17 @@ creature's brain.
 
 On any agent step, `say` is what the agent says before it acts, and
 `"by": "reviewer"` makes it the subagent's step.
+
+**A compact** comes in the middle of a turn, after the prompt and before
+the reply, with more of the agent's steps after it. It needs its
+`summary` and has no `say`: the context is full before the model can
+speak, so put the words on the step after it. Every agent says the same
+when it has compacted, and the rules show it: the creature shows its
+compacted card, and a reaction after it waits on the board until the card
+has played. With no agent, Boop sends that hook. A replayed Claude Code or
+Codex compacts for real, and its model writes the `summary`. The desktop
+app can't play a compact, since its real model can't be made to fill its
+context on cue.
 
 A back is the away and the back at once, as the Mac would record them
 after that long: being away shows nothing on the board, and the Mac's own

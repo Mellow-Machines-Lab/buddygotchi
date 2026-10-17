@@ -82,6 +82,38 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problem(#"{"mood": "calm", "say": "hi"}"#).contains("a brain step has no key say"))
     }
 
+    /// A compact is the agent's context filling up mid-turn: its summary
+    /// is optional, it takes 2 s when the script doesn't say, and it comes
+    /// after the prompt, before the reply, with more of the turn after it.
+    /// The model says nothing at the wall, and only the main thread has one.
+    func testACompactIsTheContextFillingUpInATurn() throws {
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go"}
+            {"agent": "compact", "summary": "The tax is in; the tests are next.", "note": "The wall"}
+            {"agent": "compact", "summary": "Where it was."}
+            {"agent": "run", "cmd": "npm test"}
+            {"agent": "reply", "text": "Done."}
+            """)
+        guard case .agent(let wall) = script.steps[1].what else { XCTFail("an agent step"); return }
+        XCTAssertEqual(wall.does, .compact)
+        XCTAssertEqual(wall.summary, "The tax is in; the tests are next.")
+        XCTAssertEqual([script.steps[2].after, script.steps[2].takes], [1, 2])
+        func problem(_ text: String) -> String {
+            do {
+                _ = try DemoScript(text, named: "demo.jsonl")
+                return "no problem"
+            } catch {
+                return "\(error)"
+            }
+        }
+        let prompt = #"{"agent": "prompt", "text": "Go"}"#, reply = #"{"agent": "reply", "text": "Done."}"#
+        let compact = #""agent": "compact", "summary": "Where it was.""#
+        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\"}\n\(reply)").contains("demo.jsonl:2: a compact needs the summary"))
+        XCTAssertTrue(problem("\(prompt)\n{\(compact), \"say\": \"Full!\"}\n\(reply)").contains("a compact says nothing"))
+        XCTAssertTrue(problem("\(prompt)\n{\(compact), \"by\": \"reviewer\"}\n\(reply)").contains("a compact is the main thread's"))
+        XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\", \"summary\": 3}\n\(reply)").contains("summary is a string"))
+    }
+
     /// A mood alone is the brain's step: `{"mood": "proud"}`.
     func testAMoodAloneIsTheBrainsLine() throws {
         XCTAssertEqual(try DemoScript(#"{"mood": "proud"}"#).steps[0].what, .brain([:], mood: "proud"))
@@ -103,6 +135,8 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm run setup", "about": "Install the runner", "ask": 3}"#),
                            .init(kind: "needs_you", text: "Claude asks to install the runner, and you allow it"))
         try XCTAssertEqual(cause(#"{"agent": "review", "task": "Review the diff"}"#), .init(kind: "tool", text: "Claude sends a reviewer: Review the diff"))
+        try XCTAssertEqual(DemoScript("{\"agent\": \"prompt\", \"text\": \"Go\"}\n{\"agent\": \"compact\", \"summary\": \"S\"}\n{\"agent\": \"reply\", \"text\": \"Done.\"}")
+            .steps[1].cause(creature: "Pip", agent: "codex"), .init(kind: "compact", text: "Codex's context is full: it compacts the conversation"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "ok", "by": "reviewer"}"#), .init(kind: "tool", text: "The reviewer reports back"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "Done."}"#), .init(kind: "done", text: "Claude finishes"))
         try XCTAssertNil(cause(#"{"brain": {"react.mood": "happy"}}"#), "the brain's answers show in what the creature does")
@@ -151,11 +185,13 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":5,"name":"error"}"#,
             #"{"t":"do","id":6,"name":"listening"}"#,
             #"{"t":"do","id":7,"name":"starting"}"#,
-            #"{"t":"do","id":8,"name":"wake_up","args":{"mood":"happy"}}"#,
+            #"{"t":"do","id":8,"name":"starting","args":{"ctx":"compacted"}}"#,
+            #"{"t":"do","id":9,"name":"wake_up","args":{"mood":"happy"}}"#,
         ] { recorder.sent(message) }
         XCTAssertEqual(recorder.recording(character: "pixel", face: "pixel").events.map(\.effect), [
             nil, nil, "Pip makes an excited face and says “Go”", "Pip makes a curious face",
             "Pip shows that it needs you", "Pip's mood is now proud", "Pip celebrates", "Pip slumps", "Pip winces", "Pip listens", nil,
+            "Pip shows that the context was compacted",
             "Pip stretches and yawns",
         ])
     }

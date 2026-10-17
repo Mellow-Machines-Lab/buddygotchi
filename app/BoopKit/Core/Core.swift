@@ -461,13 +461,16 @@ public final class Core {
         return snapshot
     }
 
+    /// starting's `ctx` for a session whose context was compacted.
+    static let compacted = "compacted"
+
     /// What a session's start is, from its `source`, as starting's `ctx`:
     /// `session` for a fresh one (started or cleared, or no source),
     /// `continuation` for one resumed, where the work goes on, and
     /// `compacted` for one whose context was compacted.
     static func startCtx(source: String?) -> String {
         switch source {
-        case Mapping.compacted: "compacted"
+        case Mapping.compacted: compacted
         case "resume": "continuation"
         default: "session"
         }

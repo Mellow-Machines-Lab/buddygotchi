@@ -1774,6 +1774,24 @@ static void test_a_rules_reaction_never_cuts_a_say() {
   TEST_ASSERT_TRUE(has(st, "\"audio\":{\"playing\":true,\"take\":\"previous.go\""));
 }
 
+// The compacted start holds, as a finish does, until its card has played:
+// the brain's next reaction waits in the queue, then plays. Any other start
+// rests at once (above).
+static void test_the_compacted_card_holds_until_it_has_played() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\"}");
+  clockAt(r, 100);
+  doLine(r, 1, "starting", "if_free", "{\"ctx\":\"compacted\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":1,\"name\":\"starting\",\"resting\":false}"));
+  doLine(r, 2, "react", "next", "{\"mood\":\"confused\"}");
+  TEST_ASSERT_FALSE(has(r.usb.text, endedLine(1, "done")));
+  uint32_t t = 100;
+  while (!has(r.usb.text, endedLine(1, "done")) && t < 10000) clockAt(r, t += 50);
+  TEST_ASSERT_TRUE_MESSAGE(t > 1000, "the card plays out before it ends");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":2,\"name\":\"react\""));
+}
+
 // Why a reaction is skipped: something needs you, no app,
 // listening holds the face (a reply excepted), stop_listening with
 // nothing to stop, or nothing of it that would play.
@@ -2090,6 +2108,7 @@ int main() {
   RUN_TEST(test_the_next_reaction_waits_half_a_second_after_a_bubble);
   RUN_TEST(test_a_finish_plays_until_it_ends);
   RUN_TEST(test_a_rules_reaction_never_cuts_a_say);
+  RUN_TEST(test_the_compacted_card_holds_until_it_has_played);
   RUN_TEST(test_refused_reactions_say_why);
   RUN_TEST(test_the_mic_drops_the_reactions_waiting);
   RUN_TEST(test_a_tools_press_drops_only_usbs_waiting_reactions);

@@ -116,6 +116,7 @@ public final class DemoRecorder: @unchecked Sendable {
             case "reply_ready": return "\(name) perks up\(says)"
             case "wake_up": return "\(name) stretches and yawns\(says)"
             case "error": return "\(name) winces"
+            case Core.starting where args["ctx"] as? String == Core.compacted: return "\(name) shows that the context was compacted"
             case BoopDevice.listening: return "\(name) listens"
             default: return nil
             }

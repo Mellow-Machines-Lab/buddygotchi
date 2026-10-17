@@ -65,6 +65,7 @@ class Terminal:
 
     @staticmethod
     def size() -> tuple:
+        """The agent's screen: this terminal's, else 40 × 120."""
         try:
             rows, cols, _, _ = struct.unpack("HHHH", fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, b"\0" * 8))
             if rows and cols:

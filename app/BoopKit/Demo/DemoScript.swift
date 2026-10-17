@@ -24,7 +24,9 @@ import Foundation
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
 ///   `old` and `new`), `run` (a `cmd`, what it's `about`, whether it
 ///   `fails`, and `ask`: the agent asks you first, and you allow it after
-///   that many seconds), `review` (a subagent, its `task` and `prompt`), and
+///   that many seconds), `review` (a subagent, its `task` and `prompt`),
+///   `compact` (its context is full mid-turn, and it compacts the
+///   conversation and goes on; the `summary` its model writes), and
 ///   `reply` (`text` that ends the turn). `say` is what the agent says
 ///   before it acts. `"by": "reviewer"` is the subagent's own.
 /// - `you` steps are what the person does: `poke`, `talk` (the button
@@ -59,7 +61,7 @@ public struct DemoScript: Sendable {
         /// An `agent` step.
         public struct Agent: Sendable, Equatable {
             public enum Does: String, Sendable, CaseIterable {
-                case prompt, read, edit, run, review, reply
+                case prompt, read, edit, run, review, compact, reply
             }
 
             public var does: Does
@@ -79,6 +81,9 @@ public struct DemoScript: Sendable {
             /// A review's task and prompt.
             public var task: String?
             public var prompt: String?
+            /// A compact's summary: what the agent's model writes of the
+            /// conversation so far, for it to go on from.
+            public var summary: String?
             /// The subagent's step, not the main thread's.
             public var byReviewer = false
         }
@@ -179,7 +184,7 @@ public struct DemoScript: Sendable {
                 a.old = string("old"); a.new = string("new"); a.cmd = string("cmd"); a.about = string("about")
                 a.fails = o["fails"] as? Bool ?? false
                 a.ask = number("ask")
-                a.task = string("task"); a.prompt = string("prompt")
+                a.task = string("task"); a.prompt = string("prompt"); a.summary = string("summary")
                 a.byReviewer = string("by") == "reviewer"
                 switch kind {
                 case .prompt, .reply: if a.text == nil { throw Problem(description: "\(here): a \(does) needs text") }
@@ -188,6 +193,12 @@ public struct DemoScript: Sendable {
                     if a.file == nil || a.old == nil || a.new == nil { throw Problem(description: "\(here): an edit needs a file, old and new") }
                 case .run: if a.cmd == nil { throw Problem(description: "\(here): a run needs a cmd") }
                 case .review: if a.task == nil { throw Problem(description: "\(here): a review needs a task") }
+                case .compact:
+                    if a.summary == nil { throw Problem(description: "\(here): a compact needs the summary its model writes") }
+                    // The model says nothing at the wall: the context is
+                    // full before it can.
+                    if a.say != nil { throw Problem(description: "\(here): a compact says nothing; put the words on the step after it") }
+                    if a.byReviewer { throw Problem(description: "\(here): a compact is the main thread's") }
                 }
                 what = .agent(a)
             } else if let does = string("you") {
@@ -209,7 +220,7 @@ public struct DemoScript: Sendable {
             }
             let defaults: (after: Double, takes: Double) = switch what {
             case .agent(let a) where a.does == .prompt: (1, 0)
-            case .agent(let a) where a.does == .run: (1, 2)
+            case .agent(let a) where a.does == .run || a.does == .compact: (1, 2)
             case .agent: (1, 0.6)
             case .poke, .talk, .back: (0.8, 0)
             case .brain: (0.3, 0)
@@ -228,7 +239,7 @@ public struct DemoScript: Sendable {
     /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
         "demo": ["demo", "title", "agent", "buddies"],
-        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "by", "takes"],
+        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "summary", "by", "takes"],
         "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
@@ -286,6 +297,7 @@ extension DemoScript.Step {
                 found = a.fails ? .init(kind: "tool_failed", text: "\(actor): \(what), and it fails")
                     : .init(kind: a.ask != nil ? "needs_you" : "tool", text: a.ask != nil ? "\(actor) asks to \(what), and you allow it" : "\(actor): \(what)")
             case .review: found = .init(kind: "tool", text: "\(who) sends a reviewer: \(a.task ?? "")")
+            case .compact: found = .init(kind: "compact", text: "\(who)'s context is full: it compacts the conversation")
             case .reply:
                 found = a.byReviewer ? .init(kind: "tool", text: "The reviewer reports back")
                     : .init(kind: "done", text: "\(who) finishes")

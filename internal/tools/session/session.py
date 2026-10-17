@@ -157,6 +157,11 @@ def setup_agent(agent: str, home: Path, ws: Path, base_url: str, s: scripts.Scri
         path = home / ".claude" / "settings.json"
         settings = json.loads(path.read_text())
         settings["permissions"] = permissions(s)
+        # Every demo runs Claude Code's classic renderer (the setting's
+        # "default"; without it Claude Code runs fullscreen), so every clip
+        # looks the same, and a compaction clears the screen to its
+        # "Conversation compacted" line where fullscreen keeps it all.
+        settings["tui"] = "default"
         path.write_text(json.dumps(settings, indent=2))
         (home / ".claude.json").write_text(json.dumps({
             "hasCompletedOnboarding": True, "theme": "dark", "numStartups": 5, "autoUpdates": False,
@@ -169,7 +174,10 @@ def setup_agent(agent: str, home: Path, ws: Path, base_url: str, s: scripts.Scri
     codex = home / ".codex"
     codex.mkdir(parents=True)
     # The settings first: the installer adds its own to the file after them.
+    # Codex compacts its context past model_auto_compact_token_limit: the
+    # replay server's reply before a compact step says it's past.
     (codex / "config.toml").write_text(f'''model = "{CODEX_MODEL}"
+model_auto_compact_token_limit = {model.CODEX_COMPACT_LIMIT}
 model_provider = "replay"
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
@@ -236,6 +244,20 @@ def drive(agent: str, s: scripts.Script, term: Terminal, cursor: Cursor, log: Lo
         term.press(key)
 
 
+def refusal(s: scripts.Script, agent: str, ui: str) -> Optional[str]:
+    """Why a script can't play with this agent here, or None."""
+    does = {l["agent"] for l in s.agent_steps()}
+    if ui == "desktop" and agent != "claude":
+        return "the desktop app runs Claude Code: --ui desktop is for --agent claude"
+    if ui == "desktop" and "compact" in does:
+        # A real model can't be made to fill its context on cue.
+        return (f"{s.name} fills the agent's context, which a real model in the desktop app can't be made to do: "
+                "play it with IN=simulated-claude-terminal")
+    if agent == "codex" and "review" in does:
+        return f"{s.name} sends a reviewer, and Codex has no subagents here: try --agent claude"
+    return None
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     path = scripts.find(args.name)
     s = scripts.load(path)
@@ -243,10 +265,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not source.is_dir():
         sys.exit(f"session: no project for {args.name}: make {source.relative_to(REPO)}/ with the files "
                  "the script's agent reads, edits and runs")
-    if args.ui == "desktop" and args.agent != "claude":
-        sys.exit("session: the desktop app runs Claude Code: --ui desktop is for --agent claude")
-    if args.agent == "codex" and any(l["agent"] == "review" for l in s.agent_steps()):
-        sys.exit(f"session: {args.name} sends a reviewer, and Codex has no subagents here: try --agent claude")
+    why = refusal(s, args.agent, args.ui)
+    if why:
+        sys.exit(f"session: {why}")
     if args.ui == "terminal" and shutil.which(args.agent) is None:
         sys.exit(f"session: {args.agent} isn't on PATH")
     pack = path.parents[1]
