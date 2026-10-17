@@ -252,7 +252,8 @@ gets at least one scenario. Their pictures are the golden images in
   moods and to a graph where every mood reaches every other by ordinary
   moves, so each can fade to the resting mood.
   Runtime and memory regressions cover late startup key reads, saved
-  volume bounds, separate reports created in the same second, and
+  volume bounds, separate reports created in the same second, a
+  report's files, its two-minute timeline and its note, and
   recovery of invalid UTF-8 without treating unreadable files as corrupt.
 - **agent-hooks (`swift test` in `agent-hooks/`, run by
   `make -C internal test`):** `AgentHooksTests` checks it on its own: the hook line and the

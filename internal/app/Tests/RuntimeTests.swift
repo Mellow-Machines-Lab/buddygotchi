@@ -437,6 +437,49 @@ final class RuntimeTests: XCTestCase {
         let about = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: report.appendingPathComponent("about.json"))) as? [String: Any])
         XCTAssertEqual(about["brain"] as? String, "scripted")
         XCTAssertEqual(about["connected"] as? Bool, true)
+        XCTAssertEqual(about["pack"] as? String, CharacterPack.active.id)
+        XCTAssertNotNil((about["screen"] as? [String: Any])?["mood"], "the last state sent")
+        XCTAssertEqual(about["needs_you"] as? Bool, false)
+        let timeline = try String(contentsOf: report.appendingPathComponent("timeline.txt"), encoding: .utf8)
+        XCTAssertTrue(timeline.contains("→ device (brain) {\"t\":\"do\""), "the brain's reaction, as sent")
+        XCTAssertTrue(timeline.contains("pass scripted"), "the pass's answers")
+        XCTAssertFalse(timeline.contains("PERSONALITY"), "no state in the timeline")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: report.appendingPathComponent("transcript.jsonl").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: report.appendingPathComponent(MemoryStore.longTermFile).path))
+        let readme = try String(contentsOf: report.appendingPathComponent("README.md"), encoding: .utf8)
+        for file in try FileManager.default.contentsOfDirectory(atPath: report.path) where file != "README.md" {
+            XCTAssertTrue(readme.contains("`\(file)`"), "README.md lists \(file)")
+        }
+    }
+
+    /// A report's timeline reaches back `Runtime.reportTimelineMs`
+    /// (2 minutes) before the click, and no further.
+    func testABugReportsTimelineIsTheLastTwoMinutes() {
+        XCTAssertEqual(Runtime.reportTimelineMs, 120_000)
+        let now: Int64 = 1_000_000
+        let lines = [
+            #"{"sent":{"t":"state","mood":"calm"},"by":"rule","received_at_ms":\#(now - 120_001)}"#,
+            #"{"sent":{"t":"state","mood":"happy"},"by":"rule","received_at_ms":\#(now - 120_000)}"#,
+            #"{"ended":{"id":3,"how":"skipped","why":"busy"},"received_at_ms":\#(now - 1500)}"#,
+        ].joined(separator: "\n") + "\n"
+        let timeline = Runtime.timeline(Data(lines.utf8), at: now)
+        XCTAssertFalse(timeline.contains("calm"), "older than two minutes")
+        XCTAssertTrue(timeline.contains(" -120.0s → device (rule) {\"t\":\"state\",\"mood\":\"happy\"}"))
+        XCTAssertTrue(timeline.contains("   -1.5s ← device ended {\"id\":3,\"how\":\"skipped\",\"why\":\"busy\"}"))
+    }
+
+    /// The note goes in the report as `note.md`; an empty one leaves none,
+    /// and what's copied for an agent names the folder and says the note.
+    func testABugReportsNote() throws {
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Runtime.addNote("  It cheered when my tests failed.\n", to: dir)
+        let note = dir.appendingPathComponent(Runtime.reportNote)
+        try XCTAssertEqual(String(contentsOf: note, encoding: .utf8), "It cheered when my tests failed.\n")
+        try Runtime.addNote(" ", to: dir)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: note.path))
+        let prompt = Runtime.reportPrompt(dir, note: "It cheered.")
+        XCTAssertTrue(prompt.hasPrefix("Boop bug report: \(dir.path)\n\nIt cheered.\n"))
+        XCTAssertTrue(prompt.contains("README.md"))
     }
 
     /// Each report gets a new folder even when

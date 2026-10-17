@@ -55,6 +55,10 @@ enum Snapshots {
                     gel.slime.stillImage = gelImage
                     shot("overview-gel", gel, pane: .overview)
                 }
+                let report = model(installer, status: status())
+                report.report = ReportDraft(dir: URL(fileURLWithPath: "/tmp/report"),
+                                            note: "It cheered when my tests failed, then went quiet.")
+                shot("report", report, pane: .report)
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
                 try? installer.install(.claude)
                 settings.refreshHooks()
