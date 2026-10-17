@@ -231,7 +231,7 @@ def state_ids(table: dict) -> list[str]:
 
 def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     """The board's state names, kStateNames in the firmware's render types."""
-    match = re.search(r"kStateNames\[\d+\]\s*=\s*\{([^}]*)\}", source.read_text())
+    match = re.search(r"kStateNames\[\d*\]\s*=\s*\{([^}]*)\}", source.read_text())
     if not match:
         raise SystemExit(f"charactergen: no kStateNames in {source}")
     return re.findall(r'"([a-z_]+)"', match.group(1))

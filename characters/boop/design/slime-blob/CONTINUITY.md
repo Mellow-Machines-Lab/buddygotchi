@@ -1,6 +1,6 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-11. The pure reference engine and all activity scene
+Updated 2026-10-16. The pure reference engine and all activity scene
 families are implemented. Q1 representative art review was approved on
 2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph, Mac mirror and native integer port are implemented. Contact-synchronized
 reference sound is implemented; timbres remain sketches.
@@ -285,11 +285,11 @@ safe envelope or produce competing repeated impacts.
 
 ## Full activity scene matrix
 
-The reference engine implements all 22 factual states in the nine scene
+The reference engine implements all 23 factual states in the nine scene
 families from [state-plan.json](state-plan.json). The full check executes
-all 42 canonical moods × 22 states: 924 cells, including 84 quiet aliases
-for asleep/no-app. Starting is exercised with each of its three contexts,
-and task-complete with success and failure, giving 1,050 factual test
+all 42 canonical moods × 23 states: 966 cells, including 84 quiet aliases
+for asleep/no-app. Starting is exercised with each of its four contexts,
+and task-complete with success and failure, giving 1,134 factual test
 cases. Every active case exercises all three variants; quiet aliases
 retain mood and use the shared sleeping face without contacts or acting.
 The two optional face alternates are outside this canonical matrix.
@@ -376,14 +376,15 @@ timings above:
 | Family/state | Authored contacts before mood delay | Visible meaning |
 | --- | --- | --- |
 | Starting | Reveal at [520, 820, 1080] ms by variant | `new_task` → NEW TASK, `session` → START, `continuation` → RESUME, `compacted` → COMPACTED; missing context stays neutral START |
+| Wake up | Stretch [560], [760], [900, 1500] ms, then settle [1180], [1240, 1420], none | You back after a long break: the start family's body, with no card. The stretch is a start reveal (the second of variant 2 at 0.7 strength); a settle is a body contact of strength 0.35, sides 0, then ±1 |
 | Delegating | [660, 1040], [540, 880, 1220], [820, 1640] ms | Dispatch [2, 3, 2] small helpers beside the same hero |
 | Helper return | Reveal at [680, 960, 1240] ms | One returning helper and a neutral report; no assumed success |
 | Reply ready/error/stopped | Reveal at [680, 960, 1240] ms | READY / TOOL ERROR / STOPPED, without a trophy |
 | Poked | [160], [200, 480], [160, 520] ms | Bounded local dent/wobble/bounce |
 | Tap spam | [160, 400], [160, 340, 520], [220, 620] ms | Bounded wobble/squash/dodge complaint |
 
-Start, helper and status-result contacts receive the mood/profile delay
-and strength. Helper contact sides alternate; variant 2 reverses travel
+Start, wake-up, helper and status-result contacts receive the mood/profile delay;
+their reveals take its strength. Helper contact sides alternate; variant 2 reverses travel
 direction. Their travel progress is smoothstep of age divided by the last
 contact time, clamped to [0, 1], so arrival coincides with the factual
 report reveal. Helper visibility multiplies the entry and recovery

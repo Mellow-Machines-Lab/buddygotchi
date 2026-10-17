@@ -144,7 +144,9 @@ void test_every_design_has_a_timeline() {
 // are silent; needs you's knocks end in the ding, and it, the finish and
 // an error play on their first loop only and never duck under a `say`;
 // routine designs sound a few of their contacts, picked afresh each loop.
-// Each design's voice window is where the bank puts it.
+// Each design's voice window is where the bank puts it: a wake-up's once
+// the creature is awake, late in its loop, so a hello never lands
+// mid-yawn.
 void test_each_state_sounds_as_the_bank_says() {
   int working = 0, varied = 0;
   for (int m = 0; m < render::pixelMoods(); ++m) {
@@ -155,7 +157,10 @@ void test_each_state_sounds_as_the_bank_says() {
         // The voice window opens 0.45 s in, or 0.12 s after a guarded
         // design's last cue has played out.
         std::vector<voice::FxEvent> first = loopEvents(sc, 0);
-        if (!guarded(s)) TEST_ASSERT_EQUAL_UINT16(450, sc.voiceMs);
+        if (SceneState(s) == SceneState::kWakeUp) {
+          const uint32_t loop = render::loopMs(render::pixelMood(m), SceneState(s), v);
+          TEST_ASSERT_TRUE(sc.voiceMs > loop / 2 && sc.voiceMs < loop);
+        } else if (!guarded(s)) TEST_ASSERT_EQUAL_UINT16(450, sc.voiceMs);
         else TEST_ASSERT_TRUE(sc.voiceMs >= (first.empty() ? 0 : first.back().atMs) + 120);
         switch (SceneState(s)) {
           case SceneState::kIdle:

@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory(prefix='boop-gel-',dir='/tmp') as folder:
             with conn:
                 conn.settimeout(.2)
                 hello={'t':'hello','kit':1,'app':'boop','id':'gel-fixture','fw':'synthetic','face':'gel','voice':'none',
-                       'does':['react','starting','task_complete','reply_ready','poked','tap_spam','listening','stop_listening','error','stopped','helper_return']}
+                       'does':['react','starting','task_complete','reply_ready','poked','tap_spam','wake_up','listening','stop_listening','error','stopped','helper_return']}
                 conn.sendall((json.dumps(hello)+'\n').encode());buffer=b''
                 while not done.is_set():
                     try:chunk=conn.recv(8192)

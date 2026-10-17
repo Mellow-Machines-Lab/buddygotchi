@@ -99,7 +99,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -219,7 +219,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -341,7 +341,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -469,7 +469,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -599,7 +599,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -735,7 +735,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -873,7 +873,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -1017,7 +1017,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -1163,7 +1163,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -1315,7 +1315,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -1469,7 +1469,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -1629,7 +1629,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Comfy. Positive low-energy contentment; safe and comfortable rather than disengaged.
@@ -1791,7 +1791,7 @@ Examples:
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
-  → happy, glad in a sound, then hello, twice
+  → happy, wake up, glad in a sound, then hello, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.

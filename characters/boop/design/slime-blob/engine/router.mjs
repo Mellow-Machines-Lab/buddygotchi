@@ -4,10 +4,11 @@ export const stateFamilies=Object.freeze({
   planning:'desk',working:'desk',terminal:'desk',tool_use:'desk',searching:'desk',
   analyzing:'desk',testing:'desk',delegating:'helpers',helper_return:'helpers',
   waiting:'desk',needs_you:'alert',reply_ready:'result',task_complete:'result',
-  error:'result',stopped:'result',poked:'touch',tap_spam:'touch'
+  error:'result',stopped:'result',poked:'touch',tap_spam:'touch',
+  wake_up:'start'
 });
 const acts=new Set(['planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting']);
-const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','react']);
+const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','react']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const text=value=>typeof value==='string'?value:'';
 const attentionTuple=attn=>JSON.stringify([attn.id??0,attn.agent,attn.project]);

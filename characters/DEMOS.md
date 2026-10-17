@@ -52,6 +52,7 @@ creature's brain.
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text` |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
+| `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
@@ -69,6 +70,11 @@ Codex compacts for real, and its model writes the `summary`. The desktop
 app can't play a compact, since its real model can't be made to fill its
 context on cue.
 
+A back is the away and the back at once, as the Mac would record them
+after that long: being away shows nothing on the board, and the Mac's own
+keys and mouse would end an away left open. `good-morning.jsonl` comes
+back after a night away, and Pixel wakes up.
+
 **Timing.** Steps happen in order. `after` is how many seconds a step
 waits after the one before it ends. An agent step also `takes` some
 seconds. Without them, each takes about as long as it would.
@@ -85,14 +91,14 @@ demo with its line number. So does a brain answer the pack can't play.
 A demo has no real brain. The creature does only what the rules do
 (working, needs you, done) and what the script's brain steps say. Put a
 brain step where a real brain would be asked: a turn that starts or
-ends, a poke, talk, or a check that fails or passes.
+ends, a poke, talk, you coming back, or a check that fails or passes.
 
 A brain step answers the questions that the real brain gets:
 
 | Key | Choices |
 | --- | --- |
 | `react.mood` | a mood of the pack that has a face, or `none` |
-| `react.animation` | `success`, `failure` or `reply` for a turn that ended, else `none` |
+| `react.animation` | `success`, `failure` or `reply` for a turn that ended, `wake up` for you back after a long or very long break, else `none` |
 | `react.loops` | `once`, `twice`, `three times`, `four times` |
 | `say.feeling`, `say.about`, `say.kind` | what it says; only a pack with a voice says it |
 

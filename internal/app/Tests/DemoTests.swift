@@ -51,6 +51,16 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(script.steps.map(\.takes), [0, 0, 0, 0.6, 2])
     }
 
+    /// Pins a back's break: an hour when the script doesn't say, and more
+    /// than none when it does.
+    func testABackIsABreakOfSomeMinutes() throws {
+        try XCTAssertEqual(DemoScript(#"{"you": "back"}"#).steps[0].what, .back(ms: 3_600_000))
+        try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, talk or back")) }
+    }
+
     func testABadLineSaysWhere() {
         func problem(_ text: String) -> String {
             do {
@@ -116,6 +126,8 @@ final class DemoTests: XCTestCase {
         }
         try XCTAssertEqual(cause(#"{"you": "poke"}"#), .init(kind: "tap", text: "You poke Pip"))
         try XCTAssertEqual(cause(#"{"you": "talk", "text": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 600}"#), .init(kind: "back", text: "You come back to the Mac after a very long break"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 20}"#), .init(kind: "back", text: "You come back to the Mac after a long break"))
         try XCTAssertEqual(cause(#"{"agent": "prompt", "text": "Fix it"}"#), .init(kind: "prompt", text: "You ask Claude: “Fix it”"))
         try XCTAssertEqual(cause(#"{"agent": "read", "file": "a.js"}"#, agent: "codex"), .init(kind: "tool", text: "Codex reads a.js"))
         try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}"#),
@@ -174,11 +186,13 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":6,"name":"listening"}"#,
             #"{"t":"do","id":7,"name":"starting"}"#,
             #"{"t":"do","id":8,"name":"starting","args":{"ctx":"compacted"}}"#,
+            #"{"t":"do","id":9,"name":"wake_up","args":{"mood":"happy"}}"#,
         ] { recorder.sent(message) }
         XCTAssertEqual(recorder.recording(character: "pixel", face: "pixel").events.map(\.effect), [
             nil, nil, "Pip makes an excited face and says “Go”", "Pip makes a curious face",
             "Pip shows that it needs you", "Pip's mood is now proud", "Pip celebrates", "Pip slumps", "Pip winces", "Pip listens", nil,
             "Pip shows that the context was compacted",
+            "Pip stretches and yawns",
         ])
     }
 

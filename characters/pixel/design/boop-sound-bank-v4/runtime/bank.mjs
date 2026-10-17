@@ -8,10 +8,12 @@ import {renderNeedsYou} from './needs-you.mjs';
 import {renderStateScene,stateScore} from './state-art.mjs';
 import {quietMix,routineEvents} from './quiet-mix.mjs';
 import {renderMoodScene,moodScore} from './mood-art.mjs';
+import {renderWakeScene,wakeScore} from './wake-art.mjs';
 
 export function makeScene(id){
   const asset=getAsset(id);
   if(asset.renderer==='mood-v4')return {asset,svg:renderMoodScene(asset),score:quietMix(asset,moodScore(asset))};
+  if(asset.renderer==='wake-v1')return {asset,svg:renderWakeScene(asset),score:quietMix(asset,wakeScore(asset))};
   if(asset.renderer==='state-v3')return {asset,svg:renderStateScene(asset),score:quietMix(asset,stateScore(asset))};
   const svg=asset.state==='needs_you'?renderNeedsYou(asset):syncKeyboard(renderVariation(asset.mood,asset.state,asset.variation,asset.name),asset);
   return {asset,svg,score:quietMix(asset,composeScore(asset,svg))};

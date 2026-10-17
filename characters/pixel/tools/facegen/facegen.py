@@ -1,7 +1,7 @@
 """Builds the device's faces from the animation bank as C tables.
 
 The designs are the animation bank's (characters/pixel/design/boop-sound-bank-v4/):
-13 moods × 22 states, each mood and state with variations of its own, some
+13 moods × 23 states, each mood and state with variations of its own, some
 for a host fact (task_complete's outcome, starting's context). This runs the
 bank's own generator (bank.mjs, beside this) to write every design's SVG into
 build/, which git ignores, and lists the designs in design/manifest.json. It
@@ -22,7 +22,7 @@ at the same designs, and faces.json gives each mood its drawn mood's.
 The bank's SVGs come in three dialects: V2, the first pack's (`boop-motion`,
 and needs you's `alert-motion`); V3, the older moods' newer states
 (`state-motion`); and V4, the new moods' flip-books (`motion`), where each step
-shows a whole face of its own. Each has a still copy for reduced motion, which
+shows a whole face of its own, as every mood's wake_up does. Each has a still copy for reduced motion, which
 isn't read. The older moods' designs, V2 and V3, must come out of the bank
 byte for byte as they were captured (the bank's qa/v3-fingerprints.json).
 
@@ -66,15 +66,17 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 NS = "{http://www.w3.org/2000/svg}"
 W, H = 320, 240
 
-# The pixel designs' moods and render::SceneState's order:
-# the first seven of each keep the numbers they had before the rest came. faces.h
-# carries these names for the device (kMoodNames, kStateNames); the device looks
-# the character pack's moods up among them by name (characters/CHARACTER.md §9).
+# The pixel designs' moods, and the board's states in render::SceneState's order,
+# read from the firmware as charactergen reads them: the first seven of each keep
+# the numbers they had before the rest came. faces.h carries these names for the
+# device (kMoodNames, kStateNames); the device looks the character pack's moods
+# up among them by name (characters/CHARACTER.md §9).
 MOODS = ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad",
          "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"]
-STATES = ["idle", "working", "needs_you", "task_complete", "asleep", "no_app", "listening",
-          "starting", "planning", "terminal", "tool_use", "searching", "analyzing", "testing",
-          "delegating", "helper_return", "waiting", "reply_ready", "error", "stopped", "poked", "tap_spam"]
+sys.path.insert(0, str(REPO / "characters"))
+from charactergen import firmware_states  # noqa: E402
+
+STATES = firmware_states()
 # Every mood the pack has, in its order, and the drawn mood whose designs
 # each wears: itself, or the one the temporary table lends it.
 NAMES = [m["id"] for m in json.loads(PACK.read_text())["moods"]]

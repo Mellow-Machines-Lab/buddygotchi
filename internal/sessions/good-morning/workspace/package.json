@@ -1,0 +1,7 @@
+{
+  "name": "good-morning",
+  "private": true,
+  "scripts": {
+    "test": "node test.js"
+  }
+}

@@ -37,6 +37,16 @@ extension Runtime {
         return player
     }
 
+    /// A demo's person back at the Mac after `ms` away: the away and the
+    /// back the presence detector would have made, both at once and both
+    /// `demo`'s. Being away shows nothing, and the Mac's own keys and mouse
+    /// would end an away the script left open.
+    func cameBack(afterMs ms: Int64) {
+        let now = options.clock()
+        recordPresence(PresenceDetector.awayEvent(why: Self.demoBy, since: now - ms, at: now))
+        recordPresence(PresenceDetector.backEvent(why: Self.demoBy, at: now))
+    }
+
     /// Readies a demo and plays it at once.
     public func play(_ script: DemoScript, live: Bool = false, cursor: URL? = nil,
                      step: @escaping @Sendable (DemoScript.Step, _ agent: String) -> Void = { _, _ in },
@@ -134,6 +144,10 @@ public final class DemoPlayer: @unchecked Sendable {
                 runtime.heard(words, by: .app, who: Runtime.demoBy)
                 then()
             }
+        case .back(let ms):
+            heardStep(step, agent)
+            runtime.cameBack(afterMs: ms)
+            then()
         case .brain(let answers, let mood):
             if !answers.isEmpty { runtime.forcePass(answers, by: Runtime.demoBy, who: Runtime.demoBy) }
             if let mood { runtime.forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy) }

@@ -493,7 +493,7 @@ def fate(row: Line) -> tuple[str, str]:
     return "ok", "  ✓ played"
 
 
-# The reaction's face is `react.mood`, and its finish `react.animation`.
+# The reaction's face is `react.mood`, and its animation `react.animation`.
 # Older logs name the face `react`, and for a while it carried the cheer
 # too (`proud-cheer`); `answer` reads either.
 FACE = "react.mood"
@@ -515,9 +515,9 @@ def prob(p: Line, key: str) -> float:
     return a.get("p", {}).get(a.get("choice"), 0.0)
 
 
-def finish(p: Line) -> str | None:
-    """The finish a reaction played (success, failure or reply), its
-    `react.animation`; None for a face alone."""
+def animation(p: Line) -> str | None:
+    """The animation a reaction played (success, failure, reply or wake
+    up), its `react.animation`; None for a face alone."""
     pick = choice(p, "react.animation")
     return None if pick in (None, "none") else pick
 
@@ -529,13 +529,13 @@ def word_keys(p: Line) -> list[str]:
 
 
 def picks_text(p: Line) -> str:
-    """The face, its finish, what its line means (an older log's words in
+    """The face, its animation, what its line means (an older log's words in
     quotes) and its hold, each with its probability: `proud 0.82 · success
     0.90 · glad 0.71 · three times 0.64`. What the line said is the
     reaction's takes (`said`): Voice picks a take of that meaning."""
     parts = [f"{choice(p, FACE)} {prob(p, FACE):.2f}"]
-    if finish(p):
-        parts.append(f"{finish(p)} {prob(p, 'react.animation'):.2f}")
+    if animation(p):
+        parts.append(f"{animation(p)} {prob(p, 'react.animation'):.2f}")
     words = [(k, choice(p, k), prob(p, k)) for k in word_keys(p) if choice(p, k) not in (None, "none")]
     parts += [(f"“{w}”" if k.startswith("word.") else w) + f" {v:.2f}" for k, w, v in words] or ["no word"]
     if choice(p, "react.loops"):
@@ -549,7 +549,7 @@ def reaction_text(row: Line, takes: list[str] | None = None) -> str:
     p = row["pass"]
     loops = choice(p, "react.loops")
     face, _, anim = (choice(p, FACE) or "?").partition("-")
-    anim = finish(p) or anim
+    anim = animation(p) or anim
     what = (f"a {anim} in " if anim else "") + f"{'an' if face[0] in 'aeiou' else 'a'} {face}"
     what += " face" if anim else " reaction face"
     words = said(takes)

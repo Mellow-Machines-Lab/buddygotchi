@@ -6,8 +6,9 @@ import LinkKit
 /// rule's reaction is its animation; a brain reaction has a `say` and a
 /// `mood`, its expression: the device draws that mood's version of the
 /// look while it plays, and says the takes in `say`, if there are any,
-/// over it. With no animation it's a `react`; with one (task_complete,
-/// reply_ready) it's the brain's finish. The rules' reactions never carry
+/// over it. With no animation it's a `react`; with one it's the brain's
+/// finish (task_complete, reply_ready) or its wake_up (you back after a
+/// long break). The rules' reactions never carry
 /// a mood. Whoever plays an animation or a face says how many `loops` of
 /// its design. The finish for a thread's turn says `who`: the device names
 /// it in the strip while the finish plays.
@@ -53,8 +54,8 @@ public struct DeviceReaction: Equatable, Sendable {
         public var text: String? { takes.isEmpty ? nil : takes.map(\.text).joined(separator: " ") }
     }
 
-    /// The animation: a rule's reaction, or the brain's finish; nil for a
-    /// brain reaction with none, a `react`.
+    /// The animation: a rule's reaction, or the brain's finish or wake_up;
+    /// nil for a brain reaction with none, a `react`.
     public var anim: String?
     public var say: Say?
     public var mood: String?
@@ -90,7 +91,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// state's name, besides `listening`, which only push-to-talk plays
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "starting", "helper_return", "error", "stopped"]
+    public static let anims = ["task_complete", "reply_ready", "wake_up", "starting", "helper_return", "error", "stopped"]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 

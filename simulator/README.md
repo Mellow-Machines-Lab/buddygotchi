@@ -130,7 +130,7 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `talk`,
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `talk`, `back`,
   `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one.

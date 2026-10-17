@@ -260,7 +260,7 @@ const STYLE = `
 `;
 
 // A cause's kind, as an icon (DemoScript.Cause).
-const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', needs_you: '✋', talk: '🎙', done: '✓', failed: '✕', stopped: '■' };
+const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', needs_you: '✋', talk: '🎙', back: '☀', done: '✓', failed: '✕', stopped: '■' };
 
 // Outside a browser (the tests, under Node) there's no element to be.
 const Element = globalThis.HTMLElement ?? class {};

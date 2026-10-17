@@ -4,7 +4,7 @@
 #include "render/gel/acting.h"
 #include "render/gel/router.h"
 namespace render::gel {
-// The recipe table's rows (slime::kRecipes): the 22 states, then
+// The recipe table's rows (slime::kRecipes): every state, then
 // task_complete's success and failure, then starting's four contexts.
 inline int recipeState(SceneState state, Outcome outcome, StartCtx ctx) {
   constexpr int kStates = int(SceneState::kCount);

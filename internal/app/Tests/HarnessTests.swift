@@ -175,13 +175,13 @@ final class HarnessTests: XCTestCase {
         starts(["react.mood": a("excited"), "react.loops": a("three times")], "\(creature) made an excited face, held three times.")
         XCTAssertEqual(queued.last?.reaction.loops, 3)
         queued.removeLast()
-        // `react.animation` judges a turn's finish, and
-        // plays it in the face: a success or a failure is the face's
-        // task_complete for that outcome, a reply its reply_ready; each in
-        // one of its variations at random, never the last one, naming
-        // whose turn it was. `none`, a missing answer or anything else is
-        // just the face.
-        XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply"])
+        // `react.animation` judges a turn's finish, or you back after a
+        // long break, and plays it in the face: a success or a failure is
+        // the face's task_complete for that outcome, a reply its
+        // reply_ready, a wake up its wake_up; each in one of its variations
+        // at random, never the last one, naming the thread NOW is about. `none`, a missing answer or anything else is just the face.
+        XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up"])
+        XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
         starts(["react.mood": a("proud"), "react.animation": a("success"), "react.loops": a("twice"), "say.feeling": a("glad"),
                 "say.kind": a("phrase")],
                #"\#(creature) played a success in a proud face, held twice, and said "SAID"."#)
@@ -210,6 +210,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertNil(reply.outcome, "a reply has no outcome")
         XCTAssertTrue((1...FaceLoops.count(mood: "curious", state: "reply_ready")).contains(reply.variant!))
         XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
+        queued.removeLast()
+        starts(["react.mood": a("happy"), "react.animation": a("wake up"), "say.about": a("hello")],
+               #"\#(creature) played a wake up in a happy face, held once, and said "SAID"."#)
+        let woke = try! XCTUnwrap(queued.last?.reaction)
+        XCTAssertEqual(woke.anim, "wake_up")
+        XCTAssertNil(woke.outcome, "a wake-up has no outcome")
+        XCTAssertEqual(woke.who, .init(agent: "codex", thread: "fix-nav"), "the thread NOW is about, which a back never is (PresenceTests)")
+        XCTAssertTrue((1...FaceLoops.count(mood: "happy", state: "wake_up")).contains(woke.variant!))
         queued.removeLast()
         // Each finish is one of its variations at random,
         // never the last one of its animation again.
@@ -247,7 +255,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + MoodOutput.moods.map(\.name),
                        "the faces are every mood's")
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply"])
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["once", "twice", "three times", "four times"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name), ["none", "upset", "glad", "tickled"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.map(\.name), ["none"] + ReactOutput.topics.map(\.name))

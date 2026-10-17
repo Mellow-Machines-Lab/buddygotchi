@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-15. How we check that Jev decides as Boop should: short
+Updated 2026-10-16. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -62,7 +62,7 @@ a scenario holds wherever more than one answer is right:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.mood` question: `none` or a mood's face |
-| `animation` | The finish the reaction played, Jev's `react.animation` pick (`success`, `failure` or `reply`), or `none` when it played none or Boop didn't react |
+| `animation` | The animation the reaction played, Jev's `react.animation` pick (a finish, `success`, `failure` or `reply`, or `wake up`), or `none` when it played none or Boop didn't react |
 | `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
 | `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
 | `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when `react` didn't react |
@@ -200,7 +200,7 @@ file-name order:
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
 that isn't a mood (`none` is a `react` too), an `animation` that isn't
-`none`, `success`, `failure` or `reply`, a bad `at`, `reaction` or check
+`none`, `success`, `failure`, `reply` or `wake up`, a bad `at`, `reaction` or check
 value, a `prompt` or `message` on a step that can't carry it, or nothing
 to check (no `expect` and no `checks`) doesn't load, and the error names
 the file and step.
