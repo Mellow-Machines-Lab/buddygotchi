@@ -1,6 +1,6 @@
 # Demos with a real agent
 
-Updated 2026-10-16. How a character pack's demo script plays through a
+Updated 2026-10-17. How a character pack's demo script plays through a
 real Claude Code or Codex with Boop watching, for recording videos
 (`make demo IN=…`; the commands are in
 [characters/DEMOS.md](../../characters/DEMOS.md), Play it). Here the
@@ -88,13 +88,29 @@ folder only.
 Each run keeps its logs in its `/tmp/boop-session-*` folder:
 `session.log`, `boop.log` (every line as it happened), `state/gate.log` (in the app),
 `requests/` (every request the agent made, in the terminal), and
-`agent.log` when this isn't a terminal.
+`agent.log` when this isn't a terminal; with several buddies,
+`requests-<place>/` and `agent-<place>.log` for each.
+
+## Several buddies
+
+A script whose header lists `buddies` (characters/DEMOS.md) plays in the
+terminal with an agent for each buddy, its `agents`' first: Pixel's
+Claude and Boop's Codex in `not-my-turn`. Each agent gets its own copy of
+the project (`<title>-<place>`), home and replay server, which gives only
+its buddy's replies, and the tool types its prompt and allows what it
+asks when its own steps say. The first agent shows in this terminal and
+the others each in a Terminal window of its own (what they draw is
+`agent-<place>.log`). Boop keeps to each: a buddy's agent steps wait for
+its own agent's hooks, and the other agent's wait for theirs, however
+they interleave. On the simulator each buddy has its own board, a cable
+named after its place (`serve.py --cable left --cable right`, which the
+tool starts).
 
 ## A demo's project
 
 `NAME/workspace/` here is the project the script's agent works in: its
 files, and tests that give the story's results when the script's edits are
-made (`hello`, `landing`, `context-wall`), or that runs the command it asks you about
+made (`hello`, `landing`, `context-wall`, `not-my-turn`), or that runs the command it asks you about
 (`hanging`, whose story is the wait before you allow it). Its copy is
 named after the script's title (`deploy-the-docs`), as the player with
 no agent names its project, so the board's sign says the same either way.

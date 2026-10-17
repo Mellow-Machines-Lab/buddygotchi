@@ -55,7 +55,12 @@ struct OverviewPane: View {
                         PaneSection(status.sessions.isEmpty ? "Sessions" : "Sessions · \(status.sessions.count)") {
                             sessions(status)
                         }
-                        if let growth = status.growth {
+                        if !status.buddies.isEmpty {
+                            // Each buddy grows on its own agents' work.
+                            ForEach(status.buddies, id: \.id) { b in
+                                PaneSection("\(b.name) · Growth") { growthCard(b.growth) }
+                            }
+                        } else if let growth = status.growth {
                             PaneSection("Growth") { growthCard(growth) }
                         }
                     }

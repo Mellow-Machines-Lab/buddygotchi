@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-16. A board with no board: the firmware's own code in a
+Updated 2026-10-17. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -170,16 +170,18 @@ Only this Mac can reach it: the page is served on 127.0.0.1 and the
 socket is its user's alone. The newest page to open is the board.
 
 **Several boards.** One server can give each of several boards its own
-cable: `--cable NAME=SOCKET`, once for each, in place of `--socket`. Each
+cable: `--cable NAME[=SOCKET]`, once for each, in place of `--socket`. Each
 cable is a WebSocket at `/usb/NAME` and its own socket, and there's no
-`/usb`. The page shows them side by side with `?boards=NAME,NAME`, each
+`/usb`. With no socket given it's `/tmp/boop-sim-NAME.sock`, where the
+Mac app looks for the buddy that sits at NAME: Settings' Simulator row
+then moves every buddy to its simulated board at once. The page shows them side by side with `?boards=NAME,NAME`, each
 with the id `b00p-NAME`, and `&packs=PACK,PACK` gives each board its
 pack's build and voice (`/voice/PACK.bin`):
 
 ```sh
 python3 characters/charactergen.py --stage
 simulator/web/build.sh boop && simulator/web/build.sh pixel
-python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
+python3 simulator/web/serve.py --cable left --cable right
 open 'http://127.0.0.1:8206/?boards=left,right&packs=boop,pixel'
 BOOP_BRIDGE=/tmp/boop-sim-right.sock internal/tools/boopctl ping
 ```

@@ -1,0 +1,12 @@
+/* The app's colours. */
+:root {
+  --bg: #ffffff;
+  --ink: #1b1b1b;
+}
+
+/* dark theme */
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}

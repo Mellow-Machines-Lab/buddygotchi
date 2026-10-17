@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-16. How we check that Boop works, including what's on its
+Updated 2026-10-17. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -64,7 +64,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
 | `make dash` | `boopctl dash`, for the app `make debug` started |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
-| `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`). No Bluetooth, so agents may run it |
+| `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME[=SOCKET]`, `/tmp/boop-sim-NAME.sock` by default, where the app looks for the buddy at NAME). No Bluetooth, so agents may run it |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |

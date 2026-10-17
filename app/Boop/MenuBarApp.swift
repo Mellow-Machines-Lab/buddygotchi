@@ -78,8 +78,9 @@ final class AppModel: ObservableObject {
     enum Simulator { case none, there, inUse }
     @Published var simulator = Simulator.none
     var usingSimulator: Bool { simulator == .inUse }
-    var devices: DeviceChooser? {
-        didSet { devices?.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } }
+    /// Each board's chooser: one, or each buddy's.
+    var devices: [DeviceChooser] = [] {
+        didSet { for d in devices { d.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } } }
     }
     /// The "can't react yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
@@ -194,14 +195,17 @@ final class AppModel: ObservableObject {
     /// Looks for a running simulator, off the main thread: it's a look at
     /// a socket. Only while there's someone to show it to: Settings, open.
     func lookForSimulator() {
-        guard let devices else { return }
+        let devices = devices
+        guard !devices.isEmpty else { return }
         DispatchQueue.global(qos: .utility).async {
-            let found: Simulator = devices.choice == .simulator ? .inUse : devices.simulatorIsThere() ? .there : .none
+            // With several buddies, the simulator is every one's board, or none.
+            let found: Simulator = devices.allSatisfy { $0.choice == .simulator } ? .inUse
+                : devices.allSatisfy { $0.simulatorIsThere() } ? .there : .none
             Task { @MainActor in if found != self.simulator { self.simulator = found } }
         }
     }
 
-    func use(_ choice: DeviceChoice) { devices?.choose(choice) }
+    func use(_ choice: DeviceChoice) { for d in devices { d.choose(choice) } }
 
     var device: DeviceState {
         let how = switch link {
@@ -425,7 +429,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
-        model.devices = options.link as? DeviceChooser
+        model.devices = (options.buddies.isEmpty ? [options.link] : options.buddies.map(\.link)).compactMap { $0 as? DeviceChooser }
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }

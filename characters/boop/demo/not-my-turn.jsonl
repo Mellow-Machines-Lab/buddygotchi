@@ -4,7 +4,7 @@
 // own turn right. Each buddy reacts to its own agent first, then to the
 // other buddy.
 {"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
-{"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
+{"agent": "prompt", "buddy": "left", "text": "Add dark colours to the theme"}
 {"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
 {"agent": "prompt", "buddy": "right", "text": "Fix the flaky login test"}
 {"brain": {"react.mood": "determined", "say.about": "start", "say.kind": "word"}, "buddy": "right"}
@@ -14,11 +14,11 @@
 {"brain": {"react.mood": "amused", "say.feeling": "tickled", "say.kind": "sound"}, "buddy": "left", "after": 0.8}
 {"you": "poke", "buddy": "right", "after": 1.2}
 {"brain": {"react.mood": "grumpy", "say.feeling": "upset", "say.kind": "sound"}, "mood": "grumpy", "buddy": "right"}
-{"agent": "edit", "buddy": "left", "file": "src/theme.css", "old": ":root {", "new": ":root[data-theme=dark] {"}
-{"agent": "reply", "buddy": "left", "text": "Dark mode is in, with a toggle in the header."}
+{"agent": "edit", "buddy": "left", "file": "src/theme.css", "old": "/* dark theme */", "new": ":root[data-theme=dark] {\n  --bg: #141414;\n  --ink: #eeeeee;\n}"}
+{"agent": "reply", "buddy": "left", "text": "Dark mode is in: the theme has dark colours for data-theme=dark."}
 {"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}, "mood": "proud", "buddy": "left"}
 {"brain": {"react.mood": "disappointed", "say.feeling": "upset", "say.kind": "sound"}, "buddy": "right", "after": 1, "note": "Not my turn"}
-{"agent": "edit", "buddy": "right", "file": "test/login.test.js", "old": "await sleep(100)", "new": "await screen.findByText('Welcome')"}
+{"agent": "edit", "buddy": "right", "file": "test/login.test.js", "old": "await sleep(100);", "new": "await screen.findByText('Welcome');"}
 {"agent": "run", "buddy": "right", "cmd": "npm test", "about": "Run the tests", "takes": 1.5}
 {"agent": "reply", "buddy": "right", "text": "The login test waits for the page now, and passes."}
 {"brain": {"react.mood": "proud", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "word"}, "mood": "proud", "buddy": "right"}

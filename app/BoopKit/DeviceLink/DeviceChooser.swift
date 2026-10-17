@@ -21,6 +21,11 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     /// Where a running simulator shares its board's USB, as a bridge
     /// shares a board's (simulator/web/serve.py).
     public static let simulatorSocket = "/tmp/boop-sim-usb.sock"
+
+    /// Where a running simulator shares the board on its cable `name`,
+    /// one board of several (serve.py's `--cable NAME`): a buddy's, by its
+    /// place.
+    public static func simulatorSocket(for name: String) -> String { "/tmp/boop-sim-\(name).sock" }
     /// How often the chosen simulator is looked for, to go back to the
     /// board when it has stopped.
     public static let watchEvery: TimeInterval = 2

@@ -49,6 +49,8 @@ extension Runtime {
             public var snapshot: StateSnapshot
             public var connected: Bool
             public var device: DeviceInfo?
+            /// Its own XP and stage.
+            public var growth: Growth
         }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
@@ -83,7 +85,7 @@ extension Runtime {
         if pipeline.several {
             status.buddies = rigs.map { rig in
                 Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),
-                                   connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init))
+                                   connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init), growth: rig.growth.growth)
             }
         }
         grew = false

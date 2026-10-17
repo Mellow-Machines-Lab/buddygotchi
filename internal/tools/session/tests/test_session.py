@@ -90,6 +90,23 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual("a-b-2", scripts.Script(path=Path("x.jsonl"), title=" A, b--2! ").project)
         self.assertEqual("project", scripts.Script(path=Path("x.jsonl"), title="").project)
 
+    def test_each_buddy_has_its_agent_and_its_part(self):
+        # A script of several buddies: each buddy's agent plays its own
+        # steps, numbered as Boop counts the whole script, in a project
+        # named as the player with no agent names it.
+        s = scripts.load(scripts.find("not-my-turn"))
+        self.assertEqual(s.agents(), [("left", "claude"), ("right", "codex")])
+        left, right = s.mine("left"), s.mine("right")
+        self.assertEqual(left.prompt["text"], "Add dark colours to the theme")
+        self.assertEqual(right.prompt["text"], "Fix the flaky login test")
+        self.assertTrue(all(l.get("buddy") == "right" for l in right.agent_steps()))
+        self.assertEqual([l["n"] for l in right.replies()], [l["n"] for l in s.replies() if l.get("buddy") == "right"])
+        self.assertEqual((left.project, right.project), ("not-my-turn-left", "not-my-turn-right"))
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(scripts.ScriptError, msg="each buddy needs a prompt"):
+                scripts.load(write(Path(d), ['{"demo": 1, "buddies": [{"place": "left", "pack": "pixel"}, {"place": "right", "pack": "boop"}]}',
+                                             '{"agent": "prompt", "buddy": "left", "text": "Go"}']))
+
     def test_a_compact_plays_only_where_the_model_is_replayed(self):
         # A real model can't be made to fill its context on cue.
         s = scripts.load(scripts.find("context-wall"))

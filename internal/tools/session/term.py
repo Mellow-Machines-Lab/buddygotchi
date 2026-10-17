@@ -35,11 +35,12 @@ def words(text: str) -> str:
 
 
 class Terminal:
-    def __init__(self, argv: List[str], cwd: str, env: Dict[str, str], mirror: str):
+    def __init__(self, argv: List[str], cwd: str, env: Dict[str, str], mirror: str, show: bool = True):
         """Starts `argv` in a pseudo-terminal. With this process on a
-        terminal, the agent is shown there; else what it draws goes to the
-        file `mirror`."""
-        self.shown = sys.stdout.isatty() and sys.stdin.isatty()
+        terminal, the agent is shown there; else, or not to `show` it here
+        (a second agent, shown in a window of its own), what it draws goes
+        to the file `mirror`."""
+        self.shown = show and sys.stdout.isatty() and sys.stdin.isatty()
         self.out = None if self.shown else open(mirror, "wb")
         rows, cols = self.size()
         self.pid, self.fd = pty.fork()
