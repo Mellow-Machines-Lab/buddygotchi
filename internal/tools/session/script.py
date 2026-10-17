@@ -6,7 +6,9 @@ Boop does the person's and the brain's steps and keeps to the agent's;
 this tool needs only the agent's: what the model says and calls, for the
 replay server and the `/demo` command, and which step each tool call is,
 for the gate. A step's number, `n`, is its place among the script's steps,
-from 0, as Boop counts them in its cursor file.
+from 0, as Boop counts them in its cursor file. A script of several
+buddies (a header's `buddies`) has an agent for each: `mine(place)` is
+that buddy's agent's part.
 
     script.py which NAME     prints the script `make demo NAME=…` plays
 """
@@ -36,6 +38,10 @@ class Script:
     path: Path
     title: str
     steps: List[Dict[str, Any]] = field(default_factory=list)
+    # The buddies, as the header lists them: empty for one.
+    buddies: List[Dict[str, Any]] = field(default_factory=list)
+    # Whose part this is, of a script of several buddies (`mine`).
+    buddy: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -48,7 +54,19 @@ class Script:
         its own (Runtime+Demo's slug), so the screen says the same either
         way."""
         words = "".join(c if c.isalnum() else " " for c in self.title.lower()).split()
-        return "-".join(words) or "project"
+        return "-".join(words + ([self.buddy] if self.buddy else [])) or "project"
+
+    def agents(self) -> List[tuple]:
+        """Each buddy's place and the agent that plays its steps, the
+        header's first for it: claude by default. One, of no place, for a
+        script of one buddy."""
+        return [(b["place"], (b.get("agents") or ["claude"])[0]) for b in self.buddies]
+
+    def mine(self, buddy: str) -> "Script":
+        """The buddy `buddy`'s part: its agent's steps, numbered as in the
+        whole script."""
+        return Script(path=self.path, title=self.title, buddy=buddy, buddies=self.buddies,
+                      steps=[l for l in self.steps if "agent" not in l or l.get("buddy") == buddy])
 
     def agent_steps(self) -> List[Dict[str, Any]]:
         return [l for l in self.steps if "agent" in l]
@@ -93,6 +111,7 @@ def load(path: Path) -> Script:
         raise ScriptError(f"no script at {path}")
     title = ""
     steps: List[Dict[str, Any]] = []
+    buddies: List[Dict[str, Any]] = []
     for number, raw in enumerate(path.read_text().split("\n"), 1):
         line = raw.strip()
         if not line or line.startswith("//"):
@@ -103,13 +122,15 @@ def load(path: Path) -> Script:
             raise ScriptError(f"{path.name}:{number}: not JSON ({e})")
         if "demo" in obj:
             title = obj.get("title", "")
+            buddies = obj.get("buddies", [])
             continue
         obj["n"] = len(steps)
         obj["number"] = number
         steps.append(obj)
-    if not any(l.get("agent") == "prompt" for l in steps):
-        raise ScriptError(f"{path.name}: no prompt, so no agent can play it")
-    return Script(path=path, title=title, steps=steps)
+    for buddy in [b["place"] for b in buddies] or [None]:
+        if not any(l.get("agent") == "prompt" and l.get("buddy") == buddy for l in steps):
+            raise ScriptError(f"{path.name}: no prompt{f' for {buddy}' if buddy else ''}, so no agent can play it")
+    return Script(path=path, title=title, steps=steps, buddies=buddies)
 
 
 def find(name: str) -> Path:

@@ -135,9 +135,10 @@ final class BuddiesTests: XCTestCase {
     }
 
     /// A tap on one board pokes that buddy alone, and its line names it.
-    func testATapPokesItsOwnBuddy() throws {
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
-        let settings = try XCTUnwrap(BuddySetting.parse("left:pixel,right:boop"))
+    /// Two buddies with no boards, Pixel on the left and Boop on the right.
+    func twoBuddies(_ text: String = "left:pixel,right:boop") throws -> Runtime {
+        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .cheeky)
+        let settings = try XCTUnwrap(BuddySetting.parse(text))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
         options.buddies = try settings.map { setting in
@@ -145,11 +146,75 @@ final class BuddiesTests: XCTestCase {
             return Runtime.BuddyOptions(buddy: buddy, link: nil,
                                         steering: try Steering(directory: buddy.pack.directory.appendingPathComponent("steering"), pack: buddy.pack))
         }
-        let runtime = try Runtime(options)
+        return try Runtime(options)
+    }
+
+    func testATapPokesItsOwnBuddy() throws {
+        let runtime = try twoBuddies()
         let step = runtime.home.sync { runtime.pipeline.poke(at: runtime.options.clock(), buddy: "right") }
         let poke = try XCTUnwrap(step.recorded.first)
         XCTAssertEqual(poke.buddy, "right")
         XCTAssertEqual(runtime.home.sync { runtime.harness.line(poke.seq)?.text }, "You poked Boop.")
         XCTAssertEqual(step.recorded.last?["message"]?.string, "Boop wiggled on its own.", "its own core, in its own name")
+    }
+
+    /// Each buddy has its own memory and growth: the first the state
+    /// folder's, each other its own folder, set up the first time with its
+    /// name and the first's nature; and each grows on its own agents' work.
+    func testEachBuddyRemembersAndGrowsOnItsOwn() throws {
+        let runtime = try twoBuddies("left:pixel:claude,right:boop:codex")
+        let right = try XCTUnwrap(MemoryStore(directory: dir.appendingPathComponent("buddies/right")).longTerm)
+        XCTAssertEqual(right.name, "Boop")
+        XCTAssertEqual(right.nature, .cheeky, "the first's nature")
+        let left = try MemoryStore(directory: dir.appendingPathComponent("buddies/left")).longTerm
+        XCTAssertNil(left, "the first keeps the state folder's")
+        let now = runtime.options.clock()
+        runtime.home.sync {
+            for (agent, hook) in [("claude", "UserPromptSubmit"), ("codex", "UserPromptSubmit"), ("codex", "Stop")] {
+                var line = HookLine(agent: agent, hook: hook, session: agent, cwd: "/tmp/proj", ts: now)
+                if hook == "Stop" { line.message = "Done." }
+                runtime.hook(line, received: now)
+            }
+        }
+        let xp = runtime.home.sync { runtime.rigs.map(\.growth.growth.xp) }
+        XCTAssertEqual(xp, [0, Growth.turnXP], "Codex's turn grows Boop alone")
+    }
+
+    /// A live demo of two buddies keeps to each one's agent: a buddy's
+    /// agent steps wait for its own agent's hooks, and the other agent's
+    /// wait for their own steps, however they interleave.
+    func testALiveDemoKeepsToEachBuddysAgent() throws {
+        let runtime = try twoBuddies("left:pixel:claude,right:boop:codex")
+        let script = try DemoScript("""
+            {"demo": 1, "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
+            {"agent": "prompt", "buddy": "left", "text": "Add dark mode"}
+            {"agent": "prompt", "buddy": "right", "text": "Fix the test"}
+            {"agent": "run", "buddy": "right", "cmd": "npm test", "fails": true}
+            {"brain": {"react.mood": "annoyed"}, "buddy": "right", "after": 0}
+            {"agent": "reply", "buddy": "left", "text": "Done."}
+            {"brain": {"react.mood": "proud"}, "buddy": "left", "after": 0}
+            """)
+        let cursor = dir.appendingPathComponent("demo-cursor")
+        runtime.home.sync { runtime.play(script, live: true, cursor: cursor) }
+        func settle() { runtime.home.sync {}; Thread.sleep(forTimeInterval: 0.1); runtime.home.sync {} }
+        func due() -> String? { (try? String(contentsOf: cursor, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        func hook(_ agent: String, _ name: String, _ tool: String? = nil) {
+            runtime.home.sync {
+                runtime.hook(HookLine(agent: agent, hook: name, session: agent, cwd: "/tmp/proj", tool: tool, ts: 0), received: 0)
+            }
+            settle()
+        }
+        settle()
+        // Codex runs ahead: its prompt and its run wait for their turn.
+        hook("codex", "UserPromptSubmit")
+        hook("codex", "PreToolUse", "Bash")
+        hook("codex", "PostToolUse", "Bash")
+        XCTAssertEqual(due(), "0", "Claude's prompt is first")
+        hook("claude", "UserPromptSubmit")
+        XCTAssertEqual(due(), "4", "Codex's kept hooks end its two steps, and Boop's answer plays: Claude's reply is due")
+        hook("codex", "Stop")  // not Claude's: it waits for a Codex step
+        XCTAssertEqual(due(), "4")
+        hook("claude", "Stop")
+        XCTAssertEqual(due(), "6", "over: the step count")
     }
 }

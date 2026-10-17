@@ -258,6 +258,17 @@ def refusal(s: scripts.Script, agent: str, ui: str) -> Optional[str]:
     return None
 
 
+def show_in_window(mirror: Path, what: str) -> None:
+    """Shows an agent this terminal doesn't, from what it draws to
+    `mirror`, in a Terminal window of its own, for a recording to show it
+    beside the first."""
+    if sys.stdout.isatty() and shutil.which("osascript"):
+        command = f"tail -n +1 -f {mirror}"
+        subprocess.run(["osascript", "-e", f'tell application "Terminal" to do script "{command}"'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"session: {what} draws to {mirror}", file=sys.stderr)
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     path = scripts.find(args.name)
     s = scripts.load(path)
@@ -265,11 +276,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not source.is_dir():
         sys.exit(f"session: no project for {args.name}: make {source.relative_to(REPO)}/ with the files "
                  "the script's agent reads, edits and runs")
-    why = refusal(s, args.agent, args.ui)
-    if why:
-        sys.exit(f"session: {why}")
-    if args.ui == "terminal" and shutil.which(args.agent) is None:
-        sys.exit(f"session: {args.agent} isn't on PATH")
+    # Who plays: the agent given, or each buddy's own, each its own part.
+    plays = [(buddy, agent, s.mine(buddy)) for buddy, agent in s.agents()] or [(None, args.agent, s)]
+    if s.buddies and args.ui == "desktop":
+        sys.exit("session: a script of several buddies plays in the terminal: the app runs one Claude Code")
+    if s.buddies and args.board.startswith("usb:"):
+        sys.exit("session: a script of several buddies plays on the simulator's boards, or none")
+    for _, agent, part in plays:
+        why = refusal(part, agent, args.ui)
+        if why:
+            sys.exit(f"session: {why}")
+        if args.ui == "terminal" and shutil.which(agent) is None:
+            sys.exit(f"session: {agent} isn't on PATH")
     pack = path.parents[1]
     env = clean_env()
     env["BOOP_CHARACTER"] = str(pack)
@@ -279,52 +297,64 @@ def cmd_run(args: argparse.Namespace) -> int:
     root = Path(os.path.realpath(tempfile.mkdtemp(prefix="boop-session-", dir="/tmp")))
     log = Log(root / "session.log")
     children: List[subprocess.Popen] = []
-    term: Optional[Terminal] = None
-    server = None
+    terms: List[tuple] = []
+    servers = []
     boop: Optional[subprocess.Popen] = None
     cursor: Optional[Cursor] = None
     try:
-        # The board.
-        link = "none"
+        # The board, or each buddy's on the simulator's page.
+        places = [b["place"] for b in s.buddies]
+        sockets = [f"/tmp/boop-sim-{p}.sock" for p in places] or [SIM_SOCKET]
+        link = ["--link", "none"]
+        url = SIM_URL
         if args.board == "sim":
-            if not answers(SIM_SOCKET):
+            if not all(answers(sock) for sock in sockets):
                 print("session: building the simulator's page…", file=sys.stderr)
+                if places:
+                    packs = [b["pack"] for b in s.buddies]
+                    build = " && ".join([f"python3 characters/charactergen.py --stage"]
+                                        + [f"simulator/web/build.sh {p}" for p in dict.fromkeys(packs)]
+                                        + ["python3 simulator/web/serve.py " + " ".join(f"--cable {p}" for p in places)])
+                    argv = ["sh", "-c", build]
+                    url = f"{SIM_URL}?boards={','.join(places)}&packs={','.join(packs)}"
+                else:
+                    argv = ["make", "-s", "simulator"]
                 # Its own process group, so stopping it stops its server too.
-                children.append(subprocess.Popen(["make", "-s", "simulator"], cwd=REPO, env=env, start_new_session=True,
+                children.append(subprocess.Popen(argv, cwd=REPO, env=env, start_new_session=True,
                                                  stdout=open(root / "simulator.log", "w"), stderr=subprocess.STDOUT))
-                if not wait_socket(SIM_SOCKET, 300):
+                if not all(wait_socket(sock, 300) for sock in sockets):
                     sys.exit(f"session: the simulator's page didn't start; see {root}/simulator.log")
-            link = "usb:" + SIM_SOCKET
-            print(f"session: open {SIM_URL} (the board), then it starts", file=sys.stderr)
+            link = ["--links", ",".join("usb:" + sock for sock in sockets)] if places else ["--link", "usb:" + SIM_SOCKET]
+            print(f"session: open {url} (the board), then it starts", file=sys.stderr)
             if sys.stdout.isatty() and shutil.which("open"):
-                subprocess.run(["open", SIM_URL])
+                subprocess.run(["open", url])
         elif args.board.startswith("usb:"):
-            link = args.board
+            link = ["--link", args.board]
 
-        # Boop plays the script, keeping to the live agent; it waits for
-        # the board first, and stops when the script is over.
+        # Boop plays the script, keeping to the live agents; it waits for
+        # the boards first, and stops when the script is over.
         state = root / "state"
         name = json.loads((pack / "character.json").read_text())["name"]
         boop_sock = str(root / "boop.sock")
         boop = subprocess.Popen(
             [str(REPO / ".build/debug/Boop"), "--headless", "--state-dir", str(state), "--socket", boop_sock,
-             "--link", link, "--brain", "none", "--name", name, "--no-open", "--demo", str(path), "--live"],
+             *link, "--brain", "none", "--name", name, "--no-open", "--demo", str(path), "--live"],
             cwd=REPO, env=env, stdout=open(root / "boop.log", "w"), stderr=subprocess.STDOUT)
         cursor = Cursor(state / "demo-cursor", boop)
         if not wait_socket(boop_sock, 10):
             # Most often a script step the pack can't play: Boop says which.
             sys.exit(f"session: Boop didn't start:\n{(root / 'boop.log').read_text()[-2000:]}")
-        # Boop starts the script once the board says hello (step 0 due);
-        # nothing of the agent's starts before.
-        if link != "none":
+        # Boop starts the script once the boards say hello (step 0 due);
+        # nothing of the agents' starts before.
+        if link[1] != "none":
             print("session: waiting for the board…", file=sys.stderr)
-        board = SIM_URL if args.board == "sim" else link
+        board = url if args.board == "sim" else link[1]
         if not cursor.wait(0, nag=f"still waiting for the board: is {board} open?"):
             sys.exit(f"session: Boop stopped before the script started; see {root}/boop.log")
-        log(f"boop: playing {path.name}, board {link}")
+        log(f"boop: playing {path.name}, board {link[1]}")
 
-        ws = make_workspace(source, root, s.project)
         if args.ui == "desktop":
+            ws = make_workspace(source, root, s.project)
             gate = f"/usr/bin/python3 {GATE} --script {path} --cursor {cursor.path}"
             settings = {"env": {"AGENT_HOOKS_SOCKET": boop_sock}, "permissions": permissions(s),
                         "hooks": {"PreToolUse": [gate_hook(gate)]}}
@@ -336,30 +366,46 @@ def cmd_run(args: argparse.Namespace) -> int:
             while boop.poll() is None:
                 time.sleep(0.5)
         else:
-            replay = model.Replay(s.replies(), str(ws), log, due=cursor.wait, keep=str(root / "requests"),
-                                  title=s.title or s.name)
-            server = model.start(replay)
-            base_url = f"http://127.0.0.1:{server.server_address[1]}"
-            home = root / "home"
-            home.mkdir()
-            env.update({"HOME": str(home), "AGENT_HOOKS_SOCKET": boop_sock})
-            argv = setup_agent(args.agent, home, ws, base_url, s, env)
-            print(f"session: {s.name} with {args.agent}, logs in {root}", file=sys.stderr)
-            time.sleep(1)
-            term = Terminal(argv, str(ws), env, mirror=str(root / "agent.log"))
-            drive(args.agent, s, term, cursor, log)
-            while boop.poll() is None and not term.done:
+            # Each agent in a project of its own, on a replay server of its
+            # own giving its part's replies; the first shown here, the
+            # others each in a window of its own.
+            for i, (buddy, agent, part) in enumerate(plays):
+                mine = f"-{buddy}" if buddy else ""
+                ws = make_workspace(source, root, part.project)
+                replay = model.Replay(part.replies(), str(ws), log, due=cursor.wait, keep=str(root / f"requests{mine}"),
+                                      title=s.title or s.name)
+                server = model.start(replay)
+                servers.append(server)
+                base_url = f"http://127.0.0.1:{server.server_address[1]}"
+                home = root / f"home{mine}"
+                home.mkdir()
+                own = dict(env, HOME=str(home), AGENT_HOOKS_SOCKET=boop_sock)
+                argv = setup_agent(agent, home, ws, base_url, part, own)
+                print(f"session: {s.name} with {agent}{f' for {buddy}' if buddy else ''}, logs in {root}", file=sys.stderr)
+                time.sleep(1)
+                mirror = root / f"agent{mine}.log"
+                term = Terminal(argv, str(ws), own, mirror=str(mirror), show=i == 0)
+                if i > 0:
+                    show_in_window(mirror, f"{agent} for {buddy}")
+                terms.append((agent, part, term))
+            drivers = [threading.Thread(target=drive, args=(agent, part, term, cursor, log), daemon=True)
+                       for agent, part, term in terms]
+            for d in drivers:
+                d.start()
+            while boop.poll() is None and not all(term.done for _, _, term in terms):
                 time.sleep(0.5)
             time.sleep(2)
-            if not term.done:
-                term.type(QUIT[args.agent])
+            for agent, _, term in terms:
+                if not term.done:
+                    term.type(QUIT[agent])
+            for _, _, term in terms:
                 if not term.wait_exit(15):
                     term.press("\x03"); term.press("\x03")
     finally:
-        if term:
+        for _, _, term in terms:
             term.wait_exit(10)
             term.close()
-        if server:
+        for server in servers:
             server.shutdown()
         for child in children:
             if child.poll() is None:

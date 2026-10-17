@@ -17,6 +17,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SERVE = REPO / "simulator" / "web" / "serve.py"
+sys.path.insert(0, str(SERVE.parent))
+import serve  # noqa: E402
 
 
 def free_port() -> int:
@@ -157,13 +159,18 @@ class ServeSocket(unittest.TestCase):
 
     def test_a_cable_needs_a_name_and_a_socket_of_its_own(self) -> None:
         other = os.path.join(self.dir, "o.sock")
-        for cables in (["Left=" + other], ["left"], ["left=" + other, "left=" + self.socket],
+        for cables in (["Left=" + other], ["left=" + other, "left=" + self.socket],
                        ["left=" + other, "right=" + other], ["a/b=" + other]):
             with self.subTest(cables=cables):
                 proc = self.start(free_port(), *[arg for c in cables for arg in ("--cable", c)])
                 self.assertEqual(proc.wait(timeout=10), 2)
                 self.assertIn("--cable", proc.stderr.read().decode())
                 self.assertFalse(os.path.lexists(other))
+
+    def test_a_cable_with_no_socket_takes_its_names(self) -> None:
+        """Where the Mac app looks for a buddy's simulator by its place."""
+        self.assertEqual(serve.cables(["left", "right=/tmp/x.sock"], self.socket),
+                         {"/usb/left": "/tmp/boop-sim-left.sock", "/usb/right": "/tmp/x.sock"})
 
 
 if __name__ == "__main__":

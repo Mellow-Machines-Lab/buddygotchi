@@ -1,22 +1,27 @@
 import MellowHarness
 
-/// Boop's growth as it's kept: XP,
-/// the stage and the last event counted, as `growth.` keys in the key-value
+/// A buddy's growth as it's kept: XP,
+/// the stage and the last event counted, as `growth.` keys in its key-value
 /// store. It counts each event as it's logged, once: an event at or before
-/// the last one counted is left alone. Touched only on `home`.
+/// the last one counted is left alone, and so is one about another buddy.
+/// Touched only on `home`.
 public final class GrowthStore {
     public static let xpKey = "growth.xp"
     public static let stageKey = "growth.stage"
     public static let lastSeqKey = "growth.last_seq"
 
     let store: KeyValueStore
+    /// The buddy whose agents' work it counts, by its tag: nil for the
+    /// only one, whose events carry none.
+    let buddy: String?
     let log: (String) -> Void
     public private(set) var growth: Growth
     /// The `seq` of the last event counted.
     public private(set) var lastSeq: Int
 
-    public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
+    public init(_ store: KeyValueStore, buddy: String? = nil, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
+        self.buddy = buddy
         self.log = log
         growth = Growth(xp: store.int(Self.xpKey) ?? 0, stage: store.int(Self.stageKey) ?? 1)
         lastSeq = store.int(Self.lastSeqKey) ?? 0
@@ -35,7 +40,7 @@ public final class GrowthStore {
     /// Counts `e`, and returns whether the XP changed.
     @discardableResult
     public func count(_ e: Event) -> Bool {
-        guard e.seq > lastSeq else { return false }
+        guard e.seq > lastSeq, e.buddy == buddy else { return false }
         let earned = Growth.xp(for: e)
         guard earned > 0 else { return false }
         let before = growth.stage

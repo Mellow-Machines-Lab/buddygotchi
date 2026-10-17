@@ -144,9 +144,9 @@ public final class Runtime: @unchecked Sendable {
     /// what it hears is said to that one.
     var micOn = false
     var listener: Rig?
-    /// Boop's XP and stage, counted from each event as it's logged,
-    /// and whether the XP changed since the last status.
-    let growth: GrowthStore
+    /// The first buddy's XP and stage, counted from each event as it's
+    /// logged, and whether any buddy's XP changed since the last status.
+    var growth: GrowthStore { rigs[0].growth }
     var grew = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
@@ -229,7 +229,15 @@ public final class Runtime: @unchecked Sendable {
         let plans = options.buddies.isEmpty
             ? [BuddyOptions(buddy: .only(), link: options.link, steering: options.steering)] : options.buddies
         let several = plans.count > 1
-        rigs = plans.map { Rig($0, tag: several ? $0.buddy.id : nil, log: log) }
+        // Each buddy's memory and growth, in its own folder: the first's
+        // set up already, each other's the first time with its name and
+        // the first's nature.
+        rigs = try plans.enumerated().map { i, plan in
+            let folder = Runtime.folder(i, plan.buddy, in: options.stateDir), tag = several ? plan.buddy.id : nil
+            let memory = i == 0 ? longTerm
+                : try Runtime.memory(in: folder, name: plan.buddy.name, nature: longTerm.nature, today: today, log: log)
+            return Rig(plan, tag: tag, memory: memory, growth: try Runtime.growth(in: folder, buddy: tag, log: log), log: log)
+        }
         for rig in rigs {
             // boop.log leaves out a `state` sent again unchanged (the keepalive,
             // a reply to `hello`), which debug.jsonl keeps.
@@ -247,13 +255,12 @@ public final class Runtime: @unchecked Sendable {
         // Each buddy's core, its own seed apart. The launch's read-back
         // prunes the transcript, so today isn't a new day.
         let volume = settings.volume
-        let cores = plans.enumerated().map { i, plan in
-            var config = Core.Config(volume: volume, time: options.time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i),
-                                     pack: plan.buddy.pack)
+        let cores = rigs.map { rig in
+            var config = Core.Config(volume: volume, time: options.time, seed: rig.memory.seed ^ UInt64(now), pack: rig.buddy.pack)
             config.firstAsk = SessionTracker.randomFirstRequest()
             let core = Core(config: config, lastActiveDay: today, place: places.place)
             core.setWallClock(wall, at: wallAt)
-            return (plan.buddy, core)
+            return (rig.buddy, core)
         }
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
@@ -271,12 +278,11 @@ public final class Runtime: @unchecked Sendable {
         let moods = Runtime.brain(pipeline, rigs.map { rig in
             let link = rig.link, pack = rig.buddy.pack
             // Each buddy speaks its own pack's personality of the saved
-            // name, or its first. Only the first is the one long-term.md
-            // set up.
+            // name, or its first, and its own nature.
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        nature: rig === rigs[0] ? longTerm.nature : nil)
+                        nature: rig.memory.nature)
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -285,13 +291,6 @@ public final class Runtime: @unchecked Sendable {
         var held: [String] = []
         var holding = true
         debugWriter = Runtime.debugLines(pipeline: pipeline, emit: { line in if holding { held.append(line) } else { emit(line) } })
-        // Growth's store, or one in memory for this launch if the file won't open.
-        let values: KeyValueStore
-        do { values = try KeyValueStore(directory: options.stateDir) } catch {
-            log("growth: \(error); keeping XP in memory until the app quits")
-            values = try KeyValueStore(directory: nil)
-        }
-        growth = GrowthStore(values, log: log)
         // The view and the cores pick up where the last launch left them.
         let pipeline = self.pipeline
         let read = home.sync { pipeline.readBack(now: now) }
@@ -303,7 +302,7 @@ public final class Runtime: @unchecked Sendable {
         held.forEach(emit)
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
-        growth.follow(transcriptAt: transcript.lastSeq)
+        for rig in rigs { rig.growth.follow(transcriptAt: transcript.lastSeq) }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         for rig in rigs {
@@ -333,8 +332,8 @@ public final class Runtime: @unchecked Sendable {
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
         harness.on("*") { [weak self] e in
-            guard let self, growth.count(e) else { return }
-            grew = true
+            guard let self else { return }
+            for rig in rigs where rig.growth.count(e) { grew = true }
         }
     }
 

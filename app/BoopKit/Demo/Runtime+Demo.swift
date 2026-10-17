@@ -67,15 +67,24 @@ public final class DemoPlayer: @unchecked Sendable {
     let heardStep: @Sendable (DemoScript.Step, String) -> Void
     let done: @Sendable () -> Void
     var index = 0
-    /// The agent's hooks since the last one a step was waiting for.
-    var hooks: [HookLine] = []
-    /// The agent step waiting for its hook, and what to do when it comes.
-    var waiting: (matches: (HookLine) -> Bool, then: () -> Void)?
-    /// The agent playing the script's: the script's, until a live one's
-    /// hooks say who it is.
+    /// Each live agent's hooks since the last one a step of its was waiting
+    /// for, by `key`.
+    var hooks: [String: [HookLine]] = [:]
+    /// The agent step waiting for its hook, whose agent's (`key`), and what
+    /// to do when it comes.
+    var waiting: (key: String, matches: (HookLine) -> Bool, then: () -> Void)?
+    /// The agent playing a script of one buddy: the script's, until a live
+    /// one's hooks say who it is.
     lazy var agent = script.agent
-    /// The agent a step is about: a live one's, else its buddy's agent's.
-    func agent(of step: DemoScript.Step) -> String { live ? agent : script.agent(of: step.buddy) }
+    /// The agent a step is about: its buddy's, or with one buddy the live
+    /// one's.
+    func agent(of step: DemoScript.Step) -> String {
+        live && script.buddies.isEmpty ? agent : script.agent(of: step.buddy)
+    }
+    /// Whose hooks end a step: each buddy's agent's its own steps; with one
+    /// buddy, any agent's (`""`).
+    func key(_ step: DemoScript.Step) -> String { script.buddies.isEmpty ? "" : script.agent(of: step.buddy) }
+    func key(_ hook: HookLine) -> String { script.buddies.isEmpty ? "" : hook.agent }
 
     /// With no agent: whether each buddy's agent's main thread's turn is
     /// going (`""` for the only one).
@@ -162,7 +171,7 @@ public final class DemoPlayer: @unchecked Sendable {
             then()
         case .agent(let a):
             if live {
-                waitFor(endOf(a)) { [self] in
+                waitFor(endOf(a), from: key(step)) { [self] in
                     heardStep(step, agent(of: step))
                     then()
                 }
@@ -194,37 +203,40 @@ public final class DemoPlayer: @unchecked Sendable {
         }
     }
 
-    func waitFor(_ matches: @escaping (HookLine) -> Bool, then: @escaping () -> Void) {
-        if let i = hooks.firstIndex(where: matches) {
-            hooks.removeFirst(i + 1)
+    func waitFor(_ matches: @escaping (HookLine) -> Bool, from key: String, then: @escaping () -> Void) {
+        if let i = hooks[key, default: []].firstIndex(where: matches) {
+            hooks[key]!.removeFirst(i + 1)
             return then()
         }
-        waiting = (matches, then)
+        waiting = (key, matches, then)
     }
 
-    /// A hook from the live agent: the end of the step waiting for one, or
-    /// kept until a step does. If it ends one of the next agent steps
-    /// instead, the agent left out the ones before it (a step it skipped,
-    /// or a call it was refused): the script goes on from there, without
-    /// what came between, rather than wait for good.
+    /// A hook from a live agent: the end of the step waiting for one of
+    /// its, or kept until a step does. If it ends one of that agent's next
+    /// steps instead, the agent left out the ones before it (a step it
+    /// skipped, or a call it was refused): the script goes on from there,
+    /// without what came between, rather than wait for good. With several
+    /// buddies, each buddy's agent plays its own steps, and another
+    /// agent's hooks wait for theirs.
     func heard(_ hook: HookLine) {
-        agent = hook.agent
-        guard let w = waiting else { return hooks.append(hook) }
+        if script.buddies.isEmpty { agent = hook.agent }
+        let from = key(hook)
+        guard let w = waiting, w.key == from else { return hooks[from, default: []].append(hook) }
         if w.matches(hook) {
             waiting = nil
-            hooks.removeAll()
+            hooks[from] = []
             return w.then()
         }
         let ahead = script.steps.indices.dropFirst(index + 1).filter {
-            if case .agent = script.steps[$0].what { true } else { false }
+            if case .agent = script.steps[$0].what { key(script.steps[$0]) == from } else { false }
         }.prefix(Self.lookahead)
         guard let j = ahead.first(where: { j in
             if case .agent(let a) = script.steps[j].what { return endOf(a)(hook) }
             return false
-        }) else { return hooks.append(hook) }
+        }) else { return hooks[from, default: []].append(hook) }
         runtime.options.log("demo: the agent left out steps \(script.steps[index].number)–\(script.steps[j - 1].number); going on")
         waiting = nil
-        hooks.removeAll()
+        hooks[from] = []
         index = j
         publish(index)
         heardStep(script.steps[j], agent(of: script.steps[j]))

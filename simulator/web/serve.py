@@ -10,7 +10,7 @@ goes to the board whole. So the Mac app (`Boop --link usb:SOCKET`) and
 reach one on a bridge. The page's end of it is a WebSocket at /usb, one
 line a message; the newest page to connect is the board.
 
-With `--cable NAME=SOCKET`, once for each, there are several boards, each
+With `--cable NAME[=SOCKET]`, once for each, there are several boards, each
 with its own cable: a WebSocket at /usb/NAME and its socket, and no /usb.
 The page shows them side by side with ?boards=NAME,NAME.
 
@@ -262,16 +262,23 @@ def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,15}")
 
 
+def cable_socket(name: str) -> str:
+    """Where cable NAME's board is shared when no socket is given: where the
+    Mac app looks for a buddy's simulator by its place (DeviceChooser)."""
+    return f"/tmp/boop-sim-{name}.sock"
+
+
 def cables(given: list, default_socket: str) -> dict:
     """Each cable's WebSocket path and its socket: /usb and the default
-    socket with no --cable, else /usb/NAME for each NAME=SOCKET."""
+    socket with no --cable, else /usb/NAME for each NAME[=SOCKET]."""
     if not given:
         return {"/usb": default_socket}
     paths = {}
     for each in given:
-        name, _, path = each.partition("=")
+        name, eq, path = each.partition("=")
+        path = path if eq else cable_socket(name)
         if not NAME.fullmatch(name) or not path:
-            raise ValueError(f"--cable {each}: give NAME=SOCKET, the name in lowercase letters, digits, - and _")
+            raise ValueError(f"--cable {each}: give NAME or NAME=SOCKET, the name in lowercase letters, digits, - and _")
         if f"/usb/{name}" in paths or path in paths.values():
             raise ValueError(f"--cable {each}: each cable needs its own name and socket")
         paths[f"/usb/{name}"] = path
@@ -282,8 +289,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--port", type=int, default=8206, help="the page's port on 127.0.0.1 (8206)")
     parser.add_argument("--socket", default="/tmp/boop-sim-usb.sock", help="the board's USB, as a bridge's socket (/tmp/boop-sim-usb.sock)")
-    parser.add_argument("--cable", action="append", default=[], metavar="NAME=SOCKET",
-                        help="a board of its own, its USB at /usb/NAME and SOCKET; once for each board, in place of --socket")
+    parser.add_argument("--cable", action="append", default=[], metavar="NAME[=SOCKET]",
+                        help="a board of its own, its USB at /usb/NAME and SOCKET (/tmp/boop-sim-NAME.sock), where the Mac app looks for the buddy at that place; once for each board, in place of --socket")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
     parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()

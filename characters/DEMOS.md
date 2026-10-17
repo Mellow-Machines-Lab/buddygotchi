@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-16. A demo is a short, scripted stretch of work that a
+Updated 2026-10-17. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -98,7 +98,7 @@ default, in a session of its own) and maybe its `name`. Boop's
 
 ```json
 {"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
-{"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
+{"agent": "prompt", "buddy": "left", "text": "Add dark colours to the theme"}
 {"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
 ```
 
@@ -106,13 +106,17 @@ Play it headless on two simulated boards, each on its own cable
 ([simulator/README.md](../simulator/README.md)):
 
 ```sh
-python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
+python3 simulator/web/serve.py --cable left --cable right
 # open http://127.0.0.1:8206/?boards=left,right&packs=pixel,boop
 .build/debug/Boop --headless --state-dir /tmp/two --demo pack:not-my-turn \
     --links usb:/tmp/boop-sim-left.sock,usb:/tmp/boop-sim-right.sock
 ```
 
-A live agent plays only a script of one buddy.
+With real agents (`make demo NAME=not-my-turn IN=simulated-claude-terminal`,
+any terminal `IN`), each buddy's agent plays its own steps, as its
+`agents` say, and Boop keeps to each ([internal/sessions/README.md](../internal/sessions/README.md),
+Several buddies). The Claude app runs one Claude Code, so `IN=claude`
+plays scripts of one buddy.
 
 ## The brain's answers
 

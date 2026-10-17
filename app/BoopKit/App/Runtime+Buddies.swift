@@ -18,12 +18,16 @@ extension Runtime {
         }
     }
 
-    /// One buddy's board as it runs: its link, its reactions there and its
-    /// mood. Its core is the pipeline's. On `home`.
+    /// One buddy as it runs: its board's link and its reactions there, its
+    /// mood, and its memory and growth. Its core is the pipeline's. On
+    /// `home`.
     final class Rig: @unchecked Sendable {
         let buddy: Buddy
         /// Its tag in the transcript: its id with several buddies, nil for one.
         let tag: String?
+        /// Who it is, from its own `long-term.md`, and its XP.
+        let memory: LongTerm
+        let growth: GrowthStore
         let link: DeviceLink
         let transport: Transport?
         let steering: Steering
@@ -34,13 +38,44 @@ extension Runtime {
         /// The transport's `trouble` as the status last had it.
         var linkTrouble: String?
 
-        init(_ options: BuddyOptions, tag: String?, log: @escaping (String) -> Void) {
+        init(_ options: BuddyOptions, tag: String?, memory: LongTerm, growth: GrowthStore, log: @escaping (String) -> Void) {
             buddy = options.buddy
             self.tag = tag
+            self.memory = memory
+            self.growth = growth
             transport = options.link
             link = BoopDevice.link(options.link, log: log)
             steering = options.steering
         }
+    }
+
+    /// Where a buddy keeps its memory and growth: the state directory for
+    /// the first, as Boop always has, and `buddies/<id>/` in it for each
+    /// other.
+    static func folder(_ index: Int, _ buddy: Buddy, in stateDir: URL) -> URL {
+        index == 0 ? stateDir : stateDir.appendingPathComponent("buddies").appendingPathComponent(buddy.id)
+    }
+
+    /// A buddy's own `long-term.md` in `folder`, set up the first time with
+    /// its name and `nature`, the first buddy's: then it's its own.
+    static func memory(in folder: URL, name: String, nature: LongTerm.Nature, today: String,
+                       log: @escaping (String) -> Void) throws -> LongTerm {
+        let store = try MemoryStore(directory: folder, today: today, log: log)
+        if let longTerm = store.longTerm { return longTerm }
+        try store.setUp(name: String(name.prefix(23)), nature: nature, seed: UInt64.random(in: 1...0xFFFF), today: today)
+        log("memory: set up \(name) in \(folder.path)")
+        return store.longTerm!
+    }
+
+    /// A buddy's growth, kept in `folder`, or in memory for this launch if
+    /// the file won't open.
+    static func growth(in folder: URL, buddy: String?, log: @escaping (String) -> Void) throws -> GrowthStore {
+        let values: KeyValueStore
+        do { values = try KeyValueStore(directory: folder) } catch {
+            log("growth: \(error); keeping XP in memory until the app quits")
+            values = try KeyValueStore(directory: nil)
+        }
+        return GrowthStore(values, buddy: buddy, log: log)
     }
 
     /// The rig of the buddy tagged `tag`, the first's for none.
