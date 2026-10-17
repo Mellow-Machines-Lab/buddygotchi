@@ -100,9 +100,18 @@ The first of these wins:
 the staged pack, its own files and those it uses from another pack (§6),
 each a link to the file in its pack; `pack`, the one pointer to it; and
 from it, the pack's `firmware/` and the folder the app bundles
-(`packs/`, that pack alone). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
+(`packs/`). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
 and `make build` before every app build. The app bundles only what it
-reads of the pack (not its firmware, voice file, tools or tests).
+reads of a pack (not its firmware, voice file, tools or tests): the
+chosen pack's, which `packs/chosen` names, and beside it every other
+pack in the chosen one's folder, each with what it uses, for buddies
+that run another pack. Several buddies run side by side, each a board
+with its own pack, and the app loads each buddy's pack by its `id`
+(`Buddy`, internal/VERIFICATION.md §2's `--buddies`).
+`charactergen.py --firmware-to=DIR PACK` lays out one pack's `firmware/`
+alone in `DIR/firmware/`, as a stage would, and changes nothing staged:
+the simulator builds a second pack beside the staged one that way
+(`simulator/web/build.sh pixel`, [simulator/README.md](../simulator/README.md)).
 
 Everything that runs after a build, the tests, `boopdev`, the device
 tools and the simulator, reads the **pack in use**: the one the

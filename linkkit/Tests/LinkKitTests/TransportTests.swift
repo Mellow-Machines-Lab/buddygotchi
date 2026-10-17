@@ -133,6 +133,22 @@ final class Box<T>: @unchecked Sendable {
         #expect(BLETransport.connectTimeout == 10)
     }
 
+    /// SPEC.md §8 (Bluetooth): with no device named, the host takes any
+    /// whose name is `<Prefix>-…`; with one named, only that one, so two
+    /// transports each named for their own device never take each other's.
+    /// Only the matching: making a transport doesn't start Bluetooth.
+    @Test func testBluetoothTakesItsPrefixOrOnlyTheNamedDevice() {
+        let any = BLETransport(prefix: "Lamp")
+        #expect(any.isOurs("Lamp-54fe") && any.isOurs("Lamp-0001"))
+        #expect(!any.isOurs("Lamp") && !any.isOurs("Lampshade-54fe") && !any.isOurs("Pip-54fe") && !any.isOurs(nil))
+
+        let left = BLETransport(prefix: "Lamp", only: "Lamp-54fe")
+        let right = BLETransport(prefix: "Lamp", only: "Lamp-0001")
+        #expect(left.isOurs("Lamp-54fe") && !left.isOurs("Lamp-0001"))
+        #expect(right.isOurs("Lamp-0001") && !right.isOurs("Lamp-54fe"))
+        #expect(!left.isOurs("Lamp-54fe0") && !left.isOurs("lamp-54fe") && !left.isOurs(nil))
+    }
+
     /// Bluetooth off, refused or missing is said in plain words, with what
     /// to do and the app's name; on, or on its way, is no trouble. Only
     /// the words: nothing here may start Bluetooth.

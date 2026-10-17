@@ -2,7 +2,8 @@
 import Foundation
 
 /// The device over Bluetooth: a Nordic UART central (SPEC.md §8). Finds a
-/// device advertising as `<prefix>-XXXX`, connects without pairing,
+/// device advertising as `<prefix>-XXXX`, or only the one named `only`
+/// when it's given, connects without pairing,
 /// subscribes to TX, writes lines to RX in pieces no bigger than the link
 /// allows, and reconnects after a drop: 1 s later, doubling to 5 s while
 /// attempts keep failing.
@@ -24,6 +25,11 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     public let name = "ble"
     /// Devices advertise as `<prefix>-XXXX` (SPEC.md §8): `Lamp` finds `Lamp-54fe`.
     public let prefix: String
+    /// The one device to take, by its exact advertised name (`Lamp-54fe`),
+    /// or nil for the first whose name has the prefix. Several transports,
+    /// each with its own device, can run side by side this way: none takes
+    /// another's.
+    public let only: String?
     /// The app's name in the words `trouble` says: `Lamp isn't allowed to use Bluetooth.`
     public let appName: String
     /// Read from any thread, so it's kept apart from `peripheral`.
@@ -52,16 +58,24 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     var attempt = 0
 
     /// `prefix` is what the device's advertised name starts with, before
-    /// its `-`; `appName` defaults to it.
-    public init(prefix: String, appName: String? = nil, log: @escaping @Sendable (String) -> Void = { _ in }) {
+    /// its `-`; `only`, when given, is the one device's whole name; `appName`
+    /// defaults to the prefix.
+    public init(prefix: String, only: String? = nil, appName: String? = nil,
+                log: @escaping @Sendable (String) -> Void = { _ in }) {
         self.prefix = prefix
+        self.only = only
         self.appName = appName ?? prefix
         self.log = log
         super.init()
     }
 
-    /// Whether an advertised name is one of this app's devices.
-    func isOurs(_ name: String?) -> Bool { name?.hasPrefix(prefix + "-") == true }
+    /// Whether an advertised name is the device this transport takes: the
+    /// one named `only` when it's set, else any with the prefix.
+    func isOurs(_ name: String?) -> Bool {
+        guard let name else { return false }
+        if let only { return name == only }
+        return name.hasPrefix(prefix + "-")
+    }
 
     public func start(onLine: @escaping @Sendable (String) -> Void, onConnection: @escaping @Sendable (Bool) -> Void) {
         queue.async { [self] in
@@ -124,7 +138,7 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
         guard running, let central, central.state == .poweredOn, peripheral == nil else { return }
         let held = central.retrieveConnectedPeripherals(withServices: [Self.service])
         if let device = held.first(where: { isOurs($0.name) }) {
-            log("ble: taking over macOS's connection to \(device.name ?? prefix)")
+            log("ble: taking over macOS's connection to \(device.name ?? only ?? prefix)")
             connect(device)
         } else {
             central.scanForPeripherals(withServices: [Self.service], options: nil)
@@ -140,7 +154,7 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
         let this = attempt
         queue.asyncAfter(deadline: .now() + Self.connectTimeout) { [weak self] in
             guard let self, attempt == this, peripheral === device, !up else { return }
-            log("ble: \(device.name ?? prefix) not ready after \(Int(Self.connectTimeout)) s, trying again")
+            log("ble: \(device.name ?? only ?? prefix) not ready after \(Int(Self.connectTimeout)) s, trying again")
             giveUp(device)
         }
     }
@@ -318,7 +332,7 @@ extension BLETransport: CBCentralManagerDelegate, CBPeripheralDelegate {
         }
         up = true
         backoff.reset()
-        log("ble: connected to \(peripheral.name ?? prefix)")
+        log("ble: connected to \(peripheral.name ?? only ?? prefix)")
         onConnection?(true)
     }
 

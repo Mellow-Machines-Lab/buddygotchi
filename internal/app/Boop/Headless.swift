@@ -42,6 +42,18 @@ enum Headless {
             let problems = script?.problems() ?? []
             if !problems.isEmpty { fail(problems.map { "\(file.lastPathComponent): \($0)" }.joined(separator: "\n")) }
         }
+        // Several buddies: from --buddies, else the demo's header.
+        var buddies: [BuddySetting] = script?.buddies ?? []
+        if let text = args["--buddies"] {
+            guard let parsed = BuddySetting.parse(text) else { fail("--buddies is PLACE:PACK[:AGENT[:NAME]],… with each place once") }
+            buddies = parsed
+        }
+        var links: [LinkSetting] = []
+        for item in args["--links"]?.split(separator: ",") ?? [] {
+            guard let l = LinkSetting(String(item)), l != .bluetooth else { fail("--links is usb:SOCKET or none, one for each buddy, in order") }
+            links.append(l)
+        }
+        if !links.isEmpty, links.count != buddies.count { fail("--links needs one link for each of the \(buddies.count) buddies") }
         guard let nature = LongTerm.Nature(rawValue: args["--nature"] ?? "sweet") else { fail("--nature is sweet or cheeky") }
         let log = LogFile(directory: stateDir, echo: true)
 
@@ -58,7 +70,7 @@ enum Headless {
 
         // Headless always takes the dashboard's lines.
         var options = runtimeOptions(stateDir: stateDir, socketPath: socketPath, link: link, debug: args.has("--debug"),
-                                     devLines: true, log: log)
+                                     devLines: true, log: log, buddies: buddies, links: links)
         // Jev's key only from BOOP_JEV_KEY, as boopdev: a run from an agent
         // shell must never use the owner's key from the Keychain.
         options.readJevKey = { _ in JevKey.environment() }
@@ -89,7 +101,7 @@ enum Headless {
 
         if let script {
             play(script, live: args.has("--live"), cursor: stateDir.appendingPathComponent("demo-cursor"),
-                 on: runtime, link: link, recorder: recorder, to: args["--record"], log: log)
+                 on: runtime, link: link, links: links, recorder: recorder, to: args["--record"], log: log)
         }
 
         // Stop cleanly: close the socket and the link, then exit 0.
@@ -113,13 +125,13 @@ enum Headless {
     /// `--demo`: plays the script once the device is there (with a link),
     /// then stops. `recorder` keeps what the device was sent
     /// (`DemoRecording`), written to `file` for the simulator's page.
-    static func play(_ script: DemoScript, live: Bool, cursor: URL, on runtime: Runtime, link: LinkSetting,
+    static func play(_ script: DemoScript, live: Bool, cursor: URL, on runtime: Runtime, link: LinkSetting, links: [LinkSetting],
                      recorder: DemoRecorder?, to file: String?, log: LogFile) {
         // Ready at once, so a live agent may start while the device is
         // awaited; played once it's there.
         let player = runtime.home.sync {
             runtime.demo(script, live: live, cursor: cursor, step: { step, agent in
-                let cause = step.cause(creature: runtime.name, agent: agent)
+                let cause = step.cause(creature: (runtime.buddies.first { $0.id == step.buddy }?.name ?? runtime.name), agent: agent)
                 if let cause { log.write("demo: \(cause.text)") }
                 recorder?.happened(cause, input: step.input)
             }, done: {
@@ -146,7 +158,7 @@ enum Headless {
         var tries = 0
         func wait() {
             tries += 1
-            if link == .none || runtime.link.hello != nil {
+            if (links.isEmpty ? [link] : links).allSatisfy({ $0 == .none }) || runtime.helloFromEvery {
                 recorder?.begin(name: runtime.name)
                 return player.start()
             }

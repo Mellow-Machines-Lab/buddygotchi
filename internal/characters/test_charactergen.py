@@ -168,7 +168,7 @@ class StudioRuleTests(unittest.TestCase):
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
         self.assertEqual([n for n in staged if not n.startswith(("firmware-test/", "staged/"))],
                          ["firmware/include/face.h", "firmware/include/moods.h", "firmware/src/render/face/face.cpp", "pack",
-                          "packs/solo/character.json", "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
+                          "packs/chosen", "packs/solo/character.json", "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
         moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
         self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
         self.assertIn('kPackId = "solo"', moods)
@@ -191,6 +191,32 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h"])
         self.assertEqual((gen.STAGE / "packs" / "user" / "mac" / "takes.tsv").read_text(), "t")
         self.assertFalse((gen.STAGE / "packs" / "user" / "voice").exists())
+
+    def test_staging_bundles_every_pack_beside_it_for_buddies(self):
+        """CHARACTER.md §2: the app holds every pack beside the chosen one, each with what it uses, for buddies that run another; packs/chosen names the chosen one."""
+        self.pack("lender", [{"id": "calm", "meaning": "Settled."}], files=[("mac/takes.tsv", "t"), ("steering/guide.md", "")],
+                  shares={"voice": {"files": ["mac/takes.tsv"]}})
+        self.pack("other", [{"id": "calm", "meaning": "Settled."}], files=[("steering/guide.md", "")], uses={"voice": "lender"})
+        pack = self.pack("chosen-one", [{"id": "calm", "meaning": "Settled."}], files=[("steering/guide.md", "")])
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        self.assertEqual(gen.stage(pack), 0)
+        self.assertEqual((gen.STAGE / "packs" / "chosen").read_text().strip(), "chosen-one")
+        self.assertEqual(sorted(p.name for p in (gen.STAGE / "packs").iterdir() if p.is_dir()), ["chosen-one", "lender", "other"])
+        self.assertEqual((gen.STAGE / "packs" / "other" / "mac" / "takes.tsv").read_text(), "t", "with what it uses")
+
+    def test_firmware_to_lays_out_one_packs_firmware_and_stages_nothing(self):
+        """--firmware-to=DIR, for a second build beside the staged pack's (simulator/web/build.sh PACK): the firmware's files as staging lays them out, what the pack uses included, and nothing staged changes."""
+        self.pack("lender", [{"id": "calm"}], files=[("firmware/include/art.h", "a")], shares={"art": {"files": ["firmware/include/art.h"]}})
+        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], uses={"art": "lender"})
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        out = self.dir / "out"
+        self.assertEqual(gen.firmware_to(pack, out), 0)
+        self.assertEqual(sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()),
+                         ["firmware/include/art.h", "firmware/include/moods.h", "firmware/src/render/face/face.cpp"])
+        self.assertIn('kPackId = "user"', (out / "firmware" / "include" / "moods.h").read_text())
+        self.assertFalse(gen.STAGE.exists())
 
     def test_each_board_has_a_face(self):
         """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has or uses."""

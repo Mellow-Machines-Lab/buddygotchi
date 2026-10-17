@@ -13,7 +13,9 @@ PIO := firmware/tools/pio.sh
 # and linkkit, which use Swift Testing and so run under `swift test`, each
 # in a build folder of its own. That build now and then fails with "plugin
 # for module 'TestingMacros' not found", a toolchain flake, so that
-# failure alone is tried again, up to eight tries in all.
+# failure alone is tried again, up to eight tries in all. One test at a
+# time: MellowHarness's loop tests wait on the brain's real deadline, which
+# a busy CI runner's parallel tests can starve.
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
 test:
@@ -21,7 +23,7 @@ test:
 	cd $(ROOT) && .build/debug/BoopTests
 	for pkg in $(SWIFT_PACKAGES); do \
 	  cd $(ROOT)/$$pkg && mkdir -p .build && for try in 1 2 3 4 5 6 7 8; do \
-	    swift test --scratch-path .build/tests > .build/test.log 2>&1; status=$$?; cat .build/test.log; \
+	    swift test --no-parallel --scratch-path .build/tests > .build/test.log 2>&1; status=$$?; cat .build/test.log; \
 	    [ $$status -eq 0 ] && break; \
 	    grep -q "plugin for module 'TestingMacros' not found" .build/test.log || exit $$status; \
 	    [ $$try -eq 8 ] && exit 1; \
@@ -74,11 +76,13 @@ sim:
 # The simulator (simulator/tests/): its core on the Mac in real time, with
 # the test as its front end and at its serial port; then the same core as
 # the browser runs it, built to WebAssembly (it needs Emscripten: brew
-# install emscripten), and the page's USB cable.
+# install emscripten), with Pixel's pack built beside the staged one, and
+# the page's USB cables.
 sim-test:
 	cd $(ROOT) && $(PIO) run -e native
 	cd $(ROOT) && python3 -m unittest discover -s simulator/tests
 	cd $(ROOT) && simulator/web/build.sh
+	cd $(ROOT) && simulator/web/build.sh pixel
 	cd $(ROOT) && node --test simulator/tests/
 
 # Hook → app → USB → device pipeline check (L4), on the board over USB.

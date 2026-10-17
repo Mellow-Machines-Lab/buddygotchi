@@ -33,11 +33,15 @@ public final class Core {
         /// (`SessionTracker.randomFirstRequest`), so a request can't share
         /// `attn.id` with one the device still shows from the last launch.
         public var firstAsk = 0
+        /// Whose rules these are: the buddy's character, the process's by
+        /// default.
+        public var pack: CharacterPack
 
-        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1) {
+        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active) {
             self.volume = volume
             self.time = time
             self.seed = seed
+            self.pack = pack
         }
     }
 
@@ -48,7 +52,7 @@ public final class Core {
     /// Boop's mood now, which every `state` carries and the rules'
     /// reactions are drawn in: the runtime reads it from the transcript,
     /// where the mood output keeps it. The resting mood until it's set.
-    var mood: () -> String = { MoodOutput.initial }
+    var mood: () -> String
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -134,6 +138,7 @@ public final class Core {
     public init(config: Config, lastActiveDay: String? = nil,
                 place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
         self.config = config
+        mood = { config.pack.defaultMood }
         self.lastActiveDay = lastActiveDay
         tracker = SessionTracker(firstRequest: config.firstAsk, place: place)
         rng = SplitMix64(seed: config.seed)
@@ -267,12 +272,13 @@ public final class Core {
         }
         var reaction = rule
         reaction.variant = Core.pickVariant(mood: mood(), state: anim, ctx: rule.ctx,
-                                            avoiding: lastVariant[anim], &rng)
+                                            avoiding: lastVariant[anim], in: config.pack, &rng)
         lastVariant[anim] = reaction.variant
         fx.append(.reaction(reaction))
-        var did = Event.did(Core.played(reaction) ?? "", for: seq, action: anim, by: "rule",
+        let played = Core.played(reaction, by: config.pack.name)
+        var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
                             facts: reaction.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
-        if Core.played(reaction) == nil { did.data["message"] = nil }
+        if played == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
 
@@ -280,7 +286,7 @@ public final class Core {
     /// reacted to the error on its own.` None for `starting`: every turn
     /// starts with it, so the brain hears the start itself and nothing
     /// more, and the log alone keeps that it played.
-    static func played(_ reaction: DeviceReaction) -> String? {
+    static func played(_ reaction: DeviceReaction, by name: String = CharacterPack.active.name) -> String? {
         let what: String
         switch reaction.anim {
         case Core.stopped?: what = "the stop"
@@ -288,7 +294,7 @@ public final class Core {
         case Core.helperReturn?: what = "the helper coming back"
         default: return nil
         }
-        return "\(CharacterPack.active.name) reacted to \(what) on its own."
+        return "\(name) reacted to \(what) on its own."
     }
 
     /// A tap on the device, recorded as the poke `seq`, on the brain's
@@ -475,8 +481,8 @@ public final class Core {
     /// when there's another: the rules pick it for now,
     /// and the harness may later.
     public static func pickVariant(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
-                                   avoiding last: Int?, _ rng: inout SplitMix64) -> Int {
-        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx)
+                                   avoiding last: Int?, in pack: CharacterPack = .active, _ rng: inout SplitMix64) -> Int {
+        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx, in: pack)
         let choices = fit.filter { $0 != last }
         guard !choices.isEmpty else { return fit.first ?? 1 }
         return choices[rng.int(in: 0...(choices.count - 1))]
@@ -541,9 +547,10 @@ public final class Core {
                                         facts: ["agent": .string(thread.agent)], at: now)))
             fx.append(.open(thread))
         }
-        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread) }
-        if let finish { return open(finish, Core.openedFinished) }
-        fx.append(.record(Event.did(Core.wiggled, for: seq, action: Core.wiggle, by: "rule", at: now)))
+        let name = config.pack.name
+        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread(by: name)) }
+        if let finish { return open(finish, Core.openedFinished(by: name)) }
+        fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
     }
 
     /// Turns the mic on, if it's off, recorded as `listen_start`. After the
@@ -597,10 +604,14 @@ public final class Core {
 
     /// The rule actions' names and messages.
     public static let wiggle = "wiggle"
-    public static let wiggled = "\(CharacterPack.active.name) wiggled on its own."
     public static let openThread = "open_thread"
-    public static let openedThread = "\(CharacterPack.active.name) opened the thread that needs you on the Mac."
-    public static let openedFinished = "\(CharacterPack.active.name) opened the thread that finished on the Mac."
+    public static func wiggled(by name: String = CharacterPack.active.name) -> String { "\(name) wiggled on its own." }
+    public static func openedThread(by name: String = CharacterPack.active.name) -> String {
+        "\(name) opened the thread that needs you on the Mac."
+    }
+    public static func openedFinished(by name: String = CharacterPack.active.name) -> String {
+        "\(name) opened the thread that finished on the Mac."
+    }
     public static let needsYou = "needs_you"
 
     /// Runs the session table's timers due by `now`: a
@@ -626,7 +637,7 @@ public final class Core {
                                     session: s.id,
                                     data: ["for": s.requestRef.map { .int(Int64($0)) } ?? .null, "by": "rule",
                                            "agent": .string(s.agent.rawValue), "ok": true,
-                                           "message": .string("\(CharacterPack.active.name) showed that \(s.agent.rawValue) needs you.")])))
+                                           "message": .string("\(config.pack.name) showed that \(s.agent.rawValue) needs you.")])))
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
@@ -643,11 +654,11 @@ public final class Core {
         recordNeeds(now, &fx)
         updateActs(now)
         var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual) {
+        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual, in: config.pack) {
             // A new visual, or a new mood with fewer variations of it than
             // the one showing: a variation of it at random.
             shown = (snapshot.visual, Core.pickVariant(mood: snapshot.mood, state: snapshot.visual,
-                                                         avoiding: lastVariant[snapshot.visual], &rng))
+                                                         avoiding: lastVariant[snapshot.visual], in: config.pack, &rng))
             lastVariant[snapshot.visual] = shown.variant
             snapshot.variant = shown.variant
         }

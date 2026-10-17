@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-15. How we check that Boop works, including what's on its
+Updated 2026-10-16. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -64,16 +64,16 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
 | `make dash` | `boopctl dash`, for the app `make debug` started |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
-| `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md)). No Bluetooth, so agents may run it |
+| `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`). No Bluetooth, so agents may run it |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
-| `make -C internal test` | `make build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own: `swift test --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
+| `make -C internal test` | `make build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
 | `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/`, then LinkKit's device library's own (`pio test -d linkkit/device -e native`) |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
-| `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests). It needs Emscripten and Node |
+| `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
@@ -96,7 +96,13 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   state directory other than the everyday one, it never installs or
   repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
-  and idle time.
+  and idle time. `--buddies left:pixel:claude,right:boop:codex` runs two
+  buddies side by side, each with its own pack and the agent it watches
+  first, and `--links usb:SOCKET,usb:SOCKET` gives each its own board, in
+  order; a `{"dev":…}` line then takes `"buddy": PLACE`. The menu-bar app
+  reads the same from `settings.json`'s `buddies`, each with its board's
+  `hello.id` as `board`, over Bluetooth. `BuddiesTests` checks them end to
+  end on two fake boards.
 - `.build/debug/beacon` and `.build/debug/mellowharness-emit`:
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).

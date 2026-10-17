@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-15. The tour of LinkKit: the four messages, the queue, and
+Updated 2026-10-16. The tour of LinkKit: the four messages, the queue, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -143,7 +143,9 @@ final class LampHost: @unchecked Sendable {
   `link.trouble` says why (`.tooOld`, `.tooNew`, `.otherApp`), with what
   to do about it in its `description`, for your settings screen.
 - **Bluetooth:** `BLETransport(prefix: "Lamp")` finds `Lamp-XXXX` on the
-  Nordic UART service, cuts messages to the write size and keeps a newer
+  Nordic UART service; `BLETransport(prefix: "Lamp", only: "Lamp-54FE")`
+  takes that device alone, so an app with two devices runs two transports,
+  one `DeviceLink` each, side by side. It cuts messages to the write size and keeps a newer
   `state` from queueing behind an old one; it never drops a `do`, and
   gives up a link too stuck to take them. macOS kills a process that
   touches Bluetooth without the right to, so tests, and anything started

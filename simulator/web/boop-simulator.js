@@ -8,8 +8,6 @@
 // Nothing here draws on the screen: every pixel there is the firmware's.
 // And nothing here knows what the board's lines mean: they pass through.
 
-import makeCore from './boop-sim.js';
-
 const CHUNK = 512;       // app::Sound::kChunk
 const OUT_RATE = 22050;  // voice::kOutRate
 const CANVAS = [320, 240];  // a touch is in the canvas's pixels on every board
@@ -28,7 +26,11 @@ export class Board extends EventTarget {
   frame = null;
   on = false;
 
-  static async make() {
+  /// `pack` is the character pack it was built for: `boop-sim-PACK.js`
+  /// (web/build.sh PACK), or with none the staged pack's `boop-sim.js`.
+  static async make({ pack } = {}) {
+    if (pack && !/^[a-z0-9][a-z0-9_-]*$/.test(pack)) throw new Error(`no pack called ${pack}`);
+    const { default: makeCore } = await import(pack ? `./boop-sim-${pack}.js` : './boop-sim.js');
     const board = new Board();
     board.#core = await makeCore();
     board.#usb = board.#core.cwrap('sim_usb', null, ['string']);
@@ -39,12 +41,14 @@ export class Board extends EventTarget {
 
   /// Power: on is a new boot with nothing remembered, as on a board, but
   /// for the card, which stays in its slot. `face` is `pixel` or `gel`;
-  /// `native` a native face's panel, `502x410`.
-  power(on, { face = 'pixel', native } = {}) {
+  /// `native` a native face's panel, `502x410`; `id` the board's own id,
+  /// its hello's, so boards side by side differ (`b00p-0000` without one).
+  power(on, { face = 'pixel', native, id } = {}) {
     clearInterval(this.#timer);
     if (on) {
       this.#env('BOOP_SIM_FACE', face);
       if (native) this.#env('BOOP_SIM_NATIVE', native);
+      if (id) this.#env('BOOP_SIM_ID', id);
     }
     this.#core._sim_power(on ? 1 : 0);
     this.on = !!on;
@@ -265,7 +269,8 @@ const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊',
 // Outside a browser (the tests, under Node) there's no element to be.
 const Element = globalThis.HTMLElement ?? class {};
 
-/// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json" controls>
+/// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json"
+///                 board-id="b00p-left" pack="pixel" controls>
 /// The board, drawn as a thing on a desk, with its BOOT button and a Sound
 /// button (a browser plays nothing until a click). `voice` is a voice file
 /// to fetch for its card; `usb` a WebSocket that is its USB cable, one
@@ -273,7 +278,9 @@ const Element = globalThis.HTMLElement ?? class {};
 /// tools); `controls` adds power, reset and card buttons. `demo` is a
 /// recording to play (DemoPlayer), told as a story under the board: what
 /// happens, and what the creature does about it. The board's face is then
-/// the recording's. `element.board` is its Board, and `element.demo` its
+/// the recording's. `board-id` is the board's id, its hello's, so boards on
+/// one page differ; `pack` the character pack's build to run (Board.make).
+/// `element.board` is its Board, and `element.demo` its
 /// DemoPlayer, once `ready` has fired.
 export class BoopSimulator extends Element {
   static observedAttributes = ['face', 'zoom'];
@@ -321,7 +328,10 @@ export class BoopSimulator extends Element {
   get zoom() { return Number(this.getAttribute('zoom')) || (this.face === 'gel' ? 1 : 2); }
 
   /// Power, and the RESET button: off and on again.
-  power(on) { this.board.power(on, { face: this.face, native: this.getAttribute('native') || undefined }); }
+  power(on) {
+    this.board.power(on, { face: this.face, native: this.getAttribute('native') || undefined,
+                           id: this.getAttribute('board-id') || undefined });
+  }
   reset() { this.power(true); }
 
   async #start() {
@@ -330,7 +340,13 @@ export class BoopSimulator extends Element {
       try { this.#recording = await (await fetch(demo)).json(); } catch { this.#status.textContent = `no demo at ${demo}`; }
     }
     this.#size(...PANEL[this.face]);
-    const board = this.board = await Board.make();
+    let board;
+    try {
+      board = this.board = await Board.make({ pack: this.getAttribute('pack') || undefined });
+    } catch {
+      this.#status.textContent = `no build for the pack ${this.getAttribute('pack')}: run simulator/web/build.sh ${this.getAttribute('pack')}`;
+      return;
+    }
     board.addEventListener('frame', e => this.#draw(e.detail));
     board.addEventListener('parts', e => { this.#parts = e.detail; this.#show(); });
     board.addEventListener('power', e => {
@@ -372,7 +388,8 @@ export class BoopSimulator extends Element {
     // The backlight dims the panel; the firmware's pixels stay what they are.
     this.#canvas.style.filter = (p.backlight ?? 255) < 255 ? `brightness(${p.backlight / 255})` : '';
     const usb = this.hasAttribute('usb') ? ` · usb ${this.#plugged ? 'plugged in' : 'unplugged'}` : '';
-    this.#status.textContent = on ? `${this.face}${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
+    const who = [this.getAttribute('board-id'), this.getAttribute('pack')].filter(Boolean).map(w => `${w} · `).join('');
+    this.#status.textContent = on ? `${who}${this.face}${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
     for (const [button, words] of this.#labels) button.textContent = words();
   }
 

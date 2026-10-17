@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-15.</p>
+  <p class="small">Updated 2026-10-16.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -292,7 +292,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
 
 <section id="joins">
   <h2>Where the pieces join</h2>
-  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>, which is split by job over six files in <code>app/BoopKit/App/</code>: <code>Runtime.swift</code>, and <code>Runtime+Brain</code>, <code>+Device</code>, <code>+Talk</code>, <code>+Status</code> and <code>+Dev</code>.</p>
+  <p>Each package has its own vocabulary: agent-hooks has <code>AgentEvent</code>s, MellowHarness has <code>Event</code>s and lines, LinkKit has <code>state</code>, <code>do</code> and <code>ev</code>. Boop translates between them in the places below. Everything sent to the device goes out through <code>Runtime</code>, which is split by job over seven files in <code>app/BoopKit/App/</code>: <code>Runtime.swift</code>, and <code>Runtime+Brain</code>, <code>+Buddies</code>, <code>+Device</code>, <code>+Talk</code>, <code>+Status</code> and <code>+Dev</code>.</p>
   <div class="scroll"><table>
     <thead><tr><th>From → to</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
@@ -305,6 +305,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       <tr><td>Boop → which device</td><td><code>DeviceChooser</code></td><td>The board over Bluetooth, or, while one runs on this Mac and Settings is told to use it, the simulator (<code>simulator/</code>: the firmware's own code in a web page) over its USB socket. Nothing above the transport knows which</td></tr>
       <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>, or another in <code>demo/</code>) comes in through the same doors as real work: the agent's hooks as hooks (sent by the player, or with <code>--live</code> a real agent's, which the rest keeps to), a poke as the device's, talk as the mic's; the brain's steps are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>
       <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline; <code>talk_on</code> and <code>talk_off</code> go to the core, which keeps push-to-talk, as it does for the app's mic button: it says when the Mac's mic goes on and off and when <code>listening</code> ends, records each step as a <code>listen</code> event with no sentence, and the runtime carries it out</td></tr>
+      <tr><td>Several buddies → one transcript</td><td><code>Buddy</code>, <code>Pipeline</code>, <code>Runtime+Buddies</code></td><td>Boop runs one buddy or several side by side, each a board with its own character pack, core and agents, all equals; one is the same code with a list of one. The pipeline owns every buddy's core, and <code>BuddyBinding</code> gives each agent session to one buddy (the one whose agents name it, else the least busy). With several, each event about a buddy is tagged with it (<code>data.voice</code>, <code>Event.buddy</code>), and each buddy is one of MellowHarness's voices: the brain answers an event once for each buddy, its own first, in a prompt that opens with whom it answers for (<code>Buddy.header</code>) and asks only that buddy's outputs, each built with its pack. A buddy's reaction becomes an event of its own (<code>reacted</code>, from the pipeline) that wakes the others, one more in its <code>chain</code> when it answers another's; past <code>Buddy.maxRepliesInARow</code> it no longer wakes anyone</td></tr>
     </tbody>
   </table></div>
 </section>

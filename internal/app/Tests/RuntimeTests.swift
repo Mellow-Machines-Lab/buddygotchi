@@ -1176,7 +1176,7 @@ final class RuntimeTests: XCTestCase {
         transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("the finished thread opened") { opened.all == ["claude://code/continue?session=local_7db5"] }
         let action = try XCTUnwrap(recorded().last { $0.actionName == Core.openThread })
-        XCTAssertEqual(action["message"]?.string, Core.openedFinished)
+        XCTAssertEqual(action["message"]?.string, Core.openedFinished())
         let poke = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
         XCTAssertEqual(poke.type, .poke)
         XCTAssertFalse(poke.wakesBrain, "it doesn't wake the brain")

@@ -9,7 +9,18 @@ import MellowHarness
 /// core did by rule is logged after it. The runtime runs one on `home`;
 /// replays, evals and tests drive their own.
 public final class Pipeline {
-    public let core: Core
+    /// The buddies, in order, each with its own core, which hears only its
+    /// own agents' events, pokes and talk.
+    public let buddies: [Buddy]
+    let cores: [String: Core]
+    /// Which buddy watches each agent session.
+    let binding = BuddyBinding()
+    /// The first buddy's core, the only one's.
+    public var core: Core { cores[buddies[0].id]! }
+    /// Whether there are several buddies: then each event about one is
+    /// tagged with it, and each is a voice of the harness. One is tagged
+    /// nowhere.
+    public var several: Bool { buddies.count > 1 }
     public let view: TranscriptView
     /// MellowHarness's `Harness`, which keeps the log: Boop's brain.
     public let harness: Harness
@@ -26,8 +37,11 @@ public final class Pipeline {
 
     /// What one input did.
     public struct Step: Sendable {
-        /// The core's effects, its records included.
-        public var effects: [CoreEffect] = []
+        /// The cores' effects, their records included.
+        public var effects: [CoreEffect] { tagged.map(\.effect) }
+        /// Each effect with the buddy whose core decided it: nil for the
+        /// only one.
+        public var tagged: [(buddy: String?, effect: CoreEffect)] = []
         /// Every event logged, stamped: the input's first.
         public var recorded: [Event] = []
         /// The view events made: the events with a line.
@@ -46,13 +60,23 @@ public final class Pipeline {
         var now: Int64 = 0
     }
 
+    /// One buddy, the process's character, on `core`.
+    public convenience init(core: Core, view: TranscriptView, transcript: Log = Transcript.log(), time: LocalTime = LocalTime(),
+                            clock: Harness.Clock? = nil, queue: DispatchQueue = .main, loop: Bool = true,
+                            note: @escaping (String) -> Void = { _ in }) {
+        self.init([(.only(), core)], view: view, transcript: transcript, time: time, clock: clock, queue: queue, loop: loop, note: note)
+    }
+
+    /// `buddies`, each on its own core, the first first.
     /// `clock` is the harness's; with none, its time is each input's.
     /// `loop` false leaves the brain to `harness.respond(to:)` (the evals).
-    public init(core: Core, view: TranscriptView, transcript: Log = Transcript.log(), time: LocalTime = LocalTime(),
-                clock: Harness.Clock? = nil, queue: DispatchQueue = .main, loop: Bool = true,
+    public init(_ buddies: [(buddy: Buddy, core: Core)], view: TranscriptView, transcript: Log = Transcript.log(),
+                time: LocalTime = LocalTime(), clock: Harness.Clock? = nil, queue: DispatchQueue = .main, loop: Bool = true,
                 note: @escaping (String) -> Void = { _ in }) {
-        self.core = core
+        self.buddies = buddies.map(\.buddy)
+        cores = Dictionary(uniqueKeysWithValues: buddies.map { ($0.buddy.id, $0.core) })
         self.view = view
+        if buddies.count > 1 { view.buddies = buddies.map(\.buddy) }
         var options = Harness.Options()
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
@@ -62,7 +86,16 @@ public final class Pipeline {
         let input = inputTime
         harness = Harness(name: CharacterPack.active.name, brain: nil, log: transcript,
                           clock: clock ?? Harness.Clock(now: { input.now }), queue: queue, options: options, note: note)
-        view.register(on: harness) { core.needsYouBlock }
+        view.register(on: harness) { [unowned self] buddy in self.core(buddy).needsYouBlock }
+        // With several buddies, one's reaction is an event the others hear,
+        // one more in its chain when it answers another's.
+        harness.on(Event.did) { [unowned self] d in
+            guard several, d.action == ReactOutput.outputName, d["ok"]?.bool == true, let who = d.buddy else { return }
+            let answered = d.about.flatMap(harness.log.event)
+            let chain = answered?.type == .reacted ? (answered?["chain"]?.int ?? 1) + 1 : 1
+            harness.emit(Event(at: d.at, source: .boop, type: .reacted, specificType: "brain", buddy: who,
+                               data: ["message": d["message"] ?? .null, "chain": .int(chain)]))
+        }
         harness.on("*") { [weak self] e in
             self?.step?.recorded.append(e)
             self?.onRecord?(e)
@@ -92,7 +125,7 @@ public final class Pipeline {
             onView?(made.views[i])
         }
         if var outer {
-            outer.effects += made.effects
+            outer.tagged += made.tagged
             outer.recorded += made.recorded
             outer.views += made.views
             step = outer
@@ -100,24 +133,41 @@ public final class Pipeline {
         return made
     }
 
-    /// An agent's event, from an adapter: its `ts` is now. It's logged
-    /// without what its session already has (`Core.unrepeated`).
+    /// The buddy `id`, the first for none.
+    public func buddy(_ id: String?) -> Buddy { buddies.first { $0.id == id } ?? buddies[0] }
+
+    /// The core of the buddy `id`, the first's for none.
+    public func core(_ id: String?) -> Core { id.flatMap { cores[$0] } ?? core }
+
+    /// How events about the buddy `id` are tagged: with it when there are
+    /// several, not at all for one.
+    public func tag(_ id: String) -> String? { several ? id : nil }
+
+    /// An agent's event, from an adapter: its `ts` is now. With several
+    /// buddies it goes to the one watching its session (`BuddyBinding`),
+    /// tagged with it. It's logged without what its session already has
+    /// (`Core.unrepeated`).
     @discardableResult
     public func agent(_ event: Event) -> Step {
         input(at: event.at) {
+            var event = event
+            let id = several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
+            if let id { event.data["voice"] = .string(id) }
+            let core = core(id)
             let e = harness.emit(core.unrepeated(event))
-            run(core.handle(e))
+            run(core.handle(e), buddy: id)
         }
     }
 
-    /// The device's poke: the device has already played it. A tap that
-    /// opens a finished turn's thread means "take me there", not a poke:
-    /// the core records `open_thread` for it, which holds it back.
+    /// The device's poke, on the buddy `buddy` (nil for the only one): the
+    /// device has already played it. A tap that opens a finished turn's
+    /// thread means "take me there", not a poke: the core records
+    /// `open_thread` for it, which holds it back.
     @discardableResult
-    public func poke(at now: Int64, finish: ThreadRef? = nil) -> Step {
+    public func poke(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
         input(at: now) {
-            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input"))
-            run(core.poke(at: now, seq: e.seq, finish: finish))
+            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
+            run(core(buddy).poke(at: now, seq: e.seq, finish: finish), buddy: buddy)
         }
     }
 
@@ -125,11 +175,13 @@ public final class Pipeline {
     /// after `by`'s button (`device` or `app`), cut to 2,000 characters as
     /// a prompt is on the wire. It wakes the brain
     /// even while something needs you.
+    /// With several buddies, a board's own button says it to that `buddy`,
+    /// and the app's to them all.
     @discardableResult
-    public func said(_ words: String, by: Core.Talker, at now: Int64) -> Step {
+    public func said(_ words: String, by: Core.Talker, buddy: String? = nil, at now: Int64) -> Step {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
-            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, data: ["words": .string(cut)]))
+            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
         }
     }
 
@@ -146,23 +198,27 @@ public final class Pipeline {
     @discardableResult
     public func tick(at now: Int64) -> Step {
         input(at: now) {
-            run(core.tick(at: now))
+            for b in buddies { run(cores[b.id]!.tick(at: now), buddy: tag(b.id)) }
             harness.tick()
         }
     }
 
-    /// The core's effects from a call outside the inputs above (the mood
-    /// changing, the mic): their records logged, the rest for the caller.
+    /// A core's effects from a call outside the inputs above (the mood
+    /// changing, the mic), the buddy `buddy`'s: their records logged, the
+    /// rest for the caller.
     @discardableResult
-    public func effects(_ effects: [CoreEffect], at now: Int64) -> Step {
-        input(at: now) { run(effects) }
+    public func effects(_ effects: [CoreEffect], buddy: String? = nil, at now: Int64) -> Step {
+        input(at: now) { run(effects, buddy: buddy) }
     }
 
-    /// Carries out the core's effects' records; the caller carries out the
-    /// rest, which the step collects.
-    public func run(_ effects: [CoreEffect]) {
-        step?.effects += effects
-        for case .record(let e) in effects { harness.emit(e) }
+    /// Carries out a core's effects' records, tagged with its buddy; the
+    /// caller carries out the rest, which the step collects.
+    public func run(_ effects: [CoreEffect], buddy: String? = nil) {
+        step?.tagged += effects.map { (buddy, $0) }
+        for case .record(var e) in effects {
+            if let buddy { e.data["voice"] = .string(buddy) }
+            harness.emit(e)
+        }
     }
 
     /// Reads the log's last day back, as a launch does: into the view (its
@@ -173,7 +229,11 @@ public final class Pipeline {
     public func readBack(now: Int64) -> Int {
         inputTime.now = max(inputTime.now, now)
         let read = harness.resume()
-        for e in read { core.replay(e) }
+        for e in read {
+            if several, e.agent != nil { _ = binding.buddy(for: e, among: buddies, watching: { _ in 0 }) }
+            // An untagged event, from a launch with one buddy, is the first's.
+            core(e.buddy).replay(e)
+        }
         return read.count
     }
 
@@ -193,6 +253,7 @@ public final class Pipeline {
     /// a brain, and the view's holds.
     public func whyNotWake(_ e: Event) -> String? {
         if !brain { return "no brain" }
+        let core = core(e.buddy)
         return view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock })
     }
 }

@@ -7,6 +7,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Who Boop is: the personality file it reads.
     public var personality = Personality.default
     public var volume = 6
+    /// Several buddies side by side, each its own board and pack: empty, or
+    /// one, for the one Boop.
+    public var buddies: [BuddySetting] = []
 
     public init() {}
 
@@ -22,14 +25,16 @@ public struct AppSettings: Codable, Equatable, Sendable {
             personality = p
         }
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
+        buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume }
+    enum CodingKeys: String, CodingKey { case personality, volume, buddies }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(personality.rawValue, forKey: .personality)
         try c.encode(volume, forKey: .volume)
+        if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
     }
 
     public static let file = "settings.json"

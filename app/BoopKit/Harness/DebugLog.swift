@@ -63,6 +63,8 @@ public enum DebugLog {
             pass["brain"] = p.brain ?? "none"
         }
         if let held = p.held { pass["held"] = held }
+        // With several buddies, whose pass it was.
+        if let voice = p.voice { pass["voice"] = voice }
         if let prompt = p.prompt {
             pass["state"] = split(prompt).last
             pass["questions"] = p.questions.map(\.key)
@@ -184,8 +186,9 @@ public enum DebugLog {
     /// hands the pass on (`onPass`), so those lines wait for it.
     public final class Writer: @unchecked Sendable {
         let emit: (String) -> Void
-        /// The head last written, which the passes after it share.
-        var head: String?
+        /// The head last written, which the passes after it share: for
+        /// each buddy's passes (`""` for the only one).
+        var head: [String: String] = [:]
         /// A pass is logged and its outputs running: their lines wait.
         var holding = false
         var held: [String] = []
@@ -214,9 +217,9 @@ public enum DebugLog {
         public func pass(_ pass: Harness.Pass, launchOptions: [String: [String]], at ms: Int64) {
             if let prompt = pass.prompt {
                 let (head, _) = DebugLog.split(prompt)
-                if head != self.head {
+                if head != self.head[pass.voice ?? ""] {
                     emit(DebugLog.head(head, at: ms))
-                    self.head = head
+                    self.head[pass.voice ?? ""] = head
                 }
             }
             emit(DebugLog.pass(pass, launchOptions: launchOptions, at: ms))

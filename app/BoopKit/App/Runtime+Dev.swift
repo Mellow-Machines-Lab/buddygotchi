@@ -9,19 +9,21 @@ extension Runtime {
     /// `debug.jsonl`.
     func dev(_ data: Data) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        // With several buddies, which one a line is for: the first's by default.
+        let buddy = object["buddy"] as? String
         switch object["dev"] as? String {
         case "advance":
             if let ms = (object["ms"] as? NSNumber)?.int64Value { advanceClock(ms) }
         case "answer":
-            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy) }
+            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy, buddy: buddy) }
         case "mood":
-            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy) }
+            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy, buddy: buddy) }
         case "said":
             // What push-to-talk heard, without a mic (VERIFICATION.md §2).
             guard let words = object["words"] as? String else { return }
             heard(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
         case "tap":
-            tapped()
+            tapped(buddy: buddy)
         case "listen":
             if let on = object["on"] as? Bool { listen(on) }
         case "presence":
@@ -54,26 +56,30 @@ extension Runtime {
         tick()
     }
 
-    /// A forced pass: the outputs keep their own rules. `by` is who the
-    /// pass is by, in the transcript.
-    func forcePass(_ choices: [String: String], by: String, who: String = "dev") {
-        options.log("\(who): forced pass → " + Harness.OutputRecord.names(harness.force(choices, by: by)))
+    /// A forced pass, for the buddy `buddy` (the first's by default): the
+    /// outputs keep their own rules. `by` is who the pass is by, in the
+    /// transcript.
+    func forcePass(_ choices: [String: String], by: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        let ran = harness.force(choices, by: by, voice: rig.tag)
+        options.log("\(who): forced pass\(Runtime.whose(rig)) → " + Harness.OutputRecord.names(ran))
         changed()
     }
 
-    /// The mood output's own change, which tells the device too.
-    func forceMood(_ to: String, by: String, who: String = "dev") {
-        let result = harness.force(mood, by: by) {
-            MoodOutput.change(mood, to: to, log: harness.log.view(now: options.clock()))
-        }
-        options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
+    /// The mood output's own change, the buddy `buddy`'s, which tells its
+    /// device too.
+    func forceMood(_ to: String, by: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        let result = harness.force(rig.mood, by: by) { MoodOutput.change(rig.mood, to: to, log: harness.log.view(now: options.clock())) }
+        options.log("\(who): mood\(Runtime.whose(rig)) \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
         changed()
     }
 
-    /// A tap on the device, without one.
-    func tapped(who: String = "dev") {
-        options.log("\(who): tap")
-        run(pipeline.poke(at: options.clock()))
+    /// A tap on the device, the buddy `buddy`'s, without one.
+    func tapped(who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): tap\(Runtime.whose(rig))")
+        run(pipeline.poke(at: options.clock(), buddy: rig.tag))
         changed()
     }
 

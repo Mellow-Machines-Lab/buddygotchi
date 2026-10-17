@@ -11,6 +11,12 @@ public enum BoopDevice {
     public static let app = "boop"
     /// Over Bluetooth the device advertises as `Boop-XXXX`.
     public static let blePrefix = "Boop"
+
+    /// The name a board advertises for its `hello.id`: `b00p-54fe`
+    /// advertises as `Boop-54FE`, the same two bytes of its address.
+    public static func advertised(_ id: String) -> String? {
+        id.firstIndex(of: "-").map { blePrefix + "-" + id[id.index(after: $0)...].uppercased() }
+    }
     /// Push-to-talk's face after the Mac's Talk button, and its end when no
     /// reply is coming.
     public static let listening = "listening", stopListening = "stop_listening"

@@ -37,8 +37,8 @@ public enum Voice {
     /// has some words recorded twice in one mood, and most in several.
     /// Nil when none does.
     static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String, finish: String?,
-                     avoiding: Set<String> = [], rng: inout SplitMix64) -> Take? {
-        let fit = Take.all.filter {
+                     avoiding: Set<String> = [], in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
+        let fit = Take.all(in: pack).filter {
             $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish)
         }
         for k in Self.order(kind) {
@@ -56,12 +56,12 @@ public enum Voice {
     /// one. The first take also plays alone when the two would run past
     /// `maxSayMs`.
     public static func say(feeling: String?, about: String?, kind: Take.Kind, face: String, finish: String?,
-                            avoiding: Set<String> = [], rng: inout SplitMix64) -> [Take] {
+                            avoiding: Set<String> = [], in pack: CharacterPack = .active, rng: inout SplitMix64) -> [Take] {
         let first = feeling.flatMap {
-            take(.feeling, meaning: $0, kind: kind, face: face, finish: finish, avoiding: avoiding, rng: &rng)
+            take(.feeling, meaning: $0, kind: kind, face: face, finish: finish, avoiding: avoiding, in: pack, rng: &rng)
         }
         let second = about.flatMap {
-            take(.about, meaning: $0, kind: kind, face: face, finish: finish, avoiding: avoiding, rng: &rng)
+            take(.about, meaning: $0, kind: kind, face: face, finish: finish, avoiding: avoiding, in: pack, rng: &rng)
         }
         guard let first else { return second.map { [$0] } ?? [] }
         guard let second else { return [first] }
