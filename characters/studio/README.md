@@ -53,7 +53,15 @@ tools save the clips its studio entry names (`captures`) into `DIR`.
   screen play, at most 60 at once for a `clip` character and 12 for a
   `live` one, whose each holds one of the page's few WebGL contexts, and
   a hovered cell plays first. A cell shows its first variation; clicking
-  it opens that scene.
+  it opens that scene. Served by `make simulator`
+  ([simulator/README.md](../../simulator/README.md)), the matrix also
+  marks the cell the simulated board shows now, from the board's own
+  `dbg.state` once a second: no app or needs you, else a reaction
+  playing, else its look (the agents' activity while working), in the
+  mood its face wears, with the variation it plays; clicking the marked
+  cell opens that variation. The simulator's link names the board to ask,
+  `&board=/board` (`/board/NAME` for one of several); without it the page
+  asks nothing.
 
 The address keeps the selection
 (`#pack=boop&c=pixel&mood=grumpy&state=working&v=2`), so a link opens the
@@ -119,16 +127,17 @@ cell's canvases.
 `root.studio` on the page (`document.getElementById('studio').studio`) is
 the hook browser checks drive: `ready` (a promise), `select({...})`,
 `selectAsset(id, character)`, `sel`, `adapter` (the instance), `view`
-and `setView('scene' | 'matrix')`, and `matrix` (`{cells, playing,
-transport}`).
+and `setView('scene' | 'matrix')`, `matrix` (`{cells, playing,
+transport, board}`), and `boardCell(dbgState)`, the cell a board's
+`dbg.state` marks.
 
 ## Checking it
 
 `check.cjs` drives the matrix in a headless browser, for every
 character of every pack here: a cell for each mood and state, only cells
 on screen playing and never more than the limit, the playing cells
-following the scroll and a hovered one, no page errors, and a click
-opening the scene. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points
+following the scroll and a hovered one, no page errors, a click
+opening the scene, and which cell a board's `dbg.state` marks. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points
 at another copy, `BOOP_QA_BROWSER` at a browser) and the server:
 
 ```sh

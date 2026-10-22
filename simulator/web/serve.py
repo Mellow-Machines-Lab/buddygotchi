@@ -14,6 +14,11 @@ With `--cable NAME=SOCKET`, once for each, there are several boards, each
 with its own cable: a WebSocket at /usb/NAME and its socket, and no /usb.
 The page shows them side by side with ?boards=NAME,NAME.
 
+It also serves characters/ at /characters/, so the Character Studio is at
+/characters/studio/, and /board (or /board/NAME) is what the board says it
+shows: its reply to a `dbg.state` the server sends it, as a tool on the
+cable would, or null with no board; the studio's matrix marks it.
+
 Only this Mac can reach it: the page is served on 127.0.0.1 and the socket
 is its user's alone. The standard library only, so it runs on the Mac's
 own Python.
@@ -23,6 +28,7 @@ import base64
 import errno
 import hashlib
 import os
+import posixpath
 import re
 import select
 import signal
@@ -33,6 +39,7 @@ import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import unquote
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -47,6 +54,8 @@ sys.path.pop(0)
 # §8, §9). The board's own lines may be longer: a screenshot's is.
 MAX_BEHIND = 4 * 1024 * 1024
 MAX_LINE = 512
+# How long /board waits for the board's dbg.state.
+ASK_S = 1.0
 
 
 class Cable:
@@ -59,6 +68,7 @@ class Cable:
         self.lock = threading.Lock()
         self.board = None  # the page's WebSocket: a callable that sends one line
         self.backlog = {}  # each client's lines it hasn't read yet
+        self.asking = []  # (the start of the line awaited, an Event, its line once heard) for ask()
         self.wake_r, self.wake_w = os.pipe()  # wakes the clients' thread for new lines
         os.set_blocking(self.wake_w, False)
 
@@ -80,8 +90,28 @@ class Cable:
             except OSError:
                 self.unplug(send)
 
+    def ask(self, line: bytes, reply: bytes, timeout: float = ASK_S):
+        """Sends the board a line and returns the first of its lines that
+        starts with `reply`, or None with no board or no reply in time. The
+        reply goes to every client too, as a bridge's do."""
+        waiting = [reply, threading.Event(), None]
+        with self.lock:
+            if not self.board:
+                return None
+            self.asking.append(waiting)
+        self.to_board(line)
+        waiting[1].wait(timeout)
+        with self.lock:
+            if waiting in self.asking:
+                self.asking.remove(waiting)
+        return waiting[2]
+
     def to_clients(self, line: bytes) -> None:
         with self.lock:
+            for waiting in self.asking:
+                if waiting[2] is None and line.startswith(waiting[0]):
+                    waiting[2] = line
+                    waiting[1].set()
             for out in self.backlog.values():
                 out.extend(line + b"\n")
         try:
@@ -307,9 +337,27 @@ def main() -> int:
                 websocket(self, cable)
                 self.close_connection = True
                 return
+            board = wired.get(self.path.split("?")[0].replace("/board", "/usb", 1)) if self.path.startswith("/board") else None
+            if board:
+                # null with no board or no reply: a page polling this shouldn't fill its console with errors.
+                said = board.ask(b'{"t":"dbg.state"}', b'{"t":"dbg.state"')
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(said or b"null")
+                return
             super().do_GET()
 
         def translate_path(self, path):
+            # /characters/: the packs and the Character Studio, as they are in
+            # the repository; tidied first, so a .. can't climb out of it.
+            tidy = posixpath.normpath(unquote(path.split("?", 1)[0].split("#", 1)[0]))
+            if tidy.startswith("/characters/"):
+                here, self.directory = self.directory, str(REPO)
+                try:
+                    return super().translate_path(tidy)
+                finally:
+                    self.directory = here
             path = path.split("?")[0]
             if path == "/voice.bin":
                 return args.voice
@@ -361,6 +409,7 @@ def main() -> int:
     else:
         print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (add ?face=gel for Boop's own face)")
         print(f"its USB, as a bridge's socket: {args.socket}")
+        print(f"every mood and state, the board's marked: http://127.0.0.1:{args.port}/characters/studio/#view=matrix&board=/board")
     sys.stdout.flush()
     try:
         server.serve_forever()

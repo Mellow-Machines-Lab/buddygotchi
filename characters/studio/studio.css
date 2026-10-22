@@ -124,6 +124,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .thumb.idle::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--hue,#555);opacity:.6}
 .cell small{display:block;font-size:11px;color:var(--muted);text-align:left;padding:2px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell.borrowed .thumb{outline:1px dashed var(--muted);outline-offset:-1px}
+.board-now{display:flex;align-items:center;gap:8px;font-size:14px}
+.board-now button{min-height:28px;padding:2px 10px;font-size:13px}
+.board-now .dot,.cell.board small::before{width:9px;height:9px;border-radius:50%;background:#1aa35a;flex:none}
+.board-now .dot{display:inline-block}
+.cell.board{border-color:#1aa35a}
+.cell.board small{color:var(--ink);font-weight:600;display:flex;align-items:center;gap:5px}
+.cell.board small::before{content:""}
 
 /* Tools */
 .tools{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
