@@ -477,7 +477,7 @@ and `src/` on the include path. It holds:
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 22
+- `moods` and `states`: every mood, in the pack's order, and the 23
   states above, in the designs' order.
 - `designs`: for each mood, a row for each state (a borrowing mood has
   the designs it wears), with each variation's
