@@ -1865,6 +1865,30 @@ final class RuntimeTests: XCTestCase {
     func testADemoWithNoAgentCompactsAsClaudeDoes() throws { try compactsWithNoAgent("claude") }
     func testADemoWithNoAgentCompactsAsCodexDoes() throws { try compactsWithNoAgent("codex") }
 
+    /// characters/DEMOS.md: with no agent, each `session` a script names is
+    /// a session of its own, started before its first step, a thread
+    /// beside the first: two working at once, then one failing.
+    func testADemoWithNoAgentRunsSeveralSessions() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let script = try DemoScript("""
+            {"demo": 1, "title": "Two"}
+            {"agent": "prompt", "text": "Go", "after": 0}
+            {"agent": "prompt", "text": "And you", "session": "docs", "after": 0}
+            {"agent": "reply", "text": "Oops", "fails": true, "session": "docs", "after": 0, "takes": 0.1}
+            """)
+        runtime.home.sync { runtime.play(script) }
+        eventually("both sessions, and the failure") {
+            runtime.home.sync { runtime.harness.log.events.contains { $0.specificType == "StopFailure" } }
+        }
+        let sessions = runtime.home.sync { Set(runtime.harness.log.events.compactMap(\.session)) }
+        XCTAssertEqual(sessions, ["demo", "demo-docs"])
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).busy }, 1, "the first still works")
+    }
+
     func compactsWithNoAgent(_ agent: String) throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)

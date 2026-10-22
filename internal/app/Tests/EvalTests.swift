@@ -346,4 +346,67 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(right.passed, right.runChecks.map(\.summary).joined(separator: "\n"))
         XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → skeptical")
     }
+
+    /// EVALS.md §2: every scenario passes with the expect brain, which
+    /// answers each pass as its step expects (its own `brain`, else the
+    /// first of each `expect` set, the mood a move at a time toward what a
+    /// step wants). What it checks is everything but Jev: that each step
+    /// wakes the brain as it says, that the moods it expects lie on the
+    /// graph's paths, and the whole-run checks a run can fail without Jev.
+    func testEveryScenarioPassesWithTheExpectBrain() async throws {
+        for scenario in try Scenario.load(directory: try Self.scenarios()) {
+            let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(scenario)
+            XCTAssertTrue(result.passed, "\(scenario.file):\n" + (result.checks.filter { !$0.passed }.map(\.summary)
+                + result.runChecks.filter { !$0.passed }.map(\.summary)).joined(separator: "\n"))
+        }
+    }
+
+    /// EVALS.md §2: every scenario is also a demo (`--to-demo`) that the
+    /// pack can play: a demo is an eval with its brain's answers written in.
+    func testEveryScenarioPlaysAsADemo() throws {
+        for scenario in try Scenario.load(directory: try Self.scenarios()) {
+            let text = DemoFromScenario.script(scenario)
+            let script = try DemoScript(text, named: scenario.file)
+            XCTAssertEqual(script.problems(), [], scenario.file)
+            XCTAssertEqual(script.title, scenario.name)
+            let brains = script.steps.filter { if case .brain = $0.what { true } else { false } }.count
+            XCTAssertEqual(brains, scenario.steps.filter { $0.expect != nil }.count, "\(scenario.file): a brain step after each expecting step")
+            let longest = script.steps.map(\.after).max() ?? 0
+            XCTAssertLessThanOrEqual(longest, DemoFromScenario.maxGap, "\(scenario.file): the gaps are cut short")
+        }
+    }
+
+    /// EVALS.md §3: a scenario's `start` sets the virtual clock, in UTC,
+    /// which the prompt's heading shows; a step's `brain` answers for the
+    /// expect brain ahead of its `expect`.
+    func testAScenarioStartsAtItsStartAndAStepMayAnswer() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("start-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("s.json")
+        try #"{"name":"n","case":"c","why":"w","start":"2026-10-31T09:00","steps":[{"event":"poke","at":"0s","brain":{"react.mood":"amused"},"expect":{"react":"curious|amused"}}]}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+        let scenario = try Scenario(file: file)
+        XCTAssertEqual(scenario.start, 1_793_437_200_000, "2026-10-31 09:00 UTC")
+        let states = Lines()
+        final class Seeing: Brain, @unchecked Sendable {
+            let id = "seeing"
+            let inner = ExpectBrain()
+            let states: Lines
+            init(_ states: Lines) { self.states = states }
+            func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
+                states.add(state)
+                return try await inner.answer(state: state, questions: questions, deadline: deadline)
+            }
+        }
+        let expect = ExpectBrain()
+        let result = try await Eval(brain: expect, steering: RuntimeTests.steering).run(scenario)
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.checks.first?.react, "amused", "the step's own answer comes first")
+        _ = try await Eval(brain: Seeing(states), steering: RuntimeTests.steering).run(scenario)
+        XCTAssertTrue(states.all.first?.contains("NOW (09:00, Saturday") == true, states.all.first ?? "")
+        try #"{"name":"n","case":"c","why":"w","start":"Halloween","steps":[{"event":"poke","at":"0s","expect":{"react":"none"}}]}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+        try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }
+    }
 }

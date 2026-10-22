@@ -213,4 +213,32 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
         XCTAssertTrue(problems[3].hasPrefix("line 4: say.kind has no choice wrod"))
     }
+
+    /// characters/DEMOS.md: a header's `start` is when the demo's clock
+    /// starts, on this Mac's clock; an agent step's `session` is another
+    /// of its threads; a reply that `fails` is a failed turn, and only a
+    /// run or a reply fails.
+    func testAStartSessionsAndAFailedTurn() throws {
+        let script = try DemoScript("""
+            {"demo": 1, "title": "Two at once", "start": "2026-10-31T09:00"}
+            {"agent": "prompt", "text": "Go"}
+            {"agent": "prompt", "text": "And you", "session": "docs"}
+            {"agent": "reply", "text": "Oops", "fails": true}
+            """)
+        let local = DateComponents(calendar: Calendar.current, year: 2026, month: 10, day: 31, hour: 9).date!
+        XCTAssertEqual(script.start, Int64(local.timeIntervalSince1970 * 1000))
+        guard case .agent(let second) = script.steps[1].what, case .agent(let reply) = script.steps[2].what else {
+            XCTFail("agent steps")
+            return
+        }
+        XCTAssertEqual(second.session, "docs")
+        XCTAssertTrue(reply.fails)
+        XCTAssertEqual(script.steps[2].cause(creature: "Pip", agent: "claude")?.text, "Claude's turn fails")
+        try XCTAssertThrowsError(try DemoScript(#"{"agent": "read", "file": "a", "fails": true}"#)) { error in
+            XCTAssertTrue("\(error)".contains("only a run or a reply fails"))
+        }
+        try XCTAssertThrowsError(try DemoScript(#"{"demo": 1, "start": "soon"}"#)) { error in
+            XCTAssertTrue("\(error)".contains("start is a date and time"))
+        }
+    }
 }

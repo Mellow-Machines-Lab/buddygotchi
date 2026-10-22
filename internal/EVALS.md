@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-21. How we check that Jev decides as Boop should: short
+Updated 2026-10-22. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -112,7 +112,27 @@ BOOP_JEV_KEY=… .build/debug/boopdev eval --only apology   # while developing: 
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only tests --timeline
 BOOP_JEV_KEY=… make eval                     # the final pass: every scenario, 3 runs for always and 1 for the rest
 .build/debug/boopdev eval --list             # every scenario's case, runs and requests; no key needed
+.build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
+.build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
 ```
+
+**The expect brain, and a demo for every scenario.** A demo is an eval
+with its brain's answers written in. The expect brain (`ExpectBrain`)
+answers each pass as its step expects: the step's own `brain` answers
+first, else the first value of each `expect` set that the question
+offers, else what the pipeline check would. The mood moves a step a pass
+on the graph, so when the wanted mood isn't a move away, it takes the
+move on the shortest path there, and a step that wants no mood starts
+toward the next mood a later step wants if that's more than a move off.
+It prices every run (`--list`), and `--scripted` runs every scenario
+once with it, with no key: what it checks is everything but Jev, that
+each step wakes the brain as it says, that the moods it expects lie on
+the graph's paths, and the whole-run checks a run can fail without Jev
+(`max_quiet_working`, `moves_on_graph`). `--to-demo DIR` writes each
+scenario as `DIR/<file>.jsonl`, each expecting step followed by a brain
+step with the expect brain's answers and the gaps cut to 2.5 s at most
+with a note of how long really passed, for `make demo` to play: auditing
+the evals is watching them.
 
 **The API budget.** Every pass is one request to Jev, and a full
 `make eval` is about 660 of them (`--list` counts them), so it's the
@@ -138,6 +158,8 @@ the rest run once. A scenario can say its own `runs` (§3), as `53` says
 | `--always` | Only the `always` scenarios |
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
 | `--list` | Prints each scenario's file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then the total, and runs nothing |
+| `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
+| `--to-demo DIR` | Writes each scenario as a demo script in DIR, and runs nothing |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
 The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a
@@ -159,6 +181,8 @@ saying why, a step's `reaction` shows in HISTORY as in progress, or not
 at all when it didn't happen, a scenario starts in its `mood` and a
 step's `offered` is what its pass offered, and each whole-run check
 catches what it should, `moves_on_graph` an answer that wasn't offered.
+Every scenario passes with the expect brain and plays as a demo the pack
+can play, and a scenario's `start` shows in the prompt's heading.
 
 ## 3. The scenario file
 
@@ -191,6 +215,7 @@ file-name order:
 | `always` | `true` for Boop's character (§1): 3 runs by default, and `--always` runs these |
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
+| `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | `boop` (the default) or `chatter` |
@@ -206,6 +231,7 @@ file-name order:
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
+| `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key

@@ -9,7 +9,9 @@ import Foundation
 /// The file is one JSON object a line; a line starting `//` is a comment.
 /// The first may be a header, `{"demo": 1, "title": "…", "agent": "claude"}`
 /// (the agent the script's hooks are from: `claude`, the default, or
-/// `codex`). Every other line is a step: one thing, by one of the three:
+/// `codex`), and `start`, the local date and time the demo's clock starts
+/// at (`2026-10-31T09:00`). Every other line is a step: one thing, by one
+/// of the three:
 ///
 ///     {"agent": "prompt", "text": "Add keyboard shortcuts"}
 ///     {"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
@@ -27,8 +29,10 @@ import Foundation
 ///   that many seconds), `review` (a subagent, its `task` and `prompt`),
 ///   `compact` (its context is full mid-turn, and it compacts the
 ///   conversation and goes on; the `summary` its model writes), and
-///   `reply` (`text` that ends the turn). `say` is what the agent says
-///   before it acts. `"by": "reviewer"` is the subagent's own.
+///   `reply` (`text` that ends the turn; with `fails`, the turn failed).
+///   `say` is what the agent says before it acts. `"by": "reviewer"` is
+///   the subagent's own. `session` names another of the agent's sessions,
+///   working beside the first: each name is its own thread.
 /// - `you` steps are what the person does: `poke`, `talk` (the button
 ///   held `hold` seconds, then `text` heard), and `back`: back at the Mac
 ///   after `minutes` away (`Runtime.cameBack`).
@@ -86,6 +90,8 @@ public struct DemoScript: Sendable {
             public var summary: String?
             /// The subagent's step, not the main thread's.
             public var byReviewer = false
+            /// Which of the agent's sessions it is: nil for the first.
+            public var session: String?
         }
 
         public var what: What
@@ -112,6 +118,9 @@ public struct DemoScript: Sendable {
     public var title: String
     /// Whose hooks the script's are: `claude` or `codex`.
     public var agent: String
+    /// When the demo's clock starts, local time in ms since 1970, or nil:
+    /// now.
+    public var start: Int64?
     public var steps: [Step]
     /// The buddies it plays on, when several: each with its place, pack,
     /// the agent whose hooks its steps are, and name. Empty for one.
@@ -130,6 +139,7 @@ public struct DemoScript: Sendable {
         var title = "", agent = "claude"
         var steps: [Step] = []
         var buddies: [BuddySetting] = []
+        var start: Int64?
         for (index, raw) in text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty || line.hasPrefix("//") { continue }
@@ -164,6 +174,10 @@ public struct DemoScript: Sendable {
                 title = string("title") ?? ""
                 agent = string("agent") ?? "claude"
                 guard ["claude", "codex"].contains(agent) else { throw Problem(description: "\(here): agent is claude or codex") }
+                if let text = string("start") {
+                    guard let ms = Self.date(text) else { throw Problem(description: "\(here): start is a date and time, like 2026-10-31T09:00") }
+                    start = ms
+                }
                 if let list = o["buddies"] {
                     // As settings.json has them (`BuddySetting`).
                     guard let read = try? JSONDecoder().decode([BuddySetting].self, from: JSONSerialization.data(withJSONObject: list)) else {
@@ -186,6 +200,8 @@ public struct DemoScript: Sendable {
                 a.ask = number("ask")
                 a.task = string("task"); a.prompt = string("prompt"); a.summary = string("summary")
                 a.byReviewer = string("by") == "reviewer"
+                a.session = string("session")
+                if a.fails, kind != .run, kind != .reply { throw Problem(description: "\(here): only a run or a reply fails") }
                 switch kind {
                 case .prompt, .reply: if a.text == nil { throw Problem(description: "\(here): a \(does) needs text") }
                 case .read: if a.file == nil { throw Problem(description: "\(here): a read needs a file") }
@@ -234,12 +250,22 @@ public struct DemoScript: Sendable {
         }
         self.init(title: title, agent: agent, steps: steps)
         self.buddies = buddies
+        self.start = start
+    }
+
+    /// `2026-10-31T09:00`, in this Mac's time zone, as ms since 1970.
+    static func date(_ text: String) -> Int64? {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        return f.date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
     }
 
     /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
-        "demo": ["demo", "title", "agent", "buddies"],
-        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "summary", "by", "takes"],
+        "demo": ["demo", "title", "agent", "buddies", "start"],
+        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "summary", "by", "takes",
+                  "session"],
         "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
@@ -300,6 +326,7 @@ extension DemoScript.Step {
             case .compact: found = .init(kind: "compact", text: "\(who)'s context is full: it compacts the conversation")
             case .reply:
                 found = a.byReviewer ? .init(kind: "tool", text: "The reviewer reports back")
+                    : a.fails ? .init(kind: "tool_failed", text: "\(who)'s turn fails")
                     : .init(kind: "done", text: "\(who) finishes")
             }
         }
@@ -309,14 +336,20 @@ extension DemoScript.Step {
 }
 
 extension DemoScript {
+    /// Each question a brain step may answer, and its choices in `pack`.
+    public static func choices(in pack: CharacterPack = .active) -> [String: [String]] {
+        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
+        offered["react.mood"] = ["none"] + pack.faces.map(\.name)
+        return offered
+    }
+
     /// What in the script `pack` can't play, each with its line: an answer
     /// to a question the brain is never asked, a choice it isn't offered,
     /// or a mood the pack doesn't have. Empty when every step plays. A
     /// pack with no voice takes `say.*` answers and leaves them out
     /// (characters/CHARACTER.md §8), so one script plays with or without.
     public func problems(for pack: CharacterPack = .active) -> [String] {
-        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
-        offered["react.mood"] = ["none"] + pack.faces.map(\.name)
+        let offered = Self.choices(in: pack)
         var found: [String] = []
         for step in steps {
             guard case .brain(let answers, let mood) = step.what else { continue }

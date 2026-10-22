@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-21. How we check that Boop works, including what's on its
+Updated 2026-10-22. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -475,7 +475,10 @@ retried once and counted as a link glitch.
 
 ### L5: brain
 
-1. While developing, `boopdev eval --only TEXT` (with `BOOP_JEV_KEY`)
+1. First, with no key, `boopdev eval --scripted`: every scenario with the
+   expect brain, which answers as each step expects, so anything that
+   fails is the pipeline's, the screen's or the scenario's, not Jev's
+   (`EvalTests` runs it too). While developing, `boopdev eval --only TEXT` (with `BOOP_JEV_KEY`)
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.

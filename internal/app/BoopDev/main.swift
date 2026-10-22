@@ -12,6 +12,8 @@ let usages: [(command: String, text: String)] = [
     ("eval", """
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
+    boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
+    boopdev eval --to-demo DIR [--only TEXT] [--always] [--scenarios DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
@@ -21,7 +23,11 @@ let usages: [(command: String, text: String)] = [
         passes with the scripted brain) and stops if that's over --budget (default 100); --no-budget is for
         the final pass (make eval). --always runs only the always scenarios, Boop's character. --timeline
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
-        nothing. A scenario with a known gap is reported GAP when it
+        nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
+        scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
+        wakes the brain as it should, the screen, the whole-run checks it can meet). --to-demo writes each
+        scenario as a demo script, DIR/<scenario>.jsonl, the expect brain's answers as its brain steps, for
+        make demo to play (characters/DEMOS.md). A scenario with a known gap is reported GAP when it
         fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
         /tmp/boop-eval, one JSON object a line. Exits 1 if any fails. The scenarios and steering
         default to the Boop repo's, found from the working directory or from boopdev's own place.
@@ -82,8 +88,8 @@ func findRepo() -> URL? {
 let evalBudget = 100
 
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering"],
-                         flags: ["--always", "--list", "--timeline", "--no-budget"])
+    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo"],
+                         flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
     let repo = findRepo()
     func path(_ option: String, _ inRepo: String) -> URL {
         if let given = args[option] { return URL(fileURLWithPath: given) }
@@ -98,6 +104,18 @@ func eval(_ raw: [String]) async {
     }
     if args.has("--always") { list = list.filter(\.always) }
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
+    if let dir = args["--to-demo"] {
+        let out = URL(fileURLWithPath: dir)
+        do {
+            try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+            for s in list {
+                let file = out.appendingPathComponent((s.file as NSString).deletingPathExtension + ".jsonl")
+                try DemoFromScenario.script(s).write(to: file, atomically: true, encoding: .utf8)
+                print(file.path)
+            }
+        } catch { fail("can't write the demos: \(error)") }
+        exit(0)
+    }
     let steering: Steering
     do { steering = try Steering(directory: path("--steering", "characters/boop/steering")) } catch { fail("\(error)") }
     let given = args["--runs"].map { Int($0) }
@@ -125,17 +143,24 @@ func eval(_ raw: [String]) async {
         print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests")
         exit(0)
     }
-    let limit = args.has("--no-budget") ? Int.max : budget.flatMap { $0 } ?? evalBudget
+    let scripted = args.has("--scripted")
+    if scripted { plan = plan.map { ($0.scenario, 1, $0.requests) } }
+    let limit = scripted || args.has("--no-budget") ? Int.max : budget.flatMap { $0 } ?? evalBudget
     if total > limit {
         let costliest = plan.sorted { $0.runs * $0.requests > $1.runs * $1.requests }.prefix(5)
             .map { "  \($0.scenario.file): \($0.runs) × \($0.requests)" }
         fail((["boopdev eval: about \(total) Jev requests, over the budget of \(limit); narrow it with --only or --runs 1, "
                + "raise --budget, or pass --no-budget for the final pass. The costliest:"] + costliest).joined(separator: "\n"))
     }
-    guard let key = JevKey.environment() else {
-        fail("boopdev eval asks Jev, and needs its API key in \(JevKey.variable)")
+    let brain: any Brain
+    if scripted {
+        brain = ExpectBrain()
+    } else {
+        guard let key = JevKey.environment() else {
+            fail("boopdev eval asks Jev, and needs its API key in \(JevKey.variable)")
+        }
+        brain = JevBrain(key: key)
     }
-    let brain = JevBrain(key: key)
     var runner = Eval(brain: brain, steering: steering)
     let log = evalDebugLog()
     DebugLog.start(log)

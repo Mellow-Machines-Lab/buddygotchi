@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-16. A demo is a short, scripted stretch of work that a
+Updated 2026-10-22. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -36,7 +36,9 @@ This is all of `hello.jsonl`:
 
 Each line of the file is one JSON object. A line that starts with `//`
 is a comment. The first line may be a header: `{"demo": 1, "title": "…"}`, and
-`"agent": "codex"` if the script is Codex's (Claude is the default).
+`"agent": "codex"` if the script is Codex's (Claude is the default), and
+`"start": "2026-10-31T09:00"` to start the demo's clock at that date and
+time on the Mac playing it (a morning, a Friday, a holiday).
 
 Every other line is a step, by one of three: the agent, you, or the
 creature's brain.
@@ -49,15 +51,23 @@ creature's brain.
 | `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds) |
 | `{"agent": "review"}` | The agent sends a subagent | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
-| `{"agent": "reply"}` | The agent's turn ends with this message | `text` |
+| `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
-On any agent step, `say` is what the agent says before it acts, and
-`"by": "reviewer"` makes it the subagent's step.
+On any agent step, `say` is what the agent says before it acts,
+`"by": "reviewer"` makes it the subagent's step, and `"session": "docs"`
+makes it another session's of the same agent: a thread of its own,
+working beside the first, started before its first step. A demo plays
+several agents at once this way.
+
+**Any eval is a demo too.** `boopdev eval --to-demo DIR` writes each of
+the pack's eval scenarios as a script, its brain steps the answers the
+scenario expects ([internal/EVALS.md](../internal/EVALS.md) §2), so
+`make demo` can play what an eval checks.
 
 **A compact** comes in the middle of a turn, after the prompt and before
 the reply, with more of the agent's steps after it. It needs its

@@ -80,6 +80,8 @@ public final class DemoPlayer: @unchecked Sendable {
     /// With no agent: whether each buddy's agent's main thread's turn is
     /// going (`""` for the only one).
     var turnOpen: Set<String> = []
+    /// The named sessions started so far, `buddy/session`.
+    var sessions: Set<String> = []
     var calls = 0
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
@@ -237,11 +239,13 @@ public final class DemoPlayer: @unchecked Sendable {
 
     // MARK: No agent: the player is it
 
-    /// Sends a hook as the agent would, the buddy `buddy`'s agent's (its
-    /// own session), with `set`'s fields.
-    func send(_ hook: String, buddy: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
-        let session = buddy.map { "demo-\($0)" } ?? "demo"
-        let cwd = "/demo/\(slug)" + (buddy.map { "-\($0)" } ?? "")
+    /// Sends a hook as the agent would, the buddy `buddy`'s agent's, in its
+    /// session `session` (nil for its first), with `set`'s fields. Each
+    /// session is its own thread, in a folder of its own.
+    func send(_ hook: String, buddy: String? = nil, session name: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
+        let tail = [buddy, name].compactMap { $0 }.map { "-\($0)" }.joined()
+        let session = "demo" + tail
+        let cwd = "/demo/\(slug)" + tail
         var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd, ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
@@ -256,8 +260,14 @@ public final class DemoPlayer: @unchecked Sendable {
         calls += 1
         let buddy = step.buddy
         let codex = script.agent(of: buddy) == "codex"
-        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, set) }
-        let open = buddy ?? ""
+        // A session the script hasn't used yet starts first, as an agent's would.
+        let key = (buddy ?? "") + "/" + (a.session ?? "")
+        if let name = a.session, !sessions.contains(key) {
+            sessions.insert(key)
+            self.send("SessionStart", buddy: buddy, session: name) { $0.source = "startup" }
+        }
+        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, session: a.session, set) }
+        let open = key
         let id = "t\(calls)"
         let finish = { [self] in heardStep(step, agent(of: step)); then() }
         func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil) {
@@ -313,6 +323,10 @@ public final class DemoPlayer: @unchecked Sendable {
             later(step.takes) { [self] in
                 if a.byReviewer {
                     send("SubagentStop")
+                } else if a.fails, !codex {
+                    // Codex has no hook for a failed turn.
+                    send("StopFailure") { $0.error = "api_error" }
+                    turnOpen.remove(open)
                 } else {
                     send("Stop") { $0.message = a.text ?? "" }
                     turnOpen.remove(open)

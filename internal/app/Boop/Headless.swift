@@ -82,7 +82,9 @@ enum Headless {
         if let recorder { options.onDeviceLine = { recorder.sent($0) } }
         // The clock can be moved forward with `{"dev":"advance","ms":N}`, so
         // the pipeline check can finish a 6-minute turn without waiting it out.
-        let skew = OSAllocatedUnfairLock(initialState: Int64(0))
+        // A demo with a `start` begins at that date and time.
+        let startSkew = script?.start.map { $0 - options.wallClock() } ?? 0
+        let skew = OSAllocatedUnfairLock(initialState: startSkew)
         let (clock, wallClock) = (options.clock, options.wallClock)
         options.clock = { clock() + skew.withLock { $0 } }
         options.wallClock = { wallClock() + skew.withLock { $0 } }

@@ -42,6 +42,12 @@ public struct Scenario: Sendable {
         /// What the pass should come to; nil checks nothing. A step with an
         /// expectation must wake the brain.
         public var expect: Expectation?
+        /// The expectation's sets in the file's order, each value as
+        /// written: the expect brain answers the first of each.
+        public var expectOrder: [String: [String]] = [:]
+        /// The step's own answers for the expect brain, one choice a
+        /// question, as a demo's brain step has them.
+        public var brain: [String: String]?
     }
 
     /// What a pass should come to: each a set of acceptable values, `none`
@@ -149,6 +155,10 @@ public struct Scenario: Sendable {
     public var mood: String
     public var steps: [Step]
     public var file: String
+    /// When the run starts, in ms since 1970 (`start`, a UTC date and time,
+    /// `2026-10-31T09:00`): nil for `Replay.defaultStart`, a Wednesday at
+    /// 14:00.
+    public var start: Int64?
 
     /// The nature a scenario runs with unless it says: the app always has
     /// one from setup, and the owner's is cheeky.
@@ -174,12 +184,16 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps", "start"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
         self.why = why
         always = o["always"] as? Bool ?? false
+        if let t = o["start"] {
+            guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
+            start = ms
+        }
         gap = o["gap"] as? String
         if always, gap != nil { throw bad("an always scenario can't be a known gap") }
         if let r = o["runs"] {
@@ -268,11 +282,17 @@ public struct Scenario: Sendable {
                 }
                 step.reaction = text
             }
+            if let b = s["brain"] {
+                guard let answers = b as? [String: String] else { throw badStep("brain is question keys to choices, both strings") }
+                step.brain = answers
+            }
             if let e = s["expect"] as? [String: Any] {
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
-                    return Set(text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) })
+                    let values = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                    step.expectOrder[key] = values
+                    return Set(values)
                 }
                 let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered"]
                 let unknown = Set(e.keys).subtracting(keys)
@@ -313,6 +333,15 @@ public struct Scenario: Sendable {
               let high = parts[1].isEmpty ? bounds.upperBound : T(parts[1]),
               bounds.contains(low), bounds.contains(high), low <= high else { return nil }
         return low...high
+    }
+
+    /// `2026-10-31T09:00`, in UTC, as ms since 1970.
+    static func date(_ text: String) -> Int64? {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        return f.date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
     }
 
     /// `2m30s`, `90s`, `5m`, `1h`.
@@ -454,6 +483,9 @@ public struct Eval {
 
     /// Every entry of every run, one JSON line each, as debug mode writes them.
     public var debugLog: URL?
+    /// Whether the whole-run checks on Jev's own choices (its variety, its
+    /// mood's changes, what it says) are judged: not with a scripted brain.
+    public var judgesChoices: Bool { !(brain is ExpectBrain) }
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -469,14 +501,14 @@ public struct Eval {
     /// with the scripted brain, no key needed. A real run can differ by a
     /// pass or two, since what Jev answers can move what wakes it later.
     public static func requests(_ scenario: Scenario, steering: Steering) async throws -> Int {
-        try await Eval(brain: ScriptedBrain.pipelineCheck, steering: steering).run(scenario).timeline.count
+        try await Eval(brain: ExpectBrain(), steering: steering).run(scenario).timeline.count
     }
 
     /// One run of a scenario, from a fresh core and transcript, the mood
     /// in it.
     public func run(_ scenario: Scenario) async throws -> Result {
         let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
-        let start = Replay.defaultStart
+        let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
         let rules = steering.personality(scenario.personality).rules
         let core = Core(config: .init(time: time, seed: 1), lastActiveDay: time.day(start))
@@ -555,6 +587,10 @@ public struct Eval {
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
+            // The expect brain answers the step's passes, a heartbeat's on
+            // the way to it included, from the step.
+            (brain as? ExpectBrain)?.step = step
+            (brain as? ExpectBrain)?.ahead = scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? []
             while clock.now < start + step.atMs {
                 clock.now = min(start + step.atMs, clock.now + 1000)
                 await respond(home.sync { pipeline.tick(at: clock.now).views })
@@ -562,6 +598,7 @@ public struct Eval {
             // Each input's view events get their passes before the next, as
             // the app's would once the brain answered.
             for input in Eval.inputs(step, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
+            (brain as? ExpectBrain)?.step = nil
             let session = step.session ?? "s1"
             switch step.event {
             case "turn started":
@@ -592,7 +629,18 @@ public struct Eval {
                                 latencyMs: record.latencyMs))
         }
         if let s = since, let end = scenario.steps.last?.atMs { working.append((s, end)) }
-        let runChecks = scenario.checks.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
+        var checks0 = scenario.checks
+        if !judgesChoices {
+            // A scripted brain's answers are the scenario's own: only the
+            // checks a run can fail without Jev are its to judge.
+            checks0 = checks0.map { c in
+                var kept = Scenario.Checks()
+                kept.quietWorkingMs = c.quietWorkingMs
+                kept.onGraph = c.onGraph
+                return kept
+            }
+        }
+        let runChecks = checks0.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
         return Result(scenario: scenario.name, file: scenario.file, checks: checks, runChecks: runChecks, timeline: timeline)
     }
 
