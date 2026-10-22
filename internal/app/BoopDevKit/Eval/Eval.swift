@@ -21,6 +21,8 @@ public struct Scenario: Sendable {
         /// Claude's session, `s1` unless the step says: another session is
         /// another thread, working at the same time.
         public var session: String?
+        /// Whose step it is: `claude` unless it says `codex`.
+        public var agent: String?
         /// A command: its topic, and whether it failed.
         public var topic: String?
         public var failed: Bool?
@@ -246,6 +248,11 @@ public struct Scenario: Sendable {
             var step = Step(event: event, atMs: atMs)
             step.workspace = s["workspace"] as? String
             step.session = s["session"] as? String
+            if let agent = s["agent"] {
+                guard let a = agent as? String, ["claude", "codex"].contains(a) else { throw badStep("agent is claude or codex") }
+                if a == "codex", ["turn failed", "compact"].contains(event) { throw badStep("\(event) is Claude's: Codex has no hook for it") }
+                step.agent = a
+            }
             step.topic = s["topic"] as? String
             step.failed = s["failed"] as? Bool
             step.error = s["error"] as? String
@@ -730,9 +737,10 @@ public struct Eval {
     public static func inputs(_ step: Scenario.Step, at now: Int64) -> [(Pipeline) -> Pipeline.Step] {
         let cwd = step.workspace.map { "/eval/landing/.worktrees/\($0)" } ?? "/eval/landing"
         let session = step.session ?? "s1"
+        let source: Event.Source = step.agent == "codex" ? .codex : .claude
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:]) -> (Pipeline) -> Pipeline.Step {
-            { $0.agent(Event(at: now, source: .claude, type: type, phase: phase, specificType: specific, session: session,
+            { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
                              cwd: cwd, data: data)) }
         }
         switch step.event {
@@ -746,7 +754,7 @@ public struct Eval {
             var start: [String: JSONValue] = ["tool": "Bash"]
             if let topic = step.topic { start["topic"] = .string(topic) }
             return [hook(.tool, .start, "PreToolUse", start),
-                    hook(.tool, .end, step.failed == true ? "PostToolUseFailure" : "PostToolUse", end)]
+                    hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
         case "poke": return [{ $0.poke(at: now) }]
         case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
         // A Claude session opens with no turn yet: Boop is awake and idle,

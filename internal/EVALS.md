@@ -204,6 +204,7 @@ file-name order:
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
+| `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn and a compaction are Claude's alone) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].what`, `misheard` | What a `heard` step heard, and whether Boop misheard it |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
@@ -242,7 +243,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`82`, `85`, `86`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -284,7 +285,13 @@ kinds, all with the `boop` personality unless the file says otherwise:
   step at a time (`55`). And what Boop's ears hear, like a dog: good
   boy makes it proud (`79`), a shout hurts it (`80`, hero moment 3),
   told to dance it dances (`81`), shh gets nothing (`82`), and misheard,
-  dance becomes a nap (`86`).
+  dance becomes a nap (`86`). And a Codex turn gets the same small
+  cheer as Claude's (`83`).
+
+Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
+its words and with its steering: a failed turn, pokes, a long finish,
+back after a break and an idle check-in. `make -C internal eval-pixel`
+runs them once each, about 18 requests.
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 
@@ -358,10 +365,12 @@ gives all that and every reaction.
 **Liveliness.** The report also gives, for the day: the longest stretch
 of work (any agent in a turn) with no reaction, and how many went over
 6 minutes; reactions per turn ended; how many reactions were the same
-as the one before, and the longest run of the same (reported, with no
-limit: repeats are fine); mood bounces (a mood changing back to the one
-it left within a minute); and the longest stretch of work with Boop
-calm, the resting mood, all through. `boopctl workday check FILE…` holds each run to loose
+as the one before (face, finish and what it said), and the longest run
+of the same; the share that said something; mood bounces (a mood
+changing back to the one it left within a minute); and the longest
+stretch of work with Boop calm, the resting mood, all through. A fun
+ledger gives an hour a row: reactions, how many said something, how
+many kinds, the longest run of the same, and the idle check-ins. `boopctl workday check FILE…` holds each run to loose
 limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one fails:
 
 | Limit | Holds |
@@ -372,6 +381,9 @@ limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one 
 | `mood_bounces` | 1 at most |
 | `min_mood_changes` | 10 at least |
 | `longest_rest_working_min` | 45 at most |
+| `repeat_pct` | 40 at most (reactions the same as the one before, in percent) |
+| `longest_same_run` | 3 at most |
+| `min_words_said` | 0.5 at least (the share of reactions that said something) |
 
 ```sh
 internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl

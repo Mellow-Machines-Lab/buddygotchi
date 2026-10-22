@@ -77,6 +77,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
+| `make -C internal eval-pixel` | `make build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**

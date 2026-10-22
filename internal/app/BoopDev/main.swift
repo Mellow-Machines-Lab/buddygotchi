@@ -11,7 +11,7 @@ import MellowHarness
 let usages: [(command: String, text: String)] = [
     ("eval", """
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
-    boopdev eval --list [--always] [--only TEXT] [--scenarios DIR]
+    boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run

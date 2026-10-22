@@ -16,6 +16,10 @@ final class EvalTests: XCTestCase {
     }
 
     func testEveryScenarioReads() throws {
+        // Pixel's own, which make -C internal eval-pixel runs, read too.
+        let pixel = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../characters/pixel/evals")
+        let pixels = try Scenario.load(directory: pixel)
+        XCTAssertEqual(pixels.count, 5)
         let all = try Scenario.load(directory: try Self.scenarios())
         XCTAssertGreaterThanOrEqual(all.count, 7)
         XCTAssertTrue(all.allSatisfy { !$0.story.isEmpty }, "every scenario says its case in plain words")
@@ -160,6 +164,9 @@ final class EvalTests: XCTestCase {
                             (#"{"name":"n","case":"c","why":"w","checks":{"reactions":"lots"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.reactions"),
                             (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count"),
                             (#"{"name":"n","case":"c","why":"w","nature":"grumpy","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "nature is sweet or cheeky"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","agent":"codex","expect":{"react":"none"}}]}"#, "Codex has no hook"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"heard","at":"0s","what":"sing","expect":{"react":"none"}}]}"#, "heard needs what"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","count":0,"expect":{"react":"none"}}]}"#, "count is for pokes"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"words_said":"half"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.words_said")] {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
             try Data(json.utf8).write(to: file)
