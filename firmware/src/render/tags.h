@@ -25,6 +25,6 @@ uint32_t busyTags(int working);
 // The working looks' pace then, in percent: a face plays them this much
 // quicker while the agents are busy, and quicker again when frantic.
 constexpr int kBusyPace = 125, kFranticPace = 160;
-inline int workPace(int working) { return working >= kFranticFrom ? kFranticPace : working >= kBusyFrom ? kBusyPace : 100; }
+int workPace(int working);
 
 }  // namespace render

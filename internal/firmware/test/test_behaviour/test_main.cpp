@@ -2427,7 +2427,8 @@ static void test_a_variation_waits_for_its_look() {
   TEST_ASSERT_NOT_EQUAL(nodding, r.b.show(r.t).variant);
 }
 
-// The working looks quicken with the agents working (render::workPace): calm with one, busy (125%) with two or three,
+// The working looks quicken with the agents working (render::workPace, which Behaviour hands the face as
+// FaceContext::pace): calm with one, busy (125%) with two or three,
 // frantic (160%) with four or more; the loop keeps its place as it changes.
 static void test_the_working_looks_quicken_with_the_agents() {
   TEST_ASSERT_EQUAL_INT(100, render::workPace(1));
@@ -2452,6 +2453,13 @@ static void test_the_working_looks_quicken_with_the_agents() {
   uint32_t idle = r.b.show(r.t).t;
   r.at(2100);
   TEST_ASSERT_EQUAL_UINT32(idle + 500, r.b.show(r.t).t);  // idle keeps its pace
+  // So does needs you, however busy the agents.
+  m.attn = true;
+  r.state(m);
+  r.at(2200);
+  uint32_t asking = r.b.face().designMs(r.t);
+  r.at(2700);
+  TEST_ASSERT_EQUAL_UINT32(asking + 500, r.b.face().designMs(r.t));
 }
 
 // A reaction whose occasion is on plays it, whatever the Mac asked for:

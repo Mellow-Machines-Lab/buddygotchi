@@ -25,7 +25,8 @@ or `BOARD=cyd24`/`BOARD=amoled206` picks one.
 A character pack says which of its faces each board draws (its
 `faces`, by the env's `custom_board`; [CHARACTER.md](../characters/CHARACTER.md)
 §9), and `firmware/tools/pack_face.py` builds that face and none of the
-pack's others. Boop's draws the pixel face on the CYD and the gel slime
+pack's others, into the env's own build folder, so switching boards
+rebuilds nothing that hasn't changed. Boop's draws the pixel face on the CYD and the gel slime
 on the AMOLED; Pixel's names only the CYD, so built with Pixel the
 AMOLED's build stops at the start and says so.
 

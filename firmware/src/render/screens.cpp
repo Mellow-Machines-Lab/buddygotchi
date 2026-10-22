@@ -111,6 +111,41 @@ void iconMini(Canvas& c, int x, int y, uint8_t ink) {
   c.fillRect(x + 6, y + 4, 2, 2, kBlack);
 }
 
+namespace {
+// The counts after the names: how many sessions work, the helpers at work
+// and the agents idle, from x, each with the gap after it. Drawn when c
+// is given; either way, the x after them, so the names leave them the
+// room they take.
+int drawCounts(Canvas* c, const Strip& s, int x) {
+  const int cy = kStripCy, ty = cy - 10;
+  char n[12];
+  auto number = [&](int at, uint8_t ink) {
+    return c ? drawString(*c, kSmall, at, ty, n, ink) : at + stringWidth(kSmall, n);
+  };
+  if (s.busy > 0) {
+    if (c) drawIcon(*c, x, cy - 5, kRing, kInkGrey);
+    std::snprintf(n, sizeof(n), "%d", s.busy);
+    x = number(x + 15, kInkGrey) + 14;
+  }
+  if (s.helpers > 0) {
+    const int minis = std::min(s.helpers, kMinis);
+    for (int i = 0; c && i < minis; ++i) iconMini(*c, x + i * 12, cy - 5, inkAt(kInkEye, kLevels));
+    x += minis * 12 + 2;
+    if (s.helpers > minis) {
+      std::snprintf(n, sizeof(n), "+%d", s.helpers - minis);
+      x = number(x, kInkGrey);
+    }
+    x += 12;
+  }
+  if (s.idle > 0) {
+    if (c) iconParcel(*c, x, cy - 5, inkAt(kInkEye, kLevels));
+    std::snprintf(n, sizeof(n), "%d", s.idle);
+    x = number(x + 15, kInkEye) + 14;
+  }
+  return x;
+}
+}  // namespace
+
 void drawStrip(Canvas& c, const Strip& s) {
   // An empty strip is bare glass: no divider under the face.
   if (!s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp) return;
@@ -125,27 +160,17 @@ void drawStrip(Canvas& c, const Strip& s) {
   }
   const int cy = kStripCy, ty = cy - 10;
   int x = kMargin;
-  char busy[12];
-  std::snprintf(busy, sizeof(busy), "%d", s.busy);
-  // The room the counts after the names take: working, helpers and idle.
-  auto room = [](int n, int icon) {
-    char t[12];
-    std::snprintf(t, sizeof(t), "%d", n);
-    return n > 0 ? icon + 14 + stringWidth(kSmall, t) : 0;
-  };
-  const int minis = std::min(s.helpers, kMinis);
-  const int counts = room(s.busy, 15) + (s.helpers > 0 ? minis * 12 + 4 + room(s.helpers - minis, 0) : 0) + room(s.idle, 15);
+  const int counts = drawCounts(nullptr, s, 0);
   if (s.agent) {
     drawIcon(c, x, cy - 5, kDot, kInkAmber);
     // Who needs you, cut to leave room for "+N" and the working count.
     char more[12] = "";
     if (s.more > 0) std::snprintf(more, sizeof(more), "+%d", s.more);
-    int room = kWidth - kMargin - (x + 15) - (more[0] ? stringWidth(kSmall, more) + 8 : 0) -
-               counts;
+    const int fit = kWidth - kMargin - (x + 15) - (more[0] ? stringWidth(kSmall, more) + 8 : 0) - counts;
     char who[48];
     const char* what = s.name && *s.name ? s.name : s.project;
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, what);
-    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkAmber, room);
+    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkAmber, fit);
     if (more[0]) x = drawString(c, kSmall, x + 8, ty, more, kInkGrey);
     x += 14;
   } else if (s.doneAgent) {
@@ -154,31 +179,14 @@ void drawStrip(Canvas& c, const Strip& s) {
     else if (s.doneOutcome == Outcome::kFailure) iconCross(c, x - 1, cy - 8, eye);
     else iconDots(c, x - 1, cy - 8, eye);
     // Who finished, cut to leave room for the working count.
-    int room = kWidth - kMargin - (x + 15) - counts;
+    const int fit = kWidth - kMargin - (x + 15) - counts;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
-    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkEye, room) + 14;
+    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkEye, fit) + 14;
   }
-  if (s.busy > 0) {
-    drawIcon(c, x, cy - 5, kRing, kInkGrey);
-    x = drawString(c, kSmall, x + 15, ty, busy, kInkGrey) + 14;
-  }
-  // Then the helpers at work, and the agents idle, waiting for you.
-  char count[12];
-  if (s.helpers > 0) {
-    for (int i = 0; i < minis; ++i) iconMini(c, x + i * 12, cy - 5, inkAt(kInkEye, kLevels));
-    x += minis * 12 + 2;
-    if (s.helpers > minis) {
-      std::snprintf(count, sizeof(count), "+%d", s.helpers - minis);
-      x = drawString(c, kSmall, x, ty, count, kInkGrey);
-    }
-    x += 12;
-  }
-  if (s.idle > 0) {
-    std::snprintf(count, sizeof(count), "%d", s.idle);
-    iconParcel(c, x, cy - 5, inkAt(kInkEye, kLevels));
-    drawString(c, kSmall, x + 15, ty, count, kInkEye);
-  }
+  // Then how many work, the helpers at work, and the agents idle, waiting
+  // for you.
+  drawCounts(&c, s, x);
   if (s.noApp) iconNoApp(c, kWidth - kMargin - 16, cy - 8);
 }
 

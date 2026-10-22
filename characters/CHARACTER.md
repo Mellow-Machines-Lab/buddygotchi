@@ -447,7 +447,8 @@ Besides drawing each mood and state, a face:
   Valentine's, Friday's shades, a frantic sweat, a stretch after twenty
   minutes' work, a dream after half an hour's sleep. The working looks
   also play 125% quicker while the agents are busy and 160% while
-  frantic (`render::workPace`). The gel has no occasions yet.
+  frantic (`render::workPace`, which each face gets as
+  `FaceContext::pace`). The gel has no occasions yet.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
@@ -479,8 +480,9 @@ Besides drawing each mood and state, a face:
 ### The pack's files
 
 **On the board.** The staged `firmware/` (§2) is part of the firmware's
-build. `firmware/platformio.ini` compiles its `src/` and puts `include/`
-and `src/` on the include path. It holds:
+build. `firmware/tools/pack_face.py` compiles its `src/` into each env's
+own build folder, and `firmware/platformio.ini` puts `include/` and
+`src/` on the include path. It holds:
 
 - `include/moods.h`: `enum class Mood`, in `character.json`'s order,
   with `kMoodCount`, `kStartupMood` and `kMoodNames`. It isn't in the

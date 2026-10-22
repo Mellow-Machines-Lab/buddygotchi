@@ -16,4 +16,11 @@ constexpr int ease(int t, int dur) {
 // v, held within [lo, hi].
 constexpr int clamp(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+// Millisecond times, which wrap every 49 days: a later than b, and t in
+// [from, from + ms).
+constexpr bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }
+constexpr bool within(uint32_t t, uint32_t from, uint32_t ms) {
+  return int32_t(t - from) >= 0 && int32_t(t - from) < int32_t(ms);
+}
+
 }  // namespace render

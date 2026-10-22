@@ -5,17 +5,18 @@
 #include <cstring>
 
 #include "render/maths.h"
+#include "render/tags.h"
 #include "voice/effects.h"
 #include "voice/player.h"
 
 namespace app {
 
+using render::after;
+using render::within;
+
 namespace {
 
 constexpr uint32_t kAmberDim = 0x805800;  // needs you: amber at half
-
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }  // a later than b
-bool within(uint32_t t, uint32_t from, uint32_t ms) { return int32_t(t - from) >= 0 && int32_t(t - from) < int32_t(ms); }
 
 }  // namespace
 
@@ -92,7 +93,7 @@ bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
 }
 
 void Behaviour::advance(uint32_t t, Rng& rng) {
-  if (int32_t(t - modelT_) < 0) {  // the clock went back: no history to replay
+  if (after(modelT_, t)) {  // the clock went back: no history to replay
     modelT_ = t;
     face_->rewind(t, rng);
     resync(t);
@@ -459,7 +460,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.more = model_.more;
   c.when = model_.when;
   c.lookMs = t - lookAt_;
-  c.busy = model_.busy;
+  c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }
 

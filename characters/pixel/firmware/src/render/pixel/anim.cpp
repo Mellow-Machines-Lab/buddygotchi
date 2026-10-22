@@ -1,12 +1,10 @@
 #include "render/pixel/anim.h"
 #include <cstring>
+
+#include "render/maths.h"
 namespace render::pixel {
 static_assert(EffectTrack::kMaxOut == Face::kMaxCues, "face cue buffer holds the pixel scheduler output");
 namespace {
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }
-bool within(uint32_t t, uint32_t from, uint32_t ms) {
-  return int32_t(t - from) >= 0 && int32_t(t - from) < int32_t(ms);
-}
 uint64_t frameKey(const SceneFrame& f, bool bubble) {
   static_assert(sizeof f % 4 == 0, "a frame hashes as whole words");
   const uint8_t* p = reinterpret_cast<const uint8_t*>(&f);
@@ -18,6 +16,22 @@ uint64_t frameKey(const SceneFrame& f, bool bubble) {
     h ^= h >> 29;
   }
   return (h << 1 | (bubble ? 1 : 0)) | (uint64_t(1) << 63);
+}
+// Variations of a design, split in their order into the plain ones and
+// the occasions' (those with tags).
+struct Split {
+  uint8_t plain[kMaxVariants], occasions[kMaxVariants];
+  int np = 0, no = 0;
+};
+Split split(Mood m, SceneState s, const uint8_t* vs, int n) {
+  Split out;
+  for (int i = 0; i < n; ++i) {
+    if (tagged(m, s, vs[i]))
+      out.occasions[out.no++] = vs[i];
+    else
+      out.plain[out.np++] = vs[i];
+  }
+  return out;
 }
 }  // namespace
 void PixelFace::reset(uint32_t t, linkkit::Rng& rng) {
@@ -33,27 +47,23 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
   // turns bring the rest.
   FaceSource wanted = next;
   if (pending_ || wanted.lookVariant >= variants(wanted.mood, wanted.look)) {
-    FaceSource probe = src_;
-    src_.mood = wanted.mood, src_.look = wanted.look;
-    lookVariant_ = firstLook();
-    src_ = probe;
+    lookVariant_ = firstLook(wanted.mood, wanted.look);
     pending_ = false;
     wanted.lookVariant = lookVariant_;
   }
   // The working looks keep their place in the loop as the pace changes.
-  int pace = context.working && wanted.look != SceneState::kNeedsYou ? render::workPace(context.busy) : 100;
-  if (pace != pace_) {
+  if (context.pace != pace_) {
     uint32_t into = designMs(t);
-    pace_ = pace;
+    pace_ = context.pace;
     lookAt_ = t - uint32_t((uint64_t(into) * 100 + pace_ - 1) / pace_);  // never a step back
   }
   if (!(wanted == src_)) {
-    const FaceSource& next = wanted;
-    bool restart = next.anim != SceneState::kNone && next.at != src_.at;
-    if (sceneOf(next.mood, next.state(), next.variant()) != sceneOf(src_.mood, src_.state(), src_.variant()) || restart)
+    bool restart = wanted.anim != SceneState::kNone && wanted.at != src_.at;
+    if (sceneOf(wanted.mood, wanted.state(), wanted.variant()) != sceneOf(src_.mood, src_.state(), src_.variant()) ||
+        restart)
       switched_ = true, switchAt_ = t;
-    if (next.look != src_.look || next.lookVariant != src_.lookVariant) lookAt_ = t;
-    src_ = next;
+    if (wanted.look != src_.look || wanted.lookVariant != src_.lookVariant) lookAt_ = t;
+    src_ = wanted;
   }
 }
 void PixelFace::rewind(uint32_t t, linkkit::Rng& rng) {
@@ -69,28 +79,23 @@ uint32_t PixelFace::loopEnd(uint32_t t) const {
   if (!loop) loop = 1;
   return t - (t - lookAt_) % loop + loop;
 }
-uint8_t PixelFace::firstLook() const {
-  const int n = variants(src_.mood, src_.look);
-  int plain = -1;
-  for (int v = 0; v < n; ++v) {
-    if (!lookFits(v)) continue;
-    if (tagged(src_.mood, src_.look, v)) return uint8_t(v);
-    if (plain < 0) plain = v;
-  }
-  return uint8_t(plain < 0 ? 0 : plain);
+int PixelFace::fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const {
+  int k = 0;
+  for (int v = 0; v < variants(m, s); ++v)
+    if (v != avoid && lookFits(m, s, v)) out[k++] = uint8_t(v);
+  return k;
 }
-uint8_t PixelFace::pickLook(int avoid, linkkit::Rng& rng) const {
-  const int n = variants(src_.mood, src_.look);
-  uint8_t plain[kMaxVariants], occasions[kMaxVariants];
-  int np = 0, no = 0;
-  for (int v = 0; v < n; ++v) {
-    if (v == avoid || !lookFits(v)) continue;
-    if (tagged(src_.mood, src_.look, v)) occasions[no++] = uint8_t(v);
-    else plain[np++] = uint8_t(v);
-  }
-  if (no && (!np || rng.range(1, 100) <= kTaggedPct)) return occasions[rng.range(0, no - 1)];
-  if (np) return plain[rng.range(0, np - 1)];
-  return avoid >= 0 && avoid < n ? uint8_t(avoid) : 0;
+uint8_t PixelFace::firstLook(Mood m, SceneState s) const {
+  uint8_t fit[kMaxVariants];
+  const Split c = split(m, s, fit, fittingLooks(m, s, -1, fit));
+  return c.no ? c.occasions[0] : c.np ? c.plain[0] : 0;
+}
+uint8_t PixelFace::pickLook(Mood m, SceneState s, int avoid, linkkit::Rng& rng) const {
+  uint8_t fit[kMaxVariants];
+  const Split c = split(m, s, fit, fittingLooks(m, s, avoid, fit));
+  if (c.no && (!c.np || rng.range(1, 100) <= kTaggedPct)) return c.occasions[rng.range(0, c.no - 1)];
+  if (c.np) return c.plain[rng.range(0, c.np - 1)];
+  return avoid >= 0 && avoid < variants(m, s) ? uint8_t(avoid) : 0;
 }
 // The next blink, or the look's loop ending while its variations may take
 // turns. What's due then is decided here, before Behaviour syncs the face
@@ -122,8 +127,9 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
   // A variation whose occasion is over (or whose mood lost it) turns at
   // once; any other may, now and then, to one that fits.
   if ((due & kTurn) && turnable() &&
-      (!lookFits(lookVariant_) || (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
-    lookVariant_ = pickLook(lookVariant_, rng);
+      (!lookFits(src_.mood, src_.look, lookVariant_) ||
+       (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
+    lookVariant_ = pickLook(src_.mood, src_.look, lookVariant_, rng);
 }
 void PixelFace::alert(uint32_t t, bool replacing) {
   lookAt_ = t;
@@ -138,14 +144,10 @@ uint8_t PixelFace::pick(SceneState s, Mood mood, int wanted, Outcome o, StartCtx
   int k0 = fitting(mood, s, o, c, all), n = 0;
   // Only those whose tags are on; an occasion's first, whatever the Mac
   // asked for (the Mac never asks for one).
-  uint8_t occasions[kMaxVariants];
-  int no = 0;
-  for (int i = 0; i < k0; ++i) {
-    if (!fits(mood, s, all[i], context_.when, UINT32_MAX)) continue;
-    fit[n++] = all[i];
-    if (tagged(mood, s, all[i])) occasions[no++] = all[i];
-  }
-  if (no) return occasions[rng.range(0, no - 1)];
+  for (int i = 0; i < k0; ++i)
+    if (fits(mood, s, all[i], context_.when, UINT32_MAX)) fit[n++] = all[i];
+  const Split byTags = split(mood, s, fit, n);
+  if (byTags.no) return byTags.occasions[rng.range(0, byTags.no - 1)];
   if (!n) n = k0, std::memcpy(fit, all, k0);
   for (int i = 0; i < n; ++i)
     if (fit[i] + 1 == wanted) return fit[i];

@@ -201,6 +201,24 @@ static void test_the_strip_says_who_needs_you() {
   TEST_ASSERT_EQUAL_MEMORY(asProject.c.pixels(), asName.c.pixels(), kWidth * kHeight);
 }
 
+// A cut name leaves the counts after it the room they're drawn in: the
+// working count, the helpers (minis, and "+N" past kMinis) and the idle
+// count all end inside the strip's 12 px margin.
+static void test_a_cut_name_leaves_the_counts_their_room() {
+  for (int helpers : {2, kMinis, kMinis + 3}) {
+    Strip s;
+    s.agent = "codex", s.project = "a-really-long-project-name-that-is-cut";
+    s.busy = 3, s.helpers = helpers, s.idle = 12;
+    Buf b;
+    drawStrip(b.c, s);
+    int last = -1;
+    for (int x = 0; x < kWidth; ++x)
+      for (int y = kStripTop + 1; y < kHeight; ++y)
+        if (b.at(x, y) != kBlack) last = x;
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0 && last < kWidth - 12, "the counts run into the margin");
+  }
+}
+
 // The bubble shows the take's text, in amber, centred;
 // every take's text in the card's voice file fits whole inside the margins, in
 // the large font or else the small one ("Technical difficulties" is the
@@ -515,6 +533,7 @@ int main(int, char**) {
   RUN_TEST(test_an_empty_strip_is_bare_glass);
   RUN_TEST(test_the_divider_leaves_the_design_alone);
   RUN_TEST(test_the_strip_says_who_needs_you);
+  RUN_TEST(test_a_cut_name_leaves_the_counts_their_room);
   RUN_TEST(test_the_bubble_fits_every_take);
   RUN_TEST(test_the_bubble_takes_the_lane);
   RUN_TEST(test_the_strip_marks_the_finish);

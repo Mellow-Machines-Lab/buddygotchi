@@ -12,7 +12,6 @@ namespace app {
 
 class TouchGesture {
  public:
-  enum Kind : uint8_t { kTap, kStroke, kRuffle, kTickle, kNose };
   // A stroke travels this far from where it began; one that goes up more
   // than sideways is a ruffle.
   static constexpr int kStrokePx = 40;
@@ -24,15 +23,13 @@ class TouchGesture {
 
   void down(int x, int y);
   void move(int x, int y);
-  // What it was, on release.
-  Kind up() const;
+  // What it was, on release: false for a tap, else true with the board's
+  // own reaction to it in g.
+  bool up(render::Gesture& g) const;
 
  private:
   int x0_ = 0, y0_ = 0, x_ = 0, y_ = 0, minX_ = 0, maxX_ = 0, minY_ = 0, maxY_ = 0;
   int path_ = 0;
 };
-
-// The board's own reaction to it: gesture's kind, or none for a tap.
-bool gestureOf(TouchGesture::Kind k, render::Gesture& g);
 
 }  // namespace app

@@ -50,9 +50,10 @@ struct FaceContext {
   const char* thread = "";
   int more = 0;
   // The tags on (render/tags.h), how long the look (or needs you) has
-  // shown, and how many sessions work.
+  // shown, and the working looks' pace, in percent: quicker while the
+  // agents are busy (render::workPace), 100 for any other look.
   uint32_t when = 0, lookMs = 0;
-  int busy = 0;
+  int pace = 100;
 };
 class Face {
  public:
