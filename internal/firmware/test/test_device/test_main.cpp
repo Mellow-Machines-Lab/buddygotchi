@@ -2083,6 +2083,36 @@ static void test_a_tap_says_where_it_came_from() {
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
 }
 
+// A touch that travels is a stroke: the board plays gesture's stroke and
+// tells the Mac (`ev gesture`, did its name).
+static void test_a_stroke_is_a_gesture() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+  for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+}
+
+// The motion sensor (dbg.imu stands in for it): laid face down, the board
+// tells the Mac (`facedown`), dims and refuses every reaction but
+// listening ("facedown"); turned back up, it plays its peekaboo.
+static void test_face_down_is_do_not_disturb() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n"));
+  r.usbLine("{\"t\":\"do\",\"id\":7,\"name\":\"react\",\"play\":\"now\",\"args\":{\"mood\":\"proud\"}}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"id\":7,\"how\":\"skipped\",\"why\":\"facedown\""));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 10; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"peekaboo\"}\n"));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -2091,6 +2121,8 @@ int main() {
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);
   RUN_TEST(test_a_tap_says_where_it_came_from);
+  RUN_TEST(test_a_stroke_is_a_gesture);
+  RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);
   RUN_TEST(test_a_finishs_say_starts_at_its_voice_window);

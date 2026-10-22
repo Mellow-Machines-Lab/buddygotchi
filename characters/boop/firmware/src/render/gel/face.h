@@ -22,6 +22,9 @@ class GelFace final : public Face {
   // The engine picks the look's variations itself; the Mac's is ignored.
   uint8_t lookVariant() const override { return uint8_t(engine_->scenes.variant); }
   uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&) const override;
+  // A finger: the dome leans after it (the engine's drag), from where it
+  // first touched, and springs back when it lets go.
+  void finger(bool down, int x, int y) override;
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;
@@ -55,6 +58,8 @@ class GelFace final : public Face {
   // the agents are busy (render::workPace, in percent), and its hundredths.
   uint32_t engineMs_ = 0, engineFrac_ = 0;
   int pace_ = 100;
+  bool finger_ = false;
+  int fingerX_ = 0, fingerY_ = 0;
   voice::FxEvent pending_[kMaxCues];
   uint32_t pendingAt_[kMaxCues]{};
   int pendingCount_ = 0;

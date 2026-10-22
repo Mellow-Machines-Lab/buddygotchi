@@ -47,6 +47,7 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
+| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
 | `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
@@ -320,7 +321,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   good finish as a failure, for the joke (`98`). Its opinions: a please
   warms it (`94`), capitals make it flinch (`95`), an agent's "You're
   absolutely right!" gets an eye-roll (`96`). Once the day is over it
-  writes one diary line about it, and only one (`97`). And the screen with no pass: BOOT
+  writes one diary line about it, and only one (`97`). Touched like a
+  pet: a stroke calms a fed-up Boop, a shake makes it dizzy (`99`). And the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`).
 

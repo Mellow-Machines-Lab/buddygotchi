@@ -191,6 +191,16 @@ public final class Pipeline {
         }
     }
 
+    /// What you did to the board (`kind`: a stroke, a shake, face down…),
+    /// which it reacted to at once: logged, and it may wake the brain, as
+    /// a poke does. The core isn't told.
+    @discardableResult
+    public func gesture(_ kind: String, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) {
+            harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
+        }
+    }
+
     /// What you said to Boop on push-to-talk, heard by the Mac's mic
     /// after `by`'s button (`device` or `app`), cut to 2,000 characters as
     /// a prompt is on the wire. It wakes the brain

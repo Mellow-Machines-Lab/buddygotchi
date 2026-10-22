@@ -10,7 +10,7 @@ a swear at a failed turn that stings, held longer the more failures
 pile up.
 A poke in NOW keeps it grumpy, whatever the count, and a barrage again
 makes it say so.
-Leaves for irritated or annoyed when the person says sorry to Boop;
+Leaves for irritated or annoyed when the person says sorry to Boop or strokes it;
 annoyed when a check passes after failing; whiny when the agent gives
 up; sad when a very long turn fails or the person shares sad news;
 calm when the person thanks the agent.

@@ -170,6 +170,12 @@ class Behaviour {
   const char* press(uint32_t t, Rng& rng);
   // The board's own reaction to a gesture: gesture's variation for it.
   void gesture(render::Gesture g, uint32_t t);
+  // Laid face down: do not disturb. Every reaction but listening is
+  // refused ("facedown") and the screen dims; needs you still shows.
+  void setFaceDown(bool down, uint32_t t);
+  bool faceDown() const { return faceDown_; }
+  // `listening` is playing: a touch is a tap then, never a gesture.
+  bool hearing(uint32_t t) const { return listening(t); }
   // The id of the brain's finish showing whose turn it was at t, which a
   // tap opens on the Mac instead of poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;
@@ -330,6 +336,7 @@ class Behaviour {
 
   Model model_;
   uint32_t lastState_ = 0;
+  bool faceDown_ = false;
   // When the look (or needs you) last changed: the face's variations may
   // wait for it to have shown a while (`after`).
   uint32_t lookAt_ = 0;

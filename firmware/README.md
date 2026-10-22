@@ -84,6 +84,7 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 | microSD | SPI3 (SCK 2, MOSI 1, MISO 3, CS 17) | The voice, as on the CYD |
 | USB | The S3's own USB-Serial/JTAG | `/dev/cu.usbmodem*`; flashing needs no BOOT press |
 | Buttons | BOOT (IO0) | The main button. No LED |
+| Motion | QMI8658 on I2C (0x6B, else 0x6A) | Picked up, put down, shaken, a thump on the desk, face down (do not disturb) and up: `app/motion_gesture.h`'s first guesses, read every 20 ms at ±4 g (`amoled206/imu.cpp`). Its axes on this board are a guess too (`kFlipZ`); check them on the board, where `dbg.state`'s `imu` is the reading now (`internal/tools/boopctl state`) and `dbg.imu` stands in for the sensor. The CYD has no motion sensor |
 
 Waveshare's example repo (`waveshareteam/ESP32-S3-Touch-AMOLED-2.06`) has
 a recovery image in `FirmWare/` if you ever need the factory firmware back.

@@ -29,6 +29,8 @@ void BoardHal::beginBoard() {
   defaultCal_ = app::defaultTouchCal(kRotation);
 }
 
+bool BoardHal::motion(int&, int&, int&) { return false; }  // no motion sensor on this board
+
 void BoardHal::setLed(uint32_t rgb) {
   ledChannel(pins::kLedRed, (rgb >> 16) & 0xFF);
   ledChannel(pins::kLedGreen, (rgb >> 8) & 0xFF);

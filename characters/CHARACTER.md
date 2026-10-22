@@ -452,7 +452,8 @@ Besides drawing each mood and state, a face:
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
 - **Moves with the engine.** It blinks, opens its mouth while the voice
-  speaks (`mouthOpen`), and presses down under a finger (`dy`).
+  speaks (`mouthOpen`), presses down under a finger (`dy`), and may follow
+  one (`finger`): the gel's dome leans after a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
   many sessions work, a mini for each helper at work, up to four and

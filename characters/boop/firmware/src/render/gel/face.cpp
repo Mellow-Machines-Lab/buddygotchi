@@ -90,6 +90,21 @@ void GelFace::advanceTo(uint32_t t) {
   }
 }
 
+void GelFace::finger(bool down, int x, int y) {
+  if (!down) {
+    if (finger_) engine_->dragEnd();
+    finger_ = false;
+    return;
+  }
+  // The canvas's 320 × 240, as the engine's -1 … 1 each way.
+  if (!finger_) {
+    finger_ = true, fingerX_ = x, fingerY_ = y;
+    engine_->dragStart(F(x - 160) / 160, F(y - 120) / 120);
+    return;
+  }
+  engine_->dragMove(F(x - fingerX_) / 160, F(y - fingerY_) / 120, F(0));
+}
+
 // At every stop of Behaviour's, on the grid or not.
 void GelFace::step(uint32_t t, linkkit::Rng&) { advanceTo(t); }
 

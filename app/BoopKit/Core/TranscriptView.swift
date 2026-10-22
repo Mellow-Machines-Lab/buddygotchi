@@ -222,7 +222,7 @@ public final class TranscriptView {
     /// of a finished turn, which goes ahead of the rest.
     public static let wakes: [String: Int] = [
         "turn_start": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
-        "reacted": 0, "session_start": 0, "needs_you_end": 0,
+        "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -255,6 +255,8 @@ public final class TranscriptView {
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
+        // Face down is do not disturb: the board would refuse a reaction.
+        if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
@@ -268,7 +270,8 @@ public final class TranscriptView {
     /// `tool_uses: all`).
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.talk?, nil), (.heartbeat?, nil),
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil),
+             (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
@@ -331,6 +334,9 @@ public final class TranscriptView {
         case .press?:
             noteActivity(e.at)
             return Line(EventLine.pressed(name: name(e)))
+        case .gesture?:
+            noteActivity(e.at)
+            return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .talk?: return talk(e)
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
@@ -911,6 +917,24 @@ public enum EventLine {
     /// `You came back to the Mac after a long break.`: the break's band.
     public static func back(ms: Int64) -> String {
         "You came back to the Mac after a \(Band.away(ms: ms)) break."
+    }
+
+    /// What you did to the board, which reacted at once; nil for a gesture
+    /// it doesn't know.
+    public static func gesture(_ kind: String, name: String = CharacterPack.active.name) -> String? {
+        switch kind {
+        case "stroke": "You stroked \(name)."
+        case "ruffle": "You stroked \(name) the wrong way."
+        case "nose": "You booped \(name)'s nose."
+        case "tickle": "You tickled \(name)."
+        case "dizzy": "You shook \(name)."
+        case "pickup": "You picked \(name) up."
+        case "putdown": "You put \(name) down."
+        case "startle": "You thumped the desk next to \(name)."
+        case "facedown": "You turned \(name) face down."
+        case "peekaboo": "You turned \(name) back up."
+        default: nil
+        }
     }
 
     /// A BOOT press that handed you an agent; what it opened is the core's

@@ -39,6 +39,9 @@ public struct Scenario: Sendable {
         /// Which helper a `helper started` or `helper returned` step is,
         /// `h1` unless it says.
         public var helper: String?
+        /// What a `gesture` step did to the board: `stroke`, `nose`,
+        /// `dizzy`… (render::Gesture's names, and `facedown`).
+        public var kind: String?
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -192,7 +195,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -303,6 +306,8 @@ public struct Scenario: Sendable {
             step.message = s["message"] as? String
             step.words = s["words"] as? String
             step.helper = s["helper"] as? String
+            step.kind = s["kind"] as? String
+            if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             if let c = s["count"] {
                 guard let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
@@ -886,6 +891,8 @@ public struct Eval {
         // The agent sends a helper off, and it comes back.
         case "helper started": return [hook(.subagent, .start, "SubagentStart", subagent: step.helper ?? "h1")]
         case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
+        // What you did to the board, which reacted to it at once.
+        case "gesture": return [{ $0.gesture(step.kind ?? "stroke", at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",

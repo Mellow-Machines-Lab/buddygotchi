@@ -93,6 +93,9 @@ class Face {
   // Shows the look's variation v (from 0) until it turns: dbg.look's, for
   // scenarios and tools. A face that picks by its own clock may ignore it.
   virtual void showLookVariant(uint8_t v) { (void)v; }
+  // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
+  // let go: a face may follow it, as the gel's dome leans into a stroke.
+  virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.

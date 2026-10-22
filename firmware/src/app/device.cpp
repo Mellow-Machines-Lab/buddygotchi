@@ -353,10 +353,18 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     injPress_ = true;
     injPressUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.press\"}", 17);
+  } else if (!std::strcmp(type, "dbg.imu")) {
+    // The motion sensor's reading, held until the next ("off" lets go).
+    injMotion_ = !(doc["off"] | false);
+    injAx_ = doc["ax"] | 0, injAy_ = doc["ay"] | 0, injAz_ = doc["az"] | 1000;
+    kit().reply(from, "{\"t\":\"dbg.imu\"}", 15);
   } else if (!std::strcmp(type, "dbg.touch")) {
     injTouch_ = true;
     injX_ = doc["x"] | 0;
     injY_ = doc["y"] | 0;
+    injToX_ = doc["to_x"] | injX_;  // a stroke: from x, y to these, over its ms
+    injToY_ = doc["to_y"] | injY_;
+    injTouchFrom_ = kit().now();
     injTouchUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.touch\"}", 17);
   } else if (!std::strcmp(type, "dbg.touchcal")) {
@@ -441,6 +449,16 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["act"] = nullptr;
   d["mood"] = render::moodName(m.mood);
   d["look_variant"] = b_.lookVariant() + 1;
+  // The motion sensor's reading now, in milli-g, for tuning its gestures;
+  // null on a board with none.
+  int ax = injAx_, ay = injAy_, az = injAz_;
+  if (injMotion_ || hal_.motion(ax, ay, az)) {
+    JsonArray imu = d["imu"].to<JsonArray>();
+    imu.add(ax), imu.add(ay), imu.add(az);
+  } else {
+    d["imu"] = nullptr;
+  }
+  d["face_down"] = b_.faceDown();
   d["idle"] = m.idle;
   d["helpers"] = m.helpers;
   JsonArray when = d["when"].to<JsonArray>();
@@ -610,33 +628,82 @@ void Device::readInputs(uint32_t t) {
   if (injTouch_ && int32_t(t - injTouchUntil_) >= 0) injTouch_ = false, touchGone = letGo(injTouchUntil_);
   int x = 0, y = 0;
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
+  if (injTouch_ && injTouchUntil_ != injTouchFrom_) {  // a stroke's way along
+    const int64_t along = int64_t(t - injTouchFrom_), ms = int64_t(injTouchUntil_ - injTouchFrom_);
+    x = injX_ + int((injToX_ - injX_) * along / ms), y = injY_ + int((injToY_ - injY_) * along / ms);
+  }
   if (contact) touchSeenReal_ = real, touchInjected_ = injTouch_;
   bool touching = contact || (touchDown_ && !touchInjected_ && real - touchSeenReal_ < kTouchReleaseMs);
   bool faced = !pattern_;
   if (touching && !touchDown_) {
     input("touch", t, x, y);
+    touchPath_.down(x, y);
     if (faced) {
       b_.pressDown(t);
+      b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
+  } else if (touching && contact) {
+    touchPath_.move(x, y);
+    if (faced) b_.face().finger(true, x, y);
   }
   if (!touching && touchDown_) {
     b_.pressUp();
+    b_.face().finger(false, 0, 0);
     if (faced) {
       // The panel's touch let go when it was last in contact, so its tap
-      // counts the kTouchReleaseMs the device waits to be sure.
+      // counts the kTouchReleaseMs the device waits to be sure. Its path
+      // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
+      // nose; then the board reacts as one, but not over needs you's sign
+      // or while listening, where a touch is a tap.
       latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
-      tapped(t, touchInjected_, false);
+      render::Gesture g;
+      if (app::gestureOf(touchPath_.up(), g) && !b_.model().attn && !b_.hearing(t)) gestured(g, t, touchInjected_);
+      else tapped(t, touchInjected_, false);
     }
   }
   if (touching != touchDown_) dirty_ = true;
   touchDown_ = touching;
 }
 
+void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
+  b_.gesture(g, t);
+  input("gesture", t);
+  kit().emit("gesture", render::gestureName(g), nullptr, injected);
+  drain();  // the gesture cuts an animation, as a poke does
+}
+
+// The motion sensor, every kMotionMs: picked up, put down, shaken, a thump
+// on the desk, laid face down (do not disturb) and turned back up.
+void Device::readMotion(uint32_t t) {
+  if (int32_t(t - motionAt_) < int32_t(kMotionMs)) return;
+  motionAt_ = t;
+  int ax = injAx_, ay = injAy_, az = injAz_;
+  if (!injMotion_ && !hal_.motion(ax, ay, az)) return;
+  switch (motion_.update(ax, ay, az, t)) {
+    case MotionGesture::kPickup: gestured(render::Gesture::kPickup, t, injMotion_); break;
+    case MotionGesture::kPutdown: gestured(render::Gesture::kPutdown, t, injMotion_); break;
+    case MotionGesture::kShake: gestured(render::Gesture::kDizzy, t, injMotion_); break;
+    case MotionGesture::kThump: gestured(render::Gesture::kStartle, t, injMotion_); break;
+    case MotionGesture::kFaceDown:
+      b_.setFaceDown(true, t);
+      hush();
+      kit().emit("gesture", "facedown", nullptr, injMotion_);
+      dirty_ = true;
+      break;
+    case MotionGesture::kFaceUp:
+      b_.setFaceDown(false, t);
+      gestured(render::Gesture::kPeekaboo, t, injMotion_);
+      break;
+    default: break;
+  }
+}
+
 void Device::tick(uint32_t t) {
   uint32_t real = hal_.realMs();
   if (real - fpsSinceReal_ >= 1000) fps_ = frames_ * 1000 / (real - fpsSinceReal_), frames_ = 0, fpsSinceReal_ = real;
   readInputs(t);
+  readMotion(t);
   followSound(t);
   drain();
 

@@ -1,0 +1,51 @@
+// The board's own gestures (gesture-art.mjs), each on a frozen clock part
+// way through: BOOT handing over an idle agent, a stroke, a boop on the
+// nose, a shake (dbg.imu standing in for the motion sensor), then face
+// down (dim, every reaction refused) and turned back up (peekaboo).
+{"clock":0}
+{"t":"state","base":"idle","idle":1}
+{"t":"dbg.press","ms":60}
+{"clock":100}
+{"expect":{"moment":{"anim":"gesture"}}}
+{"clock":1000}
+{"shot":"handoff"}
+{"clock":4000}
+{"t":"state","base":"idle"}
+{"t":"dbg.touch","x":60,"y":120,"to_x":200,"to_y":120,"ms":300}
+{"clock":4100}
+{"clock":4200}
+{"clock":4300}
+{"clock":4400}
+{"expect":{"moment":{"anim":"gesture"}}}
+{"clock":5100}
+{"shot":"stroke"}
+{"clock":9000}
+{"t":"dbg.touch","x":160,"y":134,"ms":60}
+{"clock":9100}
+{"clock":9500}
+{"shot":"nose"}
+{"clock":13000}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":14000}
+{"clock":15200}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1700}
+{"clock":15260}
+{"t":"dbg.imu","ax":0,"ay":0,"az":300}
+{"clock":15320}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1700}
+{"clock":15380}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":15400}
+{"expect":{"moment":{"anim":"gesture"}}}
+{"clock":16000}
+{"shot":"dizzy"}
+{"clock":20000}
+{"t":"dbg.imu","ax":0,"ay":0,"az":-1000}
+{"clock":21000}
+{"clock":22500}
+{"expect":{"bl":20}}
+{"shot":"face-down"}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":22600}
+{"clock":23400}
+{"shot":"peekaboo"}

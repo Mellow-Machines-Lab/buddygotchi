@@ -40,6 +40,10 @@ extension Event {
         /// the board handed you the next one (its `handoff`), and the core
         /// opens it on the Mac.
         case press
+        /// What you did to the board, which it already reacted to: a
+        /// stroke, a boop on the nose, a shake, a pick-up, face down…, as the
+        /// event's `specific_type` (render::Gesture's names, and `facedown`).
+        case gesture
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

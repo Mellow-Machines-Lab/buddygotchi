@@ -23,6 +23,9 @@ class BoardHal : public app::Hal {
   uint32_t realMs() override;
   bool bootDown() override;
   bool touch(int& x, int& y) override;
+  // The board's motion sensor, if it has one (the AMOLED's QMI8658;
+  // amoled206/imu.cpp); the CYD has none.
+  bool motion(int& ax, int& ay, int& az) override;
   void touchRaw(int& x, int& y, int& z, bool& irq) override;
   void setTouchCal(const app::TouchCal& c) override;
   app::TouchCal touchCal() override { return cal_; }

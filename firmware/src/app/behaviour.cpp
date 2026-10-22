@@ -233,6 +233,7 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   const bool wasListening = listening(t);
   if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { reaction_.anim = render::SceneState::kNone; });
   if (in.empty) return wasListening ? nullptr : "not_listening";
+  if (faceDown_ && !listen) return "facedown";  // do not disturb
   bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool say = in.take >= 0 && !model_.attn && !noApp(t);
   bool face = in.expr && !held(t);  // listening, if it's still on, holds the face
@@ -492,9 +493,17 @@ uint8_t Behaviour::backlight(uint32_t t) const {
   return uint8_t(blFrom_ + (target - blFrom_) * render::ease(int(t - blAt_), int(kBacklightEaseMs)) / 1024);
 }
 
+void Behaviour::setFaceDown(bool down, uint32_t t) {
+  change(t, [&] {
+    faceDown_ = down;
+    if (down && say_.take >= 0) endSay(t, CutBy::kNone);
+  });
+}
+
 uint8_t Behaviour::blTarget(uint32_t t) const {
   if (noApp(t)) return 60;      // dimmed like asleep
   if (model_.attn) return 255;  // dimming never hides "needs you"
+  if (faceDown_) return 20;     // face down: do not disturb
   if (model_.base == render::SceneState::kAsleep) return 60;
   return 255;
 }
