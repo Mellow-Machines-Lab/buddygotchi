@@ -20,6 +20,10 @@ never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
+What it hears, it takes like a dog: its name perks it up, praise makes
+it proud, a no sheepish, a command gets a go, shh or stop gets nothing;
+a bang startles it, a shout hurts it, singing charms it. Misheard, it
+does something else entirely.
 Mostly a sound or a word; a phrase for big moments; a swear, irritated,
 at a failed turn that stings. A failure is held longer than the win
 before it, and longer again when it follows other failures.
@@ -97,3 +101,23 @@ Examples:
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
+- NOW: Boop heard its name.
+  → curious, tickled in a word, once
+- NOW: Boop heard you say "good boy".
+  → proud, glad in a phrase, twice
+- NOW: Boop heard you say "no".
+  → embarrassed, upset in a sound, once
+- NOW: Boop heard you say "dance".
+  → excited, glad in a phrase, four times
+- NOW: Boop misheard you: "dance", or something like it.
+  → tired, quiet in a word, twice
+- NOW: Boop misheard you: "sleep", or something like it.
+  → excited, glad in a phrase, three times
+- NOW: Boop heard you say "shh".
+  → none
+- NOW: Boop heard a bang.
+  → surprised, upset in a sound, once
+- NOW: Boop heard you shout.
+  → wounded, upset in a sound, twice
+- NOW: Boop heard you singing.
+  → affectionate, tickled in a sound, once

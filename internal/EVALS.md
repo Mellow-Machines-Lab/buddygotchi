@@ -54,6 +54,7 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
+| `heard` | Boop's ears heard the step's `what` (`name`, a word of `Hearing.words` or a sound: `bang`, `shout`, `singsong`), `misheard` if it says: a `heard` event, `Boop heard you say "good boy".`, `Boop misheard you: "dance", or something like it.` |
 | `wait` | Nothing; only time passes: a heartbeat may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
@@ -204,6 +205,7 @@ file-name order:
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
+| `steps[].what`, `misheard` | What a `heard` step heard, and whether Boop misheard it |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
@@ -240,7 +242,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`78`, `85`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`82`, `85`, `86`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -279,7 +281,10 @@ kinds, all with the `boop` personality unless the file says otherwise:
   little lost (`75`), idle check-ins get a small face or nothing
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
   again gets a louder grumble (`78`); quiet fades an excited Boop a
-  step at a time (`55`).
+  step at a time (`55`). And what Boop's ears hear, like a dog: good
+  boy makes it proud (`79`), a shout hurts it (`80`, hero moment 3),
+  told to dance it dances (`81`), shh gets nothing (`82`), and misheard,
+  dance becomes a nap (`86`).
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 

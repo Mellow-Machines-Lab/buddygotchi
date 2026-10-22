@@ -34,6 +34,10 @@ public struct Scenario: Sendable {
         public var words: String?
         /// How many pokes a `pokes` step makes, 4 unless it says.
         public var count: Int?
+        /// What Boop's ears heard, for `heard`: `name`, a word of
+        /// `Hearing.words` or a sound, and whether it misheard it.
+        public var what: String?
+        public var misheard: Bool?
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -153,7 +157,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "heard", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -251,6 +255,14 @@ public struct Scenario: Sendable {
             if step.message != nil, event != "turn finished" { throw badStep("message is only for turn finished") }
             step.words = s["words"] as? String
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
+            step.what = s["what"] as? String
+            step.misheard = s["misheard"] as? Bool
+            if event == "heard" {
+                let known = ["name"] + Hearing.words.map(\.what) + Hearing.sounds
+                guard let what = step.what, known.contains(what) else { throw badStep("heard needs what: one of \(known.joined(separator: ", "))") }
+            } else if step.what != nil || step.misheard != nil {
+                throw badStep("what and misheard are for heard")
+            }
             if let c = s["count"] {
                 guard event == "pokes", let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
                 step.count = n
@@ -747,6 +759,8 @@ public struct Eval {
         // request's wait, then its call's result.
         case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]
         case "answered": return [hook(.tool, .end, "PostToolUse", ["tool": "Bash", "failed": false])]
+        // What Boop's ears heard, as `Hearing` would hand it on.
+        case "heard": return [{ $0.heard(step.what ?? "name", misheard: step.misheard ?? false, at: now) }]
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.

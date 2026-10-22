@@ -74,6 +74,27 @@ extension Runtime {
         }
     }
 
+    /// Boop's ears, on or off, saved: the app starts or stops its listener
+    /// (`onEars`).
+    public func setEars(_ on: Bool) {
+        home.async { [self] in
+            guard settings.ears != on else { return }
+            saveSettings { $0.ears = on }
+            options.log("ears \(on ? "on" : "off")")
+            onEars?(on)
+            changed()
+        }
+    }
+
+    /// What Boop's ears heard (`Hearing`): one word or sound, which may wake
+    /// the brain. Any thread.
+    public func heard(_ what: String, misheard: Bool = false) {
+        home.async { [self] in
+            options.log("ears: heard \(what)" + (misheard ? ", misheard" : ""))
+            run(pipeline.heard(what, misheard: misheard, at: options.clock()))
+        }
+    }
+
     /// The popover's "can't hear you" notice was dismissed.
     public func dismissMicTrouble() {
         home.async { [self] in

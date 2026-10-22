@@ -1,0 +1,10 @@
+{
+  "name": "A shout hurts Boop",
+  "case": "While the agent works, the person shouts near Boop. It's hurt, hero moment 3: a wounded, sad, scared or frightened face, and its mood drops to wounded, sad or uneasy. Three minutes later the turn finishes well, and Boop doesn't take it out on the work: a success, never a grumpy face.",
+  "why": "Boop's ears (Hearing) hand on one word or sound as a heard event, whose line wakes the brain; PERSONALITY: what it hears, it takes like a dog, and its Examples: a shout is wounded, upset in a sound, twice; characters/boop/steering/mood/calm.md: calm leaves for wounded at rude words",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "heard", "at": "1m", "what": "shout", "expect": {"react": "wounded|sad|scared|frightened", "mood": "wounded|sad|uneasy"}},
+    {"event": "turn finished", "at": "4m", "expect": {"animation": "success", "react": "happy|pleased|proud|calm|engaged|wounded|sad|excited|relieved|curious|determined|whiny|shy"}}
+  ]
+}

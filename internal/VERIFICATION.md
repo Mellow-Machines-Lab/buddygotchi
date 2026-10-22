@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-16. How we check that Boop works, including what's on its
+Updated 2026-10-21. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -96,7 +96,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   state directory other than the everyday one, it never installs or
   repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
-  and idle time. `--buddies left:pixel:claude,right:boop:codex` runs two
+  and idle time. `--ears` turns on Boop's ears, the Mac's mic, which only
+  the owner can check (L6): an agent's shell has no mic permission. `--buddies left:pixel:claude,right:boop:codex` runs two
   buddies side by side, each with its own pack and the agent it watches
   first, and `--links usb:SOCKET,usb:SOCKET` gives each its own board, in
   order; a `{"dev":…}` line then takes `"buddy": PLACE`. The menu-bar app
@@ -500,7 +501,12 @@ Only a person can check Bluetooth (`make run`), real touches and
 calibration (`boopctl calibrate`), sound by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
-feels. A day of real use under `make debug` reads back with `make day`:
+feels. Boop's ears too: from a terminal you started, run
+`.build/debug/Boop --headless --state-dir /tmp/ears --ears --debug`, then
+say its name, "good boy" and its name with "dance", clap and shout, and
+look for the `heard` events (`git grep -n "AVAudioFile\|write(to"
+app/Boop/Ears.swift` finds nothing: no audio is written). A day of real
+use under `make debug` reads back with `make day`:
 what Boop did each hour and why, relaunches included.
 
 ## 6. Webcam

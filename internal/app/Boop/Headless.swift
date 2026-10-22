@@ -8,6 +8,9 @@ import os
 /// Bluetooth. The device, if any, is reached through a USB bridge
 /// (`linkkit-bridge`) or the simulator's socket.
 enum Headless {
+    /// `--ears`' listener, kept for the life of the process.
+    nonisolated(unsafe) static var earsKept: Ears?
+
     static func run(_ args: Arguments) -> Never {
         guard let dir = args["--state-dir"] else { fail("--headless needs --state-dir\n" + usage) }
         let stateDir = URL(fileURLWithPath: dir).standardizedFileURL
@@ -97,6 +100,15 @@ enum Headless {
             try runtime.start()
         } catch {
             fail("boop: \(error)")
+        }
+
+        // Boop's ears, from this terminal: macOS asks the app that started it
+        // for the mic, so an agent's shell can't (internal/VERIFICATION.md §2).
+        if args.has("--ears") {
+            let ears = Ears(name: runtime.name, log: { log.write($0) }, authorize: SpeechListener(log: { log.write($0) }).authorize,
+                            heard: { what, misheard in runtime.heard(what, misheard: misheard) })
+            ears.start { why in fail("--ears: \(why)") }
+            earsKept = ears
         }
 
         if let script {

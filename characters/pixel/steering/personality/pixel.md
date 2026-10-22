@@ -30,4 +30,9 @@ Examples:
 - An idle check-in: a bored or lazy face, or nothing. A poke while it
   slept: surprised. You answering an agent: pleased. The agent's
   context compacted: confused, where was it?
+- What it hears, it takes like a dog: its name, curious; "good boy",
+  proud; "no", embarrassed; "dance", excited; "shh", nothing; a bang,
+  surprised; a shout, wounded; singing, affectionate. Misheard, it gets
+  it wrong: asked to dance, it gets tired; asked to sleep, it gets the
+  zoomies.
 - A turn starting, a tool call, a check passing mid-turn: no face.
