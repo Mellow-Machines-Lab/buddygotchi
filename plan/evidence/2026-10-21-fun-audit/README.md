@@ -145,26 +145,32 @@ a run for free.
 
 ## 4. What the plan does about it
 
-[PLAN.md](PLAN.md) has ten recommendations, each a brief a subagent can
-take alone, in the order the owner's rule prefers: pack content and the
-device's own timelines first, then steering, then new lines for the
-brain, then `react` reading its own answers, and one new component
-(ears) last. The core, the harness, the protocol and the device's queue
-change nowhere; one optional item (R10) says what a genuinely new
-animation would cost, for when a variation can't carry it.
+[PLAN.md](PLAN.md) (second pass, re-cut for simplicity) has ten
+recommendations, each a brief a subagent can take alone, built on five
+patterns the engine already proves: pack content plays itself, the line
+carries the count and the steering carries the ladder, a new thing is
+one raw event with one line, randomness is born at the source and
+recorded, and the evals pin the ladder. The core, the harness, the
+questions, the protocol, the device's queue, `react` and `Voice` change
+nowhere; one optional item (R10) says what a genuinely new animation
+would cost.
 
 | | Fixes | Jev passes |
 | --- | --- | --- |
-| R1 Room in the steering, and real words for the 29 slime moods | A1, C6 | ~0 |
-| R2 The cuss, and a ladder of failure | A6 | ~20 |
-| R3 Nature in the evals and the Examples | A8 | ~10 |
-| R4 Variety inside `react`: the echo rule, the off die, the kind bump | A2, A7, B1, B2, C2 | ~40 |
-| R5 Five new lines for the brain | A5, B1, B4, C5 | ~30 |
+| R1 Room in the steering, and real words for the 29 slime moods | A1, C6 | ~45 (regression only) |
+| R2 The cuss, and a ladder of failure | A6 | ~26 |
+| R3 Nature in the evals and the Examples | A8 | ~14 |
+| R4 The line counts the run, the steering climbs the ladder | A2, B1, B2 | ~40, then the always set |
+| R5 Four new lines for the brain | A5, B4, C5 | ~40 |
 | R6 Idle and asleep life in both packs | A4, C1 | 0 |
-| R7 Comedy on the finish, and bigger says for big holds | A4, C7 | 0 |
-| R8 Ears | A3, A9, C4 | ~10, plus the owner |
-| R9 Evals and the working day hold the fun | B3, C8, D | ~20 |
-| R10 (only if needed) One new animation state | C3 | ~10 |
+| R7 Comedy on the finish | A4 | 0 (~10 for 02) |
+| R8 Ears, with mishearing born at the source | A3, A7, A9, C4 | ~10, then the always set, plus the owner |
+| R9 Evals and the working day hold the fun | B3, C8, D | ~18 |
+| R10 (only if needed) One new animation state | C3 | ~20 |
+
+C2 (`react` reads only the top choice) and C7 (the say cap) are left as
+they are on purpose: the plan's Not now says what the smallest change to
+each would be, and why it waits.
 
 Everything above keeps "needs you" exactly as it is: a core rule, held
 by the device over every reaction, with nothing but your words waking

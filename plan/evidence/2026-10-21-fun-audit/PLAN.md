@@ -1,65 +1,75 @@
-# Fun plan: ten recommendations for a simple core, both packs (2026-10-21)
+# Fun plan, second pass: the simplest core that can be fun (2026-10-21)
 
-The audit is [README.md](README.md). This plan keeps one rule from the
-owner: **the core stays simple and stable; tune through pack content,
-steering, new events and lines, and `react` reading its own answers; add
-machinery only when nothing else can carry it.** Each item is a brief a
-subagent can take alone: the issue, the change, the steps with files and
-functions, the specs to update, what stays untouched, the evals with
-their expected values and Jev cost, when it's done, what it depends on,
-and how it lands in each pack.
+The audit is [README.md](README.md). This pass re-cuts the first one for
+the owner's rule: **the core stays simple and stable; tune through pack
+content, steering, new events and lines, and animations; add machinery
+only when nothing else can carry it.** Fewer mechanisms, one pattern
+reused everywhere, and an explicit list of what is not being built.
+Each item is a brief a subagent can take alone.
 
-## 0. The rule, made concrete for this engine
+## What changed from the first pass
 
-The extension points, in the order to prefer them:
+- **Variety no longer lives in `react`.** The echo rule, the off die, the
+  kind bump, the `last` state and the `varied` facts are gone. Instead
+  the view counts (quick wins in a row, check-ins on a turn) and says so
+  on the line, and the steering answers each rung differently: the
+  pattern pokes already use (`You poked Boop 4 times in a row.`). A few
+  lines of view code and some Examples; no hidden state in an output.
+- **Wrong on purpose moves to where the randomness is born.** Ears
+  mishears one command in five and records it in the event
+  (`misheard: true`); the line says so and the steering decides what a
+  misheard "dance" does. No `mischief` table in `character.json`, no die
+  in `react`.
+- **The idle check-in is the idle heartbeat with a shorter period** for
+  the first two hours, not a fourth heartbeat kind.
+- **The check-in's topic joins the counted line** (R4) instead of being
+  an item of its own.
+- **Bigger says for long holds** (a `Voice` change) is dropped to Not
+  now: the hold and the kind already carry loudness.
+- Every item opens with its architecture change in one sentence and the
+  pattern it reuses.
 
-1. **Pack content.** A new variation of a look or a finish, a sound on a
-   design's timeline, a gel recipe or performance. Both faces already
-   pick among variations on their own (the pixel face turns a look's
-   variation at loop end, the gel plays a performance every 7–15 s), so
-   new content shows with no Mac change.
-2. **Steering text.** Examples, mood files, nature files. Both packs,
-   each its own.
-3. **New lines in the view.** A thing that happens becomes one more line
-   `TranscriptView` writes, with facts and a wake. Pokes and the back
-   from a break are the model. The harness and the brain never change.
-4. **View rules from the personality's front matter.** Timings and which
-   events wake the brain, as `working_heartbeat` is.
-5. **`react` reading its own answers.** `ReactOutput.run` owns how it
-   reads Jev's probabilities. Variety lives there, in one file.
-6. **A new component**, only for ears, which turn something the Mac can
-   hear into one raw event, as `Pipeline.said` does for push-to-talk.
+## 0. The rule, made concrete
 
-What the plan does **not** do: no new question to Jev; no change to the
-harness, the core's rules, the protocol, the device's queue or "needs
-you"; no rule that chooses a face or a word; no new message on the wire;
-no new state in the engine unless R10 is chosen.
+Five patterns, each already in the engine, each reused several times.
+Nothing in the plan is a sixth.
+
+| Pattern | Already proven by | Reused by |
+| --- | --- | --- |
+| **P1 Pack content plays itself.** A new variation of a look or a finish, with a sound policy on its timeline, shows with no Mac change: the pixel face turns a look's variation at loop end (`PixelFace::kTurnPct`), both faces pick a finish's variation never-the-last, the gel plays a performance per mood every 7–15 s | The three idle designs, the four trophy designs | R6, R7 |
+| **P2 The line carries the count, the steering carries the ladder.** The view counts a run and writes it on the line; the personality's Examples answer each rung | `You poked Boop 4 times in a row.`, `answersRunFrom`; last night: a second barrage read as fresh until the line said `, again` | R2 (optional), R4, R5 |
+| **P3 A new thing is one new raw event with one line.** A kind, a line with facts, a wake; the harness and the brain never change | `talk`, `presence`, `poke` | R5, R8 |
+| **P4 Randomness is born at the source and recorded.** The view is a pure function of the log; what's random is decided before the event is logged, and the event says so | `Core.pickVariant` records `variant`; `ReactOutput.takes` | R8 |
+| **P5 Evals pin the ladder.** Every rung has a scenario step with its count, and the whole-run checks hold variety | `05`, `16`, `23` | R9 |
+
+**What the plan never touches:** the core's rules (`Core.swift`), the
+harness, the questions Jev is asked, the protocol and the device's
+queue, "needs you", the output contracts. No rule chooses a face or a
+word. No new state unless R10 is chosen. No new timer in the core.
 
 | Layer | Touched by |
 | --- | --- |
-| Core (`app/BoopKit/Core/Core.swift`) | none |
-| Harness, brain, protocol, queue | none |
-| View (`TranscriptView`, `EventLine`, `Personality.Rules`) | R5, R8 (lines, facts, one front-matter rule, one event kind) |
-| `ReactOutput` | R4, R7 (reads second-best answers and a die; passes the hold to Voice) |
-| `Voice` | R7 |
-| Steering (`characters/*/steering/`) | R1, R2, R3, R5, R8 |
-| `character.json` | R1 (`face` text), R8 (`mischief`) |
+| Core | none |
+| Harness, brain, questions, protocol, queue | none |
+| `ReactOutput`, `Voice` | none |
+| View (`TranscriptView`, `EventLine`, `Personality.Rules`) | R4 (two counts, two line forms), R5 (four lines, one front-matter key), R8 (one event kind, one line) |
+| Steering (`characters/*/steering/`) | R1, R2, R3, R4, R5, R8 |
+| `character.json` | R1 (`face` text for 29 moods) |
 | Pack art and sound | R6, R7 |
 | New component | R8 (`app/Boop/Ears.swift`, which only writes events) |
-| Evals, working day, demos | R2, R3, R5, R8, R9 |
+| Evals, working day, demos | R2, R3, R4, R5, R8, R9 |
 
 **For every subagent.** Start from the latest `main` (`git log
 --oneline HEAD..main` prints nothing). Read CLAUDE.md's "Docs stay in
 sync" table and update the doc in the same commit. Pin every number in
 a test. Run only the evals the brief names, `--runs 1`, with
-`BOOP_JEV_KEY` from the owner. `boopdev eval --list` prices a scenario
-without a key; `boopdev eval` stops over 100 requests unless `--budget`
-says otherwise. Don't run `make eval` (660 requests at the default runs).
-
-The evals live in Boop's pack (`characters/boop/evals/`) and run on the
-pack in use. Each item says what Pixel gets. Boop's steering writes its
-Examples as `NOW: … → face, animation, feeling in a kind, then topic,
-hold`; Pixel's as prose. Keep each pack's style.
+`BOOP_JEV_KEY` from the owner; `boopdev eval --list` prices a scenario
+without a key, and `boopdev eval` stops over 100 requests unless
+`--budget` says otherwise. Don't run `make eval` (660 requests). The
+evals live in Boop's pack and run on the pack in use; each item says
+what Pixel gets. Boop's Examples are written `NOW: … → face, animation,
+feeling in a kind, then topic, hold`; Pixel's as prose. Keep each pack's
+style.
 
 ## R1. Room in the steering, and real words for the 29 slime moods
 
@@ -70,107 +80,131 @@ prose with no `face` text and a boilerplate mood file, so the comic
 moods (lazy, bored, mischievous, amused, surprised, stunned, baffled,
 embarrassed, disgusted, tired) are never picked.
 
-**Change.** `Steering.Budget`: guide 300 → 400, personality 750 → 1000,
-nature 150 → 250, mood 175 → 225 (a request is about 3,400 tokens; this
-adds at most 350). Then content: in Boop's `character.json`, a `face`
-and, where it helps, a `face_not_for` for each of the 29 moods, in
-Pixel's plain register ("A lazy face: can't be bothered, but it's
-getting done"); the `meaning` stays the design's, since `slimegen`
-writes it, or change it in `emotion-graph.json` and rerun `slimegen`.
-Mood files for ten comic moods in the shape of `grumpy.md` (what it
-leans to, what it says, what it stays through, what it leaves for, when
-it fades): lazy, bored, mischievous, amused, surprised, stunned,
-baffled, embarrassed, disgusted, tired. Pixel: its 42 mood files get the
-same shape, three to five lines each.
+**Architecture change.** None. One constant and pack content.
 
-**Steps.**
+**What to do.**
 
-1. `app/BoopKit/Harness/Steering.swift` `Budget`; the pins in
-   `internal/app/Tests/RuntimeTests.swift` (`overBudget() == []`) and
-   `CharacterPackTests.swift` still pass; `HarnessTests` for nature.
-2. `characters/boop/character.json`: `face`/`face_not_for` on the 29
-   moods. `python3 characters/charactergen.py --check` and `boopdev
-   check` still pass; `node characters/boop/tools/slimegen/slimegen.mjs
-   --check` stays fresh (it keeps `face`).
+1. `app/BoopKit/Harness/Steering.swift` `Budget`: guide 300 → 400,
+   personality 750 → 1000, nature 150 → 250, mood 175 → 225. A request
+   is about 3,400 tokens; this adds at most 350. The pins in
+   `internal/app/Tests/RuntimeTests.swift` (`overBudget() == []`),
+   `CharacterPackTests.swift` and `HarnessTests.swift` (nature) still
+   pass.
+2. `characters/boop/character.json`: a `face` (and `face_not_for` where
+   it helps) for each of the 29 moods without one, in Pixel's plain
+   register: `"face": "A lazy face: can't be bothered, but it's getting
+   done."`, `"face": "A bored face: nothing to see here."`,
+   `"face": "An amused face: that was funny."`. The `meaning` stays the
+   design's (`slimegen` writes it from `emotion-graph.json` and keeps
+   `face`), or change it there and rerun `node
+   characters/boop/tools/slimegen/slimegen.mjs`. `python3
+   characters/charactergen.py --check`, `boopdev check` and `slimegen
+   --check` stay green.
 3. `characters/boop/steering/mood/{lazy,bored,mischievous,amused,
-   surprised,stunned,baffled,embarrassed,disgusted,tired}.md`.
-4. `characters/pixel/steering/mood/*.md`, same shape, shorter.
+   surprised,stunned,baffled,embarrassed,disgusted,tired}.md`, each in
+   `grumpy.md`'s shape: what its faces lean to, what it says, what it
+   stays through, what it leaves for (only moves the graph has), when it
+   fades. `bored.md` for example: "Bored. Nothing has happened for a
+   while, or the same thing keeps happening. Its faces lean bored and
+   lazy; a win gets a pleased face. Says quiet in a sound. Stays bored
+   through check-ins and quick wins. Leaves for curious at a poke or
+   anything new; calm when work starts; excited at a big win. Fades to
+   calm once Boop has been bored for 10 min."
+4. `characters/pixel/steering/mood/*.md`: the same shape, three to five
+   lines each, for all 42.
 
-**Specs.** `characters/CHARACTER.md` §7 (the budgets' numbers, if
-quoted); `documentation/architecture.html` only if it quotes a budget.
+**Specs.** `characters/CHARACTER.md` §7 if it quotes a budget;
 "Updated" dates.
 
-**Stays untouched.** The questions, the mood graph, the moves, every
-other mood file.
+**Untouched.** The questions, the mood graph and its moves, every other
+mood file.
 
-**Evals.** None new: `17-never-the-wrong-face`, `47-recovery-walk`,
-`53-busy-day-on-the-graph` once each (~45 requests) to check the new
-faces don't pull Jev off the graph or onto a wrong face. R5's idle
-check-in is where the comic moods get their own scenario.
+**Tests and evals.** The budget tests. `17-never-the-wrong-face`,
+`47-recovery-walk`, `53-busy-day-on-the-graph` once each (~45 requests)
+to check the new face texts don't pull Jev off the graph or onto a wrong
+face. The comic moods get their own scenarios in R4 and R5.
 
 **Done when** `overBudget()` is empty in both packs, `boopdev check`
 passes, the three scenarios pass once, and `boopdev eval --list` prints
 unchanged counts.
 
-**Depends on** nothing. First, since R2, R3, R5 and R8 add text.
+**Depends on** nothing. First: R2, R3, R4, R5 and R8 add text.
 
-**Per pack.** Boop: the budgets (engine) and all of the above. Pixel: the
-mood files; its `character.json` already has plain meanings and faces.
+**Per pack.** Boop: the budgets (engine) and all of the above. Pixel:
+the mood files; its `character.json` already has plain meanings and
+faces.
 
 ## R2. The cuss, and a ladder of failure
 
 **Issue.** A failed turn is one hold of an irritated face with "upset or
 nothing"; the swear is kept for a stinging failure that was already
-grumpy (`60`). Nothing escalates: a second failure in a turn, a failure
-after a fix, a failure that follows a barrage. "Loud is better" means
-pulling the two levers the steering has, the hold and the kind.
+grumpy (60). Nothing escalates: a second failure in a turn, a failure
+after a fix, a failure after a barrage. "Loud is better" means pulling
+the two levers the steering has, the hold and the kind.
 
-**Change.** Steering only. Boop's Examples (R1 makes room):
+**Architecture change.** None: steering and evals. If Jev can't climb
+the ladder from HISTORY alone (the eval below decides), one count joins
+the finish line by P2, the same change as R4's.
 
-- `claude finished turn 5 on "api": failed, a long turn, 15 tool calls.`
-  → `irritated, failure, upset in a phrase, twice` (cheeky: `upset in a
-  swear`; see R3).
-- A failed turn after `claude's tests failed on "api".` in the same turn
-  → `grumpy, failure, upset in a phrase, three times` ("Not again",
-  "Oh, come on").
-- `claude finished turn 9 on "api": failed, a very long turn, 40 tool
-  calls.` → `sad, failure, upset in a sound, four times` (already sad
-  by `08`; make the hold four).
-- `claude's tests failed on "api".` a second time in a turn → `annoyed,
-  upset in a word, then retry, twice` ("Again").
+**What to do.**
 
-`grumpy.md`, `irritated.md`, `annoyed.md` "Says" lines: a phrase at a
-failed turn, a swear when it stings, held longer than the win before
-it. The guide's "held longer for big moments" gains "a failure held
-longer than the win before it". Pixel's `pixel.md`: "A turn fails: an
-annoyed face held twice for a small one, with a huff or a word; a sad
-face held longer for a big one; a swear only when it really stings."
+1. Boop's Examples (`characters/boop/steering/personality/boop.md`;
+   R1 makes room):
+   - `NOW: claude finished turn 5 on "api": failed, a long turn, 15
+     tool calls.` → `irritated, failure, upset in a phrase, twice`.
+   - `NOW: claude finished turn 6 on "api": failed, a long turn, 15
+     tool calls.` after `claude's tests failed on "api".` in the same
+     turn → `grumpy, failure, upset in a phrase, three times` ("Not
+     again", "Oh, come on").
+   - `NOW: claude finished turn 9 on "api": failed, a very long turn,
+     40 tool calls.` → `sad, failure, upset in a sound, four times`.
+   - `NOW: claude's tests failed on "api".` a second time in a turn →
+     `annoyed, upset in a word, then retry, twice` ("Again").
+2. `grumpy.md`, `irritated.md`, `annoyed.md` "Says" lines: a phrase at a
+   failed turn, a swear when it stings, held longer than the win before
+   it. The guide's "held longer for big moments" gains "and a failure
+   longer than the win before it".
+3. Pixel's `pixel.md`: "A turn fails: an annoyed face held twice for a
+   small one, with a huff or a word; a sad face held longer for a big
+   one; a swear only when it really stings."
+4. Only if `70` (below) fails on the second rung: the finish line says
+   how many checks failed this turn, from `Counts.toolsFailed` and
+   `failRuns`: `claude finished turn 6 on "api": failed, a long turn,
+   15 tool calls, after its tests failed twice.`
+   (`EventLine.turnEnd(... failedChecks:)`, facts `failed_checks`).
+   P2, one line form, one `ViewTests` case.
 
-**Steps.** Edit the files; `boopdev check`; the two packs' budgets.
+**Specs.** `internal/EVALS.md` §4 (the reworded scenarios);
+`documentation/architecture.html` only if step 4 lands.
 
-**Specs.** None but the steering itself and `internal/EVALS.md` §4 (the
-reworded scenarios).
+**Untouched.** The questions; Voice (the 18 swear takes exist, on the
+failure finish); the device (its failure design plays).
 
-**Stays untouched.** The questions, Voice (the swear takes exist: Crap,
-Damn, Fuck, Shiba, Shit, 18 in all, on the failure finish), the device
-(the failure design plays).
+**Tests and evals.** `03-turn-failed`: `react:
+grumpy|annoyed|irritated`, `animation: failure`, `kind:
+phrase|word|swear`, `said: some`, `loops: twice|three times`.
+`08-long-turn-fails`: add `said: some`, `loops: three times|four
+times`. `04-tests-fight-back`: the second failure `said: some`, `loops:
+once|twice`. New `70-failure-after-fix.json`:
 
-**Evals.** `03-turn-failed`: `react: grumpy|annoyed|irritated`,
-`animation: failure`, `kind: phrase|word|swear`, `said: some`, `loops:
-twice|three times`. `08-long-turn-fails`: add `said: some`, `loops:
-three times|four times`. `04-tests-fight-back`: the second failure
-`said: some`, `loops: once|twice`. `60` unchanged. New
-`70-failure-after-fix.json`: tests fail, pass (reaction `done`), then
-the turn fails 90 s later on `api_error`: `react: grumpy|irritated|
-whiny`, `animation: failure`, `said: some`, `loops: twice|three
-times|four times`, `mood: grumpy|irritated|annoyed`. Cost: 03 (2), 08
-(13), 04 (~6), 70 (~5): about 26.
+```json
+{"steps": [
+  {"event": "turn started", "at": "0s"},
+  {"event": "command", "at": "1m", "topic": "tests", "failed": true},
+  {"event": "command", "at": "2m", "topic": "tests", "failed": false, "reaction": "done"},
+  {"event": "turn failed", "at": "3m30s", "error": "api_error",
+   "expect": {"react": "grumpy|irritated|whiny", "animation": "failure", "said": "some",
+              "loops": "twice|three times|four times", "mood": "grumpy|irritated|annoyed"}}]}
+```
 
-**Done when** the four pass once, `61-no-swear-at-a-win` still passes
-(~6), and a new demo `characters/boop/demo/the-cuss.jsonl` (and Pixel's)
-plays in the simulator: a turn, tests fail, the turn fails, the brain
-step `{"react.mood": "grumpy", "react.animation": "failure",
-"react.loops": "twice", "say.feeling": "upset", "say.kind": "phrase"}`.
+Cost: 03 (2), 08 (13), 04 (~6), 70 (~5): about 26. `61-no-swear-at-a-
+win` once (~6) as the regression.
+
+**Done when** the four pass once, 61 still passes, and
+`characters/boop/demo/the-cuss.jsonl` (and Pixel's) plays in the
+simulator: a turn, tests fail, the turn fails, the brain step
+`{"react.mood": "grumpy", "react.animation": "failure", "react.loops":
+"twice", "say.feeling": "upset", "say.kind": "phrase"}`.
 
 **Depends on** R1 (room). R3 splits the swear by nature.
 
@@ -185,361 +219,384 @@ never do (`nature: nil`), so every scenario checks a prompt the app
 doesn't show. The nature files are prose with no Examples, so cheeky and
 sweet differ by adjectives Jev may or may not weigh.
 
-**Change.** The runner takes a scenario field `"nature": "sweet" |
-"cheeky"`, default `cheeky` (the owner's), and builds the harness with
-it. Each nature file gets two Examples in the pack's style (budget 250
-after R1): cheeky, a failed turn → `irritated, failure, upset in a
-swear, twice` and one poke → `mischievous, tickled in a word, once`;
-sweet, a failed turn → `disappointed, failure, upset in a word, once`
-and one poke → `affectionate, tickled in a sound, once`.
+**Architecture change.** None: one runner field and steering.
 
-**Steps.**
+**What to do.**
 
-1. `internal/app/BoopDevKit/Eval/Eval.swift`: `Scenario.nature`
-   (`LongTerm.Nature`, parsed, unknown value fails to load), passed to
-   `Runtime.harness(... nature:)`; `EvalTests` loads a scenario with each
-   value and one with a bad one.
-2. `boopdev eval --list` prints the nature when it isn't the default.
-3. `characters/boop/steering/nature/{cheeky,sweet}.md`,
-   `characters/pixel/steering/nature/*.md` (prose Examples).
+1. `internal/app/BoopDevKit/Eval/Eval.swift`: `Scenario.nature:
+   LongTerm.Nature`, from the file's `"nature": "sweet" | "cheeky"`
+   (default `cheeky`, the owner's; another value fails to load), passed
+   to `Runtime.harness(... nature:)`. `boopdev eval --list` prints it
+   when it isn't the default. `EvalTests` loads one of each and a bad
+   one.
+2. `characters/boop/steering/nature/cheeky.md`, two Examples: a failed
+   turn → `irritated, failure, upset in a swear, twice`; one poke →
+   `mischievous, tickled in a word, once`. `sweet.md`: a failed turn →
+   `disappointed, failure, upset in a word, once`; one poke →
+   `affectionate, tickled in a sound, once`. Budget 250 after R1.
+3. `characters/pixel/steering/nature/*.md`: the same two, in prose.
 
-**Specs.** `internal/EVALS.md` §1 (the run's prompt has a NATURE
-section), §3 (the field), `characters/CHARACTER.md` §7 (the files may
-carry Examples).
+**Specs.** `internal/EVALS.md` §1 (the prompt has a NATURE section), §3
+(the field); `characters/CHARACTER.md` §7 (the files may carry
+Examples).
 
-**Stays untouched.** `Steering.nature`, the memory format, the
-runtime.
+**Untouched.** `Steering.nature`, the memory format, the runtime.
 
-**Evals.** `03` runs twice, once per nature, as two files or one with
-`nature: sweet` copied to `71-turn-failed-sweet.json`: sweet expects
-`react: annoyed|disappointed|sad`, `kind: sound|word|phrase` (never
-swear), `loops: once|twice`. `05-pokes-glad-miffed-grumpy` gets
-`71`-style twin `72-pokes-sweet.json`: the first poke `react:
-happy|curious|affectionate|pleased`, the third `react:
-annoyed|irritated` (sweet gets miffed, not grumpy). Cost: 71 (2), 72
-(4), and 03 and 05 again (6): about 14.
+**Tests and evals.** `71-turn-failed-sweet.json` (03's steps with
+`"nature": "sweet"`): `react: annoyed|disappointed|sad`, `kind:
+sound|word|phrase`, `loops: once|twice`. `72-pokes-sweet.json` (05's
+steps, sweet): the first poke `react: happy|curious|affectionate|
+pleased`, the third `react: annoyed|irritated`. Cost: 71 (2), 72 (4),
+03 and 05 again (6): about 14.
 
 **Done when** both natures pass their files once, `--always --runs 1`
-passes with the default nature, and `debug.jsonl` of an eval run shows
-the NATURE section in the state.
+passes with the default, and an eval run's `debug.jsonl` shows the
+NATURE section in the state.
 
 **Depends on** R1.
 
-**Per pack.** Engine change once; each pack's two nature files.
+**Per pack.** Engine once; each pack's two nature files.
 
-## R4. Variety inside `react`: the echo rule, the off die, the kind bump
+## R4. The line counts the run, the steering climbs the ladder
 
-**Issue.** Routine lines get one answer (A2, B1, B2), and nothing is
-ever wrong on purpose (A7). Text couldn't fix it last night; Jev answers
-a routine line at 0.96–0.99.
+**Issue.** Routine work is one face: every quick win is `happy, success,
+done in a word, once`, every check-in `engaged, work, twice`, the line
+identical each time (A2, B1, B2). Text alone couldn't fix it last
+night, and Jev answers the same line the same way at 0.96–0.99. But Jev
+answers a *different* line differently, and the view already proves it
+with pokes.
 
-**Change.** `ReactOutput` keeps its last reaction (face, animation,
-loops, kind, when) and a second seeded RNG, and reads the answers in
-four steps instead of taking each top choice:
+**Architecture change.** P2. The view keeps two counts and writes them
+on the line: quick wins in a row on a thread, and check-ins on a turn,
+with the turn's topic. The personality's Examples answer each rung with
+a different face, hold and kind. Nothing changes in `react`, the
+harness or the questions. (The first pass's echo rule and dice are in
+Not now, with the one die to add if this isn't enough.)
 
-1. **Routine or notable?** Routine is a pass whose event is a turn end
-   or a heartbeat, whose `react.animation` is `none` or `success`, whose
-   `say.kind` isn't `swear`, and whose `react.mood` top probability is
-   at least `routineFloor` (0.8). Everything else is notable and keeps
-   Jev's answers whole: a failure, a reply, a wake-up, a poke, talk, a
-   heard word (R8). So `03`, `05`, `16`, `17`, `23`, `35`–`40` and `60`
-   can't change.
-2. **The echo rule.** On a routine line, if the top face, the animation
-   and the hold would all equal the last reaction's within `echoMs`
-   (10 min), vary one, in this order: the hold (`once` → `twice`), else
-   the kind (`sound` → `word`, `word` → `phrase`), else the face, to the
-   second-best face with probability at least `secondBest` (0.15). The
-   face comes last and only above 0.15 so `17` can't break: Jev never
-   gives a wrong face that much at a win.
-3. **The off die.** One routine reaction in `offDie` (12) takes the
-   second-best face at or above `offFloor` (0.05), whatever the last
-   was. The obtuse pet, seeded, repeatable, logged.
-4. **The kind bump.** One routine reaction in `bumpDie` (4) takes the
-   next kind up (sound → word → phrase). "Loud is better."
+**What to do.**
 
-Every swap is recorded in the output's facts, beside `takes`:
-`"varied": ["loops once → twice"]`, so `debug.jsonl`, `boopctl day` and
-the evals can count them. `run` still returns `.started(message,
-pending, facts:)`.
-
-**Steps.**
-
-1. `app/BoopKit/Outputs/ReactOutput.swift`: `last`, `dice`
-   (`SplitMix64(seed: 0xD1CE ^ voiceSeed)`), the constants above as
-   `static let`s, a pure `static func pick(_ answers: Answers, now:
-   Event?, last: Last?, at: Int64, dice: inout SplitMix64) ->
-   (face: String, loops: Int, kind: Take.Kind, varied: [String])` that
-   `run` calls; `loops(_:)`, `kind(_:)` stay as "Jev's own pick".
-2. A new `internal/app/Tests/ReactOutputTests.swift` (the runner is
-   generated from the test files): (a) a notable line is never varied;
-   (b) two identical routine answers 30 s apart differ in hold, kind or
-   face; (c) the same two 11 min apart don't; (d) the off die hits 1 in
-   12 ± 25% over 1,200 rolls and never a face under 0.05; (e) the kind
-   bump never reaches `swear`; (f) `EvalTests`' scripted brain still
-   passes `04` and fails `05` as before.
-3. `internal/tools/boopctl_lib/day.py` and `workday.py` read `varied`
-   from the action's facts, as they read `takes`.
-
-**Specs.** `documentation/architecture.html` "Outputs and Voice" (one
-sentence: `react` varies a routine answer that would echo the last);
-`internal/EVALS.md` §1 (`varied` in the facts); a comment in
-`ReactOutput` saying why (text couldn't).
-
-**Stays untouched.** The harness, the questions, the steering, the
-device. Jev is asked exactly what it's asked today.
-
-**Evals.** `19-same-win-again`: `checks` gains `"max_same_in_a_row":
-2`, `"min_variety": 3`; its case loses "The same face every time is
-fine". `21-busy-session`: `"max_same_in_a_row": 2`, `"min_variety": 4`.
-New `73-no-echo.json`: a comeback (tests fail, pass, reaction `done`),
-the turn finishes 40 s later: the finish's `expect` has `react:
-happy|pleased|proud|excited|calm` and the run `"max_same_in_a_row": 1`.
-Cost: 19 (10), 21 (21), 73 (~6): about 37; then `--always --runs 1`
-(165) once, since this touches every reaction.
-
-**Done when** 19, 21 and 73 pass once, `--always` passes, the unit tests
-pin the numbers, and a `21` timeline shows no two identical routine
-reactions in a row.
-
-**Depends on** nothing. R2's holds and R7's bigger says make the bump
-visible.
-
-**Per pack.** Engine, pack-agnostic: the rule reads Jev's probabilities
-and the event's kind, never a mood name. Both packs' faces and takes.
-
-## R5. Five new lines for the brain
-
-**Issue.** The brain is deaf to a compaction, to you answering a
-request, to what the agent is doing at a check-in, to idle time under an
-hour, and to a poke while Boop sleeps or a barrage that comes again
-(A5, B1, B4). Each is a view change: a line, facts and a wake, gated
-like every other event.
-
-**Change.**
-
-1. **Compacted.** In `agentEvent`, a `.sessionStarted(source)` whose
-   source is `Mapping.compacted` lines `claude's context on "api" was
-   squeezed; it picks up where it left off.`, wake 0, facts thread.
-   Boop's Example → `confused, looking in a sound, once` (the
-   context-wall demo's "where was I?", now for real); `confused.md` gets
-   R1's shape. Rule reactions and the COMPACTED card stay as they are.
-2. **You answered.** `needs(_:)` lines a `needs_you` end whose `outcome`
-   is `done`: `You answered claude on "api".`, wake 0, facts thread;
-   failed ends (forgotten, the session ended) line nothing. `keeps`
-   gains `(.needsYou?, .end?)`; `wakes` gains `"needs_you_end": 0`.
-   Example → `happy, glad in a sound, then quiet... ` no: → `pleased,
-   glad in a word, once` ("Nice", "Sweet"). The hold rule is untouched:
-   with another request still waiting the pass is held as any is.
-3. **The check-in says the topic.** `EventLine.working(agent:thread:
-   ms:topic:)`: `claude is still working on "api", a very long turn,
-   running tests.` (`running a build`, `deploying`, `editing docs`; none
-   when there's no topic). The facts already carry it. Examples: with
-   tests → `hopeful, work in a word, then tests, twice`; without → as
-   now.
-4. **An idle check-in.** A fourth heartbeat, `specificType:
-   "idle-short"`, while at least one session is open, none works, and
-   the last agent event, poke, talk or back was under `idleWindowMs`
-   (2 h) ago, every `idle_heartbeat` seconds, a new front-matter rule
-   (`boop` 900–1800, `chatter` 300–600, `pixel` 1200–2400, `none` to
-   turn it off). Past the window the hourly heartbeat carries on as now,
-   so nights and weekends stay silent and `06`, `55` keep passing. Line:
-   `Nothing is happening; claude sits idle on "api".` Examples → `bored,
-   quiet in a word, once`, → `lazy, quiet in a sound, twice`, → `none`;
-   the guide: "An idle check-in is a small face or nothing, never a
-   finish, and never moves the mood but to fade it." `EventLine.words`
-   gains "An idle check-in means the person is around but no agent is
-   working."
-5. **A poke while asleep, and again.** `poke(_:)` adds `while it slept`
-   when the fold has no sessions (`You poked Boop while it slept.`,
-   facts `asleep`), and `, again` when the last run of pokes ended under
-   `againMs` (2 min) ago (`You poked Boop 4 times in a row, again.`,
-   facts `again`). Examples → `surprised, tickled in a sound, once`
-   (the startle) and → `grumpy, upset in a phrase, twice` ("Personal
-   space"); `grumpy.md`: "a barrage again, before it has calmed down,
-   keeps it grumpy and makes it say so."
-
-**Steps.**
-
-1. `app/BoopKit/Core/Personality.swift` `Rules.idleBeatMs:
-   ClosedRange<Int>?` from `idle_heartbeat`; the three personality
-   files' front matter.
-2. `app/BoopKit/Core/TranscriptView.swift`: `Config.idleWindowMs`,
-   `nextIdleBeatAt`, the branch in `heartbeat(at:)` and the line in
-   `heartbeat(_:)`; the `.sessionStarted` line in `agentEvent`; the end
-   branch in `needs(_:)`; `keeps`, `wakes`; `poke(_:)` with
-   `lastRunEndedAt`; `EventLine.compacted`, `.answered`, `.idle`,
-   `.working(topic:)`, the `words` sentence.
-3. `internal/app/Tests/ViewTests.swift`: each line with and without its
-   condition; the idle check-in only inside the window, only with a
-   session open, never while a thread works, never twice within its
-   range; the answered line once per request and not for a forgotten
-   one; `again` only within 2 min.
-4. The eval runner gains steps `compact` (a `SessionStart` with source
-   `compact`), `needs you` (a `PermissionRequest` for `Bash`), `answered`
-   (its `PostToolUse`), and `pokes` takes `"count": N` (default 4) and
-   `"asleep": true` (the step runs before any session exists).
-5. `boop.md`, `chatter.md`, `pixel.md`, the mood files named.
+1. `app/BoopKit/Core/TranscriptView.swift` `Counts`: beside `failRuns`
+   (which survives `resetCounts`), add `winRun = 0`, `lastWinAt:
+   Int64?`, and per turn `checkIns = 0` (reset in `resetCounts`). In
+   `turnEnded`: a finish `done` under 5 minutes is a quick win; if the
+   last one was under `winRunGapMs` (10 min) ago, `winRun += 1`, else
+   `winRun = 1`; a failed or stopped finish, or a very long one, sets
+   `winRun = 0`. In `heartbeat(_:)`'s working branch:
+   `fold.counts[s.key].checkIns += 1` before the line.
+2. `EventLine.turnEnd(agent:turn:thread:outcome:lengthMs:tools:
+   winsInARow:)`: for 2 or more, `, 2 quick wins in a row.`, capped at
+   `, 5 or more quick wins in a row.` Facts `wins_in_a_row`.
+3. `EventLine.working(agent:thread:ms:topic:)`: `claude is still
+   working on "api", a very long turn, running tests.` (`running a
+   build`, `deploying`, `editing docs`; nothing for another topic or
+   none). The check-in count goes as a note under the line, where the
+   prompt and the last message go: `Boop's 2nd check-in on this turn.`,
+   capped at `Boop's 4th check-in on this turn, or later.` Facts
+   `check_in`, `topic` (already there).
+4. `EventLine.words` gains two sentences: "Quick wins in a row are
+   turns done in under five minutes with nothing failed between them."
+   and "A check-in is Boop looking in on a turn that's still going."
+5. `characters/boop/steering/personality/boop.md` Examples (the two
+   "still working" Examples become the 1st check-in):
+   - `…done, a short turn, 2 tool calls, 2 quick wins in a row.` →
+     `pleased, success, glad in a sound, once`
+   - `…3 quick wins in a row.` → `excited, success, glad in a phrase,
+     twice`
+   - `…4 quick wins in a row.` → `amused, success, done in a word, once`
+   - `…5 or more quick wins in a row.` → `comfy, success, done in a
+     word, once`
+   - `claude is still working on "api", a very long turn, running
+     tests.` + `Boop's 2nd check-in on this turn.` → `hopeful, work in a
+     word, then tests, twice`
+   - `…a very long turn.` + `Boop's 3rd check-in on this turn.` →
+     `bored, quiet in a sound, once`
+   - `…running a build.` + `Boop's 4th check-in on this turn, or
+     later.` → `determined, work in a grunt, twice`
+   `chatter.md` gets the same rungs louder. The guide adds one line:
+   "A run of quick wins or check-ins is a ladder: each rung gets its own
+   face, as the Examples show, so Boop never says the same thing three
+   times running."
+6. Pixel's `pixel.md`, in prose: "Quick wins in a row: pleased, then
+   excited by the third, then amused, then cosy and quiet. Check-ins on
+   a long turn: engaged, then hopeful about the tests, then bored, then
+   determined."
 
 **Specs.** `documentation/architecture.html` "View: sentences for Jev"
-(the heartbeats, in a sentence); `characters/CHARACTER.md` §7 (the new
-front-matter key); `internal/EVALS.md` §1 (steps), §3 (`count`,
-`asleep`); CLAUDE.md's Words table if a word is new (none: "check-in"
-is in use).
+(one sentence: the view counts runs and says so, as it does for pokes);
+`internal/EVALS.md` §1 (the facts).
 
-**Stays untouched.** The core (it already records the `needs_you` end
-and plays the card), the harness, the device, `wakesWhileNeeded`.
+**Untouched.** `ReactOutput`, `Voice`, the core, the questions, the
+device.
 
-**Evals.** New `74-answered.json`: a turn, `needs you` at 1m, `answered`
-at 1m30s → `react: pleased|happy|calm|engaged`, `animation: none`,
-`said: some|none`, mood unchanged or happy; the turn finishes at 3m.
-`75-where-was-i.json`: a turn, tests fail, `compact` at 4m →
-`react: confused|curious|baffled|calm`, `animation: none`, `about:
-looking|none`; the turn finishes done at 6m → `animation: success`.
-`76-idle-check-in.json`: a quick turn, then `wait` 50m with `"checks":
-{"reactions": "1-3", "mood_changes": "-1", "moves_on_graph": true}` and
-the last pass `react: bored|lazy|calm|comfy|none`, `animation: none`.
-`77-poked-asleep.json`: `pokes` count 1, asleep → `react:
-surprised|curious|happy|stunned`, `animation: none`. `78-barrage-again`:
-`pokes` at 0s, `pokes` at 1m → the second `react: grumpy|irritated`,
-`kind: phrase|word|sound`, `said: some`. `15-quiet-work` gains `about:
-none|work|tests|waiting|quiet`. Cost: 74 (~5), 75 (~6), 76 (~4), 77 (1),
-78 (~4), 15 (6): about 26, plus `06` and `55` once (~10) as regressions.
+**Tests and evals.** `ViewTests`: the win run counts across turns,
+resets on a failure, a stop, a very long turn or a 10-minute gap, and
+caps at 5; the check-in note counts per turn and caps at 4; the topic
+words. `19-same-win-again` is reworded (five quick wins each get a
+reaction, and not the same one) and gains per-finish expectations and
+checks:
 
-**Done when** the six pass once, 06 and 55 still pass, `ViewTests` pins
-each line, and the context-wall demo's brain step reads as what Jev
-now does.
+```json
+{"checks": {"reactions": "4-", "max_same_in_a_row": 2, "min_variety": 3},
+ "steps": [
+  {"event": "turn started", "at": "0m"},
+  {"event": "command", "at": "0m20s", "topic": "tests", "failed": false},
+  {"event": "turn finished", "at": "0m30s", "expect": {"react": "happy|pleased|calm", "animation": "success|none"}},
+  {"event": "turn started", "at": "1m"},
+  {"event": "command", "at": "1m20s", "topic": "tests", "failed": false},
+  {"event": "turn finished", "at": "1m30s", "expect": {"react": "pleased|happy|excited"}},
+  {"event": "turn started", "at": "2m"},
+  {"event": "command", "at": "2m20s", "topic": "tests", "failed": false},
+  {"event": "turn finished", "at": "2m30s", "expect": {"react": "excited|amused|pleased|happy"}},
+  {"event": "turn started", "at": "3m"},
+  {"event": "command", "at": "3m20s", "topic": "tests", "failed": false},
+  {"event": "turn finished", "at": "3m30s", "expect": {"react": "amused|pleased|happy|excited|comfy"}},
+  {"event": "turn started", "at": "4m"},
+  {"event": "command", "at": "4m20s", "topic": "tests", "failed": false},
+  {"event": "turn finished", "at": "4m30s", "expect": {"react": "comfy|calm|pleased|amused|none"}}]}
+```
+
+New `85-check-ins.json`: a turn, tests pass at 20 s, `wait` at 4m
+(`react: engaged|hopeful|determined|curious|happy|calm`, `animation:
+none`), `wait` at 8m (`react: hopeful|bored|engaged|determined|lazy|
+calm`), `wait` at 13m (`react: determined|bored|engaged|lazy|calm|
+none`), `turn finished` at 14m (`animation: success`); `checks`
+`{"min_variety": 2, "max_same_in_a_row": 2, "max_quiet_working": "6m"}`.
+`21-busy-session` gains `"max_same_in_a_row": 2, "min_variety": 4`.
+Cost: 19 (10), 85 (~9), 21 (21): about 40; then `--always --runs 1`
+(165) once, since every finish line changes.
+
+**Done when** 19, 85 and 21 pass once, `--always` passes, `ViewTests`
+pins the counts, and a 21 timeline shows no three identical reactions
+in a row.
+
+**Depends on** R1 (room). Independent of R2, R3.
+
+**Per pack.** Engine once; each pack's Examples. The faces named are
+universal moods, so both packs draw them (the pixel face borrows art
+for amused, comfy, bored, hopeful; the gel has its own).
+
+## R5. Four new lines for the brain
+
+**Issue.** The brain is deaf to a compaction, to you answering a
+request, to idle time under an hour, and to a poke while Boop sleeps or
+a barrage that comes again (A5, B4). Each is one line.
+
+**Architecture change.** P3 and P2. Four lines in the view, one
+front-matter key, no new event kind, no new heartbeat kind. The core
+already records the compaction (`starting` with `ctx: compacted`) and
+the `needs_you` end; the view starts saying so.
+
+**What to do.**
+
+1. **Compacted.** In `agentEvent`, a `.sessionStarted(source)` with
+   `source == Mapping.compacted` lines `claude's context on "api" was
+   compacted; it picks up where it left off.`, wake 0, facts `thread`.
+   `EventLine.words`: "A compacted context means the agent's memory was
+   squeezed to make room; it carries on from a summary." Example →
+   `confused, looking in a sound, once` (the context-wall demo's "where
+   was I?", now for real); `confused.md` gets R1's shape. The rule
+   reaction and the COMPACTED card are untouched.
+2. **You answered.** `needs(_:)` lines a `needs_you` end whose `outcome`
+   is `done`: `You answered claude on "api".`, wake 0, facts `thread`;
+   failed ends (forgotten, the session ended) line nothing. `keeps`
+   gains `(.needsYou?, .end?)`, `wakes` gains `"needs_you_end": 0`.
+   Example → `pleased, glad in a word, once` ("Nice", "Sweet"). With
+   another request still waiting the pass is held, as any is: "needs
+   you" is untouched.
+3. **An idle check-in.** The idle heartbeat gets a second period: while
+   at least one session is open, none works, and the last agent event,
+   poke, talk or back was under `idleWindowMs` (2 h) ago, it comes every
+   `idle_heartbeat` seconds, a front-matter rule
+   (`Personality.Rules.idleBeatMs`; `boop` 900–1800, `chatter` 300–600,
+   `pixel` 1200–2400, `none` off); past the window, or with no session
+   open, it comes every hour as today. `heartbeat(at:)` keeps a
+   `nextIdleBeatAt` drawn from the range after each activity and each
+   beat, beside `nextWorkBeatAt`. The line generalises
+   `EventLine.heartbeat(hours:)` to minutes: `Nothing has happened for
+   20 min; claude sits idle on "api".` (the thread idle longest), and
+   past the hour the sentence it has today. Examples → `bored, quiet in
+   a word, once`, → `lazy, quiet in a sound, twice`, → `none`; the
+   guide: "An idle check-in is a small face or nothing, never a finish,
+   and never moves the mood except to fade it."
+   **A behaviour change to know about:** the mood files' minutes
+   ("fades to calm once Boop has been annoyed for 3 min") take effect
+   only when a pass comes. Today, with nothing happening, the first
+   pass is the hourly heartbeat, so a 3-minute fade takes an hour. With
+   check-ins every 15–30 minutes the fades happen about when the files
+   say. `06` and `55` are rewritten for that (below). Cost: with
+   sessions open eight hours a day and half of it idle, about 10–15
+   passes a day.
+4. **A poke while asleep, and again.** `poke(_:)` adds `while it slept`
+   when the fold has no sessions (`You poked Boop while it slept.`,
+   facts `asleep`), and `, again` when the previous run of pokes ended
+   under `againMs` (2 min) ago (`You poked Boop 4 times in a row,
+   again.`, facts `again`; `Fold.pokes` keeps the last run's end).
+   Examples → `surprised, tickled in a sound, once` (the startle) and →
+   `grumpy, upset in a phrase, twice` ("Personal space"); `grumpy.md`:
+   "a barrage again, before it has calmed down, keeps it grumpy and
+   makes it say so."
+5. The eval runner (`internal/app/BoopDevKit/Eval/Eval.swift`) gains
+   steps `compact` (a `SessionStart` with `source: compact`), `needs
+   you` (a `PermissionRequest` for `Bash`), `answered` (its
+   `PostToolUse`), and `pokes` takes `"count": N` (default 4) and
+   `"asleep": true` (the step runs before any session exists). Each is
+   one case in `Eval.inputs` and one line in EVALS.md §1's table.
+6. `boop.md`, `chatter.md`, `pixel.md`; `confused.md`, `bored.md`,
+   `grumpy.md`; the three personality files' front matter.
+
+**Specs.** `documentation/architecture.html` "View: sentences for Jev"
+(the heartbeats); `characters/CHARACTER.md` §7 (`idle_heartbeat`);
+`internal/EVALS.md` §1 (steps), §3 (`count`, `asleep`).
+
+**Untouched.** The core, the harness, the device, `wakesWhileNeeded`,
+`Event.Kind`.
+
+**Tests and evals.** `ViewTests`: each line with and without its
+condition; the idle check-in only inside the window, only with a session
+open, never while a thread works, never twice within its range, hourly
+after; the answered line once per request and never for a forgotten
+one; `again` only within 2 min. Scenarios:
+
+- `74-answered.json`: a turn, `needs you` at 1m, `answered` at 1m30s →
+  `react: pleased|happy|calm|engaged`, `animation: none`; the turn
+  finishes at 3m → `animation: success`.
+- `75-where-was-i.json`: a turn, tests fail at 1m, `compact` at 4m →
+  `react: confused|curious|baffled|calm`, `animation: none`, `about:
+  looking|none`; the turn finishes done at 6m → `animation: success`.
+- `76-idle-check-in.json`: a quick turn, then `wait` 50m with
+  `"checks": {"reactions": "1-3", "mood_changes": "-1", "moves_on_graph":
+  true}` and the last pass `react: bored|lazy|calm|comfy|none`,
+  `animation: none`.
+- `77-poked-asleep.json`: `pokes` count 1, `asleep: true` → `react:
+  surprised|curious|happy|stunned`, `animation: none`.
+- `78-barrage-again.json`: `pokes` at 0s, `pokes` at 1m → the second
+  `react: grumpy|irritated`, `kind: phrase|word|sound`, `said: some`.
+- `06-heartbeat-lets-grumpy-go` rewritten: the first `wait` at 35m
+  expects `mood: annoyed|irritated` (grumpy's 2 minutes are up by the
+  first check-in), at 1h5m `mood: calm|annoyed`, at 3h5m `mood: calm`.
+  `55-quiet-fades-from-excited` likewise: happy by the first check-in,
+  calm by the third.
+
+Cost: 74 (~5), 75 (~6), 76 (~4), 77 (1), 78 (~4), 06 (~8), 55 (~6),
+15 (6): about 40.
+
+**Done when** the eight pass once, `ViewTests` pins each line, and the
+context-wall demo's brain step reads as what Jev now does.
 
 **Depends on** R1 (room). Independent of R2–R4.
 
-**Per pack.** Engine once; Examples in each pack. The idle check-in's
-pace is per personality, so Pixel sets its own.
+**Per pack.** Engine once; Examples and the idle pace in each pack's
+personality file.
 
 ## R6. Idle and asleep life in both packs
 
 **Issue.** Both faces turn their idle variations on their own and have
 nothing comic or audible to turn to (A4). No yawn, nod-off, sneeze or
-snore exists, and idle and asleep designs are all `silent`.
+snore exists; every idle and asleep design is `silent`.
 
-**Change.** Pack content only, no Mac change, no Jev.
+**Architecture change.** None. P1: pack content only, no Mac change, no
+Jev.
+
+**What to do.**
 
 *Pixel's face* (`characters/pixel/design/boop-sound-bank-v4/`, which
-Boop wears on the CYD): three idle variations and one asleep one, each a
-generator in the bank's style, drawn for all 13 moods by the bank's
-mood art:
+Boop wears on the CYD). Four new designs, each one generator in the
+bank's runtime drawn for all 13 moods by the mood art, each a catalog
+entry per mood with its score:
 
-- idle 4 "Yawn and stretch" (9 s): the wake-up's yawn, slower, once per
-  loop; sound policy `entry` (the yawn tone once, when the variation is
-  turned to).
-- idle 5 "Nodding off" (12 s): eyes droop into the asleep pose for 2 s,
-  snap back with a blink; `silent`.
-- idle 6 "Sneeze" (10 s): a wind-up, a sneeze, a shake; `sparse` with
-  `every` 3 (the sneeze sounds one loop in three, so about once a
-  minute while it's the variation showing).
-- asleep 4 "Snore" (12 s): two soft breaths per loop; `sparse`, `every`
-  4 (about every 50 s), quiet. The other three asleep designs stay
-  silent, so a sleeping Boop snores now and then, not always.
+| Design | State, variation | Loop | What happens | Sound policy |
+| --- | --- | --- | --- | --- |
+| Yawn and stretch | idle 4 | 9 s | The wake-up's yawn, slower, once per loop | `entry` (the yawn tone once, when turned to) |
+| Nodding off | idle 5 | 12 s | Eyes droop into the asleep pose for 2 s, snap back with a blink | `silent` |
+| Sneeze | idle 6 | 10 s | A wind-up, a sneeze, a shake | `sparse`, `every` 3 (about once a minute while showing) |
+| Snore | asleep 4 | 12 s | Two soft breaths per loop | `sparse`, `every` 4 (about every 50 s), quiet; the other three asleep designs stay silent |
 
-The device's variation turn (`kTurnPct` 67 at each loop end) spreads
-these over an idle hour by itself. With six idle variations each shows
-about a sixth of the time.
+The device's variation turn (`kTurnPct` 67 at each loop end, after
+`kTurnMinMs`) spreads them over an idle hour by itself; with six idle
+variations each shows about a sixth of the time. `kMaxVariants` is 12.
 
-*The gel* (`characters/boop/design/slime-blob/`): `state-plan.json`
-idle gains `yawn-and-settle`, `doze-and-snap`, `sneeze-and-shake` as
-variations 4–6, asleep gains `snore` as variation 4 with `audioPolicy`
-`sparse_contacts` for that variation only (a soft clip on its contacts,
-`sound/`); `expressions.json` gives bored, tired, lazy and comfy a yawn
-among their three performances. `slimegen` regenerates `slime.h`;
-`Bag` picks among 3, so raise `kCanonical`'s per-state bag size where
-the recipe count grows (one constant in `acting.h`/`scenes.h`, pinned
-by `static_assert`).
+1. The generators and catalog entries; `make -C internal faces` (about
+   7 min, pixel for pixel against Chrome); `node
+   characters/pixel/tools/sfxgen/sfxgen.mjs` (the 180 KB asset ceiling).
+   `faces.json`, `faces.h` and `sfx.h` grow; `FaceLoops.count` follows.
+2. `make -C internal fw-test`: `test_effects` pins the `sparse` policies
+   with their `every`; `test_face` the new counts.
+3. `make -C internal sim`: `life.jsonl` gains a frozen-clock turn to idle
+   4 and asleep 4 with a cue expectation; new goldens.
 
-**Steps.**
+*The gel* (`characters/boop/design/slime-blob/`):
 
-1. Pixel: the bank's generators (`runtime/`), `catalog.mjs` entries,
-   `make -C internal faces` (about 7 min; pixel-for-pixel against
-   Chrome), `node characters/pixel/tools/sfxgen/sfxgen.mjs`; `faces.json`
-   and `faces.h` grow; `FaceLoops.count` follows; the 180 KB asset
-   ceiling in `sfxgen`.
-2. Gel: the JSON inputs, `node characters/boop/design/slime-blob/tools/
-   build.cjs`, `node characters/boop/tools/slimegen/slimegen.mjs`,
-   `check-port.py`.
-3. `make -C internal fw-test`: `test_effects` pins the sparse policies;
-   `test_face` the variation counts.
-4. `make -C internal sim`: `life.jsonl` gains a frozen-clock turn to
-   idle 4 and asleep 4 with a cue expectation; new goldens for both
-   faces.
-5. The owner flashes (`make flash`) and listens to the snore's level on
-   both boards.
+1. `state-plan.json`: idle gains `yawn-and-settle`, `doze-and-snap`,
+   `sneeze-and-shake` as variations 4–6; asleep gains `snore` as
+   variation 4 with `audioPolicy` `sparse_contacts` for that variation
+   only (a soft breath clip on its contacts, in `sound/`).
+2. `expressions.json`: bored, tired, lazy and comfy get a yawn among
+   their three performances.
+3. The recipes in `render/`; `node
+   characters/boop/design/slime-blob/tools/build.cjs`; `node
+   characters/boop/tools/slimegen/slimegen.mjs` (`slime.h`);
+   `check-port.py`. `Bag` picks among 3 (`values[3]`): widen it to the
+   largest recipe count, pinned by `static_assert`.
+4. `make -C internal sim` for the gel's goldens.
 
-**Specs.** `characters/CHARACTER.md` §9 (variation counts if quoted),
-`characters/pixel/design/README.md`, the slime's `STATES.md` and
-`VALIDATION.md`, `simulator/README.md` if a scenario is listed.
+The owner flashes (`make flash`) and listens to the snore's level on
+both boards.
 
-**Stays untouched.** The Mac entirely; the protocol (`variant` already
-travels); the brain.
+**Specs.** `characters/CHARACTER.md` §9 if it quotes variation counts;
+`characters/pixel/design/README.md`; the slime's `STATES.md` and
+`VALIDATION.md`; `simulator/README.md` if the scenario is listed.
 
-**Evals.** None with Jev. The sim scenario and `fw-test` pin it.
+**Untouched.** The Mac entirely; the protocol (`variant` travels
+already); the brain.
+
+**Tests and evals.** None with Jev. `fw-test` and `sim` pin it.
 
 **Done when** `faces`, `fw-test` and `sim` pass with the new goldens
 accepted, and the owner has heard a snore and a sneeze on a board.
 
-**Depends on** nothing. Can run in parallel with everything else.
+**Depends on** nothing. Runs in parallel with everything.
 
-**Per pack.** Pixel's bank serves both packs' CYD face; the gel is
-Boop's own. Pixel gets the idle life on the CYD for free.
+**Per pack.** Pixel's bank serves both packs' CYD face, so Pixel gets
+the idle life for free; the gel is Boop's own.
 
-## R7. Comedy on the finish, and bigger says for big holds
+## R7. Comedy on the finish
 
 **Issue.** The owner's hiccups, the gift and the zoomies have nowhere to
-show; and a four-times hold says the same two takes as a once (C7).
+show.
 
-**Change.**
+**Architecture change.** None. P1: variations of states that exist,
+picked by the faces' own never-the-last rule.
 
-*Pack content, as variations of states that exist:*
+**What to do.**
 
-- Hiccups: `task_complete` success variation 5 on Pixel's face ("Trophy,
-  then hiccups": the trophy, then three hiccup bounces, 8 s; `entry`
-  policy with three clicks) and a `bounce-and-card-hiccup` recipe on the
-  gel. Both faces pick a success variation never-the-last, so one cheer
-  in five hiccups.
-- The gift: proud's `task_complete` success variation 2 redrawn so Boop
-  holds up a pixel bug (the comeback cheer is proud's by `09`); on the
-  gel, proud's `lift-and-card` lifts a small bug. The word is Jev's
-  (`done` or `tests`).
-- Zoomies: excited's `working` variation 6 and `idle` variation 7, the
-  face zipping around the screen; the gel: an excited performance that
-  slides the dome edge to edge. Shows after a very long turn done, while
-  the mood is excited, through the variation turn.
+1. **Hiccups.** Pixel: `task_complete` success variation 5 in every
+   mood, "Trophy, then hiccups" (the trophy, then three hiccup bounces,
+   8 s; `entry` policy with three clicks). Gel: a
+   `bounce-and-card-hiccup` recipe. Both faces pick a success variation
+   never-the-last, so about one cheer in five hiccups.
+2. **The gift.** Proud's `task_complete` success variation 2 redrawn so
+   Boop holds up a pixel bug (the comeback's cheer is proud's by `09`);
+   on the gel, proud's `lift-and-card` lifts a small bug. The word is
+   Jev's (`done` or `tests`).
+3. **Zoomies.** Excited's `working` variation 6 and `idle` variation 7
+   (after R6's), the face zipping around the screen; on the gel, an
+   excited performance that slides the dome edge to edge. Shows after a
+   very long turn done while the mood is excited, through the variation
+   turn.
+4. The same generators, builds and goldens as R6; `finish.jsonl` gains
+   the hiccups.
 
-*Bigger says (engine, small):* `Voice.say` takes `loops`; for three
-times or more a phrase may be followed by the topic's word when the two
-fit in `maxSayMs` raised to 3,400 ms for those holds (the device plays
-two takes of any length; its bubble buffer holds two texts). Once and
-twice keep today's rule. `ReactOutput.run` passes `loops`.
+**Specs.** As R6.
 
-**Steps.**
+**Untouched.** The Mac, the questions, the protocol.
 
-1. Pixel's bank and the gel's inputs as in R6; `faces`, `sfxgen`,
-   `slimegen`, `fw-test`, `sim` (`finish.jsonl` gains the hiccups).
-2. `app/BoopKit/Voice/Voice.swift` `say(... loops:)`, `maxSayMs(for
-   loops:)`; `VoiceTests` pins both caps and that a phrase + word only
-   comes at three or more; `RuntimeTests`'
-   `testAReactionEndsBeforeTheHarnessCeiling` still holds (the longest
-   hold plus the longest say must end before `openForMs` 90 s).
-3. `boopctl play --take` to hear a phrase + word pair on a board.
+**Tests and evals.** None with Jev. `02-long-turn` gains `loops: three
+times|four times`, `said: some` (~10) once R2's holds are in.
 
-**Specs.** `characters/CHARACTER.md` §8 (a say is up to two takes; the
-cap by hold), `documentation/architecture.html` if it quotes 2.8 s.
+**Done when** the goldens are accepted and the owner has seen hiccups on
+a board.
 
-**Stays untouched.** The questions, the device's player, the protocol.
-
-**Evals.** None with Jev for the art. `02-long-turn` gains `loops:
-three times|four times`, `said: some` (~10) once R2's holds land.
-
-**Done when** the goldens are accepted, `VoiceTests` pins the caps, and
-the owner has seen hiccups on a board.
-
-**Depends on** R6's generator work (share it). R2 for the holds.
+**Depends on** R6's generator work (share it).
 
 **Per pack.** Pixel's bank for both CYDs; the gel for Boop's AMOLED.
 
@@ -547,155 +604,178 @@ the owner has seen hiccups on a board.
 
 **Issue.** Boop can't hear its name, a few words, a clap, a shout or a
 sing-song voice without the button held (A3, A9, C4). The brief wants
-about 20 words, mistakes on purpose, a startle, and tone.
+about 20 words, mistakes on purpose, a startle and tone.
 
-**Change.** An opt-in component, off by default, Mac-side, in the app
-target beside push-to-talk (`app/Boop/Ears.swift`; BoopKit stays free
-of AVFoundation and Speech). It uses `AVAudioEngine`'s input tap for a
-level meter and a pitch estimate, and `SFSpeechRecognizer` with
-`requiresOnDeviceRecognition = true` and `contextualStrings` set to the
-word list, restarted every 50 s; `supportsOnDeviceRecognition` false
-refuses the toggle and says why. It never writes audio anywhere; the
-recogniser's partial results are matched against the list and dropped.
-It yields to push-to-talk (stops its engine when the mic is held,
-restarts after) and emits only raw events, debounced to one per 3 s:
+**Architecture change.** P3 and P4. One new component in the app target
+that turns what the Mac's mic hears into one raw event, `heard`, as
+push-to-talk turns it into `talk`; one line in the view; Examples.
+Randomness (the mishearing) is decided in the component and recorded
+in the event, so the view and the brain stay pure. No new question, no
+pack table, nothing in `react`.
 
-- `heard` with `specificType` one of about 20 words in `Ears.words`:
-  `name` (whatever the person called Boop), `good` ("good boy", "good
-  girl", "good job"), `no`, `bad`, `dance`, `sleep`, `wake up`, `hello`,
-  `bye`, `shh`, `stop`, `who` ("who needs me"), `come`, `sit`, `speak`,
-  `treat`, `fetch`; the everyday ones (`no`, `stop`, `sleep`, `sit`)
-  only within 3 s of the name, so talk at the desk doesn't train it.
-- `heard` with `specificType` `bang` (level over `bangDb` −18 dBFS for
-  under 300 ms with no speech), `shout` (speech with level over
-  `shoutDb` −22 dBFS for 500 ms), `singsong` (pitch swinging over
-  `singRange` 7 semitones within 2 s). First guesses; the owner tunes
-  by ear.
+**What to do.**
 
-The view lines them (`EventLine.heard`): `Boop heard its name.`, `Boop
-heard you say "dance".`, `Boop heard a bang.`, `Boop heard you shout.`,
-`Boop heard you singing.`; wake 0; not in `wakesWhileNeeded` (while
-amber shows, the sign already answers "who needs me", and the reaction
-would be blocked anyway). `EventLine.words` gains "Boop hears its name,
-a few words and three kinds of sound; it can't understand anything
-else." Examples (Boop): name → `curious, tickled in a word, once`;
-`good` → `proud, glad in a phrase, twice`; `no` → `embarrassed, upset
-in a sound, once`; `dance` → `excited, glad in a phrase, four times`;
-`sleep` → `tired, quiet in a word, twice`; `hello` → `happy, glad in a
-sound, then hello, once`; `shh`/`stop` → `none`; `who` → `calm, quiet
-in a word, once`; `bang` → `surprised, upset in a sound, once` (the
-startle; Jev answers in 100–300 ms, fast enough); `shout` → `wounded,
-upset in a sound, twice`, mood `wounded|sad` (hero moment 3);
-`singsong` → `affectionate, tickled in a sound, once`. Pixel: the same
-in prose.
+1. `app/BoopKit/Core/Event.swift`: `Kind.heard`. `Source.mic` exists.
+2. `app/BoopKit/App/Pipeline.swift`: `heard(_ what: String, misheard:
+   Bool, at:)` beside `said`, which emits `Event(at:, source: .mic,
+   type: .heard, specificType: what, data: ["misheard": .bool])`. The
+   core isn't called: nothing on screen is the core's here.
+3. `TranscriptView`: `keeps` gains `(.heard?, nil)`; `wakes["heard"] =
+   0`; `heard(_:)` writes the line and `noteActivity`; facts `what`,
+   `misheard`. `wakesWhileNeeded` stays `[.talk]`: while amber shows the
+   sign already answers "who needs me", and a reaction would be blocked
+   anyway. `EventLine.heard(what:misheard:name:)`:
+   - `Boop heard its name.`
+   - `Boop heard you say "good boy".` (one canonical phrase per word)
+   - `Boop misheard you: "dance", or something like it.`
+   - `Boop heard a bang.`, `Boop heard you shout.`, `Boop heard you
+     singing.`
+   `EventLine.words`: "Boop hears its name, a few words and three kinds
+   of sound; it can't understand anything else, and it mishears now and
+   then."
+4. `app/Boop/Ears.swift` (beside `Talk.swift`; BoopKit stays free of
+   AVFoundation and Speech):
 
-**Wrong on purpose.** A pack says which heard words it gets wrong, as
-data: `character.json` gains an optional `"mischief": {"odds": 5,
-"swaps": {"dance": "tired", "sleep": "excited", "sit": "mischievous"}}`.
-On a `heard` line whose word is in `swaps`, `ReactOutput.pick` (R4)
-rolls `odds`; on a hit the face becomes the swap, the hold `twice`, and
-`varied` says `mischief: dance → tired`. Jev's answer is kept otherwise.
-One die, one table, pack-owned.
+   ```swift
+   final class Ears {
+       static let words: [String: [String]] = [   // what → the phrases that mean it
+           "good": ["good boy", "good girl", "good job"], "no": ["no", "bad"],
+           "dance": ["dance"], "sleep": ["sleep", "nap"], "wake": ["wake up"],
+           "hello": ["hello", "hi"], "bye": ["bye", "goodbye"], "shh": ["shh", "quiet"],
+           "stop": ["stop"], "who": ["who needs me"], "come": ["come here"],
+           "sit": ["sit"], "speak": ["speak"], "treat": ["treat"], "fetch": ["fetch"]]
+       static let nameGated: Set<String> = ["no", "stop", "sleep", "sit", "come"]  // only within nameGateMs of the name
+       static let canMishear: Set<String> = ["dance", "sleep", "sit", "come", "speak", "fetch"]
+       static let mishearOdds = 5, nameGateMs: Int64 = 3000, debounceMs: Int64 = 3000
+       static let bangDb: Float = -18, shoutDb: Float = -22, singSemitones = 7
+       func start(name: String, onHeard: @escaping (_ what: String, _ misheard: Bool) -> Void)
+       func pause()   // push-to-talk has the mic
+       func resume()
+       func stop()
+   }
+   ```
 
-**Steps.**
-
-1. `app/BoopKit/Core/Event.swift`: `Kind.heard`. `TranscriptView`:
-   `keeps`, `wakes["heard"] = 0`, `heard(_:)` with facts `what`;
-   `EventLine.heard`, `words`; `ViewTests`.
-2. `app/BoopKit/App/Pipeline.swift` `heard(_ what: String, at:)` beside
-   `said`; `Runtime.heard(what:)`; the core isn't called.
-3. `app/BoopKit/Character/CharacterPack.swift`: `mischief` (optional;
-   `PackCheck` refuses a swap to a mood the pack doesn't have);
-   `ReactOutput.pick`'s roll; `ReactOutputTests` (the die hits 1 in 5
-   ± 25% over 1,000 rolls; a word not in `swaps` never swaps).
-4. `app/Boop/Ears.swift`; `Runtime` starts and stops it from
-   `AppSettings.ears`; `SettingsPane` "Ears" toggle with one line and
-   the privacy note; `Arguments` `--ears` for `Boop --headless`;
+   `AVAudioEngine`'s input tap feeds a level meter and a pitch estimate
+   (autocorrelation on the buffer is enough for sing-song) and
+   `SFSpeechRecognizer` with `requiresOnDeviceRecognition = true` and
+   `contextualStrings` = every phrase, restarted every 50 s;
+   `supportsOnDeviceRecognition` false refuses to start and says why.
+   Partial results are matched against the phrases and dropped. No
+   buffer is written anywhere. `bang`: level over `bangDb` for under
+   300 ms with no speech; `shout`: speech with level over `shoutDb` for
+   500 ms; `singsong`: pitch swinging over `singSemitones` within 2 s;
+   first guesses, tuned by ear. One event per `debounceMs`. The
+   mishearing: a seeded `SplitMix64`; for a word in `canMishear`, one in
+   `mishearOdds` is reported `misheard: true`; never the name, `good`,
+   `no`, `shh` or `stop` (the safety words are always heard right).
+5. `Runtime`: `heard(what:misheard:)` → `pipeline.heard`; starts `Ears`
+   when `AppSettings.ears` (new, default false) and stops it when it's
+   turned off; `mic(on:)` pauses and resumes it around push-to-talk.
+   `Arguments`: `--ears` for `Boop --headless`. `SettingsPane`: an
+   "Ears" toggle under Sound with one line ("Boop listens for its name,
+   a few words and loud sounds, on this Mac; nothing it hears leaves
+   it") and the refusal reason when on-device recognition isn't there.
    `Info.plist` already carries the mic and speech usage strings.
-5. `characters/boop/steering/personality/boop.md`, `chatter.md`,
-   `characters/pixel/steering/personality/pixel.md`; both
-   `character.json`'s `mischief`.
-6. The eval runner's `heard` step with `"what"`.
-7. The owner tests the recogniser from a terminal the Claude app opened
-   (an agent's shell has no mic permission): `Boop --headless
-   --state-dir /tmp/ears --ears --debug`, then its name, "good boy", a
-   clap, a shout, and `debug.jsonl`'s `heard` events.
+6. Examples (`boop.md`): name → `curious, tickled in a word, once`;
+   `good boy` → `proud, glad in a phrase, twice`; `no` → `embarrassed,
+   upset in a sound, once`; `dance` → `excited, glad in a phrase, four
+   times`; `sleep` → `tired, quiet in a word, twice`; `hello` → `happy,
+   glad in a sound, then hello, once`; `shh` and `stop` → `none`; `who
+   needs me` → `calm, quiet in a word, once`; a bang → `surprised,
+   upset in a sound, once` (the startle; Jev answers in 100–300 ms);
+   a shout → `wounded, upset in a sound, twice`, mood `wounded` or `sad`
+   (hero moment 3); singing → `affectionate, tickled in a sound, once`.
+   Misheard: `"dance"` → `tired, quiet in a word, twice` (asked to
+   dance, it nods off); `"sleep"` → `excited, glad in a phrase, three
+   times` (asked to sleep, the zoomies, through R7's excited
+   variation); `"sit"` → `mischievous, tickled in a word, once`.
+   `chatter.md` and Pixel's `pixel.md` (prose) the same.
+7. The eval runner's `heard` step with `"what"` and optional
+   `"misheard": true`.
+8. The owner tests from a terminal the Claude app opened (an agent's
+   shell has no mic permission): `Boop --headless --state-dir
+   /tmp/ears --ears --debug`, then its name, "good boy", a clap, a
+   shout, and `debug.jsonl`'s `heard` events.
 
 **Specs.** README.md "What leaves your Mac" (with Ears on, only which of
-the words or sounds was heard reaches the transcript and Jev; no audio
-is recorded or sent; the recogniser is on-device or the toggle refuses);
-`documentation/architecture.html` "Where the pieces join" (a row: the
-Mac's mic → Boop, `Runtime.heard`, one raw event like a poke);
-`characters/CHARACTER.md` §4 (`mischief`); `internal/EVALS.md` §1 (the
-step); `internal/VERIFICATION.md` §2 (`--ears`, the owner's check);
-CLAUDE.md "Never do these" (don't turn Ears on from an agent shell).
+the words or sounds was heard, and whether Boop misheard, reaches the
+transcript and Jev; no audio is recorded or sent; the recogniser is
+on-device or the toggle refuses); `documentation/architecture.html`
+"Where the pieces join" (a row: the Mac's mic → Boop, `Runtime.heard`,
+one raw event like a poke); `internal/EVALS.md` §1 (the step);
+`internal/VERIFICATION.md` §2 (`--ears`, the owner's check); CLAUDE.md
+"Never do these" (don't turn Ears on from an agent shell); Words table
+("misheard").
 
-**Stays untouched.** The core, the harness, the device, push-to-talk,
-"needs you".
+**Untouched.** The core, the harness, the questions, `react`, the
+device, push-to-talk, "needs you".
 
-**Evals.** `79-good-boy.json`: `heard good` → `react:
-proud|happy|pleased|affectionate`, `said: some`, `loops:
-twice|three times`. `80-shouted.json`: a turn working, `heard shout` →
-`react: wounded|sad|scared|frightened`, `mood: wounded|sad|scared`, then
-a finish 3 min later → `animation: success`, `react` not grumpy.
-`81-dance.json`: `heard dance` → `react: excited|happy|mischievous`,
-`loops: three times|four times`, `"checks": {"reactions": "1"}`.
-`82-shh.json`: `heard shh` while working → `react: none`. The mischief
-die is unit-tested, not evaled. Cost: about 8.
+**Tests and evals.** `ViewTests` for the lines; a unit test on `Ears`'s
+decision function (pure: phrase matching, the name gate, the die's odds
+over 1,000 rolls ± 25%, never a safety word misheard). Scenarios:
+`79-good-boy.json` (`heard good` → `react: proud|happy|pleased|
+affectionate`, `said: some`, `loops: twice|three times`);
+`80-shouted.json` (a turn working, `heard shout` → `react: wounded|sad|
+scared|frightened`, `mood: wounded|sad|scared`; a finish 3 min later →
+`animation: success`, `react` not grumpy); `81-dance.json` (`heard
+dance` → `react: excited|happy|mischievous`, `loops: three times|four
+times`, `"checks": {"reactions": "1"}`); `82-shh.json` (`heard shh`
+while working → `react: none`); `86-misheard-dance.json` (`heard dance`
+with `misheard: true` → `react: tired|lazy|comfy|calm`, `animation:
+none`). Cost: about 10.
 
-**Done when** the four pass once, `git grep -n "AVAudioFile\|write(to"
+**Done when** the five pass once, `git grep -n "AVAudioFile\|write(to"
 app/Boop/Ears.swift` finds nothing, the owner has seen `heard` events
 for their name, a clap and a shout, and `--always --runs 1` passes.
 
-**Depends on** R1 (room), R4 (`pick`), R5 (the view pattern is fresh).
-Last.
+**Depends on** R1 (room), R5 (the view pattern is fresh). Last.
 
-**Per pack.** Engine once; each pack's Examples and `mischief` table.
+**Per pack.** Engine once; each pack's Examples.
 
 ## R9. Evals and the working day hold the fun
 
 **Issue.** The evals fail when Boop makes the wrong face, never when it
 is dull, quiet or repetitive (D). Pixel has no evals. Codex has none.
 
-**Change.**
+**Architecture change.** None. P5.
 
-1. `max_same_in_a_row` and `min_variety` on in `19`, `21` (R4) and `22`
-   (`"max_same_in_a_row": 3`).
-2. `Eval.judge` gains `words_said` (a range over the share of played
-   reactions with a take, `"0.5-"`) and `varied` (a count range of
-   `react`'s swaps, from the facts), both in `Checks.keys`; `21` turns
-   `words_said` on at `0.5-`.
-3. `said: some` at the hero moments: `02`, `03` (R2), `05`'s first poke,
-   `08`, `16`'s first barrage.
+**What to do.**
+
+1. `max_same_in_a_row` and `min_variety` on in 19, 21 (R4), 22
+   (`"max_same_in_a_row": 3`) and 85.
+2. `Eval.judge` gains `words_said`, a range over the share of played
+   reactions with a take (`"0.5-"`), in `Checks.keys`; 21 turns it on.
+3. `said: some` at the hero moments: 02, 03 (R2), 05's first poke, 08,
+   16's first barrage.
 4. `workday.py` `LIMITS`: `max_repeat_pct: 40`, `max_longest_same_run:
-   3`, `min_words_said: 0.5`; `check` holds them; `report` prints a fun
-   ledger per hour: distinct reactions, reactions with a word, the
-   longest identical run, `varied` count, idle check-ins. The
-   "reported, with no limit: repeats are fine" sentence goes. `boopctl
-   day` gets the same ledger. `internal/tools/boopctl_lib/tests/
-   test_workday.py` covers the limits; a scripted day should fail the
-   repeat limits (the scripted brain repeats), which is the test.
-5. The runner takes `"agent": "codex"` on a step (events from source
-   `.codex`, hooks per `Mapping.codex`); `83-codex-turn.json`: a Codex
-   turn with a command and a `Stop` after 3 min → `animation:
-   success|reply`, `react` not grumpy or sad; nothing else fires.
-6. `characters/pixel/evals/`: five scenarios in Pixel's words (a
-   failed turn, pokes, a long finish, back after a break, an idle
-   check-in), run as `CHARACTER=pixel .build/debug/boopdev eval
-   --scenarios characters/pixel/evals --steering
-   characters/pixel/steering`; `internal/Makefile` gets `eval-pixel`.
-7. Demos: `the-cheer.jsonl` and `the-cuss.jsonl` in both packs (R2 makes
-   the cuss); `boopdev check` plays them; `make demo NAME=the-cuss`.
-8. `internal/EVALS.md` §4's kinds gain "Fun (19, 21–23, 70, 73–82)".
+   3`, `min_words_said: 0.5`; `check` holds them; `report` and `boopctl
+   day` print a fun ledger per hour: distinct reactions, reactions with a
+   word, the longest identical run, idle check-ins. The "reported, with
+   no limit: repeats are fine" sentence goes.
+   `internal/tools/boopctl_lib/tests/test_workday.py` covers the limits;
+   a scripted day fails the repeat limits (the scripted brain repeats),
+   which is the test.
+5. The runner takes `"agent": "codex"` on a step (source `.codex`, hooks
+   per `Mapping.codex`); `83-codex-turn.json`: a Codex turn with a
+   command and a `Stop` after 3 min → `animation: success|reply`,
+   `react` not grumpy or sad.
+6. `characters/pixel/evals/`: five scenarios in Pixel's words (a failed
+   turn, pokes, a long finish, back after a break, an idle check-in),
+   run as `CHARACTER=pixel .build/debug/boopdev eval --scenarios
+   characters/pixel/evals --steering characters/pixel/steering`;
+   `internal/Makefile` gets `eval-pixel`.
+7. Demos `the-cheer.jsonl` and `the-cuss.jsonl` in both packs; `boopdev
+   check` plays them; `make demo NAME=the-cuss`.
+8. `internal/EVALS.md` §4's kinds gain "Fun (19, 21–23, 70, 74–86)".
 
-**Specs.** `internal/EVALS.md` §1, §3, §4, §5; `characters/DEMOS.md`
-(the two demos); `internal/VERIFICATION.md` §2 (`eval-pixel`);
-`characters/CHARACTER.md` "At a glance" (a pack's `evals/`).
+**Specs.** `internal/EVALS.md` §1, §3, §4, §5; `characters/DEMOS.md`;
+`internal/VERIFICATION.md` §2 (`eval-pixel`); `characters/CHARACTER.md`
+"At a glance" (a pack's `evals/`).
 
-**Stays untouched.** The runner's shape, the existing checks.
+**Untouched.** The runner's shape, the existing checks.
 
-**Evals.** Each check runs with the scenario that turns it on; `83`
-once (~3); Pixel's five once (~15).
+**Tests and evals.** Each check runs with the scenario that turns it on;
+83 once (~3); Pixel's five once (~15).
 
 **Done when** `boopdev eval --list` shows every new scenario with a
 case, `EvalTests` covers each new check and step without Jev, and
@@ -710,7 +790,10 @@ and the working day can land first.
 
 **Issue.** If a variation can't carry a thing (a real dance to "dance",
 a huff with steam at a barrage), it needs a state of its own, which is
-engine work the owner's rule says to avoid until it's earned.
+engine work the rule says to avoid until it's earned.
+
+**Architecture change.** One more `SceneState`, one more
+`react.animation` option, and every table that lists the states.
 
 **What it costs**, so the decision is informed: `firmware/src/render/
 types.h` and `types.cpp` (`SceneState`, the names, `isReaction`);
@@ -723,21 +806,31 @@ with a "not for") and `scenes`; `DeviceReaction.anims`; the device's
 `hello.does` if it lists animations; `characters/studio/states.json`;
 `internal/firmware/test/test_face`; a sim scenario and goldens for both
 faces; `internal/EVALS.md`'s `animation` list; `characters/DEMOS.md`'s
-brain answers. About a day, both packs, then `03`/`16`/`81` once each
-(~20).
+brain answers. About a day, both packs, then 03/16/81 once each (~20).
 
 **Do it** only after R6–R8 have shown what the variations can't do.
 
 ## Not now
 
-- **Growth in the prompt** ("Boop is a Sprout: it knows three
-  tricks"): a one-line section and a `tricks` table is cheap, but it's
-  tuning personalities, which the owner put later.
+- **Variety machinery in `react`** (the first pass's echo rule, off
+  die and kind bump): it needs hidden state in an output, three dice
+  and five constants, and it reads Jev's second-best answers, which are
+  thin on routine lines. R4's counted lines give Jev a different line to
+  answer instead. If the ladder isn't enough once 19, 85 and 21 run, the
+  smallest thing to add is one die in `ReactOutput.run` alone: one
+  routine reaction in 12 takes Jev's second-best face at or above 0.05,
+  recorded in the output's facts. Nothing else from the first pass.
+- **Bigger says for long holds** (a phrase then a word at three times or
+  more; `Voice.say` with `loops`, `maxSayMs` 3,400): a `Voice` change for
+  a small gain. The kind and the hold carry loudness. Revisit if
+  four-times holds feel mute on the board.
+- **Growth in the prompt** ("Boop is a Sprout: it knows three tricks"):
+  cheap, but it's tuning personalities, which the owner put later.
 - **A startle by rule** on the device: Jev at 100–300 ms is fast enough
-  for a `bang`; a rule that picks a face breaks "the brain is never on
-  the screen's path" the other way round.
-- **Double tap, stroke, shake:** the CYD's resistive panel and BOOT
-  make a poor stroke; the gel's drag is a reflex already.
+  for a bang; a rule that picks a face breaks "the brain is never on the
+  screen's path" the other way round.
+- **Double tap, stroke, shake:** the CYD's resistive panel and BOOT make
+  a poor stroke; the gel's drag is a reflex already.
 - **A buddies eval:** the runner is one buddy; the `not-my-turn` demo
   and `BuddiesTests` cover it.
 
@@ -746,19 +839,20 @@ brain answers. About a day, both packs, then `03`/`16`/`81` once each
 | Stage | Items | Why this order | Jev requests |
 | --- | --- | --- | --- |
 | 1 | R1, R2, R3, R9's checks and `said`s | Room first; the cuss and nature are text; the checks make the later stages measurable | ~85 (17, 47, 53, 03, 08, 04, 70, 71, 72, 05, 61) |
-| 2 | R4 | Variety; the one engine change with the biggest daily effect; shares `19`, `21` | ~37, then `--always --runs 1` (165) |
-| 3 | R5 | The five lines; the view pattern R8 copies | ~36 (74–78, 15, 06, 55) |
-| 4 | R6, R7 | Pack art and sound, in parallel with 2–3 | 0 (~10 for `02` after R2) |
-| 5 | R8 | Ears, last: copies R5's pattern and R4's die | ~8, then `--always --runs 1` (165), plus the owner at the Mac |
+| 2 | R4 | The ladder: the one view change with the biggest daily effect | ~40 (19, 85, 21), then `--always --runs 1` (165) |
+| 3 | R5 | Four lines and the check-in; the view pattern R8 copies | ~40 (74–78, 06, 55, 15) |
+| 4 | R6, R7 | Pack art and sound, in parallel with 2–3 | 0 (~10 for 02 after R2) |
+| 5 | R8 | Ears, last: copies R5's pattern | ~10, then `--always --runs 1` (165), plus the owner at the Mac |
 | 6 | R9's rest | Codex, Pixel's evals, the demos, the working day | ~18, plus one scripted `workday` (free) |
-| Before merging | `boopdev eval --runs 1 --no-budget` | Every scenario once, new ones included | ~450 |
+| Before merging | `boopdev eval --runs 1 --no-budget` | Every scenario once, new ones included | ~460 |
 
-About 1,000 requests in all at one run each, against last night's 1,360
-for a comparable night; `make eval` at the default runs (660 today,
-about 760 after) is for the owner's final pass, if at all.
+About 1,000 requests in all at one run each; `make eval` at the default
+runs (660 today, about 770 after) is for the owner's final pass, if at
+all.
 
 What a subagent must not do: add a question to Jev, change the harness's
-contracts, put a rule that chooses a face or a word anywhere but
-`react`, send a new message type to the device, add a state without R10
-being chosen, or let anything but a word from `Ears.words` or one of its
-three sounds reach the transcript from the mic.
+contracts, put a rule that chooses a face or a word anywhere, put a die
+anywhere but a component that records its roll in the event, send a new
+message type to the device, add a state without R10 being chosen, or
+let anything but a word from `Ears.words` or one of its three sounds
+reach the transcript from the mic.
