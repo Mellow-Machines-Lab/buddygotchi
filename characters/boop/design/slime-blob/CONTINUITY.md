@@ -488,9 +488,9 @@ only with one), and both painters draw an amber bug beside the card.
 
 **Comedy's contacts sound in any state**, each with the routine chance (a
 quarter): a sneeze's (`sneeze`), a zoomies landing (`bounce`), a snore's
-breath (`breath`). They are routine sounds, ducked under a line. Over
-twenty minutes the reference sounds 4 of 14 idle sneezes and 42 of 164
-snore breaths.
+breath (`breath`). They are routine sounds, ducked under a line. The
+reference sounds 4 of 14 sneezes over twenty minutes of idle, and 11 of 40
+snore breaths over five minutes of sleep.
 
 **Traces keep their columns.** A gag's channels (`actorChannels.slide`,
 `actorChannels.lids` and the drawn `slide`) join the inspection once a gag

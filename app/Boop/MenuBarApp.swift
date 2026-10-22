@@ -445,8 +445,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             let listener = SpeechListener(log: { [log] in log.write($0) })
             // Boop's ears, while Settings has them on: they give the mic to
             // push-to-talk while it's held.
-            let ears = Ears(name: runtime.name, log: { [log] in log.write($0) }, authorize: listener.authorize,
-                            heard: { what, misheard in runtime.heard(what, misheard: misheard) })
+            let ears = Ears(name: runtime.name, clock: runtime.options.clock, log: { [log] in log.write($0) },
+                            heard: { runtime.heard($0.what, misheard: $0.misheard) })
             let earsFailed: @Sendable (String) -> Void = { [weak self] why in
                 runtime.setEars(false)
                 Task { @MainActor in self?.model.earsTrouble = why }

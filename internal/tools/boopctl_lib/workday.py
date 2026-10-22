@@ -752,6 +752,19 @@ LIMITS = {
 }
 
 
+def kind(r: dict[str, Any]) -> tuple[str, str, str]:
+    """A reaction's kind: its face, its finish and what it said."""
+    return (r["face"], r["finish"], r["word"])
+
+
+def same_runs(reactions: list[dict[str, Any]]) -> list[int]:
+    """How many reactions of each one's kind end in a row at it, from 1."""
+    runs: list[int] = []
+    for i, r in enumerate(reactions):
+        runs.append(runs[-1] + 1 if i and kind(reactions[i - 1]) == kind(r) else 1)
+    return runs
+
+
 def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
                changes: list[dict[str, Any]]) -> dict[str, Any]:
     """How lively a day was: quiet stretches of work, repeats, and how the
@@ -762,14 +775,13 @@ def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
         marks = [a] + [t for t in times if a < t < b] + [b]
         gaps += [(y - x, x) for x, y in zip(marks, marks[1:])]
     longest = max(gaps, default=(0, 0))
-    same = lambda x, y: (x["face"], x["finish"], x["word"]) == (y["face"], y["finish"], y["word"])
-    run, best, best_what, repeats = 0, 0, "", 0
-    for i, r in enumerate(reactions):
-        again = i > 0 and same(reactions[i - 1], r)
-        repeats += again
-        run = run + 1 if again else 1
-        if run > best:
-            best, best_what = run, r["face"] + (f" {r['finish']}" if r["finish"] else "") + (f' "{r["word"]}"' if r["word"] else "")
+    runs = same_runs(reactions)
+    best = max(runs, default=0)
+    best_what = ""
+    if runs:
+        r = reactions[runs.index(best)]
+        best_what = r["face"] + (f" {r['finish']}" if r["finish"] else "") + (f' "{r["word"]}"' if r["word"] else "")
+    repeats = sum(1 for n in runs if n > 1)
     bounces = [f'{a["at"]} {a["from"]} → {a["to"]}, back at {b["at"]}' for a, b in zip(changes, changes[1:])
                if b["to"] == a["from"] and b["ms"] - a["ms"] < 60_000]
     # The longest stretch of work with Boop in the resting mood all through.
@@ -806,15 +818,13 @@ def ledger(reactions: list[dict[str, Any]], hours: dict[int, dict[str, Any]]) ->
     same, and the idle check-ins."""
     out = ["| Hour | Reactions | Said something | Kinds | Longest same run | Idle check-ins |",
            "| --- | --- | --- | --- | --- | --- |"]
-    key = lambda r: (r["face"], r["finish"], r["word"])
+    by_hour: dict[int, list[dict[str, Any]]] = {}
+    for r in reactions:
+        by_hour.setdefault(daylog.hour_of(r["ms"]), []).append(r)
     for h in sorted(hours):
-        rs = [r for r in reactions if daylog.hour_of(r["ms"]) == h]
-        run = best = 0
-        for i, r in enumerate(rs):
-            run = run + 1 if i and key(rs[i - 1]) == key(r) else 1
-            best = max(best, run)
-        out.append(f"| {h:02d}:00 | {len(rs)} | {sum(1 for r in rs if r['word'])} | {len({key(r) for r in rs})} | {best} "
-                   f"| {hours[h]['check_ins']} |")
+        rs = by_hour.get(h, [])
+        out.append(f"| {h:02d}:00 | {len(rs)} | {sum(1 for r in rs if r['word'])} | {len({kind(r) for r in rs})} "
+                   f"| {max(same_runs(rs), default=0)} | {hours[h]['check_ins']} |")
     return out
 
 

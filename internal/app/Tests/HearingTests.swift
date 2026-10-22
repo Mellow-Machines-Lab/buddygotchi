@@ -49,11 +49,10 @@ final class HearingTests: XCTestCase {
     func testTheDebounce() {
         XCTAssertEqual(Hearing.debounceMs, 3000)
         var h = Hearing(name: "Pip")
-        XCTAssertEqual(h.sound("bang", at: 0)?.what, "bang")
+        XCTAssertEqual(h.sound(.bang, at: 0)?.what, "bang")
         XCTAssertNil(h.words("good boy", at: 2999))
         h.newUtterance()
         XCTAssertEqual(h.words("good boy", at: 3000)?.what, "good")
-        XCTAssertNil(h.sound("whistle", at: 9000), "only the three sounds")
     }
 
     /// The commands Boop mishears on purpose, one time in 5, with a seeded
@@ -86,27 +85,27 @@ final class HearingTests: XCTestCase {
         XCTAssertNil(d.feed(levelDb: -60, pitchHz: nil, at: 0))
         XCTAssertNil(d.feed(levelDb: -10, pitchHz: nil, at: 100))
         XCTAssertNil(d.feed(levelDb: -12, pitchHz: nil, at: 200))
-        XCTAssertEqual(d.feed(levelDb: -60, pitchHz: nil, at: 300), "bang")
+        XCTAssertEqual(d.feed(levelDb: -60, pitchHz: nil, at: 300), .bang)
 
-        var heard: [String] = []
+        var heard: [Hearing.Sound] = []
         for t in stride(from: Int64(1000), to: 2000, by: 50) {
             if let s = d.feed(levelDb: -20, pitchHz: nil, at: t) { heard.append(s) }
         }
         XCTAssertNil(d.feed(levelDb: -60, pitchHz: nil, at: 2000), "a shout isn't a bang too")
-        XCTAssertEqual(heard, ["shout"])
+        XCTAssertEqual(heard, [.shout])
 
-        var speech: [String] = []
+        var speech: [Hearing.Sound] = []
         for i in 0..<40 {
             let hz = Float(200) * pow(2, Float(i % 5) / 12)  // within 4 semitones
             if let s = d.feed(levelDb: -35, pitchHz: hz, at: 3000 + Int64(i) * 50) { speech.append(s) }
         }
         XCTAssertEqual(speech, [], "speech's swing is no song")
-        var song: [String] = []
+        var song: [Hearing.Sound] = []
         for i in 0..<20 {
             let hz = Float(200) * pow(2, Float(i) / 12)  // a rising run over a 19-semitone range
             if let s = d.feed(levelDb: -35, pitchHz: hz, at: 6000 + Int64(i) * 80) { song.append(s) }
         }
-        XCTAssertEqual(song, ["singsong"])
+        XCTAssertEqual(song, [.singsong])
     }
 
     /// What each thing heard reads as, a word quoted as its first phrase.

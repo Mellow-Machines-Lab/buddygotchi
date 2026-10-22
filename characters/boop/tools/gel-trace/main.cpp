@@ -94,7 +94,7 @@ static void inspect(JsonObject o, Engine& e) {
   face["artId"] = slime::kProfile[f.artId].id;
   face["sleeping"] = f.sleeping;
   face["bridgeBlink"] = number(f.bridgeBlink);
-  face["blink"] = number(max(max(f.bridgeBlink, e.motion.blink()), a.closure()));
+  face["blink"] = number(e.blink());
   face["transition"]["elapsedMs"] = number(f.elapsedMs);
   face["transition"]["durationMs"] = number(f.durationMs);
   face["transition"]["active"] = f.active;
@@ -144,7 +144,7 @@ static void inspect(JsonObject o, Engine& e) {
   scene["loopDurationMs"] = number(s.recipe.duration);
   scene["quietMix"] = number(s.quietMix.x);
   scene["profile"]["expression"] = slime::kProfile[s.profileExpression].id;
-  if (s.variant < 3)
+  if (s.variant < kGestures)
     scene["profile"]["performanceType"] = slime::kProfile[s.profileExpression].performances[s.variant].type;
   else
     scene["profile"]["performanceType"] = nullptr;  // a fourth take has no gesture of its own

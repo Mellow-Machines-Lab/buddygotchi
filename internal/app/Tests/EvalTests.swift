@@ -17,8 +17,7 @@ final class EvalTests: XCTestCase {
 
     func testEveryScenarioReads() throws {
         // Pixel's own, which make -C internal eval-pixel runs, read too.
-        let pixel = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../characters/pixel/evals")
-        let pixels = try Scenario.load(directory: pixel)
+        let pixels = try Scenario.load(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel/evals"))
         XCTAssertEqual(pixels.count, 5)
         let all = try Scenario.load(directory: try Self.scenarios())
         XCTAssertGreaterThanOrEqual(all.count, 7)
@@ -28,12 +27,16 @@ final class EvalTests: XCTestCase {
     }
 
     func testRangesAndDurationsRead() {
-        XCTAssertEqual(Scenario.range("1-3"), 1...3)
-        XCTAssertEqual(Scenario.range("2-"), 2...Int.max)
-        XCTAssertEqual(Scenario.range("-4"), 0...4)
-        XCTAssertEqual(Scenario.range("3"), 3...3)
-        XCTAssertNil(Scenario.range("3-1"))
-        XCTAssertNil(Scenario.range("-"))
+        let counts = 0...Int.max, shares = 0...1.0
+        XCTAssertEqual(Scenario.range("1-3", within: counts), 1...3)
+        XCTAssertEqual(Scenario.range("2-", within: counts), 2...Int.max)
+        XCTAssertEqual(Scenario.range("-4", within: counts), 0...4)
+        XCTAssertEqual(Scenario.range("3", within: counts), 3...3)
+        XCTAssertNil(Scenario.range("3-1", within: counts))
+        XCTAssertNil(Scenario.range("-", within: counts))
+        XCTAssertEqual(Scenario.range("0.5-", within: shares), 0.5...1)
+        XCTAssertEqual(Scenario.range("-0.3", within: shares), 0...0.3)
+        XCTAssertNil(Scenario.range("0.5-1.5", within: shares), "a share is 1 at most")
         XCTAssertEqual(Scenario.ms("2m30s"), 150_000)
         XCTAssertEqual(Scenario.ms("1h5m"), 3_900_000)
         XCTAssertNil(Scenario.ms("5x"))

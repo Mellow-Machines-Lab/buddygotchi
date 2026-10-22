@@ -57,12 +57,13 @@ for(let at=16;at<=600000;at+=16){const out=e.step(at);contacts+=out.channels.con
  assert.ok(counts.get(key)<=4,SPEC+': four contacts per cycle');if(s.loopDurationMs<3500&&s.iteration%2)assert.equal(out.cues.length,0,SPEC+': short odd cycles silent');
  assert.deepEqual(e.step(at).cues,[],SPEC+': repeated timestamp never replays cues');}
 assert.ok(cues>0&&cues<contacts*.4,SPEC+': routine contact selection stays sparse');
-// Comedy stays sparse: over twenty minutes of idle, and of sleep, only the
-// sneeze and the snore's breaths sound, each with the routine chance.
+// Comedy stays sparse: over twenty minutes of idle, and five of sleep (its
+// snore breathes far more often than idle sneezes), only the sneeze and the
+// snore's breaths sound, each with the routine chance.
 const comedySound={};
-for(const [base,recipe] of [['idle','sneeze'],['asleep','breath']]){
+for(const [base,recipe,minutes] of [['idle','sneeze',20],['asleep','breath',5]]){
  const s=createSlime({seed:53,catalog});s.step(0);s.setFacts({base});let comedy=0,sounded=0;
- for(let at=16;at<=1200000;at+=16){const out=s.step(at);comedy+=out.channels.contacts.filter(c=>comedyKinds.has(c.kind)).length;
+ for(let at=16;at<=minutes*60000;at+=16){const out=s.step(at);comedy+=out.channels.contacts.filter(c=>comedyKinds.has(c.kind)).length;
   for(const cue of out.cues){assert.equal(cue.recipe,recipe,SPEC+': '+base+' sounds only its comedy');sounded++;}}
  assert.ok(comedy>0&&sounded>0&&sounded<comedy*.5,SPEC+': '+base+' comedy sounds sparsely ('+sounded+' of '+comedy+')');
  comedySound[base]={contacts:comedy,cues:sounded};

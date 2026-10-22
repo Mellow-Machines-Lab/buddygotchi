@@ -1,7 +1,7 @@
-import {palette as P,rect,block,at,star,face as baseFace} from './visual/base.mjs';
+import {palette as P,rect,at,star} from './visual/base.mjs';
 import {newMoods} from './mood-catalog.mjs';
-import {moodFace,frames,sceneSvg,round,pad,slab,background,burst,cup,held,props as moodProps} from './mood-art.mjs';
-import {oldMoods,profile,sleepyFace,ownFace,props as wakeProps} from './wake-art.mjs';
+import {frames,sceneSvg,round,pad,slab,background,burst,cup,completeCard,props as moodProps} from './mood-art.mjs';
+import {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor as wakeFace,props as wakeProps} from './wake-art.mjs';
 import {effects} from './audio/effects.mjs';
 
 // Comedy: life for the quiet looks and a joke on the finish, as new
@@ -68,27 +68,18 @@ export function comedyPlan(a){
 
 // ---- The faces ----------------------------------------------------------------
 // The mood's resting face, or blinking, as the wake-up has it; the sleepy
-// faces are wake-up's too, lined up with the mood's own (`y`).
-const lineUp=mood=>oldMoods.includes(mood)?0:-6;
-// The mood's face at a success, on gold: the older moods' from the first
-// pack's face, the newer ones' from their flip-books (a cheer's stage).
-function successFace(a,stage,blink=false){
- if(!oldMoods.includes(a.mood))return moodFace({mood:a.mood,state:'task_complete',outcome:'success'},stage,blink);
- const ctx={mood:a.mood,state:'task_complete',quiet:false,complete:true,motion:false,ink:P.dark,bg:P.gold,cheek:'#D8576C'};
- if(blink)ctx.eyeOverride=block(68,99,40,5,P.dark)+block(212,99,40,5,P.dark);
- const art=baseFace(ctx);
- return blink?art.replace('data-part="face"','data-part="face" data-blink="1"'):art;
-}
-// Each pose's face and where it sits.
+// faces are wake-up's too, lined up with the mood's own. On a finish, the
+// mood's face at a success, on gold (a cheer's stage).
 const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 const blinking=a=>ownFace(a.mood,true);
 const sleepy=(eyes,mouth,dx=0,dy=0)=>a=>at(dx,dy,sleepyFace(eyes,mouth,lineUp(a.mood)));
+const successFace=(a,stage,blink=false)=>ownFace(a.mood,blink,{complete:true,stage});
 const cheering=(stage,dy=0)=>a=>at(0,dy,successFace(a,stage));
+// Each pose's face and where it sits.
 const faces={
  home:own(),blink:blinking,
- // Yawn and stretch: the wake-up's poses.
- droop:sleepy('heavy','o',0,4),inhale:sleepy('squeeze','o',0,2),yawn:sleepy('squeeze','yawn',0,-4),stretch:sleepy('squeeze','wide',0,-8),
- release:sleepy('shut','mm',0,2),settle:sleepy('shut','mm',0,1),
+ // Yawn and stretch: the wake-up's poses, then a settle.
+ ...Object.fromEntries(['droop','inhale','yawn','stretch','release'].map(pose=>[pose,a=>wakeFace(a,pose)])),settle:sleepy('shut','mm',0,1),
  // Nodding off.
  heavy:sleepy('heavy','mm',0,3),shut:sleepy('shut','mm',0,6),nod:sleepy('shut','o',0,12),'nod-deep':sleepy('shut','o',0,17),
  snap:own(0,-8),'glance-left':own(-7,0),'glance-right':own(7,0),
@@ -107,11 +98,11 @@ const faces={
  crouch:own(0,6),'zip-left':own(-80,-6),'zip-right':own(80,-6),'off-right':own(240,-10),gone:own(400,0),'enter-left':own(-150,4),
  overshoot:own(20,0),recoil:own(-6,0),hop:own(0,-10)
 };
-// On gold, the finish's faces rest and blink on the success face.
+// The finishes, on gold: their faces rest and blink on the success face.
+const gold=a=>['trophy-hiccups','gift'].includes(a.action);
 const goldFaces={home:a=>successFace(a,0),blink:a=>successFace(a,0,true)};
 function faceFor(a,pose){
- const gold=['trophy-hiccups','gift'].includes(a.action);
- if(gold&&goldFaces[pose])return goldFaces[pose](a);
+ if(gold(a)&&goldFaces[pose])return goldFaces[pose](a);
  return faces[pose](a);
 }
 
@@ -136,69 +127,55 @@ function bug(x,y,legs){
  return art;
 }
 const sparkles=phase=>phase?star(60,40,16,P.ink)+star(250,30,8,P.ink)+star(270,70,16,P.ink):star(40,64,8,P.ink)+star(240,46,16,P.ink)+star(76,20,8,P.ink);
-const trophy=(y=0)=>at(0,y,cup(139,106,.75))+held('COMPLETE',155,P.dark).replaceAll(`fill="${P.black}"`,`fill="${P.gold}"`);
-function propsFor(a,pose){
- switch(a.action){
-  case 'yawn-stretch':return ['inhale','yawn','stretch','release'].includes(pose)?wakeProps(a,pose):'';
-  case 'nod-off':
-   if(pose==='nod')return zee(262,58,3);
-   if(pose==='nod-deep')return zee(262,50,3)+zee(282,26,2);
-   if(pose==='snap')return bang(36,30)+bang(278,30);
-   return '';
-  case 'sneeze':
-   if(pose==='ah')return rect(144,24,6,6,P.dim)+rect(170,16,6,6,P.dim);
-   if(pose==='ah-ah')return rect(132,18,6,6,P.dim)+rect(152,8,6,6,P.dim)+rect(178,12,6,6,P.dim);
-   if(pose==='choo')return drops([[126,160,6],[190,160,6],[110,172,4],[206,172,4],[140,182,6],[176,182,4],[96,182,4],[222,182,6]])+rect(24,92,18,4,P.dim)+rect(278,92,18,4,P.dim)+rect(30,108,12,4,P.dim)+rect(278,108,12,4,P.dim);
-   if(pose==='spray')return drops([[92,176,4],[226,178,4],[76,186,4],[242,186,4],[118,186,4],[198,186,4]]);
-   if(pose==='shake-left'||pose==='shake-right')return wakeProps(a,pose);
-   return '';
-  case 'snore':
-   if(pose==='snore')return rect(186,130,4,4,P.dim)+rect(194,124,4,4,P.dim);
-   if(pose==='out')return bubble(184,128,12)+zee(250,72,2);
-   if(pose==='out-z')return bubble(184,124,18)+zee(258,52,3);
-   return '';
-  case 'trophy-hiccups':{
-   const stage={'cheer-1':1,'cheer-2':2,'cheer-3':3,'cheer-4':4,'cheer-5':5,'cheer-6':6}[pose];
-   if(stage)return moodProps({...a,action:'cup'},{stage});
-   if(pose==='hic-1')return trophy(-6)+hic(112,54);
-   if(pose==='hic-2')return trophy(-6)+hic(194,54);
-   if(pose==='hic-3')return trophy(-8)+hic(153,30);
-   if(pose==='held')return trophy();
-   return '';
-  }
-  case 'gift':
-   if(pose==='reach')return pad(104,164)+pad(188,164);
-   if(pose==='catch')return bug(136,152,0)+pad(108,166)+pad(176,166)+burst(158,160,1,P.ink,4);
-   if(pose==='raise'||pose==='wiggle')return bug(136,4,pose==='wiggle'?1:0)+pad(108,14)+pad(176,14)+sparkles(pose==='wiggle'?1:0);
-   if(pose==='present'||pose==='present-wiggle')return bug(136,152,pose==='present'?0:1)+pad(108,166)+pad(176,166)+sparkles(pose==='present'?0:1);
-   if(pose==='tuck')return pad(104,166)+pad(188,166);
-   return '';
-  case 'zoomies':
-   if(pose==='crouch')return puffs(70,176)+puffs(242,176);
-   if(pose==='zip-left')return trail(196,268,80);
-   if(pose==='zip-right')return trail(52,124,80);
-   if(pose==='off-right')return trail(30,280,76);
-   if(pose==='gone')return puffs(300,120);
-   if(pose==='enter-left')return puffs(14,128)+puffs(14,96);
-   if(pose==='overshoot')return rect(12,90,24,4,P.dim)+rect(18,114,18,4,P.dim);
-   if(pose==='hop')return puffs(150,184);
-   return '';
+const trophy=(y=0)=>at(0,y,cup(139,106,.75))+completeCard();
+// The cheer's stages, the mood's trophy cheer in its colours.
+const cheerStages={'cheer-1':1,'cheer-2':2,'cheer-3':3,'cheer-4':4,'cheer-5':5,'cheer-6':6};
+const cheerProps=(a,pose)=>moodProps({...a,action:'cup'},{stage:cheerStages[pose]});
+// The gift held up, or held out to you, its legs wiggling on the second pose.
+const raised=(a,pose)=>{const legs=pose==='wiggle'?1:0;return bug(136,4,legs)+pad(108,14)+pad(176,14)+sparkles(legs);};
+const presented=(a,pose)=>{const legs=pose==='present'?0:1;return bug(136,152,legs)+pad(108,166)+pad(176,166)+sparkles(legs);};
+// Each design's props, by pose; any other pose has none.
+const props={
+ 'yawn-stretch':{inhale:wakeProps,yawn:wakeProps,stretch:wakeProps,release:wakeProps},
+ 'nod-off':{nod:()=>zee(262,58,3),'nod-deep':()=>zee(262,50,3)+zee(282,26,2),snap:()=>bang(36,30)+bang(278,30)},
+ sneeze:{
+  ah:()=>rect(144,24,6,6,P.dim)+rect(170,16,6,6,P.dim),
+  'ah-ah':()=>rect(132,18,6,6,P.dim)+rect(152,8,6,6,P.dim)+rect(178,12,6,6,P.dim),
+  choo:()=>drops([[126,160,6],[190,160,6],[110,172,4],[206,172,4],[140,182,6],[176,182,4],[96,182,4],[222,182,6]])+rect(24,92,18,4,P.dim)+rect(278,92,18,4,P.dim)+rect(30,108,12,4,P.dim)+rect(278,108,12,4,P.dim),
+  spray:()=>drops([[92,176,4],[226,178,4],[76,186,4],[242,186,4],[118,186,4],[198,186,4]]),
+  'shake-left':wakeProps,'shake-right':wakeProps
+ },
+ snore:{snore:()=>rect(186,130,4,4,P.dim)+rect(194,124,4,4,P.dim),out:()=>bubble(184,128,12)+zee(250,72,2),'out-z':()=>bubble(184,124,18)+zee(258,52,3)},
+ 'trophy-hiccups':{
+  'cheer-1':cheerProps,'cheer-2':cheerProps,'cheer-3':cheerProps,'cheer-4':cheerProps,'cheer-5':cheerProps,'cheer-6':cheerProps,
+  'hic-1':()=>trophy(-6)+hic(112,54),'hic-2':()=>trophy(-6)+hic(194,54),'hic-3':()=>trophy(-8)+hic(153,30),held:()=>trophy()
+ },
+ gift:{
+  reach:()=>pad(104,164)+pad(188,164),catch:()=>bug(136,152,0)+pad(108,166)+pad(176,166)+burst(158,160,1,P.ink,4),
+  raise:raised,wiggle:raised,present:presented,'present-wiggle':presented,tuck:()=>pad(104,166)+pad(188,166)
+ },
+ zoomies:{
+  crouch:()=>puffs(70,176)+puffs(242,176),'zip-left':()=>trail(196,268,80),'zip-right':()=>trail(52,124,80),'off-right':()=>trail(30,280,76),
+  gone:()=>puffs(300,120),'enter-left':()=>puffs(14,128)+puffs(14,96),overshoot:()=>rect(12,90,24,4,P.dim)+rect(18,114,18,4,P.dim),hop:()=>puffs(150,184)
  }
- throw new Error('Unauthored comedy '+a.action);
+};
+function propsFor(a,pose){
+ const drawn=props[a.action];
+ if(!drawn)throw new Error('Unauthored comedy '+a.action);
+ return drawn[pose]?.(a,pose)??'';
 }
-// The finishes' gold behind, in the cheer's colours, still while it hics.
-function backgroundFor(a,pose){
- if(!['trophy-hiccups','gift'].includes(a.action))return '';
- const stage={'cheer-1':1,'cheer-2':2,'cheer-3':3,'cheer-4':4,'cheer-5':5,'cheer-6':6,raise:3,wiggle:4,present:5,'present-wiggle':6}[pose]??0;
- return background({outcome:'success'},stage);
-}
+// The finishes' gold behind, in the cheer's colours, still while it hics;
+// the gift's held-up poses take the cheer's later stages.
+const backgroundStages={...cheerStages,raise:3,wiggle:4,present:5,'present-wiggle':6};
+const backgroundFor=(a,pose)=>gold(a)?background({outcome:'success'},backgroundStages[pose]??0):'';
+// A pose drawn whole: the gold behind, the face and its props.
+const frame=(a,pose)=>backgroundFor(a,pose)+faceFor(a,pose)+propsFor(a,pose);
 
 export function renderComedyScene(a){
  const plan=comedyPlan(a),id='boop-comedy-'+a.id.replaceAll('.','-');
  const art=frames(a,plan,s=>backgroundFor(a,s.pose),'comedy-background')+frames(a,plan,s=>faceFor(a,s.pose),'comedy-face')+frames(a,plan,s=>propsFor(a,s.pose),'comedy-action');
  // Reduced motion: the resting face, the finishes' cheer and the gift held up.
- const still=a.action==='trophy-hiccups'?backgroundFor(a,'cheer-5')+faceFor(a,'cheer-5')+propsFor(a,'cheer-5')
-  :a.action==='gift'?backgroundFor(a,'raise')+faceFor(a,'raise')+propsFor(a,'raise')
+ const still=a.action==='trophy-hiccups'?frame(a,'cheer-5'):a.action==='gift'?frame(a,'raise')
   :a.action==='snore'?faceFor(a,'rest')+zee(258,52,3):faceFor(a,'home');
  return sceneSvg(a,id,a.caption,art,still);
 }

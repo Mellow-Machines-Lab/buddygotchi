@@ -22,8 +22,10 @@ static_assert(slime::kRecipeTakes[int(SceneState::kAsleep)] == 4 && slime::kReci
                   slime::kRecipeTakes[int(SceneState::kNoApp)] == 3,
               "asleep and a success have a fourth take; a failure and a lost link don't");
 inline int takes(int row) { return slime::kRecipeTakes[row]; }
+static_assert(int(std::size(slime::kRecipes[0][0])) == kGestures, "a row's first takes, one for each gesture");
 inline const slime::Recipe& take(int profile, int row, int variant) {
-  return variant < 3 ? slime::kRecipes[profile][row][variant] : slime::kFourthTakes[profile][slime::kFourthRow[row]];
+  return variant < kGestures ? slime::kRecipes[profile][row][variant]
+                             : slime::kFourthTakes[profile][slime::kFourthRow[row]];
 }
 // Idle's takes: an expression's three gestures, its own gags, then the idle
 // gags (acting.h Acting::takes), at most this many.

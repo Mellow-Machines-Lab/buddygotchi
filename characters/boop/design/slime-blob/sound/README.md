@@ -161,7 +161,7 @@ zero until measured; the pixel device's 70 ms lead is not assumed for Web Audio.
 motion, deterministic cue lists, the 60-second attention hold with three mood
 changes and one ding, repeated completion loops, sparse routine cycles, comedy
 that alone sounds in quiet states and stays sparse over twenty minutes of idle
-and of sleep, and the player's limits/mute/suspension/ducking using a fake audio backend. Timbres remain
+and five of sleep, and the player's limits/mute/suspension/ducking using a fake audio backend. Timbres remain
 sketches; mathematical checks do not establish listening quality on a speaker.
 
 Choosing a manual sound sketch or **Stop sound** mutes integrated animation

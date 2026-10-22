@@ -38,6 +38,7 @@ export function wakePlan(a){
 
 // The sleepy faces are shared: the mood comes back when Boop wakes. `y` lines
 // them up with the mood's own face (the newer moods sit a little higher).
+export const lineUp=mood=>oldMoods.includes(mood)?0:-6;
 const sleepyEyes={
  heavy:y=>block(68,94+y,40,16)+block(212,94+y,40,16),
  squeeze:y=>[[0,0],[12,8],[24,16],[12,24],[0,32]].map(([dx,dy])=>rect(72+dx,82+y+dy,12,8)+rect(236-dx,82+y+dy,12,8)).join(''),
@@ -54,18 +55,21 @@ export function sleepyFace(eyes,mouth,y){
  return group(sleepyEyes[eyes](y)+group(sleepyMouth[mouth](y),'data-part="mouth"')+cheeks,'data-part="face"');
 }
 // The mood's own face, at rest, or blinking: the older moods' from the
-// first pack's face, the newer ones' from their flip-books.
-export function ownFace(mood,blink){
- if(!oldMoods.includes(mood))return moodFace({mood,state:'wake_up'},0,blink);
- const ctx={mood,state:'idle',quiet:false,complete:false,motion:false,ink:P.ink,bg:P.black,cheek:P.cheek};
- if(blink)ctx.eyeOverride=block(68,99,40,5,P.ink)+block(212,99,40,5,P.ink);
+// first pack's face, the newer ones' from their flip-books. `complete`, it's
+// the face at a success, on gold, the newer moods' at a cheer's `stage`.
+export function ownFace(mood,blink,{complete=false,stage=0}={}){
+ if(!oldMoods.includes(mood))return moodFace(complete?{mood,state:'task_complete',outcome:'success'}:{mood,state:'wake_up'},stage,blink);
+ const ink=complete?P.dark:P.ink;
+ const ctx={mood,state:complete?'task_complete':'idle',quiet:false,complete,motion:false,ink,bg:complete?P.gold:P.black,cheek:complete?'#D8576C':P.cheek};
+ if(blink)ctx.eyeOverride=block(68,99,40,5,ink)+block(212,99,40,5,ink);
  const art=baseFace(ctx);
  return blink?art.replace('data-part="face"','data-part="face" data-blink="1"'):art;
 }
 // Where the face sits in each pose; awake, it hops by its mood's own height.
+// The comedy's yawn borrows these poses.
 const offsets={home:[0,0],droop:[0,4],inhale:[0,2],yawn:[0,-4],stretch:[0,-8],release:[0,2],'shake-left':[-5,0],'shake-right':[5,0],blink:[0,0]};
-function faceFor(a,pose){
- const y=oldMoods.includes(a.mood)?0:-6,[dx,dy]=pose==='awake'?[0,-hop[a.mood]]:offsets[pose];
+export function faceFor(a,pose){
+ const y=lineUp(a.mood),[dx,dy]=pose==='awake'?[0,-hop[a.mood]]:offsets[pose];
  const art={home:()=>ownFace(a.mood,false),awake:()=>ownFace(a.mood,false),blink:()=>ownFace(a.mood,true),
   droop:()=>sleepyFace('heavy','o',y),inhale:()=>sleepyFace('squeeze','o',y),yawn:()=>sleepyFace('squeeze','yawn',y),
   stretch:()=>sleepyFace('squeeze','wide',y),release:()=>sleepyFace('shut','mm',y),

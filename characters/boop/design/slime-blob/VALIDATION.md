@@ -49,8 +49,8 @@ from its second round, the hiccups' timings, the gift on proud's lifted success
 alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
 and sinks then blinks awake, the sneeze is one contact a second in, the zoomies
 reach both edges, small under reduced motion) and sleep's still first 12.8 s.
-The cue check plays twenty minutes of idle and of sleep: only the sneeze and
-the snore's breaths sound, sparsely. The builder runs the
+The cue check plays twenty minutes of idle and five of sleep: only the sneeze
+and the snore's breaths sound, sparsely. The builder runs the
 full coverage check before updating `coverage.json`; no cell earns a
 status merely from a scene name or counter. `preview/script-catalog.js` must match the scripts
 and verified review manifest.

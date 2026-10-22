@@ -168,10 +168,9 @@ void Scenes::pickRecipe(T time, Random& random) {
   // The host's take if its state has it; the first rest is always the still
   // one, and asleep deals from its bag after that.
   const int row = recipeState(route), count = takes(row), asked = route.moment ? route.moment->value.variant : -1;
-  variant = asked >= 0 && asked < count                        ? asked
-            : !route.quiet && route.state != SceneState::kIdle ? bags[mood][row].next(random, count)
-            : route.state == SceneState::kAsleep && iteration  ? bags[mood][row].next(random, count)
-                                                               : 0;
+  const bool deal =
+      (!route.quiet && route.state != SceneState::kIdle) || (route.state == SceneState::kAsleep && iteration);
+  variant = asked >= 0 && asked < count ? asked : deal ? bags[mood][row].next(random, count) : 0;
   profileExpression = expression;
   const auto* base = &take(expression, row, variant);
   uint32_t seed = random.state;
@@ -305,7 +304,7 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
   F recoveryPose[3]{};
   const auto& profile = slime::kProfile[profileExpression];
   // A fourth take (the hiccups) has no gesture of its own to recover with.
-  if (active && !std::strcmp(phase, "recover") && !profile.representative && variant < 3) {
+  if (active && !std::strcmp(phase, "recover") && !profile.representative && variant < kGestures) {
     const auto& perf = profile.performances[variant];
     T pt = F(1 - (recipe.duration - ageMs) / 480) * F(perf.duration);
     for (int i = 0; i < perf.count; ++i) {

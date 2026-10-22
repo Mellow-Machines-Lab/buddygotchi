@@ -107,6 +107,24 @@ std::array<F, 3> Engine::life() const {
   return {clamp(max(0, acting.channels[3].x), q(-.24), q(.24)), clamp(acting.channels[4].x, q(-.12), q(.12)),
           clamp(acting.channels[5].x + scenes.activity[2].x + bridge.channels[2].x, q(-.23), q(.23))};
 }
+bool Engine::admits(const ContactEvent& c, SceneState state, bool quiet, bool protect) {
+  // Comedy sounds even in a quiet state, with the routine chance.
+  if (comedy(c.kind)) return soundRandom.unit() < slime::kRoutineProbability;
+  if (quiet) return false;
+  if (protect && reveals(c.kind)) {
+    // The reference's "requestId:kind", as its key.
+    const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
+    if (revealed_.find([&](uint64_t k) { return k == identity; })) return false;
+    revealed_.add(identity);
+  }
+  if (isDesk(state) && state != SceneState::kDelegating) {
+    if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) return false;
+    if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) return false;
+    ++cueCount_;
+    return true;
+  }
+  return !scenes.iteration;
+}
 void Engine::consumeCues() {
   auto state = scenes.route.state;
   if (cueGeneration_ != scenes.generation || cueIteration_ != scenes.iteration) {
@@ -116,6 +134,8 @@ void Engine::consumeCues() {
   }
   const bool quiet = state == SceneState::kIdle || state == SceneState::kAsleep || state == SceneState::kNoApp ||
                      state == SceneState::kListening || state == SceneState::kWaiting;
+  const bool protect =
+      state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
   static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed", nullptr, "squish",
                                   "squish",   "squish", "failed", "squish", "sneeze",   "breath", "bounce"};
   static_assert(std::size(recipes) == slime::kContactKinds, "a recipe, or none, for every contact kind");
@@ -123,27 +143,7 @@ void Engine::consumeCues() {
   for (const auto* list : {&scenes.contacts, &acting.contacts})
     for (const auto& c : *list) {
       const char* recipe = recipes[c.kind];
-      if (!recipe) continue;
-      bool protect =
-          state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
-      if (comedy(c.kind)) {
-        // Comedy sounds even in a quiet state, with the routine chance.
-        if (soundRandom.unit() >= slime::kRoutineProbability) continue;
-      } else {
-        if (quiet) continue;
-        if (protect && reveals(c.kind)) {
-          // The reference's "requestId:kind", as its key.
-          const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
-          if (revealed_.find([&](uint64_t k) { return k == identity; })) continue;
-          revealed_.add(identity);
-        }
-        if (isDesk(state) && state != SceneState::kDelegating) {
-          if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) continue;
-          if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) continue;
-          ++cueCount_;
-        } else if (scenes.iteration)
-          continue;
-      }
+      if (!recipe || !admits(c, state, quiet, protect)) continue;
       int mood = slime::kProfile[emotion].canonical;
       const auto& p = slime::kProfile[mood];
       SoundCue cue{c, recipe, mood, 0, 53, 1, q(.45), protect};

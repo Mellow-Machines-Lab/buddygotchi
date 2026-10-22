@@ -95,6 +95,9 @@ class Engine {
   // The mood posture's lean and squash, after the quiet blend.
   std::array<F, 2> posture() const;
   T timeMs() const { return motion.time * 1000; }
+  // How closed the eyes are drawn: a bridge's blink, the idle blink, or a
+  // gag's lids, whichever is most.
+  F blink() const { return max(max(face.bridgeBlink, motion.blink()), acting.closure()); }
 
  private:
   bool stamped_ = false;
@@ -102,5 +105,9 @@ class Engine {
   int cueGeneration_ = -1, cueIteration_ = -1, cueCount_ = 0;
   History<uint64_t, 64> revealed_;
   void consumeCues();
+  // Whether a contact sounds: a gag's anywhere, at the routine chance; a
+  // scene's never in a quiet state, a reveal once per request, a desk loop's
+  // within its cycle's routine budget and any other's on its first loop.
+  bool admits(const ContactEvent& c, SceneState state, bool quiet, bool protect);
 };
 }  // namespace render::gel

@@ -234,8 +234,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.squash = scalar(pose[1]);
   c.ripple = scalar(pose[2]);
   c.dent = scalar(pose[3]);
-  // A gag's lids close the eyes as a blink does.
-  c.blink = scalar(max(max(e.face.bridgeBlink, e.motion.blink()), e.acting.closure()));
+  c.blink = scalar(e.blink());
   c.slide = scalar(e.acting.slide.x);
   c.gaze = scalar(e.motion.gaze);
   c.lift = scalar(life[0]);

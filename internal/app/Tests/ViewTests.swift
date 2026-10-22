@@ -84,8 +84,8 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
                        [#"claude finished turn 3 on "fix-nav" (landing): failed, a short turn, no tool calls."#],
                        "a turn counts only its own failed checks")
-        XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 0),
-                       #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#)
+        XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 2),
+                       #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
     }
 
     /// A long prompt or message is cut, on one line.

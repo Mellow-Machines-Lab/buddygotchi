@@ -27,6 +27,8 @@ const arrow=(x,y,c=P.blue)=>rect(x,y+6,24,6,c)+path(`M${x+20} ${y}h6v6h6v6h-6v6h
 const bang=(x,y,c=P.amber)=>rect(x,y,16,40,c)+rect(x,y+48,16,12,c);
 const folder=(x,y,w=80,h=50,c=P.dim)=>rect(x,y,30,8,c)+slab(x,y+8,w,h,c)+rect(x+8,y+16,w-16,4,P.prop);
 export const cup=(x,y,s=1)=>at(x,y,group(path('M0 0h56v30h-8v12H8V30H0ZM-14 4H0v7h-7v12H4v7h-18ZM56 4h14v26H52v-7h11V11h-7ZM22 42h12v15h14v8H8v-8h14Z',P.ochre)+rect(9,4,8,22,P.ink),`transform="scale(${s})"`));
+// The trophy's card, held up under the cup: COMPLETE in gold.
+export const completeCard=()=>held('COMPLETE',155,P.dark).replaceAll(`fill="${P.black}"`,`fill="${P.gold}"`);
 const quietStates=['no_app','asleep','idle','listening','waiting'];
 const typingActions=['flow-keys','split-keys','tear-type','tissue-type','umbrella-work','cautious-key','matrix','console'];
 
@@ -227,7 +229,7 @@ export function props(a,step){
  if(a.state==='task_complete'){
   if(a.outcome==='success'){
    const fireworks=active?[burst(42,52,s%4,P.ochre),burst(272,57,(s+2)%4,P.ochre),burst(60,145,s%3,P.cheek,5)].join(''):'';
-   if(k==='cup')return fireworks+(active?cup(139,106,.75)+held('COMPLETE',155,P.dark).replaceAll(`fill="${P.black}"`,`fill="${P.gold}"`):'');
+   if(k==='cup')return fireworks+(active?cup(139,106,.75)+completeCard():'');
    if(k==='ribbon')return fireworks+(active?at(135,104,star(0,0,52,P.ochre)+rect(7,37,10,18,P.dark)+rect(33,37,10,18,P.dark))+card('COMPLETE',158,P.prop):'');
    return fireworks+rect(68,178,184,10,P.ochre)+rect(116,165,88,16,P.dark)+(active?cup(143,100,.6)+card('COMPLETE',143,P.prop):'');
   }

@@ -21,8 +21,8 @@ public struct Scenario: Sendable {
         /// Claude's session, `s1` unless the step says: another session is
         /// another thread, working at the same time.
         public var session: String?
-        /// Whose step it is: `claude` unless it says `codex`.
-        public var agent: String?
+        /// Whose step it is: Claude's unless it says `codex`.
+        public var agent: Event.Source?
         /// A command: its topic, and whether it failed.
         public var topic: String?
         public var failed: Bool?
@@ -204,22 +204,19 @@ public struct Scenario: Sendable {
                 guard let n = v as? Int, n >= 0 else { throw bad("checks.\(key) is a count") }
                 return n
             }
-            func range(_ key: String) throws -> ClosedRange<Int>? {
+            func range<T: LosslessStringConvertible & Comparable>(_ key: String, within bounds: ClosedRange<T>, like: String = "1-3, 2- or -4") throws -> ClosedRange<T>? {
                 guard let v = c[key] else { return nil }
-                guard let t = v as? String, let r = Scenario.range(t) else { throw bad("checks.\(key) is like 1-3, 2- or -4") }
+                guard let t = v as? String, let r = Scenario.range(t, within: bounds) else { throw bad("checks.\(key) is like \(like)") }
                 return r
             }
             var checks = Checks()
             checks.quietWorkingMs = try time("max_quiet_working")
             checks.sameInARow = try count("max_same_in_a_row")
-            checks.moodChanges = try range("mood_changes")
+            checks.moodChanges = try range("mood_changes", within: 0...Int.max)
             checks.bounceMs = try time("no_mood_bounce_within")
-            checks.reactions = try range("reactions")
+            checks.reactions = try range("reactions", within: 0...Int.max)
             checks.variety = try count("min_variety")
-            if let v = c["words_said"] {
-                guard let t = v as? String, let r = Scenario.share(t) else { throw bad("checks.words_said is like 0.5- or 0.2-0.8") }
-                checks.wordsSaid = r
-            }
+            checks.wordsSaid = try range("words_said", within: 0...1.0, like: "0.5- or 0.2-0.8")
             if let v = c["moves_on_graph"] {
                 guard let on = v as? Bool, on else { throw bad("checks.moves_on_graph is true") }
                 checks.onGraph = true
@@ -249,29 +246,31 @@ public struct Scenario: Sendable {
             step.workspace = s["workspace"] as? String
             step.session = s["session"] as? String
             if let agent = s["agent"] {
-                guard let a = agent as? String, ["claude", "codex"].contains(a) else { throw badStep("agent is claude or codex") }
-                if a == "codex", event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
+                guard let a = (agent as? String).flatMap(Event.Source.init(rawValue:)), [.claude, .codex].contains(a) else {
+                    throw badStep("agent is claude or codex")
+                }
+                if a == .codex, event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
                 step.agent = a
+            }
+            for (key, only) in ["prompt": "turn started", "message": "turn finished", "what": "heard", "misheard": "heard",
+                                "count": "pokes"] where s[key] != nil && event != only {
+                throw badStep("\(key) is only for \(only)")
             }
             step.topic = s["topic"] as? String
             step.failed = s["failed"] as? Bool
             step.error = s["error"] as? String
             step.prompt = s["prompt"] as? String
             step.message = s["message"] as? String
-            if step.prompt != nil, event != "turn started" { throw badStep("prompt is only for turn started") }
-            if step.message != nil, event != "turn finished" { throw badStep("message is only for turn finished") }
             step.words = s["words"] as? String
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             step.what = s["what"] as? String
             step.misheard = s["misheard"] as? Bool
             if event == "heard" {
-                let known = ["name"] + Hearing.words.map(\.what) + Hearing.sounds
+                let known = ["name"] + Hearing.words.map(\.what) + Hearing.Sound.allCases.map(\.rawValue)
                 guard let what = step.what, known.contains(what) else { throw badStep("heard needs what: one of \(known.joined(separator: ", "))") }
-            } else if step.what != nil || step.misheard != nil {
-                throw badStep("what and misheard are for heard")
             }
             if let c = s["count"] {
-                guard event == "pokes", let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
+                guard let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
                 step.count = n
             }
             if let reaction = s["reaction"] {
@@ -315,23 +314,15 @@ public struct Scenario: Sendable {
         guard checks != nil || steps.contains(where: { $0.expect != nil }) else { throw bad("expects nothing") }
     }
 
-    /// `1-3`, `2-` (2 or more), `-4` (4 at most) or `3`.
-    static func range(_ text: String) -> ClosedRange<Int>? {
+    /// `1-3`, `2-` (2 or more), `-4` (4 at most) or `3`, of counts or of
+    /// shares (`0.5-`, half or more), within `bounds`.
+    static func range<T: LosslessStringConvertible & Comparable>(_ text: String, within bounds: ClosedRange<T>) -> ClosedRange<T>? {
         let parts = text.split(separator: "-", omittingEmptySubsequences: false).map(String.init)
-        if parts.count == 1 { return Int(parts[0]).map { $0...$0 } }
-        guard parts.count == 2, !(parts[0].isEmpty && parts[1].isEmpty) else { return nil }
-        guard let low = parts[0].isEmpty ? 0 : Int(parts[0]), let high = parts[1].isEmpty ? Int.max : Int(parts[1]),
-              low <= high else { return nil }
-        return low...high
-    }
-
-    /// A share's range: `0.5-` (half or more), `-0.3` (at most 0.3) or
-    /// `0.2-0.8`, each between 0 and 1.
-    static func share(_ text: String) -> ClosedRange<Double>? {
-        let parts = text.split(separator: "-", omittingEmptySubsequences: false).map(String.init)
+        if parts.count == 1 { return T(parts[0]).flatMap { bounds.contains($0) ? $0...$0 : nil } }
         guard parts.count == 2, !(parts[0].isEmpty && parts[1].isEmpty),
-              let low = parts[0].isEmpty ? 0 : Double(parts[0]), let high = parts[1].isEmpty ? 1 : Double(parts[1]),
-              0 <= low, low <= high, high <= 1 else { return nil }
+              let low = parts[0].isEmpty ? bounds.lowerBound : T(parts[0]),
+              let high = parts[1].isEmpty ? bounds.upperBound : T(parts[1]),
+              bounds.contains(low), bounds.contains(high), low <= high else { return nil }
         return low...high
     }
 
@@ -737,7 +728,7 @@ public struct Eval {
     public static func inputs(_ step: Scenario.Step, at now: Int64) -> [(Pipeline) -> Pipeline.Step] {
         let cwd = step.workspace.map { "/eval/landing/.worktrees/\($0)" } ?? "/eval/landing"
         let session = step.session ?? "s1"
-        let source: Event.Source = step.agent == "codex" ? .codex : .claude
+        let source = step.agent ?? .claude
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:]) -> (Pipeline) -> Pipeline.Step {
             { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
@@ -762,7 +753,7 @@ public struct Eval {
         case "session started": return [hook(.session, .start, "SessionStart", ["source": "startup"])]
         // The agent's context compacted, mid-turn: a session start that
         // says so.
-        case "compact": return [hook(.session, .start, step.agent == "codex" ? "PostCompact" : "SessionStart", ["source": "compact"])]
+        case "compact": return [hook(.session, .start, source == .codex ? "PostCompact" : "SessionStart", ["source": "compact"])]
         // Claude asks to run a command, and later you answer it: the
         // request's wait, then its call's result.
         case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]

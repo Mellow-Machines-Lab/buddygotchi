@@ -5,17 +5,20 @@
 #include <vector>
 #include "render/gel/motion.h"
 namespace render::gel {
+// A profile's gestures, as slimegen sizes them: the first takes of idle and
+// of every scene row.
+constexpr int kGestures = int(std::size(slime::kProfile[0].performances));
 // A shuffle bag of a key's takes (variation.mjs). Its first round deals the
 // first three, the ones every state has always had; from its second round on
 // it deals every take, the comedy ones too. Never the take it dealt last.
 template <int Capacity>
 struct Bag {
-  static_assert(Capacity >= 3, "every bag deals at least three takes");
+  static_assert(Capacity >= kGestures, "every bag deals at least three takes");
   uint8_t values[Capacity]{}, left = 0, size = 0, last = 255;
   bool dealt = false;
-  int next(Random& random, int takes = 3) {
+  int next(Random& random, int takes = kGestures) {
     if (!left) {
-      size = uint8_t(dealt ? std::min(takes, Capacity) : std::min(takes, 3));
+      size = uint8_t(dealt ? std::min(takes, Capacity) : std::min(takes, kGestures));
       dealt = true;
       for (int i = 0; i < size; ++i) values[i] = uint8_t(i);
       for (int i = size - 1; i > 0; --i) std::swap(values[i], values[random.index(i + 1)]);
@@ -59,12 +62,12 @@ struct Acting {
   Acting() { contacts.reserve(4); }
   // Idle's takes for an expression: its three gestures, its own gags, then
   // every expression's idle gags.
-  static int takes(int profile) { return 3 + slime::kProfile[profile].gagCount + slime::kIdleGagCount; }
+  static int takes(int profile) { return kGestures + slime::kProfile[profile].gagCount + slime::kIdleGagCount; }
   // A take's gag; none for the three gestures.
   static const slime::Gag* gag(int profile, int take) {
     const auto& p = slime::kProfile[profile];
-    if (take < 3) return nullptr;
-    take -= 3;
+    if (take < kGestures) return nullptr;
+    take -= kGestures;
     return &slime::kGags[take < p.gagCount ? p.gags[take] : slime::kIdleGags[take - p.gagCount]];
   }
   // A take's impulses and timing.

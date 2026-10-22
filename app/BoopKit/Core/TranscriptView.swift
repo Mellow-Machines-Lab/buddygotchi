@@ -85,10 +85,9 @@ public final class TranscriptView {
         /// This turn's failed checks, which a failed finish counts.
         var checksFailed = 0
         /// Quick wins in a row on the thread, across turns, and when the
-        /// last one finished: a finish done in under 5 minutes within
+        /// last one finished: a finish done in under `quickWinMs` within
         /// `winRunGapMs` of the last.
-        var winRun = 0
-        var lastWinAt: Int64?
+        var wins: (run: Int, at: Int64)?
         /// This turn's working heartbeats.
         var checkIns = 0
     }
@@ -124,12 +123,10 @@ public final class TranscriptView {
         /// The sessions, and what each one's turn did.
         var sessions: SessionTracker
         var counts: [String: Counts] = [:]
-        /// The run of pokes going on, on each buddy (`""` for the only one),
-        /// when the run before it ended, and whether this one came again,
-        /// within `againMs` of that.
-        var pokes: [String: [Int64]] = [:]
-        var lastPokeRun: [String: Int64] = [:]
-        var pokedAgain: [String: Bool] = [:]
+        /// The run of pokes going on, on each buddy (`""` for the only one):
+        /// when each came, and whether the run came again, within `againMs`
+        /// of the run before.
+        var pokes: [String: (at: [Int64], again: Bool)] = [:]
         /// The away you haven't come back from: its
         /// event's `seq` and when you left.
         var awaySince: (seq: Int, at: Int64)?
@@ -160,10 +157,9 @@ public final class TranscriptView {
     /// a reaction (the newest `react` start it has seen), with its random
     /// waits.
     var nextWorkBeatAt: Int64?
-    /// The idle check-in's schedule: when it's next due, drawn after the
-    /// activity it follows (`idleBeatAfter`) and after each check-in.
-    var nextIdleBeatAt: Int64?
-    var idleBeatAfter: Int64?
+    /// The idle check-in's schedule: the activity it follows, and when it's
+    /// next due, drawn after that activity and after each check-in.
+    var idleBeat: (after: Int64, due: Int64)?
     var reactSeen = 0
     var rng: SplitMix64
 
@@ -217,7 +213,7 @@ public final class TranscriptView {
     public func setRules(_ rules: Personality.Rules) {
         self.rules = rules
         nextWorkBeatAt = nil
-        idleBeatAfter = nil
+        idleBeat = nil
     }
 
     // MARK: - Registration
@@ -412,13 +408,8 @@ public final class TranscriptView {
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
-            if outcome == "done", now - started < Self.quickWinMs {
-                c.winRun = c.lastWinAt.map { now - $0 < Self.winRunGapMs } == true ? c.winRun + 1 : 1
-                c.lastWinAt = now
-            } else {
-                c.winRun = 0
-                c.lastWinAt = nil
-            }
+            let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
+            c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
             return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
                              message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
         case .sessionStart:
@@ -478,7 +469,7 @@ public final class TranscriptView {
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
         let text = notable
             ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
-                              inARow: failed! ? failedBefore + 1 : 1)
+                              inARow: failedBefore + 1)
             : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
             "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
@@ -505,13 +496,13 @@ public final class TranscriptView {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
-                                     lengthMs: lengthMs, tools: c.tools, failedChecks: outcome == "failed" ? c.checksFailed : 0,
-                                     ofStreak: EventLine.rung(c.winRun, of: EventLine.streak))
+                                     lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
+                                     ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak))
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
-                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.winRun)),
+                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
 
@@ -538,21 +529,17 @@ public final class TranscriptView {
         let now = e.at
         noteActivity(now)
         let who = e.buddy ?? ""
-        var pokes = fold.pokes[who] ?? []
-        if let last = pokes.last, now - last >= Self.inARowMs {
-            fold.lastPokeRun[who] = last
-            pokes.removeAll()
-        }
-        if pokes.isEmpty { fold.pokedAgain[who] = fold.lastPokeRun[who].map { now - $0 < Self.againMs } ?? false }
-        pokes.append(now)
-        fold.pokes[who] = pokes
-        let count = pokes.count
-        let seconds = max(1, Int((now - pokes[0] + 999) / 1000))
+        var run = fold.pokes[who] ?? ([], false)
+        if let last = run.at.last, now - last >= Self.inARowMs { run = ([], now - last < Self.againMs) }
+        run.at.append(now)
+        fold.pokes[who] = run
+        let count = run.at.count
+        let seconds = max(1, Int((now - run.at[0] + 999) / 1000))
         // The first poke of a run wakes Boop; the rest find it awake.
-        let asleep = count == 1 && fold.sessions.sessions.isEmpty, again = fold.pokedAgain[who] ?? false
-        return Line(EventLine.poke(inARow: count, name: name(e), asleep: asleep, again: again),
+        let asleep = count == 1 && fold.sessions.sessions.isEmpty
+        return Line(EventLine.poke(inARow: count, name: name(e), asleep: asleep, again: run.again),
                     facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds)), "asleep": .bool(asleep),
-                            "again": .bool(again)])
+                            "again": .bool(run.again)])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to
@@ -702,25 +689,17 @@ public final class TranscriptView {
         }
         nextWorkBeatAt = nil
         guard !working, let last = fold.lastActivityAt else { return nil }
-        if idleCheckIns(at: now, since: last), let gap = rules.idleBeatMs {
-            if idleBeatAfter != last {
-                idleBeatAfter = last
-                nextIdleBeatAt = last + Int64(rng.int(in: gap))
-            }
-            guard let due = nextIdleBeatAt, now >= due else { return nil }
-            nextIdleBeatAt = now + Int64(rng.int(in: gap))
-            return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
+        // An idle check-in, at the personality's pace: a session is open,
+        // you're at the Mac, and it's within `idleWindowMs` of the last
+        // activity. Nights and weekends stay hourly.
+        if let gap = rules.idleBeatMs, fold.awaySince == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+            if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
+            guard let beat = idleBeat, now >= beat.due else { return nil }
+            idleBeat = (last, now + Int64(rng.int(in: gap)))
+            return Event(at: now, source: .clock, type: .heartbeat, specificType: "check_in")
         }
         guard (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else { return nil }
         return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
-    }
-
-    /// Whether the idle heartbeat comes as a check-in at `now`, the last
-    /// activity at `last`: a session is open, you're at the Mac, and it's
-    /// within `idleWindowMs` of the last activity. Nights and weekends
-    /// stay hourly.
-    func idleCheckIns(at now: Int64, since last: Int64) -> Bool {
-        rules.idleBeatMs != nil && fold.awaySince == nil && !fold.sessions.sessions.isEmpty && now - last < Self.idleWindowMs
     }
 
     func heartbeat(_ e: Event) -> Line? {
@@ -741,7 +720,7 @@ public final class TranscriptView {
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
-        if idleCheckIns(at: now, since: last),
+        if e.specificType == "check_in",
            let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) {
             // An idle check-in: you're around, and no agent works.
             fold.heartbeats = Int(hours)
@@ -841,7 +820,8 @@ public enum EventLine {
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
                                tools: Int, failedChecks: Int = 0, ofStreak: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
-        let after = failedChecks == 1 ? ", after a failed check" : failedChecks > 1 ? ", after \(failedChecks) failed checks" : ""
+        let after = how != "failed" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
+            : ", after \(failedChecks) failed checks"
         let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
         return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)\(run)."
     }
@@ -855,7 +835,7 @@ public enum EventLine {
     /// 6th quick win is the 1st of a new streak.
     public static func rung(_ n: Int, of size: Int) -> Int { n < 1 ? 0 : (n - 1) % size + 1 }
 
-    static func nth(_ n: Int) -> String { ["0th", "1st", "2nd", "3rd"].indices.contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
+    static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
 
     /// A working heartbeat's note for its rung of a round, from the second:
     /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
@@ -926,7 +906,9 @@ public enum EventLine {
     public static func poke(inARow count: Int, name: String = CharacterPack.active.name, asleep: Bool = false,
                             again: Bool = false) -> String {
         let poked = count <= 1 ? "You poked \(name)" : "You poked \(name) \(count) times in a row"
-        return poked + (asleep ? " while it slept" : again ? (count <= 1 ? " again" : ", again") : "") + "."
+        if asleep { return poked + " while it slept." }
+        if again { return poked + (count <= 1 ? " again." : ", again.") }
+        return poked + "."
     }
 
     /// What Boop's ears heard: `Boop heard you say "good boy".`, `Boop heard
@@ -1008,10 +990,10 @@ public enum EventLine {
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
           long (5 minutes or more). Quick wins in a row are turns done in under
-          5 minutes, one after another on a thread, in streaks of up to 5: the
-          line says which of its streak it is, and the 6th starts a new one.
+          \(TranscriptView.quickWinMs / 60_000) minutes, one after another on a thread, in streaks of up to \(streak): the
+          line says which of its streak it is, and the \(nth(streak + 1)) starts a new one.
         - A check-in is \(name) looking in on a turn that's still going, in
-          rounds of 4; the note under it says which of its round it is.
+          rounds of \(round); the note under it says which of its round it is.
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - An idle check-in ("Nothing has happened for 20 min") means the person is

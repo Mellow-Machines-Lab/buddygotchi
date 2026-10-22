@@ -39,8 +39,10 @@ public struct Hearing: Sendable {
         ("treat", ["treat"]),
         ("fetch", ["fetch"]),
     ]
-    /// The sounds, from `SoundDetector`.
-    public static let sounds = ["bang", "shout", "singsong"]
+    /// The sounds Boop hears, from `SoundDetector`.
+    public enum Sound: String, CaseIterable, Sendable {
+        case bang, shout, singsong
+    }
     /// Heard on their own; every other word counts only within
     /// `nameGateMs` of Boop's name ("Boop, sit"), so talk at the desk or
     /// on a call doesn't set it off.
@@ -59,6 +61,10 @@ public struct Hearing: Sendable {
 
     /// The phrase a word's line quotes.
     public static func phrase(_ what: String) -> String { words.first { $0.what == what }?.phrases.first ?? what }
+
+    /// Every word's phrases as `tokens`, what the recogniser wrote is
+    /// matched against.
+    static let phraseTokens = words.map { (what: $0.what, phrases: $0.phrases.map(tokens)) }
 
     let name: [Substring]
     var dice: SplitMix64
@@ -107,19 +113,14 @@ public struct Hearing: Sendable {
     }
 
     /// A sound `SoundDetector` heard.
-    public mutating func sound(_ kind: String, at now: Int64) -> Heard? {
-        Self.sounds.contains(kind) ? emit(kind, at: now) : nil
-    }
+    public mutating func sound(_ sound: Sound, at now: Int64) -> Heard? { emit(sound.rawValue, at: now) }
 
     /// The longest phrase, or the name, that starts at `i`.
     func match(_ tokens: [Substring], at i: Int) -> (String, Int)? {
-        var best: (String, Int)?
-        func fits(_ phrase: [Substring]) -> Bool {
-            !phrase.isEmpty && i + phrase.count <= tokens.count && Array(tokens[i..<(i + phrase.count)]) == phrase
-        }
-        if fits(name) { best = ("name", name.count) }
-        for (what, phrases) in Self.words {
-            for p in phrases.map(Self.tokens) where fits(p) && p.count > (best?.1 ?? 0) { best = (what, p.count) }
+        let rest = tokens[i...]
+        var best: (String, Int)? = !name.isEmpty && rest.starts(with: name) ? ("name", name.count) : nil
+        for (what, phrases) in Self.phraseTokens {
+            for p in phrases where p.count > (best?.1 ?? 0) && rest.starts(with: p) { best = (what, p.count) }
         }
         return best
     }
@@ -157,7 +158,7 @@ public struct SoundDetector: Sendable {
 
     /// One buffer's level in dBFS and, when it's voiced, its pitch in Hz:
     /// the sound it completes, if any.
-    public mutating func feed(levelDb: Float, pitchHz: Float?, at now: Int64) -> String? {
+    public mutating func feed(levelDb: Float, pitchHz: Float?, at now: Int64) -> Hearing.Sound? {
         if levelDb >= Self.shoutDb {
             if loudSince == nil {
                 loudSince = now
@@ -167,11 +168,11 @@ public struct SoundDetector: Sendable {
             loudPeak = max(loudPeak, levelDb)
             if !shouted, let since = loudSince, now - since >= Self.shoutMinMs {
                 shouted = true
-                return "shout"
+                return .shout
             }
         } else if let since = loudSince {
             loudSince = nil
-            if !shouted, now - since < Self.bangMaxMs, loudPeak >= Self.bangDb { return "bang" }
+            if !shouted, now - since < Self.bangMaxMs, loudPeak >= Self.bangDb { return .bang }
         }
         guard let hz = pitchHz, hz > 60, hz < 1100, levelDb >= Self.voicedDb else { return nil }
         pitches.append((now, 12 * log2(hz / 440)))
@@ -179,6 +180,6 @@ public struct SoundDetector: Sendable {
         guard pitches.count >= Self.singMinFrames, let lo = pitches.map(\.semitone).min(), let hi = pitches.map(\.semitone).max(),
               hi - lo >= Self.singSemitones else { return nil }
         pitches = []
-        return "singsong"
+        return .singsong
     }
 }
