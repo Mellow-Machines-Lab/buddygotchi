@@ -38,6 +38,8 @@ Studio.register('pixel',{
         progress={elapsed:t,duration:scene.asset.seconds,label:'Frame inspection · silent'};ctx.onChange();},
       time(){return progress&&scene?progress.elapsed%scene.asset.seconds:0;},
       setSound(){player.setVolume(ctx.sound?ctx.volume*.8:0);},
+      // The matrix's cell: the scene's own animation, silent and looping, with no sound engine.
+      preview(){const svg=mount.querySelector('svg');if(svg&&!matchMedia('(prefers-reduced-motion: reduce)').matches)svg.unpauseAnimations();},
       status(){
         if(error)return 'Playback error: '+error;
         if(!scene)return '';

@@ -15,6 +15,10 @@
     <h1>Character Studio</h1>
     <p>Pick a mood and a state to see what the character does.</p>
     <label class="pack-choice" data-pack-choice hidden><span>Pack</span><select data-pack></select></label>
+    <div class="segmented views" data-view-choice role="group" aria-label="View">
+      <button type="button" data-value="scene" aria-pressed="true">Scene</button>
+      <button type="button" data-value="matrix" aria-pressed="false">Matrix</button>
+    </div>
   </div>
   <div class="characters" role="tablist" aria-label="Character" data-cards></div>
 </header>
@@ -81,13 +85,18 @@
   </section>
 </main>
 
+<section class="matrix" data-matrix aria-label="Every mood and state" hidden>
+  <p class="matrix-head" data-matrix-about></p>
+  <div class="matrix-scroll" data-matrix-scroll><table data-matrix-table></table></div>
+</section>
+
 <details class="tools" data-tools hidden>
   <summary>Tools</summary>
   <div data-tools-body></div>
 </details>
 
 <footer class="foot">
-  <p><kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke</p>
+  <p><kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke · <kbd>M</kbd> matrix</p>
   <p>Works offline. Nothing here talks to the app, the board or the network. Each character's preview comes from its own pack.</p>
 </footer>
 
