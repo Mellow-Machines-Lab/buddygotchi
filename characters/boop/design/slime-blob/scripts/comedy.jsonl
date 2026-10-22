@@ -1,0 +1,16 @@
+{"at":0,"type":"facts","facts":{"base":"idle","attn":null}}
+{"at":0,"type":"mood","mood":"excited"}
+{"at":200,"type":"perform","index":3}
+{"at":3200,"type":"mood","mood":"calm"}
+{"at":3400,"type":"perform","index":5}
+{"at":6400,"type":"perform","index":3}
+{"at":9400,"type":"perform","index":4}
+{"at":13200,"type":"mood","mood":"tired"}
+{"at":13400,"type":"perform","index":3}
+{"at":18000,"type":"mood","mood":"proud"}
+{"at":18000,"type":"facts","facts":{"base":"working","attn":null}}
+{"at":18200,"type":"oneShot","moment":{"id":"gift-1","name":"task_complete","args":{"outcome":"success","variant":1}}}
+{"at":22400,"type":"mood","mood":"happy"}
+{"at":22400,"type":"oneShot","moment":{"id":"hiccups-1","name":"task_complete","args":{"outcome":"success","variant":3}}}
+{"at":26600,"type":"facts","facts":{"base":"asleep","attn":null}}
+{"at":86400,"type":"end"}

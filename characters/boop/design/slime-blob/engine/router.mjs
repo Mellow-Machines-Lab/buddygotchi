@@ -66,9 +66,10 @@ export function createRouter({hasMood=()=>false}={}) {
     }
     overlay=null;
     // A host that times its own moments (the board's Behaviour) holds them
-    // until it clears them, and may choose the take it has already timed.
+    // until it clears them, and may choose the take it has already timed:
+    // any of a state's takes (the scene refuses one its state hasn't).
     moment={name,id,requestId,loops,startedAt:time,expiresAt:time+overlayLoopMs*loops,hold:value.hold===true,
-      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=2?args.variant:null,
+      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=3?args.variant:null,
       outcome:name==='task_complete'&&['success','failure'].includes(args.outcome)?args.outcome:null,
       ctx:name==='starting'&&['new_task','session','continuation','compacted'].includes(args.ctx)?args.ctx:null,
       expression:hasMood(args.mood)?args.mood:null};

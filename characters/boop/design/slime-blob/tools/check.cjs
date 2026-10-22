@@ -26,6 +26,7 @@ for(const [id,n] of Object.entries(g.nodes)){
   const reached=new Set([id]),pending=[id];while(pending.length)for(const next of g.nodes[pending.pop()].ordinary)if(!reached.has(next)){reached.add(next);pending.push(next);}
   assert.equal(reached.size,42,'Ordinary graph not strongly connected from '+id);
   assert.equal(c.expressions[id].mood,id);assert.equal(c.expressions[id].performances.length,3);assert.ok(c.expressions[id].art.note.length>10);
+  for(const gag of c.expressions[id].gags||[])assert.ok(c.gags[gag],'Unknown gag '+gag+' for '+id);
 }
 assert.equal(expectedEdges.size,295);assert.equal(trans.edges.length,expectedEdges.size);assert.equal(new Set(trans.edges.map(v=>v.id)).size,295);
 for(const e of trans.edges){assert.equal(expectedEdges.get(e.id),e.category);assert.equal(e.variants.length,3);assert.equal(e.status,'implemented');assert.deepEqual(e.variants,verifiedEdges.get(e.id).primitives);}
@@ -33,10 +34,15 @@ for(const ladder of Object.values(g.intensityLadders))for(let i=1;i<ladder.lengt
 assert.equal(cov.cells.length,42*23);assert.equal(new Set(cov.cells.map(v=>v.id)).size,cov.cells.length);
 for(const row of cov.cells){
   const state=s.states.find(v=>v.id===row.state);assert.ok(ids.includes(row.mood)&&state);assert.equal(row.id,row.mood+'.'+row.state);
-  assert.equal(row.variations.length,3);assert.deepEqual(row.requiredHostFacts,s.hostFacts[row.state]||{});
+  // Three takes each, but idle's six (its gags) and asleep's four (a snore);
+  // a successful finish has a fourth, its hiccups.
+  assert.equal(row.variations.length,{idle:6,asleep:4}[row.state]??3);assert.deepEqual(row.requiredHostFacts,s.hostFacts[row.state]||{});
   assert.deepEqual(row.factVariations,state.factVariations||{});
-  for(const choices of Object.values(row.factVariations))for(const variations of Object.values(choices)){assert.equal(variations.length,3);assert.equal(new Set(variations).size,3);}
+  for(const [fact,choices] of Object.entries(row.factVariations))for(const [value,variations] of Object.entries(choices)){
+    const takes=fact==='outcome'&&value==='success'?4:3;assert.equal(variations.length,takes);assert.equal(new Set(variations).size,takes);}
   assert.equal(row.status,exercised.has(row.id)?(state.scene==='rest'?'quiet-alias':'implemented'):(state.scene==='rest'?'planned-shared-rest':'planned-state-layer'));assert.equal(row.audioPolicy,state.audioPolicy);
+  assert.deepEqual(row.variationAudio,state.variationAudio||{});
+  for(const variation of Object.keys(row.variationAudio))assert.ok(state.variations.includes(variation),'Audio for an unknown variation '+variation);
   if(state.scene==='rest'){assert.equal(row.mode,'explicit-quiet-alias');assert.equal(row.audioPolicy,'silent');}
 }
 const script=fs.readFileSync(path.join(root,'preview/slime.bundle.js'),'utf8');new vm.Script(script);

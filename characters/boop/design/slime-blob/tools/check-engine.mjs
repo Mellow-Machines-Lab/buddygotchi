@@ -71,11 +71,15 @@ function checkTraceNumber(value, inspection, at, before, motion) {
     `${SPEC}, Keep the object; change its targets: gaze`);
   // CONTINUITY.md, "Phase 1 channel bounds": original additive audition
   // layers retain their limits; these are not new physics tuning values.
+  // A gag's own channels (CONTINUITY.md, Comedy): the slide and the lids.
   for (const [name, channel] of Object.entries(value.actorChannels)) {
-    const cap = { lift: 0.24, roll: 0.12, forward: 0.18 }[name] ?? 0.42;
+    const cap = { lift: 0.24, roll: 0.12, forward: 0.18, slide: 0.7, lids: 1 }[name] ?? 0.42;
+    const speed = { lids: 20 }[name] ?? 5;
     range(channel.x, -cap, cap, `${SPEC}, Phase 1 channel bounds: ${name} displacement`);
-    range(channel.v, -5, 5, `${SPEC}, Phase 1 channel bounds: ${name} velocity`);
+    range(channel.v, -speed, speed, `${SPEC}, Phase 1 channel bounds: ${name} velocity`);
   }
+  if ('slide' in value) range(value.slide, -0.7, 0.7, `${SPEC}, Comedy: composed slide`);
+  range(value.face.blink, 0, 1, `${SPEC}, Comedy: a gag's lids close the eyes no further than a blink`);
   for (const [name, channel] of Object.entries(value.bridgeChannels ?? {})) {
     const cap = { lean: 0.06, squash: 0.05, forward: 0.04 }[name];
     range(channel.x, -cap, cap, `${SPEC}, Directed edge bridges: ${name} displacement`);

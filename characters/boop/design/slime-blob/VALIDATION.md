@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-16. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-21. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -36,12 +36,21 @@ approval or equivalence of the C++ port.
 
 The scene check exercises all routing IDs separately from choreography
 coverage. Its representative script covers 24 cases in 20 distinct cells;
-full-matrix checks execute every canonical mood/state cell, all three active
-variants, all start contexts and completion outcomes, a wake-up with no
+full-matrix checks execute every canonical mood/state cell, all its active
+variants (idle's gags and a success's hiccups among them), all start contexts
+and completion outcomes, a wake-up with no
 start card, plus a
 ten-minute work run, attention identity, alerts interrupted at every stage
-(each request knocks and confirms exactly once), drag interruption, quiet rest,
-latest-facts recovery and truthful success/failure. The builder runs the
+(each request knocks and confirms exactly once), drag interruption, quiet rest
+(a minute asleep snores, two breaths at a time, and a lost link never does),
+latest-facts recovery and truthful success/failure. Its comedy checks pin the
+gags' catalogue and durations, their springs and keys, the bag that deals them
+from its second round, the hiccups' timings, the gift on proud's lifted success
+alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
+and sinks then blinks awake, the sneeze is one contact a second in, the zoomies
+reach both edges, small under reduced motion) and sleep's still first 12.8 s.
+The cue check plays twenty minutes of idle and of sleep: only the sneeze and
+the snore's breaths sound, sparsely. The builder runs the
 full coverage check before updating `coverage.json`; no cell earns a
 status merely from a scene name or counter. `preview/script-catalog.js` must match the scripts
 and verified review manifest.
@@ -103,16 +112,18 @@ The C++ gel face (`characters/boop/firmware/src/render/gel/`) is checked
 against this package's reference engine, from the repository root:
 
 ```sh
-make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against
+make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against, and stages the pack
 python3 characters/boop/tools/slimegen/check-port.py --output /tmp/boop-gel-port
 internal/tools/boopctl sim --face gel
 ```
 
 - `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
   the one build that keeps the recipes' `intent`) and replays every
-  `scripts/*.jsonl` against the saved traces. It checks every scalar,
+  `scripts/*.jsonl` against the saved traces, `comedy.jsonl`'s gags,
+  hiccups, gift and snore included. It checks every scalar,
   categorical field, cue and frame count within its tolerance, and fails
-  on unexpected extra fields too.
+  on unexpected extra fields too. It reads the staged pack's `moods.h`
+  (`.character-build/`, which `fw-test` stages) after the pack's own headers.
 - `test_gel` (in the pack's `tests/firmware/`, run by `fw-test`) checks
   arithmetic, reference clock rounding, every expression buffer's
   bounds, deterministic pixels, request identity, bounded caches, alerts
@@ -125,12 +136,20 @@ internal/tools/boopctl sim --face gel
   blends once, the body's outline is soft with no seam inside), and
   tracked-clear parity with full clearing across pose and prop changes.
   RGB565 opacity rounding is checked against an independent scalar
-  reference across every channel value and all 256 opacity levels.
+  reference across every channel value and all 256 opacity levels. Its
+  comedy test pins each row's takes, the hiccups' and the snore's
+  recipes, the one gift, idle's takes per expression, the bag's rounds,
+  the doze's lids and sink, the zoomies' reach, a sneeze that allocates
+  nothing, and sleep that snores after its still start (never with the
+  link lost); the extreme pose includes the slide at its bound.
 - `boopctl sim --face gel` plays the pack's `tests/scenarios-gel/`
   against its `tests/golden-gel/`: every canonical mood and factual
-  state, failure and neutral-finish frames, and the host lane at the
+  state, failure and neutral-finish frames, the host lane at the
   panel's size (`lane.jsonl`: the working count, a long name that needs
-  you, the finish's marks and the bubble in each of its fonts).
+  you, the finish's marks and the bubble in each of its fonts), and the
+  comedy (`comedy.jsonl`: the yawn, the sneeze's wind-up, the doze, the
+  long yawn, the zoomies at either edge, a snore, the hiccups and the
+  gift).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
 

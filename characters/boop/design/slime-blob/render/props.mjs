@@ -110,6 +110,18 @@ export function createProps(stage,{hostLane=true}={}) {
         ctx.strokeStyle='#efc879';ctx.lineWidth=.006;for(const side of [-1,1]){ctx.beginPath();ctx.arc(.500+side*.037,y+.050,.021,side<0?Math.PI/2:-Math.PI/2,side<0?3*Math.PI/2:Math.PI/2);ctx.stroke();}
       }else if(bad){ctx.strokeStyle='#e8a9b4';ctx.lineWidth=.010;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(.478,y+.036);ctx.lineTo(.522,y+.082);ctx.moveTo(.522,y+.036);ctx.lineTo(.478,y+.082);ctx.stroke();}
       text(result.label,.5,y+.160,.054,good?'#b4e5d4':bad?'#efb9c7':'#d5e8f2');ctx.restore();
+      // A gift beside the card: the small bug Boop caught, held up proudly.
+      if(result.gift){
+        ctx.save();ctx.globalAlpha=result.visible;const x=.795,by=y+.105;
+        ctx.strokeStyle='#2c251d';ctx.lineWidth=.004;ctx.lineCap='round';
+        for(const side of [-1,1])for(const row of [-1,0,1]){ctx.beginPath();ctx.moveTo(x+side*.018,by+row*.016);ctx.lineTo(x+side*.034,by+row*.020+.006);ctx.stroke();}
+        for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(x+side*.006,by-.046);ctx.lineTo(x+side*.016,by-.064);ctx.stroke();}
+        ctx.fillStyle='#2c251d';ctx.beginPath();ctx.ellipse(x,by-.036,.012,.012,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#efbd67';ctx.beginPath();ctx.ellipse(x,by,.024,.032,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#2c251d';ctx.fillRect(x-.002,by-.030,.004,.060);
+        for(const [dx,dy] of [[-.011,-.012],[.011,-.012],[-.012,.010],[.012,.010]]){ctx.beginPath();ctx.arc(x+dx,by+dy,.005,0,Math.PI*2);ctx.fill();}
+        ctx.restore();
+      }
     }
     ctx.restore();
     // This lane belongs to host facts, separate from the decorative scene.

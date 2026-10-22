@@ -23,7 +23,8 @@ export function profileTraits(profile) {
 
 export function recoveryGesture(profile,variant,progress) {
   const result={lean:0,squash:0,forward:0};
-  if(!profile||sceneMoodTraits[profile.mood]||progress<0||progress>1)return result;
+  // A fourth take (a snore, the hiccups) has no gesture of its own to recover with.
+  if(!profile||sceneMoodTraits[profile.mood]||progress<0||progress>1||!profile.performances[variant])return result;
   const performance=profile.performances[variant],time=progress*performance.duration;
   for(const [at,channel,velocity] of performance.cues){
     const target=channel==='roll'?'lean':channel==='lift'?'squash':channel==='ripple'?'forward':channel;

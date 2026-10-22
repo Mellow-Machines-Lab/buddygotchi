@@ -40,6 +40,7 @@ struct Projector {
     p.x = product(x, cs) - product(y, sn);
     p.y = std::max(74, product(x, sn) + product(y, cs) + 2540 + c.lift);
     p.z += product(c.forward, h2);
+    p.x += c.slide;
     return p;
   }
   Point project(World p) const {

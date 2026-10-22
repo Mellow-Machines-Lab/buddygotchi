@@ -15,9 +15,9 @@ class Engine {
  public:
   explicit Engine(uint32_t seed = 53) : random(seed), soundRandom(seed ^ 0xa511e9b3u) {
     postureWeights[slime::kCalm].x = 1;
-    // A step's cues are its contacts, at most a recipe's: room for them now
-    // keeps every frame off the heap (test_gel).
-    cues.reserve(std::size(slime::Recipe{}.contacts));
+    // A step's cues are its contacts, at most a recipe's and a gag's: room
+    // for them now keeps every frame off the heap (test_gel).
+    cues.reserve(std::size(slime::Recipe{}.contacts) + std::size(slime::Gag{}.contacts));
     sync();
   }
   Random random, soundRandom;

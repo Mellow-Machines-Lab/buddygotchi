@@ -3,7 +3,7 @@ import {sceneConstants,implementedStates} from './constants.mjs';
 import {deskRecipe} from './desk.mjs';
 import {alertRecipe} from './alert.mjs';
 import {resultRecipe,statusResultRecipe} from './result.mjs';
-import {restRecipe} from './rest.mjs';
+import {restRecipe,snore} from './rest.mjs';
 import {idleRecipe} from './idle.mjs';
 import {listenRecipe} from './listen.mjs';
 import {startRecipe,wakeRecipe} from './start.mjs';
@@ -16,7 +16,11 @@ import {createRamp} from './ramp.mjs';
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const smooth=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
 const isDesk=state=>['working','planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting'].includes(state);
-const routine=state=>isDesk(state)||state==='listening';
+// Asleep picks again after each take, as routine work does, so it can snore.
+const routine=state=>isDesk(state)||state==='listening'||state==='asleep';
+// A state's takes: three, and a fourth for two of them, asleep's snore and a
+// successful finish's hiccups. Its bag deals the fourth from its second round.
+export function takesOf(state,outcome=null) {return state==='asleep'||(state==='task_complete'&&outcome==='success')?4:3;}
 const implemented=new Set(implementedStates);
 // CONTINUITY.md, Representative activity scenes: each prop keeps the content
 // it last showed while its ramp fades it out.
@@ -43,8 +47,12 @@ export function createScenes({rand,reduced,profiles}) {
       const saved=moments.get(route.moment.requestId);variant=saved.variant;recipe=saved.recipe;
       phase='enter';return;
     }
-    variant=route.moment&&route.moment.variant!==null?route.moment.variant
-      :implemented.has(route.state)&&!route.quiet&&route.state!=='idle'?variation.next(key):0;
+    // The host's take if its state has it; the first rest is always the
+    // still one, and asleep deals from its bag after that.
+    const takes=takesOf(route.state,route.outcome);
+    variant=route.moment&&route.moment.variant!==null&&route.moment.variant<takes?route.moment.variant
+      :implemented.has(route.state)&&!route.quiet&&route.state!=='idle'?variation.next(key,takes)
+      :route.state==='asleep'&&iteration>0?variation.next(key,takes):0;
     const profile=profiles[expression];
     if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
     else if(route.state==='needs_you'){
@@ -56,7 +64,7 @@ export function createScenes({rand,reduced,profiles}) {
     else if(route.family==='helpers')recipe=helpersRecipe(route.state,variant,mood,profile);
     else if(route.family==='touch')recipe=touchRecipe(route.state,variant);
     else if(route.state==='listening')recipe=listenRecipe(variant);
-    else if(route.quiet)recipe=restRecipe();
+    else if(route.quiet)recipe=restRecipe(variant);
     else recipe=idleRecipe();
     recipe={...recipe,profile,profileExpression:expression};
     if(route.state==='needs_you')alerts.set(route.requestId,{variant,recipe,ageMs:0,cursor:0});
@@ -108,16 +116,17 @@ export function createScenes({rand,reduced,profiles}) {
     ageMs=Math.max(0,time-started);
     if(route.quiet||!implemented.has(route.state)||route.state==='idle'){
       phase=ageMs<sceneConstants.entryMs?'enter':'sustain';
-      if(route.moment&&ageMs>=recipe.duration)completed=true;
+      if((route.moment||route.state==='asleep')&&ageMs>=recipe.duration)completed=true;
     }else if(ageMs<sceneConstants.entryMs)phase='enter';
     else if(ageMs<recipe.duration-sceneConstants.recoveryMs)phase='act';
     else if(ageMs<recipe.duration)phase='recover';
     else {phase='sustain';completed=true;}
     // Elapsed contacts are consumed even during a grab. Releasing never plays
     // a backlog, and retargeting replaces the recipe cursor immediately.
+    // Quiet rest has no contacts but a snore's breaths.
     while(cursor<recipe.contacts.length&&ageMs>=recipe.contacts[cursor].at){
       const cue=recipe.contacts[cursor],index=cursor++;
-      if(route.quiet||(grabActive&&!cue.kind.endsWith('_reveal')))continue;
+      if((route.quiet&&cue.kind!=='breath_contact')||(grabActive&&!cue.kind.endsWith('_reveal')))continue;
       const event={id:route.requestId+':'+generation+':'+iteration+':'+index,kind:cue.kind,
         requestId:route.requestId,generation,iteration,index,timeMs:time,side:cue.side,strength:cue.strength};
       contacts.push(event);lastContact=event;
@@ -135,9 +144,12 @@ export function createScenes({rand,reduced,profiles}) {
     const recoveryPose=active&&phase==='recover'?recoveryGesture(recipe.profile,variant,1-(recipe.duration-ageMs)/sceneConstants.recoveryMs):{lean:0,squash:0,forward:0};
     const quietActivity=route.state==='waiting'||route.state==='listening';
     const wave=quietActivity?.65+.35*Math.sin(ageMs/recipe.duration*Math.PI*2*(recipe.focusCycles||recipe.pulseCycles||1)):1;
+    // A snore's breath swells the sleeping body a little, rising and falling.
+    const swell=route.quiet&&lastContact?.kind==='breath_contact'&&time-lastContact.timeMs<snore.swellMs?
+      Math.sin((time-lastContact.timeMs)/snore.swellMs*Math.PI)**2*lastContact.strength*snore.swell:0;
     const target={
       lean:active?(recipe.lean*attack*recovery*wave+(lastContact?.side||0)*contact*.024+recoveryPose.lean)*scale:0,
-      squash:active?(-contact*.052+(success?.036:failure?-.048:0)*reveal+present*.018+recoveryPose.squash)*scale:0,
+      squash:active?(-contact*.052+(success?.036:failure?-.048:0)*reveal+present*.018+recoveryPose.squash)*scale:swell*scale,
       forward:active?(contact*.045+(success?.025:failure?-.035:0)*reveal+present*(route.state==='error'?-.025:.018)+recoveryPose.forward)*scale:0
     };
     for(const [name,m] of Object.entries(activity)){
@@ -178,8 +190,9 @@ export function createScenes({rand,reduced,profiles}) {
   function liveContent(name) {
     const attn=route.attention||{};
     if(name==='alert')return {requestId:route.requestId,agent:attn.agent||'',project:attn.project||'',name:attn.name||'',more:attn.more||0};
+    // A gift (proud's bug) shows beside its card; the key appears only with one.
     if(name==='result')return {state:route.state,label:recipe.label||(route.outcome==='success'?'COMPLETE':route.outcome==='failure'?'FAILED':'FINISHED'),
-      outcome:route.outcome,reveal:cardReveal()};
+      outcome:route.outcome,reveal:cardReveal(),...(recipe.gift?{gift:true}:{})};
     if(name==='start')return {label:recipe.label,ctx:route.ctx,reveal:cardReveal()};
     if(name==='helpers')return {mode:route.state==='helper_return'?'return':'dispatch',count:recipe.helperCount,
       progress:smooth(ageMs/(recipe.contacts.at(-1)?.at||recipe.duration)),report:route.state==='helper_return'&&resultRevealed,

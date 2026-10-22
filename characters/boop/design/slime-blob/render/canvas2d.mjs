@@ -10,7 +10,8 @@ export function createCanvas2D(canvas,catalog){
       const w=replacement.width,h=replacement.height;
       ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
       const [lean,squash,ripple]=pose,sx=1/Math.sqrt(1+squash*.52),sy=1+squash*.52;
-      ctx.save();ctx.translate(w*.5,h*.74);ctx.scale(w/4.5,h/3.35);
+      // A gag's slide carries the dome and its shadow sideways.
+      ctx.save();ctx.translate(w*.5,h*.74);ctx.scale(w/4.5,h/3.35);ctx.translate(channels.slide||0,0);
       const shadow=ctx.createRadialGradient(0,0,.1,0,0,1.35);shadow.addColorStop(0,'rgba(0,0,0,.6)');shadow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=shadow;ctx.save();ctx.scale(1,.21);ctx.beginPath();ctx.arc(0,0,1.4,0,Math.PI*2);ctx.fill();ctx.restore();
       const pull=grab.pull;ctx.translate(pull[0]*.35,-pull[1]*.35-life[0]);ctx.rotate(-life[1]);
       ctx.transform(sx+Math.abs(pull[0])*.12,0,lean*.25-pull[0]*.18,sy+Math.abs(pull[1])*.12,0,0);ctx.beginPath();

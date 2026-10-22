@@ -42,7 +42,7 @@ Studio.register('boop',{
     for(const name of Object.keys(window.SlimeScripts||{})){const o=document.createElement('option');o.value=name;o.textContent=name.replace('.jsonl','').replaceAll('-',' ');$('[data-script]').append(o);}
     $('[data-play-script]').addEventListener('click',()=>slime.playScript($('[data-script]').value));
     $('[data-stop-script]').addEventListener('click',()=>{slime.stopScript();$('[data-script-status]').textContent='Script stopped. The slime keeps its last facts.';});
-    const sketches={squish:'Gel squish',bounce:'Soft landing',wobble:'Elastic wobble',poke:'Tiny poke',keyboard:'Crisp key',tear:'Tear plip',knock_ding:'Knock → ding',complete:'Success swell',failed:'Failure cue'};
+    const sketches={squish:'Gel squish',bounce:'Soft landing',wobble:'Elastic wobble',poke:'Tiny poke',keyboard:'Crisp key',tear:'Tear plip',knock_ding:'Knock → ding',complete:'Success swell',failed:'Failure cue',sneeze:'Little sneeze',breath:'Snore breath'};
     let sketchCount=0;
     for(const [name,label] of Object.entries(sketches)){
       const b=document.createElement('button');b.type='button';b.textContent=label;
@@ -65,10 +65,13 @@ Studio.register('boop',{
         if(want!==face){face=want;slime.setFace(want);choice='auto';}
         const key=[s.state,s.outcome,s.context].join('/');
         if(key!==fact){fact=key;slime.setState(s.state,{outcome:s.outcome,context:s.context});}
-        const performances=profiles[want].performances;
-        const next=s.variant===0?'auto':String(Math.min(s.variant,performances.length)-1);
+        // Idle's takes: the mood's three gestures, then its comedy (its own
+        // gags and every mood's idle gags), as the engine deals them.
+        const catalog=window.SlimeCatalog,gags=[...(profiles[want].gags||[]),...(catalog.idleGags||[])].map(name=>catalog.gags[name]);
+        const takes=[...profiles[want].performances,...gags];
+        const next=s.variant===0?'auto':String(Math.min(s.variant,takes.length)-1);
         if(next!==choice){choice=next;slime.perform(next);}
-        return {variants:['Any gesture, at its own pace',...performances.map((p,i)=>`Gesture ${i+1} · ${p.label}`)],caption:''};
+        return {variants:['Any gesture, at its own pace',...takes.map((p,i)=>`${i<3?'Gesture':'Comedy'} ${i+1} · ${p.label}`)],caption:''};
       },
       faces(mood){
         const ids=Object.keys(profiles).filter(id=>id.includes(':')&&profiles[id].mood===mood);

@@ -40,6 +40,8 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 
 **Current gesture recipes:** Contented side sway (3 s); Long squishy exhale (4 s); Soft inward snuggle (3.2 s).
 
+**Its own comedy, idle only:** Long slow yawn (4.2 s).
+
 **Entry evidence:** Settled safe context or explicitly friendly interaction.
 
 **Ordinary →** `calm`, `lazy`, `pleased`, `shy`, `affectionate`, `tired`.
@@ -58,6 +60,8 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 
 **Current gesture recipes:** Droop and recover (3.8 s); Look aside and return (3.6 s); Sleepy slow nod (4.4 s).
 
+**Its own comedy, idle only:** Long slow yawn (4.2 s).
+
 **Entry evidence:** Low-stakes idle characterization; never a reason to delay the real task.
 
 **Ordinary →** `comfy`, `calm`, `bored`, `engaged`, `tired`.
@@ -75,6 +79,8 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 **Body intent:** Low sag, slow sideways glance and a tiny flattening sigh; no fake progress or repeated alerts.
 
 **Current gesture recipes:** Lean back and side-eye (2.8 s); Droop and recover (3.8 s); Long squishy exhale (4 s).
+
+**Its own comedy, idle only:** Long slow yawn (4.2 s).
 
 **Entry evidence:** Opted-in low-stimulation acting, not inferred abandonment.
 
@@ -95,6 +101,8 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 **Body intent:** Longer blinks, a small yawn squash and reduced movement amplitude while remaining productive.
 
 **Current gesture recipes:** Stretchy yawn (4.2 s); Sleepy slow nod (4.4 s); Droop and recover (3.8 s).
+
+**Its own comedy, idle only:** Long slow yawn (4.2 s).
 
 **Entry evidence:** Opted-in sustained-effort acting with a quieter performance budget.
 
@@ -169,6 +177,8 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 **Body intent:** Two short buoyant compress-and-lift beats with lively but bounded wobble, then continued activity.
 
 **Current gesture recipes:** Two eager hops (3 s); Laughing belly jiggle (3.6 s); Happy side-to-side wiggle (2.6 s).
+
+**Its own comedy, idle only:** Zoomies, edge to edge (2.6 s).
 
 **Entry evidence:** Fresh unusually positive progress, playful poke scene or earned celebration.
 
@@ -787,6 +797,14 @@ Faces are V3 review candidates; body descriptions below are choreography targets
 **Ordinary →** `confused`, `baffled`, `irritated`, `scared`, `tired`, `exhausted`.
 
 **Dramatic →** `frightened`, `angry`.
+
+## Idle comedy every mood shares
+
+After a mood's first round of gestures, its idle bag deals these too (CONTINUITY.md, Comedy):
+
+- `yawn-and-settle`: Yawn and settle (2.9 s).
+- `doze-and-snap`: Doze off and snap awake (3.6 s).
+- `sneeze-and-shake`: Sneeze and shake it off (2.7 s).
 
 ## Reference face alternates (not graph nodes)
 

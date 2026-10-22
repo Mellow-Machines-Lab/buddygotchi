@@ -152,6 +152,18 @@
       "cue": "One alert reveal per request; invariant notes",
       "duration": 0.68,
       "status": "contact-synchronized-sketch"
+    },
+    {
+      "id": "sneeze",
+      "cue": "An idle sneeze's lurch; sounds with the routine chance",
+      "duration": 0.3,
+      "status": "contact-synchronized-sketch"
+    },
+    {
+      "id": "breath",
+      "cue": "A snore's soft breath while asleep; sounds with the routine chance",
+      "duration": 0.55,
+      "status": "contact-synchronized-sketch"
     }
   ],
   "moodProfiles": {

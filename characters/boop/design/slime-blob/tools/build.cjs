@@ -21,6 +21,7 @@ for(const mood of Object.keys(graph.nodes))for(const state of plan.states){
   rows.push({id:mood+'.'+state.id,mood,state:state.id,scene:state.scene,expression:quiet?'shared-sleeping-face':mood,
     mode:quiet?'explicit-quiet-alias':'composed-active-cell',variations:state.variations.map(v=>state.id+'.'+v),
     requiredHostFacts:plan.hostFacts[state.id]||{},factVariations:state.factVariations||{},moodSoundProfile:mood,audioPolicy:state.audioPolicy,
+    variationAudio:state.variationAudio||{},
     status:exercised.has(mood+'.'+state.id)?(quiet?'quiet-alias':'implemented'):(quiet?'planned-shared-rest':'planned-state-layer'),faceStatus:quiet?(exercised.has(mood+'.'+state.id)?'shared-sleeping-face':'planned-shared-sleeping-face'):'candidate-art-present',review:exercised.has(mood+'.'+state.id)?'engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches':'pending-integrated-animation-and-sound'});
 }
 write('coverage.json',{version:1,status:'FULL SCENE MATRIX TESTED; CONTACT SOUND IMPLEMENTED; TIMBRES SKETCHES',cells:rows});
@@ -45,12 +46,15 @@ for(const [family,group] of Object.entries(graph.families)){
     md+='**Face:** '+e.art.note+'\n\n';
     md+='**Body intent:** '+n.bodyPerformance+'\n\n';
     md+='**Current gesture recipes:** '+e.performances.map(p=>p.label+' ('+p.duration+' s)').join('; ')+'.\n\n';
+    if(e.gags)md+='**Its own comedy, idle only:** '+e.gags.map(id=>catalog.gags[id].label+' ('+catalog.gags[id].duration+' s)').join('; ')+'.\n\n';
     md+='**Entry evidence:** '+n.entryCues.join('; ')+'.\n\n';
     md+='**Ordinary →** '+n.ordinary.map(v=>'`'+v+'`').join(', ')+'.\n\n';
     md+='**Dramatic →** '+(n.dramatic.length?n.dramatic.map(v=>'`'+v+'`').join(', '):'none')+'.\n\n';
   }
 }
-md+='## Reference face alternates (not graph nodes)\n\n';
+md+='## Idle comedy every mood shares\n\nAfter a mood\'s first round of gestures, its idle bag deals these too (CONTINUITY.md, Comedy):\n\n';
+for(const id of catalog.idleGags)md+='- `'+id+'`: '+catalog.gags[id].label+' ('+catalog.gags[id].duration+' s).\n';
+md+='\n## Reference face alternates (not graph nodes)\n\n';
 for(const [id,e] of Object.entries(catalog.expressions).filter(([id])=>id.includes(':')))md+='- `'+id+'` → mood `'+e.mood+'`: '+e.art.note+'\n';
 md+='\n## Supplied references and their mappings\n\n';
 for(const r of catalog.referenceMapping)md+='- '+r.reference+' → expression `'+r.expression+'`, mood `'+r.mood+'`'+(r.relatedMood?' (related `'+r.relatedMood+'`)':'')+'.\n';

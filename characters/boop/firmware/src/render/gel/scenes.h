@@ -13,6 +13,21 @@ inline int recipeState(SceneState state, Outcome outcome, StartCtx ctx) {
   return int(state);
 }
 static_assert(int(SceneState::kCount) + 2 + 4 == slime::kRecipeStates, "recipe rows: states, outcomes, contexts");
+// A row's takes: three, and a fourth for two rows, asleep's snore and a
+// successful finish's hiccups (scenes/index.mjs takesOf). The fourths are a
+// table of their own, so the other rows stay three.
+static_assert(slime::kMaxTakes == 4 && slime::kFourthRows == 2, "two rows have a fourth take");
+static_assert(slime::kRecipeTakes[int(SceneState::kAsleep)] == 4 && slime::kRecipeTakes[int(SceneState::kCount)] == 4 &&
+                  slime::kRecipeTakes[int(SceneState::kCount) + 1] == 3 &&
+                  slime::kRecipeTakes[int(SceneState::kNoApp)] == 3,
+              "asleep and a success have a fourth take; a failure and a lost link don't");
+inline int takes(int row) { return slime::kRecipeTakes[row]; }
+inline const slime::Recipe& take(int profile, int row, int variant) {
+  return variant < 3 ? slime::kRecipes[profile][row][variant] : slime::kFourthTakes[profile][slime::kFourthRow[row]];
+}
+// Idle's takes: an expression's three gestures, its own gags, then the idle
+// gags (acting.h Acting::takes), at most this many.
+static_assert(slime::kMaxGestures == 7, "three gestures, an own gag and three idle gags");
 enum ContactKind {
   kKey,
   kKnock,
@@ -25,20 +40,17 @@ enum ContactKind {
   kHelper,
   kReply,
   kError,
-  kStopped
+  kStopped,
+  // Comedy's: a gag's sneeze and zoomies, a snore's breath.
+  kSneeze,
+  kBreath,
+  kZoom
 };
-// A contact as it fires. The reference's id for it is
-// "requestId:generation:iteration:index", which nothing on the device
-// reads, so only the trace check spells it out (gel-trace): building it on
-// every contact cost the board's heap a few allocations each.
-struct ContactEvent {
-  std::string requestId;
-  int generation = 0, iteration = 0, index = 0;
-  uint8_t kind = 0;
-  int side = 0;
-  T timeMs;
-  F strength;
-};
+static_assert(kZoom + 1 == slime::kContactKinds, "contact kinds as slimegen numbers them");
+// A reveal: the alert's, or a card's or a start's.
+constexpr bool reveals(int kind) { return kind >= kAlert && kind <= kStopped; }
+// Comedy's contacts sound even in a quiet state, with the routine chance.
+constexpr bool comedy(int kind) { return kind >= kSneeze; }
 // scenes/ramp.mjs: a prop's visibility over kPropRampMs. A cubic Hermite from
 // the current value and slope: a smoothstep from rest, continuous in value and
 // velocity on a reversal, exact at its end.
@@ -66,7 +78,7 @@ struct Scenes {
   ContactEvent last;
   bool hasLast = false, resultRevealed = false, completed = false, quietRestored = false;
   const char* phase = "sustain";
-  Bag bags[slime::kCanonical][slime::kRecipeStates];
+  Bag<slime::kMaxTakes> bags[slime::kCanonical][slime::kRecipeStates];
   // The catalog is immutable. Keep its address and the jitter seed instead
   // of copying every contact into each of the two 64-entry histories. An
   // alert also keeps how far it got, so an interrupted one resumes there.
@@ -95,7 +107,7 @@ struct Scenes {
   } alertProp;
   struct {
     SceneState state = SceneState::kIdle;
-    bool known = false;
+    bool known = false, gift = false;  // a gift: proud's bug beside its card
     const char* label = "FINISHED";
     Outcome outcome = Outcome::kNone;
     F reveal;
