@@ -479,6 +479,7 @@ func openVerb(_ target: ThreadLink.Target) -> String {
     case .url(let url) where url.hasPrefix("codex:"): "open it in Codex"
     case .url: "open it"
     case .app(let id): "switch to " + appName(id)
+    case .terminal(let app, _): "open its tab in " + appName(app)
     }
 }
 
