@@ -1,5 +1,6 @@
 ---
 working_heartbeat: 90-180
+idle_heartbeat: 900-1800
 tool_uses: notable
 ---
 <!-- The boop personality: settings for the view's rules, then the PERSONALITY section. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
@@ -14,7 +15,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -65,6 +67,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -77,6 +87,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".

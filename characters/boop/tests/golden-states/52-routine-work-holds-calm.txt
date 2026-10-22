@@ -44,6 +44,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -92,6 +95,8 @@ Examples:
   → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice
+- NOW: Nothing has happened for 10 min; claude sits idle on "api".
+  → bored, quiet in a phrase, twice
 - NOW: You came back to the Mac after a short break.
   → excited, glad in a sound, then hello, three times
 
@@ -201,6 +206,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -249,6 +257,8 @@ Examples:
   → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice
+- NOW: Nothing has happened for 10 min; claude sits idle on "api".
+  → bored, quiet in a phrase, twice
 - NOW: You came back to the Mac after a short break.
   → excited, glad in a sound, then hello, three times
 

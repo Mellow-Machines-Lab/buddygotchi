@@ -40,15 +40,21 @@ public struct Personality: RawRepresentable, Hashable, Sendable {
 
         /// The working heartbeat's wait, in milliseconds, or none.
         public var workBeatMs: ClosedRange<Int>?
+        /// The idle check-in's wait, in milliseconds, or none: only the
+        /// hourly heartbeat, as before there were check-ins.
+        public var idleBeatMs: ClosedRange<Int>?
         public var toolUses: ToolUses
 
-        public init(workBeatMs: ClosedRange<Int>? = 90_000...180_000, toolUses: ToolUses = .notable) {
+        public init(workBeatMs: ClosedRange<Int>? = 90_000...180_000, idleBeatMs: ClosedRange<Int>? = nil,
+                    toolUses: ToolUses = .notable) {
             self.workBeatMs = workBeatMs
+            self.idleBeatMs = idleBeatMs
             self.toolUses = toolUses
         }
 
-        /// Reads `working_heartbeat` and `tool_uses` from a front-matter block;
-        /// anything missing or unreadable keeps its default.
+        /// Reads `working_heartbeat`, `idle_heartbeat` and `tool_uses` from a
+        /// front-matter block; anything missing or unreadable keeps its
+        /// default.
         public init(frontMatter: String) {
             self.init()
             for line in frontMatter.split(separator: "\n") {
@@ -56,18 +62,20 @@ public struct Personality: RawRepresentable, Hashable, Sendable {
                 guard parts.count == 2 else { continue }
                 switch parts[0] {
                 case "tool_uses": if let t = ToolUses(rawValue: parts[1]) { toolUses = t }
-                case "working_heartbeat":
-                    if parts[1] == "none" {
-                        workBeatMs = nil
-                    } else {
-                        let bounds = parts[1].split(separator: "-").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
-                        if bounds.count == 2, bounds[0] > 0, bounds[0] <= bounds[1] {
-                            workBeatMs = bounds[0] * 1000...bounds[1] * 1000
-                        }
-                    }
+                case "working_heartbeat": workBeatMs = Rules.seconds(parts[1], else: workBeatMs)
+                case "idle_heartbeat": idleBeatMs = Rules.seconds(parts[1], else: idleBeatMs)
                 default: break
                 }
             }
+        }
+
+        /// A range of seconds (`90-180`) in milliseconds, nil for `none`,
+        /// or `old` for anything unreadable.
+        static func seconds(_ text: String, else old: ClosedRange<Int>?) -> ClosedRange<Int>? {
+            if text == "none" { return nil }
+            let bounds = text.split(separator: "-").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+            guard bounds.count == 2, bounds[0] > 0, bounds[0] <= bounds[1] else { return old }
+            return bounds[0] * 1000...bounds[1] * 1000
         }
     }
 }

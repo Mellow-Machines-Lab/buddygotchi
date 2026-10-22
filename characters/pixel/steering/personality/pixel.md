@@ -1,5 +1,6 @@
 ---
 working_heartbeat: 120-240
+idle_heartbeat: 1200-2400
 tool_uses: notable
 ---
 <!-- The pixel personality: settings for the view's rules, then the PERSONALITY section (characters/CHARACTER.md §7). Comments are left out of the state. -->
@@ -26,4 +27,7 @@ Examples:
   amused, then cosy and quiet, a new face on each rung.
 - Check-ins on a long turn: engaged, then hopeful about the tests, then
   bored, then determined.
+- An idle check-in: a bored or lazy face, or nothing. A poke while it
+  slept: surprised. You answering an agent: pleased. The agent's
+  context compacted: confused, where was it?
 - A turn starting, a tool call, a check passing mid-turn: no face.

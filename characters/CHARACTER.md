@@ -304,8 +304,10 @@ What the brain reads, in plain Markdown:
 - `guide.md` (required): how the creature reads what happens, read on
   every pass.
 - `personality/<name>.md` (one per name in `personalities`): who it is,
-  with front matter for the view's rules (`working_heartbeat`,
-  `tool_uses`).
+  with front matter for the view's rules: `working_heartbeat` (seconds
+  between check-ins on a turn), `idle_heartbeat` (seconds between idle
+  check-ins while you're around and no agent works; without it, only
+  the hourly heartbeat) and `tool_uses`.
 - `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
   person chose at setup, saved in `long-term.md`. The chosen one goes
   into the prompt right after the personality's PERSONALITY section,

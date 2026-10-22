@@ -1,0 +1,11 @@
+{
+  "name": "Idle check-ins get a small face or nothing",
+  "case": "A quick turn finishes and then the person is around but nothing happens for fifty minutes, with the session open. Boop checks in now and then: a bored, lazy, calm or comfy face, or nothing, never a finish, and its mood barely moves.",
+  "why": "The idle heartbeat comes every 15 to 30 minutes for two hours after the last activity while a session is open (TranscriptView.idleWindowMs, boop's idle_heartbeat 900-1800); PERSONALITY: an idle check-in gets a small face or nothing, and moves the mood only to fade it",
+  "checks": {"reactions": "1-4", "mood_changes": "-2", "moves_on_graph": true},
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn finished", "at": "30s"},
+    {"event": "wait", "at": "50m", "expect": {"react": "bored|lazy|calm|comfy|tired|none", "animation": "none"}}
+  ]
+}

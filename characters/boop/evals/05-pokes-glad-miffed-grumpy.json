@@ -4,6 +4,7 @@
   "always": true,
   "why": "PERSONALITY's Examples and the react question: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "animation": "none", "mood": "curious|happy", "said": "some"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "annoyed"}},
     {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "irritated|grumpy"}},

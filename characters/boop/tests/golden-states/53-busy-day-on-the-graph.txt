@@ -44,6 +44,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -59,7 +62,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -110,6 +114,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -122,6 +134,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -212,6 +228,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -227,7 +246,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -278,6 +298,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -290,6 +318,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -375,6 +407,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -390,7 +425,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -441,6 +477,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -453,6 +497,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -544,6 +592,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -559,7 +610,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -610,6 +662,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -622,6 +682,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -719,6 +783,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -734,7 +801,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -785,6 +853,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -797,6 +873,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -898,6 +978,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -913,7 +996,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -964,6 +1048,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -976,6 +1068,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -1078,6 +1174,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -1093,7 +1192,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1144,6 +1244,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -1156,6 +1264,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -1260,6 +1372,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -1275,7 +1390,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1326,6 +1442,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -1338,6 +1462,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -1526,6 +1654,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -1541,7 +1672,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1592,6 +1724,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -1604,6 +1744,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -1681,6 +1825,46 @@ claude started turn 3 on "landing".
 Boop did nothing on its own.
 === pass 13
 HISTORY (oldest first; indented lines add to the line above)
+9 min ago: claude's tests failed again on "landing", 2 times in a row.
+  Boop reacted to the error on its own.
+  Boop's mood changed: comfy → calm.
+  Boop made an annoyed face, held twice, and said "Doh Probe".
+8 min ago: claude's tests passed on "landing" after failing.
+  Boop's mood changed: calm → curious.
+  Boop made a happy face, held once, and said "Mwahaha... Checking".
+8 min ago: claude finished turn 1 on "landing": done, a long turn, 3 tool calls.
+  Its last message: "Added pagination; the tests pass."
+  Boop's mood changed: curious → engaged.
+  Boop played a success in a happy face, held once, and said "Heh... Verify".
+6 min ago: You poked Boop.
+  Boop wiggled on its own.
+  Boop's mood changed: engaged → calm.
+  Boop made a curious face, held once, and said "Tickles Careful".
+6 min ago: You poked Boop 2 times in a row.
+  Boop wiggled on its own.
+  Boop's mood changed: calm → comfy.
+  Boop made a curious face, held once, and said "Whoa Work".
+6 min ago: You poked Boop 3 times in a row.
+  Boop wiggled on its own.
+  Boop's mood changed: comfy → calm.
+  Boop made a curious face, held once, and said "Boop Easy".
+5 min ago: You said to Boop: "sorry, didn't mean to"
+  Boop made a proud face, held once, and said "Busy".
+3 min ago: claude started turn 2 on "landing".
+  You asked: "why is the build so slow?"
+3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
+  Its last message: "It compiles every test file twice. Want me to fix that?"
+  Boop's mood changed: calm → curious.
+  Boop played a success in a happy face, held once, and said "Phew... Fixed".
+1 min ago: claude started turn 3 on "landing".
+  You asked: "yes please"
+Boop has been curious for 3 min.
+
+NOW (14:11, Wednesday)
+claude is still working on "landing", a long turn.
+Boop did nothing on its own.
+=== pass 14
+HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude's tests failed again on "landing", 2 times in a row.
   Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
@@ -1714,12 +1898,14 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 2 min ago: claude started turn 3 on "landing".
   You asked: "yes please"
+just now: claude is still working on "landing", a long turn.
+  Boop made an engaged face, held once, and said "Hup".
 Boop has been curious for 3 min.
 
 NOW (14:12, Wednesday)
 claude's build failed on "landing".
 Boop reacted to the error on its own.
-=== pass 14
+=== pass 15
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -1765,6 +1951,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -1780,7 +1969,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1831,6 +2021,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -1843,6 +2041,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -1874,57 +2076,37 @@ agent; sad when a very long turn fails, the agent gives up or the
 person shares sad news; wounded at rude words to Boop.
 
 HISTORY (oldest first; indented lines add to the line above)
-8 min ago: You poked Boop.
+9 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: engaged → calm.
   Boop made a curious face, held once, and said "Tickles Careful".
-8 min ago: You poked Boop 2 times in a row.
+9 min ago: You poked Boop 2 times in a row.
   Boop wiggled on its own.
   Boop's mood changed: calm → comfy.
   Boop made a curious face, held once, and said "Whoa Work".
-8 min ago: You poked Boop 3 times in a row.
+9 min ago: You poked Boop 3 times in a row.
   Boop wiggled on its own.
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Boop Easy".
-7 min ago: You said to Boop: "sorry, didn't mean to"
+8 min ago: You said to Boop: "sorry, didn't mean to"
   Boop made a proud face, held once, and said "Busy".
-5 min ago: claude started turn 2 on "landing".
-  You asked: "why is the build so slow?"
-5 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
-  Its last message: "It compiles every test file twice. Want me to fix that?"
-  Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Phew... Fixed".
-3 min ago: claude started turn 3 on "landing".
-  You asked: "yes please"
-1 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-
-NOW (14:13, Wednesday)
-claude is still working on "landing", a long turn, running a build.
-Boop did nothing on its own.
-=== pass 15
-HISTORY (oldest first; indented lines add to the line above)
-9 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
-7 min ago: claude started turn 2 on "landing".
+6 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
 6 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
-5 min ago: claude started turn 3 on "landing".
+4 min ago: claude started turn 3 on "landing".
   You asked: "yes please"
-3 min ago: claude's build failed on "landing".
+3 min ago: claude is still working on "landing", a long turn.
+  Boop made an engaged face, held once, and said "Hup".
+2 min ago: claude's build failed on "landing".
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-1 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an annoyed face, held twice, and said "Ouch Busy".
 
-NOW (14:15, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
+NOW (14:14, Wednesday)
+claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in on this turn.
 Boop did nothing on its own.
 === pass 16
@@ -1939,15 +2121,15 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 6 min ago: claude started turn 3 on "landing".
   You asked: "yes please"
+4 min ago: claude is still working on "landing", a long turn.
+  Boop made an engaged face, held once, and said "Hup".
 4 min ago: claude's build failed on "landing".
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-2 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
-just now: claude is still working on "landing", a very long turn, running a build.
+  Boop made an annoyed face, held twice, and said "Ouch Busy".
+1 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Ngh".
 
 NOW (14:16, Wednesday)
 claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
@@ -1998,6 +2180,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -2013,7 +2198,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2064,6 +2250,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -2076,6 +2270,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -2112,15 +2310,15 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
 8 min ago: claude started turn 3 on "landing".
   You asked: "yes please"
+6 min ago: claude is still working on "landing", a long turn.
+  Boop made an engaged face, held once, and said "Hup".
 6 min ago: claude's build failed on "landing".
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-4 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an annoyed face, held twice, and said "Ouch Busy".
+3 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Ngh".
 2 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face, held twice, and said "Basta".
@@ -2132,53 +2330,28 @@ claude started turn 4 on "landing".
 Boop did nothing on its own.
 === pass 18
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude started turn 3 on "landing".
-  You asked: "yes please"
-7 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-6 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-3 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
-  Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Basta".
-1 min ago: claude started turn 4 on "landing".
-  You asked: "it's still broken, why does this keep happening"
-Boop has been comfy for 3 min.
-
-NOW (14:19, Wednesday)
-claude is still working on "landing", a long turn.
-Boop did nothing on its own.
-=== pass 19
-HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 3 on "landing".
   You asked: "yes please"
+8 min ago: claude is still working on "landing", a long turn.
+  Boop made an engaged face, held once, and said "Hup".
 8 min ago: claude's build failed on "landing".
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Aigo Work".
-6 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an annoyed face, held twice, and said "Ouch Busy".
+5 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Ngh".
 4 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face, held twice, and said "Basta".
 2 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-just now: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
 Boop has been comfy for 4 min.
 
 NOW (14:20, Wednesday)
 claude's build passed on "landing" after failing.
 Boop did nothing on its own.
-=== pass 20
+=== pass 19
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -2224,6 +2397,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -2239,7 +2415,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2290,6 +2467,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -2302,6 +2487,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -2331,90 +2520,103 @@ happens; comfy at kind words; surprised at a big, sudden event. Fades
 to calm once Boop has been lazy for 10 min.
 
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Nnh".
-7 min ago: claude is still working on "landing", a very long turn, running a build.
+7 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Ngh".
 6 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face, held twice, and said "Basta".
 4 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-3 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
 2 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
 Boop has been lazy for 2 min.
 
 NOW (14:22, Wednesday)
 claude is still working on "landing", a long turn, running a build.
+Boop did nothing on its own.
+=== pass 20
+HISTORY (oldest first; indented lines add to the line above)
+9 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
+  Boop made an engaged face, held once, and said "Ngh".
+8 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
+  Boop's mood changed: calm → comfy.
+  Boop played a failure in an annoyed face, held twice, and said "Basta".
+6 min ago: claude started turn 4 on "landing".
+  You asked: "it's still broken, why does this keep happening"
+4 min ago: claude's build passed on "landing" after failing.
+  Boop's mood changed: comfy → lazy.
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
+2 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop made an engaged face, held once, and said "Nnh".
+Boop has been lazy for 4 min.
+
+NOW (14:24, Wednesday)
+claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in on this turn.
 Boop did nothing on its own.
 === pass 21
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
-  Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Basta".
-7 min ago: claude started turn 4 on "landing".
+9 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-5 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
-5 min ago: claude's build passed on "landing" after failing.
+7 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
-2 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop's 2nd check-in on this turn.
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
+5 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-Boop has been lazy for 5 min.
+3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
+  Boop made an engaged face, held once, and said "Rrr... tik".
+Boop has been lazy for 7 min.
 
-NOW (14:25, Wednesday)
+NOW (14:27, Wednesday)
 claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in on this turn.
 Boop did nothing on its own.
 === pass 22
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude started turn 4 on "landing".
+11 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-8 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
-7 min ago: claude's build passed on "landing" after failing.
+9 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
-5 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop's 2nd check-in on this turn.
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
+7 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
+  Boop made an engaged face, held once, and said "Rrr... tik".
+1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in on this turn.
-  Boop made an engaged face, held once, and said "Ngh".
-Boop has been lazy for 7 min.
+  Boop made an engaged face, held once, and said "Hrr...".
+Boop has been lazy for 9 min.
 
-NOW (14:27, Wednesday)
+NOW (14:29, Wednesday)
 claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
 === pass 23
 HISTORY (oldest first; indented lines add to the line above)
-11 min ago: claude started turn 4 on "landing".
+12 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-9 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
-9 min ago: claude's build passed on "landing" after failing.
+10 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
-6 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop's 2nd check-in on this turn.
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
+8 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
+  Boop made an engaged face, held once, and said "Rrr... tik".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in on this turn.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hrr...".
 1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-Boop has been lazy for 9 min.
+Boop has been lazy for 10 min.
 
-NOW (14:29, Wednesday)
+NOW (14:30, Wednesday)
 claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
@@ -2422,21 +2624,21 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 14 min ago: claude started turn 4 on "landing".
   You asked: "it's still broken, why does this keep happening"
-12 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
 12 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
-9 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop's 2nd check-in on this turn.
+  Boop made a happy face, held once, and said "Mwahaha... Gently".
+10 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-6 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in on this turn.
-  Boop made an engaged face, held once, and said "Ngh".
+7 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
+  Boop made an engaged face, held once, and said "Rrr... tik".
 4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
+  Boop made an engaged face, held once, and said "Hrr...".
+3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
+1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
 Boop has been lazy for 12 min.
@@ -2447,58 +2649,28 @@ claude is still working on "landing", a very long turn, running a build.
 Boop did nothing on its own.
 === pass 25
 HISTORY (oldest first; indented lines add to the line above)
-15 min ago: claude started turn 4 on "landing".
-  You asked: "it's still broken, why does this keep happening"
-14 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Ngh".
-13 min ago: claude's build passed on "landing" after failing.
-  Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Mm-hm Busy".
-11 min ago: claude is still working on "landing", a long turn, running a build.
+9 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
-8 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in on this turn.
-  Boop made an engaged face, held once, and said "Ngh".
-5 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Hup".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Nnh".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Hup".
-Boop has been lazy for 13 min.
-
-NOW (14:33, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-Boop did nothing on its own.
-=== pass 26
-HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in on this turn.
-  Boop made an engaged face, held once, and said "Ngh".
-6 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Hup".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Nnh".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Hup".
-just now: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Rrr... tik".
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
+  Boop made an engaged face, held once, and said "Hrr...".
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
+  Boop made an engaged face, held once, and said "Hup".
+3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
+  Boop made an engaged face, held once, and said "Nnh".
+1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
+  Boop made an engaged face, held once, and said "Hup".
 Boop has been lazy for 14 min.
 
 NOW (14:34, Wednesday)
 claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
   Its last message: "Done: the build is twice as fast and everything passes."
 Boop did nothing on its own.
-=== pass 27
+=== pass 26
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -2544,6 +2716,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -2559,7 +2734,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2610,6 +2786,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -2622,6 +2806,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -2654,44 +2842,44 @@ person shares sad news; wounded at rude words to Boop.
 
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
+  Boop made an engaged face, held once, and said "Hrr...".
+6 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-6 min ago: claude is still working on "landing", a very long turn, running a build.
+5 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
   Its last message: "Done: the build is twice as fast and everything passes."
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face, held once, and said "Haa... Finished".
+  Boop played a success in a happy face, held once, and said "Phew... Finished".
 
 NOW (14:36, Wednesday)
 claude started turn 5 on "landing".
   You asked: "perfect, thank you!"
 Boop did nothing on its own.
-=== pass 28
+=== pass 27
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
+  Boop made an engaged face, held once, and said "Hrr...".
+7 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-6 min ago: claude is still working on "landing", a very long turn, running a build.
+5 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
+3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in on this turn, or later.
-  Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
   Its last message: "Done: the build is twice as fast and everything passes."
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face, held once, and said "Haa... Finished".
+  Boop played a success in a happy face, held once, and said "Phew... Finished".
 just now: claude started turn 5 on "landing".
   You asked: "perfect, thank you!"
 
@@ -2699,7 +2887,7 @@ NOW (14:36, Wednesday)
 claude finished turn 5 on "landing": done, a short turn, no tool calls.
   Its last message: "You're welcome!"
 Boop did nothing on its own.
-=== pass 29
+=== pass 28
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -2745,6 +2933,9 @@ How to read HISTORY and NOW:
   note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -2760,7 +2951,8 @@ A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
-check-in, never none.
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2811,6 +3003,14 @@ Examples:
   → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a phrase, twice
 - NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
@@ -2823,6 +3023,10 @@ Examples:
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
@@ -2855,8 +3059,15 @@ at rude words to Boop. Fades to calm once Boop has been curious for 2
 min.
 
 HISTORY (oldest first; indented lines add to the line above)
-Boop has been curious for 1 h.
+Boop has been curious for 26 min.
 
-NOW (15:36, Wednesday)
-Nothing has happened for 1 hour.
+NOW (15:02, Wednesday)
+Nothing has happened for 26 min; claude sits idle on "landing".
+Boop did nothing on its own.
+=== pass 29
+HISTORY (oldest first; indented lines add to the line above)
+Boop has been curious for 47 min.
+
+NOW (15:24, Wednesday)
+Nothing has happened for 47 min; claude sits idle on "landing".
 Boop did nothing on its own.

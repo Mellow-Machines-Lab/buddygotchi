@@ -124,8 +124,12 @@ public final class TranscriptView {
         /// The sessions, and what each one's turn did.
         var sessions: SessionTracker
         var counts: [String: Counts] = [:]
-        /// The run of pokes going on, on each buddy (`""` for the only one).
+        /// The run of pokes going on, on each buddy (`""` for the only one),
+        /// when the run before it ended, and whether this one came again,
+        /// within `againMs` of that.
         var pokes: [String: [Int64]] = [:]
+        var lastPokeRun: [String: Int64] = [:]
+        var pokedAgain: [String: Bool] = [:]
         /// The away you haven't come back from: its
         /// event's `seq` and when you left.
         var awaySince: (seq: Int, at: Int64)?
@@ -133,8 +137,10 @@ public final class TranscriptView {
         /// the idle heartbeats since.
         var lastActivityAt: Int64?
         var heartbeats = 0
-        /// The last event folded.
+        /// The last event folded, and whether the last agent event had a
+        /// line: a request it answered says so only when it didn't.
         var at = 0
+        var lastAgentLined = false
 
         init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place) }
     }
@@ -154,6 +160,10 @@ public final class TranscriptView {
     /// a reaction (the newest `react` start it has seen), with its random
     /// waits.
     var nextWorkBeatAt: Int64?
+    /// The idle check-in's schedule: when it's next due, drawn after the
+    /// activity it follows (`idleBeatAfter`) and after each check-in.
+    var nextIdleBeatAt: Int64?
+    var idleBeatAfter: Int64?
     var reactSeen = 0
     var rng: SplitMix64
 
@@ -190,12 +200,22 @@ public final class TranscriptView {
     /// While no thread works, a heartbeat after this long with no event,
     /// and again every time as long again passes.
     public static let heartbeatMs: Int64 = 60 * 60 * 1000
+    /// For this long after the last agent event, poke, thing you said or
+    /// coming back, while a session is open and you're at the Mac, the
+    /// idle heartbeat comes at the personality's `idle_heartbeat` pace
+    /// instead: an idle check-in, so Boop has something to fidget at
+    /// while you're around.
+    public static let idleWindowMs: Int64 = 2 * 60 * 60 * 1000
+    /// A run of pokes within this of the run before it is that run again,
+    /// which its line says.
+    public static let againMs: Int64 = 2 * 60_000
 
     /// A new personality's settings, from the next event on. The working
     /// heartbeat starts its wait again at the new pace.
     public func setRules(_ rules: Personality.Rules) {
         self.rules = rules
         nextWorkBeatAt = nil
+        idleBeatAfter = nil
     }
 
     // MARK: - Registration
@@ -204,7 +224,7 @@ public final class TranscriptView {
     /// of a finished turn, which goes ahead of the rest.
     public static let wakes: [String: Int] = [
         "turn_start": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
-        "reacted": 0,
+        "reacted": 0, "session_start": 0, "needs_you_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain.
@@ -249,7 +269,7 @@ public final class TranscriptView {
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.talk?, nil), (.heartbeat?, nil),
-             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?): true
+             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
         }
@@ -299,7 +319,11 @@ public final class TranscriptView {
     /// them.
     func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
-        if let a = AgentEvent(e) { return agentEvent(a) }
+        if let a = AgentEvent(e) {
+            let line = agentEvent(a)
+            fold.lastAgentLined = line != nil
+            return line
+        }
         advance(to: e.at)
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return nil
@@ -394,7 +418,12 @@ public final class TranscriptView {
             }
             return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
                              message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
-        case .sessionStart, .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
+        case .sessionStart:
+            // The agent's context was compacted: it carries on from a
+            // summary. Any other session start is no line.
+            guard case .sessionStarted(let source) = change, source == Mapping.compacted else { return nil }
+            return Line(EventLine.compacted(agent: t.agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
+        case .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
             return nil
         }
     }
@@ -507,13 +536,20 @@ public final class TranscriptView {
         noteActivity(now)
         let who = e.buddy ?? ""
         var pokes = fold.pokes[who] ?? []
-        if let last = pokes.last, now - last >= Self.inARowMs { pokes.removeAll() }
+        if let last = pokes.last, now - last >= Self.inARowMs {
+            fold.lastPokeRun[who] = last
+            pokes.removeAll()
+        }
+        if pokes.isEmpty { fold.pokedAgain[who] = fold.lastPokeRun[who].map { now - $0 < Self.againMs } ?? false }
         pokes.append(now)
         fold.pokes[who] = pokes
         let count = pokes.count
         let seconds = max(1, Int((now - pokes[0] + 999) / 1000))
-        return Line(EventLine.poke(inARow: count, name: name(e)),
-                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))])
+        // The first poke of a run wakes Boop; the rest find it awake.
+        let asleep = count == 1 && fold.sessions.sessions.isEmpty, again = fold.pokedAgain[who] ?? false
+        return Line(EventLine.poke(inARow: count, name: name(e), asleep: asleep, again: again),
+                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds)), "asleep": .bool(asleep),
+                            "again": .bool(again)])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to
@@ -652,10 +688,26 @@ public final class TranscriptView {
             return Event(at: now, source: .clock, type: .heartbeat, specificType: "working")
         }
         nextWorkBeatAt = nil
-        guard !working, let last = fold.lastActivityAt, (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else {
-            return nil
+        guard !working, let last = fold.lastActivityAt else { return nil }
+        if idleCheckIns(at: now, since: last), let gap = rules.idleBeatMs {
+            if idleBeatAfter != last {
+                idleBeatAfter = last
+                nextIdleBeatAt = last + Int64(rng.int(in: gap))
+            }
+            guard let due = nextIdleBeatAt, now >= due else { return nil }
+            nextIdleBeatAt = now + Int64(rng.int(in: gap))
+            return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
         }
+        guard (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else { return nil }
         return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
+    }
+
+    /// Whether the idle heartbeat comes as a check-in at `now`, the last
+    /// activity at `last`: a session is open, you're at the Mac, and it's
+    /// within `idleWindowMs` of the last activity. Nights and weekends
+    /// stay hourly.
+    func idleCheckIns(at now: Int64, since last: Int64) -> Bool {
+        rules.idleBeatMs != nil && fold.awaySince == nil && !fold.sessions.sessions.isEmpty && now - last < Self.idleWindowMs
     }
 
     func heartbeat(_ e: Event) -> Line? {
@@ -676,6 +728,14 @@ public final class TranscriptView {
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
+        if idleCheckIns(at: now, since: last),
+           let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) {
+            // An idle check-in: you're around, and no agent works.
+            fold.heartbeats = Int(hours)
+            let t = Thread(s), minutes = (now - last) / 60_000
+            return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
+                        facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
+        }
         guard hours > 0 else { return nil }
         fold.heartbeats = Int(hours)
         return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
@@ -683,13 +743,23 @@ public final class TranscriptView {
 
     // MARK: Needs you
 
-    /// "Needs you" showing (the core's) is a line; its clearing isn't.
-    /// Whether a session waits is the fold's own sessions', not these
-    /// records'.
+    /// "Needs you" showing (the core's) is a line, and so is its clearing
+    /// when you answered (allowed or denied it) and the agent works on,
+    /// unless what answered it has a line of its own (tests failing right
+    /// after you allowed them): one moment, one line. One that cleared for
+    /// any other reason (forgotten, the session ended) or with the turn (a
+    /// stop) isn't. Whether a
+    /// session waits is the fold's own sessions', not these records'.
     func needs(_ e: Event) -> Line? {
-        guard e.phase == .start, let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)),
-              let session = e.session else { return nil }
-        let t = fold.sessions.sessions[SessionFold.key(agent, session)].map(Thread.init) ?? Thread(agent: agent, id: session)
+        guard let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session else { return nil }
+        let s = fold.sessions.sessions[SessionFold.key(agent, session)]
+        let t = s.map(Thread.init) ?? Thread(agent: agent, id: session)
+        if e.phase == .end {
+            guard e["outcome"]?.string == "done", s?.turn.startedAt != nil, !fold.lastAgentLined else { return nil }
+            noteActivity(e.at)
+            return Line(EventLine.answered(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
+        }
+        guard e.phase == .start else { return nil }
         // The request's own event is a tool call's wait; "needs you"
         // showing is when it has a line, after Codex's grace.
         return Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
@@ -726,7 +796,7 @@ public final class TranscriptView {
     /// A `ViewEvent` for `e` and its line, for what an input reports.
     func view(_ e: Event, _ line: Line, wakes: Bool, log: LogView) -> ViewEvent? {
         guard let type = e.type else { return nil }
-        let (shownType, shownPhase) = type == .needsYou ? (Event.Kind.tool, Event.Phase.wait) : (type, e.phase)
+        let (shownType, shownPhase) = type == .needsYou && e.phase == .start ? (Event.Kind.tool, Event.Phase.wait) : (type, e.phase)
         let from = type == .needsYou ? (e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq])
             : type == .presence && e.phase == .end ? [log.last(Event.kind(.presence, .start))?.seq, e.seq].compactMap { $0 }
             : [e.seq]
@@ -831,9 +901,14 @@ public enum EventLine {
         return names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names.last!
     }
 
-    /// `You poked Boop.`, or `You poked Boop 4 times in a row.`
-    public static func poke(inARow count: Int, name: String = CharacterPack.active.name) -> String {
-        count <= 1 ? "You poked \(name)." : "You poked \(name) \(count) times in a row."
+    /// `You poked Boop.`, or `You poked Boop 4 times in a row.`; `while it
+    /// slept` for a run's first poke with no session open, and `, again` (`again` for one poke) when
+    /// the run before ended under `againMs` ago: the brain can't count the
+    /// runs back in HISTORY.
+    public static func poke(inARow count: Int, name: String = CharacterPack.active.name, asleep: Bool = false,
+                            again: Bool = false) -> String {
+        let poked = count <= 1 ? "You poked \(name)" : "You poked \(name) \(count) times in a row"
+        return poked + (asleep ? " while it slept" : again ? (count <= 1 ? " again" : ", again") : "") + "."
     }
 
     /// You stepping away from the Mac.
@@ -846,6 +921,22 @@ public enum EventLine {
 
     public static func heartbeat(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."
+    }
+
+    /// The idle check-in: `Nothing has happened for 20 min; claude sits
+    /// idle on "api".`, the thread last active.
+    public static func idle(minutes: Int, agent: String, thread: String) -> String {
+        "Nothing has happened for \(minutes) min; \(agent) sits idle on \(thread)."
+    }
+
+    /// The agent's context compacted, mid-work.
+    public static func compacted(agent: String, thread: String) -> String {
+        "\(agent)'s context on \(thread) was compacted; it picks up where it left off."
+    }
+
+    /// You answered a request ("needs you" cleared): allowed or denied.
+    public static func answered(agent: String, thread: String) -> String {
+        "You answered \(agent) on \(thread)."
     }
 
     /// The working heartbeat: `claude is still working on "fix-nav"
@@ -889,6 +980,9 @@ public enum EventLine {
           note under it says which on this turn.
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
+        - An idle check-in ("Nothing has happened for 20 min") means the person is
+          around but no agent is working. A compacted context means the agent's
+          memory was squeezed to make room; it carries on from a summary.
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
           hours or more).

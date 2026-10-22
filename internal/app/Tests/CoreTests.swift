@@ -1117,7 +1117,7 @@ final class CoreNeedsYouTests: XCTestCase {
     /// A subagent you deny carries on, and one that then
     /// ends without another tool call sends only `SubagentStop`. Its end
     /// answers its own request and nobody else's, and the main agent's turn
-    /// goes on working. The brain doesn't hear of it.
+    /// goes on working. The brain hears only that you answered.
     func testASubagentsEndAnswersOnlyItsOwnRequest() {
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -1136,7 +1136,7 @@ final class CoreNeedsYouTests: XCTestCase {
         XCTAssertNil(states(fx).last?.attn)
         XCTAssertEqual(states(fx).last?.base, "working", "the main agent's turn goes on")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "working"]])
-        XCTAssertTrue(events(fx).isEmpty, "nothing for the brain")
+        XCTAssertEqual(events(fx).map(\.line), [#"You answered claude on "landing"."#], "you denied it, and nothing else")
         rig.send(.activity, tool: "Agent", failed: false)
         XCTAssertEqual(finished(rig.send(.turnEnd)), ["done"])
     }
@@ -1435,7 +1435,7 @@ final class CoreYouAndBoopTests: XCTestCase {
     func testAPokeWigglesByRuleAndReachesTheBrain() {
         let rig = CoreRig()
         let fx = rig.poke()
-        XCTAssertEqual(woke(fx), ["You poked \(creature)."])
+        XCTAssertEqual(woke(fx), ["You poked \(creature) while it slept."], "no session is open")
         XCTAssertEqual(rig.ruleActions, ["wiggle"])
         XCTAssertEqual(states(fx), [], "the rules add no reaction: the device has already wiggled")
         XCTAssertEqual(opened(fx), [])
@@ -1606,6 +1606,7 @@ final class CoreYouAndBoopTests: XCTestCase {
     /// line counts the ones in a row, each within 3 s of the last.
     func testPokesInARow() {
         let rig = CoreRig()
+        rig.send(.sessionStart)  // awake: with no session, a run's first poke finds Boop asleep
         var lines: [String] = []
         for _ in 0..<4 {
             lines += woke(rig.poke())
@@ -1614,7 +1615,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(lines, ["You poked \(creature).", "You poked \(creature) 2 times in a row.", "You poked \(creature) 3 times in a row.",
                                "You poked \(creature) 4 times in a row."])
         rig.wait(2100)
-        XCTAssertEqual(woke(rig.poke()), ["You poked \(creature)."], "3 s after the last")
+        XCTAssertEqual(woke(rig.poke()), ["You poked \(creature) again."], "3 s after the last: a new run, within 2 minutes of the last")
         var fx = Fx()
         for _ in 0..<20 { fx += rig.poke() }
         XCTAssertEqual(woke(fx).count, 20, "no limit")

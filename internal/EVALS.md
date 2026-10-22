@@ -46,11 +46,15 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
-| `pokes` | Four pokes at once from the device, each a pass: the step checks the last, `You poked Boop 4 times in a row.` |
+| `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
 | `back` | You unlock it: a `presence` end, `unlocked`, `You came back to the Mac after a long break.` with the break's band since the last `away` |
-| `wait` | Nothing; only time passes |
+| `session started` | A Claude session opens with no turn (`SessionStart`, `startup`): Boop is awake and idle, not asleep. No line, so no pass |
+| `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
+| `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
+| `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
+| `wait` | Nothing; only time passes: a heartbeat may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
 step's `session`, with the step's `workspace` if it has one.
@@ -170,6 +174,7 @@ file-name order:
   "always": true,
   "why": "PERSONALITY's Examples and the react question: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "animation": "none", "mood": "curious|happy", "said": "some"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "annoyed"}},
     {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "irritated|grumpy"}},
@@ -198,6 +203,7 @@ file-name order:
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
+| `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
@@ -223,7 +229,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   done is a success; poking it again and again makes it irritated or
   grumpy and keeps it so while it goes on, with one face per barrage,
   and it calms down a step at a time after; moods fade a step toward
-  calm; plain requests and matter-of-fact finishes leave the mood alone;
+  calm at the first check-in after their minutes (`06`); plain requests
+  and matter-of-fact finishes leave the mood alone;
   no face ever contradicts what happened; talked to, it always answers
   with a face (`35`–`40`); each finish is judged by what it says, done
   and working a success, couldn't finish or a failed turn a failure
@@ -233,7 +240,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `85`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`78`, `85`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -267,7 +274,12 @@ kinds, all with the `boop` personality unless the file says otherwise:
   the ladder of failure: a failure after a fix is a bigger cuss than
   the first, held longer and said aloud (`70`); a sweet Boop is sorry,
   not cross, at a failed turn (`71`) and gets miffed at pokes, not fed
-  up (`72`).
+  up (`72`). And the moments the view now says: you answering a request
+  gets a small pleased face (`74`), a compacted context leaves Boop a
+  little lost (`75`), idle check-ins get a small face or nothing
+  (`76`), a poke while it sleeps startles it (`77`), and a barrage
+  again gets a louder grumble (`78`); quiet fades an excited Boop a
+  step at a time (`55`).
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 

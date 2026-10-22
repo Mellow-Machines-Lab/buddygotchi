@@ -1,5 +1,6 @@
 ---
 working_heartbeat: 30-60
+idle_heartbeat: 300-600
 tool_uses: all
 ---
 <!-- The chatter personality: settings for the view's rules, then the PERSONALITY section. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
@@ -47,5 +48,7 @@ Examples:
   → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice
+- NOW: Nothing has happened for 10 min; claude sits idle on "api".
+  → bored, quiet in a phrase, twice
 - NOW: You came back to the Mac after a short break.
   → excited, glad in a sound, then hello, three times

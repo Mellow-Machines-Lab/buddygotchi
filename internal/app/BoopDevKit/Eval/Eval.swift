@@ -32,6 +32,8 @@ public struct Scenario: Sendable {
         public var message: String?
         /// What you said to Boop, for `said`.
         public var words: String?
+        /// How many pokes a `pokes` step makes, 4 unless it says.
+        public var count: Int?
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -151,7 +153,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -249,6 +251,10 @@ public struct Scenario: Sendable {
             if step.message != nil, event != "turn finished" { throw badStep("message is only for turn finished") }
             step.words = s["words"] as? String
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
+            if let c = s["count"] {
+                guard event == "pokes", let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
+                step.count = n
+            }
             if let reaction = s["reaction"] {
                 guard let text = reaction as? String, Scenario.end(text) != nil else {
                     throw badStep("reaction is done, in progress or failed: <why>")
@@ -730,7 +736,17 @@ public struct Eval {
             return [hook(.tool, .start, "PreToolUse", start),
                     hook(.tool, .end, step.failed == true ? "PostToolUseFailure" : "PostToolUse", end)]
         case "poke": return [{ $0.poke(at: now) }]
-        case "pokes": return (0..<4).map { _ in { $0.poke(at: now) } }
+        case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
+        // A Claude session opens with no turn yet: Boop is awake and idle,
+        // not asleep. No line, so no pass.
+        case "session started": return [hook(.session, .start, "SessionStart", ["source": "startup"])]
+        // The agent's context compacted, mid-turn: a session start that
+        // says so.
+        case "compact": return [hook(.session, .start, "SessionStart", ["source": "compact"])]
+        // Claude asks to run a command, and later you answer it: the
+        // request's wait, then its call's result.
+        case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]
+        case "answered": return [hook(.tool, .end, "PostToolUse", ["tool": "Bash", "failed": false])]
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.

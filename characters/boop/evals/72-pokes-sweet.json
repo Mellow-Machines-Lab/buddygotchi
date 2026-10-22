@@ -4,6 +4,7 @@
   "why": "characters/boop/steering/nature/sweet.md: warm, and its Example: one poke is an affectionate sound; the cheeky NATURE gets grumpy at pokes quicker",
   "nature": "sweet",
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "poke", "at": "0s", "expect": {"react": "happy|curious|affectionate|pleased", "animation": "none", "mood": "curious|happy"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated|curious|happy", "animation": "none", "mood": "annoyed|curious|happy"}},
     {"event": "poke", "at": "2s", "expect": {"react": "annoyed|irritated", "animation": "none", "kind": "sound|word|phrase", "mood": "annoyed|irritated"}}
