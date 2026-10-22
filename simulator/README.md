@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-16. A board with no board: the firmware's own code in a
+Updated 2026-10-21. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -12,6 +12,13 @@ make simulator            # builds it, then serves http://127.0.0.1:8206/
 Add `?face=gel` for Boop's own face and
 `?zoom=3` for a bigger one. It uses no Bluetooth, so an agent's shell may
 run it.
+
+**Every mood and state alongside.** The same server serves the
+[Character Studio](../characters/studio/README.md) at
+`http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
+state" link opens its matrix with `&board=/board`, so it marks the cell
+the board shows now (`/board`, under USB below; the first board's, with
+several).
 
 **With the Mac app.** While the simulator runs, Boop's Settings shows it
 under Device: **Use it** makes it Boop's body, with your real hooks and
@@ -169,6 +176,14 @@ BOOP_BRIDGE=/tmp/boop-sim-usb.sock internal/tools/boopctl run     # every scenar
 Only this Mac can reach it: the page is served on 127.0.0.1 and the
 socket is its user's alone. The newest page to open is the board.
 
+**What the board shows.** `GET /board` (`/board/NAME` for a cable) sends
+the board `{"t":"dbg.state"}` as a tool on the cable would, so the
+clients hear the reply too, and answers with the board's reply, or
+`null` when no page is open or it says nothing within a second. The
+studio's matrix asks once a second while it's open. Beside it,
+`/characters/` is the repository's `characters/` folder, tidied first,
+so nothing outside it is served.
+
 **Several boards.** One server can give each of several boards its own
 cable: `--cable NAME=SOCKET`, once for each, in place of `--socket`. Each
 cable is a WebSocket at `/usb/NAME` and its own socket, and there's no
@@ -256,7 +271,10 @@ make -C internal sim-test
   ways, a 900 KB one among them, and keeping a bridge's rules: a client
   that stops reading dropped while another hears every message, and a
   client's message over 512 bytes dropped whole; two cables, each page's
-  messages reaching its own socket and no other's; a recording played into a board in
+  messages reaching its own socket and no other's; `/board` answering with
+  the board's `dbg.state` and not a line before it, a tool hearing it too,
+  and `null` with no page; the studio served beside the page, and a `..`
+  kept inside `characters/`; a recording played into a board in
   order; and a voice file cut down to a demo's takes that the board plays
   from.
 

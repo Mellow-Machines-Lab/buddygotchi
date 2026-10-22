@@ -236,6 +236,48 @@ test('the cable never waits on a client, and drops a line too long for the board
   stuck.destroy();
 });
 
+// /board asks the page's board for dbg.state, as a tool on the cable would,
+// and the tools hear the reply too; with no board it says so. The Character
+// Studio is served beside the page, and nothing outside characters/.
+// Needs no build: an empty dist and a page that answers by itself.
+test('the board says what it shows, and the studio is beside it', async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
+  const socket = path.join(dir, 'usb.sock'), port = 18206 + Math.floor(Math.random() * 1000);
+  const empty = path.join(dir, 'dist');
+  execFileSync('mkdir', [empty]);
+  writeFileSync(path.join(empty, 'boop-sim.wasm'), '');
+  const server = spawn('python3', [path.join(repo, 'simulator/web/serve.py'), '--port', String(port), '--socket', socket, '--dist', empty]);
+  t.after(() => server.kill());
+  for (let i = 0; i < 100 && !existsSync(socket); i++) await sleep(50);
+  const url = `http://127.0.0.1:${port}`;
+  assert.equal(await (await fetch(`${url}/board`)).json(), null, 'no page, no board');
+  const studio = await fetch(`${url}/characters/studio/`);
+  assert.equal(studio.status, 200);
+  assert.match(await studio.text(), /Character Studio/);
+  // Sent as it is: fetch would tidy the .. away first.
+  const raw = await new Promise(ok => { let got = ''; const c = net.connect(port, '127.0.0.1', () => c.write('GET /characters/../Package.swift HTTP/1.0\r\n\r\n'));
+    c.on('data', d => { got += d; }); c.on('close', () => ok(got)); });
+  assert.match(raw, /^HTTP\/1\.0 404/, 'nothing outside characters/');
+  const said = '{"t":"dbg.state","screen":"face","base":"working","act":"testing","mood":"grumpy","look_variant":2,"moment":null,"expr":null}';
+  const page = new WebSocket(`ws://127.0.0.1:${port}/usb`);
+  await new Promise((ok, no) => { page.onopen = ok; page.onerror = no; });
+  const asked = [];
+  page.onmessage = e => { asked.push(String(e.data)); page.send('{"t":"ev","k":"tap"}'); page.send(said); };
+  const tool = net.connect(socket);
+  await new Promise(ok => tool.on('connect', ok));
+  let heard = '';
+  tool.on('data', d => { heard += d; });
+  await sleep(100);
+  const reply = await fetch(`${url}/board`);
+  assert.equal(reply.status, 200);
+  assert.deepEqual(await reply.json(), JSON.parse(said), 'the dbg.state, not the line before it');
+  assert.deepEqual(asked, ['{"t":"dbg.state"}']);
+  for (let i = 0; i < 50 && !heard.includes('dbg.state'); i++) await sleep(20);
+  assert.ok(heard.includes(said), 'a tool on the cable hears the reply, as on a bridge');
+  page.close();
+  tool.destroy();
+});
+
 // serve.py --cable NAME=SOCKET, once for each board: each page's cable at
 // /usb/NAME leads to its own socket and no other's, and there's no /usb.
 test('several cables, each its own board and socket', { skip }, async t => {

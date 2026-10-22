@@ -174,7 +174,8 @@
     if(entryOf(sel.pack,sel.card)&&!adapter)$('[data-status]').textContent=`${label(sel.card)}'s scripts didn't register an adapter.`;
     instance=adapter?adapter.create(ctx):null;
     instance?.setSound();
-    render({autoplay:true});
+    if(view==='matrix'){clearMatrix();rested=false;if(adapter?.transport==='live'){instance.setPaused(true);rested=true;}buildMatrix();fillSoon();}
+    render({autoplay:view==='scene'});
   }
   function change(patch,{resetVariant=false}={}){
     if(busyNow())return;
@@ -182,11 +183,150 @@
     render({autoplay:true});
   }
 
+  // ── Matrix ─────────────────────────────────────────────────────────────
+  // Every mood and state at once, for the card shown. Each cell is the
+  // character's own preview, made by its adapter as the stage's is, silent,
+  // and looping where the adapter can (`preview()`). Only cells on screen
+  // play, at most LIMIT at once, a hovered cell first: a live character's
+  // each holds a WebGL context, and a page gets about 16. A cell opens its scene.
+  const LIMIT={clip:60,live:12};
+  let view='scene';
+  const matrix={table:$('[data-matrix-table]'),key:'',cells:[],playing:new Map(),seen:new Set(),hovered:null,observer:null,timer:0};
+  function buildMatrix(){
+    const key=sel.pack+'/'+sel.card+'/'+Boolean(adapter);
+    if(matrix.key===key)return;
+    clearMatrix();matrix.key=key;
+    const cell=(tag,text,cls)=>{const c=document.createElement(tag);if(text)c.append(text);if(cls)c.className=cls;return c;};
+    const head=document.createElement('tr');head.append(cell('th'));
+    for(const g of stateGroups)g.states.forEach((s,i)=>{const th=cell('th');th.append(cell('small',i?'':g.label),stateInfo[s.id].label);th.title=s.about;head.append(th);});
+    const thead=document.createElement('thead'),tbody=document.createElement('tbody');thead.append(head);
+    for(const f of families()){
+      const row=document.createElement('tr');row.append(cell('th',f.label,'family'));tbody.append(row);
+      for(const m of f.moods){
+        const tr=document.createElement('tr'),th=cell('th'),to=shows(sel.card,m);th.scope='row';
+        th.append(chip(title(m.id),{pressed:false,hue:f.colour,borrowed:to!==m.id,to,data:{}}));tr.append(th);
+        for(const id of stateIds){
+          const b=cell('button','','cell'+(to!==m.id?' borrowed':''));b.type='button';
+          b.dataset.mood=m.id;b.dataset.state=id;b.title=`${title(m.id)} · ${stateInfo[id].label}`;
+          const thumb=cell('div','','thumb idle');if(f.colour)thumb.style.setProperty('--hue',f.colour);
+          b.append(thumb,cell('small','\u00a0'));
+          const td=cell('td');td.append(b);tr.append(td);matrix.cells.push(b);
+        }
+        tbody.append(tr);
+      }
+    }
+    matrix.table.replaceChildren(thead,tbody);
+    // On screen is under the sticky state row and right of the sticky mood column, and half a cell at least.
+    const top=thead.getBoundingClientRect().height,left=tbody.querySelector('th[scope=row]')?.getBoundingClientRect().width||0;
+    matrix.observer=new IntersectionObserver(entries=>{
+      for(const e of entries)e.isIntersecting?matrix.seen.add(e.target):matrix.seen.delete(e.target);
+      fillSoon();
+    },{root:$('[data-matrix-scroll]'),rootMargin:`-${Math.ceil(top)}px 0px 0px -${Math.ceil(left)}px`,threshold:.5});
+    for(const c of matrix.cells)matrix.observer.observe(c);
+    if(board.shows)markBoard(board.shows,'');
+    const n=packs[sel.pack].moods.length;
+    $('[data-matrix-about]').textContent=adapter
+      ?`${label(sel.card)}: ${n} moods × ${stateIds.length} states. The cells on screen play, silently, up to ${LIMIT[adapter.transport]||LIMIT.clip} at once; hover one to play it. Click one to open it.`
+      :`${label(sel.card)} has no preview, so the matrix is empty.`;
+  }
+  function fillSoon(){if(!matrix.timer)matrix.timer=setTimeout(()=>{matrix.timer=0;fill();},80);}
+  function fill(){
+    if(view!=='matrix'||!adapter)return;
+    const first=matrix.hovered?[matrix.hovered]:[];
+    const want=[...first,...matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered)].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
+    for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
+    for(const c of want)if(!matrix.playing.has(c))mount(c);
+  }
+  function mount(cell){
+    const thumb=cell.querySelector('.thumb'),note=cell.querySelector('small');
+    const s={mood:shows(sel.card,moodOf(cell.dataset.mood)),face:null,state:cell.dataset.state,outcome:'success',context:'new_task',variant:0};
+    // A cell's own context: no sound, no drawer, nothing to redraw.
+    const own={root,stage:thumb,tools:document.createElement('div'),sound:false,volume:0,loop:true,selection:s,onChange(){},setSound(){}};
+    thumb.classList.remove('idle');
+    try{
+      const instance=adapter.create(own);matrix.playing.set(cell,instance);
+      const got=instance.select(s);
+      note.textContent=got?.variants?.length>1?got.variants[0]:got?.caption||'\u00a0';
+      instance.preview?.();
+    }catch(error){note.textContent=error.message;}
+  }
+  function unmount(cell){
+    const instance=matrix.playing.get(cell),thumb=cell.querySelector('.thumb');matrix.playing.delete(cell);
+    const canvases=[...thumb.querySelectorAll('canvas')];
+    try{instance?.destroy();}catch{}
+    // A destroyed preview's WebGL context lives on until it's collected, and
+    // the page's few run out as the matrix scrolls: let each go now.
+    for(const c of canvases)for(const kind of ['webgl2','webgl'])c.getContext(kind)?.getExtension('WEBGL_lose_context')?.loseContext();
+    thumb.replaceChildren();thumb.classList.add('idle');
+  }
+  function clearMatrix(){
+    for(const c of [...matrix.playing.keys()])unmount(c);
+    matrix.observer?.disconnect();matrix.cells=[];matrix.seen.clear();matrix.hovered=null;matrix.key='';matrix.table.replaceChildren();
+    board.cell=null;
+  }
+  // What the simulated board shows, marked: `make simulator` serves this page
+  // beside the board, and its link names the board to ask (&board=/board, or
+  // /board/NAME for one of several), which answers with the board's dbg.state.
+  const BOARD_MS=1000,BOARD_URL=/^\/board(\/[a-z0-9][a-z0-9_-]{0,15})?$/;
+  const board={timer:0,url:null,cell:null,shows:null};
+  // The cell for a dbg.state: no app and needs you first, then a reaction
+  // playing, then the look, the agents' activity while working.
+  function boardCell(d){
+    const mood=d.expr||d.mood;
+    if(d.screen==='no_app'||d.screen==='needs_you')return {mood,state:d.screen,variant:d.look_variant};
+    if(d.moment?.anim&&stateInfo[d.moment.anim])return {mood,state:d.moment.anim,variant:d.moment.variant};
+    return {mood,state:d.base==='working'?d.act||'working':d.base,variant:d.look_variant};
+  }
+  async function askBoard(){
+    board.timer=0;
+    if(view!=='matrix'||!board.url)return;
+    let shows=null,text='';
+    try{
+      const reply=await fetch(board.url,{cache:'no-store'});
+      const said=reply.ok?await reply.json():null;
+      shows=said&&boardCell(said);
+      if(!shows)text='The simulator has no board right now: open its page.';
+    }catch{text='The simulator stopped.';}
+    markBoard(shows,text);
+    board.timer=setTimeout(askBoard,BOARD_MS);
+  }
+  function markBoard(shows,text){
+    board.shows=shows;
+    const cell=shows&&matrix.cells.find(c=>c.dataset.mood===shows.mood&&c.dataset.state===shows.state)||null;
+    if(board.cell!==cell){board.cell?.classList.remove('board');cell?.classList.add('board');board.cell=cell;}
+    if(cell)cell.dataset.variant=String(Math.max(0,(shows.variant||1)-1));
+    $('[data-board-now]').hidden=!shows&&!text;
+    $('[data-board-show]').hidden=!cell;
+    $('[data-board-text]').textContent=shows?`The simulator shows ${title(shows.mood)} · ${stateInfo[shows.state]?.label||shows.state}`+(shows.variant?`, variation ${shows.variant}`:'')+(cell?'':' (not a cell here)')+'.':text;
+  }
+
+  // The stage's own preview rests while the matrix shows: a live one is one of the page's WebGL contexts.
+  let rested=false;
+  function setView(next){
+    if(next===view||busyNow())return;
+    view=next;
+    $('.layout').hidden=view==='matrix';$('[data-matrix]').hidden=view!=='matrix';
+    setSegment($('[data-view-choice]'),view);
+    if(view==='matrix'){
+      if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
+      else if(instance?.playing)instance.stop();
+      buildMatrix();fillSoon();
+      if(!board.timer)askBoard();
+    }else{
+      clearTimeout(board.timer);board.timer=0;
+      for(const c of [...matrix.playing.keys()])unmount(c);
+      if(rested){instance?.setPaused(false);rested=false;}
+    }
+    writeHash();
+  }
+
   // ── URL ────────────────────────────────────────────────────────────────
   function writeHash(){
     const p=new URLSearchParams({pack:sel.pack,c:sel.card,mood:sel.face||sel.mood,state:sel.state});
     const fact=facts[sel.state];if(fact)p.set(fact.name,sel[fact.name]);
     if(sel.variant)p.set('v',String(sel.variant+1));
+    if(view==='matrix')p.set('view','matrix');
+    if(board.url)p.set('board',board.url);
     const hash='#'+p.toString().replaceAll('%3A',':');
     if(location.hash!==hash)history.replaceState(null,'',hash);
   }
@@ -196,7 +336,8 @@
     let mood=p.get('mood')||'',face=null;
     if(mood.includes(':')){face=mood;mood=mood.split(':')[0];}
     const out={pack,card:cardsOf(pack).includes(p.get('c'))?p.get('c'):cardsOf(pack)[0],mood,face,
-      state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1)};
+      state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1),
+      view:p.get('view')==='matrix'?'matrix':'scene',board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
     for(const fact of Object.values(facts)){const v=p.get(fact.name);out[fact.name]=fact.options.some(o=>o.id===v)?v:fact.options[0].id;}
     return out;
   }
@@ -213,6 +354,11 @@
   $('[data-facts]').addEventListener('click',e=>{const b=e.target.closest('button'),seg=e.target.closest('[data-fact]');if(b&&seg)change({[seg.dataset.fact]:b.dataset.value},{resetVariant:true});});
   $('[data-face-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)change({face:b.dataset.value.includes(':')?b.dataset.value:null},{resetVariant:true});});
   $('[data-variation]').addEventListener('change',e=>change({variant:Number(e.target.value)}));
+  $('[data-view-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.value);});
+  $('[data-board-show]').addEventListener('click',()=>board.cell?.scrollIntoView({block:'center',inline:'center',behavior:'smooth'}));
+  matrix.table.addEventListener('pointerover',e=>{const c=e.target.closest('.cell');if(c&&c!==matrix.hovered){matrix.hovered=c;fillSoon();}});
+  matrix.table.addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c)return;
+    setView('scene');change({mood:c.dataset.mood,face:null,state:c.dataset.state,variant:Number(c.dataset.variant||0)});});
   function step(d){const n=$('[data-variation]').options.length;if(n)change({variant:(sel.variant+d+n)%n});}
   $('[data-prev]').addEventListener('click',()=>step(-1));$('[data-next]').addEventListener('click',()=>step(1));
   function playPause(){if(!info)return;start();if(adapter.transport==='clip')instance.playing?instance.stop():instance.play();else instance.setPaused(!instance.paused);update();}
@@ -231,6 +377,8 @@
 
   document.addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey||busyNow()||e.target.closest?.('input,select,textarea'))return;
+    if(e.key==='m'||e.key==='M'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
+    if(view==='matrix')return;
     const i=stateIds.indexOf(sel.state);
     if(e.key==='ArrowLeft')step(-1);
     else if(e.key==='ArrowRight')step(1);
@@ -243,14 +391,16 @@
     started=true;e.preventDefault();
   });
   window.addEventListener('hashchange',()=>{
-    const next=readHash();
+    const {view:nextView,board:url,...next}=readHash();board.url=url;setView(nextView);
     if(next.pack!==sel.pack||next.card!==sel.card){Object.assign(sel,next,{pack:sel.pack,card:sel.card});switchCard(next.pack,next.card,next.variant);}
     else{Object.assign(sel,next);render();}
   });
 
   // For browser checks and the console: select by fields, or by a scene id the adapter knows.
-  const ready=(async()=>{const first=readHash();Object.assign(sel,first,{pack:'',card:''});await switchCard(first.pack,first.card,first.variant);})();
-  root.studio={sel,ready,packs,get adapter(){return instance;},
+  const ready=(async()=>{const {view:firstView,board:url,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});await switchCard(first.pack,first.card,first.variant);setView(firstView);})();
+  root.studio={sel,ready,packs,get adapter(){return instance;},get view(){return view;},setView,
+    get matrix(){return {cells:matrix.cells.length,playing:matrix.playing.size,transport:adapter?.transport||null,board:board.shows};},
+    boardCell,
     async select({pack,character,...patch}){if(pack||character)await switchCard(pack||sel.pack,character||sel.card);change(patch);},
     async selectAsset(id,card=sel.card){
       await switchCard(sel.pack,card);const found=instance?.find?.(id);if(!found)throw Error('No scene '+id);
