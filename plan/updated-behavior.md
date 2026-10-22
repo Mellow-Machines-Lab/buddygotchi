@@ -1,8 +1,47 @@
-# Updated behaviour: the plan (2026-10-21)
+# Updated behaviour: the plan (2026-10-21, outcome 2026-10-22)
 
 The implementation plan for everything marked Yes in
 [product-ideas.md](product-ideas.md), for an overnight run. It lands on
 `feature/updated-behavior`, not `main`.
+
+## Outcome (2026-10-22)
+
+Stages 0 to 7 landed, one commit each, plus a build fix (each board
+builds the pack's sources afresh). Stage 8 was skipped, and stage 9 ran
+without Jev.
+
+**Checks that ran and passed** at the last commit:
+- `make -C internal test`: 347 passed, 1 skipped.
+- `boopdev eval --scripted`: 82 of 82 on the expect brain.
+- `make -C internal fw-test`: 221 and 55.
+- `make -C internal sim`: Pixel's 18 scenarios and the gel's 4.
+- `make -C internal fw`: both boards build (CYD flash 65.1%, AMOLED 40.7%).
+- Also: `tools-test`, `charactergen`, `slimegen`, the bank's
+  `qa/check.mjs` and `boopdev check`.
+- `boopctl workday run --brain scripted`, then `workday check`: every
+  limit but `min_mood_changes`, which the scripted brain can't meet
+  because it never changes mood.
+
+**Not run:** any Jev eval or Jev workday (no key here), and anything on
+a board (no Bluetooth or webcam from an agent shell).
+
+**Skipped, for the owner:**
+- **Stage 8, the exact tab, and the deleted-code reaction.** Both need
+  AgentHooks changes that are pushed before Boop can point at them, and
+  the terminal scripting needs the owner's choice of terminals and a
+  permission prompt. Nothing was started in `agent-hooks/`.
+- **The gel's art.** It has no occasion variations and no gesture
+  recipes yet. It plays its existing poke for every gesture, and its
+  looks don't change by occasion.
+- **The simulator page's motion buttons.** They need Emscripten, which
+  isn't here. Motion is covered by the native simulator's
+  `gestures.jsonl` and the firmware's unit tests.
+- **Regional holidays.** Only the fixed list in `Occasions` is in.
+- **The QMI8658's axis signs.** `kFlipZ` in
+  `firmware/src/board/amoled206/imu.cpp` is a guess until the board is
+  turned over on the desk; check `dbg.imu`.
+- **Touch thresholds.** `kStrokePx`, the tickle path and the nose box
+  are tuned on the simulator, not under a finger on the board.
 
 ## The shape, in one paragraph
 
