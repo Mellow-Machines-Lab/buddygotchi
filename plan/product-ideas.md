@@ -1,5 +1,7 @@
 # Product ideas: the running list (updated 2026-10-21)
 
+The implementation plan for the Yes list is [updated-behavior.md](updated-behavior.md).
+
 The owner's brainstorm for making a single buddy more fun, interactive
 and useful. The fun audit's plan (comedy, the cuss, ladders, idle
 check-ins, ears) is a separate track, not repeated here.
