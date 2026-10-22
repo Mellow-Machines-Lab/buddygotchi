@@ -233,7 +233,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`–`72`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `85`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -241,7 +241,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   with no reaction, even while another thread's quick turns keep waking
   the brain (`18`, `21`, `22`), and its mood drifts (calm → engaged →
   determined → excited), never flipping back within a minute; in a long
-  grind it may ease back and return (`18`, `51`). Repeats are fine. The
+  grind it may ease back and return (`18`, `51`). Runs are ladders, not
+  repeats: quick wins in a row climb from happy to excited to amused to
+  comfy (`19`), check-ins on a long turn from engaged to hopeful to bored
+  to determined (`85`), and a busy half hour never plays the same
+  reaction three times running (`21`, `22`). The
   moods the words bring (`24`–`27`): a frustrated request annoyed, a
   step toward determined, thanks excited, a long turn's hard work done
   proud, an agent giving up sad. The finishes: a question back or an

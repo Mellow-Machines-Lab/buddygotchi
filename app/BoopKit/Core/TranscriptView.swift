@@ -84,6 +84,13 @@ public final class TranscriptView {
         var failRuns: [String: Int] = [:]
         /// This turn's failed checks, which a failed finish counts.
         var checksFailed = 0
+        /// Quick wins in a row on the thread, across turns, and when the
+        /// last one finished: a finish done in under 5 minutes within
+        /// `winRunGapMs` of the last.
+        var winRun = 0
+        var lastWinAt: Int64?
+        /// This turn's working heartbeats.
+        var checkIns = 0
     }
 
     /// A thread as the lines name it: its session's agent, project and
@@ -165,6 +172,13 @@ public final class TranscriptView {
 
     /// The topics whose failing command fails a turn.
     static let checks: Set<String> = ["tests", "build", "deploy"]
+
+    /// A finish done in under this is a quick win, and quick wins within
+    /// `winRunGapMs` of each other are a run the line counts, as it counts
+    /// pokes: the brain answers each rung differently, where it would
+    /// answer the same line the same way every time.
+    public static let quickWinMs: Int64 = 5 * 60_000
+    public static let winRunGapMs: Int64 = 10 * 60_000
 
     /// A poke within this of the one before is another in a row, which its
     /// line counts.
@@ -371,6 +385,13 @@ public final class TranscriptView {
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
+            if outcome == "done", now - started < Self.quickWinMs {
+                c.winRun = c.lastWinAt.map { now - $0 < Self.winRunGapMs } == true ? c.winRun + 1 : 1
+                c.lastWinAt = now
+            } else {
+                c.winRun = 0
+                c.lastWinAt = nil
+            }
             return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
                              message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
         case .sessionStart, .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
@@ -388,6 +409,7 @@ public final class TranscriptView {
         c.comeback = nil
         c.check = nil
         c.checksFailed = 0
+        c.checkIns = 0
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
@@ -451,12 +473,13 @@ public final class TranscriptView {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
-                                     lengthMs: lengthMs, tools: c.tools, failedChecks: outcome == "failed" ? c.checksFailed : 0)
+                                     lengthMs: lengthMs, tools: c.tools, failedChecks: outcome == "failed" ? c.checksFailed : 0,
+                                     winsInARow: c.winRun)
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
-                            "checks_failed": .int(Int64(c.checksFailed)),
+                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.winRun)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
 
@@ -641,8 +664,15 @@ public final class TranscriptView {
         if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
             let t = Thread(s)
             let ms = max(0, now - (s.turn.startedAt ?? now))
-            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
-                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(fold.counts[s.key]?.topic)])
+            // Each check-in on a turn is a rung of a ladder, as quick wins
+            // are: the line says which.
+            var c = fold.counts[s.key] ?? Counts()
+            c.checkIns += 1
+            fold.counts[s.key] = c
+            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms, topic: c.topic),
+                        notes: EventLine.checkIn(c.checkIns, name: name(e)).map { [$0] } ?? [],
+                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
+                                "check_in": .int(Int64(c.checkIns))])
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
@@ -726,10 +756,23 @@ public enum EventLine {
     /// (`, after 2 failed checks`), so a failure that follows others reads
     /// as more than the first: the brain can't count them back in HISTORY.
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int, failedChecks: Int = 0) -> String {
+                               tools: Int, failedChecks: Int = 0, winsInARow: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
         let after = failedChecks == 1 ? ", after a failed check" : failedChecks > 1 ? ", after \(failedChecks) failed checks" : ""
-        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)."
+        let run = winsInARow < 2 ? "" : winsInARow < maxWins ? ", \(winsInARow) quick wins in a row" : ", \(maxWins) or more quick wins in a row"
+        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)\(run)."
+    }
+
+    /// The most quick wins in a row the line counts, and the most
+    /// check-ins on a turn: past them, each rung is the top one.
+    public static let maxWins = 5, maxCheckIns = 4
+
+    /// The working heartbeat's note from the second on: `Boop's 2nd
+    /// check-in on this turn.`; nil for the first.
+    public static func checkIn(_ n: Int, name: String = CharacterPack.active.name) -> String? {
+        guard n > 1 else { return nil }
+        let nth = ["", "", "2nd", "3rd"]
+        return n < maxCheckIns ? "\(name)'s \(nth[n]) check-in on this turn." : "\(name)'s \(maxCheckIns)th check-in on this turn, or later."
     }
 
     static func toolCalls(_ n: Int) -> String {
@@ -806,10 +849,14 @@ public enum EventLine {
     }
 
     /// The working heartbeat: `claude is still working on "fix-nav"
-    /// (landing), a long turn.`, the band of the turn so far.
-    public static func working(agent: String, thread: String, ms: Int64) -> String {
-        "\(agent) is still working on \(thread), a \(Band.length(ms: ms)) turn."
+    /// (landing), a long turn, running tests.`, the band of the turn so far
+    /// and what its latest command or edit was about.
+    public static func working(agent: String, thread: String, ms: Int64, topic: String? = nil) -> String {
+        "\(agent) is still working on \(thread), a \(Band.length(ms: ms)) turn\(topic.flatMap { doing[$0] }.map { ", \($0)" } ?? "")."
     }
+
+    /// What a turn is doing, by its latest topic, as a check-in says it.
+    static let doing = ["tests": "running tests", "build": "running a build", "deploy": "deploying", "docs": "editing docs"]
 
     /// How to read HISTORY and NOW: Boop's own
     /// words for MellowHarness's layout, after the guide, with the
@@ -836,7 +883,10 @@ public enum EventLine {
         - Tests, build, deploy and docs are what a command was about; failed
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
-          long (5 minutes or more).
+          long (5 minutes or more). Quick wins in a row are turns done in under
+          5 minutes, one after another on a thread.
+        - A check-in is \(name) looking in on a turn that's still going; the
+          note under it says which on this turn.
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - "You" stepping away from the Mac and coming back is the person. Breaks

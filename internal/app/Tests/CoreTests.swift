@@ -565,7 +565,8 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.wait(30_000)
         rig.send(.activity, tool: "Edit", failed: false, id: "e")
         let second = events(rig.send(.turnEnd))
-        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call."#])
+        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call, 2 quick wins in a row."#],
+                       "a second finish on the thread within 10 minutes")
         XCTAssertEqual(second.first?.facts["tools"], .int(1), "its own call only")
         XCTAssertEqual(second.first?.facts["topics"], .object([:]), "none of the last turn's topics")
         XCTAssertEqual(second.first?.facts["length_ms"], .int(30_000), "from that call")
@@ -1779,7 +1780,7 @@ final class CoreRulesTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(b - a, 90_000)
                 XCTAssertLessThanOrEqual(b - a, 181_000)
             }
-            XCTAssertTrue(said.allSatisfy { $0.hasPrefix(#"claude is still working on "landing", a "#) && $0.hasSuffix(" turn.") })
+            XCTAssertTrue(said.allSatisfy { $0.hasPrefix(#"claude is still working on "landing", a "#) && $0.hasSuffix(" turn, running tests.") })
         }
     }
 

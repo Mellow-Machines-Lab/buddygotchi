@@ -14,6 +14,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -35,7 +38,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -55,6 +61,8 @@ Examples:
   → excited, glad in a word, then start, twice
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a short turn, 2 tool calls, 3 quick wins in a row.
+  → amused, success, glad in a phrase, three times
 - NOW: claude edited a file on "api".
   → engaged, work in a word, twice
 - NOW: codex ran a command on "api".
@@ -79,6 +87,9 @@ Examples:
   → curious, tickled in a word, three times
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a sound, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice
 - NOW: You came back to the Mac after a short break.
@@ -160,6 +171,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -181,7 +195,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -201,6 +218,8 @@ Examples:
   → excited, glad in a word, then start, twice
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a short turn, 2 tool calls, 3 quick wins in a row.
+  → amused, success, glad in a phrase, three times
 - NOW: claude edited a file on "api".
   → engaged, work in a word, twice
 - NOW: codex ran a command on "api".
@@ -225,6 +244,9 @@ Examples:
   → curious, tickled in a word, three times
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a sound, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice
 - NOW: You came back to the Mac after a short break.
@@ -332,6 +354,6 @@ just now: claude ran a command on "landing".
 Boop has been curious for 1 min.
 
 NOW (14:01, Wednesday)
-claude finished turn 2 on "landing": done, a short turn, 2 tool calls.
+claude finished turn 2 on "landing": done, a short turn, 2 tool calls, 2 quick wins in a row.
   Its last message: "Tidied the imports; the build passes."
 Boop did nothing on its own.

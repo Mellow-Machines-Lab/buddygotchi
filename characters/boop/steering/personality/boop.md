@@ -13,8 +13,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -28,6 +28,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -42,8 +50,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.

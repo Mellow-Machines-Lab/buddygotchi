@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-16.</p>
+  <p class="small">Updated 2026-10-21.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -196,7 +196,7 @@ td.where{font-size:13px;white-space:nowrap}
       </li>
       <li class="link"><div class="wire"><span>the event, read from the transcript</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. A finished turn is worth asking Jev about.</p></div>
+        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. It counts runs on the line, as it does pokes: a check failing again, quick wins in a row, the check-ins on a long turn. Jev answers the same line the same way, so each rung of a run gets a line of its own. A finished turn is worth asking Jev about.</p></div>
         <div class="pay"><span class="what">The end of the prompt Jev reads</span>
 <pre>HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "api".

@@ -22,4 +22,8 @@ Examples:
 - Thanks or kind words: a happy face.
 - You back at the Mac after a long break: a happy face, and it wakes up
   for you.
+- Quick wins in a row: pleased, then excited by the third, then
+  amused, then cosy and quiet, a new face on each rung.
+- Check-ins on a long turn: engaged, then hopeful about the tests, then
+  bored, then determined.
 - A turn starting, a tool call, a check passing mid-turn: no face.

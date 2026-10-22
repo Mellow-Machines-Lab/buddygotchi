@@ -14,6 +14,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -35,7 +38,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -52,8 +58,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -67,6 +73,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -81,8 +95,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -161,6 +182,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -182,7 +206,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -199,8 +226,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -214,6 +241,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -228,8 +263,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -303,6 +345,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -324,7 +369,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -341,8 +389,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -356,6 +404,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -370,8 +426,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -451,6 +514,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -472,7 +538,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -489,8 +558,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -504,6 +573,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -518,8 +595,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -605,6 +689,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -626,7 +713,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -643,8 +733,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -658,6 +748,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -672,8 +770,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -763,6 +868,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -784,7 +892,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -801,8 +912,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -816,6 +927,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -830,8 +949,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -922,6 +1048,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -943,7 +1072,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -960,8 +1092,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -975,6 +1107,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -989,8 +1129,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -1083,6 +1230,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -1104,7 +1254,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -1121,8 +1274,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1136,6 +1289,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -1150,8 +1311,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -1309,7 +1477,7 @@ just now: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
 
 NOW (14:08, Wednesday)
-claude finished turn 2 on "landing": done, a short turn, no tool calls.
+claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
 Boop did nothing on its own.
 === pass 12
@@ -1328,6 +1496,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -1349,7 +1520,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -1366,8 +1540,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1381,6 +1555,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -1395,8 +1577,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -1480,7 +1669,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made a proud face, held once, and said "Busy".
 2 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1519,7 +1708,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made a proud face, held once, and said "Busy".
 4 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1546,6 +1735,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -1567,7 +1759,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -1584,8 +1779,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1599,6 +1794,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -1613,8 +1816,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -1680,7 +1890,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made a proud face, held once, and said "Busy".
 5 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-5 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+5 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1692,7 +1902,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an annoyed face, held twice, and said "Aigo Work".
 
 NOW (14:13, Wednesday)
-claude is still working on "landing", a long turn.
+claude is still working on "landing", a long turn, running a build.
 Boop did nothing on its own.
 === pass 15
 HISTORY (oldest first; indented lines add to the line above)
@@ -1700,7 +1910,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made a proud face, held once, and said "Busy".
 7 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-6 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+6 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1710,11 +1920,12 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Aigo Work".
-1 min ago: claude is still working on "landing", a long turn.
+1 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
 
 NOW (14:15, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
 Boop did nothing on its own.
 === pass 16
 HISTORY (oldest first; indented lines add to the line above)
@@ -1722,7 +1933,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made a proud face, held once, and said "Busy".
 8 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-7 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+7 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1732,9 +1943,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Aigo Work".
-2 min ago: claude is still working on "landing", a long turn.
+2 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-just now: claude is still working on "landing", a very long turn.
+just now: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 
 NOW (14:16, Wednesday)
@@ -1756,6 +1968,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -1777,7 +1992,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -1794,8 +2012,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -1809,6 +2027,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -1823,8 +2049,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -1873,7 +2106,7 @@ Boop has been comfy for 10 min.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 2 on "landing".
   You asked: "why is the build so slow?"
-9 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls.
+9 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, 2 quick wins in a row.
   Its last message: "It compiles every test file twice. Want me to fix that?"
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Phew... Fixed".
@@ -1883,9 +2116,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Aigo Work".
-4 min ago: claude is still working on "landing", a long turn.
+4 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-2 min ago: claude is still working on "landing", a very long turn.
+2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
@@ -1904,9 +2138,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Aigo Work".
-6 min ago: claude is still working on "landing", a long turn.
+6 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 3 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
@@ -1926,9 +2161,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Aigo Work".
-6 min ago: claude is still working on "landing", a long turn.
+6 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 4 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
@@ -1958,6 +2194,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -1979,7 +2218,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -1996,8 +2238,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2011,6 +2253,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -2025,8 +2275,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -2074,9 +2331,10 @@ happens; comfy at kind words; surprised at a big, sudden event. Fades
 to calm once Boop has been lazy for 10 min.
 
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude is still working on "landing", a long turn.
+9 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
-7 min ago: claude is still working on "landing", a very long turn.
+7 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 6 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
@@ -2091,7 +2349,8 @@ HISTORY (oldest first; indented lines add to the line above)
 Boop has been lazy for 2 min.
 
 NOW (14:22, Wednesday)
-claude is still working on "landing", a long turn.
+claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
 Boop did nothing on its own.
 === pass 21
 HISTORY (oldest first; indented lines add to the line above)
@@ -2105,12 +2364,14 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Busy".
-2 min ago: claude is still working on "landing", a long turn.
+2 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 Boop has been lazy for 5 min.
 
 NOW (14:25, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
 Boop did nothing on its own.
 === pass 22
 HISTORY (oldest first; indented lines add to the line above)
@@ -2121,14 +2382,17 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Busy".
-5 min ago: claude is still working on "landing", a long turn.
+5 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Nnh".
-2 min ago: claude is still working on "landing", a very long turn.
+2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
   Boop made an engaged face, held once, and said "Ngh".
 Boop has been lazy for 7 min.
 
 NOW (14:27, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
 === pass 23
 HISTORY (oldest first; indented lines add to the line above)
@@ -2139,16 +2403,20 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Busy".
-6 min ago: claude is still working on "landing", a long turn.
+6 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Nnh".
-3 min ago: claude is still working on "landing", a very long turn.
+3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
   Boop made an engaged face, held once, and said "Ngh".
-1 min ago: claude is still working on "landing", a very long turn.
+1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
 Boop has been lazy for 9 min.
 
 NOW (14:29, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
 === pass 24
 HISTORY (oldest first; indented lines add to the line above)
@@ -2159,18 +2427,23 @@ HISTORY (oldest first; indented lines add to the line above)
 12 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Busy".
-9 min ago: claude is still working on "landing", a long turn.
+9 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Nnh".
-6 min ago: claude is still working on "landing", a very long turn.
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
   Boop made an engaged face, held once, and said "Ngh".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn.
+2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
 Boop has been lazy for 12 min.
 
 NOW (14:32, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
 === pass 25
 HISTORY (oldest first; indented lines add to the line above)
@@ -2181,32 +2454,43 @@ HISTORY (oldest first; indented lines add to the line above)
 13 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Busy".
-11 min ago: claude is still working on "landing", a long turn.
+11 min ago: claude is still working on "landing", a long turn, running a build.
+  Boop's 2nd check-in on this turn.
   Boop made an engaged face, held once, and said "Nnh".
-8 min ago: claude is still working on "landing", a very long turn.
+8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
   Boop made an engaged face, held once, and said "Ngh".
-5 min ago: claude is still working on "landing", a very long turn.
+5 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
-1 min ago: claude is still working on "landing", a very long turn.
+1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
 Boop has been lazy for 13 min.
 
 NOW (14:33, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
 Boop did nothing on its own.
 === pass 26
 HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude is still working on "landing", a very long turn.
+8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 3rd check-in on this turn.
   Boop made an engaged face, held once, and said "Ngh".
-6 min ago: claude is still working on "landing", a very long turn.
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
-1 min ago: claude is still working on "landing", a very long turn.
+1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-just now: claude is still working on "landing", a very long turn.
+just now: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Rrr... tik".
 Boop has been lazy for 14 min.
 
@@ -2230,6 +2514,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -2251,7 +2538,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -2268,8 +2558,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2283,6 +2573,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -2297,8 +2595,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
@@ -2348,13 +2653,17 @@ agent; sad when a very long turn fails, the agent gives up or the
 person shares sad news; wounded at rude words to Boop.
 
 HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude is still working on "landing", a very long turn.
+8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-6 min ago: claude is still working on "landing", a very long turn.
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
-3 min ago: claude is still working on "landing", a very long turn.
+3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn.
+2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
   Its last message: "Done: the build is twice as fast and everything passes."
@@ -2367,13 +2676,17 @@ claude started turn 5 on "landing".
 Boop did nothing on its own.
 === pass 28
 HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude is still working on "landing", a very long turn.
+8 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-6 min ago: claude is still working on "landing", a very long turn.
+6 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Nnh".
-4 min ago: claude is still working on "landing", a very long turn.
+4 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn.
+2 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop's 4th check-in on this turn, or later.
   Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
   Its last message: "Done: the build is twice as fast and everything passes."
@@ -2402,6 +2715,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- Quick wins in a row and check-ins on a turn are a ladder: each rung
+  gets its own face, as the Examples show, never the same three times
+  running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -2423,7 +2739,10 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread.
+- A check-in is Boop looking in on a turn that's still going; the
+  note under it says which on this turn.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - "You" stepping away from the Mac and coming back is the person. Breaks
@@ -2440,8 +2759,8 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
@@ -2455,6 +2774,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -2469,8 +2796,15 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in on this turn, or later.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
 - NOW: claude's tests failed again on "api", 2 times in a row.
