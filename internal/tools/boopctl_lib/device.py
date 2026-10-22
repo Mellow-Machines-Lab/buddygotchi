@@ -265,14 +265,16 @@ class Device(Link):
     """A locked, open serial connection to the board, or, while a bridge
     (`linkkit-bridge`) shares it, a connection to the bridge's socket."""
 
-    def __init__(self, port: str | None = None) -> None:
+    def __init__(self, port: str | None = None, bridge: str | None = None) -> None:
+        """`bridge` is a bridge's socket to use, such as the one the app's
+        link names; without it, `bridge_path()`'s while a bridge answers there."""
         super().__init__()
         self._ser: serial.Serial | None = None
         self._sock: socket.socket | None = None
         self._lock_fd: int | None = None
-        self._bridged = not port and bridge_running()
+        self._bridged = bool(bridge) or not port and bridge_running()
         if self._bridged:
-            self.port = bridge_path()
+            self.port = bridge or bridge_path()
             self.name = f"the board through the bridge on {self.port}"
         else:
             self.port = port or find_port()

@@ -62,7 +62,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon` and `linkkit-bridge`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make app` | What `make run` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
-| `make dash` | `boopctl dash`, for the app `make debug` started |
+| `make dash` | `boopctl dash`, for the app `make debug` started. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
 | `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |

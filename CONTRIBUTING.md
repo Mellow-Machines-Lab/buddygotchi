@@ -52,7 +52,9 @@ One thing that will surprise you:
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
 
 The dashboard shows the face, Boop's mood, its automatic reactions and the
-ones Jev decided, and can force any mood or reaction.
+ones Jev decided, and can force any mood or reaction. `b` saves a bug
+report, as the popover's ladybug does, and with Boop on the simulator a
+report gets the board's screen too.
 
 How each level of checking works, from unit tests to the board, is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md).
