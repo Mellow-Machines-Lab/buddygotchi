@@ -446,8 +446,10 @@ Besides drawing each mood and state, a face:
   speaks (`mouthOpen`), and presses down under a finger (`dy`).
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
-  many sessions work, a finished turn's tick or cross) and the speech
-  bubble. The face calls `drawLane` to draw them.
+  many sessions work, a mini for each helper at work, up to four and
+  then +N, a parcel and the count of agents idle for BOOT to hand over,
+  a finished turn's tick or cross) and the speech bubble. The face calls
+  `drawLane` to draw them.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the

@@ -53,3 +53,7 @@
 {"t":"state","base":"working","mood":"happy","busy":2,"helpers":4,"idle":3,"vol":0}
 {"clock":9600}
 {"shot":"working-counts"}
+// Seven helpers: four minis, then +3.
+{"t":"state","base":"working","mood":"happy","busy":1,"helpers":7,"vol":0}
+{"clock":9800}
+{"shot":"helpers-seven"}

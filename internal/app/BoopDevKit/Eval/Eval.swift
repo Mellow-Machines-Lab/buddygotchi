@@ -36,6 +36,9 @@ public struct Scenario: Sendable {
         public var words: String?
         /// How many pokes a `pokes` step makes, 4 unless it says.
         public var count: Int?
+        /// Which helper a `helper started` or `helper returned` step is,
+        /// `h1` unless it says.
+        public var helper: String?
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -84,6 +87,14 @@ public struct Scenario: Sendable {
         /// (`claude docs`): checked with no pass, since a press wakes no
         /// brain.
         public var opens: Set<String>?
+        /// What the screen shows after the step, from the core's `state`,
+        /// with no pass: how many sessions sit idle, how many helpers
+        /// work (each a set of counts), and tags that must all be on.
+        public var idle: Set<String>?
+        public var helpers: Set<String>?
+        public var when: Set<String>?
+        /// Whether any of it is about the screen.
+        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil }
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
             react != nil || animation != nil || feeling != nil || about != nil || kind != nil || said != nil || loops != nil
@@ -178,7 +189,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -288,6 +299,7 @@ public struct Scenario: Sendable {
             step.prompt = s["prompt"] as? String
             step.message = s["message"] as? String
             step.words = s["words"] as? String
+            step.helper = s["helper"] as? String
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             if let c = s["count"] {
                 guard let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
@@ -311,14 +323,20 @@ public struct Scenario: Sendable {
                     step.expectOrder[key] = values
                     return Set(values)
                 }
-                let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens"]
+                let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens", "idle",
+                            "helpers", "when"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), animation: try set("animation"), feeling: try set("feeling"), about: try set("about"),
                                           kind: try set("kind"), said: try set("said"), loops: try set("loops"),
                                           mood: try set("mood"), offered: try set("offered"))
-                let opens = try set("opens")
+                let opens = try set("opens"), idle = try set("idle"), helpers = try set("helpers"), when = try set("when")
                 step.expect?.opens = opens
+                step.expect?.idle = idle
+                step.expect?.helpers = helpers
+                step.expect?.when = when
+                let unknownTags = (when ?? []).subtracting(Occasions.all)
+                guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("feeling", step.expect?.feeling, ReactOutput.feelings.map(\.name)),
                                              ("about", step.expect?.about, ReactOutput.topics.map(\.name)),
                                              ("kind", step.expect?.kind, ReactOutput.kinds.map(\.name))] {
@@ -418,10 +436,18 @@ public struct Eval {
         public var latencyMs: Int
         /// What a press opened, `agent thread`, for `opens`.
         public var opened: String?
+        /// What the screen showed: the idle and helper counts and the tags.
+        public var screen: (idle: Int, helpers: Int, when: [String])?
 
         public var passed: Bool {
             guard dropped == nil else { return false }
             if let o = expected.opens { return o.contains(opened ?? "nothing") }
+            if let shown = screen {
+                if let i = expected.idle, !i.contains("\(shown.idle)") { return false }
+                if let h = expected.helpers, !h.contains("\(shown.helpers)") { return false }
+                if let w = expected.when, !w.isSubset(of: shown.when) { return false }
+                return true
+            }
             if let r = expected.react, !r.contains(react ?? "none") { return false }
             if let a = expected.animation, !a.contains(animation ?? "none") { return false }
             if let f = expected.feeling, !f.contains(feeling ?? "none") { return false }
@@ -446,8 +472,13 @@ public struct Eval {
                         expected.loops.map { "loops \($0.sorted().joined(separator: "|"))" },
                         expected.mood.map { "mood \($0.sorted().joined(separator: "|"))" },
                         expected.offered.map { "offered \($0.sorted().joined(separator: "|"))" },
-                        expected.opens.map { "opens \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
-            let got = opened.map { "opened \($0)" } ?? dropped.map { "dropped: \($0)" }
+                        expected.opens.map { "opens \($0.sorted().joined(separator: "|"))" },
+                        expected.idle.map { "idle \($0.sorted().joined(separator: "|"))" },
+                        expected.helpers.map { "helpers \($0.sorted().joined(separator: "|"))" },
+                        expected.when.map { "when \($0.sorted().joined(separator: " and "))" }].compactMap { $0 }
+            let got = opened.map { "opened \($0)" }
+                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " "))" }
+                ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), animation \(animation ?? "none"), feeling \(feeling ?? "none"), about \(about ?? "none"), kind \(kind ?? "none"), said \(said ?? "none"), loops \(loops ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
             return "  step \(step): \(line)\n    wanted \(want.joined(separator: ", ")); got \(got)"
@@ -636,6 +667,17 @@ public struct Eval {
             default: break
             }
             guard let expect = step.expect else { continue }
+            if expect.wantsTheScreen {
+                // What the screen shows now: the core's state, with no pass.
+                let shown = home.sync { core.snapshot(at: clock.now) }
+                var check = Check(step: i + 1, line: "the screen", expected: Scenario.Expectation(), mood: moodNow(), latencyMs: 0)
+                check.expected.idle = expect.idle
+                check.expected.helpers = expect.helpers
+                check.expected.when = expect.when
+                check.screen = (shown.idle, shown.helpers, shown.when)
+                checks.append(check)
+                if !expect.wantsAPass, expect.opens == nil { continue }
+            }
             if let opens = expect.opens {
                 // What the press opened: the core's record of it, this step's.
                 let did = home.sync { harness.log.events.last { $0.action == Core.openThread && $0.at == clock.now } }
@@ -798,9 +840,9 @@ public struct Eval {
         let session = step.session ?? "s1"
         let source = step.agent ?? .claude
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
-                  _ data: [String: JSONValue] = [:]) -> (Pipeline) -> Pipeline.Step {
+                  _ data: [String: JSONValue] = [:], subagent: String? = nil) -> (Pipeline) -> Pipeline.Step {
             { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
-                             cwd: cwd, data: data)) }
+                             subagent: subagent, cwd: cwd, data: data)) }
         }
         switch step.event {
         case "turn started": return [hook(.turn, .start, "UserPromptSubmit", step.prompt.map { ["prompt": .string($0)] } ?? [:])]
@@ -829,6 +871,9 @@ public struct Eval {
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
         // BOOT, and the board handed you the next agent.
         case "press": return [{ $0.press(at: now) }]
+        // The agent sends a helper off, and it comes back.
+        case "helper started": return [hook(.subagent, .start, "SubagentStart", subagent: step.helper ?? "h1")]
+        case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",

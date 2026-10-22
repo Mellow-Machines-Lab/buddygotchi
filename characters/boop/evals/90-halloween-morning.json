@@ -5,6 +5,6 @@
   "start": "2026-10-31T00:30",
   "steps": [
     {"event": "away", "at": "0s"},
-    {"event": "back", "at": "8h30m", "expect": {"react": "mischievous|excited|happy|amused", "animation": "wake up", "feeling": "glad", "about": "hello", "loops": "twice|three times|four times"}}
+    {"event": "back", "at": "8h30m", "expect": {"when": "halloween|morning|weekend", "react": "mischievous|excited|happy|amused", "animation": "wake up", "feeling": "glad", "about": "hello", "loops": "twice|three times|four times"}}
   ]
 }

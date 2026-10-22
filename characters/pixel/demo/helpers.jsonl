@@ -1,0 +1,14 @@
+// Twenty-five seconds: the minis. The agent sends three reviewers off at
+// once, a mini each under the face, and they come back one by one, each
+// with the helper's return, until the turn ends.
+{"demo": 1, "title": "Three reviewers"}
+{"agent": "prompt", "text": "Review the payments change from three sides"}
+{"agent": "review", "task": "Check the API", "prompt": "Review the API changes"}
+{"agent": "review", "task": "Check the tests", "prompt": "Review the tests", "after": 0.5}
+{"agent": "review", "task": "Check the docs", "prompt": "Review the docs", "after": 0.5}
+{"brain": {"react.mood": "excited", "say.about": "helpers", "say.kind": "word"}, "note": "Three minis"}
+{"agent": "reply", "text": "The API looks right.", "by": "reviewer", "after": 3}
+{"agent": "reply", "text": "Two tests are missing.", "by": "reviewer", "after": 2}
+{"agent": "reply", "text": "The docs need the new field.", "by": "reviewer", "after": 2}
+{"agent": "reply", "text": "All three reviews are in: two tests and a doc line to add.", "after": 1}
+{"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}

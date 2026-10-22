@@ -18,6 +18,13 @@
 {"clock":1000}
 {"expect":{"idle":3,"helpers":4}}
 {"shot":"working-counts"}
+// One helper is one mini; seven are four, then +3.
+{"t":"state","base":"working","busy":1,"helpers":1}
+{"clock":1100}
+{"shot":"helpers-one"}
+{"t":"state","base":"working","busy":1,"helpers":7}
+{"clock":1200}
+{"shot":"helpers-seven"}
 {"t":"state","base":"asleep","busy":0}
 {"clock":1200}
 {"expect":{"base":"asleep"}}

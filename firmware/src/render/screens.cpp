@@ -1,5 +1,6 @@
 #include "render/screens.h"
 
+#include <algorithm>
 #include <cstdio>
 
 #include "render/font.h"
@@ -102,10 +103,12 @@ void iconParcel(Canvas& c, int x, int y, uint8_t ink) {
   c.fillRect(x + 4, y + 2, 2, 8, inkAt(kInkDim, kLevels));
 }
 
-// Two little heads, 12 × 10: the helpers' count.
-void iconHelpers(Canvas& c, int x, int y, uint8_t ink) {
-  c.fillRect(x, y + 3, 5, 5, ink);
-  c.fillRect(x + 7, y + 3, 5, 5, ink);
+// A mini, 10 × 10: a helper at work, a tiny face with two eyes.
+void iconMini(Canvas& c, int x, int y, uint8_t ink) {
+  c.fillRect(x + 1, y, 8, 10, ink);
+  c.fillRect(x, y + 1, 10, 8, ink);
+  c.fillRect(x + 2, y + 4, 2, 2, kBlack);
+  c.fillRect(x + 6, y + 4, 2, 2, kBlack);
 }
 
 void drawStrip(Canvas& c, const Strip& s) {
@@ -130,7 +133,8 @@ void drawStrip(Canvas& c, const Strip& s) {
     std::snprintf(t, sizeof(t), "%d", n);
     return n > 0 ? icon + 14 + stringWidth(kSmall, t) : 0;
   };
-  const int counts = room(s.busy, 15) + room(s.helpers, 17) + room(s.idle, 15);
+  const int minis = std::min(s.helpers, kMinis);
+  const int counts = room(s.busy, 15) + (s.helpers > 0 ? minis * 12 + 4 + room(s.helpers - minis, 0) : 0) + room(s.idle, 15);
   if (s.agent) {
     drawIcon(c, x, cy - 5, kDot, kInkAmber);
     // Who needs you, cut to leave room for "+N" and the working count.
@@ -162,9 +166,13 @@ void drawStrip(Canvas& c, const Strip& s) {
   // Then the helpers at work, and the agents idle, waiting for you.
   char count[12];
   if (s.helpers > 0) {
-    std::snprintf(count, sizeof(count), "%d", s.helpers);
-    iconHelpers(c, x, cy - 5, inkAt(kInkGrey, kLevels));
-    x = drawString(c, kSmall, x + 17, ty, count, kInkGrey) + 14;
+    for (int i = 0; i < minis; ++i) iconMini(c, x + i * 12, cy - 5, inkAt(kInkEye, kLevels));
+    x += minis * 12 + 2;
+    if (s.helpers > minis) {
+      std::snprintf(count, sizeof(count), "+%d", s.helpers - minis);
+      x = drawString(c, kSmall, x, ty, count, kInkGrey);
+    }
+    x += 12;
   }
   if (s.idle > 0) {
     std::snprintf(count, sizeof(count), "%d", s.idle);

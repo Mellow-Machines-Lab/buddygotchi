@@ -82,6 +82,9 @@ public final class DemoPlayer: @unchecked Sendable {
     var turnOpen: Set<String> = []
     /// The named sessions started so far, `buddy/session`.
     var sessions: Set<String> = []
+    /// The reviewers sent off and not yet back, by session (`buddy/session`),
+    /// each by its `agent_id`, the first sent the first back.
+    var reviewers: [String: [String]] = [:]
     var calls = 0
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
@@ -307,8 +310,9 @@ public final class DemoPlayer: @unchecked Sendable {
         case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask)
         case .review:
             send("PreToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
+            reviewers[key, default: []].append("reviewer-\(id)")
             later(0.2) { [self] in
-                send("SubagentStart")
+                send("SubagentStart") { $0.agentID = "reviewer-\(id)" }
                 send("PostToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
                 finish()
             }
@@ -326,7 +330,8 @@ public final class DemoPlayer: @unchecked Sendable {
         case .reply:
             later(step.takes) { [self] in
                 if a.byReviewer {
-                    send("SubagentStop")
+                    let reviewer = reviewers[key]?.isEmpty == false ? reviewers[key]!.removeFirst() : nil
+                    send("SubagentStop") { $0.agentID = reviewer }
                 } else if a.fails, !codex {
                     // Codex has no hook for a failed turn.
                     send("StopFailure") { $0.error = "api_error" }

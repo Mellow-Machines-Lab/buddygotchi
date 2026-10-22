@@ -1,5 +1,6 @@
 #include "render/gel/lane.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -117,7 +118,9 @@ void strip(Lane& l, const Strip& s) {
     std::snprintf(t, sizeof(t), "%d", n);
     return n > 0 ? icon + glyphCount(t) * f.w + kIcon : 0;
   };
-  const int busyRoom = room(s.busy, kIcon + 8) + room(s.helpers, kIcon + 12) + room(s.idle, kIcon + 10);
+  const int minis = std::min(s.helpers, kMinis), miniW = 20;
+  const int busyRoom = room(s.busy, kIcon + 8) + (s.helpers > 0 ? minis * miniW + kIcon + room(s.helpers - minis, 0) : 0) +
+                       room(s.idle, kIcon + 10);
   int x = kMargin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
@@ -150,10 +153,20 @@ void strip(Lane& l, const Strip& s) {
   // parcel each for BOOT to hand over.
   char count[12];
   if (s.helpers > 0) {
-    std::snprintf(count, sizeof(count), "%d", s.helpers);
-    r.round(x, cy - 2, 7, 7, 3, grey);
-    r.round(x + 10, cy - 2, 7, 7, 3, grey);
-    x = text(r, f, x + kIcon + 12, ty, count, grey) + kIcon;
+    // A mini each: a little droplet of the gel, with two eyes.
+    const uint16_t gel = 0x75BE, ink = 0x0000;
+    for (int i = 0; i < minis; ++i) {
+      const int mx = x + i * miniW;
+      r.round(mx, cy - 7, 16, 15, 7, gel);
+      r.round(mx + 4, cy - 2, 3, 3, 1, ink);
+      r.round(mx + 9, cy - 2, 3, 3, 1, ink);
+    }
+    x += minis * miniW;
+    if (s.helpers > minis) {
+      std::snprintf(count, sizeof(count), "+%d", s.helpers - minis);
+      x = text(r, f, x + 2, ty, count, grey);
+    }
+    x += kIcon;
   }
   if (s.idle > 0) {
     std::snprintf(count, sizeof(count), "%d", s.idle);

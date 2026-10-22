@@ -49,7 +49,7 @@ creature's brain.
 | `{"agent": "read"}` | The agent reads a file | `file` |
 | `{"agent": "edit"}` | The agent edits a file | `file`, `old`, `new` |
 | `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds) |
-| `{"agent": "review"}` | The agent sends a subagent | `task`, `prompt` |
+| `{"agent": "review"}` | The agent sends a subagent: a helper at work, a mini under the face, until a `reply` `"by": "reviewer"` brings the first one still out back | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |

@@ -1,0 +1,15 @@
+{
+  "name": "Helpers show as minis while they work, and the finished agent as a parcel",
+  "case": "The agent sends three helpers off, then one comes back, then the turn ends. The screen counts the helpers at work, a mini each (three, then two), and once the turn is over none, and the agent sits idle: one parcel for BOOT.",
+  "why": "The state's helpers count (Core.snapshot: helpers of every working session) and its idle count (sessions whose turn ended); the line under the face draws them (render/screens.cpp drawStrip, gel lane.cpp strip)",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "helper started", "at": "5s", "helper": "h1"},
+    {"event": "helper started", "at": "6s", "helper": "h2"},
+    {"event": "helper started", "at": "7s", "helper": "h3", "expect": {"helpers": "3", "idle": "0"}},
+    {"event": "helper returned", "at": "40s", "helper": "h2", "expect": {"helpers": "2"}},
+    {"event": "helper returned", "at": "50s", "helper": "h1"},
+    {"event": "helper returned", "at": "55s", "helper": "h3"},
+    {"event": "turn finished", "at": "1m", "expect": {"helpers": "0", "idle": "1"}}
+  ]
+}

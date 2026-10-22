@@ -6,6 +6,6 @@
   "hatched": "2026-09-01",
   "steps": [
     {"event": "away", "at": "0s"},
-    {"event": "back", "at": "8h30m", "expect": {"react": "excited|happy|proud", "animation": "wake up", "feeling": "glad", "loops": "twice|three times|four times"}}
+    {"event": "back", "at": "8h30m", "expect": {"when": "party|morning", "react": "excited|happy|proud", "animation": "wake up", "feeling": "glad", "loops": "twice|three times|four times"}}
   ]
 }

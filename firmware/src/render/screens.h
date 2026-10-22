@@ -34,9 +34,12 @@ struct Strip {
   Outcome doneOutcome = Outcome::kNone;
   int busy = 0;     // sessions working (grey; hidden at zero)
   int idle = 0;     // sessions idle, waiting for your next prompt: a parcel each for BOOT (hidden at zero)
-  int helpers = 0;  // helpers at work (hidden at zero)
+  int helpers = 0;  // helpers at work: a mini each, up to kMinis, then +N (hidden at zero)
   bool noApp = false;
 };
+
+// How many helpers the strip draws as minis; more show as +N.
+constexpr int kMinis = 4;
 
 void drawLane(Canvas& c, const char* bubble, const Strip& s);
 void drawStrip(Canvas& c, const Strip& s);
