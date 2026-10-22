@@ -6,18 +6,20 @@ The implementation plan for everything marked Yes in
 
 ## Outcome (2026-10-22)
 
-Stages 0 to 7 landed, one commit each, plus a build fix (each board
-builds the pack's sources afresh). Stage 8 was skipped, and stage 9 ran
-without Jev.
+Stages 0 to 7 landed, one commit each, plus a build fix. Then a
+second pass, at the owner's word: the gel's own art, the simulator's
+motion buttons, the review's deeper cleanups, and stage 8 started.
 
 **Checks that ran and passed** at the last commit:
-- `make -C internal test`: 347 passed, 1 skipped.
+- `.build/debug/BoopTests`: 349 passed, 1 skipped.
 - `boopdev eval --scripted`: 82 of 82 on the expect brain.
-- `make -C internal fw-test`: 221 and 55.
-- `make -C internal sim`: Pixel's 18 scenarios and the gel's 4.
-- `make -C internal fw`: both boards build (CYD flash 65.1%, AMOLED 40.7%).
-- Also: `tools-test`, `charactergen`, `slimegen`, the bank's
-  `qa/check.mjs` and `boopdev check`.
+- `make -C internal fw-test`: 224 and 55.
+- `make -C internal sim`: Pixel's 18 scenarios and the gel's 6.
+- `make -C internal fw`: both boards build (CYD flash 65.1%, AMOLED 41.1%).
+- `make -C internal sim-test`: the core's tests and the page's 12.
+- `make -C internal tools-test` and `faces`; slimegen `--check`,
+  `check-mirror.mjs` and `check-port.py`; `charactergen --check`; the
+  bank's `qa/check.mjs`; `boopdev check`.
 - `boopctl workday run --brain scripted`, then `workday check`: every
   limit but `min_mood_changes`, which the scripted brain can't meet
   because it never changes mood.
@@ -25,23 +27,32 @@ without Jev.
 **Not run:** any Jev eval or Jev workday (no key here), and anything on
 a board (no Bluetooth or webcam from an agent shell).
 
-**Skipped, for the owner:**
-- **Stage 8, the exact tab, and the deleted-code reaction.** Both need
-  AgentHooks changes that are pushed before Boop can point at them, and
-  the terminal scripting needs the owner's choice of terminals and a
-  permission prompt. Nothing was started in `agent-hooks/`.
-- **The gel's art.** It has no occasion variations and no gesture
-  recipes yet. It plays its existing poke for every gesture, and its
-  looks don't change by occasion.
-- **The simulator page's motion buttons.** They need Emscripten, which
-  isn't here. Motion is covered by the native simulator's
-  `gestures.jsonl` and the firmware's unit tests.
-- **Regional holidays.** Only the fixed list in `Occasions` is in.
+**Stage 8, waiting on a push.** AgentHooks' branch
+`terminal-tab-and-edit-sizes` (14b0bf4, in `agent-hooks/`, not pushed)
+records the terminal and tab a session runs in and opens that tab
+(iTerm2, Terminal.app, tmux), and counts the lines an edit adds and
+removes. Boop's side is the local branch `boop-terminal-tab`: the
+popover's "open its tab in …", the Automation prompt's words in
+Info.plist, and a finish that says `, 1,200 lines gone` once a turn
+removes 500 lines or more net (eval 100). It leaves out the submodule
+pointer: push AgentHooks' branch, merge it, bump `agent-hooks` in that
+commit, then merge it here. Neither has met a real terminal.
+
+**Left for the owner:**
+- **Regional holidays.** Only the fixed list in `Occasions` is in, which
+  is fine for now.
+- **The gel's art is best effort.** Its gestures borrow a face each;
+  it has no colour for a party, and no occasions for April Fools, Pi
+  Day, May the 4th or Friday the 13th. The studio plays only the first
+  gesture.
 - **The QMI8658's axis signs.** `kFlipZ` in
   `firmware/src/board/amoled206/imu.cpp` is a guess until the board is
   turned over on the desk; check `dbg.imu`.
 - **Touch thresholds.** `kStrokePx`, the tickle path and the nose box
   are tuned on the simulator, not under a finger on the board.
+- **Gestures by position.** A gesture's design is its place in
+  `render::Gesture`'s order. Both faces now draw all ten (the gel's
+  test pins its count), so naming them was left alone.
 
 ## The shape, in one paragraph
 
