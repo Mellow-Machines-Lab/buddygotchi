@@ -11,8 +11,19 @@ uint32_t tagBit(const char* name) {
   return 0;
 }
 
+namespace {
+// The rung of the ladder: 0 below busy, 1 busy, 2 frantic.
+int rung(int working) { return working >= kFranticFrom ? 2 : working >= kBusyFrom ? 1 : 0; }
+}  // namespace
+
 uint32_t busyTags(int working) {
-  return working >= kFranticFrom ? tagBit("frantic") : working >= kBusyFrom ? tagBit("busy") : 0;
+  static constexpr const char* kRungs[] = {nullptr, "busy", "frantic"};
+  return tagBit(kRungs[rung(working)]);
+}
+
+int workPace(int working) {
+  static constexpr int kPaces[] = {100, kBusyPace, kFranticPace};
+  return kPaces[rung(working)];
 }
 
 }  // namespace render

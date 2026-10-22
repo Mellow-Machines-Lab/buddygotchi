@@ -101,6 +101,50 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
   r.round(x + 17, cy + 3, 7, 3, 1, ink);
 }
 
+// The counts after the names: how many sessions work, the helpers at work
+// (a mini each, a little droplet of the gel with two eyes) and the agents
+// idle (a parcel each for BOOT to hand over), from x, each with the gap
+// after it. Drawn when r is given; either way, the x after them, so the
+// names leave them the room they take.
+int counts(Raster* r, const Strip& s, int x, int cy) {
+  const Font& f = kSign;
+  const int ty = cy - f.h / 2;
+  const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey), eye = inkRgb565(kInkEye);
+  char n[12];
+  auto number = [&](int at, uint16_t ink) { return r ? text(*r, f, at, ty, n, ink) : at + glyphCount(n) * f.w; };
+  if (s.busy > 0) {
+    if (r) ring(*r, x, cy, grey);
+    std::snprintf(n, sizeof(n), "%d", s.busy);
+    x = number(x + kIcon + 8, grey) + kIcon;
+  }
+  if (s.helpers > 0) {
+    const int minis = std::min(s.helpers, kMinis), miniW = 20;
+    const uint16_t gel = 0x75BE, ink = 0x0000;
+    for (int i = 0; r && i < minis; ++i) {
+      const int mx = x + i * miniW;
+      r->round(mx, cy - 7, 16, 15, 7, gel);
+      r->round(mx + 4, cy - 2, 3, 3, 1, ink);
+      r->round(mx + 9, cy - 2, 3, 3, 1, ink);
+    }
+    x += minis * miniW;
+    if (s.helpers > minis) {
+      std::snprintf(n, sizeof(n), "+%d", s.helpers - minis);
+      x = number(x + 2, grey);
+    }
+    x += kIcon;
+  }
+  if (s.idle > 0) {
+    if (r) {
+      r->round(x, cy - 6, 16, 13, 2, eye);
+      r->round(x + 7, cy - 6, 2, 13, 0, dim);
+      r->round(x, cy - 1, 16, 2, 0, dim);
+    }
+    std::snprintf(n, sizeof(n), "%d", s.idle);
+    x = number(x + kIcon + 10, eye) + kIcon;
+  }
+  return x;
+}
+
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
@@ -110,17 +154,7 @@ void strip(Lane& l, const Strip& s) {
   r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
   const Font& f = kSign;
   const int cy = l.y((kStripTop + kHeight) / 2), ty = cy - f.h / 2;
-  char busy[12];
-  std::snprintf(busy, sizeof(busy), "%d", s.busy);
-  // The room the counts after the names take: working, helpers and idle.
-  auto room = [&](int n, int icon) {
-    char t[12];
-    std::snprintf(t, sizeof(t), "%d", n);
-    return n > 0 ? icon + glyphCount(t) * f.w + kIcon : 0;
-  };
-  const int minis = std::min(s.helpers, kMinis), miniW = 20;
-  const int busyRoom = room(s.busy, kIcon + 8) + (s.helpers > 0 ? minis * miniW + kIcon + room(s.helpers - minis, 0) : 0) +
-                       room(s.idle, kIcon + 10);
+  const int countsWidth = counts(nullptr, s, 0, cy);
   int x = kMargin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
@@ -130,7 +164,7 @@ void strip(Lane& l, const Strip& s) {
     const int moreRoom = more[0] ? glyphCount(more) * f.w + 12 : 0;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, s.name && *s.name ? s.name : s.project);
-    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - kMargin - (x + 2 * kIcon) - moreRoom - busyRoom);
+    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - kMargin - (x + 2 * kIcon) - moreRoom - countsWidth);
     if (more[0]) x = text(r, f, x + 12, ty, more, grey);
     x += kIcon;
   } else if (s.doneAgent) {
@@ -143,39 +177,11 @@ void strip(Lane& l, const Strip& s) {
       dots(r, x, cy, eye);
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
-    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - kMargin - (x + 2 * kIcon) - busyRoom) + kIcon;
+    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - kMargin - (x + 2 * kIcon) - countsWidth) + kIcon;
   }
-  if (s.busy > 0) {
-    ring(r, x, cy, grey);
-    x = text(r, f, x + kIcon + 8, ty, busy, grey) + kIcon;
-  }
-  // Then the helpers at work, and the agents idle, waiting for you: a
-  // parcel each for BOOT to hand over.
-  char count[12];
-  if (s.helpers > 0) {
-    // A mini each: a little droplet of the gel, with two eyes.
-    const uint16_t gel = 0x75BE, ink = 0x0000;
-    for (int i = 0; i < minis; ++i) {
-      const int mx = x + i * miniW;
-      r.round(mx, cy - 7, 16, 15, 7, gel);
-      r.round(mx + 4, cy - 2, 3, 3, 1, ink);
-      r.round(mx + 9, cy - 2, 3, 3, 1, ink);
-    }
-    x += minis * miniW;
-    if (s.helpers > minis) {
-      std::snprintf(count, sizeof(count), "+%d", s.helpers - minis);
-      x = text(r, f, x + 2, ty, count, grey);
-    }
-    x += kIcon;
-  }
-  if (s.idle > 0) {
-    std::snprintf(count, sizeof(count), "%d", s.idle);
-    const uint16_t eye = inkRgb565(kInkEye);
-    r.round(x, cy - 6, 16, 13, 2, eye);
-    r.round(x + 7, cy - 6, 2, 13, 0, dim);
-    r.round(x, cy - 1, 16, 2, 0, dim);
-    text(r, f, x + kIcon + 10, ty, count, eye);
-  }
+  // Then how many work, the helpers at work, and the agents idle, waiting
+  // for you.
+  counts(&r, s, x, cy);
   if (s.noApp) plug(r, l.w - kMargin - 24, cy, grey);
 }
 

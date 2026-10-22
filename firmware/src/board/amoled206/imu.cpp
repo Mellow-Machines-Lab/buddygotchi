@@ -4,8 +4,8 @@
 // board, held sideways with USB-C on the left, are first guesses: z is out
 // of the screen when kFlipZ says so, to check on the board (`boopctl imu`).
 #include <Arduino.h>
-#include <Wire.h>
 
+#include "board/amoled206/i2c.h"
 #include "board/board_hal.h"
 
 namespace board {
@@ -19,22 +19,6 @@ constexpr bool kFlipZ = false;
 uint8_t addr = 0;
 bool tried = false;
 
-bool writeReg(uint8_t reg, uint8_t v) {
-  Wire.beginTransmission(addr);
-  Wire.write(reg);
-  Wire.write(v);
-  return Wire.endTransmission() == 0;
-}
-
-bool readRegs(uint8_t reg, uint8_t* out, int n) {
-  Wire.beginTransmission(addr);
-  Wire.write(reg);
-  if (Wire.endTransmission(false) != 0) return false;
-  if (Wire.requestFrom(int(addr), n) != n) return false;
-  for (int i = 0; i < n; ++i) out[i] = uint8_t(Wire.read());
-  return true;
-}
-
 // Finds the sensor once: its address, then auto-increment, +/-4 g at about
 // 125 Hz, and the accelerometer on.
 bool start() {
@@ -42,8 +26,8 @@ bool start() {
   for (uint8_t a : kAddrs) {
     addr = a;
     uint8_t who = 0;
-    if (readRegs(kWhoAmI, &who, 1) && who == kWho) {
-      return writeReg(kCtrl1, 0x40) && writeReg(kCtrl2, 0x16) && writeReg(kCtrl7, 0x01);
+    if (i2cRead(addr, kWhoAmI, &who, 1) && who == kWho) {
+      return i2cWrite(addr, kCtrl1, 0x40) && i2cWrite(addr, kCtrl2, 0x16) && i2cWrite(addr, kCtrl7, 0x01);
     }
   }
   addr = 0;
@@ -55,7 +39,7 @@ bool BoardHal::motion(int& ax, int& ay, int& az) {
   if (!tried) start();
   if (!addr) return false;
   uint8_t b[6];
-  if (!readRegs(kAxL, b, 6)) return false;
+  if (!i2cRead(addr, kAxL, b, 6)) return false;
   auto mg = [&](int i) { return int(int16_t(uint16_t(b[i]) | uint16_t(b[i + 1]) << 8)) * 1000 / kLsbPerG; };
   ax = mg(0), ay = mg(2), az = kFlipZ ? -mg(4) : mg(4);
   return true;

@@ -72,27 +72,29 @@ static void test_bounces_are_ignored() {
 // Pins TouchGesture's distances: 40 px of travel is a stroke, upward
 // more than sideways a ruffle; 90 px of wiggling inside a 36 px spot a
 // tickle; a tap within 14 px of the nose, under the eyes, a boop on it.
-static TouchGesture::Kind path(std::initializer_list<std::pair<int, int>> points) {
+// What a touch along `points` was: its gesture, or kTouchTap for a tap.
+constexpr int kTouchTap = -1;
+static int path(std::initializer_list<std::pair<int, int>> points) {
   TouchGesture g;
   auto p = points.begin();
   g.down(p->first, p->second);
   for (++p; p != points.end(); ++p) g.move(p->first, p->second);
-  return g.up();
+  render::Gesture what;
+  return g.up(what) ? int(what) : kTouchTap;
 }
 static void test_a_touchs_path() {
-  TEST_ASSERT_EQUAL(TouchGesture::kTap, path({{40, 40}}));
-  TEST_ASSERT_EQUAL(TouchGesture::kTap, path({{40, 40}, {60, 40}}));        // short of a stroke
-  TEST_ASSERT_EQUAL(TouchGesture::kStroke, path({{60, 120}, {100, 120}}));  // 40 px across
-  TEST_ASSERT_EQUAL(TouchGesture::kStroke, path({{160, 60}, {160, 150}}));  // down
-  TEST_ASSERT_EQUAL(TouchGesture::kRuffle, path({{160, 150}, {150, 90}}));  // up
-  TEST_ASSERT_EQUAL(TouchGesture::kTickle, path({{100, 100}, {120, 100}, {100, 100}, {120, 100}, {100, 100}, {120, 100}}));
-  TEST_ASSERT_EQUAL(TouchGesture::kNose, path({{160, 134}}));
-  TEST_ASSERT_EQUAL(TouchGesture::kNose, path({{174, 148}}));
-  TEST_ASSERT_EQUAL(TouchGesture::kTap, path({{175, 134}}));
-  TEST_ASSERT_EQUAL(TouchGesture::kTap, path({{160, 100}}));  // the face, but not its nose
-  render::Gesture g;
-  TEST_ASSERT_TRUE(app::gestureOf(TouchGesture::kNose, g) && g == render::Gesture::kNose);
-  TEST_ASSERT_FALSE(app::gestureOf(TouchGesture::kTap, g));
+  using render::Gesture;
+  TEST_ASSERT_EQUAL(kTouchTap, path({{40, 40}}));
+  TEST_ASSERT_EQUAL(kTouchTap, path({{40, 40}, {60, 40}}));                 // short of a stroke
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {100, 120}}));  // 40 px across
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{160, 60}, {160, 150}}));  // down
+  TEST_ASSERT_EQUAL(int(Gesture::kRuffle), path({{160, 150}, {150, 90}}));  // up
+  TEST_ASSERT_EQUAL(int(Gesture::kTickle),
+                    path({{100, 100}, {120, 100}, {100, 100}, {120, 100}, {100, 100}, {120, 100}}));
+  TEST_ASSERT_EQUAL(int(Gesture::kNose), path({{160, 134}}));
+  TEST_ASSERT_EQUAL(int(Gesture::kNose), path({{174, 148}}));
+  TEST_ASSERT_EQUAL(kTouchTap, path({{175, 134}}));
+  TEST_ASSERT_EQUAL(kTouchTap, path({{160, 100}}));  // the face, but not its nose
 }
 
 // Feeds `MotionGesture` a reading every 20 ms from `from` to `to`, and

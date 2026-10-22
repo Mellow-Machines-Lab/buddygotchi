@@ -55,7 +55,7 @@ class GelFace final : public Face {
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;
   // The engine's own clock, which runs quicker in the working looks while
-  // the agents are busy (render::workPace, in percent), and its hundredths.
+  // the agents are busy (FaceContext::pace, in percent), and its hundredths.
   uint32_t engineMs_ = 0, engineFrac_ = 0;
   int pace_ = 100;
   bool finger_ = false;

@@ -1,11 +1,11 @@
 #include "render/gel/face.h"
-#include "render/tags.h"
 
 #include <cstdio>
 #include <cstring>
 
 #include "render/gel/lane.h"
 #include "render/gel/profile.h"
+#include "render/maths.h"
 #include "render/palette.h"
 #include "render/gel/sounds.h"
 
@@ -52,7 +52,7 @@ void GelFace::seed(uint32_t s) {
 // The engine steps on the reference's 16 ms grid from the last reset.
 bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   uint32_t next = origin_ + ((from - origin_) / 16 + 1) * 16;
-  if (int32_t(to - next) < 0) return false;
+  if (after(next, to)) return false;
   at = next;
   return true;
 }
@@ -121,7 +121,7 @@ bool GelFace::factsChanged(const FaceContext& c) const {
 
 void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_t t) {
   advanceTo(t);
-  pace_ = context.working && !context.attention ? render::workPace(context.busy) : 100;
+  pace_ = context.pace;
   Measure measure(gel::profile.sync);
   auto& e = *engine_;
   if (factsChanged(context)) {

@@ -1,7 +1,6 @@
 // The pixel face's presentation clock and asset adapter.
 #pragma once
 #include "render/face.h"
-#include "render/tags.h"
 #include "render/pixel/effect_track.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sign.h"
@@ -53,9 +52,14 @@ class PixelFace final : public Face {
   bool turnable() const;
   // A variation of the look that fits now, never `avoid` while another
   // does, an occasion's kTaggedPct of the time while one fits.
-  uint8_t pickLook(int avoid, linkkit::Rng& rng) const;
-  uint8_t firstLook() const;
-  bool lookFits(int v) const { return fits(src_.mood, src_.look, v, context_.when, context_.lookMs); }
+  uint8_t pickLook(Mood m, SceneState s, int avoid, linkkit::Rng& rng) const;
+  // A new look's variation: the first occasion's that fits, else the first
+  // that fits, else the first.
+  uint8_t firstLook(Mood m, SceneState s) const;
+  // The variations of mood m's look s that fit now, but `avoid`, into out;
+  // how many.
+  int fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const;
+  bool lookFits(Mood m, SceneState s, int v) const { return fits(m, s, v, context_.when, context_.lookMs); }
   FaceSource src_;
   FaceContext context_;
   uint32_t lookAt_ = 0;
@@ -63,7 +67,7 @@ class PixelFace final : public Face {
   // A new look waits for its variation, picked at the next sync from those
   // that fit then.
   bool pending_ = true;
-  // The working looks' pace now, in percent (render::workPace).
+  // The working looks' pace now, in percent (FaceContext::pace).
   int pace_ = 100;
   bool switched_ = false, blink_ = false;
   uint32_t switchAt_ = 0, blinkAt_ = 0, nextBlink_ = 0;

@@ -14,6 +14,8 @@
 
 namespace app {
 
+using render::after;
+
 namespace {
 
 using linkkit::Do;
@@ -30,8 +32,6 @@ static_assert(ButtonGesture::kTalkCapMs == Behaviour::kListenMs, "the talk cap i
 // entries, low byte first.
 static_assert(sizeof(render::kPalette.c) == 512, "the palette is 256 entries");
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out as it's stored");
-
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }  // a later than b
 
 // A repeated state keeps the link alive but doesn't invalidate the picture.
 // Compare fields, not bytes: Model has padding and its strings are terminated.
@@ -572,9 +572,9 @@ void Device::tapped(uint32_t t, bool injected, bool button) {
   const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
   // Where it came from (`src`), and the finish it landed on, if any.
-  char data[48];
-  if (finish) std::snprintf(data, sizeof(data), "{\"src\":\"%s\",\"on\":%lu}", button ? "button" : "screen", (unsigned long)finish);
-  else std::snprintf(data, sizeof(data), "{\"src\":\"%s\"}", button ? "button" : "screen");
+  char on[24] = "", data[48];
+  if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
+  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s}", button ? "button" : "screen", on);
   kit().emit("tap", did, data, injected);
   drain();  // the poke cuts an animation
 }
@@ -588,7 +588,7 @@ void Device::readInputs(uint32_t t) {
   // A tool's input then times its release exactly (dbg.latency).
   auto letGo = [&](uint32_t until) { return kit().frozen() ? real : real - (t - until); };
   uint32_t pressGone = real, touchGone = real;
-  if (injPress_ && int32_t(t - injPressUntil_) >= 0) injPress_ = false, pressGone = letGo(injPressUntil_);
+  if (injPress_ && !after(injPressUntil_, t)) injPress_ = false, pressGone = letGo(injPressUntil_);
   switch (boot_.update(hal_.bootDown() || injPress_, t)) {
     case ButtonGesture::kDown:
       bootInjected_ = !hal_.bootDown();
@@ -625,7 +625,7 @@ void Device::readInputs(uint32_t t) {
   // press, so its touch ends only after kTouchReleaseMs without contact,
   // in real time so that it ends while a tool has the clock frozen; an
   // injected one ends when it says. The debug pattern ignores touches.
-  if (injTouch_ && int32_t(t - injTouchUntil_) >= 0) injTouch_ = false, touchGone = letGo(injTouchUntil_);
+  if (injTouch_ && !after(injTouchUntil_, t)) injTouch_ = false, touchGone = letGo(injTouchUntil_);
   int x = 0, y = 0;
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
   if (injTouch_ && injTouchUntil_ != injTouchFrom_) {  // a stroke's way along
@@ -658,7 +658,7 @@ void Device::readInputs(uint32_t t) {
       // held, where a touch is a tap.
       latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
       render::Gesture g;
-      if (app::gestureOf(touchPath_.up(), g) && !b_.held(t)) gestured(g, t, touchInjected_);
+      if (touchPath_.up(g) && !b_.held(t)) gestured(g, t, touchInjected_);
       else tapped(t, touchInjected_, false);
     }
   }
