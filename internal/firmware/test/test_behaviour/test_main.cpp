@@ -13,6 +13,8 @@
 #include "app/device.h"
 #include "render/pixel/anim.h"
 #include "render/pixel/sounds.h"
+#include "render/pixel/scene.h"
+#include "render/tags.h"
 #include "linkkit/kit.h"
 #include "voice/player.h"
 
@@ -48,6 +50,11 @@ struct Rig {
     b.advance(t, rng);
   }
   void state(Model m) { b.onState(m, t); }
+  // Pins the look's variation `v` (from 0), as dbg.look does, from now.
+  void look(uint8_t v) {
+    b.face().showLookVariant(v);
+    b.advance(t, rng);
+  }
   void react(SceneState a) {
     ReactionIn m;
     m.anim = a;
@@ -110,21 +117,23 @@ bool onFace(const Behaviour& b, uint32_t t) {
 
 }  // namespace
 
-// A look's variations rotate. Each
+// A look's variations rotate, the face's own picks. Each
 // shows at least render::pixel::PixelFace::kTurnMinMs, then each end of its loop moves
 // to another (never itself) or plays another loop, and the move blinks
-// and starts the new one's clock. The Mac's same state again doesn't
-// start them over; its new variation does. Needs you and a finish hold the
-// variation showing.
+// and starts the new one's clock. Only those that fit turn up: with no
+// tags on and the look new, never an occasion's (working's coffee and
+// sweat) nor one that waits (its stretch, after 20 minutes). The Mac's
+// same state again doesn't start them over. Needs you and a finish hold
+// the variation showing.
 static void test_the_looks_variations_rotate() {
   Rig r;
   Model m = base("working");
-  m.variant = 2;
   r.state(m);
+  r.look(2);
   uint8_t shown = 2;
   uint32_t since = 0;
   int turns = 0, stays = 0;
-  bool seen[5] = {};
+  bool seen[8] = {};
   seen[2] = true;
   for (uint32_t t = 10; t <= 600000; t += 10) {
     r.at(t);
@@ -141,23 +150,24 @@ static void test_the_looks_variations_rotate() {
     shown = s.variant, since = t, ++turns;
     seen[shown] = true;
   }
-  for (bool v : seen) TEST_ASSERT_TRUE(v);
+  for (int v = 0; v < 5; ++v) TEST_ASSERT_TRUE(seen[v]);
+  for (int v = 5; v < 8; ++v) TEST_ASSERT_FALSE(seen[v]);
   TEST_ASSERT_TRUE(turns >= 40 && turns <= 110);  // about one every 8 s
   TEST_ASSERT_TRUE(stays > 0);
 
-  // The Mac's own new variation shows at once.
-  m.variant = uint8_t((shown + 1) % 5);
-  r.state(m);
-  TEST_ASSERT_EQUAL(m.variant, r.b.show(r.t).variant);
+  // A pinned variation (dbg.look) shows at once.
+  r.look(uint8_t((shown + 1) % 5));
+  TEST_ASSERT_EQUAL((shown + 1) % 5, r.b.show(r.t).variant);
 
   // Needs you holds its variation, and so does a finish.
   Model a = attn();
-  a.variant = 1;
   r.state(a);
+  r.at(r.t);
+  const int held = r.b.show(r.t).variant;
   for (uint32_t t = r.t; t <= r.t + 60000; t += 1000) {
     r.at(t);
     if (t % 10000 == 0) r.state(a);
-    TEST_ASSERT_EQUAL(1, r.b.show(t).variant);
+    TEST_ASSERT_EQUAL(held, r.b.show(t).variant);
   }
   r.state(m);
   r.at(r.t + 20000);
@@ -1405,25 +1415,23 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // reaction: it was seen and heard, so it's done. A tap's poke plays in it.
   Rig h;
   Model hm = base("idle");
-  hm.variant = 1;  // the idle design's second variation, a long loop, its clock from 0
   h.state(hm);
+  h.look(1);  // the idle design's second variation, a long loop, its clock from 0
   const uint32_t idle = loopMs(render::Mood::kProud, SceneState::kIdle, 1);
   // The look's variations take turns at their loops' ends between the
   // parts below, so each part pins the second again, its clock from the
   // part's start: another variation from the Mac, then this one, starts
   // the turns over from it.
   auto pin = [&](Rig& g) {
-    Model other = hm;
-    other.variant = 0;
-    g.state(other);
-    g.at(g.t);
     g.state(hm);
-    g.at(g.t);
+    g.look(0);
+    g.look(1);
   };
   render::Mood face;
   {
     Rig p;
     p.state(hm);
+    p.look(1);
     p.at(1000);
     onReaction(p.b, waited(17), p.t);
     p.at(1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
@@ -1878,8 +1886,9 @@ static void test_an_act_shows_in_workings_place() {
   TEST_ASSERT_TRUE(app::actFromName(nullptr) == SceneState::kWorking);
   Rig r;
   Model m = base("working");
-  m.act = SceneState::kTerminal, m.mood = Mood::kCalm, m.variant = 2;
+  m.act = SceneState::kTerminal, m.mood = Mood::kCalm;
   r.state(m);
+  r.look(2);
   r.at(700);
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kTerminal && s.mood == Mood::kCalm);
@@ -1887,7 +1896,7 @@ static void test_an_act_shows_in_workings_place() {
   TEST_ASSERT_EQUAL_UINT32(700, s.t);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kTerminal);
   // Another activity: its design from its start, behind a blink.
-  m.act = SceneState::kAnalyzing, m.variant = 0;
+  m.act = SceneState::kAnalyzing;
   r.state(m);
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kAnalyzing && s.t == 0 && s.eyesShut && render::eyesClosed(s));
@@ -2350,6 +2359,119 @@ static void test_a_long_touch_during_needs_you_is_a_tap() {
   TEST_ASSERT_TRUE(r.has("\"moment\":null"));
 }
 
+// Occasions (render/tags.h): a look's variation that needs tags shows
+// only while they're all on. A new look starts on it while it fits, the
+// turns keep to those that fit (an occasion's kTaggedPct of the time), and
+// one whose tags go off turns away at its loop's end. Happy's idle: the
+// morning coffee is its 7th variation (index 6), the nightcap its 8th.
+static void test_an_occasion_shows_only_while_its_tags_are_on() {
+  using render::pixel::PixelFace;
+  const int coffee = 6, nightcap = 7;
+  TEST_ASSERT_TRUE(render::tagged(render::Mood::kHappy, SceneState::kIdle, coffee));
+  TEST_ASSERT_FALSE(render::tagged(render::Mood::kHappy, SceneState::kIdle, 0));
+  Rig r;
+  r.state(base("asleep"));
+  r.at(5);
+  Model m = base("idle");
+  m.when = render::tagBit("morning");
+  r.state(m);
+  r.at(10);
+  TEST_ASSERT_EQUAL_INT(coffee, r.b.show(r.t).variant);  // a new look starts on it
+  // Of the turns from an ordinary variation, about two in three go to the
+  // coffee, the only occasion that fits; a turn from it goes elsewhere.
+  int shown = coffee, occasions = 0, turns = 0;
+  for (uint32_t t = 20; t <= 1800000; t += 10) {
+    r.at(t);
+    if (t % 10000 == 0) r.state(m);
+    int v = r.b.show(t).variant;
+    TEST_ASSERT_TRUE(v != nightcap);  // night isn't on
+    if (v == shown) continue;
+    if (shown != coffee) ++turns, occasions += v == coffee;
+    shown = v;
+  }
+  TEST_ASSERT_TRUE(turns >= 30);
+  TEST_ASSERT_TRUE(occasions * 100 >= turns * (PixelFace::kTaggedPct - 15));
+  TEST_ASSERT_TRUE(occasions * 100 <= turns * (PixelFace::kTaggedPct + 15));
+  // Morning ends: the coffee turns away at its loop's end, whatever the odds.
+  r.look(uint8_t(coffee));
+  m.when = render::tagBit("day");
+  r.state(m);
+  const uint32_t loop = render::loopMs(render::Mood::kHappy, SceneState::kIdle, coffee);
+  r.at(r.t + loop + 10);
+  TEST_ASSERT_NOT_EQUAL(coffee, r.b.show(r.t).variant);
+  // A tag the board doesn't know is no tag.
+  TEST_ASSERT_EQUAL_UINT32(0, render::tagBit("someday"));
+  TEST_ASSERT_EQUAL_UINT32(1u << 18, render::tagBit("frantic"));
+}
+
+// A variation with a wait (`after`) shows only once its look has shown
+// that long: happy's nodding off (idle's 6th, index 4) after 20 minutes.
+// A new look starts the wait over.
+static void test_a_variation_waits_for_its_look() {
+  const int nodding = 4;
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  bool early = false, late = false;
+  for (uint32_t t = 100; t <= 3600000; t += 100) {
+    r.at(t);
+    if (t % 10000 == 0) r.state(m);
+    if (r.b.show(t).variant != nodding) continue;
+    (t < 20 * 60000 ? early : late) = true;
+  }
+  TEST_ASSERT_FALSE(early);
+  TEST_ASSERT_TRUE(late);
+  r.state(base("working"));
+  r.state(m);
+  r.at(r.t + 10);
+  TEST_ASSERT_NOT_EQUAL(nodding, r.b.show(r.t).variant);
+}
+
+// The working looks quicken with the agents working (render::workPace): calm with one, busy (125%) with two or three,
+// frantic (160%) with four or more; the loop keeps its place as it changes.
+static void test_the_working_looks_quicken_with_the_agents() {
+  TEST_ASSERT_EQUAL_INT(100, render::workPace(1));
+  TEST_ASSERT_EQUAL_INT(125, render::workPace(2));
+  TEST_ASSERT_EQUAL_INT(125, render::workPace(3));
+  TEST_ASSERT_EQUAL_INT(160, render::workPace(4));
+  Rig r;
+  Model m = base("working");
+  m.busy = 1;
+  r.state(m);
+  r.look(0);
+  r.at(1000);
+  uint32_t calm = r.b.show(r.t).t;
+  m.busy = 4;
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL_UINT32(calm, r.b.show(r.t).t);  // no jump as it changes
+  r.at(1500);
+  TEST_ASSERT_UINT32_WITHIN(1, calm + 800, r.b.show(r.t).t);  // half a second at 160%
+  r.state(base("idle"));
+  r.at(1600);
+  uint32_t idle = r.b.show(r.t).t;
+  r.at(2100);
+  TEST_ASSERT_EQUAL_UINT32(idle + 500, r.b.show(r.t).t);  // idle keeps its pace
+}
+
+// A reaction whose occasion is on plays it, whatever the Mac asked for:
+// the party wake-up (wake_up's 2nd) on a party day, else the plain one.
+static void test_a_reactions_occasion_wins_while_on() {
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(10);
+  for (int i = 0; i < 20; ++i)
+    TEST_ASSERT_EQUAL_INT(0, r.b.face().pick(SceneState::kWakeUp, render::Mood::kHappy, 1, render::Outcome::kNone,
+                                               render::StartCtx::kNone, r.rng));
+  m.when = render::tagBit("party") | render::tagBit("morning");
+  r.state(m);
+  r.at(20);
+  for (int i = 0; i < 20; ++i)
+    TEST_ASSERT_EQUAL_INT(1, r.b.face().pick(SceneState::kWakeUp, render::Mood::kHappy, 1, render::Outcome::kNone,
+                                               render::StartCtx::kNone, r.rng));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -2396,6 +2518,10 @@ int main() {
   RUN_TEST(test_flip_books_blink_by_themselves);
   RUN_TEST(test_each_look_shows_its_design_in_the_mood);
   RUN_TEST(test_the_looks_variations_rotate);
+  RUN_TEST(test_an_occasion_shows_only_while_its_tags_are_on);
+  RUN_TEST(test_a_variation_waits_for_its_look);
+  RUN_TEST(test_the_working_looks_quicken_with_the_agents);
+  RUN_TEST(test_a_reactions_occasion_wins_while_on);
   RUN_TEST(test_no_app_at_30s_and_reconnect_blinks_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);

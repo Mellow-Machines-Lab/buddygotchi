@@ -216,6 +216,7 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
+| `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | `boop` (the default) or `chatter` |
@@ -307,7 +308,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
   again gets a louder grumble (`78`); quiet fades an excited Boop a
   step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`83`).
+  cheer as Claude's (`83`). On an occasion the
+  prompt's heading names, Boop plays along when you come back: on
+  Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello.
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

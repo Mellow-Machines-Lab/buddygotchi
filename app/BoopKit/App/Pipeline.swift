@@ -81,7 +81,13 @@ public final class Pipeline {
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
         options.reading = .none
-        options.heading = { wall in "\(time.clock(wall)), \(time.weekday(wall))" }
+        // The time and weekday, then the calendar's occasions in words
+        // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
+        let hatched = buddies.first?.core.config.hatched, name = CharacterPack.active.name
+        options.heading = { wall in
+            ([time.clock(wall), time.weekday(wall)] + Occasions.words(at: wall, hatched: hatched, name: name, time: time))
+                .joined(separator: ", ")
+        }
         options.loop = loop
         let input = inputTime
         harness = Harness(name: CharacterPack.active.name, brain: nil, log: transcript,

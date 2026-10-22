@@ -204,6 +204,13 @@ int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out) {
   return k;
 }
 
+bool fits(Mood m, SceneState s, int variant, uint32_t when, uint32_t lookMs) {
+  const Design& d = design(m, s, variant);
+  return (d.when & ~when) == 0 && uint32_t(d.after) * 1000 <= lookMs;
+}
+
+bool tagged(Mood m, SceneState s, int variant) { return design(m, s, variant).when != 0; }
+
 int sceneOf(Mood m, SceneState s, int variant) { return design(m, s, variant).scene; }
 
 uint32_t loopMs(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].loopMs; }

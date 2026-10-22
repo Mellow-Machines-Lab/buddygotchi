@@ -404,7 +404,7 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(result.passed)
         XCTAssertEqual(result.checks.first?.react, "amused", "the step's own answer comes first")
         _ = try await Eval(brain: Seeing(states), steering: RuntimeTests.steering).run(scenario)
-        XCTAssertTrue(states.all.first?.contains("NOW (09:00, Saturday") == true, states.all.first ?? "")
+        XCTAssertTrue(states.all.first?.contains("NOW (09:00, Saturday, Halloween)") == true, "the heading says the occasion: " + (states.all.first ?? ""))
         try #"{"name":"n","case":"c","why":"w","start":"Halloween","steps":[{"event":"poke","at":"0s","expect":{"react":"none"}}]}"#
             .write(to: file, atomically: true, encoding: .utf8)
         try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }

@@ -3,11 +3,13 @@
 // the Mac's variation. A new one starts from its beginning behind a blink:
 // a new mood's flip-book shows its own blink step to hide the switch.
 {"clock":0}
-{"t":"state","base":"working","act":"terminal","busy":1,"variant":1}
+{"t":"state","base":"working","act":"terminal","busy":1}
+{"t":"dbg.look","variant":1}
 {"clock":1500}
 {"expect":{"act":"terminal","look_variant":1,"moment":null}}
 {"shot":"terminal"}
-{"t":"state","base":"working","act":"analyzing","mood":"calm","busy":1,"variant":2}
+{"t":"state","base":"working","act":"analyzing","mood":"calm","busy":1}
+{"t":"dbg.look","variant":2}
 {"clock":1575}
 {"shot":"to-analyzing-calm-75ms"}
 {"clock":3000}

@@ -22,7 +22,7 @@ public struct LocalTime: Sendable {
     }
 
     /// Whether `s` is a `yyyy-MM-dd` that names a real day.
-    static func isDay(_ s: String) -> Bool {
+    public static func isDay(_ s: String) -> Bool {
         let p = s.split(separator: "-", omittingEmptySubsequences: false).map { Int($0) }
         guard s.count == 10, p.count == 3, let y = p[0], let m = p[1], let d = p[2], (1...12).contains(m),
               String(format: "%04d-%02d-%02d", y, m, d) == s else { return false }

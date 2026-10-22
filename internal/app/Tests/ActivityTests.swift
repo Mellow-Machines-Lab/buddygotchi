@@ -56,16 +56,15 @@ final class CoreActivityTests: XCTestCase {
     }
 
     /// `act` goes out only while `base` is `working` and
-    /// nothing needs you, and the variation is that visual's.
+    /// nothing needs you. The device picks the look's variation itself.
     func testTheActivityShowsOnlyInTheWorkingLook() {
         let rig = CoreRig()
         rig.send(.sessionStart)
         rig.send(.turnStart)
         let fx = rig.send(.activity, tool: "Bash", id: "b")
         let line = states(fx).last!.jsonLine
-        let variant = rig.state.variant
-        XCTAssertEqual(line, #"{"t":"state","base":"working","act":"terminal","mood":"calm","busy":1,"vol":6,"variant":"# + "\(variant)}")
-        XCTAssertTrue((1...FaceLoops.count(mood: "calm", state: "terminal")).contains(variant))
+        let when = rig.state.when.map { "\"\($0)\"" }.joined(separator: ",")
+        XCTAssertEqual(line, #"{"t":"state","base":"working","act":"terminal","mood":"calm","busy":1,"vol":6,"when":["# + when + "]}")
         rig.send(.needsYou, tool: "Bash")
         XCTAssertNil(rig.act, "needs you covers it")
         XCTAssertEqual(rig.state.visual, "needs_you")
@@ -299,29 +298,6 @@ final class CoreActivityTests: XCTestCase {
         rig.wait(2000)
         XCTAssertNil(rig.act)
         XCTAssertEqual(rig.state.busy, 2)
-    }
-
-    /// A new mood keeps the variation showing, unless it
-    /// has fewer of that look; then one of its own, at random.
-    func testANewMoodWithFewerVariationsPicksAgain() throws {
-        let many = FaceLoops.moods.max { FaceLoops.count(mood: $0, state: "terminal") < FaceLoops.count(mood: $1, state: "terminal") }!
-        let few = FaceLoops.moods.min { FaceLoops.count(mood: $0, state: "terminal") < FaceLoops.count(mood: $1, state: "terminal") }!
-        let fewer = FaceLoops.count(mood: few, state: "terminal")
-        try XCTSkipUnless(FaceLoops.count(mood: many, state: "terminal") > fewer, "every mood has as many terminal looks")
-        let rig = CoreRig(seed: 7)
-        _ = rig.setMood(many)
-        var n = 0
-        repeat {
-            rig.send(.turnEnd)
-            rig.send(.turnStart)
-            rig.send(.activity, tool: "Bash", id: "b\(n)")
-            n += 1
-        } while rig.state.variant <= fewer && n < 50
-        XCTAssertEqual(rig.state.visual, "terminal")
-        XCTAssertGreaterThan(rig.state.variant, fewer, "a variation \(few) hasn't")
-        let fx = rig.setMood(few)
-        XCTAssertEqual(states(fx).last?.visual, "terminal")
-        XCTAssertTrue((1...fewer).contains(rig.state.variant), "\(rig.state.variant) of \(fewer)")
     }
 }
 

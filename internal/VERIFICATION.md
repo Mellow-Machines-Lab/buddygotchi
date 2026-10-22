@@ -239,7 +239,7 @@ gets at least one scenario. Their pictures are the golden images in
   that subagent's request, isn't activity, and makes its session work
   again only while its turn goes on, and its start changes none of that.
   It also checks what the agents are doing shows only in the working
-  look, every variation is one the visual has, and the rules' reactions
+  look, every tag sent is one the board knows, and the rules' reactions
   never go out while something needs you or with an `id`, the error one
   at most every 30 s.
   `GoldenStateTests` runs every eval scenario with a scripted brain that

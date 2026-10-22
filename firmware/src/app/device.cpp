@@ -1,4 +1,5 @@
 #include "app/device.h"
+#include "render/tags.h"
 
 #include <ArduinoJson.h>
 
@@ -35,8 +36,9 @@ bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }  // a later th
 // A repeated state keeps the link alive but doesn't invalidate the picture.
 // Compare fields, not bytes: Model has padding and its strings are terminated.
 bool sameModel(const Model& a, const Model& b) {
-  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.variant == b.variant &&
-         a.attn == b.attn && a.attnId == b.attnId && a.more == b.more && a.busy == b.busy && a.vol == b.vol &&
+  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
+         a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
+         a.when == b.when &&
          !std::strcmp(a.agent, b.agent) && !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
 }
 
@@ -201,10 +203,12 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     m.attnId = attn["id"] | 0u;
   }
   m.busy = doc["busy"] | 0;
+  m.idle = doc["idle"] | 0;
+  m.helpers = doc["helpers"] | 0;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
-  // The visual's variation, from 1: missing reads as 1, and one out of range is held to it.
-  m.variant = uint8_t(
-      heldTo(doc["variant"], 1, b_.face().variants(m.mood, m.attn ? render::SceneState::kNeedsYou : m.look()), 1) - 1);
+  // A tag the board doesn't know is left out.
+  for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
+  m.when |= render::busyTags(m.busy);
   if (!sameModel(m, b_.model()) || pattern_ || b_.noApp(at)) dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
   b_.onState(m, at);
   if (m.attn || m.vol == 0) hush();
@@ -339,6 +343,12 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     pattern_ = true;
     dirty_ = true;
     kit().reply(from, "{\"t\":\"dbg.pattern\"}", 19);
+  } else if (!std::strcmp(type, "dbg.look")) {
+    // A look's variation, from 1, shown until it turns: for scenarios and
+    // tools, since the face picks its own.
+    b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1));
+    dirty_ = true;
+    kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
   } else if (!std::strcmp(type, "dbg.press")) {
     injPress_ = true;
     injPressUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
@@ -430,8 +440,12 @@ void Device::state(JsonObject d, uint32_t t) {
   if (m.act != render::SceneState::kWorking) d["act"] = render::stateName(m.act);
   else d["act"] = nullptr;
   d["mood"] = render::moodName(m.mood);
-  d["variant"] = m.variant + 1;
   d["look_variant"] = b_.lookVariant() + 1;
+  d["idle"] = m.idle;
+  d["helpers"] = m.helpers;
+  JsonArray when = d["when"].to<JsonArray>();
+  for (int i = 0; i < render::kTagCount; ++i)
+    if (m.when >> i & 1) when.add(render::kTagNames[i]);
   if (m.attn) {
     d["attn"]["agent"] = m.agent;
     d["attn"]["project"] = m.project;

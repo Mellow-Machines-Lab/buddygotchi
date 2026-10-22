@@ -30,10 +30,12 @@ const make=(mood,state,variation,action,name,caption,seconds,extra={})=>({
 const finishes=mood=>oldMoods.includes(mood)?5:6;
 export const comedyAdditions=[
  ...moods.map(mood=>make(mood,'idle',4,'yawn-stretch','Yawn and stretch','Eyes droop, a slow wide yawn with both mitts up, a long stretch, then a blink and rest.',9*profile(mood).pace,{sound:'scored'})),
- ...moods.map(mood=>make(mood,'idle',5,'nod-off','Nodding off','Eyes droop shut and the head nods for two seconds, then it snaps awake, blinks and looks around.',11*profile(mood).pace,{sound:'scored'})),
+ // Nodding off and the snore wait for a look that has gone on a while:
+ // twenty minutes idle, ten asleep (`after`, in seconds; occasion-art.mjs).
+ ...moods.map(mood=>make(mood,'idle',5,'nod-off','Nodding off','Eyes droop shut and the head nods for two seconds, then it snaps awake, blinks and looks around.',11*profile(mood).pace,{sound:'scored',after:1200})),
  ...moods.map(mood=>make(mood,'idle',6,'sneeze','Sneeze','Ah… ah… a wind-up with the head thrown back, a sneeze and its spray, a little shake.',10*profile(mood).pace,{sound:'scored'})),
  // Asleep looks the same in every mood, so its snore does too.
- ...moods.map(mood=>make(mood,'asleep',4,'snore','Snore','Two soft snoring breaths: the mouth opens on each, and a Z drifts up.',12,{sound:'scored'})),
+ ...moods.map(mood=>make(mood,'asleep',4,'snore','Snore','Two soft snoring breaths: the mouth opens on each, and a Z drifts up.',12,{sound:'scored',after:600})),
  ...moods.map(mood=>make(mood,'task_complete',finishes(mood)+1,'trophy-hiccups','Trophy, then hiccups','The mood\'s trophy cheer, then three hiccups that bounce the face.',8,{outcome:'success'})),
  make('proud','task_complete',7,'gift','The gift','Proudly holds up a little pixel bug it caught, then presents it to you.',7,{outcome:'success'}),
  ...['working','idle'].map((state,i)=>make('excited',state,i?7:6,'zoomies','Zoomies','The face zips left, right and off the screen, comes back from the other side and hops.',5*profile('excited').pace,{sound:'routine'}))

@@ -92,8 +92,10 @@ static void test_every_scene_matches_facegen() {
 // Boop looks the same in every older mood, and in every new one, and snores
 // the same in all of them.
 static void test_variations_and_shared_designs() {
-  const int older[] = {6, 5, 3, 6, 4, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1};
-  const int newer[] = {6, 5, 3, 7, 4, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1};
+  // Then the occasions (occasion-art.mjs): seven more idle, three more
+  // working, two more asleep and a party wake-up.
+  const int older[] = {13, 8, 3, 6, 6, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2};
+  const int newer[] = {13, 8, 3, 7, 6, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2};
   for (int m = 0; m < pixelMoods(); ++m) {
     const Mood mood = render::pixelMood(m);
     for (int s = 0; s < int(SceneState::kCount); ++s) {

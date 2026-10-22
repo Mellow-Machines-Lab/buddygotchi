@@ -1,4 +1,5 @@
 #include "render/gel/face.h"
+#include "render/tags.h"
 
 #include <cstdio>
 #include <cstring>
@@ -35,6 +36,8 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   engine_ = std::make_unique<Engine>(kSeed);
   engine_->step(0);
   origin_ = lastTick_ = lookAt_ = t;
+  engineMs_ = engineFrac_ = 0;
+  pace_ = 100;
   source_ = {};
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
@@ -62,7 +65,10 @@ void GelFace::restartCues() {
 void GelFace::advanceTo(uint32_t t) {
   if (t == lastTick_) return;
   Measure measure(gel::profile.engine);
-  engine_->step(t - origin_);
+  const uint64_t scaled = uint64_t(t - lastTick_) * pace_ + engineFrac_;
+  engineMs_ += uint32_t(scaled / 100);
+  engineFrac_ = uint32_t(scaled % 100);
+  engine_->step(engineMs_);
   lastTick_ = t;
   int kept = 0;
   for (int i = 0; i < pendingCount_; ++i)
@@ -100,6 +106,7 @@ bool GelFace::factsChanged(const FaceContext& c) const {
 
 void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_t t) {
   advanceTo(t);
+  pace_ = context.working && !context.attention ? render::workPace(context.busy) : 100;
   Measure measure(gel::profile.sync);
   auto& e = *engine_;
   if (factsChanged(context)) {

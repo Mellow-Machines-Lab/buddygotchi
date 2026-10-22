@@ -1213,9 +1213,11 @@ static void test_a_reaction_with_an_id_is_answered_when_it_ends() {
   NEEDS_VOICE_PACK();
   Rig r;
   // Idle's second variation, a long loop (`variant`).
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   r.usbLine("{\"t\":\"do\",\"id\":5,\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\"}}");
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2,\"vol\":0}");  // hushed, but it plays on
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}");  // hushed, but it plays on
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1840}");  // the `say` is over: 640 ms + 1.2 s
   // The face holds a loop of the idle design in proud.
   const uint32_t loop = render::loopMs(render::Mood::kProud, render::SceneState::kIdle, 1);
@@ -1353,7 +1355,7 @@ static void test_the_face_plays_its_designs_sounds() {
 // from its own start. dbg.state's `look_variant` says which shows.
 static void test_the_sounds_follow_the_looks_rotation() {
   Rig r;
-  const char* state = "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"variant\":1}";
+  const char* state = "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\"}";
   r.usbLine(state);
   for (uint32_t t = 10; t <= 300000; t += 10) {
     if (t % 10000 == 0) r.usbLine(state);  // the Mac, saying the same
@@ -1419,18 +1421,35 @@ static void test_a_test_pattern_is_silent() {
   TEST_ASSERT_EQUAL(int(sent), int(r.hal.effects.size()));
 }
 
-// `state`'s `act` says what the agents are doing while
-// working, which dbg.state reports (null for none, or one the device
-// doesn't know); `variant` is then the act's, held to its variations.
-static void test_a_state_carries_what_the_agents_do() {
+// `state`'s `when` is the Mac's tags, and the board adds busy or frantic
+// from `busy` (render::busyTags); a tag it doesn't know is left out.
+// dbg.state reports them, with the idle and helper counts.
+static void test_a_state_carries_its_tags_and_counts() {
   Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"variant\":3}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":4,\"idle\":2,\"helpers\":3,\"when\":[\"morning\",\"someday\",\"party\"]}");
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"variant\":3,"));
-  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"happy\",\"variant\":3}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"idle\":2,\"helpers\":3,\"when\":[\"morning\",\"party\",\"frantic\"]"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":2}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"variant\":1,"));  // happy has one terminal design
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"idle\":0,\"helpers\":0,\"when\":[\"busy\"]"));
+}
+
+// `state`'s `act` says what the agents are doing while
+// working, which dbg.state reports (null for none, or one the device
+// doesn't know); a pinned variation (dbg.look) is the act's, held to its
+// variations.
+static void test_a_state_carries_what_the_agents_do() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\"}");
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":3}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"look_variant\":3,"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"happy\"}");
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":3}");
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"look_variant\":1,"));  // happy has one terminal design
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"act\":\"juggling\"}");
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1670,7 +1689,8 @@ static const char* kGo = "{\"say\":{\"take\":\"previous.go\"}}";  // 638 ms, the
 static void test_a_reaction_waits_for_the_say_before_it() {
   NEEDS_VOICE_PACK();
   Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   doLine(r, 1, "react", "next", kGo);
   clockAt(r, 100);
   doLine(r, 2, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":3}");
@@ -1691,7 +1711,8 @@ static void test_a_reaction_waits_for_the_say_before_it() {
   TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":2,\"name\":\"react\",\"resting\":true}"));
   // A face with no `say` rests 1.2 s in, and the half second.
   Rig f;
-  f.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2}");  // a long loop
+  f.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop
+  f.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   doLine(f, 3, "react", "next", "{\"mood\":\"grumpy\",\"loops\":3}");
   clockAt(f, 1699);
   TEST_ASSERT_TRUE(has(stateOf(f), "\"resting\":false"));
@@ -1707,7 +1728,8 @@ static void test_the_next_reaction_waits_half_a_second_after_a_bubble() {
   NEEDS_VOICE_PACK();
   TEST_ASSERT_EQUAL_UINT32(500, app::Device::kReactGapMs);
   Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":3}");
   clockAt(r, 100);
   doLine(r, 2, "react", "next", kGo);
@@ -1752,7 +1774,8 @@ static void test_a_finish_plays_until_it_ends() {
 static void test_a_rules_reaction_never_cuts_a_say() {
   NEEDS_VOICE_PACK();
   Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"variant\":2}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // a long loop for the face to hold
+  r.usbLine("{\"t\":\"dbg.look\",\"variant\":2}");
   doLine(r, 1, "react", "next", "{\"say\":{\"take\":\"previous.go\"},\"mood\":\"proud\",\"loops\":2}");
   clockAt(r, 100);
   doLine(r, 2, "starting", "if_free", "{\"ctx\":\"new_task\"}");
@@ -2052,6 +2075,7 @@ int main() {
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);
+  RUN_TEST(test_a_state_carries_its_tags_and_counts);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);
   RUN_TEST(test_a_finishs_say_starts_at_its_voice_window);

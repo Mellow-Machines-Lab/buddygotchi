@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-21. A board with no board: the firmware's own code in a
+Updated 2026-10-22. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -128,7 +128,7 @@ A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
   "version": 1, "character": "boop", "name": "Boop", "face": "pixel", "length": 79,
   "takes": ["…"],
   "events": [
-    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"variant\":3}"},
+    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6}"},
     {"at": 0.001, "line": "{\"t\":\"do\",\"id\":1493456480,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"variant\":5,\"ctx\":\"session\"}}"},
     {"at": 2.003, "cause": {"kind": "prompt", "text": "You ask Claude: “Add keyboard shortcuts”"}}
   ]

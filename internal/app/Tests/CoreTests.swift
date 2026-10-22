@@ -1809,7 +1809,7 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(workBeats(rig.wait(600_000)), [])
     }
 
-    /// The `state` message carries only the busy count and
+    /// The `state` message carries the busy and idle counts and
     /// the oldest session that needs you; the list is the popover's.
     func testSnapshotShapeAndSessionList() {
         let rig = CoreRig()
@@ -1821,47 +1821,19 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(rig.sessions, [["claude", "landing", "waiting"], ["codex", "buddygotchi", "working"],
                                       ["claude", "jetpack", "working"], ["claude", "notes", "idle"]])
         XCTAssertEqual([s.busy, s.waiting], [2, 1])
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"calm","attn":{"agent":"claude","project":"landing","more":0,"id":1},"busy":2,"vol":6,"variant":"# + "\(s.variant)}")
+        let when = s.when.map { "\"\($0)\"" }.joined(separator: ",")
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"calm","attn":{"agent":"claude","project":"landing","more":0,"id":1},"busy":2,"idle":1,"vol":6,"when":["# + when + "]}")
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
     }
 
-    /// Each time the visual changes, the
-    /// core picks one of its variations at random, never the one that visual
-    /// showed last; it holds while the visual does, a new mood included.
-    func testEachVisualGetsARandomVariation() {
-        let rig = CoreRig(seed: 11)
-        var seen: [String: Set<Int>] = [:]
-        var last: [String: Int] = [:]
-        for _ in 0..<40 {
-            for step in [Hook.turnStart, .needsYou, .activity, .turnEnd] {
-                rig.send(step, tool: "Bash")
-                let s = rig.state
-                let count = FaceLoops.count(mood: s.mood, state: s.visual)
-                XCTAssertTrue((1...count).contains(s.variant), "\(s.visual) \(s.variant)")
-                if let before = last[s.visual], count > 1 { XCTAssertNotEqual(before, s.variant, "\(s.visual) repeats") }
-                last[s.visual] = s.variant
-                seen[s.visual, default: []].insert(s.variant)
-                rig.wait(1000)
-                XCTAssertEqual(rig.state.variant, s.variant, "holds while the visual does")
-            }
-        }
-        XCTAssertEqual(seen["working"], Set(1...5), "all five working variations come up")
-        XCTAssertEqual(seen["needs_you"], Set(1...3))
-        let before = rig.state.variant
-        rig.setMood("grumpy")
-        XCTAssertEqual(rig.state.variant, before, "a new mood keeps the variation")
-    }
-
-    /// The `state` message carries no idle count, so a second idle session
-    /// leaves the snapshot as it was; the core still says the list changed,
-    /// for the popover and debug.jsonl's `status`, and only then.
-    func testASessionListChangeTheSnapshotDoesntShow() {
+    /// The `state` message carries the idle count, so a second idle
+    /// session goes out as a new snapshot, and so does its end; with
+    /// nothing changed, nothing goes out.
+    func testAnIdleSessionShowsInTheState() {
         let rig = CoreRig()
-        XCTAssertEqual(states(rig.send(.sessionStart, session: "a", project: "notes")).map(\.base), ["idle"])
-        let fx = rig.send(.sessionStart, session: "b", project: "jetpack")
-        XCTAssertEqual(fx.effects.filter { switch $0 { case .reaction, .record: false; default: true } }, [.sessions],
-                       "the same snapshot, and a new list (and the start's reaction, and its record)")
-        XCTAssertEqual(rig.send(.sessionEnd, session: "b", project: "jetpack").effects, [.sessions])
+        XCTAssertEqual(states(rig.send(.sessionStart, session: "a", project: "notes")).map(\.idle), [1])
+        XCTAssertEqual(states(rig.send(.sessionStart, session: "b", project: "jetpack")).map(\.idle), [2])
+        XCTAssertEqual(states(rig.send(.sessionEnd, session: "b", project: "jetpack")).map(\.idle), [1])
         XCTAssertEqual(rig.wait(5000).effects, [], "nothing changed")
         XCTAssertEqual(rig.state.waiting, 0)
     }
@@ -2109,7 +2081,7 @@ final class CoreFuzzTests: XCTestCase {
             }
             for sent in states(fx) {
                 XCTAssertTrue(sent.act == nil || (sent.base == "working" && sent.attn == nil), "\(sent.jsonLine)\n\(why)")
-                XCTAssertTrue((1...FaceLoops.count(mood: sent.mood, state: sent.visual)).contains(sent.variant), why)
+                XCTAssertTrue(sent.when.allSatisfy(Occasions.all.contains), why)
                 if sent.act != nil { acts += 1 }
             }
             if let sent = states(fx).last {

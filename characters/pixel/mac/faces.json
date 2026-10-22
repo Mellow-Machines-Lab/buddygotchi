@@ -89,11 +89,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -116,6 +166,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -184,7 +253,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -477,6 +559,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -500,11 +589,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -527,6 +666,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -595,7 +753,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -888,6 +1059,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -911,11 +1089,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -938,6 +1166,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -1006,7 +1253,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -1299,6 +1559,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -1322,11 +1589,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -1349,6 +1666,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -1417,7 +1753,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -1710,6 +2059,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -1733,11 +2089,61 @@
     },
     {
      "ms": 11000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -1760,6 +2166,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7000,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -1823,7 +2248,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -1972,6 +2410,13 @@
     {
      "ms": 5600,
      "voice_ms": 4704
+    },
+    {
+     "ms": 5600,
+     "voice_ms": 4704,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -1995,11 +2440,61 @@
     },
     {
      "ms": 11000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -2022,6 +2517,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7000,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -2085,7 +2599,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -2234,6 +2761,13 @@
     {
      "ms": 5600,
      "voice_ms": 4704
+    },
+    {
+     "ms": 5600,
+     "voice_ms": 4704,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -2257,7 +2791,8 @@
     },
     {
      "ms": 8580,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 7800,
@@ -2266,6 +2801,55 @@
     {
      "ms": 3900,
      "voice_ms": 450
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 6240,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -2292,6 +2876,25 @@
     {
      "ms": 3900,
      "voice_ms": 450
+    },
+    {
+     "ms": 4680,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 5460,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -2355,7 +2958,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -2504,6 +3120,13 @@
     {
      "ms": 4368,
      "voice_ms": 3669
+    },
+    {
+     "ms": 4368,
+     "voice_ms": 3669,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -2527,11 +3150,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -2554,6 +3227,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -2617,7 +3309,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -2766,6 +3471,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -2789,11 +3501,61 @@
     },
     {
      "ms": 10340,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 9400,
      "voice_ms": 450
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 7520,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -2816,6 +3578,25 @@
     {
      "ms": 6228,
      "voice_ms": 450
+    },
+    {
+     "ms": 5640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 6580,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -2884,7 +3665,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -3177,6 +3971,13 @@
     {
      "ms": 5264,
      "voice_ms": 4422
+    },
+    {
+     "ms": 5264,
+     "voice_ms": 4422,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -3200,11 +4001,61 @@
     },
     {
      "ms": 10120,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 9200,
      "voice_ms": 450
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -3227,6 +4078,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 5520,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 6440,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -3290,7 +4160,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -3439,6 +4322,13 @@
     {
      "ms": 5152,
      "voice_ms": 4328
+    },
+    {
+     "ms": 5152,
+     "voice_ms": 4328,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -3462,11 +4352,61 @@
     },
     {
      "ms": 12320,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11200,
      "voice_ms": 450
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -3489,6 +4429,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6720,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7840,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -3557,7 +4516,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -3706,6 +4678,13 @@
     {
      "ms": 6272,
      "voice_ms": 5268
+    },
+    {
+     "ms": 6272,
+     "voice_ms": 5268,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -3729,11 +4708,61 @@
     },
     {
      "ms": 12320,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11200,
      "voice_ms": 450
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -3756,6 +4785,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6720,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7840,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -3824,7 +4872,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -3973,6 +5034,13 @@
     {
      "ms": 6272,
      "voice_ms": 5268
+    },
+    {
+     "ms": 6272,
+     "voice_ms": 5268,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -3996,11 +5064,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -4023,6 +5141,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -4086,7 +5223,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -4235,6 +5385,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -4258,11 +5415,61 @@
     },
     {
      "ms": 12100,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -4285,6 +5492,25 @@
     {
      "ms": 7220,
      "voice_ms": 450
+    },
+    {
+     "ms": 6600,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7700,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -4353,7 +5579,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -4646,6 +5885,13 @@
     {
      "ms": 6160,
      "voice_ms": 5174
+    },
+    {
+     "ms": 6160,
+     "voice_ms": 5174,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -4669,11 +5915,61 @@
     },
     {
      "ms": 12100,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -4696,6 +5992,25 @@
     {
      "ms": 7220,
      "voice_ms": 450
+    },
+    {
+     "ms": 6600,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7700,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -4764,7 +6079,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -5057,6 +6385,13 @@
     {
      "ms": 6160,
      "voice_ms": 5174
+    },
+    {
+     "ms": 6160,
+     "voice_ms": 5174,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -5080,11 +6415,61 @@
     },
     {
      "ms": 9130,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 8300,
      "voice_ms": 450
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 6640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -5107,6 +6492,25 @@
     {
      "ms": 5546,
      "voice_ms": 450
+    },
+    {
+     "ms": 4980,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 5810,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -5175,7 +6579,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -5468,6 +6885,13 @@
     {
      "ms": 4648,
      "voice_ms": 3904
+    },
+    {
+     "ms": 4648,
+     "voice_ms": 3904,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -5491,11 +6915,61 @@
     },
     {
      "ms": 8360,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 7600,
      "voice_ms": 450
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -5518,6 +6992,25 @@
     {
      "ms": 2400,
      "voice_ms": 450
+    },
+    {
+     "ms": 4560,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 5320,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -5581,7 +7074,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -5730,6 +7236,13 @@
     {
      "ms": 4256,
      "voice_ms": 3575
+    },
+    {
+     "ms": 4256,
+     "voice_ms": 3575,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -5753,11 +7266,61 @@
     },
     {
      "ms": 8360,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 7600,
      "voice_ms": 450
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 6080,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -5780,6 +7343,25 @@
     {
      "ms": 2400,
      "voice_ms": 450
+    },
+    {
+     "ms": 4560,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 5320,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -5843,7 +7425,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -5992,6 +7587,13 @@
     {
      "ms": 4256,
      "voice_ms": 3575
+    },
+    {
+     "ms": 4256,
+     "voice_ms": 3575,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -6015,11 +7617,61 @@
     },
     {
      "ms": 14080,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12800,
      "voice_ms": 450
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -6042,6 +7694,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 7680,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -6105,7 +7776,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -6254,6 +7938,13 @@
     {
      "ms": 7168,
      "voice_ms": 6021
+    },
+    {
+     "ms": 7168,
+     "voice_ms": 6021,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -6277,11 +7968,61 @@
     },
     {
      "ms": 14080,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12800,
      "voice_ms": 450
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -6304,6 +8045,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 7680,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -6367,7 +8127,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -6516,6 +8289,13 @@
     {
      "ms": 7168,
      "voice_ms": 6021
+    },
+    {
+     "ms": 7168,
+     "voice_ms": 6021,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -6539,11 +8319,61 @@
     },
     {
      "ms": 14080,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12800,
      "voice_ms": 450
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -6566,6 +8396,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 7680,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -6629,7 +8478,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -6778,6 +8640,13 @@
     {
      "ms": 7168,
      "voice_ms": 6021
+    },
+    {
+     "ms": 7168,
+     "voice_ms": 6021,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -6801,11 +8670,61 @@
     },
     {
      "ms": 12760,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11600,
      "voice_ms": 450
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9280,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -6828,6 +8747,25 @@
     {
      "ms": 7592,
      "voice_ms": 450
+    },
+    {
+     "ms": 6960,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8120,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -6896,7 +8834,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -7189,6 +9140,13 @@
     {
      "ms": 6496,
      "voice_ms": 5457
+    },
+    {
+     "ms": 6496,
+     "voice_ms": 5457,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -7212,11 +9170,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -7239,6 +9247,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -7307,7 +9334,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -7600,6 +9640,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -7623,11 +9670,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -7650,6 +9747,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -7718,7 +9834,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -8011,6 +10140,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -8034,11 +10170,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -8061,6 +10247,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -8129,7 +10334,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -8422,6 +10640,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -8445,11 +10670,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -8472,6 +10747,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -8540,7 +10834,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -8833,6 +11140,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -8856,11 +11170,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -8883,6 +11247,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -8946,7 +11329,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -9095,6 +11491,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -9118,11 +11521,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -9145,6 +11598,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -9208,7 +11680,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -9357,6 +11842,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -9380,11 +11872,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -9407,6 +11949,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -9470,7 +12031,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -9619,6 +12193,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -9642,11 +12223,61 @@
     },
     {
      "ms": 11000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -9669,6 +12300,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7000,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -9732,7 +12382,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -9881,6 +12544,13 @@
     {
      "ms": 5600,
      "voice_ms": 4704
+    },
+    {
+     "ms": 5600,
+     "voice_ms": 4704,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -9904,11 +12574,61 @@
     },
     {
      "ms": 10120,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 9200,
      "voice_ms": 450
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 7360,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -9931,6 +12651,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 5520,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 6440,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -9994,7 +12733,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -10143,6 +12895,13 @@
     {
      "ms": 5152,
      "voice_ms": 4328
+    },
+    {
+     "ms": 5152,
+     "voice_ms": 4328,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -10166,11 +12925,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -10193,6 +13002,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -10261,7 +13089,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -10554,6 +13395,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -10577,11 +13425,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -10604,6 +13502,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -10667,7 +13584,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -10816,6 +13746,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -10839,11 +13776,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -10866,6 +13853,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -10929,7 +13935,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -11078,6 +14097,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -11101,11 +14127,61 @@
     },
     {
      "ms": 11880,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10800,
      "voice_ms": 450
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8640,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -11128,6 +14204,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6480,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7560,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -11191,7 +14286,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -11340,6 +14448,13 @@
     {
      "ms": 6048,
      "voice_ms": 5080
+    },
+    {
+     "ms": 6048,
+     "voice_ms": 5080,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -11363,11 +14478,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -11390,6 +14555,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -11458,7 +14642,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -11751,6 +14948,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -11774,11 +14978,61 @@
     },
     {
      "ms": 11000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 10000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8000,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -11801,6 +15055,25 @@
     {
      "ms": 4000,
      "voice_ms": 450
+    },
+    {
+     "ms": 6000,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7000,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -11864,7 +15137,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -12013,6 +15299,13 @@
     {
      "ms": 5600,
      "voice_ms": 4704
+    },
+    {
+     "ms": 5600,
+     "voice_ms": 4704,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -12036,11 +15329,61 @@
     },
     {
      "ms": 14080,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12800,
      "voice_ms": 450
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10240,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -12063,6 +15406,25 @@
     {
      "ms": 5000,
      "voice_ms": 450
+    },
+    {
+     "ms": 7680,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8960,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -12126,7 +15488,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -12275,6 +15650,13 @@
     {
      "ms": 7168,
      "voice_ms": 6021
+    },
+    {
+     "ms": 7168,
+     "voice_ms": 6021,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -12298,11 +15680,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -12325,6 +15757,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -12393,7 +15844,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -12686,6 +16150,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -12709,11 +16180,61 @@
     },
     {
      "ms": 13420,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 12200,
      "voice_ms": 450
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 9760,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -12736,6 +16257,25 @@
     {
      "ms": 7964,
      "voice_ms": 450
+    },
+    {
+     "ms": 7320,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 8540,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -12804,7 +16344,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -13097,6 +16650,13 @@
     {
      "ms": 6832,
      "voice_ms": 5739
+    },
+    {
+     "ms": 6832,
+     "voice_ms": 5739,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -13120,11 +16680,61 @@
     },
     {
      "ms": 14300,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 13000,
      "voice_ms": 450
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 10400,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -13147,6 +16757,25 @@
     {
      "ms": 8460,
      "voice_ms": 450
+    },
+    {
+     "ms": 7800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 9100,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -13215,7 +16844,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -13508,6 +17150,13 @@
     {
      "ms": 7280,
      "voice_ms": 6115
+    },
+    {
+     "ms": 7280,
+     "voice_ms": 6115,
+     "when": [
+      "party"
+     ]
     }
    ]
   ],
@@ -13531,11 +17180,61 @@
     },
     {
      "ms": 12100,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 1200
     },
     {
      "ms": 11000,
      "voice_ms": 450
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "party"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "halloween"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "winter"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "valentines"
+     ]
+    },
+    {
+     "ms": 8800,
+     "voice_ms": 450,
+     "when": [
+      "friday"
+     ]
     }
    ],
    [
@@ -13558,6 +17257,25 @@
     {
      "ms": 7220,
      "voice_ms": 450
+    },
+    {
+     "ms": 6600,
+     "voice_ms": 450,
+     "when": [
+      "morning"
+     ]
+    },
+    {
+     "ms": 3000,
+     "voice_ms": 450,
+     "when": [
+      "frantic"
+     ]
+    },
+    {
+     "ms": 7700,
+     "voice_ms": 450,
+     "after": 1200
     }
    ],
    [
@@ -13626,7 +17344,20 @@
     },
     {
      "ms": 12000,
-     "voice_ms": 450
+     "voice_ms": 450,
+     "after": 600
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "when": [
+      "night"
+     ]
+    },
+    {
+     "ms": 12000,
+     "voice_ms": 450,
+     "after": 1800
     }
    ],
    [
@@ -13919,6 +17650,13 @@
     {
      "ms": 6160,
      "voice_ms": 5174
+    },
+    {
+     "ms": 6160,
+     "voice_ms": 5174,
+     "when": [
+      "party"
+     ]
     }
    ]
   ]

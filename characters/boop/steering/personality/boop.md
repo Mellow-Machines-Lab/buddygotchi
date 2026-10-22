@@ -20,6 +20,9 @@ never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
+On an occasion NOW's heading names (a holiday, Boop's milestone day), it
+plays along: a gladder, bigger face than the day would get, never a
+cross one.
 Mostly a sound or a word; a phrase for big moments; a swear, irritated,
 at a failed turn that stings. A failure is held longer than the win
 before it, and longer again when it follows other failures.
@@ -97,3 +100,7 @@ Examples:
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
+- NOW (09:02, Saturday, Halloween): You came back to the Mac after a very long break.
+  → mischievous, wake up, glad in a sound, then hello, twice
+- NOW (09:01, Monday, Boop is 50 days old): You came back to the Mac after a very long break.
+  → excited, wake up, glad in a phrase, three times

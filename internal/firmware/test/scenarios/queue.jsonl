@@ -6,7 +6,8 @@
 // a finish plays to its end, and a reaction that waits past its ttl is
 // late. dbg.state's `turn` says which reaction plays and which wait.
 {"clock":0}
-{"t":"state","base":"idle","variant":2}
+{"t":"state","base":"idle"}
+{"t":"dbg.look","variant":2}
 {"clock":1000}
 {"t":"do","id":1,"name":"react","play":"next","args":{"say":{"take":"previous.go"}}}
 {"clock":1100}

@@ -808,10 +808,10 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// The `state` message carries no idle count, so a second idle
-    /// session sends the device nothing; debug.jsonl's `status`, which the
-    /// dashboard counts idle sessions from, and the popover still hear of it.
-    func testASecondIdleSessionReachesTheStatusNotTheDevice() throws {
+    /// A second idle session reaches the device as its idle count, and
+    /// debug.jsonl's `status`, which the dashboard counts idle sessions
+    /// from, and the popover hear of it too.
+    func testASecondIdleSessionReachesTheStatusAndTheDevice() throws {
         var options = try options(nil)
         options.debug = true
         let runtime = try Runtime(options)
@@ -831,7 +831,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(second, to: socketPath))
         eventually("the second session") { sessions().count == 2 }
         XCTAssertEqual(sessions().map { $0["status"] }, ["idle", "idle"])
-        XCTAssertEqual(states(runtime.home.sync { sentLines.all }), states(sent), "no new state")
+        eventually("a state with both idle") { states(runtime.home.sync { sentLines.all }).last?.contains(#""idle":2"#) == true }
     }
 
     /// The mood lives only in the log: a change reaches the device in a
@@ -1403,7 +1403,7 @@ final class RuntimeTests: XCTestCase {
         let faces = try String(contentsOf: assets.appendingPathComponent("faces.h"), encoding: .utf8)
         let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+\}"#)
             .map { Int64($0[0])! }
-        let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+\}"#).map { Int($0[0])! }
+        let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+, \d+, \d+\}"#).map { Int($0[0])! }
         let sfx = try String(contentsOf: assets.appendingPathComponent("sfx.h"), encoding: .utf8)
         let windows = rows(block(sfx, "static const Score kScore[] = {"), #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},\s*// (\S+)"#)
         func names(_ array: String) -> [String] {
@@ -1425,7 +1425,7 @@ final class RuntimeTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(n, 876)
+        XCTAssertEqual(n, 1045)
         XCTAssertEqual(scenes.count, n)
         XCTAssertEqual(windows.count, n)
     }

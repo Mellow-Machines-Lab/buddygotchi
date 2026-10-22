@@ -31,9 +31,6 @@ struct Model {
   // design shows in working's place. kWorking for none.
   render::SceneState act = render::SceneState::kWorking;
   render::Mood mood = render::kStartupMood;
-  // The variation of the visual the Mac shows (needs you's while something
-  // does, else the look's), from 0: the wire's `variant` less one.
-  uint8_t variant = 0;
   bool attn = false;
   char agent[12] = "";
   // Both show on the needs-you sign, three lines of 16.
@@ -41,8 +38,14 @@ struct Model {
   char name[48] = "";  // the thread's name; "" when the Mac sends none
   int more = 0;
   uint32_t attnId = 0;  // the needs-you shown's number; 0 when the Mac sends none
-  int busy = 0;
-  int vol = 6;  // 0–10
+  int busy = 0;     // sessions working
+  int idle = 0;     // sessions idle, waiting for your next prompt
+  int helpers = 0;  // helpers working, over every session
+  int vol = 6;      // 0–10
+  // The tags on now (`when`, render/tags.h): the part of the day, an
+  // occasion, how busy the agents are. The face shows only the designs
+  // whose tags are all on, and picks each look's variation itself.
+  uint32_t when = 0;
   // The look while nothing needs you: what the agents are doing while
   // they work, else the base.
   render::SceneState look() const { return base == render::SceneState::kWorking ? act : base; }
@@ -321,6 +324,9 @@ class Behaviour {
 
   Model model_;
   uint32_t lastState_ = 0;
+  // When the look (or needs you) last changed: the face's variations may
+  // wait for it to have shown a while (`after`).
+  uint32_t lookAt_ = 0;
   // Latched once the Mac has been silent kNoAppMs, so "no app" holds
   // however long the silence (the clock's differences wrap after 24 days).
   bool stale_ = false;

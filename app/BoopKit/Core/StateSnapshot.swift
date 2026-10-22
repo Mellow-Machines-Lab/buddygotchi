@@ -61,22 +61,29 @@ public struct StateSnapshot: Equatable, Sendable {
     /// picks the set of faces the device draws everything in.
     public var mood: String
     public var attn: Attention?
+    /// Sessions working.
     public var busy: Int
+    /// Sessions idle: their turn ended, and they wait for your next prompt.
+    public var idle: Int
+    /// Helpers (subagents) working, over every session.
+    public var helpers: Int
     public var vol: Int
-    /// Which variation of the visual shows, from 1: needs you's while
-    /// something needs you, else the look's. The core
-    /// picks it at random when the visual changes.
-    public var variant: Int
+    /// What's true now (`Occasions`): the part of the day, a holiday, how
+    /// busy the agents are. The device shows the designs whose tags are
+    /// all on, and picks each look's variation itself.
+    public var when: [String]
 
-    public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, vol: Int,
-                variant: Int = 1) {
+    public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
+                vol: Int, when: [String] = []) {
         self.base = base
         self.act = act
         self.mood = mood
         self.attn = attn
         self.busy = busy
+        self.idle = idle
+        self.helpers = helpers
         self.vol = vol
-        self.variant = variant
+        self.when = when
     }
 
     /// The look the device shows when nothing needs you: what the agents
@@ -105,8 +112,10 @@ public struct StateSnapshot: Equatable, Sendable {
             fields["attn"] = .object(a)
         }
         fields["busy"] = .int(busy)
+        if idle > 0 { fields["idle"] = .int(idle) }
+        if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
-        fields["variant"] = .int(variant)
+        if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
         return fields
     }
 

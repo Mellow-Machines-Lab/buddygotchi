@@ -184,11 +184,11 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     bool had = model_.attn;
     bool fresh = m.attn && (!had || m.attnId != model_.attnId || std::strncmp(model_.agent, m.agent, sizeof(m.agent)) ||
                             std::strncmp(model_.project, m.project, sizeof(m.project)));
-    // Another visual, or another variation of it from the Mac, starts the
-    // looks' rotation over from the Mac's; the same one again leaves it.
-    bool look = m.attn != model_.attn || m.look() != model_.look() || m.variant != model_.variant;
+    // Another visual starts the looks' rotation over: the face picks its
+    // first variation itself, from those that fit now.
+    bool look = m.attn != model_.attn || m.look() != model_.look();
     model_ = m;
-    if (look) face_->setLookVariant(m.variant);
+    if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
     stale_ = false;
     blOverride_ = false;
@@ -411,13 +411,8 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     return s;
   }
   s.mood = exprOn(t) ? exprMood_ : model_.mood;  // the reaction's expression, or the mood
-  if (model_.attn) {
-    s.look = render::SceneState::kNeedsYou;
-    s.lookVariant = model_.variant;
-  } else {
-    s.look = model_.look();
-    s.lookVariant = face_->lookVariant();
-  }
+  s.look = model_.attn ? render::SceneState::kNeedsYou : model_.look();
+  s.lookVariant = face_->lookVariant();
   if (reactionOn(t)) {
     s.anim = reaction_.anim;
     s.at = reaction_.at;
@@ -446,6 +441,9 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.project = model_.project;
   c.thread = model_.name;
   c.more = model_.more;
+  c.when = model_.when;
+  c.lookMs = t - lookAt_;
+  c.busy = model_.busy;
   return c;
 }
 

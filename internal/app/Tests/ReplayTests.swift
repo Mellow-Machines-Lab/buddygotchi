@@ -28,7 +28,8 @@ final class ReplayTests: XCTestCase {
             let who = attn.map { "\($0["agent"]!)/\($0["project"]!)" } ?? "-"
             let waiting = attn.map { ($0["more"] as! Int) + 1 } ?? 0
             let look = (object["base"] as! String) + ((object["act"] as? String).map { "/" + $0 } ?? "")
-            return "\(parts[0]) \(look) \(who) \(waiting)"
+            let helpers = (object["helpers"] as? Int).map { " +\($0) helper" + ($0 == 1 ? "" : "s") } ?? ""
+            return "\(parts[0]) \(look) \(who) \(waiting)\(helpers)"
         }
     }
 
@@ -144,6 +145,8 @@ final class ReplayTests: XCTestCase {
             "+17.0s working/testing - 0",
             "+18.0s error",
             "+20.0s working/delegating - 0",
+            "+20.0s working/delegating - 0 +1 helper",
+            "+23.0s working/delegating - 0",
             "+23.0s helper_return",
             "+26.0s working/terminal - 0",
             "+46.0s working/waiting - 0",

@@ -51,6 +51,10 @@ class GelFace final : public Face {
   std::unique_ptr<Engine> engine_;
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;
+  // The engine's own clock, which runs quicker in the working looks while
+  // the agents are busy (render::workPace, in percent), and its hundredths.
+  uint32_t engineMs_ = 0, engineFrac_ = 0;
+  int pace_ = 100;
   voice::FxEvent pending_[kMaxCues];
   uint32_t pendingAt_[kMaxCues]{};
   int pendingCount_ = 0;

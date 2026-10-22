@@ -36,12 +36,17 @@ public final class Core {
         /// Whose rules these are: the buddy's character, the process's by
         /// default.
         public var pack: CharacterPack
+        /// The day Boop hatched (`yyyy-MM-dd`), for its milestone days; nil
+        /// for none.
+        public var hatched: String?
 
-        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active) {
+        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active,
+                    hatched: String? = nil) {
             self.volume = volume
             self.time = time
             self.seed = seed
             self.pack = pack
+            self.hatched = hatched
         }
     }
 
@@ -65,9 +70,8 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
-    /// The visual the device shows and its variation, from 1, and the last
-    /// variation each visual showed, which the next one there avoids.
-    var shown: (visual: String, variant: Int) = ("", 1)
+    /// The last variation each rule's reaction played, which the next one
+    /// there avoids. The device picks the looks' variations itself.
     var lastVariant: [String: Int] = [:]
     /// The activity the working look shows (`updateActs`), and each
     /// working session's, held.
@@ -444,7 +448,7 @@ public final class Core {
     // MARK: - Reading
 
     public func snapshot(at now: Int64) -> StateSnapshot {
-        let (waiting, working, _) = tracker.grouped(at: now)
+        let (waiting, working, idle) = tracker.grouped(at: now)
         let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
         let attn = waiting.first.map {
             StateSnapshot.Attention(
@@ -455,10 +459,10 @@ public final class Core {
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
-        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
-                                     vol: config.volume, variant: 1)
-        if shown.visual == snapshot.visual { snapshot.variant = shown.variant }
-        return snapshot
+        let helpers = working.reduce(0) { $0 + $1.helpers.count }
+        return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count, idle: idle.count,
+                             helpers: helpers, vol: config.volume,
+                             when: Occasions.tags(at: wall(now), hatched: config.hatched, time: config.time))
     }
 
     /// starting's `ctx` for a session whose context was compacted.
@@ -653,15 +657,7 @@ public final class Core {
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordNeeds(now, &fx)
         updateActs(now)
-        var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual, in: config.pack) {
-            // A new visual, or a new mood with fewer variations of it than
-            // the one showing: a variation of it at random.
-            shown = (snapshot.visual, Core.pickVariant(mood: snapshot.mood, state: snapshot.visual,
-                                                         avoiding: lastVariant[snapshot.visual], in: config.pack, &rng))
-            lastVariant[snapshot.visual] = shown.variant
-            snapshot.variant = shown.variant
-        }
+        let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
         defer { lastSessions = sessions }
         if snapshot != lastPublished {

@@ -1,0 +1,11 @@
+{
+  "name": "Boop's 50th day: a bigger hello",
+  "case": "Boop hatched fifty days ago today. The person comes back to the Mac in the morning after the night away. Boop wakes up for them with a big, glad hello for the milestone: an excited or happy face, saying something glad, held more than once, never a cross, sad or hurt one.",
+  "why": "The heading says Boop is 50 days old (Occasions.isMilestone: the 10th and 50th days, every 100th and each anniversary); PERSONALITY: on an occasion it plays along; its Example: back on its 50th day, excited, wake up, glad in a phrase, three times. The board shows the party designs (state.when has party)",
+  "start": "2026-10-21T00:30",
+  "hatched": "2026-09-01",
+  "steps": [
+    {"event": "away", "at": "0s"},
+    {"event": "back", "at": "8h30m", "expect": {"react": "excited|happy|proud", "animation": "wake up", "feeling": "glad", "loops": "twice|three times|four times"}}
+  ]
+}

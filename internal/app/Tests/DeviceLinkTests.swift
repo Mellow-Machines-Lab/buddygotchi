@@ -274,30 +274,35 @@ final class DeviceLinkTests: XCTestCase {
     private let widest = StateSnapshot.clip(String(repeating: "\"", count: 60), max: StateSnapshot.maxSignBytes)
     private let esc = String(repeating: #"\""#, count: 47)
 
+    /// The most calendar tags that can be on at once: a part of the day,
+    /// a Friday the 13th that's also a holiday, Programmers' Day, Lunar
+    /// New Year and a party.
+    private let mostTags = ["morning", "friday", "friday13", "aprilfools", "programmers", "lunar", "party"]
+
     /// A line is at most 512 bytes. The biggest `state`,
     /// with a 47-byte project and name that escape to two bytes a
-    /// character, fits.
+    /// character, the counts at their widest and the most tags, fits.
     func testEveryStateLineFitsTheProtocol() {
         XCTAssertEqual(StateSnapshot.clip("a\u{1}b\u{7F}c\td"), "a b c d")
         let s = StateSnapshot(base: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, vol: 10, variant: 5)
+                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"vol":10,"variant":5}"#)
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","friday13","aprilfools","programmers","lunar","party"]}"#)
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, busy: 2, vol: 6, variant: 3)
-        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6,"variant":3}"#)
+        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, busy: 2, vol: 6)
+        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
         XCTAssertEqual(working.visual, "delegating")
         XCTAssertEqual(working.look, "delegating")
         let s = StateSnapshot(base: "working", act: "delegating", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, vol: 10, variant: 9)
+                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertEqual(s.visual, "needs_you", "needs you wins")
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)

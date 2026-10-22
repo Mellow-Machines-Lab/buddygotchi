@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-21. The contract a character pack meets, so that any
+Updated 2026-10-22. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -417,8 +417,27 @@ The engine's interface is `render::Face` (`firmware/src/render/face.h`).
 Besides drawing each mood and state, a face:
 
 - **Has variations.** A state may have several designs, numbered from 1.
-  The Mac picks one, and a reaction's facts (`outcome`, `ctx`) pick among
-  them. A face says how many it has (`variants`).
+  The face picks a look's itself: a new look starts on its first, and at
+  the end of a loop it may turn to another. The Mac picks a reaction's,
+  among those for its facts (`outcome`, `ctx`). A face says how many it
+  has (`variants`).
+- **Has occasions.** A design may need tags (`when`: every one on) or a
+  wait (`after`: seconds its look has shown). The tags are the engine's
+  (`firmware/src/render/tags.h`): the part of the day (`morning`, `day`,
+  `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
+  (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
+  `winter`, `programmers`, `lunar`), `party` (a milestone day since
+  hatching, New Year's Day, a growth stage reached) from the Mac's
+  `state.when`, and `busy` (2–3 sessions working) and `frantic` (4 or
+  more), which the board adds from `state.busy`. A design that fits
+  only while its tags are on shows only then; a look starts on one while
+  it fits, turns to one two times in three, and a reaction always takes
+  one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
+  morning, a nightcap at night, a party hat, Halloween, winter,
+  Valentine's, Friday's shades, a frantic sweat, a stretch after twenty
+  minutes' work, a dream after half an hour's sleep. The working looks
+  also play 125% quicker while the agents are busy and 160% while
+  frantic (`render::workPace`). The gel has no occasions yet.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
@@ -481,10 +500,12 @@ facegen writes it into the Pixel pack. It holds:
   states above, in the designs' order.
 - `designs`: for each mood, a row for each state (a borrowing mood has
   the designs it wears), with each variation's
-  loop length (`ms`), voice window (`voice_ms`) and fact (`outcome` or
-  `ctx`). The board has the same numbers (`faces.h`, `sfx.h`). The Mac
-  times reactions and picks variations by them. A fact no design is for
-  plays any of the state's designs.
+  loop length (`ms`), voice window (`voice_ms`), fact (`outcome` or
+  `ctx`), tags (`when`) and wait (`after`, in seconds). The board has the
+  same numbers (`faces.h`, `sfx.h`). The Mac times reactions and picks
+  their variations by them, never one with tags or a wait (the board
+  swaps one in itself). A fact no design is for plays any of the state's
+  designs.
 - `box`, `colors` and `faces`: the popover's still faces, each as
   `<mood>/<look>` for `idle`, `working` and `needs_you`, and
   `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.

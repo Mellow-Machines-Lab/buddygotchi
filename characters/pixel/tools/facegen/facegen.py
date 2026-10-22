@@ -86,6 +86,16 @@ assert set(MOODS) <= set(NAMES) and set(WEARS.values()) <= set(MOODS), "every mo
 # render::StartCtx): task_complete's outcome and starting's context; none for any.
 OUTCOMES = [None, "success", "failure"]
 CTXS = [None, "new_task", "session", "continuation", "compacted"]
+# The tags a design may need on (an occasion's: firmware/src/render/tags.h,
+# which the Mac's list matches), as bits in that order.
+TAGS = re.findall(r'"(\w+)"', re.search(r"kTagNames\[kTagCount\] = \{(.*?)\};",
+                  (REPO / "firmware" / "src" / "render" / "tags.h").read_text(), re.S).group(1))
+
+
+def tag_bits(when: list[str] | None) -> int:
+    unknown = set(when or []) - set(TAGS)
+    assert not unknown, f"unknown tags {sorted(unknown)}: firmware/src/render/tags.h has {TAGS}"
+    return sum(1 << TAGS.index(t) for t in when or [])
 # The group that holds a design's animation, by dialect; the still copy
 # beside it is the reduced-motion picture, which the device never shows.
 MOTION = ("boop-motion", "alert-motion", "state-motion", "motion")
@@ -781,7 +791,7 @@ def canvas_index(color: int) -> int:
 # ---- Writing -----------------------------------------------------------------
 
 
-def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict[tuple[int, int, int], tuple[int, int, int]],
+def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]],
          sources: dict[int, str], counts: dict[tuple[int, int], int]) -> str:
     # The designs share much: the same rectangles, the same tracks, the same
     # key times and values. Each is stored once, however many use it.
@@ -956,9 +966,13 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "// render::StartCtx number them: task_complete's outcome, 1 success or",
         "// 2 failure, and starting's context, 1 new_task, 2 session,",
         "// 3 continuation or 4 compacted; 0 when it's for any.",
+        "// It shows only while every tag of `when` is on (bits in",
+        "// render::kTagNames' order) and once its look has shown `after` seconds.",
         "struct Design {",
         "  uint16_t scene;",
         "  uint8_t outcome, ctx;",
+        "  uint32_t when;",
+        "  uint16_t after;",
         "};",
         "",
     ]
@@ -971,8 +985,8 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
             row_first.append(str(first))
             row_count.append(str(n))
             for v in range(n):
-                o, c, _ = meta[(m, st, v)]
-                design_rows.append(f"{{{table[(m, st, v)]}, {o}, {c}}}")
+                o, c, _, when, after = meta[(m, st, v)]
+                design_rows.append(f"{{{table[(m, st, v)]}, {o}, {c}, {when}, {after}}}")
             first += n
         rows_first.append("{" + ", ".join(row_first) + "},  // " + MOODS[m])
         rows_count.append("{" + ", ".join(row_count) + "},  // " + MOODS[m])
@@ -1057,7 +1071,7 @@ def tile_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int]):
 
 
 def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
-                    meta: dict[tuple[int, int, int], tuple[int, int, int]], counts: dict[tuple[int, int], int]) -> str:
+                    meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]], counts: dict[tuple[int, int], int]) -> str:
     """The Pixel pack's mac/faces.json (characters/CHARACTER.md §9): what
     the Mac needs of the pixel face. The popover's still faces (`box`,
     `colors`, `faces`), and each mood, state and variation's loop length,
@@ -1070,12 +1084,16 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
     faces["happy/asleep"] = drawn["happy/asleep"]
 
     def design(m: int, st: int, v: int) -> dict:
-        o, c, w = meta[(m, st, v)]
+        o, c, w, when, after = meta[(m, st, v)]
         d = {"ms": scenes[table[(m, st, v)]].loop_ms(), "voice_ms": w}
         if o:
             d["outcome"] = OUTCOMES[o]
         if c:
             d["ctx"] = CTXS[c]
+        if when:
+            d["when"] = [t for i, t in enumerate(TAGS) if when >> i & 1]
+        if after:
+            d["after"] = after
         return d
 
     data = {
@@ -1223,12 +1241,12 @@ def export() -> list[dict]:
     return designs
 
 
-def load() -> tuple[list[Scene], dict[tuple[int, int, int], int], dict[tuple[int, int, int], tuple[int, int, int]],
+def load() -> tuple[list[Scene], dict[tuple[int, int, int], int], dict[tuple[int, int, int], tuple[int, int, int, int, int]],
                     dict[int, str], dict[int, Path], dict[tuple[int, int], int]]:
     scenes: list[Scene] = []
     seen: dict[str, int] = {}
     table: dict[tuple[int, int, int], int] = {}  # mood, state, variation (from 0) → scene
-    meta: dict[tuple[int, int, int], tuple[int, int, int]] = {}  # the same → outcome and context, as numbered, and voice window
+    meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]] = {}  # the same → outcome, context, voice window, tags and wait
     sources: dict[int, str] = {}
     files: dict[int, Path] = {}
     counts: dict[tuple[int, int], int] = {}  # mood, state → how many variations
@@ -1243,7 +1261,8 @@ def load() -> tuple[list[Scene], dict[tuple[int, int, int], int], dict[tuple[int
             sources[seen[k]] = path.name
             files[seen[k]] = path
         table[(m, s, v)] = seen[k]
-        meta[(m, s, v)] = (OUTCOMES.index(a.get("outcome")), CTXS.index(a.get("ctx")), a["voiceMs"])
+        meta[(m, s, v)] = (OUTCOMES.index(a.get("outcome")), CTXS.index(a.get("ctx")), a["voiceMs"], tag_bits(a.get("when")),
+                           int(a.get("after", 0)))
         counts[(m, s)] = max(counts.get((m, s), 0), v + 1)
     for m in range(len(MOODS)):
         for s in range(len(STATES)):

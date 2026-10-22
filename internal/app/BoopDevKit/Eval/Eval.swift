@@ -159,6 +159,9 @@ public struct Scenario: Sendable {
     /// `2026-10-31T09:00`): nil for `Replay.defaultStart`, a Wednesday at
     /// 14:00.
     public var start: Int64?
+    /// The day Boop hatched, `yyyy-MM-dd`, for its milestone days: nil for
+    /// none.
+    public var hatched: String?
 
     /// The nature a scenario runs with unless it says: the app always has
     /// one from setup, and the owner's is cheeky.
@@ -184,7 +187,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps", "start"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps", "start", "hatched"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -193,6 +196,10 @@ public struct Scenario: Sendable {
         if let t = o["start"] {
             guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
             start = ms
+        }
+        if let h = o["hatched"] {
+            guard let day = h as? String, LocalTime.isDay(day) else { throw bad("hatched is a day, like 2026-09-01") }
+            hatched = day
         }
         gap = o["gap"] as? String
         if always, gap != nil { throw bad("an always scenario can't be a known gap") }
@@ -511,7 +518,7 @@ public struct Eval {
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
         let rules = steering.personality(scenario.personality).rules
-        let core = Core(config: .init(time: time, seed: 1), lastActiveDay: time.day(start))
+        let core = Core(config: .init(time: time, seed: 1, hatched: scenario.hatched), lastActiveDay: time.day(start))
         core.setWallClock(start, at: start)
         let view = TranscriptView(rules: rules, seed: 1)
         let home = DispatchQueue(label: "boop.eval")

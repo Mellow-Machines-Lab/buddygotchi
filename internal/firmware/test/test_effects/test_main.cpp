@@ -108,11 +108,12 @@ bool guarded(int s) {
 // it; its sneeze (5) every third loop; excited's zoomies (6) as routine work
 // sounds; asleep's snore (3) every fourth loop. Nodding off (idle 4) and
 // the rest stay silent.
-render::pixel::Policy quietPolicy(SceneState s, int v, int& every) {
+render::pixel::Policy quietPolicy(SceneState s, int v, int& every, bool excited) {
   every = 1;
   if (s == SceneState::kIdle && v == 3) return render::pixel::Policy::kEntry;
   if (s == SceneState::kIdle && v == 5) return every = 3, render::pixel::Policy::kSparse;
-  if (s == SceneState::kIdle && v == 6) return render::pixel::Policy::kLoop;
+  // Excited's zoomies; every other occasion (occasion-art.mjs) is silent.
+  if (s == SceneState::kIdle && v == 6 && excited) return render::pixel::Policy::kLoop;
   if (s == SceneState::kAsleep && v == 3) return every = 4, render::pixel::Policy::kSparse;
   return render::pixel::Policy::kSilent;
 }
@@ -188,7 +189,7 @@ void test_each_state_sounds_as_the_bank_says() {
           case SceneState::kIdle:
           case SceneState::kAsleep: {
             int every;
-            TEST_ASSERT_TRUE(sc.policy == quietPolicy(SceneState(s), v, every));
+            TEST_ASSERT_TRUE(sc.policy == quietPolicy(SceneState(s), v, every, render::pixelMood(m) == Mood::kExcited));
             TEST_ASSERT_EQUAL(every, sc.every);
             break;
           }
@@ -499,7 +500,8 @@ void test_the_quiet_breaks_now_and_then() {
     for (SceneState s : {SceneState::kIdle, SceneState::kAsleep}) {
       for (int v = 0; v < render::variants(render::pixelMood(m), s); ++v) {
         int every;
-        if (quietPolicy(s, v, every) == render::pixel::Policy::kLoop) continue;  // zoomies: routine work's level
+        if (quietPolicy(s, v, every, render::pixelMood(m) == Mood::kExcited) == render::pixel::Policy::kLoop)
+          continue;  // zoomies: routine work's level
         for (const voice::FxEvent& e : loopEvents(render::pixel::score(m, int(s), v), 0))
           breaks = e.gain > breaks ? e.gain : breaks;
       }

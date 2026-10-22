@@ -4,7 +4,8 @@
 // state's mood. The takes are Voice's (`boopdev voice`).
 // Happy and working, the tests fail: grumpy, once, with "Hrr...".
 {"clock":0}
-{"t":"state","base":"working","mood":"happy","busy":1,"variant":3}
+{"t":"state","base":"working","mood":"happy","busy":1}
+{"t":"dbg.look","variant":3}
 {"clock":1000}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"new.d12"},"mood":"grumpy","loops":1}}
 {"expect":{"mood":"happy","expr":"grumpy","audio":{"playing":true,"take":"new.d12"}}}

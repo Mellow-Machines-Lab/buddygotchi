@@ -16,7 +16,7 @@ namespace render {
 // Each mood has its own variations of each state's design, 1 to kMaxVariants
 // of them; a variation is 0..variants(m, s) - 1 here, and 1..variants(m, s)
 // on the wire. One out of range draws the first.
-constexpr int kMaxVariants = 12;  // faces.h checks it
+constexpr int kMaxVariants = 16;  // faces.h checks it
 int variants(Mood m, SceneState s);
 
 // The moods the designs draw, by name (faces.h's), whatever the character
@@ -34,6 +34,11 @@ StartCtx variantCtx(Mood m, SceneState s, int variant);
 // and how many; every variation when none fits, as the Mac's
 // FaceLoops.variants does.
 int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out);
+// Whether a variation may show now: every tag it needs is on in `when`
+// (render/tags.h) and its look has shown its wait (`lookMs`). And whether
+// it needs a tag at all: an occasion's, which the face prefers while it fits.
+bool fits(Mood m, SceneState s, int variant, uint32_t when, uint32_t lookMs);
+bool tagged(Mood m, SceneState s, int variant);
 
 // A flip-book, one of the new moods' designs, blinks in a step of its own on
 // its own clock, so the device's blinks leave it be.

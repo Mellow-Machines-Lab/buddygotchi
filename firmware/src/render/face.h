@@ -49,6 +49,10 @@ struct FaceContext {
   const char* project = "";
   const char* thread = "";
   int more = 0;
+  // The tags on (render/tags.h), how long the look (or needs you) has
+  // shown, and how many sessions work.
+  uint32_t when = 0, lookMs = 0;
+  int busy = 0;
 };
 class Face {
  public:
@@ -79,12 +83,16 @@ class Face {
   virtual bool nextDue(uint32_t from, uint32_t to, uint32_t& at) = 0;
   virtual void step(uint32_t t, linkkit::Rng& rng) = 0;
 
-  // Bookkeeping a face may ignore: a new needs-you, the Mac's
-  // variation of the look. lookVariant is the one showing: the Mac's, or
-  // the face's own choice.
+  // Bookkeeping a face may ignore: a new needs-you, a new look. The face
+  // picks each look's variation itself, from those whose tags are on
+  // (FaceContext::when) and whose wait is over (lookMs); lookVariant is the
+  // one showing.
   virtual void alert(uint32_t t, bool replacing) { (void)t, (void)replacing; }
   virtual uint8_t lookVariant() const = 0;
-  virtual void setLookVariant(uint8_t variant) { (void)variant; }
+  virtual void newLook() {}
+  // Shows the look's variation v (from 0) until it turns: dbg.look's, for
+  // scenarios and tools. A face that picks by its own clock may ignore it.
+  virtual void showLookVariant(uint8_t v) { (void)v; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.
