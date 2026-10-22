@@ -220,7 +220,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -321,9 +321,9 @@ public struct Scenario: Sendable {
                 if a == .codex, event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
                 step.agent = a
             }
-            for (key, only) in ["prompt": "turn started", "reading": "turn started", "message": "turn finished", "count": "pokes"]
-            where s[key] != nil && event != only {
-                throw badStep("\(key) is only for \(only)")
+            for (key, only) in ["prompt": ["turn started"], "reading": ["turn started"], "message": ["turn finished"], "count": ["pokes", "edit"]]
+            where s[key] != nil && !only.contains(event) {
+                throw badStep("\(key) is only for \(only.joined(separator: " and "))")
             }
             step.topic = s["topic"] as? String
             step.failed = s["failed"] as? Bool
@@ -906,6 +906,11 @@ public struct Eval {
             if let topic = step.topic { start["topic"] = .string(topic) }
             return [hook(.tool, .start, "PreToolUse", start),
                     hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
+        // An edit that removes `count` lines and adds none: the counts the
+        // hook gives, never the text.
+        case "edit":
+            let lines: [String: JSONValue] = ["tool": "Edit", "lines_added": 0, "lines_removed": .int(Int64(step.count ?? 100))]
+            return [hook(.tool, .start, "PreToolUse", lines), hook(.tool, .end, "PostToolUse", lines.merging(["failed": false]) { a, _ in a })]
         case "poke": return [{ $0.poke(at: now) }]
         case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
         // A Claude session opens with no turn yet: Boop is awake and idle,

@@ -88,6 +88,19 @@ final class ViewTests: XCTestCase {
                        #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
     }
 
+    /// Pins `EventLine.bigDeletion`: a turn whose edits removed 500 lines
+    /// or more, net, says how many are gone; fewer, or as many added back,
+    /// says nothing.
+    func testABigDeletionSaysHowManyLinesAreGone() {
+        func line(_ gone: Int) -> String {
+            EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 3, linesGone: gone)
+        }
+        XCTAssertEqual(line(1200), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 1,200 lines gone."#)
+        XCTAssertEqual(line(500), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 500 lines gone."#)
+        XCTAssertEqual(line(499), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls."#)
+        XCTAssertEqual(line(-800), line(0))
+    }
+
     /// A long prompt or message is cut, on one line.
     func testLongWordsAreCut() {
         let long = String(repeating: "word ", count: 200)
