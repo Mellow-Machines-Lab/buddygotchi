@@ -83,9 +83,12 @@ public final class Pipeline {
         options.reading = .none
         // The time and weekday, then the calendar's occasions in words
         // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
-        let hatched = buddies.first?.core.config.hatched, name = CharacterPack.active.name
+        // The first core's, read as the prompt is built, on the pipeline's queue.
+        let first = FirstCore(buddies.first?.core), name = CharacterPack.active.name
         options.heading = { wall in
-            ([time.clock(wall), time.weekday(wall)] + Occasions.words(at: wall, hatched: hatched, name: name, time: time))
+            ([time.clock(wall), time.weekday(wall)]
+                + Occasions.words(at: wall, hatched: first.core?.config.hatched, name: name, stage: first.core?.config.stageReached,
+                                  time: time))
                 .joined(separator: ", ")
         }
         options.loop = loop
@@ -273,4 +276,11 @@ public final class Pipeline {
         let core = core(e.buddy)
         return view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock })
     }
+}
+
+/// The first buddy's core for the prompt's heading, which reads its
+/// hatch day and stage on the pipeline's own queue.
+private final class FirstCore: @unchecked Sendable {
+    weak var core: Core?
+    init(_ core: Core?) { self.core = core }
 }

@@ -1,0 +1,9 @@
+{
+  "name": "Manners warm Boop",
+  "case": "The person asks the agent politely, with a please. Boop warms to it: a soft, glad face (affectionate, happy, pleased or curious), never a cross one, and maybe a glad sound.",
+  "why": "PERSONALITY: it has opinions on how the person talks to the agents: manners warm it; its Example: please, affectionate, glad in a sound, once. The prompt goes to Jev as NOW's You asked: note",
+  "runs": 2,
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "please add a retry to the upload", "expect": {"react": "affectionate|happy|pleased|curious", "feeling": "glad|none"}}
+  ]
+}

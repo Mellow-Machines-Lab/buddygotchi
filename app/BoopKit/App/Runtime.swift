@@ -103,6 +103,9 @@ public final class Runtime: @unchecked Sendable {
     public var latest: StateSnapshot? { rigs[0].latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
+    /// Boop's memory: long-term.md, read at launch, and the diary, which
+    /// the brain's diary output writes a line to each day.
+    public let memory: MemoryStore
     public private(set) var settings: AppSettings
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
@@ -204,8 +207,9 @@ public final class Runtime: @unchecked Sendable {
         let log = options.log
         let wall = options.wallClock(), wallAt = options.clock()
         let today = options.time.day(wall)
-        guard let longTerm = try MemoryStore(directory: options.stateDir, today: today, log: log).longTerm
-        else { throw OpenError.notSetUp }
+        let memory = try MemoryStore(directory: options.stateDir, today: today, log: log)
+        guard let longTerm = memory.longTerm else { throw OpenError.notSetUp }
+        self.memory = memory
         name = longTerm.name
         settings = AppSettings.load(from: options.stateDir)
         let recent = DebugLog.Recent()
@@ -276,7 +280,11 @@ public final class Runtime: @unchecked Sendable {
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        nature: rig === rigs[0] ? longTerm.nature : nil)
+                        nature: rig === rigs[0] ? longTerm.nature : nil,
+                        diary: rig === rigs[0] ? { day, line in
+                            // The pass that wrote it changes the popover.
+                            do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
+                        } : nil)
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -333,8 +341,12 @@ public final class Runtime: @unchecked Sendable {
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
         harness.on("*") { [weak self] e in
-            guard let self, growth.count(e) else { return }
+            guard let self else { return }
+            let before = growth.growth.stage
+            guard growth.count(e) else { return }
             grew = true
+            // A stage reached makes the rest of the day a party.
+            if growth.growth.stage > before { for rig in rigs { core(rig).reachedStage(growth.growth.name, at: options.clock()) } }
         }
     }
 
@@ -344,9 +356,10 @@ public final class Runtime: @unchecked Sendable {
     /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
-                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
+                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil,
+                               diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, nature: nature)
+                        queue: queue, speaks: speaks, nature: nature, diary: diary)
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 

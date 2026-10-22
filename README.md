@@ -24,6 +24,7 @@ them has been waiting on you for ten minutes. Boop noticed.
 - 🏆 **Celebrates** a finish that earns it, and grumbles at a failed test (never at you).
 - 📦 **Counts who's done** under its face, and its button hands you the next one: whoever needs you, then the agent that finished last, at its thread on the Mac.
 - 👉 **Pokes back** when you tap it, and answers when you hold its button and talk.
+- 📔 **Keeps a diary**, a line a day about the one before, and dresses for the day: coffee in the morning, a nightcap at night, a costume on Halloween, a party hat on its milestone days.
 
 It has moods of its own, and there's no reset button. It only watches:
 it never approves, denies or blocks anything an agent does.

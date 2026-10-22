@@ -38,6 +38,10 @@ extension Steering {
     /// file for it.
     public func nature(_ nature: LongTerm.Nature) -> String? { files["nature/\(nature.rawValue)"] }
 
+    /// The diary's lines (`diary.md`, optional): none for a pack with no
+    /// file, which keeps no diary.
+    public var diary: [DiaryOutput.Template] { files["diary"].map(DiaryOutput.templates) ?? [] }
+
     /// The MOOD section for a mood, or the resting mood's for one Boop
     /// doesn't know: `pack`'s, whose steering this is.
     public func mood(_ name: String, in pack: CharacterPack = .active) -> String {
@@ -47,7 +51,7 @@ extension Steering {
     /// Budgets in tokens.
     public enum Budget {
         public static let guide = 400
-        public static let personality = 1500
+        public static let personality = 2000
         public static let nature = 250
         public static let mood = 225
     }

@@ -324,6 +324,15 @@ What the brain reads, in plain Markdown:
 - `mood/<mood>.md` (one per mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
+- `diary.md` (optional): the lines the creature may write in its diary,
+  one a day about yesterday, on the first pass of a new day
+  (`DiaryOutput`). Each is `- [tags] words`: the tags (optional) a day
+  must all have (`failed`, `clean`, `long`, `quiet`, `poked` and the
+  calendar's), and the words may fill in `{weekday}`, `{turns}`,
+  `{failed}`, `{longest}` (minutes), `{thread}` and `{pokes}`. The brain
+  picks one of those that fit, at most eight; the memory store keeps it
+  in `diary.md` in the state directory, and the popover shows the last
+  week. A pack without the file keeps no diary.
 
 Each file has a budget in tokens, the same for every pack
 (`Steering.Budget`, in `app/BoopKit/Harness/Steering.swift`). The app

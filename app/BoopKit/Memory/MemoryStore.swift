@@ -1,7 +1,7 @@
 import Foundation
 
 /// The only code that reads or writes Boop's memory:
-/// `long-term.md`, who this Boop is. It reads it once, when it opens,
+/// `long-term.md`, who this Boop is, and `diary.md`, a line a day. It reads it once, when it opens,
 /// writes atomically, keeps copies in `history/`, and restores a file that
 /// won't parse.
 ///
@@ -9,6 +9,7 @@ import Foundation
 /// and reads it at launch.
 public final class MemoryStore {
     public static let longTermFile = "long-term.md"
+    public static let diaryFile = "diary.md"
     public static let historyDir = "history"
 
     public let directory: URL
@@ -108,6 +109,29 @@ public final class MemoryStore {
     }
 
     /// Atomic: a temporary file renamed over the old one.
+    /// Adds `line` to the diary under `day` (`## 2026-10-21`), once a day:
+    /// a day already written keeps its line.
+    public func appendDiary(day: String, line: String) throws {
+        let old = (try? String(contentsOf: url(Self.diaryFile), encoding: .utf8)) ?? "# \(longTerm?.name ?? "Boop")'s diary\n"
+        guard !old.contains("\n## \(day)\n") else { return }
+        try write(old + "\n## \(day)\n\(line)\n", Self.diaryFile)
+    }
+
+    /// The diary's last `count` days, newest first.
+    public func diary(last count: Int) -> [(day: String, line: String)] {
+        guard let text = try? String(contentsOf: url(Self.diaryFile), encoding: .utf8) else { return [] }
+        var out: [(day: String, line: String)] = []
+        var day: String?
+        for raw in text.split(separator: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("## ") { day = String(line.dropFirst(3)) } else if let d = day, !line.isEmpty, !line.hasPrefix("#") {
+                out.append((d, line))
+                day = nil
+            }
+        }
+        return Array(out.suffix(count).reversed())
+    }
+
     func write(_ text: String, _ file: String) throws {
         try Data(text.utf8).write(to: url(file), options: .atomic)
     }

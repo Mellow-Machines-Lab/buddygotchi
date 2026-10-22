@@ -81,4 +81,17 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(names, Occasions.all)
         XCTAssertLessThanOrEqual(Occasions.all.count, 32, "a set of tags is 32 bits on the board")
     }
+
+    /// A growth stage reached makes the rest of its day a party, on the
+    /// board (`state.when`) and in the heading's words.
+    func testAStageReachedIsAParty() {
+        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        let now = ms(2026, 10, 22, 10)
+        core.setWallClock(now, at: now)
+        XCTAssertFalse(core.snapshot(at: now).when.contains("party"))
+        core.reachedStage("Sprout", at: now)
+        XCTAssertTrue(core.snapshot(at: now).when.contains("party"))
+        XCTAssertFalse(core.snapshot(at: now + 24 * 3_600_000).when.contains("party"), "the next day isn't")
+        XCTAssertEqual(Occasions.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
+    }
 }

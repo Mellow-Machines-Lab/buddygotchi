@@ -39,6 +39,9 @@ public final class Core {
         /// The day Boop hatched (`yyyy-MM-dd`), for its milestone days; nil
         /// for none.
         public var hatched: String?
+        /// The growth stage Boop reached last and the day it did: that day
+        /// is a party (`Occasions`).
+        public var stageReached: (name: String, day: String)?
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active,
                     hatched: String? = nil) {
@@ -427,6 +430,12 @@ public final class Core {
         return fx
     }
 
+    /// Boop reached a growth stage at `now`: the rest of the day is a
+    /// party. The input's `state` carries it.
+    public func reachedStage(_ name: String, at now: Int64) {
+        config.stageReached = (name, day(now))
+    }
+
     /// The mood output saved a new mood (`mood` reads it): a `state`
     /// carries it at once.
     @discardableResult
@@ -476,7 +485,8 @@ public final class Core {
         let helpers = working.reduce(0) { $0 + $1.helpers.count }
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count, idle: idle.count,
                              helpers: helpers, vol: config.volume,
-                             when: Occasions.tags(at: wall(now), hatched: config.hatched, time: config.time))
+                             when: Occasions.tags(at: wall(now), hatched: config.hatched,
+                                                  party: config.stageReached?.day == day(now), time: config.time))
     }
 
     /// starting's `ctx` for a session whose context was compacted.

@@ -52,8 +52,10 @@ public enum Occasions {
     }
 
     /// The calendar's tags in words, for the prompt's heading: `Halloween`,
-    /// `Boop is 50 days old`. Empty on an ordinary day.
-    public static func words(at ms: Int64, hatched: String?, name: String, time: LocalTime) -> [String] {
+    /// `Boop is 50 days old`, `Boop became a Sprout` on the day `stage`
+    /// was reached. Empty on an ordinary day.
+    public static func words(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
+                             time: LocalTime) -> [String] {
         let c = time.components(ms)
         var out: [String] = []
         if c.weekday == 6, c.day == 13 { out.append("Friday the 13th") }
@@ -69,6 +71,7 @@ public enum Occasions {
                 out.append("\(name) is \(days) days old")
             }
         }
+        if let stage, stage.day == time.day(ms) { out.append("\(name) became a \(stage.name)") }
         return out
     }
 }

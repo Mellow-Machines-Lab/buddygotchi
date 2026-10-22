@@ -1,0 +1,11 @@
+// Halloween morning: the demo's clock starts at nine on 31 October. You
+// come back after the night away and Boop wakes up in the day's mood; its
+// idle look puts the witch hat on (an occasion, `when: halloween`), and a
+// finish later gets a mischievous cheer.
+{"demo": 1, "title": "Halloween", "start": "2026-10-31T09:00"}
+{"you": "back", "minutes": 600}
+{"brain": {"react.mood": "mischievous", "react.animation": "wake up", "react.loops": "twice", "say.feeling": "glad", "say.about": "hello", "say.kind": "sound"}, "mood": "happy"}
+{"agent": "prompt", "text": "Add a spooky theme for today", "after": 6}
+{"agent": "edit", "file": "src/theme.css", "old": "--accent: #4a90e2", "new": "--accent: #ff7518", "takes": 2}
+{"agent": "reply", "text": "The orange theme is on for Halloween.", "after": 1}
+{"brain": {"react.mood": "mischievous", "react.animation": "success", "react.loops": "twice", "say.feeling": "tickled", "say.kind": "sound"}}

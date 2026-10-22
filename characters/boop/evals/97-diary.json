@@ -1,0 +1,15 @@
+{
+  "name": "The diary: a line about yesterday, once the day is over",
+  "case": "A day of work: three turns, the tests failing on the way, the last one failed. Once the day is over (by the first pass of the new one, an hourly check-in in the night or the morning's first turn), Boop writes one line in its diary about yesterday: one that fits a day with a failure. It writes once, not again on the next event.",
+  "why": "DiaryOutput: on the first pass of a new day it asks one question, the pack's diary lines (steering/diary.md) that fit yesterday's counts, filled in; the did's day keeps it to once. The counts come from the raw events",
+  "start": "2026-10-20T15:00",
+  "steps": [
+    {"event": "turn started", "at": "0s", "workspace": "api"},
+    {"event": "turn finished", "at": "2m", "workspace": "api", "expect": {"diary": "none"}},
+    {"event": "turn started", "at": "10m", "workspace": "api"},
+    {"event": "command", "at": "12m", "workspace": "api", "topic": "tests", "failed": true},
+    {"event": "turn failed", "at": "40m", "workspace": "api"},
+    {"event": "turn started", "at": "18h", "workspace": "api", "expect": {"diary": "some"}},
+    {"event": "turn finished", "at": "18h5m", "workspace": "api", "expect": {"diary": "none"}}
+  ]
+}

@@ -235,6 +235,7 @@ file-name order:
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
+| `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), and tags that must all be on (`halloween\|morning`) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
@@ -315,7 +316,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   cheer as Claude's (`83`). On an occasion the
   prompt's heading names, Boop plays along when you come back: on
   Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
-  and the screen has the day's tags. And the screen with no pass: BOOT
+  and the screen has the day's tags; on April Fools' Day it may play a
+  good finish as a failure, for the joke (`98`). Its opinions: a please
+  warms it (`94`), capitals make it flinch (`95`), an agent's "You're
+  absolutely right!" gets an eye-roll (`96`). Once the day is over it
+  writes one diary line about it, and only one (`97`). And the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`).
 
