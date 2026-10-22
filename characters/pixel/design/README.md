@@ -1,6 +1,6 @@
 # Pixel's design: the animation bank and mood graph
 
-Updated 2026-10-15. The code-based animation/SFX bank and approved mood-graph
+Updated 2026-10-21. The code-based animation/SFX bank and approved mood-graph
 handover. The bank is the one source of the device's designs and sounds:
 `facegen` runs its generator for the faces and `sfxgen` imports its
 timelines and synthesiser, so a change here changes the firmware once
@@ -66,6 +66,14 @@ is copied out of the bank by hand. The older moods' designs must come out as
 fingerprints in the same commit. The generator tags each flip-book step's
 face and mouth (`data-part`) and its blink (`data-blink`), which facegen and
 the device use; `qa/check.mjs` must pass after any change.
+
+A new design is a new variation after a state's others, never a redrawn
+one: the device turns a look's variations by itself at the end of a loop,
+and picks a finish's for its outcome, never the last again, so the Mac
+needs no change. The comedy (`boop-sound-bank-v4/runtime/comedy-art.mjs`:
+a yawn, nodding off, a sneeze, a snore, hiccups after a cheer, proud's
+gift and excited's zoomies) came that way, with the only sounds a quiet
+look makes.
 
 The mood graph belongs to the Mac's Mood action, never the generic harness.
 Integration is not visual approval: new art and sounds are reviewed by

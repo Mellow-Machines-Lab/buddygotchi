@@ -1,0 +1,78 @@
+// The comedy designs (the bank's comedy-art.mjs), each picked by its
+// variation on a frozen clock: a look's by the state's `variant`, a
+// finish's by the reaction's. Each sound is checked as the design's clock
+// reaches it (audio.fx.last); a jump in the clock drops what it passes.
+// Yawn and stretch, happy's idle 4 (9 s): the yawn opens at 2.43 s with its
+// tone, and the long stretch follows at 3.51 s.
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","variant":4}
+{"expect":{"look_variant":4}}
+{"clock":2420}
+{"expect":{"audio":{"fx":{"last":"yawn"}}}}
+{"clock":2500}
+{"shot":"yawn"}
+{"clock":3600}
+{"shot":"yawn-stretch"}
+// Nodding off, calm's idle 5 (13.42 s at calm's pace): the head nods deepest
+// from 6.04 s, then snaps awake at 6.98 s. It makes no sound.
+{"clock":20000}
+{"t":"state","base":"idle","mood":"calm","variant":5}
+{"expect":{"look_variant":5}}
+{"clock":26300}
+{"shot":"nodding-off"}
+{"clock":27100}
+{"shot":"nod-snap"}
+{"expect":{"audio":{"fx":{"last":"yawn"}}}}
+// Sneeze, grumpy's idle 6 (7.6 s at grumpy's pace): the sneeze at 3.344 s,
+// and its spray.
+{"clock":40000}
+{"t":"state","base":"idle","mood":"grumpy","variant":6}
+{"expect":{"look_variant":6}}
+{"clock":43300}
+{"expect":{"audio":{"fx":{"last":"sneeze"}}}}
+{"clock":43450}
+{"shot":"sneeze"}
+// Snore, asleep 4 (12 s, the same in every mood): the mouth opens on a snore
+// at 2.16 s, and the breath out blows a bubble and a Z.
+{"clock":60000}
+{"t":"state","base":"asleep","mood":"whiny","variant":4}
+{"expect":{"look_variant":4}}
+{"clock":62150}
+{"expect":{"audio":{"fx":{"last":"snore"}}}}
+{"clock":62300}
+{"shot":"snore"}
+{"clock":64500}
+{"shot":"snore-bubble"}
+// Trophy, then hiccups: happy's success 6 (8 s), the cheer, then hiccups
+// at 3.84, 4.88 and 5.92 s.
+{"clock":80000}
+{"t":"state","base":"idle","mood":"happy","busy":1}
+{"t":"do","id":31,"name":"task_complete","play":"now","args":{"outcome":"success","variant":6,"mood":"happy","loops":1}}
+{"expect":{"moment":{"anim":"task_complete","left_ms":8000,"variant":6}}}
+{"clock":81000}
+{"shot":"hiccups-cheer"}
+{"clock":83830}
+{"expect":{"audio":{"fx":{"last":"hiccup"}}}}
+{"clock":83900}
+{"shot":"hiccup"}
+// The gift: proud's success 7 (7 s). It holds up the bug it caught, to its
+// fanfare at 1.82 s, then presents it.
+{"clock":100000}
+{"t":"state","base":"idle","mood":"proud","busy":1}
+{"t":"do","id":32,"name":"task_complete","play":"now","args":{"outcome":"success","variant":7,"mood":"proud","loops":1}}
+{"expect":{"moment":{"anim":"task_complete","left_ms":7000,"variant":7}}}
+{"clock":101810}
+{"expect":{"audio":{"fx":{"last":"trophyB"}}}}
+{"clock":102000}
+{"shot":"gift-raised"}
+{"clock":103700}
+{"shot":"gift-presented"}
+// Zoomies: excited's working 6 (3.9 s at excited's pace), the face zips
+// right, off the screen, and back in from the left.
+{"clock":120000}
+{"t":"state","base":"working","mood":"excited","busy":1,"variant":6}
+{"expect":{"look_variant":6}}
+{"clock":120800}
+{"shot":"zoomies-zip"}
+{"clock":121500}
+{"shot":"zoomies-back"}
