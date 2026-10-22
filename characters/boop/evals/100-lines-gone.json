@@ -1,0 +1,12 @@
+{
+  "name": "A big deletion is a joy",
+  "case": "A turn whose edits remove 1,200 lines net. Boop loves deleted code: an excited, happy or proud face at the finish, never a worried or grumpy one.",
+  "why": "PERSONALITY: it loves deleted code; its Example: 1,200 lines gone, excited, success, glad in a phrase, twice. The finish line says how many lines are gone once a turn removes 500 or more net (EventLine.bigDeletion)",
+  "runs": 2,
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "rip out the old exporter"},
+    {"event": "edit", "at": "2m", "count": 700},
+    {"event": "edit", "at": "4m", "count": 500},
+    {"event": "turn finished", "at": "6m", "expect": {"react": "excited|happy|proud"}}
+  ]
+}
