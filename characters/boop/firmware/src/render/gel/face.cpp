@@ -25,8 +25,10 @@ constexpr int kTakes = int(sizeof(slime::kRecipes[0][0]) / sizeof(slime::kRecipe
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
 const slime::Recipe& GelFace::recipe(Mood mood, SceneState state, int variant, Outcome outcome, StartCtx ctx) {
-  return slime::kRecipes[profileFor(mood)][recipeState(state, outcome, ctx)]
-                        [std::max(0, std::min(kTakes - 1, variant))];
+  int row = recipeState(state, outcome, ctx);
+  // A finish timed without its outcome: its fourth take is a success's.
+  if (state == SceneState::kTaskComplete && variant >= takes(row)) row = recipeState(state, Outcome::kSuccess, ctx);
+  return take(profileFor(mood), row, std::max(0, std::min(takes(row) - 1, variant)));
 }
 
 void GelFace::reset(uint32_t t, linkkit::Rng&) {
@@ -151,13 +153,15 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
 // refused after its pick (Device::refuse) leaves the bag and the engine's
 // randomness as they were. started draws the same take for real.
 uint8_t GelFace::pick(SceneState a, Mood mood, int, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
-  Bag bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)];
+  const int row = recipeState(a, outcome, ctx);
+  auto bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row];
   Random random = engine_->random;
-  return uint8_t(bag.next(random));
+  return uint8_t(bag.next(random, takes(row)));
 }
 
 void GelFace::started(SceneState a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
-  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)].next(engine_->random);
+  const int row = recipeState(a, outcome, ctx);
+  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row].next(engine_->random, takes(row));
 }
 
 int GelFace::variants(Mood, SceneState) const { return kTakes; }
@@ -171,7 +175,7 @@ uint32_t GelFace::loopMs(Mood mood, SceneState state, int variant) const {
 uint32_t GelFace::voiceMs(Mood mood, SceneState state, int variant) const {
   const auto& r = recipe(mood, state, variant, Outcome::kNone, StartCtx::kNone);
   for (int i = 0; i < r.count; ++i)
-    if (r.contacts[i].kind >= kAlert) return uint32_t(F(r.contacts[i].at).integer() + 70);
+    if (reveals(r.contacts[i].kind)) return uint32_t(F(r.contacts[i].at).integer() + 70);
   return 0;
 }
 

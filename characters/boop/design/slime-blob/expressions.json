@@ -281,6 +281,9 @@
           ]
         }
       ],
+      "gags": [
+        "long-yawn"
+      ],
       "art": {
         "eyes": "comfy-dash",
         "mouth": "little-bean",
@@ -368,6 +371,9 @@
           ]
         }
       ],
+      "gags": [
+        "long-yawn"
+      ],
       "art": {
         "eyes": "lazy-equals",
         "mouth": "baby-w",
@@ -454,6 +460,9 @@
             ]
           ]
         }
+      ],
+      "gags": [
+        "long-yawn"
       ],
       "art": {
         "eyes": "bored-bean",
@@ -546,6 +555,9 @@
             ]
           ]
         }
+      ],
+      "gags": [
+        "long-yawn"
       ],
       "art": {
         "eyes": "sleepy-lid",
@@ -974,6 +986,9 @@
             ]
           ]
         }
+      ],
+      "gags": [
+        "zoomies"
       ],
       "art": {
         "eyes": "laugh-lid",
@@ -4393,6 +4408,9 @@
           ]
         }
       ],
+      "gags": [
+        "long-yawn"
+      ],
       "art": {
         "eyes": "rosy-beans",
         "mouth": "tiny-triangle",
@@ -4491,6 +4509,510 @@
       }
     }
   },
+  "gags": {
+    "yawn-and-settle": {
+      "label": "Yawn and settle",
+      "duration": 2.9,
+      "keys": [
+        [
+          0.45,
+          "lids",
+          0.8
+        ],
+        [
+          0.7,
+          "lift",
+          0.06
+        ],
+        [
+          0.7,
+          "squash",
+          0.12
+        ],
+        [
+          0.7,
+          "forward",
+          -0.05
+        ],
+        [
+          1.5,
+          "lift",
+          0.07
+        ],
+        [
+          1.5,
+          "squash",
+          0.13
+        ],
+        [
+          1.5,
+          "forward",
+          -0.06
+        ],
+        [
+          1.55,
+          "lids",
+          0.85
+        ],
+        [
+          1.8,
+          "lids",
+          0
+        ],
+        [
+          1.9,
+          "lift",
+          0
+        ],
+        [
+          1.9,
+          "forward",
+          0
+        ],
+        [
+          1.95,
+          "squash",
+          -0.03
+        ],
+        [
+          2.5,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          1.95,
+          "squash",
+          -0.6
+        ],
+        [
+          2.15,
+          "lean",
+          0.7
+        ],
+        [
+          2.45,
+          "lean",
+          -0.55
+        ]
+      ],
+      "contacts": []
+    },
+    "doze-and-snap": {
+      "label": "Doze off and snap awake",
+      "duration": 3.6,
+      "keys": [
+        [
+          0.8,
+          "lids",
+          0.6
+        ],
+        [
+          0.9,
+          "squash",
+          -0.055
+        ],
+        [
+          1.1,
+          "forward",
+          0.05
+        ],
+        [
+          1.6,
+          "lids",
+          0.66
+        ],
+        [
+          1.7,
+          "forward",
+          0.03
+        ],
+        [
+          2.3,
+          "forward",
+          0.07
+        ],
+        [
+          2.45,
+          "lids",
+          0.72
+        ],
+        [
+          2.45,
+          "squash",
+          -0.07
+        ],
+        [
+          2.55,
+          "forward",
+          0
+        ],
+        [
+          2.58,
+          "lids",
+          0
+        ],
+        [
+          2.6,
+          "squash",
+          0.025
+        ],
+        [
+          2.7,
+          "lids",
+          1
+        ],
+        [
+          2.84,
+          "lids",
+          0
+        ],
+        [
+          3.1,
+          "squash",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          2.55,
+          "lift",
+          1.1
+        ],
+        [
+          2.6,
+          "ripple",
+          1.0
+        ]
+      ],
+      "contacts": []
+    },
+    "sneeze-and-shake": {
+      "label": "Sneeze and shake it off",
+      "duration": 2.7,
+      "keys": [
+        [
+          0.3,
+          "lids",
+          0.5
+        ],
+        [
+          0.8,
+          "lift",
+          0.05
+        ],
+        [
+          0.8,
+          "squash",
+          0.05
+        ],
+        [
+          0.85,
+          "forward",
+          -0.06
+        ],
+        [
+          0.9,
+          "lids",
+          0.9
+        ],
+        [
+          0.95,
+          "lift",
+          0.06
+        ],
+        [
+          0.97,
+          "squash",
+          0.06
+        ],
+        [
+          0.97,
+          "forward",
+          -0.07
+        ],
+        [
+          1.0,
+          "lids",
+          1
+        ],
+        [
+          1.05,
+          "lift",
+          0
+        ],
+        [
+          1.06,
+          "squash",
+          -0.05
+        ],
+        [
+          1.08,
+          "forward",
+          0.06
+        ],
+        [
+          1.12,
+          "lids",
+          0
+        ],
+        [
+          1.4,
+          "squash",
+          0
+        ],
+        [
+          1.4,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "ripple",
+          0.5
+        ],
+        [
+          0.6,
+          "ripple",
+          0.6
+        ],
+        [
+          1.0,
+          "forward",
+          1.8
+        ],
+        [
+          1.0,
+          "ripple",
+          2.2
+        ],
+        [
+          1.45,
+          "lean",
+          1.8
+        ],
+        [
+          1.65,
+          "lean",
+          -2.2
+        ],
+        [
+          1.85,
+          "lean",
+          1.6
+        ]
+      ],
+      "contacts": [
+        [
+          1.0,
+          "sneeze_contact",
+          0.6
+        ]
+      ]
+    },
+    "long-yawn": {
+      "label": "Long slow yawn",
+      "duration": 4.2,
+      "keys": [
+        [
+          0.6,
+          "lids",
+          0.85
+        ],
+        [
+          1.1,
+          "lift",
+          0.07
+        ],
+        [
+          1.1,
+          "squash",
+          0.11
+        ],
+        [
+          1.1,
+          "forward",
+          -0.06
+        ],
+        [
+          1.2,
+          "lean",
+          0.03
+        ],
+        [
+          2.0,
+          "lean",
+          -0.03
+        ],
+        [
+          2.1,
+          "lift",
+          0.08
+        ],
+        [
+          2.1,
+          "squash",
+          0.12
+        ],
+        [
+          2.1,
+          "forward",
+          -0.07
+        ],
+        [
+          2.2,
+          "lids",
+          0.92
+        ],
+        [
+          2.5,
+          "lean",
+          0
+        ],
+        [
+          2.6,
+          "lift",
+          0
+        ],
+        [
+          2.6,
+          "forward",
+          0
+        ],
+        [
+          2.6,
+          "lids",
+          0.5
+        ],
+        [
+          2.8,
+          "squash",
+          -0.05
+        ],
+        [
+          3.6,
+          "lids",
+          0.45
+        ],
+        [
+          3.7,
+          "squash",
+          0
+        ],
+        [
+          4.0,
+          "lids",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          2.75,
+          "squash",
+          -0.7
+        ]
+      ],
+      "contacts": []
+    },
+    "zoomies": {
+      "label": "Zoomies, edge to edge",
+      "duration": 2.6,
+      "keys": [
+        [
+          0.3,
+          "slide",
+          0.5
+        ],
+        [
+          0.75,
+          "slide",
+          -0.5
+        ],
+        [
+          1.2,
+          "slide",
+          0.5
+        ],
+        [
+          1.65,
+          "slide",
+          -0.35
+        ],
+        [
+          2.05,
+          "slide",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.04,
+          "lean",
+          -1.4
+        ],
+        [
+          0.3,
+          "squash",
+          -1.1
+        ],
+        [
+          0.5,
+          "lean",
+          2.2
+        ],
+        [
+          0.75,
+          "squash",
+          -1.1
+        ],
+        [
+          0.95,
+          "lean",
+          -2.2
+        ],
+        [
+          1.2,
+          "squash",
+          -1.1
+        ],
+        [
+          1.4,
+          "lean",
+          1.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.3,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          0.75,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          1.2,
+          "zoom_contact",
+          0.55
+        ],
+        [
+          1.65,
+          "zoom_contact",
+          0.45
+        ]
+      ]
+    }
+  },
+  "idleGags": [
+    "yawn-and-settle",
+    "doze-and-snap",
+    "sneeze-and-shake"
+  ],
   "created": "2026-10-02",
   "designSystem": {
     "identity": "Soft rounded slime face, inspired by the supplied kawaii/Rimuru-like facial language; original blue gel body retained.",

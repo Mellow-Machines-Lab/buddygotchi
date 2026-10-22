@@ -2,7 +2,8 @@
 // Pure render() is shared by browser audition and offline checks.
 (function(global){
   'use strict';
-  const recipes={squish:.23,bounce:.32,wobble:.38,poke:.13,keyboard:.08,tear:.14,knock:.13,ding:.68,knock_ding:1.1,complete:2,failed:1.05};
+  const recipes={squish:.23,bounce:.32,wobble:.38,poke:.13,keyboard:.08,tear:.14,knock:.13,ding:.68,knock_ding:1.1,complete:2,failed:1.05,
+    sneeze:.3,breath:.55};
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const finite=(n,fallback)=>Number.isFinite(n)?n:fallback;
   function render(name, options={}){
@@ -49,6 +50,16 @@
           value+=low*.42*Math.pow(Math.sin(Math.PI*clamp(t/2,0,1)),2);break;
         }
         case 'failed':value=.43*bell(t,392,5.4)+.32*bell(t-.19,293.66,5.2)+.24*impulse(t-.40,110*pitch,7)+low*.24*Math.exp(-t*10);break;
+        // A tiny gel sneeze: a short rising "ah", then an airy "choo".
+        case 'sneeze':{
+          const ah=t<.09?.20*Math.sin(2*Math.PI*(360*pp*t+1100*pp*t*t))*Math.sin(Math.PI*t/.09):0;
+          value=ah+(t<.08?0:(band*.50+(n-low)*.22)*Math.exp(-(t-.08)*20));break;
+        }
+        // A snore's soft breath: low airy noise that swells and fades, with a faint purr.
+        case 'breath':{
+          const swell=Math.pow(Math.sin(Math.PI*clamp(t/.55,0,1)),2);
+          value=(low*1.6+band*.06)*swell+.09*Math.sin(2*Math.PI*58*pp*t)*swell*(.6+.4*Math.sin(2*Math.PI*11*t));break;
+        }
       }
       const attack=clamp(t/.003,0,1), release=clamp((recipes[name]-t)/.014,0,1);
       data[i]=Math.tanh(value)*gain*attack*release;

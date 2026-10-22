@@ -1,6 +1,6 @@
 # Nonverbal slime sound handover
 
-Updated 2026-10-05. Scope: basic material/emotion/attention SFX, **not**
+Updated 2026-10-21. Scope: basic material/emotion/attention SFX, **not**
 ElevenLabs, recorded speech/mumbles or background music. The executable
 [sfx.js](sfx.js) provides procedural timbre sketches. The pure cue scheduler and browser
 player synchronize them to visible contacts. Animation sound starts muted
@@ -19,7 +19,8 @@ direction, recipe catalogue, three-take sketch variation and quiet mix
 parameters. Profiles are tuning plans, not all individually reviewed audio.
 The original nine sketch recipes are squish, bounce, wobble, poke, keyboard, tear,
 knock_ding, complete and failed. They generate PCM in memory at playback;
-two isolated stems, knock and ding, now support contact timing. Listen with the sound sketches in the
+two isolated stems, knock and ding, now support contact timing, and two
+comedy sketches, a little sneeze and a snore's soft breath. Listen with the sound sketches in the
 [Character Studio](../../../../studio/README.md)'s **Tools**.
 
 Three variant indices are supported; short material effects vary pitch,
@@ -126,7 +127,10 @@ unchanged. Cue IDs include request, generation, iteration and contact identity.
 All seven routine work states use the plan's probability 0.25 and cap of four
 contacts per cycle; loops under 3.5 seconds sound only on even iterations.
 Other active states sound on their first iteration. Rest, idle, no app,
-listening and waiting remain silent. This quarter-contact prototype policy is
+listening and waiting remain silent, but for comedy: an idle sneeze, excited's
+zoomies landing at each edge and a snore's breath while asleep sound in any
+state, each contact with the routine chance (a quarter), ducked as routine
+sounds are ([CONTINUITY.md](../CONTINUITY.md), Comedy). This quarter-contact prototype policy is
 more conservative than the pixel bank's roughly 30% policy; it is not a claim
 of identical choreography. Reveal guards retain request identity across mood
 retargets and repeated result loops. Notification history currently has the
@@ -135,7 +139,9 @@ same actor-lifetime scope as the reference router's request history.
 `key_contact` maps to keyboard, `body_contact` to squish, `screen_knock` to
 knock, and `alert_reveal` to ding. Only explicit success maps to complete;
 explicit failure and tool error map to failed. Neutral starting/helper/reply/
-stopped reveals receive a small squish. Neutral completion is silent. There
+stopped reveals receive a small squish. Neutral completion is silent.
+`sneeze_contact` maps to sneeze, `zoom_contact` to bounce and
+`breath_contact` to breath, two sketches added for the comedy. There
 is no tear/landing/rebound sound without an authored visible contact.
 The ding uses fixed variant 0, seed 53, pitch 1 and gain 0.45, with its existing
 880 and 1318.51 Hz notes; mood never retunes it.
@@ -153,8 +159,9 @@ zero until measured; the pixel device's 70 ms lead is not assumed for Web Audio.
 
 `tools/check-cues.mjs` checks contact alignment, duplicate consumption, unchanged
 motion, deterministic cue lists, the 60-second attention hold with three mood
-changes and one ding, repeated completion loops, sparse routine cycles and the
-player's limits/mute/suspension/ducking using a fake audio backend. Timbres remain
+changes and one ding, repeated completion loops, sparse routine cycles, comedy
+that alone sounds in quiet states and stays sparse over twenty minutes of idle
+and of sleep, and the player's limits/mute/suspension/ducking using a fake audio backend. Timbres remain
 sketches; mathematical checks do not establish listening quality on a speaker.
 
 Choosing a manual sound sketch or **Stop sound** mutes integrated animation

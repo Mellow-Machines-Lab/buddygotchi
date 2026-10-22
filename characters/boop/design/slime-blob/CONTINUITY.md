@@ -1,7 +1,8 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-16. The pure reference engine and all activity scene
-families are implemented. Q1 representative art review was approved on
+Updated 2026-10-21. The pure reference engine and all activity scene
+families are implemented, and idle, sleep and a finish have their comedy
+(Comedy, below). Q1 representative art review was approved on
 2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph, Mac mirror and native integer port are implemented. Contact-synchronized
 reference sound is implemented; timbres remain sketches.
 
@@ -123,7 +124,8 @@ each (success and failure separately): 24 cases, 20 mood/state cells.
 gives each case an eight-second window. `tools/check-scenes.mjs --coverage`
 validates those windows and the full matrix described below before the
 builder marks cells implemented or quiet-alias. Sleeping is a justified
-shared alias, not three newly authored sleep animations. The 24 clips
+shared alias, not three newly authored sleep animations; its one addition
+is a snore (Comedy, below). The 24 clips
 record the approved representative set; they do not claim separate owner
 review of every cell in the expanded matrix.
 
@@ -173,7 +175,8 @@ continues, so elapsed moments are not replayed when the link returns.
 
 One desk, id `desk-1` with normalized anchor (0.5, 0.64), persists across
 work modes. Three shuffle-bag recipes per mood/state/factual outcome or context differ
-in rhythm, with no adjacent repeats. Routine work changes variation after
+in rhythm, with no adjacent repeats; asleep and a successful finish have a
+fourth (Comedy, below). Routine work changes variation after
 recovery; alert/result requests choose once at entry. Mood retargeting does
 not restart an existing recipe or alert. Original emotion gesture recipes
 run only in idle without a grab; the activity scene owns the choreography
@@ -290,13 +293,15 @@ families from [state-plan.json](state-plan.json). The full check executes
 all 42 canonical moods × 23 states: 966 cells, including 84 quiet aliases
 for asleep/no-app. Starting is exercised with each of its four contexts,
 and task-complete with success and failure, giving 1,134 factual test
-cases. Every active case exercises all three variants; quiet aliases
-retain mood and use the shared sleeping face without contacts or acting.
+cases. Every active case exercises all its variants: three, a successful
+finish's four, and idle's takes (an expression's three gestures and its
+comedy, six or seven); quiet aliases retain mood and use the shared
+sleeping face without acting, and without contacts but a snore's breaths.
 The two optional face alternates are outside this canonical matrix.
 
 Coverage requires actual execution, bounded physical channels, factual
-labels, three distinct motion/contact signatures and visible props for
-each variant. Signatures use the same number of normalized phase samples
+labels, a distinct motion/contact signature and visible props for each
+variant. Signatures use the same number of normalized phase samples
 so duration or metadata alone cannot make identical acting pass. The
 builder consumes the checked cells; declaring a state implemented is
 insufficient. These tests establish engineering coverage, not separate
@@ -306,10 +311,11 @@ The activity scene selects a shuffle bag keyed by mood, state and factual
 outcome/context. Desk modes, delegating and listening select again only
 after recovery. A one-shot selects once per request and keeps that recipe
 across explicit loops; an attention entry selects once and then holds.
-Idle uses its expression's three original gesture recipes, with a separate
-automatic shuffle bag per expression and the quiet interval specified
-above. Each bag exhausts all three entries before refill and prevents an
-adjacent repeat across refills. Explicit review `perform(index)` remains
+Idle uses its expression's three original gesture recipes, then its comedy,
+with a separate automatic shuffle bag per expression and the quiet interval
+specified above. A bag's first round deals its first three entries; every
+later round deals all of them (Comedy, below). Each round is exhausted
+before the next and no entry repeats across a refill. Explicit review `perform(index)` remains
 an exact selection. Changing targets never replaces the body or its
 springs. The intentional idle scheduler change updates seeded reference
 traces; the seven V1 source locks remain unchanged.
@@ -414,6 +420,86 @@ controls do not allow a second script to reset a running recording. The
 preview remains a local visual reference: LinkKit admission, actual
 microphone deadlines, Voice playback, finish-thread taps and production
 ports remain their existing owners' responsibilities.
+
+## Comedy
+
+Idle, sleep and a finish have comedy, all of it the same body: a squash,
+a stretch, a tilt, a slide or a rebound, never a new silhouette or another
+asset.
+
+| Comedy | Where | Its takes | Sound |
+| --- | --- | --- | --- |
+| Yawn and settle (2.9 s), doze off and snap awake (3.6 s), sneeze and shake it off (2.7 s) | Idle, every expression | Idle's takes 4 to 6 (`idleGags`) | The sneeze's one contact |
+| A long, slow yawn (4.2 s) | Idle, bored, tired, lazy and comfy (and comfy's rosy face) | Their own take 4 | None |
+| Zoomies, edge to edge (2.6 s) | Idle, excited | Its own take 4 | A landing (`bounce`) at each edge |
+| A snore: two breaths, each a slight swell | Asleep | Asleep's fourth take | Each breath |
+| Hiccups: the first take's card, then three small hiccups | A successful finish | Its fourth take | The card's fanfare, then three squishes |
+| A gift: a small bug beside the card | Proud's successful finish | Its second take, lifted | As that take |
+
+**Idle's comedy is gags, beside the gestures.** Idle's variations are an
+expression's performances, so its comedy is more of them, dealt by acting's
+bag: an expression's three gestures, its own `gags` (expressions.json), then
+everyone's `idleGags`. A gag is in `gags` once, shared. It is a performance
+(its `cues`, impulses on the gesture springs) with `keys`, which set a
+channel's target (from (0, 0) at its start, a smoothstep to each of the
+channel's keys in turn, then its last value), and `contacts`, which sound
+and move nothing. The six gesture springs follow their keys under-damped,
+as gel does; a gag has two springs of its own, its `slide` (frequency 10,
+damping 9, at most 0.7) and its `lids` (critically damped, frequency 24).
+The lids close the eyes as a blink does: the drawn blink is the largest of
+the natural one, the bridge's and the lids'. The slide carries the whole
+dome sideways, its face and its shadow with it, and leaves its shape as it
+is. Reduced motion scales a gag's body keys as it scales impulses (0.18),
+not its lids. The three gestures stay as they were, so the traits the scene
+recipes take from them, and every existing recipe, are unchanged.
+
+**A scene's fourth take is a table of its own.** Every row of
+`slime::kRecipes` keeps its three takes; asleep and a successful finish
+have a fourth, in `slime::kFourthTakes`, and `slime::kRecipeTakes` says how
+many each row has. Widening every row to four would have carried 296 KB of
+empty recipes on the AMOLED; the fourths are about 20 KB. A host may ask
+for a take from 0 to 3; one its state hasn't is dealt from the bag. A
+finish timed without its outcome finds a success's fourth (`GelFace::recipe`).
+A fourth take has no gesture of its own, so no recovery gesture.
+
+**Comedy joins a bag's second round.** One rule for every bag, acting's
+and the scenes': its first round deals the first three takes, the ones every
+state has always had; every later round deals all of them, never opening on
+the take just dealt. A fresh mood, a reset and every first round play as
+they always did, and the joke comes once the straight takes have been seen.
+Acting's bags hold at most seven (`kMaxGestures`: three gestures, an own
+gag, three idle gags), the scenes' four (`kMaxTakes`). In calm idle, with a
+gesture every 10 to 20 seconds, the first gag plays after about 40 seconds,
+then each about once a round, a minute and a half.
+
+**Asleep picks again after each take**, as routine work does. Its first
+rest is always the still one, drawn from no bag, so sleep starts still for at
+least 12.8 s (the first rest and the bag's first round). The snore lasts
+4.8 s: breaths at 600 and 2,600 ms, strength 0.35, each swelling the body's
+squash by sin² over 1,200 ms, times its strength, times 0.07, even while
+quiet. They are quiet rest's only contacts. A lost link rests still and
+never snores.
+
+**The hiccups** reveal the first take's card at 680 ms (plus the mood's
+delay), then three body contacts at 1,640, 2,060 and 2,480 ms, strength
+0.45, in a 3.7 s take. **The gift** is a flag on proud's second success
+take: the result card's content carries it (`props.result.gift`, present
+only with one), and both painters draw an amber bug beside the card.
+
+**Comedy's contacts sound in any state**, each with the routine chance (a
+quarter): a sneeze's (`sneeze`), a zoomies landing (`bounce`), a snore's
+breath (`breath`). They are routine sounds, ducked under a line. Over
+twenty minutes the reference sounds 4 of 14 idle sneezes and 42 of 164
+snore breaths.
+
+**Traces keep their columns.** A gag's channels (`actorChannels.slide`,
+`actorChannels.lids` and the drawn `slide`) join the inspection once a gag
+has played, and `gift` appears only with one, so a trace with no comedy
+keeps its columns. Of the twelve earlier reference traces only two changed:
+`idle-60s` from its second round (40 s), and `representative-matrix` from
+asleep's first pick again (3.2 s into each sleep). `scripts/comedy.jsonl`
+plays every gag, the hiccups, the gift and a snore, sounds included, and
+the port replays it frame for frame.
 
 ## States share one scene
 

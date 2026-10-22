@@ -5,6 +5,7 @@ namespace render::gel {
 struct PaintControls {
   int lean = 0, squash = 0, dent = 0, blink = 0, gaze = 0;
   int ripple = 0, lift = 0, roll = 0, forward = 0, grabX = 0, grabY = 0, dy = 0;
+  int slide = 0;  // a gag's slide: the whole dome, sideways
 };
 // The body; the surface's clear first keeps what this frame covers again
 // (Surface::clear).

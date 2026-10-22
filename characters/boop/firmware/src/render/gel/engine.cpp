@@ -114,38 +114,47 @@ void Engine::consumeCues() {
     cueIteration_ = scenes.iteration;
     cueCount_ = 0;
   }
-  if (state == SceneState::kIdle || state == SceneState::kAsleep || state == SceneState::kNoApp ||
-      state == SceneState::kListening || state == SceneState::kWaiting)
-    return;
-  static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed",
-                                  nullptr,    "squish", "squish", "squish", "failed",   "squish"};
-  for (const auto& c : scenes.contacts) {
-    const char* recipe = recipes[c.kind];
-    if (!recipe) continue;
-    bool protect = state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
-    if (protect && c.kind >= kAlert) {
-      // The reference's "requestId:kind", as its key.
-      const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
-      if (revealed_.find([&](uint64_t k) { return k == identity; })) continue;
-      revealed_.add(identity);
+  const bool quiet = state == SceneState::kIdle || state == SceneState::kAsleep || state == SceneState::kNoApp ||
+                     state == SceneState::kListening || state == SceneState::kWaiting;
+  static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed", nullptr, "squish",
+                                  "squish",   "squish", "failed", "squish", "sneeze",   "breath", "bounce"};
+  static_assert(std::size(recipes) == slime::kContactKinds, "a recipe, or none, for every contact kind");
+  // The scene's contacts, then a gag's (cues.mjs reads them in this order).
+  for (const auto* list : {&scenes.contacts, &acting.contacts})
+    for (const auto& c : *list) {
+      const char* recipe = recipes[c.kind];
+      if (!recipe) continue;
+      bool protect =
+          state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
+      if (comedy(c.kind)) {
+        // Comedy sounds even in a quiet state, with the routine chance.
+        if (soundRandom.unit() >= slime::kRoutineProbability) continue;
+      } else {
+        if (quiet) continue;
+        if (protect && reveals(c.kind)) {
+          // The reference's "requestId:kind", as its key.
+          const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
+          if (revealed_.find([&](uint64_t k) { return k == identity; })) continue;
+          revealed_.add(identity);
+        }
+        if (isDesk(state) && state != SceneState::kDelegating) {
+          if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) continue;
+          if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) continue;
+          ++cueCount_;
+        } else if (scenes.iteration)
+          continue;
+      }
+      int mood = slime::kProfile[emotion].canonical;
+      const auto& p = slime::kProfile[mood];
+      SoundCue cue{c, recipe, mood, 0, 53, 1, q(.45), protect};
+      if (c.kind != kAlert) {
+        cue.variant = soundRandom.index(3);
+        cue.seed = soundRandom.next();
+        cue.pitch = p.pitch * (slime::kPitchLo + soundRandom.unit() * (slime::kPitchHi - slime::kPitchLo));
+        cue.gain =
+            min(q(.8), p.gain * c.strength * (slime::kGainLo + soundRandom.unit() * (slime::kGainHi - slime::kGainLo)));
+      }
+      cues.push_back(cue);
     }
-    if (isDesk(state) && state != SceneState::kDelegating) {
-      if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) continue;
-      if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) continue;
-      ++cueCount_;
-    } else if (scenes.iteration)
-      continue;
-    int mood = slime::kProfile[emotion].canonical;
-    const auto& p = slime::kProfile[mood];
-    SoundCue cue{c, recipe, mood, 0, 53, 1, q(.45), protect};
-    if (c.kind != kAlert) {
-      cue.variant = soundRandom.index(3);
-      cue.seed = soundRandom.next();
-      cue.pitch = p.pitch * (slime::kPitchLo + soundRandom.unit() * (slime::kPitchHi - slime::kPitchLo));
-      cue.gain =
-          min(q(.8), p.gain * c.strength * (slime::kGainLo + soundRandom.unit() * (slime::kGainHi - slime::kGainLo)));
-    }
-    cues.push_back(cue);
-  }
 }
 }  // namespace render::gel

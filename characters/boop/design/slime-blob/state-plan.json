@@ -52,13 +52,17 @@
       "scene": "rest",
       "kind": "persistent",
       "trigger": "No sessions, as the core derives; not a mood.",
-      "visual": "Shared sleepy face; no angry-sleeping catalogue.",
+      "visual": "Shared sleepy face; no angry-sleeping catalogue. From the second round of rests on, now and then a snore: two soft breaths, each a slight swell.",
       "variations": [
         "still-rest",
         "slow-settle",
-        "one-sleepy-shift"
+        "one-sleepy-shift",
+        "snore"
       ],
       "audioPolicy": "silent",
+      "variationAudio": {
+        "snore": "sparse_contacts"
+      },
       "status": "implemented-quiet-alias"
     },
     {
@@ -66,13 +70,19 @@
       "scene": "idle",
       "kind": "persistent",
       "trigger": "Sessions exist but none are working.",
-      "visual": "Show mood face, soft breathing and occasional quiet gesture.",
+      "visual": "Show mood face, soft breathing and occasional quiet gesture; from the second round of gestures on, now and then a yawn, a doze that snaps awake, or a sneeze.",
       "variations": [
         "look-and-return",
         "small-nod",
-        "settle-sway"
+        "settle-sway",
+        "yawn-and-settle",
+        "doze-and-snap",
+        "sneeze-and-shake"
       ],
       "audioPolicy": "silent",
+      "variationAudio": {
+        "sneeze-and-shake": "sparse_contacts"
+      },
       "status": "implemented-reference-choreography"
     },
     {
@@ -313,7 +323,8 @@
           "success": [
             "settle-and-trophy",
             "hop-and-complete-card",
-            "small-confetti-reveal"
+            "small-confetti-reveal",
+            "trophy-then-hiccups"
           ],
           "failure": [
             "slump-and-failed-card",
