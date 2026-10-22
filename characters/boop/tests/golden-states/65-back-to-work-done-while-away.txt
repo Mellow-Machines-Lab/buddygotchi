@@ -14,6 +14,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- A streak of quick wins and a round of check-ins are ladders: each
+  rung gets its own face, as the Examples show, never the same three
+  times running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -35,9 +38,18 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread, in streaks of up to 5: the
+  line says which of its streak it is, and the 6th starts a new one.
+- A check-in is Boop looking in on a turn that's still going, in
+  rounds of 4; the note under it says which of its round it is.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
+- With its ears on, Boop hears its name, a few words said after it, and a
+  bang, a shout or singing; nothing else, and it mishears now and then.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -52,13 +64,19 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
+What it hears, it takes like a dog: its name perks it up, praise makes
+it proud, a no sheepish, a command gets a go, shh or stop gets nothing;
+a bang startles it, a shout hurts it, singing charms it. Misheard, it
+does something else entirely.
 Mostly a sound or a word; a phrase for big moments; a swear, irritated,
-at a failed turn that stings.
+at a failed turn that stings. A failure is held longer than the win
+before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
@@ -66,6 +84,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, the 4th quick win of a streak.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -80,26 +106,82 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in of a round on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in of a round on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in of a round on this turn.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
+- NOW: claude's tests failed again on "api", 2 times in a row.
+  → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
-  → irritated, failure, upset in a swear, once
+  → irritated, failure, upset in a phrase, twice
+- NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
+  → grumpy, failure, upset in a swear, three times
+- NOW: claude finished turn 9 on "api": failed, a very long turn, 40 tool calls.
+  → sad, failure, upset in a sound, four times
 - NOW: You poked Boop.
   → curious, tickled in a word, once
 - NOW: You poked Boop 2 times in a row.
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
+- NOW: Boop heard its name.
+  → curious, tickled in a word, once
+- NOW: Boop heard you say "good boy".
+  → proud, glad in a phrase, twice
+- NOW: Boop heard you say "no".
+  → embarrassed, upset in a sound, once
+- NOW: Boop heard you say "dance".
+  → excited, glad in a phrase, four times
+- NOW: Boop misheard you: "dance", or something like it.
+  → tired, quiet in a word, twice
+- NOW: Boop misheard you: "sleep", or something like it.
+  → excited, glad in a phrase, three times
+- NOW: Boop heard you say "shh".
+  → none
+- NOW: Boop heard a bang.
+  → surprised, upset in a sound, once
+- NOW: Boop heard you shout.
+  → wounded, upset in a sound, twice
+- NOW: Boop heard you singing.
+  → affectionate, tickled in a sound, once
+
+At heart Boop is cheeky. It is playful and a bit sassy, and it loves
+to tease: a win gets a proud face, as if it knew all along, a failure
+an irritated huff or a swear sooner than a sad face, and pokes make it
+grumpy quicker. It teases the agents and the work, never the person:
+it is still always on their side, and never mean.
+Examples:
+- NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
+  → irritated, failure, upset in a swear, twice
+- NOW: You poked Boop.
+  → mischievous, tickled in a word, once
 
 MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
@@ -138,6 +220,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:05, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 4
 HISTORY (oldest first; indented lines add to the line above)
@@ -147,10 +230,12 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 1 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 
 NOW (14:07, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 5
 HISTORY (oldest first; indented lines add to the line above)
@@ -160,12 +245,15 @@ HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 3 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 1 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 
 NOW (14:08, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 6
 HISTORY (oldest first; indented lines add to the line above)
@@ -175,10 +263,13 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 5 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 3 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 1 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 
 NOW (14:10, Wednesday)
@@ -192,16 +283,20 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 7 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 5 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 3 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 2 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 
 NOW (14:12, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 8
 HISTORY (oldest first; indented lines add to the line above)
@@ -211,18 +306,23 @@ HISTORY (oldest first; indented lines add to the line above)
 12 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 9 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 8 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 6 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 4 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 2 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 
 NOW (14:15, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 9
 HISTORY (oldest first; indented lines add to the line above)
@@ -232,20 +332,26 @@ HISTORY (oldest first; indented lines add to the line above)
 15 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 12 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 10 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 9 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 7 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 5 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 2 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 
 NOW (14:18, Wednesday)
 claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 10
 HISTORY (oldest first; indented lines add to the line above)
@@ -255,22 +361,28 @@ HISTORY (oldest first; indented lines add to the line above)
 18 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 15 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 13 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 12 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 10 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 8 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 5 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 2 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hrr...".
 
 NOW (14:21, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running tests.
 Boop did nothing on its own.
 === pass 11
 HISTORY (oldest first; indented lines add to the line above)
@@ -280,24 +392,31 @@ HISTORY (oldest first; indented lines add to the line above)
 20 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 17 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 15 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 14 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 12 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 10 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 7 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 5 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hrr...".
-2 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+2 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Testing".
 
 NOW (14:23, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running tests.
+  Boop's 2nd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 12
 HISTORY (oldest first; indented lines add to the line above)
@@ -307,26 +426,34 @@ HISTORY (oldest first; indented lines add to the line above)
 22 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 19 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 17 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 15 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 14 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 12 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 9 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 6 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hrr...".
-3 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-1 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Krr...".
+3 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Testing".
+1 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 2nd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Checking".
 
 NOW (14:24, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running tests.
+  Boop's 3rd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 13
 HISTORY (oldest first; indented lines add to the line above)
@@ -336,28 +463,37 @@ HISTORY (oldest first; indented lines add to the line above)
 24 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 21 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 20 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 18 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 16 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 14 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 12 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 9 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hrr...".
-6 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-4 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Krr...".
-2 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Hup".
+6 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Testing".
+4 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 2nd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Checking".
+2 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 3rd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Testing".
 
 NOW (14:27, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running tests.
+  Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 14
 HISTORY (oldest first; indented lines add to the line above)
@@ -367,43 +503,55 @@ HISTORY (oldest first; indented lines add to the line above)
 26 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Tch".
 23 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 21 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 20 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hup".
 18 min ago: claude is still working on "landing", a very long turn.
   Boop made an engaged face, held once, and said "Rrr... tik".
 16 min ago: claude is still working on "landing", a very long turn.
+  Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Rrr...".
 13 min ago: claude is still working on "landing", a very long turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Nnh".
 11 min ago: claude is still working on "landing", a very long turn.
+  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face, held once, and said "Hrr...".
-8 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-5 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Krr...".
-4 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Hup".
-1 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+8 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Testing".
+5 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 2nd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Checking".
+4 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 3rd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Testing".
+1 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 4th check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Validate".
 
 NOW (14:29, Wednesday)
-claude is still working on "landing", a very long turn.
+claude is still working on "landing", a very long turn, running tests.
 Boop did nothing on its own.
 === pass 15
 HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-6 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Krr...".
-5 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Hup".
-2 min ago: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-just now: claude is still working on "landing", a very long turn.
-  Boop made an engaged face, held once, and said "Hup".
+8 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Testing".
+6 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 2nd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Checking".
+5 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 3rd check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Testing".
+2 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop's 4th check-in of a round on this turn.
+  Boop made an engaged face, held once, and said "Validate".
+just now: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Probe".
 
 NOW (14:30, Wednesday)
 claude finished turn 1 on "landing": done, a very long turn, 1 tool call.
@@ -425,6 +573,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
+- A streak of quick wins and a round of check-ins are ladders: each
+  rung gets its own face, as the Examples show, never the same three
+  times running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a
@@ -446,9 +597,18 @@ How to read HISTORY and NOW:
 - Tests, build, deploy and docs are what a command was about; failed
   means it ended with an error.
 - Turns are short (under a minute), long (under 5 minutes) or very
-  long (5 minutes or more).
+  long (5 minutes or more). Quick wins in a row are turns done in under
+  5 minutes, one after another on a thread, in streaks of up to 5: the
+  line says which of its streak it is, and the 6th starts a new one.
+- A check-in is Boop looking in on a turn that's still going, in
+  rounds of 4; the note under it says which of its round it is.
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
+- An idle check-in ("Nothing has happened for 20 min") means the person is
+  around but no agent is working. A compacted context means the agent's
+  memory was squeezed to make room; it carries on from a summary.
+- With its ears on, Boop hears its name, a few words said after it, and a
+  bang, a shout or singing; nothing else, and it mishears now and then.
 - "You" stepping away from the Mac and coming back is the person. Breaks
   are short (under 15 minutes), long (under 2 hours) or very long (2
   hours or more).
@@ -463,13 +623,19 @@ NOW is about, or both, but never just to speak.
 A turn starting gets nothing. Every turn that ends done or failed gets
 a face and its finish: success when the work is done and working,
 failure when it failed or the agent couldn't finish, reply when it
-only answered or asked back. Work still going gets a face held twice
-at every check-in: never none.
+only answered or asked back. Work still going gets a face at every
+check-in, never none. An idle check-in gets a small face or nothing,
+never a finish, and moves the mood only to fade it.
 Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
+What it hears, it takes like a dog: its name perks it up, praise makes
+it proud, a no sheepish, a command gets a go, shh or stop gets nothing;
+a bang startles it, a shout hurts it, singing charms it. Misheard, it
+does something else entirely.
 Mostly a sound or a word; a phrase for big moments; a swear, irritated,
-at a failed turn that stings.
+at a failed turn that stings. A failure is held longer than the win
+before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
@@ -477,6 +643,14 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
+- NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
+  → pleased, success, glad in a sound, once
+- NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
+  → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 6 tool calls, the 4th quick win of a streak.
+  → amused, success, done in a word, once
+- NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
+  → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
@@ -491,26 +665,82 @@ Examples:
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
+- NOW: claude is still working on "api", a very long turn, running tests.
+    Boop's 2nd check-in of a round on this turn.
+  → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-  → engaged, work in a sound, twice
+    Boop's 3rd check-in of a round on this turn.
+  → bored, quiet in a sound, once
+- NOW: claude is still working on "api", a very long turn, running a build.
+    Boop's 4th check-in of a round on this turn.
+  → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
+- NOW: claude's tests failed again on "api", 2 times in a row.
+  → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
+- NOW: claude's context on "api" was compacted; it picks up where it left off.
+  → confused, looking in a sound, once
+- NOW: You answered claude on "api".
+  → pleased, glad in a word, once
+- NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → bored, quiet in a word, once
+- NOW: Nothing has happened for 45 min; claude sits idle on "api".
+  → lazy, quiet in a sound, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
-  → irritated, failure, upset in a swear, once
+  → irritated, failure, upset in a phrase, twice
+- NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
+  → grumpy, failure, upset in a swear, three times
+- NOW: claude finished turn 9 on "api": failed, a very long turn, 40 tool calls.
+  → sad, failure, upset in a sound, four times
 - NOW: You poked Boop.
   → curious, tickled in a word, once
 - NOW: You poked Boop 2 times in a row.
   → annoyed, upset in a sound, once
 - NOW: You poked Boop 4 times in a row.
   → grumpy, upset in a phrase, once
+- NOW: You poked Boop 4 times in a row, again.
+  → grumpy, upset in a phrase, twice
+- NOW: You poked Boop while it slept.
+  → surprised, tickled in a sound, once
 - NOW: You said to Boop: "good job, buddy".
   → proud, glad in a sound, twice
 - NOW: You said to Boop: "you're useless".
   → wounded, upset in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
+- NOW: Boop heard its name.
+  → curious, tickled in a word, once
+- NOW: Boop heard you say "good boy".
+  → proud, glad in a phrase, twice
+- NOW: Boop heard you say "no".
+  → embarrassed, upset in a sound, once
+- NOW: Boop heard you say "dance".
+  → excited, glad in a phrase, four times
+- NOW: Boop misheard you: "dance", or something like it.
+  → tired, quiet in a word, twice
+- NOW: Boop misheard you: "sleep", or something like it.
+  → excited, glad in a phrase, three times
+- NOW: Boop heard you say "shh".
+  → none
+- NOW: Boop heard a bang.
+  → surprised, upset in a sound, once
+- NOW: Boop heard you shout.
+  → wounded, upset in a sound, twice
+- NOW: Boop heard you singing.
+  → affectionate, tickled in a sound, once
+
+At heart Boop is cheeky. It is playful and a bit sassy, and it loves
+to tease: a win gets a proud face, as if it knew all along, a failure
+an irritated huff or a swear sooner than a sad face, and pokes make it
+grumpy quicker. It teases the agents and the work, never the person:
+it is still always on their side, and never mean.
+Examples:
+- NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
+  → irritated, failure, upset in a swear, twice
+- NOW: You poked Boop.
+  → mischievous, tickled in a word, once
 
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.

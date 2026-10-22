@@ -11,7 +11,7 @@ import MellowHarness
 let usages: [(command: String, text: String)] = [
     ("eval", """
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
-    boopdev eval --list [--always] [--only TEXT] [--scenarios DIR]
+    boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
@@ -117,7 +117,7 @@ func eval(_ raw: [String]) async {
     if args.has("--list") {
         for p in plan {
             let s = p.scenario
-            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")  \(s.name)")
+            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")\(s.nature == Scenario.defaultNature ? "" : "  [\(s.nature.rawValue)]")  \(s.name)")
             print("    \(p.runs) run\(p.runs == 1 ? "" : "s") × about \(p.requests) requests")
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }

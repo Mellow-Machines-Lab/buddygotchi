@@ -63,7 +63,8 @@
         "dramatic": [
           "surprised"
         ]
-      }
+      },
+      "face": "A cosy face: all quiet and snug."
     },
     {
       "id": "lazy",
@@ -80,7 +81,8 @@
         "dramatic": [
           "surprised"
         ]
-      }
+      },
+      "face": "A lazy face: taking it easy."
     },
     {
       "id": "bored",
@@ -99,7 +101,8 @@
         "dramatic": [
           "excited"
         ]
-      }
+      },
+      "face": "A bored face: nothing to see."
     },
     {
       "id": "pleased",
@@ -118,7 +121,8 @@
           "wounded",
           "surprised"
         ]
-      }
+      },
+      "face": "A pleased face: that went nicely."
     },
     {
       "id": "happy",
@@ -283,7 +287,8 @@
           "surprised",
           "embarrassed"
         ]
-      }
+      },
+      "face": "A cheeky face: up to something."
     },
     {
       "id": "shy",
@@ -301,7 +306,8 @@
         "dramatic": [
           "happy"
         ]
-      }
+      },
+      "face": "A shy face: all that attention."
     },
     {
       "id": "uncomfortable",
@@ -319,7 +325,8 @@
         "dramatic": [
           "scared"
         ]
-      }
+      },
+      "face": "An uncomfortable face: this feels off."
     },
     {
       "id": "annoyed",
@@ -407,7 +414,8 @@
           "sad",
           "frightened"
         ]
-      }
+      },
+      "face": "An angry face: a big comic huff."
     },
     {
       "id": "disappointed",
@@ -425,7 +433,8 @@
         "dramatic": [
           "wounded"
         ]
-      }
+      },
+      "face": "A disappointed face: that fell short."
     },
     {
       "id": "sad",
@@ -464,7 +473,8 @@
         "dramatic": [
           "relieved"
         ]
-      }
+      },
+      "face": "A crying face: too sad to hold in."
     },
     {
       "id": "whiny",
@@ -530,7 +540,8 @@
           "surprised",
           "frightened"
         ]
-      }
+      },
+      "face": "An uneasy face: a little worried."
     },
     {
       "id": "scared",
@@ -549,7 +560,8 @@
           "angry",
           "stunned"
         ]
-      }
+      },
+      "face": "A scared face: that looks dangerous."
     },
     {
       "id": "frightened",
@@ -567,7 +579,8 @@
           "speechless",
           "relieved"
         ]
-      }
+      },
+      "face": "A frightened face: fear takes over."
     },
     {
       "id": "surprised",
@@ -586,7 +599,8 @@
           "frightened",
           "angry"
         ]
-      }
+      },
+      "face": "A surprised face: that was unexpected."
     },
     {
       "id": "stunned",
@@ -603,7 +617,8 @@
           "excited",
           "wounded"
         ]
-      }
+      },
+      "face": "A stunned face: frozen by a big surprise."
     },
     {
       "id": "speechless",
@@ -622,7 +637,8 @@
           "angry",
           "sad"
         ]
-      }
+      },
+      "face": "A speechless face: no words."
     },
     {
       "id": "amused",
@@ -639,7 +655,8 @@
         "dramatic": [
           "embarrassed"
         ]
-      }
+      },
+      "face": "An amused face: that was funny."
     },
     {
       "id": "hopeful",
@@ -657,7 +674,8 @@
           "relieved",
           "disappointed"
         ]
-      }
+      },
+      "face": "A hopeful face: maybe this time."
     },
     {
       "id": "relieved",
@@ -674,7 +692,8 @@
         "dramatic": [
           "happy"
         ]
-      }
+      },
+      "face": "A relieved face: phew."
     },
     {
       "id": "confused",
@@ -692,7 +711,8 @@
           "stunned",
           "overwhelmed"
         ]
-      }
+      },
+      "face": "A confused face: wait, what?"
     },
     {
       "id": "baffled",
@@ -708,7 +728,8 @@
         "dramatic": [
           "stunned"
         ]
-      }
+      },
+      "face": "A baffled face: makes no sense."
     },
     {
       "id": "skeptical",
@@ -725,7 +746,8 @@
         "dramatic": [
           "surprised"
         ]
-      }
+      },
+      "face": "A doubtful face: really?"
     },
     {
       "id": "embarrassed",
@@ -743,7 +765,8 @@
           "angry",
           "amused"
         ]
-      }
+      },
+      "face": "An embarrassed face: oops."
     },
     {
       "id": "affectionate",
@@ -759,7 +782,8 @@
         "dramatic": [
           "surprised"
         ]
-      }
+      },
+      "face": "A fond face: warm and friendly."
     },
     {
       "id": "lonely",
@@ -775,7 +799,8 @@
         "dramatic": [
           "happy"
         ]
-      }
+      },
+      "face": "A lonely face: missing company."
     },
     {
       "id": "tired",
@@ -792,7 +817,8 @@
         "dramatic": [
           "surprised"
         ]
-      }
+      },
+      "face": "A tired face: a long stretch."
     },
     {
       "id": "exhausted",
@@ -808,7 +834,8 @@
         "dramatic": [
           "relieved"
         ]
-      }
+      },
+      "face": "An exhausted face: all worn out."
     },
     {
       "id": "overwhelmed",
@@ -827,7 +854,8 @@
           "frightened",
           "angry"
         ]
-      }
+      },
+      "face": "An overwhelmed face: too much at once."
     },
     {
       "id": "disgusted",
@@ -843,7 +871,8 @@
         "dramatic": [
           "amused"
         ]
-      }
+      },
+      "face": "A disgusted face: yuck."
     }
   ],
   "studio": [

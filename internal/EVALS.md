@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-16. How we check that Jev decides as Boop should: short
+Updated 2026-10-21. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -12,10 +12,12 @@ and how long a mood holds is the steering's.
 ## 1. What an eval is
 
 A scenario is a few hook-level steps on a virtual clock. Each run starts
-fresh: a new core and view, an empty transcript kept in memory, and the
+fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
-say how long Boop has been in it. The runner (`Eval` in
+say how long Boop has been in it, and its nature (cheeky unless the file
+says sweet), whose NATURE section follows PERSONALITY as the app's
+always does. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a reaction goes to a fake device, which answers at once with the
@@ -44,11 +46,16 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
-| `pokes` | Four pokes at once from the device, each a pass: the step checks the last, `You poked Boop 4 times in a row.` |
+| `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
 | `back` | You unlock it: a `presence` end, `unlocked`, `You came back to the Mac after a long break.` with the break's band since the last `away` |
-| `wait` | Nothing; only time passes |
+| `session started` | A Claude session opens with no turn (`SessionStart`, `startup`): Boop is awake and idle, not asleep. No line, so no pass |
+| `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
+| `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
+| `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
+| `heard` | Boop's ears heard the step's `what` (`name`, a word of `Hearing.words` or a sound: `bang`, `shout`, `singsong`), `misheard` if it says: a `heard` event, `Boop heard you say "good boy".`, `Boop misheard you: "dance", or something like it.` |
+| `wait` | Nothing; only time passes: a heartbeat may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
 step's `session`, with the step's `workspace` if it has one.
@@ -89,6 +96,7 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `no_mood_bounce_within` | A mood changes back to the one it just left sooner than this |
 | `reactions` | The run plays a number of reactions outside this range |
 | `min_variety` | The run plays fewer different reactions (face, animation and take) than this |
+| `words_said` | The share of the reactions played that said something falls outside this range |
 | `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
 
 **Always and gaps.** An `always` scenario is Boop's character, not a
@@ -167,7 +175,8 @@ file-name order:
   "always": true,
   "why": "PERSONALITY's Examples and the react question: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
   "steps": [
-    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited", "animation": "none", "mood": "curious|happy"}},
+    {"event": "session started", "at": "0s"},
+    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "animation": "none", "mood": "curious|happy", "said": "some"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "annoyed"}},
     {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "irritated|grumpy"}},
     {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "annoyed|irritated"}}
@@ -184,8 +193,9 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
-| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), and `moves_on_graph` (`true`) |
+| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | `boop` (the default) or `chatter` |
+| `nature` | `cheeky` (the default) or `sweet`: the nature chosen at setup |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
@@ -194,6 +204,9 @@ file-name order:
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
+| `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
+| `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
+| `steps[].what`, `misheard` | What a `heard` step heard, and whether Boop misheard it |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
@@ -219,7 +232,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   done is a success; poking it again and again makes it irritated or
   grumpy and keeps it so while it goes on, with one face per barrage,
   and it calms down a step at a time after; moods fade a step toward
-  calm; plain requests and matter-of-fact finishes leave the mood alone;
+  calm at the first check-in after their minutes (`06`); plain requests
+  and matter-of-fact finishes leave the mood alone;
   no face ever contradicts what happened; talked to, it always answers
   with a face (`35`–`40`); each finish is judged by what it says, done
   and working a success, couldn't finish or a failed turn a failure
@@ -229,7 +243,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`, `69`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -237,7 +251,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   with no reaction, even while another thread's quick turns keep waking
   the brain (`18`, `21`, `22`), and its mood drifts (calm → engaged →
   determined → excited), never flipping back within a minute; in a long
-  grind it may ease back and return (`18`, `51`). Repeats are fine. The
+  grind it may ease back and return (`18`, `51`). Runs are ladders, not
+  repeats: a streak of quick wins climbs from happy to excited to amused
+  to comfy and round again (`19`), a round of check-ins on a long turn
+  from engaged to hopeful to bored to determined (`85`), and a busy half hour never plays the same
+  reaction three times running (`21`, `22`). The
   moods the words bring (`24`–`27`): a frustrated request annoyed, a
   step toward determined, thanks excited, a long turn's hard work done
   proud, an agent giving up sad. The finishes: a question back or an
@@ -255,7 +273,25 @@ kinds, all with the `boop` personality unless the file says otherwise:
   from the Mac is celebrated as it ends, never replayed when you're
   back, when Boop cheers to see you (`65`). And the rarer
   moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
-  new work moves a comfy one only to a mood on offer (`69`).
+  new work moves a comfy one only to a mood on offer (`69`). And
+  the ladder of failure: a failure after a fix is a bigger cuss than
+  the first, held longer and said aloud (`70`); a sweet Boop is sorry,
+  not cross, at a failed turn (`71`) and gets miffed at pokes, not fed
+  up (`72`). And the moments the view now says: you answering a request
+  gets a small pleased face (`74`), a compacted context leaves Boop a
+  little lost (`75`), idle check-ins get a small face or nothing
+  (`76`), a poke while it sleeps startles it (`77`), and a barrage
+  again gets a louder grumble (`78`); quiet fades an excited Boop a
+  step at a time (`55`). And what Boop's ears hear, like a dog: good
+  boy makes it proud (`79`), a shout hurts it (`80`, hero moment 3),
+  told to dance it dances (`81`), shh gets nothing (`82`), and misheard,
+  dance becomes a nap (`86`). And a Codex turn gets the same small
+  cheer as Claude's (`83`).
+
+Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
+its words and with its steering: a failed turn, pokes, a long finish,
+back after a break and an idle check-in. `make -C internal eval-pixel`
+runs them once each, about 18 requests.
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 
@@ -329,10 +365,12 @@ gives all that and every reaction.
 **Liveliness.** The report also gives, for the day: the longest stretch
 of work (any agent in a turn) with no reaction, and how many went over
 6 minutes; reactions per turn ended; how many reactions were the same
-as the one before, and the longest run of the same (reported, with no
-limit: repeats are fine); mood bounces (a mood changing back to the one
-it left within a minute); and the longest stretch of work with Boop
-calm, the resting mood, all through. `boopctl workday check FILE…` holds each run to loose
+as the one before (face, finish and what it said), and the longest run
+of the same; the share that said something; mood bounces (a mood
+changing back to the one it left within a minute); and the longest
+stretch of work with Boop calm, the resting mood, all through. A fun
+ledger gives an hour a row: reactions, how many said something, how
+many kinds, the longest run of the same, and the idle check-ins. `boopctl workday check FILE…` holds each run to loose
 limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one fails:
 
 | Limit | Holds |
@@ -343,6 +381,9 @@ limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one 
 | `mood_bounces` | 1 at most |
 | `min_mood_changes` | 10 at least |
 | `longest_rest_working_min` | 45 at most |
+| `repeat_pct` | 40 at most (reactions the same as the one before, in percent) |
+| `longest_same_run` | 3 at most |
+| `min_words_said` | 0.5 at least (the share of reactions that said something) |
 
 ```sh
 internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl

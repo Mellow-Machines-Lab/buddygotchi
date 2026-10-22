@@ -1,31 +1,68 @@
 #include "render/gel/acting.h"
 namespace render::gel {
+namespace {
+// The channels a cue or a key names (slimegen's): the six gestures', then a
+// gag's slide and lids.
+constexpr int kSlide = 6, kLids = 7, kChannels = 8;
+}  // namespace
+F keyed(const slime::Gag& gag, int channel, T age) {
+  T from = 0;
+  F value = 0;
+  for (int i = 0; i < gag.keyCount; ++i) {
+    const auto& key = gag.keys[i];
+    if (key.channel != channel) continue;
+    if (age < key.at) return value + (key.value - value) * smooth((age - from) / (key.at - from));
+    from = key.at;
+    value = key.value;
+  }
+  return value;
+}
 bool Acting::perform(T time, Random& random, int index) {
   if (suppressed) return false;
-  int selected = index < 0 ? (chosen < 0 ? bags[emotion].next(random) : chosen) : index;
-  selected = std::max(0, std::min(2, selected));
+  const int n = takes(emotion);
+  int selected = index < 0 ? (chosen < 0 ? bags[emotion].next(random, n) : chosen) : index;
+  selected = std::max(0, std::min(n - 1, selected));
   performance = selected;
   expression = emotion;
   start = time;
-  cursor = 0;
+  cursor = contactCursor = 0;
   ++count;
-  nextPerformance = time + slime::kProfile[emotion].performances[selected].duration + 7 + random.unit() * 8;
+  if (gag(emotion, selected)) gagged = true;
+  nextPerformance = time + gesture(emotion, selected).duration + 7 + random.unit() * 8;
   return true;
 }
 void Acting::advance(T dt, T time, bool grab, bool reduced, Random& random) {
+  contacts.clear();
   if (!suppressed && !grab && time >= nextPerformance) perform(time, random);
+  F target[kChannels]{};
+  const F scale = reduced ? q(.18) : F(1);
   if (!suppressed && performance >= 0 && expression == emotion) {
-    const auto& p = slime::kProfile[emotion].performances[performance];
+    const auto& p = gesture(emotion, performance);
+    const auto* g = gag(emotion, performance);
     T age = time - start;
     while (cursor < p.count && age >= p.cues[cursor].at) {
       const auto& cue = p.cues[cursor++];
-      channels[cue.channel].v += cue.velocity * (reduced ? q(.18) : F(1));
+      (cue.channel == kSlide ? slide : channels[cue.channel]).v += cue.velocity * scale;
+    }
+    if (g) {
+      // A gag's keys set its channels' targets; the lids aren't the body's,
+      // so reduced motion leaves them be.
+      for (int c = 0; c < kChannels; ++c)
+        if (F value = keyed(*g, c, age); value.raw) target[c] = c == kLids ? value : value * scale;
+      // Its contacts are its sounds; they move nothing themselves.
+      while (contactCursor < g->contactCount && age >= g->contacts[contactCursor].at) {
+        const int index = contactCursor++;
+        const auto& c = g->contacts[index];
+        contacts.push_back({"gag", count, 0, index, c.kind, 0, time * 1000, c.strength});
+      }
     }
   }
   for (int i = 0; i < 6; ++i) {
     F limit = i == 3 ? q(.24) : i == 4 ? q(.12) : i == 5 ? q(.18) : q(.42);
-    integrate(channels[i], dt, 0, i == 3 ? 11 : i == 4 ? 10 : 9, q(6.4), limit, 5);
+    integrate(channels[i], dt, target[i], i == 3 ? 11 : i == 4 ? 10 : 9, q(6.4), limit, 5);
   }
+  integrate(slide, dt, target[kSlide], 10, 9, q(.7), 5);
+  integrate(lids, dt, target[kLids], 24, 48, 1, 20);
 }
 T Bridge::retarget(int source, int target, T time, Random& random, int forced) {
   from = source;

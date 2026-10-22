@@ -1064,8 +1064,13 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(files, (["guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
                                + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
-        XCTAssertEqual(Self.steering.personality(.default).rules, Personality.Rules(workBeatMs: 90_000...180_000, toolUses: .notable))
-        XCTAssertEqual(Self.steering.personality(.chatter).rules, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))
+        XCTAssertEqual(Self.steering.personality(.default).rules,
+                       Personality.Rules(workBeatMs: 90_000...180_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable))
+        XCTAssertEqual(Self.steering.personality(.chatter).rules,
+                       Personality.Rules(workBeatMs: 30_000...60_000, idleBeatMs: 300_000...600_000, toolUses: .all))
+        XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
         XCTAssertTrue(Self.steering.personality(.default).text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
@@ -1349,8 +1354,8 @@ final class RuntimeTests: XCTestCase {
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
     /// end it. The loops are the designs' (`FaceLoops`), so a new design
-    /// with a long loop fails here rather than in HISTORY: wounded's 13 s
-    /// idle, held four times, is 52 s.
+    /// with a long loop fails here rather than in HISTORY: wounded's 14.3 s
+    /// of nodding off, held four times, is 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(ReactOutput.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
@@ -1420,7 +1425,7 @@ final class RuntimeTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(n, 808)
+        XCTAssertEqual(n, 876)
         XCTAssertEqual(scenes.count, n)
         XCTAssertEqual(windows.count, n)
     }

@@ -50,7 +50,7 @@ Delete code that nothing uses; git keeps it.
 The everyday entry points are in [README.md](README.md), which stays a
 short overview. The root `Makefile` has only what the owner uses: `build`,
 `app`, `run`, `debug`, `dash`, `day`, `simulator`, `demo`, `flash`, `eval` and `clean`. The development targets
-(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `sim-test`, `e2e`, `faces`, `tools`)
+(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `sim-test`, `e2e`, `faces`, `tools`, `eval-pixel`)
 are in `internal/Makefile`; run them from the repo root as
 `make -C internal <target>`. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its
@@ -212,7 +212,10 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
   the installers `--home` too: `NSHomeDirectory()` ignores `HOME`.
 - **Don't let Boop approve, deny or block anything an agent does.** Hooks
   only report, and they fail open.
-- **Don't use the webcam unless the owner asks** (below).
+- **Don't use the webcam unless the owner asks** (below), and **don't
+  turn on Boop's ears** (`--ears`) from an agent shell: macOS asks the
+  app that started the process for the mic, and only the owner checks
+  them (internal/VERIFICATION.md L6).
 
 ## Words
 
@@ -234,6 +237,7 @@ keep their names.
 | speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack |
 | needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
+| ears | Boop listening, hands-free, for its name, a few words and three sounds (`Ears`, `Hearing`); what it heard is a `heard` event | the mic (push-to-talk's) |
 | buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
 | personality, nature | The pack's personality file, and the person's sweet or cheeky choice laid over it (characters/CHARACTER.md §7) | |
 

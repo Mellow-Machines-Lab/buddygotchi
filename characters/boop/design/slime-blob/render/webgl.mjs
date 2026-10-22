@@ -30,6 +30,7 @@ export function createWebGL(canvas, catalog){
       uniform vec3 uGrab;
       uniform vec2 uGrabPoint;
       uniform vec3 uLife;
+      uniform float uSlide;
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vBase;
@@ -46,6 +47,8 @@ ${deformationGLSL}
         float y=pos.y-.62,x=pos.x,c=cos(uLife.y),s=sin(uLife.y);
         pos.x=x*c-y*s;pos.y=max(.018,x*s+y*c+.62+uLife.x);
         pos.z+=uLife.z*h*h;
+        // A gag's slide carries the whole dome sideways; its shape is unchanged.
+        pos.x+=uSlide;
         return pos;
       }
       void main(){
@@ -186,7 +189,7 @@ ${deformationGLSL}
     const vertexBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(params),gl.STATIC_DRAW);
     const indexBuffer=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices),gl.STATIC_DRAW);
     const at=gl.getAttribLocation(body,'aParam');
-    const uniforms={};for(const name of ['uMatrix','uModes','uContact','uEye','uBlink','uGaze','uBackdrop','uResolution','uFaceTexture','uTime','uShell','uGrab','uGrabPoint','uLife'])uniforms[name]=gl.getUniformLocation(body,name);
+    const uniforms={};for(const name of ['uMatrix','uModes','uContact','uEye','uBlink','uGaze','uBackdrop','uResolution','uFaceTexture','uTime','uShell','uGrab','uGrabPoint','uLife','uSlide'])uniforms[name]=gl.getUniformLocation(body,name);
     const fullscreenVS=`attribute vec2 aPosition;varying vec2 vUV;void main(){vUV=aPosition*.5+.5;gl_Position=vec4(aPosition,0.0,1.0);}`;
     const studio=program(fullscreenVS,`precision highp float;void main(){gl_FragColor=vec4(0.0,0.0,0.0,1.0);}`);
     const screen=program(fullscreenVS,`precision highp float;varying vec2 vUV;uniform sampler2D uTexture;void main(){gl_FragColor=texture2D(uTexture,vUV);}`);
@@ -232,10 +235,10 @@ ${deformationGLSL}
     gl.bindTexture(gl.TEXTURE_2D,backdropTexture);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    const shadow=program(`attribute vec3 aPosition;uniform mat4 uMatrix;varying vec2 vXZ;void main(){vXZ=aPosition.xz;gl_Position=uMatrix*vec4(aPosition,1.0);}`,`precision highp float;varying vec2 vXZ;void main(){float d=dot(vXZ*vec2(.9,1.45),vXZ*vec2(.9,1.45));float a=.18*exp(-d*1.4)+.22*exp(-d*9.0);gl_FragColor=vec4(0.0,0.0,0.0,a);}`);
+    const shadow=program(`attribute vec3 aPosition;uniform mat4 uMatrix;uniform float uSlide;varying vec2 vXZ;void main(){vXZ=aPosition.xz-vec2(uSlide,0.0);gl_Position=uMatrix*vec4(aPosition,1.0);}`,`precision highp float;varying vec2 vXZ;void main(){float d=dot(vXZ*vec2(.9,1.45),vXZ*vec2(.9,1.45));float a=.18*exp(-d*1.4)+.22*exp(-d*9.0);gl_FragColor=vec4(0.0,0.0,0.0,a);}`);
     const floor=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,floor);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-4,0,-4,4,0,-4,-4,0,4,-4,0,4,4,0,-4,4,0,4]),gl.STATIC_DRAW);
     const floorAt=gl.getAttribLocation(shadow,'aPosition');
-    const floorMatrix=gl.getUniformLocation(shadow,'uMatrix');
+    const floorMatrix=gl.getUniformLocation(shadow,'uMatrix'),floorSlide=gl.getUniformLocation(shadow,'uSlide');
     const camera=viewMatrix();
     const draw=(channels)=>{
       const {pose,life,contact,gaze,time,grab}=channels;
@@ -257,7 +260,7 @@ ${deformationGLSL}
       gl.useProgram(studio);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(studioAt);gl.vertexAttribPointer(studioAt,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,3);
       const matrix=matrixMultiply(projection(canvas.width/canvas.height),camera);
       gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.disable(gl.DEPTH_TEST);
-      gl.useProgram(shadow);gl.uniformMatrix4fv(floorMatrix,false,matrix);gl.bindBuffer(gl.ARRAY_BUFFER,floor);gl.enableVertexAttribArray(floorAt);gl.vertexAttribPointer(floorAt,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,6);
+      gl.useProgram(shadow);gl.uniformMatrix4fv(floorMatrix,false,matrix);gl.uniform1f(floorSlide,channels.slide||0);gl.bindBuffer(gl.ARRAY_BUFFER,floor);gl.enableVertexAttribArray(floorAt);gl.vertexAttribPointer(floorAt,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,6);
       gl.bindFramebuffer(gl.FRAMEBUFFER,sceneTarget.framebuffer);gl.viewport(0,0,sceneWidth,sceneHeight);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
       gl.disable(gl.BLEND);gl.useProgram(screen);gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(screenAt);gl.vertexAttribPointer(screenAt,2,gl.FLOAT,false,0,0);
       gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,backdropTexture);gl.uniform1i(screenTexture,0);gl.drawArrays(gl.TRIANGLES,0,3);
@@ -265,7 +268,7 @@ ${deformationGLSL}
       gl.useProgram(body);gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);gl.enableVertexAttribArray(at);gl.vertexAttribPointer(at,2,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
       gl.uniformMatrix4fv(uniforms.uMatrix,false,matrix);gl.uniform4fv(uniforms.uModes,pose);gl.uniform2f(uniforms.uContact,contact.x,contact.y);gl.uniform3fv(uniforms.uEye,eye);gl.uniform1f(uniforms.uBlink,channels.face.blink);gl.uniform1f(uniforms.uGaze,gaze);
       gl.uniform1i(uniforms.uBackdrop,0);gl.uniform2f(uniforms.uResolution,sceneWidth,sceneHeight);paintFace(faceContext,channels,catalog);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,faceTexture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,faceCanvas);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.generateMipmap(gl.TEXTURE_2D);gl.uniform1i(uniforms.uFaceTexture,2);gl.activeTexture(gl.TEXTURE0);
-      gl.uniform3fv(uniforms.uGrab,grab.pull);gl.uniform2fv(uniforms.uGrabPoint,grab.point);gl.uniform3fv(uniforms.uLife,life);gl.uniform1f(uniforms.uTime,channels.reducedMotion?0:time);gl.uniform1f(uniforms.uShell,1);
+      gl.uniform3fv(uniforms.uGrab,grab.pull);gl.uniform2fv(uniforms.uGrabPoint,grab.point);gl.uniform3fv(uniforms.uLife,life);gl.uniform1f(uniforms.uSlide,channels.slide||0);gl.uniform1f(uniforms.uTime,channels.reducedMotion?0:time);gl.uniform1f(uniforms.uShell,1);
       gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       gl.disable(gl.CULL_FACE);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);
       // Average the scene down to the canvas; the bloom and composite then

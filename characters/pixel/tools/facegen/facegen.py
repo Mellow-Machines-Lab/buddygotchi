@@ -22,7 +22,7 @@ at the same designs, and faces.json gives each mood its drawn mood's.
 The bank's SVGs come in three dialects: V2, the first pack's (`boop-motion`,
 and needs you's `alert-motion`); V3, the older moods' newer states
 (`state-motion`); and V4, the new moods' flip-books (`motion`), where each step
-shows a whole face of its own, as every mood's wake_up does. Each has a still copy for reduced motion, which
+shows a whole face of its own, as every mood's wake_up and comedy designs do. Each has a still copy for reduced motion, which
 isn't read. The older moods' designs, V2 and V3, must come out of the bank
 byte for byte as they were captured (the bank's qa/v3-fingerprints.json).
 

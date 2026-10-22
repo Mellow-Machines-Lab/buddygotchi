@@ -22,8 +22,8 @@ fs.rmSync(path.join(out, 'svg'), {recursive: true, force: true});
 
 // The bank's three kinds of SVG: V2, the first pack (no renderer); V3, the
 // older moods' newer states; V4, the new moods' flip-books, and every
-// mood's wake_up, drawn the same way.
-const dialects = {undefined: 'v2', 'state-v3': 'v3', 'mood-v4': 'v4', 'wake-v1': 'v4'};
+// mood's wake_up and comedy (comedy-art.mjs), drawn the same way.
+const dialects = {undefined: 'v2', 'state-v3': 'v3', 'mood-v4': 'v4', 'wake-v1': 'v4', 'comedy-v1': 'v4'};
 
 // A design's voice window: when a line over it may start, in ms, by the
 // bank's rule (mood-art.mjs voiceStart). The bank's own voiceWindows gives

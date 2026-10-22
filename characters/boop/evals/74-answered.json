@@ -1,0 +1,11 @@
+{
+  "name": "Answering a request gets a small pleased face",
+  "case": "Claude asks to run a command a minute into its turn, and half a minute later the person allows it. The moment the amber sign clears, Boop is pleased: a pleased, happy, calm or engaged face, no finish, since the turn goes on. When the turn finishes well two minutes later, that's a success.",
+  "why": "The view lines a request you answered while the agent works on (TranscriptView.needs: You answered claude on ...); PERSONALITY's Example: pleased, glad in a word, once",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "needs you", "at": "1m"},
+    {"event": "answered", "at": "1m30s", "expect": {"react": "pleased|happy|calm|engaged|curious", "animation": "none"}},
+    {"event": "turn finished", "at": "3m", "expect": {"animation": "success"}}
+  ]
+}

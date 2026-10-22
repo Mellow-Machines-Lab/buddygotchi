@@ -34,6 +34,8 @@ extension Runtime {
         public var faceListening: Bool
         /// Why push-to-talk couldn't hear you, until the next try.
         public var micTrouble: String?
+        /// Boop's ears are on, as Settings says.
+        public var ears = false
         /// Boop's XP and stage.
         public var growth: Growth?
         /// Each buddy, when there are several; empty for one, which the
@@ -80,6 +82,7 @@ extension Runtime {
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+        status.ears = settings.ears
         if pipeline.several {
             status.buddies = rigs.map { rig in
                 Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),

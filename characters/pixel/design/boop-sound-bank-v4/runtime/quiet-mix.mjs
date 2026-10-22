@@ -30,8 +30,13 @@ export function routineEvents(score,cycle=0,seed=53){
 }
 export function quietMix(asset,score){
  if(protectedSoundStates.includes(asset.state))return score;
+ // A comedy design breaks the quiet on purpose (comedy-art.mjs): one
+ // 'scored' keeps its soft cue or two as scored, a yawn once or a sneeze or
+ // a snore every few loops; one 'routine' takes the routine mix below, even
+ // in a quiet state.
+ if(asset.sound==='scored')return score;
  const original=score.events.length;
- if(silenceStates.includes(asset.state))return {...score,policy:'silent',intervalSeconds:0,tailSeconds:0,events:[],description:'Intentionally silent in the voice-first mix.',mix:{profile:'voice-first',originalCueCount:original,retainedCueCount:0}};
+ if(silenceStates.includes(asset.state)&&asset.sound!=='routine')return {...score,policy:'silent',intervalSeconds:0,tailSeconds:0,events:[],description:'Intentionally silent in the voice-first mix.',mix:{profile:'voice-first',originalCueCount:original,retainedCueCount:0}};
  if(!original)return score;
  // An early attack plus a release is one physical key gesture. Pair only when
  // the source actually identifies that release; unrelated cues stay independent.

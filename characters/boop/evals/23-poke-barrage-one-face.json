@@ -5,6 +5,7 @@
   "why": "PERSONALITY's Examples: one poke gets a curious face, two in a row an annoyed one, three an irritated or grumpy one. A reaction a tap cut short stays in progress while the pokes go on, and a poke doesn't wake the brain while the reaction to its run's third or later poke is in progress with the mood unchanged. The first step checks its last pass; the second wakes nothing, so the run check counts the faces",
   "checks": {"reactions": "1-3"},
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "reaction": "failed: cut short: you tapped Boop", "expect": {"mood": "irritated|grumpy"}},
     {"event": "pokes", "at": "1s", "reaction": "failed: cut short: you tapped Boop"}
   ]

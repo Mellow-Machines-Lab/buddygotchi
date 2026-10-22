@@ -1,23 +1,23 @@
 {
-  "name": "Quick wins again and again each get a reaction",
-  "case": "The agent does five quick turns in a row, a minute apart, and each one passes its tests and finishes within half a minute. Boop reacts to every one, or nearly: a small pleased face each time, played as a success. The same face every time is fine; staying quiet isn't. Nothing here is big, and the mood never goes sad or grumpy.",
-  "why": "The owner's liveliness brief (2026-09-28): react often, and repeats are fine. PERSONALITY's Examples: a short turn done gets a small happy face, a success",
-  "checks": {"reactions": "4-"},
+  "name": "Quick wins again and again each get a reaction, and not the same one",
+  "case": "The agent does five quick turns in a row, a minute apart, and each one passes its tests and finishes within half a minute. Boop reacts to every one, or nearly, played as a success, and climbs a ladder as the wins pile up: happy or pleased at first, excited by the third, then amused, then comfy and quiet. Never the same reaction three times running, and staying quiet isn't fine. Nothing here is big, and the mood never goes sad or grumpy.",
+  "why": "The finish line counts quick wins in a row (TranscriptView.quickWinMs, winRunGapMs), and PERSONALITY's Examples give each rung its own face; the guide: quick wins in a row are a ladder",
+  "checks": {"reactions": "4-", "max_same_in_a_row": 2, "min_variety": 3},
   "steps": [
     {"event": "turn started", "at": "0m"},
     {"event": "command", "at": "0m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "0m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged"}},
+    {"event": "turn finished", "at": "0m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "happy|pleased|calm"}},
     {"event": "turn started", "at": "1m"},
     {"event": "command", "at": "1m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "1m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged"}},
+    {"event": "turn finished", "at": "1m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "pleased|happy|excited"}},
     {"event": "turn started", "at": "2m"},
     {"event": "command", "at": "2m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "2m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged"}},
+    {"event": "turn finished", "at": "2m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "excited|amused|pleased|happy"}},
     {"event": "turn started", "at": "3m"},
     {"event": "command", "at": "3m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "3m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged"}},
+    {"event": "turn finished", "at": "3m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "amused|pleased|happy|excited|comfy"}},
     {"event": "turn started", "at": "4m"},
     {"event": "command", "at": "4m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "4m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged"}}
+    {"event": "turn finished", "at": "4m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "comfy|calm|pleased|amused|happy|none"}}
   ]
 }

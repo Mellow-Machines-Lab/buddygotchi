@@ -1,14 +1,14 @@
 {
-  "name": "Hours of nothing let a fed-up mood go, a step at a time",
-  "case": "A test fails and then the agent's turn fails, so Boop gets fed up: irritated or grumpy. Then nothing at all happens for hours. Each hour of nothing lets Boop calm down a step: after the first it's no longer grumpy, and by the third it's calm again, with a calm face at most.",
+  "name": "Quiet time lets a fed-up mood go, a step at a time",
+  "case": "A test fails and then the agent's turn fails, so Boop gets fed up: irritated or grumpy. Then nothing happens for hours, with the session still open. Boop's idle check-ins, every 15 to 30 minutes for the first two hours, let it calm down when its mood's minutes are up, a step at a time: by half an hour it's no longer grumpy, by an hour it's calm or nearly, and hours later it's calm, with a calm face at most. Past two hours only the hourly heartbeat comes.",
   "always": true,
-  "why": "characters/boop/steering/guide.md: after an hour of nothing a mood fades a step toward calm, along the mood graph; the hourly heartbeat is the event that brings it, and a heartbeat itself is no reason to say anything. characters/boop/steering/mood/annoyed.md: a turn failing after a failed check leaves annoyed for grumpy (a jump a failed turn earns) or irritated",
+  "why": "characters/boop/steering/guide.md: after the minutes MOOD gives a mood fades a step toward calm, along the mood graph; the idle check-in (TranscriptView.idleWindowMs, the personality's idle_heartbeat) is the pass that brings it, and a check-in itself is no reason to say anything. characters/boop/steering/mood/annoyed.md: a turn failing after a failed check leaves annoyed for grumpy or irritated",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true},
     {"event": "turn failed", "at": "2m", "error": "api_error", "expect": {"mood": "irritated|grumpy"}},
-    {"event": "wait", "at": "1h5m", "expect": {"react": "none|calm|annoyed|irritated", "mood": "annoyed|irritated"}},
-    {"event": "wait", "at": "2h5m"},
-    {"event": "wait", "at": "3h5m", "expect": {"react": "none|calm|happy", "mood": "calm"}}
+    {"event": "wait", "at": "35m", "expect": {"react": "none|calm|annoyed|irritated|bored|lazy", "mood": "annoyed|irritated|calm"}},
+    {"event": "wait", "at": "1h5m", "expect": {"react": "none|calm|annoyed|bored|lazy|comfy", "mood": "calm|annoyed"}},
+    {"event": "wait", "at": "3h5m", "expect": {"react": "none|calm|happy|bored|lazy|comfy", "mood": "calm"}}
   ]
 }

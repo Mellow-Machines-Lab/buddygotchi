@@ -74,6 +74,8 @@ final class AppModel: ObservableObject {
     /// row still says why, until the hooks change.
     @Published var hookErrorsDismissed: Set<Agent> = []
     @Published var startError: String?
+    /// Why Boop's ears couldn't start, until they're turned on again.
+    @Published var earsTrouble: String?
     /// A simulator on this Mac, as a body to choose (`DeviceChooser`).
     enum Simulator { case none, there, inUse }
     @Published var simulator = Simulator.none
@@ -257,6 +259,14 @@ final class AppModel: ObservableObject {
         runtime?.setVolume(volume)
     }
 
+    /// Boop's ears on or off: the runtime saves it and starts or stops them.
+    func setEars(_ on: Bool) {
+        guard status?.ears != on else { return }
+        status?.ears = on
+        earsTrouble = nil
+        runtime?.setEars(on)
+    }
+
     /// Takes effect from the next event.
     func setPersonality(_ personality: Personality) {
         guard personality != self.personality else { return }
@@ -433,12 +443,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // Push-to-talk: the core says when the mic
             // is on; what it heard goes back to the runtime.
             let listener = SpeechListener(log: { [log] in log.write($0) })
+            // Boop's ears, while Settings has them on: they give the mic to
+            // push-to-talk while it's held.
+            let ears = Ears(name: runtime.name, clock: runtime.options.clock, log: { [log] in log.write($0) },
+                            heard: { runtime.heard($0.what, misheard: $0.misheard) })
+            let earsFailed: @Sendable (String) -> Void = { [weak self] why in
+                runtime.setEars(false)
+                Task { @MainActor in self?.model.earsTrouble = why }
+            }
+            runtime.onEars = { on in on ? ears.start(failed: earsFailed) : ears.stop() }
+            if runtime.settings.ears { ears.start(failed: earsFailed) }
             runtime.onListen = { (on: Bool) in
                 if on {
+                    ears.pause()
                     listener.start { why in runtime.micFailed(why) }
                 } else {
                     listener.stop { words in
                         if let words { runtime.said(words) } else { runtime.heardNothing() }
+                        ears.resume()
                     }
                 }
             }

@@ -46,10 +46,10 @@ extension Steering {
 
     /// Budgets in tokens.
     public enum Budget {
-        public static let guide = 300
-        public static let personality = 750
-        public static let nature = 150
-        public static let mood = 175
+        public static let guide = 400
+        public static let personality = 1500
+        public static let nature = 250
+        public static let mood = 225
     }
 
     /// About four bytes a token, which overestimates for English prose.

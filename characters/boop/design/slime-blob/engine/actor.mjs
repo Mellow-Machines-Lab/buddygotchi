@@ -10,11 +10,11 @@ import {createBridges} from './bridges.mjs';
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'}) {
+export function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
-  const acting=createActing({profiles,rand,reduced,initialEmotion});
+  const acting=createActing({profiles,gags,idleGags,rand,reduced,initialEmotion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
   const scenes=createScenes({rand,reduced,profiles});
@@ -55,8 +55,11 @@ export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'})
     const mood=moodPosture({weights:posture.weights,emotions,profiles,time:motion.time,reduced}).map(value=>value*(1-scene.scene.quietMix));
     const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
     const life=lifePose(acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.lifeBounds[index],sceneConstants.lifeBounds[index]));
+    // A gag's lids close the eyes as a blink does; its slide is drawn once
+    // one has played. Its contacts follow the scene's.
     return {...base,...performance,...scene,...bridges.inspect(),mood:profiles[emotion].mood,expression,reducedMotion:reduced.matches,
-      pose,life,posture:[mood[0],mood[1]],face:face.inspect(motion.blink()),facts:router.facts(),
+      pose,life,...(acting.gagged?{slide:acting.slide()}:{}),posture:[mood[0],mood[1]],face:face.inspect(Math.max(motion.blink(),acting.lids())),
+      contacts:[...scene.contacts,...acting.contacts.map(contact=>({...contact}))],facts:router.facts(),
       grab:{active:grab.active,point:[...grab.point],target:[...grab.target],pull:grab.pull.map(m=>({...m}))}};
   }
   return {

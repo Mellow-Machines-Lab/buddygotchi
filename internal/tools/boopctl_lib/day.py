@@ -92,6 +92,7 @@ class Hour:
     finishes: int = 0
     chatter: int = 0
     reactions: int = 0
+    said: int = 0  # the reactions that said something
     faces: Counter = field(default_factory=Counter)
     alerts: int = 0
     moods: int = 0
@@ -274,6 +275,7 @@ def summarise(launches: list[Launch], date: str) -> Day:
                         day.forced_reacts += 1
                     else:
                         h.reactions += 1
+                        h.said += bool(body.get("takes"))
                         h.faces[face(last_pass) or "?"] += 1
                     if not body.get("ok"):
                         h.missed += not forced
@@ -352,7 +354,7 @@ def faces(c: Counter) -> str:
     return ", ".join(f"{name} {n}" for name, n in sorted(c.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
-COLUMNS = [("finishes", "finishes"), ("chatter", "chatter"), ("reactions", "reacts"), ("alerts", "alerts"),
+COLUMNS = [("finishes", "finishes"), ("chatter", "chatter"), ("reactions", "reacts"), ("said", "said"), ("alerts", "alerts"),
            ("moods", "moods"), ("passes", "passes"), ("dropped", "dropped"), ("missed", "missed"), ("pokes", "pokes")]
 
 

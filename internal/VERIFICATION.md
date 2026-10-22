@@ -77,6 +77,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
+| `make -C internal eval-pixel` | `make build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
@@ -96,7 +97,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   state directory other than the everyday one, it never installs or
   repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
-  and idle time. `--buddies left:pixel:claude,right:boop:codex` runs two
+  and idle time. `--ears` turns on Boop's ears, the Mac's mic, which only
+  the owner can check (L6): an agent's shell has no mic permission. `--buddies left:pixel:claude,right:boop:codex` runs two
   buddies side by side, each with its own pack and the agent it watches
   first, and `--links usb:SOCKET,usb:SOCKET` gives each its own board, in
   order; a `{"dev":…}` line then takes `"buddy": PLACE`. The menu-bar app
@@ -500,7 +502,12 @@ Only a person can check Bluetooth (`make run`), real touches and
 calibration (`boopctl calibrate`), sound by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
-feels. A day of real use under `make debug` reads back with `make day`:
+feels. Boop's ears too: from a terminal you started, run
+`.build/debug/Boop --headless --state-dir /tmp/ears --ears --debug`, then
+say its name, "good boy" and its name with "dance", clap and shout, and
+look for the `heard` events (`git grep -n "AVAudioFile\|write(to"
+app/Boop/Ears.swift` finds nothing: no audio is written). A day of real
+use under `make debug` reads back with `make day`:
 what Boop did each hour and why, relaunches included.
 
 ## 6. Webcam

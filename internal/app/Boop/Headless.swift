@@ -99,6 +99,14 @@ enum Headless {
             fail("boop: \(error)")
         }
 
+        // Boop's ears, from this terminal: macOS asks the app that started it
+        // for the mic, so an agent's shell can't.
+        let ears = args.has("--ears")
+            ? Ears(name: runtime.name, clock: runtime.options.clock, log: { log.write($0) },
+                   heard: { runtime.heard($0.what, misheard: $0.misheard) })
+            : nil
+        ears?.start { why in fail("--ears: \(why)") }
+
         if let script {
             play(script, live: args.has("--live"), cursor: stateDir.appendingPathComponent("demo-cursor"),
                  on: runtime, link: link, links: links, recorder: recorder, to: args["--record"], log: log)
@@ -119,7 +127,7 @@ enum Headless {
             source.resume()
             sources.append(source)
         }
-        withExtendedLifetime(sources) { dispatchMain() }
+        withExtendedLifetime((sources, ears)) { dispatchMain() }
     }
 
     /// `--demo`: plays the script once the device is there (with a link),

@@ -1,8 +1,9 @@
+<!-- The tired mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Tired. Low-energy acting after sustained fictional effort; not real system battery or human fatigue.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-Repeated descriptions of one event are not new evidence.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to calm once Boop has been tired for 5 min.
+Tired. A long stretch of work wore Boop down: droopy, not ill.
+Its faces lean tired and lazy; a win gets a pleased face.
+Says quiet in a sound: yawns and sighs.
+Stays tired through check-ins and routine turns.
+Leaves for exhausted when a very long turn grinds on and on; comfy at
+kind words; lazy when nothing happens; surprised at a big event. Fades
+to calm once Boop has been tired for 10 min.

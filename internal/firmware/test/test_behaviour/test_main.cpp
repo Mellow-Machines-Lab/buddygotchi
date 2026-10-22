@@ -1046,7 +1046,10 @@ static void test_a_face_alone_plays_its_loops() {
 }
 
 // Starts of blinks between 0 and `to` ms, with the Mac sending `m` every
-// 10 s (or never, for no app).
+// 10 s (or never, for no app). A design that blinks in a step of its own,
+// as the comedy's idles the look's variations turn to do, gets none of the
+// device's blinks: kSelfBlink marks where one showed, and no gap spans it.
+constexpr uint32_t kSelfBlink = 0xFFFFFFFF;
 std::vector<uint32_t> blinkStarts(const Model& m, bool mac, uint32_t to) {
   Rig r;
   r.state(m);
@@ -1056,17 +1059,30 @@ std::vector<uint32_t> blinkStarts(const Model& m, bool mac, uint32_t to) {
     if (mac && t % 10000 == 0) r.at(t), r.state(m);
     r.at(t);
     bool blink = r.b.blinking(t);
-    if (blink) TEST_ASSERT_TRUE(r.b.show(t).eyesShut);
+    SceneShow s = r.b.show(t);
+    if (blink) TEST_ASSERT_TRUE(s.eyesShut);
+    if (render::blinksItself(s.mood, s.state, s.variant)) {
+      TEST_ASSERT_FALSE(blink);
+      if (starts.empty() || starts.back() != kSelfBlink) starts.push_back(kSelfBlink);
+    }
     if (blink && !prev) starts.push_back(t);
     prev = blink;
   }
   return starts;
 }
 
+// The device's own blinks among them, without the marks.
+std::vector<uint32_t> deviceBlinks(const std::vector<uint32_t>& starts) {
+  std::vector<uint32_t> out;
+  for (uint32_t t : starts)
+    if (t != kSelfBlink) out.push_back(t);
+  return out;
+}
+
 void checkGaps(const std::vector<uint32_t>& starts, uint32_t from, uint32_t lo, uint32_t hi) {
   int n = 0;
   for (size_t i = 1; i < starts.size(); ++i) {
-    if (starts[i - 1] < from) continue;
+    if (starts[i] == kSelfBlink || starts[i - 1] == kSelfBlink || starts[i - 1] < from) continue;
     uint32_t gap = starts[i] - starts[i - 1];
     TEST_ASSERT_TRUE(gap >= lo + render::pixel::PixelFace::kBlinkMs);  // the gap follows the blink
     TEST_ASSERT_TRUE(gap <= hi + render::pixel::PixelFace::kBlinkMs);
@@ -1076,8 +1092,8 @@ void checkGaps(const std::vector<uint32_t>& starts, uint32_t from, uint32_t lo, 
 }
 
 // Idle and working life is blinks only, every 2–6 s idle,
-// 2–5 s working, however many agents are busy. Asleep, as with no app,
-// never blinks.
+// 2–5 s working, however many agents are busy, except while a design that
+// blinks itself shows. Asleep, as with no app, never blinks.
 // A reaction's `mood` is its expression. With no animation,
 // the look is drawn in that mood for the reaction's loops of the design it's
 // drawn in, ending on a loop boundary of that design's clock (so the first
@@ -1392,6 +1408,18 @@ static void test_a_waited_reaction_says_how_it_ended() {
   hm.variant = 1;  // the idle design's second variation, a long loop, its clock from 0
   h.state(hm);
   const uint32_t idle = loopMs(render::Mood::kProud, SceneState::kIdle, 1);
+  // The look's variations take turns at their loops' ends between the
+  // parts below, so each part pins the second again, its clock from the
+  // part's start: another variation from the Mac, then this one, starts
+  // the turns over from it.
+  auto pin = [&](Rig& g) {
+    Model other = hm;
+    other.variant = 0;
+    g.state(other);
+    g.at(g.t);
+    g.state(hm);
+    g.at(g.t);
+  };
   render::Mood face;
   {
     Rig p;
@@ -1409,7 +1437,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
     TEST_ASSERT_EQUAL_STRING("17 done", ended(p).c_str());
   }
   h.at(2 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(18), h.t);
   h.at(2 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   TEST_ASSERT_NULL(h.b.bubble(h.t));
@@ -1417,13 +1445,13 @@ static void test_a_waited_reaction_says_how_it_ended() {
   h.state(attn());
   TEST_ASSERT_EQUAL_STRING("18 done", ended(h).c_str());
   h.at(4 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(19), h.t);
   h.at(4 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   h.react(SceneState::kTaskComplete);
   TEST_ASSERT_EQUAL_STRING("19 done", ended(h).c_str());
   h.at(6 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(20), h.t);
   h.at(6 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   h.say();  // a newer `say`
@@ -1431,7 +1459,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // During its bubble, after the take, it's still its `say`, which a tap
   // doesn't cut.
   h.at(8 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(21), h.t);
   h.at(8 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs - 1);
   TEST_ASSERT_NOT_NULL(h.b.bubble(h.t));
@@ -1444,7 +1472,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // it replaces the face held for its loops, and this one is done, as the
   // kit said when the next started.
   h.at(10 * idle + 1000);
-  h.state(hm);
+  pin(h);
   ReactionIn held = expressive(render::Mood::kProud, kGo, 4);  // held four times
   held.key = 22;
   onReaction(h.b, held, h.t);
@@ -1505,7 +1533,7 @@ static void test_life_is_blinks_at_their_pace() {
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
   w.busy = 3;
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
-  std::vector<uint32_t> none = blinkStarts(base("idle"), false, 180000);
+  std::vector<uint32_t> none = deviceBlinks(blinkStarts(base("idle"), false, 180000));
   TEST_ASSERT_TRUE(none.empty() || none.back() < 30000);  // no app: no blinks after 30 s
 }
 
@@ -2200,10 +2228,10 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
 static void test_flip_books_blink_by_themselves() {
   Model calm = base("idle");
   calm.mood = render::Mood::kCalm;
-  TEST_ASSERT_TRUE(blinkStarts(calm, true, 120000).empty());
+  TEST_ASSERT_TRUE(deviceBlinks(blinkStarts(calm, true, 120000)).empty());
   Model working = base("working");
   working.mood = render::Mood::kWounded;
-  TEST_ASSERT_TRUE(blinkStarts(working, true, 120000).empty());
+  TEST_ASSERT_TRUE(deviceBlinks(blinkStarts(working, true, 120000)).empty());
   TEST_ASSERT_TRUE(render::blinksItself(render::Mood::kCalm, SceneState::kIdle, 0));
   TEST_ASSERT_FALSE(render::blinksItself(render::Mood::kHappy, SceneState::kIdle, 0));
   Rig r;

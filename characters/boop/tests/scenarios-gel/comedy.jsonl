@@ -1,0 +1,90 @@
+// The gel's comedy (CONTINUITY.md, Comedy), each on a frozen clock after a
+// reset (the device wakes in its startup mood, then takes the state's).
+// Idle deals its gags from its bag's second round: calm yawns from 41.8 s
+// (stretched, eyes squeezed), winds up a sneeze at 52.6 s and dozes off
+// from 81.7 s (lids drooped, dome sunk); comfy's long yawn comes at 57 s
+// and excited's zoomies at 43.5 s, at the left edge, then the right. Asleep
+// snores from 19.3 s (a breath's swell). A happy finish's sixth take is its
+// fourth, the hiccups, at the first; proud's third is its lifted one, with
+// the gift. A state every 20 s keeps the link alive.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"clock":40000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"clock":42800}
+{"expect":{"mood":"calm","base":"idle","moment":null}}
+{"shot":"yawn"}
+{"clock":52640}
+{"shot":"sneeze"}
+{"clock":60000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"clock":78000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"clock":83200}
+{"expect":{"screen":"face","mood":"calm","moment":null}}
+{"shot":"doze"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"comfy","vol":0}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"comfy","vol":0}
+{"clock":40000}
+{"t":"state","base":"idle","mood":"comfy","vol":0}
+{"clock":58800}
+{"expect":{"screen":"face","mood":"comfy","moment":null}}
+{"shot":"long_yawn"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"excited","vol":0}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"excited","vol":0}
+{"clock":40000}
+{"t":"state","base":"idle","mood":"excited","vol":0}
+{"clock":44400}
+{"expect":{"screen":"face","mood":"excited","moment":null}}
+{"shot":"zoomies_left"}
+{"clock":44800}
+{"shot":"zoomies_right"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0}
+{"clock":15000}
+{"t":"state","base":"asleep","mood":"calm","vol":0}
+{"clock":20528}
+{"expect":{"base":"asleep","look_variant":4}}
+{"shot":"snore"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":401,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":5200}
+{"t":"do","id":402,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":10200}
+{"t":"do","id":403,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":15200}
+{"t":"do","id":404,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":20000}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":20200}
+{"t":"do","id":405,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":25200}
+{"t":"do","id":406,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":26896}
+{"expect":{"moment":{"anim":"task_complete","variant":4}}}
+{"shot":"hiccups"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"proud","vol":0}
+{"clock":200}
+{"t":"do","id":501,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":5200}
+{"t":"do","id":502,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":10200}
+{"t":"do","id":503,"name":"task_complete","args":{"outcome":"success"}}
+{"clock":11696}
+{"expect":{"mood":"proud","moment":{"anim":"task_complete","variant":2}}}
+{"shot":"gift"}

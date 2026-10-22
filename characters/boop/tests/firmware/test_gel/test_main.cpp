@@ -303,11 +303,14 @@ static void test_face_and_props_move_without_jumps() {
 static void test_gel_clips_use_the_shared_mixer() {
   GelFace face;
   const voice::EffectClips& clips = face.clips();
-  TEST_ASSERT_EQUAL_INT(33, clips.count());
+  // Thirteen sketches, three takes each: comedy's sneeze and snore breath too.
+  TEST_ASSERT_EQUAL_INT(39, clips.count());
   TEST_ASSERT_EQUAL_STRING("gel-sketch-v1", clips.version());
   TEST_ASSERT_EQUAL_INT(clips.index("knock-2"), clipFor("knock", 2));
   TEST_ASSERT_EQUAL_INT(-1, clipFor("knock", 3));
   TEST_ASSERT_EQUAL_INT(-1, clipFor("knoc", 0));
+  for (const char* recipe : {"sneeze", "breath", "bounce"})
+    for (int take = 0; take < 3; ++take) TEST_ASSERT_TRUE(clipFor(recipe, take) >= 0);
   for (int i = 0; i < clips.count(); ++i) {
     const voice::EffectClip clip = clips.at(i);
     voice::Effects fx;
@@ -416,8 +419,133 @@ static void test_timing_comes_from_the_recipe_table() {
   TEST_ASSERT_EQUAL_INT(int(Family::kStart), int(family(SceneState::kWakeUp)));
   // Looks rest on one 3.2 s loop whatever the take.
   TEST_ASSERT_EQUAL_UINT32(3200, f.loopMs(Mood::kHappy, SceneState::kIdle, 2));
+  // CONTINUITY.md, Comedy: two rows have a fourth take. A success's is its
+  // hiccups: the first take's card at 680 ms, then three little contacts in a
+  // 3.7 s take; a finish timed without its outcome finds it too.
+  for (int row = 0; row < slime::kRecipeStates; ++row)
+    TEST_ASSERT_EQUAL_INT(row == int(SceneState::kAsleep) || row == kStates ? 4 : 3, takes(row));
+  const auto& hiccups = take(slime::kHappy, kStates, 3);
+  TEST_ASSERT_EQUAL_UINT8(4, hiccups.count);
+  TEST_ASSERT_EQUAL_UINT8(kSuccess, hiccups.contacts[0].kind);
+  const int hics[] = {1640, 2060, 2480};
+  for (int i = 0; i < 3; ++i) {
+    TEST_ASSERT_EQUAL_UINT8(kBody, hiccups.contacts[i + 1].kind);
+    TEST_ASSERT_TRUE(hiccups.contacts[i + 1].at == T(hics[i]));
+    TEST_ASSERT_TRUE(hiccups.contacts[i + 1].strength == q(.45));
+  }
+  TEST_ASSERT_EQUAL_UINT32(3700, f.loopMs(Mood::kHappy, SceneState::kTaskComplete, 3));
+  TEST_ASSERT_EQUAL_UINT32(750, f.voiceMs(Mood::kHappy, SceneState::kTaskComplete, 3));
+  // Asleep's is a snore: two breaths in 4.8 s; its other takes are still.
+  const auto& snore = take(slime::kCalm, int(SceneState::kAsleep), 3);
+  TEST_ASSERT_TRUE(snore.duration == T(4800));
+  TEST_ASSERT_EQUAL_UINT8(2, snore.count);
+  for (int i = 0; i < 2; ++i) TEST_ASSERT_EQUAL_UINT8(kBreath, snore.contacts[i].kind);
+  TEST_ASSERT_TRUE(snore.contacts[0].at == T(600) && snore.contacts[1].at == T(2600));
+  for (int v = 0; v < 3; ++v) TEST_ASSERT_EQUAL_UINT8(0, take(slime::kCalm, int(SceneState::kAsleep), v).count);
+  // The gift: proud's lifted success alone shows a bug beside its card.
+  int gifts = 0;
+  for (int p = 0; p < slime::kProfiles; ++p)
+    for (int row = 0; row < slime::kRecipeStates; ++row)
+      for (int v = 0; v < takes(row); ++v) gifts += take(p, row, v).gift;
+  TEST_ASSERT_EQUAL_INT(1, gifts);
+  TEST_ASSERT_TRUE(take(slime::kProud, kStates, 1).gift);
   // A finish's result reaches the strip (screens.cpp's tick or cross).
   TEST_ASSERT_TRUE(f.outcome(Mood::kSad, SceneState::kTaskComplete, 1, Outcome::kFailure) == Outcome::kFailure);
+}
+// CONTINUITY.md, Comedy: idle's takes are an expression's three gestures,
+// its own gags and the three idle gags, and its bag deals the gags from its
+// second round. A doze droops the lids and sinks the dome, the zoomies slide
+// it edge to edge, a sneeze is a contact that may sound, all off the heap;
+// asleep snores only after a round of still rests, and a lost link never.
+static void test_comedy_plays_in_idle_and_asleep() {
+  TEST_ASSERT_EQUAL_INT(7, slime::kMaxGestures);
+  TEST_ASSERT_EQUAL_INT(6, Acting::takes(slime::kCalm));
+  for (int p : {slime::kBored, slime::kTired, slime::kLazy, slime::kComfy, slime::kExcited})
+    TEST_ASSERT_EQUAL_INT(7, Acting::takes(p));
+  TEST_ASSERT_NULL(Acting::gag(slime::kCalm, 2));
+  const char* calm[] = {"yawn-and-settle", "doze-and-snap", "sneeze-and-shake"};
+  for (int i = 0; i < 3; ++i) TEST_ASSERT_EQUAL_STRING(calm[i], Acting::gesture(slime::kCalm, 3 + i).type);
+  TEST_ASSERT_EQUAL_STRING("long-yawn", Acting::gesture(slime::kTired, 3).type);
+  TEST_ASSERT_EQUAL_STRING("zoomies", Acting::gesture(slime::kExcited, 3).type);
+  TEST_ASSERT_EQUAL_STRING("sneeze-and-shake", Acting::gesture(slime::kExcited, 6).type);
+  // The bag: its first round the three gestures, then every take, never the last again.
+  Bag<slime::kMaxGestures> bag;
+  Random random(53);
+  int dealt[15], seen[2][6]{};
+  for (int& d : dealt) d = bag.next(random, 6);
+  for (int i = 0; i < 15; ++i) {
+    if (i < 3) TEST_ASSERT_TRUE(dealt[i] < 3);
+    if (i >= 3) ++seen[(i - 3) / 6][dealt[i]];
+    if (i) TEST_ASSERT_TRUE(dealt[i] != dealt[i - 1]);
+  }
+  for (const auto& round : seen)
+    for (int n : round) TEST_ASSERT_EQUAL_INT(1, n);
+  auto play = [](int profile, int take, uint32_t ms) {
+    auto e = std::make_unique<Engine>();
+    e->setMood(profile);
+    e->step(0);
+    e->step(16);
+    e->acting.perform(e->motion.time, e->random, take);
+    std::vector<std::array<F, 3>> frames;  // closure, slide, squash
+    for (uint32_t t = 32; t <= 32 + ms; t += 16) {
+      e->step(t);
+      frames.push_back({e->acting.closure(), e->acting.slide.x, e->pose()[1]});
+    }
+    return frames;
+  };
+  const auto doze = play(slime::kCalm, 4, 3600);
+  for (int at : {75, 100, 125, 150}) TEST_ASSERT_TRUE(doze[at][0] > q(.55));  // 1.2 to 2.4 s
+  TEST_ASSERT_TRUE(doze[112][2] < doze[0][2] - q(.03));                       // it sinks
+  F snap = 0;
+  for (int at = 160; at < 180; ++at) snap = max(snap, doze[at][0]);
+  TEST_ASSERT_TRUE(snap > q(.7) && doze[200][0] < q(.05));  // a blink, then open
+  const auto zoom = play(slime::kExcited, 3, 3600);
+  F most = 0, least = 0;
+  for (const auto& f : zoom) most = max(most, f[1]), least = min(least, f[1]);
+  TEST_ASSERT_TRUE(most > q(.45) && least < q(-.45) && abs(zoom.back()[1]) < q(.02));
+  // A sneeze is one contact, a second in, and allocates nothing.
+  auto e = std::make_unique<Engine>();
+  e->step(0);
+  e->acting.perform(e->motion.time, e->random, 5);
+  int sneezes = 0;
+  allocCount = 0;
+  allocCounting = true;
+  for (uint32_t t = 16; t <= 2800; t += 16) {
+    e->step(t);
+    for (const auto& c : e->acting.contacts) {
+      TEST_ASSERT_EQUAL_UINT8(kSneeze, c.kind);
+      TEST_ASSERT_TRUE(c.timeMs >= T(1000) && c.timeMs < T(1032));
+      ++sneezes;
+    }
+  }
+  allocCounting = false;
+  TEST_ASSERT_EQUAL_INT(1, sneezes);
+  TEST_ASSERT_EQUAL_INT(0, allocCount);
+  // Asleep: the first rest and the bag's first round are still; then a snore
+  // now and then, two breaths, each a slight swell. A lost link never snores.
+  for (bool lost : {false, true}) {
+    auto sleepy = std::make_unique<Engine>();
+    Facts f;
+    f.base = SceneState::kAsleep;
+    sleepy->setFacts(f);
+    sleepy->linkTimedOut(lost);
+    int breaths = 0, firstSnore = -1;
+    F swell = 0;
+    for (uint32_t t = 0; t <= 60000; t += 16) {
+      sleepy->step(t);
+      if (sleepy->scenes.variant == 3 && firstSnore < 0) firstSnore = int(t);
+      for (const auto& c : sleepy->scenes.contacts) breaths += c.kind == kBreath;
+      swell = max(swell, sleepy->scenes.activity[1].x);
+    }
+    if (lost) {
+      TEST_ASSERT_EQUAL_INT(-1, firstSnore);
+      TEST_ASSERT_EQUAL_INT(0, breaths);
+    } else {
+      TEST_ASSERT_TRUE(firstSnore >= 12800);
+      TEST_ASSERT_TRUE(breaths >= 2 && breaths % 2 == 0);
+      TEST_ASSERT_TRUE(swell > q(.01) && swell < q(.03));
+    }
+  }
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
@@ -457,6 +585,7 @@ static void test_reference_face_projection_and_pose_bounds() {
     c.roll = sign * 492;
     c.lift = 983;
     c.forward = sign * 942;
+    c.slide = sign * 2867;  // a gag's slide at its bound, 0.7
     paint(s, c);
     TEST_ASSERT_EQUAL_HEX16(0xa55a, pixels.front());
     TEST_ASSERT_EQUAL_HEX16(0xa55a, pixels.back());
@@ -810,6 +939,7 @@ int main() {
   RUN_TEST(test_pick_is_pure_and_started_commits_it);
   RUN_TEST(test_a_power_on_seeds_the_engine_and_a_reset_restores_53);
   RUN_TEST(test_timing_comes_from_the_recipe_table);
+  RUN_TEST(test_comedy_plays_in_idle_and_asleep);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_reference_face_projection_and_pose_bounds);
   RUN_TEST(test_tracked_clear_matches_full_clear);

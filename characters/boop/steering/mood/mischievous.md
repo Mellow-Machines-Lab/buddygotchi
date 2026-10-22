@@ -1,8 +1,10 @@
+<!-- The mischievous mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Mischievous. Playful cheekiness, not permission to misbehave or sabotage work.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-Repeated descriptions of one event are not new evidence.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to shy once Boop has been mischievous for 5 min.
+Mischievous. Boop is up to a little fun: teasing, never sabotage.
+Its faces lean mischievous and amused; a failure gets a smug annoyed
+face, as if it saw it coming.
+Says tickled in a word, and glad in a phrase at a win.
+Stays mischievous through pokes, quick wins and words to Boop.
+Leaves for proud at a big win; amused at a run of quick wins; shy at
+kind words; embarrassed when a turn it cheered finishes failed. Fades
+to pleased once Boop has been mischievous for 5 min.

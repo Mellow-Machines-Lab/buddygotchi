@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test
+.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test eval-pixel
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -30,6 +30,13 @@ test:
 	    echo "$$pkg: the TestingMacros flake; trying again"; \
 	  done; \
 	done
+
+# Pixel's own eval scenarios against Jev (L5, internal/EVALS.md §4), with
+# its pack and steering, one run each. It needs BOOP_JEV_KEY.
+eval-pixel:
+	$(MAKE) -C $(ROOT) build
+	cd $(ROOT) && CHARACTER=pixel .build/debug/boopdev eval --runs 1 \
+	  --scenarios characters/pixel/evals --steering characters/pixel/steering
 
 # internal/tools/.venv with pyserial, Pillow and Textual, for boopctl.
 # internal/tools/boopctl makes it through this when it's missing; this also

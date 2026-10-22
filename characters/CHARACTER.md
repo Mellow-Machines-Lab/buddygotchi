@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-16. The contract a character pack meets, so that any
+Updated 2026-10-21. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -304,13 +304,17 @@ What the brain reads, in plain Markdown:
 - `guide.md` (required): how the creature reads what happens, read on
   every pass.
 - `personality/<name>.md` (one per name in `personalities`): who it is,
-  with front matter for the view's rules (`working_heartbeat`,
-  `tool_uses`).
+  with front matter for the view's rules: `working_heartbeat` (seconds
+  between check-ins on a turn), `idle_heartbeat` (seconds between idle
+  check-ins while you're around and no agent works; without it, only
+  the hourly heartbeat) and `tool_uses`.
 - `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
   person chose at setup, saved in `long-term.md`. The chosen one goes
   into the prompt right after the personality's PERSONALITY section,
   whatever the personality: sweet is warm and gentle with failures,
-  cheeky playful and teasing, never mean to the person. A pack without
+  cheeky playful and teasing, never mean to the person. A file may end
+  with Examples, as a personality does, where the two natures answer
+  the same moment differently. A pack without
   the file adds nothing; `boopdev check` notes a pack with only one.
 
   So a **personality** is the pack's: a file in `personality/` (Boop's
@@ -473,7 +477,7 @@ and `src/` on the include path. It holds:
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 22
+- `moods` and `states`: every mood, in the pack's order, and the 23
   states above, in the designs' order.
 - `designs`: for each mood, a row for each state (a borrowing mood has
   the designs it wears), with each variation's

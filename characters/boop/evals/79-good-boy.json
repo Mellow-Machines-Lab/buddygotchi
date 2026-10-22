@@ -1,0 +1,8 @@
+{
+  "name": "Good boy makes Boop proud",
+  "case": "With its ears on, Boop hears the person say \"good boy\". It's proud of itself: a proud, happy, pleased or affectionate face, held twice or more, and it says something glad.",
+  "why": "Boop's ears (Hearing) hand on one word or sound as a heard event, whose line wakes the brain; PERSONALITY: what it hears, it takes like a dog, and its Examples: good boy is proud, glad in a phrase, twice",
+  "steps": [
+    {"event": "heard", "at": "0s", "what": "good", "expect": {"react": "proud|happy|pleased|affectionate", "said": "some", "loops": "twice|three times"}}
+  ]
+}

@@ -4,6 +4,7 @@
   "why": "The owner's brief of 2026-09-29: one apology should do, apart from specific cases like this. characters/boop/steering/mood/: saying sorry moves grumpy to irritated or annoyed and irritated to annoyed; 3+ pokes in a row move annoyed to irritated, and 4+ irritated to grumpy",
   "mood": "grumpy",
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy"}},
     {"event": "said", "at": "15s", "words": "sorry, sorry, I'll stop", "expect": {"mood": "irritated|annoyed"}},
     {"event": "pokes", "at": "30s", "expect": {"react": "irritated|grumpy|annoyed", "mood": "grumpy|irritated"}},

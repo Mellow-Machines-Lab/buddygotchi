@@ -1,0 +1,8 @@
+{
+  "name": "A poke while Boop sleeps startles it",
+  "case": "No agent session is open, so Boop is asleep, when the person pokes it once. It wakes with a start: a surprised, curious, stunned or happy face, no finish.",
+  "why": "The poke's line says Boop slept (EventLine.poke, asleep); PERSONALITY's Example: surprised, tickled in a sound, once",
+  "steps": [
+    {"event": "pokes", "at": "0s", "count": 1, "expect": {"react": "surprised|curious|happy|stunned|excited", "animation": "none"}}
+  ]
+}
