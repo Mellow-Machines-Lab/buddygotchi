@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-16. The contract a character pack meets, so that any
+Updated 2026-10-21. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -310,7 +310,9 @@ What the brain reads, in plain Markdown:
   person chose at setup, saved in `long-term.md`. The chosen one goes
   into the prompt right after the personality's PERSONALITY section,
   whatever the personality: sweet is warm and gentle with failures,
-  cheeky playful and teasing, never mean to the person. A pack without
+  cheeky playful and teasing, never mean to the person. A file may end
+  with Examples, as a personality does, where the two natures answer
+  the same moment differently. A pack without
   the file adds nothing; `boopdev check` notes a pack with only one.
 
   So a **personality** is the pack's: a file in `personality/` (Boop's

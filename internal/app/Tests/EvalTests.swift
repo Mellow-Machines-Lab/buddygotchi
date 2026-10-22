@@ -148,7 +148,7 @@ final class EvalTests: XCTestCase {
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
         XCTAssertEqual(report.first, "FAIL  05-pokes-glad-miffed-grumpy.json  Pokes make Boop curious, then miffed, then fed up")
-        XCTAssertTrue(report[1].contains("wanted react curious|excited|happy, animation none, mood curious|happy; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
+        XCTAssertTrue(report[1].contains("wanted react amused|curious|excited|happy|mischievous, animation none, said some, mood curious|happy; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
         XCTAssertEqual(Eval.summary([[result]]), "0/1 passed")
     }
 
@@ -158,7 +158,9 @@ final class EvalTests: XCTestCase {
         for (json, why) in [(#"{"name":"n","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "needs name, case"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"max_fun":2},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks has only"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"reactions":"lots"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.reactions"),
-                            (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count")] {
+                            (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count"),
+                            (#"{"name":"n","case":"c","why":"w","nature":"grumpy","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "nature is sweet or cheeky"),
+                            (#"{"name":"n","case":"c","why":"w","checks":{"words_said":"half"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.words_said")] {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
             try Data(json.utf8).write(to: file)
             defer { try? FileManager.default.removeItem(at: file) }
@@ -168,6 +170,27 @@ final class EvalTests: XCTestCase {
             } catch {
                 XCTAssertTrue("\(error)".contains(why), "\(error)")
             }
+        }
+    }
+
+    /// EVALS.md §1: a run's prompt has the NATURE the person chose at
+    /// setup, as the app's always does: cheeky unless the scenario says
+    /// sweet.
+    func testAScenarioRunsWithItsNature() async throws {
+        for (nature, words) in [(nil, "At heart Boop is cheeky."), ("sweet", "At heart Boop is sweet.")] {
+            let states = Lines()
+            let brain = ScriptedBrain { state, _ in
+                states.add(state)
+                return [:]
+            }
+            let field = nature.map { #","nature":"\#($0)""# } ?? ""
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("nature-\(UUID().uuidString).json")
+            try Data(#"{"name":"n","case":"c","why":"w"\#(field),"steps":[{"event":"poke","at":"0s","expect":{"mood":"calm"}}]}"#.utf8).write(to: file)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let scenario = try Scenario(file: file)
+            XCTAssertEqual(scenario.nature.rawValue, nature ?? "cheeky")
+            _ = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
+            XCTAssertTrue(states.all.first?.contains(words) ?? false, states.all.first ?? "no state")
         }
     }
 
@@ -200,7 +223,7 @@ final class EvalTests: XCTestCase {
                 + #"{"event":"turn finished","at":"\#(i)m30s"}"#
         }.joined(separator: ",")
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("19-same-win-again.json")
-        try Data(#"{"name":"n","case":"c","why":"w","checks":{"max_same_in_a_row":2,"min_variety":2,"reactions":"2-","mood_changes":"-2"},"steps":[\#(steps)]}"#.utf8)
+        try Data(#"{"name":"n","case":"c","why":"w","checks":{"max_same_in_a_row":2,"min_variety":2,"reactions":"2-","mood_changes":"-2","words_said":"0.5-"},"steps":[\#(steps)]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         let scenario = try Scenario(file: file)
@@ -213,6 +236,8 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(failed["min_variety 2"]?.passed, false)
         XCTAssertEqual(failed["reactions 2 or more"]?.passed, true)
         XCTAssertEqual(failed["mood_changes 0-2"]?.passed, true)
+        XCTAssertEqual(failed["words_said 0.5-1.0"]?.passed, false, "it never says anything")
+        XCTAssertEqual(failed["words_said 0.5-1.0"]?.detail, "0 of 10 reactions said something")
         let report = Eval.report([result], story: scenario.story)
         XCTAssertEqual(report[1], "  case: " + scenario.story)
         let asGap = Eval.report([result], story: scenario.story, gap: "why")

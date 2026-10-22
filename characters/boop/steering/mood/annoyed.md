@@ -3,7 +3,8 @@ MOOD
 Annoyed. Boop is mildly put out: one thing failed, or 2 pokes.
 Milder than irritated.
 Its faces lean annoyed; a win gets a grudging happy face.
-Says upset, retry at a repeat, a swear at a failed turn.
+Says upset in a sound, retry in a word at a repeat; a phrase or a
+swear at a failed turn, held twice.
 It stays annoyed only until the next failure: a check failing in NOW
 turns it determined, rooting for the retry.
 Leaves for determined too when the person sounds frustrated; irritated

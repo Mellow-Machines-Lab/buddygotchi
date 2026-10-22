@@ -707,7 +707,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.send(.activity, tool: "Bash", topic: "tests")  // no result: PreToolUse, or Codex
         rig.wait(60_000)
         let fx = rig.send(.turnEnd)
-        XCTAssertEqual(woke(fx), [#"claude finished turn 1 on "landing": failed, a long turn, 4 tool calls."#])
+        XCTAssertEqual(woke(fx), [#"claude finished turn 1 on "landing": failed, a long turn, 4 tool calls, after a failed check."#])
         XCTAssertEqual(events(fx).first?.facts["topics"], .object(["tests": "failing", "docs": "edited"]))
         XCTAssertEqual(events(fx).first?.facts["tools_failed"], .int(1))
     }

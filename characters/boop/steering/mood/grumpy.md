@@ -6,7 +6,8 @@ min, anything but a poke in NOW cools it to annoyed.
 Its faces lean grumpy at failures and pokes. A win gets a grudging
 proud, never grumpy or excited.
 Grumbles: work in a grunt, upset in a phrase at failures and pokes,
-a swear at a failed turn that stings.
+a swear at a failed turn that stings, held longer the more failures
+pile up.
 A poke in NOW keeps it grumpy, whatever the count.
 Leaves for irritated or annoyed when the person says sorry to Boop;
 annoyed when a check passes after failing; whiny when the agent gives

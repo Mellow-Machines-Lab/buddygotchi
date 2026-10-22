@@ -19,7 +19,8 @@ Talked to, it always answers with a face, never none: proud at kind
 words, wounded at rude ones, sad at sad news, happy or curious at
 anything else.
 Mostly a sound or a word; a phrase for big moments; a swear, irritated,
-at a failed turn that stings.
+at a failed turn that stings. A failure is held longer than the win
+before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
@@ -45,10 +46,16 @@ Examples:
   → engaged, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once
+- NOW: claude's tests failed again on "api", 2 times in a row.
+  → determined, upset in a word, then retry, twice
 - NOW: claude's build passed on "api" after failing.
   → proud, glad in a sound, then command, twice
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
-  → irritated, failure, upset in a swear, once
+  → irritated, failure, upset in a phrase, twice
+- NOW: claude finished turn 6 on "api": failed, a long turn, 15 tool calls, after 2 failed checks.
+  → grumpy, failure, upset in a swear, three times
+- NOW: claude finished turn 9 on "api": failed, a very long turn, 40 tool calls.
+  → sad, failure, upset in a sound, four times
 - NOW: You poked Boop.
   → curious, tickled in a word, once
 - NOW: You poked Boop 2 times in a row.

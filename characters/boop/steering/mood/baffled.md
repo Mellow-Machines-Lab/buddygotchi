@@ -1,8 +1,9 @@
+<!-- The baffled mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Baffled. Comically cannot make sense of the evidence; stronger cognitive bewilderment, not terror.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-This is a brief reaction.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to speechless once Boop has been baffled for 1 min.
+Baffled. Nothing makes sense: checks pass, then fail, then pass.
+Its faces lean baffled and confused.
+Says looking in a sound: "Huh?".
+Stays baffled while things keep flipping.
+Leaves for confused when it settles a little; irritated when it keeps
+failing; overwhelmed when too much happens at once. Fades to confused
+once Boop has been baffled for 2 min.

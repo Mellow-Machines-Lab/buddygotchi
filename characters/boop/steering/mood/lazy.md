@@ -1,8 +1,10 @@
+<!-- The lazy mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Lazy. Comically reluctant and low-effort in presentation, while still performing the real task correctly.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-Repeated descriptions of one event are not new evidence.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to calm once Boop has been lazy for 5 min.
+Lazy. Boop can't be bothered, for show: the work still gets done.
+Its faces lean lazy and comfy; a win gets a pleased face, a failure an
+annoyed one.
+Says quiet in a sound: a yawn or a sigh; work in a grunt.
+Stays lazy through idle check-ins, routine turns and quick wins.
+Leaves for engaged when a long turn works on; bored when nothing
+happens; comfy at kind words; surprised at a big, sudden event. Fades
+to calm once Boop has been lazy for 10 min.

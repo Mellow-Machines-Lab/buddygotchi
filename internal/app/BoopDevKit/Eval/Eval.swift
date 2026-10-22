@@ -106,6 +106,9 @@ public struct Scenario: Sendable {
         /// `min_variety`: the fewest different reactions (face, animation
         /// and what it said) the run must play.
         public var variety: Int?
+        /// `words_said`: the share of the reactions played that said
+        /// something, as a range (`0.5-`).
+        public var wordsSaid: ClosedRange<Double>?
         /// `moves_on_graph`: every pass's mood answer was one of the
         /// options it offered, and every mood change was a move on the
         /// mood graph.
@@ -113,7 +116,7 @@ public struct Scenario: Sendable {
 
         public init() {}
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
-                           "reactions", "min_variety", "moves_on_graph"]
+                           "reactions", "min_variety", "words_said", "moves_on_graph"]
     }
 
     public var name: String
@@ -134,11 +137,18 @@ public struct Scenario: Sendable {
     /// says when it passes after all.
     public var gap: String?
     public var personality: Personality
+    /// The nature the person chose at setup, whose NATURE section follows
+    /// PERSONALITY as in the app: cheeky unless the file says sweet.
+    public var nature: LongTerm.Nature
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
     public var steps: [Step]
     public var file: String
+
+    /// The nature a scenario runs with unless it says: the app always has
+    /// one from setup, and the owner's is cheeky.
+    public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
                                 "away", "back", "wait"]
@@ -160,7 +170,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "mood", "checks", "steps"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -198,6 +208,10 @@ public struct Scenario: Sendable {
             checks.bounceMs = try time("no_mood_bounce_within")
             checks.reactions = try range("reactions")
             checks.variety = try count("min_variety")
+            if let v = c["words_said"] {
+                guard let t = v as? String, let r = Scenario.share(t) else { throw bad("checks.words_said is like 0.5- or 0.2-0.8") }
+                checks.wordsSaid = r
+            }
             if let v = c["moves_on_graph"] {
                 guard let on = v as? Bool, on else { throw bad("checks.moves_on_graph is true") }
                 checks.onGraph = true
@@ -208,6 +222,10 @@ public struct Scenario: Sendable {
             guard let p = Personality(rawValue: $0) else { throw bad("unknown personality \($0)") }
             return p
         } ?? .default
+        nature = try (o["nature"] as? String).map {
+            guard let n = LongTerm.Nature(rawValue: $0) else { throw bad("nature is sweet or cheeky") }
+            return n
+        } ?? Scenario.defaultNature
         let graphMoods = MoodGraph.moods
         mood = try (o["mood"] as? String).map {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
@@ -279,6 +297,16 @@ public struct Scenario: Sendable {
         guard parts.count == 2, !(parts[0].isEmpty && parts[1].isEmpty) else { return nil }
         guard let low = parts[0].isEmpty ? 0 : Int(parts[0]), let high = parts[1].isEmpty ? Int.max : Int(parts[1]),
               low <= high else { return nil }
+        return low...high
+    }
+
+    /// A share's range: `0.5-` (half or more), `-0.3` (at most 0.3) or
+    /// `0.2-0.8`, each between 0 and 1.
+    static func share(_ text: String) -> ClosedRange<Double>? {
+        let parts = text.split(separator: "-", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2, !(parts[0].isEmpty && parts[1].isEmpty),
+              let low = parts[0].isEmpty ? 0 : Double(parts[0]), let high = parts[1].isEmpty ? 1 : Double(parts[1]),
+              0 <= low, low <= high, high <= 1 else { return nil }
         return low...high
     }
 
@@ -471,7 +499,7 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            })
+            }, nature: scenario.nature)
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
@@ -616,6 +644,12 @@ public struct Eval {
             let kinds = Set(played.compactMap(\.reaction))
             out.append(RunCheck(name: "min_variety \(least)", passed: kinds.count >= least,
                                 detail: "\(kinds.count): " + kinds.map(\.text).sorted().joined(separator: ", ")))
+        }
+        if let range = c.wordsSaid {
+            let said = played.filter { $0.reaction?.said != "none" }.count
+            let share = played.isEmpty ? 0 : Double(said) / Double(played.count)
+            out.append(RunCheck(name: "words_said \(range.lowerBound)-\(range.upperBound)", passed: range.contains(share),
+                                detail: "\(said) of \(played.count) reactions said something"))
         }
         if c.onGraph {
             // Each pass's answer against what it offered, and each change

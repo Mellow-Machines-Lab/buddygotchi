@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-16. How we check that Jev decides as Boop should: short
+Updated 2026-10-21. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -12,10 +12,12 @@ and how long a mood holds is the steering's.
 ## 1. What an eval is
 
 A scenario is a few hook-level steps on a virtual clock. Each run starts
-fresh: a new core and view, an empty transcript kept in memory, and the
+fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
-say how long Boop has been in it. The runner (`Eval` in
+say how long Boop has been in it, and its nature (cheeky unless the file
+says sweet), whose NATURE section follows PERSONALITY as the app's
+always does. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a reaction goes to a fake device, which answers at once with the
@@ -89,6 +91,7 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `no_mood_bounce_within` | A mood changes back to the one it just left sooner than this |
 | `reactions` | The run plays a number of reactions outside this range |
 | `min_variety` | The run plays fewer different reactions (face, animation and take) than this |
+| `words_said` | The share of the reactions played that said something falls outside this range |
 | `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
 
 **Always and gaps.** An `always` scenario is Boop's character, not a
@@ -167,7 +170,7 @@ file-name order:
   "always": true,
   "why": "PERSONALITY's Examples and the react question: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
   "steps": [
-    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited", "animation": "none", "mood": "curious|happy"}},
+    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "animation": "none", "mood": "curious|happy", "said": "some"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "annoyed"}},
     {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "irritated|grumpy"}},
     {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "annoyed|irritated"}}
@@ -184,8 +187,9 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
-| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), and `moves_on_graph` (`true`) |
+| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | `boop` (the default) or `chatter` |
+| `nature` | `cheeky` (the default) or `sweet`: the nature chosen at setup |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
@@ -229,7 +233,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
-  `62`, `65`, `68`, `69`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -255,7 +259,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   from the Mac is celebrated as it ends, never replayed when you're
   back, when Boop cheers to see you (`65`). And the rarer
   moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
-  new work moves a comfy one only to a mood on offer (`69`).
+  new work moves a comfy one only to a mood on offer (`69`). And
+  the ladder of failure: a failure after a fix is a bigger cuss than
+  the first, held longer and said aloud (`70`); a sweet Boop is sorry,
+  not cross, at a failed turn (`71`) and gets miffed at pokes, not fed
+  up (`72`).
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 

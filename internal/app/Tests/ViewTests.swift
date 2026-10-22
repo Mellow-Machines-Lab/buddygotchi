@@ -28,7 +28,8 @@ final class ViewTests: XCTestCase {
 
     /// The tests-fail-then-pass turn, line by line, with the
     /// thread named after its workspace and its project. A repeat failure
-    /// reads as the first did; streaks are left to the facts.
+    /// says it's again, and how many in a row: the brain can't count them
+    /// back in HISTORY.
     func testATurnOfFailuresAndAComeback() throws {
         let start = hook(.turnStart, prompt: "fix the nav\nplease")
         XCTAssertEqual(start.map(\.line), [#"claude started turn 1 on "fix-nav" (landing)."#])
@@ -38,10 +39,10 @@ final class ViewTests: XCTestCase {
 
         XCTAssertEqual(tests(failed: true, id: "t1").map(\.line), [#"claude's tests failed on "fix-nav" (landing)."#])
         XCTAssertEqual(tests(failed: true, id: "t2").map(\.line),
-                       [#"claude's tests failed on "fix-nav" (landing)."#])
+                       [#"claude's tests failed again on "fix-nav" (landing), 2 times in a row."#])
         let third = try XCTUnwrap(tests(failed: true, id: "t3").first)
         XCTAssertEqual(third.name, "tool end")
-        XCTAssertEqual(third.line, #"claude's tests failed on "fix-nav" (landing)."#)
+        XCTAssertEqual(third.line, #"claude's tests failed again on "fix-nav" (landing), 3 times in a row."#)
         XCTAssertEqual(third.facts["failed_before"], .int(2))
         XCTAssertEqual(third.facts["took"], "short", "40 s is short")
         XCTAssertEqual(third.facts["took_ms"], .int(40_000))
@@ -61,6 +62,30 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(end.facts["tools_failed"], .int(3))
         XCTAssertEqual(end.facts["outcome"], "done")
         XCTAssertEqual(end.facts["message"], "All green now.")
+    }
+
+    /// A failed turn says how many checks failed on the way, so a failure
+    /// after others reads as bigger than the first; a done one doesn't, and
+    /// the next turn starts counting again.
+    func testAFailedFinishCountsItsFailedChecks() throws {
+        hook(.turnStart)
+        tests(failed: true, id: "t1")
+        tests(failed: true, id: "t2")
+        let failed = try XCTUnwrap(hook(.turnFailed, error: "api_error").first)
+        XCTAssertEqual(failed.line, #"claude finished turn 1 on "fix-nav" (landing): failed, a long turn, 2 tool calls, after 2 failed checks."#)
+        XCTAssertEqual(failed.facts["checks_failed"], .int(2))
+
+        hook(.turnStart)
+        tests(failed: true, id: "t3")
+        XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
+                       [#"claude finished turn 2 on "fix-nav" (landing): failed, a short turn, 1 tool call, after a failed check."#])
+
+        hook(.turnStart)
+        XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
+                       [#"claude finished turn 3 on "fix-nav" (landing): failed, a short turn, no tool calls."#],
+                       "a turn counts only its own failed checks")
+        XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 0),
+                       #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#)
     }
 
     /// A long prompt or message is cut, on one line.

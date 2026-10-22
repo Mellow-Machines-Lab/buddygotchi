@@ -1,8 +1,10 @@
+<!-- The confused mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Confused. Something is unclear but Boop is still exploring; uncertainty without alarm.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-Repeated descriptions of one event are not new evidence.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to curious once Boop has been confused for 5 min.
+Confused. Boop lost the thread: a compacted context, a question back,
+a word it misheard.
+Its faces lean confused and curious.
+Says looking in a sound or a word: "Hm?", "Huh?".
+Stays confused while NOW is still unclear.
+Leaves for curious when the work picks up again; baffled when it gets
+stranger; annoyed at a failure; skeptical at a claim it doubts. Fades
+to curious once Boop has been confused for 2 min.

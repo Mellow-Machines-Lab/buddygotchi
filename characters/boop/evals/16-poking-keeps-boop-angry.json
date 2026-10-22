@@ -4,7 +4,7 @@
   "always": true,
   "why": "PERSONALITY's Examples: pokes in a row get an annoyed, then irritated or grumpy face; characters/boop/steering/mood/: pokes in a row climb the mood graph to irritated and grumpy, more keep it there, and grumpy and irritated fade a step toward calm after their minutes, a single poke then being a fresh start. Every poke wakes the brain; each step checks its round's last, four in a row",
   "steps": [
-    {"event": "pokes", "at": "0s", "expect": {"react": "grumpy|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "grumpy|irritated"}},
+    {"event": "pokes", "at": "0s", "expect": {"react": "grumpy|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "grumpy|irritated", "said": "some"}},
     {"event": "pokes", "at": "1m10s", "expect": {"react": "grumpy|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "grumpy|irritated"}},
     {"event": "pokes", "at": "2m20s", "expect": {"react": "grumpy|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "grumpy|irritated"}},
     {"event": "turn started", "at": "6m"},

@@ -82,6 +82,8 @@ public final class TranscriptView {
         var check: (topic: String, failed: Bool)?
         /// Failures in a row of each check topic, across turns.
         var failRuns: [String: Int] = [:]
+        /// This turn's failed checks, which a failed finish counts.
+        var checksFailed = 0
     }
 
     /// A thread as the lines name it: its session's agent, project and
@@ -385,6 +387,7 @@ public final class TranscriptView {
         c.topicStates = []
         c.comeback = nil
         c.check = nil
+        c.checksFailed = 0
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
@@ -402,6 +405,7 @@ public final class TranscriptView {
                 failedBefore = c.failRuns[topic] ?? 0
                 if failed {
                     c.failRuns[topic] = failedBefore + 1
+                    c.checksFailed += 1
                     notable = true
                 } else {
                     c.failRuns[topic] = 0
@@ -419,7 +423,8 @@ public final class TranscriptView {
         let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
         let text = notable
-            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!)
+            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
+                              inARow: failed! ? failedBefore + 1 : 1)
             : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
             "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
@@ -446,11 +451,12 @@ public final class TranscriptView {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
-                                     lengthMs: lengthMs, tools: c.tools)
+                                     lengthMs: lengthMs, tools: c.tools, failedChecks: outcome == "failed" ? c.checksFailed : 0)
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
+                            "checks_failed": .int(Int64(c.checksFailed)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
 
@@ -716,11 +722,14 @@ public enum EventLine {
 
     /// `claude finished turn 7 on "fix-nav" (landing): done, a very long
     /// turn, 12 tool calls.`: the outcome, the length band and how many
-    /// tool calls it made.
+    /// tool calls it made; a failed one, how many checks failed on the way
+    /// (`, after 2 failed checks`), so a failure that follows others reads
+    /// as more than the first: the brain can't count them back in HISTORY.
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int) -> String {
+                               tools: Int, failedChecks: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
-        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))."
+        let after = failedChecks == 1 ? ", after a failed check" : failedChecks > 1 ? ", after \(failedChecks) failed checks" : ""
+        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)."
     }
 
     static func toolCalls(_ n: Int) -> String {
@@ -746,9 +755,11 @@ public enum EventLine {
     }
 
     /// A tool use that woke the brain: a check that failed, or passed after
-    /// failing.
-    public static func check(agent: String, topic: String, thread: String, failed: Bool) -> String {
-        "\(agent)'s \(topic) \(failed ? "failed" : "passed") on \(thread)\(failed ? "" : " after failing")."
+    /// failing. A check failing again says how many times in a row:
+    /// `claude's tests failed again on "api", 3 times in a row.`
+    public static func check(agent: String, topic: String, thread: String, failed: Bool, inARow: Int = 1) -> String {
+        guard failed else { return "\(agent)'s \(topic) passed on \(thread) after failing." }
+        return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
     }
 
     /// Any other tool use, with the personality's `tool_uses: all`.

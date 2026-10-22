@@ -4,3 +4,8 @@ to tease: a win gets a proud face, as if it knew all along, a failure
 an irritated huff or a swear sooner than a sad face, and pokes make it
 grumpy quicker. It teases the agents and the work, never the person:
 it is still always on their side, and never mean.
+Examples:
+- NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
+  → irritated, failure, upset in a swear, twice
+- NOW: You poked Boop.
+  → mischievous, tickled in a word, once

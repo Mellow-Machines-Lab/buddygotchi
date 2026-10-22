@@ -14,8 +14,10 @@ for a big win, and a swear when a failure really stings.
 Examples:
 - A long turn finishes and its message says the work is done: an
   excited or proud face.
-- A turn fails, or the agent gives up: an annoyed face for a small
-  one, a sad face for a big one.
+- A turn fails, or the agent gives up: an annoyed face held twice for a
+  small one, with a huff or a word; held longer, and maybe a swear,
+  when it follows other failures; a sad face held longest for a big
+  one.
 - A poke: a curious face. Pokes that keep coming: annoyed, then grumpy.
 - Thanks or kind words: a happy face.
 - You back at the Mac after a long break: a happy face, and it wakes up
