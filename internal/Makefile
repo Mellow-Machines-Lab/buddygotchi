@@ -90,7 +90,7 @@ sim-test:
 	cd $(ROOT) && python3 -m unittest discover -s simulator/tests
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && simulator/web/build.sh pixel
-	cd $(ROOT) && node --test simulator/tests/
+	cd $(ROOT) && node --test simulator/tests/*.test.mjs
 
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:

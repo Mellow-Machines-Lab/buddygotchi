@@ -1,7 +1,7 @@
 // The simulator's core as the browser runs it (simulator/README.md): the
 // WebAssembly build, driven as the page drives it, the page's demo player,
 // and its USB cable (web/serve.py). Needs simulator/web/build.sh to have run.
-//   node --test simulator/tests/
+//   node --test simulator/tests/*.test.mjs
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
