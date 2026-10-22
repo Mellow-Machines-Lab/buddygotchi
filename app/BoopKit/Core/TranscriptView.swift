@@ -73,6 +73,9 @@ public final class TranscriptView {
         /// This turn's tool calls, and how many failed.
         var tools = 0
         var toolsFailed = 0
+        /// The lines this turn's edits added and removed: counts, never
+        /// the text.
+        var linesAdded = 0, linesRemoved = 0
         /// This turn's topics, in the order first seen, with their last state.
         var topicStates: [(topic: String, state: String)] = []
         /// A topic that passed after failing this turn.
@@ -453,6 +456,8 @@ public final class TranscriptView {
     func resetCounts(_ c: inout Counts) {
         c.tools = 0
         c.toolsFailed = 0
+        c.linesAdded = 0
+        c.linesRemoved = 0
         c.topicStates = []
         c.comeback = nil
         c.check = nil
@@ -467,6 +472,7 @@ public final class TranscriptView {
         let tookMs = started.map { max(0, a.at - $0) }
         c.tools += 1
         if failed == true { c.toolsFailed += 1 }
+        if failed != true { c.linesAdded += a.linesAdded ?? 0; c.linesRemoved += a.linesRemoved ?? 0 }
 
         var failedBefore = 0
         var notable = false
@@ -522,11 +528,13 @@ public final class TranscriptView {
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
                                      lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
-                                     ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak))
+                                     ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak),
+                                     linesGone: c.linesRemoved - c.linesAdded)
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
+                            "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
                             "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
@@ -845,14 +853,21 @@ public enum EventLine {
     /// tool calls it made; a failed one, how many checks failed on the way
     /// (`, after 2 failed checks`), so a failure that follows others reads
     /// as more than the first: the brain can't count them back in HISTORY.
+    /// A turn whose edits removed `bigDeletion` lines or more, net, says
+    /// how many are gone (`, 1,200 lines gone`).
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0) -> String {
+                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
         let after = how != "failed" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
             : ", after \(failedChecks) failed checks"
         let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
-        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)\(run)."
+        let gone = linesGone < bigDeletion ? "" : ", \(linesGone.formatted(.number.locale(Locale(identifier: "en_US")))) lines gone"
+        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(gone)\(after)\(run)."
     }
+
+    /// The lines a turn must remove, net of those it added, for its finish
+    /// to say how many are gone.
+    public static let bigDeletion = 500
 
     /// Quick wins in a row come in streaks of this many, and a turn's
     /// check-ins in rounds of this many: the lines say which rung, and a
