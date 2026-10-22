@@ -1,7 +1,7 @@
 {
   "name": "A sweet Boop is sorry, not cross, at a failed turn",
   "case": "The same failed turn as 03, with the person having chosen a sweet Boop at setup. Boop is let down rather than cross: an annoyed, disappointed or sad face played as a failure, held once or twice, with a sound, a word or a phrase, never a swear.",
-  "why": "characters/boop/steering/nature/sweet.md: gentle with failures, a sad or determined face before an annoyed one, and its Example: a failed turn is disappointed, a word, once",
+  "why": "characters/boop/steering/nature/sweet.md: a step softer than PERSONALITY's Examples, irritated becoming disappointed, sad or annoyed, and its Example: a failed turn is disappointed, a word, once",
   "nature": "sweet",
   "steps": [
     {"event": "turn started", "at": "0s"},
