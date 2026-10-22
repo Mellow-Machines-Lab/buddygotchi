@@ -185,8 +185,10 @@ public final class TranscriptView {
 
     /// A finish done in under this is a quick win, and quick wins within
     /// `winRunGapMs` of each other are a run the line counts, as it counts
-    /// pokes: the brain answers each rung differently, where it would
-    /// answer the same line the same way every time.
+    /// pokes, in streaks of `EventLine.streak`: the brain answers each rung
+    /// differently, where it would answer the same line the same way every
+    /// time, and a long run goes round the ladder again rather than staying
+    /// on its top rung.
     public static let quickWinMs: Int64 = 5 * 60_000
     public static let winRunGapMs: Int64 = 10 * 60_000
 
@@ -504,7 +506,7 @@ public final class TranscriptView {
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
                                      lengthMs: lengthMs, tools: c.tools, failedChecks: outcome == "failed" ? c.checksFailed : 0,
-                                     winsInARow: c.winRun)
+                                     ofStreak: EventLine.rung(c.winRun, of: EventLine.streak))
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
@@ -733,7 +735,7 @@ public final class TranscriptView {
             c.checkIns += 1
             fold.counts[s.key] = c
             return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms, topic: c.topic),
-                        notes: EventLine.checkIn(c.checkIns, name: name(e)).map { [$0] } ?? [],
+                        notes: EventLine.checkIn(EventLine.rung(c.checkIns, of: EventLine.round), name: name(e)).map { [$0] } ?? [],
                         facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
                                 "check_in": .int(Int64(c.checkIns))])
         }
@@ -837,23 +839,28 @@ public enum EventLine {
     /// (`, after 2 failed checks`), so a failure that follows others reads
     /// as more than the first: the brain can't count them back in HISTORY.
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int, failedChecks: Int = 0, winsInARow: Int = 0) -> String {
+                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
         let after = failedChecks == 1 ? ", after a failed check" : failedChecks > 1 ? ", after \(failedChecks) failed checks" : ""
-        let run = winsInARow < 2 ? "" : winsInARow < maxWins ? ", \(winsInARow) quick wins in a row" : ", \(maxWins) or more quick wins in a row"
+        let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
         return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(after)\(run)."
     }
 
-    /// The most quick wins in a row the line counts, and the most
-    /// check-ins on a turn: past them, each rung is the top one.
-    public static let maxWins = 5, maxCheckIns = 4
+    /// Quick wins in a row come in streaks of this many, and a turn's
+    /// check-ins in rounds of this many: the lines say which rung, and a
+    /// long run starts the ladder again.
+    public static let streak = 5, round = 4
 
-    /// The working heartbeat's note from the second on: `Boop's 2nd
-    /// check-in on this turn.`; nil for the first.
-    public static func checkIn(_ n: Int, name: String = CharacterPack.active.name) -> String? {
-        guard n > 1 else { return nil }
-        let nth = ["", "", "2nd", "3rd"]
-        return n < maxCheckIns ? "\(name)'s \(nth[n]) check-in on this turn." : "\(name)'s \(maxCheckIns)th check-in on this turn, or later."
+    /// Which rung of a ladder of `size` the `n`th in a row is, from 1: the
+    /// 6th quick win is the 1st of a new streak.
+    public static func rung(_ n: Int, of size: Int) -> Int { n < 1 ? 0 : (n - 1) % size + 1 }
+
+    static func nth(_ n: Int) -> String { ["0th", "1st", "2nd", "3rd"].indices.contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
+
+    /// A working heartbeat's note for its rung of a round, from the second:
+    /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
+    public static func checkIn(_ rung: Int, name: String = CharacterPack.active.name) -> String? {
+        rung > 1 ? "\(name)'s \(nth(rung)) check-in of a round on this turn." : nil
     }
 
     static func toolCalls(_ n: Int) -> String {
@@ -1001,9 +1008,10 @@ public enum EventLine {
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
           long (5 minutes or more). Quick wins in a row are turns done in under
-          5 minutes, one after another on a thread.
-        - A check-in is \(name) looking in on a turn that's still going; the
-          note under it says which on this turn.
+          5 minutes, one after another on a thread, in streaks of up to 5: the
+          line says which of its streak it is, and the 6th starts a new one.
+        - A check-in is \(name) looking in on a turn that's still going, in
+          rounds of 4; the note under it says which of its round it is.
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - An idle check-in ("Nothing has happened for 20 min") means the person is

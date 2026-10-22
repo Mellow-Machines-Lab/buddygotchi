@@ -13,9 +13,9 @@ How to choose:
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
   Example.
-- Quick wins in a row and check-ins on a turn are a ladder: each rung
-  gets its own face, as the Examples show, never the same three times
-  running.
+- A streak of quick wins and a round of check-ins are ladders: each
+  rung gets its own face, as the Examples show, never the same three
+  times running.
 - The mood is the backdrop and moves a step at a time: to a mood on
   offer when NOW is MOOD's reason to leave, but never for a routine
   turn alone, and not while HISTORY ends "for under a minute" unless a

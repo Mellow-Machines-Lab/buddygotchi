@@ -565,7 +565,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.wait(30_000)
         rig.send(.activity, tool: "Edit", failed: false, id: "e")
         let second = events(rig.send(.turnEnd))
-        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call, 2 quick wins in a row."#],
+        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call, the 2nd quick win of a streak."#],
                        "a second finish on the thread within 10 minutes")
         XCTAssertEqual(second.first?.facts["tools"], .int(1), "its own call only")
         XCTAssertEqual(second.first?.facts["topics"], .object([:]), "none of the last turn's topics")

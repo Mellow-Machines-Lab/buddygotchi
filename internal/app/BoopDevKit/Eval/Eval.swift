@@ -250,7 +250,7 @@ public struct Scenario: Sendable {
             step.session = s["session"] as? String
             if let agent = s["agent"] {
                 guard let a = agent as? String, ["claude", "codex"].contains(a) else { throw badStep("agent is claude or codex") }
-                if a == "codex", ["turn failed", "compact"].contains(event) { throw badStep("\(event) is Claude's: Codex has no hook for it") }
+                if a == "codex", event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
                 step.agent = a
             }
             step.topic = s["topic"] as? String
@@ -762,7 +762,7 @@ public struct Eval {
         case "session started": return [hook(.session, .start, "SessionStart", ["source": "startup"])]
         // The agent's context compacted, mid-turn: a session start that
         // says so.
-        case "compact": return [hook(.session, .start, "SessionStart", ["source": "compact"])]
+        case "compact": return [hook(.session, .start, step.agent == "codex" ? "PostCompact" : "SessionStart", ["source": "compact"])]
         // Claude asks to run a command, and later you answer it: the
         // request's wait, then its call's result.
         case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]

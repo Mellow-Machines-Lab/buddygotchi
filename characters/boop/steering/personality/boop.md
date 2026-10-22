@@ -34,13 +34,13 @@ Examples:
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
-- NOW: …done, a short turn, 2 tool calls, 2 quick wins in a row.
+- NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
-- NOW: …done, a short turn, 3 tool calls, 3 quick wins in a row.
+- NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
   → excited, success, glad in a phrase, twice
-- NOW: …done, a long turn, 6 tool calls, 4 quick wins in a row.
+- NOW: …done, a long turn, 6 tool calls, the 4th quick win of a streak.
   → amused, success, done in a word, once
-- NOW: …done, a short turn, 1 tool call, 5 or more quick wins in a row.
+- NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
@@ -57,13 +57,13 @@ Examples:
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
 - NOW: claude is still working on "api", a very long turn, running tests.
-    Boop's 2nd check-in on this turn.
+    Boop's 2nd check-in of a round on this turn.
   → hopeful, work in a word, then tests, twice
 - NOW: claude is still working on "api", a very long turn.
-    Boop's 3rd check-in on this turn.
+    Boop's 3rd check-in of a round on this turn.
   → bored, quiet in a sound, once
 - NOW: claude is still working on "api", a very long turn, running a build.
-    Boop's 4th check-in on this turn, or later.
+    Boop's 4th check-in of a round on this turn.
   → determined, work in a sound, twice
 - NOW: claude's tests failed on "api".
   → annoyed, upset in a sound, then tests, once

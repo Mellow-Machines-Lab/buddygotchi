@@ -204,7 +204,7 @@ file-name order:
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
-| `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn and a compaction are Claude's alone) |
+| `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].what`, `misheard` | What a `heard` step heard, and whether Boop misheard it |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
@@ -252,9 +252,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   the brain (`18`, `21`, `22`), and its mood drifts (calm → engaged →
   determined → excited), never flipping back within a minute; in a long
   grind it may ease back and return (`18`, `51`). Runs are ladders, not
-  repeats: quick wins in a row climb from happy to excited to amused to
-  comfy (`19`), check-ins on a long turn from engaged to hopeful to bored
-  to determined (`85`), and a busy half hour never plays the same
+  repeats: a streak of quick wins climbs from happy to excited to amused
+  to comfy and round again (`19`), a round of check-ins on a long turn
+  from engaged to hopeful to bored to determined (`85`), and a busy half hour never plays the same
   reaction three times running (`21`, `22`). The
   moods the words bring (`24`–`27`): a frustrated request annoyed, a
   step toward determined, thanks excited, a long turn's hard work done

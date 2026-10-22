@@ -17,7 +17,7 @@ Examples:
   → excited, glad in a word, then start, twice
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → excited, success, glad in a phrase, twice
-- NOW: …done, a short turn, 2 tool calls, 3 quick wins in a row.
+- NOW: …done, a short turn, 2 tool calls, the 3rd quick win of a streak.
   → amused, success, glad in a phrase, three times
 - NOW: claude edited a file on "api".
   → engaged, work in a word, twice
@@ -44,7 +44,7 @@ Examples:
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a sound, twice
 - NOW: claude is still working on "api", a very long turn, running tests.
-    Boop's 3rd check-in on this turn.
+    Boop's 3rd check-in of a round on this turn.
   → bored, quiet in a phrase, twice
 - NOW: Nothing has happened for 1 hour.
   → calm, quiet in a word, twice

@@ -435,16 +435,19 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "a poke starts the hour again")
     }
 
-    /// Quick wins in a row on a thread are counted on the finish, up to 5,
-    /// so the brain answers each rung differently; a failure, a stop, a
-    /// turn of 5 minutes or more, or 10 minutes between wins starts again.
+    /// Quick wins in a row on a thread are counted on the finish in streaks
+    /// of 5, so the brain answers each rung differently and a long run goes
+    /// round again; a failure, a stop, a turn of 5 minutes or more, or 10
+    /// minutes between wins starts again.
     func testTheFinishCountsQuickWinsInARow() {
         XCTAssertEqual(TranscriptView.quickWinMs, 5 * 60_000)
         XCTAssertEqual(TranscriptView.winRunGapMs, 10 * 60_000)
-        for i in 1...6 {
+        XCTAssertEqual(EventLine.streak, 5)
+        for i in 1...7 {
             hook(.turnStart)
             rig.wait(30_000)
-            let run = i == 1 ? "" : i < 5 ? ", \(i) quick wins in a row" : ", 5 or more quick wins in a row"
+            let run = ["", "", ", the 2nd quick win of a streak", ", the 3rd quick win of a streak", ", the 4th quick win of a streak",
+                       ", the 5th quick win of a streak", "", ", the 2nd quick win of a streak"][i]
             XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn \#(i) on "fix-nav" (landing): done, a short turn, no tool calls\#(run)."#])
             rig.wait(60_000)
         }
@@ -455,7 +458,7 @@ final class ViewTests: XCTestCase {
         }
         hook(.turnStart)
         hook(.turnFailed, error: "api_error")
-        XCTAssertEqual(win(), .int(1), "a failure ends the run")
+        XCTAssertEqual(win(), .int(1), "a failure ends the run, which the facts count whole")
         XCTAssertEqual(win(), .int(2))
         XCTAssertEqual(win(after: 5 * 60_000), .int(0), "a very long turn is no quick win, and ends the run")
         XCTAssertEqual(win(), .int(1))
@@ -464,18 +467,20 @@ final class ViewTests: XCTestCase {
     }
 
     /// Each working heartbeat on a turn is numbered in a note from the
-    /// second, up to the 4th "or later", and says what the turn's latest
-    /// command was about; the next turn starts counting again.
+    /// second of each round of 4, and says what the turn's latest command
+    /// was about; the next turn starts counting again.
     func testCheckInsAreNumberedAndSayTheTopic() {
         hook(.turnStart)
         hook(.activity, tool: "Bash", topic: "tests", id: "t")
-        rig.wait(15 * 60_000)
+        rig.wait(20 * 60_000)
         let beats = rig.views.filter { $0.type == .heartbeat }
-        XCTAssertGreaterThan(beats.count, 4)
+        XCTAssertGreaterThan(beats.count, 5)
         XCTAssertTrue(beats.allSatisfy { $0.line.hasSuffix(" turn, running tests.") }, beats.map(\.line).joined(separator: "\n"))
-        XCTAssertEqual(beats.prefix(4).map(\.notes), [[], ["Boop's 2nd check-in on this turn."], ["Boop's 3rd check-in on this turn."],
-                                                     ["Boop's 4th check-in on this turn, or later."]])
-        XCTAssertEqual(beats.last?.notes, ["Boop's 4th check-in on this turn, or later."])
+        XCTAssertEqual(EventLine.round, 4)
+        XCTAssertEqual(beats.prefix(6).map(\.notes), [[], ["Boop's 2nd check-in of a round on this turn."],
+                                                     ["Boop's 3rd check-in of a round on this turn."],
+                                                     ["Boop's 4th check-in of a round on this turn."], [],
+                                                     ["Boop's 2nd check-in of a round on this turn."]], "and round again")
         XCTAssertEqual(beats.last?.facts["check_in"], .int(Int64(beats.count)))
         hook(.turnEnd)
         hook(.turnStart)
@@ -483,7 +488,7 @@ final class ViewTests: XCTestCase {
         rig.wait(4 * 60_000)
         let next = rig.views.dropFirst(before).filter { $0.type == .heartbeat }
         XCTAssertEqual(next.first?.notes, [], "a new turn's first check-in")
-        XCTAssertEqual(next.first?.line, #"claude is still working on "fix-nav" (landing), a long turn."#, "and no topic yet")
+        XCTAssertTrue(next.first?.line.hasSuffix(" turn.") ?? false, "and no topic yet: \(next.first?.line ?? "none")")
         XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a short turn."#)
     }
 

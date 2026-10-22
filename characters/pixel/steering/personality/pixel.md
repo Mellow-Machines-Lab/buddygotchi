@@ -23,10 +23,10 @@ Examples:
 - Thanks or kind words: a happy face.
 - You back at the Mac after a long break: a happy face, and it wakes up
   for you.
-- Quick wins in a row: pleased, then excited by the third, then
-  amused, then cosy and quiet, a new face on each rung.
-- Check-ins on a long turn: engaged, then hopeful about the tests, then
-  bored, then determined.
+- A streak of quick wins: pleased, then excited by the third, then
+  amused, then cosy and quiet, a new face on each rung, and round again.
+- A round of check-ins on a long turn: engaged, then hopeful about the
+  tests, then bored, then determined, and round again.
 - An idle check-in: a bored or lazy face, or nothing. A poke while it
   slept: surprised. You answering an agent: pleased. The agent's
   context compacted: confused, where was it?
