@@ -10,9 +10,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Several buddies side by side, each its own board and pack: empty, or
     /// one, for the one Boop.
     public var buddies: [BuddySetting] = []
-    /// Boop's ears: the Mac's mic listens for its name, a few words and
-    /// loud sounds, on this Mac (`Hearing`). Off unless you turn it on.
-    public var ears = false
 
     public init() {}
 
@@ -29,17 +26,15 @@ public struct AppSettings: Codable, Equatable, Sendable {
         }
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
-        ears = (try? c.decodeIfPresent(Bool.self, forKey: .ears)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume, buddies, ears }
+    enum CodingKeys: String, CodingKey { case personality, volume, buddies }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(personality.rawValue, forKey: .personality)
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
-        if ears { try c.encode(ears, forKey: .ears) }
     }
 
     public static let file = "settings.json"

@@ -162,11 +162,6 @@ public final class Runtime: @unchecked Sendable {
     /// Read-only visual mirror of the reactions sent. Never completes a handle.
     public var onReaction: ((Int, DeviceReaction) -> Void)?
 
-    /// Boop's ears: Settings turned them on (true) or off, and the app
-    /// starts or stops its listener. At launch the app reads `settings.ears`.
-    /// Called on `home`.
-    public var onEars: ((Bool) -> Void)?
-
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
     /// `heardNothing`; with none set (headless), turning it off hears

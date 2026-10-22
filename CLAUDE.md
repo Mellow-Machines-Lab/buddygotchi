@@ -213,10 +213,7 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
   the installers `--home` too: `NSHomeDirectory()` ignores `HOME`.
 - **Don't let Boop approve, deny or block anything an agent does.** Hooks
   only report, and they fail open.
-- **Don't use the webcam unless the owner asks** (below), and **don't
-  turn on Boop's ears** (`--ears`) from an agent shell: macOS asks the
-  app that started the process for the mic, and only the owner checks
-  them (internal/VERIFICATION.md L6).
+- **Don't use the webcam unless the owner asks** (below).
 
 ## Words
 
@@ -238,7 +235,6 @@ keep their names.
 | speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack |
 | needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
-| ears | Boop listening, hands-free, for its name, a few words and three sounds (`Ears`, `Hearing`); what it heard is a `heard` event | the mic (push-to-talk's) |
 | buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
 | personality, nature | The pack's personality file, and the person's sweet or cheeky choice laid over it (characters/CHARACTER.md §7) | |
 

@@ -1,7 +1,6 @@
 <!-- The confused mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Confused. Boop lost the thread: a compacted context, a question back,
-a word it misheard.
+Confused. Boop lost the thread: a compacted context, a question back.
 Its faces lean confused and curious.
 Says looking in a sound or a word: "Hm?", "Huh?".
 Stays confused while NOW is still unclear.

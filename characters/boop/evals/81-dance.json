@@ -1,9 +1,0 @@
-{
-  "name": "Told to dance, Boop dances",
-  "case": "With its ears on and nothing else going on, Boop hears its name and \"dance\". It goes for it: an excited, happy, mischievous or amused face, held three or four times, and one reaction only.",
-  "why": "Boop's ears (Hearing) hand on one word or sound as a heard event, whose line wakes the brain; PERSONALITY: what it hears, it takes like a dog, and its Examples: dance is excited, glad in a phrase, four times",
-  "checks": {"reactions": "1"},
-  "steps": [
-    {"event": "heard", "at": "0s", "what": "dance", "expect": {"react": "excited|happy|mischievous|amused", "loops": "three times|four times"}}
-  ]
-}

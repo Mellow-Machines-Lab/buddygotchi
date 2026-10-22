@@ -185,18 +185,6 @@ public final class Pipeline {
         }
     }
 
-    /// What Boop's ears heard (`Hearing`): its name, a word from its list or
-    /// a sound, and whether it misheard. Like a poke it's logged and may
-    /// wake the brain, and only the one word or sound it was, never what
-    /// was said around it; nothing on screen is the rules' here, so the
-    /// core isn't told. With several buddies, every one hears it.
-    @discardableResult
-    public func heard(_ what: String, misheard: Bool = false, at now: Int64) -> Step {
-        input(at: now) {
-            harness.emit(Event(at: now, source: .mic, type: .heard, specificType: what, data: ["misheard": .bool(misheard)]))
-        }
-    }
-
     /// You stepping away from the Mac or coming back, as the presence
     /// detector decided: logged, but never the
     /// core's. Only a back wakes the brain.

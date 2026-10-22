@@ -1,9 +1,0 @@
-{
-  "name": "Shh gets nothing",
-  "case": "While the agent works, the person tells Boop shh. It keeps quiet: no face at all.",
-  "why": "Boop's ears (Hearing) hand on one word or sound as a heard event, whose line wakes the brain; PERSONALITY: what it hears, it takes like a dog, and its Examples: shh or stop gets nothing",
-  "steps": [
-    {"event": "turn started", "at": "0s"},
-    {"event": "heard", "at": "30s", "what": "shh", "expect": {"react": "none"}}
-  ]
-}

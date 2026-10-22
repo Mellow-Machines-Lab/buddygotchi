@@ -54,7 +54,6 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
-| `heard` | Boop's ears heard the step's `what` (`name`, a word of `Hearing.words` or a sound: `bang`, `shout`, `singsong`), `misheard` if it says: a `heard` event, `Boop heard you say "good boy".`, `Boop misheard you: "dance", or something like it.` |
 | `wait` | Nothing; only time passes: a heartbeat may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
@@ -206,7 +205,6 @@ file-name order:
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
-| `steps[].what`, `misheard` | What a `heard` step heard, and whether Boop misheard it |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
@@ -282,10 +280,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   little lost (`75`), idle check-ins get a small face or nothing
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
   again gets a louder grumble (`78`); quiet fades an excited Boop a
-  step at a time (`55`). And what Boop's ears hear, like a dog: good
-  boy makes it proud (`79`), a shout hurts it (`80`, hero moment 3),
-  told to dance it dances (`81`), shh gets nothing (`82`), and misheard,
-  dance becomes a nap (`86`). And a Codex turn gets the same small
+  step at a time (`55`). And a Codex turn gets the same small
   cheer as Claude's (`83`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in

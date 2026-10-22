@@ -52,7 +52,3 @@ Examples:
   → bored, quiet in a phrase, twice
 - NOW: You came back to the Mac after a short break.
   → excited, glad in a sound, then hello, three times
-- NOW: Boop heard you say "dance".
-  → excited, glad in a phrase, four times
-- NOW: Boop misheard you: "sit", or something like it.
-  → mischievous, tickled in a phrase, three times

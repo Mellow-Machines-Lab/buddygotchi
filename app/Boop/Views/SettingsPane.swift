@@ -48,28 +48,6 @@ struct SettingsPane: View {
     // MARK: Sound
 
     private var sound: some View {
-        VStack(alignment: .leading, spacing: Theme.gapSnug) {
-            volume
-            ears
-        }
-    }
-
-    private var ears: some View {
-        let on = model.status?.ears ?? false
-        return Card(padding: 0) {
-            SettingRow(icon: on ? "ear.fill" : "ear", title: "Ears",
-                       detail: model.earsTrouble ?? "\(model.name) listens for its name, a few words and loud sounds, on this Mac. Nothing it hears leaves it.",
-                       detailTone: model.earsTrouble == nil ? Theme.inkSoft : Theme.clayInk) {
-                Toggle("Ears", isOn: Binding(get: { on }, set: { model.setEars($0) }))
-                    .toggleStyle(.switch)
-                    .tint(Theme.sage)
-                    .labelsHidden()
-            }
-        }
-        .disabled(model.status == nil)
-    }
-
-    private var volume: some View {
         let s = model.status?.snapshot
         return Card(padding: 0) {
             SettingRow(icon: s?.vol == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", title: "Volume",

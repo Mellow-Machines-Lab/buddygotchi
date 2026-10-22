@@ -168,7 +168,6 @@ final class EvalTests: XCTestCase {
                             (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count"),
                             (#"{"name":"n","case":"c","why":"w","nature":"grumpy","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "nature is sweet or cheeky"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","agent":"codex","expect":{"react":"none"}}]}"#, "Codex has no hook"),
-                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"heard","at":"0s","what":"sing","expect":{"react":"none"}}]}"#, "heard needs what"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","count":0,"expect":{"react":"none"}}]}"#, "count is for pokes"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"words_said":"half"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.words_said")] {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")

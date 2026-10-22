@@ -1,8 +1,0 @@
-{
-  "name": "Misheard, dance becomes a nap",
-  "case": "With its ears on, Boop half hears \"dance\" and gets it wrong, as a dog would: instead of dancing it gets sleepy, a tired, lazy, comfy or calm face, no animation.",
-  "why": "Boop's ears (Hearing) hand on one word or sound as a heard event, whose line wakes the brain; PERSONALITY: what it hears, it takes like a dog, and its Examples: misheard, it does something else entirely, and its Example: a misheard dance is tired, quiet in a word, twice. Hearing.canMishear and mishearOdds decide when",
-  "steps": [
-    {"event": "heard", "at": "0s", "what": "dance", "misheard": true, "expect": {"react": "tired|lazy|comfy|calm|bored|exhausted", "animation": "none"}}
-  ]
-}

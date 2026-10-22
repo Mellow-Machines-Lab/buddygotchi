@@ -113,12 +113,6 @@ Three things in your own words go too, each cut to 300 characters: your
 prompt, the agent's last message, and what you say to Boop when you hold
 its button. Your files, commands and tool output never do.
 
-Boop's **ears** are off unless you turn them on in Settings. With them
-on, the Mac's mic listens for Boop's name, a few words and loud sounds,
-recognised on your Mac only (or Ears won't start). No audio is kept or
-sent anywhere: only which of those words or sounds Boop heard reaches
-its transcript and Jev, like `Boop heard you say "good boy".`
-
 ## Uninstall
 
 Quit Boop from its menu, then take its hooks out of Claude Code and

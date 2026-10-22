@@ -14,7 +14,7 @@ let usage = """
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, not this one.
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
-                [--brain jev|scripted|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--ears] [--debug]
+                [--brain jev|scripted|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
                 [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --personality overrides the saved one for this run only.
@@ -28,9 +28,7 @@ let usage = """
                line takes "buddy": PLACE for the one it's for.
                Stops cleanly on SIGINT or SIGTERM. {"dev":"advance","ms":N} on the socket moves the clock forward,
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
-               thread on this Mac; --no-open only logs where it would have opened. --ears turns on Boop's ears
-               (the Mac's mic, recognised on this Mac only; nothing heard is kept or sent) from a terminal the
-               owner runs: macOS asks the app that started it for the mic, so an agent's shell can't.
+               thread on this Mac; --no-open only logs where it would have opened.
                Every event goes to DIR/transcript/<date>.jsonl, read back at the next launch.
                --demo plays a demo script (pack: the character pack's own, demo/demo.jsonl; pack:NAME its
                demo/NAME.jsonl) and stops when it's over; with a link it waits for the device first. It runs with
@@ -171,7 +169,7 @@ let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contain
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
     launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--brain", "--name", "--nature", "--demo", "--record",
                        "--buddies", "--links"],
-                      ["--headless", "--debug", "--no-open", "--live", "--ears"])
+                      ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
     : (["--state-dir", "--link"], ["--debug"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)

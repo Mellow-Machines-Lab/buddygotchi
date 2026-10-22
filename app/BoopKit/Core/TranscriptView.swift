@@ -222,7 +222,7 @@ public final class TranscriptView {
     /// of a finished turn, which goes ahead of the rest.
     public static let wakes: [String: Int] = [
         "turn_start": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
-        "reacted": 0, "session_start": 0, "needs_you_end": 0, "heard": 0,
+        "reacted": 0, "session_start": 0, "needs_you_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain.
@@ -267,7 +267,7 @@ public final class TranscriptView {
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.talk?, nil), (.heartbeat?, nil),
-             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?), (.heard?, nil): true
+             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
         }
@@ -331,7 +331,6 @@ public final class TranscriptView {
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)
         case .reacted?: return e["message"]?.string.map { Line($0) }
-        case .heard?: return heard(e)
         case .listen?, nil: return nil
         }
     }
@@ -608,16 +607,6 @@ public final class TranscriptView {
                                                                                      ? EventLine.everyone(buddies) : name(e)) else { return nil }
         noteActivity(e.at)
         return Line(line, facts: ["words": .string(words), "by": .string(e.specificType)])
-    }
-
-    // MARK: Ears
-
-    /// Something Boop's ears heard: its name, a word or a sound.
-    func heard(_ e: Event) -> Line {
-        noteActivity(e.at)
-        let misheard = e["misheard"]?.bool ?? false
-        return Line(EventLine.heard(e.specificType, misheard: misheard, name: name(e)),
-                    facts: ["what": .string(e.specificType), "misheard": .bool(misheard)])
     }
 
     // MARK: Here and away
@@ -911,21 +900,6 @@ public enum EventLine {
         return poked + "."
     }
 
-    /// What Boop's ears heard: `Boop heard you say "good boy".`, `Boop heard
-    /// its name.`, `Boop heard a bang.`; a misheard word says so: `Boop
-    /// misheard you: "dance", or something like it.`
-    public static func heard(_ what: String, misheard: Bool = false, name: String = CharacterPack.active.name) -> String {
-        switch what {
-        case "name": return "\(name) heard its name."
-        case "bang": return "\(name) heard a bang."
-        case "shout": return "\(name) heard you shout."
-        case "singsong": return "\(name) heard you singing."
-        default:
-            let phrase = Hearing.phrase(what)
-            return misheard ? "\(name) misheard you: \"\(phrase)\", or something like it." : "\(name) heard you say \"\(phrase)\"."
-        }
-    }
-
     /// You stepping away from the Mac.
     public static let away = "You stepped away from the Mac."
 
@@ -999,8 +973,6 @@ public enum EventLine {
         - An idle check-in ("Nothing has happened for 20 min") means the person is
           around but no agent is working. A compacted context means the agent's
           memory was squeezed to make room; it carries on from a summary.
-        - With its ears on, \(name) hears its name, a few words said after it, and a
-          bang, a shout or singing; nothing else, and it mishears now and then.
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
           hours or more).

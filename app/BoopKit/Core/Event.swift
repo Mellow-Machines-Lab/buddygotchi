@@ -14,8 +14,7 @@ extension Event {
     /// Where it came from.
     public enum Source: String, Sendable {
         case claude, codex, device, clock, boop
-        /// The Mac's microphone: what you said to Boop, and what its ears
-        /// heard.
+        /// The Mac's microphone: what you said to Boop.
         case mic
         /// The Mac itself: you stepping away and coming back, as the
         /// presence detector decides.
@@ -37,9 +36,6 @@ extension Event {
         /// One buddy's reaction, which the other buddies hear: only with
         /// several (`Buddy`).
         case reacted
-        /// What Boop's ears heard (`Hearing`): its name, a word or a sound,
-        /// as the event's `specific_type`, and whether it `misheard`.
-        case heard
     }
 
     /// Where in its life a thing with a start and an end is: a tool call
