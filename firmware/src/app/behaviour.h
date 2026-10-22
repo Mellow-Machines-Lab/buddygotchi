@@ -168,14 +168,17 @@ class Behaviour {
   // the next one on the Mac ("handoff"), and the board plays its hand-off
   // but over needs you's sign, which stays; else it's a tap.
   const char* press(uint32_t t, Rng& rng);
-  // The board's own reaction to a gesture: gesture's variation for it.
+  // The board's own reaction to a gesture: gesture's variation for it,
+  // unless the face is held.
   void gesture(render::Gesture g, uint32_t t);
   // Laid face down: do not disturb. Every reaction but listening is
   // refused ("facedown") and the screen dims; needs you still shows.
   void setFaceDown(bool down, uint32_t t);
   bool faceDown() const { return faceDown_; }
-  // `listening` is playing: a touch is a tap then, never a gesture.
-  bool hearing(uint32_t t) const { return listening(t); }
+  // No app, something needs you, or `listening` waits for the reply: a
+  // tap or another animation doesn't take the face over, and a touch is a
+  // tap, never a gesture.
+  bool held(uint32_t t) const;
   // The id of the brain's finish showing whose turn it was at t, which a
   // tap opens on the Mac instead of poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;
@@ -321,10 +324,6 @@ class Behaviour {
   // The brain's finish plays, naming whose turn it was (the strip shows it).
   bool finishOn(uint32_t t) const;
   bool listening(uint32_t t) const;  // `listening` is playing
-  // No app, something needs you, or `listening` waits
-  // for the reply: a tap or another animation doesn't take
-  // the face over.
-  bool held(uint32_t t) const;
   uint8_t blTarget(uint32_t t) const;  // the level the state asks for at t
   bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to

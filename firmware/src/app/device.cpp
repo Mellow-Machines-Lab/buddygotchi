@@ -654,11 +654,11 @@ void Device::readInputs(uint32_t t) {
       // The panel's touch let go when it was last in contact, so its tap
       // counts the kTouchReleaseMs the device waits to be sure. Its path
       // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
-      // nose; then the board reacts as one, but not over needs you's sign
-      // or while listening, where a touch is a tap.
+      // nose; then the board reacts as one, but not while the face is
+      // held, where a touch is a tap.
       latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
       render::Gesture g;
-      if (app::gestureOf(touchPath_.up(), g) && !b_.model().attn && !b_.hearing(t)) gestured(g, t, touchInjected_);
+      if (app::gestureOf(touchPath_.up(), g) && !b_.held(t)) gestured(g, t, touchInjected_);
       else tapped(t, touchInjected_, false);
     }
   }

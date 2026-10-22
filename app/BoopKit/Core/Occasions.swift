@@ -32,19 +32,27 @@ public enum Occasions {
         return days > 0 && hatched.dropFirst(5) == today.dropFirst(5)
     }
 
+    /// The calendar's own occasions at `ms`, each with its words for the
+    /// heading: Friday the 13th, the holidays, Programmers' Day and Lunar
+    /// New Year.
+    static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [(tag: String, words: String)] {
+        var on: [(tag: String, words: String)] = []
+        if c.weekday == 6, c.day == 13 { on.append(("friday13", "Friday the 13th")) }
+        for h in holidays where h.month == c.month && h.days.contains(c.day) { on.append((h.tag, h.words)) }
+        if c.dayOfYear == 256 { on.append(("programmers", "Programmers' Day")) }
+        if time.isLunarNewYear(ms) { on.append(("lunar", "Lunar New Year")) }
+        return on
+    }
+
     /// The calendar's tags on at `ms`: `hatched` is the day Boop was set up
     /// (`yyyy-MM-dd`), and `party` any other reason for one (a stage
     /// reached today).
     public static func tags(at ms: Int64, hatched: String?, party: Bool = false, time: LocalTime) -> [String] {
         let c = time.components(ms)
-        var on: [String] = []
-        on.append(dayParts.last { c.hour >= $0.from }?.tag ?? "night")
+        var on = [dayParts.last { c.hour >= $0.from }?.tag ?? "night"]
         if c.weekday == 6 { on.append("friday") }
         if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
-        if c.weekday == 6, c.day == 13 { on.append("friday13") }
-        for h in holidays where h.month == c.month && h.days.contains(c.day) { on.append(h.tag) }
-        if c.dayOfYear == 256 { on.append("programmers") }
-        if time.isLunarNewYear(ms) { on.append("lunar") }
+        on += calendar(c, at: ms, time: time).map(\.tag)
         if party || on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: time.day(ms)) }) == true {
             on.append("party")
         }
@@ -56,61 +64,18 @@ public enum Occasions {
     /// was reached. Empty on an ordinary day.
     public static func words(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
                              time: LocalTime) -> [String] {
-        let c = time.components(ms)
-        var out: [String] = []
-        if c.weekday == 6, c.day == 13 { out.append("Friday the 13th") }
-        for h in holidays where h.month == c.month && h.days.contains(c.day) { out.append(h.words) }
-        if c.dayOfYear == 256 { out.append("Programmers' Day") }
-        if time.isLunarNewYear(ms) { out.append("Lunar New Year") }
+        var out = calendar(time.components(ms), at: ms, time: time).map(\.words)
+        let today = time.day(ms)
         if let hatched {
             let days = time.days(from: hatched, to: ms)
-            if hatched.dropFirst(5) == time.day(ms).dropFirst(5), days > 0 {
-                let years = Int(time.day(ms).prefix(4))! - Int(hatched.prefix(4))!
+            if days > 0, hatched.dropFirst(5) == today.dropFirst(5) {
+                let years = Int(today.prefix(4))! - Int(hatched.prefix(4))!
                 out.append("\(name)'s \(years == 1 ? "first" : "\(years)-year") anniversary")
-            } else if isMilestone(days: days, hatched: hatched, today: time.day(ms)) {
+            } else if isMilestone(days: days, hatched: hatched, today: today) {
                 out.append("\(name) is \(days) days old")
             }
         }
-        if let stage, stage.day == time.day(ms) { out.append("\(name) became a \(stage.name)") }
+        if let stage, stage.day == today { out.append("\(name) became a \(stage.name)") }
         return out
-    }
-}
-
-extension LocalTime {
-    struct Parts {
-        var month: Int, day: Int, hour: Int, weekday: Int, dayOfYear: Int
-    }
-
-    /// The month, day, hour, weekday (1 Sunday … 7 Saturday) and day of the
-    /// year at `ms`.
-    func components(_ ms: Int64) -> Parts {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let d = date(ms)
-        let c = calendar.dateComponents([.month, .day, .hour, .weekday], from: d)
-        return Parts(month: c.month ?? 1, day: c.day ?? 1, hour: c.hour ?? 0, weekday: c.weekday ?? 1,
-                     dayOfYear: calendar.ordinality(of: .day, in: .year, for: d) ?? 1)
-    }
-
-    /// Whole days from the day `from` (`yyyy-MM-dd`) to the day at `ms`.
-    public func days(from day: String, to ms: Int64) -> Int {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let f = DateFormatter()
-        f.calendar = calendar
-        f.timeZone = timeZone
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        guard let start = f.date(from: day), let end = f.date(from: self.day(ms)) else { return 0 }
-        return calendar.dateComponents([.day], from: start, to: end).day ?? 0
-    }
-
-    /// Whether `ms` falls on the first day of the Chinese calendar's first
-    /// month: Lunar New Year.
-    func isLunarNewYear(_ ms: Int64) -> Bool {
-        var chinese = Calendar(identifier: .chinese)
-        chinese.timeZone = timeZone
-        let c = chinese.dateComponents([.month, .day, .isLeapMonth], from: date(ms))
-        return c.month == 1 && c.day == 1 && c.isLeapMonth != true
     }
 }

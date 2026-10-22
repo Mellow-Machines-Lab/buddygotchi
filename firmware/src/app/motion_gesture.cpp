@@ -10,7 +10,9 @@ bool reached(uint32_t t, uint32_t at) { return int32_t(t - at) >= 0; }
 }  // namespace
 
 MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
-  const int off = int(std::lround(std::sqrt(double(ax) * ax + double(ay) * ay + double(az) * az))) - 1000;
+  // In float: the ESP32-S3's FPU has no double.
+  const float x = float(ax), y = float(ay), z = float(az);
+  const int off = int(std::lroundf(std::sqrt(x * x + y * y + z * z))) - 1000;
   const bool calm = std::abs(off) <= kStillMg;
   if (!started_) started_ = true, calmSince_ = flatSince_ = t;
 

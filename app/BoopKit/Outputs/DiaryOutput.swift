@@ -93,7 +93,8 @@ public final class DiaryOutput: Output {
         guard let now else { return nil }
         let (day, at) = yesterday(now.at)
         if log.lastDid(Self.outputName, where: { $0["day"]?.string == day }) != nil { return nil }
-        let events = log.events.filter { time.day($0.at) == day }
+        let range = time.dayRange(at)
+        let events = log.events.filter { range.contains($0.at) }
         guard !events.isEmpty else { return nil }
         return Self.count(events, day: day, weekday: time.weekday(at), tags: Occasions.tags(at: at, hatched: nil, time: time))
     }

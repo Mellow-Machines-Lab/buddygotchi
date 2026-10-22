@@ -373,11 +373,12 @@ const char* Behaviour::press(uint32_t t, Rng& rng) {
   if (noApp(t) || !(model_.attn || model_.idle > 0)) return tap(t, rng);
   taps_ = 0;
   // While something needs you its sign stays up: the Mac opens it.
-  if (!model_.attn && !held(t)) gesture(render::Gesture::kHandoff, t);
+  gesture(render::Gesture::kHandoff, t);
   return "handoff";
 }
 
 void Behaviour::gesture(render::Gesture g, uint32_t t) {
+  if (held(t)) return;
   const int n = face_->variants(model_.mood, render::SceneState::kGesture);
   const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
   change(t, [&] { playAnim(render::SceneState::kGesture, t, CutBy::kTap, 1, model_.mood, v); });

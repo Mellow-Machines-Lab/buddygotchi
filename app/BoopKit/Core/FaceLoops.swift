@@ -79,11 +79,6 @@ public enum FaceLoops {
         return designs.isEmpty ? [Design(ms: 0, voiceMs: 0, outcome: nil, ctx: nil)] : designs
     }
 
-    /// How many variations `mood` has for `state`.
-    public static func count(mood: String, state: String, in pack: CharacterPack = .active) -> Int {
-        row(mood: mood, state: state, in: pack).count
-    }
-
     /// The variations (from 1) of `mood`'s `state` for an outcome and a
     /// context, nil matching any; all of them when none match. Only those
     /// the device may show whenever: it swaps in one for an occasion itself.
@@ -91,10 +86,9 @@ public enum FaceLoops {
                                 in pack: CharacterPack = .active) -> [Int] {
         let row = row(mood: mood, state: state, in: pack)
         let always = row.indices.filter { row[$0].always }
-        let fit = always.filter { i in
-            (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx)
-        }.map { $0 + 1 }
-        return fit.isEmpty ? always.map { $0 + 1 }.ifEmpty(Array(1...row.count)) : fit
+        let pool = always.isEmpty ? Array(row.indices) : always
+        let fit = pool.filter { i in (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx) }
+        return (fit.isEmpty ? pool : fit).map { $0 + 1 }
     }
 
     /// A design's loop length: `mood`'s design for `state`, variation
@@ -112,8 +106,4 @@ public enum FaceLoops {
         let row = row(mood: mood, state: state)
         return row[(1...row.count).contains(variant) ? variant - 1 : 0].voiceMs
     }
-}
-
-private extension Array {
-    func ifEmpty(_ other: Self) -> Self { isEmpty ? other : self }
 }

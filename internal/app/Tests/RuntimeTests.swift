@@ -1361,7 +1361,7 @@ final class RuntimeTests: XCTestCase {
         let held = Int64(ReactOutput.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
             MoodOutput.moods.map(\.name).flatMap { mood in
-                FaceLoops.states.flatMap { state in (1...FaceLoops.count(mood: mood, state: state)).map { ms(mood, state, $0) } }
+                FaceLoops.states.flatMap { state in (1...FaceLoops.row(mood: mood, state: state).count).map { ms(mood, state, $0) } }
             }.max() ?? 0
         }
         let longestLoop = longest { FaceLoops.ms(mood: $0, state: $1, variant: $2) }
@@ -1417,7 +1417,7 @@ final class RuntimeTests: XCTestCase {
         var n = 0
         for mood in drawn {
             for state in FaceLoops.states {
-                for v in 1...FaceLoops.count(mood: mood, state: state) {
+                for v in 1...FaceLoops.row(mood: mood, state: state).count {
                     XCTAssertEqual(FaceLoops.ms(mood: mood, state: state, variant: v), loops[scenes[n]], "\(mood) \(state) \(v)")
                     XCTAssertEqual(windows[n][1], "\(mood).\(state).\(String(format: "%02d", v))")
                     XCTAssertEqual(FaceLoops.voiceMs(mood: mood, state: state, variant: v), Int64(windows[n][0])!,

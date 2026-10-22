@@ -16,6 +16,9 @@ public final class MemoryStore {
     let log: (String) -> Void
 
     public private(set) var longTerm: LongTerm?
+    /// The diary's lines, oldest first, as the file had them at open and
+    /// with every line added since.
+    private var diaryLines: [(day: String, line: String)] = []
 
     /// Opens the store as a launch on `today` does.
     public init(directory: URL, today: String = LocalTime().day(Int64(Date().timeIntervalSince1970 * 1000)),
@@ -24,6 +27,7 @@ public final class MemoryStore {
         self.log = log
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         loadLongTerm(today: today)
+        diaryLines = Self.parseDiary((try? String(contentsOf: url(Self.diaryFile), encoding: .utf8)) ?? "")
     }
 
     public var isSetUp: Bool { longTerm != nil }
@@ -108,18 +112,22 @@ public final class MemoryStore {
         try? FileManager.default.copyItem(at: url(file), to: broken)
     }
 
-    /// Atomic: a temporary file renamed over the old one.
     /// Adds `line` to the diary under `day` (`## 2026-10-21`), once a day:
     /// a day already written keeps its line.
     public func appendDiary(day: String, line: String) throws {
         let old = (try? String(contentsOf: url(Self.diaryFile), encoding: .utf8)) ?? "# \(longTerm?.name ?? "Boop")'s diary\n"
         guard !old.contains("\n## \(day)\n") else { return }
         try write(old + "\n## \(day)\n\(line)\n", Self.diaryFile)
+        diaryLines.append((day, line))
     }
 
     /// The diary's last `count` days, newest first.
     public func diary(last count: Int) -> [(day: String, line: String)] {
-        guard let text = try? String(contentsOf: url(Self.diaryFile), encoding: .utf8) else { return [] }
+        Array(diaryLines.suffix(count).reversed())
+    }
+
+    /// `diary.md`'s days and lines, oldest first.
+    static func parseDiary(_ text: String) -> [(day: String, line: String)] {
         var out: [(day: String, line: String)] = []
         var day: String?
         for raw in text.split(separator: "\n") {
@@ -129,9 +137,10 @@ public final class MemoryStore {
                 day = nil
             }
         }
-        return Array(out.suffix(count).reversed())
+        return out
     }
 
+    /// Atomic: a temporary file renamed over the old one.
     func write(_ text: String, _ file: String) throws {
         try Data(text.utf8).write(to: url(file), options: .atomic)
     }

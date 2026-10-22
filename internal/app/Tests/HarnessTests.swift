@@ -208,7 +208,7 @@ final class HarnessTests: XCTestCase {
         let reply = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(reply.anim, "reply_ready")
         XCTAssertNil(reply.outcome, "a reply has no outcome")
-        XCTAssertTrue((1...FaceLoops.count(mood: "curious", state: "reply_ready")).contains(reply.variant!))
+        XCTAssertTrue((1...FaceLoops.row(mood: "curious", state: "reply_ready").count).contains(reply.variant!))
         XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
         queued.removeLast()
         starts(["react.mood": a("happy"), "react.animation": a("wake up"), "say.about": a("hello")],
@@ -217,7 +217,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(woke.anim, "wake_up")
         XCTAssertNil(woke.outcome, "a wake-up has no outcome")
         XCTAssertEqual(woke.who, .init(agent: "codex", thread: "fix-nav"), "the thread NOW is about, which a back never is (PresenceTests)")
-        XCTAssertTrue((1...FaceLoops.count(mood: "happy", state: "wake_up")).contains(woke.variant!))
+        XCTAssertTrue((1...FaceLoops.row(mood: "happy", state: "wake_up").count).contains(woke.variant!))
         queued.removeLast()
         // Each finish is one of its variations at random,
         // never the last one of its animation again.

@@ -82,6 +82,10 @@ public final class Core {
     /// working session's, held.
     var shownAct: Timed?
     var held: [String: Timed] = [:]
+    /// The calendar's tags, worked out once a quarter of an hour: every
+    /// time zone's hours start on one, so the part of the day and the date
+    /// can't change within it.
+    var whenCache: (slot: Int64, hatched: String?, stage: String?, tags: [String])?
     /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
@@ -485,8 +489,15 @@ public final class Core {
         let helpers = working.reduce(0) { $0 + $1.helpers.count }
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count, idle: idle.count,
                              helpers: helpers, vol: config.volume,
-                             when: Occasions.tags(at: wall(now), hatched: config.hatched,
-                                                  party: config.stageReached?.day == day(now), time: config.time))
+                             when: when(at: now))
+    }
+
+    func when(at now: Int64) -> [String] {
+        let wall = wall(now), slot = wall / 900_000, stage = config.stageReached?.day
+        if let c = whenCache, c.slot == slot, c.hatched == config.hatched, c.stage == stage { return c.tags }
+        let tags = Occasions.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
+        whenCache = (slot, config.hatched, stage, tags)
+        return tags
     }
 
     /// starting's `ctx` for a session whose context was compacted.
@@ -607,8 +618,7 @@ public final class Core {
         }
         let s = line[next]
         lastHanded = (s.key, now)
-        // Named as the brain's lines name a thread: its workspace, else its project.
-        let thread = s.workspace ?? s.project
+        let thread = TranscriptView.Thread(s).name
         let more = line.count - 1
         let message = "\(config.pack.name) handed you \(s.agent.rawValue) on \(EventLine.thread(name: thread, project: s.project))"
             + (more > 0 ? "; \(more) more in line." : ".")
