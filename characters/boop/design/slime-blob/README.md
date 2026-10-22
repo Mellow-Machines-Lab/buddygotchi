@@ -1,6 +1,6 @@
 # VideoG Slime Blob — colleague handover
 
-Updated 2026-10-21. Imported from `VideoG-Slime-Blob` and integrated on
+Updated 2026-10-22. Imported from `VideoG-Slime-Blob` and integrated on
 `main`: this engine is the reference the AMOLED's gel face ports and the
 Mac's popover bundles. This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
@@ -70,7 +70,7 @@ consumes credits.
 | Acting | Three authored gesture recipes per expression; recipes share primitives. Idle comedy: a yawn, a doze and a sneeze for every mood, a long yawn for the low moods, zoomies for excited | Tune every recipe in motion, layer activity choreography; owner review of the comedy on the board |
 | Drag | Bounded local surface pull, face follows body, release wobble | Host-boundary termination and real touchscreen QA |
 | Mood topology | Complete design graph and 295 tested directed bridges, three variants each | Host eligibility/pacing, Jev choices, production enum migration |
-| Activity/state | All 23 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift | Physical board measurements/review |
+| Activity/state | All 24 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures; occasions for idle, typing and sleep (the part of the day, holidays, a party, busy and frantic work, long idle, work and sleep) | Physical board measurements/review |
 | Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library, a sneeze and a snore's breath among them | Speaker review and physical audio latency; the snore's level |
 
 **Coverage is earned by execution.** The preview has all scene families, an
@@ -91,8 +91,9 @@ sketch timbres and an opt-in browser player.
 - [MOODS.md](MOODS.md): generated readable inventory, face descriptions,
   body behavior and every outgoing ordinary/dramatic edge.
 - [expressions.json](expressions.json): V3 art profiles, reference mapping,
-  three gesture recipes per expression, and the comedy gags idle plays
-  (`gags`, `idleGags`, an expression's own `gags`). Edit this, then rebuild.
+  three gesture recipes per expression, the comedy gags idle plays
+  (`gags`, `idleGags`, an expression's own `gags`), the board's gestures
+  (`gestures`) and the looks' occasions (`occasions`). Edit this, then rebuild.
 - [state-plan.json](state-plan.json) and [STATES.md](STATES.md): activity
   coverage, scene reuse, events and outcome/context distinctions.
 - [coverage.json](coverage.json): generated checklist for every mood×state;
@@ -235,7 +236,7 @@ There is no need for hundreds of unrelated professions or props.
 
 Every mood/state cell has three variants in [coverage.json](coverage.json)
 (idle six, asleep four, a successful finish four: the comedy of
-[CONTINUITY.md](CONTINUITY.md)), with implementation status earned by full-matrix tests. All are implemented
+[CONTINUITY.md](CONTINUITY.md); a gesture ten, one for each), with implementation status earned by full-matrix tests. All are implemented
 in the reference engine or justified quiet aliases; this does not establish
 production integration or port equivalence.
 For normal active states, compose its mood face/acting profile with the

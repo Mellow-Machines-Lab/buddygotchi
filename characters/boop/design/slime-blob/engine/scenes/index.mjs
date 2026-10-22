@@ -9,6 +9,8 @@ import {listenRecipe} from './listen.mjs';
 import {startRecipe,wakeRecipe} from './start.mjs';
 import {helpersRecipe} from './helpers.mjs';
 import {touchRecipe} from './touch.mjs';
+import {gestureRecipe} from './gesture.mjs';
+import {occasionShare,fits,lookOccasions,realizeOccasion} from './occasion.mjs';
 import {recoveryGesture} from './profile.mjs';
 import {sceneMoodTraits} from './mood.mjs';
 import {createRamp} from './ramp.mjs';
@@ -20,7 +22,10 @@ const isDesk=state=>['working','planning','terminal','tool_use','searching','ana
 const routine=state=>isDesk(state)||state==='listening'||state==='asleep';
 // A state's takes: three, and a fourth for two of them, asleep's snore and a
 // successful finish's hiccups. Its bag deals the fourth from its second round.
-export function takesOf(state,outcome=null) {return state==='asleep'||(state==='task_complete'&&outcome==='success')?4:3;}
+// A gesture has one for each gesture, which the board names, never dealt.
+export function takesOf(state,outcome=null) {
+  return state==='gesture'?10:state==='asleep'||(state==='task_complete'&&outcome==='success')?4:3;
+}
 const implemented=new Set(implementedStates);
 // CONTINUITY.md, Representative activity scenes: each prop keeps the content
 // it last showed while its ramp fades it out.
@@ -29,7 +34,8 @@ const hiddenContent=Object.freeze({alert:{requestId:null,agent:'',project:'',nam
   result:{state:null,label:'FINISHED',outcome:null,reveal:0},start:{label:'START',ctx:null,reveal:0},
   helpers:{mode:'dispatch',count:0,progress:0,report:false,direction:1,presence:0},listening:{pulse:.5},touch:{kind:null}});
 
-export function createScenes({rand,reduced,profiles}) {
+export function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
+  const looks=lookOccasions(occasions).map((entry,index)=>({...entry,index}));
   const variation=createVariations(rand),alerts=new Map(),moments=new Map();
   const activity={lean:{x:0,v:0},squash:{x:0,v:0},forward:{x:0,v:0}};
   const desk={x:0,v:0},quietMix={x:0,v:0};
@@ -48,13 +54,24 @@ export function createScenes({rand,reduced,profiles}) {
       phase='enter';return;
     }
     // The host's take if its state has it; the first rest is always the
-    // still one, and asleep deals from its bag after that.
+    // still one, and asleep deals from its bag after that. A look deals an
+    // occasion's take instead, while one fits, occasionShare of the time
+    // (numbered after the state's own); a gesture's take is the board's, or
+    // the first.
     const takes=takesOf(route.state,route.outcome);
-    variant=route.moment&&route.moment.variant!==null&&route.moment.variant<takes?route.moment.variant
-      :implemented.has(route.state)&&!route.quiet&&route.state!=='idle'?variation.next(key,takes)
-      :route.state==='asleep'&&iteration>0?variation.next(key,takes):0;
+    const asked=Boolean(route.moment&&route.moment.variant!==null&&route.moment.variant<takes);
+    const deal=!asked&&route.state!=='gesture'&&(implemented.has(route.state)&&!route.quiet&&route.state!=='idle'
+      ||route.state==='asleep'&&iteration>0);
+    let look=null;
+    if(deal&&!route.moment){
+      const fit=looks.filter(entry=>entry.state===route.state&&fits(entry,occasion));
+      if(fit.length&&rand()<occasionShare)look=fit[Math.floor(rand()*fit.length)];
+    }
+    variant=asked?route.moment.variant:look?takes+look.index:deal?variation.next(key,takes):0;
     const profile=profiles[expression];
-    if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
+    if(look)recipe=realizeOccasion(look.recipe,rand);
+    else if(route.state==='gesture')recipe=gestureRecipe(gestures,variant);
+    else if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
     else if(route.state==='needs_you'){
       recipe=alertRecipe(variant,mood,profile);
     }else if(route.state==='task_complete')recipe=resultRecipe(route.outcome,variant,mood,profile);
@@ -141,7 +158,7 @@ export function createScenes({rand,reduced,profiles}) {
     const failure=route.state==='task_complete'&&route.outcome==='failure';
     const reveal=active?Math.max(envelope(time,'success_reveal'),envelope(time,'failure_reveal'))*(lastContact?.strength||1):0;
     const present=active?Math.max(...['start_reveal','helper_reveal','reply_ready_reveal','error_reveal','stopped_reveal'].map(kind=>envelope(time,kind)))*(lastContact?.strength||1):0;
-    const recoveryPose=active&&phase==='recover'?recoveryGesture(recipe.profile,variant,1-(recipe.duration-ageMs)/sceneConstants.recoveryMs):{lean:0,squash:0,forward:0};
+    const recoveryPose=active&&phase==='recover'&&!recipe.gag?recoveryGesture(recipe.profile,variant,1-(recipe.duration-ageMs)/sceneConstants.recoveryMs):{lean:0,squash:0,forward:0};
     const quietActivity=route.state==='waiting'||route.state==='listening';
     const wave=quietActivity?.65+.35*Math.sin(ageMs/recipe.duration*Math.PI*2*(recipe.focusCycles||recipe.pulseCycles||1)):1;
     // A snore's breath swells the sleeping body a little, rising and falling.
@@ -247,5 +264,8 @@ export function createScenes({rand,reduced,profiles}) {
       activityChannels:Object.fromEntries(Object.entries(activity).map(([key,m])=>[key,{...m}]))
     };
   }
-  return {setRoute,advance,inspect,activity,variation:variation.inspect};
+  // The gag the recipe playing carries for acting (a gesture's, an
+  // occasion's), and which pass of it this is; null for none.
+  function gag() {return route&&recipe?.gag?{name:recipe.gag,key:generation+':'+iteration}:null;}
+  return {setRoute,advance,inspect,gag,activity,variation:variation.inspect};
 }

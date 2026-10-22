@@ -1,4 +1,5 @@
 import {createVariations} from './variation.mjs';
+import {occasionShare,fits} from './scenes/occasion.mjs';
 
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const smooth=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
@@ -22,12 +23,17 @@ export function keyed(keys,channel,age) {
 // Retargeting cancels future recipe cues; it never replaces these springs.
 // Idle's takes are the expression's three gestures, then its own gags and
 // every expression's idle gags: comedy that adds keyed targets and contacts
-// that sound to the same springs.
-export function createActing({profiles,gags={},idleGags=[],rand,reduced,initialEmotion}) {
+// that sound to the same springs. While an idle occasion fits (the host's
+// tags and how long the look has shown, setOccasion), its next gesture is
+// one of those, occasionShare of the time, numbered after the takes.
+// A recipe may carry a gag of its own (a gesture's, an occasion's): acting
+// holds it for that recipe's pass, and deals nothing of its own meanwhile.
+export function createActing({profiles,gags={},idleGags=[],extraGags={},idleLooks=[],rand,reduced,initialEmotion,
+  occasion={when:new Set(),lookMs:0}}) {
   const channels={lean:{x:0,v:0},squash:{x:0,v:0},ripple:{x:0,v:0},lift:{x:0,v:0},roll:{x:0,v:0},forward:{x:0,v:0}};
   const own={slide:{x:0,v:0},lids:{x:0,v:0}},springs={...channels,...own};
-  const automaticVariants=createVariations(rand);
-  let emotion=initialEmotion,actor=null,nextPerformance=1,performanceCount=0;
+  const automaticVariants=createVariations(rand),looks=idleLooks.map((entry,index)=>({...entry,index}));
+  let emotion=initialEmotion,actor=null,nextPerformance=1,performanceCount=0,held=null;
   let chosenPerformance='auto',suppressed=false,gagged=false,contacts=[];
   function takes(id) {
     const profile=profiles[id];
@@ -36,10 +42,17 @@ export function createActing({profiles,gags={},idleGags=[],rand,reduced,initialE
   function perform(time,index) {
     if(suppressed)return false;
     const choices=takes(emotion);
-    let selected=index===undefined?(chosenPerformance==='auto'?automaticVariants.next(emotion+':idle',choices.length):Number(chosenPerformance)):Number(index);
+    let selected,choice;
+    if(index===undefined&&chosenPerformance==='auto'){
+      const fit=looks.filter(entry=>fits(entry,occasion));
+      if(fit.length&&rand()<occasionShare){
+        const entry=fit[Math.floor(rand()*fit.length)];
+        selected=choices.length+entry.index;choice={...extraGags[entry.gag],type:entry.gag};
+      }else selected=automaticVariants.next(emotion+':idle',choices.length);
+    }else selected=index===undefined?Number(chosenPerformance):Number(index);
     if(!Number.isInteger(selected))throw new TypeError('performance index must be an integer');
-    selected=clamp(selected,0,choices.length-1);
-    actor={...choices[selected],index:selected,start:time,cursor:0,contactCursor:0,expression:emotion};
+    if(!choice){selected=clamp(selected,0,choices.length-1);choice=choices[selected];}
+    actor={...choice,index:selected,start:time,cursor:0,contactCursor:0,expression:emotion};
     if(actor.keys)gagged=true;
     performanceCount++;
     nextPerformance=time+actor.duration+7+rand()*8;
@@ -53,6 +66,17 @@ export function createActing({profiles,gags={},idleGags=[],rand,reduced,initialE
       chosenPerformance=String(value);
     },
     deferUntil(time) {nextPerformance=Math.max(nextPerformance,time);},
+    // A recipe's gag, once for each pass (key) of it; null lets go. It plays
+    // from now, and the next gesture of acting's own waits three seconds
+    // after it ends.
+    hold(name,key,time) {
+      if(!name){held=null;return;}
+      if(key===held)return;
+      held=key;
+      actor={...extraGags[name],type:name,index:-1,start:time,cursor:0,contactCursor:0,expression:emotion};
+      gagged=true;performanceCount++;
+      nextPerformance=Math.max(nextPerformance,time+actor.duration+3);
+    },
     setSuppressed(value,time) {
       value=Boolean(value);if(value===suppressed)return;
       suppressed=value;actor=null;
@@ -60,7 +84,7 @@ export function createActing({profiles,gags={},idleGags=[],rand,reduced,initialE
     },
     advance(dt,time,grabActive) {
       contacts=[];
-      if(!suppressed&&!grabActive&&time>=nextPerformance)perform(time);
+      if(!suppressed&&!grabActive&&held===null&&time>=nextPerformance)perform(time);
       const target={},scale=reduced.matches?.18:1;
       if(!suppressed&&actor&&actor.expression===emotion){
         const age=time-actor.start;

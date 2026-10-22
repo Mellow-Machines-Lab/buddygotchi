@@ -166,13 +166,27 @@ void Scenes::pickRecipe(T time, Random& random) {
       return;
     }
   // The host's take if its state has it; the first rest is always the still
-  // one, and asleep deals from its bag after that.
+  // one, and asleep deals from its bag after that. A look deals an
+  // occasion's take instead, while one fits, kOccasionShare of the time
+  // (numbered after the row's own); a gesture's take is the board's, or
+  // the first.
   const int row = recipeState(route), count = takes(row), asked = route.moment ? route.moment->value.variant : -1;
+  const bool ask = asked >= 0 && asked < count;
   const bool deal =
-      (!route.quiet && route.state != SceneState::kIdle) || (route.state == SceneState::kAsleep && iteration);
-  variant = asked >= 0 && asked < count ? asked : deal ? bags[mood][row].next(random, count) : 0;
+      !ask && route.state != SceneState::kGesture &&
+      ((!route.quiet && route.state != SceneState::kIdle) || (route.state == SceneState::kAsleep && iteration));
+  int look = -1;
+  if (deal && !route.moment) {
+    int fit[slime::kLookOccasionCount], k = 0;
+    for (int i = 0; i < slime::kLookOccasionCount; ++i) {
+      const auto& o = slime::kLookOccasions[i];
+      if (o.row == row && fits(o.when, o.after, when, lookMs)) fit[k++] = i;
+    }
+    if (k && random.unit() < slime::kOccasionShare) look = fit[random.index(k)];
+  }
+  variant = ask ? asked : look >= 0 ? count + look : deal ? bags[mood][row].next(random, count) : 0;
   profileExpression = expression;
-  const auto* base = &take(expression, row, variant);
+  const auto* base = look >= 0 ? &slime::kLookOccasions[look].recipe : &take(expression, row, variant);
   uint32_t seed = random.state;
   recipe = realize(*base, random);
   Saved saved{identityKey(requestId), variant, profileExpression, base, seed};
@@ -303,8 +317,9 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
        failure = route.state == SceneState::kTaskComplete && route.outcome == Outcome::kFailure;
   F recoveryPose[3]{};
   const auto& profile = slime::kProfile[profileExpression];
-  // A fourth take (the hiccups) has no gesture of its own to recover with.
-  if (active && !std::strcmp(phase, "recover") && !profile.representative && variant < kGestures) {
+  // A fourth take (the hiccups) has no gesture of its own to recover with,
+  // and a recipe with a gag of its own recovers with that.
+  if (active && !std::strcmp(phase, "recover") && !profile.representative && variant < kGestures && recipe.gag < 0) {
     const auto& perf = profile.performances[variant];
     T pt = F(1 - (recipe.duration - ageMs) / 480) * F(perf.duration);
     for (int i = 0; i < perf.count; ++i) {

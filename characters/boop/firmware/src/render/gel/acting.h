@@ -45,15 +45,28 @@ struct ContactEvent {
 // acting.mjs keyed: a gag's target for a channel at its age, from (0, 0) at
 // its start, a smoothstep to each of the channel's keys, then its last value.
 F keyed(const slime::Gag& gag, int channel, T age);
+// An occasion fits while every tag it needs is on and its look has shown
+// its wait (render/tags.h; the reference's scenes/occasion.mjs).
+constexpr bool fits(uint32_t needs, uint16_t afterS, uint32_t when, uint32_t lookMs) {
+  return (needs & ~when) == 0 && uint32_t(afterS) * 1000 <= lookMs;
+}
 struct Acting {
   // The six gesture springs, then a gag's own: the dome's slide, and how far
   // its lids are closed (critically damped).
   Spring channels[6], slide, lids;
   Bag<slime::kMaxGestures> bags[slime::kProfiles];
-  int emotion = slime::kCalm, performance = -1, expression = slime::kCalm, chosen = -1, cursor = 0, contactCursor = 0,
-      count = 0;
+  // performance is the take playing (an idle occasion's numbered after the
+  // takes), or -1; playing, a recipe's gag (kGags) playing in its place.
+  int emotion = slime::kCalm, performance = -1, playing = -1, expression = slime::kCalm, chosen = -1, cursor = 0,
+      contactCursor = 0, count = 0;
   T start, nextPerformance = 1;
   bool suppressed = false;
+  // A recipe's gag held for one pass of it (the scene's generation and
+  // iteration): acting deals nothing of its own meanwhile.
+  bool holding = false;
+  int heldGeneration = 0, heldIteration = 0;
+  // The tags on and how long the look has shown (Engine::setOccasion).
+  uint32_t when = 0, lookMs = 0;
   // A gag has played: its channels join the trace (gel-trace), as they do
   // the reference's inspection.
   bool gagged = false;
@@ -63,10 +76,12 @@ struct Acting {
   // Idle's takes for an expression: its three gestures, its own gags, then
   // every expression's idle gags.
   static int takes(int profile) { return kGestures + slime::kProfile[profile].gagCount + slime::kIdleGagCount; }
-  // A take's gag; none for the three gestures.
+  // A take's gag; none for the three gestures. After the takes, idle's
+  // occasions.
   static const slime::Gag* gag(int profile, int take) {
     const auto& p = slime::kProfile[profile];
     if (take < kGestures) return nullptr;
+    if (take >= takes(profile)) return &slime::kGags[slime::kIdleOccasions[take - takes(profile)].gag];
     take -= kGestures;
     return &slime::kGags[take < p.gagCount ? p.gags[take] : slime::kIdleGags[take - p.gagCount]];
   }
@@ -75,18 +90,25 @@ struct Acting {
     const auto* g = gag(profile, take);
     return g ? g->gesture : slime::kProfile[profile].performances[take];
   }
+  // What plays now: a recipe's gag, or the take's (none for a gesture of
+  // the expression's own).
+  const slime::Gag* current() const { return playing >= 0 ? &slime::kGags[playing] : gag(emotion, performance); }
   // The lids as drawn: a closure in [0, 1], like a blink's.
   F closure() const { return clamp(lids.x, 0, 1); }
   bool perform(T time, Random& random, int index = -1);
+  // A recipe's gag (kGags; -1 lets go), once for each pass of the recipe.
+  // It plays from now, and acting's own next gesture waits three seconds
+  // after it ends.
+  void hold(int gag, int generation, int iteration, T time);
   void setMood(int id, T time) {
     emotion = id;
-    performance = -1;
+    performance = playing = -1;
     nextPerformance = time + T::literal(.4);
   }
   void setSuppressed(bool value, T time) {
     if (value == suppressed) return;
     suppressed = value;
-    performance = -1;
+    performance = playing = -1;
     if (!value) nextPerformance = max(nextPerformance, time + T::literal(.4));
   }
   void advance(T dt, T time, bool grab, bool reduced, Random& random);

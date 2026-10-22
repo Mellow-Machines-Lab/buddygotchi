@@ -20,9 +20,20 @@ F keyed(const slime::Gag& gag, int channel, T age) {
 bool Acting::perform(T time, Random& random, int index) {
   if (suppressed) return false;
   const int n = takes(emotion);
-  int selected = index < 0 ? (chosen < 0 ? bags[emotion].next(random, n) : chosen) : index;
-  selected = std::max(0, std::min(n - 1, selected));
+  int selected;
+  if (index < 0 && chosen < 0) {
+    // While an idle occasion fits, its gag kOccasionShare of the time.
+    int fit[slime::kIdleOccasionCount], k = 0;
+    for (int i = 0; i < slime::kIdleOccasionCount; ++i)
+      if (fits(slime::kIdleOccasions[i].when, slime::kIdleOccasions[i].after, when, lookMs)) fit[k++] = i;
+    if (k && random.unit() < slime::kOccasionShare)
+      selected = n + fit[random.index(k)];
+    else
+      selected = bags[emotion].next(random, n);
+  } else
+    selected = std::max(0, std::min(n - 1, index < 0 ? chosen : index));
   performance = selected;
+  playing = -1;
   expression = emotion;
   start = time;
   cursor = contactCursor = 0;
@@ -31,14 +42,32 @@ bool Acting::perform(T time, Random& random, int index) {
   nextPerformance = time + gesture(emotion, selected).duration + 7 + random.unit() * 8;
   return true;
 }
+void Acting::hold(int g, int generation, int iteration, T time) {
+  if (g < 0) {
+    holding = false;
+    return;
+  }
+  if (holding && heldGeneration == generation && heldIteration == iteration) return;
+  holding = true;
+  heldGeneration = generation;
+  heldIteration = iteration;
+  performance = -1;
+  playing = g;
+  expression = emotion;
+  start = time;
+  cursor = contactCursor = 0;
+  ++count;
+  gagged = true;
+  nextPerformance = max(nextPerformance, time + slime::kGags[g].gesture.duration + 3);
+}
 void Acting::advance(T dt, T time, bool grab, bool reduced, Random& random) {
   contacts.clear();
-  if (!suppressed && !grab && time >= nextPerformance) perform(time, random);
+  if (!suppressed && !grab && !holding && time >= nextPerformance) perform(time, random);
   F target[kChannels]{};
   const F scale = reduced ? q(.18) : F(1);
-  if (!suppressed && performance >= 0 && expression == emotion) {
-    const auto& p = gesture(emotion, performance);
-    const auto* g = gag(emotion, performance);
+  if (!suppressed && (performance >= 0 || playing >= 0) && expression == emotion) {
+    const auto* g = current();
+    const auto& p = g ? g->gesture : slime::kProfile[emotion].performances[performance];
     T age = time - start;
     while (cursor < p.count && age >= p.cues[cursor].at) {
       const auto& cue = p.cues[cursor++];

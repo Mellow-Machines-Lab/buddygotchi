@@ -15,6 +15,7 @@
 #include "linkkit/kit.h"
 #include <new>
 #include "render/gel/lane.h"
+#include "render/tags.h"
 #include "fonts_gel.h"
 using namespace render;
 using namespace render::gel;
@@ -423,7 +424,10 @@ static void test_timing_comes_from_the_recipe_table() {
   // hiccups: the first take's card at 680 ms, then three little contacts in a
   // 3.7 s take; a finish timed without its outcome finds it too.
   for (int row = 0; row < slime::kRecipeStates; ++row)
-    TEST_ASSERT_EQUAL_INT(row == int(SceneState::kAsleep) || row == kStates ? 4 : 3, takes(row));
+    TEST_ASSERT_EQUAL_INT(row == int(SceneState::kGesture)                    ? 10
+                          : row == int(SceneState::kAsleep) || row == kStates ? 4
+                                                                              : 3,
+                          takes(row));
   const auto& hiccups = take(slime::kHappy, kStates, 3);
   TEST_ASSERT_EQUAL_UINT8(4, hiccups.count);
   TEST_ASSERT_EQUAL_UINT8(kSuccess, hiccups.contacts[0].kind);
@@ -546,6 +550,108 @@ static void test_comedy_plays_in_idle_and_asleep() {
       TEST_ASSERT_TRUE(swell > q(.01) && swell < q(.03));
     }
   }
+}
+// CONTINUITY.md, Gestures: the gesture state has a take for each of
+// render::Gesture, each its own gag under the face it borrows; the board
+// names the take, and no bag deals it. A shake wobbles the dome both ways
+// under baffled eyes, then the mood's face comes back.
+static void test_each_gesture_plays_its_own_gag() {
+  linkkit::Rng rng;
+  GelFace f;
+  f.reset(0, rng);
+  TEST_ASSERT_EQUAL_INT(int(Gesture::kCount), f.variants(Mood::kHappy, SceneState::kGesture));
+  TEST_ASSERT_EQUAL_INT(3, f.variants(Mood::kHappy, SceneState::kPoked));
+  const int row = int(SceneState::kGesture);
+  for (int g = 0; g < int(Gesture::kCount); ++g) {
+    const auto& r = take(slime::kGrumpy, row, g);
+    TEST_ASSERT_TRUE(&r == &take(slime::kCalm, row, g));  // the same in every mood
+    TEST_ASSERT_TRUE(r.gag >= 0 && r.count > 0);
+    char type[32];
+    std::snprintf(type, sizeof type, "gesture:%s", gestureName(Gesture(g)));
+    TEST_ASSERT_EQUAL_STRING(type, slime::kGags[r.gag].gesture.type);
+    TEST_ASSERT_TRUE(slime::kGestureFaces[g] >= 0 && slime::kGestureFaces[g] < slime::kProfiles);
+    TEST_ASSERT_EQUAL_UINT8(g, f.pick(SceneState::kGesture, Mood::kHappy, g + 1, Outcome::kNone, StartCtx::kNone, rng));
+    TEST_ASSERT_EQUAL_UINT32(uint32_t(F(r.duration).integer()), f.loopMs(Mood::kHappy, SceneState::kGesture, g));
+  }
+  const uint32_t random = f.engine().random.state;
+  f.started(SceneState::kGesture, Mood::kHappy, 5, Outcome::kNone, StartCtx::kNone);
+  TEST_ASSERT_EQUAL_UINT32(random, f.engine().random.state);
+  FaceSource s;
+  FaceContext c;
+  c.mood = s.mood = Mood::kHappy;
+  f.sync(s, c, 0);
+  for (uint32_t t = 16; t <= 480; t += 16) f.step(t, rng);
+  s.anim = SceneState::kGesture;
+  s.animVariant = uint8_t(Gesture::kDizzy);
+  s.at = 496;
+  f.sync(s, c, 496);
+  const auto& e = f.engine();
+  TEST_ASSERT_EQUAL_STRING("baffled", slime::kProfile[e.expression].id);
+  TEST_ASSERT_EQUAL_INT(int(Gesture::kDizzy), e.scenes.variant);
+  TEST_ASSERT_EQUAL_STRING("gesture:dizzy", slime::kGags[e.acting.playing].gesture.type);
+  F most = 0, least = 0;
+  for (uint32_t t = 512; t <= 496 + 3400; t += 16) {
+    f.sync(s, c, t);
+    f.step(t, rng);
+    most = max(most, e.acting.slide.x), least = min(least, e.acting.slide.x);
+  }
+  TEST_ASSERT_TRUE(most > q(.05) && least < q(-.05));
+  s.anim = SceneState::kNone;
+  f.sync(s, c, 4000);
+  f.step(4000, rng);
+  TEST_ASSERT_EQUAL_STRING("happy", slime::kProfile[e.expression].id);
+  TEST_ASSERT_FALSE(e.acting.holding);
+}
+// CONTINUITY.md, Occasions: a look's takes for tags and waits, dealt only
+// while they fit. Idle at night drowses; with no tag on it never plays an
+// occasion; frantic work types frantically; twenty idle minutes nod off.
+static void test_occasions_play_only_while_they_fit() {
+  auto idle = [](uint32_t when, uint32_t lookMs) {
+    auto e = std::make_unique<Engine>();
+    e->setOccasion(when, lookMs);
+    int occasions = 0, last = -1;
+    for (uint32_t t = 0; t <= 120000; t += 16) {
+      e->step(t);
+      if (e->acting.performance != last && e->acting.performance >= Acting::takes(e->emotion)) {
+        const auto& o = slime::kIdleOccasions[e->acting.performance - Acting::takes(e->emotion)];
+        TEST_ASSERT_TRUE(fits(o.when, o.after, when, lookMs));
+        ++occasions;
+      }
+      last = e->acting.performance;
+    }
+    return occasions;
+  };
+  TEST_ASSERT_EQUAL_INT(0, idle(0, 0));
+  TEST_ASSERT_EQUAL_INT(0, idle(tagBit("day") | tagBit("weekend"), 0));
+  TEST_ASSERT_TRUE(idle(tagBit("night"), 0) > 0);
+  TEST_ASSERT_TRUE(idle(tagBit("party"), 0) > 0);
+  TEST_ASSERT_EQUAL_INT(0, idle(0, 1199000));
+  TEST_ASSERT_TRUE(idle(0, 1200000) > 0);
+  // Work: an occasion's take is numbered after the row's three.
+  auto work = [](SceneState base, uint32_t when, uint32_t lookMs) {
+    auto e = std::make_unique<Engine>();
+    Facts facts;
+    facts.base = base;
+    e->setFacts(facts);
+    e->setOccasion(when, lookMs);
+    int occasions = 0;
+    for (uint32_t t = 0; t <= 60000; t += 16) {
+      e->step(t);
+      if (e->scenes.variant >= takes(int(base))) {
+        const auto& o = slime::kLookOccasions[e->scenes.variant - takes(int(base))];
+        TEST_ASSERT_EQUAL_INT(int(base), o.row);
+        TEST_ASSERT_TRUE(fits(o.when, o.after, when, lookMs));
+        ++occasions;
+      }
+    }
+    return occasions;
+  };
+  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kWorking, 0, 0));
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(5), 0) > 0);
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(2), 0) > 0);
+  TEST_ASSERT_TRUE(work(SceneState::kAsleep, tagBit("night"), 0) > 0);
+  TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1800000) > 0);
+  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kAsleep, 0, 1799000));
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
@@ -940,6 +1046,8 @@ int main() {
   RUN_TEST(test_a_power_on_seeds_the_engine_and_a_reset_restores_53);
   RUN_TEST(test_timing_comes_from_the_recipe_table);
   RUN_TEST(test_comedy_plays_in_idle_and_asleep);
+  RUN_TEST(test_each_gesture_plays_its_own_gag);
+  RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_reference_face_projection_and_pose_bounds);
   RUN_TEST(test_tracked_clear_matches_full_clear);

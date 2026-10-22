@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..'),read=name=>JSON.parse(fs.readFileSync(pa
 const g=read('emotion-graph.json'),c=read('expressions.json'),s=read('state-plan.json'),cov=read('coverage.json'),trans=read('transitions.json'),sound=read('sound/sound-plan.json');
 const review=JSON.parse(require('node:child_process').execFileSync(process.execPath,[path.join(__dirname,'check-scenes.mjs'),'--coverage'],{encoding:'utf8'}));
 const exercised=new Set(review.cells);
-assert.equal(exercised.size,42*23,'Every cell needs executed reference-scene coverage');
+assert.equal(exercised.size,42*24,'Every cell needs executed reference-scene coverage');
 const bridgeReview=JSON.parse(require('node:child_process').execFileSync(process.execPath,[path.join(__dirname,'check-bridges.mjs'),'--coverage'],{encoding:'utf8'}));
 const verifiedEdges=new Map(bridgeReview.edges.map(edge=>[edge.id,edge]));
 assert.equal(verifiedEdges.size,295,'Every directed edge needs executed bridge coverage');
@@ -12,7 +12,7 @@ const ids=Object.keys(g.nodes);
 assert.equal(ids.length,42);assert.equal(Object.keys(c.expressions).length,44);assert.equal(c.referenceMapping.length,19);
 assert.equal(g.holdAlwaysAvailable,true);assert.equal(g.maxEdgesPerDecision,1);assert.equal(g.maxDestinationChoices,8);
 assert.equal(g.implementation.runtimeChanged,true);assert.equal(g.implementation.productionEnumsChanged,true);
-assert.deepEqual([...g.schema.stateNames].sort(),s.states.map(v=>v.id).sort());assert.equal(new Set(s.states.map(v=>v.id)).size,23);
+assert.deepEqual([...g.schema.stateNames].sort(),s.states.map(v=>v.id).sort());assert.equal(new Set(s.states.map(v=>v.id)).size,24);
 assert.equal(g.retainedMoodIds.length,13);
 assert.equal(g.deletedMoodIds.length,0);assert.equal(g.newMoodIds.length,29);
 assert.deepEqual(Object.keys(sound.moodProfiles).sort(),[...ids].sort());
@@ -31,12 +31,13 @@ for(const [id,n] of Object.entries(g.nodes)){
 assert.equal(expectedEdges.size,295);assert.equal(trans.edges.length,expectedEdges.size);assert.equal(new Set(trans.edges.map(v=>v.id)).size,295);
 for(const e of trans.edges){assert.equal(expectedEdges.get(e.id),e.category);assert.equal(e.variants.length,3);assert.equal(e.status,'implemented');assert.deepEqual(e.variants,verifiedEdges.get(e.id).primitives);}
 for(const ladder of Object.values(g.intensityLadders))for(let i=1;i<ladder.length;i++)assert.ok(g.nodes[ladder[i-1]].ordinary.includes(ladder[i]));
-assert.equal(cov.cells.length,42*23);assert.equal(new Set(cov.cells.map(v=>v.id)).size,cov.cells.length);
+assert.equal(cov.cells.length,42*24);assert.equal(new Set(cov.cells.map(v=>v.id)).size,cov.cells.length);
 for(const row of cov.cells){
   const state=s.states.find(v=>v.id===row.state);assert.ok(ids.includes(row.mood)&&state);assert.equal(row.id,row.mood+'.'+row.state);
-  // Three takes each, but idle's six (its gags) and asleep's four (a snore);
+  // Three takes each, but idle's six (its gags), asleep's four (a snore) and
+  // a gesture's ten;
   // a successful finish has a fourth, its hiccups.
-  assert.equal(row.variations.length,{idle:6,asleep:4}[row.state]??3);assert.deepEqual(row.requiredHostFacts,s.hostFacts[row.state]||{});
+  assert.equal(row.variations.length,{idle:6,asleep:4,gesture:10}[row.state]??3);assert.deepEqual(row.requiredHostFacts,s.hostFacts[row.state]||{});
   assert.deepEqual(row.factVariations,state.factVariations||{});
   for(const [fact,choices] of Object.entries(row.factVariations))for(const [value,variations] of Object.entries(choices)){
     const takes=fact==='outcome'&&value==='success'?4:3;assert.equal(variations.length,takes);assert.equal(new Set(variations).size,takes);}
@@ -79,4 +80,4 @@ for(const file of walk(root)){
     const target=path.resolve(path.dirname(file),decodeURIComponent(href.split('#')[0]));assert.ok(fs.existsSync(target),'Broken link '+href+' in '+file);
   }
 }
-console.log(JSON.stringify({status:'OFFLINE PACKAGE PASS',moods:42,expressions:44,states:23,cells:cov.cells.length,edges:expectedEdges.size,ordinary,dramatic,soundRenders,maxPeak,links:'pass',productionChanged:true}));
+console.log(JSON.stringify({status:'OFFLINE PACKAGE PASS',moods:42,expressions:44,states:24,cells:cov.cells.length,edges:expectedEdges.size,ordinary,dramatic,soundRenders,maxPeak,links:'pass',productionChanged:true}));

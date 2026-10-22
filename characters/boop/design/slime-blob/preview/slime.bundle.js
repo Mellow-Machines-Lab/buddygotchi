@@ -5,12 +5,12 @@ const __modules={
 // The gel slime in the Character Studio (characters/studio/). It owns the
 // engine, renderer, sound and pointer wiring; the studio owns the controls.
 const {createSlime}=__load(1);
-const {createWebGL}=__load(27);
-const {createCanvas2D}=__load(30);
-const {eye,target}=__load(28);
-const {createProps}=__load(31);
-const {createPlayer}=__load(32);
-const {createReview}=__load(33);
+const {createWebGL}=__load(29);
+const {createCanvas2D}=__load(32);
+const {eye,target}=__load(30);
+const {createProps}=__load(33);
+const {createPlayer}=__load(34);
+const {createReview}=__load(35);
 const oneShotStates=['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','listening'];
 
 function create({root,stage,onChange=()=>{}}) {
@@ -198,9 +198,9 @@ function createSlime({seed=1729,catalog,reducedMotion=false}={}) {
   if(!profiles||!profiles.calm?.art)throw new TypeError('catalog.expressions must contain the expression profiles');
   const clock=createClock(),reduced={matches:Boolean(reducedMotion)};
   const cues=createCues({seed,plan:catalog.sound});
-  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
+  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],gestures:catalog.gestures||[],occasions:catalog.occasions||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
   return {
-    setMood:actor.setMood,setFacts:actor.setFacts,poke:actor.poke,shake:actor.shake,
+    setMood:actor.setMood,setFacts:actor.setFacts,setOccasion:actor.setOccasion,poke:actor.poke,shake:actor.shake,
     clearTransient:actor.clearTransient,holdExpression:actor.holdExpression,oneShot:actor.oneShot,setLinkTimedOut:actor.setLinkTimedOut,
     perform:actor.perform,setPerformance:actor.setPerformance,
     dragStart:actor.dragStart,dragMove:actor.dragMove,dragEnd:actor.dragEnd,
@@ -296,23 +296,28 @@ return {comedyKinds,createCues};
 5:()=>{
 const {createMotionV1}=__load(6);
 const {createActing}=__load(7);
-const {createFace}=__load(9);
-const {moodPosture,composePose,lifePose,createPostureWeights}=__load(10);
-const {createRouter}=__load(11);
-const {createScenes}=__load(12);
-const {sceneConstants}=__load(13);
-const {createBridges}=__load(26);
+const {createFace}=__load(11);
+const {moodPosture,composePose,lifePose,createPostureWeights}=__load(12);
+const {createRouter}=__load(13);
+const {createScenes}=__load(14);
+const {sceneConstants}=__load(10);
+const {createBridges}=__load(28);
+const {gestureGagName,gestureGag}=__load(26);
+const {idleOccasions,occasionGags}=__load(9);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEmotion='calm'}) {
+function createActor({profiles,gags,idleGags,gestures=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
-  const acting=createActing({profiles,gags,idleGags,rand,reduced,initialEmotion});
+  // The host's tags and how long its look has shown (setOccasion).
+  const occasion={when:new Set(),lookMs:0};
+  const extraGags=Object.fromEntries([...gestures.map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
+  const acting=createActing({profiles,gags,idleGags,extraGags,idleLooks:idleOccasions(occasions),rand,reduced,initialEmotion,occasion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
-  const scenes=createScenes({rand,reduced,profiles});
+  const scenes=createScenes({rand,reduced,profiles,gestures,occasions,occasion});
   const bridges=createBridges({graph,profiles,rand,reduced});
   const posture=createPostureWeights({emotions,initialEmotion,reduced});
   function sync(time,options) {
@@ -323,8 +328,11 @@ function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEmotion='
       expression=nextExpression;motion.setEmotion(expression);acting.setMood(expression,time/1000);face.setMood(expression,faceOptions);
     }
     face.setSleeping(route.quiet);
-    acting.setSuppressed(route.state!=='idle'||grab.active,time/1000);
     scenes.setRoute(route,time,expression);
+    // Acting plays in idle, and wherever the scene's recipe carries a gag.
+    const gag=scenes.gag();
+    acting.setSuppressed((route.state!=='idle'&&!gag)||grab.active,time/1000);
+    acting.hold(gag?gag.name:null,gag?gag.key:null,time/1000);
     if(route.moment)router.setMomentDuration(route.moment.requestId,scenes.inspect(time).scene.loopDurationMs);
     return route;
   }
@@ -370,6 +378,11 @@ function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEmotion='
     },
     setFacts(value) {
       router.setFacts(value);sync(motion.time*1000);
+    },
+    // The tags on now and how long the look has shown, in milliseconds: an
+    // occasion's take fits by them at its next pick (CONTINUITY.md, Occasions).
+    setOccasion({when=[],lookMs=0}={}) {
+      occasion.when=new Set(when);occasion.lookMs=Math.max(0,Number(lookMs)||0);
     },
     oneShot(value) {
       const result=router.oneShot(value,motion.time*1000,sceneConstants.cycleMs[0]);
@@ -519,6 +532,7 @@ return {deformationGLSL,createMotionV1};
 },
 7:()=>{
 const {createVariations}=__load(8);
+const {occasionShare,fits}=__load(9);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const smooth=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
 // A gag's own channels, beside the six gesture springs: the dome's slide
@@ -541,12 +555,17 @@ function keyed(keys,channel,age) {
 // Retargeting cancels future recipe cues; it never replaces these springs.
 // Idle's takes are the expression's three gestures, then its own gags and
 // every expression's idle gags: comedy that adds keyed targets and contacts
-// that sound to the same springs.
-function createActing({profiles,gags={},idleGags=[],rand,reduced,initialEmotion}) {
+// that sound to the same springs. While an idle occasion fits (the host's
+// tags and how long the look has shown, setOccasion), its next gesture is
+// one of those, occasionShare of the time, numbered after the takes.
+// A recipe may carry a gag of its own (a gesture's, an occasion's): acting
+// holds it for that recipe's pass, and deals nothing of its own meanwhile.
+function createActing({profiles,gags={},idleGags=[],extraGags={},idleLooks=[],rand,reduced,initialEmotion,
+  occasion={when:new Set(),lookMs:0}}) {
   const channels={lean:{x:0,v:0},squash:{x:0,v:0},ripple:{x:0,v:0},lift:{x:0,v:0},roll:{x:0,v:0},forward:{x:0,v:0}};
   const own={slide:{x:0,v:0},lids:{x:0,v:0}},springs={...channels,...own};
-  const automaticVariants=createVariations(rand);
-  let emotion=initialEmotion,actor=null,nextPerformance=1,performanceCount=0;
+  const automaticVariants=createVariations(rand),looks=idleLooks.map((entry,index)=>({...entry,index}));
+  let emotion=initialEmotion,actor=null,nextPerformance=1,performanceCount=0,held=null;
   let chosenPerformance='auto',suppressed=false,gagged=false,contacts=[];
   function takes(id) {
     const profile=profiles[id];
@@ -555,10 +574,17 @@ function createActing({profiles,gags={},idleGags=[],rand,reduced,initialEmotion}
   function perform(time,index) {
     if(suppressed)return false;
     const choices=takes(emotion);
-    let selected=index===undefined?(chosenPerformance==='auto'?automaticVariants.next(emotion+':idle',choices.length):Number(chosenPerformance)):Number(index);
+    let selected,choice;
+    if(index===undefined&&chosenPerformance==='auto'){
+      const fit=looks.filter(entry=>fits(entry,occasion));
+      if(fit.length&&rand()<occasionShare){
+        const entry=fit[Math.floor(rand()*fit.length)];
+        selected=choices.length+entry.index;choice={...extraGags[entry.gag],type:entry.gag};
+      }else selected=automaticVariants.next(emotion+':idle',choices.length);
+    }else selected=index===undefined?Number(chosenPerformance):Number(index);
     if(!Number.isInteger(selected))throw new TypeError('performance index must be an integer');
-    selected=clamp(selected,0,choices.length-1);
-    actor={...choices[selected],index:selected,start:time,cursor:0,contactCursor:0,expression:emotion};
+    if(!choice){selected=clamp(selected,0,choices.length-1);choice=choices[selected];}
+    actor={...choice,index:selected,start:time,cursor:0,contactCursor:0,expression:emotion};
     if(actor.keys)gagged=true;
     performanceCount++;
     nextPerformance=time+actor.duration+7+rand()*8;
@@ -572,6 +598,17 @@ function createActing({profiles,gags={},idleGags=[],rand,reduced,initialEmotion}
       chosenPerformance=String(value);
     },
     deferUntil(time) {nextPerformance=Math.max(nextPerformance,time);},
+    // A recipe's gag, once for each pass (key) of it; null lets go. It plays
+    // from now, and the next gesture of acting's own waits three seconds
+    // after it ends.
+    hold(name,key,time) {
+      if(!name){held=null;return;}
+      if(key===held)return;
+      held=key;
+      actor={...extraGags[name],type:name,index:-1,start:time,cursor:0,contactCursor:0,expression:emotion};
+      gagged=true;performanceCount++;
+      nextPerformance=Math.max(nextPerformance,time+actor.duration+3);
+    },
     setSuppressed(value,time) {
       value=Boolean(value);if(value===suppressed)return;
       suppressed=value;actor=null;
@@ -579,7 +616,7 @@ function createActing({profiles,gags={},idleGags=[],rand,reduced,initialEmotion}
     },
     advance(dt,time,grabActive) {
       contacts=[];
-      if(!suppressed&&!grabActive&&time>=nextPerformance)perform(time);
+      if(!suppressed&&!grabActive&&held===null&&time>=nextPerformance)perform(time);
       const target={},scale=reduced.matches?.18:1;
       if(!suppressed&&actor&&actor.expression===emotion){
         const age=time-actor.start;
@@ -656,6 +693,60 @@ function createVariations(rand) {
 return {createVariations};
 },
 9:()=>{
+const {sceneConstants}=__load(10);
+// CONTINUITY.md, Occasions: a look's takes that need tags (`when`, every one
+// on: the part of the day, a holiday, party, busy, frantic) or a wait
+// (`after`, seconds the look has shown), as the host says them
+// (setOccasion). While one fits, a pick goes to one this often; otherwise,
+// and while none fits, the look deals as it always has.
+const occasionShare=.67;
+const occasionGagName=occasion=>'occasion:'+(typeof occasion.gag==='string'?occasion.gag:occasion.id);
+function fits(entry,occasion) {
+  return entry.when.every(tag=>occasion.when.has(tag))&&entry.after*1000<=occasion.lookMs;
+}
+// Idle's: gags acting plays in place of its next gesture, in catalogue order.
+function idleOccasions(occasions) {
+  return occasions.filter(o=>o.looks.includes('idle')).map(o=>({id:o.id,when:o.when,after:o.after,gag:occasionGagName(o)}));
+}
+// The other looks': a recipe each (and a gag, if it has one) for each look
+// it names, flattened in catalogue order; the port's table is the same.
+function lookOccasions(occasions) {
+  return occasions.filter(o=>o.recipe).flatMap(o=>o.looks.map(state=>({id:o.id,state,when:o.when,after:o.after,
+    recipe:{duration:Math.round(o.recipe.duration*1000),intent:o.label,lean:o.recipe.lean,jitter:o.recipe.jitter,
+      contacts:o.recipe.contacts.map(([at,kind,strength,side])=>({at:Math.round(at*1000),kind,side,strength})),
+      gag:o.gag?occasionGagName(o):null}})));
+}
+// The gags occasions carry, each once: those named by another occasion are its.
+function occasionGags(occasions) {
+  return occasions.filter(o=>o.gag&&typeof o.gag==='object').map(o=>[occasionGagName(o),{label:o.label,...o.gag}]);
+}
+// A look's recipe as it plays: a jittered one takes the desk's bounded
+// jitter, contact by contact (its time, then its strength).
+function realizeOccasion(recipe,rand) {
+  const contacts=recipe.contacts.map(contact=>recipe.jitter?{...contact,at:contact.at+(rand()*2-1)*sceneConstants.timingJitterMs,
+    strength:contact.strength*(1+(rand()*2-1)*sceneConstants.gainJitter)}:{...contact});
+  return {duration:recipe.duration,intent:recipe.intent,lean:recipe.lean,contacts,focusCycles:1,gag:recipe.gag};
+}
+
+return {occasionShare,occasionGagName,fits,idleOccasions,lookOccasions,occasionGags,realizeOccasion};
+},
+10:()=>{
+// Phase 2 art candidates, outside accepted motion V1. CONTINUITY.md is the
+// specification; check-scenes.mjs pins these timings and aggregate bounds.
+const sceneConstants=Object.freeze({
+  entryMs:240,recoveryMs:480,contactMs:120,cycleMs:Object.freeze([3200,3700,4200]),
+  timingJitterMs:40,gainJitter:.10,activityFrequency:12,activityDamping:10,
+  activityVelocity:1.2,activityBounds:Object.freeze({lean:.08,squash:.06,forward:.05}),
+  propFrequency:10,propDamping:14,propRampMs:200,hostLaneTop:.8,
+  poseBounds:Object.freeze([1.25,1.32,1.14,.72]),lifeBounds:Object.freeze([.24,.12,.23])
+});
+const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
+  'tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready',
+  'task_complete','error','stopped','poked','tap_spam','wake_up','gesture']);
+
+return {sceneConstants,implementedStates};
+},
+11:()=>{
 // Semantic dimensions derived from the existing painter's art primitives. A
 // renderer draws the ONE selected primitive at face.render's ratios: at rest
 // each ratio is one, preserving the authored face without silhouette blends.
@@ -804,7 +895,7 @@ function createFace({profiles,initialEmotion,reduced}) {
 
 return {faceTransition,faceRender,sleepTarget,faceTarget,sleepScale,softRatio,createFace};
 },
-10:()=>{
+12:()=>{
 // CONTINUITY.md, Phase 1 channel bounds: the mood posture's weights are
 // critically damped (frequency 10, or 25 with reduced motion), outside the
 // locked blocks, so a mood change starts the body moving without a jolt.
@@ -854,7 +945,7 @@ function lifePose(channels,activity={forward:{x:0}},bridge={forward:{x:0}}) {
 
 return {postureFilter,createPostureWeights,moodPosture,composePose,lifePose};
 },
-11:()=>{
+13:()=>{
 // Boop vocabulary only. These are visual targets, never a new wire field.
 const stateFamilies=Object.freeze({
   no_app:'rest',asleep:'rest',idle:'idle',listening:'listen',starting:'start',
@@ -862,10 +953,10 @@ const stateFamilies=Object.freeze({
   analyzing:'desk',testing:'desk',delegating:'helpers',helper_return:'helpers',
   waiting:'desk',needs_you:'alert',reply_ready:'result',task_complete:'result',
   error:'result',stopped:'result',poked:'touch',tap_spam:'touch',
-  wake_up:'start'
+  wake_up:'start',gesture:'touch'
 });
 const acts=new Set(['planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting']);
-const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','react']);
+const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture','react']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const text=value=>typeof value==='string'?value:'';
 const attentionTuple=attn=>JSON.stringify([attn.id??0,attn.agent,attn.project]);
@@ -926,7 +1017,7 @@ function createRouter({hasMood=()=>false}={}) {
     // until it clears them, and may choose the take it has already timed:
     // any of a state's takes (the scene refuses one its state hasn't).
     moment={name,id,requestId,loops,startedAt:time,expiresAt:time+overlayLoopMs*loops,hold:value.hold===true,
-      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=3?args.variant:null,
+      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=9?args.variant:null,
       outcome:name==='task_complete'&&['success','failure'].includes(args.outcome)?args.outcome:null,
       ctx:name==='starting'&&['new_task','session','continuation','compacted'].includes(args.ctx)?args.ctx:null,
       expression:hasMood(args.mood)?args.mood:null};
@@ -964,21 +1055,23 @@ function createRouter({hasMood=()=>false}={}) {
 
 return {stateFamilies,createRouter};
 },
-12:()=>{
+14:()=>{
 const {createVariations}=__load(8);
-const {sceneConstants,implementedStates}=__load(13);
-const {deskRecipe}=__load(14);
-const {alertRecipe}=__load(17);
-const {resultRecipe,statusResultRecipe}=__load(18);
-const {restRecipe,snore}=__load(19);
-const {idleRecipe}=__load(20);
-const {listenRecipe}=__load(21);
-const {startRecipe,wakeRecipe}=__load(22);
-const {helpersRecipe}=__load(23);
-const {touchRecipe}=__load(24);
-const {recoveryGesture}=__load(15);
-const {sceneMoodTraits}=__load(16);
-const {createRamp}=__load(25);
+const {sceneConstants,implementedStates}=__load(10);
+const {deskRecipe}=__load(15);
+const {alertRecipe}=__load(18);
+const {resultRecipe,statusResultRecipe}=__load(19);
+const {restRecipe,snore}=__load(20);
+const {idleRecipe}=__load(21);
+const {listenRecipe}=__load(22);
+const {startRecipe,wakeRecipe}=__load(23);
+const {helpersRecipe}=__load(24);
+const {touchRecipe}=__load(25);
+const {gestureRecipe}=__load(26);
+const {occasionShare,fits,lookOccasions,realizeOccasion}=__load(9);
+const {recoveryGesture}=__load(16);
+const {sceneMoodTraits}=__load(17);
+const {createRamp}=__load(27);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const smooth=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
 const isDesk=state=>['working','planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting'].includes(state);
@@ -986,7 +1079,10 @@ const isDesk=state=>['working','planning','terminal','tool_use','searching','ana
 const routine=state=>isDesk(state)||state==='listening'||state==='asleep';
 // A state's takes: three, and a fourth for two of them, asleep's snore and a
 // successful finish's hiccups. Its bag deals the fourth from its second round.
-function takesOf(state,outcome=null) {return state==='asleep'||(state==='task_complete'&&outcome==='success')?4:3;}
+// A gesture has one for each gesture, which the board names, never dealt.
+function takesOf(state,outcome=null) {
+  return state==='gesture'?10:state==='asleep'||(state==='task_complete'&&outcome==='success')?4:3;
+}
 const implemented=new Set(implementedStates);
 // CONTINUITY.md, Representative activity scenes: each prop keeps the content
 // it last showed while its ramp fades it out.
@@ -995,7 +1091,8 @@ const hiddenContent=Object.freeze({alert:{requestId:null,agent:'',project:'',nam
   result:{state:null,label:'FINISHED',outcome:null,reveal:0},start:{label:'START',ctx:null,reveal:0},
   helpers:{mode:'dispatch',count:0,progress:0,report:false,direction:1,presence:0},listening:{pulse:.5},touch:{kind:null}});
 
-function createScenes({rand,reduced,profiles}) {
+function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
+  const looks=lookOccasions(occasions).map((entry,index)=>({...entry,index}));
   const variation=createVariations(rand),alerts=new Map(),moments=new Map();
   const activity={lean:{x:0,v:0},squash:{x:0,v:0},forward:{x:0,v:0}};
   const desk={x:0,v:0},quietMix={x:0,v:0};
@@ -1014,13 +1111,24 @@ function createScenes({rand,reduced,profiles}) {
       phase='enter';return;
     }
     // The host's take if its state has it; the first rest is always the
-    // still one, and asleep deals from its bag after that.
+    // still one, and asleep deals from its bag after that. A look deals an
+    // occasion's take instead, while one fits, occasionShare of the time
+    // (numbered after the state's own); a gesture's take is the board's, or
+    // the first.
     const takes=takesOf(route.state,route.outcome);
-    variant=route.moment&&route.moment.variant!==null&&route.moment.variant<takes?route.moment.variant
-      :implemented.has(route.state)&&!route.quiet&&route.state!=='idle'?variation.next(key,takes)
-      :route.state==='asleep'&&iteration>0?variation.next(key,takes):0;
+    const asked=Boolean(route.moment&&route.moment.variant!==null&&route.moment.variant<takes);
+    const deal=!asked&&route.state!=='gesture'&&(implemented.has(route.state)&&!route.quiet&&route.state!=='idle'
+      ||route.state==='asleep'&&iteration>0);
+    let look=null;
+    if(deal&&!route.moment){
+      const fit=looks.filter(entry=>entry.state===route.state&&fits(entry,occasion));
+      if(fit.length&&rand()<occasionShare)look=fit[Math.floor(rand()*fit.length)];
+    }
+    variant=asked?route.moment.variant:look?takes+look.index:deal?variation.next(key,takes):0;
     const profile=profiles[expression];
-    if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
+    if(look)recipe=realizeOccasion(look.recipe,rand);
+    else if(route.state==='gesture')recipe=gestureRecipe(gestures,variant);
+    else if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
     else if(route.state==='needs_you'){
       recipe=alertRecipe(variant,mood,profile);
     }else if(route.state==='task_complete')recipe=resultRecipe(route.outcome,variant,mood,profile);
@@ -1107,7 +1215,7 @@ function createScenes({rand,reduced,profiles}) {
     const failure=route.state==='task_complete'&&route.outcome==='failure';
     const reveal=active?Math.max(envelope(time,'success_reveal'),envelope(time,'failure_reveal'))*(lastContact?.strength||1):0;
     const present=active?Math.max(...['start_reveal','helper_reveal','reply_ready_reveal','error_reveal','stopped_reveal'].map(kind=>envelope(time,kind)))*(lastContact?.strength||1):0;
-    const recoveryPose=active&&phase==='recover'?recoveryGesture(recipe.profile,variant,1-(recipe.duration-ageMs)/sceneConstants.recoveryMs):{lean:0,squash:0,forward:0};
+    const recoveryPose=active&&phase==='recover'&&!recipe.gag?recoveryGesture(recipe.profile,variant,1-(recipe.duration-ageMs)/sceneConstants.recoveryMs):{lean:0,squash:0,forward:0};
     const quietActivity=route.state==='waiting'||route.state==='listening';
     const wave=quietActivity?.65+.35*Math.sin(ageMs/recipe.duration*Math.PI*2*(recipe.focusCycles||recipe.pulseCycles||1)):1;
     // A snore's breath swells the sleeping body a little, rising and falling.
@@ -1213,30 +1321,17 @@ function createScenes({rand,reduced,profiles}) {
       activityChannels:Object.fromEntries(Object.entries(activity).map(([key,m])=>[key,{...m}]))
     };
   }
-  return {setRoute,advance,inspect,activity,variation:variation.inspect};
+  // The gag the recipe playing carries for acting (a gesture's, an
+  // occasion's), and which pass of it this is; null for none.
+  function gag() {return route&&recipe?.gag?{name:recipe.gag,key:generation+':'+iteration}:null;}
+  return {setRoute,advance,inspect,gag,activity,variation:variation.inspect};
 }
 
 return {takesOf,createScenes};
 },
-13:()=>{
-// Phase 2 art candidates, outside accepted motion V1. CONTINUITY.md is the
-// specification; check-scenes.mjs pins these timings and aggregate bounds.
-const sceneConstants=Object.freeze({
-  entryMs:240,recoveryMs:480,contactMs:120,cycleMs:Object.freeze([3200,3700,4200]),
-  timingJitterMs:40,gainJitter:.10,activityFrequency:12,activityDamping:10,
-  activityVelocity:1.2,activityBounds:Object.freeze({lean:.08,squash:.06,forward:.05}),
-  propFrequency:10,propDamping:14,propRampMs:200,hostLaneTop:.8,
-  poseBounds:Object.freeze([1.25,1.32,1.14,.72]),lifeBounds:Object.freeze([.24,.12,.23])
-});
-const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
-  'tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready',
-  'task_complete','error','stopped','poked','tap_spam','wake_up']);
-
-return {sceneConstants,implementedStates};
-},
-14:()=>{
-const {sceneConstants}=__load(13);
-const {profileTraits}=__load(15);
+15:()=>{
+const {sceneConstants}=__load(10);
+const {profileTraits}=__load(16);
 // Rhythm, rather than tint, distinguishes each representative variation.
 const rhythms={
   working:[[580,780,1040],[560,760,1680,1880],[1100,2220]],
@@ -1280,8 +1375,8 @@ function deskRecipe(state,mood,variant,rand,profile=null) {
 
 return {deskRecipe};
 },
-15:()=>{
-const {sceneMoodTraits}=__load(16);
+16:()=>{
+const {sceneMoodTraits}=__load(17);
 const clamp=(value,lo,hi)=>Math.min(hi,Math.max(lo,value));
 const profileLimits=Object.freeze({
   delayMs:160,spacingMin:.88,spacingMax:1.18,gainMin:.68,gainMax:1.12,lean:.022,
@@ -1321,7 +1416,7 @@ function recoveryGesture(profile,variant,progress) {
 
 return {profileLimits,profileTraits,recoveryGesture};
 },
-16:()=>{
+17:()=>{
 // Representative expressive intent, independent of factual outcome. The same
 // request is signalled once; mood shapes the movement, never its meaning.
 const sceneMoodTraits=Object.freeze({
@@ -1335,10 +1430,10 @@ function sceneMood(mood) {return sceneMoodTraits[mood]||neutral;}
 
 return {sceneMoodTraits,sceneMood};
 },
-17:()=>{
-const {sceneConstants}=__load(13);
-const {sceneMood}=__load(16);
-const {profileTraits}=__load(15);
+18:()=>{
+const {sceneConstants}=__load(10);
+const {sceneMood}=__load(17);
+const {profileTraits}=__load(16);
 function alertRecipe(variant,mood='calm',profile=null) {
   const source=[[420],[420,740],[420,690,960]][variant],traits=profile?profileTraits(profile):sceneMood(mood);
   const times=source.map(at=>source[0]+traits.delayMs+(at-source[0])*traits.spacing);
@@ -1349,10 +1444,10 @@ function alertRecipe(variant,mood='calm',profile=null) {
 
 return {alertRecipe};
 },
-18:()=>{
-const {sceneConstants}=__load(13);
-const {sceneMood}=__load(16);
-const {profileTraits}=__load(15);
+19:()=>{
+const {sceneConstants}=__load(10);
+const {sceneMood}=__load(17);
+const {profileTraits}=__load(16);
 // A successful finish's fourth take: the card as the first take shows it,
 // then three small hiccups, each a little body contact.
 const hiccups=Object.freeze({revealMs:680,atMs:Object.freeze([1640,2060,2480]),strength:.45});
@@ -1379,8 +1474,8 @@ function statusResultRecipe(state,variant,mood='calm',profile=null) {
 
 return {hiccups,resultRecipe,statusResultRecipe};
 },
-19:()=>{
-const {sceneConstants}=__load(13);
+20:()=>{
+const {sceneConstants}=__load(10);
 // Both host asleep and explicit link timeout are the deliberate quiet alias:
 // they retain mood, close the shared sleeping face, and let live springs settle.
 // Asleep's fourth take is a snore: two soft breaths, each a slight swell
@@ -1394,8 +1489,8 @@ function restRecipe(variant=0) {
 
 return {snore,restRecipe};
 },
-20:()=>{
-const {sceneConstants}=__load(13);
+21:()=>{
+const {sceneConstants}=__load(10);
 // Idle variations are the expression catalogue's three authored performances.
 // Acting owns their quiet intervals and persistent springs, as in the audition.
 function idleRecipe() {
@@ -1404,8 +1499,8 @@ function idleRecipe() {
 
 return {idleRecipe};
 },
-21:()=>{
-const {sceneConstants}=__load(13);
+22:()=>{
+const {sceneConstants}=__load(10);
 function listenRecipe(variant) {
   return {duration:sceneConstants.cycleMs[variant],contacts:[],
     intent:['lean toward the speaker','tilt and listen','still attentive listening'][variant],
@@ -1414,10 +1509,10 @@ function listenRecipe(variant) {
 
 return {listenRecipe};
 },
-22:()=>{
-const {sceneConstants}=__load(13);
-const {sceneMood}=__load(16);
-const {profileTraits}=__load(15);
+23:()=>{
+const {sceneConstants}=__load(10);
+const {sceneMood}=__load(17);
+const {profileTraits}=__load(16);
 function startRecipe(ctx,variant,mood='calm',profile=null) {
   const traits=profile?profileTraits(profile):sceneMood(mood),at=[520,820,1080][variant]+traits.delayMs;
   return {duration:sceneConstants.cycleMs[variant],intent:['perk and present start','nod into the new work','stretch and resume'][variant],
@@ -1439,10 +1534,10 @@ function wakeRecipe(variant,mood='calm',profile=null) {
 
 return {startRecipe,wakeRecipe};
 },
-23:()=>{
-const {sceneConstants}=__load(13);
-const {sceneMood}=__load(16);
-const {profileTraits}=__load(15);
+24:()=>{
+const {sceneConstants}=__load(10);
+const {sceneMood}=__load(17);
+const {profileTraits}=__load(16);
 function helpersRecipe(state,variant,mood='calm',profile=null) {
   const traits=profile?profileTraits(profile):sceneMood(mood),returning=state==='helper_return';
   const times=returning?[[680],[960],[1240]][variant]:[[660,1040],[540,880,1220],[820,1640]][variant];
@@ -1455,8 +1550,8 @@ function helpersRecipe(state,variant,mood='calm',profile=null) {
 
 return {helpersRecipe};
 },
-24:()=>{
-const {sceneConstants}=__load(13);
+25:()=>{
+const {sceneConstants}=__load(10);
 function touchRecipe(state,variant) {
   const spam=state==='tap_spam',times=(spam?[[160,400],[160,340,520],[220,620]]:[[160],[200,480],[160,520]])[variant];
   return {duration:sceneConstants.cycleMs[variant],
@@ -1466,7 +1561,29 @@ function touchRecipe(state,variant) {
 
 return {touchRecipe};
 },
-25:()=>{
+26:()=>{
+// The board's own reaction to what you do to it (CONTINUITY.md, Gestures):
+// one take for each gesture, in the board's order (render::Gesture). Each is
+// a short scene whose contacts dent the body and sound, and a gag the acting
+// layer plays with it (gesture:<id>), under a face the board borrows for it.
+const gestureNames=Object.freeze(['handoff','stroke','ruffle','nose','tickle','dizzy','pickup','putdown','startle','peekaboo']);
+// The scene outlasts its gag a little, so the body settles before it ends.
+const gestureTailMs=200;
+const gestureGagName=gesture=>'gesture:'+gesture.id;
+function gestureRecipe(gestures,variant) {
+  const gesture=gestures[variant]||gestures[0];
+  return {duration:Math.round(gesture.duration*1000)+gestureTailMs,intent:gesture.label,lean:0,
+    contacts:gesture.contacts.map(([at,kind,strength,side])=>({at:Math.round(at*1000),kind,side,strength})),
+    gag:gestureGagName(gesture)};
+}
+// A gesture's gag: its keys and impulses; its sounds are the scene's.
+function gestureGag(gesture) {
+  return {label:gesture.label,duration:gesture.duration,keys:gesture.keys,cues:gesture.cues,contacts:[]};
+}
+
+return {gestureNames,gestureTailMs,gestureGagName,gestureRecipe,gestureGag};
+},
+27:()=>{
 // CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
 // A cubic Hermite from the current value and slope to the target over a fixed
 // window: from rest it is a smoothstep; a reversal keeps the current slope,
@@ -1495,10 +1612,10 @@ function createRamp(durationMs) {
 
 return {createRamp};
 },
-26:()=>{
+28:()=>{
 const {createVariations}=__load(8);
-const {profileTraits}=__load(15);
-const {faceTarget}=__load(9);
+const {profileTraits}=__load(16);
+const {faceTarget}=__load(11);
 const clamp=(value,lo,hi)=>Math.min(hi,Math.max(lo,value));
 const bridgeConstants=Object.freeze({
   durationsMs:Object.freeze({ordinary:Object.freeze([420,680,360]),dramatic:Object.freeze([760,920,560])}),
@@ -1615,10 +1732,10 @@ function createBridges({graph,profiles,rand,reduced}) {
 
 return {bridgeConstants,bridgePlan,bridgeDirection,primitivePeaks,amplitudeLimit,bridgeTarget,createBridges};
 },
-27:()=>{
+29:()=>{
 const {deformationGLSL}=__load(6);
-const {matrixMultiply,projection,viewMatrix,eye}=__load(28);
-const {paintFace}=__load(29);
+const {matrixMultiply,projection,viewMatrix,eye}=__load(30);
+const {paintFace}=__load(31);
 // Supersampling tiers, as [factor, most scene pixels]. The body is drawn into
 // an offscreen texture, where the context's antialias flag does nothing, so
 // the scene is rendered at factor× the canvas in each dimension and averaged
@@ -1910,7 +2027,7 @@ ${deformationGLSL}
 
 return {sceneScale,createWebGL};
 },
-28:()=>{
+30:()=>{
 // Camera shared by drawing and pointer hit testing.
 function matrixMultiply(a,b){
     const out=new Float32Array(16);
@@ -1934,8 +2051,8 @@ function viewMatrix(){
 
 return {matrixMultiply,projection,eye,target,viewMatrix};
 },
-29:()=>{
-const {sleepScale}=__load(9);
+31:()=>{
+const {sleepScale}=__load(11);
 // Catalogue primitives retained from the imported face audition.
 function paintFace(ctx, channels, catalog){
     const {time, gaze, performance:actor, face} = channels;
@@ -2185,8 +2302,8 @@ function paintFace(ctx, channels, catalog){
 
 return {paintFace};
 },
-30:()=>{
-const {paintFace}=__load(29);
+32:()=>{
+const {paintFace}=__load(31);
 function createCanvas2D(canvas,catalog){
     const faceCanvas=document.createElement('canvas');faceCanvas.width=512;faceCanvas.height=512;
     const faceContext=faceCanvas.getContext('2d');
@@ -2213,7 +2330,7 @@ function createCanvas2D(canvas,catalog){
 
 return {createCanvas2D};
 },
-31:()=>{
+33:()=>{
 // The same screen-space prop layout overlays either body renderer. All activity
 // positions are above the host's reserved lower 20%; props are persistent objects.
 // Each prop's visible is its drawn opacity, ramped by the engine; a prop that is
@@ -2353,7 +2470,7 @@ function createProps(stage,{hostLane=true}={}) {
 
 return {createProps};
 },
-32:()=>{
+34:()=>{
 // The output backend owns audio buffers, never the animation clock or motion.
 const playerPolicy=Object.freeze({lateMs:150,voices:4,fadeSeconds:.004,routineDuck:.25});
 function createPlayer({sfx,makeContext=()=>new (window.AudioContext||window.webkitAudioContext)()}) {
@@ -2403,7 +2520,7 @@ function createPlayer({sfx,makeContext=()=>new (window.AudioContext||window.webk
 
 return {playerPolicy,createPlayer};
 },
-33:()=>{
+35:()=>{
 // Records the rendered preview itself, never a webcam or the user's desktop.
 // Captures remain local Blob URLs until the owner/reviewer downloads them.
 function createReview({root,body,props,getChannels,applyCase,cases,startRun,getCases}) {

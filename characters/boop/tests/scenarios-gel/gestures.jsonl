@@ -1,0 +1,55 @@
+// The gel's own gestures (CONTINUITY.md, Gestures), each part way through
+// under the face it borrows: BOOT handing over an idle agent (pleased,
+// lifted and leaning in), a stroke (affectionate, melted, eyes shut), a
+// boop on the nose (surprised, squished), a shake (baffled, wobbling off
+// to one side; dbg.imu stands in for the motion sensor), then face down
+// and turned back up (peekaboo: happy, rising from below).
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","idle":1,"vol":0}
+{"t":"dbg.press","ms":60}
+{"clock":100}
+{"expect":{"moment":{"anim":"gesture","variant":1}}}
+{"clock":1100}
+{"shot":"handoff"}
+{"clock":4000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"t":"dbg.touch","x":60,"y":120,"to_x":200,"to_y":120,"ms":300}
+{"clock":4100}
+{"clock":4200}
+{"clock":4300}
+{"clock":4400}
+{"expect":{"moment":{"anim":"gesture","variant":2}}}
+{"clock":5800}
+{"shot":"stroke"}
+{"clock":9000}
+{"t":"dbg.touch","x":160,"y":134,"ms":60}
+{"clock":9100}
+{"expect":{"moment":{"anim":"gesture","variant":4}}}
+{"clock":9300}
+{"shot":"nose"}
+{"clock":13000}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":14000}
+{"clock":15200}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1700}
+{"clock":15260}
+{"t":"dbg.imu","ax":0,"ay":0,"az":300}
+{"clock":15320}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1700}
+{"clock":15380}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":15400}
+{"expect":{"moment":{"anim":"gesture","variant":6}}}
+{"clock":16000}
+{"shot":"dizzy"}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"calm","vol":0}
+{"t":"dbg.imu","ax":0,"ay":0,"az":-1000}
+{"clock":21000}
+{"clock":22500}
+{"t":"dbg.imu","ax":0,"ay":0,"az":1000}
+{"clock":22600}
+{"expect":{"moment":{"anim":"gesture","variant":10}}}
+{"clock":22900}
+{"shot":"peekaboo"}

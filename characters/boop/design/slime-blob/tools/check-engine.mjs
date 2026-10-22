@@ -370,6 +370,10 @@ export async function checkEngine() {
           before = structuredClone(observation.after); event = true;
           if (['mood', 'facts', 'oneShot', 'linkTimedOut'].includes(observation.event.type)) {
             const before = physical(observation.before), after = physical(observation.after);
+            // A gag's own springs (the slide, the lids) join the inspection
+            // at rest when its first gag starts (a gesture's, at its event).
+            for (const [name, spring] of Object.entries(after.actorChannels))
+              if (!(name in before.actorChannels) && spring.x === 0 && spring.v === 0) delete after.actorChannels[name];
             const reflex = observation.event.type === 'oneShot' && ['poked', 'tap_spam'].includes(observation.event.moment.name);
             if (reflex) {
               for (const [name, mode] of Object.entries(after.modes)) {

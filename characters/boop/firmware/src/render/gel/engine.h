@@ -48,6 +48,12 @@ class Engine {
     router.setFacts(value);
     sync();
   }
+  // The tags on now (render/tags.h bits) and how long the look has shown:
+  // an occasion's take fits by them at its next pick.
+  void setOccasion(uint32_t when, uint32_t lookMs) {
+    acting.when = scenes.when = when;
+    acting.lookMs = scenes.lookMs = lookMs;
+  }
   bool oneShot(const Request& value) {
     bool ok = router.oneShot(value, timeMs());
     sync();

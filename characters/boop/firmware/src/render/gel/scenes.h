@@ -23,7 +23,12 @@ static_assert(slime::kRecipeTakes[int(SceneState::kAsleep)] == 4 && slime::kReci
               "asleep and a success have a fourth take; a failure and a lost link don't");
 inline int takes(int row) { return slime::kRecipeTakes[row]; }
 static_assert(int(std::size(slime::kRecipes[0][0])) == kGestures, "a row's first takes, one for each gesture");
+// The gesture state's takes are render::Gesture's, one for each, the same in
+// every mood (kGestureTakes); the board names one, and no bag deals them.
+static_assert(slime::kGestureCount == int(Gesture::kCount), "a take for each of render::Gesture");
+static_assert(slime::kRecipeTakes[int(SceneState::kGesture)] == slime::kGestureCount, "the gesture row's takes");
 inline const slime::Recipe& take(int profile, int row, int variant) {
+  if (row == int(SceneState::kGesture)) return slime::kGestureTakes[variant < slime::kGestureCount ? variant : 0];
   return variant < kGestures ? slime::kRecipes[profile][row][variant]
                              : slime::kFourthTakes[profile][slime::kFourthRow[row]];
 }
@@ -127,6 +132,13 @@ struct Scenes {
   F listeningPulse = q(.5);
   SceneState touchKind = SceneState::kIdle;
   bool touchKnown = false;
+  // The tags on and how long the look has shown (Engine::setOccasion): a
+  // look's occasion (kLookOccasions) is dealt by them, numbered after the
+  // row's takes.
+  uint32_t when = 0, lookMs = 0;
+  // The gag the recipe playing carries for acting (a gesture's, an
+  // occasion's), as kGags numbers it, or -1.
+  int gag() const { return generation ? recipe.gag : -1; }
   void setRoute(const Route&, T time, int expression, Random&);
   void pickRecipe(T time, Random&);
   std::string advance(T dt, T time, bool grab, bool reduced, Random&);

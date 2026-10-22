@@ -1,7 +1,8 @@
 # State coverage and event mapping
 
-Updated 2026-10-21. The exact 23 state IDs, trigger descriptions, authored
-variations (three each; idle's six and asleep's four, with their comedy)
+Updated 2026-10-22. The exact 24 state IDs, trigger descriptions, authored
+variations (three each; idle's six and asleep's four, with their comedy,
+and a gesture's ten)
 and nine visual scene families are in [state-plan.json](state-plan.json). The router and reference scene modules
 cover this vocabulary. The owner approved the representative set before the
 remaining matrix was implemented and exercised. Production integration and
@@ -19,11 +20,11 @@ synchronized sound remain separate work.
 | Helpers | delegating, helper_return | Dispatch/live helpers vs an observed returning helper |
 | Alert | needs_you | Permission/input pending, stable recognizable ding and sign |
 | Result | reply_ready, task_complete, error, stopped | Reply vs whole-task success/failure vs tool error vs interruption |
-| Touch | poked, tap_spam | Ordinary local response vs repeated-tap response |
+| Touch | poked, tap_spam, gesture | Ordinary local response vs repeated-tap response vs the board's own gesture (a stroke, a shake, BOOT's hand-off: a gag each, under a borrowed face) |
 
 The generated [coverage.json](coverage.json) enumerates every mood and
 state pairing. Each row has the expression, scene, its variation IDs,
-state/mood sound profile and required host facts. All 966 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
+state/mood sound profile and required host facts. All 1,008 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
 separately. Shared rest rows explicitly alias one quiet
 family; they still preserve the mood in host storage. Active cells are
 compositions, not isolated exported assets.
@@ -43,6 +44,9 @@ trophy, then hiccups; failure keeps its three. Proud's lifted success
 shows a gift, a small bug beside its card. Each joins its bag's second
 round, so a fresh state opens as it always has.
 
+Occasions add takes too ([CONTINUITY.md](CONTINUITY.md), Occasions): idle,
+the typing desk modes and asleep deal one that needs the tags on or the
+wait the look has shown, two picks in three while one fits.
 ## Source events: account for everything, do not animate everything
 
 Rules own activity truth and urgent attention. Mood is independent.

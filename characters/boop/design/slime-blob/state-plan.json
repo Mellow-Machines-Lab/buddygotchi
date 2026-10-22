@@ -403,6 +403,27 @@
       ],
       "audioPolicy": "first_only",
       "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "gesture",
+      "scene": "touch",
+      "kind": "one_shot",
+      "trigger": "The board's own reaction to what you do to it: BOOT's hand-off, a stroke, one the wrong way, a boop on the nose, a tickle, a shake, a pick-up, a put-down, a thump on the desk, turned face up again. The board names the gesture, and its take is that gesture's.",
+      "visual": "The same body acts the gesture out with a gag of its own (keyed squash, stretch, lean, slide and lids) under a face it borrows for it: offers, melts, bristles, squishes, giggles, wobbles, stretches up, lands, jumps, rises from below.",
+      "variations": [
+        "handoff",
+        "stroke",
+        "ruffle",
+        "nose",
+        "tickle",
+        "dizzy",
+        "pickup",
+        "putdown",
+        "startle",
+        "peekaboo"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
     }
   ]
 }
