@@ -448,7 +448,16 @@ Besides drawing each mood and state, a face:
   minutes' work, a dream after half an hour's sleep. The working looks
   also play 125% quicker while the agents are busy and 160% while
   frantic (`render::workPace`, which each face gets as
-  `FaceContext::pace`). The gel has no occasions yet.
+  `FaceContext::pace`). The gel's are takes its engine deals
+  by the same tags and waits (`occasions` in its design's
+  `expressions.json`, which slimegen bakes into `slime.h`): idle drowses
+  at night, stretches in the morning, bounces on a party day or a New
+  Year, sways on a Friday, shivers in winter, wobbles at Halloween,
+  swoons on Valentine's and nods off after twenty minutes; busy and
+  frantic work type faster, twenty minutes' work ends in a stretch, and
+  sleep snores deeper at night and dreams after half an hour. Its idle
+  picks one in place of a gesture, and it has no costume or colour for
+  one.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.

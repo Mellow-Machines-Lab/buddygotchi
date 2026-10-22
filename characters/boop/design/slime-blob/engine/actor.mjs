@@ -6,18 +6,23 @@ import {createRouter} from './router.mjs';
 import {createScenes} from './scenes/index.mjs';
 import {sceneConstants} from './scenes/constants.mjs';
 import {createBridges} from './bridges.mjs';
+import {gestureGagName,gestureGag} from './scenes/gesture.mjs';
+import {idleOccasions,occasionGags} from './scenes/occasion.mjs';
 
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-export function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEmotion='calm'}) {
+export function createActor({profiles,gags,idleGags,gestures=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
-  const acting=createActing({profiles,gags,idleGags,rand,reduced,initialEmotion});
+  // The host's tags and how long its look has shown (setOccasion).
+  const occasion={when:new Set(),lookMs:0};
+  const extraGags=Object.fromEntries([...gestures.map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
+  const acting=createActing({profiles,gags,idleGags,extraGags,idleLooks:idleOccasions(occasions),rand,reduced,initialEmotion,occasion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
-  const scenes=createScenes({rand,reduced,profiles});
+  const scenes=createScenes({rand,reduced,profiles,gestures,occasions,occasion});
   const bridges=createBridges({graph,profiles,rand,reduced});
   const posture=createPostureWeights({emotions,initialEmotion,reduced});
   function sync(time,options) {
@@ -28,8 +33,11 @@ export function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEm
       expression=nextExpression;motion.setEmotion(expression);acting.setMood(expression,time/1000);face.setMood(expression,faceOptions);
     }
     face.setSleeping(route.quiet);
-    acting.setSuppressed(route.state!=='idle'||grab.active,time/1000);
     scenes.setRoute(route,time,expression);
+    // Acting plays in idle, and wherever the scene's recipe carries a gag.
+    const gag=scenes.gag();
+    acting.setSuppressed((route.state!=='idle'&&!gag)||grab.active,time/1000);
+    acting.hold(gag?gag.name:null,gag?gag.key:null,time/1000);
     if(route.moment)router.setMomentDuration(route.moment.requestId,scenes.inspect(time).scene.loopDurationMs);
     return route;
   }
@@ -75,6 +83,11 @@ export function createActor({profiles,gags,idleGags,graph,rand,reduced,initialEm
     },
     setFacts(value) {
       router.setFacts(value);sync(motion.time*1000);
+    },
+    // The tags on now and how long the look has shown, in milliseconds: an
+    // occasion's take fits by them at its next pick (CONTINUITY.md, Occasions).
+    setOccasion({when=[],lookMs=0}={}) {
+      occasion.when=new Set(when);occasion.lookMs=Math.max(0,Number(lookMs)||0);
     },
     oneShot(value) {
       const result=router.oneShot(value,motion.time*1000,sceneConstants.cycleMs[0]);

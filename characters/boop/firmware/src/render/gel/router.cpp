@@ -56,7 +56,7 @@ Family family(SceneState s) {
     case SceneState::kStopped: return Family::kResult;
     case SceneState::kPoked:
     case SceneState::kTapSpam:
-    case SceneState::kGesture: return Family::kTouch;  // its own recipes later
+    case SceneState::kGesture: return Family::kTouch;
     default: return Family::kDesk;
   }
 }

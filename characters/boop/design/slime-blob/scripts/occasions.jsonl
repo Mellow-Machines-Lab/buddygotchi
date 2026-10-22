@@ -1,0 +1,17 @@
+{"at":0,"type":"facts","facts":{"base":"idle","attn":null}}
+{"at":0,"type":"mood","mood":"calm"}
+{"at":0,"type":"occasion","when":["night"],"lookMs":0}
+{"at":6000,"type":"occasion","when":["party","weekend"],"lookMs":0}
+{"at":6000,"type":"mood","mood":"happy"}
+{"at":12000,"type":"occasion","when":["day"],"lookMs":1300000}
+{"at":12000,"type":"mood","mood":"calm"}
+{"at":19000,"type":"occasion","when":["day","frantic"],"lookMs":0}
+{"at":19000,"type":"facts","facts":{"base":"working","act":"working","attn":null}}
+{"at":29000,"type":"occasion","when":["day","busy"],"lookMs":0}
+{"at":29000,"type":"facts","facts":{"base":"working","act":"terminal","attn":null}}
+{"at":36000,"type":"occasion","when":["evening"],"lookMs":1300000}
+{"at":36000,"type":"facts","facts":{"base":"working","act":"working","attn":null}}
+{"at":48000,"type":"occasion","when":["night"],"lookMs":0}
+{"at":48000,"type":"facts","facts":{"base":"asleep","attn":null}}
+{"at":62000,"type":"occasion","when":["morning"],"lookMs":2000000}
+{"at":76000,"type":"end"}

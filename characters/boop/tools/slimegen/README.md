@@ -1,6 +1,6 @@
 # Slime asset generator
 
-Updated 2026-10-21.
+Updated 2026-10-22.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
@@ -30,7 +30,10 @@ See [verification](../../../../internal/VERIFICATION.md).
 
 The generator also writes `characters/boop/firmware/include/slime.h` (expression profiles,
 the idle gags and which expressions play them, scene recipes with each row's
-takes and the two rows' fourth takes, bridges and baked cue clips) and `slime_art.h` (authored vector
+takes and the two rows' fourth takes, the gesture state's ten takes, each
+with a gag of its own and the face it borrows, the looks' occasions with
+their tags as `firmware/src/render/tags.h` numbers them, bridges and baked
+cue clips) and `slime_art.h` (authored vector
 face paths). `slime_mesh.h` samples the reference dome geometry and analytic
 studio lighting into a mesh and a dense material lookup. These are not animation
 frames: the board deforms and projects geometry on every draw.

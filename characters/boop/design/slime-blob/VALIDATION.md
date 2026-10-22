@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-21. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-22. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -49,6 +49,17 @@ from its second round, the hiccups' timings, the gift on proud's lifted success
 alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
 and sinks then blinks awake, the sneeze is one contact a second in, the zoomies
 reach both edges, small under reduced motion) and sleep's still first 12.8 s.
+Its gesture checks pin the ten gestures in the board's order, each gag's
+shape, the face each borrows and gives back, a contact apiece and what each
+does (the hand-off lifts and leans in, the stroke melts with eyes shut, the
+ruffle bristles, the nose squishes, the tickle and the shake go both ways,
+the pick-up stretches up, the put-down lands squashed, the startle jumps,
+peekaboo rises from below). Its occasion checks play two minutes of each
+look with tags on and off: none plays with no tag or with tags none needs,
+night drowses, morning stretches, a party and New Year bounce, the nod-off
+waits its twenty minutes, busy and frantic work type faster, twenty
+working minutes stretch, and asleep snores deeper at night and dreams
+after half an hour.
 The cue check plays twenty minutes of idle and five of sleep: only the sneeze
 and the snore's breaths sound, sparsely. The builder runs the
 full coverage check before updating `coverage.json`; no cell earns a
@@ -120,7 +131,8 @@ internal/tools/boopctl sim --face gel
 - `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
   the one build that keeps the recipes' `intent`) and replays every
   `scripts/*.jsonl` against the saved traces, `comedy.jsonl`'s gags,
-  hiccups, gift and snore included. It checks every scalar,
+  hiccups, gift and snore, `gestures.jsonl`'s ten and
+  `occasions.jsonl`'s picks included. It checks every scalar,
   categorical field, cue and frame count within its tolerance, and fails
   on unexpected extra fields too. It reads the staged pack's `moods.h`
   (`.character-build/`, which `fw-test` stages) after the pack's own headers.
@@ -141,7 +153,13 @@ internal/tools/boopctl sim --face gel
   recipes, the one gift, idle's takes per expression, the bag's rounds,
   the doze's lids and sink, the zoomies' reach, a sneeze that allocates
   nothing, and sleep that snores after its still start (never with the
-  link lost); the extreme pose includes the slide at its bound.
+  link lost); the extreme pose includes the slide at its bound. Its
+  gesture test pins a take for each of `render::Gesture` (ten, the same in
+  every mood, each its own gag and a face there is), the take the board
+  names, a start that draws no randomness, and a shake played through the
+  face: baffled, sliding both ways, then the mood's face back. Its
+  occasion test plays two minutes of idle and one of work and sleep with
+  tags on and off: an occasion plays only while it fits, and does.
 - `boopctl sim --face gel` plays the pack's `tests/scenarios-gel/`
   against its `tests/golden-gel/`: every canonical mood and factual
   state, failure and neutral-finish frames, the host lane at the
@@ -149,7 +167,10 @@ internal/tools/boopctl sim --face gel
   you, the finish's marks and the bubble in each of its fonts), and the
   comedy (`comedy.jsonl`: the yawn, the sneeze's wind-up, the doze, the
   long yawn, the zoomies at either edge, a snore, the hiccups and the
-  gift).
+  gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
+  on the nose, a shake and peekaboo, each by the board's own input, its
+  variation expected) and the occasions (`occasions.jsonl`: a party's
+  bounce, a night's drowse, frantic typing).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
 

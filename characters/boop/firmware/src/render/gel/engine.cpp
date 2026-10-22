@@ -19,8 +19,11 @@ void Engine::sync(int forced) {
     face.setMood(next, ms);
   }
   face.setSleeping(route.quiet);
-  acting.setSuppressed(route.state != SceneState::kIdle || grab, motion.time);
   scenes.setRoute(route, timeMs(), expression, random);
+  // Acting plays in idle, and wherever the scene's recipe carries a gag.
+  const int gag = scenes.gag();
+  acting.setSuppressed((route.state != SceneState::kIdle && gag < 0) || grab, motion.time);
+  acting.hold(gag, scenes.generation, scenes.iteration, motion.time);
   if (route.moment) router.duration(*route.requestId, scenes.recipe.duration);
 }
 void Engine::step(uint32_t ms) {

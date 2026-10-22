@@ -141,7 +141,11 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   e.setMood(expressionFromName(moodName(context.mood)));
   bool timeout = source.look == SceneState::kNoApp;
   if (timeout != e.router.timedOut) e.linkTimedOut(timeout);
-  const int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
+  e.setOccasion(context.when, context.lookMs);
+  // The Mac's borrowed expression, else a gesture's own face while it plays.
+  int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
+  if (borrowed < 0 && source.anim == SceneState::kGesture)
+    borrowed = slime::kGestureFaces[std::min<int>(source.animVariant, slime::kGestureCount - 1)];
   bool nextMoment = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (nextMoment) {
     // Behaviour times the moment (its loops, its line), so the engine
@@ -174,7 +178,9 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
 // The engine's shuffle bag for the moment, drawn from copies: a call
 // refused after its pick (Device::refuse) leaves the bag and the engine's
 // randomness as they were. started draws the same take for real.
-uint8_t GelFace::pick(SceneState a, Mood mood, int, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
+uint8_t GelFace::pick(SceneState a, Mood mood, int wanted, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
+  // A gesture's take is the gesture asked for (from 1), never dealt.
+  if (a == SceneState::kGesture) return uint8_t(wanted > 0 && wanted <= slime::kGestureCount ? wanted - 1 : 0);
   const int row = recipeState(a, outcome, ctx);
   auto bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row];
   Random random = engine_->random;
@@ -182,11 +188,12 @@ uint8_t GelFace::pick(SceneState a, Mood mood, int, Outcome outcome, StartCtx ct
 }
 
 void GelFace::started(SceneState a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
+  if (a == SceneState::kGesture) return;
   const int row = recipeState(a, outcome, ctx);
   engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row].next(engine_->random, takes(row));
 }
 
-int GelFace::variants(Mood, SceneState) const { return kTakes; }
+int GelFace::variants(Mood, SceneState s) const { return s == SceneState::kGesture ? slime::kGestureCount : kTakes; }
 
 uint32_t GelFace::loopMs(Mood mood, SceneState state, int variant) const {
   return uint32_t(F(recipe(mood, state, variant, Outcome::kNone, StartCtx::kNone).duration).integer());

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include "render/gel/engine.h"
+#include "render/tags.h"
 using namespace render;
 using namespace render::gel;
 static double number(F x) { return double(x.raw) / F::scale; }
@@ -72,11 +73,12 @@ static void inspect(JsonObject o, Engine& e) {
   o["performanceCount"] = a.count;
   o["nextPerformance"] = number(a.nextPerformance);
   o["actingSuppressed"] = a.suppressed;
-  if (a.performance < 0)
+  if (a.performance < 0 && a.playing < 0)
     o["performance"] = nullptr;
   else {
+    // A recipe's gag held (a gesture's, an occasion's) is index -1.
     auto p = o["performance"].to<JsonObject>();
-    auto& perf = Acting::gesture(a.expression, a.performance);
+    auto& perf = a.playing >= 0 ? slime::kGags[a.playing].gesture : Acting::gesture(a.expression, a.performance);
     p["type"] = perf.type;
     p["index"] = a.performance;
     p["expression"] = slime::kProfile[a.expression].id;
@@ -271,11 +273,15 @@ static void event(Engine& e, JsonVariantConst v) {
     r.ctx = r.anim == SceneState::kStarting ? ctxFromName(args["ctx"]) : StartCtx::kNone;
     r.hold = j["hold"] | false;
     int variant = args["variant"] | -1;
-    r.variant = variant >= 0 && variant < slime::kMaxTakes ? variant : -1;
+    r.variant = variant >= 0 && variant < slime::kGestureCount ? variant : -1;  // router.mjs: 0 to 9
     e.oneShot(r);
   } else if (type == "linkTimedOut")
     e.linkTimedOut(v["value"]);
-  else if (type == "clearTransient")
+  else if (type == "occasion") {
+    uint32_t when = 0;
+    for (JsonVariantConst tag : v["when"].as<JsonArrayConst>()) when |= tagBit(tag.as<const char*>());
+    e.setOccasion(when, v["lookMs"] | 0u);
+  } else if (type == "clearTransient")
     e.clearTransient();
   else if (type == "holdExpression")
     e.holdExpression(expressionFromName(v["mood"]));

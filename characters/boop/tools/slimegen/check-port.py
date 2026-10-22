@@ -25,7 +25,7 @@ def main():
     exe=args.output/'gel-trace'
     if not (ROOT/'firmware/.pio/libdeps/native/ArduinoJson/src').is_dir() or not (ROOT/'.character-build/firmware/include/moods.h').is_file():
         raise SystemExit('check-port needs ArduinoJson from the native env and the staged pack: run make -C internal fw-test first')
-    sources=[ROOT/'characters/boop/tools/gel-trace/main.cpp',ROOT/'firmware/src/render/types.cpp']
+    sources=[ROOT/'characters/boop/tools/gel-trace/main.cpp',ROOT/'firmware/src/render/types.cpp',ROOT/'firmware/src/render/tags.cpp']
     sources += [ROOT/f'characters/boop/firmware/src/render/gel/{name}.cpp' for name in ['engine','scenes','acting','motion','router']]
     # The pack's own headers first, as slimegen just wrote them; the staged
     # build's last, for the moods.h only staging makes (characters/CHARACTER.md §2).

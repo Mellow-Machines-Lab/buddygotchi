@@ -1,8 +1,9 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-21. The pure reference engine and all activity scene
-families are implemented, and idle, sleep and a finish have their comedy
-(Comedy, below). Q1 representative art review was approved on
+Updated 2026-10-22. The pure reference engine and all activity scene
+families are implemented, idle, sleep and a finish have their comedy
+(Comedy, below), the board's gestures have a take each (Gestures) and
+the looks have occasions (Occasions). Q1 representative art review was approved on
 2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph, Mac mirror and native integer port are implemented. Contact-synchronized
 reference sound is implemented; timbres remain sketches.
 
@@ -288,14 +289,15 @@ safe envelope or produce competing repeated impacts.
 
 ## Full activity scene matrix
 
-The reference engine implements all 23 factual states in the nine scene
+The reference engine implements all 24 factual states in the nine scene
 families from [state-plan.json](state-plan.json). The full check executes
-all 42 canonical moods × 23 states: 966 cells, including 84 quiet aliases
+all 42 canonical moods × 24 states: 1,008 cells, including 84 quiet aliases
 for asleep/no-app. Starting is exercised with each of its four contexts,
-and task-complete with success and failure, giving 1,134 factual test
+and task-complete with success and failure, giving 1,176 factual test
 cases. Every active case exercises all its variants: three, a successful
-finish's four, and idle's takes (an expression's three gestures and its
-comedy, six or seven); quiet aliases retain mood and use the shared
+finish's four, a gesture's ten (each asked for, as the board does), and
+idle's takes (an expression's three gestures and its comedy, six or
+seven); quiet aliases retain mood and use the shared
 sleeping face without acting, and without contacts but a snore's breaths.
 The two optional face alternates are outside this canonical matrix.
 
@@ -500,6 +502,82 @@ keeps its columns. Of the twelve earlier reference traces only two changed:
 asleep's first pick again (3.2 s into each sleep). `scripts/comedy.jsonl`
 plays every gag, the hiccups, the gift and a snore, sounds included, and
 the port replays it frame for frame.
+
+## Gestures
+
+`gesture` is the board's own reaction to what you do to it, a one-shot
+in the touch family. Its takes are the board's gestures, in its order
+(`render::Gesture`, [engine/scenes/gesture.mjs](engine/scenes/gesture.mjs)):
+the board names one (`args.variant`, 0 to 9), no bag deals them, and a
+gesture asked for without one plays the first. Each is the same in every
+mood: a scene recipe whose body contacts dent the dome, pulse the touch
+mark and sound a squish on its first loop, and a gag of its own
+(`expressions.json` `gestures`, keyed as Comedy's are) that acting plays
+with it. The board borrows a face for each while it plays, as a react's
+expression is borrowed, and the mood stays.
+
+| Gesture | What the body does | Face it borrows | Gag |
+| --- | --- | --- | --- |
+| handoff (BOOT hands you an agent) | Lifts and leans in, offering | pleased | 2.4 s |
+| stroke | Melts under the hand, eyes shut | affectionate | 3 s |
+| ruffle (stroked the wrong way) | Bristles in ripples, then huffs | annoyed | 2.2 s |
+| nose | Squished in at the nose, pops back | surprised | 1.8 s |
+| tickle | Giggles, jiggling side to side, eyes squeezed | excited | 2.4 s |
+| dizzy (shaken) | Wobbles round, sliding and rolling side to side | baffled | 3.2 s |
+| pickup | Stretches up tall | surprised | 2.2 s |
+| putdown | Lands squashed and settles | relieved | 2 s |
+| startle (a thump on the desk) | Flinches, jumps, lands | stunned | 1.9 s |
+| peekaboo (turned face up again) | Squashed low with eyes shut, then rises | happy | 2.6 s |
+
+A scene lasts its gag and 200 ms more. **A recipe may carry a gag.**
+The scene names it (`gag`), and acting plays it once for each pass of the
+recipe (its generation and iteration), in any state, then waits: its own
+next gesture comes three seconds after the gag ends, and none is dealt
+while one is held. Acting is suppressed outside idle only while the
+recipe has no gag. A recipe with a gag recovers with the gag, not with the
+expression's recovery gesture. `scripts/gestures.jsonl` plays all ten as
+the board does (held, with their faces), one from work and one with no
+take named, and the port replays it frame for frame.
+
+## Occasions
+
+A look may have takes that need tags (`when`, every one on: the board's
+`render/tags.h`, the part of the day, the holidays, `party`, `busy` and
+`frantic`) or a wait (`after`, seconds the look has shown), as Pixel's
+designs do (characters/CHARACTER.md §9). The host says them with
+`setOccasion({when, lookMs})`; the board does on every sync, the Mac's
+mirror with the Mac's tags and no wait. While one fits, a pick goes to one
+of those that fit 67% of the time (`occasionShare`), any one alike;
+otherwise, and while none fits, the look deals as it always has, drawing
+no randomness of its own, so no trace without occasions changed.
+`expressions.json` `occasions` holds them ([engine/scenes/occasion.mjs](engine/scenes/occasion.mjs)):
+
+| Look | Occasion | Needs | What plays |
+| --- | --- | --- | --- |
+| idle | morning-stretch | morning | A big stretch up, eyes squeezed, a lean each way |
+| idle | night-drowse | night | Heavy lids, sunk a little, a slow sway |
+| idle | nod-off | 1,200 s idle | Nods three times deeper, lids closing, then jerks awake |
+| idle | party-bounce (and New Year's, Lunar New Year's, Programmers' Day's) | party (newyear, lunar, programmers) | Three hops side to side, eyes squinting; each landing a bounce at comedy's chance |
+| idle | friday-sway | friday | A little dance, leaning and sliding |
+| idle | winter-shiver | winter | Huddled down, shivering |
+| idle | halloween-wobble | halloween | A slow spooky roll and drift, lids half shut |
+| idle | valentines-swoon | valentines | Eyes shut, lifted, a lean |
+| working, terminal, tool_use | busy-typing | busy | Two quick three-key bursts, leaning in |
+| working, terminal, tool_use | frantic-typing | frantic | Six keys in 0.6 s, leaning in harder |
+| working | work-stretch | 1,200 s at work | A desk recipe with a stretch-up gag |
+| asleep | deep-snore | night | Three deeper breaths |
+| asleep | dream | 1,800 s asleep | Two soft breaths and a twitch-and-wriggle gag |
+
+Idle's are gags acting plays in place of its next gesture (numbered after
+the expression's takes); the other looks' are recipes the scene deals at
+a pick (numbered after the row's takes), the same in every mood, and a
+jittered one takes the desk's jitter. A gesture or a host's moment never
+takes one. An occasion whose tags go off simply isn't picked again. The
+engine has no colour channel, so no occasion tints the gel. The working
+looks' quicker pace while the agents are busy is the board's
+(`render::workPace`), not an occasion. `scripts/occasions.jsonl` plays a
+night, a party, twenty idle minutes, frantic and busy work, twenty working
+minutes, a night asleep and half an hour asleep, and the port replays it.
 
 ## States share one scene
 

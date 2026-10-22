@@ -5,10 +5,10 @@ export const stateFamilies=Object.freeze({
   analyzing:'desk',testing:'desk',delegating:'helpers',helper_return:'helpers',
   waiting:'desk',needs_you:'alert',reply_ready:'result',task_complete:'result',
   error:'result',stopped:'result',poked:'touch',tap_spam:'touch',
-  wake_up:'start'
+  wake_up:'start',gesture:'touch'
 });
 const acts=new Set(['planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting']);
-const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','react']);
+const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture','react']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const text=value=>typeof value==='string'?value:'';
 const attentionTuple=attn=>JSON.stringify([attn.id??0,attn.agent,attn.project]);
@@ -69,7 +69,7 @@ export function createRouter({hasMood=()=>false}={}) {
     // until it clears them, and may choose the take it has already timed:
     // any of a state's takes (the scene refuses one its state hasn't).
     moment={name,id,requestId,loops,startedAt:time,expiresAt:time+overlayLoopMs*loops,hold:value.hold===true,
-      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=3?args.variant:null,
+      variant:Number.isInteger(args.variant)&&args.variant>=0&&args.variant<=9?args.variant:null,
       outcome:name==='task_complete'&&['success','failure'].includes(args.outcome)?args.outcome:null,
       ctx:name==='starting'&&['new_task','session','continuation','compacted'].includes(args.ctx)?args.ctx:null,
       expression:hasMood(args.mood)?args.mood:null};
