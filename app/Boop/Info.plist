@@ -20,6 +20,8 @@
 	<string>26.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>When you open an agent from Boop, Boop asks your terminal to show that agent's tab.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Boop talks to its body on your desk over Bluetooth.</string>
 	<key>NSMicrophoneUsageDescription</key>
