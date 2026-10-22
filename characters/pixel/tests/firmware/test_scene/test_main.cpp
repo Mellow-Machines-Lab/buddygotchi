@@ -84,15 +84,23 @@ static void test_every_scene_matches_facegen() {
 // have the first pack's (three a state, working five), one or two of each
 // newer state and four starts (one a context); the six new ones three of
 // each, twelve starts (three a context)
-// and six finishes (three a result). Every mood has one wake-up. Asleep and
-// with no app, Boop looks the same in every older mood, and in every new one.
+// and six finishes (three a result). Every mood has one wake-up. Then the
+// comedy (the bank's comedy-art.mjs), after them: three more idles (a yawn,
+// nodding off, a sneeze), a fourth asleep (a snore) and one more success
+// (trophy, then hiccups) in every mood; proud's gift, one more success; and
+// excited's zoomies, one more working and idle. Asleep and with no app,
+// Boop looks the same in every older mood, and in every new one, and snores
+// the same in all of them.
 static void test_variations_and_shared_designs() {
-  const int older[] = {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1};
-  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1};
+  const int older[] = {6, 5, 3, 6, 4, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1};
+  const int newer[] = {6, 5, 3, 7, 4, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1};
   for (int m = 0; m < pixelMoods(); ++m) {
+    const Mood mood = render::pixelMood(m);
     for (int s = 0; s < int(SceneState::kCount); ++s) {
-      int n = variants(render::pixelMood(m), SceneState(s));
-      TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? older[s] : newer[s], n);
+      int n = variants(mood, SceneState(s));
+      const bool zoomies = mood == Mood::kExcited && (s == int(SceneState::kIdle) || s == int(SceneState::kWorking));
+      const bool gift = mood == Mood::kProud && s == int(SceneState::kTaskComplete);
+      TEST_ASSERT_EQUAL_INT((m < pixelIndex(Mood::kCalm) ? older[s] : newer[s]) + (zoomies || gift), n);
       TEST_ASSERT_TRUE(n >= 1 && n <= kMaxVariants);
       for (int v = 1; v < n; ++v) {
         TEST_ASSERT_NOT_EQUAL(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), v));
@@ -105,6 +113,8 @@ static void test_variations_and_shared_designs() {
       TEST_ASSERT_EQUAL_INT(sceneOf(family, SceneState::kAsleep, v), sceneOf(render::pixelMood(m), SceneState::kAsleep, v));
       TEST_ASSERT_EQUAL_INT(sceneOf(family, SceneState::kNoApp, v), sceneOf(render::pixelMood(m), SceneState::kNoApp, v));
     }
+    TEST_ASSERT_EQUAL_INT(sceneOf(Mood::kHappy, SceneState::kAsleep, 3),
+                          sceneOf(render::pixelMood(m), SceneState::kAsleep, 3));
     if (m) TEST_ASSERT_NOT_EQUAL(sceneOf(Mood::kHappy, SceneState::kIdle), sceneOf(render::pixelMood(m), SceneState::kIdle));
   }
   // A mood or state the device doesn't know draws happy's, and idle's.
@@ -127,7 +137,9 @@ static void test_variations_for_a_result_or_a_context() {
       TEST_ASSERT_TRUE(variantCtx(mood, SceneState::kTaskComplete, v) == StartCtx::kNone);
       (o == Outcome::kSuccess ? wins : fails)++;
     }
-    TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? 4 : 3, wins);  // the first pack's three successes, and the newer ones
+    // The first pack's three successes, and the newer ones; then the
+    // hiccups, and proud's gift.
+    TEST_ASSERT_EQUAL_INT((m < pixelIndex(Mood::kCalm) ? 4 : 3) + 1 + (mood == Mood::kProud), wins);
     TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? 1 : 3, fails);
     for (Outcome o : {Outcome::kSuccess, Outcome::kFailure}) {
       int n = fitting(mood, SceneState::kTaskComplete, o, StartCtx::kNone, out);
@@ -162,6 +174,39 @@ static void test_variations_for_a_result_or_a_context() {
   TEST_ASSERT_TRUE(ctxFromName("continuation") == StartCtx::kContinuation);
   TEST_ASSERT_TRUE(ctxFromName("compacted") == StartCtx::kCompacted);
   TEST_ASSERT_TRUE(ctxFromName("resume") == StartCtx::kNone);
+}
+
+// The comedy's flip-books (the bank's comedy-art.mjs), each at its mood's
+// pace: happy's, at pace 1, are 9 s of yawn, 11 s of nodding off, 10 s of
+// sneeze, 8 s of hiccups; the snore is 12 s in every mood, proud's gift 7 s,
+// excited's zoomies 3.9 s (5 s at its pace, 0.78), one design idle and
+// working. Each but the snore blinks in a step of its own; the snore's eyes
+// never open. Held four times, the longest of them in any mood still ends
+// inside the link's minute: under 15 s.
+static void test_the_comedy_designs() {
+  TEST_ASSERT_EQUAL_UINT32(9000, loopMs(Mood::kHappy, SceneState::kIdle, 3));
+  TEST_ASSERT_EQUAL_UINT32(11000, loopMs(Mood::kHappy, SceneState::kIdle, 4));
+  TEST_ASSERT_EQUAL_UINT32(10000, loopMs(Mood::kHappy, SceneState::kIdle, 5));
+  TEST_ASSERT_EQUAL_UINT32(8000, loopMs(Mood::kHappy, SceneState::kTaskComplete, 5));
+  TEST_ASSERT_EQUAL_UINT32(8000, loopMs(Mood::kCalm, SceneState::kTaskComplete, 6));
+  TEST_ASSERT_EQUAL_UINT32(7000, loopMs(Mood::kProud, SceneState::kTaskComplete, 6));
+  TEST_ASSERT_EQUAL_UINT32(3900, loopMs(Mood::kExcited, SceneState::kWorking, 5));
+  TEST_ASSERT_EQUAL_INT(sceneOf(Mood::kExcited, SceneState::kWorking, 5),
+                        sceneOf(Mood::kExcited, SceneState::kIdle, 6));
+  for (int m = 0; m < pixelMoods(); ++m) {
+    const Mood mood = render::pixelMood(m);
+    TEST_ASSERT_EQUAL_UINT32(12000, loopMs(mood, SceneState::kAsleep, 3));
+    for (int v = 3; v < variants(mood, SceneState::kIdle); ++v) {
+      TEST_ASSERT_TRUE(blinksItself(mood, SceneState::kIdle, v));
+      TEST_ASSERT_TRUE(loopMs(mood, SceneState::kIdle, v) < 15000);
+      TEST_ASSERT_FALSE(eyesClosed(show(mood, SceneState::kIdle, 0, v)));
+    }
+    TEST_ASSERT_FALSE(blinksItself(mood, SceneState::kAsleep, 3));
+    for (uint32_t t = 0; t < 12000; t += 500) TEST_ASSERT_TRUE(eyesClosed(show(mood, SceneState::kAsleep, t, 3)));
+    for (int v = 0; v < variants(mood, SceneState::kTaskComplete); ++v) {
+      TEST_ASSERT_TRUE(loopMs(mood, SceneState::kTaskComplete, v) < 15000);
+    }
+  }
 }
 
 // Shut eyes, a blink's or the one that hides a change of design, show the
@@ -349,6 +394,7 @@ int main(int, char**) {
   RUN_TEST(test_every_scene_matches_facegen);
   RUN_TEST(test_variations_and_shared_designs);
   RUN_TEST(test_variations_for_a_result_or_a_context);
+  RUN_TEST(test_the_comedy_designs);
   RUN_TEST(test_a_blink_shows_the_closed_eyes);
   RUN_TEST(test_the_mouth_opens_to_talk);
   RUN_TEST(test_a_flip_book_talks_with_the_face_that_shows);

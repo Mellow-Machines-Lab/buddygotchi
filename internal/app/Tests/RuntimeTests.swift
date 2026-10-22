@@ -1354,8 +1354,8 @@ final class RuntimeTests: XCTestCase {
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
     /// end it. The loops are the designs' (`FaceLoops`), so a new design
-    /// with a long loop fails here rather than in HISTORY: wounded's 13 s
-    /// idle, held four times, is 52 s.
+    /// with a long loop fails here rather than in HISTORY: wounded's 14.3 s
+    /// of nodding off, held four times, is 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(ReactOutput.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
@@ -1425,7 +1425,7 @@ final class RuntimeTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(n, 808)
+        XCTAssertEqual(n, 876)
         XCTAssertEqual(scenes.count, n)
         XCTAssertEqual(windows.count, n)
     }

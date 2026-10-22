@@ -7,16 +7,17 @@ import {moodAdditions,newMoods} from '../runtime/mood-catalog.mjs';
 import {makeScene,sceneEvents,chooseVariation,synthesizeCue} from '../runtime/bank.mjs';
 import {moodPlan,moodScore,voiceWindows} from '../runtime/mood-art.mjs';
 import {wakeAdditions,wakePlan,wakeScore} from '../runtime/wake-art.mjs';
+import {comedyAdditions,comedyPlan,comedyScore,sparseEvery} from '../runtime/comedy-art.mjs';
 import {stateOrder} from '../runtime/state-catalog.mjs';
 import {cycleHasSound} from '../runtime/score.mjs';
 if(process.argv.includes('--help')){console.log('Usage: node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs\nBuild the bank first. Checks coverage, V3 fingerprints, clocks, outcomes and procedural audio; no browser or API needed.');process.exit(0);}
 const baseline=JSON.parse(fs.readFileSync(new URL('./v3-fingerprints.json',import.meta.url)));
 const sha=value=>createHash('sha256').update(value).digest('hex');
-const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,newPlansChecked:0,wakePlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
-assert.equal(catalog.length,808);assert.equal(moodAdditions.length,480);assert.equal(wakeAdditions.length,13);assert.equal(new Set(catalog.map(a=>a.id)).size,808);
+const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,newPlansChecked:0,wakePlansChecked:0,comedyPlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
+assert.equal(catalog.length,876);assert.equal(moodAdditions.length,480);assert.equal(wakeAdditions.length,13);assert.equal(comedyAdditions.length,68);assert.equal(new Set(catalog.map(a=>a.id)).size,876);
 for(const m of moods)for(const s of stateOrder)assert(catalog.some(a=>a.mood===m&&a.state===s));
 for(const m of newMoods){
- assert.equal(catalog.filter(a=>a.mood===m).length,81);
+ assert.equal(catalog.filter(a=>a.mood===m).length,86);
  for(const s of stateOrder.filter(s=>s!=='wake_up'))assert(catalog.filter(a=>a.mood===m&&a.state===s).length>=3);
  assert.equal(catalog.filter(a=>a.mood===m&&a.state==='working').length,5);
  for(const outcome of ['success','failure'])for(const r of [0,.49,.999])assert.equal(makeScene(chooseVariation({mood:m,state:'task_complete'},{hostContext:{completionOutcome:outcome},random:()=>r})).asset.outcome,outcome);
@@ -36,6 +37,27 @@ for(const a of catalog){
   for(const e of score.events){assert.equal(e.at,plan.steps[e.sync.step].at);assert.equal(e.effect,plan.steps[e.sync.step].effect);recipes.set(e.effect+':'+e.pitch,e);report.soundContactsChecked++;}
   assert.equal(score.voiceSeconds,plan.voiceAt);assert.equal(scene.score.policy,'entry');
   report.wakePlansChecked++;continue;
+ }
+ // Comedy: one flip-book per design and mood that starts and ends on its resting face and blinks once
+ // (the snore's eyes stay shut), with each cue on its own step, and the sound it was scored for.
+ if(a.renderer==='comedy-v1'){
+  const plan=comedyPlan(a),score=comedyScore(a);assert.equal(plan.steps[0].at,0);assert.equal(plan.steps.at(-1).at,a.seconds);assert.equal(plan.steps[0].pose,plan.steps.at(-1).pose);
+  for(let i=1;i<plan.steps.length;i++)assert(plan.steps[i].at>plan.steps[i-1].at,a.id+' nonincreasing time');
+  for(const tag of scene.svg.matchAll(/<animate\b([^>]+)\/>/g)){const values=tag[1].match(/values="([^"]*)"/)[1].split(';');assert.equal(values[0],values.at(-1),a.id+' loop values');}
+  assert.equal((scene.svg.match(/data-blink="1"/g)||[]).length,a.action==='snore'?0:1,a.id+' one blink step');
+  for(const e of score.events){assert.equal(e.at,plan.steps[e.sync.step].at);assert.equal(e.effect,plan.steps[e.sync.step].effect);assert(e.gain>0&&e.gain<=1);recipes.set(e.effect+':'+e.pitch,e);report.soundContactsChecked++;}
+  // A yawn once, a sneeze every third loop and a snore every fourth, kept as scored; nodding off is silent;
+  // zoomies are thinned as routine work is, idle or working; a finish's cues play once.
+  assert.equal(scene.score.policy,{'yawn-stretch':'entry','nod-off':'silent','sneeze':'sparse','snore':'sparse','trophy-hiccups':'entry','gift':'entry','zoomies':'loop'}[a.action],a.id);
+  if(a.sound==='scored'||a.state==='task_complete')assert.deepEqual(scene.score,score);
+  if(a.sound==='routine'){assert(scene.score.mix.gestures.length===score.events.length&&scene.score.events.length<score.events.length,a.id+' thinned');for(const cycle of [0,1,4])for(const e of sceneEvents(scene,{cycle}))assert(score.events.some(o=>o.at===e.at&&o.effect===e.effect),a.id+' audio moved');}
+  if(sparseEvery[a.action])for(let n=0;n<4*sparseEvery[a.action];n++)assert.equal(cycleHasSound(scene.score,n),n%sparseEvery[a.action]===0,a.id+' every');
+  if(a.action==='snore')assert(scene.score.events.length===2&&scene.score.events.every(e=>e.effect==='snore'&&e.pitch===1));
+  if(a.state==='task_complete'){assert.equal(a.outcome,'success');assert(score.events.some(e=>e.effect.startsWith('trophy')));assert(!cycleHasSound(scene.score,1));}
+  if(a.action==='trophy-hiccups')assert.equal(score.events.filter(e=>e.effect==='hiccup').length,3);
+  // Held four times, the longest loop still ends inside the link's minute (RuntimeTests).
+  assert(a.seconds<15,a.id+' too long to hold four times');
+  report.comedyPlansChecked++;continue;
  }
  // A design drawn the V3 way with no fingerprint came after the freeze; every fingerprint must still find its design (below).
  if(a.renderer!=='mood-v4'){const old=baseline.hashes[a.id];if(!old)continue;assert.equal(sha(scene.svg),old.svg,a.id+' changed SVG');assert.equal(sha(JSON.stringify(scene.score)),old.score,a.id+' changed score');report.preservedByteExact++;continue;}
@@ -58,9 +80,9 @@ for(const a of catalog){
 for(const e of recipes.values()){
  const pcm=synthesizeCue(e,53,16000);let peak=0;for(const x of pcm){assert(Number.isFinite(x));peak=Math.max(peak,Math.abs(x));}assert(peak>0);assert(peak<=1.001);report.synthRecipesChecked++;
 }
-const c={};vm.runInNewContext(fs.readFileSync(new URL('../dist/boop-runtime.js',import.meta.url),'utf8'),c);assert.equal(c.Boop.catalog.length,808);assert.equal(c.Boop.moods.length,13);
+const c={};vm.runInNewContext(fs.readFileSync(new URL('../dist/boop-runtime.js',import.meta.url),'utf8'),c);assert.equal(c.Boop.catalog.length,876);assert.equal(c.Boop.moods.length,13);
 assert.equal(report.preservedByteExact,baseline.assetCount);
 assert.equal(c.Boop.makeScene('wounded.working.05').asset.action,'collect-pieces');
-assert.equal(report.wakePlansChecked,13);
+assert.equal(report.wakePlansChecked,13);assert.equal(report.comedyPlansChecked,68);
 report.newWorkingCueReduction=1-routineAfter/routineBefore;assert(report.newWorkingCueReduction>=.60);report.newWorkingRawCues=routineBefore;report.newWorkingRetainedCues=routineAfter;
 fs.writeFileSync(new URL('./checks.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(report);
