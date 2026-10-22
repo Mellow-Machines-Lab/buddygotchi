@@ -33,7 +33,8 @@ import Foundation
 ///   `say` is what the agent says before it acts. `"by": "reviewer"` is
 ///   the subagent's own. `session` names another of the agent's sessions,
 ///   working beside the first: each name is its own thread.
-/// - `you` steps are what the person does: `poke`, `talk` (the button
+/// - `you` steps are what the person does: `poke`, `press` (BOOT, which
+///   hands you the next agent while one needs you or sits idle), `talk` (the button
 ///   held `hold` seconds, then `text` heard), and `back`: back at the Mac
 ///   after `minutes` away (`Runtime.cameBack`).
 /// - `brain` steps are the creature's brain's answers to its questions,
@@ -56,6 +57,8 @@ public struct DemoScript: Sendable {
         public enum What: Sendable, Equatable {
             case agent(Agent)
             case poke
+            /// BOOT pressed: the board hands you the next agent.
+            case press
             case talk(String, hold: Double)
             /// Back at the Mac after this many ms away.
             case back(ms: Int64)
@@ -220,6 +223,7 @@ public struct DemoScript: Sendable {
             } else if let does = string("you") {
                 switch does {
                 case "poke": what = .poke
+                case "press": what = .press
                 case "talk":
                     guard let words = string("text") else { throw Problem(description: "\(here): talk needs text") }
                     what = .talk(words, hold: number("hold") ?? 1.5)
@@ -227,7 +231,7 @@ public struct DemoScript: Sendable {
                     let minutes = number("minutes") ?? 60
                     guard minutes > 0 else { throw Problem(description: "\(here): a back's minutes are more than 0") }
                     what = .back(ms: Int64(minutes * 60_000))
-                default: throw Problem(description: "\(here): you is poke, talk or back")
+                default: throw Problem(description: "\(here): you is poke, press, talk or back")
                 }
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
@@ -238,7 +242,7 @@ public struct DemoScript: Sendable {
             case .agent(let a) where a.does == .prompt: (1, 0)
             case .agent(let a) where a.does == .run || a.does == .compact: (1, 2)
             case .agent: (1, 0.6)
-            case .poke, .talk, .back: (0.8, 0)
+            case .poke, .press, .talk, .back: (0.8, 0)
             case .brain: (0.3, 0)
             }
             let buddy = string("buddy")
@@ -299,7 +303,7 @@ extension DemoScript.Step {
     /// What the person does to the device itself at this step, for
     /// whoever replays it: a tap is a finger on its screen, which the
     /// device reacts to by itself.
-    public var input: String? { what == .poke ? "tap" : nil }
+    public var input: String? { what == .poke ? "tap" : what == .press ? "press" : nil }
 
     /// What happened, for whoever is watching: the step's `note`, else words
     /// made from the step. Nil for a step nobody would see as something
@@ -309,6 +313,7 @@ extension DemoScript.Step {
         let found: DemoScript.Cause?
         switch what {
         case .poke: found = .init(kind: "tap", text: "You poke \(name)")
+        case .press: found = .init(kind: "press", text: "You press \(name)'s button")
         case .talk(let words, _): found = .init(kind: "talk", text: "You say “\(words)”")
         case .back(let ms): found = .init(kind: "back", text: "You come back to the Mac after a \(Band.away(ms: ms)) break")
         case .brain: found = nil

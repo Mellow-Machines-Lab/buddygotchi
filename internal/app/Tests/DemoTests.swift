@@ -58,7 +58,16 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
-        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, talk or back")) }
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, press, talk or back")) }
+    }
+
+    /// A press is BOOT: the board hands you the next agent, which a
+    /// recording replays on the board as a press (`input`).
+    func testAPressIsBOOT() throws {
+        let step = try DemoScript(#"{"you": "press"}"#).steps[0]
+        XCTAssertEqual(step.what, .press)
+        XCTAssertEqual(step.input, "press")
+        XCTAssertEqual(step.cause(creature: "Pip", agent: "claude")?.text, "You press Pip's button")
     }
 
     func testABadLineSaysWhere() {

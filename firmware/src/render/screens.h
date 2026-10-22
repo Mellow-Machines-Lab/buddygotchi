@@ -32,7 +32,9 @@ struct Strip {
   const char* doneAgent = nullptr;
   const char* doneThread = "";
   Outcome doneOutcome = Outcome::kNone;
-  int busy = 0;  // sessions working (grey; hidden at zero)
+  int busy = 0;     // sessions working (grey; hidden at zero)
+  int idle = 0;     // sessions idle, waiting for your next prompt: a parcel each for BOOT (hidden at zero)
+  int helpers = 0;  // helpers at work (hidden at zero)
   bool noApp = false;
 };
 

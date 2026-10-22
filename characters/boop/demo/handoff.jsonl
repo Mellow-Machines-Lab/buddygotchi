@@ -1,0 +1,19 @@
+// Thirty seconds: the hand-off. Two agents finish while a third works,
+// and the line under the face counts them, a parcel each. BOOT hands you
+// the one that finished last, then the other, the board playing its
+// hand-off as each opens on the Mac.
+{"demo": 1, "title": "The hand-off"}
+{"agent": "prompt", "text": "Tidy the settings page"}
+{"agent": "prompt", "text": "Write the changelog for 2.4", "session": "notes"}
+{"agent": "prompt", "text": "Find why the build is slow", "session": "build"}
+{"agent": "edit", "file": "src/settings.js", "old": "padding: 4px", "new": "padding: 8px", "takes": 2}
+{"agent": "reply", "text": "The settings page is tidied.", "after": 1}
+{"brain": {"react.mood": "pleased", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}
+{"agent": "edit", "file": "CHANGELOG.md", "old": "## 2.3", "new": "## 2.4\n\n- Faster search\n\n## 2.3", "session": "notes", "takes": 2}
+{"agent": "reply", "text": "The changelog for 2.4 is written.", "session": "notes", "after": 1}
+{"brain": {"react.mood": "happy", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}
+{"you": "press", "after": 2, "note": "BOOT: the changelog opens"}
+{"you": "press", "after": 2, "note": "BOOT again: the settings page opens"}
+{"agent": "run", "cmd": "npm run build", "about": "Time the build", "session": "build", "takes": 3}
+{"agent": "reply", "text": "The build is slow because of the source maps; I turned them off for dev.", "session": "build", "after": 1}
+{"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud"}

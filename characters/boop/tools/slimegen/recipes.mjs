@@ -9,13 +9,16 @@ import {listenRecipe} from '../../design/slime-blob/engine/scenes/listen.mjs';
 import {restRecipe,snore} from '../../design/slime-blob/engine/scenes/rest.mjs';
 import {idleRecipe} from '../../design/slime-blob/engine/scenes/idle.mjs';
 import {takesOf} from '../../design/slime-blob/engine/scenes/index.mjs';
-export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam','wake_up'];
+export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam','wake_up','gesture'];
 // The contact kinds, as the port's ContactKind numbers them: the scenes',
 // then comedy's (a gag's sneeze and zoomies, a snore's breath).
 export const kinds=['key_contact','screen_knock','body_contact','alert_reveal','success_reveal','failure_reveal','result_reveal','start_reveal','helper_reveal','reply_ready_reveal','error_reveal','stopped_reveal',
  'sneeze_contact','breath_contact','zoom_contact'];
+// A gesture (the board's own reaction to a stroke, a shake, BOOT's
+// hand-off) plays the touch's recipe until the gel has its own.
 function recipe(p,{state,outcome,ctx},v){
  let r,jitter=false;
+ if(state==='gesture')state='poked';
  if(['working','planning','terminal','tool_use','searching','analyzing','testing','waiting'].includes(state)){r=deskRecipe(state,p.mood,v,()=>.5,p);jitter=true;}
  else if(state==='needs_you')r=alertRecipe(v,p.mood,p);
  else if(state==='task_complete')r=resultRecipe(outcome||null,v,p.mood,p);

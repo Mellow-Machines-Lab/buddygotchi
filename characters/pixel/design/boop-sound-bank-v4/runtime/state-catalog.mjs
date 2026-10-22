@@ -1,6 +1,6 @@
 import {moods} from './visual/base.mjs';
 
-export const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up'];
+export const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture'];
 export const sustainedStates=['working','idle','asleep','no_app','planning','terminal','tool_use','searching','analyzing','testing','waiting'];
 // Seven named characters, not a new intensity axis. Timing is authored per mood.
 export const acting={

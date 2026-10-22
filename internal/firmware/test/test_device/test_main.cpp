@@ -273,7 +273,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
   r.kit.tick();
   r.hal.boot = false;
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
-  TEST_ASSERT_TRUE(has(r.ble.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\"}\n"));
+  TEST_ASSERT_TRUE(has(r.ble.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"button\"}}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"hello\""));
   r.kit.disconnected();
@@ -328,7 +328,7 @@ static void test_input_reaches_every_live_link() {
   press(800, 500);  // a hold: push-to-talk, and no tap
   for (const std::string* out : {&r.ble.text, &r.usb.text}) {
     TEST_ASSERT_EQUAL_INT(1, count(*out, tap));
-    TEST_ASSERT_EQUAL_INT(1, count(*out, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\"}\n"));
+    TEST_ASSERT_EQUAL_INT(1, count(*out, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"button\"}}\n"));
     TEST_ASSERT_EQUAL_INT(1, count(*out, talkOn));
     TEST_ASSERT_EQUAL_INT(1, count(*out, talkOff));
   }
@@ -338,7 +338,7 @@ static void test_input_reaches_every_live_link() {
   TEST_ASSERT_EQUAL_INT(2, count(r.ble.text, tap));
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
   // Listening still waits for the reply, so that tap only dipped the face.
-  TEST_ASSERT_TRUE(has(r.ble.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\"}\n"));
+  TEST_ASSERT_TRUE(has(r.ble.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"button\"}}\n"));
   // Disconnected, Bluetooth hears nothing more.
   r.kit.disconnected();
   press(100, 100);
@@ -465,7 +465,7 @@ static void test_injected_tap_reaches_the_mac() {
   r.usbLine("{\"t\":\"state\"}");  // the Mac is on USB
   r.usbLine("{\"t\":\"dbg.press\",\"ms\":100}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\"}\n"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"button\"}}\n"));
 }
 
 // A tap while the brain's finish names whose turn it was
@@ -478,7 +478,7 @@ static void test_a_tap_on_a_named_finish_carries_its_id() {
             "\"who\":{\"agent\":\"claude\",\"thread\":\"fix-nav\"}}}");
   r.usbLine("{\"t\":\"dbg.press\",\"ms\":100}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"on\":42}}\n"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"button\",\"on\":42}}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));  // not cut
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1008,7 +1008,7 @@ static void test_a_strip_touch_is_a_tap() {
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":222,\"ms\":100}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":200}");
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\"}\n"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"anim\":\"poked\""));
 }
@@ -1917,7 +1917,7 @@ static void test_a_tap_cuts_the_holders_animation() {
   doLine(r, 2, "react", "next", kGo);
   r.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");
   clockAt(r, 100);
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\"}\n"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"button\"}}\n"));
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "cut", "tap")));
   std::string st = stateOf(r);
   TEST_ASSERT_TRUE(has(st, "\"moment\":{\"anim\":\"poked\""));  // the `say` plays over the poke
@@ -2069,6 +2069,20 @@ static void test_dbg_latency_times_inputs_and_messages() {
   for (const char* k : {"press", "tap", "state", "do", "frame"}) TEST_ASSERT_EQUAL_UINT32(0, d[k]["n"].as<uint32_t>());
 }
 
+// A tap says where it came from (`src`: the screen or BOOT), and BOOT
+// while an agent sits idle says the board handed it over (`handoff`).
+static void test_a_tap_says_where_it_came_from() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"idle\":1}");
+  r.usbLine("{\"t\":\"dbg.press\",\"ms\":100}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"handoff\",\"data\":{\"src\":\"button\"}}\n"));
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":5000}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":100}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -2076,6 +2090,7 @@ int main() {
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);
+  RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);
   RUN_TEST(test_a_finishs_say_starts_at_its_voice_window);

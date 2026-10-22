@@ -53,6 +53,7 @@ creature's brain.
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
+| `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood |

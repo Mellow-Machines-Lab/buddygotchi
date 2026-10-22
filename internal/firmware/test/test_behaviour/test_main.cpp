@@ -2472,6 +2472,31 @@ static void test_a_reactions_occasion_wins_while_on() {
                                                render::StartCtx::kNone, r.rng));
 }
 
+// BOOT (Behaviour::press): while something needs you or an agent sits
+// idle, it hands you the next one, and the board plays gesture's hand-off
+// (its first variation, render::Gesture::kHandoff); with neither, it's a
+// tap, a poke.
+static void test_boot_hands_over_while_someone_waits() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  TEST_ASSERT_EQUAL_STRING("poked", r.b.press(r.t, r.rng));
+  TEST_ASSERT_TRUE(r.anim() == SceneState::kPoked);
+  Model m = base("idle");
+  m.idle = 2;
+  r.state(m);
+  r.at(5000);
+  TEST_ASSERT_EQUAL_STRING("handoff", r.b.press(r.t, r.rng));
+  TEST_ASSERT_TRUE(r.anim() == SceneState::kGesture);
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kHandoff), r.b.show(r.t).variant);
+  r.at(9000);
+  r.state(attn());
+  r.at(9100);
+  TEST_ASSERT_EQUAL_STRING("handoff", r.b.press(r.t, r.rng));  // needs you, idle or not
+  TEST_ASSERT_EQUAL_STRING("handoff", render::gestureName(render::Gesture::kHandoff));
+  TEST_ASSERT_EQUAL_STRING("peekaboo", render::gestureName(render::Gesture::kPeekaboo));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -2522,6 +2547,7 @@ int main() {
   RUN_TEST(test_a_variation_waits_for_its_look);
   RUN_TEST(test_the_working_looks_quicken_with_the_agents);
   RUN_TEST(test_a_reactions_occasion_wins_while_on);
+  RUN_TEST(test_boot_hands_over_while_someone_waits);
   RUN_TEST(test_no_app_at_30s_and_reconnect_blinks_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);

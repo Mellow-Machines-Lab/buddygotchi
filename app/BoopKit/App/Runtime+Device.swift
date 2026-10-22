@@ -45,6 +45,9 @@ extension Runtime {
             if rig === rigs[0], ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did)) }
             let finish = BoopDevice.finish(tapped: ev)
             options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
+            // BOOT that handed you an agent: the board played its hand-off,
+            // and the core opens the next one.
+            if ev.did == "handoff" { return run(pipeline.press(at: now, buddy: rig.tag)) }
             // A poke. The device has already poked,
             // cutting the animation playing but not a reaction's `say` or face;
             // on the brain's finish that names whose turn it was it only

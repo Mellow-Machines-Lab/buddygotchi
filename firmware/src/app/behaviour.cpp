@@ -368,6 +368,20 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
   return render::stateName(a);
 }
 
+const char* Behaviour::press(uint32_t t, Rng& rng) {
+  if (noApp(t) || !(model_.attn || model_.idle > 0)) return tap(t, rng);
+  taps_ = 0;
+  // While something needs you its sign stays up: the Mac opens it.
+  if (!model_.attn && !held(t)) gesture(render::Gesture::kHandoff, t);
+  return "handoff";
+}
+
+void Behaviour::gesture(render::Gesture g, uint32_t t) {
+  const int n = face_->variants(model_.mood, render::SceneState::kGesture);
+  const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
+  change(t, [&] { playAnim(render::SceneState::kGesture, t, CutBy::kTap, 1, model_.mood, v); });
+}
+
 // BOOT held: listening at once, even while something needs you, cutting
 // whatever else plays as a tap would. Already listening (the Mac's own
 // mic), it carries on with the same design.
@@ -501,6 +515,8 @@ render::Strip Behaviour::strip(uint32_t t) const {
   s.noApp = noApp(t);
   if (s.noApp) return s;
   s.busy = model_.busy;
+  s.idle = model_.idle;
+  s.helpers = model_.helpers;
   if (model_.attn) s.agent = model_.agent, s.project = model_.project, s.name = model_.name, s.more = model_.more;
   if (finishOn(t)) {
     s.doneAgent = reaction_.agent, s.doneThread = reaction_.thread, s.doneOutcome = reaction_.outcome;

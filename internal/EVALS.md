@@ -46,6 +46,7 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
+| `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
 | `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
@@ -233,6 +234,7 @@ file-name order:
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
+| `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key

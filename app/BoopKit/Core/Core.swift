@@ -73,6 +73,8 @@ public final class Core {
     /// The last variation each rule's reaction played, which the next one
     /// there avoids. The device picks the looks' variations itself.
     var lastVariant: [String: Int] = [:]
+    /// The session a BOOT press opened last, and when.
+    var lastHanded: (key: String, at: Int64)?
     /// The activity the working look shows (`updateActs`), and each
     /// working session's, held.
     var shownAct: Timed?
@@ -310,6 +312,18 @@ public final class Core {
         advance(to: now)
         startDayIfNew(now, &fx)
         poked(now, seq: seq, finish: finish, &fx)
+        publish(now, &fx)
+        return fx
+    }
+
+    /// BOOT pressed, recorded as `seq`: the board has handed you the next
+    /// agent (`pressed`).
+    @discardableResult
+    public func press(at now: Int64, seq: Int? = nil) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        startDayIfNew(now, &fx)
+        pressed(now, seq: seq, &fx)
         publish(now, &fx)
         return fx
     }
@@ -555,6 +569,43 @@ public final class Core {
         if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
         fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
+    }
+
+    /// Presses within this long of the last walk down the line: each opens
+    /// the one after the one opened last. After it, a press starts again
+    /// at the top.
+    public static let walkMs: Int64 = 8_000
+
+    /// Who a BOOT press hands you, in order: those that need you, oldest
+    /// first; then the idle ones, the one that finished last first (the
+    /// oldest idle session is usually one you've left).
+    func line(at now: Int64) -> [Session] {
+        let (waiting, _, idle) = tracker.grouped(at: now)
+        return waiting + idle.sorted { ($0.lastEventAt, $0.order) > ($1.lastEventAt, $1.order) }
+    }
+
+    /// A BOOT press: opens the next session in the line on the Mac,
+    /// recorded as the `open_thread` action, by the button. With nobody in
+    /// line (the board saw one the Mac no longer has), it's a poke.
+    func pressed(_ now: Int64, seq: Int?, _ fx: inout [CoreEffect]) {
+        guard !showsListening(at: now) else { return }
+        let line = line(at: now)
+        guard !line.isEmpty else { return poked(now, seq: seq, finish: nil, &fx) }
+        var next = 0
+        if let last = lastHanded, now - last.at < Self.walkMs, let i = line.firstIndex(where: { $0.key == last.key }) {
+            next = (i + 1) % line.count
+        }
+        let s = line[next]
+        lastHanded = (s.key, now)
+        // Named as the brain's lines name a thread: its workspace, else its project.
+        let thread = s.workspace ?? s.project
+        let more = line.count - 1
+        let message = "\(config.pack.name) handed you \(s.agent.rawValue) on \(EventLine.thread(name: thread, project: s.project))"
+            + (more > 0 ? "; \(more) more in line." : ".")
+        fx.append(.record(Event.did(message, for: seq, action: Core.openThread, by: "button",
+                                    facts: ["agent": .string(s.agent.rawValue), "thread": .string(thread), "more": .int(Int64(more)),
+                                            "waiting": .bool(s.needsSince != nil)], at: now)))
+        fx.append(.open(s.thread))
     }
 
     /// Turns the mic on, if it's off, recorded as `listen_start`. After the

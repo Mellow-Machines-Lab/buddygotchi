@@ -94,8 +94,9 @@ static void test_every_scene_matches_facegen() {
 static void test_variations_and_shared_designs() {
   // Then the occasions (occasion-art.mjs): seven more idle, three more
   // working, two more asleep and a party wake-up.
-  const int older[] = {13, 8, 3, 6, 6, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2};
-  const int newer[] = {13, 8, 3, 7, 6, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2};
+  // And gesture's ten, one for each render::Gesture (gesture-art.mjs).
+  const int older[] = {13, 8, 3, 6, 6, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 10};
+  const int newer[] = {13, 8, 3, 7, 6, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 10};
   for (int m = 0; m < pixelMoods(); ++m) {
     const Mood mood = render::pixelMood(m);
     for (int s = 0; s < int(SceneState::kCount); ++s) {

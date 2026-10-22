@@ -164,6 +164,12 @@ class Behaviour {
   // BOOT, or a touch anywhere: what it did, "poked" or "tap_spam", or
   // "dip" when it only dipped the face.
   const char* tap(uint32_t t, Rng& rng);
+  // BOOT: while something needs you or an agent sits idle, it hands you
+  // the next one on the Mac ("handoff"), and the board plays its hand-off
+  // but over needs you's sign, which stays; else it's a tap.
+  const char* press(uint32_t t, Rng& rng);
+  // The board's own reaction to a gesture: gesture's variation for it.
+  void gesture(render::Gesture g, uint32_t t);
   // The id of the brain's finish showing whose turn it was at t, which a
   // tap opens on the Mac instead of poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;

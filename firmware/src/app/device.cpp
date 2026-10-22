@@ -549,13 +549,15 @@ bool Device::shot(linkkit::Shot& s, uint32_t t) {
 // A tap goes to the Mac as what the device did about it: the poke, or the
 // press dip while the face is held or a finish names whose turn it was,
 // with that finish's id, the thread the Mac opens.
-void Device::tapped(uint32_t t, bool injected) {
+void Device::tapped(uint32_t t, bool injected, bool button) {
   uint32_t finish = b_.finishShown(t);
-  const char* did = b_.tap(t, kit().rng());
+  const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
-  char data[32];
-  bool on = finish && std::snprintf(data, sizeof(data), "{\"on\":%lu}", (unsigned long)finish) > 0;
-  kit().emit("tap", did, on ? data : nullptr, injected);
+  // Where it came from (`src`), and the finish it landed on, if any.
+  char data[48];
+  if (finish) std::snprintf(data, sizeof(data), "{\"src\":\"%s\",\"on\":%lu}", button ? "button" : "screen", (unsigned long)finish);
+  else std::snprintf(data, sizeof(data), "{\"src\":\"%s\"}", button ? "button" : "screen");
+  kit().emit("tap", did, data, injected);
   drain();  // the poke cuts an animation
 }
 
@@ -579,7 +581,7 @@ void Device::readInputs(uint32_t t) {
     case ButtonGesture::kTap:
       b_.pressUp();
       latency_.mark(Latency::kTap, bootInjected_ ? pressGone : real);
-      tapped(t, bootInjected_);
+      tapped(t, bootInjected_, true);
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
@@ -624,7 +626,7 @@ void Device::readInputs(uint32_t t) {
       // The panel's touch let go when it was last in contact, so its tap
       // counts the kTouchReleaseMs the device waits to be sure.
       latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
-      tapped(t, touchInjected_);
+      tapped(t, touchInjected_, false);
     }
   }
   if (touching != touchDown_) dirty_ = true;

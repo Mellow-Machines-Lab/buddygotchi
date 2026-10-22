@@ -220,10 +220,15 @@ export class DemoPlayer extends EventTarget {
 
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
-    // A finger on the screen, which is the board's own to react to.
+    // A finger on the screen, or BOOT pressed, which is the board's own to
+    // react to (a press long enough to pass the button's debounce).
     if (event.input === 'tap') {
       this.#board.touch(CANVAS[0] / 2, CANVAS[1] / 2);
       this.#board.release();
+    }
+    if (event.input === 'press') {
+      this.#board.boot(true);
+      setTimeout(() => this.#board.boot(false), 60);
     }
     if (event.line) {
       if (event.line.startsWith('{"t":"state"')) this.#state = event.line;

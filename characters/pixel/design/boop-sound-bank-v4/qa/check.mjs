@@ -9,20 +9,24 @@ import {moodPlan,moodScore,voiceWindows} from '../runtime/mood-art.mjs';
 import {wakeAdditions,wakePlan,wakeScore} from '../runtime/wake-art.mjs';
 import {comedyAdditions,comedyPlan,comedyScore,sparseEvery} from '../runtime/comedy-art.mjs';
 import {occasionAdditions,occasionPlan,occasionScore} from '../runtime/occasion-art.mjs';
+import {gestureAdditions,gesturePlan,gestureScore,gestures} from '../runtime/gesture-art.mjs';
 import {stateOrder} from '../runtime/state-catalog.mjs';
 import {cycleHasSound} from '../runtime/score.mjs';
 if(process.argv.includes('--help')){console.log('Usage: node characters/pixel/design/boop-sound-bank-v4/qa/check.mjs\nBuild the bank first. Checks coverage, V3 fingerprints, clocks, outcomes and procedural audio; no browser or API needed.');process.exit(0);}
 const baseline=JSON.parse(fs.readFileSync(new URL('./v3-fingerprints.json',import.meta.url)));
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const tags=[...fs.readFileSync(new URL('../../../../../firmware/src/render/tags.h',import.meta.url),'utf8').match(/kTagNames\[kTagCount\] = \{([^}]*)\}/)[1].matchAll(/"(\w+)"/g)].map(m=>m[1]);
-const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,newPlansChecked:0,wakePlansChecked:0,comedyPlansChecked:0,occasionPlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
-assert.equal(catalog.length,1045);assert.equal(moodAdditions.length,480);assert.equal(wakeAdditions.length,13);assert.equal(comedyAdditions.length,68);assert.equal(occasionAdditions.length,169);assert.equal(new Set(catalog.map(a=>a.id)).size,1045);
+const engineGestures=[...fs.readFileSync(new URL('../../../../../firmware/src/render/types.cpp',import.meta.url),'utf8').match(/kGestureNames\[\] = \{([^}]*)\}/)[1].matchAll(/"(\w+)"/g)].map(m=>m[1]);
+assert.deepEqual(gestures.map(g=>g[0]),engineGestures,'gestures in the engine\'s order');
+const report={status:'pass',moods:moods.length,states:stateOrder.length,performances:catalog.length,newPerformances:moodAdditions.length,preservedByteExact:0,newPlansChecked:0,wakePlansChecked:0,comedyPlansChecked:0,occasionPlansChecked:0,gesturePlansChecked:0,soundContactsChecked:0,synthRecipesChecked:0};
+assert.equal(catalog.length,1175);assert.equal(moodAdditions.length,480);assert.equal(wakeAdditions.length,13);assert.equal(comedyAdditions.length,68);assert.equal(occasionAdditions.length,169);assert.equal(gestureAdditions.length,130);assert.equal(new Set(catalog.map(a=>a.id)).size,1175);
 for(const m of moods)for(const s of stateOrder)assert(catalog.some(a=>a.mood===m&&a.state===s));
 for(const m of newMoods){
- // Every mood's 86, then its 13 occasions (occasion-art.mjs).
- assert.equal(catalog.filter(a=>a.mood===m&&a.renderer!=='occasion-v1').length,86);
+ // Every mood's 86, then its 13 occasions (occasion-art.mjs) and its 10 gestures (gesture-art.mjs).
+ assert.equal(catalog.filter(a=>a.mood===m&&!['occasion-v1','gesture-v1'].includes(a.renderer)).length,86);
+ assert.equal(catalog.filter(a=>a.mood===m&&a.renderer==='gesture-v1').length,10);
  assert.equal(catalog.filter(a=>a.mood===m&&a.renderer==='occasion-v1').length,13);
- for(const s of stateOrder.filter(s=>s!=='wake_up'))assert(catalog.filter(a=>a.mood===m&&a.state===s).length>=3);
+ for(const s of stateOrder.filter(s=>s!=='wake_up'&&s!=='gesture'))assert(catalog.filter(a=>a.mood===m&&a.state===s).length>=3);
  assert.equal(catalog.filter(a=>a.mood===m&&a.state==='working'&&a.renderer!=='occasion-v1').length,5);
  for(const outcome of ['success','failure'])for(const r of [0,.49,.999])assert.equal(makeScene(chooseVariation({mood:m,state:'task_complete'},{hostContext:{completionOutcome:outcome},random:()=>r})).asset.outcome,outcome);
  assert.equal(makeScene(chooseVariation({mood:m,state:'task_complete'})).asset.state,'reply_ready');
@@ -78,6 +82,17 @@ for(const a of catalog){
   assert(a.seconds<15,a.id+' too long to hold four times');
   report.occasionPlansChecked++;continue;
  }
+ // Gestures: one played once per kind and mood, in the engine's order (render::Gesture,
+ // firmware/src/render/types.h), every step later than the last, ending on the resting face, with a cue or two.
+ if(a.renderer==='gesture-v1'){
+  const plan=gesturePlan(a),score=gestureScore(a);assert.equal(plan.steps[0].at,0);assert.equal(plan.steps.at(-1).at,a.seconds);assert.equal(plan.steps.at(-1).pose,'home');
+  for(let i=1;i<plan.steps.length;i++)assert(plan.steps[i].at>plan.steps[i-1].at,a.id+' nonincreasing time');
+  assert.equal(a.action,gestures[a.variation-1][0],a.id+' in the engine\'s order');
+  assert(score.events.length>=1&&score.events.length<=2,a.id+' a cue or two');assert.equal(scene.score.policy,'entry');
+  for(const e of score.events){recipes.set(e.effect+':'+e.pitch,e);report.soundContactsChecked++;}
+  assert(a.seconds<4,a.id+' a reflex is short');
+  report.gesturePlansChecked++;continue;
+ }
  // A design drawn the V3 way with no fingerprint came after the freeze; every fingerprint must still find its design (below).
  if(a.renderer!=='mood-v4'){const old=baseline.hashes[a.id];if(!old)continue;assert.equal(sha(scene.svg),old.svg,a.id+' changed SVG');assert.equal(sha(JSON.stringify(scene.score)),old.score,a.id+' changed score');report.preservedByteExact++;continue;}
  const plan=moodPlan(a);assert.equal(plan.steps[0].at,0);assert.equal(plan.steps.at(-1).at,a.seconds);assert.equal(plan.steps[0].stage,plan.steps.at(-1).stage);
@@ -99,9 +114,9 @@ for(const a of catalog){
 for(const e of recipes.values()){
  const pcm=synthesizeCue(e,53,16000);let peak=0;for(const x of pcm){assert(Number.isFinite(x));peak=Math.max(peak,Math.abs(x));}assert(peak>0);assert(peak<=1.001);report.synthRecipesChecked++;
 }
-const c={};vm.runInNewContext(fs.readFileSync(new URL('../dist/boop-runtime.js',import.meta.url),'utf8'),c);assert.equal(c.Boop.catalog.length,1045);assert.equal(c.Boop.moods.length,13);
+const c={};vm.runInNewContext(fs.readFileSync(new URL('../dist/boop-runtime.js',import.meta.url),'utf8'),c);assert.equal(c.Boop.catalog.length,1175);assert.equal(c.Boop.moods.length,13);
 assert.equal(report.preservedByteExact,baseline.assetCount);
 assert.equal(c.Boop.makeScene('wounded.working.05').asset.action,'collect-pieces');
-assert.equal(report.wakePlansChecked,13);assert.equal(report.comedyPlansChecked,68);assert.equal(report.occasionPlansChecked,169);
+assert.equal(report.wakePlansChecked,13);assert.equal(report.comedyPlansChecked,68);assert.equal(report.occasionPlansChecked,169);assert.equal(report.gesturePlansChecked,130);
 report.newWorkingCueReduction=1-routineAfter/routineBefore;assert(report.newWorkingCueReduction>=.60);report.newWorkingRawCues=routineBefore;report.newWorkingRetainedCues=routineAfter;
 fs.writeFileSync(new URL('./checks.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(report);

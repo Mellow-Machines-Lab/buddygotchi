@@ -36,6 +36,10 @@ extension Event {
         /// One buddy's reaction, which the other buddies hear: only with
         /// several (`Buddy`).
         case reacted
+        /// BOOT pressed while something needs you or an agent sits idle:
+        /// the board handed you the next one (its `handoff`), and the core
+        /// opens it on the Mac.
+        case press
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

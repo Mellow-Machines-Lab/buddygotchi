@@ -94,9 +94,23 @@ void iconDots(Canvas& c, int x, int y, uint8_t ink) {  // three dots: something 
 
 }  // namespace
 
+// A parcel, 10 × 10: the idle count's, what BOOT hands you.
+void iconParcel(Canvas& c, int x, int y, uint8_t ink) {
+  c.fillRect(x, y + 2, 10, 8, ink);
+  c.fillRect(x + 4, y, 2, 2, ink);
+  c.fillRect(x + 1, y + 5, 8, 1, inkAt(kInkDim, kLevels));
+  c.fillRect(x + 4, y + 2, 2, 8, inkAt(kInkDim, kLevels));
+}
+
+// Two little heads, 12 × 10: the helpers' count.
+void iconHelpers(Canvas& c, int x, int y, uint8_t ink) {
+  c.fillRect(x, y + 3, 5, 5, ink);
+  c.fillRect(x + 7, y + 3, 5, 5, ink);
+}
+
 void drawStrip(Canvas& c, const Strip& s) {
   // An empty strip is bare glass: no divider under the face.
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && !s.noApp) return;
+  if (!s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp) return;
   // The first pack's success designs for the finish fill the screen with
   // colour: the finish's names get a black band to be read on.
   if (s.doneAgent) c.fillRect(0, kStripTop, kWidth, kHeight - kStripTop, kBlack);
@@ -110,13 +124,20 @@ void drawStrip(Canvas& c, const Strip& s) {
   int x = kMargin;
   char busy[12];
   std::snprintf(busy, sizeof(busy), "%d", s.busy);
+  // The room the counts after the names take: working, helpers and idle.
+  auto room = [](int n, int icon) {
+    char t[12];
+    std::snprintf(t, sizeof(t), "%d", n);
+    return n > 0 ? icon + 14 + stringWidth(kSmall, t) : 0;
+  };
+  const int counts = room(s.busy, 15) + room(s.helpers, 17) + room(s.idle, 15);
   if (s.agent) {
     drawIcon(c, x, cy - 5, kDot, kInkAmber);
     // Who needs you, cut to leave room for "+N" and the working count.
     char more[12] = "";
     if (s.more > 0) std::snprintf(more, sizeof(more), "+%d", s.more);
     int room = kWidth - kMargin - (x + 15) - (more[0] ? stringWidth(kSmall, more) + 8 : 0) -
-               (s.busy > 0 ? 29 + stringWidth(kSmall, busy) : 0);
+               counts;
     char who[48];
     const char* what = s.name && *s.name ? s.name : s.project;
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, what);
@@ -129,14 +150,26 @@ void drawStrip(Canvas& c, const Strip& s) {
     else if (s.doneOutcome == Outcome::kFailure) iconCross(c, x - 1, cy - 8, eye);
     else iconDots(c, x - 1, cy - 8, eye);
     // Who finished, cut to leave room for the working count.
-    int room = kWidth - kMargin - (x + 15) - (s.busy > 0 ? 29 + stringWidth(kSmall, busy) : 0);
+    int room = kWidth - kMargin - (x + 15) - counts;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
     x = drawStringFit(c, kSmall, x + 15, ty, who, kInkEye, room) + 14;
   }
   if (s.busy > 0) {
     drawIcon(c, x, cy - 5, kRing, kInkGrey);
-    drawString(c, kSmall, x + 15, ty, busy, kInkGrey);
+    x = drawString(c, kSmall, x + 15, ty, busy, kInkGrey) + 14;
+  }
+  // Then the helpers at work, and the agents idle, waiting for you.
+  char count[12];
+  if (s.helpers > 0) {
+    std::snprintf(count, sizeof(count), "%d", s.helpers);
+    iconHelpers(c, x, cy - 5, inkAt(kInkGrey, kLevels));
+    x = drawString(c, kSmall, x + 17, ty, count, kInkGrey) + 14;
+  }
+  if (s.idle > 0) {
+    std::snprintf(count, sizeof(count), "%d", s.idle);
+    iconParcel(c, x, cy - 5, inkAt(kInkEye, kLevels));
+    drawString(c, kSmall, x + 15, ty, count, kInkEye);
   }
   if (s.noApp) iconNoApp(c, kWidth - kMargin - 16, cy - 8);
 }

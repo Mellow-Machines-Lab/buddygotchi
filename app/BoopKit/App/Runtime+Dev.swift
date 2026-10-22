@@ -83,6 +83,14 @@ extension Runtime {
         changed()
     }
 
+    /// BOOT pressed, as the board reports it when it hands you an agent.
+    func pressed(who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): press\(Runtime.whose(rig))")
+        run(pipeline.press(at: options.clock(), buddy: rig.tag))
+        changed()
+    }
+
     /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
 }

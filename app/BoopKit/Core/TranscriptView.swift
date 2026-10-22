@@ -225,8 +225,10 @@ public final class TranscriptView {
         "reacted": 0, "session_start": 0, "needs_you_end": 0,
     ]
 
-    /// The kinds with lines that never wake the brain.
-    public static let quiet = ["presence_start", "needs_you_start"]
+    /// The kinds with lines that never wake the brain: a BOOT press that
+    /// opens an agent is the board's own reaction, as a tap that opens a
+    /// thread is.
+    public static let quiet = ["presence_start", "needs_you_start", "press"]
 
     /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
@@ -266,7 +268,7 @@ public final class TranscriptView {
     /// `tool_uses: all`).
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.talk?, nil), (.heartbeat?, nil),
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.talk?, nil), (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
@@ -326,6 +328,9 @@ public final class TranscriptView {
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return nil
         case .poke?: return poke(e)
+        case .press?:
+            noteActivity(e.at)
+            return Line(EventLine.pressed(name: name(e)))
         case .talk?: return talk(e)
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
@@ -907,6 +912,10 @@ public enum EventLine {
     public static func back(ms: Int64) -> String {
         "You came back to the Mac after a \(Band.away(ms: ms)) break."
     }
+
+    /// A BOOT press that handed you an agent; what it opened is the core's
+    /// record under it.
+    public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }
 
     public static func heartbeat(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."

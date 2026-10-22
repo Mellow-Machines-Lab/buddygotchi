@@ -178,7 +178,7 @@ class Device : public linkkit::App {
   ReactionIn parse(const linkkit::Do& c);
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
-  void tapped(uint32_t t, bool injected);  // a tap, from BOOT or the panel
+  void tapped(uint32_t t, bool injected, bool button);  // a tap, from BOOT or the panel
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();

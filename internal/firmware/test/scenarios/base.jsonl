@@ -12,6 +12,12 @@
 {"t":"state","base":"working","busy":3}
 {"clock":900}
 {"shot":"working-busy"}
+// The counts under the face: sessions working, helpers at work, and the
+// agents idle, a parcel each for BOOT to hand over.
+{"t":"state","base":"working","busy":2,"helpers":4,"idle":3}
+{"clock":1000}
+{"expect":{"idle":3,"helpers":4}}
+{"shot":"working-counts"}
 {"t":"state","base":"asleep","busy":0}
 {"clock":1200}
 {"expect":{"base":"asleep"}}

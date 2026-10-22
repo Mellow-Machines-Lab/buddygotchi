@@ -80,10 +80,19 @@ public struct Scenario: Sendable {
         /// Exactly the options the pass's mood question offered: staying
         /// in the mood it had, and its moves on the graph.
         public var offered: Set<String>?
+        /// The thread a `press` opened on the Mac, as `agent thread`
+        /// (`claude docs`): checked with no pass, since a press wakes no
+        /// brain.
+        public var opens: Set<String>?
+        /// Whether any of it is about a pass.
+        public var wantsAPass: Bool {
+            react != nil || animation != nil || feeling != nil || about != nil || kind != nil || said != nil || loops != nil
+                || mood != nil || offered != nil
+        }
 
         public init(react: Set<String>? = nil, animation: Set<String>? = nil, feeling: Set<String>? = nil, about: Set<String>? = nil,
                     kind: Set<String>? = nil, said: Set<String>? = nil, loops: Set<String>? = nil,
-                    mood: Set<String>? = nil, offered: Set<String>? = nil) {
+                    mood: Set<String>? = nil, offered: Set<String>? = nil, opens: Set<String>? = nil) {
             self.react = react
             self.animation = animation
             self.feeling = feeling
@@ -93,6 +102,7 @@ public struct Scenario: Sendable {
             self.loops = loops
             self.mood = mood
             self.offered = offered
+            self.opens = opens
         }
     }
 
@@ -168,7 +178,7 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "press", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -301,12 +311,14 @@ public struct Scenario: Sendable {
                     step.expectOrder[key] = values
                     return Set(values)
                 }
-                let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered"]
+                let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), animation: try set("animation"), feeling: try set("feeling"), about: try set("about"),
                                           kind: try set("kind"), said: try set("said"), loops: try set("loops"),
                                           mood: try set("mood"), offered: try set("offered"))
+                let opens = try set("opens")
+                step.expect?.opens = opens
                 for (key, values, known) in [("feeling", step.expect?.feeling, ReactOutput.feelings.map(\.name)),
                                              ("about", step.expect?.about, ReactOutput.topics.map(\.name)),
                                              ("kind", step.expect?.kind, ReactOutput.kinds.map(\.name))] {
@@ -404,9 +416,12 @@ public struct Eval {
         public var offered: [String] = []
         public var dropped: String?
         public var latencyMs: Int
+        /// What a press opened, `agent thread`, for `opens`.
+        public var opened: String?
 
         public var passed: Bool {
             guard dropped == nil else { return false }
+            if let o = expected.opens { return o.contains(opened ?? "nothing") }
             if let r = expected.react, !r.contains(react ?? "none") { return false }
             if let a = expected.animation, !a.contains(animation ?? "none") { return false }
             if let f = expected.feeling, !f.contains(feeling ?? "none") { return false }
@@ -430,8 +445,9 @@ public struct Eval {
                         expected.said.map { "said \($0.sorted().joined(separator: "|"))" },
                         expected.loops.map { "loops \($0.sorted().joined(separator: "|"))" },
                         expected.mood.map { "mood \($0.sorted().joined(separator: "|"))" },
-                        expected.offered.map { "offered \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
-            let got = dropped.map { "dropped: \($0)" }
+                        expected.offered.map { "offered \($0.sorted().joined(separator: "|"))" },
+                        expected.opens.map { "opens \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
+            let got = opened.map { "opened \($0)" } ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), animation \(animation ?? "none"), feeling \(feeling ?? "none"), about \(about ?? "none"), kind \(kind ?? "none"), said \(said ?? "none"), loops \(loops ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
             return "  step \(step): \(line)\n    wanted \(want.joined(separator: ", ")); got \(got)"
@@ -620,6 +636,14 @@ public struct Eval {
             default: break
             }
             guard let expect = step.expect else { continue }
+            if let opens = expect.opens {
+                // What the press opened: the core's record of it, this step's.
+                let did = home.sync { harness.log.events.last { $0.action == Core.openThread && $0.at == clock.now } }
+                let got = did.map { "\($0["agent"]?.string ?? "") \($0["thread"]?.string ?? "")" } ?? "nothing"
+                checks.append(Check(step: i + 1, line: "a press", expected: Scenario.Expectation(opens: opens), mood: moodNow(),
+                                    latencyMs: 0, opened: got))
+                if !expect.wantsAPass { continue }
+            }
             guard let record = last else {
                 throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
             }
@@ -803,6 +827,8 @@ public struct Eval {
         case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]
         case "answered": return [hook(.tool, .end, "PostToolUse", ["tool": "Bash", "failed": false])]
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
+        // BOOT, and the board handed you the next agent.
+        case "press": return [{ $0.press(at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",

@@ -1,7 +1,7 @@
 """Builds the device's faces from the animation bank as C tables.
 
 The designs are the animation bank's (characters/pixel/design/boop-sound-bank-v4/):
-13 moods × 23 states, each mood and state with variations of its own, some
+13 moods × 24 states, each mood and state with variations of its own, some
 for a host fact (task_complete's outcome, starting's context). This runs the
 bank's own generator (bank.mjs, beside this) to write every design's SVG into
 build/, which git ignores, and lists the designs in design/manifest.json. It

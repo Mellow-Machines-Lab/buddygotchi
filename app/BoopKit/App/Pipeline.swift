@@ -177,6 +177,17 @@ public final class Pipeline {
         }
     }
 
+    /// BOOT pressed, and the board handed you the next agent (its
+    /// `handoff`): the core opens it on the Mac. With several buddies, the
+    /// board's buddy's.
+    @discardableResult
+    public func press(at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) {
+            let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
+            run(core(buddy).press(at: now, seq: e.seq), buddy: buddy)
+        }
+    }
+
     /// What you said to Boop on push-to-talk, heard by the Mac's mic
     /// after `by`'s button (`device` or `app`), cut to 2,000 characters as
     /// a prompt is on the wire. It wakes the brain

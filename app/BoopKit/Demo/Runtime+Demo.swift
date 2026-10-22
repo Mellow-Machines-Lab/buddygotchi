@@ -147,6 +147,10 @@ public final class DemoPlayer: @unchecked Sendable {
             heardStep(step, agent(of: step))
             runtime.tapped(who: Runtime.demoBy, buddy: step.buddy)
             then()
+        case .press:
+            heardStep(step, agent(of: step))
+            runtime.pressed(who: Runtime.demoBy, buddy: step.buddy)
+            then()
         case .talk(let words, let hold):
             heardStep(step, agent(of: step))
             runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)

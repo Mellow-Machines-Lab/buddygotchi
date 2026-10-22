@@ -103,7 +103,7 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && !s.noApp) return;  // bare glass, no divider
+  if (!s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp) return;  // bare glass
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
   r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
@@ -111,7 +111,13 @@ void strip(Lane& l, const Strip& s) {
   const int cy = l.y((kStripTop + kHeight) / 2), ty = cy - f.h / 2;
   char busy[12];
   std::snprintf(busy, sizeof(busy), "%d", s.busy);
-  const int busyRoom = s.busy > 0 ? kIcon + 8 + glyphCount(busy) * f.w + kIcon : 0;
+  // The room the counts after the names take: working, helpers and idle.
+  auto room = [&](int n, int icon) {
+    char t[12];
+    std::snprintf(t, sizeof(t), "%d", n);
+    return n > 0 ? icon + glyphCount(t) * f.w + kIcon : 0;
+  };
+  const int busyRoom = room(s.busy, kIcon + 8) + room(s.helpers, kIcon + 12) + room(s.idle, kIcon + 10);
   int x = kMargin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
@@ -138,7 +144,24 @@ void strip(Lane& l, const Strip& s) {
   }
   if (s.busy > 0) {
     ring(r, x, cy, grey);
-    text(r, f, x + kIcon + 8, ty, busy, grey);
+    x = text(r, f, x + kIcon + 8, ty, busy, grey) + kIcon;
+  }
+  // Then the helpers at work, and the agents idle, waiting for you: a
+  // parcel each for BOOT to hand over.
+  char count[12];
+  if (s.helpers > 0) {
+    std::snprintf(count, sizeof(count), "%d", s.helpers);
+    r.round(x, cy - 2, 7, 7, 3, grey);
+    r.round(x + 10, cy - 2, 7, 7, 3, grey);
+    x = text(r, f, x + kIcon + 12, ty, count, grey) + kIcon;
+  }
+  if (s.idle > 0) {
+    std::snprintf(count, sizeof(count), "%d", s.idle);
+    const uint16_t eye = inkRgb565(kInkEye);
+    r.round(x, cy - 6, 16, 13, 2, eye);
+    r.round(x + 7, cy - 6, 2, 13, 0, dim);
+    r.round(x, cy - 1, 16, 2, 0, dim);
+    text(r, f, x + kIcon + 10, ty, count, eye);
   }
   if (s.noApp) plug(r, l.w - kMargin - 24, cy, grey);
 }
@@ -156,7 +179,7 @@ uint32_t laneKey(const char* line, const Strip& s) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.noApp};
+    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;

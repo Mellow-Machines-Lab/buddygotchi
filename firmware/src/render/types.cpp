@@ -5,7 +5,10 @@ namespace {
 constexpr const char* kStateNames[] = {
     "idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",   "listening",  "starting",
     "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing",  "delegating", "helper_return",
-    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam", "wake_up"};
+    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam", "wake_up",    "gesture"};
+constexpr const char* kGestureNames[] = {"handoff", "stroke",  "ruffle", "nose",    "tickle",
+                                         "dizzy",   "pickup",  "putdown", "startle", "peekaboo"};
+static_assert(sizeof kGestureNames / sizeof kGestureNames[0] == int(Gesture::kCount), "a name for every gesture");
 static_assert(sizeof kStateNames / sizeof kStateNames[0] == int(SceneState::kCount), "a name for every state");
 const char* const kOutcomes[] = {"", "success", "failure"};
 const char* const kCtxs[] = {"", "new_task", "session", "continuation", "compacted"};
@@ -31,6 +34,8 @@ const char* stateName(SceneState s) {
   return kStateNames[int(s) < int(SceneState::kCount) ? int(s) : 0];
 }
 
+const char* gestureName(Gesture g) { return int(g) < int(Gesture::kCount) ? kGestureNames[int(g)] : "handoff"; }
+
 bool isReaction(SceneState s) {
   switch (s) {
     case SceneState::kTaskComplete:
@@ -42,6 +47,7 @@ bool isReaction(SceneState s) {
     case SceneState::kHelperReturn:
     case SceneState::kPoked:
     case SceneState::kTapSpam:
+    case SceneState::kGesture:
     case SceneState::kListening: return true;
     default: return false;
   }

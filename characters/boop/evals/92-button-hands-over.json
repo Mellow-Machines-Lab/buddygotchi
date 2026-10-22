@@ -1,0 +1,17 @@
+{
+  "name": "BOOT hands you the next agent: who needs you, then the newest idle",
+  "case": "Three agent sessions: one finished a while ago and sits idle, one asks the person for permission, and one finished just now. The person presses Boop's button: it opens the one that needs them. Pressing again straight away opens the one that just finished, and again the one that finished a while ago. Ten seconds later, a press starts at the top again: the one that needs them.",
+  "why": "Core.pressed and Core.line: those that need you, oldest first, then the idle ones, the one that finished last first; presses within Core.walkMs (8 s) walk down the line, and after it a press starts again. A press is the board's own reaction (its handoff), so it wakes no brain",
+  "steps": [
+    {"event": "turn started", "at": "0s", "session": "s1", "workspace": "old"},
+    {"event": "turn finished", "at": "10s", "session": "s1", "workspace": "old"},
+    {"event": "turn started", "at": "20s", "session": "s2", "workspace": "asks"},
+    {"event": "needs you", "at": "30s", "session": "s2", "workspace": "asks"},
+    {"event": "turn started", "at": "40s", "session": "s3", "workspace": "new"},
+    {"event": "turn finished", "at": "1m", "session": "s3", "workspace": "new"},
+    {"event": "press", "at": "2m", "expect": {"opens": "claude asks"}},
+    {"event": "press", "at": "2m2s", "expect": {"opens": "claude new"}},
+    {"event": "press", "at": "2m4s", "expect": {"opens": "claude old"}},
+    {"event": "press", "at": "2m14s", "expect": {"opens": "claude asks"}}
+  ]
+}

@@ -365,8 +365,8 @@ A face is what the board draws and the sounds it makes. The engine says
 ### Every state a face is asked for
 
 The engine asks a face for any of the pack's moods (§5) with any of
-these 23 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
-for all 23, and the gel face maps some to others in its own code
+these 24 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
+for all 24, and the gel face maps some to others in its own code
 (`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
 and `charactergen.py --check` holds this table to them.
 
@@ -397,6 +397,7 @@ the brain's, a rule's, or the board's own.
 | `task_complete` | A turn ends; `outcome` is `success` or `failure` | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
+| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
@@ -496,7 +497,7 @@ and `src/` on the include path. It holds:
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 23
+- `moods` and `states`: every mood, in the pack's order, and the 24
   states above, in the designs' order.
 - `designs`: for each mood, a row for each state (a borrowing mood has
   the designs it wears), with each variation's

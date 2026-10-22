@@ -138,14 +138,15 @@ class PlayTests(unittest.TestCase):
         """The names boopctl plays are the device's own, the names of the
         states whose designs they play (firmware/src/render/types.cpp
         isReaction; faces.h names them), and all of them are in Boop's
-        `hello.does`, but for a tap's, which the device plays itself. The
+        `hello.does`, but for a tap's and a gesture's, which the device
+        plays itself. The
         older one is play's own, sent by today's name."""
         names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
         self.assertEqual(names, facegen.STATES)
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
         plays = firmware_names("render/types.cpp", "bool isReaction(SceneState s) {", r"case SceneState::(k\w+):",
                                end="\n}\n")
-        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "listening"], [states[s] for s in plays])
+        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "gesture", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
         self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
         self.assertTrue(set(cli.OLD_ANIMS.values()) <= set(cli.ANIMS))
