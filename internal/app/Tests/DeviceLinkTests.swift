@@ -137,24 +137,24 @@ final class DeviceLinkTests: XCTestCase {
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(DeviceReaction(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "starting", variant: 3, ctx: "new_task").line(id: 558386701, play: .ifFree),
-                       #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"variant":3,"ctx":"new_task"}}"#)
+        XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
+                       #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(DeviceReaction(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
-        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud", variant: 2,
+        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
-                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":2,"who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
+                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
-        let quoted = DeviceReaction(anim: "reply_ready", variant: 1,
+        let quoted = DeviceReaction(anim: "reply_ready",
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
-        XCTAssertEqual(quoted.args.json, #"{"variant":1,"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
+        XCTAssertEqual(quoted.args.json, #"{"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
         XCTAssertEqual(DeviceReaction.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
         let longest = DeviceReaction.Say(takes: [byLength[0], byLength[1]])
         let longestWho = DeviceReaction.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
         XCTAssertLessThanOrEqual(DeviceReaction(anim: "task_complete", say: longest, mood: "determined", loops: DeviceReaction.maxLoops,
-                                              variant: 5, who: longestWho, outcome: "failure")
+                                              who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)
     }
 

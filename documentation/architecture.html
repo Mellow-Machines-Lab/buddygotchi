@@ -226,7 +226,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       </li>
       <li class="link"><div class="wire"><span>Jev's answers</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
+        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device, which picks the animation's variation. Boop counts it as in progress until the device says it's finished.</p></div>
         <div class="pay"><span class="what"><code>do</code> to the device: play this when you can</span>
 <pre>{
   "t": "do",
@@ -236,7 +236,6 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
   "ttl": 5000,
   "args": {
     "outcome": "success",
-    "variant": 2,
     "who": { "agent": "claude", "thread": "api" },
     "say": { "take": "new.d02" },
     "mood": "proud"

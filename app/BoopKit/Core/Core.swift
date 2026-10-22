@@ -26,7 +26,6 @@ public final class Core {
     public struct Config: Sendable {
         public var volume: Int
         public var time: LocalTime
-        public var seed: UInt64
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
         /// app starts each launch somewhere random
@@ -43,11 +42,10 @@ public final class Core {
         /// is a party (`Occasions`).
         public var stageReached: (name: String, day: String)?
 
-        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active,
+        public init(volume: Int = 6, time: LocalTime = LocalTime(), pack: CharacterPack = .active,
                     hatched: String? = nil) {
             self.volume = volume
             self.time = time
-            self.seed = seed
             self.pack = pack
             self.hatched = hatched
         }
@@ -65,7 +63,6 @@ public final class Core {
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
     var sessions: [String: Session] { tracker.sessions }
-    var rng: SplitMix64
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
     var lastActiveDay: String?
@@ -73,9 +70,6 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
-    /// The last variation each rule's reaction played, which the next one
-    /// there avoids. The device picks the looks' variations itself.
-    var lastVariant: [String: Int] = [:]
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
     /// The activity the working look shows (`updateActs`), and each
@@ -154,7 +148,6 @@ public final class Core {
         mood = { config.pack.defaultMood }
         self.lastActiveDay = lastActiveDay
         tracker = SessionTracker(firstRequest: config.firstAsk, place: place)
-        rng = SplitMix64(seed: config.seed)
     }
 
     /// The rules' reactions.
@@ -283,14 +276,10 @@ public final class Core {
             if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
             lastErrorAt = now
         }
-        var reaction = rule
-        reaction.variant = Core.pickVariant(mood: mood(), state: anim, ctx: rule.ctx,
-                                            avoiding: lastVariant[anim], in: config.pack, &rng)
-        lastVariant[anim] = reaction.variant
-        fx.append(.reaction(reaction))
-        let played = Core.played(reaction, by: config.pack.name)
+        fx.append(.reaction(rule))
+        let played = Core.played(rule, by: config.pack.name)
         var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
-                            facts: reaction.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+                            facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
         if played == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
@@ -518,18 +507,6 @@ public final class Core {
         case "resume": "continuation"
         default: "session"
         }
-    }
-
-    /// A variation of `mood`'s design for `state` at random, from 1, among
-    /// those for `outcome` and `ctx` (FaceLoops.variants), never `last`
-    /// when there's another: the rules pick it for now,
-    /// and the harness may later.
-    public static func pickVariant(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
-                                   avoiding last: Int?, in pack: CharacterPack = .active, _ rng: inout SplitMix64) -> Int {
-        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx, in: pack)
-        let choices = fit.filter { $0 != last }
-        guard !choices.isEmpty else { return fit.first ?? 1 }
-        return choices[rng.int(in: 0...(choices.count - 1))]
     }
 
     /// Every session, for the popover's list, in the tracker's order:

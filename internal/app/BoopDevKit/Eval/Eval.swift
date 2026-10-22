@@ -583,7 +583,7 @@ public struct Eval {
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
         let rules = steering.personality(scenario.personality).rules
-        let core = Core(config: .init(time: time, seed: 1, hatched: scenario.hatched), lastActiveDay: time.day(start))
+        let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start))
         core.setWallClock(start, at: start)
         let view = TranscriptView(rules: rules, seed: 1)
         let home = DispatchQueue(label: "boop.eval")

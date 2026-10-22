@@ -24,13 +24,6 @@ public enum FaceLoops {
         public let voiceMs: Int64
         public let outcome: String?
         public let ctx: String?
-        /// The tags it needs on, and how long its look must have shown
-        /// first, in seconds: the device's to judge, so the Mac never asks
-        /// for one that has either.
-        public var when: [String] = []
-        public var after = 0
-        /// Whether the device may show it whenever: no tags, no wait.
-        public var always: Bool { when.isEmpty && after == 0 }
     }
 
     /// By mood, each state's designs in `states`' order, one a variation:
@@ -59,8 +52,7 @@ public enum FaceLoops {
             t.designs[mood] = rows.map { row in
                 row.map { d in
                     Design(ms: (d["ms"] as? NSNumber)?.int64Value ?? 0, voiceMs: (d["voice_ms"] as? NSNumber)?.int64Value ?? 0,
-                           outcome: d["outcome"] as? String, ctx: d["ctx"] as? String, when: d["when"] as? [String] ?? [],
-                           after: (d["after"] as? NSNumber)?.intValue ?? 0)
+                           outcome: d["outcome"] as? String, ctx: d["ctx"] as? String)
                 }
             }
         }
@@ -77,18 +69,6 @@ public enum FaceLoops {
         }
         let designs = row[t.states.firstIndex(of: state) ?? 0]
         return designs.isEmpty ? [Design(ms: 0, voiceMs: 0, outcome: nil, ctx: nil)] : designs
-    }
-
-    /// The variations (from 1) of `mood`'s `state` for an outcome and a
-    /// context, nil matching any; all of them when none match. Only those
-    /// the device may show whenever: it swaps in one for an occasion itself.
-    public static func variants(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
-                                in pack: CharacterPack = .active) -> [Int] {
-        let row = row(mood: mood, state: state, in: pack)
-        let always = row.indices.filter { row[$0].always }
-        let pool = always.isEmpty ? Array(row.indices) : always
-        let fit = pool.filter { i in (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx) }
-        return (fit.isEmpty ? pool : fit).map { $0 + 1 }
     }
 
     /// A design's loop length: `mood`'s design for `state`, variation

@@ -225,7 +225,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish") {
             transport.dos("task_complete").contains {
-                $0.contains(#""play":"next","ttl":5000,"args":{"outcome":"success","variant":"#) && $0.contains(#""say":"#)
+                $0.contains(#""play":"next","ttl":5000,"args":{"outcome":"success","#) && $0.contains(#""say":"#)
                     && $0.contains(#""mood":"excited""#)
             }
         }
@@ -1161,7 +1161,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(transport.dos("task_complete").isEmpty && transport.dos("reply_ready").isEmpty, "a start gets no finish")
         let starting = transport.dos("starting")
         XCTAssertEqual(starting.count, 1, "only the rule's reaction")
-        XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"variant":"#), starting[0])
+        XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"ctx":"#), starting[0])
         transport.endDos()  // the device says each has played
         eventually("the start's reaction has played") {
             runtime.home.sync { self.recorded().contains { $0.actionPhase == .end && $0.actionName == "react" } }
@@ -1172,7 +1172,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish", timeout: 4) { transport.dos.count >= before + 1 }
         let finish = transport.dos[before]
-        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":"#),
+        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","#),
                       "one do, a variation for its outcome: \(finish)")
         XCTAssertTrue(finish.contains(#""who":{"agent":"claude","thread":"jetpack"},"say":"#), "names whose turn: \(finish)")
         XCTAssertTrue(finish.hasSuffix(#","mood":"excited","loops":1}}"#), "in its face, held once: \(finish)")
@@ -1450,8 +1450,8 @@ final class RuntimeTests: XCTestCase {
         let start = try XCTUnwrap(sent.firstIndex { $0.contains(#""name":"starting""#) })
         XCTAssertTrue(sent[start - 1].hasPrefix(#"{"t":"state""#) && sent[start - 1].contains(#""base":"working""#),
                       "\(sent)")
-        XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"variant":"#)
-                      && sent[start].hasSuffix(#","ctx":"new_task"}}"#), sent[start])
+        XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"ctx":"#)
+                      && sent[start].hasSuffix(#"{"ctx":"new_task"}}"#), sent[start])
         let id = FakeTransport.id(sent[start])
         transport.endDos("skipped", why: "busy")
         eventually("its end logged") { lines.all.contains("device: do \(id) ended skipped (busy)") }
@@ -1560,7 +1560,7 @@ final class RuntimeTests: XCTestCase {
         let pending = Pending()
         pending.bind { ends.append($0) }
         runtime.home.sync {
-            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud", variant: 1,
+            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud",
                                        who: .init(agent: "claude", thread: "jetpack", opens: thread), outcome: "success"), pending)
         }
         let id = FakeTransport.id(try XCTUnwrap(transport.dos("task_complete").first))

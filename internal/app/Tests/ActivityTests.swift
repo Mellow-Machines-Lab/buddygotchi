@@ -316,16 +316,13 @@ final class CoreRuleReactionTests: XCTestCase {
             XCTAssertEqual(reactionNames(fx), ["starting \(ctx)"], source ?? "no source")
             let reaction = deviceReactions(fx)[0]
             XCTAssertNil(reaction.mood)
-            XCTAssertTrue(FaceLoops.variants(mood: MoodOutput.initial, state: "starting", ctx: ctx).contains(reaction.variant ?? 0))
+            XCTAssertEqual(reaction.ctx, ctx, "the device picks a variation for it")
         }
         let rig = CoreRig()
         let fx = rig.send(.turnStart)
         let start = deviceReactions(fx)
         XCTAssertEqual(start.count, 1)
-        let variant = start[0].variant ?? 0
-        XCTAssertTrue(FaceLoops.variants(mood: MoodOutput.initial, state: "starting", ctx: "new_task").contains(variant))
-        XCTAssertEqual(start[0].line(id: 1, play: .ifFree),
-                       #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"variant":"# + "\(variant)" + #","ctx":"new_task"}}"#)
+        XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
         XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
         XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
@@ -472,22 +469,5 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
         rig.passed(reacted: true)
         XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "d")), ["starting new_task"])
-    }
-
-    /// Each rule reaction is drawn in Boop's mood, a
-    /// variation at random among those for its context, never the one it
-    /// played last when there's another.
-    func testRuleReactionsTakeTheMoodsVariations() {
-        let rig = CoreRig(seed: 5)
-        _ = rig.setMood("calm")
-        let fit = FaceLoops.variants(mood: "calm", state: "starting", ctx: "new_task")
-        var last: Int?
-        for _ in 0..<12 {
-            let reaction = deviceReactions(rig.send(.turnStart))[0]
-            XCTAssertTrue(fit.contains(reaction.variant ?? 0), "\(String(describing: reaction.variant)) of \(fit)")
-            if fit.count > 1 { XCTAssertNotEqual(reaction.variant, last) }
-            last = reaction.variant
-            rig.send(.turnEnd)
-        }
     }
 }

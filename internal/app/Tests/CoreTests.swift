@@ -62,7 +62,7 @@ final class CoreRig {
     init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules()) {
         now = start
         let today = time.day(start)
-        let core = Core(config: .init(time: time, seed: seed), lastActiveDay: newDay ? nil : today)
+        let core = Core(config: .init(time: time), lastActiveDay: newDay ? nil : today)
         pipeline = Pipeline(core: core, view: TranscriptView(rules: rules, seed: seed))
         if !newDay { core.tick(at: start) }  // the first snapshot has gone out
     }
@@ -2105,8 +2105,6 @@ final class CoreFuzzTests: XCTestCase {
                 XCTAssertNil(reaction.mood, why)
                 XCTAssertTrue(["starting", "stopped", "error", "helper_return"].contains(reaction.anim ?? ""), why)
                 XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
-                XCTAssertTrue(FaceLoops.variants(mood: rig.core.mood(), state: reaction.anim!, ctx: reaction.ctx)
-                    .contains(reaction.variant ?? 0), why)
                 if reaction.anim == "error" {
                     if let last = lastError { XCTAssertGreaterThanOrEqual(rig.now - last, Core.errorEveryMs, why) }
                     lastError = rig.now

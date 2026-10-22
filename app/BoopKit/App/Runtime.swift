@@ -252,8 +252,7 @@ public final class Runtime: @unchecked Sendable {
         // prunes the transcript, so today isn't a new day.
         let volume = settings.volume
         let cores = plans.enumerated().map { i, plan in
-            var config = Core.Config(volume: volume, time: options.time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i),
-                                     pack: plan.buddy.pack, hatched: longTerm.hatched)
+            var config = Core.Config(volume: volume, time: options.time, pack: plan.buddy.pack, hatched: longTerm.hatched)
             config.firstAsk = SessionTracker.randomFirstRequest()
             let core = Core(config: config, lastActiveDay: today, place: places.place)
             core.setWallClock(wall, at: wallAt)

@@ -63,9 +63,6 @@ public struct DeviceReaction: Equatable, Sendable {
     /// and no animation, how many loops of the design it's drawn in the
     /// face holds. Nil sends none, which the device reads as 1.
     public var loops: Int?
-    /// The animation's variation, from 1; nil sends none, and the device
-    /// picks one for the reaction's facts.
-    public var variant: Int?
     /// With the finish, whose turn it was; nil sends none.
     public var who: Who?
     /// With task_complete, the turn's outcome: `success` or `failure`;
@@ -76,12 +73,11 @@ public struct DeviceReaction: Equatable, Sendable {
     public var ctx: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
-                variant: Int? = nil, who: Who? = nil, outcome: String? = nil, ctx: String? = nil) {
+                who: Who? = nil, outcome: String? = nil, ctx: String? = nil) {
         self.anim = anim
         self.say = say
         self.mood = mood
         self.loops = loops
-        self.variant = variant
         self.who = who
         self.outcome = outcome
         self.ctx = ctx
@@ -106,7 +102,6 @@ public struct DeviceReaction: Equatable, Sendable {
     public var args: JSONObject {
         var args = JSONObject()
         if let outcome { args["outcome"] = .string(outcome) }
-        if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }

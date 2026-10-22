@@ -38,9 +38,6 @@ public final class ReactOutput: Output {
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
     var lastWords: Set<String> = []
-    /// Picks each finish's variation, never the last one of its animation.
-    var variants = SplitMix64(seed: 0xB00B)
-    var lastVariant: [String: Int] = [:]
     /// With a `voice`, a buddy's: its picks are its own, so two buddies
     /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
@@ -48,7 +45,6 @@ public final class ReactOutput: Output {
                 pack: CharacterPack = .active, voice: String? = nil) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
-        variants = SplitMix64(seed: 0xB00B ^ seed)
         self.pack = pack
         self.voice = voice
         asked = Self.asked(in: pack)
@@ -253,14 +249,11 @@ public final class ReactOutput: Output {
         var reaction = DeviceReaction(say: say, mood: choice, loops: loops)
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
-            // Its scene, a variation of it for a finish's outcome in the
-            // face's design (never the last one), and the thread NOW is
-            // about, if any: a turn's finish names whose turn it was.
-            let variant = Core.pickVariant(mood: choice, state: anim, outcome: outcome, avoiding: lastVariant[anim], in: pack, &variants)
-            lastVariant[anim] = variant
+            // Its scene and a finish's outcome, whose variation the device
+            // picks, and the thread NOW is about, if any: a turn's finish
+            // names whose turn it was.
             reaction.anim = anim
             reaction.outcome = outcome
-            reaction.variant = variant
             reaction.who = who(now)
         }
         let pending = Pending()

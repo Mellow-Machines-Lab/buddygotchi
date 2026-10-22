@@ -178,8 +178,8 @@ final class HarnessTests: XCTestCase {
         // `react.animation` judges a turn's finish, or you back after a
         // long break, and plays it in the face: a success or a failure is
         // the face's task_complete for that outcome, a reply its
-        // reply_ready, a wake up its wake_up; each in one of its variations
-        // at random, never the last one, naming the thread NOW is about. `none`, a missing answer or anything else is just the face.
+        // reply_ready, a wake up its wake_up, naming the thread NOW is
+        // about; the device picks the variation. `none`, a missing answer or anything else is just the face.
         XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up"])
         XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
         starts(["react.mood": a("proud"), "react.animation": a("success"), "react.loops": a("twice"), "say.feeling": a("glad"),
@@ -189,17 +189,13 @@ final class HarnessTests: XCTestCase {
         let success = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(success.anim, "task_complete")
         XCTAssertEqual(success.outcome, "success")
-        XCTAssertTrue(FaceLoops.variants(mood: "proud", state: "task_complete", outcome: "success").contains(success.variant!))
         let line = success.line(id: 7, play: .next)
-        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":"#
-                                     + "\(success.variant!)" + #","who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
+        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
         XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":2}}"#), line)
         queued.removeLast()
         starts(["react.mood": a("whiny"), "react.animation": a("failure")], "\(creature) played a failure in a whiny face, held once.")
         let failure = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual([failure.anim, failure.outcome], ["task_complete", "failure"])
-        XCTAssertEqual(Set(FaceLoops.variants(mood: "whiny", state: "task_complete", outcome: "failure")), [4, 5, 6])
-        XCTAssertTrue([4, 5, 6].contains(failure.variant!), "a failure's variation, never a success's")
         XCTAssertEqual(failure.who, .init(agent: "codex", thread: "fix-nav"))
         queued.removeLast()
         starts(["react.mood": a("curious"), "react.animation": a("reply"), "say.about": a("answer")],
@@ -208,7 +204,6 @@ final class HarnessTests: XCTestCase {
         let reply = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(reply.anim, "reply_ready")
         XCTAssertNil(reply.outcome, "a reply has no outcome")
-        XCTAssertTrue((1...FaceLoops.row(mood: "curious", state: "reply_ready").count).contains(reply.variant!))
         XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
         queued.removeLast()
         starts(["react.mood": a("happy"), "react.animation": a("wake up"), "say.about": a("hello")],
@@ -217,17 +212,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(woke.anim, "wake_up")
         XCTAssertNil(woke.outcome, "a wake-up has no outcome")
         XCTAssertEqual(woke.who, .init(agent: "codex", thread: "fix-nav"), "the thread NOW is about, which a back never is (PresenceTests)")
-        XCTAssertTrue((1...FaceLoops.row(mood: "happy", state: "wake_up").count).contains(woke.variant!))
         queued.removeLast()
-        // Each finish is one of its variations at random,
-        // never the last one of its animation again.
-        var finishes: [Int] = []
-        for _ in 0..<30 {
-            _ = react.run(["react.mood": a("calm"), "react.animation": a("success")], now: nil, log: Self.log)
-            finishes.append(queued.removeLast().reaction.variant!)
-        }
-        XCTAssertEqual(Set(finishes), Set(FaceLoops.variants(mood: "calm", state: "task_complete", outcome: "success")))
-        XCTAssertTrue(zip(finishes, finishes.dropFirst()).allSatisfy { $0 != $1 }, "\(finishes)")
         for pick in ["none", "cheer", "wiggle", "confetti"] {
             starts(["react.mood": a("happy"), "react.animation": a(pick)], "\(creature) made a happy face, held once.")
             XCTAssertNil(queued.last?.reaction.anim, pick)

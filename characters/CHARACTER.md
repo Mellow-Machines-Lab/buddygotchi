@@ -428,9 +428,9 @@ Besides drawing each mood and state, a face:
 
 - **Has variations.** A state may have several designs, numbered from 1.
   The face picks a look's itself: a new look starts on its first, and at
-  the end of a loop it may turn to another. The Mac picks a reaction's,
-  among those for its facts (`outcome`, `ctx`). A face says how many it
-  has (`variants`).
+  the end of a loop it may turn to another. It picks a reaction's too,
+  among those for its facts (`outcome`, `ctx`), never the last one when
+  there's another. A face says how many it has (`variants`).
 - **Has occasions.** A design may need tags (`when`: every one on) or a
   wait (`after`: seconds its look has shown). The tags are the engine's
   (`firmware/src/render/tags.h`): the part of the day (`morning`, `day`,
