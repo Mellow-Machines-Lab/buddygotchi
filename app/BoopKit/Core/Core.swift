@@ -323,8 +323,8 @@ public final class Core {
         return fx
     }
 
-    /// BOOT pressed, recorded as `seq`: the board has handed you the next
-    /// agent (`pressed`).
+    /// BOOT pressed with someone in line (`line`), recorded as `seq`: it
+    /// hands you the next agent (`pressed`).
     @discardableResult
     public func press(at now: Int64, seq: Int? = nil) -> [CoreEffect] {
         var fx: [CoreEffect] = []
@@ -434,10 +434,15 @@ public final class Core {
         return fx
     }
 
-    /// Boop reached a growth stage at `now`: the rest of the day is a
-    /// party. The input's `state` carries it.
-    public func reachedStage(_ name: String, at now: Int64) {
-        config.stageReached = (name, day(now))
+    /// Boop reached the growth stage `name` on `day` (today's at `now` by
+    /// default): the rest of that day is a party, which a `state` carries
+    /// at once.
+    @discardableResult
+    public func reachedStage(_ name: String, day: String? = nil, at now: Int64) -> [CoreEffect] {
+        config.stageReached = (name, day ?? self.day(now))
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
     }
 
     /// The mood output saved a new mood (`mood` reads it): a `state`
@@ -606,12 +611,11 @@ public final class Core {
     }
 
     /// A BOOT press: opens the next session in the line on the Mac,
-    /// recorded as the `open_thread` action, by the button. With nobody in
-    /// line (the board saw one the Mac no longer has), it's a poke.
+    /// recorded as the `open_thread` action, by the button.
     func pressed(_ now: Int64, seq: Int?, _ fx: inout [CoreEffect]) {
         guard !showsListening(at: now) else { return }
         let line = line(at: now)
-        guard !line.isEmpty else { return poked(now, seq: seq, finish: nil, &fx) }
+        guard !line.isEmpty else { return }
         var next = 0
         if let last = lastHanded, now - last.at < Self.walkMs, let i = line.firstIndex(where: { $0.key == last.key }) {
             next = (i + 1) % line.count

@@ -257,12 +257,23 @@ public struct DemoScript: Sendable {
         self.start = start
     }
 
-    /// `2026-10-31T09:00`, in this Mac's time zone, as ms since 1970.
-    static func date(_ text: String) -> Int64? {
+    /// `2026-10-31T09:00`, a demo's `start` and an eval's, in `timeZone`
+    /// (this Mac's for a demo), as ms since 1970.
+    public static func date(_ text: String, timeZone: TimeZone = .current) -> Int64? {
+        dateFormatter(timeZone).date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
+    }
+
+    /// `ms` as `date` reads it, in `timeZone`.
+    public static func date(_ ms: Int64, timeZone: TimeZone = .current) -> String {
+        dateFormatter(timeZone).string(from: Date(timeIntervalSince1970: Double(ms) / 1000))
+    }
+
+    static func dateFormatter(_ timeZone: TimeZone) -> DateFormatter {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = timeZone
         f.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        return f.date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
+        return f
     }
 
     /// The keys each kind of step takes, besides `anyStep`'s.

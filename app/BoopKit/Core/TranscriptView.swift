@@ -130,6 +130,9 @@ public final class TranscriptView {
         /// The away you haven't come back from: its
         /// event's `seq` and when you left.
         var awaySince: (seq: Int, at: Int64)?
+        /// The buddies lying face down (`""` for the only one), from their
+        /// `facedown` until their `peekaboo`.
+        var faceDown: Set<String> = []
         /// The last agent event, poke, thing you said or coming back, and
         /// the idle heartbeats since.
         var lastActivityAt: Int64?
@@ -238,7 +241,7 @@ public final class TranscriptView {
     public func register(on h: Harness, needsYou: @escaping (_ buddy: String?) -> String?) {
         for (kind, wake) in Self.wakes {
             h.input(kind, wake: wake) { [weak self] e, log in self?.line(e, log) }
-            h.hold(kind) { [weak self] e, log, voice in self?.hold(e, log, needsYou: { needsYou(voice?.id) }) }
+            h.hold(kind) { [weak self] e, log, voice in self?.hold(e, log, buddy: voice?.id, needsYou: { needsYou(voice?.id) }) }
         }
         for kind in Self.quiet {
             h.input(kind) { [weak self] e, log in self?.line(e, log) }
@@ -249,14 +252,21 @@ public final class TranscriptView {
     /// Why `e` may not wake the brain now, or nil if it may:
     /// nothing but what you said while something needs you; not a tap that
     /// opened a thread; and not a poke while the brain's reaction to its
-    /// run is in progress, with the mood unchanged.
-    public func hold(_ e: Event, _ log: LogView, needsYou: () -> String?) -> String? {
+    /// run is in progress, with the mood unchanged; and nothing but what
+    /// you said while the buddy (`e`'s, else `buddy`, else any) lies face
+    /// down, which is do not disturb: the board would refuse a reaction.
+    public func hold(_ e: Event, _ log: LogView, buddy: String? = nil, needsYou: () -> String?) -> String? {
         if let type = e.type, !Self.wakesWhileNeeded.contains(type), let why = needsYou() { return why }
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
-        // Face down is do not disturb: the board would refuse a reaction.
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
+        // Folded up to `e` at most: `e` itself, if folded, is neither of
+        // the two gestures that change it, so the fold says as before it.
+        for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
+        let key = e.buddy ?? buddy
+        let down = key.map { fold.faceDown.contains($0) || fold.faceDown.contains("") } ?? !fold.faceDown.isEmpty
+        if down, e.type != .talk, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
@@ -336,6 +346,8 @@ public final class TranscriptView {
             return Line(EventLine.pressed(name: name(e)))
         case .gesture?:
             noteActivity(e.at)
+            if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
+            if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
             return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .talk?: return talk(e)
         case .presence?: return presence(e)

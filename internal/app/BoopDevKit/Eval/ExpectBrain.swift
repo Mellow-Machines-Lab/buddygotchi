@@ -2,13 +2,20 @@ import BoopKit
 import Foundation
 import MellowHarness
 
+/// A brain that plays a scenario's own answers: an eval tells it each step
+/// as it runs (nil between steps) and the moods a later step wants, and
+/// judges none of its choices, which are the scenario's.
+public protocol ScenarioBrain: AnyObject {
+    func willRun(_ step: Scenario.Step?, ahead: [String])
+}
+
 /// The brain a scenario implies: each pass answered from the step it
 /// belongs to, so a run with no key plays as the scenario says Boop should
 /// (internal/EVALS.md §2). A question gets the step's own `brain` answer,
 /// else the first of its `expect` set that the question offers, else what
 /// the pipeline check would answer. It prices scenarios, and turns them
 /// into demos (`DemoFromScenario`).
-public final class ExpectBrain: Brain, @unchecked Sendable {
+public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     public let id = "expect"
     /// The step being run; nil between steps.
     public var step: Scenario.Step?
@@ -17,6 +24,11 @@ public final class ExpectBrain: Brain, @unchecked Sendable {
     public var ahead: [String] = []
 
     public init() {}
+
+    public func willRun(_ step: Scenario.Step?, ahead: [String]) {
+        self.step = step
+        self.ahead = ahead
+    }
 
     /// Which question each `expect` field answers.
     public static let questions = ["react": "react.mood", "animation": "react.animation", "loops": "react.loops",

@@ -180,14 +180,16 @@ public final class Pipeline {
         }
     }
 
-    /// BOOT pressed, and the board handed you the next agent (its
-    /// `handoff`): the core opens it on the Mac. With several buddies, the
-    /// board's buddy's.
+    /// BOOT pressed: the core opens the next agent in line on the Mac
+    /// (`Core.line`). With nobody in line it's a poke, on `finish` if the
+    /// board pressed on one. With several buddies, the board's buddy's.
     @discardableResult
-    public func press(at now: Int64, buddy: String? = nil) -> Step {
-        input(at: now) {
+    public func press(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
+        let core = core(buddy)
+        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, buddy: buddy) }
+        return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
-            run(core(buddy).press(at: now, seq: e.seq), buddy: buddy)
+            run(core.press(at: now, seq: e.seq), buddy: buddy)
         }
     }
 
@@ -284,7 +286,7 @@ public final class Pipeline {
     public func whyNotWake(_ e: Event) -> String? {
         if !brain { return "no brain" }
         let core = core(e.buddy)
-        return view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock })
+        return view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock })
     }
 }
 

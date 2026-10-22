@@ -3,6 +3,7 @@ import {newMoods} from './mood-catalog.mjs';
 import {frames,sceneSvg,round,pad,slab} from './mood-art.mjs';
 import {oldMoods,profile,lineUp,sleepyFace,ownFace} from './wake-art.mjs';
 import {effects} from './audio/effects.mjs';
+import {moods,steps,own,heart,bang} from './kit-art.mjs';
 
 // gesture: the board's own reaction to what you do to it, one variation a
 // gesture, in the engine's order (render::Gesture, firmware/src/render/
@@ -20,7 +21,6 @@ import {effects} from './audio/effects.mjs';
 // Each plays once, starting and ending on the mood's resting face but the
 // peekaboo, which comes up from nothing, with a cue or two.
 
-const moods=[...oldMoods,...newMoods];
 export const gestures=[
  ['handoff','Here you go','Holds up a parcel and slides it toward you: your next agent.',2.4],
  ['stroke','Stroked','Eyes close and it leans into your finger; a little purr of hearts.',2.6],
@@ -52,11 +52,10 @@ const plans={
  peekaboo:[[0,'gone'],[.15,'peek-1'],[.35,'peek-2','pop',.4],[.55,'home'],[.7,'sparkle'],[.88,'blink'],[.94,'home'],[1,'home']]
 };
 export function gesturePlan(a){
- return {steps:plans[a.action].map(([u,pose,effect=null,gain=0])=>({at:round(u*a.seconds),pose,effect,gain})),policy:'entry',intervalSeconds:0};
+ return {steps:steps(a,plans[a.action]),policy:'entry',intervalSeconds:0};
 }
 
 // ---- The faces ---------------------------------------------------------------
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 // Spiral eyes: a square ring with a dot, at each eye, turned a step.
 function spirals(y,turn){
  const one=(x)=>rect(x,94+y,40,4)+rect(x+36,94+y,4,24)+rect(x+8,114+y,32,4)+rect(x+8,102+y,4,16)+rect(x+12,102+y,16,4)+rect(x+20,106+y,4,6);
@@ -82,10 +81,8 @@ function faceFor(a,pose){return faces[pose](a);}
 // A parcel: a box with a ribbon, held by two mitts at `y`, `s` its size.
 const parcel=(y,s=1)=>{const w=Math.round(48*s),h=Math.round(36*s),x=160-w/2;
  return slab(x,y,w,h,P.amber)+rect(x+w/2-3,y,6,h,P.red)+rect(x,y+h/2-3,w,6,P.red)+pad(x-24,y+h/2-8)+pad(x+w-4,y+h/2-8);};
-const heart=(x,y,c=P.red)=>rect(x,y,6,6,c)+rect(x+10,y,6,6,c)+rect(x-2,y+4,20,6,c)+rect(x,y+10,16,4,c)+rect(x+4,y+14,8,4,c);
 const bristles=y=>[0,1,2,3,4,5,6,7].map(i=>rect(84+i*20,y+(i%2?6:0),6,14,P.prop)).join('');
 const puffs=(x,y)=>rect(x,y,8,8,P.dim)+rect(x+12,y+4,6,6,P.prop)+rect(x-10,y+6,6,6,P.prop);
-const bang=(x,y,c=P.amber)=>rect(x,y,6,16,c)+rect(x,y+20,6,6,c);
 const props={
  handoff:{lift:()=>parcel(150,.8),hold:()=>parcel(130,.9)+star(60,40,8,P.amber),give:()=>parcel(140,1.25),given:()=>parcel(150,1.4)+star(250,40,16,P.amber)+star(70,30,8,P.amber)},
  stroke:{lean:()=>rect(40,60,24,6,P.prop),content:()=>heart(250,40),'content-2':()=>heart(262,24,P.cheek)+heart(232,56)},

@@ -1,3 +1,4 @@
+import AgentHooks
 import Foundation
 import MellowHarness
 
@@ -55,12 +56,16 @@ public final class DiaryOutput: Output {
     let time: LocalTime
     let creature: String
     let write: (String, String) -> Void
+    let place: (String) -> Place
 
     /// `templates` from the pack's `diary.md`, days on `time`'s calendar,
     /// `creature` the buddy's name, and `write` given each day and its line.
+    /// A thread is named as the lines name it, from where `place` says its
+    /// folder works.
     public init(templates: [Template], time: LocalTime, creature: String, voice: String? = nil,
-                write: @escaping (String, String) -> Void) {
+                place: @escaping (String) -> Place = { Place.at(cwd: $0) }, write: @escaping (String, String) -> Void) {
         self.voice = voice
+        self.place = place
         self.templates = templates
         self.time = time
         self.creature = creature
@@ -96,14 +101,16 @@ public final class DiaryOutput: Output {
         let range = time.dayRange(at)
         let events = log.events.filter { range.contains($0.at) }
         guard !events.isEmpty else { return nil }
-        return Self.count(events, day: day, weekday: time.weekday(at), tags: Occasions.tags(at: at, hatched: nil, time: time))
+        return Self.count(events, day: day, weekday: time.weekday(at), tags: Occasions.tags(at: at, hatched: nil, time: time), place: place)
     }
 
     /// A day's counts from its raw events.
-    static func count(_ events: [Event], day: String, weekday: String, tags calendar: [String]) -> Day {
+    static func count(_ events: [Event], day: String, weekday: String, tags calendar: [String],
+                      place: (String) -> Place = { Place.at(cwd: $0) }) -> Day {
         var d = Day(day: day, weekday: weekday)
         var started: [String: Int64] = [:]
         var threads: [String: Int] = [:]
+        var names: [String: String] = [:]
         for e in events {
             if e.type == .poke { d.pokes += 1 }
             guard e.type == .turn, let session = e.session else { continue }
@@ -112,7 +119,11 @@ public final class DiaryOutput: Output {
                 d.turns += 1
                 if e["outcome"]?.string == "failed" { d.failed += 1 }
                 if let from = started.removeValue(forKey: session) { d.longestMinutes = max(d.longestMinutes, Int((e.at - from) / 60_000)) }
-                let thread = e.cwd.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "work"
+                var thread = "work"
+                if let cwd = e.cwd {
+                    if names[cwd] == nil { let p = place(cwd); names[cwd] = p.workspace ?? p.project }
+                    thread = names[cwd]!
+                }
                 threads[thread, default: 0] += 1
             }
         }

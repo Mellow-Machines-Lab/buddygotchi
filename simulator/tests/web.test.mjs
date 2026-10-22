@@ -121,8 +121,9 @@ test('a touch is a tap however soon it lifts, and power-on is a new boot', { ski
   const first = (await b.request({ t: 'hello' })).boot;
   b.send(WORKING);
   await b.run(200);
-  // A click: down and up before the board has looked once.
-  b.input('touch 160 120');
+  // A click, off the nose (a boop there is a gesture): down and up before
+  // the board has looked once.
+  b.input('touch 60 120');
   b.input('release');
   await b.run(400);
   assert.ok(b.lines.some(m => m.t === 'ev' && m.kind === 'tap'));
@@ -137,6 +138,22 @@ test('a touch is a tap however soon it lifts, and power-on is a new boot', { ski
   const second = (await b.request({ t: 'hello' })).boot;
   assert.ok(first && second && first !== second);
   assert.equal(b.lines.filter(m => m.t === 'ev').length, 0, 'nothing of the board before is left');
+});
+
+test('the motion sensor: a shake is a gesture, and face down and up again', { skip }, async () => {
+  const b = await board();
+  b.send(QUIET);
+  b.input('motion 0 0 1000');
+  await b.run(1300);
+  for (const az of [1700, 300, 1700, 300, 1700, 300]) { b.input(`motion 0 0 ${az}`); await b.run(60); }
+  b.input('motion 0 0 1000');
+  await b.run(2000);
+  b.input('motion 0 0 -1000');
+  await b.run(1400);
+  b.input('motion 0 0 1000');
+  await b.run(300);
+  const did = b.lines.filter(m => m.t === 'ev' && m.kind === 'gesture').map(m => m.did);
+  assert.deepEqual(did, ['dizzy', 'facedown', 'peekaboo']);
 });
 
 test('a line plays for as long as its samples last, from the card in the slot', { skip: needsVoice }, async () => {
@@ -335,7 +352,7 @@ test('a recording plays into the board in order, and knows nothing of what its l
   player.play();
   await ended;
   player.stop();
-  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 160, 120], ['release'], ['line', 'anything']]);
+  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 80, 120], ['release'], ['line', 'anything']]);
   assert.deepEqual(told, ['You ask Claude: “Fix it”', 'Pip makes an excited face and says “Go”', 'You poke Pip']);
   assert.ok(player.ended && !player.playing);
   assert.throws(() => new DemoPlayer(fake, { ...recording, version: 2 }), /version 2/);

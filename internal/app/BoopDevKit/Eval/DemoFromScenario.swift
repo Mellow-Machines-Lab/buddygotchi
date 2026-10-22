@@ -102,11 +102,5 @@ public enum DemoFromScenario {
     }
 
     /// A UTC start as the demo's local `start`: the same clock reading.
-    static func localDate(_ ms: Int64) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        return f.string(from: Date(timeIntervalSince1970: Double(ms) / 1000))
-    }
+    static func localDate(_ ms: Int64) -> String { DemoScript.date(ms, timeZone: TimeZone(identifier: "UTC")!) }
 }

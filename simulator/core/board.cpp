@@ -64,8 +64,9 @@ Board::Frame Board::frame() {
 }
 
 void Board::input(const char* line) {
-  int a = 0, b = 0;
+  int a = 0, b = 0, c = 0;
   if (std::sscanf(line, "touch %d %d", &a, &b) == 2) hal_.setTouch(true, a, b);
+  else if (std::sscanf(line, "motion %d %d %d", &a, &b, &c) == 3) hal_.setMotion(a, b, c);
   else if (!std::strncmp(line, "release", 7)) hal_.setTouch(false);
   else if (std::sscanf(line, "boot %d", &a) == 1) hal_.setBoot(a != 0);
   else if (!std::strncmp(line, "card in", 7)) hal_.insertCard(card_);

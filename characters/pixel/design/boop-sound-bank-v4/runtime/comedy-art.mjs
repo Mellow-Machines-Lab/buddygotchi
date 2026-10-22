@@ -3,6 +3,8 @@ import {newMoods} from './mood-catalog.mjs';
 import {frames,sceneSvg,round,pad,slab,background,burst,cup,completeCard,props as moodProps} from './mood-art.mjs';
 import {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor as wakeFace,props as wakeProps} from './wake-art.mjs';
 import {effects} from './audio/effects.mjs';
+import {moods,design,steps,own,bang} from './kit-art.mjs';
+const make=design('comedy-v1');
 
 // Comedy: life for the quiet looks and a joke on the finish, as new
 // variations of states that exist, so the device turns to them by itself.
@@ -20,11 +22,6 @@ import {effects} from './audio/effects.mjs';
 // third loop or a snore every fourth, each soft; zoomies sound as routine
 // work does (quiet-mix.mjs).
 
-const moods=[...oldMoods,...newMoods];
-const make=(mood,state,variation,action,name,caption,seconds,extra={})=>({
- id:`${mood}.${state}.${String(variation).padStart(2,'0')}`,mood,state,variation,action,name,caption,
- seconds:Number(seconds.toFixed(3)),renderer:'comedy-v1',approval:'Review candidate',...extra
-});
 // A finish's new variation comes after the mood's others: the older moods
 // have five (four successes and a failure), the newer six.
 const finishes=mood=>oldMoods.includes(mood)?5:6;
@@ -41,10 +38,6 @@ export const comedyAdditions=[
  ...['working','idle'].map((state,i)=>make('excited',state,i?7:6,'zoomies','Zoomies','The face zips left, right and off the screen, comes back from the other side and hops.',5*profile('excited').pace,{sound:'routine'}))
 ];
 
-// Each step is one pose and the cue that goes with it, if any.
-function steps(a,list){
- return list.map(([u,pose,effect=null,gain=0])=>({at:round(u*a.seconds),pose,effect,gain}));
-}
 // The steps of each design: [when (of the loop), pose, cue, cue's gain].
 const plans={
  'yawn-stretch':()=>[[0,'home'],[.10,'droop'],[.18,'inhale'],[.27,'yawn','yawn',.40],[.39,'stretch'],[.52,'release'],[.60,'settle'],[.66,'home'],[.70,'blink'],[.73,'home'],[.98,'home'],[1,'home']],
@@ -72,7 +65,6 @@ export function comedyPlan(a){
 // The mood's resting face, or blinking, as the wake-up has it; the sleepy
 // faces are wake-up's too, lined up with the mood's own. On a finish, the
 // mood's face at a success, on gold (a cheer's stage).
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 const blinking=a=>ownFace(a.mood,true);
 const sleepy=(eyes,mouth,dx=0,dy=0)=>a=>at(dx,dy,sleepyFace(eyes,mouth,lineUp(a.mood)));
 const successFace=(a,stage,blink=false)=>ownFace(a.mood,blink,{complete:true,stage});
@@ -111,7 +103,6 @@ function faceFor(a,pose){
 // ---- What's around the face ---------------------------------------------------
 // A pixel Z, `k` px a stroke.
 const zee=(x,y,k,c=P.dim)=>rect(x,y,5*k,k,c)+rect(x+3*k,y+k,k,k,c)+rect(x+2*k,y+2*k,k,k,c)+rect(x+k,y+3*k,k,k,c)+rect(x,y+4*k,5*k,k,c);
-const bang=(x,y,c=P.amber)=>rect(x,y,6,16,c)+rect(x,y+20,6,6,c);
 const drops=list=>list.map(([x,y,s],i)=>rect(x,y,s,s,[P.lightWater,P.blue,P.water][i%3])).join('');
 // A snore's bubble: a hollow square that grows as the breath goes out.
 const bubble=(x,y,s)=>slab(x,y,s,s,P.lightWater)+rect(x+3,y+3,s-6,s-6,P.black)+rect(x+4,y+4,3,3,P.ink);

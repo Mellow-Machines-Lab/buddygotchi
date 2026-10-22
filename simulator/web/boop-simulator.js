@@ -71,6 +71,9 @@ export class Board extends EventTarget {
   touch(x, y) { this.#say(`touch ${Math.round(x)} ${Math.round(y)}`); }
   release() { this.#say('release'); }
   boot(down) { this.#say(`boot ${down ? 1 : 0}`); }
+  /// The motion sensor's reading in mg, held until the next: flat on the
+  /// desk is 0 0 1000.
+  motion(ax, ay, az) { this.#say(`motion ${ax} ${ay} ${az}`); }
 
   /// The card: a voice file's bytes go in, the card that came out goes
   /// back (no bytes), or it comes out.
@@ -220,10 +223,11 @@ export class DemoPlayer extends EventTarget {
 
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
-    // A finger on the screen, or BOOT pressed, which is the board's own to
-    // react to (a press long enough to pass the button's debounce).
+    // A finger on the screen, beside the nose (a boop there is a gesture),
+    // or BOOT pressed, which is the board's own to react to (a press long
+    // enough to pass the button's debounce).
     if (event.input === 'tap') {
-      this.#board.touch(CANVAS[0] / 2, CANVAS[1] / 2);
+      this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
       this.#board.release();
     }
     if (event.input === 'press') {
@@ -275,12 +279,14 @@ const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊',
 const Element = globalThis.HTMLElement ?? class {};
 
 /// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json"
-///                 board-id="b00p-left" pack="pixel" controls>
+///                 board-id="b00p-left" pack="pixel" controls motion>
 /// The board, drawn as a thing on a desk, with its BOOT button and a Sound
 /// button (a browser plays nothing until a click). `voice` is a voice file
 /// to fetch for its card; `usb` a WebSocket that is its USB cable, one
 /// line a message each way (serve.py's, which leads to the Mac app and the
-/// tools); `controls` adds power, reset and card buttons. `demo` is a
+/// tools); `controls` adds power, reset and card buttons, and `motion`
+/// the motion sensor's: shake, pick up and put down, a thump on the desk,
+/// face down and up (the AMOLED board's; the CYD has none). `demo` is a
 /// recording to play (DemoPlayer), told as a story under the board: what
 /// happens, and what the creature does about it. The board's face is then
 /// the recording's. `board-id` is the board's id, its hello's, so boards on
@@ -449,6 +455,36 @@ export class BoopSimulator extends Element {
                    () => this.#parts.card === 'no card' ? board.insertCard() : board.ejectCard());
     }
     this.#button(tools, () => board.audible ? 'Sound off' : 'Sound on', () => board.audible ? board.mute() : board.unmute());
+    if (this.hasAttribute('motion')) this.#motion(tools);
+  }
+
+  // The motion sensor's buttons: readings in mg, in the shapes the board
+  // knows (firmware/src/app/motion_gesture.h). Flat and still is 0 0 1000.
+  #motion(tools) {
+    const board = this.board, flat = [0, 0, 1000];
+    let held = null, down = false;
+    const play = async readings => {
+      for (const [az, ms] of readings) { board.motion(0, 0, az); await new Promise(r => setTimeout(r, ms)); }
+    };
+    // Held in a hand: never quite still, never a jolt.
+    const hold = () => { let up = false; held = setInterval(() => board.motion(0, 0, (up = !up) ? 1100 : 900), 100); };
+    this.#button(tools, () => 'Shake', () => play([[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]]));
+    this.#button(tools, () => held ? 'Put down' : 'Pick up', async () => {
+      if (held) { clearInterval(held); held = null; board.motion(...flat); return; }
+      await play([[1250, 300]]);
+      hold();
+    });
+    this.#button(tools, () => 'Thump', () => play([[1500, 40], [1000, 0]]));
+    this.#button(tools, () => down ? 'Face up' : 'Face down', () => {
+      down = !down;
+      board.motion(0, 0, down ? -1000 : 1000);
+    });
+    // Each board powered on lies flat on the desk, so it's still.
+    board.addEventListener('power', () => {
+      clearInterval(held);
+      held = null, down = false;
+      if (board.on) board.motion(...flat);
+    });
   }
 
   // A demo, told under the board: what happens, and what the creature does.

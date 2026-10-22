@@ -2,6 +2,8 @@ import {palette as P,rect,at,star} from './visual/base.mjs';
 import {newMoods} from './mood-catalog.mjs';
 import {frames,sceneSvg,round,pad,slab} from './mood-art.mjs';
 import {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor as wakeFace,props as wakeProps} from './wake-art.mjs';
+import {moods,design,steps,own,heart} from './kit-art.mjs';
+const make=design('occasion-v1');
 
 // Occasions: variations that fit only some of the time, which the device
 // turns to by itself. Each carries `when`, the tags that must all be on
@@ -19,11 +21,6 @@ import {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor as wakeFace,props as 
 // Each is the mood's own face at rest with a small bob and a blink, and the
 // occasion around it. The quiet looks stay silent (quiet-mix.mjs).
 
-const moods=[...oldMoods,...newMoods];
-const make=(mood,state,variation,action,name,caption,seconds,extra={})=>({
- id:`${mood}.${state}.${String(variation).padStart(2,'0')}`,mood,state,variation,action,name,caption,
- seconds:Number(seconds.toFixed(3)),renderer:'occasion-v1',approval:'Review candidate',...extra
-});
 // Each mood's variations so far: the idle ones (excited's zoomies is a
 // seventh), working's (its zoomies a sixth), asleep's four and the wake-up.
 const idleN=mood=>mood==='excited'?7:6, workN=mood=>mood==='excited'?6:5;
@@ -48,7 +45,6 @@ export const occasionAdditions=[
 ];
 
 // ---- Plans: [when (of the loop), pose] ------------------------------------
-const steps=(a,list)=>list.map(([u,pose])=>({at:round(u*a.seconds),pose,effect:null,gain:0}));
 const rest=[[0,'home'],[.25,'bob'],[.45,'home'],[.62,'blink'],[.66,'home'],[.8,'bob'],[.98,'home'],[1,'home']];
 const plans={
  coffee:[[0,'home'],[.2,'sip'],[.4,'sip-2'],[.55,'home'],[.7,'blink'],[.74,'home'],[.98,'home'],[1,'home']],
@@ -63,7 +59,6 @@ export function occasionPlan(a){
 }
 
 // ---- The faces ---------------------------------------------------------------
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 const faces={
  home:own(),bob:own(0,-3),blink:a=>ownFace(a.mood,true),sip:own(0,-2),'sip-2':own(0,-4),
  'dart-left':own(-6,0),'dart-right':own(6,0),
@@ -105,7 +100,6 @@ function bobble(){
 }
 const snow=phase=>[[24,10],[60,40],[110,4],[200,30],[250,8],[292,44],[40,120],[280,110],[16,70],[300,150]]
  .map(([x,y])=>rect(x,(y+phase*12)%186,4,4,P.ink)).join('');
-const heart=(x,y,c=P.red)=>rect(x,y,6,6,c)+rect(x+10,y,6,6,c)+rect(x-2,y+4,20,6,c)+rect(x,y+10,16,4,c)+rect(x+4,y+14,8,4,c);
 const hearts=phase=>[[40,140],[260,120],[80,40],[230,30]].map(([x,y],i)=>heart(x,(y-phase*16+180)%180,i%2?P.cheek:P.red)).join('');
 // Shades over the eyes, the older moods' and the newer ones' line-ups.
 function shades(a){

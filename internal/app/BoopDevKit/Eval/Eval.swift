@@ -152,6 +152,16 @@ public struct Scenario: Sendable {
         public var onGraph = false
 
         public init() {}
+
+        /// Only the checks a run can fail without Jev choosing: the quiet
+        /// while working, and moves on the mood graph.
+        var withoutChoices: Checks {
+            var kept = Checks()
+            kept.quietWorkingMs = quietWorkingMs
+            kept.onGraph = onGraph
+            return kept
+        }
+
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
                            "reactions", "min_variety", "words_said", "moves_on_graph"]
     }
@@ -383,13 +393,7 @@ public struct Scenario: Sendable {
     }
 
     /// `2026-10-31T09:00`, in UTC, as ms since 1970.
-    static func date(_ text: String) -> Int64? {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        return f.date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
-    }
+    static func date(_ text: String) -> Int64? { DemoScript.date(text, timeZone: TimeZone(identifier: "UTC")!) }
 
     /// `2m30s`, `90s`, `5m`, `1h`.
     static func ms(_ text: String) -> Int64? {
@@ -553,7 +557,7 @@ public struct Eval {
     public var debugLog: URL?
     /// Whether the whole-run checks on Jev's own choices (its variety, its
     /// mood's changes, what it says) are judged: not with a scripted brain.
-    public var judgesChoices: Bool { !(brain is ExpectBrain) }
+    public var judgesChoices: Bool { !(brain is ScenarioBrain) }
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -659,8 +663,8 @@ public struct Eval {
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
             // The expect brain answers the step's passes, a heartbeat's on
             // the way to it included, from the step.
-            (brain as? ExpectBrain)?.step = step
-            (brain as? ExpectBrain)?.ahead = scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? []
+            let scripted = brain as? ScenarioBrain
+            scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? [])
             while clock.now < start + step.atMs {
                 clock.now = min(start + step.atMs, clock.now + 1000)
                 await respond(home.sync { pipeline.tick(at: clock.now).views })
@@ -668,7 +672,7 @@ public struct Eval {
             // Each input's view events get their passes before the next, as
             // the app's would once the brain answered.
             for input in Eval.inputs(step, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
-            (brain as? ExpectBrain)?.step = nil
+            scripted?.willRun(nil, ahead: [])
             let session = step.session ?? "s1"
             switch step.event {
             case "turn started":
@@ -719,18 +723,10 @@ public struct Eval {
                                 wrote: wroteDiary))
         }
         if let s = since, let end = scenario.steps.last?.atMs { working.append((s, end)) }
-        var checks0 = scenario.checks
-        if !judgesChoices {
-            // A scripted brain's answers are the scenario's own: only the
-            // checks a run can fail without Jev are its to judge.
-            checks0 = checks0.map { c in
-                var kept = Scenario.Checks()
-                kept.quietWorkingMs = c.quietWorkingMs
-                kept.onGraph = c.onGraph
-                return kept
-            }
-        }
-        let runChecks = checks0.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
+        // A scripted brain's answers are the scenario's own: only the checks
+        // a run can fail without Jev are its to judge.
+        let judged = judgesChoices ? scenario.checks : scenario.checks?.withoutChoices
+        let runChecks = judged.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
         return Result(scenario: scenario.name, file: scenario.file, checks: checks, runChecks: runChecks, timeline: timeline)
     }
 
@@ -886,7 +882,7 @@ public struct Eval {
         case "needs you": return [hook(.tool, .start, "PreToolUse", ["tool": "Bash"]), hook(.tool, .wait, "PermissionRequest", ["tool": "Bash"])]
         case "answered": return [hook(.tool, .end, "PostToolUse", ["tool": "Bash", "failed": false])]
         case "said": return [{ $0.said(step.words ?? "", by: .device, at: now) }]
-        // BOOT, and the board handed you the next agent.
+        // BOOT pressed: it hands you the next agent, or pokes.
         case "press": return [{ $0.press(at: now) }]
         // The agent sends a helper off, and it comes back.
         case "helper started": return [hook(.subagent, .start, "SubagentStart", subagent: step.helper ?? "h1")]

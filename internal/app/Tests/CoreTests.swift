@@ -1427,6 +1427,39 @@ final class CoreNeedsYouTests: XCTestCase {
 
 final class CoreYouAndBoopTests: XCTestCase {
 
+    /// BOOT is the Mac's to judge: with nobody in line a press is a poke,
+    /// and with an agent idle it opens that agent.
+    func testAPressOpensTheNextOneOrPokes() {
+        let rig = CoreRig()
+        let alone = rig.note(Fx(rig.pipeline.press(at: rig.now)))
+        XCTAssertEqual(opened(alone), [])
+        XCTAssertEqual(rig.ruleActions, ["wiggle"], "nobody in line: a poke")
+        rig.wait(5000)
+        rig.send(.turnStart)
+        rig.send(.turnEnd)
+        rig.wait(1000)
+        let before = rig.ruleActions
+        XCTAssertEqual(opened(rig.note(Fx(rig.pipeline.press(at: rig.now)))).count, 1, "the idle agent opens")
+        XCTAssertEqual(rig.ruleActions, before, "and no poke")
+    }
+
+    /// Face down is do not disturb until it's turned back up: nothing
+    /// wakes the brain in between, and turning it up does.
+    func testFaceDownHoldsTheBrainUntilItsTurnedUp() {
+        let rig = CoreRig()
+        rig.send(.turnStart)
+        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("facedown", at: rig.now)))), [])
+        rig.wait(60_000)
+        XCTAssertEqual(woke(rig.send(.turnEnd)), [], "a finished turn while it lies face down")
+        XCTAssertEqual(woke(rig.poke()), [])
+        rig.wait(5000)
+        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("peekaboo", at: rig.now)))).count, 1)
+        rig.wait(5000)
+        rig.send(.turnStart)
+        rig.wait(60_000)
+        XCTAssertEqual(woke(rig.send(.turnEnd)).count, 1, "face up again")
+    }
+
     /// A poke is the rules' alone to react to: they
     /// record the device's wiggle as an action under it, and the brain
     /// hears of it. While something needs you, the device only squashes,

@@ -83,7 +83,7 @@ extension Runtime {
         changed()
     }
 
-    /// BOOT pressed, as the board reports it when it hands you an agent.
+    /// BOOT pressed, as the board reports it (a `tap` from the button).
     func pressed(who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)
         options.log("\(who): press\(Runtime.whose(rig))")

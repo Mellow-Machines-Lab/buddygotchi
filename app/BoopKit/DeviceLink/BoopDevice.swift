@@ -39,6 +39,9 @@ public enum BoopDevice {
     /// The `do` id of the brain's finish a tap landed on, when the device
     /// says so (`data.on`): it only dipped the face, and
     /// the tap opens that thread.
+    /// Whether a `tap` was BOOT (`src` `button`), not the screen.
+    public static func button(tapped ev: DeviceEvent) -> Bool { ev.data["src"]?.string == "button" }
+
     public static func finish(tapped ev: DeviceEvent) -> Int? {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }
         return on

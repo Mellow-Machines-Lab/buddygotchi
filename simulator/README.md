@@ -60,8 +60,9 @@ A generic one, not the CYD or the AMOLED board:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`). Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a tap, as on the boards. The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
+| Motion | With `motion`, buttons that move the board as the AMOLED's motion sensor feels it: Shake, Pick up and Put down, Thump, Face down and Face up. Without them the board has no sensor, as the CYD hasn't |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
 | Light | The dot under the screen, in the LED's colour |
 | Backlight | The screen dims as the firmware dims it |
@@ -87,6 +88,7 @@ local page, in `web/dist/`:
 | `voice` | A voice file to fetch for the card |
 | `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
+| `motion` | Adds the motion sensor's buttons. The page's own `index.html` has them |
 | `demo` | A recording to play (below). The board's face is then the recording's |
 | `board-id` | The board's id, its `hello`'s, so boards on one page differ (`b00p-0000` without it) |
 | `pack` | The character pack whose build it runs, `boop-sim-PACK.js` (below); the staged pack's `boop-sim.js` without it |
@@ -264,6 +266,7 @@ make -C internal sim-test
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing, a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
+  shake and face down and up through the motion sensor, a
   `say`'s sound asked for a chunk at a time, and the card staying in its
   slot through a reset. Boards side by side each say their own id, and
   Pixel's build (`build.sh pixel`, which `sim-test` makes) says its pack.
