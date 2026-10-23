@@ -4,6 +4,7 @@
 // plain letter and anything else as "?". Text is drawn over black with an
 // ink ramp, or in black over the needs-you sign's amber (kInkOnAmber).
 #pragma once
+#include <cstddef>
 #include <cstdint>
 
 #include "render/canvas.h"
@@ -37,5 +38,11 @@ int nextGlyph(const char*& p);
 // Each line is written, NUL-terminated, into `out` (`lineBytes` per line).
 // Returns how many lines.
 int wrapText(const char* text, int cols, int maxLines, char* out, int lineBytes);
+// `text` as the fonts draw it, into `out` (`n` bytes): accented letters as
+// their plain letter, "·" kept, anything else unknown "?", a line break or
+// tab a space, and no spaces at either end. More than `maxGlyphs` glyphs
+// are cut to maxGlyphs - 2 and "..", so it's at most maxGlyphs. Returns
+// its glyphs.
+int foldText(const char* text, int maxGlyphs, char* out, size_t n);
 
 }  // namespace render

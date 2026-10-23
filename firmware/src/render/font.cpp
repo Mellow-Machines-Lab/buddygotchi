@@ -133,4 +133,44 @@ int wrapText(const char* text, int cols, int maxLines, char* out, int lineBytes)
   return n;
 }
 
+int foldText(const char* text, int maxGlyphs, char* out, size_t n) {
+  if (!n) return 0;
+  out[0] = 0;
+  if (!text || maxGlyphs < 3) return 0;
+  // A glyph, with a line break or tab as a space (glyph 0).
+  auto glyphOf = [](const char*& p) {
+    if (*p == '\n' || *p == '\r' || *p == '\t') return ++p, 0;
+    return nextGlyph(p);
+  };
+  // The glyphs after the spaces it starts with, up to the last that isn't one.
+  const char* p = text;
+  int total = 0, last = 0;
+  for (int g; (g = glyphOf(p)) >= 0;) {
+    if (g == 0 && total == 0) continue;
+    ++total;
+    if (g) last = total;
+  }
+  const bool cut = last > maxGlyphs;
+  const int keep = cut ? maxGlyphs - 2 : last;
+  size_t b = 0;
+  int written = 0;
+  p = text;
+  for (int g; written < keep && (g = glyphOf(p)) >= 0;) {
+    if (g == 0 && written == 0) continue;
+    const size_t len = g == 95 ? 2 : 1;  // "·", the one glyph of two bytes
+    if (b + len + (cut ? 2 : 0) >= n) break;
+    if (len == 2)
+      out[b] = '\xC2', out[b + 1] = '\xB7';
+    else
+      out[b] = char(g + 0x20);
+    b += len, ++written;
+  }
+  if (cut && b + 2 < n) {
+    while (b > 0 && out[b - 1] == ' ') --b, --written;  // "done.." rather than "done .."
+    out[b++] = '.', out[b++] = '.', written += 2;
+  }
+  out[b] = 0;
+  return written;
+}
+
 }  // namespace render

@@ -3,6 +3,7 @@
 #include <unity.h>
 
 #include <cstring>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -523,6 +524,34 @@ void test_text_wraps_at_spaces() {
   TEST_ASSERT_EQUAL_INT(0, wrapText("   ", 16, 3, &lines[0][0], 48));
 }
 
+// A sign's words (foldText): as the fonts draw them, trimmed, and at most
+// the glyphs asked for, cut with "..".
+void test_text_folds_and_cuts_to_its_glyphs() {
+  char out[40];
+  TEST_ASSERT_EQUAL_INT(12, foldText("  bye bye code ", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("bye bye code", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("exactly eighteen!!", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("exactly eighteen!!", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("nineteen glyphs, ok", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("nineteen glyphs,..", out);
+  TEST_ASSERT_EQUAL_INT(14, foldText("still broken after", 15, out, sizeof out));  // no space before ".."
+  TEST_ASSERT_EQUAL_STRING("still broken..", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("still broken  aft\xC3\xA9r all", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("still broken  af..", out);
+  TEST_ASSERT_EQUAL_INT(7, foldText("\xC3\xA9t\xC3\xA9\t\xC2\xB7 \xE2\x9C\x93", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("ete \xC2\xB7 ?", out);
+  std::string dots, kept;  // "·" is two bytes: 18 of them still fit app::kSignBytes
+  for (int i = 0; i < 20; ++i) dots += "\xC2\xB7";
+  for (int i = 0; i < 16; ++i) kept += "\xC2\xB7";
+  TEST_ASSERT_EQUAL_INT(18, foldText(dots.c_str(), 18, out, 37));
+  TEST_ASSERT_EQUAL_STRING((kept + "..").c_str(), out);
+  TEST_ASSERT_EQUAL_INT(0, foldText("   ", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("", out);
+  TEST_ASSERT_EQUAL_INT(0, foldText(nullptr, 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_INT(4, foldText("abcdefgh", 18, out, 5));  // a short buffer holds what fits
+  TEST_ASSERT_EQUAL_STRING("abcd", out);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
     RUN_TEST(test_ease_is_monotonic_from_0_to_1024);
@@ -543,5 +572,6 @@ int main(int, char**) {
   RUN_TEST(test_it_asks_harder_the_longer_it_waits);
   RUN_TEST(test_the_sign_is_black_on_amber);
   RUN_TEST(test_text_wraps_at_spaces);
+  RUN_TEST(test_text_folds_and_cuts_to_its_glyphs);
   return UNITY_END();
 }

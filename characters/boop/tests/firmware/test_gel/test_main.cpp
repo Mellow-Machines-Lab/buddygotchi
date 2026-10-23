@@ -871,11 +871,11 @@ static void test_kept_cards_and_lanes_match_a_fresh_frame() {
     cardFrames += opaqueCards(s, *e, boxes) > 0;
     laneKeeps += s.laneKey && s.laneKey == laneKey(bubble, strip);
     const uint32_t cardKey = s.cardKey;
-    paintFrame(s, *e, false, 0, bubble, strip);
+    paintFrame(s, *e, false, 0, bubble, {}, strip);
     cardKeeps += cardKey && s.cardKey == cardKey;
     knockKeeps += cardKey && s.cardKey == cardKey && e->scenes.envelope(e->timeMs(), kKnock) > 0;
     fresh.invalidate();
-    paintFrame(fresh, *e, false, 0, bubble, strip);
+    paintFrame(fresh, *e, false, 0, bubble, {}, strip);
     if (std::memcmp(s.pixels, fresh.pixels, s.bytes()))
       TEST_FAIL_MESSAGE(("kept frame differs from a fresh one at " + std::to_string(i)).c_str());
   }

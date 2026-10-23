@@ -1326,6 +1326,88 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
   return m;
 }
 
+// A reaction's sign (Behaviour::kSignMinMs, 2.5 s): held up from the
+// reaction's start for as long as any of its parts plays, and at least
+// 2.5 s so it can be read; the reaction isn't played out until it's down.
+// A tap's poke leaves it up; a newer reaction's animation and needs you
+// take it down.
+static void test_a_sign_shows_while_its_reaction_plays() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  auto holding = [](const char* text, uint32_t key) {
+    ReactionIn m;
+    std::snprintf(m.sign, sizeof m.sign, "%s", text);
+    m.key = key;
+    return m;
+  };
+  auto sign = [&] {
+    const char* text = r.b.sign(r.t).text;
+    return std::string(text ? text : "-");
+  };
+  // On its own: 2.5 s.
+  TEST_ASSERT_NULL(r.b.admit(holding("bye bye code", 1), r.t));
+  r.b.play(holding("bye bye code", 1), r.t);
+  TEST_ASSERT_EQUAL_STRING("bye bye code", sign().c_str());
+  r.at(1000 + Behaviour::kSignMinMs - 1);
+  TEST_ASSERT_EQUAL_STRING("bye bye code", sign().c_str());
+  TEST_ASSERT_EQUAL_UINT32(Behaviour::kSignMinMs - 1, r.b.sign(r.t).ms);
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
+  r.at(1000 + Behaviour::kSignMinMs);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("1 done", ended(r).c_str());
+
+  // With a finish longer than that: as long as the finish plays.
+  r.at(10000);
+  r.state(base("idle"));
+  ReactionIn cheer = holding("ship it", 2);
+  cheer.anim = SceneState::kTaskComplete;
+  onReaction(r.b, cheer, r.t);
+  uint32_t left;
+  r.b.reaction(r.t, left);
+  TEST_ASSERT_TRUE(left > Behaviour::kSignMinMs);
+  r.at(10000 + left - 1);
+  TEST_ASSERT_EQUAL_STRING("ship it", sign().c_str());
+  r.at(10000 + left);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("2 done", ended(r).c_str());
+
+  // A short `say` (638 ms, and 1.2 s to read it) holds it 2.5 s, after
+  // its bubble has gone.
+  if (voice::takeIndex(kGo) >= 0) {
+    r.at(20000);
+    r.state(base("idle"));
+    ReactionIn brief = holding("oops", 3);
+    brief.said = true, brief.take = voice::takeIndex(kGo);
+    onReaction(r.b, brief, r.t);
+    r.at(20000 + kGoMs + Behaviour::kBubbleReadMs);
+    TEST_ASSERT_NULL(r.b.bubble(r.t));
+    TEST_ASSERT_EQUAL_STRING("oops", sign().c_str());
+    r.at(20000 + Behaviour::kSignMinMs - 1);
+    TEST_ASSERT_EQUAL_STRING("oops", sign().c_str());
+    r.at(20000 + Behaviour::kSignMinMs);
+    TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  }
+
+  // A tap's poke plays under it; a newer reaction's animation takes it down.
+  r.at(30000);
+  r.state(base("idle"));
+  onReaction(r.b, holding("hello", 4), r.t);
+  r.at(30100);
+  TEST_ASSERT_EQUAL_STRING("poked", r.b.tap(r.t, r.rng));
+  TEST_ASSERT_EQUAL_STRING("hello", sign().c_str());
+  r.react(SceneState::kStarting);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+
+  // Needs you takes it down, and no sign plays while it waits.
+  r.at(40000);
+  r.state(base("idle"));
+  onReaction(r.b, holding("hello", 5), r.t);
+  r.state(attn());
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(holding("again", 6), r.t));
+}
+
 static void test_a_waited_reaction_says_how_it_ended() {
   NEEDS_VOICE_PACK();
   Rig r;
@@ -2562,5 +2644,6 @@ int main() {
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_is_a_tap);
+  RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();
 }

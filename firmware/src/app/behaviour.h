@@ -72,9 +72,15 @@ struct PlayedOut {
   CutBy by = CutBy::kNone;
 };
 
+// A reaction's sign (`sign`): at most kSignGlyphs glyphs of the board's
+// fonts, cut with ".." past them (render::foldText), in kSignBytes.
+constexpr int kSignGlyphs = 18;
+constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+
 // A reaction from the Mac as Device parsed its args, already
 // held in range: the do's name as an animation (none for `react`), a
-// `say`, a face. With no anim, only the `say`, or only the face.
+// `say`, a face, a sign. With no anim, only the `say`, the face or the
+// sign.
 struct ReactionIn {
   render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isReaction)
   // It had a `say` field: the reply `listening` waits for, even with no
@@ -105,6 +111,8 @@ struct ReactionIn {
   uint32_t key = 0;
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
+  // The words the buddy holds up on a sign while it plays, "" for none.
+  char sign[kSignBytes] = "";
 };
 
 class Behaviour {
@@ -134,6 +142,9 @@ class Behaviour {
   // together.
   static constexpr uint32_t kTapRunMs = 3000;
   static constexpr int kTapSpamFrom = 3;
+  // A reaction's sign shows from its start for as long as any part of it
+  // plays, and at least this long, to be read.
+  static constexpr uint32_t kSignMinMs = 2500;
 
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
@@ -211,6 +222,11 @@ class Behaviour {
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
+  // The sign a reaction holds up, while it shows: no text with no app or
+  // while something needs you.
+  render::SignShow sign(uint32_t t) const;
+  // When the sign shown last goes.
+  uint32_t signEnd() const { return sign_.at + sign_.ms; }
   // A `say` has arrived that waits for its animation's voice window:
   // it starts later, if nothing replaces it first.
   bool sayAhead(uint32_t t) const;
@@ -232,7 +248,8 @@ class Behaviour {
   // message, hook and tick.
   bool takePlayedOut(PlayedOut& p);
   // The first instant after `from`, at most `to`, at which a part ends
-  // (an animation, a `say` with its bubble, a borrowed face); false for none.
+  // (an animation, a `say` with its bubble, a borrowed face, a sign); false
+  // for none.
   bool nextEnd(uint32_t from, uint32_t to, uint32_t& at) const;
   // When the `say`'s bubble goes, from its start at its voice window.
   uint32_t sayEnd() const { return say_.at + say_.ms; }
@@ -279,6 +296,12 @@ class Behaviour {
     char text[2 * voice::kTextMax] = "";  // the bubble's: the takes' words
     uint32_t at = 0, ms = 0;
     uint32_t speakMs = 0;  // the takes play this long, the gap included
+    uint32_t key = 0;
+  };
+  // A sign: its words from `at` for `ms`, for its reaction (`key`).
+  struct Sign {
+    char text[kSignBytes] = "";
+    uint32_t at = 0, ms = 0;
     uint32_t key = 0;
   };
   using Source = render::FaceSource;
@@ -328,6 +351,7 @@ class Behaviour {
   bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
+  bool signOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
   // What the Mac last said, as the face may use it (render::FaceContext).
   render::FaceContext contextAt(uint32_t t) const;
@@ -352,6 +376,7 @@ class Behaviour {
   uint32_t blAt_ = 0;
   Reaction reaction_;
   Say say_;
+  Sign sign_;
   // The reaction's expression: its mood from exprAt_ for exprMs_: as long
   // as the animation with it plays, or its loops; and at least as long as
   // the `say` with it.

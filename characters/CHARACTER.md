@@ -481,6 +481,18 @@ Besides drawing each mood and state, a face:
   then +N, a parcel and the count of agents idle for BOOT to hand over,
   a finished turn's tick or cross) and the speech bubble. The face calls
   `drawLane` to draw them.
+- **Holds up a sign.** Any reaction may carry words in `sign` (the `do`'s
+  args), at most 18 glyphs of the fonts (accents folded, cut with `..`
+  past that, `render::foldText`). The engine keeps them up from the
+  reaction's start for as long as any part of it plays, and at least
+  2.5 s to be read (`Behaviour::kSignMinMs`); a newer reaction's
+  animation or `say`, listening and needs you take them down, a tap's
+  poke doesn't. A face gets them as `SignShow` (the words, and how long
+  they've shown) and draws them as its own: Pixel's a card under its face
+  gripped by two mitts (`render/pixel/held.h`), the gel's a card in front
+  of its body with a little gel hand at either side
+  (`render/gel/layers.h`). Each slides up as it starts and bobs while
+  it's held.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the
