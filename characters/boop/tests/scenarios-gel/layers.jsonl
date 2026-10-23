@@ -1,0 +1,52 @@
+// What the gel wears and the air around it, by the tags on
+// (render/gel/layers.h), each on a frozen clock after a reset, idle unless
+// it says. A state every 20 s keeps the link alive.
+// A nightcap at night, its lids a little lower.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"]}
+{"clock":1200}
+{"shot":"nightcap"}
+// Asleep at night: the nightcap, and Zs rising.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["night"]}
+{"clock":2000}
+{"shot":"asleep-night"}
+// A party day: a party hat and confetti.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"busy":1,"when":["day","party"]}
+{"clock":1500}
+{"shot":"party"}
+// Halloween: a witch hat.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","vol":0,"when":["evening","halloween"]}
+{"clock":1200}
+{"shot":"halloween"}
+// Winter: a bobble hat in the snow.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["morning","winter"]}
+{"clock":1200}
+{"shot":"winter"}
+// A Friday's day: shades. Valentine's: hearts.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"proud","vol":0,"when":["day","friday"]}
+{"clock":1200}
+{"shot":"friday"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"pleased","vol":0,"when":["day","valentines"]}
+{"clock":1200}
+{"shot":"valentines"}
+// A sign at night: held at its front, under the nightcap.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"still broken","mood":"sad"}}
+{"clock":1600}
+{"shot":"sign-night"}

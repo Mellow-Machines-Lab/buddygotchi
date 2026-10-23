@@ -226,8 +226,9 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
-  paint(surface, e, mouthOpen, dy, key);
-  if (sign.text) paintSign(surface, sign, dy);
+  Anchors at;
+  paint(surface, e, mouthOpen, dy, key, &at);
+  if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);
 }

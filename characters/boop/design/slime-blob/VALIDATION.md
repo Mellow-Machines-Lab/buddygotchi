@@ -170,7 +170,9 @@ internal/tools/boopctl sim --face gel
   gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
   on the nose, a shake and peekaboo, each by the board's own input, its
   variation expected), the occasions (`occasions.jsonl`: a party's
-  bounce, a night's drowse, frantic typing) and a reaction's sign
+  bounce, a night's drowse, frantic typing, in a nightcap and a party
+  hat), the layers (`layers.jsonl`: each outfit and air by its tags, Zs
+  asleep at night, a sign under the nightcap) and a reaction's sign
   (`sign.jsonl`: the card held up over idle and over a finish, with how
   long it stays).
   `--accept` updates only the gel goldens, after looking at them.

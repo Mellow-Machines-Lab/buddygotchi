@@ -41,13 +41,17 @@ and new actions. One personality (Boop's default nature) for now.
       pack's `signs.md`, with `{words}` captions that play your phrases
       back in the buddy's way; the `react.sign` question; the `notice`
       animation; evals 101-103 and demos. The board's drawing is next.
-- [ ] **Anchors and layers on the gel.** The body's head and hands each
+- [x] **Anchors and layers on the gel.** The body's head and hands each
       frame; the outfit, prop or sign and air layers drawn over it; a
       design may move a layer, pin it to the screen ("brb" while it
       hides), or keep none. Prove one nightcap over the slime first.
+      Done on the board (`render/gel/layers.h`); peekaboo hides the hat.
+      Still to do: pinning a layer to the screen ("brb"), and the Mac's
+      mirror drawing the layers.
 - [ ] **Outfits by the time of day and the calendar.** A nightcap and
       gown at night (and a sleepier face), a party hat, reading glasses;
-      then the holidays.
+      then the holidays. The gel has the hats, shades, the air and lower
+      lids at night; still to do: a gown, reading glasses.
 - [ ] **First three scenarios**, each with evals and a demo:
       "still broken" (sad, holds up the words); its name in your prompt
       (it looks up at you); a delete or clean-up (glee, "bye bye code").

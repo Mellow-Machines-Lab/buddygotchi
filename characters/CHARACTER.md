@@ -467,8 +467,17 @@ Besides drawing each mood and state, a face:
   swoons on Valentine's and nods off after twenty minutes; busy and
   frantic work type faster, twenty minutes' work ends in a stretch, and
   sleep snores deeper at night and dreams after half an hour. Its idle
-  picks one in place of a gesture, and it has no costume or colour for
-  one.
+  picks one in place of a gesture. Over every state the board also draws
+  layers on the gel by the tags (`render/gel/layers.h`), at anchors the
+  pose that drew its body gives (`render/gel/painter.h`'s `Anchors`: the
+  dome's top, a ring for a hat's brim, a ring for its hands, its eyes),
+  so they move, squash and leave the screen with it: a nightcap at night
+  (and its lids a little lower), a party hat on a party day, New Year's
+  Day, Lunar New Year and Programmers' Day, a witch hat at Halloween, a
+  bobble hat in winter, shades on a Friday's day; snow in winter,
+  confetti on a party day and New Year's Day, hearts on Valentine's, Zs
+  while it sleeps at night. Peekaboo's gesture takes the hat off. The
+  Mac's mirror of the gel doesn't draw them yet.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
