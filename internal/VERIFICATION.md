@@ -439,7 +439,8 @@ does all of it:
    everyday ones:
    `.build/debug/Boop --headless --state-dir /tmp/boop-e2e/state --link usb:/tmp/boop-e2e/usb.sock --socket /tmp/boop-e2e/boop.sock --brain scripted --name Pip --no-open --debug`.
    The scripted brain makes runs repeatable; `boopctl e2e --brain jev`
-   asks Jev, with `BOOP_JEV_KEY`.
+   asks Jev, with `BOOP_JEV_KEY`. The state's `settings.json` sets the
+   volume to 0 first, so a run is silent on the board.
 3. The fixtures in `internal/app/Tests/Fixtures/hooks/e2e/` go through the
    real `agent-hook`, run as Boop installs it (`--keep-text`): a Claude
    session, a Codex approval answered within the 2 s grace period, and one

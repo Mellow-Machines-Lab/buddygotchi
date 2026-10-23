@@ -78,6 +78,10 @@ class Run:
             shutil.rmtree(self.root)
         self.root.mkdir(parents=True)
         self.out.mkdir(parents=True, exist_ok=True)
+        # Silent: a run plays every reaction on the board, and nobody wants
+        # to hear them all. The app reads its volume from here at launch.
+        self.state.mkdir(parents=True, exist_ok=True)
+        (self.state / "settings.json").write_text(json.dumps({"volume": 0}))
         for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
                 raise DeviceError(f"no {BIN / name}; run make build")

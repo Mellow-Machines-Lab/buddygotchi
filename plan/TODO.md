@@ -55,6 +55,15 @@ and new actions. One personality (Boop's default nature) for now.
       a refactor, tests, a deploy (panic on a Friday), docs, a question,
       an essay of a prompt, "just" and "quickly", "be careful", thanks.
 - [ ] **Pixel gets the layers too**, after the gel.
+- [ ] **Fluid animations and interactions.** Today the face visibly cuts
+      from one state to the next (a look to a reaction and back, one mood
+      to another, a gesture in and out). It should flow: blend between
+      states (the slime's springs carry motion over; Pixel's flip-books
+      could cross-fade or share in-between poses), ease a reaction in and
+      out of the look it interrupts, keep the eyes and body moving
+      through a change instead of resetting, and let a touch or a poke
+      bend the current motion rather than replace it. Start by filming or
+      recording a few transitions on the board to see where it jumps.
 
 ## Waiting on the owner
 
