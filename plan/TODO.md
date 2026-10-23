@@ -34,13 +34,14 @@ and new actions. One personality (Boop's default nature) for now.
       for real. `boopdev read-check` runs the real
       on-device model over sample prompts and reports how often it gets
       the kind and tone right.
-- [ ] **The sign.** A reaction's `sign` argument (about 18 characters,
+- [x] **The sign.** A reaction's `sign` argument (about 18 characters,
       your words when they fit, else the pack's canned captions); react
       asks which, from the reading's phrases. The board draws it in the
       sign font in the design's sign slot. The Mac's side is in: each
       pack's `signs.md`, with `{words}` captions that play your phrases
       back in the buddy's way; the `react.sign` question; the `notice`
-      animation; evals 101-103 and demos. The board's drawing is next.
+      animation; evals 101-103 and demos. The board draws it on both faces,
+      held up in front (the gel's hands ring; Pixel's mitts under the face).
 - [x] **Anchors and layers on the gel.** The body's head and hands each
       frame; the outfit, prop or sign and air layers drawn over it; a
       design may move a layer, pin it to the screen ("brb" while it
@@ -52,7 +53,7 @@ and new actions. One personality (Boop's default nature) for now.
       gown at night (and a sleepier face), a party hat, reading glasses;
       then the holidays. The gel has the hats, shades, the air and lower
       lids at night; still to do: a gown, reading glasses.
-- [ ] **First three scenarios**, each with evals and a demo:
+- [x] **First three scenarios**, each with evals and a demo:
       "still broken" (sad, holds up the words); its name in your prompt
       (it looks up at you); a delete or clean-up (glee, "bye bye code").
 - [x] **More scenarios** (evals 104-114, Mac side) from the catalogue: a bug hunt, a new feature,
