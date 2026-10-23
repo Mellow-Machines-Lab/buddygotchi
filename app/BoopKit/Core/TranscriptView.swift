@@ -553,11 +553,10 @@ public final class TranscriptView {
     func promptRead(_ e: Event) -> Line? {
         guard let reading = PromptReading(facts: e.data) else { return nil }
         noteActivity(e.at)
-        let session = e.agent.flatMap { agent in e.session.flatMap { fold.sessions.sessions[SessionFold.key(agent, $0)] } }
-        let thread = session.map { threadLine(Thread($0)) }
-        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: thread, name: name(e)),
+        let t = Self.about(e, facts: nil).flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
+        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine), name: name(e)),
                     notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
-                    facts: reading.facts.merging(["thread": session.map { threadFacts(Thread($0)) } ?? .null]) { a, _ in a })
+                    facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
     }
 
     // MARK: Pokes
@@ -886,20 +885,8 @@ public enum EventLine {
     /// `You asked claude on "api" for a fix, in a sentence, frustrated, and
     /// said Pip's name.`: your prompt's reading, never its words; with no
     /// labeler, only its length and the name.
-    public static func asked(_ r: PromptReading, agent: String, thread: String?, name: String = CharacterPack.active.name) -> String {
-        let kind: [PromptReading.Kind: String] = [
-            .fix: "for a fix", .feature: "for something new", .cleanup: "to clean up", .refactor: "for a refactor",
-            .tests: "about tests", .deploy: "to ship it", .docs: "for docs", .question: "a question",
-            .carryOn: "to carry on", .other: "for something else",
-        ]
-        let tone: [PromptReading.Tone: String] = [
-            .frustrated: "frustrated", .rushed: "in a hurry", .polite: "politely", .playful: "playfully",
-            .shouting: "SHOUTING", .careful: "carefully",
-        ]
-        let length: [PromptReading.Length: String] = [
-            .words: "in a few words", .sentence: "in a sentence", .paragraph: "in a paragraph", .essay: "at length",
-        ]
-        let parts = [r.kind.flatMap { kind[$0] }, length[r.length], r.tone.flatMap { tone[$0] }, r.named ? "and said \(name)'s name" : nil]
+    public static func asked(_ r: PromptReading, agent: String, thread: String?, name: String) -> String {
+        let parts = [r.kind?.words, r.length.words, r.tone?.words, r.named ? "and said \(name)'s name" : nil]
         let head = "You asked \(agent)" + (thread.map { " on \($0)" } ?? "")
         return head + " " + parts.compactMap { $0 }.joined(separator: ", ") + "."
     }

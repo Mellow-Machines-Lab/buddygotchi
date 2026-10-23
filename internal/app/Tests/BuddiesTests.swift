@@ -79,7 +79,6 @@ final class BuddiesTests: XCTestCase {
         let (left, right) = (FakeTransport(), FakeTransport())
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
-        options.labeler = { nil }
         options.buddies = try zip(settings, [left, right]).map { setting, transport in
             let buddy = try setting.buddy(bundled: nil, among: settings)
             return Runtime.BuddyOptions(buddy: buddy, link: transport,
@@ -141,7 +140,6 @@ final class BuddiesTests: XCTestCase {
         let settings = try XCTUnwrap(BuddySetting.parse("left:pixel,right:boop"))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
-        options.labeler = { nil }
         options.buddies = try settings.map { setting in
             let buddy = try setting.buddy(bundled: nil, among: settings)
             return Runtime.BuddyOptions(buddy: buddy, link: nil,

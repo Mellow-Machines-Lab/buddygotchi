@@ -308,11 +308,9 @@ func readCheck(_ raw: [String]) async {
     var kinds = 0, tones = 0
     for sample in samples {
         let prompt = sample["prompt"] ?? ""
-        let text = Scrubber.scrub(prompt)
-        var reading = PromptReading(counting: text, names: [])
         let started = ContinuousClock.now
-        if let labels = await labeler.label(text) { reading.label(labels, in: text) }
-        let ms = (ContinuousClock.now - started).components.attoseconds / 1_000_000_000_000_000 + (ContinuousClock.now - started).components.seconds * 1000
+        let reading = await PromptReading.read(prompt, names: [], labeler: labeler)
+        let ms = Int(started.duration(to: .now) / .milliseconds(1))
         let kindOK = reading.kind?.rawValue == sample["kind"], toneOK = reading.tone?.rawValue == sample["tone"]
         kinds += kindOK ? 1 : 0
         tones += toneOK ? 1 : 0

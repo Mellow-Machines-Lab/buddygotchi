@@ -10,10 +10,39 @@ public struct PromptReading: Equatable, Sendable {
     public enum Kind: String, CaseIterable, Sendable {
         case fix, feature, cleanup, refactor, tests, deploy, docs, question, other
         case carryOn = "carry_on"
+
+        /// What you asked for, after `You asked claude on "api"`.
+        public var words: String {
+            switch self {
+            case .fix: "for a fix"
+            case .feature: "for something new"
+            case .cleanup: "to clean up"
+            case .refactor: "for a refactor"
+            case .tests: "about tests"
+            case .deploy: "to ship it"
+            case .docs: "for docs"
+            case .question: "a question"
+            case .carryOn: "to carry on"
+            case .other: "for something else"
+            }
+        }
     }
 
     public enum Tone: String, CaseIterable, Sendable {
         case calm, frustrated, rushed, polite, playful, shouting, careful
+
+        /// How you sound, in the line; nil for calm, which says nothing.
+        public var words: String? {
+            switch self {
+            case .calm: nil
+            case .frustrated: "frustrated"
+            case .rushed: "in a hurry"
+            case .polite: "politely"
+            case .playful: "playfully"
+            case .shouting: "SHOUTING"
+            case .careful: "carefully"
+            }
+        }
     }
 
     /// By characters: a few words under 25, a sentence under 150, a
@@ -26,6 +55,15 @@ public struct PromptReading: Equatable, Sendable {
         public init(_ text: String) {
             let n = text.trimmingCharacters(in: .whitespacesAndNewlines).count
             self = Self.bounds.first { n < $0.1 }?.0 ?? .essay
+        }
+
+        public var words: String {
+            switch self {
+            case .words: "in a few words"
+            case .sentence: "in a sentence"
+            case .paragraph: "in a paragraph"
+            case .essay: "at length"
+            }
         }
     }
 
@@ -50,7 +88,7 @@ public struct PromptReading: Equatable, Sendable {
     public var named: Bool
     public var kind: Kind?
     public var tone: Tone?
-    public var phrases: [String] = []
+    public var phrases: [String]
 
     public init(length: Length, named: Bool = false, kind: Kind? = nil, tone: Tone? = nil, phrases: [String] = []) {
         self.length = length
@@ -58,6 +96,22 @@ public struct PromptReading: Equatable, Sendable {
         self.kind = kind
         self.tone = tone
         self.phrases = phrases
+    }
+
+    /// Your prompt's reading: scrubbed before anything reads it, counted,
+    /// and labelled with `labels` if given.
+    public init(prompt: String, names: [String], labels: Labels? = nil) {
+        let text = Scrubber.scrub(prompt)
+        self.init(counting: text, names: names)
+        if let labels { label(labels, in: text) }
+    }
+
+    /// The same, labelled by `labeler`, if there is one.
+    public static func read(_ prompt: String, names: [String], labeler: (any PromptLabeler)?) async -> PromptReading {
+        let text = Scrubber.scrub(prompt)
+        var reading = PromptReading(counting: text, names: names)
+        if let labels = await labeler?.label(text) { reading.label(labels, in: text) }
+        return reading
     }
 
     /// The tones a prompt's own words show, first match first: capitals
@@ -91,8 +145,13 @@ public struct PromptReading: Equatable, Sendable {
     /// tone stands where the labeler hears nothing more than calm.
     public mutating func label(_ labels: Labels, in text: String) {
         kind = labels.kind
-        let heard = labels.tone == .shouting ? nil : labels.tone
-        if tone != .shouting { tone = heard == nil || heard == .calm ? tone ?? heard : heard }
+        if tone != .shouting {
+            switch labels.tone {
+            case nil, .shouting?: break
+            case .calm?: tone = tone ?? .calm
+            case let heard?: tone = heard
+            }
+        }
         // Searched where the secrets are blanked out, so none is ever a phrase.
         let searchable = text.replacingOccurrences(of: Scrubber.secret, with: String(repeating: "\u{1}", count: Scrubber.secret.count))
         var kept: [String] = []
@@ -122,4 +181,9 @@ public struct PromptReading: Equatable, Sendable {
                   kind: facts["kind"]?.string.flatMap(Kind.init(rawValue:)), tone: facts["tone"]?.string.flatMap(Tone.init(rawValue:)),
                   phrases: facts["phrases"]?.array?.compactMap(\.string) ?? [])
     }
+}
+
+extension CaseIterable where Self: RawRepresentable, RawValue == String {
+    /// Every case's name, `fix, feature, …`, for a list to choose from.
+    public static var choices: String { allCases.map(\.rawValue).joined(separator: ", ") }
 }

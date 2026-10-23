@@ -38,7 +38,6 @@ final class SoakTests: XCTestCase {
         try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet, today: time.day(end))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
-        options.labeler = { nil }
         options.clock = { clock.now }
         options.wallClock = { clock.now }
         options.readJevKey = { _ in "k" }

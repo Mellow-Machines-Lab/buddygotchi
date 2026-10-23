@@ -91,7 +91,7 @@ public struct Replay {
                     if !statesOnly { out.append("# ignored hook \(line.hook)") }
                     continue
                 }
-                let step = pipeline.agentReadingPrompt(event)
+                let step = pipeline.agent(event)
                 if !statesOnly, let recorded = step.recorded.first { out.append("event " + recorded.jsonLine) }
                 emit(step)
                 advance(gapMs)

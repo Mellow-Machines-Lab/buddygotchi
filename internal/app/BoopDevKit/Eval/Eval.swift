@@ -318,14 +318,12 @@ public struct Scenario: Sendable {
             step.error = s["error"] as? String
             step.prompt = s["prompt"] as? String
             if let r = s["reading"] {
-                guard let r = r as? [String: Any], Set(r.keys).isSubset(of: ["kind", "tone", "phrases"]) else {
-                    throw badStep("reading has a kind, a tone and phrases")
-                }
+                guard let r = r as? [String: Any] else { throw badStep("reading is an object") }
+                guard Set(r.keys).subtracting(["kind", "tone", "phrases"]).isEmpty else { throw badStep("reading has only kind, tone, phrases") }
                 let kind = (r["kind"] as? String).flatMap(PromptReading.Kind.init(rawValue:))
                 let tone = (r["tone"] as? String).flatMap(PromptReading.Tone.init(rawValue:))
                 guard (r["kind"] == nil) == (kind == nil), (r["tone"] == nil) == (tone == nil) else {
-                    throw badStep("reading's kind is one of \(PromptReading.Kind.allCases.map(\.rawValue).joined(separator: ", ")), "
-                                  + "and its tone one of \(PromptReading.Tone.allCases.map(\.rawValue).joined(separator: ", "))")
+                    throw badStep("reading's kind is one of \(PromptReading.Kind.choices), and its tone one of \(PromptReading.Tone.choices)")
                 }
                 step.labels = .init(kind: kind, tone: tone, phrases: r["phrases"] as? [String] ?? [])
             }
@@ -876,13 +874,10 @@ public struct Eval {
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:], subagent: String? = nil) -> (Pipeline) -> Pipeline.Step {
             { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
-                             subagent: subagent, cwd: cwd, data: data)) }
+                             subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
         }
         switch step.event {
-        case "turn started":
-            let turn = Event(at: now, source: source, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: session,
-                             cwd: cwd, data: step.prompt.map { ["prompt": .string($0)] } ?? [:])
-            return [{ $0.agentReadingPrompt(turn, labels: step.labels) }]
+        case "turn started": return [hook(.turn, .start, "UserPromptSubmit", step.prompt.map { ["prompt": .string($0)] } ?? [:])]
         case "turn finished": return [hook(.turn, .end, "Stop", ["outcome": "done"].merging(step.message.map { ["message": .string($0)] } ?? [:]) { a, _ in a })]
         case "turn failed": return [hook(.turn, .end, "StopFailure", ["outcome": "failed", "error": .string(step.error ?? "api_error")])]
         case "command":

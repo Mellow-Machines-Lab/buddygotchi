@@ -116,14 +116,13 @@ final class PromptTests: XCTestCase {
             }
         }
         let home = DispatchQueue(label: "test.home")
-        let turn = Event(at: 0, source: .claude, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: "s1")
         let got = Lines()
-        PromptIntake(labeler: nil, home: home, names: { ["Pip"] }, deliver: { r, _ in got.add("\(r.length) \(r.named)") })
-            .read("hey pip", about: turn)
+        PromptIntake.read("hey pip", names: ["Pip"], labeler: nil, home: home) { r in got.add("\(r.length) \(r.named)") }
         XCTAssertEqual(got.all, ["words true"], "at once, with no labeler")
         let seen = Seen()
-        PromptIntake(labeler: seen, home: home, names: { [] }, deliver: { r, _ in got.add("\(r.kind!) \(r.phrases)") })
-            .read("still broken, key sk-proj-8f2aQz91kLmN0pQrStUv", about: turn)
+        PromptIntake.read("still broken, key sk-proj-8f2aQz91kLmN0pQrStUv", names: [], labeler: seen, home: home) { r in
+            got.add("\(r.kind!) \(r.phrases)")
+        }
         eventually("the labeler's reading") { got.all.count == 2 }
         XCTAssertEqual(got.all.last, #"fix ["still broken"]"#)
         XCTAssertEqual(seen.text, "still broken, key [secret]", "it reads the scrubbed prompt")
