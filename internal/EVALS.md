@@ -118,7 +118,7 @@ BOOP_JEV_KEY=… make eval                     # the final pass: every scenario,
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
 .build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
-.build/debug/boopdev read-check              # how often Apple Intelligence reads sample prompts' kind and tone right
+.build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts, scored; fails under its floors or on a leaked secret
 ```
 
 **The expect brain, and a demo for every scenario.** A demo is an eval

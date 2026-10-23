@@ -17,9 +17,12 @@ public enum Scrubber {
         (#"(://)[^/\s:@]+:[^/\s@]+@"#, "$1\(secret)@"),
         // A URL's secret parameters: ?token=…, &api_key=….
         (#"(?i)([?&](?:access_token|api_key|apikey|key|password|secret|sig|signature|token)=)[^&\s]+"#, "$1\(secret)"),
-        // A name that says it holds a secret, then = or :, then its value:
-        // API_KEY=…, password: hunter2, "token": "…".
-        (#"(?i)(\b[\w.-]*(?:api[_-]?key|token|secret|password|passwd|pwd)["']?\s*[=:]\s*)["']?[^\s"',;&]+["']?"#, "$1\(secret)"),
+        // A name that says it holds a secret, then = or :, then a value of
+        // six or more with a letter in it: API_KEY=…, password: hunter2,
+        // "token": "…", aws_secret_access_key = …; not max_tokens: 4096.
+        (#"(?i)(\b[\w.-]*(?:api[_-]?key|access[_-]?key|secret|token|password|passwd|pwd)[\w-]*["']?\s*[=:]\s*)["']?(?=[^\s"',;&]*[A-Za-z])[^\s"',;&]{6,}["']?"#, "$1\(secret)"),
+        // A bearer token: Authorization: Bearer ….
+        (#"(?i)(\bbearer\s+)[A-Za-z0-9._~+/=-]{12,}"#, "$1\(secret)"),
         // Keys and tokens by their shape: OpenAI and Anthropic, GitHub,
         // AWS, Slack, Google, Stripe, and a JWT.
         (#"\b(?:sk|pk|rk)-[A-Za-z0-9_-]{16,}"#, secret),
@@ -32,8 +35,9 @@ public enum Scrubber {
         // An email address.
         (#"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+"#, secret),
         // Any other long run of letters and digits with both in it: a hash,
-        // a token, base64. Paths keep their slashes, so they don't match.
-        (#"\b(?=[A-Za-z0-9+_=-]*[0-9])(?=[A-Za-z0-9+_=-]*[A-Za-z])[A-Za-z0-9+_=-]{32,}"#, secret),
+        // a token, base64. Paths keep their slashes and UUIDs their
+        // hyphens, so neither matches.
+        (#"\b(?=[A-Za-z0-9+_=]*[0-9])(?=[A-Za-z0-9+_=]*[A-Za-z])[A-Za-z0-9+_=]{32,}"#, secret),
     ]
 
     static let compiled = rules.map { (try! NSRegularExpression(pattern: $0.pattern), $0.template) }

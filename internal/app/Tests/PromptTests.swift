@@ -1,6 +1,7 @@
 import Foundation
 import MellowHarness
 import XCTest
+@testable import BoopDevKit
 @testable import BoopKit
 
 /// Your prompt, read on the Mac (`PromptIntake`): scrubbed of secrets,
@@ -29,6 +30,42 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(Scrubber.scrub(plain), plain, "paths, numbers and versions stay")
     }
 
+    /// The scrubber against two corpora: every made-up secret in its real
+    /// format is gone (`must-scrub.tsv`: the text, a tab, the secret), and
+    /// ordinary prompt text, paths, versions, SQL, UUIDs and short hashes
+    /// come through untouched (`must-keep.txt`).
+    func testTheScrubbersCorpora() throws {
+        let dir = CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/scrubber")
+        func lines(_ file: String) throws -> [String] {
+            try String(contentsOf: dir.appendingPathComponent(file), encoding: .utf8).split(separator: "\n").map(String.init)
+                .filter { !$0.hasPrefix("#") }
+        }
+        let secrets = try lines("must-scrub.tsv")
+        XCTAssertGreaterThanOrEqual(secrets.count, 18)
+        for line in secrets {
+            let parts = line.split(separator: "\t").map(String.init)
+            let text = parts[0].replacingOccurrences(of: "\\n", with: "\n"), scrubbed = Scrubber.scrub(text)
+            XCTAssertFalse(scrubbed.contains(parts[1]), "kept a secret: \(scrubbed)")
+            XCTAssertTrue(scrubbed.contains(Scrubber.secret), scrubbed)
+        }
+        for line in try lines("must-keep.txt") { XCTAssertEqual(Scrubber.scrub(line), line) }
+    }
+
+    /// Pins `AppleIntelligenceLabeler.timeout`'s race: the wait ends at the
+    /// timeout even when the work ignores being cancelled.
+    func testTheLabelerGivesUpAtItsTimeout() async {
+        let started = ContinuousClock.now
+        let labels = await AppleIntelligenceLabeler.within(.milliseconds(100)) {
+            for _ in 0..<50 { try? await Task.sleep(for: .milliseconds(100)) }  // carries on through cancelling
+            return .init(kind: .fix)
+        }
+        XCTAssertNil(labels)
+        XCTAssertLessThan(started.duration(to: .now), .seconds(1))
+        XCTAssertEqual(AppleIntelligenceLabeler.timeout, .seconds(3))
+        let quick = await AppleIntelligenceLabeler.within(.seconds(2)) { .init(kind: .docs) }
+        XCTAssertEqual(quick?.kind, .docs, "an answer in time is kept")
+    }
+
     /// Pins `PromptReading.Length.bounds`: a few words under 25 characters,
     /// a sentence under 150, a paragraph under 600, an essay beyond.
     func testTheLengthBands() {
@@ -48,6 +85,8 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(read("WHY IS THE LOGIN STILL BROKEN").tone, .shouting)
         XCTAssertNil(read("fix the API").tone, "a capitalised word isn't shouting")
         XCTAssertEqual(read("please add a retry").tone, .polite)
+        XCTAssertEqual(read("Thanks so much, add a retry").phrases, ["Thanks"], "the cue is a phrase, as you spelled it")
+        XCTAssertEqual(read("WHY IS THE LOGIN STILL BROKEN").phrases, [], "shouting has no cue word")
         XCTAssertEqual(read("ultrathink: why is it stale").tone, .careful)
         XCTAssertEqual(read("just quickly fix it").tone, .rushed)
         XCTAssertEqual(read("lol ok try again 🙃").tone, .playful)
@@ -108,13 +147,6 @@ final class PromptTests: XCTestCase {
     /// The intake hands on the reading at once with no labeler, and on
     /// `home` once one answers, the prompt scrubbed before it reads it.
     func testTheIntakeReadsOnceAndHandsOn() {
-        final class Seen: PromptLabeler, @unchecked Sendable {
-            var text: String?
-            func label(_ text: String) async -> PromptReading.Labels? {
-                self.text = text
-                return .init(kind: .fix, tone: .frustrated, phrases: ["still broken"])
-            }
-        }
         let home = DispatchQueue(label: "test.home")
         let got = Lines()
         PromptIntake.read("hey pip", names: ["Pip"], labeler: nil, home: home) { r in got.add("\(r.length) \(r.named)") }
@@ -126,5 +158,42 @@ final class PromptTests: XCTestCase {
         eventually("the labeler's reading") { got.all.count == 2 }
         XCTAssertEqual(got.all.last, #"fix ["still broken"]"#)
         XCTAssertEqual(seen.text, "still broken, key [secret]", "it reads the scrubbed prompt")
+    }
+
+    /// `boopdev read-check`'s fixture loads, and its scoring: a hit is any
+    /// expected phrase picked, a secret comes back if 8 of its characters
+    /// do, and the floors name what falls short. A labeler that tries to
+    /// quote a planted secret can't: it was scrubbed before it read it.
+    func testReadCheckScoresAndCatchesLeaks() async throws {
+        let fixture = CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/prompt-readings.json")
+        let samples = try ReadCheck.samples(Data(contentsOf: fixture))
+        XCTAssertGreaterThanOrEqual(samples.count, 40)
+        XCTAssertGreaterThanOrEqual(samples.filter { $0.secret != nil }.count, 5)
+        struct Quoter: PromptLabeler {
+            func label(_ text: String) async -> PromptReading.Labels? {
+                .init(kind: .fix, tone: .frustrated, phrases: text.split(separator: " ").map(String.init))
+            }
+        }
+        let planted = samples.filter { $0.secret != nil }
+        let results = await ReadCheck.run(planted, labeler: Quoter())
+        XCTAssertTrue(results.allSatisfy { !$0.leaked }, "\(results.map(\.reading.phrases))")
+        var leaky = results[0]
+        leaky.reading.phrases = [String(leaky.sample.secret!.prefix(10))]
+        XCTAssertTrue(leaky.leaked)
+        var score = ReadCheck.score(results + [leaky])
+        XCTAssertEqual(score.leaks.count, 1)
+        score.kind = (8, 10)
+        score.medianMs = 2000
+        XCTAssertEqual(score.shortfalls(.init()).count, 3, "kind under 85%, slow, and the leak")
+    }
+}
+
+/// A labeler that keeps the text it was given, and reads every prompt as
+/// a frustrated fix, "still broken".
+private final class Seen: PromptLabeler, @unchecked Sendable {
+    var text: String?
+    func label(_ text: String) async -> PromptReading.Labels? {
+        self.text = text
+        return .init(kind: .fix, tone: .frustrated, phrases: ["still broken"])
     }
 }

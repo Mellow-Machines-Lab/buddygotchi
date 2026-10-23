@@ -126,21 +126,25 @@ public struct PromptReading: Equatable, Sendable {
     public static let shoutingLetters = 8
 
     /// What needs no model: the length, whether `text` says one of `names`
-    /// as a word, in any case, and the tone its words show (`toneCues`).
+    /// as a word, in any case, and the tone its words show (`toneCues`),
+    /// with the cue itself as a phrase, as you spelled it.
     public init(counting text: String, names: [String]) {
         let lower = text.lowercased()
         let words = Set(lower.split { !$0.isLetter && !$0.isNumber }.map(String.init))
         let letters = text.filter(\.isLetter)
         let shouting = letters.count >= Self.shoutingLetters && letters.filter(\.isUppercase).count * 4 >= letters.count * 3
-        let cue = shouting ? .shouting : Self.toneCues.first { _, cues in
-            cues.contains { $0.contains(" ") || !$0.allSatisfy(\.isLetter) ? lower.contains($0) : words.contains($0) }
-        }?.0
-        self.init(length: Length(text), named: names.contains { words.contains($0.lowercased()) }, tone: cue)
+        let cue = shouting ? nil : Self.toneCues.lazy.compactMap { tone, cues in
+            cues.first { $0.contains(" ") || !$0.allSatisfy(\.isLetter) ? lower.contains($0) : words.contains($0) }.map { (tone, $0) }
+        }.first
+        let said = cue.flatMap { text.range(of: $0.1, options: .caseInsensitive) }.map { String(text[$0]) }
+        self.init(length: Length(text), named: names.contains { words.contains($0.lowercased()) }, tone: shouting ? .shouting : cue?.0,
+                  phrases: said.map { [$0] } ?? [])
     }
 
     /// Takes a labeler's kind and tone, and the phrases that really are in
-    /// `text` (in any case, its own spelling kept) and fit a sign, at most
-    /// `maxPhrases`, without a secret. Shouting is counted, never heard:
+    /// `text` (in any case, its own spelling kept) and fit a sign, then the
+    /// counted cue if there's room: at most `maxPhrases`, none a secret or
+    /// a part of one already kept. Shouting is counted, never heard:
     /// the labeler's is dropped, and a counted one stays. Any other counted
     /// tone stands where the labeler hears nothing more than calm.
     public mutating func label(_ labels: Labels, in text: String) {
@@ -155,11 +159,11 @@ public struct PromptReading: Equatable, Sendable {
         // Searched where the secrets are blanked out, so none is ever a phrase.
         let searchable = text.replacingOccurrences(of: Scrubber.secret, with: String(repeating: "\u{1}", count: Scrubber.secret.count))
         var kept: [String] = []
-        for p in labels.phrases {
+        for p in labels.phrases + phrases {
             let phrase = p.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
             guard kept.count < Self.maxPhrases, !phrase.isEmpty, phrase.count <= Self.maxPhrase,
                   let range = searchable.range(of: phrase, options: .caseInsensitive),
-                  !kept.contains(where: { $0.caseInsensitiveCompare(phrase) == .orderedSame }) else { continue }
+                  !kept.contains(where: { $0.range(of: phrase, options: .caseInsensitive) != nil }) else { continue }
             kept.append(String(searchable[range]))
         }
         phrases = kept

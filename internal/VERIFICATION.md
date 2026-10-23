@@ -90,9 +90,11 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   runs (below), commands go through the bridge.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
   (character packs, [CHARACTER.md](../characters/CHARACTER.md)),
-  `read-check` (Apple Intelligence's readings of sample prompts against
+  `read-check` (Apple Intelligence's readings of the sample prompts in
   `internal/app/Tests/Fixtures/prompt-readings.json`, on a Mac that has
-  it) and `hooks` (Boop's hook installer, against any `--home`).
+  it: their kind, tone and phrases scored against floors, planted
+  secrets that must never come back, and how long a typical reading
+  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, gel frames and menu-bar icons as PNGs (L0). With a
@@ -484,9 +486,14 @@ retried once and counted as a link glitch.
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
-   After a change to how prompts are read, `boopdev read-check`, and the
-   scenarios with prompts again with `--labeler apple`, which reads them
-   with Apple Intelligence instead of the steps' own `reading`.
+   After a change to how prompts are read (the scrubber, the cues or the
+   labeler's instructions), `boopdev read-check`, which fails under its
+   floors, and the scenarios with prompts again with `--labeler apple`,
+   which reads them with Apple Intelligence instead of the steps' own
+   `reading`. The scrubber's own corpora, `must-scrub.tsv` and
+   `must-keep.txt` in `internal/app/Tests/Fixtures/scrubber/`, run with
+   the unit tests; a secret format it missed goes in the first, and text
+   it scrubbed by mistake in the second.
 2. Read a sample of its passes (`--timeline`, or the run's file it names)
    against the steering files (`characters/boop/steering/`): are the reactions and
    mood changes in character and never nagging, and the words and how

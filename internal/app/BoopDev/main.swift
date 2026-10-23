@@ -43,11 +43,13 @@ let usages: [(command: String, text: String)] = [
         which doesn't. Exits 1 on a problem.
     """),
     ("read-check", """
-    boopdev read-check [--fixture FILE] [--verbose]
-        Reads sample prompts with Apple Intelligence on this Mac, as the app does (PromptIntake), and says
-        how often it gets the kind and the tone the fixture expects. FILE defaults to the repo's
-        internal/app/Tests/Fixtures/prompt-readings.json. --verbose prints every reading. Needs Apple
-        Intelligence; exits 1 without it.
+    boopdev read-check [--fixture FILE] [--min-kind SHARE] [--min-tone SHARE] [--min-phrases SHARE] [--max-ms MS] [--verbose]
+        Reads sample prompts with Apple Intelligence on this Mac, as the app does, and scores each against what
+        it expects: its kind, its tone, one of its phrases picked, and a secret planted in it never coming
+        back. Exits 1 if a secret comes back, a score is under its floor (--min-kind and --min-tone 0.85,
+        --min-phrases 0.75 by default) or a typical reading takes longer than --max-ms (1500). FILE defaults
+        to the repo's internal/app/Tests/Fixtures/prompt-readings.json. It prints each miss, or with
+        --verbose every reading. Needs Apple Intelligence; exits 1 without it.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -297,30 +299,45 @@ func check(_ raw: [String]) {
 }
 
 func readCheck(_ raw: [String]) async {
-    let args = arguments("read-check", raw, options: ["--fixture"], flags: ["--verbose"])
+    let args = arguments("read-check", raw, options: ["--fixture", "--min-kind", "--min-tone", "--min-phrases", "--max-ms"],
+                         flags: ["--verbose"])
     let file = args["--fixture"].map { URL(fileURLWithPath: $0) }
         ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/prompt-readings.json")
-    guard let file, let data = try? Data(contentsOf: file),
-          let samples = try? JSONSerialization.jsonObject(with: data) as? [[String: String]] else {
-        fail("boopdev read-check: can't read the fixture; pass --fixture FILE")
+    let samples: [ReadCheck.Sample]
+    do {
+        guard let file else { fail("boopdev read-check: can't find the fixture; pass --fixture FILE") }
+        samples = try ReadCheck.samples(Data(contentsOf: file))
+    } catch {
+        fail("boopdev read-check: \(error)")
+    }
+    var floors = ReadCheck.Floors()
+    for (option, keyPath) in [("--min-kind", \ReadCheck.Floors.kind), ("--min-tone", \.tone), ("--min-phrases", \.phrases)] {
+        guard let v = args[option] else { continue }
+        guard let share = Double(v) else { fail("boopdev read-check: \(option) is a share, like 0.85") }
+        floors[keyPath: keyPath] = share
+    }
+    if let v = args["--max-ms"] {
+        guard let ms = Int(v) else { fail("boopdev read-check: --max-ms is a number of ms") }
+        floors.medianMs = ms
     }
     guard let labeler = AppleIntelligenceLabeler.ifAvailable() else { fail("boopdev read-check: Apple Intelligence isn't available on this Mac") }
-    var kinds = 0, tones = 0
-    for sample in samples {
-        let prompt = sample["prompt"] ?? ""
-        let started = ContinuousClock.now
-        let reading = await PromptReading.read(prompt, names: [], labeler: labeler)
-        let ms = Int(started.duration(to: .now) / .milliseconds(1))
-        let kindOK = reading.kind?.rawValue == sample["kind"], toneOK = reading.tone?.rawValue == sample["tone"]
-        kinds += kindOK ? 1 : 0
-        tones += toneOK ? 1 : 0
-        if args.has("--verbose") || !kindOK || !toneOK {
-            let got = "\(reading.kind?.rawValue ?? "none")\(kindOK ? "" : " (not \(sample["kind"] ?? "?"))"), "
-                + "\(reading.tone?.rawValue ?? "none")\(toneOK ? "" : " (not \(sample["tone"] ?? "?"))")"
-            print("\(kindOK && toneOK ? "ok  " : "MISS")  \(ms) ms  \(got)  \(reading.phrases)  \"\(prompt.prefix(60))\"")
+    let results = await ReadCheck.run(samples, labeler: labeler)
+    for r in results where args.has("--verbose") || r.kindOK == false || r.toneOK == false || r.phrasesOK == false || r.leaked {
+        func field(_ got: String?, _ want: String?, _ ok: Bool?) -> String {
+            (got ?? "none") + (ok == false ? " (not \(want ?? "none"))" : "")
         }
+        let line = [field(r.reading.kind?.rawValue, r.sample.kind?.rawValue, r.kindOK), field(r.reading.tone?.rawValue, r.sample.tone?.rawValue, r.toneOK),
+                    "\(r.reading.phrases)" + (r.phrasesOK == false ? " (not one of \(r.sample.phrases ?? []))" : ""), r.leaked ? "LEAKED" : nil]
+        let flat = r.sample.prompt.split(whereSeparator: \.isNewline).joined(separator: " ")
+        let ok = r.kindOK != false && r.toneOK != false && r.phrasesOK != false && !r.leaked
+        print("\(ok ? "ok  " : "MISS")  \(r.ms) ms  \(line.compactMap { $0 }.joined(separator: ", "))  \"\(flat.prefix(50))\"")
     }
-    print("kind \(kinds)/\(samples.count), tone \(tones)/\(samples.count)")
+    let score = ReadCheck.score(results)
+    print("kind \(score.kind.hits)/\(score.kind.of), tone \(score.tone.hits)/\(score.tone.of), phrases \(score.phrases.hits)/\(score.phrases.of), "
+          + "secrets kept out \(results.filter { $0.sample.secret != nil }.count - score.leaks.count)/\(results.filter { $0.sample.secret != nil }.count), "
+          + "median \(score.medianMs) ms")
+    let short = score.shortfalls(floors)
+    guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 
 let args = Array(CommandLine.arguments.dropFirst())

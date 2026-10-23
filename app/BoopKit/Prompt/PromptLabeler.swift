@@ -70,16 +70,21 @@ public struct AppleIntelligenceLabeler: PromptLabeler {
     /// The model's answer, or nil at `timeout`, whichever comes first: the
     /// wait ends then even if the model takes its time to stop.
     public func label(_ text: String) async -> PromptReading.Labels? {
+        await Self.within(Self.timeout) {
+            let session = LanguageModelSession(model: Self.model, instructions: Self.instructions)
+            let reply = try? await session.respond(to: "Request: \"\(text)\"", options: GenerationOptions(samplingMode: .greedy))
+            return reply.map { Self.parse($0.content) }
+        }
+    }
+
+    /// `work`'s answer, or nil at `timeout`, whichever comes first.
+    static func within(_ timeout: Duration, _ work: @escaping @Sendable () async -> PromptReading.Labels?) async -> PromptReading.Labels? {
         await withCheckedContinuation { (done: CheckedContinuation<PromptReading.Labels?, Never>) in
             let first = First(done)
-            let work = Task {
-                let session = LanguageModelSession(model: Self.model, instructions: Self.instructions)
-                let reply = try? await session.respond(to: "Request: \"\(text)\"", options: GenerationOptions(samplingMode: .greedy))
-                first.resume(reply.map { Self.parse($0.content) })
-            }
+            let task = Task { first.resume(await work()) }
             Task {
-                try? await Task.sleep(for: Self.timeout)
-                work.cancel()
+                try? await Task.sleep(for: timeout)
+                task.cancel()
                 first.resume(nil)
             }
         }
