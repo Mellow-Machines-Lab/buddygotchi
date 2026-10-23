@@ -71,9 +71,12 @@ public struct DeviceReaction: Equatable, Sendable {
     /// With starting, what started: `new_task`, `session`,
     /// `continuation` or `compacted`. Nil sends none.
     public var ctx: String?
+    /// What the buddy holds up on a sign while it plays (`Signs`); nil
+    /// for none.
+    public var sign: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
-                who: Who? = nil, outcome: String? = nil, ctx: String? = nil) {
+                who: Who? = nil, outcome: String? = nil, ctx: String? = nil, sign: String? = nil) {
         self.anim = anim
         self.say = say
         self.mood = mood
@@ -81,6 +84,7 @@ public struct DeviceReaction: Equatable, Sendable {
         self.who = who
         self.outcome = outcome
         self.ctx = ctx
+        self.sign = sign
     }
 
     /// The animations the Mac asks the device to play, each its design
@@ -103,6 +107,7 @@ public struct DeviceReaction: Equatable, Sendable {
         var args = JSONObject()
         if let outcome { args["outcome"] = .string(outcome) }
         if let ctx { args["ctx"] = .string(ctx) }
+        if let sign { args["sign"] = .string(sign) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

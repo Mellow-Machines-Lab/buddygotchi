@@ -333,6 +333,17 @@ What the brain reads, in plain Markdown:
   picks one of those that fit, at most eight; the memory store keeps it
   in `diary.md` in the state directory, and the popover shows the last
   week. A pack without the file keeps no diary.
+- `signs.md` (optional): the captions the creature may hold up on a
+  sign when it reacts to your prompt (`Signs`, the `react.sign`
+  question, asked only when NOW is a prompt's reading). Each is
+  `- [tags] words`: the tags (optional) the reading must all have (its
+  kind, tone and length, `named`, `words`, and the calendar's), and
+  `{words}` (or `{WORDS}`, in capitals) is filled in once for each of
+  your phrases, so your own words come back in the creature's way. Your
+  words come first, then tagged captions, then the rest: at most six,
+  each at most 18 printable ASCII characters. The board draws the one
+  picked on a sign (the `do`'s `sign`). A pack without the file holds up
+  no signs.
 
 Each file has a budget in tokens, the same for every pack
 (`Steering.Budget`, in `app/BoopKit/Harness/Steering.swift`). The app

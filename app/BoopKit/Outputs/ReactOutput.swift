@@ -34,6 +34,10 @@ public final class ReactOutput: Output {
     /// card has another pack, or none, and then Boop says
     /// nothing.
     let speaks: () -> Bool
+    /// The pack's sign captions (`signs.md`), and the calendar's tags at an
+    /// event: a prompt's reading may get a sign (`Signs`).
+    let signs: [TaggedLine]
+    let calendar: (Event) -> [String]
     /// Picks among the takes that fit, and remembers the last `say`'s
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
@@ -42,7 +46,8 @@ public final class ReactOutput: Output {
     /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
                 who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil }, speaks: @escaping () -> Bool = { true },
-                pack: CharacterPack = .active, voice: String? = nil) {
+                pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
+                calendar: @escaping (Event) -> [String] = { _ in [] }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -52,6 +57,8 @@ public final class ReactOutput: Output {
         self.blocked = blocked
         self.who = who
         self.speaks = speaks
+        self.signs = signs
+        self.calendar = calendar
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -130,6 +137,8 @@ public final class ReactOutput: Output {
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
         Option("wake up", "NOW's line says you came back to the Mac after a long or very long break: \(name) stretches, yawns and wakes up for you.",
                notFor: "A short break, a turn, a poke, or words to \(name)."),
+        Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard.",
+               notFor: "A prompt that doesn't say its name, or anything but a prompt."),
     ] }
 
     /// The animation `react.animation` picked, or nil for none, a missing
@@ -144,7 +153,7 @@ public final class ReactOutput: Output {
     /// its reply_ready for a reply, and its wake_up for a wake up.
     public static let scenes: [String: (anim: String, outcome: String?)] = [
         "success": ("task_complete", "success"), "failure": ("task_complete", "failure"),
-        "reply": ("reply_ready", nil), "wake up": ("wake_up", nil),
+        "reply": ("reply_ready", nil), "wake up": ("wake_up", nil), "notice": ("notice", nil),
     ]
 
     /// How long the face holds, in loops of the design it's drawn in: the
@@ -194,7 +203,26 @@ public final class ReactOutput: Output {
         answers["say.kind"].flatMap { Take.Kind(rawValue: $0.choice) } ?? .sound
     }
 
-    public func questions(now: Event?, log: LogView) -> [Question] { asked }
+    /// Its questions, and for a prompt's reading the sign's, when a
+    /// caption fits it.
+    public func questions(now: Event?, log: LogView) -> [Question] {
+        let captions = offered(now, log)
+        guard !captions.isEmpty else { return asked }
+        return asked + [Question(key: Signs.questionKey,
+                                 text: "If \(pack.name) reacts, does it hold up a sign about your prompt? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
+                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, and how the person sounds",
+                                 options: [Option("none", "No sign: the prompt is plain and nothing in it is worth holding up.")]
+                                     + captions.map { Option($0, "A sign that says this.") })]
+    }
+
+    /// The captions a sign may show for `now`, if it's a prompt's reading;
+    /// with no event (a pass forced from outside, such as a demo's), for
+    /// the latest prompt in `log`.
+    func offered(_ now: Event?, _ log: LogView) -> [String] {
+        guard let about = now ?? log.events.last(where: { $0.type == .prompt }), about.type == .prompt,
+              let reading = PromptReading(facts: about.data) else { return [] }
+        return Signs.offered(signs, reading: reading, calendar: calendar(about))
+    }
 
     /// The questions asked: a character pack with no voice is never asked
     /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
@@ -246,7 +274,9 @@ public final class ReactOutput: Output {
                                                face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes)
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)
-        var reaction = DeviceReaction(say: say, mood: choice, loops: loops)
+        let picked = answers[Signs.questionKey]?.choice
+        let sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
+        var reaction = DeviceReaction(say: say, mood: choice, loops: loops, sign: sign)
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device
@@ -263,7 +293,9 @@ public final class ReactOutput: Output {
         let did = pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
             ?? "\(pack.name) made \(Self.article(choice)) \(choice) face"
         // The takes' ids in order, for the tools to say what it said.
-        return .started(did + ", held \(Self.holds[loops - 1].name)" + (say.text.map { ", and said \"\($0)\"." } ?? "."), pending,
+        let held: String = sign.map { ", holding up a sign: \"\($0)\"" } ?? ""
+        let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
+        return .started(did + ", held \(Self.holds[loops - 1].name)" + held + spoke, pending,
                         facts: ["takes": .array(said.map { .string($0.id) })])
     }
 }

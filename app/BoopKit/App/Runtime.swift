@@ -184,6 +184,8 @@ public final class Runtime: @unchecked Sendable {
     /// Hears every agent's hook as it comes, before Boop takes it: a live
     /// demo's player (`play`), which keeps its script to the agent's pace.
     var demoHeard: ((HookLine) -> Void)?
+    /// Labels your prompts: the options', or a demo's script in front of it.
+    lazy var labeler: (any PromptLabeler)? = options.labeler
 
     /// A clock that never steps and keeps counting while the Mac sleeps,
     /// starting at the wall clock's time: the keepalive and the link's
@@ -449,7 +451,7 @@ public final class Runtime: @unchecked Sendable {
         guard let event else { return }
         run(pipeline.agent(event))
         guard let prompt else { return }
-        PromptIntake.read(prompt, names: rigs.map(\.buddy.name), labeler: options.labeler, home: home) { [weak self] reading in
+        PromptIntake.read(prompt, names: rigs.map(\.buddy.name), labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }
             run(pipeline.promptRead(reading, about: event, at: options.clock()))
         }

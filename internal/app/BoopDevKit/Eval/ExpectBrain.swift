@@ -33,7 +33,7 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     /// Which question each `expect` field answers.
     public static let questions = ["react": "react.mood", "animation": "react.animation", "loops": "react.loops",
                                    "feeling": "say.feeling", "about": "say.about", "kind": "say.kind",
-                                   "mood": MoodOutput.outputName]
+                                   "mood": MoodOutput.outputName, "sign": Signs.questionKey]
 
     /// What `step` answers for each question, in the order to try:
     /// its `brain`'s, then its `expect`'s.
@@ -63,7 +63,11 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
             let offered = q.options.map(\.name)
             // The mood moves a step a pass: toward the nearest wanted mood
             // when none is a step away. Its first option is staying.
-            let pick = want.first(where: offered.contains)
+            // A sign is wanted by its words: the first caption that says one,
+            // and any for `some`.
+            let sign = q.key == Signs.questionKey
+                ? offered.dropFirst().first { o in want.contains { $0 == "some" || o.range(of: $0, options: .caseInsensitive) != nil } } : nil
+            let pick = want.first(where: offered.contains) ?? sign
                 ?? (q.key == MoodOutput.outputName ? Self.toward(want, from: offered.first ?? "", offered: offered) : nil)
             guard let pick else { continue }
             out[q.key] = Answer(choice: pick, probabilities: [pick: 1])

@@ -102,12 +102,16 @@ public struct Scenario: Sendable {
         /// Whether a pass of the step, a heartbeat's on the way to it
         /// included, wrote the diary (`some`) or none did (`none`).
         public var diary: Set<String>?
+        /// The sign the reaction held up: `some` for any, `none` for none,
+        /// or words any of which it says (in any case: `still broken`
+        /// passes "still broken :(").
+        public var sign: Set<String>?
         /// Whether any of it is about the screen.
         public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil }
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
             react != nil || animation != nil || feeling != nil || about != nil || kind != nil || said != nil || loops != nil
-                || mood != nil || offered != nil || diary != nil
+                || mood != nil || offered != nil || diary != nil || sign != nil
         }
 
         public init(react: Set<String>? = nil, animation: Set<String>? = nil, feeling: Set<String>? = nil, about: Set<String>? = nil,
@@ -356,7 +360,7 @@ public struct Scenario: Sendable {
                     return Set(values)
                 }
                 let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens", "idle",
-                            "helpers", "when", "diary"]
+                            "helpers", "when", "diary", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), animation: try set("animation"), feeling: try set("feeling"), about: try set("about"),
@@ -369,6 +373,8 @@ public struct Scenario: Sendable {
                 step.expect?.when = when
                 let diary = try set("diary")
                 step.expect?.diary = diary
+                let sign = try set("sign")
+                step.expect?.sign = sign
                 let unknownTags = (when ?? []).subtracting(Occasions.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("feeling", step.expect?.feeling, ReactOutput.feelings.map(\.name)),
@@ -456,6 +462,8 @@ public struct Eval {
         public var kind: String?
         public var said: String?
         public var saidTakes: [String] = []
+        /// The sign the reaction held up.
+        public var sign: String?
         public var loops: String?
         public var mood: String
         /// What the pass's mood question offered.
@@ -489,6 +497,10 @@ public struct Eval {
             if let l = expected.loops, !l.contains(loops ?? "none") { return false }
             if let m = expected.mood, !m.contains(mood) { return false }
             if let d = expected.diary, !d.contains(wrote ? "some" : "none") { return false }
+            if let s = expected.sign {
+                guard let sign else { return s.contains("none") }
+                if !s.contains("some") && !s.contains(where: { sign.range(of: $0, options: .caseInsensitive) != nil }) { return false }
+            }
             if let o = expected.offered, o != Set(offered) { return false }
             return true
         }
@@ -507,12 +519,14 @@ public struct Eval {
                         expected.idle.map { "idle \($0.sorted().joined(separator: "|"))" },
                         expected.helpers.map { "helpers \($0.sorted().joined(separator: "|"))" },
                         expected.when.map { "when \($0.sorted().joined(separator: " and "))" },
-                        expected.diary.map { "diary \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
+                        expected.diary.map { "diary \($0.sorted().joined(separator: "|"))" },
+                        expected.sign.map { "sign \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
             let got = opened.map { "opened \($0)" }
                 ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " "))" }
                 ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), animation \(animation ?? "none"), feeling \(feeling ?? "none"), about \(about ?? "none"), kind \(kind ?? "none"), said \(said ?? "none"), loops \(loops ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
+                + (expected.sign == nil ? "" : ", sign \(sign ?? "none")")
             return "  step \(step): \(line)\n    wanted \(want.joined(separator: ", ")); got \(got)"
         }
     }
@@ -619,6 +633,7 @@ public struct Eval {
             queue: { reaction, pending in
                 ending.said = reaction.say?.text
                 ending.takes = reaction.say?.takes.map(\.text) ?? []
+                ending.sign = reaction.sign
                 guard let end = ending.end else { return ending.open.append(pending) }
                 if let ended = Eval.ended(end) {
                     reactions.read(.ended(ended), pending).map(pending.finish)
@@ -653,15 +668,18 @@ public struct Eval {
             var last: Harness.Pass?
             var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
+            var lastSign: String?  // and the sign it held up
             var wroteDiary = false  // any pass of the step, a heartbeat's on the way included
             func respond(_ views: [ViewEvent]) async {
                 for view in views where view.wakesBrain {
                     ending.said = nil
                     ending.takes = []
+                    ending.sign = nil
                     guard let e = home.sync(execute: { harness.log.event(view.seq) }),
                           let record = await harness.respond(to: e) else { continue }
                     lastSaid = ending.said
                     lastTakes = ending.takes
+                    lastSign = ending.sign
                     last = record
                     if record.outputs.contains(where: { $0.name == DiaryOutput.outputName && $0.result.ok }) { wroteDiary = true }
                     let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
@@ -735,7 +753,7 @@ public struct Eval {
                                 feeling: ran ? ReactOutput.feeling(record.answers) : nil,
                                 about: ran ? ReactOutput.about(record.answers) : nil,
                                 kind: ran ? ReactOutput.kind(record.answers).rawValue : nil,
-                                said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [],
+                                said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 loops: ran ? ReactOutput.holds[ReactOutput.loops(record.answers) - 1].name : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs,
@@ -862,6 +880,7 @@ public struct Eval {
         /// texts.
         var said: String?
         var takes: [String] = []
+        var sign: String?
     }
 
     /// A step as it reaches the pipeline: the hook events or pokes it

@@ -100,6 +100,12 @@ public final class DemoPlayer: @unchecked Sendable {
     /// Plays the script, on `home`.
     public func start() {
         runtime.options.log("demo: \(script.steps.count) steps\(live ? ", with a live agent" : "")")
+        // The script's prompts read as it says, on any Mac.
+        let readings = Dictionary(script.steps.compactMap { step -> (String, PromptReading.Labels)? in
+            guard case .agent(let a) = step.what, let text = a.text, let reading = a.reading else { return nil }
+            return (Scrubber.scrub(text), reading)
+        }, uniquingKeysWith: { first, _ in first })
+        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: runtime.labeler) }
         if !live {
             for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
                 send("SessionStart", buddy: buddy) { $0.source = "startup" }
@@ -348,4 +354,16 @@ public final class DemoPlayer: @unchecked Sendable {
 
 private extension String {
     func ifEmpty(_ other: String) -> String { isEmpty ? other : self }
+}
+
+/// A demo's readings: each prompt step's own, by its scrubbed text, and
+/// the labeler it stands in front of for any other prompt.
+struct ScriptLabeler: PromptLabeler {
+    let readings: [String: PromptReading.Labels]
+    let otherwise: (any PromptLabeler)?
+
+    func label(_ text: String) async -> PromptReading.Labels? {
+        if let reading = readings[text] { return reading }
+        return await otherwise?.label(text)
+    }
 }

@@ -12,8 +12,9 @@ public enum DemoFromScenario {
     /// The longest a demo waits between two steps, in seconds.
     public static let maxGap = 2.5
 
-    /// The script, one JSON object a line.
-    public static func script(_ scenario: Scenario) -> String {
+    /// The script, one JSON object a line. A step's sign is the first of
+    /// `signs`, the pack's captions, that says what it expects.
+    public static func script(_ scenario: Scenario, signs: [TaggedLine] = []) -> String {
         var lines: [[String: Any]] = []
         var header: [String: Any] = ["demo": 1, "title": scenario.name]
         if scenario.steps.allSatisfy({ $0.agent == .codex }) { header["agent"] = "codex" }
@@ -36,7 +37,16 @@ public enum DemoFromScenario {
                 note = nil
             }
             switch step.event {
-            case "turn started": add(["agent": "prompt", "text": step.prompt ?? "Carry on"])
+            case "turn started":
+                var o: [String: Any] = ["agent": "prompt", "text": step.prompt ?? "Carry on"]
+                if let l = step.labels {
+                    var r: [String: Any] = [:]
+                    if let kind = l.kind { r["kind"] = kind.rawValue }
+                    if let tone = l.tone { r["tone"] = tone.rawValue }
+                    if !l.phrases.isEmpty { r["phrases"] = l.phrases }
+                    o["reading"] = r
+                }
+                add(o)
             case "turn finished": add(["agent": "reply", "text": step.message ?? "Done."])
             case "turn failed": add(["agent": "reply", "text": "…", "fails": true])
             case "command":
@@ -62,6 +72,11 @@ public enum DemoFromScenario {
                 let wanted = Self.playable(ExpectBrain.wanted(step))
                 var brain = ["react.mood": "excited", "react.animation": finish, "react.loops": "once", "say.feeling": "none",
                              "say.about": "start", "say.kind": "word"].merging(wanted) { $1 }
+                if let want = step.expectOrder["sign"], let prompt = step.prompt {
+                    let reading = PromptReading(prompt: prompt, names: [CharacterPack.active.name], labels: step.labels)
+                    let captions = Signs.offered(signs, reading: reading, calendar: [])
+                    brain[Signs.questionKey] = captions.first { c in want.contains { $0 == "some" || c.range(of: $0, options: .caseInsensitive) != nil } }
+                }
                 let mood = brain.removeValue(forKey: MoodOutput.outputName)
                 var o: [String: Any] = ["brain": brain]
                 if let mood { o["mood"] = mood }

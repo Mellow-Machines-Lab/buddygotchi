@@ -45,7 +45,7 @@ creature's brain.
 
 | Step | What it does | Keys |
 | --- | --- | --- |
-| `{"agent": "prompt"}` | You give the agent its task | `text` |
+| `{"agent": "prompt"}` | You give the agent its task | `text`; `reading`, what Apple Intelligence would make of it (`kind`, `tone`, `phrases`), so it reads the same on any Mac |
 | `{"agent": "read"}` | The agent reads a file | `file` |
 | `{"agent": "edit"}` | The agent edits a file | `file`, `old`, `new` |
 | `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds) |
@@ -56,7 +56,7 @@ creature's brain.
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
-| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood |
+| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
 On any agent step, `say` is what the agent says before it acts,

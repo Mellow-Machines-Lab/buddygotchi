@@ -1056,13 +1056,13 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// characters/boop/steering/ has the guide, a file per mood, both natures, the two
-    /// personalities and the diary's lines. The static parts stay within their budgets, and the
+    /// personalities, the diary's lines and the signs' captions. The static parts stay within their budgets, and the
     /// personalities' settings are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its two personalities and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md"]).sorted())
+                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
         XCTAssertEqual(Self.steering.personality(.default).rules,

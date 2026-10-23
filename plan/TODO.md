@@ -37,7 +37,10 @@ and new actions. One personality (Boop's default nature) for now.
 - [ ] **The sign.** A reaction's `sign` argument (about 18 characters,
       your words when they fit, else the pack's canned captions); react
       asks which, from the reading's phrases. The board draws it in the
-      sign font in the design's sign slot.
+      sign font in the design's sign slot. The Mac's side is in: each
+      pack's `signs.md`, with `{words}` captions that play your phrases
+      back in the buddy's way; the `react.sign` question; the `notice`
+      animation; evals 101-103 and demos. The board's drawing is next.
 - [ ] **Anchors and layers on the gel.** The body's head and hands each
       frame; the outfit, prop or sign and air layers drawn over it; a
       design may move a layer, pin it to the screen ("brb" while it

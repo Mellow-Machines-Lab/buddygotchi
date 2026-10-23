@@ -95,6 +95,10 @@ public struct DemoScript: Sendable {
             public var byReviewer = false
             /// Which of the agent's sessions it is: nil for the first.
             public var session: String?
+            /// A prompt's reading, as Apple Intelligence would make it
+            /// (`kind`, `tone`, `phrases`), so the demo reads the same on
+            /// any Mac (`ScriptLabeler`); nil for counted only.
+            public var reading: PromptReading.Labels?
         }
 
         public var what: What
@@ -167,6 +171,7 @@ public struct DemoScript: Sendable {
                     case "fails": isBool
                     case "brain": value is [String: String]
                     case "buddies": value is [Any]
+                    case "reading": value is [String: Any]
                     default: value is String
                     }
                     if !ok { throw Problem(description: "\(here): \(key) is \(Self.type(of: key))") }
@@ -204,6 +209,12 @@ public struct DemoScript: Sendable {
                 a.task = string("task"); a.prompt = string("prompt"); a.summary = string("summary")
                 a.byReviewer = string("by") == "reviewer"
                 a.session = string("session")
+                if let r = o["reading"] {
+                    guard kind == .prompt, let r = r as? [String: Any] else { throw Problem(description: "\(here): only a prompt has a reading, an object") }
+                    a.reading = .init(kind: (r["kind"] as? String).flatMap(PromptReading.Kind.init(rawValue:)),
+                                      tone: (r["tone"] as? String).flatMap(PromptReading.Tone.init(rawValue:)),
+                                      phrases: r["phrases"] as? [String] ?? [])
+                }
                 if a.fails, kind != .run, kind != .reply { throw Problem(description: "\(here): only a run or a reply fails") }
                 switch kind {
                 case .prompt, .reply: if a.text == nil { throw Problem(description: "\(here): a \(does) needs text") }
@@ -280,7 +291,7 @@ public struct DemoScript: Sendable {
     static let keys: [String: [String]] = [
         "demo": ["demo", "title", "agent", "buddies", "start"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "summary", "by", "takes",
-                  "session"],
+                  "session", "reading"],
         "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
@@ -292,6 +303,7 @@ public struct DemoScript: Sendable {
         case "fails": "true or false"
         case "brain": "question keys to choices, both strings"
         case "buddies": "a list of buddies, as settings.json has them"
+        case "reading": "a prompt's reading: its kind, tone and phrases"
         default: "a string"
         }
     }
@@ -370,6 +382,12 @@ extension DemoScript {
         for step in steps {
             guard case .brain(let answers, let mood) = step.what else { continue }
             for (key, choice) in answers.sorted(by: { $0.key < $1.key }) {
+                // A sign's captions come from the prompt's reading, so any
+                // that fits one may be picked.
+                if key == Signs.questionKey {
+                    if choice.count > Signs.maxLength { found.append("line \(step.number): a sign has at most \(Signs.maxLength) characters") }
+                    continue
+                }
                 guard let choices = offered[key] else {
                     found.append("line \(step.number): the brain is never asked \(key); it's asked \(offered.keys.sorted().joined(separator: ", "))")
                     continue

@@ -19,10 +19,7 @@ public final class DiaryOutput: Output {
     /// One line of `diary.md`: the tags a day needs, all of them, for it to
     /// fit, and its words with `{turns}`, `{failed}`, `{longest}`,
     /// `{thread}`, `{pokes}` and `{weekday}` to fill in.
-    public struct Template: Equatable, Sendable {
-        public var tags: [String]
-        public var text: String
-    }
+    public typealias Template = TaggedLine
 
     /// What a day came to.
     public struct Day: Equatable, Sendable {
@@ -72,20 +69,6 @@ public final class DiaryOutput: Output {
         self.write = write
     }
 
-    /// `diary.md`'s lines: `- [failed long] {weekday}. "{thread}" fell over {failed} times.`, the tags optional.
-    public static func templates(_ text: String) -> [Template] {
-        text.split(separator: "\n").compactMap { raw in
-            let line = raw.trimmingCharacters(in: .whitespaces)
-            guard line.hasPrefix("- ") else { return nil }
-            var body = String(line.dropFirst(2))
-            var tags: [String] = []
-            if body.hasPrefix("["), let close = body.firstIndex(of: "]") {
-                tags = body[body.index(after: body.startIndex)..<close].split(separator: " ").map(String.init)
-                body = String(body[body.index(after: close)...]).trimmingCharacters(in: .whitespaces)
-            }
-            return Template(tags: tags, text: body)
-        }
-    }
 
     /// The day before `now`'s, on the calendar.
     func yesterday(_ now: Int64) -> (day: String, noon: Int64) {
@@ -141,7 +124,7 @@ public final class DiaryOutput: Output {
     /// The lines that fit `day`, filled in: those with tags first, in the
     /// file's order, then the rest, at most `maxOffered`.
     func offered(_ day: Day) -> [String] {
-        let fit = templates.filter { Set($0.tags).isSubset(of: day.tags) }
+        let fit = templates.filter { $0.fits(Set(day.tags)) }
         let ordered = fit.filter { !$0.tags.isEmpty } + fit.filter { $0.tags.isEmpty }
         var seen: Set<String> = []
         return ordered.map { day.fill($0.text) }.filter { seen.insert($0).inserted }.prefix(Self.maxOffered).map { $0 }

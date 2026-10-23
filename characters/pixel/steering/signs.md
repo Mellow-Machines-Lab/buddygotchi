@@ -1,0 +1,28 @@
+<!-- Pixel's signs: what it may hold up on a sign when it reacts to your prompt (Signs, the react.sign question). A line may start with tags in brackets, every one of which the prompt's reading must have: its kind (fix, feature, cleanup, refactor, tests, deploy, docs, question, carry_on, other), its tone (calm, frustrated, rushed, polite, playful, shouting, careful), its length (words, sentence, paragraph, essay), named (you said Pixel's name), words (it kept a phrase of yours), and the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9). {words} is one of your phrases as you wrote it, {WORDS} the same in capitals: such a line is offered once for each. Your words come first, then tagged captions, then the rest; at most six, each at most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+- [frustrated] {words} :(
+- [frustrated] {words}?!
+- [frustrated] {words}. again.
+- [shouting] {WORDS}!!
+- [polite] {words} <3
+- [rushed] '{words}', sure
+- [careful] {words}...
+- [playful] {words} lol
+- [named] me?!
+- [named] beep? me?
+- [fix frustrated] bug, again
+- [fix] bug hunt
+- [fix night] bugs at night?
+- [feature] new thing!
+- [feature] new pixels!
+- [cleanup] bye bye code
+- [cleanup] delete it all
+- [refactor] tidy time
+- [tests] tests! tests!
+- [deploy] ship it?
+- [deploy friday] on a FRIDAY?
+- [docs] docs...
+- [question] hmm?
+- [question] good q
+- [carry_on] onward!
+- [essay] reading...
+- [words] {words}

@@ -115,20 +115,20 @@ func eval(_ raw: [String]) async {
     }
     if args.has("--always") { list = list.filter(\.always) }
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
+    let steering: Steering
+    do { steering = try Steering(directory: path("--steering", "characters/boop/steering")) } catch { fail("\(error)") }
     if let dir = args["--to-demo"] {
         let out = URL(fileURLWithPath: dir)
         do {
             try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
             for s in list {
                 let file = out.appendingPathComponent((s.file as NSString).deletingPathExtension + ".jsonl")
-                try DemoFromScenario.script(s).write(to: file, atomically: true, encoding: .utf8)
+                try DemoFromScenario.script(s, signs: steering.signs).write(to: file, atomically: true, encoding: .utf8)
                 print(file.path)
             }
         } catch { fail("can't write the demos: \(error)") }
         exit(0)
     }
-    let steering: Steering
-    do { steering = try Steering(directory: path("--steering", "characters/boop/steering")) } catch { fail("\(error)") }
     let given = args["--runs"].map { Int($0) }
     if let given, (given ?? 0) < 1 { fail("--runs is a count, 1 or more") }
     let budget = args["--budget"].map { Int($0) }

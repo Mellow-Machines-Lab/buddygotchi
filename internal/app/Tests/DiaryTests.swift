@@ -9,7 +9,7 @@ final class DiaryTests: XCTestCase {
     let utc = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
 
     func testTheLinesReadWithTheirTags() {
-        let t = DiaryOutput.templates("<!-- -->\n- [failed long] {weekday}. Broke.\n- Plain {turns}.\nnot a line\n")
+        let t = TaggedLine.parse("<!-- -->\n- [failed long] {weekday}. Broke.\n- Plain {turns}.\nnot a line\n")
         XCTAssertEqual(t, [.init(tags: ["failed", "long"], text: "{weekday}. Broke."), .init(tags: [], text: "Plain {turns}.")])
     }
 
@@ -36,7 +36,7 @@ final class DiaryTests: XCTestCase {
     /// Only the lines whose tags the day has all of, those with tags
     /// first, at most `DiaryOutput.maxOffered`.
     func testTheLinesOfferedFitTheDay() {
-        let out = DiaryOutput(templates: DiaryOutput.templates("""
+        let out = DiaryOutput(templates: TaggedLine.parse("""
             - [failed] Broke.
             - [clean] All good.
             - [failed long] Long and broken.

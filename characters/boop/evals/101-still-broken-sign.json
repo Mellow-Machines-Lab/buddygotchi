@@ -1,0 +1,9 @@
+{
+  "name": "Still broken: Boop holds up your own words",
+  "case": "The person starts a turn sounding fed up: it's still broken. Boop takes their side, determined or annoyed at the bug, and holds up a sign with their own words on it: still broken, in its way (\"still broken?!\", \"still broken :(\").",
+  "why": "PERSONALITY's Examples: a frustrated fix is determined, retry in a word, once, holding up \"still broken?!\"; signs.md offers your words first (Signs); the react.sign question is asked for a prompt's reading",
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "it's still broken, why does this keep happening", "reading": {"kind": "fix", "tone": "frustrated", "phrases": ["still broken", "keep happening"]},
+     "expect": {"react": "determined|annoyed|irritated", "sign": "still broken"}}
+  ]
+}

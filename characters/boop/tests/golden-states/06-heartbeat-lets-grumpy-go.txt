@@ -103,7 +103,11 @@ Examples:
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
-  → determined, retry in a word, once
+  → determined, retry in a word, once, holding up "still broken?!"
+- NOW: You asked claude on "api" for something new, in a sentence, and said Boop's name.
+  → surprised, notice, glad in a sound, once, holding up "me?!"
+- NOW: You asked claude on "api" to clean up, in a sentence.
+  → excited, glad in a word, once, holding up "bye bye code"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -336,7 +340,11 @@ Examples:
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
-  → determined, retry in a word, once
+  → determined, retry in a word, once, holding up "still broken?!"
+- NOW: You asked claude on "api" for something new, in a sentence, and said Boop's name.
+  → surprised, notice, glad in a sound, once, holding up "me?!"
+- NOW: You asked claude on "api" to clean up, in a sentence.
+  → excited, glad in a word, once, holding up "bye bye code"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -565,7 +573,11 @@ Examples:
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
-  → determined, retry in a word, once
+  → determined, retry in a word, once, holding up "still broken?!"
+- NOW: You asked claude on "api" for something new, in a sentence, and said Boop's name.
+  → surprised, notice, glad in a sound, once, holding up "me?!"
+- NOW: You asked claude on "api" to clean up, in a sentence.
+  → excited, glad in a word, once, holding up "bye bye code"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once

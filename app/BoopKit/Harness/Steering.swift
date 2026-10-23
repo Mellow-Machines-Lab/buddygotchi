@@ -40,7 +40,11 @@ extension Steering {
 
     /// The diary's lines (`diary.md`, optional): none for a pack with no
     /// file, which keeps no diary.
-    public var diary: [DiaryOutput.Template] { files["diary"].map(DiaryOutput.templates) ?? [] }
+    public var diary: [TaggedLine] { files["diary"].map(TaggedLine.parse) ?? [] }
+
+    /// The captions a sign may show (`signs.md`, optional): none for a
+    /// pack with no file, whose buddy holds up no signs.
+    public var signs: [TaggedLine] { files["signs"].map(TaggedLine.parse) ?? [] }
 
     /// The MOOD section for a mood, or the resting mood's for one Boop
     /// doesn't know: `pack`'s, whose steering this is.

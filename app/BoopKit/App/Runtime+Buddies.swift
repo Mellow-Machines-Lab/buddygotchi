@@ -125,7 +125,7 @@ extension Runtime {
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
                 return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
-            }, speaks: m.speaks, pack: pack, voice: voice)
+            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.when(at: $0.at) })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             if let write = m.diary, !m.steering.diary.isEmpty {

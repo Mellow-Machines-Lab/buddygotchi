@@ -71,7 +71,8 @@ a scenario holds wherever more than one answer is right:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.mood` question: `none` or a mood's face |
-| `animation` | The animation the reaction played, Jev's `react.animation` pick (a finish, `success`, `failure` or `reply`, or `wake up`), or `none` when it played none or Boop didn't react |
+| `animation` | The animation the reaction played, Jev's `react.animation` pick (a finish, `success`, `failure` or `reply`, `wake up`, or `notice`, when your prompt says its name), or `none` when it played none or Boop didn't react |
+| `sign` | The sign the reaction held up, Jev's `react.sign` pick (asked only for a prompt's reading, from the pack's `signs.md`): `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
 | `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
 | `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when `react` didn't react |
@@ -247,7 +248,7 @@ file-name order:
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
 that isn't a mood (`none` is a `react` too), an `animation` that isn't
-`none`, `success`, `failure`, `reply` or `wake up`, a bad `at`, `reaction` or check
+`none`, `success`, `failure`, `reply`, `wake up` or `notice`, a bad `at`, `reaction` or check
 value, a `prompt`, `reading` or `message` on a step that can't carry it, a
 `reading` whose kind or tone isn't one of the lists, or nothing
 to check (no `expect` and no `checks`) doesn't load, and the error names

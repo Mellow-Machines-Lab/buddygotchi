@@ -223,6 +223,7 @@ keep their names.
 | Word | Means | Not |
 | --- | --- | --- |
 | reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
+| sign | A short caption the buddy holds up while a reaction plays, often your own words (`Signs`, a pack's `signs.md`, the `do`'s `sign`) | banner, label |
 | reading | What Boop takes from your prompt in its place: its kind, tone, length, whether you said the buddy's name, and a few of your words (`PromptReading`) | summary, label (for the whole) |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
 | message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |

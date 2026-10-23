@@ -180,7 +180,7 @@ final class HarnessTests: XCTestCase {
         // the face's task_complete for that outcome, a reply its
         // reply_ready, a wake up its wake_up, naming the thread NOW is
         // about; the device picks the variation. `none`, a missing answer or anything else is just the face.
-        XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up"])
+        XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
         starts(["react.mood": a("proud"), "react.animation": a("success"), "react.loops": a("twice"), "say.feeling": a("glad"),
                 "say.kind": a("phrase")],
@@ -240,7 +240,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + MoodOutput.moods.map(\.name),
                        "the faces are every mood's")
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up"])
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["once", "twice", "three times", "four times"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name), ["none", "upset", "glad", "tickled"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.map(\.name), ["none"] + ReactOutput.topics.map(\.name))
