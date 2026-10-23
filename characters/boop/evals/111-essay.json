@@ -1,0 +1,19 @@
+{
+  "name": "A long prompt gets Boop reading along",
+  "case": "The person writes a long, careful prompt, politely. Boop settles in to read it: curious, engaged or determined, or warmed by the manners, maybe holding up \"reading...\".",
+  "why": "signs.md's [essay] caption; the reading says at length",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "ok so the upload flow is broken on mobile. when you pick a photo over 5MB the progress bar sits at 0% for a while, then jumps straight to 100% and the server returns a 413. I think the nginx limit is fine, so it's probably the presigned URL path in the upload API, which still uses the old single-part upload. can you switch it to multipart for anything over 5MB, with 5MB chunks, and retry each chunk up to three times with backoff? keep the progress bar honest, it should move per chunk. also the cancel button doesn't abort the request, please fix that too. add tests for the chunking and the retry, and run the whole upload suite before you say it's done.",
+      "reading": {
+        "kind": "fix"
+      },
+      "expect": {
+        "react": "curious|engaged|determined|affectionate|pleased|happy|none",
+        "sign": "reading|please|none"
+      }
+    }
+  ]
+}

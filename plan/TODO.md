@@ -51,7 +51,7 @@ and new actions. One personality (Boop's default nature) for now.
 - [ ] **First three scenarios**, each with evals and a demo:
       "still broken" (sad, holds up the words); its name in your prompt
       (it looks up at you); a delete or clean-up (glee, "bye bye code").
-- [ ] **More scenarios** from the catalogue: a bug hunt, a new feature,
+- [x] **More scenarios** (evals 104-114, Mac side) from the catalogue: a bug hunt, a new feature,
       a refactor, tests, a deploy (panic on a Friday), docs, a question,
       an essay of a prompt, "just" and "quickly", "be careful", thanks.
 - [ ] **Pixel gets the layers too**, after the gel.

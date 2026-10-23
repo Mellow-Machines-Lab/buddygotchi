@@ -108,6 +108,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -348,6 +350,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -583,6 +587,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -824,6 +830,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -1071,6 +1079,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -1322,6 +1332,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -1574,6 +1586,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -1828,6 +1842,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -2171,6 +2187,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -2535,6 +2553,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -2827,6 +2847,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -3108,6 +3130,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -3491,6 +3515,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
@@ -3764,6 +3790,8 @@ Examples:
   → surprised, notice, glad in a sound, once, holding up "me?!"
 - NOW: You asked claude on "api" to clean up, in a sentence.
   → excited, glad in a word, once, holding up "bye bye code"
+- NOW (on a Friday afternoon): You asked claude on "api" to ship it, in a few words.
+  → uneasy, upset in a sound, once, holding up "on a FRIDAY?"
 - NOW: You asked claude on "api" to carry on, in a few words, politely.
     Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once

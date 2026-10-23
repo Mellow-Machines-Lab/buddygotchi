@@ -1,0 +1,19 @@
+{
+  "name": "Docs get a yawn",
+  "case": "A request to update the docs. Boop is unimpressed but fond: bored, lazy, tired or calm, maybe holding up \"docs...\".",
+  "why": "signs.md's docs caption",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "update the changelog for the release",
+      "reading": {
+        "kind": "docs"
+      },
+      "expect": {
+        "react": "bored|lazy|tired|calm|comfy|none",
+        "sign": "docs|none"
+      }
+    }
+  ]
+}

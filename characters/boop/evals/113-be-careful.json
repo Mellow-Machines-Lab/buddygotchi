@@ -1,0 +1,23 @@
+{
+  "name": "\"Be careful\" makes Boop serious",
+  "case": "The person asks the agent to be careful with a migration. Boop turns serious and attentive: determined, engaged, uneasy or calm, never excited or silly.",
+  "why": "signs.md's [careful] caption; the reading counts careful",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "be careful with the migration, check with me before touching prod",
+      "reading": {
+        "kind": "other",
+        "tone": "careful",
+        "phrases": [
+          "careful"
+        ]
+      },
+      "expect": {
+        "react": "determined|engaged|uneasy|calm|curious|none",
+        "sign": "careful|none"
+      }
+    }
+  ]
+}

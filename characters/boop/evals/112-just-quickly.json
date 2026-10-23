@@ -1,0 +1,23 @@
+{
+  "name": "\"Just quickly\" gets a knowing look",
+  "case": "The person asks for a \"just quickly\" change. Boop gives it a knowing look, skeptical or amused, and may play the words back: \"'quickly', sure\".",
+  "why": "signs.md's [rushed] caption with your words; the reading counts quickly as rushed",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "just quickly fix the typo on the pricing page",
+      "reading": {
+        "kind": "fix",
+        "tone": "rushed",
+        "phrases": [
+          "quickly"
+        ]
+      },
+      "expect": {
+        "react": "skeptical|amused|mischievous|curious|none",
+        "sign": "sure|quickly|none"
+      }
+    }
+  ]
+}
