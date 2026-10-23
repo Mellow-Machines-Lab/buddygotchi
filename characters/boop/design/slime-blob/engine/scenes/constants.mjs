@@ -9,4 +9,4 @@ export const sceneConstants=Object.freeze({
 });
 export const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
   'tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready',
-  'task_complete','error','stopped','poked','tap_spam','wake_up','gesture']);
+  'task_complete','error','stopped','poked','tap_spam','wake_up','gesture','notice']);

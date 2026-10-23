@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-22. The contract a character pack meets, so that any
+Updated 2026-10-23. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -385,8 +385,8 @@ A face is what the board draws and the sounds it makes. The engine says
 ### Every state a face is asked for
 
 The engine asks a face for any of the pack's moods (§5) with any of
-these 24 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
-for all 24, and the gel face maps some to others in its own code
+these 25 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
+for all 25, and the gel face maps some to others in its own code
 (`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
 and `charactergen.py --check` holds this table to them.
 
@@ -417,6 +417,7 @@ the brain's, a rule's, or the board's own.
 | `task_complete` | A turn ends; `outcome` is `success` or `failure` | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
+| `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
 | `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
@@ -557,7 +558,7 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 24
+- `moods` and `states`: every mood, in the pack's order, and the 25
   states above, in the designs' order.
 - `designs`: for each mood, a row for each state (a borrowing mood has
   the designs it wears), with each variation's

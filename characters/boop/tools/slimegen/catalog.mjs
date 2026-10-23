@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {faceTarget} from '../../design/slime-blob/engine/face.mjs';
 import {profileTraits} from '../../design/slime-blob/engine/scenes/profile.mjs';
 import {sceneMoodTraits} from '../../design/slime-blob/engine/scenes/mood.mjs';
-import {gestureGagName,gestureGag,gestureNames} from '../../design/slime-blob/engine/scenes/gesture.mjs';
+import {gestureGagName,gestureGag,gestureNames,noticeNames} from '../../design/slime-blob/engine/scenes/gesture.mjs';
 import {idleOccasions,occasionGags,occasionShare} from '../../design/slime-blob/engine/scenes/occasion.mjs';
 import {recipes,kinds} from './recipes.mjs';
 const require=createRequire(import.meta.url);
@@ -23,8 +23,9 @@ export function firmwareCatalog(root){
  const read=name=>JSON.parse(fs.readFileSync(path.join(base,name)));
  const design=read('expressions.json'),profiles=design.expressions,graph=read('emotion-graph.json'),sound=read('sound/sound-plan.json');
  // Every gag the port plays: comedy's, then each gesture's, then the
- // occasions' (each once).
- const allGags=[...Object.entries(design.gags),...design.gestures.map(g=>[gestureGagName(g),gestureGag(g)]),...occasionGags(design.occasions)];
+ // occasions' (each once), then the notice state's takes'.
+ const allGags=[...Object.entries(design.gags),...design.gestures.map(g=>[gestureGagName(g),gestureGag(g)]),...occasionGags(design.occasions),
+  ...design.notices.map(g=>[gestureGagName(g),gestureGag(g)])];
  const ids=Object.keys(profiles),index=id=>ids.indexOf(id),gagIds=allGags.map(([id])=>id);
  // A tag's bit, in render::kTagNames' order (firmware/src/render/tags.h).
  const tagNames=[...fs.readFileSync(path.join(root,'firmware/src/render/tags.h'),'utf8').match(/kTagNames\[kTagCount\] = \{([\s\S]*?)\};/)[1].matchAll(/"(\w+)"/g)].map(m=>m[1]);
@@ -54,6 +55,9 @@ export function firmwareCatalog(root){
  // (seconds) and gag; and how often a pick goes to one that fits.
  if(JSON.stringify(design.gestures.map(g=>g.id))!==JSON.stringify(gestureNames))throw Error('gestures out of render::Gesture order');
  out+='constexpr int kGestureCount='+design.gestures.length+';\nconstexpr int8_t kGestureFaces[kGestureCount]={'+design.gestures.map(g=>index(g.face)).join(',')+'};\n';
+ // The notice state's takes' faces, which the board borrows the same way.
+ if(JSON.stringify(design.notices.map(g=>g.id))!==JSON.stringify(noticeNames))throw Error('notices out of order');
+ out+='constexpr int kNoticeCount='+design.notices.length+';\nconstexpr int8_t kNoticeFaces[kNoticeCount]={'+design.notices.map(g=>index(g.face)).join(',')+'};\n';
  out+='struct IdleOccasion {uint32_t when;uint16_t after;uint8_t gag;};\nconstexpr IdleOccasion kIdleOccasions[]={\n'+
   idleOccasions(design.occasions).map(o=>'{'+[tagBits(o.when),o.after,gagIds.indexOf(o.gag)].join(',')+'},').join('\n')+'\n};\n';
  out+='constexpr int kIdleOccasionCount=sizeof(kIdleOccasions)/sizeof(kIdleOccasions[0]);\nconstexpr F kOccasionShare='+q(occasionShare)+';\n';

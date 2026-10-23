@@ -215,6 +215,7 @@ const {renderWakeScene,wakeScore}=load("wake-art.mjs");
 const {renderComedyScene,comedyScore}=load("comedy-art.mjs");
 const {renderOccasionScene,occasionScore}=load("occasion-art.mjs");
 const {renderGestureScene,gestureScore}=load("gesture-art.mjs");
+const {renderNoticeScene,noticeScore}=load("notice-art.mjs");
 function makeScene(id){
   const asset=getAsset(id);
   if(asset.renderer==='mood-v4')return {asset,svg:renderMoodScene(asset),score:quietMix(asset,moodScore(asset))};
@@ -222,6 +223,7 @@ function makeScene(id){
   if(asset.renderer==='comedy-v1')return {asset,svg:renderComedyScene(asset),score:quietMix(asset,comedyScore(asset))};
   if(asset.renderer==='occasion-v1')return {asset,svg:renderOccasionScene(asset),score:quietMix(asset,occasionScore(asset))};
   if(asset.renderer==='gesture-v1')return {asset,svg:renderGestureScene(asset),score:quietMix(asset,gestureScore(asset))};
+  if(asset.renderer==='notice-v1')return {asset,svg:renderNoticeScene(asset),score:quietMix(asset,noticeScore(asset))};
   if(asset.renderer==='state-v3')return {asset,svg:renderStateScene(asset),score:quietMix(asset,stateScore(asset))};
   const svg=asset.state==='needs_you'?renderNeedsYou(asset):syncKeyboard(renderVariation(asset.mood,asset.state,asset.variation,asset.name),asset);
   return {asset,svg,score:quietMix(asset,composeScore(asset,svg))};
@@ -266,8 +268,9 @@ const {wakeAdditions}=load("wake-art.mjs");
 const {comedyAdditions}=load("comedy-art.mjs");
 const {occasionAdditions}=load("occasion-art.mjs");
 const {gestureAdditions}=load("gesture-art.mjs");
+const {noticeAdditions}=load("notice-art.mjs");
 const moods=['happy','excited','proud','curious','determined','grumpy','sad',...newMoods];
-const catalog=[...legacyCatalog,...moodAdditions,...wakeAdditions,...comedyAdditions,...occasionAdditions,...gestureAdditions];
+const catalog=[...legacyCatalog,...moodAdditions,...wakeAdditions,...comedyAdditions,...occasionAdditions,...gestureAdditions,...noticeAdditions];
 function getAsset(id){const asset=catalog.find(a=>a.id===id);if(!asset)throw new Error('Unknown Boop variation: '+id);return asset;}
 
 return {moods,catalog,getAsset};},
@@ -277,6 +280,9 @@ const {newMoods}=load("mood-catalog.mjs");
 const {frames,sceneSvg,round,pad,slab,background,burst,cup,completeCard,props:moodProps}=load("mood-art.mjs");
 const {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor:wakeFace,props:wakeProps}=load("wake-art.mjs");
 const {effects}=load("audio/effects.mjs");
+const {moods,design,steps,own,bang}=load("kit-art.mjs");
+const make=design('comedy-v1');
+
 // Comedy: life for the quiet looks and a joke on the finish, as new
 // variations of states that exist, so the device turns to them by itself.
 // Each is one flip-book drawn for every mood that has it, at the mood's own
@@ -293,11 +299,6 @@ const {effects}=load("audio/effects.mjs");
 // third loop or a snore every fourth, each soft; zoomies sound as routine
 // work does (quiet-mix.mjs).
 
-const moods=[...oldMoods,...newMoods];
-const make=(mood,state,variation,action,name,caption,seconds,extra={})=>({
- id:`${mood}.${state}.${String(variation).padStart(2,'0')}`,mood,state,variation,action,name,caption,
- seconds:Number(seconds.toFixed(3)),renderer:'comedy-v1',approval:'Review candidate',...extra
-});
 // A finish's new variation comes after the mood's others: the older moods
 // have five (four successes and a failure), the newer six.
 const finishes=mood=>oldMoods.includes(mood)?5:6;
@@ -314,10 +315,6 @@ const comedyAdditions=[
  ...['working','idle'].map((state,i)=>make('excited',state,i?7:6,'zoomies','Zoomies','The face zips left, right and off the screen, comes back from the other side and hops.',5*profile('excited').pace,{sound:'routine'}))
 ];
 
-// Each step is one pose and the cue that goes with it, if any.
-function steps(a,list){
- return list.map(([u,pose,effect=null,gain=0])=>({at:round(u*a.seconds),pose,effect,gain}));
-}
 // The steps of each design: [when (of the loop), pose, cue, cue's gain].
 const plans={
  'yawn-stretch':()=>[[0,'home'],[.10,'droop'],[.18,'inhale'],[.27,'yawn','yawn',.40],[.39,'stretch'],[.52,'release'],[.60,'settle'],[.66,'home'],[.70,'blink'],[.73,'home'],[.98,'home'],[1,'home']],
@@ -345,7 +342,6 @@ function comedyPlan(a){
 // The mood's resting face, or blinking, as the wake-up has it; the sleepy
 // faces are wake-up's too, lined up with the mood's own. On a finish, the
 // mood's face at a success, on gold (a cheer's stage).
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 const blinking=a=>ownFace(a.mood,true);
 const sleepy=(eyes,mouth,dx=0,dy=0)=>a=>at(dx,dy,sleepyFace(eyes,mouth,lineUp(a.mood)));
 const successFace=(a,stage,blink=false)=>ownFace(a.mood,blink,{complete:true,stage});
@@ -384,7 +380,6 @@ function faceFor(a,pose){
 // ---- What's around the face ---------------------------------------------------
 // A pixel Z, `k` px a stroke.
 const zee=(x,y,k,c=P.dim)=>rect(x,y,5*k,k,c)+rect(x+3*k,y+k,k,k,c)+rect(x+2*k,y+2*k,k,k,c)+rect(x+k,y+3*k,k,k,c)+rect(x,y+4*k,5*k,k,c);
-const bang=(x,y,c=P.amber)=>rect(x,y,6,16,c)+rect(x,y+20,6,6,c);
 const drops=list=>list.map(([x,y,s],i)=>rect(x,y,s,s,[P.lightWater,P.blue,P.water][i%3])).join('');
 // A snore's bubble: a hollow square that grows as the breath goes out.
 const bubble=(x,y,s)=>slab(x,y,s,s,P.lightWater)+rect(x+3,y+3,s-6,s-6,P.black)+rect(x+4,y+4,3,3,P.ink);
@@ -473,6 +468,7 @@ const {newMoods}=load("mood-catalog.mjs");
 const {frames,sceneSvg,round,pad,slab}=load("mood-art.mjs");
 const {oldMoods,profile,lineUp,sleepyFace,ownFace}=load("wake-art.mjs");
 const {effects}=load("audio/effects.mjs");
+const {moods,steps,own,heart,bang}=load("kit-art.mjs");
 // gesture: the board's own reaction to what you do to it, one variation a
 // gesture, in the engine's order (render::Gesture, firmware/src/render/
 // types.h), drawn for every mood with its own face:
@@ -489,7 +485,6 @@ const {effects}=load("audio/effects.mjs");
 // Each plays once, starting and ending on the mood's resting face but the
 // peekaboo, which comes up from nothing, with a cue or two.
 
-const moods=[...oldMoods,...newMoods];
 const gestures=[
  ['handoff','Here you go','Holds up a parcel and slides it toward you: your next agent.',2.4],
  ['stroke','Stroked','Eyes close and it leans into your finger; a little purr of hearts.',2.6],
@@ -521,11 +516,10 @@ const plans={
  peekaboo:[[0,'gone'],[.15,'peek-1'],[.35,'peek-2','pop',.4],[.55,'home'],[.7,'sparkle'],[.88,'blink'],[.94,'home'],[1,'home']]
 };
 function gesturePlan(a){
- return {steps:plans[a.action].map(([u,pose,effect=null,gain=0])=>({at:round(u*a.seconds),pose,effect,gain})),policy:'entry',intervalSeconds:0};
+ return {steps:steps(a,plans[a.action]),policy:'entry',intervalSeconds:0};
 }
 
 // ---- The faces ---------------------------------------------------------------
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 // Spiral eyes: a square ring with a dot, at each eye, turned a step.
 function spirals(y,turn){
  const one=(x)=>rect(x,94+y,40,4)+rect(x+36,94+y,4,24)+rect(x+8,114+y,32,4)+rect(x+8,102+y,4,16)+rect(x+12,102+y,16,4)+rect(x+20,106+y,4,6);
@@ -551,10 +545,8 @@ function faceFor(a,pose){return faces[pose](a);}
 // A parcel: a box with a ribbon, held by two mitts at `y`, `s` its size.
 const parcel=(y,s=1)=>{const w=Math.round(48*s),h=Math.round(36*s),x=160-w/2;
  return slab(x,y,w,h,P.amber)+rect(x+w/2-3,y,6,h,P.red)+rect(x,y+h/2-3,w,6,P.red)+pad(x-24,y+h/2-8)+pad(x+w-4,y+h/2-8);};
-const heart=(x,y,c=P.red)=>rect(x,y,6,6,c)+rect(x+10,y,6,6,c)+rect(x-2,y+4,20,6,c)+rect(x,y+10,16,4,c)+rect(x+4,y+14,8,4,c);
 const bristles=y=>[0,1,2,3,4,5,6,7].map(i=>rect(84+i*20,y+(i%2?6:0),6,14,P.prop)).join('');
 const puffs=(x,y)=>rect(x,y,8,8,P.dim)+rect(x+12,y+4,6,6,P.prop)+rect(x-10,y+6,6,6,P.prop);
-const bang=(x,y,c=P.amber)=>rect(x,y,6,16,c)+rect(x,y+20,6,6,c);
 const props={
  handoff:{lift:()=>parcel(150,.8),hold:()=>parcel(130,.9)+star(60,40,8,P.amber),give:()=>parcel(140,1.25),given:()=>parcel(150,1.4)+star(250,40,16,P.amber)+star(70,30,8,P.amber)},
  stroke:{lean:()=>rect(40,60,24,6,P.prop),content:()=>heart(250,40),'content-2':()=>heart(262,24,P.cheek)+heart(232,56)},
@@ -610,6 +602,33 @@ function syncKeyboard(svg,asset){
 }
 
 return {keyPlans,syncKeyboard};},
+"kit-art.mjs":()=>{
+const {palette:P,rect,at}=load("visual/base.mjs");
+const {newMoods}=load("mood-catalog.mjs");
+const {round}=load("mood-art.mjs");
+const {oldMoods,ownFace}=load("wake-art.mjs");
+// What the variations drawn on top of the bank share (comedy-art,
+// occasion-art, gesture-art): every mood, a design's entry, its steps, the
+// mood's resting face, and a few small props.
+
+const moods=[...oldMoods,...newMoods];
+// A design's entry, for `renderer`: `mood.state.NN`, at its seconds.
+const design=renderer=>(mood,state,variation,action,name,caption,seconds,extra={})=>({
+ id:`${mood}.${state}.${String(variation).padStart(2,'0')}`,mood,state,variation,action,name,caption,
+ seconds:Number(seconds.toFixed(3)),renderer,approval:'Review candidate',...extra
+});
+// Each step is one pose and the cue that goes with it, if any:
+// [when (of the loop), pose, cue, cue's gain].
+function steps(a,list){
+ return list.map(([u,pose,effect=null,gain=0])=>({at:round(u*a.seconds),pose,effect,gain}));
+}
+// The mood's resting face, moved by dx, dy.
+const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
+const heart=(x,y,c=P.red)=>rect(x,y,6,6,c)+rect(x+10,y,6,6,c)+rect(x-2,y+4,20,6,c)+rect(x,y+10,16,4,c)+rect(x+4,y+14,8,4,c);
+// An exclamation mark.
+const bang=(x,y,c=P.amber)=>rect(x,y,6,16,c)+rect(x,y+20,6,6,c);
+
+return {moods,design,steps,own,heart,bang};},
 "legacy-catalog.mjs":()=>{
 const {requestPerformance}=load("request-performances.mjs");
 const {additions}=load("state-catalog.mjs");
@@ -1123,11 +1142,83 @@ function needsYouScore(asset){
 }
 
 return {alertProfiles,requestLayout,requestPlan,renderNeedsYou,needsYouScore};},
+"notice-art.mjs":()=>{
+const {palette:P,at,star}=load("visual/base.mjs");
+const {frames,sceneSvg,round}=load("mood-art.mjs");
+const {profile,lineUp,sleepyFace,ownFace}=load("wake-art.mjs");
+const {effects}=load("audio/effects.mjs");
+const {moods,steps,own,heart,bang}=load("kit-art.mjs");
+// notice: the brain's reaction when you name it in your prompt: it heard
+// its name and looks up at you, surprised and pleased. Three variations,
+// drawn for every mood with its own face, dealt as any reaction's are:
+//   1 perk: it looks up at you, an exclamation either side, then a twinkle;
+//   2 hop: a little hop, eyes squeezed with glee, a heart or two;
+//   3 beam: it leans in close and beams, sparkles round it.
+// Each plays once, starting and ending on the mood's resting face, with a
+// cue or two.
+
+const notices=[
+ ['perk','Heard its name','Looks up at you, surprised: oh, that\'s me!',2.0],
+ ['hop','A happy hop','Hops up at its name, eyes squeezed with glee.',1.8],
+ ['beam','Beams at you','Leans in close and beams, sparkles round it.',2.2]
+];
+const noticeAdditions=moods.flatMap(mood=>notices.map(([action,name,caption,seconds],i)=>({
+ id:`${mood}.notice.${String(i+1).padStart(2,'0')}`,mood,state:'notice',variation:i+1,action,name,caption,
+ seconds:Number((seconds*Math.min(1.15,profile(mood).pace)).toFixed(3)),renderer:'notice-v1',approval:'Review candidate'
+})));
+
+// ---- Plans: [when (of the loop), pose, cue, gain] ---------------------------
+const plans={
+ perk:[[0,'home'],[.1,'up','swipe',.3],[.3,'up-2'],[.55,'twinkle','shimmer',.25],[.75,'blink'],[.82,'home'],[1,'home']],
+ hop:[[0,'home'],[.1,'squish'],[.22,'jump','pop',.4],[.42,'glee'],[.65,'glee-2'],[.85,'home'],[1,'home']],
+ beam:[[0,'home'],[.15,'lean','shimmer',.3],[.35,'close'],[.65,'close-2'],[.85,'blink'],[.92,'home'],[1,'home']]
+};
+function noticePlan(a){
+ return {steps:steps(a,plans[a.action]),policy:'entry',intervalSeconds:0};
+}
+
+// ---- The faces ---------------------------------------------------------------
+const glee=dy=>a=>at(0,dy,sleepyFace('squeeze','wide',lineUp(a.mood)));
+const faces={
+ home:own(),blink:a=>ownFace(a.mood,true),
+ up:own(0,-10),'up-2':own(0,-12),twinkle:own(0,-10),
+ squish:own(0,6),jump:own(0,-16),glee:glee(-6),'glee-2':glee(-2),
+ lean:own(0,-4),close:own(0,-6),'close-2':own(0,-5)
+};
+const faceFor=(a,pose)=>faces[pose](a);
+
+// ---- What's around it --------------------------------------------------------
+const props={
+ perk:{up:()=>bang(40,24)+bang(274,24),'up-2':()=>bang(40,20)+bang(274,20),twinkle:()=>star(56,36,16,P.gold)+star(258,30,8,P.ink)},
+ hop:{jump:()=>star(150,8,8,P.ink),glee:()=>heart(250,40),'glee-2':()=>heart(262,24,P.cheek)+heart(52,44)},
+ beam:{close:()=>star(60,40,16,P.gold)+star(260,36,8,P.ink),'close-2':()=>star(264,30,16,P.gold)+star(52,48,8,P.ink)+star(240,120,8,P.amber)}
+};
+const propsFor=(a,pose)=>props[a.action]?.[pose]?.(a)??'';
+
+function renderNoticeScene(a){
+ const plan=noticePlan(a),id='boop-notice-'+a.id.replaceAll('.','-');
+ const art=frames(a,plan,s=>faceFor(a,s.pose),'notice-face')+frames(a,plan,s=>propsFor(a,s.pose),'notice-props');
+ const still=faceFor(a,plan.steps[2].pose)+propsFor(a,plan.steps[2].pose);
+ return sceneSvg(a,id,a.caption,art,still);
+}
+function noticeScore(a){
+ const plan=noticePlan(a),pace=profile(a.mood);
+ const events=plan.steps.flatMap((s,i)=>s.effect?[{at:s.at,effect:s.effect,gain:round(s.gain*pace.gain),pitch:pace.pitch,
+  label:`${a.action} · ${s.pose}`,sync:{part:'notice-props',step:i,pose:s.pose}}]:[]);
+ for(const e of events)if(!effects[e.effect])throw new Error('Missing effect '+e.effect);
+ return {id:a.id,seconds:a.seconds,policy:'entry',intervalSeconds:0,character:pace.character,
+  description:a.caption+' A cue or two on its moments.',events,tailSeconds:round(Math.max(0,...events.map(e=>e.at+effects[e.effect].duration-a.seconds)))};
+}
+
+return {notices,noticeAdditions,noticePlan,renderNoticeScene,noticeScore};},
 "occasion-art.mjs":()=>{
 const {palette:P,rect,at,star}=load("visual/base.mjs");
 const {newMoods}=load("mood-catalog.mjs");
 const {frames,sceneSvg,round,pad,slab}=load("mood-art.mjs");
 const {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor:wakeFace,props:wakeProps}=load("wake-art.mjs");
+const {moods,design,steps,own,heart}=load("kit-art.mjs");
+const make=design('occasion-v1');
+
 // Occasions: variations that fit only some of the time, which the device
 // turns to by itself. Each carries `when`, the tags that must all be on
 // (the engine's: firmware/src/render/tags.h), or `after`, how many seconds
@@ -1144,11 +1235,6 @@ const {oldMoods,profile,lineUp,sleepyFace,ownFace,faceFor:wakeFace,props:wakePro
 // Each is the mood's own face at rest with a small bob and a blink, and the
 // occasion around it. The quiet looks stay silent (quiet-mix.mjs).
 
-const moods=[...oldMoods,...newMoods];
-const make=(mood,state,variation,action,name,caption,seconds,extra={})=>({
- id:`${mood}.${state}.${String(variation).padStart(2,'0')}`,mood,state,variation,action,name,caption,
- seconds:Number(seconds.toFixed(3)),renderer:'occasion-v1',approval:'Review candidate',...extra
-});
 // Each mood's variations so far: the idle ones (excited's zoomies is a
 // seventh), working's (its zoomies a sixth), asleep's four and the wake-up.
 const idleN=mood=>mood==='excited'?7:6, workN=mood=>mood==='excited'?6:5;
@@ -1173,7 +1259,6 @@ const occasionAdditions=[
 ];
 
 // ---- Plans: [when (of the loop), pose] ------------------------------------
-const steps=(a,list)=>list.map(([u,pose])=>({at:round(u*a.seconds),pose,effect:null,gain:0}));
 const rest=[[0,'home'],[.25,'bob'],[.45,'home'],[.62,'blink'],[.66,'home'],[.8,'bob'],[.98,'home'],[1,'home']];
 const plans={
  coffee:[[0,'home'],[.2,'sip'],[.4,'sip-2'],[.55,'home'],[.7,'blink'],[.74,'home'],[.98,'home'],[1,'home']],
@@ -1188,7 +1273,6 @@ function occasionPlan(a){
 }
 
 // ---- The faces ---------------------------------------------------------------
-const own=(dx=0,dy=0)=>a=>at(dx,dy,ownFace(a.mood,false));
 const faces={
  home:own(),bob:own(0,-3),blink:a=>ownFace(a.mood,true),sip:own(0,-2),'sip-2':own(0,-4),
  'dart-left':own(-6,0),'dart-right':own(6,0),
@@ -1230,7 +1314,6 @@ function bobble(){
 }
 const snow=phase=>[[24,10],[60,40],[110,4],[200,30],[250,8],[292,44],[40,120],[280,110],[16,70],[300,150]]
  .map(([x,y])=>rect(x,(y+phase*12)%186,4,4,P.ink)).join('');
-const heart=(x,y,c=P.red)=>rect(x,y,6,6,c)+rect(x+10,y,6,6,c)+rect(x-2,y+4,20,6,c)+rect(x,y+10,16,4,c)+rect(x+4,y+14,8,4,c);
 const hearts=phase=>[[40,140],[260,120],[80,40],[230,30]].map(([x,y],i)=>heart(x,(y-phase*16+180)%180,i%2?P.cheek:P.red)).join('');
 // Shades over the eyes, the older moods' and the newer ones' line-ups.
 function shades(a){
@@ -2076,7 +2159,7 @@ function stateScore(asset){
 return {pixelText,statePlan,renderStateScene,stateScore};},
 "state-catalog.mjs":()=>{
 const {moods}=load("visual/base.mjs");
-const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture'];
+const stateOrder=['no_app','asleep','idle','listening','starting','planning','working','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture','notice'];
 const sustainedStates=['working','idle','asleep','no_app','planning','terminal','tool_use','searching','analyzing','testing','waiting'];
 // Seven named characters, not a new intensity axis. Timing is authored per mood.
 const acting={

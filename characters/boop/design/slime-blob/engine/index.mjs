@@ -9,7 +9,7 @@ export function createSlime({seed=1729,catalog,reducedMotion=false}={}) {
   if(!profiles||!profiles.calm?.art)throw new TypeError('catalog.expressions must contain the expression profiles');
   const clock=createClock(),reduced={matches:Boolean(reducedMotion)};
   const cues=createCues({seed,plan:catalog.sound});
-  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],gestures:catalog.gestures||[],occasions:catalog.occasions||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
+  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],gestures:catalog.gestures||[],notices:catalog.notices||[],occasions:catalog.occasions||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
   return {
     setMood:actor.setMood,setFacts:actor.setFacts,setOccasion:actor.setOccasion,poke:actor.poke,shake:actor.shake,
     clearTransient:actor.clearTransient,holdExpression:actor.holdExpression,oneShot:actor.oneShot,setLinkTimedOut:actor.setLinkTimedOut,

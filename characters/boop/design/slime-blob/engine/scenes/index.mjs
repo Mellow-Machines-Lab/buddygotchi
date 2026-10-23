@@ -34,7 +34,7 @@ const hiddenContent=Object.freeze({alert:{requestId:null,agent:'',project:'',nam
   result:{state:null,label:'FINISHED',outcome:null,reveal:0},start:{label:'START',ctx:null,reveal:0},
   helpers:{mode:'dispatch',count:0,progress:0,report:false,direction:1,presence:0},listening:{pulse:.5},touch:{kind:null}});
 
-export function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
+export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
   const looks=lookOccasions(occasions).map((entry,index)=>({...entry,index}));
   const variation=createVariations(rand),alerts=new Map(),moments=new Map();
   const activity={lean:{x:0,v:0},squash:{x:0,v:0},forward:{x:0,v:0}};
@@ -71,6 +71,7 @@ export function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occ
     const profile=profiles[expression];
     if(look)recipe=realizeOccasion(look.recipe,rand);
     else if(route.state==='gesture')recipe=gestureRecipe(gestures,variant);
+    else if(route.state==='notice')recipe=gestureRecipe(notices,variant);
     else if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
     else if(route.state==='needs_you'){
       recipe=alertRecipe(variant,mood,profile);

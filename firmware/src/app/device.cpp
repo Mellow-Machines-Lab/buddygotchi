@@ -58,15 +58,18 @@ enum DoIndex : uint8_t {
   kWakeUp,
   kListening,
   kStopListening,
+  kNotice,
   kDoCount
 };
-constexpr const char* kDoNames[kDoCount] = {"react", "task_complete", "reply_ready", "starting",  "stopped",
-                                            "error", "helper_return", "wake_up",     "listening", "stop_listening"};
+constexpr const char* kDoNames[kDoCount] = {"react",         "task_complete", "reply_ready", "starting",
+                                            "stopped",       "error",         "helper_return", "wake_up",
+                                            "listening",     "stop_listening", "notice"};
 constexpr render::SceneState kDoAnims[kDoCount] = {render::SceneState::kNone,         render::SceneState::kTaskComplete,
                                                    render::SceneState::kReplyReady,   render::SceneState::kStarting,
                                                    render::SceneState::kStopped,      render::SceneState::kError,
                                                    render::SceneState::kHelperReturn, render::SceneState::kWakeUp,
-                                                   render::SceneState::kListening,    render::SceneState::kNone};
+                                                   render::SceneState::kListening,    render::SceneState::kNone,
+                                                   render::SceneState::kNotice};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -299,6 +302,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kTaskComplete:
     case kReplyReady:
     case kWakeUp:  // the brain's, like a finish: it plays through
+    case kNotice:
       break;
     case kListening:
       kit().dropWaiting("mic_on", c.from);  // the mic went on: the reactions waiting would end it

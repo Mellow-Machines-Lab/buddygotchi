@@ -1,0 +1,26 @@
+// `notice` on the gel: it heard its name and looks up at you, each take
+// dealt by the board and played under the face it borrows (CONTINUITY.md,
+// Notice): over idle, over work, and with a sign; each on a frozen clock
+// after a reset.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"notice","play":"now","args":{}}
+{"expect":{"moment":{"anim":"notice"}}}
+{"clock":1400}
+{"shot":"idle"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"engaged","busy":1,"vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"notice","play":"now","args":{}}
+{"clock":1300}
+{"shot":"working"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"notice","play":"now","args":{"sign":"that's me!"}}
+{"clock":1600}
+{"shot":"with-sign"}

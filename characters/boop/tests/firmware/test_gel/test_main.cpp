@@ -603,6 +603,41 @@ static void test_each_gesture_plays_its_own_gag() {
   TEST_ASSERT_EQUAL_STRING("happy", slime::kProfile[e.expression].id);
   TEST_ASSERT_FALSE(e.acting.holding);
 }
+// CONTINUITY.md, Notice: the notice state's three takes, each a gag under a
+// face it borrows (kNoticeFaces), dealt by its bag; its scene is the start
+// family's with no card.
+static void test_a_notice_looks_up_at_you() {
+  linkkit::Rng rng;
+  GelFace f;
+  f.reset(0, rng);
+  TEST_ASSERT_EQUAL_INT(3, f.variants(Mood::kHappy, SceneState::kNotice));
+  TEST_ASSERT_EQUAL_INT(3, slime::kNoticeCount);
+  TEST_ASSERT_TRUE(family(SceneState::kNotice) == Family::kStart);
+  const int row = int(SceneState::kNotice);
+  for (int v = 0; v < 3; ++v) {
+    const auto& r = take(slime::kGrumpy, row, v);
+    TEST_ASSERT_TRUE(r.gag >= 0 && r.count > 0 && r.label == nullptr);
+    TEST_ASSERT_EQUAL_INT(0, std::strncmp(slime::kGags[r.gag].gesture.type, "gesture:notice-", 15));
+    TEST_ASSERT_TRUE(slime::kNoticeFaces[v] >= 0 && slime::kNoticeFaces[v] < slime::kProfiles);
+  }
+  FaceSource s;
+  FaceContext c;
+  c.mood = s.mood = Mood::kCalm;
+  f.sync(s, c, 0);
+  for (uint32_t t = 16; t <= 480; t += 16) f.step(t, rng);
+  s.anim = SceneState::kNotice;
+  s.animVariant = 1;
+  s.at = 496;
+  f.sync(s, c, 496);
+  const auto& e = f.engine();
+  TEST_ASSERT_EQUAL_INT(slime::kNoticeFaces[1], e.expression);
+  TEST_ASSERT_EQUAL_INT(1, e.scenes.variant);
+  TEST_ASSERT_EQUAL_STRING("gesture:notice-hop", slime::kGags[e.acting.playing].gesture.type);
+  s.anim = SceneState::kNone;
+  f.sync(s, c, 3000);
+  f.step(3000, rng);
+  TEST_ASSERT_EQUAL_STRING("calm", slime::kProfile[e.expression].id);
+}
 // CONTINUITY.md, Occasions: a look's takes for tags and waits, dealt only
 // while they fit. Idle at night drowses; with no tag on it never plays an
 // occasion; frantic work types frantically; twenty idle minutes nod off.
@@ -1098,6 +1133,7 @@ int main() {
   RUN_TEST(test_timing_comes_from_the_recipe_table);
   RUN_TEST(test_comedy_plays_in_idle_and_asleep);
   RUN_TEST(test_each_gesture_plays_its_own_gag);
+  RUN_TEST(test_a_notice_looks_up_at_you);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_reference_face_projection_and_pose_bounds);

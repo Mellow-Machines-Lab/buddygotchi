@@ -1,8 +1,8 @@
 {
   "moods": 13,
-  "states": 24,
-  "pairs": 312,
-  "total": 1175,
+  "states": 25,
+  "pairs": 325,
+  "total": 1214,
   "preservedV3": 308,
   "newPerformances": 480,
   "newMoods": [
@@ -46,7 +46,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "excited": {
       "no_app": 3,
@@ -72,7 +73,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "proud": {
       "no_app": 3,
@@ -98,7 +100,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "curious": {
       "no_app": 3,
@@ -124,7 +127,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "determined": {
       "no_app": 3,
@@ -150,7 +154,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "grumpy": {
       "no_app": 3,
@@ -176,7 +181,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "sad": {
       "no_app": 3,
@@ -202,7 +208,8 @@
       "poked": 1,
       "tap_spam": 1,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "calm": {
       "no_app": 3,
@@ -228,7 +235,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "engaged": {
       "no_app": 3,
@@ -254,7 +262,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "annoyed": {
       "no_app": 3,
@@ -280,7 +289,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "irritated": {
       "no_app": 3,
@@ -306,7 +316,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "whiny": {
       "no_app": 3,
@@ -332,7 +343,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     },
     "wounded": {
       "no_app": 3,
@@ -358,7 +370,8 @@
       "poked": 3,
       "tap_spam": 3,
       "wake_up": 2,
-      "gesture": 10
+      "gesture": 10,
+      "notice": 3
     }
   }
 }
