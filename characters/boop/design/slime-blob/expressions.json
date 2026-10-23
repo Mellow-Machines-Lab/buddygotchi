@@ -6940,6 +6940,213 @@
       }
     }
   ],
+  "notices": [
+    {
+      "id": "notice-perk",
+      "label": "Perks up at its name, leaning in",
+      "face": "surprised",
+      "duration": 2,
+      "keys": [
+        [
+          0.15,
+          "squash",
+          -0.06
+        ],
+        [
+          0.35,
+          "lift",
+          0.14
+        ],
+        [
+          0.35,
+          "squash",
+          0.12
+        ],
+        [
+          0.4,
+          "forward",
+          0.12
+        ],
+        [
+          1.2,
+          "lift",
+          0.04
+        ],
+        [
+          1.2,
+          "squash",
+          0.02
+        ],
+        [
+          1.6,
+          "lift",
+          0
+        ],
+        [
+          1.6,
+          "squash",
+          0
+        ],
+        [
+          1.8,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "ripple",
+          1
+        ],
+        [
+          1.25,
+          "squash",
+          -0.6
+        ]
+      ],
+      "contacts": [
+        [
+          0.35,
+          "body_contact",
+          0.4,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "notice-hop",
+      "label": "A little hop, beaming at you",
+      "face": "happy",
+      "duration": 1.9,
+      "keys": [
+        [
+          0.1,
+          "squash",
+          -0.08
+        ],
+        [
+          0.3,
+          "lift",
+          0.16
+        ],
+        [
+          0.3,
+          "squash",
+          0.1
+        ],
+        [
+          0.3,
+          "forward",
+          0.1
+        ],
+        [
+          0.6,
+          "lift",
+          0
+        ],
+        [
+          0.7,
+          "squash",
+          -0.06
+        ],
+        [
+          1,
+          "squash",
+          0
+        ],
+        [
+          1.4,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.65,
+          "squash",
+          -1
+        ],
+        [
+          0.8,
+          "ripple",
+          0.8
+        ]
+      ],
+      "contacts": [
+        [
+          0.3,
+          "body_contact",
+          0.4,
+          0
+        ],
+        [
+          0.65,
+          "body_contact",
+          0.45,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "notice-tilt",
+      "label": "Tilts toward you, then leans in, pleased",
+      "face": "pleased",
+      "duration": 2.1,
+      "keys": [
+        [
+          0.3,
+          "roll",
+          0.08
+        ],
+        [
+          0.4,
+          "forward",
+          0.1
+        ],
+        [
+          0.4,
+          "lift",
+          0.06
+        ],
+        [
+          1.1,
+          "roll",
+          0
+        ],
+        [
+          1.4,
+          "lift",
+          0
+        ],
+        [
+          1.6,
+          "forward",
+          0
+        ]
+      ],
+      "cues": [
+        [
+          0.3,
+          "lean",
+          0.8
+        ],
+        [
+          1.2,
+          "lean",
+          -0.5
+        ]
+      ],
+      "contacts": [
+        [
+          0.3,
+          "body_contact",
+          0.3,
+          1
+        ]
+      ]
+    }
+  ],
   "created": "2026-10-02",
   "designSystem": {
     "identity": "Soft rounded slime face, inspired by the supplied kawaii/Rimuru-like facial language; original blue gel body retained.",

@@ -571,6 +571,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "calm.notice",
+      "mood": "calm",
+      "state": "notice",
+      "scene": "start",
+      "expression": "calm",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "calm",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "comfy.no_app",
       "mood": "comfy",
       "state": "no_app",
@@ -1128,6 +1149,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "comfy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "comfy.notice",
+      "mood": "comfy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "comfy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -1707,6 +1749,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "lazy.notice",
+      "mood": "lazy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "lazy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "lazy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "bored.no_app",
       "mood": "bored",
       "state": "no_app",
@@ -2264,6 +2327,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "bored",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "bored.notice",
+      "mood": "bored",
+      "state": "notice",
+      "scene": "start",
+      "expression": "bored",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -2843,6 +2927,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "pleased.notice",
+      "mood": "pleased",
+      "state": "notice",
+      "scene": "start",
+      "expression": "pleased",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "pleased",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "happy.no_app",
       "mood": "happy",
       "state": "no_app",
@@ -3400,6 +3505,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "happy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "happy.notice",
+      "mood": "happy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "happy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -3979,6 +4105,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "excited.notice",
+      "mood": "excited",
+      "state": "notice",
+      "scene": "start",
+      "expression": "excited",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "excited",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "curious.no_app",
       "mood": "curious",
       "state": "no_app",
@@ -4536,6 +4683,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "curious",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "curious.notice",
+      "mood": "curious",
+      "state": "notice",
+      "scene": "start",
+      "expression": "curious",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -5115,6 +5283,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "engaged.notice",
+      "mood": "engaged",
+      "state": "notice",
+      "scene": "start",
+      "expression": "engaged",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "engaged",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "determined.no_app",
       "mood": "determined",
       "state": "no_app",
@@ -5672,6 +5861,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "determined",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "determined.notice",
+      "mood": "determined",
+      "state": "notice",
+      "scene": "start",
+      "expression": "determined",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -6251,6 +6461,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "proud.notice",
+      "mood": "proud",
+      "state": "notice",
+      "scene": "start",
+      "expression": "proud",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "proud",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "mischievous.no_app",
       "mood": "mischievous",
       "state": "no_app",
@@ -6808,6 +7039,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "mischievous",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "mischievous.notice",
+      "mood": "mischievous",
+      "state": "notice",
+      "scene": "start",
+      "expression": "mischievous",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -7387,6 +7639,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "shy.notice",
+      "mood": "shy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "shy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "shy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "uncomfortable.no_app",
       "mood": "uncomfortable",
       "state": "no_app",
@@ -7944,6 +8217,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "uncomfortable",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "uncomfortable.notice",
+      "mood": "uncomfortable",
+      "state": "notice",
+      "scene": "start",
+      "expression": "uncomfortable",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -8523,6 +8817,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "annoyed.notice",
+      "mood": "annoyed",
+      "state": "notice",
+      "scene": "start",
+      "expression": "annoyed",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "annoyed",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "irritated.no_app",
       "mood": "irritated",
       "state": "no_app",
@@ -9080,6 +9395,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "irritated",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "irritated.notice",
+      "mood": "irritated",
+      "state": "notice",
+      "scene": "start",
+      "expression": "irritated",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -9659,6 +9995,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "grumpy.notice",
+      "mood": "grumpy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "grumpy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "grumpy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "angry.no_app",
       "mood": "angry",
       "state": "no_app",
@@ -10216,6 +10573,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "angry",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "angry.notice",
+      "mood": "angry",
+      "state": "notice",
+      "scene": "start",
+      "expression": "angry",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -10795,6 +11173,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "disappointed.notice",
+      "mood": "disappointed",
+      "state": "notice",
+      "scene": "start",
+      "expression": "disappointed",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "disappointed",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "sad.no_app",
       "mood": "sad",
       "state": "no_app",
@@ -11352,6 +11751,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "sad",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "sad.notice",
+      "mood": "sad",
+      "state": "notice",
+      "scene": "start",
+      "expression": "sad",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -11931,6 +12351,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "crying.notice",
+      "mood": "crying",
+      "state": "notice",
+      "scene": "start",
+      "expression": "crying",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "crying",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "whiny.no_app",
       "mood": "whiny",
       "state": "no_app",
@@ -12488,6 +12929,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "whiny",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "whiny.notice",
+      "mood": "whiny",
+      "state": "notice",
+      "scene": "start",
+      "expression": "whiny",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -13067,6 +13529,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "wounded.notice",
+      "mood": "wounded",
+      "state": "notice",
+      "scene": "start",
+      "expression": "wounded",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "wounded",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "uneasy.no_app",
       "mood": "uneasy",
       "state": "no_app",
@@ -13624,6 +14107,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "uneasy",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "uneasy.notice",
+      "mood": "uneasy",
+      "state": "notice",
+      "scene": "start",
+      "expression": "uneasy",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -14203,6 +14707,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "scared.notice",
+      "mood": "scared",
+      "state": "notice",
+      "scene": "start",
+      "expression": "scared",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "scared",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "frightened.no_app",
       "mood": "frightened",
       "state": "no_app",
@@ -14760,6 +15285,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "frightened",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "frightened.notice",
+      "mood": "frightened",
+      "state": "notice",
+      "scene": "start",
+      "expression": "frightened",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -15339,6 +15885,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "surprised.notice",
+      "mood": "surprised",
+      "state": "notice",
+      "scene": "start",
+      "expression": "surprised",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "surprised",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "stunned.no_app",
       "mood": "stunned",
       "state": "no_app",
@@ -15896,6 +16463,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "stunned",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "stunned.notice",
+      "mood": "stunned",
+      "state": "notice",
+      "scene": "start",
+      "expression": "stunned",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -16475,6 +17063,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "speechless.notice",
+      "mood": "speechless",
+      "state": "notice",
+      "scene": "start",
+      "expression": "speechless",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "speechless",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "amused.no_app",
       "mood": "amused",
       "state": "no_app",
@@ -17032,6 +17641,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "amused",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "amused.notice",
+      "mood": "amused",
+      "state": "notice",
+      "scene": "start",
+      "expression": "amused",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -17611,6 +18241,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "hopeful.notice",
+      "mood": "hopeful",
+      "state": "notice",
+      "scene": "start",
+      "expression": "hopeful",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "hopeful",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "relieved.no_app",
       "mood": "relieved",
       "state": "no_app",
@@ -18168,6 +18819,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "relieved",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "relieved.notice",
+      "mood": "relieved",
+      "state": "notice",
+      "scene": "start",
+      "expression": "relieved",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -18747,6 +19419,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "confused.notice",
+      "mood": "confused",
+      "state": "notice",
+      "scene": "start",
+      "expression": "confused",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "confused",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "baffled.no_app",
       "mood": "baffled",
       "state": "no_app",
@@ -19304,6 +19997,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "baffled",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "baffled.notice",
+      "mood": "baffled",
+      "state": "notice",
+      "scene": "start",
+      "expression": "baffled",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -19883,6 +20597,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "skeptical.notice",
+      "mood": "skeptical",
+      "state": "notice",
+      "scene": "start",
+      "expression": "skeptical",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "skeptical",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "embarrassed.no_app",
       "mood": "embarrassed",
       "state": "no_app",
@@ -20440,6 +21175,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "embarrassed",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "embarrassed.notice",
+      "mood": "embarrassed",
+      "state": "notice",
+      "scene": "start",
+      "expression": "embarrassed",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -21019,6 +21775,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "affectionate.notice",
+      "mood": "affectionate",
+      "state": "notice",
+      "scene": "start",
+      "expression": "affectionate",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "affectionate",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "lonely.no_app",
       "mood": "lonely",
       "state": "no_app",
@@ -21576,6 +22353,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "lonely",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "lonely.notice",
+      "mood": "lonely",
+      "state": "notice",
+      "scene": "start",
+      "expression": "lonely",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -22155,6 +22953,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "tired.notice",
+      "mood": "tired",
+      "state": "notice",
+      "scene": "start",
+      "expression": "tired",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "tired",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "exhausted.no_app",
       "mood": "exhausted",
       "state": "no_app",
@@ -22712,6 +23531,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "exhausted",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "exhausted.notice",
+      "mood": "exhausted",
+      "state": "notice",
+      "scene": "start",
+      "expression": "exhausted",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},
@@ -23291,6 +24131,27 @@
       "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
     },
     {
+      "id": "overwhelmed.notice",
+      "mood": "overwhelmed",
+      "state": "notice",
+      "scene": "start",
+      "expression": "overwhelmed",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "overwhelmed",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
       "id": "disgusted.no_app",
       "mood": "disgusted",
       "state": "no_app",
@@ -23848,6 +24709,27 @@
         "gesture.putdown",
         "gesture.startle",
         "gesture.peekaboo"
+      ],
+      "requiredHostFacts": {},
+      "factVariations": {},
+      "moodSoundProfile": "disgusted",
+      "audioPolicy": "first_only",
+      "variationAudio": {},
+      "status": "implemented",
+      "faceStatus": "candidate-art-present",
+      "review": "engineering-tested; representative-art-approved; contact-sound-implemented; timbres-sketches"
+    },
+    {
+      "id": "disgusted.notice",
+      "mood": "disgusted",
+      "state": "notice",
+      "scene": "start",
+      "expression": "disgusted",
+      "mode": "composed-active-cell",
+      "variations": [
+        "notice.notice-perk",
+        "notice.notice-hop",
+        "notice.notice-tilt"
       ],
       "requiredHostFacts": {},
       "factVariations": {},

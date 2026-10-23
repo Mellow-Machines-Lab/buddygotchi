@@ -1,6 +1,6 @@
 # VideoG Slime Blob — colleague handover
 
-Updated 2026-10-22. Imported from `VideoG-Slime-Blob` and integrated on
+Updated 2026-10-23. Imported from `VideoG-Slime-Blob` and integrated on
 `main`: this engine is the reference the AMOLED's gel face ports and the
 Mac's popover bundles. This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
@@ -70,7 +70,7 @@ consumes credits.
 | Acting | Three authored gesture recipes per expression; recipes share primitives. Idle comedy: a yawn, a doze and a sneeze for every mood, a long yawn for the low moods, zoomies for excited | Tune every recipe in motion, layer activity choreography; owner review of the comedy on the board |
 | Drag | Bounded local surface pull, face follows body, release wobble | Host-boundary termination and real touchscreen QA |
 | Mood topology | Complete design graph and 295 tested directed bridges, three variants each | Host eligibility/pacing, Jev choices, production enum migration |
-| Activity/state | All 24 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures; occasions for idle, typing and sleep (the part of the day, holidays, a party, busy and frantic work, long idle, work and sleep) | Physical board measurements/review |
+| Activity/state | All 25 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures and the notice's three takes; occasions for idle, typing and sleep (the part of the day, holidays, a party, busy and frantic work, long idle, work and sleep) | Physical board measurements/review |
 | Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library, a sneeze and a snore's breath among them | Speaker review and physical audio latency; the snore's level |
 
 **Coverage is earned by execution.** The preview has all scene families, an

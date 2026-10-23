@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "REFERENCE SCENES IMPLEMENTED \u2014 production adapter and synchronized sound remain planned",
+  "status": "REFERENCE SCENES IMPLEMENTED — production adapter and synchronized sound remain planned",
   "primaryParameters": [
     "mood",
     "state"
@@ -421,6 +421,20 @@
         "putdown",
         "startle",
         "peekaboo"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "notice",
+      "scene": "start",
+      "kind": "one_shot",
+      "trigger": "The brain's reaction when you name it in your prompt: it heard its name.",
+      "visual": "The same body looks up at you, surprised and pleased, under a face it borrows for it: perks up and leans in, hops and beams, or tilts toward you; the start family without a card.",
+      "variations": [
+        "notice-perk",
+        "notice-hop",
+        "notice-tilt"
       ],
       "audioPolicy": "first_only",
       "status": "implemented-reference-choreography"

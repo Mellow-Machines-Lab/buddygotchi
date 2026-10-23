@@ -12,17 +12,17 @@ import {idleOccasions,occasionGags} from './scenes/occasion.mjs';
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-export function createActor({profiles,gags,idleGags,gestures=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
+export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
   // The host's tags and how long its look has shown (setOccasion).
   const occasion={when:new Set(),lookMs:0};
-  const extraGags=Object.fromEntries([...gestures.map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
+  const extraGags=Object.fromEntries([...[...gestures,...notices].map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
   const acting=createActing({profiles,gags,idleGags,extraGags,idleLooks:idleOccasions(occasions),rand,reduced,initialEmotion,occasion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
-  const scenes=createScenes({rand,reduced,profiles,gestures,occasions,occasion});
+  const scenes=createScenes({rand,reduced,profiles,gestures,notices,occasions,occasion});
   const bridges=createBridges({graph,profiles,rand,reduced});
   const posture=createPostureWeights({emotions,initialEmotion,reduced});
   function sync(time,options) {

@@ -122,7 +122,8 @@
       "poked",
       "tap_spam",
       "wake_up",
-      "gesture"
+      "gesture",
+      "notice"
     ],
     "hostFacts": {
       "startContext": [

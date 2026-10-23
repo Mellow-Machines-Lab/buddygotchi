@@ -255,10 +255,10 @@ export async function checkFullMatrix() {
   await checkProfileContract();
   await checkFullFamilyConstants(createSlime, catalog);
   assert.equal(canonicalMoods.length, 42, `${FULL_SPEC}: canonical mood count`);
-  assert.equal(states.length, 24, `${FULL_SPEC}: factual state count`);
-  assert.equal(fullMatrixCells.length, 1008, `${FULL_SPEC}: every canonical mood/state cell is required`);
+  assert.equal(states.length, 25, `${FULL_SPEC}: factual state count`);
+  assert.equal(fullMatrixCells.length, 1050, `${FULL_SPEC}: every canonical mood/state cell is required`);
   const { implementedStates } = await import('../engine/scenes/constants.mjs');
-  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 24 scenes have implementations`);
+  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 25 scenes have implementations`);
   const verified = new Set();
   let frameCount = 0, variantsChecked = 0, factCasesChecked = 0, quietAliases = 0;
   for (const mood of canonicalMoods) for (const definition of states) {
@@ -544,14 +544,14 @@ function checkRouting(createSlime, catalog) {
   d.slime.oneShot({ id: 3, name: 'react', args: { say: {} } }); expect('needs_you', 'empty say ends listening');
   d.slime.setFacts({ base: 'working' }); expect('working', 'full snapshot without attn clears attention');
   let id = 10;
-  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam', 'wake_up', 'gesture']) {
+  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam', 'wake_up', 'gesture', 'notice']) {
     const single = driver(createSlime, catalog);
     single.slime.setFacts({ base: 'working' });
     single.slime.oneShot({ id: id++, name, args: { outcome: 'failure', ctx: 'continuation', loops: 1 } });
     route(single, name); visited.add(name);
   }
   const planned = JSON.parse(fs.readFileSync(path.join(root, 'state-plan.json'), 'utf8')).states.map(state => state.id);
-  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 24 existing state IDs from current facts`);
+  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 25 existing state IDs from current facts`);
   const stopped = driver(createSlime, catalog);
   stopped.slime.oneShot({ id: 1, name: 'task_complete', args: { outcome: 'failure' } }); route(stopped, 'task_complete');
   stopped.slime.oneShot({ id: 2, name: 'stop_listening' }); route(stopped, 'task_complete', 'stop_listening does not end unrelated moments');
@@ -1107,6 +1107,37 @@ async function checkGestures(createSlime, catalog) {
   assert.equal(working.after.actingSuppressed, true, `${GESTURES}: and stops when the work comes back`);
 }
 
+// CONTINUITY.md, Notice: it hears its name and looks up at you, three takes
+// dealt as any state's, each a gag under a face it borrows, leaning in.
+async function checkNotices(createSlime, catalog) {
+  const NOTICE = 'CONTINUITY.md, Notice';
+  const { noticeNames, gestureRecipe } = await import('../engine/scenes/gesture.mjs');
+  assert.deepEqual(catalog.notices.map(g => g.id), noticeNames, `${NOTICE}: the catalogue's takes in order`);
+  assert.deepEqual(plan.states.find(state => state.id === 'notice').variations, noticeNames, `${NOTICE}: the state's variations`);
+  assert.equal(takesOf('notice'), 3, `${NOTICE}: three takes`);
+  checkGagShapes(catalog.notices, NOTICE);
+  for (const [variant, g] of catalog.notices.entries()) {
+    assert.ok(catalog.expressions[g.face], `${NOTICE}: ${g.id} borrows a face there is (${g.face})`);
+    assert.equal(gestureRecipe(catalog.notices, variant).gag, `gesture:${g.id}`, `${NOTICE}: ${g.id} names its gag`);
+    const d = driver(createSlime, catalog, 'calm');
+    d.slime.setFacts({ base: 'working', act: 'terminal' }); d.advance(160);
+    d.slime.oneShot({ id: `notice-${variant}`, name: 'notice', hold: true, args: { variant, mood: g.face } });
+    const frames = [];
+    d.advance(Math.ceil(g.duration * 1000 / STEP_MS) * STEP_MS, frame => frames.push(frame));
+    assert.ok(frames.every(frame => frame.scene.state === 'notice' && frame.scene.variant === variant), `${NOTICE}: ${g.id} is its take`);
+    assert.ok(frames.slice(1).every(frame => frame.performance?.type === `gesture:${g.id}`), `${NOTICE}: ${g.id} plays its gag`);
+    assert.equal(frames.slice(1).filter(frame => frame.props.start.visible > 0).length, 0, `${NOTICE}: ${g.id} shows no start card`);
+    assert.ok(Math.max(...frames.map(f => f.life[2])) > 0.04, `${NOTICE}: ${g.id} leans in toward you`);
+    d.slime.clearTransient(); d.slime.holdExpression(null);
+    route(d, 'terminal', `${NOTICE}: ${g.id} returns to its look`);
+  }
+  // Without a take asked, one is dealt.
+  const dealt = driver(createSlime, catalog);
+  dealt.slime.setFacts({ base: 'idle' });
+  dealt.slime.oneShot({ id: 'notice-dealt', name: 'notice', args: {} });
+  assert.ok(route(dealt, 'notice').scene.variant < 3, `${NOTICE}: a take is dealt`);
+}
+
 // The gag shapes the port's arrays take: seven cues, twenty-four keys,
 // times within the gag, each channel's keys rising and ending at rest.
 function checkGagShapes(gags, spec) {
@@ -1198,6 +1229,7 @@ export async function checkScenes({ coverageOnly = false } = {}) {
   checkContactInterruption(createSlime, catalog);
   const comedy = await checkComedy(createSlime, catalog);
   await checkGestures(createSlime, catalog);
+  await checkNotices(createSlime, catalog);
   await checkOccasions(createSlime, catalog);
   const longWork = checkLongWork(createSlime, catalog);
   smooth.finish();
@@ -1205,13 +1237,13 @@ export async function checkScenes({ coverageOnly = false } = {}) {
     traceFrames: representativeCases.length * CASE_MS / STEP_MS + 1, matrixFrames: matrix.frames,
     activeVariants: matrix.variants, factualCases: matrix.factCases, quietAliases: matrix.quietAliases, comedy, longWork,
     ownerReview: 'Representative art approved at Q1; full matrix has executed engineering evidence',
-    scope: '42 canonical moods × 24 factual states; sound, graph bridges and production ports checked separately' };
+    scope: '42 canonical moods × 25 factual states; sound, graph bridges and production ports checked separately' };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--help') {
-    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 1008 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:1008 verified cells} for the builder.');
+    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 1050 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:1050 verified cells} for the builder.');
   } else if (args.length > 0 && !(args.length === 1 && args[0] === '--coverage')) {
     console.error('Unknown arguments; use --help'); process.exitCode = 1;
   } else {

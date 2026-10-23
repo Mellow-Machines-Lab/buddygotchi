@@ -11,7 +11,7 @@ import {idleRecipe} from '../../design/slime-blob/engine/scenes/idle.mjs';
 import {takesOf} from '../../design/slime-blob/engine/scenes/index.mjs';
 import {gestureRecipe} from '../../design/slime-blob/engine/scenes/gesture.mjs';
 import {lookOccasions} from '../../design/slime-blob/engine/scenes/occasion.mjs';
-export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam','wake_up','gesture'];
+export const states=['idle','working','needs_you','task_complete','asleep','no_app','listening','starting','planning','terminal','tool_use','searching','analyzing','testing','delegating','helper_return','waiting','reply_ready','error','stopped','poked','tap_spam','wake_up','gesture','notice'];
 // The contact kinds, as the port's ContactKind numbers them: the scenes',
 // then comedy's (a gag's sneeze and zoomies, a snore's breath).
 export const kinds=['key_contact','screen_knock','body_contact','alert_reveal','success_reveal','failure_reveal','result_reveal','start_reveal','helper_reveal','reply_ready_reveal','error_reveal','stopped_reveal',
@@ -19,6 +19,7 @@ export const kinds=['key_contact','screen_knock','body_contact','alert_reveal','
 function recipe(p,{state,outcome,ctx},v,design){
  let r,jitter=false;
  if(state==='gesture')r=gestureRecipe(design.gestures,v);
+ else if(state==='notice')r=gestureRecipe(design.notices,v);
  else if(['working','planning','terminal','tool_use','searching','analyzing','testing','waiting'].includes(state)){r=deskRecipe(state,p.mood,v,()=>.5,p);jitter=true;}
  else if(state==='needs_you')r=alertRecipe(v,p.mood,p);
  else if(state==='task_complete')r=resultRecipe(outcome||null,v,p.mood,p);

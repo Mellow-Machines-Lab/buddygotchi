@@ -12,6 +12,7 @@ import {renderWakeScene,wakeScore} from './wake-art.mjs';
 import {renderComedyScene,comedyScore} from './comedy-art.mjs';
 import {renderOccasionScene,occasionScore} from './occasion-art.mjs';
 import {renderGestureScene,gestureScore} from './gesture-art.mjs';
+import {renderNoticeScene,noticeScore} from './notice-art.mjs';
 
 export function makeScene(id){
   const asset=getAsset(id);
@@ -20,6 +21,7 @@ export function makeScene(id){
   if(asset.renderer==='comedy-v1')return {asset,svg:renderComedyScene(asset),score:quietMix(asset,comedyScore(asset))};
   if(asset.renderer==='occasion-v1')return {asset,svg:renderOccasionScene(asset),score:quietMix(asset,occasionScore(asset))};
   if(asset.renderer==='gesture-v1')return {asset,svg:renderGestureScene(asset),score:quietMix(asset,gestureScore(asset))};
+  if(asset.renderer==='notice-v1')return {asset,svg:renderNoticeScene(asset),score:quietMix(asset,noticeScore(asset))};
   if(asset.renderer==='state-v3')return {asset,svg:renderStateScene(asset),score:quietMix(asset,stateScore(asset))};
   const svg=asset.state==='needs_you'?renderNeedsYou(asset):syncKeyboard(renderVariation(asset.mood,asset.state,asset.variation,asset.name),asset);
   return {asset,svg,score:quietMix(asset,composeScore(asset,svg))};

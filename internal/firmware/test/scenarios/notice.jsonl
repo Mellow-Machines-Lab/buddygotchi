@@ -1,0 +1,20 @@
+// `notice`: you named it in your prompt, and it looks up at you, the
+// brain's reaction (notice-art.mjs): a perk with exclamations, a happy hop,
+// a beam. Each asked for by its variation, and with a sign.
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"happy","busy":1}
+{"clock":1000}
+{"t":"do","name":"notice","play":"now","args":{"variant":1}}
+{"expect":{"moment":{"anim":"notice","variant":1}}}
+{"clock":1500}
+{"shot":"perk"}
+{"clock":10000}
+{"t":"state","base":"idle","mood":"calm"}
+{"t":"do","name":"notice","play":"now","args":{"variant":2}}
+{"clock":10800}
+{"shot":"hop"}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"curious"}
+{"t":"do","name":"notice","play":"now","args":{"variant":3,"sign":"that's me!"}}
+{"clock":21200}
+{"shot":"beam-sign"}

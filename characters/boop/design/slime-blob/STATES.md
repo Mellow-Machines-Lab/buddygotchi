@@ -1,6 +1,6 @@
 # State coverage and event mapping
 
-Updated 2026-10-22. The exact 24 state IDs, trigger descriptions, authored
+Updated 2026-10-23. The exact 25 state IDs, trigger descriptions, authored
 variations (three each; idle's six and asleep's four, with their comedy,
 and a gesture's ten)
 and nine visual scene families are in [state-plan.json](state-plan.json). The router and reference scene modules
@@ -15,7 +15,7 @@ synchronized sound remain separate work.
 | Quiet rest | no_app, asleep | Lost app vs no sessions; both quiet, retained mood suppressed visually; only asleep snores now and then |
 | Idle | idle | Available but not working; face/microgesture carries mood, then now and then a yawn, a doze or a sneeze (excited has zoomies, the low moods a long yawn) |
 | Listen | listening | Actual mic-on, not every input event |
-| Start | starting, wake_up | ctx new_task/session/continuation/compacted selects truthful card; wake_up (you back after a long break) stretches with no card |
+| Start | starting, wake_up, notice | ctx new_task/session/continuation/compacted selects truthful card; wake_up (you back after a long break) stretches with no card; notice (you named it) looks up at you, a gag under a borrowed face, with no card |
 | Desk | planning, working, terminal, tool_use, searching, analyzing, testing, waiting | One computer, different activity rhythms/cues |
 | Helpers | delegating, helper_return | Dispatch/live helpers vs an observed returning helper |
 | Alert | needs_you | Permission/input pending, stable recognizable ding and sign |
@@ -24,7 +24,7 @@ synchronized sound remain separate work.
 
 The generated [coverage.json](coverage.json) enumerates every mood and
 state pairing. Each row has the expression, scene, its variation IDs,
-state/mood sound profile and required host facts. All 1,008 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
+state/mood sound profile and required host facts. All 1,050 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
 separately. Shared rest rows explicitly alias one quiet
 family; they still preserve the mood in host storage. Active cells are
 compositions, not isolated exported assets.

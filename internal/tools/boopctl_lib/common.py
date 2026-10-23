@@ -23,14 +23,15 @@ REPO = Path(__file__).resolve().parents[3]
 MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_text())["moods"]
 
 # The animations a `do` plays by name:
-# the brain's finish and wake-up and the rules' reactions, each its design's
-# state. A tap's (poked, tap_spam) the device plays itself, never by name.
-ANIMS = ["task_complete", "reply_ready", "wake_up", "starting", "stopped", "error", "helper_return"]
+# the brain's finish, wake-up and notice and the rules' reactions, each its
+# design's state. A tap's (poked, tap_spam) the device plays itself, never
+# by name.
+ANIMS = ["task_complete", "reply_ready", "wake_up", "notice", "starting", "stopped", "error", "helper_return"]
 # Every name Boop's device plays, its `hello.does`:
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
 DOES = ["react", "task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "wake_up",
-        "listening", "stop_listening"]
+        "listening", "stop_listening", "notice"]
 # The `do` names that play no animation: a face and a `say`, and ending
 # push-to-talk.
 NO_ANIM = {"react", "stop_listening"}

@@ -255,7 +255,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
-                          "\"wake_up\",\"listening\",\"stop_listening\"],\"voice\":\"") +
+                          "\"wake_up\",\"listening\",\"stop_listening\",\"notice\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
                       "\",\"pack_version\":\"" + render::kPackVersion + "\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
@@ -1774,6 +1774,23 @@ static void test_a_reaction_holds_up_its_sign() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(6, "skipped", "nothing")));
 }
 
+// `notice` (you named it in your prompt) plays its own design, the brain's
+// as a wake-up is: it never rests, so the next reaction waits for its end.
+static void test_a_notice_plays_through() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  doLine(r, 1, "notice", "next", "{\"sign\":\"that's me!\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"moment\":{\"anim\":\"notice\""));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"that's me!\""));
+  const uint32_t loop = render::loopMs(render::Mood::kHappy, render::SceneState::kNotice, 0);
+  TEST_ASSERT_TRUE(loop > 1000);
+  doLine(r, 2, "react", "next", "{\"mood\":\"proud\"}");
+  clockAt(r, 500);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":1,\"name\":\"notice\""));
+  clockAt(r, 6000);
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+}
+
 // The brain's finish never rests: the next reaction waits
 // until it's over, and one that has waited longer than its ttl is late.
 static void test_a_finish_plays_until_it_ends() {
@@ -2209,6 +2226,7 @@ int main() {
   RUN_TEST(test_the_next_reaction_waits_half_a_second_after_a_bubble);
   RUN_TEST(test_a_finish_plays_until_it_ends);
   RUN_TEST(test_a_reaction_holds_up_its_sign);
+  RUN_TEST(test_a_notice_plays_through);
   RUN_TEST(test_a_rules_reaction_never_cuts_a_say);
   RUN_TEST(test_the_compacted_card_holds_until_it_has_played);
   RUN_TEST(test_refused_reactions_say_why);

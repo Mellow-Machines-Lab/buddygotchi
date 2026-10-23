@@ -142,10 +142,13 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   bool timeout = source.look == SceneState::kNoApp;
   if (timeout != e.router.timedOut) e.linkTimedOut(timeout);
   e.setOccasion(context.when, context.lookMs);
-  // The Mac's borrowed expression, else a gesture's own face while it plays.
+  // The Mac's borrowed expression, else a gesture's or a notice's own face
+  // while it plays.
   int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
   if (borrowed < 0 && source.anim == SceneState::kGesture)
     borrowed = slime::kGestureFaces[std::min<int>(source.animVariant, slime::kGestureCount - 1)];
+  if (borrowed < 0 && source.anim == SceneState::kNotice)
+    borrowed = slime::kNoticeFaces[std::min<int>(source.animVariant, slime::kNoticeCount - 1)];
   bool nextMoment = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (nextMoment) {
     // Behaviour times the moment (its loops, its line), so the engine

@@ -198,7 +198,7 @@ function createSlime({seed=1729,catalog,reducedMotion=false}={}) {
   if(!profiles||!profiles.calm?.art)throw new TypeError('catalog.expressions must contain the expression profiles');
   const clock=createClock(),reduced={matches:Boolean(reducedMotion)};
   const cues=createCues({seed,plan:catalog.sound});
-  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],gestures:catalog.gestures||[],occasions:catalog.occasions||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
+  const actor=createActor({profiles,gags:catalog.gags||{},idleGags:catalog.idleGags||[],gestures:catalog.gestures||[],notices:catalog.notices||[],occasions:catalog.occasions||[],graph:catalog.graph,rand:createPRNG(seed),reduced});
   return {
     setMood:actor.setMood,setFacts:actor.setFacts,setOccasion:actor.setOccasion,poke:actor.poke,shake:actor.shake,
     clearTransient:actor.clearTransient,holdExpression:actor.holdExpression,oneShot:actor.oneShot,setLinkTimedOut:actor.setLinkTimedOut,
@@ -307,17 +307,17 @@ const {idleOccasions,occasionGags}=__load(9);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-function createActor({profiles,gags,idleGags,gestures=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
+function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
   // The host's tags and how long its look has shown (setOccasion).
   const occasion={when:new Set(),lookMs:0};
-  const extraGags=Object.fromEntries([...gestures.map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
+  const extraGags=Object.fromEntries([...[...gestures,...notices].map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
   const acting=createActing({profiles,gags,idleGags,extraGags,idleLooks:idleOccasions(occasions),rand,reduced,initialEmotion,occasion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
-  const scenes=createScenes({rand,reduced,profiles,gestures,occasions,occasion});
+  const scenes=createScenes({rand,reduced,profiles,gestures,notices,occasions,occasion});
   const bridges=createBridges({graph,profiles,rand,reduced});
   const posture=createPostureWeights({emotions,initialEmotion,reduced});
   function sync(time,options) {
@@ -742,7 +742,7 @@ const sceneConstants=Object.freeze({
 });
 const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
   'tool_use','searching','analyzing','testing','delegating','helper_return','waiting','needs_you','reply_ready',
-  'task_complete','error','stopped','poked','tap_spam','wake_up','gesture']);
+  'task_complete','error','stopped','poked','tap_spam','wake_up','gesture','notice']);
 
 return {sceneConstants,implementedStates};
 },
@@ -953,10 +953,10 @@ const stateFamilies=Object.freeze({
   analyzing:'desk',testing:'desk',delegating:'helpers',helper_return:'helpers',
   waiting:'desk',needs_you:'alert',reply_ready:'result',task_complete:'result',
   error:'result',stopped:'result',poked:'touch',tap_spam:'touch',
-  wake_up:'start',gesture:'touch'
+  wake_up:'start',gesture:'touch',notice:'start'
 });
 const acts=new Set(['planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting']);
-const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture','react']);
+const momentNames=new Set(['starting','helper_return','reply_ready','task_complete','error','stopped','poked','tap_spam','wake_up','gesture','notice','react']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const text=value=>typeof value==='string'?value:'';
 const attentionTuple=attn=>JSON.stringify([attn.id??0,attn.agent,attn.project]);
@@ -1091,7 +1091,7 @@ const hiddenContent=Object.freeze({alert:{requestId:null,agent:'',project:'',nam
   result:{state:null,label:'FINISHED',outcome:null,reveal:0},start:{label:'START',ctx:null,reveal:0},
   helpers:{mode:'dispatch',count:0,progress:0,report:false,direction:1,presence:0},listening:{pulse:.5},touch:{kind:null}});
 
-function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
+function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
   const looks=lookOccasions(occasions).map((entry,index)=>({...entry,index}));
   const variation=createVariations(rand),alerts=new Map(),moments=new Map();
   const activity={lean:{x:0,v:0},squash:{x:0,v:0},forward:{x:0,v:0}};
@@ -1128,6 +1128,7 @@ function createScenes({rand,reduced,profiles,gestures=[],occasions=[],occasion={
     const profile=profiles[expression];
     if(look)recipe=realizeOccasion(look.recipe,rand);
     else if(route.state==='gesture')recipe=gestureRecipe(gestures,variant);
+    else if(route.state==='notice')recipe=gestureRecipe(notices,variant);
     else if(route.family==='desk')recipe=deskRecipe(route.state,mood,variant,rand,profile);
     else if(route.state==='needs_you'){
       recipe=alertRecipe(variant,mood,profile);
@@ -1576,12 +1577,15 @@ function gestureRecipe(gestures,variant) {
     contacts:gesture.contacts.map(([at,kind,strength,side])=>({at:Math.round(at*1000),kind,side,strength})),
     gag:gestureGagName(gesture)};
 }
+// The notice state's takes (CONTINUITY.md, Notice): it hears its name and
+// looks up at you, each take a gesture's shape, dealt as any state's are.
+const noticeNames=Object.freeze(['notice-perk','notice-hop','notice-tilt']);
 // A gesture's gag: its keys and impulses; its sounds are the scene's.
 function gestureGag(gesture) {
   return {label:gesture.label,duration:gesture.duration,keys:gesture.keys,cues:gesture.cues,contacts:[]};
 }
 
-return {gestureNames,gestureTailMs,gestureGagName,gestureRecipe,gestureGag};
+return {gestureNames,gestureTailMs,gestureGagName,gestureRecipe,noticeNames,gestureGag};
 },
 27:()=>{
 // CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.

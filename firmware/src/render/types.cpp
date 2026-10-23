@@ -5,7 +5,8 @@ namespace {
 constexpr const char* kStateNames[] = {
     "idle",     "working",     "needs_you", "task_complete", "asleep",    "no_app",   "listening",  "starting",
     "planning", "terminal",    "tool_use",  "searching",     "analyzing", "testing",  "delegating", "helper_return",
-    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam", "wake_up",    "gesture"};
+    "waiting",  "reply_ready", "error",     "stopped",       "poked",     "tap_spam", "wake_up",    "gesture",
+    "notice"};
 constexpr const char* kGestureNames[] = {"handoff", "stroke",  "ruffle", "nose",    "tickle",
                                          "dizzy",   "pickup",  "putdown", "startle", "peekaboo"};
 static_assert(sizeof kGestureNames / sizeof kGestureNames[0] == int(Gesture::kCount), "a name for every gesture");
@@ -41,6 +42,7 @@ bool isReaction(SceneState s) {
     case SceneState::kTaskComplete:
     case SceneState::kReplyReady:
     case SceneState::kWakeUp:
+    case SceneState::kNotice:
     case SceneState::kStarting:
     case SceneState::kStopped:
     case SceneState::kError:

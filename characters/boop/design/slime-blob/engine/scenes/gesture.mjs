@@ -12,6 +12,9 @@ export function gestureRecipe(gestures,variant) {
     contacts:gesture.contacts.map(([at,kind,strength,side])=>({at:Math.round(at*1000),kind,side,strength})),
     gag:gestureGagName(gesture)};
 }
+// The notice state's takes (CONTINUITY.md, Notice): it hears its name and
+// looks up at you, each take a gesture's shape, dealt as any state's are.
+export const noticeNames=Object.freeze(['notice-perk','notice-hop','notice-tilt']);
 // A gesture's gag: its keys and impulses; its sounds are the scene's.
 export function gestureGag(gesture) {
   return {label:gesture.label,duration:gesture.duration,keys:gesture.keys,cues:gesture.cues,contacts:[]};

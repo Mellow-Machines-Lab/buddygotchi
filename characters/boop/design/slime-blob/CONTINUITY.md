@@ -1,6 +1,6 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-22. The pure reference engine and all activity scene
+Updated 2026-10-23. The pure reference engine and all activity scene
 families are implemented, idle, sleep and a finish have their comedy
 (Comedy, below), the board's gestures have a take each (Gestures) and
 the looks have occasions (Occasions). Q1 representative art review was approved on
@@ -289,11 +289,11 @@ safe envelope or produce competing repeated impacts.
 
 ## Full activity scene matrix
 
-The reference engine implements all 24 factual states in the nine scene
+The reference engine implements all 25 factual states in the nine scene
 families from [state-plan.json](state-plan.json). The full check executes
-all 42 canonical moods × 24 states: 1,008 cells, including 84 quiet aliases
+all 42 canonical moods × 25 states: 1,050 cells, including 84 quiet aliases
 for asleep/no-app. Starting is exercised with each of its four contexts,
-and task-complete with success and failure, giving 1,176 factual test
+and task-complete with success and failure, giving 1,218 factual test
 cases. Every active case exercises all its variants: three, a successful
 finish's four, a gesture's ten (each asked for, as the board does), and
 idle's takes (an expression's three gestures and its comedy, six or
@@ -538,6 +538,18 @@ recipe has no gag. A recipe with a gag recovers with the gag, not with the
 expression's recovery gesture. `scripts/gestures.jsonl` plays all ten as
 the board does (held, with their faces), one from work and one with no
 take named, and the port replays it frame for frame.
+
+## Notice
+
+The brain's reaction when you name it in your prompt: it heard its name and
+looks up at you, surprised and pleased. Its three takes are `notices` in
+`expressions.json`, each a gesture's shape (a gag of keys and impulses
+under a face it borrows, the scene's contacts) and played as one
+(`gestureRecipe`), but dealt from its bag as any state's takes are:
+`notice-perk` perks up and leans in (surprised), `notice-hop` hops and
+beams (happy), `notice-tilt` tilts toward you and leans in (pleased). It
+is the start family with no card. The board borrows each take's face
+(`kNoticeFaces`) unless the Mac sends a mood with it.
 
 ## Occasions
 
