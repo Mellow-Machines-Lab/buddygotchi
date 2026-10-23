@@ -6,6 +6,7 @@
 #include "faces.h"
 #include "render/palette.h"
 #include "render/pixel/held.h"
+#include "render/pixel/outfit.h"
 
 namespace render {
 
@@ -272,11 +273,11 @@ void drawScene(Canvas& c, const SceneFrame& f) {
   }
 }
 
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const char* held,
-                    int heldOffset) {
+void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over) {
   c.fill(kBlack);
   drawScene(c, face);
-  if (held) drawHeld(c, held, heldOffset);
+  if (over.dressed) drawOutfit(c, over.when, over.mood, over.ms);
+  if (over.held) drawHeld(c, over.held, over.heldOffset);
   drawLane(c, bubble, s);
 }
 

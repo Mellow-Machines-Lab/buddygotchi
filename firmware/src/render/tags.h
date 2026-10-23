@@ -27,4 +27,11 @@ uint32_t busyTags(int working);
 constexpr int kBusyPace = 125, kFranticPace = 160;
 int workPace(int working);
 
+// What a face wears for the tags on, when it dresses for them (the gel's
+// layers, Pixel's overlays): the first that fits, Halloween's witch hat,
+// a party hat (a party day, New Year's Day, Lunar New Year, Programmers'
+// Day), a nightcap at night, a bobble hat in winter; else none.
+enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
+Outfit outfitFor(uint32_t when);
+
 }  // namespace render

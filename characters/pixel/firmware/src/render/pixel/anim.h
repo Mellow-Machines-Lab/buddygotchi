@@ -3,6 +3,7 @@
 #include "render/face.h"
 #include "render/pixel/effect_track.h"
 #include "render/pixel/held.h"
+#include "render/pixel/outfit.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sign.h"
 #include "render/pixel/sounds.h"

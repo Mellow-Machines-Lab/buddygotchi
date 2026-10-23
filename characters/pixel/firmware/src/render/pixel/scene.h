@@ -82,16 +82,25 @@ inline void drawScene(Canvas& c, const SceneShow& s) { drawScene(c, sceneFrame(s
 // The palette entry for a design colour (faces::kColors), for the tests.
 uint8_t sceneInk(int color);
 
-// The face as its design shows it, the sign it holds up when there's one
-// (`held`, `heldOffset` px below its place: render/pixel/held.h), and the
-// bubble with the line's text (its take's, in amber) when there's one,
-// else the strip. The face is a frame sceneFrame made, or a show for the
-// tests, as drawScene takes it.
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const char* held = nullptr,
-                    int heldOffset = 0);
+// What's drawn over the face: what it wears and the air around it, when it
+// dresses (render/pixel/outfit.h: for `when`, in `mood`, at `ms`), and the
+// sign it holds up, when there's one (`held`, `heldOffset` px below its
+// place: render/pixel/held.h).
+struct Overlays {
+  bool dressed = false;
+  Mood mood = kStartupMood;
+  uint32_t when = 0, ms = 0;
+  const char* held = nullptr;
+  int heldOffset = 0;
+};
+// The face as its design shows it, its overlays, and the bubble with the
+// line's text (its take's, in amber) when there's one, else the strip.
+// The face is a frame sceneFrame made, or a show for the tests, as
+// drawScene takes it.
+void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over = {});
 inline void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s,
-                           const char* held = nullptr, int heldOffset = 0) {
-  drawFaceScreen(c, sceneFrame(face), bubble, s, held, heldOffset);
+                           const Overlays& over = {}) {
+  drawFaceScreen(c, sceneFrame(face), bubble, s, over);
 }
 
 }  // namespace render

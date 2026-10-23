@@ -32,9 +32,6 @@ struct SignLayer {
   static constexpr int kBobPx = 3;
 };
 
-// What it wears for the tags on (render/tags.h bits); the first that fits.
-enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
-Outfit outfitFor(uint32_t when);
 // How far its lids hang at night (Q12, as PaintControls::blink): 0 by day,
 // and asleep, when they're shut anyway.
 constexpr int kNightLids = 1100;
