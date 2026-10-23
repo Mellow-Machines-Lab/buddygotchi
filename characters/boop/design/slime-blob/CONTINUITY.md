@@ -579,6 +579,24 @@ looks' quicker pace while the agents are busy is the board's
 night, a party, twenty idle minutes, frantic and busy work, twenty working
 minutes, a night asleep and half an hour asleep, and the port replays it.
 
+### Layers over the body (the board's)
+
+The engine draws no costume, but the board's port draws layers over the
+body by the same tags, after the face art and before the props
+(`firmware/src/render/gel/layers.h`): a hat by the first tag that has one
+(Halloween's witch hat; a party hat for party, New Year's, Lunar New Year
+and Programmers' Day; a nightcap at night; a bobble hat in winter),
+shades on a Friday's day, and the air (snow, confetti, hearts, Zs asleep
+at night), and last the sign a reaction holds up. Each sits on anchors
+the painter takes from the very vertices it projects for the body
+(`Anchors`: the dome's apex, ring 6's sides and front for a brim, ring
+15's for the hands) and the face art's eye centres, so a layer leans,
+squashes, dips under a finger and slides off the screen with the body
+and is cut off there with it. Peekaboo's gesture hides the hat. At night,
+but asleep, the lids hang a little lower (`kNightLids`). The layers read
+the engine and never change it, so the traces don't see them; the Mac's
+mirror doesn't draw them yet.
+
 ## States share one scene
 
 Build a persistent desk and computer once. Working, terminal, searching,

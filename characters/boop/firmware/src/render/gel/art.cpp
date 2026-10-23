@@ -4,7 +4,7 @@
 #include "render/gel/geometry.h"
 #include "slime_art.h"
 namespace render::gel {
-void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bool mouthOpen) {
+void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bool mouthOpen, Anchors* anchors) {
   if (!surface.pixels) return;
   Raster raster{surface};
   const auto& f = engine.face;
@@ -31,6 +31,10 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
     // body instead of stepping a whole pixel at a time.
     return projection.face(x, y);
   };
+  if (anchors) {  // each eye's middle, where its art is centred
+    const Point l = projection.face(-eyeX + c.gaze, eyeY), r = projection.face(eyeX + c.gaze, eyeY);
+    anchors->eyeL = {l.x, l.y}, anchors->eyeR = {r.x, r.y};
+  }
   auto range = slime::kArt[f.artId];
   Point vertices[96], clip[96];
   for (int i = 0; i < range.count; ++i) {

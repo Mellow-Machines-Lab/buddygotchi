@@ -15,6 +15,7 @@
 #include "linkkit/kit.h"
 #include <new>
 #include "render/gel/lane.h"
+#include "render/gel/layers.h"
 #include "render/tags.h"
 #include "fonts_gel.h"
 using namespace render;
@@ -750,6 +751,56 @@ static void test_tracked_clear_matches_full_clear() {
 // frightened face and asleep allocate nothing; only messages and events
 // do, into bounded histories. (ArduinoJson's documents use malloc, so a
 // line's parsing isn't counted here.)
+// The layers (render/gel/layers.h) sit on the anchors of the pose that drew
+// the body: the crown over the brim's ring over the hands'; they move with
+// the body. The outfit is the first that fits its tags, and a night's lids
+// hang lower but asleep.
+static void test_layers_follow_the_bodys_anchors() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  Anchors at;
+  paint(s, *e, false, 0, 0, &at);
+  TEST_ASSERT_TRUE(at.crown.y < at.brimF.y && at.brimF.y < at.handF.y);
+  TEST_ASSERT_TRUE(at.brimL.x < at.crown.x && at.crown.x < at.brimR.x);
+  TEST_ASSERT_TRUE(at.handL.x < at.handF.x && at.handF.x < at.handR.x);
+  TEST_ASSERT_TRUE(at.eyeL.x < at.eyeR.x && at.brimF.y < at.eyeL.y && at.eyeL.y < at.handF.y + 16 * 40);
+  TEST_ASSERT_TRUE(at.crown.y > 0 && at.handF.y / 16 < 410 * 4 / 5);
+  Anchors pressed;
+  paint(s, *e, false, 2, 0, &pressed);  // the press dips the body, and the layers with it
+  TEST_ASSERT_EQUAL_INT(at.crown.y + 32, pressed.crown.y);
+  TEST_ASSERT_EQUAL_INT(at.handF.y + 32, pressed.handF.y);
+  auto tags = [](std::initializer_list<const char*> names) {
+    uint32_t when = 0;
+    for (const char* n : names) when |= tagBit(n);
+    return when;
+  };
+  TEST_ASSERT_EQUAL(int(Outfit::kNone), int(outfitFor(tags({"day", "friday"}))));
+  TEST_ASSERT_EQUAL(int(Outfit::kNightcap), int(outfitFor(tags({"night", "winter"}))));
+  TEST_ASSERT_EQUAL(int(Outfit::kBobble), int(outfitFor(tags({"morning", "winter"}))));
+  TEST_ASSERT_EQUAL(int(Outfit::kPartyHat), int(outfitFor(tags({"night", "party"}))));
+  TEST_ASSERT_EQUAL(int(Outfit::kPartyHat), int(outfitFor(tags({"day", "programmers"}))));
+  TEST_ASSERT_EQUAL(int(Outfit::kWitchHat), int(outfitFor(tags({"night", "halloween", "party"}))));
+  TEST_ASSERT_EQUAL_INT(0, sleepyLids(*e));
+  e->setOccasion(tags({"night"}), 0);
+  TEST_ASSERT_EQUAL_INT(kNightLids, sleepyLids(*e));
+  // A nightcap covers the dome's top: the pixels just over the crown change.
+  const std::vector<uint16_t> bare(px);
+  paint(s, *e, false, 0, 0, &at);
+  const size_t over = size_t(at.crown.y / 16 - 4) * 502 + size_t(at.crown.x / 16);
+  TEST_ASSERT_NOT_EQUAL(bare[over], px[over]);
+  // Every layer at once, asleep (a hat, shades, snow, confetti, hearts and
+  // Zs), off the heap.
+  e->setOccasion(tags({"night", "winter", "party", "valentines", "friday"}), 0);
+  e->scenes.route.state = SceneState::kAsleep;
+  allocCount = 0;
+  allocCounting = true;
+  for (int i = 0; i < 20; ++i) paintLayers(s, *e, at);
+  allocCounting = false;
+  TEST_ASSERT_EQUAL_INT(0, allocCount);
+}
+
 static void test_steady_frames_allocate_nothing() {
   struct Hal : app::Hal {
     uint32_t realMs() override { return 0; }
@@ -1060,5 +1111,6 @@ int main() {
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
+  RUN_TEST(test_layers_follow_the_bodys_anchors);
   return UNITY_END();
 }
