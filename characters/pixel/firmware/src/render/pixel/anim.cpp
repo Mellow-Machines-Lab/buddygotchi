@@ -219,13 +219,17 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   } else {
     drawnSign_ = false;
     SceneFrame frame = sceneFrame(show);
-    // The sign held up, where it is now: part of the key, as it moves on its own.
-    const int held = sign.text ? heldOffset(sign.ms, show.dy) : 0;
+    // The overlays, as they are now: part of the key, as they move on their own.
+    Overlays over;
+    const uint32_t dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
+    over.dressed = dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
+    over.held = sign.text, over.heldOffset = sign.text ? heldOffset(sign.ms, show.dy) : 0;
     uint64_t key = frameKey(frame, bubble != nullptr);
-    if (sign.text) key ^= uint64_t(uint32_t(held + 1024)) << 40 | uint64_t(1) << 62;
+    if (sign.text) key ^= uint64_t(uint32_t(over.heldOffset + 1024)) << 40 | uint64_t(1) << 62;
+    if (dress) key = (key ^ dress) * 1099511628211ull | uint64_t(1) << 63;
     if (!dirty && key == drawnKey_) return false;
     drawnKey_ = key;
-    drawFaceScreen(c, frame, bubble, strip, sign.text, held);
+    drawFaceScreen(c, frame, bubble, strip, over);
   }
   return true;
 }

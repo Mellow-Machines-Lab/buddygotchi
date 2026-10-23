@@ -456,7 +456,12 @@ Besides drawing each mood and state, a face:
   one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
   morning, a nightcap at night, a party hat, Halloween, winter,
   Valentine's, Friday's shades, a frantic sweat, a stretch after twenty
-  minutes' work, a dream after half an hour's sleep. The working looks
+  minutes' work, a dream after half an hour's sleep. Over idle's and
+  asleep's other variations Pixel draws the same hats and air itself, by
+  the tags (`render/pixel/outfit.h`, `render::outfitFor` in
+  `render/tags.h` the one rule for which hat), so it's dressed whichever
+  variation shows; its working looks and reactions draw their own props
+  where a hat would go, and stay as they are. The working looks
   also play 125% quicker while the agents are busy and 160% while
   frantic (`render::workPace`, which each face gets as
   `FaceContext::pace`). The gel's are takes its engine deals

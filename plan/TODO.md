@@ -58,7 +58,10 @@ and new actions. One personality (Boop's default nature) for now.
 - [x] **More scenarios** (evals 104-114, Mac side) from the catalogue: a bug hunt, a new feature,
       a refactor, tests, a deploy (panic on a Friday), docs, a question,
       an essay of a prompt, "just" and "quickly", "be careful", thanks.
-- [ ] **Pixel gets the layers too**, after the gel.
+- [x] **Pixel gets the layers too**, after the gel. Its hats and air
+      over idle's and asleep's plain variations (`render/pixel/outfit.h`),
+      at the place its occasion art puts them, and the sign; its working
+      looks and reactions keep their own props up there, undressed.
 - [ ] **Fluid animations and interactions.** Today the face visibly cuts
       from one state to the next (a look to a reaction and back, one mood
       to another, a gesture in and out). It should flow: blend between

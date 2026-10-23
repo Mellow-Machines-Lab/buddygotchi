@@ -11,7 +11,9 @@
 #include "linkkit/codec.h"
 #include "frames.h"
 #include "render/palette.h"
+#include "render/pixel/outfit.h"
 #include "render/pixel/scene.h"
+#include "render/tags.h"
 
 using namespace render;
 
@@ -391,6 +393,36 @@ static void test_a_fade_changes_the_frame() {
   TEST_ASSERT_TRUE(changed);
 }
 
+// What Pixel wears (render/pixel/outfit.h): only over idle's and asleep's
+// variations that aren't occasions, which have their own; nothing without
+// a tag for it; the air moves a step every 400 ms, and the hat is drawn
+// where the occasion art puts it.
+static void test_it_dresses_for_the_tags_over_its_plain_looks() {
+  const Mood happy = moodFromName("happy");
+  TEST_ASSERT_TRUE(dresses(happy, SceneState::kIdle, 0));
+  TEST_ASSERT_TRUE(dresses(happy, SceneState::kAsleep, 0));
+  TEST_ASSERT_FALSE(dresses(happy, SceneState::kWorking, 0));
+  TEST_ASSERT_FALSE(dresses(happy, SceneState::kTaskComplete, 0));
+  int occasions = 0;
+  for (int v = 0; v < variants(happy, SceneState::kIdle); ++v)
+    if (tagged(happy, SceneState::kIdle, v)) {
+      TEST_ASSERT_FALSE(dresses(happy, SceneState::kIdle, v));
+      ++occasions;
+    }
+  TEST_ASSERT_TRUE(occasions > 0);
+  const uint32_t night = tagBit("night"), winter = tagBit("winter"), friday = tagBit("friday");
+  TEST_ASSERT_EQUAL_UINT32(0, outfitKey(0, happy, 0));
+  TEST_ASSERT_EQUAL_UINT32(0, outfitKey(friday, happy, 0));  // Friday's shades are its occasion's alone
+  TEST_ASSERT_NOT_EQUAL(0, outfitKey(night, happy, 0));
+  TEST_ASSERT_EQUAL_UINT32(outfitKey(winter, happy, 0), outfitKey(winter, happy, 399));
+  TEST_ASSERT_NOT_EQUAL(outfitKey(winter, happy, 0), outfitKey(winter, happy, 400));
+  Buf b;
+  drawOutfit(b.c, night, happy, 0);
+  TEST_ASSERT_NOT_EQUAL(kBlack, b.at(160, 30));  // the cap
+  TEST_ASSERT_NOT_EQUAL(kBlack, b.at(160, 44));  // its band
+  TEST_ASSERT_EQUAL(kBlack, b.at(160, 120));     // the face is left alone
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -406,5 +438,6 @@ int main(int, char**) {
   RUN_TEST(test_needs_you_leaves_the_bottom_lane);
   RUN_TEST(test_frames_change_only_when_the_picture_can);
   RUN_TEST(test_a_fade_changes_the_frame);
+  RUN_TEST(test_it_dresses_for_the_tags_over_its_plain_looks);
   return UNITY_END();
 }

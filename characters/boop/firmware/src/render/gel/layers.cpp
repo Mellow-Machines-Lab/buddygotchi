@@ -198,15 +198,6 @@ void zs(Raster& r, const Anchors& at, int ms) {
 
 }  // namespace
 
-Outfit outfitFor(uint32_t when) {
-  if (on(when, "halloween")) return Outfit::kWitchHat;
-  if (on(when, "party") || on(when, "newyear") || on(when, "lunar") || on(when, "programmers"))
-    return Outfit::kPartyHat;
-  if (on(when, "night")) return Outfit::kNightcap;
-  if (on(when, "winter")) return Outfit::kBobble;
-  return Outfit::kNone;
-}
-
 int sleepyLids(const Engine& e) {
   return on(e.scenes.when, "night") && e.scenes.route.state != SceneState::kAsleep ? kNightLids : 0;
 }
