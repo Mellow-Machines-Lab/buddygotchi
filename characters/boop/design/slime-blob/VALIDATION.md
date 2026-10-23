@@ -169,8 +169,10 @@ internal/tools/boopctl sim --face gel
   long yawn, the zoomies at either edge, a snore, the hiccups and the
   gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
   on the nose, a shake and peekaboo, each by the board's own input, its
-  variation expected) and the occasions (`occasions.jsonl`: a party's
-  bounce, a night's drowse, frantic typing).
+  variation expected), the occasions (`occasions.jsonl`: a party's
+  bounce, a night's drowse, frantic typing) and a reaction's sign
+  (`sign.jsonl`: the card held up over idle and over a finish, with how
+  long it stays).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
 

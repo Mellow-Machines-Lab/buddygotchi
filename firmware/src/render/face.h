@@ -36,6 +36,12 @@ struct FaceSource {
   SceneState state() const { return anim != SceneState::kNone ? anim : look; }
   uint8_t variant() const { return anim != SceneState::kNone ? animVariant : lookVariant; }
 };
+// The sign a reaction holds up while it plays (its `sign`): the words, at
+// most 18 glyphs of the fonts, and how long it has shown. No text for none.
+struct SignShow {
+  const char* text = nullptr;
+  uint32_t ms = 0;
+};
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
   Mood mood = kStartupMood;
@@ -117,12 +123,12 @@ class Face {
   // What shows at t, with the device's additions: the mouth talking and
   // the press's dip.
   virtual SceneShow show(uint32_t t, bool mouthOpen, int dy) const = 0;
-  // Draws the face and the shared lane: into the canvas, or into `native`
-  // when it draws natively. `dirty` when something besides the face's own
-  // clock changed since the last frame. Returns false when the pixels have
-  // not changed.
+  // Draws the face, the sign it holds up and the shared lane: into the
+  // canvas, or into `native` when it draws natively. `dirty` when something
+  // besides the face's own clock changed since the last frame. Returns
+  // false when the pixels have not changed.
   virtual bool draw(Canvas& canvas, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                    const Strip& strip, bool dirty) = 0;
+                    const SignShow& sign, const Strip& strip, bool dirty) = 0;
   // The sounds due at t, each with its own duck, and whether the last
   // ones should stop first; `shown` is false while the test pattern hides
   // the face.

@@ -225,10 +225,10 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 
 // The lane is drawn at the panel's size too (render/gel/lane.h), so the
 // canvas is left to the test pattern.
-bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble, const Strip& strip,
-                   bool) {
+bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
+                   const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, strip);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip);
   return true;
 }
 

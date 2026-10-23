@@ -2,6 +2,7 @@
 #pragma once
 #include "render/face.h"
 #include "render/pixel/effect_track.h"
+#include "render/pixel/held.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sign.h"
 #include "render/pixel/sounds.h"
@@ -40,7 +41,8 @@ class PixelFace final : public Face {
   }
   bool blinking(uint32_t t) const override;
   SceneShow show(uint32_t t, bool mouthOpen, int dy) const override;
-  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const Strip&, bool) override;
+  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const Strip&,
+            bool) override;
   int cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) override;
 
  private:

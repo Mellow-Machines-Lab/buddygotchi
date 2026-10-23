@@ -6,6 +6,7 @@
 
 #include "fonts_gel.h"
 #include "render/font.h"
+#include "render/gel/layers.h"
 #include "render/gel/painter.h"
 #include "render/gel/profile.h"
 #include "render/gel/raster.h"
@@ -47,9 +48,9 @@ void glyph(Raster& r, const Font& f, int x, int y, int g, uint16_t ink) {
   r.alpha = opacity;
 }
 
-// Text whose cells start at (x, y): at most `room` px of it, ending ".."
-// when cut, as the canvas's drawStringFit. Returns the x after it.
-int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20) {
+}  // namespace
+
+int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room) {
   const bool fits = glyphCount(s) * f.w <= room;
   int left = fits ? room : room / f.w - 2;  // leave space for ".."
   for (int g; left > 0 && (g = nextGlyph(s)) >= 0; --left, x += f.w) glyph(r, f, x, y, g, ink);
@@ -57,6 +58,8 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
     for (int i = 0; i < 2; ++i, x += f.w) glyph(r, f, x, y, '.' - 0x20, ink);
   return x;
 }
+
+namespace {
 
 // The line in its bubble, which takes the whole lane: a box with round
 // corners and a short tail up to the face, the text centred in the
@@ -218,11 +221,13 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
   surface.laneKeyFrom = l.y(kLaneTop);
 }
 
-void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const Strip& s) {
+void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
+                const Strip& s) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
   paint(surface, e, mouthOpen, dy, key);
+  if (sign.text) paintSign(surface, sign, dy);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);
 }

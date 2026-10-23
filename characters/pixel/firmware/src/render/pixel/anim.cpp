@@ -207,8 +207,8 @@ int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) 
   if (until > arcCovered_) arcCovered_ = until;
   return n;
 }
-bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble, const Strip& strip,
-                     bool dirty) {
+bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble,
+                     const SignShow& sign, const Strip& strip, bool dirty) {
   if (strip.agent && show.state == SceneState::kNeedsYou) {
     SignPose pose = signPose(designMs(t), show.eyesShut, show.dy);
     if (!dirty && drawnSign_ && pose == drawnPose_) return false;
@@ -219,10 +219,13 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   } else {
     drawnSign_ = false;
     SceneFrame frame = sceneFrame(show);
+    // The sign held up, where it is now: part of the key, as it moves on its own.
+    const int held = sign.text ? heldOffset(sign.ms, show.dy) : 0;
     uint64_t key = frameKey(frame, bubble != nullptr);
+    if (sign.text) key ^= uint64_t(uint32_t(held + 1024)) << 40 | uint64_t(1) << 62;
     if (!dirty && key == drawnKey_) return false;
     drawnKey_ = key;
-    drawFaceScreen(c, frame, bubble, strip);
+    drawFaceScreen(c, frame, bubble, strip, sign.text, held);
   }
   return true;
 }

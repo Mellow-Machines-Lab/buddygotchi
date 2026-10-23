@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "linkkit/codec.h"
+#include "render/font.h"
 #include "render/maths.h"
 #include "render/palette.h"
 #include "render/pattern.h"
@@ -252,6 +253,8 @@ ReactionIn Device::parse(const Do& c) {
   // is still a `say` (the reply listening waits for) but plays nothing.
   mo.take = voice::takeIndex(args["say"]["take"].as<const char*>());
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
+  // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
+  render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
   return mo;
 }
 
@@ -271,9 +274,9 @@ const char* Device::refuse(const Do& c, uint32_t t) {
 // it may be replaced: a
 // `react` half a second after its `say` and bubble have played, or 1.7 s
 // in for a face with no `say` (it ends sooner if nothing of it plays by
-// then); a finish and the compacted start never, until they're over; the
-// rules' other reactions, a poke and listening at once; stop_listening is
-// over as it starts. The Mac's
+// then), and not before its sign comes down; a finish and the compacted
+// start never, until they're over; the rules' other reactions, a poke and
+// listening at once; stop_listening is over as it starts. The Mac's
 // `listening` drops the reactions its own host has waiting in the queue.
 void Device::onDo(const Do& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
@@ -291,6 +294,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kReact:
       restKey_ = c.key;
       restAt_ = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
+      if (mo.sign[0] && b_.sign(t).text && after(b_.signEnd(), restAt_)) restAt_ = b_.signEnd();
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -485,6 +489,9 @@ void Device::state(JsonObject d, uint32_t t) {
   render::Mood expr;
   if (b_.expression(t, expr)) d["expr"] = render::moodName(expr);
   else d["expr"] = nullptr;
+  const render::SignShow sign = b_.sign(t);
+  if (sign.text) d["sign"] = sign.text;
+  else d["sign"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;
@@ -797,8 +804,8 @@ void Device::render(uint32_t t) {
       render::blit(canvas_, native->back(), 0);
     }
   } else {
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.strip(t),
-                        dirty_))
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
+                        b_.strip(t), dirty_))
       return;
   }
   if (native) native->drew();

@@ -1744,6 +1744,36 @@ static void test_the_next_reaction_waits_half_a_second_after_a_bubble() {
   TEST_ASSERT_EQUAL(2, int(r.hal.said.size()));
 }
 
+// A reaction's `sign`: its words as the fonts draw them, at most 18 glyphs
+// (app::kSignGlyphs), cut with ".."; dbg.state says it while it's up. A
+// `react` with one rests only once it's down, so the next can't take it
+// down before it's been read (Behaviour::kSignMinMs).
+static void test_a_reaction_holds_up_its_sign() {
+  TEST_ASSERT_EQUAL_INT(18, app::kSignGlyphs);
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  doLine(r, 1, "react", "next", "{\"sign\":\"  bye bye   code \"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"bye bye   code\""));
+  doLine(r, 2, "react", "next", "{\"say\":{},\"mood\":\"proud\"}");
+  clockAt(r, app::Behaviour::kSignMinMs - 1);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":1,"));
+  clockAt(r, app::Behaviour::kSignMinMs);
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":null"));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":2,"));
+  clockAt(r, 10000);
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  doLine(r, 3, "react", "now", "{\"sign\":\"still broken after all that\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"still broken aft..\""));
+  doLine(r, 4, "react", "now", "{\"sign\":\"caf\xC3\xA9\\nna\xC3\xAFve \xC2\xB7 \xE2\x9C\x93\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"cafe naive \xC2\xB7 ?\""));
+  // Not a string, or nothing but spaces: no sign, and nothing to play.
+  doLine(r, 5, "react", "now", "{\"sign\":42}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "nothing")));
+  doLine(r, 6, "react", "now", "{\"sign\":\"   \"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(6, "skipped", "nothing")));
+}
+
 // The brain's finish never rests: the next reaction waits
 // until it's over, and one that has waited longer than its ttl is late.
 static void test_a_finish_plays_until_it_ends() {
@@ -2178,6 +2208,7 @@ int main() {
   RUN_TEST(test_a_reaction_waits_for_the_say_before_it);
   RUN_TEST(test_the_next_reaction_waits_half_a_second_after_a_bubble);
   RUN_TEST(test_a_finish_plays_until_it_ends);
+  RUN_TEST(test_a_reaction_holds_up_its_sign);
   RUN_TEST(test_a_rules_reaction_never_cuts_a_say);
   RUN_TEST(test_the_compacted_card_holds_until_it_has_played);
   RUN_TEST(test_refused_reactions_say_why);
