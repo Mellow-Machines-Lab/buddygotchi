@@ -217,9 +217,9 @@ public final class ReactOutput: Output {
 
     /// The captions a sign may show for `now`, if it's a prompt's reading;
     /// with no event (a pass forced from outside, such as a demo's), for
-    /// the latest prompt in `log`.
+    /// a prompt's reading only when it's the latest thing that happened.
     func offered(_ now: Event?, _ log: LogView) -> [String] {
-        guard let about = now ?? log.events.last(where: { $0.type == .prompt }), about.type == .prompt,
+        guard let about = now ?? log.events.last(where: { !$0.fromHarness }), about.type == .prompt,
               let reading = PromptReading(facts: about.data) else { return [] }
         return Signs.offered(signs, reading: reading, calendar: calendar(about))
     }

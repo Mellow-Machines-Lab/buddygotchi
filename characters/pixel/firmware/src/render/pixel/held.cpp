@@ -2,6 +2,7 @@
 
 #include <initializer_list>
 
+#include "render/face.h"
 #include "render/font.h"
 #include "render/palette.h"
 #include "render/pixel/scene.h"
@@ -9,21 +10,10 @@
 
 namespace render {
 
-int heldOffset(uint32_t ms, int dy) {
-  int offset = dy;
-  if (ms < Held::kRiseMs) {  // up from behind the lane, easing out
-    const int left = int(Held::kRiseMs - ms);
-    offset += 60 * left * left / int(Held::kRiseMs * Held::kRiseMs);
-  } else {  // a little lift now and then, a parabola
-    const int n = int((ms - Held::kRiseMs) % Held::kBobEveryMs);
-    if (n < int(Held::kBobMs))
-      offset -= 4 * Held::kBobPx * n * (int(Held::kBobMs) - n) / int(Held::kBobMs * Held::kBobMs);
-  }
-  return offset;
-}
+int heldOffset(uint32_t ms, int dy) { return dy + signLift(ms, Held::kRisePx, Held::kBobPx); }
 
 void drawHeld(Canvas& c, const char* text, int offset) {
-  const Font& f = glyphCount(text) * kSign.w <= Held::kSignRoom ? kSign : kLarge;
+  const Font& f = stringWidth(kSign, text) <= Held::kSignRoom ? kSign : kLarge;
   const int tw = stringWidth(f, text), w = tw + 2 * Held::kPad + 4, h = f.h + 8;
   const int left = (kWidth - w) / 2, top = Held::kBottom - h + offset;
   const uint8_t edge = inkAt(kInkEye, kLevels), mitt = sceneInk(1);

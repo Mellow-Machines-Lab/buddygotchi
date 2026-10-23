@@ -211,9 +211,7 @@ public struct DemoScript: Sendable {
                 a.session = string("session")
                 if let r = o["reading"] {
                     guard kind == .prompt, let r = r as? [String: Any] else { throw Problem(description: "\(here): only a prompt has a reading, an object") }
-                    a.reading = .init(kind: (r["kind"] as? String).flatMap(PromptReading.Kind.init(rawValue:)),
-                                      tone: (r["tone"] as? String).flatMap(PromptReading.Tone.init(rawValue:)),
-                                      phrases: r["phrases"] as? [String] ?? [])
+                    do { a.reading = try PromptReading.Labels(json: r) } catch { throw Problem(description: "\(here): \(error)") }
                 }
                 if a.fails, kind != .run, kind != .reply { throw Problem(description: "\(here): only a run or a reply fails") }
                 switch kind {

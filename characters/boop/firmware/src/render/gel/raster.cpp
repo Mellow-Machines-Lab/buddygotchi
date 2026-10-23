@@ -121,8 +121,12 @@ void Raster::composite(int y, int x0, int x1, const uint16_t* row, uint16_t ink)
   }
 }
 
+// Marks only the pixels the row wrote as changed, not the shape's whole box:
+// a hat's or a stroke's box is mostly empty, and what's marked is cleared and
+// pushed again next frame.
 void Raster::flush(int y, uint16_t ink) {
   if (touchedLo > touchedHi) return;
+  touch(touchedLo, y, touchedHi + 1, y + 1);
   composite(y, touchedLo, touchedHi, coverage, ink);
   std::fill(coverage + touchedLo, coverage + touchedHi + 1, 0);
   touchedLo = kMaxWidth, touchedHi = -1;
@@ -149,7 +153,6 @@ void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, i
   const int x0 = std::max({0, floor16(minX), bounds.x0}),
             x1 = std::min({s.width, kMaxWidth, floor16(maxX - 1) + 1, bounds.x1}) - 1;
   if (y0 > y1 || x0 > x1) return;
-  touch(x0, y0, x1 + 1, y1 + 1);
   int hits[128], clips[128];
   uint8_t edges[128][2], clipEdges[128][2];
   for (int y = y0; y <= y1; ++y) {
@@ -184,8 +187,11 @@ void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
   const int x0 = std::max({0, floor16(minX - outer), bounds.x0}),
             x1 = std::min({s.width, kMaxWidth, floor16(maxX + outer) + 1, bounds.x1}) - 1;
   if (y0 > y1 || x0 > x1) return;
-  touch(x0, y0, x1 + 1, y1 + 1);
   const int count = std::min(kMaxSegments, std::max(1, n - 1));
+  // A disk (one point): a pixel whose centre is inside its edge's band is
+  // covered whole, with no square root.
+  const int whole = radius * 16 - 128;
+  const uint64_t whole2 = whole > 0 ? uint64_t(whole) * uint64_t(whole) : 0;
   for (int i = 0; i < count; ++i) segments[i].set(v[i], v[std::min(i + 1, n - 1)]);
   for (int y = y0; y <= y1; ++y) {
     const int cy = y * 16 + 8;
@@ -197,6 +203,14 @@ void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
                 to = std::min(x1, floor16(std::max(a.x, b.x) + outer));
       for (int x = from; x <= to; ++x) {
         if (coverage[x] >= 256) continue;
+        if (n == 1 && whole2) {
+          const int64_t ex = x * 16 + 8 - a.x, ey = cy - a.y;
+          if (uint64_t(ex * ex + ey * ey) << 8 <= whole2) {
+            coverage[x] = 256;
+            touched(x);
+            continue;
+          }
+        }
         // 256ths of a pixel: coverage is the share of the pixel inside.
         const int d = segment.distance(x * 16 + 8, cy, outer * 16);
         if (d < 0 || d >= outer * 16) continue;

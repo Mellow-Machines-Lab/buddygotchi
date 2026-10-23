@@ -106,6 +106,14 @@ public struct Scenario: Sendable {
         /// or words any of which it says (in any case: `still broken`
         /// passes "still broken :(").
         public var sign: Set<String>?
+
+        /// Whether a sign that says `caption` (nil for none) is one of
+        /// `wanted`: `some` for any, `none` for none, or words it says, in
+        /// any case.
+        public static func sign(_ wanted: some Collection<String>, says caption: String?) -> Bool {
+            guard let caption else { return wanted.contains("none") }
+            return wanted.contains { $0 == "some" || caption.range(of: $0, options: .caseInsensitive) != nil }
+        }
         /// Whether any of it is about the screen.
         public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil }
         /// Whether any of it is about a pass.
@@ -323,13 +331,7 @@ public struct Scenario: Sendable {
             step.prompt = s["prompt"] as? String
             if let r = s["reading"] {
                 guard let r = r as? [String: Any] else { throw badStep("reading is an object") }
-                guard Set(r.keys).subtracting(["kind", "tone", "phrases"]).isEmpty else { throw badStep("reading has only kind, tone, phrases") }
-                let kind = (r["kind"] as? String).flatMap(PromptReading.Kind.init(rawValue:))
-                let tone = (r["tone"] as? String).flatMap(PromptReading.Tone.init(rawValue:))
-                guard (r["kind"] == nil) == (kind == nil), (r["tone"] == nil) == (tone == nil) else {
-                    throw badStep("reading's kind is one of \(PromptReading.Kind.choices), and its tone one of \(PromptReading.Tone.choices)")
-                }
-                step.labels = .init(kind: kind, tone: tone, phrases: r["phrases"] as? [String] ?? [])
+                do { step.labels = try PromptReading.Labels(json: r) } catch { throw badStep("\(error)") }
             }
             step.message = s["message"] as? String
             step.words = s["words"] as? String
@@ -497,10 +499,7 @@ public struct Eval {
             if let l = expected.loops, !l.contains(loops ?? "none") { return false }
             if let m = expected.mood, !m.contains(mood) { return false }
             if let d = expected.diary, !d.contains(wrote ? "some" : "none") { return false }
-            if let s = expected.sign {
-                guard let sign else { return s.contains("none") }
-                if !s.contains("some") && !s.contains(where: { sign.range(of: $0, options: .caseInsensitive) != nil }) { return false }
-            }
+            if let s = expected.sign, !Scenario.Expectation.sign(s, says: sign) { return false }
             if let o = expected.offered, o != Set(offered) { return false }
             return true
         }

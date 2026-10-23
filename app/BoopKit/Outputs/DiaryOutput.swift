@@ -16,10 +16,9 @@ public final class DiaryOutput: Output {
     /// The most lines a question offers.
     public static let maxOffered = 8
 
-    /// One line of `diary.md`: the tags a day needs, all of them, for it to
-    /// fit, and its words with `{turns}`, `{failed}`, `{longest}`,
-    /// `{thread}`, `{pokes}` and `{weekday}` to fill in.
-    public typealias Template = TaggedLine
+    // Its lines are `diary.md`'s (`TaggedLine`): the tags a day needs, all
+    // of them, and words with `{turns}`, `{failed}`, `{longest}`,
+    // `{thread}`, `{pokes}` and `{weekday}` to fill in.
 
     /// What a day came to.
     public struct Day: Equatable, Sendable {
@@ -49,7 +48,7 @@ public final class DiaryOutput: Output {
 
     public let name = outputName
     public let voice: String?
-    let templates: [Template]
+    let templates: [TaggedLine]
     let time: LocalTime
     let creature: String
     let write: (String, String) -> Void
@@ -59,7 +58,7 @@ public final class DiaryOutput: Output {
     /// `creature` the buddy's name, and `write` given each day and its line.
     /// A thread is named as the lines name it, from where `place` says its
     /// folder works.
-    public init(templates: [Template], time: LocalTime, creature: String, voice: String? = nil,
+    public init(templates: [TaggedLine], time: LocalTime, creature: String, voice: String? = nil,
                 place: @escaping (String) -> Place = { Place.at(cwd: $0) }, write: @escaping (String, String) -> Void) {
         self.voice = voice
         self.place = place

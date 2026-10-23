@@ -25,8 +25,6 @@ uint8_t gold() { return ink(255, 213, 74); }
 uint8_t dark() { return ink(48, 35, 56); }
 uint8_t cheek() { return ink(241, 120, 125); }
 
-bool on(uint32_t when, const char* tag) { return (when & tagBit(tag)) != 0; }
-
 // The older moods' faces sit 6 px lower than the newer ones' (wake-art.mjs's lineUp).
 int lineUp(Mood m) {
   static const char* const kOlder[] = {"happy", "excited", "proud", "curious", "determined", "grumpy", "sad"};
@@ -111,7 +109,7 @@ bool dresses(Mood m, SceneState s, int variant) {
 
 uint32_t outfitKey(uint32_t when, Mood m, uint32_t ms) {
   const Outfit o = outfitFor(when);
-  const bool air = on(when, "winter") || on(when, "party") || on(when, "newyear") || on(when, "valentines");
+  const bool air = airFor(when) != kNoAir;
   if (o == Outfit::kNone && !air) return 0;
   const uint32_t moving = air || o == Outfit::kNightcap ? phase(ms) % 1000 : 0;
   return 1 + uint32_t(o) + 8 * uint32_t(lineUp(m) != 0) + 16 * moving;
@@ -119,9 +117,10 @@ uint32_t outfitKey(uint32_t when, Mood m, uint32_t ms) {
 
 void drawOutfit(Canvas& c, uint32_t when, Mood m, uint32_t ms) {
   const uint32_t p = phase(ms);
-  if (on(when, "winter")) snow(c, p);
-  if (on(when, "party") || on(when, "newyear")) confetti(c, p);
-  if (on(when, "valentines")) hearts(c, p);
+  const uint8_t air = airFor(when);
+  if (air & kSnow) snow(c, p);
+  if (air & kConfetti) confetti(c, p);
+  if (air & kHearts) hearts(c, p);
   switch (outfitFor(when)) {
     case Outfit::kWitchHat: witchHat(c); break;
     case Outfit::kPartyHat: partyHat(c, 0); break;

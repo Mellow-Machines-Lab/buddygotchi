@@ -37,11 +37,24 @@ struct FaceSource {
   uint8_t variant() const { return anim != SceneState::kNone ? animVariant : lookVariant; }
 };
 // The sign a reaction holds up while it plays (its `sign`): the words, at
-// most 18 glyphs of the fonts, and how long it has shown. No text for none.
+// most Behaviour::kSignGlyphs glyphs of the fonts, and how long it has
+// shown. No text for none.
 struct SignShow {
   const char* text = nullptr;
   uint32_t ms = 0;
 };
+// How far a sign sits below its place `ms` after it went up, the same on
+// every face: sliding up from `rise` px below, easing out, then lifting
+// `bob` px now and then, a parabola.
+constexpr uint32_t kSignRiseMs = 220, kSignBobEveryMs = 1400, kSignBobMs = 350;
+inline int signLift(uint32_t ms, int rise, int bob) {
+  if (ms < kSignRiseMs) {
+    const int left = int(kSignRiseMs - ms);
+    return rise * left * left / int(kSignRiseMs * kSignRiseMs);
+  }
+  const int n = int((ms - kSignRiseMs) % kSignBobEveryMs);
+  return n < int(kSignBobMs) ? -4 * bob * n * (int(kSignBobMs) - n) / int(kSignBobMs * kSignBobMs) : 0;
+}
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
   Mood mood = kStartupMood;

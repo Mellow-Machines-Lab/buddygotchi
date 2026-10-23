@@ -78,6 +78,35 @@ public struct PromptReading: Equatable, Sendable {
             self.tone = tone
             self.phrases = phrases
         }
+
+        /// As a demo's or an eval's step writes them: `{"kind": "fix",
+        /// "tone": "frustrated", "phrases": ["still broken"]}`, each
+        /// optional; anything else, or a kind or tone off its list, is a
+        /// mistake that names the lists.
+        public init(json: [String: Any]) throws {
+            guard Set(json.keys).subtracting(["kind", "tone", "phrases"]).isEmpty else {
+                throw LabelsError("a reading has only kind, tone, phrases")
+            }
+            let kind = (json["kind"] as? String).flatMap(Kind.init(rawValue:)), tone = (json["tone"] as? String).flatMap(Tone.init(rawValue:))
+            guard (json["kind"] == nil) == (kind == nil), (json["tone"] == nil) == (tone == nil) else {
+                throw LabelsError("a reading's kind is one of \(Kind.choices), and its tone one of \(Tone.choices)")
+            }
+            self.init(kind: kind, tone: tone, phrases: json["phrases"] as? [String] ?? [])
+        }
+
+        /// The same, to write.
+        public var json: [String: Any] {
+            var out: [String: Any] = [:]
+            if let kind { out["kind"] = kind.rawValue }
+            if let tone { out["tone"] = tone.rawValue }
+            if !phrases.isEmpty { out["phrases"] = phrases }
+            return out
+        }
+    }
+
+    public struct LabelsError: Error, CustomStringConvertible {
+        public var description: String
+        init(_ description: String) { self.description = description }
     }
 
     /// The most phrases kept, and the longest, in characters: what fits

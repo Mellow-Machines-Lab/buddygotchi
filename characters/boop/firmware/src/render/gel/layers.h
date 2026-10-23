@@ -25,11 +25,9 @@
 namespace render::gel {
 
 struct SignLayer {
-  static constexpr int kPad = 20;  // the words from the card's sides, clear of the hands
-  static constexpr int kGap = 4;   // the card's bottom over the lane, at the lowest
-  static constexpr uint32_t kRiseMs = 220;
-  static constexpr uint32_t kBobEveryMs = 1400, kBobMs = 350;
-  static constexpr int kBobPx = 3;
+  static constexpr int kPad = 20;                 // the words from the card's sides, clear of the hands
+  static constexpr int kGap = 4;                  // the card's bottom over the lane, at the lowest
+  static constexpr int kRisePx = 90, kBobPx = 3;  // its signLift
 };
 
 // How far its lids hang at night (Q12, as PaintControls::blink): 0 by day,

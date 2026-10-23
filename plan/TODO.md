@@ -71,9 +71,13 @@ and new actions. One personality (Boop's default nature) for now.
       instead of strokes didn't help (night 28 fps), so it's the filled
       area. The slower loop reads USB less often: the e2e check's p95
       latency went from 139 ms to 182-221 ms at night and fails its 200 ms
-      limit about half the time. Draw the hat into its own small buffer
-      when the anchors' shape changes and blit it, or draw layers every
-      other frame, and re-measure.
+      limit about half the time. Marking only the rows a shape draws as
+      changed (in place) and skipping the square root inside disks didn't
+      move the frame rate either. The fix is to cache the hat: draw it
+      into a small buffer when the brim's shape changes (about 95% of
+      frames reuse it; step the nightcap's swing every 400 ms as Pixel's
+      does) and blit it, about 4 ms back; give paintLayers its own field
+      in the gel's profile first, so `boopctl ping` shows it.
 - [ ] **Fluid animations and interactions.** Today the face visibly cuts
       from one state to the next (a look to a reaction and back, one mood
       to another, a gesture in and out). It should flow: blend between

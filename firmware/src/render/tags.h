@@ -17,6 +17,8 @@ constexpr const char* kTagNames[kTagCount] = {
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.
 uint32_t tagBit(const char* name);
+// Whether the tag `name` is on in `when`.
+inline bool hasTag(uint32_t when, const char* name) { return (when & tagBit(name)) != 0; }
 
 // How busy the agents are, the board's own tags from `state.busy`: busy
 // with this many sessions working, frantic with this many and more.
@@ -33,5 +35,9 @@ int workPace(int working);
 // Day), a nightcap at night, a bobble hat in winter; else none.
 enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
 Outfit outfitFor(uint32_t when);
+// What's in the air for the tags on, as bits: snow in winter, confetti on
+// a party day or New Year's Day, hearts on Valentine's.
+enum Air : uint8_t { kNoAir = 0, kSnow = 1, kConfetti = 2, kHearts = 4 };
+uint8_t airFor(uint32_t when);
 
 }  // namespace render

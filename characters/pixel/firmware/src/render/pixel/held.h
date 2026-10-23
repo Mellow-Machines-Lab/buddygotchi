@@ -10,12 +10,10 @@
 namespace render {
 
 struct Held {
-  static constexpr int kBottom = 188;    // the card's bottom edge, over the lane
-  static constexpr int kPad = 10;        // the words from the card's sides
-  static constexpr int kSignRoom = 272;  // the widest words in the sign's font, else the large one
-  static constexpr uint32_t kRiseMs = 220;
-  static constexpr uint32_t kBobEveryMs = 1400, kBobMs = 350;
-  static constexpr int kBobPx = 2;
+  static constexpr int kBottom = 188;             // the card's bottom edge, over the lane
+  static constexpr int kPad = 10;                 // the words from the card's sides
+  static constexpr int kSignRoom = 272;           // the widest words in the sign's font, else the large one
+  static constexpr int kRisePx = 60, kBobPx = 2;  // its signLift
 };
 
 // How far the card sits below its place `ms` after it went up: sliding up,

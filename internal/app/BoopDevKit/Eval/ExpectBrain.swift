@@ -65,8 +65,7 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
             // when none is a step away. Its first option is staying.
             // A sign is wanted by its words: the first caption that says one,
             // and any for `some`.
-            let sign = q.key == Signs.questionKey
-                ? offered.dropFirst().first { o in want.contains { $0 == "some" || o.range(of: $0, options: .caseInsensitive) != nil } } : nil
+            let sign = q.key == Signs.questionKey ? offered.first { $0 != "none" && Scenario.Expectation.sign(want, says: $0) } : nil
             let pick = want.first(where: offered.contains) ?? sign
                 ?? (q.key == MoodOutput.outputName ? Self.toward(want, from: offered.first ?? "", offered: offered) : nil)
             guard let pick else { continue }

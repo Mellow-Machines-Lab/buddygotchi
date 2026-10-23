@@ -39,13 +39,7 @@ public enum DemoFromScenario {
             switch step.event {
             case "turn started":
                 var o: [String: Any] = ["agent": "prompt", "text": step.prompt ?? "Carry on"]
-                if let l = step.labels {
-                    var r: [String: Any] = [:]
-                    if let kind = l.kind { r["kind"] = kind.rawValue }
-                    if let tone = l.tone { r["tone"] = tone.rawValue }
-                    if !l.phrases.isEmpty { r["phrases"] = l.phrases }
-                    o["reading"] = r
-                }
+                if let l = step.labels { o["reading"] = l.json }
                 add(o)
             case "turn finished": add(["agent": "reply", "text": step.message ?? "Done."])
             case "turn failed": add(["agent": "reply", "text": "…", "fails": true])
@@ -75,7 +69,7 @@ public enum DemoFromScenario {
                 if let want = step.expectOrder["sign"], let prompt = step.prompt {
                     let reading = PromptReading(prompt: prompt, names: [CharacterPack.active.name], labels: step.labels)
                     let captions = Signs.offered(signs, reading: reading, calendar: [])
-                    brain[Signs.questionKey] = captions.first { c in want.contains { $0 == "some" || c.range(of: $0, options: .caseInsensitive) != nil } }
+                    brain[Signs.questionKey] = captions.first { Scenario.Expectation.sign(want, says: $0) }
                 }
                 let mood = brain.removeValue(forKey: MoodOutput.outputName)
                 var o: [String: Any] = ["brain": brain]

@@ -27,12 +27,17 @@ int workPace(int working) {
 }
 
 Outfit outfitFor(uint32_t when) {
-  auto on = [&](const char* tag) { return (when & tagBit(tag)) != 0; };
+  auto on = [&](const char* tag) { return hasTag(when, tag); };
   if (on("halloween")) return Outfit::kWitchHat;
   if (on("party") || on("newyear") || on("lunar") || on("programmers")) return Outfit::kPartyHat;
   if (on("night")) return Outfit::kNightcap;
   if (on("winter")) return Outfit::kBobble;
   return Outfit::kNone;
+}
+
+uint8_t airFor(uint32_t when) {
+  return (hasTag(when, "winter") ? kSnow : 0) | (hasTag(when, "party") || hasTag(when, "newyear") ? kConfetti : 0) |
+         (hasTag(when, "valentines") ? kHearts : 0);
 }
 
 }  // namespace render

@@ -19,8 +19,6 @@ constexpr uint16_t kCardInk = rgb565(27, 55, 78), kCardRim = rgb565(0x78, 0xa4, 
 constexpr uint16_t kWords = rgb565(184, 233, 245), kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245);
 constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
 
-bool on(uint32_t when, const char* tag) { return when & tagBit(tag); }
-
 // The ring through its left side, its front and its right side, as a
 // curve (sixteenths), its `n` + 1 points from left to right, raised `up`.
 int ring(const Spot& l, const Spot& f, const Spot& r, int up, Point* out, int n = 8) {
@@ -199,7 +197,7 @@ void zs(Raster& r, const Anchors& at, int ms) {
 }  // namespace
 
 int sleepyLids(const Engine& e) {
-  return on(e.scenes.when, "night") && e.scenes.route.state != SceneState::kAsleep ? kNightLids : 0;
+  return hasTag(e.scenes.when, "night") && e.scenes.route.state != SceneState::kAsleep ? kNightLids : 0;
 }
 
 void paintLayers(Surface& s, const Engine& e, const Anchors& at) {
@@ -209,13 +207,13 @@ void paintLayers(Surface& s, const Engine& e, const Anchors& at) {
   const int ms = int(e.elapsedMs % 3600000u), bottom = s.height * 4 / 5;
   const SceneState state = e.scenes.route.state;
   const bool peekaboo = state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo);
-  if (on(when, "friday") && !on(when, "night") && state != SceneState::kAsleep && !peekaboo) shades(r, at);
+  if (hasTag(when, "friday") && !hasTag(when, "night") && state != SceneState::kAsleep && !peekaboo) shades(r, at);
   if (!peekaboo) {
     const Head h = head(at, 0);
     switch (outfitFor(when)) {
       case Outfit::kWitchHat: witchHat(r, h); break;
       case Outfit::kPartyHat: {
-        const bool lunar = on(when, "lunar"), coder = on(when, "programmers") && !on(when, "party");
+        const bool lunar = hasTag(when, "lunar"), coder = hasTag(when, "programmers") && !hasTag(when, "party");
         partyHat(r, h,
                  lunar   ? rgb565(210, 40, 40)
                  : coder ? rgb565(30, 40, 36)
@@ -230,20 +228,11 @@ void paintLayers(Surface& s, const Engine& e, const Anchors& at) {
       default: break;
     }
   }
-  if (on(when, "winter")) snow(r, s.width, bottom, ms);
-  if (on(when, "party") || on(when, "newyear")) confetti(r, s.width, bottom, ms);
-  if (on(when, "valentines")) hearts(r, s.width, bottom, ms);
-  if (on(when, "night") && state == SceneState::kAsleep) zs(r, at, ms);
-}
-
-int signOffset(uint32_t ms) {
-  if (ms < SignLayer::kRiseMs) {  // up from behind the lane, easing out
-    const int left = int(SignLayer::kRiseMs - ms);
-    return 90 * left * left / int(SignLayer::kRiseMs * SignLayer::kRiseMs);
-  }
-  const int n = int((ms - SignLayer::kRiseMs) % SignLayer::kBobEveryMs);  // a little lift now and then
-  if (n >= int(SignLayer::kBobMs)) return 0;
-  return -4 * SignLayer::kBobPx * n * (int(SignLayer::kBobMs) - n) / int(SignLayer::kBobMs * SignLayer::kBobMs);
+  const uint8_t air = airFor(when);
+  if (air & kSnow) snow(r, s.width, bottom, ms);
+  if (air & kConfetti) confetti(r, s.width, bottom, ms);
+  if (air & kHearts) hearts(r, s.width, bottom, ms);
+  if (hasTag(when, "night") && state == SceneState::kAsleep) zs(r, at, ms);
 }
 
 void paintSign(Surface& s, const SignShow& sign, const Anchors& at) {
@@ -251,10 +240,11 @@ void paintSign(Surface& s, const SignShow& sign, const Anchors& at) {
   Raster r{s};
   const int bottom = s.height * 4 / 5;  // the lane's top: shapes stop there
   const Font& f = kSign;
-  const int tw = glyphCount(sign.text) * f.w, w = tw + 2 * SignLayer::kPad, h = f.h + 10;
+  const int tw = stringWidth(f, sign.text), w = tw + 2 * SignLayer::kPad, h = f.h + 10;
   // Centred on its front, held at its hands' ring, never into the lane.
   const int x = at.handF.x / 16 - w / 2;
-  const int y = std::min(at.handF.y / 16 - h / 2, bottom - SignLayer::kGap - h) + signOffset(sign.ms);
+  const int y = std::min(at.handF.y / 16 - h / 2, bottom - SignLayer::kGap - h) +
+                signLift(sign.ms, SignLayer::kRisePx, SignLayer::kBobPx);
   r.round(x, y, w, h, 12, kCardInk);
   r.ring(x, y, w, h, 12, 2, kCardRim);
   text(r, f, x + SignLayer::kPad, y + 5, sign.text, kWords);

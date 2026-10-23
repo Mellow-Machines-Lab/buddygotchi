@@ -26,14 +26,13 @@ public enum Signs {
         let on = tags(reading, calendar: calendar)
         let fit = lines.filter { $0.fits(on) }
         func filled(_ line: TaggedLine) -> [String] {
-            guard line.text.contains("{words}") || line.text.contains("{WORDS}") else { return [line.text] }
+            guard line.hasWords else { return [line.text] }
             return reading.phrases.map {
                 line.text.replacingOccurrences(of: "{words}", with: $0).replacingOccurrences(of: "{WORDS}", with: $0.uppercased())
             }
         }
-        let yours = fit.filter { $0.text.contains("{words}") || $0.text.contains("{WORDS}") }, stock = fit.filter { !yours.contains($0) }
-        let ordered = [yours.filter { !$0.tags.isEmpty }, yours.filter(\.tags.isEmpty), stock.filter { !$0.tags.isEmpty },
-                       stock.filter(\.tags.isEmpty)].flatMap { $0.flatMap(filled) }
+        func rank(_ line: TaggedLine) -> Int { (line.hasWords ? 0 : 2) + (line.tags.isEmpty ? 1 : 0) }
+        let ordered = (0..<4).flatMap { r in fit.filter { rank($0) == r }.flatMap(filled) }
         var seen: Set<String> = []
         return Array(ordered.filter { $0.count <= maxLength && seen.insert($0.lowercased()).inserted }.prefix(maxOffered))
     }

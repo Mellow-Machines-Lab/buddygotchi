@@ -12,6 +12,9 @@ public struct TaggedLine: Equatable, Sendable {
         self.text = text
     }
 
+    /// Whether its words take one of yours (`{words}` or `{WORDS}`).
+    public var hasWords: Bool { text.contains("{words}") || text.contains("{WORDS}") }
+
     /// Whether `on` has all of its tags.
     public func fits(_ on: Set<String>) -> Bool { Set(tags).isSubset(of: on) }
 

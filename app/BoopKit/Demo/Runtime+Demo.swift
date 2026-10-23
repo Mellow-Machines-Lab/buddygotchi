@@ -105,7 +105,9 @@ public final class DemoPlayer: @unchecked Sendable {
             guard case .agent(let a) = step.what, let text = a.text, let reading = a.reading else { return nil }
             return (Scrubber.scrub(text), reading)
         }, uniquingKeysWith: { first, _ in first })
-        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: runtime.labeler) }
+        // In front of the app's own labeler, not another demo's.
+        let own = (runtime.labeler as? ScriptLabeler)?.otherwise ?? runtime.labeler
+        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: own) }
         if !live {
             for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
                 send("SessionStart", buddy: buddy) { $0.source = "startup" }
