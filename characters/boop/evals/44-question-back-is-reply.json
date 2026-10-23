@@ -3,7 +3,7 @@
   "case": "The person asks for a new export endpoint, and the agent ends its turn, without doing any work, asking whether it should return JSON or CSV. That's a question back, not a finished task: Boop plays a reply, not a success.",
   "why": "react.animation's reply is a turn that ended with an answer or a question back, no task finished",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "add an export endpoint for the reports"},
+    {"event": "turn started", "at": "0s", "prompt": "add an export endpoint for the reports", "reading": {"kind": "feature"}},
     {"event": "turn finished", "at": "30s", "message": "Before I start: should the export return JSON or CSV?", "expect": {"animation": "reply"}}
   ]
 }

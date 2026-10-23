@@ -32,10 +32,10 @@ final class ViewTests: XCTestCase {
     /// back in HISTORY.
     func testATurnOfFailuresAndAComeback() throws {
         let start = hook(.turnStart, prompt: "fix the nav\nplease")
-        XCTAssertEqual(start.map(\.line), [#"claude started turn 1 on "fix-nav" (landing)."#])
-        XCTAssertEqual(start.map(\.name), ["turn start"])
-        XCTAssertEqual(start[0].notes, [#"You asked: "fix the nav please""#], "on one line")
-        XCTAssertTrue(start[0].wakesBrain)
+        XCTAssertEqual(start.map(\.line), [#"claude started turn 1 on "fix-nav" (landing)."#,
+                                           #"You asked claude on "fix-nav" (landing) in a few words, politely."#])
+        XCTAssertEqual(start.map(\.name), ["turn start", "prompt"])
+        XCTAssertEqual(start.map(\.wakesBrain), [false, true], "the prompt's reading wakes the brain, not the turn start")
 
         XCTAssertEqual(tests(failed: true, id: "t1").map(\.line), [#"claude's tests failed on "fix-nav" (landing)."#])
         XCTAssertEqual(tests(failed: true, id: "t2").map(\.line),
@@ -94,7 +94,6 @@ final class ViewTests: XCTestCase {
         let note = EventLine.lastMessage(long)!
         XCTAssertEqual(note.count, "Its last message: \"\"".count + EventLine.messageMax)
         XCTAssertTrue(note.hasSuffix("…\""))
-        XCTAssertNil(EventLine.prompt("  \n "))
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 1),
                        #"claude finished turn 1 on "x": done, a short turn, 1 tool call."#)
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 0),

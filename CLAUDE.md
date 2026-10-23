@@ -223,6 +223,7 @@ keep their names.
 | Word | Means | Not |
 | --- | --- | --- |
 | reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
+| reading | What Boop takes from your prompt in its place: its kind, tone, length, whether you said the buddy's name, and a few of your words (`PromptReading`) | summary, label (for the whole) |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
 | message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |
 | line | What the brain reads for one event (MellowHarness's `Line`) | |
@@ -277,8 +278,11 @@ MellowHarness, LinkKit), is
   the single source, and the app bundles it at build time
   (`Package.swift` copies it into the app's resources).
 - **No code, commands, tool output, file contents or agent transcripts go
-  to the brain.** The only words are your prompt, the agent's last
-  message and what you say to Boop on push-to-talk, cut short.
+  to the brain.** The only words are the agent's last message and what
+  you say to Boop on push-to-talk, cut short, and up to three short
+  phrases of your prompt. Your prompt itself stays on the Mac: the
+  intake (`app/BoopKit/Prompt/`) scrubs it, reads it with Apple
+  Intelligence and passes on only its reading; nothing keeps it.
 - **"Needs you" and the screen priority are plain rules in the core.**
 - **The device renders, reports, and decides when a reaction plays**
   (LinkKit's queue), never what Boop does: the Mac sends each thing to

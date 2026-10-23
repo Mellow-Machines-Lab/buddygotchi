@@ -13,23 +13,25 @@ yours), and the transcript keeps no prompt text. Boop reacts to it with
 the board's new layers: a sign with words, outfits by the time of day,
 and new actions. One personality (Boop's default nature) for now.
 
-- [ ] **Scrubber.** `app/BoopKit/Prompt/Scrubber.swift`: one table of
+- [x] **Scrubber.** `app/BoopKit/Prompt/Scrubber.swift`: one table of
       secret patterns (API keys, tokens, JWTs, long hex and base64,
       `KEY=value`, URLs with tokens, emails), each `[secret]`, pinned by a
       fixture of fake keys.
-- [ ] **The reading and its readers.** `PromptReading` (closed lists for
-      kind and tone; length band; named; phrases), `PromptReader`,
-      `AppleIntelligenceReader` (FoundationModels, a dynamic schema, an
-      availability check, a timeout) and `CountingReader` (length and
-      name only: the fallback, and the tests').
-- [ ] **The intake.** `PromptIntake` between `Runtime.hook` and the
+- [x] **The reading and its labeler.** `PromptReading` (closed lists for
+      kind and tone; length band; named; phrases), counted with no model
+      (length, name, and the tone the words plainly show), and
+      `AppleIntelligenceLabeler` (FoundationModels, three plain lines with
+      examples, permissive guardrails, greedy, a 3 s timeout) for the
+      kind, a heard tone and the phrases.
+- [x] **The intake.** `PromptIntake` between `Runtime.hook` and the
       pipeline: scrub, strip the prompt from the event, read, then
       `Pipeline.promptRead`. The reading's event wakes the brain; the turn
-      start no longer does. The view's line for it; the turn start's
+      start waits for it (one with no prompt still wakes it). The view's line for it; the turn start's
       `You asked` note goes. CLAUDE.md's rule on what reaches the brain
       says so.
-- [ ] **Evals and `read-check`.** Scenario steps carry a `reading`;
-      evals 94 and 95 move to readings. `boopdev read-check` runs the real
+- [x] **Evals and `read-check`.** Scenario steps carry a `reading`
+      (every prompt in the evals has one); `--labeler apple` reads them
+      for real. `boopdev read-check` runs the real
       on-device model over sample prompts and reports how often it gets
       the kind and tone right.
 - [ ] **The sign.** A reaction's `sign` argument (about 18 characters,

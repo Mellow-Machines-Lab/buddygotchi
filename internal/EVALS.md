@@ -117,6 +117,8 @@ BOOP_JEV_KEY=… make eval                     # the final pass: every scenario,
 .build/debug/boopdev eval --list             # every scenario's case, runs and requests; no key needed
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
 .build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
+BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
+.build/debug/boopdev read-check              # how often Apple Intelligence reads sample prompts' kind and tone right
 ```
 
 **The expect brain, and a demo for every scenario.** A demo is an eval
@@ -228,7 +230,8 @@ file-name order:
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
 | `steps[].error` | A failed turn's error class |
-| `steps[].prompt` | What the person asked, on a `turn started`: NOW's `You asked:` note |
+| `steps[].prompt` | What the person asked, on a `turn started`. Jev never sees it: it reaches NOW as its reading, counted (its length, the buddy's name, a tone its words plainly show) and labelled with the step's `reading` |
+| `steps[].reading` | What Apple Intelligence would make of the prompt, standing in for it: its `kind` (`fix`, `feature`, `cleanup`, `refactor`, `tests`, `deploy`, `docs`, `question`, `carry_on`, `other`), its `tone` (`calm`, `frustrated`, `rushed`, `polite`, `playful`, `shouting`, `careful`) and its `phrases`, kept only if they're in the prompt. `--labeler apple` reads the prompt for real instead |
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
@@ -245,7 +248,8 @@ A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
 that isn't a mood (`none` is a `react` too), an `animation` that isn't
 `none`, `success`, `failure`, `reply` or `wake up`, a bad `at`, `reaction` or check
-value, a `prompt` or `message` on a step that can't carry it, or nothing
+value, a `prompt`, `reading` or `message` on a step that can't carry it, a
+`reading` whose kind or tone isn't one of the lists, or nothing
 to check (no `expect` and no `checks`) doesn't load, and the error names
 the file and step.
 

@@ -158,14 +158,51 @@ public final class Pipeline {
     /// (`Core.unrepeated`).
     @discardableResult
     public func agent(_ event: Event) -> Step {
-        input(at: event.at) {
-            var event = event
-            let id = several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
-            if let id { event.data["voice"] = .string(id) }
-            let core = core(id)
-            let e = harness.emit(core.unrepeated(event))
-            run(core.handle(e), buddy: id)
+        input(at: event.at) { take(event) }
+    }
+
+    /// An agent's event and, if it brought your prompt, the prompt's
+    /// reading at once: counted, and with `labels` as a labeler's answer
+    /// if given. The tools', tests' and evals' way in, where the app reads
+    /// the prompt later (`PromptIntake`).
+    @discardableResult
+    public func agentReadingPrompt(_ event: Event, labels: PromptReading.Labels? = nil) -> Step {
+        let (event, prompt) = PromptIntake.split(event)
+        return input(at: event.at) {
+            take(event)
+            guard let prompt else { return }
+            let text = Scrubber.scrub(prompt)
+            var reading = PromptReading(counting: text, names: buddies.map(\.name))
+            if let labels { reading.label(labels, in: text) }
+            take(reading, about: event, at: event.at)
         }
+    }
+
+    func take(_ event: Event) {
+        var event = event
+        let id = buddy(watching: event)
+        if let id { event.data["voice"] = .string(id) }
+        let core = core(id)
+        let e = harness.emit(core.unrepeated(event))
+        run(core.handle(e), buddy: id)
+    }
+
+    /// With several buddies, the one watching `event`'s session.
+    func buddy(watching event: Event) -> String? {
+        several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
+    }
+
+    /// Your prompt's reading, for the turn start `turn` that brought it:
+    /// logged, with the session and the buddy of that turn, and it wakes
+    /// the brain (the turn start no longer does). The core isn't told.
+    @discardableResult
+    public func promptRead(_ reading: PromptReading, about turn: Event, at now: Int64) -> Step {
+        input(at: now) { take(reading, about: turn, at: now) }
+    }
+
+    func take(_ reading: PromptReading, about turn: Event, at now: Int64) {
+        harness.emit(Event(at: now, source: turn.from ?? .mac, type: .prompt, specificType: "reading", session: turn.session,
+                           buddy: buddy(watching: turn), data: reading.facts))
     }
 
     /// The device's poke, on the buddy `buddy` (nil for the only one): the

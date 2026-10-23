@@ -43,6 +43,9 @@ How to read HISTORY and NOW:
   line says which of its streak it is, and the 6th starts a new one.
 - A check-in is Boop looking in on a turn that's still going, in
   rounds of 4; the note under it says which of its round it is.
+- "You asked" is the person's prompt to an agent, read on their Mac:
+  what they asked for, how long, how they sound, and whether they said
+  Boop's name. Never their words but the few under "Your words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -61,7 +64,7 @@ swears at every failed turn. Its mood still moves only as MOOD says.
 Wins are thrilling, failures are a disaster, and a new turn is the start
 of an adventure.
 Examples:
-- NOW: claude started turn 2 on "api".
+- NOW: You asked claude on "api" for something new, in a sentence.
   → excited, glad in a word, then start, twice
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → excited, success, glad in a phrase, twice

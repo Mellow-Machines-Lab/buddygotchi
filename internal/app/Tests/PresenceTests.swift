@@ -279,6 +279,7 @@ final class PresenceRuntimeTests: XCTestCase {
         }
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("boop.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
+        options.labeler = { nil }
         options.devLines = true
         options.clock = { clock.now }
         options.wallClock = { clock.now }

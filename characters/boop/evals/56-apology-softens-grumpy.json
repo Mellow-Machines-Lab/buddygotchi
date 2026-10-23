@@ -7,6 +7,6 @@
     {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy"}},
     {"event": "said", "at": "15s", "words": "sorry boop, I'll stop poking you", "expect": {"react": "irritated|annoyed|calm|happy|proud|whiny", "mood": "irritated|annoyed"}},
-    {"event": "turn started", "at": "1m45s", "prompt": "add a loading spinner to the dashboard", "expect": {"mood": "irritated|annoyed|calm"}}
+    {"event": "turn started", "at": "1m45s", "prompt": "add a loading spinner to the dashboard", "reading": {"kind": "feature"}, "expect": {"mood": "irritated|annoyed|calm"}}
   ]
 }

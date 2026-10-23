@@ -50,23 +50,23 @@ Examples:
 - NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
     Its last message: "It retries three times. Want a fourth?"
   → curious, reply, answer in a word, once
-- NOW: claude started turn 7 on "api".
-    You asked: "it's still broken, why does this keep happening"
+- NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
+    Your words: "still broken", "keep happening".
   → determined, retry in a word, once
-- NOW: claude started turn 8 on "api".
-    You asked: "perfect, thank you!"
+- NOW: You asked claude on "api" to carry on, in a few words, politely.
+    Your words: "perfect", "thank you".
   → excited, glad in a word, then start, once
-- NOW: claude started turn 3 on "api".
-    You asked: "please add a retry to the upload"
+- NOW: You asked claude on "api" for something new, in a sentence, politely.
+    Your words: "please".
   → affectionate, glad in a sound, once
-- NOW: claude started turn 5 on "api".
-    You asked: "WHY IS THE LOGIN STILL BROKEN"
+- NOW: You asked claude on "api" for a fix, in a sentence, SHOUTING.
+    Your words: "STILL BROKEN".
   → surprised, upset in a sound, once
-- NOW: claude started turn 6 on "api".
-    You asked: "continue"
+- NOW: You asked claude on "api" to carry on, in a few words.
+    Your words: "continue".
   → bored, quiet in a sound, once
-- NOW: claude started turn 2 on "api".
-    You asked: "ultrathink: why does the cache go stale?"
+- NOW: You asked claude on "api" a question, in a sentence, carefully.
+    Your words: "ultrathink".
   → determined, start in a word, once
 - NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
     Its last message: "You're absolutely right! I'll fix that."

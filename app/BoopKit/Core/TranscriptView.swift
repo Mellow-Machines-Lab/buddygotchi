@@ -222,9 +222,10 @@ public final class TranscriptView {
     // MARK: - Registration
 
     /// Each kind's `wake`: what you said goes ahead
-    /// of a finished turn, which goes ahead of the rest.
+    /// of a finished turn, which goes ahead of the rest. A turn start
+    /// whose prompt is being read waits for its reading (`hold`).
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
+        "turn_start": 0, "prompt": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
         "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
     ]
 
@@ -261,6 +262,7 @@ public final class TranscriptView {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
+        if e[PromptIntake.readingFollows]?.bool == true { return "its prompt's reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
@@ -280,7 +282,7 @@ public final class TranscriptView {
     /// `tool_uses: all`).
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil),
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
              (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
@@ -344,6 +346,8 @@ public final class TranscriptView {
         case .press?:
             noteActivity(e.at)
             return Line(EventLine.pressed(name: name(e)))
+        case .prompt?:
+            return promptRead(e)
         case .gesture?:
             noteActivity(e.at)
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
@@ -396,8 +400,7 @@ public final class TranscriptView {
             c.topic = nil
             resetCounts(&c)
             return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
-                        notes: a.prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
-                        facts: ["thread": threadFacts(t), "prompt": .of(a.prompt)])
+                        facts: ["thread": threadFacts(t)])
         case .activity:
             var topic = a.topic
             var line: Line?
@@ -541,6 +544,20 @@ public final class TranscriptView {
     func noteActivity(_ now: Int64) {
         fold.lastActivityAt = now
         fold.heartbeats = 0
+    }
+
+    // MARK: Your prompt
+
+    /// Your prompt's reading, under its turn's thread: what you asked for,
+    /// how long and how you sound, and your words for a sign as a note.
+    func promptRead(_ e: Event) -> Line? {
+        guard let reading = PromptReading(facts: e.data) else { return nil }
+        noteActivity(e.at)
+        let session = e.agent.flatMap { agent in e.session.flatMap { fold.sessions.sessions[SessionFold.key(agent, $0)] } }
+        let thread = session.map { threadLine(Thread($0)) }
+        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: thread, name: name(e)),
+                    notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
+                    facts: reading.facts.merging(["thread": session.map { threadFacts(Thread($0)) } ?? .null]) { a, _ in a })
     }
 
     // MARK: Pokes
@@ -866,8 +883,32 @@ public enum EventLine {
     /// `Its last message: "…"`: the agent's last message, quoted.
     public static func lastMessage(_ message: String) -> String? { quote("Its last message", message) }
 
-    /// `You asked: "…"`: your prompt, quoted.
-    public static func prompt(_ prompt: String) -> String? { quote("You asked", prompt) }
+    /// `You asked claude on "api" for a fix, in a sentence, frustrated, and
+    /// said Pip's name.`: your prompt's reading, never its words; with no
+    /// labeler, only its length and the name.
+    public static func asked(_ r: PromptReading, agent: String, thread: String?, name: String = CharacterPack.active.name) -> String {
+        let kind: [PromptReading.Kind: String] = [
+            .fix: "for a fix", .feature: "for something new", .cleanup: "to clean up", .refactor: "for a refactor",
+            .tests: "about tests", .deploy: "to ship it", .docs: "for docs", .question: "a question",
+            .carryOn: "to carry on", .other: "for something else",
+        ]
+        let tone: [PromptReading.Tone: String] = [
+            .frustrated: "frustrated", .rushed: "in a hurry", .polite: "politely", .playful: "playfully",
+            .shouting: "SHOUTING", .careful: "carefully",
+        ]
+        let length: [PromptReading.Length: String] = [
+            .words: "in a few words", .sentence: "in a sentence", .paragraph: "in a paragraph", .essay: "at length",
+        ]
+        let parts = [r.kind.flatMap { kind[$0] }, length[r.length], r.tone.flatMap { tone[$0] }, r.named ? "and said \(name)'s name" : nil]
+        let head = "You asked \(agent)" + (thread.map { " on \($0)" } ?? "")
+        return head + " " + parts.compactMap { $0 }.joined(separator: ", ") + "."
+    }
+
+    /// `Your words: "still broken", "thank you".`, the phrases a sign may
+    /// show; nil for none.
+    public static func yourWords(_ phrases: [String]) -> String? {
+        phrases.isEmpty ? nil : "Your words: " + phrases.map { "\"\($0)\"" }.joined(separator: ", ") + "."
+    }
 
     /// Words on one line, cut to `messageMax`, after `label`. Nil for none.
     static func quote(_ label: String, _ text: String) -> String? {
@@ -1013,6 +1054,9 @@ public enum EventLine {
           line says which of its streak it is, and the \(nth(streak + 1)) starts a new one.
         - A check-in is \(name) looking in on a turn that's still going, in
           rounds of \(round); the note under it says which of its round it is.
+        - "You asked" is the person's prompt to an agent, read on their Mac:
+          what they asked for, how long, how they sound, and whether they said
+          \(name)'s name. Never their words but the few under "Your words".
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - An idle check-in ("Nothing has happened for 20 min") means the person is

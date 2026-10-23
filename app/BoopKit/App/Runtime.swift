@@ -65,6 +65,10 @@ public final class Runtime: @unchecked Sendable {
         /// the one buddy, the process's character, on `link` with
         /// `steering`, as Boop always has.
         public var buddies: [BuddyOptions] = []
+        /// Reads your prompts on the Mac (`PromptIntake`): Apple
+        /// Intelligence where it's on, else none, and the readings are
+        /// counted only. Tests pass none.
+        public var labeler: @Sendable () -> (any PromptLabeler)? = { AppleIntelligenceLabeler.ifAvailable() }
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -180,6 +184,9 @@ public final class Runtime: @unchecked Sendable {
     /// Hears every agent's hook as it comes, before Boop takes it: a live
     /// demo's player (`play`), which keeps its script to the agent's pace.
     var demoHeard: ((HookLine) -> Void)?
+    /// Reads your prompts, the only part of Boop that holds one.
+    lazy var intake = PromptIntake(labeler: options.labeler(), home: home, names: { [weak self] in self?.rigs.map(\.buddy.name) ?? [] },
+                                   deliver: { [weak self] reading, turn in self?.promptRead(reading, about: turn) })
 
     /// A clock that never steps and keeps counting while the Mac sleeps,
     /// starting at the wall clock's time: the keepalive and the link's
@@ -432,7 +439,9 @@ public final class Runtime: @unchecked Sendable {
 
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
-        let event = Adapter.event(from: line, receivedAt: received)
+        // Your prompt goes no further than the intake: the turn start is
+        // logged without it, and its reading follows.
+        let (event, prompt) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)
         // Debug mode logs every hook with what it became; the doctor skill
         // arms the plain line to see hooks arrive. Otherwise hooks aren't logged.
         if options.debug {
@@ -442,6 +451,13 @@ public final class Runtime: @unchecked Sendable {
         }
         guard let event else { return }
         run(pipeline.agent(event))
+        if let prompt { intake.read(prompt, about: event) }
+    }
+
+
+    /// A prompt's reading, for the turn start it's about.
+    func promptRead(_ reading: PromptReading, about turn: Event) {
+        run(pipeline.promptRead(reading, about: turn, at: options.clock()))
     }
 
     func tick() {

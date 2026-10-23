@@ -13,7 +13,7 @@ swears at every failed turn. Its mood still moves only as MOOD says.
 Wins are thrilling, failures are a disaster, and a new turn is the start
 of an adventure.
 Examples:
-- NOW: claude started turn 2 on "api".
+- NOW: You asked claude on "api" for something new, in a sentence.
   → excited, glad in a word, then start, twice
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → excited, success, glad in a phrase, twice

@@ -120,9 +120,9 @@ final class EvalTests: XCTestCase {
         }
     }
 
-    /// EVALS.md §3: a turn start's `prompt` and a finish's `message` reach
-    /// Jev as NOW's notes (`27-agent-gives-up`); on any other step they
-    /// don't load.
+    /// EVALS.md §3: a turn start's `prompt` reaches Jev as its reading,
+    /// never its words, and a finish's `message` as NOW's note
+    /// (`27-agent-gives-up`); on any other step they don't load.
     func testAStepCarriesThePromptAndLastMessage() async throws {
         let states = Lines()
         let brain = ScriptedBrain { state, _ in
@@ -131,7 +131,8 @@ final class EvalTests: XCTestCase {
         }
         _ = try await Eval(brain: brain, steering: RuntimeTests.steering)
             .run(try Scenario(file: try Self.scenarios().appendingPathComponent("27-agent-gives-up.json")))
-        XCTAssertTrue(states.all.first?.contains("\n  You asked: \"fix the login redirect\"") == true, states.all.first ?? "no pass")
+        XCTAssertTrue(states.all.first?.contains("\nYou asked claude on \"landing\" for a fix, in a few words.") == true, states.all.first ?? "no pass")
+        XCTAssertFalse(states.all.joined().contains("fix the login redirect"), "the prompt's words never reach Jev")
         XCTAssertTrue(states.all.last?.contains("\n  Its last message: \"I couldn't get the login working.") == true, states.all.last ?? "no pass")
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","prompt":"hi","expect":{"react":"none"}}]}"#, "step 1: prompt is only"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","message":"hi","expect":{"react":"none"}}]}"#, "step 1: message is only")] {

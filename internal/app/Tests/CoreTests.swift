@@ -157,7 +157,7 @@ final class CoreRig {
     @discardableResult
     func send(_ event: Event) -> Fx {
         sent.append(event)
-        return note(Fx(pipeline.agent(event)))
+        return note(Fx(pipeline.agentReadingPrompt(event)))
     }
 
     /// Every event sent, in order.

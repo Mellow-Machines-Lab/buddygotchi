@@ -29,8 +29,11 @@ public struct Scenario: Sendable {
         /// A failed turn's error class.
         public var error: String?
         /// What you asked, on a turn start, and the agent's last message,
-        /// on a finish: the two notes Jev reads.
+        /// on a finish. The prompt reaches Jev as its reading: counted, and
+        /// labelled with `labels` (`reading` in the file), which stand in
+        /// for Apple Intelligence's.
         public var prompt: String?
+        public var labels: PromptReading.Labels?
         public var message: String?
         /// What you said to Boop, for `said`.
         public var words: String?
@@ -306,13 +309,26 @@ public struct Scenario: Sendable {
                 if a == .codex, event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
                 step.agent = a
             }
-            for (key, only) in ["prompt": "turn started", "message": "turn finished", "count": "pokes"] where s[key] != nil && event != only {
+            for (key, only) in ["prompt": "turn started", "reading": "turn started", "message": "turn finished", "count": "pokes"]
+            where s[key] != nil && event != only {
                 throw badStep("\(key) is only for \(only)")
             }
             step.topic = s["topic"] as? String
             step.failed = s["failed"] as? Bool
             step.error = s["error"] as? String
             step.prompt = s["prompt"] as? String
+            if let r = s["reading"] {
+                guard let r = r as? [String: Any], Set(r.keys).isSubset(of: ["kind", "tone", "phrases"]) else {
+                    throw badStep("reading has a kind, a tone and phrases")
+                }
+                let kind = (r["kind"] as? String).flatMap(PromptReading.Kind.init(rawValue:))
+                let tone = (r["tone"] as? String).flatMap(PromptReading.Tone.init(rawValue:))
+                guard (r["kind"] == nil) == (kind == nil), (r["tone"] == nil) == (tone == nil) else {
+                    throw badStep("reading's kind is one of \(PromptReading.Kind.allCases.map(\.rawValue).joined(separator: ", ")), "
+                                  + "and its tone one of \(PromptReading.Tone.allCases.map(\.rawValue).joined(separator: ", "))")
+                }
+                step.labels = .init(kind: kind, tone: tone, phrases: r["phrases"] as? [String] ?? [])
+            }
             step.message = s["message"] as? String
             step.words = s["words"] as? String
             step.helper = s["helper"] as? String
@@ -558,6 +574,9 @@ public struct Eval {
     /// Whether the whole-run checks on Jev's own choices (its variety, its
     /// mood's changes, what it says) are judged: not with a scripted brain.
     public var judgesChoices: Bool { !(brain is ScenarioBrain) }
+    /// Reads each turn start's prompt in place of its `reading`: Apple
+    /// Intelligence for `--labeler apple`, so a run checks it too.
+    public var labeler: (any PromptLabeler)?
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -671,7 +690,9 @@ public struct Eval {
             }
             // Each input's view events get their passes before the next, as
             // the app's would once the brain answered.
-            for input in Eval.inputs(step, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
+            var read = step
+            if let labeler, let prompt = step.prompt { read.labels = await labeler.label(Scrubber.scrub(prompt)) }
+            for input in Eval.inputs(read, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
             scripted?.willRun(nil, ahead: [])
             let session = step.session ?? "s1"
             switch step.event {
@@ -858,7 +879,10 @@ public struct Eval {
                              subagent: subagent, cwd: cwd, data: data)) }
         }
         switch step.event {
-        case "turn started": return [hook(.turn, .start, "UserPromptSubmit", step.prompt.map { ["prompt": .string($0)] } ?? [:])]
+        case "turn started":
+            let turn = Event(at: now, source: source, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: session,
+                             cwd: cwd, data: step.prompt.map { ["prompt": .string($0)] } ?? [:])
+            return [{ $0.agentReadingPrompt(turn, labels: step.labels) }]
         case "turn finished": return [hook(.turn, .end, "Stop", ["outcome": "done"].merging(step.message.map { ["message": .string($0)] } ?? [:]) { a, _ in a })]
         case "turn failed": return [hook(.turn, .end, "StopFailure", ["outcome": "failed", "error": .string(step.error ?? "api_error")])]
         case "command":

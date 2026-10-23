@@ -89,8 +89,10 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `workday`). `--port` picks the serial port; without it, while a bridge
   runs (below), commands go through the bridge.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
-  (character packs, [CHARACTER.md](../characters/CHARACTER.md)) and
-  `hooks` (Boop's hook installer, against any `--home`).
+  (character packs, [CHARACTER.md](../characters/CHARACTER.md)),
+  `read-check` (Apple Intelligence's readings of sample prompts against
+  `internal/app/Tests/Fixtures/prompt-readings.json`, on a Mac that has
+  it) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, gel frames and menu-bar icons as PNGs (L0). With a
@@ -450,8 +452,8 @@ does all of it:
    the fixtures' `expect.json` (for the whole run, not named fixtures or
    `--clip`), that no `PRIVATE_` marker from the
    fixtures reached any app file (`debug.jsonl` and the transcript
-   included) but `PRIVATE_PROMPT` and `PRIVATE_CLOSING`, which mark your
-   prompt and the agent's last message, and, from `boop.log`
+   included) but `PRIVATE_CLOSING`, which marks the agent's last message
+   (`PRIVATE_PROMPT`, your prompt, is read on the Mac and never kept), and, from `boop.log`
    (`link brain → …` and `device: do N ended HOW (WHY)`), that every
    brain reaction came after the rules' reaction, that the board said how
    every one it was sent ended (`ended`, [linkkit/SPEC.md](../linkkit/SPEC.md) §4),
@@ -482,6 +484,9 @@ retried once and counted as a link glitch.
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
+   After a change to how prompts are read, `boopdev read-check`, and the
+   scenarios with prompts again with `--labeler apple`, which reads them
+   with Apple Intelligence instead of the steps' own `reading`.
 2. Read a sample of its passes (`--timeline`, or the run's file it names)
    against the steering files (`characters/boop/steering/`): are the reactions and
    mood changes in character and never nagging, and the words and how

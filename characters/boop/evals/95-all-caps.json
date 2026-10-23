@@ -4,6 +4,6 @@
   "why": "PERSONALITY: shouting makes it flinch; its Example: a prompt in capitals, surprised, upset in a sound, once",
   "runs": 2,
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "WHY IS THE LOGIN STILL BROKEN", "expect": {"react": "surprised|stunned|uneasy|wounded|frightened", "feeling": "upset|none"}}
+    {"event": "turn started", "at": "0s", "prompt": "WHY IS THE LOGIN STILL BROKEN", "reading": {"kind": "fix", "tone": "shouting", "phrases": ["STILL BROKEN"]}, "expect": {"react": "surprised|stunned|uneasy|wounded|frightened", "feeling": "upset|none"}}
   ]
 }

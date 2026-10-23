@@ -10,7 +10,7 @@ import MellowHarness
 /// Each subcommand's usage, in the order `boopdev --help` lists them.
 let usages: [(command: String, text: String)] = [
     ("eval", """
-    boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--timeline] [--scenarios DIR] [--steering DIR]
+    boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
     boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --to-demo DIR [--only TEXT] [--always] [--scenarios DIR]
@@ -21,7 +21,9 @@ let usages: [(command: String, text: String)] = [
         (default the scenario's own runs, else 3 for an always scenario and 1 for the rest); it passes only
         if every run does. Before asking Jev anything it counts the requests the runs will send (each run's
         passes with the scripted brain) and stops if that's over --budget (default 100); --no-budget is for
-        the final pass (make eval). --always runs only the always scenarios, Boop's character. --timeline
+        the final pass (make eval). --labeler apple reads each turn start's prompt with Apple Intelligence on
+        this Mac, in place of the step's own reading, so a run checks the reading too. --always runs only
+        the always scenarios, Boop's character. --timeline
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
         nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
         scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
@@ -39,6 +41,13 @@ let usages: [(command: String, text: String)] = [
         studio (characters/charactergen.py --check). PACK is a pack's folder; without one, every pack in
         the repo's characters/. Prints each problem, which stops a pack from working, and each note,
         which doesn't. Exits 1 on a problem.
+    """),
+    ("read-check", """
+    boopdev read-check [--fixture FILE] [--verbose]
+        Reads sample prompts with Apple Intelligence on this Mac, as the app does (PromptIntake), and says
+        how often it gets the kind and the tone the fixture expects. FILE defaults to the repo's
+        internal/app/Tests/Fixtures/prompt-readings.json. --verbose prints every reading. Needs Apple
+        Intelligence; exits 1 without it.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -88,7 +97,7 @@ func findRepo() -> URL? {
 let evalBudget = 100
 
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo"],
+    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo", "--labeler"],
                          flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
     let repo = findRepo()
     func path(_ option: String, _ inRepo: String) -> URL {
@@ -162,6 +171,13 @@ func eval(_ raw: [String]) async {
         brain = JevBrain(key: key)
     }
     var runner = Eval(brain: brain, steering: steering)
+    switch args["--labeler"] {
+    case nil: break
+    case "apple":
+        guard let labeler = AppleIntelligenceLabeler.ifAvailable() else { fail("boopdev eval: Apple Intelligence isn't available on this Mac") }
+        runner.labeler = labeler
+    case let other?: fail("boopdev eval: --labeler is apple, not \(other)")
+    }
     let log = evalDebugLog()
     DebugLog.start(log)
     runner.debugLog = log
@@ -280,6 +296,35 @@ func check(_ raw: [String]) {
     exit(failed ? 1 : 0)
 }
 
+func readCheck(_ raw: [String]) async {
+    let args = arguments("read-check", raw, options: ["--fixture"], flags: ["--verbose"])
+    let file = args["--fixture"].map { URL(fileURLWithPath: $0) }
+        ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/prompt-readings.json")
+    guard let file, let data = try? Data(contentsOf: file),
+          let samples = try? JSONSerialization.jsonObject(with: data) as? [[String: String]] else {
+        fail("boopdev read-check: can't read the fixture; pass --fixture FILE")
+    }
+    guard let labeler = AppleIntelligenceLabeler.ifAvailable() else { fail("boopdev read-check: Apple Intelligence isn't available on this Mac") }
+    var kinds = 0, tones = 0
+    for sample in samples {
+        let prompt = sample["prompt"] ?? ""
+        let text = Scrubber.scrub(prompt)
+        var reading = PromptReading(counting: text, names: [])
+        let started = ContinuousClock.now
+        if let labels = await labeler.label(text) { reading.label(labels, in: text) }
+        let ms = (ContinuousClock.now - started).components.attoseconds / 1_000_000_000_000_000 + (ContinuousClock.now - started).components.seconds * 1000
+        let kindOK = reading.kind?.rawValue == sample["kind"], toneOK = reading.tone?.rawValue == sample["tone"]
+        kinds += kindOK ? 1 : 0
+        tones += toneOK ? 1 : 0
+        if args.has("--verbose") || !kindOK || !toneOK {
+            let got = "\(reading.kind?.rawValue ?? "none")\(kindOK ? "" : " (not \(sample["kind"] ?? "?"))"), "
+                + "\(reading.tone?.rawValue ?? "none")\(toneOK ? "" : " (not \(sample["tone"] ?? "?"))")"
+            print("\(kindOK && toneOK ? "ok  " : "MISS")  \(ms) ms  \(got)  \(reading.phrases)  \"\(prompt.prefix(60))\"")
+        }
+    }
+    print("kind \(kinds)/\(samples.count), tone \(tones)/\(samples.count)")
+}
+
 let args = Array(CommandLine.arguments.dropFirst())
 switch args.first {
 case "eval":
@@ -288,6 +333,8 @@ case "check":
     check(Array(args.dropFirst()))
 case "hooks":
     hooks(Array(args.dropFirst()))
+case "read-check":
+    await readCheck(Array(args.dropFirst()))
 case nil, "-h", "--help", "help":
     print(usage)
 case let command?:

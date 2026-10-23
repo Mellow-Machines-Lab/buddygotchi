@@ -34,6 +34,7 @@ final class RuntimeTests: XCTestCase {
         try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
         var options = Runtime.Options(stateDir: dir, socketPath: socketPath, link: transport, steering: Self.steering)
         options.devLines = true
+        options.labeler = { nil }
         options.readJevKey = readJevKey
         options.brain = { key in key.map { _ in brain } }
         let opened = self.opened
