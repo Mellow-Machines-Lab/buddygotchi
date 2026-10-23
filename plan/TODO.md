@@ -61,9 +61,10 @@ and new actions. One personality (Boop's default nature) for now.
 - [ ] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
       terminal tab and "lines gone"). Try it in iTerm2 and Terminal.
-- [ ] On the AMOLED board: turn it over and check the motion sensor's
-      axis (`kFlipZ`, `dbg.imu`), and try a stroke, a tickle and the nose
-      under a finger.
+- [ ] On the AMOLED board: turn it over once to confirm the motion
+      sensor's z (flipped on 2026-10-22: resting on the desk it read
+      -1 g and thought it was face down; now +1 g), and try a stroke, a
+      tickle and the nose under a finger.
 
 ## Later
 
