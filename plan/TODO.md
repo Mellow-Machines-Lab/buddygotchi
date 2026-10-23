@@ -63,6 +63,17 @@ and new actions. One personality (Boop's default nature) for now.
       over idle's and asleep's plain variations (`render/pixel/outfit.h`),
       at the place its occasion art puts them, and the sign; its working
       looks and reactions keep their own props up there, undressed.
+- [ ] **The slime's hats cost frames.** On the AMOLED board (140c9f2,
+      measured 2026-10-23 with `boopctl ping`'s `draw_us` and `fps`): idle
+      in the daytime draws in 26 ms, 37 fps; with a hat 31-35 ms, 27-30
+      fps (night's cap and lower lids 33.5 ms, winter's bobble 34.7,
+      Halloween 31.3, a party 31.5). Drawing the bands as filled ribbons
+      instead of strokes didn't help (night 28 fps), so it's the filled
+      area. The slower loop reads USB less often: the e2e check's p95
+      latency went from 139 ms to 182-221 ms at night and fails its 200 ms
+      limit about half the time. Draw the hat into its own small buffer
+      when the anchors' shape changes and blit it, or draw layers every
+      other frame, and re-measure.
 - [ ] **Fluid animations and interactions.** Today the face visibly cuts
       from one state to the next (a look to a reaction and back, one mood
       to another, a gesture in and out). It should flow: blend between
