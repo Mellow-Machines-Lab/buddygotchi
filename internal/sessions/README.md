@@ -1,6 +1,6 @@
 # Demos with a real agent
 
-Updated 2026-10-16. How a character pack's demo script plays through a
+Updated 2026-10-24. How a character pack's demo script plays through a
 real Claude Code or Codex with Boop watching, for recording videos
 (`make demo IN=…`; the commands are in
 [characters/DEMOS.md](../../characters/DEMOS.md), Play it). Here the
@@ -67,6 +67,14 @@ Boop's brain. They happen in order, and three things keep them so:
     looks the same; it also clears the screen at a compaction to its
     "Conversation compacted" line, where the default fullscreen one keeps
     the conversation on the screen.
+  - **A todo** is the agent's own to-do list call, its items numbered
+    steps with the script's counts done (`script.py`'s `todos`): Claude
+    Code's `TodoWrite`, Codex's `update_plan`, and in the app the
+    `/demo` command's instruction to write that list. Boop takes it as
+    done once a hook carries the list's counts, or one of Claude's
+    tasks. **A run that waits** ends its step at the request: Boop plays
+    the steps after it (a `hold`, say) while the agent waits to be
+    allowed, after the script's seconds as before.
   - In the Claude desktop app (`IN=claude`), the app sets its own model
     address, so the model can't be replayed: your real Claude performs the
     script openly instead, as a `/demo` command in the project, word for

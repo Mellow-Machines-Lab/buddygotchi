@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-22.</p>
+  <p class="small">Updated 2026-10-24.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -193,7 +193,7 @@ td.where{font-size:13px;white-space:nowrap}
   "idle": 1,
   "vol": 6,
   "when": ["day"]
-}</pre><span class="small"><code>idle</code> and <code>helpers</code> count sessions waiting for your next prompt and helpers at work; <code>when</code> is what's true now (<code>Occasions</code>: the part of the day, a holiday, a milestone day), and the board picks each look's variation itself from the designs whose tags are all on. The prompt's heading says the calendar's in words (<code>14:05, Saturday, Halloween</code>).</span></div>
+}</pre><span class="small"><code>idle</code> and <code>helpers</code> count sessions waiting for your next prompt and helpers at work; while an agent works and nothing needs you, <code>todo</code> is the longest turn's to-do list (<code>{"done": 3, "total": 7}</code>), drawn as <code>3/7</code> under the face. <code>when</code> is what's true now (<code>Occasions</code>: the part of the day, a holiday, a milestone day, every growth stage reached, and one tier: a long turn's <code>marathon</code> from 8 minutes and <code>camp</code> from 15, or, once the last turn has ended, <code>fidget</code> from 30 seconds, <code>setpiece</code> from 3 minutes and <code>doze</code> from 10), and the board picks each look's variation itself from the designs whose tags are all on. The prompt's heading says the calendar's in words (<code>14:05, Saturday, Halloween</code>).</span></div>
       </li>
       <li class="link"><div class="wire"><span>the event, read from the transcript</span></div></li>
       <li class="hop">
@@ -273,7 +273,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
   "did": "poked",
   "data": { "src": "screen" }
 }</pre>
-        <span class="small">Boop records it as a poke, which also prompts Jev. BOOT's says <code>"src": "button"</code>, and the Mac makes it a press (below); <code>"did": "handoff"</code> says the board played its hand-off. A touch that travels or wiggles, or the AMOLED's motion sensor, sends <code>"kind": "gesture"</code> instead, <code>did</code> what it was (<code>stroke</code>, <code>nose</code>, <code>dizzy</code>, <code>facedown</code>…): a line for Jev, as a poke is.</span></div>
+        <span class="small">Boop records it as a poke, which also prompts Jev. BOOT's says <code>"src": "button"</code>, and the Mac makes it a press (below); <code>"did": "handoff"</code> says the board played its hand-off. A touch that travels or wiggles, or the AMOLED's motion sensor, sends <code>"kind": "gesture"</code> instead, <code>did</code> what it was (<code>stroke</code>, <code>nose</code>, <code>dizzy</code>, <code>facedown</code>…): a line for Jev, as a poke is. A finger held still a second on the needs-you sign is <code>dismiss</code>: the core stops showing that request (<code>Core.dismiss</code>), though the agent still waits, and the board plays nothing.</span></div>
     </li>
   </ol>
   </div>

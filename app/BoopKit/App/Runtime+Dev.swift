@@ -91,6 +91,15 @@ extension Runtime {
         changed()
     }
 
+    /// What you did to the device, the buddy `buddy`'s, as it reports it
+    /// (`ev gesture`): `dismiss`, a finger held on the needs-you sign.
+    func gestured(_ kind: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): gesture \(kind)\(Runtime.whose(rig))")
+        run(pipeline.gesture(kind, at: options.clock(), buddy: rig.tag))
+        changed()
+    }
+
     /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
 }

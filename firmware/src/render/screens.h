@@ -35,6 +35,9 @@ struct Strip {
   int busy = 0;     // sessions working (grey; hidden at zero)
   int idle = 0;     // sessions idle, waiting for your next prompt: a parcel each for BOOT (hidden at zero)
   int helpers = 0;  // helpers at work: a mini each, up to kMinis, then +N (hidden at zero)
+  // The working agent's to-do list, as "3/7" after the working count
+  // (hidden with no list).
+  int todoDone = 0, todoTotal = 0;
   bool noApp = false;
 };
 
