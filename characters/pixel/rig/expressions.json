@@ -1,21 +1,21 @@
 {
   "styles": {
-    "eyes": ["dot", "bean"],
-    "mouth": ["curve", "ring"]
+    "eyes": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"],
+    "mouth": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"]
   },
   "expressions": {
-    "calm": {"mouthWidth": 250, "mouthOpen": 300, "mouth": "ring"},
-    "happy": {"eyeCurve": 300, "eyeSize": 950, "mouthWidth": 1000, "mouthCurve": 800, "mouthOpen": 400, "cheek": 500},
-    "excited": {"squash": -150, "eyeOpen": 150, "eyeCurve": 900, "mouthWidth": 1500, "mouthCurve": 900, "mouthOpen": 800, "cheek": 1000},
-    "curious": {"tilt": 200, "eyeSize": 1050, "gazeY": -250, "mouthWidth": 250, "mouthOpen": 300, "mouth": "ring"},
-    "engaged": {"eyeSize": 1150, "mouthWidth": 600, "mouthCurve": 400},
-    "determined": {"eyeOpen": 850, "eyeCurve": 100, "eyeSize": 1100, "mouthWidth": 800, "mouthCurve": 100, "cheek": 300},
-    "proud": {"squash": -100, "eyeOpen": 450, "eyeCurve": 400, "mouthWidth": 1000, "mouthCurve": 500, "cheek": 400, "eyes": "bean"},
-    "annoyed": {"eyeOpen": 500, "eyeCurve": -200, "gazeX": -300, "mouthWidth": 550, "mouthCurve": -300, "eyes": "bean"},
-    "irritated": {"eyeOpen": 450, "eyeCurve": -300, "mouthWidth": 700, "mouthCurve": -400, "cheek": 300, "eyes": "bean"},
-    "grumpy": {"squash": 150, "eyeOpen": 500, "eyeCurve": -400, "mouthWidth": 850, "mouthCurve": -600, "cheek": 300, "eyes": "bean"},
-    "sad": {"squash": 150, "eyeOpen": 600, "eyeCurve": -700, "gazeY": 300, "mouthWidth": 450, "mouthCurve": -700, "cheek": 400, "tear": 500},
-    "whiny": {"eyeCurve": -500, "eyeSize": 1200, "gazeY": -200, "mouthWidth": 800, "mouthCurve": -500, "mouthOpen": 300, "cheek": 400, "tear": 700},
-    "wounded": {"squash": 100, "tilt": -150, "eyeCurve": -300, "eyeSize": 950, "mouthWidth": 450, "mouthCurve": -500, "cheek": 400, "tear": 800}
+    "happy": {"eyeCurve": 300, "eyeSize": 1080, "mouthWidth": 670, "mouthCurve": 800, "mouthOpen": 300, "cheek": 1000, "eyes": "happy", "mouth": "happy"},
+    "excited": {"eyeOpen": 150, "eyeCurve": 900, "mouthWidth": 1470, "mouthCurve": 900, "mouthOpen": 800, "cheek": 1000, "eyes": "excited", "mouth": "excited"},
+    "proud": {"eyeOpen": 450, "eyeCurve": 400, "mouthWidth": 1500, "mouthCurve": 500, "cheek": 1000, "eyes": "proud", "mouth": "proud"},
+    "curious": {"eyeSize": 1050, "gazeY": -250, "mouthWidth": 530, "mouthOpen": 700, "cheek": 1000, "eyes": "curious", "mouth": "curious"},
+    "determined": {"eyeOpen": 700, "eyeCurve": 100, "eyeSize": 920, "mouthWidth": 1130, "mouthCurve": 100, "cheek": 1000, "eyes": "determined", "mouth": "determined"},
+    "grumpy": {"eyeOpen": 600, "eyeCurve": -400, "eyeSize": 830, "mouthWidth": 1270, "mouthCurve": -600, "mouthOpen": 300, "cheek": 1000, "eyes": "grumpy", "mouth": "grumpy"},
+    "sad": {"eyeOpen": 700, "eyeCurve": -700, "eyeSize": 830, "gazeY": 300, "mouthWidth": 1270, "mouthCurve": -700, "mouthOpen": 500, "cheek": 1000, "tear": 400, "eyes": "sad", "mouth": "sad"},
+    "calm": {"mouthWidth": 730, "mouthCurve": 400, "cheek": 1000, "eyes": "calm", "mouth": "calm"},
+    "engaged": {"eyeSize": 1040, "mouthWidth": 870, "cheek": 1000, "eyes": "engaged", "mouth": "engaged"},
+    "annoyed": {"eyeOpen": 550, "eyeCurve": -200, "eyeSize": 850, "gazeX": 300, "mouthWidth": 930, "mouthCurve": -300, "cheek": 1000, "eyes": "annoyed", "mouth": "annoyed"},
+    "irritated": {"eyeOpen": 600, "eyeCurve": -300, "eyeSize": 830, "mouthWidth": 1000, "mouthCurve": -400, "cheek": 1000, "eyes": "irritated", "mouth": "irritated"},
+    "whiny": {"eyeCurve": -500, "eyeSize": 1080, "gazeY": -200, "mouthWidth": 1000, "mouthCurve": -500, "mouthOpen": 500, "cheek": 1000, "tear": 300, "eyes": "whiny", "mouth": "whiny"},
+    "wounded": {"eyeCurve": -300, "eyeSize": 960, "mouthWidth": 800, "mouthCurve": -500, "cheek": 1000, "tear": 300, "eyes": "wounded", "mouth": "wounded"}
   }
 }

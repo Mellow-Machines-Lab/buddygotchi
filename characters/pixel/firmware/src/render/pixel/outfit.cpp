@@ -42,38 +42,38 @@ void slab(Canvas& c, int x, int y, int w, int h, uint8_t color) {
 // The step the air and the nightcap's pompom are on: one every 400 ms.
 uint32_t phase(uint32_t ms) { return ms / 400; }
 
-void nightcap(Canvas& c, int y, int swing) {
-  c.fillRect(96, y + 40, 128, 10, white());
-  c.fillRect(104, y + 28, 116, 12, blue());
-  c.fillRect(118, y + 16, 96, 12, blue());
-  c.fillRect(140, y + 6, 68, 10, blue());
-  c.fillRect(200, y + 4, 22, 8, blue());
-  c.fillRect(218 + swing, y + 10, 10, 10, blue());
-  slab(c, 222 + swing, y + 18, 16, 16, white());
+void nightcap(Canvas& c, int x, int y, int swing) {
+  c.fillRect(x + 96, y + 40, 128, 10, white());
+  c.fillRect(x + 104, y + 28, 116, 12, blue());
+  c.fillRect(x + 118, y + 16, 96, 12, blue());
+  c.fillRect(x + 140, y + 6, 68, 10, blue());
+  c.fillRect(x + 200, y + 4, 22, 8, blue());
+  c.fillRect(x + 218 + swing, y + 10, 10, 10, blue());
+  slab(c, x + 222 + swing, y + 18, 16, 16, white());
 }
 
-void partyHat(Canvas& c, int y) {
-  c.fillRect(152, y + 8, 16, 10, red());
-  c.fillRect(146, y + 18, 28, 10, amber());
-  c.fillRect(140, y + 28, 40, 10, red());
-  c.fillRect(134, y + 38, 52, 10, amber());
-  c.fillRect(128, y + 48, 64, 8, red());
-  slab(c, 152, y - 6, 16, 16, gold());
+void partyHat(Canvas& c, int x, int y) {
+  c.fillRect(x + 152, y + 8, 16, 10, red());
+  c.fillRect(x + 146, y + 18, 28, 10, amber());
+  c.fillRect(x + 140, y + 28, 40, 10, red());
+  c.fillRect(x + 134, y + 38, 52, 10, amber());
+  c.fillRect(x + 128, y + 48, 64, 8, red());
+  slab(c, x + 152, y - 6, 16, 16, gold());
 }
 
-void witchHat(Canvas& c) {
-  c.fillRect(150, 2, 20, 12, dark());
-  c.fillRect(140, 14, 40, 14, dark());
-  c.fillRect(128, 28, 64, 14, dark());
-  c.fillRect(124, 42, 72, 6, amber());
-  c.fillRect(96, 48, 128, 10, dark());
+void witchHat(Canvas& c, int x, int y) {
+  c.fillRect(x + 150, y + 2, 20, 12, dark());
+  c.fillRect(x + 140, y + 14, 40, 14, dark());
+  c.fillRect(x + 128, y + 28, 64, 14, dark());
+  c.fillRect(x + 124, y + 42, 72, 6, amber());
+  c.fillRect(x + 96, y + 48, 128, 10, dark());
 }
 
-void bobble(Canvas& c) {
-  c.fillRect(100, 42, 120, 12, white());
-  c.fillRect(108, 24, 104, 18, red());
-  c.fillRect(124, 12, 72, 12, red());
-  slab(c, 150, -2, 20, 18, white());
+void bobble(Canvas& c, int x, int y) {
+  c.fillRect(x + 100, y + 42, 120, 12, white());
+  c.fillRect(x + 108, y + 24, 104, 18, red());
+  c.fillRect(x + 124, y + 12, 72, 12, red());
+  slab(c, x + 150, y - 2, 20, 18, white());
 }
 
 void snow(Canvas& c, uint32_t p) {
@@ -115,17 +115,17 @@ uint32_t outfitKey(uint32_t when, Mood m, uint32_t ms) {
   return 1 + uint32_t(o) + 8 * uint32_t(lineUp(m) != 0) + 16 * moving;
 }
 
-void drawOutfit(Canvas& c, uint32_t when, Mood m, uint32_t ms) {
+void drawOutfit(Canvas& c, uint32_t when, Mood m, uint32_t ms, int dx, int dy) {
   const uint32_t p = phase(ms);
   const uint8_t air = airFor(when);
   if (air & kSnow) snow(c, p);
   if (air & kConfetti) confetti(c, p);
   if (air & kHearts) hearts(c, p);
   switch (outfitFor(when)) {
-    case Outfit::kWitchHat: witchHat(c); break;
-    case Outfit::kPartyHat: partyHat(c, 0); break;
-    case Outfit::kNightcap: nightcap(c, lineUp(m), p % 2 ? 4 : 0); break;
-    case Outfit::kBobble: bobble(c); break;
+    case Outfit::kWitchHat: witchHat(c, dx, dy); break;
+    case Outfit::kPartyHat: partyHat(c, dx, dy); break;
+    case Outfit::kNightcap: nightcap(c, dx, dy + lineUp(m), p % 2 ? 4 : 0); break;
+    case Outfit::kBobble: bobble(c, dx, dy); break;
     default: break;
   }
 }

@@ -128,7 +128,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
 - `internal/tools/fluid/measure.py`: how fluid the everyday transitions
-  are (`transitions.jsonl`, recorded with `boopctl sim`), each frame's
+  are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
+  idle's mood changes and the rig face's hand-overs, recorded with
+  `boopctl sim`), each frame's
   change against the median; `--json FILE` writes them for the Character
   Studio's Transitions, its jumpiest list
   ([characters/studio/README.md](../characters/studio/README.md)).
@@ -341,12 +343,18 @@ gets at least one scenario. Their pictures are the golden images in
   scenes send a frame; the animation bank's player
   against facegen's frames, every mood, state and variation, and the
   variations' host facts (`test_scene`, Pixel's pack's, which comes with
-  the pixel face to a pack that uses it); the voice
+  the pixel face to a pack that uses it); Pixel's rig face (`test_rig_face`,
+  Pixel's pack's too): every drawn mood at rest on its own art, as its
+  idle design draws it, an eye squashing onto its pivot and shut below a
+  third open, a mood change's parts morphing and dithering, a press's
+  squash and a stroke's lean, the talking "o", the anchors, and a
+  cross-fade's two pictures sharing the pixels; the voice
   player (`test_voice`); the sound effects' assets, policies, timing
   and mixer (`test_effects`); and the rig the faces are moving onto
   (`test_rig`): clips' eases, loops and cues, the mixer's springs
   settling without overshoot and a mood changed mid-way never jumping,
-  reactions' weights easing in and out over 150 ms, additive and
+  reactions' weights easing in and out over 150 ms (a quarter of a
+  shorter clip, so a blink shuts), additive and
   absolute clips blending, styles cross-fading over 200 ms, the same
   frames from the same inputs, the layers' 200 ms fades, and the staged
   pack's `rig_tables.h` against its files.

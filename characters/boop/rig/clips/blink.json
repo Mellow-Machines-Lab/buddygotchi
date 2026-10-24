@@ -1,0 +1,7 @@
+{
+  "about": "A blink: the eyes shut quickly, hold a moment and open a little slower.",
+  "ms": 180,
+  "tracks": {
+    "eyeOpen": [[0, 0], [60, -1000, "in"], [100, -1000], [180, 0, "out"]]
+  }
+}

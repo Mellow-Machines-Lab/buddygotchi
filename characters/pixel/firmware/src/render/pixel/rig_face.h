@@ -1,0 +1,78 @@
+// The rig face: Pixel's plain face drawn from the rig's channels
+// (render/rig/), so it moves continuously, with each drawn mood's own art as
+// its parts (faces.h's kParts, which facegen cuts from the mood's idle face
+// at rest). A style of the staged pack's rig names the drawn mood whose eyes
+// or mouth it draws.
+//
+// A mood's pose sits on its styles' art: while the channels are at the
+// pose, each part is drawn as the art has it, and their difference from it
+// moves the parts. The body's moves, squashes and leans the whole face; the
+// eyes' close each eye onto the line it shuts on (its shut art below a
+// third open), scale them and shift them; the mouth's widen and open it.
+// The cheeks stay as the style's art has them. A style changing cross-fades
+// over the mixer's style mix: each part dithers out as the next one's
+// dithers in, both morphing from the one's box to the other's. Pure: a
+// function of the mixer's state.
+#pragma once
+#include <cstdint>
+
+#include "render/canvas.h"
+#include "render/pixel/scene.h"
+#include "render/rig/layers.h"
+#include "render/rig/mixer.h"
+
+namespace render::pixel {
+
+// A part placed: which one (faces::kParts[style][kind]), where its pivot
+// is, its scale each way in 1024ths, and the pixels it draws.
+struct Placed {
+  uint8_t style = 0, kind = 0;
+  int16_t x = 0, y = 0, sx = 1024, sy = 1024;
+  Dither dither;
+};
+// What the rig face draws: its parts placed, and while it talks the "o" in
+// its mouth's place (its corner, and its ink; 0 for none). Two equal frames
+// draw the same pixels.
+struct RigFrame {
+  static constexpr int kMaxParts = 8;  // two styles' eyes and cheeks, and two mouths
+  Placed parts[kMaxParts];
+  int16_t talkX = 0, talkY = 0;
+  uint8_t count = 0, talkInk = 0;
+  Dither talk;
+  bool operator==(const RigFrame& o) const;
+};
+
+class RigFace {
+ public:
+  // The velocity a press gives the squash, and each px of a stroke the lean.
+  static constexpr int kPressKick = 6000, kStrokeKick = 400;
+  // The pose the rig face wears in mood m: the staged rig's expression for
+  // it, else for the drawn mood it wears, when both its styles name drawn
+  // moods. nullptr for none: the baked designs draw that mood.
+  static const rig::Expression* pose(Mood m);
+  // At rest in mood m (one without a pose: at rest), at t.
+  void reset(Mood m, uint32_t t);
+  // A mood without a pose keeps the one it has.
+  void setMood(Mood m);
+  void advanceTo(uint32_t t);
+  // Plays the rig's blink clip, if it has one.
+  void blink();
+  // A finger on the screen: a press squashes the face, a stroke leans it.
+  void finger(bool down, int x, int y);
+  // The face now, `dy` px lower (the press's dip), with the "o" in its
+  // mouth's place while `talking`, of the pixels `d` draws.
+  RigFrame frame(int dy, bool talking, Dither d = {}) const;
+  // Where the body is now, in canvas px, and where it is at rest in mood m.
+  rig::Anchors anchors() const;
+  static rig::Anchors restAnchors(Mood m);
+
+ private:
+  rig::Mixer mixer_;
+  uint32_t at_ = 0;
+  bool finger_ = false;
+  int fingerX_ = 0;
+};
+
+void drawRig(Canvas& c, const RigFrame& f);
+
+}  // namespace render::pixel

@@ -48,6 +48,11 @@ constexpr Track kWiderTracks[] = {{Channel::kEyeOpenL, {kOpen, 2}}};
 constexpr Clip kShutLoop = {"shut", 1000, true, false, {kShutTracks, 1}, {}};
 constexpr Clip kWider = {"wider", 1000, true, true, {kWiderTracks, 1}, {}};
 
+constexpr Key kDip[] = {
+    {0, 0, Ease::kLinear}, {60, -1000, Ease::kIn}, {100, -1000, Ease::kLinear}, {180, 0, Ease::kOut}};
+constexpr Track kDipTracks[] = {{Channel::kEyeOpenL, {kDip, 4}}};
+constexpr Clip kBlink = {"blink", 180, false, true, {kDipTracks, 1}, {}};
+
 constexpr Cue kTicks[] = {{0, "tick"}, {400, "tock"}};
 constexpr Clip kTicking = {"ticking", 1000, true, true, {}, {kTicks, 2}};
 constexpr Clip kOnce = {"once", 1000, false, true, {}, {kTicks, 2}};
@@ -184,6 +189,24 @@ static void test_a_reactions_weight_eases_in_and_out() {
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
   m.advance(16);
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
+}
+
+// A clip shorter than four fades eases in and out over a quarter of itself,
+// so a 180 ms blink still shuts whole for its held keys.
+static void test_a_short_clip_fades_over_a_quarter_of_itself() {
+  Mixer m;
+  m.reset(pose({}), nullptr);
+  m.play(kBlink);
+  m.advance(60);
+  TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kEyeOpenL]);  // whole by 45 ms
+  m.advance(40);
+  TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kEyeOpenL]);
+  m.advance(80);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kEyeOpenL]);
+  // A clip of four fades or more fades over kFadeMs: half way at 75 ms.
+  m.play(kLean);
+  m.advance(75);
+  TEST_ASSERT_EQUAL_INT(250, m.channels()[Channel::kLean]);
 }
 
 static void test_a_cut_reaction_eases_out_from_where_it_was() {
@@ -404,7 +427,7 @@ static void test_the_staged_rig_is_whole() {
   }
 }
 
-// Boop's rig/ files (and Pixel's copy of them), as the table holds them.
+// Boop's rig/ files, as the table holds them.
 static void test_the_staged_rig_is_the_packs_files() {
   if (!kRig.expressions.count) TEST_IGNORE_MESSAGE("the staged pack has no rig/");
   const Expression* happy = kRig.expression("happy");
@@ -414,7 +437,7 @@ static void test_the_staged_rig_is_the_packs_files() {
   TEST_ASSERT_EQUAL_INT16(800, happy->values[Channel::kMouthCurve]);
   TEST_ASSERT_EQUAL_INT16(-700, sad->values[Channel::kEyeCurve]);
   TEST_ASSERT_EQUAL_INT16(1000, sad->values[Channel::kEyeSize]);  // at rest: its file doesn't say
-  TEST_ASSERT_EQUAL_STRING("ring", kRig.mouthStyles[kRig.expression("calm")->mouth]);
+  TEST_ASSERT_EQUAL_STRING("calm", kRig.mouthStyles[kRig.expression("calm")->mouth]);
   TEST_ASSERT_NULL(kRig.expression("comfy"));  // not drawn yet
   const Look* idle = kRig.look(SceneState::kIdle);
   TEST_ASSERT_NOT_NULL(idle);
@@ -444,6 +467,7 @@ int main() {
   RUN_TEST(test_springs_settle_on_the_moods_targets_without_overshoot);
   RUN_TEST(test_a_retarget_mid_way_keeps_the_channel_continuous);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
+  RUN_TEST(test_a_short_clip_fades_over_a_quarter_of_itself);
   RUN_TEST(test_a_cut_reaction_eases_out_from_where_it_was);
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);

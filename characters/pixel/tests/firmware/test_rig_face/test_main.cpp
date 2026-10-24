@@ -1,0 +1,193 @@
+// The rig face (render/pixel/rig_face.h): each drawn mood at rest on its own
+// art, as its idle design draws it; its parts chosen and placed by the
+// channels (an eye shut below a third open, the body's squash and lean, the
+// gaze); a style change's morph and dither; the "o" while it talks; and the
+// anchors that what it wears rides.
+#include <unity.h>
+
+#include <vector>
+
+#include "faces.h"
+#include "render/palette.h"
+#include "render/pixel/rig_face.h"
+#include "render/pixel/scene.h"
+
+using namespace render;
+using namespace render::pixel;
+
+void setUp() {}
+void tearDown() {}
+
+namespace {
+
+struct Buf {
+  std::vector<uint8_t> px = std::vector<uint8_t>(size_t(kWidth) * kHeight, 0);
+  Canvas c{px.data()};
+  int count(uint8_t color) const {
+    int n = 0;
+    for (uint8_t p : px) n += p == color;
+    return n;
+  }
+};
+
+// At rest in mood m from 0, at t: its look's clip playing, nothing else.
+RigFace at(Mood m, uint32_t t = 0) {
+  RigFace f;
+  f.reset(m, 0);
+  f.advanceTo(t);
+  return f;
+}
+// The part of a frame of this kind, or nullptr.
+const Placed* find(const RigFrame& f, int kind, int nth = 0) {
+  for (int i = 0; i < f.count; ++i)
+    if (f.parts[i].kind == kind && nth-- == 0) return &f.parts[i];
+  return nullptr;
+}
+
+}  // namespace
+
+// At rest in each drawn mood, the rig face draws that mood's own parts where
+// its art has them, whole: its idle design's face at its start, pixel for
+// pixel, for every mood whose first idle is the face alone at its start.
+static void test_each_mood_rests_on_its_own_art() {
+  for (int d = 0; d < faces::kMoodCount; ++d) {
+    const Mood m = pixelMood(d);
+    TEST_ASSERT_NOT_NULL(RigFace::pose(m));
+    const RigFrame f = at(m).frame(0, false);
+    TEST_ASSERT_EQUAL_INT(4, f.count);  // two eyes, the cheeks, the mouth
+    for (int i = 0; i < f.count; ++i) {
+      const Placed& p = f.parts[i];
+      const faces::Part& art = faces::kParts[d][p.kind];
+      TEST_ASSERT_EQUAL_INT(d, p.style);
+      TEST_ASSERT_TRUE(p.kind != faces::kPartShutL && p.kind != faces::kPartShutR);
+      TEST_ASSERT_EQUAL_INT(art.x, p.x);
+      TEST_ASSERT_EQUAL_INT(art.y, p.y);
+      TEST_ASSERT_EQUAL_INT(1024, p.sx);
+      TEST_ASSERT_EQUAL_INT(1024, p.sy);
+      TEST_ASSERT_TRUE(p.dither.all());
+    }
+  }
+  // Happy's and sad's first idles start on the face alone: the rig face's
+  // pixels are theirs.
+  for (const Mood m : {Mood::kHappy, Mood::kSad}) {
+    Buf rig, baked;
+    drawRig(rig.c, at(m).frame(0, false));
+    SceneShow s;
+    s.mood = m, s.state = SceneState::kIdle;
+    drawScene(baked.c, s);
+    TEST_ASSERT_EQUAL_MEMORY(baked.px.data(), rig.px.data(), baked.px.size());
+  }
+}
+
+// A blink closes each eye onto the line it shuts on: squashed about its
+// pivot while it's a third open or more, its shut art below that.
+static void test_an_eye_closes_onto_its_pivot_then_shows_shut() {
+  RigFace f = at(Mood::kCalm);
+  f.blink();
+  f.advanceTo(30);
+  const RigFrame closing = f.frame(0, false);
+  const Placed* eye = find(closing, faces::kPartEyeL);
+  TEST_ASSERT_NOT_NULL(eye);
+  const faces::Part& art = faces::kParts[pixelIndex(Mood::kCalm)][faces::kPartEyeL];
+  TEST_ASSERT_TRUE(eye->sy < 1024 && eye->sy >= 1024 / 3);
+  TEST_ASSERT_EQUAL_INT(1024, eye->sx);
+  TEST_ASSERT_EQUAL_INT(art.y, eye->y);  // it closes onto its pivot
+  f.advanceTo(80);
+  const RigFrame shut = f.frame(0, false);
+  TEST_ASSERT_NULL(find(shut, faces::kPartEyeL));
+  TEST_ASSERT_NOT_NULL(find(shut, faces::kPartShutL));
+  TEST_ASSERT_NOT_NULL(find(shut, faces::kPartShutR));
+  f.advanceTo(400);
+  TEST_ASSERT_TRUE(f.frame(0, false) == at(Mood::kCalm, 400).frame(0, false));  // open again, at rest
+}
+
+// A new mood cross-fades its styles over the mixer's style mix: half way,
+// both moods' parts, the old one's thresholds the rest of the new one's,
+// each box between the two; then the new mood's alone.
+static void test_a_mood_change_morphs_and_dissolves() {
+  RigFace f = at(Mood::kHappy);
+  f.setMood(Mood::kExcited);
+  f.advanceTo(100);
+  const RigFrame mid = f.frame(0, false);
+  TEST_ASSERT_EQUAL_INT(8, mid.count);
+  const Placed *out = find(mid, faces::kPartMouth), *in = find(mid, faces::kPartMouth, 1);
+  TEST_ASSERT_NOT_NULL(in);
+  TEST_ASSERT_EQUAL_INT(pixelIndex(Mood::kHappy), out->style);
+  TEST_ASSERT_EQUAL_INT(pixelIndex(Mood::kExcited), in->style);
+  TEST_ASSERT_TRUE(out->dither.lo == in->dither.hi && out->dither.hi == 16 && in->dither.lo == 0);
+  TEST_ASSERT_TRUE(in->dither.hi > 0 && in->dither.hi < 16);
+  // Happy's small mouth grows toward excited's wide one, which starts small.
+  TEST_ASSERT_TRUE(out->sx > 1024 && in->sx < 1024);
+  f.advanceTo(1000);
+  const RigFrame after = f.frame(0, false);
+  TEST_ASSERT_EQUAL_INT(4, after.count);
+  TEST_ASSERT_TRUE(after == at(Mood::kExcited, 1000).frame(0, false));
+}
+
+// A press squashes the face onto its ground, wider and shorter; a stroke
+// leans it the way the finger goes. Both settle back to rest.
+static void test_a_press_squashes_and_a_stroke_leans() {
+  RigFace f = at(Mood::kCalm);
+  const Placed rest = *find(f.frame(0, false), faces::kPartEyeL);
+  f.finger(true, 100, 120);
+  f.advanceTo(60);
+  const Placed pressed = *find(f.frame(0, false), faces::kPartEyeL);
+  TEST_ASSERT_TRUE(pressed.sx > 1024 && pressed.sy < 1024);
+  TEST_ASSERT_TRUE(pressed.y > rest.y);  // down toward the ground
+  for (int x = 110; x <= 200; x += 10) f.finger(true, x, 120);
+  f.finger(false, 0, 0);
+  f.advanceTo(160);
+  TEST_ASSERT_TRUE(f.anchors().crown.x > RigFace::restAnchors(Mood::kCalm).crown.x);  // its top leans right
+  f.advanceTo(3000);
+  TEST_ASSERT_TRUE(f.frame(0, false) == at(Mood::kCalm, 3000).frame(0, false));
+}
+
+// While it talks, the "o" takes the mouth's place, at its middle, in its ink.
+static void test_talking_shows_the_o_in_the_mouths_place() {
+  const RigFrame f = at(Mood::kCalm).frame(0, true);
+  TEST_ASSERT_NULL(find(f, faces::kPartMouth));
+  const faces::Part& mouth = faces::kParts[pixelIndex(Mood::kCalm)][faces::kPartMouth];
+  TEST_ASSERT_EQUAL_INT(mouth.x + (mouth.x0 + mouth.x1) / 2 - kTalkW / 2, f.talkX);
+  TEST_ASSERT_EQUAL_INT(sceneInk(1), f.talkInk);
+}
+
+// The anchors at rest are the mood's; a lift raises them with the face.
+static void test_the_anchors_ride_the_face() {
+  RigFace f = at(Mood::kHappy);
+  const rig::Anchors rest = RigFace::restAnchors(Mood::kHappy), now = f.anchors();
+  TEST_ASSERT_EQUAL_INT(rest.brimF.y, now.brimF.y);
+  TEST_ASSERT_EQUAL_INT(rest.handF.y, now.handF.y);
+  const faces::Part& eye = faces::kParts[pixelIndex(Mood::kHappy)][faces::kPartEyeL];
+  TEST_ASSERT_EQUAL_INT(eye.y + eye.y0, rest.brimF.y);  // the top of its eyes
+  f.finger(true, 160, 120);                             // a press: the face squashes down, and its brim with it
+  f.advanceTo(60);
+  TEST_ASSERT_TRUE(f.anchors().brimF.y > rest.brimF.y);
+}
+
+// A cross-fade's two pictures share the pixels: each threshold is one's.
+static void test_a_dither_shares_the_pixels() {
+  for (int mix = 0; mix <= 1000; mix += 125) {
+    const Dither in = Dither::fade(mix, true), out = Dither::fade(mix, false);
+    Buf a, b;
+    fillDithered(a.c, 0, 0, kWidth, kHeight, 1, in);
+    fillDithered(b.c, 0, 0, kWidth, kHeight, 1, out);
+    TEST_ASSERT_EQUAL_INT(kWidth * kHeight, a.count(1) + b.count(1));
+    TEST_ASSERT_EQUAL_INT(kWidth * kHeight * in.hi / 16, a.count(1));
+  }
+  // Within another: a quarter of a half.
+  const Dither d = Dither{0, 4}.within(Dither::fade(500, false));
+  TEST_ASSERT_EQUAL_INT(8, d.lo);
+  TEST_ASSERT_EQUAL_INT(10, d.hi);
+}
+
+int main(int, char**) {
+  UNITY_BEGIN();
+  RUN_TEST(test_each_mood_rests_on_its_own_art);
+  RUN_TEST(test_an_eye_closes_onto_its_pivot_then_shows_shut);
+  RUN_TEST(test_a_mood_change_morphs_and_dissolves);
+  RUN_TEST(test_a_press_squashes_and_a_stroke_leans);
+  RUN_TEST(test_talking_shows_the_o_in_the_mouths_place);
+  RUN_TEST(test_the_anchors_ride_the_face);
+  RUN_TEST(test_a_dither_shares_the_pixels);
+  return UNITY_END();
+}

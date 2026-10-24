@@ -67,6 +67,27 @@ struct SceneFrame {
 bool operator==(const SceneFrame& a, const SceneFrame& b);
 inline bool operator!=(const SceneFrame& a, const SceneFrame& b) { return !(a == b); }
 
+// Which pixels a picture draws while two cross-fade: a 4 × 4 ordered dither
+// gives each pixel a threshold, 0 … 15, and a picture draws those whose
+// threshold is in [lo, hi). Every pixel is [0, 16).
+struct Dither {
+  uint8_t lo = 0, hi = 16;
+  // The new picture's share `mix` (0 … 1000) of the way into a fade, or
+  // the old one's.
+  static Dither fade(int mix, bool incoming);
+  // This one, of what `outer` draws.
+  Dither within(Dither outer) const;
+  bool all() const { return lo == 0 && hi >= 16; }
+  bool draws(int x, int y) const;
+  bool operator==(const Dither& o) const { return lo == o.lo && hi == o.hi; }
+};
+// A rectangle's pixels that `d` draws, in `color`.
+void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d);
+// The small "o" the mouth becomes while a take is loud, at x, y (its top
+// left corner), in `ink`.
+constexpr int kTalkW = 14, kTalkH = 12;
+void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d = {});
+
 // The scene a mood, state and variation show: some are shared, such as
 // asleep and no app, which look the same in every mood.
 int sceneOf(Mood m, SceneState s, int variant = 0);
@@ -74,29 +95,32 @@ int sceneOf(Mood m, SceneState s, int variant = 0);
 // loopMs): what a moment's loops count.
 uint32_t loopMs(Mood m, SceneState s, int variant = 0);
 SceneFrame sceneFrame(const SceneShow& s);
-// Draws a frame sceneFrame made over what's on the canvas; the screen
-// clears it first. The device draws the frame it compared, so it lays each
-// frame out once. The show's overload, for the tests, lays one out.
-void drawScene(Canvas& c, const SceneFrame& f);
-inline void drawScene(Canvas& c, const SceneShow& s) { drawScene(c, sceneFrame(s)); }
-// The palette entry for a design colour (faces::kColors), for the tests.
+// Draws a frame sceneFrame made over what's on the canvas, the pixels `d`
+// draws; the screen clears it first. The device draws the frame it
+// compared, so it lays each frame out once. The show's overload lays one out.
+void drawScene(Canvas& c, const SceneFrame& f, Dither d = {});
+inline void drawScene(Canvas& c, const SceneShow& s, Dither d = {}) { drawScene(c, sceneFrame(s), d); }
+// The palette entry for a design colour (faces::kColors).
 uint8_t sceneInk(int color);
 
 // What's drawn over the face: what it wears and the air around it, when it
-// dresses (render/pixel/outfit.h: for `when`, in `mood`, at `ms`), and the
-// sign it holds up, when there's one (`held`, `heldOffset` px below its
-// place: render/pixel/held.h).
+// dresses (render/pixel/outfit.h: for `when`, in `mood`, at `ms`, `hatX`
+// and `hatY` px from its place, as the rig face moves), and the sign it
+// holds up, when there's one (`held`, `heldOffset` px below its place:
+// render/pixel/held.h).
 struct Overlays {
   bool dressed = false;
   Mood mood = kStartupMood;
   uint32_t when = 0, ms = 0;
+  int hatX = 0, hatY = 0;
   const char* held = nullptr;
   int heldOffset = 0;
 };
-// The face as its design shows it, its overlays, and the bubble with the
-// line's text (its take's, in amber) when there's one, else the strip.
-// The face is a frame sceneFrame made, or a show for the tests, as
-// drawScene takes it.
+// The overlays over a face drawn, then the bubble with the line's text (its
+// take's, in amber) when there's one, else the strip.
+void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over);
+// The face as its design shows it, on black, and drawOverlays. The face is
+// a frame sceneFrame made, or a show for the tests, as drawScene takes it.
 void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over = {});
 inline void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s,
                            const Overlays& over = {}) {

@@ -4,6 +4,7 @@
 #include "render/pixel/effect_track.h"
 #include "render/pixel/held.h"
 #include "render/pixel/outfit.h"
+#include "render/pixel/rig_face.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sign.h"
 #include "render/pixel/sounds.h"
@@ -12,6 +13,13 @@ class PixelFace final : public Face {
  public:
   static constexpr uint32_t kBlendMs = 150, kBlinkMs = 180, kTurnMinMs = 5000;
   static constexpr int kTurnPct = 67;
+  // Idle's first variations, a blink and a look-around, are the plain face,
+  // which the rig face draws in every mood with a pose (RigFace::pose);
+  // the baked designs draw the rest. A design changing to or from the rig
+  // face cross-fades over kBlendMs. False draws every look baked, to
+  // compare.
+  static constexpr bool kRig = true;
+  static constexpr int kRigIdles = 2;
   // While an occasion's variation fits (one with tags, all on), a look
   // turns to one of those this often, so a costume or a coffee shows more
   // than its share; reactions always take one.
@@ -25,6 +33,7 @@ class PixelFace final : public Face {
   bool nextDue(uint32_t from, uint32_t to, uint32_t& at) override;
   void step(uint32_t t, linkkit::Rng& rng) override;
   void alert(uint32_t t, bool replacing) override;
+  void finger(bool down, int x, int y) override;
   void started(SceneState a, Mood mood, uint8_t variant, Outcome outcome, StartCtx ctx) override;
   uint8_t lookVariant() const override { return lookVariant_; }
   void newLook() override { pending_ = true; }
@@ -63,6 +72,14 @@ class PixelFace final : public Face {
   // how many.
   int fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const;
   bool lookFits(Mood m, SceneState s, int v) const { return fits(m, s, v, context_.when, context_.lookMs); }
+  // Whether the rig face draws mood m's state s, variation v.
+  bool rigDraws(Mood m, SceneState s, int v) const {
+    return kRig && s == SceneState::kIdle && v < kRigIdles && RigFace::pose(m);
+  }
+  bool rigDraws() const { return rigDraws(src_.mood, src_.state(), src_.variant()); }
+  enum class Drew : uint8_t { kSign, kDesign, kRig };
+  // The rig face, or the show's design, of the pixels `d` draws.
+  void drawFaceOf(Canvas& c, Drew kind, const SceneShow& show, Dither d) const;
   FaceSource src_;
   FaceContext context_;
   uint32_t lookAt_ = 0;
@@ -86,5 +103,12 @@ class PixelFace final : public Face {
   uint64_t drawnKey_ = 0;
   bool drawnSign_ = false;
   SignPose drawnPose_{};
+  RigFace rig_;
+  // What the last frame drew: the rig face, a design, or the needs-you
+  // sign; and the last design drawn. A switch between the rig face and a
+  // design cross-fades from what showed as of the switch, at fadeAt_.
+  Drew drew_ = Drew::kSign, fadeFrom_ = Drew::kSign;
+  SceneShow drawnShow_;
+  uint32_t fadeAt_ = 0;
 };
 }  // namespace render::pixel

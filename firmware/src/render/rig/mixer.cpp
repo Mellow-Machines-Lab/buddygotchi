@@ -93,10 +93,13 @@ void Mixer::fadeOut(Play& p) {
   p.out = 0;
 }
 
+uint32_t Mixer::fadeMs(const Clip& clip) { return std::min<uint32_t>(kFadeMs, clip.ms / 4); }
+
 int Mixer::weight(const Play& p) {
-  int w = ease(int(p.in), int(kFadeMs));
-  if (!p.clip->loop) w = std::min(w, ease(int(p.clip->ms) - int(p.age), int(kFadeMs)));
-  if (p.cut) w = std::min(w, p.from * (1024 - ease(int(p.out), int(kFadeMs))) / 1024);
+  const int fade = int(fadeMs(*p.clip));
+  int w = ease(int(p.in), fade);
+  if (!p.clip->loop) w = std::min(w, ease(int(p.clip->ms) - int(p.age), fade));
+  if (p.cut) w = std::min(w, p.from * (1024 - ease(int(p.out), fade)) / 1024);
   return w;
 }
 
@@ -111,7 +114,7 @@ void Mixer::advance(uint32_t dt) {
     if (p.cut) p.out = std::min(p.out + dt, kFadeMs);
     if (!p.cut) cueCount_ += crossed(*p.clip, was, p.age, cues_ + cueCount_, kMaxCues - cueCount_);
     if (p.clip->loop) p.age %= p.clip->ms;
-    const bool over = (!p.clip->loop && p.age >= p.clip->ms) || (p.cut && p.out >= kFadeMs);
+    const bool over = (!p.clip->loop && p.age >= p.clip->ms) || (p.cut && p.out >= fadeMs(*p.clip));
     if (!over) plays_[kept++] = p;
   }
   playing_ = kept;

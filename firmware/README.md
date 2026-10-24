@@ -37,8 +37,10 @@ channels and the types of a pack's tables (`rig.h`), the mixer that
 plays a mood, a look and reactions into the channels each frame
 (`mixer.h`), and the layers and anchors a face draws (`layers.h`).
 Staging writes the pack's rig as `rig_tables.h`
-([CHARACTER.md](../characters/CHARACTER.md) §15). No face uses it yet,
-so the boards link none of its code.
+([CHARACTER.md](../characters/CHARACTER.md) §15). The pixel face draws
+idle's plain face from it, with its moods' own art as parts
+(`render/pixel/rig_face.h`), so the CYD links the mixer; the gel doesn't
+use it yet.
 
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages in `firmware/.platformio-core`, inside the checkout.

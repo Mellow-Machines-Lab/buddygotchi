@@ -7,7 +7,8 @@
 //   nothing jumps;
 // - the look's base clip, looping;
 // - reactions: clips playing over it, a few at once, each with a weight
-//   eased in over kFadeMs as it starts and out as it ends or is cut.
+//   eased in over kFadeMs (a quarter of a shorter clip, so a blink still
+//   shuts) as it starts and out as it ends or is cut.
 //   Additive clips add their offsets, absolute ones blend toward their
 //   values by their weight, in the order they started;
 // - input: an impulse, velocity added to a channel's spring.
@@ -72,6 +73,7 @@ class Mixer {
     uint32_t age = 0;
     void advance(uint32_t dt);
   };
+  static uint32_t fadeMs(const Clip& clip);
   static int weight(const Play& p);
   void start(const Clip& clip, bool base);
   void fadeOut(Play& p);

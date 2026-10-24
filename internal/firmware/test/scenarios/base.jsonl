@@ -38,7 +38,8 @@
 {"expect":{"screen":"no_app","bl":60}}
 {"clock":31500}
 {"shot":"no-app"}
-// Reconnect: the next state, its design behind a blink (100 ms of 150 in).
+// Reconnect: the next state, idle's rig face cross-fading in over no app's
+// design (100 ms of 150 in).
 {"t":"state","base":"idle","busy":0}
 {"clock":31600}
 {"expect":{"screen":"face","life":null}}

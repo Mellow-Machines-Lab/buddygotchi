@@ -18,6 +18,7 @@ bool dresses(Mood m, SceneState s, int variant);
 // What the overlay shows at `ms`, as a key that changes whenever its
 // pixels do; 0 for nothing.
 uint32_t outfitKey(uint32_t when, Mood m, uint32_t ms);
-void drawOutfit(Canvas& c, uint32_t when, Mood m, uint32_t ms);
+// The hat `dx`, `dy` px from its place, as the rig face moves; the air stays put.
+void drawOutfit(Canvas& c, uint32_t when, Mood m, uint32_t ms, int dx = 0, int dy = 0);
 
 }  // namespace render

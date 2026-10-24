@@ -2,10 +2,12 @@
 #include <cstring>
 
 #include "render/maths.h"
+#include "render/palette.h"
 namespace render::pixel {
 static_assert(EffectTrack::kMaxOut == Face::kMaxCues, "face cue buffer holds the pixel scheduler output");
 namespace {
-uint64_t frameKey(const SceneFrame& f, bool bubble) {
+template <class Frame>
+uint64_t frameKey(const Frame& f, bool bubble) {
   static_assert(sizeof f % 4 == 0, "a frame hashes as whole words");
   const uint8_t* p = reinterpret_cast<const uint8_t*>(&f);
   uint64_t h = 14695981039346656037ull;
@@ -38,8 +40,10 @@ void PixelFace::reset(uint32_t t, linkkit::Rng& rng) {
   *this = PixelFace{};
   nextBlink_ = t + blinkGap(rng);
   lookAt_ = t;
+  rig_.reset(src_.mood, t);
 }
 void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_t t) {
+  rig_.advanceTo(t);
   context_ = context;
   if (switched_ && !within(t, switchAt_, kBlendMs)) switched_ = false;
   // A new look starts on its first variation, or on an occasion's while
@@ -63,6 +67,9 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
         restart)
       switched_ = true, switchAt_ = t;
     if (wanted.look != src_.look || wanted.lookVariant != src_.lookVariant) lookAt_ = t;
+    // The rig face moves to a new mood while it shows, and is at rest in it
+    // when it comes back.
+    if (wanted.mood != src_.mood) drew_ == Drew::kRig ? rig_.setMood(wanted.mood) : rig_.reset(wanted.mood, t);
     src_ = wanted;
   }
 }
@@ -116,9 +123,11 @@ bool PixelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   return true;
 }
 void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
+  rig_.advanceTo(t);
   const uint8_t due = t == dueAt_ ? due_ : 0;
   due_ = 0;
   if (due & kBlink) {
+    if (rigDraws()) rig_.blink();
     blink_ = src_.anim == SceneState::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp &&
              !blinksItself(src_.mood, src_.look, src_.lookVariant);
     blinkAt_ = t;
@@ -135,6 +144,7 @@ void PixelFace::alert(uint32_t t, bool replacing) {
   lookAt_ = t;
   if (replacing) switched_ = true, switchAt_ = t;
 }
+void PixelFace::finger(bool down, int x, int y) { rig_.finger(down && rigDraws(), x, y); }
 void PixelFace::started(SceneState a, Mood, uint8_t variant, Outcome, StartCtx) {
   last_[int(a)] = uint8_t(variant + 1);
   blink_ = false;
@@ -209,28 +219,72 @@ int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) 
 }
 bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble,
                      const SignShow& sign, const Strip& strip, bool dirty) {
+  rig_.advanceTo(t);
   if (strip.agent && show.state == SceneState::kNeedsYou) {
     SignPose pose = signPose(designMs(t), show.eyesShut, show.dy);
+    drew_ = Drew::kSign;
     if (!dirty && drawnSign_ && pose == drawnPose_) return false;
     drawnSign_ = true;
     drawnPose_ = pose;
     drawnKey_ = 0;
     drawSignScreen(c, pose, strip);
-  } else {
-    drawnSign_ = false;
-    SceneFrame frame = sceneFrame(show);
-    // The overlays, as they are now: part of the key, as they move on their own.
-    Overlays over;
-    const uint32_t dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
-    over.dressed = dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
-    over.held = sign.text, over.heldOffset = sign.text ? heldOffset(sign.ms, show.dy) : 0;
-    uint64_t key = frameKey(frame, bubble != nullptr);
-    if (sign.text) key ^= uint64_t(uint32_t(over.heldOffset + 1024)) << 40 | uint64_t(1) << 62;
-    if (dress) key = (key ^ dress) * 1099511628211ull | uint64_t(1) << 63;
-    if (!dirty && key == drawnKey_) return false;
-    drawnKey_ = key;
-    drawFaceScreen(c, frame, bubble, strip, over);
+    return true;
   }
+  drawnSign_ = false;
+  const bool rig = rigDraws(show.mood, show.state, show.variant);
+  // A switch since the last frame between the rig face and a design: what
+  // showed fades out as the new one fades in.
+  if (switched_ && switchAt_ != fadeAt_) fadeAt_ = switchAt_, fadeFrom_ = drew_;
+  const bool fading =
+      switched_ && within(t, switchAt_, kBlendMs) && fadeFrom_ != Drew::kSign && (fadeFrom_ == Drew::kRig) != rig;
+  // The overlays, as they are now: part of the key, as they move on their
+  // own. On the rig face, the hat and the sign ride its anchors.
+  Overlays over;
+  over.mood = show.mood, over.when = context_.when, over.ms = t;
+  over.held = sign.text, over.heldOffset = sign.text ? heldOffset(sign.ms, show.dy) : 0;
+  if (rig) {
+    const rig::Anchors now = rig_.anchors(), rest = RigFace::restAnchors(show.mood);
+    over.hatX = now.brimF.x - rest.brimF.x, over.hatY = now.brimF.y - rest.brimF.y;
+    if (sign.text) over.heldOffset += now.handF.y - rest.handF.y;
+  }
+  const uint32_t dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
+  over.dressed = dress != 0;
+  const Drew from = drew_;
+  drew_ = rig ? Drew::kRig : Drew::kDesign;
+  if (fading) {
+    const int mix = ease(int(t - switchAt_), int(kBlendMs)) * 1000 / 1024;
+    drawnKey_ = 0;  // the frame after draws whole
+    c.fill(kBlack);
+    drawFaceOf(c, fadeFrom_, fadeFrom_ == Drew::kRig ? show : drawnShow_, Dither::fade(mix, false));
+    drawFaceOf(c, drew_, show, Dither::fade(mix, true));
+  } else {
+    const RigFrame face = rig ? rig_.frame(show.dy, show.mouthOpen) : RigFrame{};
+    const SceneFrame design = rig ? SceneFrame{} : sceneFrame(show);
+    uint64_t key = rig ? frameKey(face, bubble != nullptr) : frameKey(design, bubble != nullptr);
+    if (sign.text) key ^= uint64_t(uint32_t(over.heldOffset + 1024)) << 40 | uint64_t(1) << 62;
+    if (dress) {
+      const uint32_t hat = uint32_t(uint8_t(over.hatX)) << 16 | uint32_t(uint8_t(over.hatY)) << 24;
+      key = (key ^ dress ^ hat) * 1099511628211ull | uint64_t(1) << 63;
+    }
+    if (!dirty && from == drew_ && key == drawnKey_) return false;
+    drawnKey_ = key;
+    c.fill(kBlack);
+    if (rig) {
+      drawRig(c, face);
+    } else {
+      drawScene(c, design);
+    }
+  }
+  // The design that showed last, which a switch to the rig face fades out.
+  if (!rig) drawnShow_ = show;
+  drawOverlays(c, bubble, strip, over);
   return true;
+}
+void PixelFace::drawFaceOf(Canvas& c, Drew kind, const SceneShow& show, Dither d) const {
+  if (kind == Drew::kRig) {
+    drawRig(c, rig_.frame(show.dy, show.mouthOpen, d));
+  } else {
+    drawScene(c, show, d);
+  }
 }
 }  // namespace render::pixel

@@ -281,7 +281,8 @@ shares its face and its voice, and Boop's uses both:
 ```json
 "shares": {
   "pixel_face": {
-    "files": ["firmware/include/faces.h", "firmware/include/sfx.h", "firmware/src/render/pixel", "mac/faces.json"],
+    "files": ["firmware/include/faces.h", "firmware/include/sfx.h", "firmware/src/render/pixel", "mac/faces.json",
+              "tests/firmware/test_scene", "tests/firmware/test_rig_face"],
     "studio": ["pixel"]
   },
   "voice": {
@@ -497,7 +498,9 @@ Besides drawing each mood and state, a face:
   start.
 - **Moves with the engine.** It blinks, opens its mouth while the voice
   speaks (`mouthOpen`), presses down under a finger (`dy`), and may follow
-  one (`finger`): the gel's dome leans after a stroke.
+  one (`finger`): the gel's dome leans after a stroke, and Pixel's plain
+  face, drawn from the rig (§15), squashes under a press and leans after
+  a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
   many sessions work, a mini for each helper at work, up to four and
@@ -705,12 +708,14 @@ a character is a value on each of its channels. A pack's `rig/` says
 what they do: its poses, its moves, its looks and where its outfits sit.
 The engine's half is `firmware/src/render/rig/`: the channels and the
 tables' types (`rig.h`), the mixer that plays them (`mixer.h`) and the
-layers a face draws (`layers.h`). No face draws from it yet; the pixel
-face and the gel move onto it next. Boop's rig has poses for the 13
-moods Pixel draws, read off the gel's faces for them
-(`design/slime-blob/expressions.json`), the looks idle, working and
-asleep, and a notice, a cheer and a poke. Pixel's is a copy of Boop's
-until Pixel's face has its own.
+layers a face draws (`layers.h`). The pixel face draws idle's plain face
+from it (below, Pixel's face on the rig); the gel moves onto it next.
+Pixel's rig has poses for its 13 drawn moods, fitted to their art, each
+wearing its own mood's eyes and mouth, the looks idle, working and
+asleep, a blink, a notice, a cheer and a poke. Boop's has poses for the
+same moods, read off the gel's faces for them
+(`design/slime-blob/expressions.json`), and Pixel's styles, since Boop
+wears Pixel's face on the CYD.
 
 **Channels.** The body's `x`, `y`, `squash`, `lean`, `tilt` and `lift`;
 the eyes' `eyeOpenL`, `eyeOpenR`, `eyeCurve`, `eyeSize`, `gazeX` and
@@ -721,22 +726,23 @@ for `x`, `y` and `lift` (px), with a range and a value at rest:
 checks the files by it. In the files, `eyeOpen` sets both eyes. A face
 also has two **styles**, the eyes' and the mouth's: which of the pack's
 drawings it draws, for the shapes no channel reaches (hearts, X eyes). A
-new style cross-fades in.
+new style cross-fades in. The pixel face's styles are its drawn moods'
+names: a style is that mood's eyes, or its mouth, as its art draws them.
 
 **`expressions.json`**: the styles, the first of each the default, and a
 pose for each mood the pack has one for: a target for each channel it
-names (the others at rest) and its styles. Boop's, cut to two of its
-moods:
+names (the others at rest) and its styles. Pixel's, cut to two of its
+moods' poses (each style list names all 13):
 
 ```json
 {
   "styles": {
-    "eyes": ["dot", "bean"],
-    "mouth": ["curve", "ring"]
+    "eyes": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"],
+    "mouth": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"]
   },
   "expressions": {
-    "calm": {"mouthWidth": 250, "mouthOpen": 300, "mouth": "ring"},
-    "happy": {"eyeCurve": 300, "eyeSize": 950, "mouthWidth": 1000, "mouthCurve": 800, "mouthOpen": 400, "cheek": 500}
+    "happy": {"eyeCurve": 300, "eyeSize": 1080, "mouthWidth": 670, "mouthCurve": 800, "mouthOpen": 300, "cheek": 1000, "eyes": "happy", "mouth": "happy"},
+    "excited": {"eyeOpen": 150, "eyeCurve": 900, "mouthWidth": 1470, "mouthCurve": 900, "mouthOpen": 800, "cheek": 1000, "eyes": "excited", "mouth": "excited"}
   }
 }
 ```
@@ -802,13 +808,37 @@ with a lookup by mood, clip, look and outfit. The app doesn't bundle
 on each channel, the face's quicker than the body's, whose targets are
 the mood's pose, so a new mood never jumps. The look's clip loops over
 the springs, and reactions' clips over that, a few at once, each with a
-weight that eases in and out: an additive clip adds its offsets, an
+weight that eases in and out over 150 ms (a quarter of a shorter clip,
+so a 180 ms blink still shuts): an additive clip adds its offsets, an
 absolute one blends toward its values. A poke or a stroke kicks a
 spring. The layers (`layers.h`) are scene, body, face, accessories,
 held, air and lane, back to front, each fading in and out, with the
 anchors the face reports from the pose it draws (the crown, a ring for a
 brim and one for the hands, the eyes), so what's worn or held rides the
 body.
+
+**Pixel's face on the rig.** Idle's first two variations, a blink and a
+look-around, are Pixel's plain face, and the pixel face draws them from
+the rig (`render/pixel/rig_face.h`) in every mood with a pose whose
+styles it has; its other looks, its occasions and the reactions are its
+baked designs. Its parts are each drawn mood's own art, which facegen
+cuts from the mood's first idle at rest: each eye open and shut, the
+mouth and the cheeks (`faces.h`'s `kParts`, about 6 KB). At a mood's
+pose each part draws as its art has it, and the channels' difference
+from the pose moves it: `x`, `y`, `lift`, `squash` and `lean` the whole
+face; `eyeOpen` closes each eye onto the line it shuts on, its shut art
+below a third open; `eyeSize` scales the eyes, `gazeX`, `gazeY` and
+`tilt` shift them; `mouthWidth` and `mouthOpen` widen and open the mouth.
+So a pack's poses needn't be Pixel's to look right at rest (Boop's
+aren't): they shape the moves between. A new style dissolves in over the
+mixer's 200 ms, a 4 × 4 ordered dither (the canvas has no alpha), each
+part morphing from its box to the next one's. The look's clip plays
+under it (Pixel's breathe lifts it a pixel and glances to either side),
+the `blink` clip at each blink; a press kicks the squash and a stroke
+the lean. A switch between the rig face and a design dissolves the same
+way over 150 ms as the design blinks open, and the hat
+(`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
+brim and hands.
 
 ## 16. References and review (optional)
 
@@ -891,8 +921,11 @@ doesn't bundle either folder.
   (`characters/pixel/tools/borrowed.json`) until they have art and takes
   of their own.
 - Pixel's mood moves are Boop's; they become Pixel's own.
-- No face draws from the rig yet (§15), and Pixel's rig is a copy of
-  Boop's; it becomes Pixel's own when the pixel face moves onto it.
+- Pixel's face draws only idle's plain face from the rig (§15): its
+  working looks, occasions and reactions are still baked designs, and
+  its rig face holds still what some drawn idles move (curious's eyes,
+  whiny's falling tears). The gel doesn't draw from the rig yet, and
+  Boop's poses serve both its faces.
 - The palette lives in the pixel face's `faces.h`; it moves out of the
   art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and

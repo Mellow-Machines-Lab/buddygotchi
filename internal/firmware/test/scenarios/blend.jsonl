@@ -1,5 +1,7 @@
 // Switching designs: the eyes shut for 150 ms to hide each cut, and a
-// switch mid-switch shuts them again from there.
+// switch mid-switch shuts them again from there. Idle's plain face is the
+// rig face, so going to work it cross-fades into the design as that blinks
+// open.
 {"clock":0}
 {"t":"state","base":"idle"}
 {"clock":1000}

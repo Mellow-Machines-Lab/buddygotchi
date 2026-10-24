@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "faces.h"
+#include "render/maths.h"
 #include "render/palette.h"
 #include "render/pixel/held.h"
 #include "render/pixel/outfit.h"
@@ -29,7 +30,11 @@ struct Box {
   int16_t x, y, w, h;
 };
 constexpr Box kTalk[] = {{0, 0, 14, 4}, {0, 4, 4, 4}, {10, 4, 4, 4}, {0, 8, 14, 4}};
-constexpr int kTalkW = 14, kTalkH = 12;
+static_assert(kTalkW == 14 && kTalkH == 12, "the o's box");
+
+// The dither's thresholds, a 4 × 4 Bayer matrix: a picture with a share of
+// them draws its pixels spread evenly.
+constexpr uint8_t kBayer[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
 // Where the first pack's "o" sat, from its mouth's place: the "o" for a
 // mouth with nothing drawn to measure.
 constexpr int kTalkX = 153, kTalkY = 128;
@@ -137,18 +142,18 @@ bool talk(const Scene& sc, const Placed& p, int16_t& ox, int16_t& oy, uint8_t& i
   return true;
 }
 
-// A rectangle cut to the scene's clip and the screen, in colour `color`:
-// translucent from kBlend on, where each pixel it covers becomes the blend
-// of its colour over what's there.
-void clipRect(Canvas& c, int x, int y, int w, int h, int color, const Scene& sc) {
+// A rectangle cut to the scene's clip and the screen, in colour `color`, the
+// pixels `d` draws: translucent from kBlend on, where each pixel it covers
+// becomes the blend of its colour over what's there.
+void clipRect(Canvas& c, int x, int y, int w, int h, int color, const Scene& sc, Dither d) {
   int x0 = std::max({x, int(sc.clipX), 0}), y0 = std::max({y, int(sc.clipY), 0});
   int x1 = std::min({x + w, sc.clipX + sc.clipW, kWidth}), y1 = std::min({y + h, sc.clipY + sc.clipH, kHeight});
-  if (color < kBlend) return c.fillRect(x0, y0, x1 - x0, y1 - y0, toCanvas(color));
+  if (color < kBlend) return fillDithered(c, x0, y0, x1 - x0, y1 - y0, toCanvas(color), d);
   uint8_t* px = c.pixels();
   for (int yy = y0; yy < y1; ++yy) {
     for (int xx = x0; xx < x1; ++xx) {
-      uint8_t& d = px[yy * kWidth + xx];
-      d = toCanvas(kBlendOver[color - kBlend][fromCanvas(d)]);
+      uint8_t& p = px[yy * kWidth + xx];
+      if (d.draws(xx, yy)) p = toCanvas(kBlendOver[color - kBlend][fromCanvas(p)]);
     }
   }
 }
@@ -258,27 +263,57 @@ SceneFrame sceneFrame(const SceneShow& s) {
   return f;
 }
 
-void drawScene(Canvas& c, const SceneFrame& f) {
+Dither Dither::fade(int mix, bool incoming) {
+  const uint8_t at = uint8_t(clamp((mix * 16 + 500) / 1000, 0, 16));
+  return incoming ? Dither{0, at} : Dither{at, 16};
+}
+
+Dither Dither::within(Dither outer) const {
+  const int span = outer.hi - outer.lo;
+  return {uint8_t(outer.lo + span * lo / 16), uint8_t(outer.lo + span * hi / 16)};
+}
+
+bool Dither::draws(int x, int y) const {
+  const uint8_t k = kBayer[y & 3][x & 3];
+  return k >= lo && k < hi;
+}
+
+void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d) {
+  if (d.all()) return c.fillRect(x, y, w, h, color);
+  if (d.lo >= d.hi) return;
+  const int x0 = std::max(x, 0), y0 = std::max(y, 0), x1 = std::min(x + w, kWidth), y1 = std::min(y + h, kHeight);
+  for (int yy = y0; yy < y1; ++yy)
+    for (int xx = x0; xx < x1; ++xx)
+      if (d.draws(xx, yy)) c.pixels()[yy * kWidth + xx] = color;
+}
+
+void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d) {
+  for (const Box& b : kTalk) fillDithered(c, x + b.x, y + b.y, b.w, b.h, ink, d);
+}
+
+void drawScene(Canvas& c, const SceneFrame& f, Dither d) {
   const Scene& sc = kScenes[f.scene];
   for (int i = 0; i < sc.groups; ++i) {
     if (!f.on[i]) continue;
     const Group& g = kGroups[kSceneGroups[sc.group0 + i]];
     for (int k = 0; k < g.rects; ++k) {
       const Rect& r = kRects[kRectIdx[g.rect0 + k]];
-      clipRect(c, r.x + f.x[i], r.y + f.y[i], r.w, r.h, r.color == kInherit ? f.fill[i] : r.color, sc);
+      clipRect(c, r.x + f.x[i], r.y + f.y[i], r.w, r.h, r.color == kInherit ? f.fill[i] : r.color, sc, d);
     }
   }
-  if (f.talkInk != kBlack) {
-    for (const Box& b : kTalk) c.fillRect(f.talkX + b.x, f.talkY + b.y, b.w, b.h, f.talkInk);
-  }
+  if (f.talkInk != kBlack) drawTalk(c, f.talkX, f.talkY, f.talkInk, d);
+}
+
+void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over) {
+  if (over.dressed) drawOutfit(c, over.when, over.mood, over.ms, over.hatX, over.hatY);
+  if (over.held) drawHeld(c, over.held, over.heldOffset);
+  drawLane(c, bubble, s);
 }
 
 void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over) {
   c.fill(kBlack);
   drawScene(c, face);
-  if (over.dressed) drawOutfit(c, over.when, over.mood, over.ms);
-  if (over.held) drawHeld(c, over.held, over.heldOffset);
-  drawLane(c, bubble, s);
+  drawOverlays(c, bubble, s, over);
 }
 
 }  // namespace render

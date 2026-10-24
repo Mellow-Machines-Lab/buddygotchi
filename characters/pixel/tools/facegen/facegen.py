@@ -6,7 +6,9 @@ for a host fact (task_complete's outcome, starting's context). This runs the
 bank's own generator (bank.mjs, beside this) to write every design's SVG into
 build/, which git ignores, and lists the designs in design/manifest.json. It
 reads each SVG as rectangles and step-wise timings and writes
-the Pixel pack's characters/pixel/firmware/include/faces.h, plus the frames the firmware test checks the device's
+the Pixel pack's characters/pixel/firmware/include/faces.h, with the rig face's
+parts (cut_parts: each drawn mood's eyes, mouth and cheeks from its first idle at
+rest), plus the frames the firmware test checks the device's
 player against (the pack's tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
 faces the Mac's popover shows, and each design's loop length and host fact
@@ -748,20 +750,21 @@ def place(scene: Scene, t: int, svg_blink: bool, shut: bool) -> tuple[list[tuple
     return offset, shown, fills
 
 
-def render(scene: Scene, t: int, svg_blink: bool = False, face_only: bool = False, shut: bool = False,
+def render(scene: Scene, t: int, svg_blink: bool = False, within: str | None = None, shut: bool = False,
            blended: set[int] | None = None) -> bytes:
     """The scene colour of every pixel at t ms. The device blinks on its own
     clock, so it shows the open eyes, or the closed ones when `shut`; with
     `svg_blink` the eyes blink on the design's clock, as Chrome draws it.
-    `face_only` leaves out everything outside the face's group."""
+    `within` a role ("face", "mouth") leaves out everything outside the
+    groups of that role."""
     px = bytearray(W * H)
     offset, shown, fills = place(scene, t, svg_blink, shut)
-    in_face: list[bool] = []
+    inside: list[bool] = []
     for g in scene.groups:
-        in_face.append(g.role == "face" or (g.parent >= 0 and in_face[g.parent]))
+        inside.append(g.role == within or (g.parent >= 0 and inside[g.parent]))
     cx0, cy0, cw, ch = scene.clip
     for i, g in enumerate(scene.groups):
-        if not shown[i] or (face_only and not in_face[i]):
+        if not shown[i] or (within and not inside[i]):
             continue
         ox, oy = offset[i]
         for x, y, w, h, c in g.rects:
@@ -792,7 +795,7 @@ def canvas_index(color: int) -> int:
 
 
 def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]],
-         sources: dict[int, str], counts: dict[tuple[int, int], int]) -> str:
+         sources: dict[int, str], counts: dict[tuple[int, int], int], parts: list[list[tuple[int, int, list]]]) -> str:
     # The designs share much: the same rectangles, the same tracks, the same
     # key times and values. Each is stored once, however many use it.
     tracks: list[str] = []
@@ -1003,22 +1006,48 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
     lines += block("kTracks", "Track", tracks, 6)
     lines += block("kKeys", "uint16_t", [str(k) for k in keys], 16)
     lines += block("kValues", "int8_t", [str(v) for v in vals], 32)
+    lines += emit_parts(parts)
     lines += ["", "}  // namespace faces", "}  // namespace render", ""]
     return "\n".join(lines)
 
 
-def tile_face(scene: Scene, shut: bool) -> bytes:
-    """A tile's face: the design's face as it starts, its eyes open, or shut.
-    A flip-book (V4) shuts them in a step of its own, whose face is the one
-    tagged as its blink, so a shut tile shows that step's face."""
+def at_rest(scene: Scene, shut: bool) -> dict:
+    """When the design's face is at rest, its eyes open or shut, as render's
+    arguments: as it starts. A flip-book (V4) shuts them in a step of its
+    own, whose face is the one tagged as its blink, so its shut face is
+    that step's."""
     if not shut or any(g.role == "eyes_open" for g in scene.groups):
-        return render(scene, 0, face_only=True, shut=shut)
+        return {"t": 0, "shut": shut}
     blinks = [i for i, g in enumerate(scene.groups) if g.blink]
     for t in scene.step_times():
         _, shown, _ = place(scene, t, svg_blink=True, shut=False)
         if any(shown[i] for i in blinks):
-            return render(scene, t, svg_blink=True, face_only=True)
-    return render(scene, 0, face_only=True)
+            return {"t": t, "svg_blink": True}
+    return {"t": 0}
+
+
+def tile_face(scene: Scene, shut: bool) -> bytes:
+    """A tile's face: the design's face at rest, its eyes open, or shut."""
+    return render(scene, within="face", **at_rest(scene, shut))
+
+
+def color_rects(px: bytes) -> list[tuple[int, int, int, int, int]]:
+    """A picture's pixels as rectangles of one colour each, black left out."""
+    out = []
+    for color in sorted(set(px) - {0}):
+        rows = []
+        for y in range(H):
+            run, start = [], None
+            for x in range(W + 1):
+                on = x < W and px[y * W + x] == color
+                if on and start is None:
+                    start = x
+                if not on and start is not None:
+                    run.append((start, x))
+                    start = None
+            rows.append(run)
+        out += [(x, y, w, h, color) for x, y, w, h in merge_runs(rows, 0)]
+    return out
 
 
 def tile_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int]):
@@ -1036,21 +1065,7 @@ def tile_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int]):
         for shut in (False, True):
             if (n, shut) in rects_of:
                 continue
-            px = tile_face(scenes[n], shut)
-            out = []
-            for color in sorted(set(px) - {0}):
-                rows = []
-                for y in range(H):
-                    run, start = [], None
-                    for x in range(W + 1):
-                        on = x < W and px[y * W + x] == color
-                        if on and start is None:
-                            start = x
-                        if not on and start is not None:
-                            run.append((start, x))
-                            start = None
-                    rows.append(run)
-                out += [(x, y, w, h, color) for x, y, w, h in merge_runs(rows, 0)]
+            out = color_rects(tile_face(scenes[n], shut))
             rects_of[(n, shut)] = out
             boxes += out
     x0 = min(r[0] for r in boxes)
@@ -1106,6 +1121,81 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
         "faces": {k: {"open": o, "shut": s} for k, (o, s) in faces.items()},
     }
     return json.dumps(data, indent=1) + "\n"
+
+
+# ---- The rig face's parts ------------------------------------------------------
+
+# What the rig face draws a drawn mood with (render/pixel/rig_face.h), in
+# faces::PartKind's order.
+PARTS = ["eye_l", "eye_r", "shut_l", "shut_r", "mouth", "cheeks"]
+CHEEK = (241, 120, 125)  # the bank's cheek pink (visual/base.mjs)
+
+
+def cut_parts(scenes: list[Scene], table: dict[tuple[int, int, int], int]) -> list[list[tuple[int, int, list]]]:
+    """Each drawn mood's parts (PARTS), cut from its first idle's face at
+    rest, open and shut: the mouth is its mouth's group; the cheeks, what's
+    left in the cheeks' pink; each eye, the rest on its side of the face,
+    with what's drawn about it (a brow, a lid, a tear). Each part as its
+    pivot and its rectangles from there: an eye's pivot is the middle of the
+    line its shut eye is, so it closes onto it; the mouth's and the cheeks',
+    the middle of their box."""
+    cheek, idle, out = COLORS.index[CHEEK], STATES.index("idle"), []
+    for m in range(len(MOODS)):
+        scene, cut = scenes[table[(m, idle, 0)]], {}
+        for shut in (False, True):
+            rest = at_rest(scene, shut)
+            face, mouth = render(scene, within="face", **rest), render(scene, within="mouth", **rest)
+            for i, side in enumerate("lr"):
+                cut[f"{'shut' if shut else 'eye'}_{side}"] = bytes(
+                    c if c != cheek and not mouth[p] and (p % W < W // 2) == (i == 0) else 0 for p, c in enumerate(face))
+            if not shut:
+                cut["mouth"] = mouth
+                cut["cheeks"] = bytes(c if c == cheek and not mouth[p] else 0 for p, c in enumerate(face))
+        parts = []
+        for name in PARTS:
+            rects = color_rects(cut[name])
+            assert rects and all(c < BLEND for *_, c in rects), f"{MOODS[m]}: an opaque {name}"
+            x0, y0, x1, y1 = bbox(color_rects(cut["shut_" + name[-1]]) if name.startswith("eye") else rects)
+            px, py = (x0 + x1) // 2, (y0 + y1) // 2
+            parts.append((px, py, [(x - px, y - py, w, h, c) for x, y, w, h, c in rects]))
+        out.append(parts)
+    return out
+
+
+def bbox(rects: list[tuple[int, int, int, int, int]]) -> tuple[int, int, int, int]:
+    """The box around rectangles: x0, y0, x1, y1."""
+    return (min(r[0] for r in rects), min(r[1] for r in rects), max(r[0] + r[2] for r in rects),
+            max(r[1] + r[3] for r in rects))
+
+
+def emit_parts(parts: list[list[tuple[int, int, list]]]) -> list[str]:
+    rows, rects = [], []
+    for m, mood in enumerate(parts):
+        row = []
+        for px, py, rs in mood:
+            x0, y0, x1, y1 = bbox(rs)
+            row.append(f"{{{px}, {py}, {x0}, {y0}, {x1}, {y1}, {len(rects)}, {len(rs)}}}")
+            rects += [f"{{{x}, {y}, {w}, {h}, {c}}}" for x, y, w, h, c in rs]
+        rows.append("{" + ", ".join(row) + "},  // " + MOODS[m])
+    return [
+        "",
+        "// The rig face's parts (render/pixel/rig_face.h): a style for each drawn",
+        "// mood, by its name (kMoodNames), cut by facegen from its first idle's face",
+        "// at rest: its eyes open and shut, its mouth and its cheeks. A part sits",
+        "// at its pivot at rest: an eye's is the middle of the line its shut eye",
+        "// is, the mouth's and the cheeks' the middle of their box; its box and",
+        f"// its rectangles (kPartRects) are from there. {len(rects)} rectangles, about "
+        f"{(len(rects) * 8 + len(rows) * len(PARTS) * 16) // 1024 + 1} KB.",
+        "enum PartKind : uint8_t { " + ", ".join("kPart" + "".join(w.title() for w in p.split("_")) for p in PARTS) +
+        ", kPartKinds };",
+        "struct Part {",
+        "  int16_t x, y;",
+        "  int16_t x0, y0, x1, y1;",
+        "  uint16_t rect0, rects;",
+        "};",
+        f"static const Part kParts[kMoodCount][kPartKinds] = {{",
+    ] + ["  " + r for r in rows] + ["};"] + [f"static const Rect kPartRects[{len(rects)}] = {{"] + [
+        "  " + ", ".join(rects[i:i + 5]) + "," for i in range(0, len(rects), 5)] + ["};"]
 
 
 def emit_frames(frames: list[tuple[int, int, int, int, int]]) -> str:
@@ -1288,7 +1378,7 @@ def main() -> None:
             continue  # a shared design, checked once
         for t in scenes[n].samples():
             frames.append((m, s, v, t, zlib.crc32(render(scenes[n], t).translate(canvas))))
-    OUT.write_text(emit(scenes, table, meta, sources, counts))
+    OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(scenes, table)))
     FACES_JSON.parent.mkdir(parents=True, exist_ok=True)
     FACES_JSON.write_text(emit_faces_json(scenes, table, meta, counts))
     FRAMES.parent.mkdir(parents=True, exist_ok=True)

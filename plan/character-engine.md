@@ -242,11 +242,53 @@ sketch above, and why:
   and Pixel's rig is a copy of Boop's, so Pixel's pack still needs
   nothing of Boop's.
 
+### Checkpoint 4, as built (2026-10-24)
+
+Pixel's face is `render/pixel/rig_face.h` and its part of the schema
+[CHARACTER.md](../characters/CHARACTER.md) §15, Pixel's face on the rig.
+Where it differs from the sketch above, and why:
+
+- **A style is a drawn mood's art.** Pixel's moods differ in drawn detail
+  no channel reaches (brows, lids, star cut-outs, chevrons, odd-sized
+  eyes), so each mood's eyes and mouth are a style, cut by facegen from
+  its idle face at rest, rather than a few shapes at openness and curve
+  steps. Openness is the one step baked (each eye open and shut); a mood
+  change dissolves the styles over the mixer's 200 ms with each part
+  morphing from its box to the next one's, and the face never closes.
+- **A pose is where the art sits.** Each part draws as its art has it at
+  its mood's pose, and the channels move it by their difference from
+  that pose, so any pack's poses look right at rest. Boop keeps the poses
+  read off the gel's faces and takes Pixel's styles (it wears Pixel's
+  face on the CYD); Pixel's own are fitted to its art. One rig with a
+  pose per mood for both of Boop's faces is checkpoint 5's to keep or
+  split.
+- **The rig face draws idle's plain face only**, its first two
+  variations, in every drawn mood. Working's desk, the reactions (so
+  which clip a reaction plays is still open), the occasions and the
+  comedy stay baked. A switch between the two dissolves over 150 ms while
+  the design blinks open, as designs did, so the baked convention and its
+  tests stand; design to design still blinks and cuts.
+- **Tears and sweat stay in the art**: sad's drops are its eyes'; a
+  shared, falling tear or sweat part waits for a clip that uses one.
+  Some drawn idles move more than the rig face does (curious's eyes,
+  whiny's tears, the newer moods' glances); Pixel's breathe glances to
+  either side and lifts it a pixel instead.
+- **A short clip fades over a quarter of itself** (the mixer's one
+  change), so a 180 ms blink clip shuts the eyes whole.
+- **Measured** (internal/tools/fluid, `transitions-pixel.jsonl`, Boop's
+  rig on Pixel's face, 40 ms shots, largest frame's changed pixels):
+  idle mood changes 5648, 4384 and 5053 fell to 2620, 2110 and 1929 (a
+  dissolve, where the face had shut for 150 ms and cut); going to work
+  6560 to 3630; a finish handing back to idle 76800 (its whole card, in
+  one frame) to 29552. At rest the rig face is its mood's idle face as
+  drawn, pixel for pixel, so it kept its craft and is the default.
+
 ## Risks
 
 - **Pixel's look** may lose craft in parts. Checkpoint 4 compares one mood
   first; if it suffers, Pixel keeps its flip-books and shares only layers,
-  anchors and the lane (the simplicity fallback).
+  anchors and the lane (the simplicity fallback). It didn't: the parts
+  are its own art.
 - **Frame time on the AMOLED**: hats already cost 5-8 ms a frame
   (plan/TODO.md). Cross-fades draw two faces for ~200 ms; the rig adds a
   little per frame. Measure on the board at each checkpoint (`boopctl

@@ -1,6 +1,6 @@
 # TODO
 
-Updated 2026-10-22. What's next, one at a time, top first. Tick an item
+Updated 2026-10-24. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
@@ -101,7 +101,14 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] **2. The dashboard and the reference pipeline.**
 - [ ] **3. The rig core**: channels, expressions, clips, the mixer, layers,
       anchors, the pack schema and its generator.
-- [ ] **4. Pixel on the rig**: sprite parts, one mood first, then all.
+- [x] **4. Pixel on the rig**: sprite parts, one mood first, then all.
+      Idle's plain face in every drawn mood: mood changes dissolve and
+      morph, and the hand-overs to and from the baked designs cross-fade
+      (character-engine.md, Checkpoint 4 as built).
+- [ ] **Pixel's rig face, the rest**: in the working looks over their
+      desk and in the reactions (which clip a reaction plays), parts that
+      move as some drawn idles do (curious's eyes, falling tears), and its
+      frame cost on the CYD (`boopctl ping`'s `draw_us`).
 - [ ] **5. The slime on the rig**: the mixer drives the gel face.
 - [ ] **6. Retire what the engine replaces.**
 
