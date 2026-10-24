@@ -68,6 +68,21 @@ struct BodyAct: View {
                 OnboardingBuddy(model: model, snapshot: .onboarding(mood: "curious"), size: 140)
             }
             .frame(height: 220)
+            if let problem = app.startError {
+                ActTitle(title: "I couldn't start", detail: problem)
+            } else {
+                lookingWords
+            }
+            Spacer(minLength: 0)
+            HStack {
+                Button("I don't have my Boop yet", action: model.skipBoard).buttonStyle(.quiet).font(.system(size: 13))
+                Spacer()
+            }
+        }
+        .animation(.boopPop, value: model.board)
+    }
+
+    @ViewBuilder private var lookingWords: some View {
             switch model.board {
             case .found(let name):
                 VStack(spacing: 6) {
@@ -90,13 +105,6 @@ struct BodyAct: View {
                     ActTitle(title: "Looking for my body…", detail: hint)
                 }
             }
-            Spacer(minLength: 0)
-            HStack {
-                Button("I don't have my Boop yet", action: model.skipBoard).buttonStyle(.quiet).font(.system(size: 13))
-                Spacer()
-            }
-        }
-        .animation(.boopPop, value: model.board)
     }
 
     private var hint: String {

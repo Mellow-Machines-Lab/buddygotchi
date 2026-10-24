@@ -162,6 +162,10 @@ enum Snapshots {
                 $0.body = .looking
             }),
             ("4-body-found", at(.body, status: status()) { $0.body = .looking }),
+            ("4-body-cant-start", at(.body) {
+                $0.body = .looking
+                $0.app.startError = AppModel.startProblem(Runtime.OpenError.locked("/tmp/boop"))
+            }),
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),

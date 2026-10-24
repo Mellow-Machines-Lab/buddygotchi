@@ -33,4 +33,85 @@ public enum Onboarding {
         guard let saved, saved.afterNaming else { return nil }
         return saved
     }
+
+    /// What the walkthrough has heard and done so far, and the rules for
+    /// what a tap on the board or an agent's hook does in each act. The
+    /// window shows it; nothing here touches the board or the Mac.
+    public struct Progress: Equatable, Sendable {
+        /// Act 4's board.
+        public enum Body: Equatable, Sendable {
+            /// Plug me in, and why macOS will ask about Bluetooth.
+            case intro
+            /// "Look for me" was pressed: the runtime is looking.
+            case looking
+            /// The board was tapped while found: paired.
+            case joined
+            /// "I don't have my Boop yet", or past act 4 at launch.
+            case skipped
+        }
+
+        /// Act 5's lessons done on the board.
+        public enum Lesson: Hashable, Sendable { case tap, button }
+
+        /// What a tap on the board did.
+        public enum Tap: Equatable, Sendable {
+            /// It paired the board: Boop wakes up in it.
+            case paired
+            /// It did a lesson.
+            case lesson(Lesson)
+            case nothing
+        }
+
+        public private(set) var act: Act
+        public var body: Body
+        public var lessons: Set<Lesson> = []
+        /// Act 6's hooks are installed.
+        public var connected: Bool
+        /// The agent whose first hook was heard in act 6.
+        public var heard: String?
+
+        /// At `act`, as a launch starts there: past the board, it's
+        /// skipped (a quit forgets whether it was paired; the board is
+        /// remembered anyway); past the agents, they're connected.
+        public init(act: Act) {
+            self.act = act
+            body = act.index > Act.body.index ? .skipped : .intro
+            connected = act.index > Act.agents.index
+        }
+
+        /// Moves to `act`. Into the lessons with the board paired, the tap
+        /// that paired it counts as the first.
+        public mutating func move(to act: Act) {
+            self.act = act
+            if act == .howTo, body == .joined { lessons.insert(.tap) }
+        }
+
+        /// A tap on the board (its screen or its button). In act 4, while
+        /// looking and with a board found, it pairs it; in act 5 it does
+        /// the next lesson; anywhere else it's only a poke.
+        public mutating func tapped(boardFound: Bool) -> Tap {
+            switch act {
+            case .body where body == .looking && boardFound:
+                body = .joined
+                lessons.insert(.tap)
+                return .paired
+            case .howTo:
+                for lesson in [Lesson.tap, .button] where !lessons.contains(lesson) {
+                    lessons.insert(lesson)
+                    return .lesson(lesson)
+                }
+                return .nothing
+            default:
+                return .nothing
+            }
+        }
+
+        /// An agent's hook. Only in act 6, once connected, and only the
+        /// first: true when it's the hello to celebrate.
+        public mutating func heard(_ agent: String) -> Bool {
+            guard act == .agents, connected, heard == nil else { return false }
+            heard = agent
+            return true
+        }
+    }
 }

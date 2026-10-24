@@ -11,36 +11,37 @@ import SwiftUI
 /// by the app when the board is tapped or an agent's hook arrives.
 @MainActor
 final class OnboardingModel: ObservableObject {
-    @Published private(set) var act: Onboarding.Act
+    /// What's been heard and done, and the rules for taps and hooks
+    /// (BoopKit's, tested there).
+    @Published var progress: Onboarding.Progress
     /// The last move went forward, for which way the acts slide.
     @Published private(set) var forward = true
+
+    var act: Onboarding.Act { progress.act }
+    var body: Onboarding.Progress.Body {
+        get { progress.body }
+        set { progress.body = newValue }
+    }
+    var lessons: Set<Onboarding.Progress.Lesson> {
+        get { progress.lessons }
+        set { progress.lessons = newValue }
+    }
+    var connected: Bool {
+        get { progress.connected }
+        set { progress.connected = newValue }
+    }
+    var heard: String? {
+        get { progress.heard }
+        set { progress.heard = newValue }
+    }
 
     // Act 3: why naming couldn't save, if it couldn't.
     @Published var nameError: String?
 
-    // Act 4: the board.
-    enum Body: Equatable {
-        /// Plug me in, and why macOS will ask about Bluetooth.
-        case intro
-        /// "Look for me" was pressed: the runtime is looking.
-        case looking
-        /// The board was tapped: Boop jumped into it.
-        case joined
-        /// "I don't have my Boop yet."
-        case skipped
-    }
-    @Published var body = Body.intro
-    /// When looking started, for the "can't find me" hint.
+    // Act 4: when looking started, for the "can't find me" hint.
     @Published var lookingSince: Date?
 
-    // Act 5: the lessons done on the board.
-    enum Lesson: Hashable { case tap, button }
-    @Published var lessons: Set<Lesson> = []
-
-    // Act 6: the agents.
-    @Published var connected = false
-    /// The agent whose first hook was heard, by name.
-    @Published var heard: String?
+    // Act 6: what gets added, shown.
     @Published var showHooks = false
 
     // Act 7: the microphone and speech, once asked.
@@ -64,10 +65,8 @@ final class OnboardingModel: ObservableObject {
 
     init(app: AppModel, act: Onboarding.Act, stateDir: URL) {
         self.app = app
-        self.act = act
+        progress = Onboarding.Progress(act: act)
         self.stateDir = stateDir
-        if act.index > Onboarding.Act.body.index { body = .skipped }
-        if act.index > Onboarding.Act.agents.index { connected = true }
         app.setup.agents = Set(Agent.allCases.filter(app.installer.detected))
     }
 
@@ -78,7 +77,7 @@ final class OnboardingModel: ObservableObject {
     func go(_ to: Onboarding.Act) {
         forward = to.index > act.index
         OnboardingSound.play(.step)
-        withAnimation(.boopEase(0.45)) { act = to }
+        withAnimation(.boopEase(0.45)) { progress.move(to: to) }
         // Past the name, a quit comes back here; before it nothing is kept.
         if to.afterNaming { app.runtime?.setOnboarding(to) }
         entered(to)
@@ -95,8 +94,6 @@ final class OnboardingModel: ObservableObject {
     /// What an act does as it opens.
     func entered(_ act: Onboarding.Act) {
         switch act {
-        case .howTo:
-            if body == .joined { lessons.insert(.tap) }
         case .smallThings:
             app.refreshLoginItem()
             // On by default: Boop only watches while it's open.
@@ -164,29 +161,23 @@ final class OnboardingModel: ObservableObject {
     // MARK: Taps and hooks, from the runtime
 
     func tapped() {
-        switch act {
-        case .body where body == .looking:
-            if case .found = board {
-                OnboardingSound.play(.success)
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.6)) { body = .joined }
-                app.runtime?.greet(.wake)
-                lessons.insert(.tap)
-                log("onboarding: the board was tapped; paired")
-            }
-        case .howTo:
-            guard !lessons.contains(.button) else { return }
-            OnboardingSound.play(.success)
-            withAnimation(.boopPop) {
-                if lessons.contains(.tap) { lessons.insert(.button) } else { lessons.insert(.tap) }
-            }
-        default:
-            break
+        var found = false
+        if case .found = board { found = true }
+        var next = progress
+        let tap = next.tapped(boardFound: found)
+        guard tap != .nothing else { return }
+        OnboardingSound.play(.success)
+        withAnimation(tap == .paired ? .spring(response: 0.55, dampingFraction: 0.6) : .boopPop) { progress = next }
+        if tap == .paired {
+            app.runtime?.greet(.wake)
+            log("onboarding: the board was tapped; paired")
         }
     }
 
     func agentHook(_ agent: String) {
-        guard act == .agents, connected, heard == nil else { return }
-        withAnimation(.boopPop) { heard = agent }
+        var next = progress
+        guard next.heard(agent) else { return }
+        withAnimation(.boopPop) { progress = next }
         app.runtime?.greet(.celebrate)
         celebrate()
         log("onboarding: heard \(agent)'s first hook")
