@@ -219,12 +219,13 @@ public final class Pipeline {
     /// What you did to the board (`kind`: a stroke, a shake, face down…),
     /// which it reacted to at once: logged, and it may wake the brain, as
     /// a poke does. The core hears only `dismiss`, a finger held on the
-    /// sign: the request that shows stops showing (`Core.dismiss`).
+    /// sign: the request numbered `request`, the one the sign showed,
+    /// stops showing if it still shows (`Core.dismiss`).
     @discardableResult
-    public func gesture(_ kind: String, at now: Int64, buddy: String? = nil) -> Step {
+    public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
-            if kind == Core.dismissGesture { run(core(buddy).dismiss(at: now), buddy: buddy) }
+            if kind == Core.dismissGesture { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
         }
     }
 
