@@ -39,7 +39,7 @@ import Foundation
 ///   working beside the first: each name is its own thread.
 /// - `you` steps are what the person does: `poke`, `press` (BOOT, which
 ///   hands you the next agent while one needs you or sits idle), `hold`
-///   (a finger held on the needs-you sign, which dismisses it), `talk` (the
+///   (a finger held on the needs-you screen, which dismisses it), `talk` (the
 ///   button held `hold` seconds, then `text` heard), `back`: back at the
 ///   Mac after `minutes` away (`Runtime.cameBack`), and `wait`: `minutes`
 ///   pass at once, where the demo's clock can be moved (headless, as
@@ -66,7 +66,7 @@ public struct DemoScript: Sendable {
             case poke
             /// BOOT pressed: the board hands you the next agent.
             case press
-            /// A finger held on the needs-you sign: Boop stops showing the
+            /// A finger held on the needs-you screen: Boop stops showing the
             /// request.
             case hold
             case talk(String, hold: Double)
@@ -294,8 +294,9 @@ public struct DemoScript: Sendable {
         self.start = start
     }
 
-    /// How long a `hold` keeps its finger on the sign, in seconds: past
-    /// the board's hold (TouchGesture::kHoldMs), so the board sees one.
+    /// How long a `hold` keeps its finger on the needs-you screen, in
+    /// seconds: past the board's hold (TouchGesture::kHoldMs), so the
+    /// board sees one.
     public static let holdSeconds = 1.2
 
     /// `2026-10-31T09:00`, a demo's `start` and an eval's, in `timeZone`
@@ -374,7 +375,7 @@ extension DemoScript.Step {
         switch what {
         case .poke: found = .init(kind: "tap", text: "You poke \(name)")
         case .press: found = .init(kind: "press", text: "You press \(name)'s button")
-        case .hold: found = .init(kind: "hold", text: "You hold a finger on \(name)'s sign")
+        case .hold: found = .init(kind: "hold", text: "You hold a finger on \(name)'s needs-you screen")
         case .wait(let ms): found = .init(kind: "wait", text: "\(Self.minutes(ms)) later")
         case .talk(let words, _): found = .init(kind: "talk", text: "You say “\(words)”")
         case .back(let ms): found = .init(kind: "back", text: "You come back to the Mac after a \(Band.away(ms: ms)) break")

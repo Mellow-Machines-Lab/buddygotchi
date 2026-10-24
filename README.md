@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="documentation/media/boop.gif" width="440" alt="Boop's face on the board: napping, working along, an amber 'Claude needs you' sign, running tests, then a trophy for a big finish">
+  <img src="documentation/media/boop.gif" width="440" alt="Boop's face on the board: napping, working along, an amber 'Claude needs you' screen, running tests, then a trophy for a big finish">
 </p>
 
 <h1 align="center">Boop</h1>

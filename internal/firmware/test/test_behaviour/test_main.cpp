@@ -269,7 +269,7 @@ static void test_tap_during_needs_you_is_only_the_dip_and_stays_amber() {
 }
 
 // Answered on the Mac, the face goes back to the base
-// look with no reaction: the needs-you sign cuts away, with no blink.
+// look with no reaction: the needs-you screen cuts away, with no blink.
 static void test_answering_on_the_mac_goes_back() {
   Rig r;
   r.state(attn());
@@ -345,7 +345,7 @@ static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
   render::Canvas c{px.data()};
   r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.strip(r.t), dirty);
 }
-// The needs-you sign shows, which a switch to or from cuts: it rises in,
+// The needs-you screen shows, which a switch to or from cuts: it rises in,
 // and drops, on its own.
 static bool signShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
 // A switch of design doesn't cut hard: it dissolves over the rig's fade,
@@ -524,7 +524,7 @@ static void test_a_switch_dissolves_over_200_ms() {
 // held on for its `say`, the Mac going quiet), the face never cuts hard.
 // From one 20 ms frame to the next the design goes on at the same instant of
 // its clock, or the face dissolves from the one to the other (but for the
-// needs-you sign, which cuts in and out). An animation's design
+// needs-you screen, which cuts in and out). An animation's design
 // starting over at each of its loop boundaries is its clock going on, and
 // so is resting on its last frame.
 static void test_nothing_cuts_hard_as_it_plays_out() {

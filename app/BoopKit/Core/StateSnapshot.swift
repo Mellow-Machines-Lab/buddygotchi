@@ -24,9 +24,9 @@ public struct StateSnapshot: Equatable, Sendable {
         }
     }
 
-    /// The device keeps names in 24-byte fields, and what needs you's sign
+    /// The device keeps names in 24-byte fields, and what the needs-you screen
     /// shows (`attn.project` and `attn.name`) in 48-byte ones: three lines
-    /// of 16 on the sign.
+    /// of 16 on the screen.
     public static let maxNameBytes = 23
     public static let maxSignBytes = 47
 

@@ -1,8 +1,8 @@
-// The three anti-aliased fonts (the v1 build plan's F2, and the sign's): Geist Mono, generated into
+// The three anti-aliased fonts (the v1 build plan's F2, and the needs-you screen's): Geist Mono, generated into
 // firmware/assets/fonts.h by internal/tools/fontgen. Monospaced, printable ASCII plus
 // "·" (UTF-8 C2 B7). Accented Latin letters (U+00C0 to U+00FF) show as their
 // plain letter and anything else as "?". Text is drawn over black with an
-// ink ramp, or in black over the needs-you sign's amber (kInkOnAmber).
+// ink ramp, or in black over the needs-you screen's amber (kInkOnAmber).
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +18,7 @@ struct Font {
 
 extern const Font& kSmall;  // 8 × 18 cells, for the strip
 extern const Font& kLarge;  // 13 × 30 cells, for the bubble's text
-extern const Font& kSign;   // 17 × 38 cells, for the thread on the needs-you sign
+extern const Font& kSign;   // 17 × 38 cells, for the thread on the needs-you screen
 
 // Draws `text` with its cell's top-left at (x, y). Returns the x after it.
 int drawString(Canvas& c, const Font& f, int x, int y, const char* text, int ink);

@@ -37,7 +37,7 @@ struct SlimeFace: View {
     let listening: Bool
     let size: CGFloat
     /// Taller or shorter than `size`, for a tile that isn't square: the
-    /// engine's own 4:3 keeps the "needs you" sign whole.
+    /// engine's own 4:3 keeps the needs-you screen whole.
     var height: CGFloat?
     @Environment(\.stillMotion) private var still
     @Environment(\.accessibilityReduceMotion) private var reduced

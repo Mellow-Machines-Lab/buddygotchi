@@ -396,7 +396,7 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
 const char* Behaviour::press(uint32_t t, Rng& rng) {
   if (noApp(t) || !(model_.attn || model_.idle > 0)) return tap(t, rng);
   taps_ = 0;
-  // While something needs you its sign stays up: the Mac opens it.
+  // While something needs you its screen stays up: the Mac opens it.
   gesture(render::Gesture::kHandoff, t);
   return "handoff";
 }

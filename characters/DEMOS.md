@@ -55,7 +55,7 @@ creature's brain.
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
-| `{"you": "hold"}` | You hold a finger on the needs-you sign for a second: the sign goes, though the agent still waits, and its next request shows again | |
+| `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
 | `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a marathon at 8 minutes, a camp at 15) and the quiet after it its own. The agent's process runs all through the demo, as its hooks say, so a request still waits however long passes | `minutes` |

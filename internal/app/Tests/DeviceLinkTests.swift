@@ -112,7 +112,7 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The device's `hello` says who it is and which voice
     /// pack its card has; a tap names the brain's finish it landed on, when
-    /// it only dipped the face; a hold on the sign names the request it
+    /// it only dipped the face; a hold on the needs-you screen names the request it
     /// showed, in a request's 32 bits.
     func testWhatTheDeviceSays() throws {
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())

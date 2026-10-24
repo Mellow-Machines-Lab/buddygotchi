@@ -431,7 +431,7 @@ the brain's, a rule's, or the board's own.
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
-| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you sign is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request the sign showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
+| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
@@ -541,11 +541,11 @@ Besides drawing each mood and state, a face:
   request's own clock (`designMs`, from when the request came) for
   as long as it waits, and its `cues` follow the same clock, so a face
   can make it a performance that grows, and the engine knows nothing of
-  it. Pixel holds up a sign with who's asking and peeks over it, then
-  sways it and waves a mitt, then shakes it and waves both, then lowers
-  it and stares at you, and at last gives up and peeks calmly
-  (`render/pixel/sign.h`). Answer at any point and the face goes straight
-  back to its look.
+  it. On Pixel's needs-you screen it holds up an amber placard with
+  who's asking and peeks over it, then sways it and waves a mitt, then
+  shakes it and waves both, then lowers it and stares at you, and at
+  last gives up and peeks calmly (`render/pixel/sign.h`). Answer at any
+  point and the face goes straight back to its look.
 - **Has a name** for the board's `hello` (`name`). It draws every mood,
   so the Mac sends each as it is. The board shows its startup mood only
   for a name it doesn't know: a malformed message, or a Mac on another
@@ -854,8 +854,8 @@ a press kicks the squash and a stroke the lean. Every switch of design
 dissolves over the rig's 200 ms fade, through the same dither, with no
 blink: the whole picture, or between two designs the rig face draws,
 their desks while the face stays whole, moving from where the one had
-it to where the other has it. Into and out of the needs-you sign it
-cuts: the sign rises in and drops away on its own. The hat
+it to where the other has it. Into and out of the needs-you screen it
+cuts: the placard rises in and drops away on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
 

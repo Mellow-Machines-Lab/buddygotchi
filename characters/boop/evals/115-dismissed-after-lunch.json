@@ -1,7 +1,7 @@
 {
   "name": "A request waits through lunch, and a held finger dismisses it",
-  "case": "Claude asks to run a command, and the person is away for a two-hour lunch. The agent's process still runs, so the request still shows when they come back. They hold a finger on the sign: it goes, and the session waits as an idle one, a parcel for BOOT. Claude's next request shows again.",
-  "why": "A request waits as long as the agent's process runs, which every eval's hooks name (the 10 silent minutes clear only a request from a hook that doesn't); the board's `dismiss` gesture, a finger held 1 s on the sign (TouchGesture::kHoldMs), hides that request on Boop only (Core.dismiss): the session counts as idle, and its next request shows",
+  "case": "Claude asks to run a command, and the person is away for a two-hour lunch. The agent's process still runs, so the request still shows when they come back. They hold a finger on the needs-you screen: it goes, and the session waits as an idle one, a parcel for BOOT. Claude's next request shows again.",
+  "why": "A request waits as long as the agent's process runs, which every eval's hooks name (the 10 silent minutes clear only a request from a hook that doesn't); the board's `dismiss` gesture, a finger held 1 s on the needs-you screen (TouchGesture::kHoldMs), hides that request on Boop only (Core.dismiss): the session counts as idle, and its next request shows",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "set up the local database"},
     {"event": "needs you", "at": "1m", "expect": {"needs": "shown"}},

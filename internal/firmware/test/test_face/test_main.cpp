@@ -362,7 +362,7 @@ static void test_fonts_are_monospaced_and_utf8_aware() {
   TEST_ASSERT_TRUE(other.px == marks.px);
 }
 
-// The needs-you sign: the whole face for kHoldMs, then the
+// The needs-you screen: the whole face for kHoldMs, then the
 // sign rises over kRiseMs, bouncing past its place, as the head shrinks
 // behind it to peek over its top edge.
 void test_the_sign_rises_then_peeks() {

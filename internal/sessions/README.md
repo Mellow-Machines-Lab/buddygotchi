@@ -105,7 +105,7 @@ files, and tests that give the story's results when the script's edits are
 made (`hello`, `landing`, `context-wall`), or that runs the command it asks you about
 (`hanging`, whose story is the wait before you allow it). Its copy is
 named after the script's title (`deploy-the-docs`), as the player with
-no agent names its project, so the board's sign says the same either way.
+no agent names its project, so the board shows the same either way.
 A real model reads what it runs, so the
 project and the script must agree, and the script must say only what's
 true: a reviewer asked to say "nothing else changed" when something did

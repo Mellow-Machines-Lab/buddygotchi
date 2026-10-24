@@ -51,12 +51,12 @@ enum Ink : uint8_t {
 
 constexpr int kLevels = 8;          // coverage 1..8 of 8; 0 is the background
 constexpr int kInkBase = 16;        // ink i, level k at kInkBase + i * 8 + k - 1
-// Black text on the needs-you sign's amber: a ramp from the amber down to
+// Black text on the needs-you screen's amber: a ramp from the amber down to
 // black, level k at kOnAmberBase + k - 1, in the free entries before the
 // ink ramps. Font drawing takes it as the ink kInkOnAmber.
 constexpr int kOnAmberBase = 8;
 constexpr int kInkOnAmber = 0x40;
-static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the sign's ramp fits before the inks");
+static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the amber ramp fits before the inks");
 constexpr int kPaletteUsed = kInkBase + kInkCount * kLevels;
 static_assert(kPaletteUsed == faces::kSceneBase, "the scene colours start after the ramps");
 static_assert(faces::kSceneBase + faces::kColorCount - 1 <= 256, "palette overflow");
@@ -66,7 +66,7 @@ constexpr uint8_t inkAt(int ink, int level) {
   return level <= 0 ? kBlack : uint8_t(kInkBase + ink * kLevels + (level > kLevels ? kLevels : level) - 1);
 }
 // The index for text in `ink` at coverage `level`: over black, or black
-// over the sign's amber for kInkOnAmber.
+// over the needs-you screen's amber for kInkOnAmber.
 constexpr uint8_t textAt(int ink, int level) {
   if (ink != kInkOnAmber) return inkAt(ink, level);
   return level <= 0 ? kAmber : uint8_t(kOnAmberBase + (level > kLevels ? kLevels : level) - 1);
