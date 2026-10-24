@@ -317,6 +317,7 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
+        for rig in rigs { core(rig).setStage(growth.growth.stage) }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
@@ -352,7 +353,12 @@ public final class Runtime: @unchecked Sendable {
             guard growth.count(e, day: options.time.day(options.wallClock())) else { return }
             grew = true
             // A stage reached makes the rest of the day a party.
-            if growth.growth.stage > before { for rig in rigs { run(core(rig).reachedStage(growth.growth.name, at: now), on: rig) } }
+            if growth.growth.stage > before {
+                for rig in rigs {
+                    core(rig).setStage(growth.growth.stage)
+                    run(core(rig).reachedStage(growth.growth.name, at: now), on: rig)
+                }
+            }
         }
     }
 
