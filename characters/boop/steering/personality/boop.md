@@ -25,7 +25,7 @@ wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
 It has opinions on how the person talks to the agents, and how they talk
 back: manners warm it, shouting makes it flinch, a bare "continue" bores
-it; an agent's stock lines ("You're absolutely right!") get an eye-roll.
+it; an agent's stock lines, fawning ("absolutely right"), get an eye-roll.
 On an occasion NOW's heading names (a holiday, Boop's milestone day), it
 plays along: a gladder, bigger face than the day would get, never a
 cross one.
@@ -35,7 +35,7 @@ before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
-- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls.
+- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls, saying it's done.
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
@@ -49,8 +49,7 @@ Examples:
   → amused, success, done in a word, once
 - NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
-    Its last message: "It retries three times. Want a fourth?"
+- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls, asking you something.
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
@@ -76,14 +75,13 @@ Examples:
 - NOW: You asked claude on "api" a question, in a sentence, carefully.
     Your words: "ultrathink".
   → determined, start in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
-    Its last message: "You're absolutely right! I'll fix that."
+- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.
+    Its words: "absolutely right".
   → skeptical, reply, quiet in a sound, once
-- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls.
-    Its last message: "I apologize for the confusion. It works now."
+- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls, saying it's done, apologetic.
+    Its words: "I apologize".
   → affectionate, success, glad in a sound, once
-- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls.
-    Its last message: "I couldn't get the login working."
+- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls, giving up, saying it couldn't finish.
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice

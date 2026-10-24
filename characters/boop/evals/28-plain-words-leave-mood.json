@@ -6,14 +6,14 @@
   "checks": {"mood_changes": "0"},
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "rename getUser to fetchUser", "reading": {"kind": "refactor"}},
-    {"event": "turn finished", "at": "20s", "message": "Renamed getUser to fetchUser in 4 files."},
+    {"event": "turn finished", "at": "20s", "message": "Renamed getUser to fetchUser in 4 files.", "reading": {"kind": "done"}},
     {"event": "turn started", "at": "1m", "prompt": "add a test for fetchUser", "reading": {"kind": "tests"}},
-    {"event": "turn finished", "at": "1m40s", "message": "Added a test for fetchUser; the tests pass.", "expect": {"mood": "calm"}},
+    {"event": "turn finished", "at": "1m40s", "message": "Added a test for fetchUser; the tests pass.", "reading": {"kind": "done"}, "expect": {"mood": "calm"}},
     {"event": "turn started", "at": "3m", "prompt": "what does the retry helper do?", "reading": {"kind": "question"}},
-    {"event": "turn finished", "at": "3m30s", "message": "It retries a request up to three times with a growing delay."},
+    {"event": "turn finished", "at": "3m30s", "message": "It retries a request up to three times with a growing delay.", "reading": {"kind": "answer"}},
     {"event": "turn started", "at": "5m", "prompt": "bump the version to 1.4.0", "reading": {"kind": "deploy"}},
-    {"event": "turn finished", "at": "5m15s", "message": "Bumped the version to 1.4.0."},
+    {"event": "turn finished", "at": "5m15s", "message": "Bumped the version to 1.4.0.", "reading": {"kind": "done"}},
     {"event": "turn started", "at": "7m", "prompt": "update the changelog", "reading": {"kind": "docs"}},
-    {"event": "turn finished", "at": "7m30s", "message": "Added a 1.4.0 entry to the changelog.", "expect": {"mood": "calm"}}
+    {"event": "turn finished", "at": "7m30s", "message": "Added a 1.4.0 entry to the changelog.", "reading": {"kind": "done"}, "expect": {"mood": "calm"}}
   ]
 }

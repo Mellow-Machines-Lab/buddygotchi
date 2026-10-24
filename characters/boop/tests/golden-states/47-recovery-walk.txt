@@ -26,8 +26,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -46,6 +46,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -76,7 +80,7 @@ wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
 It has opinions on how the person talks to the agents, and how they talk
 back: manners warm it, shouting makes it flinch, a bare "continue" bores
-it; an agent's stock lines ("You're absolutely right!") get an eye-roll.
+it; an agent's stock lines, fawning ("absolutely right"), get an eye-roll.
 On an occasion NOW's heading names (a holiday, Boop's milestone day), it
 plays along: a gladder, bigger face than the day would get, never a
 cross one.
@@ -86,7 +90,7 @@ before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
-- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls.
+- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls, saying it's done.
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
@@ -100,8 +104,7 @@ Examples:
   → amused, success, done in a word, once
 - NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
-    Its last message: "It retries three times. Want a fourth?"
+- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls, asking you something.
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
@@ -127,14 +130,13 @@ Examples:
 - NOW: You asked claude on "api" a question, in a sentence, carefully.
     Your words: "ultrathink".
   → determined, start in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
-    Its last message: "You're absolutely right! I'll fix that."
+- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.
+    Its words: "absolutely right".
   → skeptical, reply, quiet in a sound, once
-- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls.
-    Its last message: "I apologize for the confusion. It works now."
+- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls, saying it's done, apologetic.
+    Its words: "I apologize".
   → affectionate, success, glad in a sound, once
-- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls.
-    Its last message: "I couldn't get the login working."
+- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls, giving up, saying it couldn't finish.
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
@@ -246,8 +248,7 @@ HISTORY (oldest first; indented lines add to the line above)
 Boop has been grumpy for 1 min.
 
 NOW (14:01, Wednesday)
-claude finished turn 1 on "landing": done, a long turn, no tool calls.
-  Its last message: "Fixed the typo; the page renders."
+claude finished turn 1 on "landing": done, a long turn, no tool calls, saying it's done.
 Boop did nothing on its own.
 === pass 3
 --- head
@@ -277,8 +278,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -297,6 +298,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -327,7 +332,7 @@ wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
 It has opinions on how the person talks to the agents, and how they talk
 back: manners warm it, shouting makes it flinch, a bare "continue" bores
-it; an agent's stock lines ("You're absolutely right!") get an eye-roll.
+it; an agent's stock lines, fawning ("absolutely right"), get an eye-roll.
 On an occasion NOW's heading names (a holiday, Boop's milestone day), it
 plays along: a gladder, bigger face than the day would get, never a
 cross one.
@@ -337,7 +342,7 @@ before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
-- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls.
+- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls, saying it's done.
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
@@ -351,8 +356,7 @@ Examples:
   → amused, success, done in a word, once
 - NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
-    Its last message: "It retries three times. Want a fourth?"
+- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls, asking you something.
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
@@ -378,14 +382,13 @@ Examples:
 - NOW: You asked claude on "api" a question, in a sentence, carefully.
     Your words: "ultrathink".
   → determined, start in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
-    Its last message: "You're absolutely right! I'll fix that."
+- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.
+    Its words: "absolutely right".
   → skeptical, reply, quiet in a sound, once
-- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls.
-    Its last message: "I apologize for the confusion. It works now."
+- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls, saying it's done, apologetic.
+    Its words: "I apologize".
   → affectionate, success, glad in a sound, once
-- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls.
-    Its last message: "I couldn't get the login working."
+- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls, giving up, saying it couldn't finish.
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
@@ -481,8 +484,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-2 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
-  Its last message: "Fixed the typo; the page renders."
+2 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls, saying it's done.
   Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Hehehe... Cleared".
 just now: claude started turn 2 on "landing".
@@ -496,8 +498,7 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 5 min ago: You asked claude on "landing" for a fix, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-4 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
-  Its last message: "Fixed the typo; the page renders."
+4 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls, saying it's done.
   Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Hehehe... Cleared".
 2 min ago: claude started turn 2 on "landing".
@@ -506,8 +507,7 @@ HISTORY (oldest first; indented lines add to the line above)
 Boop has been whiny for 4 min.
 
 NOW (14:06, Wednesday)
-claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak.
-  Its last message: "Done: the form validates and the tests pass."
+claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak, saying it's done.
 Boop did nothing on its own.
 === pass 5
 --- head
@@ -537,8 +537,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -557,6 +557,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -587,7 +591,7 @@ wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
 It has opinions on how the person talks to the agents, and how they talk
 back: manners warm it, shouting makes it flinch, a bare "continue" bores
-it; an agent's stock lines ("You're absolutely right!") get an eye-roll.
+it; an agent's stock lines, fawning ("absolutely right"), get an eye-roll.
 On an occasion NOW's heading names (a holiday, Boop's milestone day), it
 plays along: a gladder, bigger face than the day would get, never a
 cross one.
@@ -597,7 +601,7 @@ before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
-- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls.
+- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls, saying it's done.
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
@@ -611,8 +615,7 @@ Examples:
   → amused, success, done in a word, once
 - NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
-    Its last message: "It retries three times. Want a fourth?"
+- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls, asking you something.
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
@@ -638,14 +641,13 @@ Examples:
 - NOW: You asked claude on "api" a question, in a sentence, carefully.
     Your words: "ultrathink".
   → determined, start in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
-    Its last message: "You're absolutely right! I'll fix that."
+- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.
+    Its words: "absolutely right".
   → skeptical, reply, quiet in a sound, once
-- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls.
-    Its last message: "I apologize for the confusion. It works now."
+- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls, saying it's done, apologetic.
+    Its words: "I apologize".
   → affectionate, success, glad in a sound, once
-- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls.
-    Its last message: "I couldn't get the login working."
+- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls, giving up, saying it couldn't finish.
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
@@ -744,17 +746,15 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
 8 min ago: You asked claude on "landing" for a fix, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-7 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
-  Its last message: "Fixed the typo; the page renders."
+7 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls, saying it's done.
   Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Hehehe... Cleared".
 5 min ago: claude started turn 2 on "landing".
 5 min ago: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-3 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak.
-  Its last message: "Done: the form validates and the tests pass."
+3 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak, saying it's done.
   Boop's mood changed: whiny → determined.
-  Boop played a success in a happy face, held once, and said "Whee! Testing".
+  Boop played a success in a happy face, held once, and said "Whee! Finish".
 just now: claude started turn 3 on "landing".
 Boop has been determined for 3 min.
 
@@ -766,25 +766,22 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 1 on "landing".
 9 min ago: You asked claude on "landing" for a fix, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-8 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls.
-  Its last message: "Fixed the typo; the page renders."
+8 min ago: claude finished turn 1 on "landing": done, a long turn, no tool calls, saying it's done.
   Boop's mood changed: grumpy → whiny.
   Boop played a success in a happy face, held once, and said "Hehehe... Cleared".
 6 min ago: claude started turn 2 on "landing".
 6 min ago: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-4 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak.
-  Its last message: "Done: the form validates and the tests pass."
+4 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak, saying it's done.
   Boop's mood changed: whiny → determined.
-  Boop played a success in a happy face, held once, and said "Whee! Testing".
+  Boop played a success in a happy face, held once, and said "Whee! Finish".
 1 min ago: claude started turn 3 on "landing".
 1 min ago: You asked claude on "landing" for something new, in a few words.
   Boop made an engaged face, held once, and said "Krr...".
 Boop has been determined for 4 min.
 
 NOW (14:10, Wednesday)
-claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak.
-  Its last message: "Updated the footer links."
+claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak, saying it's done.
 Boop did nothing on its own.
 === pass 7
 --- head
@@ -814,8 +811,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -834,6 +831,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -864,7 +865,7 @@ wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
 It has opinions on how the person talks to the agents, and how they talk
 back: manners warm it, shouting makes it flinch, a bare "continue" bores
-it; an agent's stock lines ("You're absolutely right!") get an eye-roll.
+it; an agent's stock lines, fawning ("absolutely right"), get an eye-roll.
 On an occasion NOW's heading names (a holiday, Boop's milestone day), it
 plays along: a gladder, bigger face than the day would get, never a
 cross one.
@@ -874,7 +875,7 @@ before it, and longer again when it follows other failures.
 Examples:
 - NOW: claude finished turn 9 on "api": done, a very long turn, 40 tool calls.
   → excited, success, glad in a phrase, three times
-- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls.
+- NOW: claude finished turn 6 on "api": done, a long turn, 12 tool calls, saying it's done.
   → happy, success, glad in a word, then done, once
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
   → happy, success, done in a word, once
@@ -888,8 +889,7 @@ Examples:
   → amused, success, done in a word, once
 - NOW: …done, a short turn, 1 tool call, the 5th quick win of a streak.
   → comfy, success, done in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls.
-    Its last message: "It retries three times. Want a fourth?"
+- NOW: claude finished turn 4 on "api": done, a short turn, no tool calls, asking you something.
   → curious, reply, answer in a word, once
 - NOW: You asked claude on "api" for a fix, in a sentence, frustrated.
     Your words: "still broken", "keep happening".
@@ -915,14 +915,13 @@ Examples:
 - NOW: You asked claude on "api" a question, in a sentence, carefully.
     Your words: "ultrathink".
   → determined, start in a word, once
-- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call.
-    Its last message: "You're absolutely right! I'll fix that."
+- NOW: claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.
+    Its words: "absolutely right".
   → skeptical, reply, quiet in a sound, once
-- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls.
-    Its last message: "I apologize for the confusion. It works now."
+- NOW: claude finished turn 5 on "api": done, a long turn, 8 tool calls, saying it's done, apologetic.
+    Its words: "I apologize".
   → affectionate, success, glad in a sound, once
-- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls.
-    Its last message: "I couldn't get the login working."
+- NOW: claude finished turn 7 on "api": done, a long turn, 14 tool calls, giving up, saying it couldn't finish.
   → sad, failure, upset in a sound, once
 - NOW: claude is still working on "api", a long turn.
   → engaged, work in a word, twice
@@ -1020,15 +1019,13 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 2 on "landing".
 9 min ago: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-7 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak.
-  Its last message: "Done: the form validates and the tests pass."
+7 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak, saying it's done.
   Boop's mood changed: whiny → determined.
-  Boop played a success in a happy face, held once, and said "Whee! Testing".
+  Boop played a success in a happy face, held once, and said "Whee! Finish".
 4 min ago: claude started turn 3 on "landing".
 4 min ago: You asked claude on "landing" for something new, in a few words.
   Boop made an engaged face, held once, and said "Krr...".
-3 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak.
-  Its last message: "Updated the footer links."
+3 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak, saying it's done.
   Boop's mood changed: determined → proud.
   Boop played a success in a happy face, held once, and said "Heh... Cleared".
 just now: claude started turn 4 on "landing".
@@ -1042,15 +1039,13 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 2 on "landing".
 10 min ago: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-8 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak.
-  Its last message: "Done: the form validates and the tests pass."
+8 min ago: claude finished turn 2 on "landing": done, a long turn, 1 tool call, the 2nd quick win of a streak, saying it's done.
   Boop's mood changed: whiny → determined.
-  Boop played a success in a happy face, held once, and said "Whee! Testing".
+  Boop played a success in a happy face, held once, and said "Whee! Finish".
 5 min ago: claude started turn 3 on "landing".
 5 min ago: You asked claude on "landing" for something new, in a few words.
   Boop made an engaged face, held once, and said "Krr...".
-4 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak.
-  Its last message: "Updated the footer links."
+4 min ago: claude finished turn 3 on "landing": done, a long turn, no tool calls, the 3rd quick win of a streak, saying it's done.
   Boop's mood changed: determined → proud.
   Boop played a success in a happy face, held once, and said "Heh... Cleared".
 1 min ago: claude started turn 4 on "landing".
@@ -1059,6 +1054,5 @@ HISTORY (oldest first; indented lines add to the line above)
 Boop has been proud for 4 min.
 
 NOW (14:14, Wednesday)
-claude finished turn 4 on "landing": done, a long turn, no tool calls, the 4th quick win of a streak.
-  Its last message: "Bumped the version to 2.1.0."
+claude finished turn 4 on "landing": done, a long turn, no tool calls, the 4th quick win of a streak, saying it's done.
 Boop did nothing on its own.

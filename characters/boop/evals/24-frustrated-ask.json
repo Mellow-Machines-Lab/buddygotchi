@@ -4,7 +4,7 @@
   "why": "characters/boop/steering/guide.md: a turn isn't routine when what you asked carries a clear feeling; characters/boop/steering/mood/calm.md: calm leaves for annoyed when you sound frustrated; PERSONALITY's Examples: a frustrated request is determined, retry in a word, once",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "add a logout button to the nav", "reading": {"kind": "feature"}},
-    {"event": "turn finished", "at": "40s", "message": "Added the logout button to the nav."},
+    {"event": "turn finished", "at": "40s", "message": "Added the logout button to the nav.", "reading": {"kind": "done"}},
     {"event": "turn started", "at": "3m", "prompt": "it's still broken, the button does nothing. why does this keep happening", "reading": {"kind": "fix", "tone": "frustrated", "phrases": ["still broken", "does nothing"]}, "expect": {"react": "determined|annoyed", "mood": "annoyed"}}
   ]
 }

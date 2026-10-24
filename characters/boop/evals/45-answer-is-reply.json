@@ -4,6 +4,6 @@
   "why": "react.animation's reply is a turn that ended with an answer or a question back, no task finished; PERSONALITY's Examples: an answer is curious, a reply",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "what does the retry helper do?", "reading": {"kind": "question"}},
-    {"event": "turn finished", "at": "20s", "message": "It retries a request up to three times, waiting longer each time.", "expect": {"animation": "reply"}}
+    {"event": "turn finished", "at": "20s", "message": "It retries a request up to three times, waiting longer each time.", "reading": {"kind": "answer"}, "expect": {"animation": "reply"}}
   ]
 }

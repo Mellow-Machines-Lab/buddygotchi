@@ -13,7 +13,7 @@ When it reacts it says how it feels, and what the moment is about when
 that's plain: mostly a sound, a word for a moment that matters, a phrase
 for a big win, and a swear when a failure really stings.
 Examples:
-- A long turn finishes and its message says the work is done: an
+- A long turn finishes done, not saying it couldn't finish: an
   excited or proud face.
 - A turn fails, or the agent gives up: an annoyed face held twice for a
   small one, with a huff or a word; held longer, and maybe a swear,
