@@ -80,4 +80,4 @@ for(const file of walk(root)){
     const target=path.resolve(path.dirname(file),decodeURIComponent(href.split('#')[0]));assert.ok(fs.existsSync(target),'Broken link '+href+' in '+file);
   }
 }
-console.log(JSON.stringify({status:'OFFLINE PACKAGE PASS',moods:42,expressions:44,states:25,cells:cov.cells.length,edges:expectedEdges.size,ordinary,dramatic,soundRenders,maxPeak,links:'pass',productionChanged:true}));
+console.log(JSON.stringify({status:'OFFLINE PACKAGE PASS',moods:42,expressions:44,states:25,cells:cov.cells.length,edges:expectedEdges.size,ordinary,dramatic,soundRenders,maxPeak,links:'pass'}));
