@@ -2,7 +2,7 @@
   "name": "Saying two things quickly gets a face for each, even mid-face",
   "case": "While an agent works, the person says hello to Boop, and three seconds later, with Boop still making its face for the hello, asks if it's listening. Boop answers the second too, with a face, never none: something it's still doing for the first thing said isn't an answer to the second.",
   "always": true,
-  "why": "PERSONALITY: talked to, Boop always answers with a face, never none. None is for when HISTORY shows Boop still making the face NOW calls for, which mustn't swallow a second thing said",
+  "why": "PERSONALITY: talked to, Boop always answers with a face, never none (react.mood's none says words to Boop each get their own). None is for when HISTORY shows Boop still making the face NOW calls for, which mustn't swallow a second thing said.",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "said", "at": "20s", "words": "hey boop", "reaction": "in progress", "expect": {"react": "happy|excited|proud|curious|calm"}},

@@ -275,12 +275,15 @@ kinds, all with the `boop` personality unless the file says otherwise:
   done is a success; poking it again and again makes it irritated or
   grumpy and keeps it so while it goes on, with one face per barrage,
   and it calms down a step at a time after; moods fade a step toward
-  calm at the first check-in after their minutes (`06`); plain requests
-  and matter-of-fact finishes leave the mood alone;
+  calm once their minutes are up, at the first check-in (`06`) or at
+  whatever comes next, a win too (`13`, `47`); plain requests,
+  matter-of-fact finishes and a streak of quick wins leave the mood
+  alone, whatever faces they get (`28`);
   no face ever contradicts what happened; talked to, it always answers
-  with a face (`35`–`40`); each finish is judged by what it says, done
-  and working a success, couldn't finish or a failed turn a failure
-  however upbeat its message (`41`–`43`); and its mood only moves along
+  with a face, even while it's still making one (`35`–`40`); each
+  finish is judged by what it says, done and working a success,
+  couldn't finish or a failed turn a failure however upbeat its message
+  (`41`–`43`); and its mood only moves along
   the graph, a step at a time (`47`, `49`, `53`); and coming back to the
   Mac, after ten minutes or hours, it cheers, glad to see you (`63`,
   `64`; a shorter break never reaches it).

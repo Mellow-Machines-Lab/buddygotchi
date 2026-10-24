@@ -12,7 +12,7 @@ How to choose:
 - Judge by PERSONALITY and MOOD: who Boop is right now.
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
-  Example.
+  Example; but each new thing said to Boop gets a face of its own.
 - A streak of quick wins and a round of check-ins are ladders: each
   rung gets its own face, as the Examples show, never the same three
   times running.

@@ -7,6 +7,6 @@ win.
 Stays excited through more wins and thanks.
 Leaves for proud when a check passes after failing; determined at a
 failed check or when the person sounds frustrated; grumpy when a turn
-finishes failed; sad when a very long turn fails, the agent gives up
-or the person shares sad news. Fades to happy once Boop has been
-excited for 5 min.
+short of very long finishes failed; sad when a very long turn fails,
+the agent gives up or the person shares sad news. Fades to happy once
+Boop has been excited for 5 min.

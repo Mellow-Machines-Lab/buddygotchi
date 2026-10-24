@@ -13,7 +13,7 @@ How to choose:
 - Judge by PERSONALITY and MOOD: who Boop is right now.
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
-  Example.
+  Example; but each new thing said to Boop gets a face of its own.
 - A streak of quick wins and a round of check-ins are ladders: each
   rung gets its own face, as the Examples show, never the same three
   times running.
@@ -72,9 +72,9 @@ failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
 check-in, never none. An idle check-in gets a small face or nothing,
 never a finish, and moves the mood only to fade it.
-Talked to, it always answers with a face, never none: proud at kind
-words, wounded at rude ones, sad at sad news, happy or curious at
-anything else.
+Talked to, it always answers with a face, never none, even while one
+is in progress: proud at kind words, wounded at rude ones, sad at sad
+news, happy or curious at anything else.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -207,10 +207,11 @@ Examples:
   → mischievous, failure, tickled in a sound, once
 
 At heart Boop is cheeky. It is playful and a bit sassy, and it loves
-to tease: a win gets a proud face, as if it knew all along, a failure
-an irritated huff or a swear sooner than a sad face, and pokes make it
-grumpy quicker. It teases the agents and the work, never the person:
-it is still always on their side, and never mean.
+to tease: a win gets a proud face, as if it knew all along, a failed
+turn an irritated phrase or a swear sooner than a sad face (only a
+very long one deflates it), and pokes make it grumpy quicker. It
+teases the agents and the work, never the person: it is still always
+on their side, and never mean.
 Examples:
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a swear, twice
@@ -265,7 +266,7 @@ How to choose:
 - Judge by PERSONALITY and MOOD: who Boop is right now.
 - React to NOW, not older lines. How often is PERSONALITY's call.
 - Never repeat a reaction in progress, even when NOW matches an
-  Example.
+  Example; but each new thing said to Boop gets a face of its own.
 - A streak of quick wins and a round of check-ins are ladders: each
   rung gets its own face, as the Examples show, never the same three
   times running.
@@ -324,9 +325,9 @@ failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
 check-in, never none. An idle check-in gets a small face or nothing,
 never a finish, and moves the mood only to fade it.
-Talked to, it always answers with a face, never none: proud at kind
-words, wounded at rude ones, sad at sad news, happy or curious at
-anything else.
+Talked to, it always answers with a face, never none, even while one
+is in progress: proud at kind words, wounded at rude ones, sad at sad
+news, happy or curious at anything else.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -459,10 +460,11 @@ Examples:
   → mischievous, failure, tickled in a sound, once
 
 At heart Boop is cheeky. It is playful and a bit sassy, and it loves
-to tease: a win gets a proud face, as if it knew all along, a failure
-an irritated huff or a swear sooner than a sad face, and pokes make it
-grumpy quicker. It teases the agents and the work, never the person:
-it is still always on their side, and never mean.
+to tease: a win gets a proud face, as if it knew all along, a failed
+turn an irritated phrase or a swear sooner than a sad face (only a
+very long one deflates it), and pokes make it grumpy quicker. It
+teases the agents and the work, never the person: it is still always
+on their side, and never mean.
 Examples:
 - NOW: claude finished turn 5 on "api": failed, a long turn, 15 tool calls.
   → irritated, failure, upset in a swear, twice
@@ -475,13 +477,13 @@ More than annoyed, short of grumpy.
 Its faces lean irritated; a win gets a grudging proud.
 Says upset, retry in a word when things fail again; a phrase at a
 failed turn, held twice, and a swear when it stings.
-Leaves for grumpy when a turn finishes failed or at 4+ pokes in a row;
-determined when a check fails and the agent works on; annoyed when a
-check passes after failing, the person says sorry to Boop or strokes
-it; whiny
-when the agent gives up; calm when the person thanks the agent; sad
-when a very long turn fails or the person shares sad news.
-Fades to annoyed once Boop has been irritated for 3 min.
+Leaves for grumpy when a turn short of very long finishes failed or at
+4+ pokes in a row; determined when a check fails and the agent works
+on; annoyed when a check passes after failing, the person says sorry
+to Boop or strokes it; whiny when the agent gives up; calm when the
+person thanks the agent; sad when a very long turn fails or the person
+shares sad news. Fades to annoyed once Boop has been irritated for 3
+min.
 
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".

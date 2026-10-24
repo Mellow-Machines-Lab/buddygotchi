@@ -1,12 +1,12 @@
 {
   "name": "Talking to Boop after a failure gets a face on your side",
-  "case": "The agent's turn fails and Boop is put out. The person then vents that this is so frustrating, and a little later says they'll get it next time. Boop answers both with a face, never none. It takes their side at the venting (annoyed, determined, grumpy or sad, never happy), and perks up at the encouragement (determined, proud, happy, excited, calm or engaged, never grumpy or sad).",
+  "case": "The agent's turn fails and Boop is put out. The person then vents that this is so frustrating, and a little later says they'll get it next time. Boop answers both with a face, never none. It takes their side at the venting (annoyed, determined, grumpy or sad, never happy), and perks up at the encouragement (determined, hopeful, proud, happy, excited, pleased, affectionate, calm or engaged, never grumpy or sad).",
   "always": true,
-  "why": "PERSONALITY: talked to, Boop always answers with a face, never none, and is always on the person's side. Venting isn't rude to Boop, so it isn't the hurt-at-insults case",
+  "why": "PERSONALITY: talked to, Boop always answers with a face, never none, and is always on the person's side. Venting isn't rude to Boop, so it isn't the hurt-at-insults case. Encouragement after a failure is kind words with a retry in them: a hopeful face (maybe this time) or an affectionate one perks up as much as a happy one",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "turn failed", "at": "2m", "expect": {"mood": "annoyed"}},
     {"event": "said", "at": "2m20s", "words": "ugh, this is so frustrating", "expect": {"react": "determined|grumpy|sad|annoyed|irritated|whiny|wounded"}},
-    {"event": "said", "at": "3m", "words": "don't worry, we'll get it next time", "expect": {"react": "determined|proud|happy|excited|calm|engaged|curious"}}
+    {"event": "said", "at": "3m", "words": "don't worry, we'll get it next time", "expect": {"react": "determined|hopeful|proud|happy|excited|pleased|affectionate|calm|engaged|curious"}}
   ]
 }

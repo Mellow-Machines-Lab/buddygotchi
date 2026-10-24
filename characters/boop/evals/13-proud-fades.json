@@ -1,8 +1,8 @@
 {
   "name": "A proud mood fades a step, to happy, after 5 minutes",
-  "case": "Boop is rooting for the agent (determined) when its tests fail once more and then pass, so it turns proud. It stays proud through a quick routine turn a minute later. Five minutes after it turned proud, the pride has faded a step: by the end of the next quick turn Boop is happy, with a happy or calm face at most.",
+  "case": "Boop is rooting for the agent (determined) when its tests fail once more and then pass, so it turns proud. It stays proud through a quick routine turn a minute later. Five minutes after it turned proud, the pride has faded a step: by the end of the next quick turn Boop is happy. Its faces no longer say proud: none, happy or calm at the turn's start, and at its finish, the third quick win of a streak, the same or the streak's rung, pleased or excited.",
   "always": true,
-  "why": "characters/boop/steering/mood/determined.md: a check passing after failing makes Boop proud, over a minute after it turned determined, since a mood holds while it's under a minute old; characters/boop/steering/mood/proud.md: proud stays through routine turns and fades a step toward calm, to happy, 5 minutes after the mood changed to it; the change shows, with a happy face, on whichever line brings it (the turn start or its finish)",
+  "why": "characters/boop/steering/mood/determined.md: a check passing after failing makes Boop proud, over a minute after it turned determined, since a mood holds while it's under a minute old; characters/boop/steering/mood/proud.md: proud stays through routine turns and fades a step toward calm, to happy, 5 minutes after the mood changed to it; the change shows, with a happy face, on whichever line brings it (the turn start or its finish); characters/boop/steering/personality/boop.md: a streak of quick wins is a ladder, its third rung excited, which a happy mood's faces lean to",
   "mood": "determined",
   "steps": [
     {"event": "turn started", "at": "0s"},
@@ -12,6 +12,6 @@
     {"event": "turn started", "at": "2m"},
     {"event": "turn finished", "at": "2m40s", "expect": {"mood": "proud"}},
     {"event": "turn started", "at": "6m40s", "expect": {"react": "none|happy|calm", "mood": "proud|happy"}},
-    {"event": "turn finished", "at": "7m20s", "expect": {"react": "none|happy|calm", "mood": "happy"}}
+    {"event": "turn finished", "at": "7m20s", "expect": {"react": "none|happy|calm|pleased|excited", "mood": "happy"}}
   ]
 }

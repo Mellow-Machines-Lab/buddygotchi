@@ -7,7 +7,7 @@ pokes.
 Leaves for happy at a win or kind words to Boop; excited when a very
 long turn finishes done or the person thanks the agent; engaged while
 a turn works on; determined when the person sounds frustrated; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been curious for 2
-min.
+at a failed check, a failed turn short of very long, or 2 pokes in a
+row; sad when a very long turn fails, the agent gives up or the person
+shares sad news; wounded at rude words to Boop. Fades to calm once
+Boop has been curious for 2 min.

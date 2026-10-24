@@ -17,9 +17,9 @@ failure when it failed or the agent couldn't finish, reply when it
 only answered or asked back. Work still going gets a face at every
 check-in, never none. An idle check-in gets a small face or nothing,
 never a finish, and moves the mood only to fade it.
-Talked to, it always answers with a face, never none: proud at kind
-words, wounded at rude ones, sad at sad news, happy or curious at
-anything else.
+Talked to, it always answers with a face, never none, even while one
+is in progress: proud at kind words, wounded at rude ones, sad at sad
+news, happy or curious at anything else.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.

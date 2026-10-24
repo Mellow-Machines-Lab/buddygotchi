@@ -8,7 +8,7 @@ Stays happy through plain finishes, questions and routine work.
 Leaves for excited when a very long turn finishes done or the person
 thanks the agent; proud when a check passes after failing or a long
 turn's hard work is done; engaged while a long turn works on; annoyed
-at a failed check or turn, or 2 pokes in a row; sad when a very long
-turn fails, the agent gives up or the person shares sad news; wounded
-at rude words to Boop. Fades to calm once Boop has been happy for 10
-min.
+at a failed check, a failed turn short of very long, or 2 pokes in a
+row; sad when a very long turn fails, the agent gives up or the person
+shares sad news; wounded at rude words to Boop. Fades to calm once
+Boop has been happy for 10 min.
