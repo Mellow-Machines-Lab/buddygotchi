@@ -57,3 +57,7 @@
 {"t":"state","base":"working","mood":"happy","busy":1,"helpers":7,"vol":0}
 {"clock":9800}
 {"shot":"helpers-seven"}
+// The working agent's to-do list, done of total, after the working count.
+{"t":"state","base":"working","mood":"happy","busy":2,"helpers":2,"idle":1,"todo":{"done":3,"total":7},"vol":0}
+{"clock":10000}
+{"shot":"working-todo"}

@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-22. A demo is a short, scripted stretch of work that a
+Updated 2026-10-24. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -48,14 +48,17 @@ creature's brain.
 | `{"agent": "prompt"}` | You give the agent its task | `text`; `reading`, what Apple Intelligence would make of it (`kind`, `tone`, `phrases`), so it reads the same on any Mac |
 | `{"agent": "read"}` | The agent reads a file | `file` |
 | `{"agent": "edit"}` | The agent edits a file | `file`, `old`, `new` |
-| `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds) |
+| `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds), `waits` (true: the step ends as it asks, and the steps after it play while it waits, such as a `hold`) |
+| `{"agent": "todo"}` | The agent writes its to-do list (Claude's `TodoWrite`, Codex's `update_plan`): the line under the face counts it | `todos`, done of all (`"2/4"`) |
 | `{"agent": "review"}` | The agent sends a subagent: a helper at work, a mini under the face, until a `reply` `"by": "reviewer"` brings the first one still out back | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
+| `{"you": "hold"}` | You hold a finger on the needs-you sign for a second: the sign goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
+| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a marathon at 8 minutes, a camp at 15) and the quiet after it its own. While an agent works, keep each under 10 minutes with a step between: an agent not heard from in 10 minutes stops counting as working | `minutes` |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
@@ -66,8 +69,9 @@ working beside the first, started before its first step. A demo plays
 several agents at once this way.
 
 **Any eval is a demo too.** `boopdev eval --to-demo DIR` writes each of
-the pack's eval scenarios as a script, its brain steps the answers the
-scenario expects ([internal/EVALS.md](../internal/EVALS.md) §2), so
+the pack's eval scenarios as a script (a `needs you` becomes a run that
+`waits`, a held finger a `hold`, a to-do list a `todo`), its brain
+steps the answers the scenario expects ([internal/EVALS.md](../internal/EVALS.md) §2), so
 `make demo` can play what an eval checks.
 
 **A compact** comes in the middle of a turn, after the prompt and before

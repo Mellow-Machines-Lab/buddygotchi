@@ -1,0 +1,33 @@
+// A finger held on the needs-you sign dismisses it. The press shows at
+// once; held still 1 s, the board tells the Mac (`ev gesture` `dismiss`,
+// last_input `gesture`) and plays nothing; the sign stays until the Mac's
+// next state says nothing needs you, and the release is no tap.
+{"clock":0}
+{"t":"state","base":"working","busy":1,"attn":{"agent":"claude","project":"landing","id":1}}
+{"clock":2000}
+{"t":"dbg.touch","x":60,"y":60,"ms":1500}
+{"clock":2100}
+{"clock":2200}
+{"clock":2300}
+{"clock":2400}
+{"clock":2500}
+{"expect":{"screen":"needs_you","last_input":{"k":"touch","at":2000}}}
+{"shot":"holding"}
+{"clock":2600}
+{"clock":2700}
+{"clock":2800}
+{"clock":2900}
+{"clock":3000}
+{"expect":{"screen":"needs_you","last_input":{"k":"gesture","at":3000},"moment":null}}
+{"clock":3100}
+{"clock":3200}
+{"clock":3300}
+{"clock":3400}
+{"clock":3500}
+{"clock":3600}
+{"expect":{"screen":"needs_you","last_input":{"k":"gesture","at":3000},"moment":null}}
+// The Mac's next state: the request hidden, its session idle.
+{"t":"state","base":"idle","idle":1}
+{"clock":4200}
+{"expect":{"screen":"face","attn":null}}
+{"shot":"dismissed"}

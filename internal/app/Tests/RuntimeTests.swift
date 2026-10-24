@@ -1,6 +1,7 @@
 import AgentHooks
 import Foundation
 import MellowHarness
+import os
 import LinkKit
 import XCTest
 @testable import BoopDevKit
@@ -1908,6 +1909,43 @@ final class RuntimeTests: XCTestCase {
         let sessions = runtime.home.sync { Set(runtime.harness.log.events.compactMap(\.session)) }
         XCTAssertEqual(sessions, ["demo", "demo-docs"])
         XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).busy }, 1, "the first still works")
+    }
+
+    /// characters/DEMOS.md, with no agent: a todo sends the list's counts;
+    /// a wait moves the clock on where it can be moved (headless), here
+    /// past a long turn's 8 minutes; a run that `waits` lets the next steps
+    /// play while its request waits; and a hold, a second on, dismisses
+    /// that request on Boop.
+    func testADemoTicksOffItsListWaitsAndHolds() throws {
+        let transport = FakeTransport()
+        var options = try options(transport)
+        let skew = OSAllocatedUnfairLock(initialState: Int64(0))
+        let clock = options.clock
+        options.clock = { clock() + skew.withLock { $0 } }
+        options.advance = { ms in skew.withLock { $0 += ms } }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go", "after": 0}
+            {"agent": "todo", "todos": "2/4", "after": 0, "takes": 0}
+            {"you": "wait", "minutes": 8, "after": 0}
+            {"agent": "run", "cmd": "npm install", "ask": 30, "waits": true, "after": 0}
+            {"you": "hold", "after": 0}
+            """)
+        runtime.home.sync { runtime.play(script) }
+        eventually("the hold") { runtime.home.sync { runtime.harness.log.events.contains { $0.specificType == Core.dismissGesture } } }
+        let hooks = runtime.home.sync { runtime.harness.log.events.filter { $0.agent != nil && $0.type == .tool }.map(\.specificType) }
+        XCTAssertEqual(hooks.suffix(2), ["PreToolUse", "PermissionRequest"], "still waiting: nobody allowed it")
+        let states = transport.sent.filter { $0.hasPrefix(#"{"t":"state""#) }
+        XCTAssertTrue(states.contains { $0.contains(#""marathon""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
+        XCTAssertTrue(states.contains { $0.contains(#""attn""#) })
+        runtime.home.sync {
+            let now = runtime.core.snapshot(at: runtime.options.clock())
+            XCTAssertNil(now.attn, "dismissed")
+            XCTAssertEqual(now.idle, 1)
+        }
     }
 
     func compactsWithNoAgent(_ agent: String) throws {

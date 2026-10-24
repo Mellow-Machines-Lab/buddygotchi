@@ -104,21 +104,26 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
   r.round(x + 17, cy + 3, 7, 3, 1, ink);
 }
 
-// The counts after the names: how many sessions work, the helpers at work
-// (a mini each, a little droplet of the gel with two eyes) and the agents
-// idle (a parcel each for BOOT to hand over), from x, each with the gap
-// after it. Drawn when r is given; either way, the x after them, so the
-// names leave them the room they take.
+// The counts after the names: how many sessions work and how far down its
+// to-do list the longest turn is ("3/7"), the helpers at work (a mini
+// each, a little droplet of the gel with two eyes) and the agents idle (a
+// parcel each for BOOT to hand over), from x, each with the gap after it.
+// Drawn when r is given; either way, the x after them, so the names leave
+// them the room they take.
 int counts(Raster* r, const Strip& s, int x, int cy) {
   const Font& f = kSign;
   const int ty = cy - f.h / 2;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey), eye = inkRgb565(kInkEye);
-  char n[12];
+  char n[24];
   auto number = [&](int at, uint16_t ink) { return r ? text(*r, f, at, ty, n, ink) : at + glyphCount(n) * f.w; };
   if (s.busy > 0) {
     if (r) ring(*r, x, cy, grey);
     std::snprintf(n, sizeof(n), "%d", s.busy);
     x = number(x + kIcon + 8, grey) + kIcon;
+  }
+  if (s.todoTotal > 0) {
+    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
+    x = number(x, eye) + kIcon;
   }
   if (s.helpers > 0) {
     const int minis = std::min(s.helpers, kMinis), miniW = 20;
@@ -216,7 +221,7 @@ uint32_t laneKey(const char* line, const Strip& s) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp, s.opacity};
+    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.todoDone, s.todoTotal, s.noApp, s.opacity};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;

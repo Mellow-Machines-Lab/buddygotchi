@@ -19,6 +19,8 @@ import Foundation
 ///     {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading the editor."}
 ///     {"you": "talk", "text": "You suck at this!", "hold": 2}
 ///     {"you": "back", "minutes": 600}
+///     {"agent": "todo", "todos": "2/4"}
+///     {"you": "wait", "minutes": 8}
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
 ///     {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
 ///
@@ -26,17 +28,22 @@ import Foundation
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
 ///   `old` and `new`), `run` (a `cmd`, what it's `about`, whether it
 ///   `fails`, and `ask`: the agent asks you first, and you allow it after
-///   that many seconds), `review` (a subagent, its `task` and `prompt`),
+///   that many seconds; with `waits`, the steps after it play while it
+///   waits), `review` (a subagent, its `task` and `prompt`),
 ///   `compact` (its context is full mid-turn, and it compacts the
-///   conversation and goes on; the `summary` its model writes), and
+///   conversation and goes on; the `summary` its model writes), `todo`
+///   (it writes its to-do list, `todos` done of all, as `2/4`), and
 ///   `reply` (`text` that ends the turn; with `fails`, the turn failed).
 ///   `say` is what the agent says before it acts. `"by": "reviewer"` is
 ///   the subagent's own. `session` names another of the agent's sessions,
 ///   working beside the first: each name is its own thread.
 /// - `you` steps are what the person does: `poke`, `press` (BOOT, which
-///   hands you the next agent while one needs you or sits idle), `talk` (the button
-///   held `hold` seconds, then `text` heard), and `back`: back at the Mac
-///   after `minutes` away (`Runtime.cameBack`).
+///   hands you the next agent while one needs you or sits idle), `hold`
+///   (a finger held on the needs-you sign, which dismisses it), `talk` (the
+///   button held `hold` seconds, then `text` heard), `back`: back at the
+///   Mac after `minutes` away (`Runtime.cameBack`), and `wait`: `minutes`
+///   pass at once, where the demo's clock can be moved (headless, as
+///   `make demo` plays it).
 /// - `brain` steps are the creature's brain's answers to its questions,
 ///   about the step above, and `mood` its mood. `{"mood": "proud"}`
 ///   alone is a brain step too.
@@ -59,16 +66,21 @@ public struct DemoScript: Sendable {
             case poke
             /// BOOT pressed: the board hands you the next agent.
             case press
+            /// A finger held on the needs-you sign: Boop stops showing the
+            /// request.
+            case hold
             case talk(String, hold: Double)
             /// Back at the Mac after this many ms away.
             case back(ms: Int64)
+            /// This many ms pass at once.
+            case wait(ms: Int64)
             case brain([String: String], mood: String?)
         }
 
         /// An `agent` step.
         public struct Agent: Sendable, Equatable {
             public enum Does: String, Sendable, CaseIterable {
-                case prompt, read, edit, run, review, compact, reply
+                case prompt, read, edit, run, review, compact, todo, reply
             }
 
             public var does: Does
@@ -85,12 +97,17 @@ public struct DemoScript: Sendable {
             public var fails = false
             /// Seconds the agent's request to run waits for you, or nil: it doesn't ask.
             public var ask: Double?
+            /// The request's step ends as it's asked, so the steps after it
+            /// play while it waits for you (`waits`).
+            public var waits = false
             /// A review's task and prompt.
             public var task: String?
             public var prompt: String?
             /// A compact's summary: what the agent's model writes of the
             /// conversation so far, for it to go on from.
             public var summary: String?
+            /// A to-do list's counts.
+            public var todos: StateSnapshot.Todo?
             /// The subagent's step, not the main thread's.
             public var byReviewer = false
             /// Which of the agent's sessions it is: nil for the first.
@@ -168,7 +185,7 @@ public struct DemoScript: Sendable {
                     let isBool = (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } == true
                     let ok = switch key {
                     case "after", "takes", "ask", "hold", "minutes", "demo": value is NSNumber && !isBool
-                    case "fails": isBool
+                    case "fails", "waits": isBool
                     case "brain": value is [String: String]
                     case "buddies": value is [Any]
                     case "reading": value is [String: Any]
@@ -206,7 +223,13 @@ public struct DemoScript: Sendable {
                 a.old = string("old"); a.new = string("new"); a.cmd = string("cmd"); a.about = string("about")
                 a.fails = o["fails"] as? Bool ?? false
                 a.ask = number("ask")
+                a.waits = o["waits"] as? Bool ?? false
+                if a.waits, a.ask == nil { throw Problem(description: "\(here): only a run that asks waits") }
                 a.task = string("task"); a.prompt = string("prompt"); a.summary = string("summary")
+                if let text = string("todos") {
+                    guard kind == .todo, let list = Self.todos(text) else { throw Problem(description: "\(here): only a todo has todos, like 2/4") }
+                    a.todos = list
+                }
                 a.byReviewer = string("by") == "reviewer"
                 a.session = string("session")
                 if let r = o["reading"] {
@@ -221,6 +244,7 @@ public struct DemoScript: Sendable {
                     if a.file == nil || a.old == nil || a.new == nil { throw Problem(description: "\(here): an edit needs a file, old and new") }
                 case .run: if a.cmd == nil { throw Problem(description: "\(here): a run needs a cmd") }
                 case .review: if a.task == nil { throw Problem(description: "\(here): a review needs a task") }
+                case .todo: if a.todos == nil { throw Problem(description: "\(here): a todo needs todos, like 2/4") }
                 case .compact:
                     if a.summary == nil { throw Problem(description: "\(here): a compact needs the summary its model writes") }
                     // The model says nothing at the wall: the context is
@@ -233,6 +257,7 @@ public struct DemoScript: Sendable {
                 switch does {
                 case "poke": what = .poke
                 case "press": what = .press
+                case "hold": what = .hold
                 case "talk":
                     guard let words = string("text") else { throw Problem(description: "\(here): talk needs text") }
                     what = .talk(words, hold: number("hold") ?? 1.5)
@@ -240,7 +265,10 @@ public struct DemoScript: Sendable {
                     let minutes = number("minutes") ?? 60
                     guard minutes > 0 else { throw Problem(description: "\(here): a back's minutes are more than 0") }
                     what = .back(ms: Int64(minutes * 60_000))
-                default: throw Problem(description: "\(here): you is poke, press, talk or back")
+                case "wait":
+                    guard let minutes = number("minutes"), minutes > 0 else { throw Problem(description: "\(here): a wait's minutes are more than 0") }
+                    what = .wait(ms: Int64(minutes * 60_000))
+                default: throw Problem(description: "\(here): you is poke, press, hold, talk, back or wait")
                 }
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
@@ -251,7 +279,7 @@ public struct DemoScript: Sendable {
             case .agent(let a) where a.does == .prompt: (1, 0)
             case .agent(let a) where a.does == .run || a.does == .compact: (1, 2)
             case .agent: (1, 0.6)
-            case .poke, .press, .talk, .back: (0.8, 0)
+            case .poke, .press, .hold, .talk, .back, .wait: (0.8, 0)
             case .brain: (0.3, 0)
             }
             let buddy = string("buddy")
@@ -264,6 +292,14 @@ public struct DemoScript: Sendable {
         self.init(title: title, agent: agent, steps: steps)
         self.buddies = buddies
         self.start = start
+    }
+
+    /// A to-do list's `2/4`, a demo's `todos` and an eval's: done, of a
+    /// total of 1 or more.
+    public static func todos(_ text: String) -> StateSnapshot.Todo? {
+        let parts = text.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2, let done = Int(parts[0]), let total = Int(parts[1]), total >= 1, (0...total).contains(done) else { return nil }
+        return StateSnapshot.Todo(done: done, total: total)
     }
 
     /// `2026-10-31T09:00`, a demo's `start` and an eval's, in `timeZone`
@@ -288,8 +324,8 @@ public struct DemoScript: Sendable {
     /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
         "demo": ["demo", "title", "agent", "buddies", "start"],
-        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "task", "prompt", "summary", "by", "takes",
-                  "session", "reading"],
+        "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "waits", "task", "prompt", "summary", "by",
+                  "takes", "session", "reading", "todos"],
         "you": ["you", "text", "hold", "minutes"],
         "brain": ["brain", "mood"],
     ]
@@ -298,7 +334,7 @@ public struct DemoScript: Sendable {
     static func type(of key: String) -> String {
         switch key {
         case "after", "takes", "ask", "hold", "minutes", "demo": "a number"
-        case "fails": "true or false"
+        case "fails", "waits": "true or false"
         case "brain": "question keys to choices, both strings"
         case "buddies": "a list of buddies, as settings.json has them"
         case "reading": "a prompt's reading: its kind, tone and phrases"
@@ -323,8 +359,15 @@ public struct DemoScript: Sendable {
 extension DemoScript.Step {
     /// What the person does to the device itself at this step, for
     /// whoever replays it: a tap is a finger on its screen, which the
-    /// device reacts to by itself.
-    public var input: String? { what == .poke ? "tap" : what == .press ? "press" : nil }
+    /// device reacts to by itself, and a hold one kept there.
+    public var input: String? {
+        switch what {
+        case .poke: "tap"
+        case .press: "press"
+        case .hold: "hold"
+        default: nil
+        }
+    }
 
     /// What happened, for whoever is watching: the step's `note`, else words
     /// made from the step. Nil for a step nobody would see as something
@@ -335,6 +378,8 @@ extension DemoScript.Step {
         switch what {
         case .poke: found = .init(kind: "tap", text: "You poke \(name)")
         case .press: found = .init(kind: "press", text: "You press \(name)'s button")
+        case .hold: found = .init(kind: "hold", text: "You hold a finger on \(name)'s sign")
+        case .wait(let ms): found = .init(kind: "wait", text: "\(Self.minutes(ms)) later")
         case .talk(let words, _): found = .init(kind: "talk", text: "You say “\(words)”")
         case .back(let ms): found = .init(kind: "back", text: "You come back to the Mac after a \(Band.away(ms: ms)) break")
         case .brain: found = nil
@@ -347,9 +392,11 @@ extension DemoScript.Step {
             case .run:
                 let what = a.about.map { $0.prefix(1).lowercased() + $0.dropFirst() } ?? "runs `\(a.cmd ?? "")`"
                 found = a.fails ? .init(kind: "tool_failed", text: "\(actor): \(what), and it fails")
+                    : a.waits ? .init(kind: "needs_you", text: "\(actor) asks to \(what), and waits for you")
                     : .init(kind: a.ask != nil ? "needs_you" : "tool", text: a.ask != nil ? "\(actor) asks to \(what), and you allow it" : "\(actor): \(what)")
             case .review: found = .init(kind: "tool", text: "\(who) sends a reviewer: \(a.task ?? "")")
             case .compact: found = .init(kind: "compact", text: "\(who)'s context is full: it compacts the conversation")
+            case .todo: found = .init(kind: "tool", text: "\(who) ticks off its to-do list: \(a.todos.map { "\($0.done) of \($0.total) done" } ?? "")")
             case .reply:
                 found = a.byReviewer ? .init(kind: "tool", text: "The reviewer reports back")
                     : a.fails ? .init(kind: "tool_failed", text: "\(who)'s turn fails")
@@ -358,6 +405,15 @@ extension DemoScript.Step {
         }
         guard let note else { return found }
         return DemoScript.Cause(kind: found?.kind ?? "note", text: note)
+    }
+
+    /// A wait's length, in words: `8 minutes`, `1 hour 30 minutes`.
+    static func minutes(_ ms: Int64) -> String {
+        let m = Int((Double(ms) / 60_000).rounded())
+        let (h, r) = (m / 60, m % 60)
+        func n(_ count: Int, _ unit: String) -> String { "\(count) \(unit)\(count == 1 ? "" : "s")" }
+        if m < 1 { return n(Int(ms / 1000), "second") }
+        return h == 0 ? n(r, "minute") : r == 0 ? n(h, "hour") : "\(n(h, "hour")) \(n(r, "minute"))"
     }
 }
 

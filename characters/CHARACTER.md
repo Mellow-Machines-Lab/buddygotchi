@@ -427,7 +427,7 @@ the brain's, a rule's, or the board's own.
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
-| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
+| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you sign is no gesture of the face's: the board tells the Mac (`dismiss`), which stops showing that request, and plays nothing | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
@@ -510,9 +510,10 @@ Besides drawing each mood and state, a face:
   a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
-  many sessions work, a mini for each helper at work, up to four and
-  then +N, a parcel and the count of agents idle for BOOT to hand over,
-  a finished turn's tick or cross) and the speech bubble. The face calls
+  many sessions work and how far down its to-do list the longest turn
+  is, as `3/7`, a mini for each helper at work, up to four and then +N,
+  a parcel and the count of agents idle for BOOT to hand over, a
+  finished turn's tick or cross) and the speech bubble. The face calls
   `drawLane` to draw them. The engine fades the strip in as it comes and
   out as it goes, over the rig's 200 ms fade, from the moment it came or
   went, and hands the face its opacity with it (`Strip::opacity`):

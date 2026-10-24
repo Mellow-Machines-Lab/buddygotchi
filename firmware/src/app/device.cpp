@@ -39,8 +39,8 @@ static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out a
 bool sameModel(const Model& a, const Model& b) {
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
-         a.when == b.when &&
-         !std::strcmp(a.agent, b.agent) && !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
+         a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
+         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -173,7 +173,8 @@ void Device::reset() {
   pattern_ = false;
   patternFill_ = -1;
   targetX_ = targetY_ = -1;
-  injPress_ = injTouch_ = injMotion_ = bootInjected_ = touchDown_ = touchInjected_ = false;
+  injPress_ = injTouch_ = injMotion_ = bootInjected_ = touchDown_ = touchInjected_ = touchOnSign_ = touchDismissed_ =
+      false;
   boot_ = ButtonGesture{};
   // The motion sensor's readings start again with the clock, so one taken
   // before (its time far past the new clock's) can't hold the next back.
@@ -213,6 +214,9 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   m.busy = doc["busy"] | 0;
   m.idle = doc["idle"] | 0;
   m.helpers = doc["helpers"] | 0;
+  JsonObjectConst todo = doc["todo"];
+  m.todoDone = todo["done"] | 0;
+  m.todoTotal = todo["total"] | 0;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
@@ -476,6 +480,12 @@ void Device::state(JsonObject d, uint32_t t) {
   JsonArray when = d["when"].to<JsonArray>();
   for (int i = 0; i < render::kTagCount; ++i)
     if (m.when >> i & 1) when.add(render::kTagNames[i]);
+  if (m.todoTotal > 0) {
+    d["todo"]["done"] = m.todoDone;
+    d["todo"]["total"] = m.todoTotal;
+  } else {
+    d["todo"] = nullptr;
+  }
   if (m.attn) {
     d["attn"]["agent"] = m.agent;
     d["attn"]["project"] = m.project;
@@ -635,11 +645,14 @@ void Device::readInputs(uint32_t t) {
       break;
   }
 
-  // A touch anywhere is a tap, sent on release however long it was held.
-  // The press shows at once. The panel misses readings under a light
-  // press, so its touch ends only after kTouchReleaseMs without contact,
-  // in real time so that it ends while a tool has the clock frozen; an
-  // injected one ends when it says. The debug pattern ignores touches.
+  // A touch anywhere is a tap, sent on release however long it was held,
+  // but for a finger held still on the needs-you sign (TouchGesture::held):
+  // that's the gesture `dismiss`, sent as the hold completes, and its
+  // release does nothing, as a touch's on a sign that has gone does. The
+  // press shows at once. The panel misses readings under a light press, so
+  // its touch ends only after kTouchReleaseMs without contact, in real time
+  // so that it ends while a tool has the clock frozen; an injected one ends
+  // when it says. The debug pattern ignores touches.
   if (injTouch_ && !after(injTouchUntil_, t)) injTouch_ = false, touchGone = letGo(injTouchUntil_);
   int x = 0, y = 0;
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
@@ -652,7 +665,11 @@ void Device::readInputs(uint32_t t) {
   bool faced = !pattern_;
   if (touching && !touchDown_) {
     input("touch", t, x, y);
-    touchPath_.down(x, y);
+    touchPath_.down(x, y, t);
+    // Only a touch that began on the sign holds it: a request that comes
+    // up under a finger already down isn't dismissed by it.
+    touchOnSign_ = faced && signShows(t);
+    touchDismissed_ = false;
     if (faced) {
       b_.pressDown(t);
       b_.face().finger(true, x, y);
@@ -661,6 +678,12 @@ void Device::readInputs(uint32_t t) {
   } else if (touching && contact) {
     touchPath_.move(x, y);
     if (faced) b_.face().finger(true, x, y);
+  }
+  if (touching && touchOnSign_ && !touchDismissed_ && signShows(t) && touchPath_.held(t)) {
+    // Nothing plays: the sign goes when the Mac's next state says so.
+    touchDismissed_ = true;
+    input("gesture", t);
+    kit().emit("gesture", kDismissGesture, nullptr, touchInjected_);
   }
   if (!touching && touchDown_) {
     b_.pressUp();
@@ -671,15 +694,24 @@ void Device::readInputs(uint32_t t) {
       // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
       // nose; then the board reacts as one, but not while the face is
       // held, where a touch is a tap.
-      latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
+      // A hold that dismissed the sign was the whole touch: no tap after
+      // it. Nor is there one for a touch on a sign that has gone since, its
+      // request answered or dismissed on the Mac: it was for the sign.
       render::Gesture g;
-      if (touchPath_.up(g) && !b_.held(t)) gestured(g, t, touchInjected_);
-      else tapped(t, touchInjected_, false);
+      if (!touchDismissed_ && !(touchOnSign_ && !signShows(t))) {
+        latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
+        if (touchPath_.up(g) && !b_.held(t))
+          gestured(g, t, touchInjected_);
+        else
+          tapped(t, touchInjected_, false);
+      }
     }
   }
   if (touching != touchDown_) dirty_ = true;
   touchDown_ = touching;
 }
+
+bool Device::signShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
 
 void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
   b_.gesture(g, t);

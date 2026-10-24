@@ -65,7 +65,7 @@ A generic one, not the CYD or the AMOLED board:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`). Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). Held still a second on the needs-you sign, it dismisses it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | With `motion`, buttons that move the board as the AMOLED's motion sensor feels it: Shake, Pick up and Put down, Thump, Face down and Face up. Without them the board has no sensor, as the CYD hasn't |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
@@ -157,10 +157,12 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `talk`, `back`,
-  `done`, `failed`, `stopped` or `note`.
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `press`,
+  `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
-  screen, which the board reacts to by itself, as it does to a real one.
+  screen, which the board reacts to by itself, as it does to a real one;
+  `hold`, one kept there 1.2 s, past the board's hold on the needs-you
+  sign; or `press`, BOOT.
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page

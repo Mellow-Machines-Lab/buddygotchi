@@ -243,11 +243,16 @@ export class DemoPlayer extends EventTarget {
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
     // A finger on the screen, beside the nose (a boop there is a gesture),
-    // or BOOT pressed, which is the board's own to react to (a press long
-    // enough to pass the button's debounce).
+    // or kept there past the board's hold on the needs-you sign
+    // (TouchGesture::kHoldMs), or BOOT pressed, which is the board's own to
+    // react to (a press long enough to pass the button's debounce).
     if (event.input === 'tap') {
       this.#board.touch(...TAP);
       this.#board.release();
+    }
+    if (event.input === 'hold') {
+      this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
+      setTimeout(() => this.#board.release(), 1200);
     }
     if (event.input === 'press') {
       this.#board.boot(true);
@@ -292,7 +297,8 @@ const STYLE = `
 `;
 
 // A cause's kind, as an icon (DemoScript.Cause).
-const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', needs_you: '✋', talk: '🎙', back: '☀', done: '✓', failed: '✕', stopped: '■' };
+const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', hold: '☝', needs_you: '✋', talk: '🎙', back: '☀',
+                wait: '⏳', done: '✓', failed: '✕', stopped: '■' };
 
 // Outside a browser (the tests, under Node) there's no element to be.
 const Element = globalThis.HTMLElement ?? class {};

@@ -5,10 +5,11 @@
 
 namespace app {
 
-void TouchGesture::down(int x, int y) {
+void TouchGesture::down(int x, int y, uint32_t t) {
   x0_ = x_ = minX_ = maxX_ = x;
   y0_ = y_ = minY_ = maxY_ = y;
   path_ = 0;
+  t0_ = t;
 }
 
 void TouchGesture::move(int x, int y) {
@@ -16,6 +17,10 @@ void TouchGesture::move(int x, int y) {
   x_ = x, y_ = y;
   minX_ = std::min(minX_, x), maxX_ = std::max(maxX_, x);
   minY_ = std::min(minY_, y), maxY_ = std::max(maxY_, y);
+}
+
+bool TouchGesture::held(uint32_t t) const {
+  return t - t0_ >= kHoldMs && maxX_ - minX_ <= kHoldSpotPx && maxY_ - minY_ <= kHoldSpotPx;
 }
 
 bool TouchGesture::up(render::Gesture& g) const {

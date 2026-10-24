@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-22. How we check that Jev decides as Boop should: short
+Updated 2026-10-24. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -47,7 +47,8 @@ Wednesday 14:00 UTC and stands still while Jev answers.
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
-| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke |
+| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you sign: the request that shows stops showing (`Core.dismiss`), though its agent still waits |
+| `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
 | `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
@@ -239,11 +240,13 @@ file-name order:
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
+| `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
+| `steps[].process` | `running`: the step's hooks say which process the agent is, one that runs all through the scenario (the eval's own), as a real agent's hooks do. Its request then waits as long as the agent does; one from a hook that doesn't say clears after 10 silent minutes |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
 | `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
-| `steps[].expect.idle`, `helpers`, `when` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), and tags that must all be on (`halloween\|morning`) |
+| `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you sign shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
 | `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
@@ -330,7 +333,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   writes one diary line about it, and only one (`97`). Touched like a
   pet: a stroke calms a fed-up Boop, a shake makes it dizzy (`99`). And the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
-  the helpers and idle agents are counted under the face (`93`).
+  the helpers and idle agents are counted under the face (`93`); a
+  request still shows after a two-hour lunch, since its agent still
+  runs, and a finger held on the sign dismisses it (`115`); a long turn
+  and the quiet after it go through their tiers (`116`); and the to-do
+  count under the face climbs with the list (`117`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

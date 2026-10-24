@@ -126,6 +126,11 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   Check inversion, colour order and the SPI pins first.
 - **Touch does nothing:** wrong pins, no calibration, or touch sharing the
   screen's bus.
+- **A hold doesn't dismiss the needs-you sign:** the finger must stay
+  down a second inside a spot 24 px wide each way
+  (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). On the CYD,
+  press firmly: a touch with no reading for 50 ms has let go, and its
+  release is a tap.
 - **Boop is silent, faces fine:** the popover says "No voice", and
   `ping`'s `card` says why. `no card`: the card is out, or exFAT (cards
   over 32 GB come that way; format it FAT32). `no pack`, no voice file: copy the character

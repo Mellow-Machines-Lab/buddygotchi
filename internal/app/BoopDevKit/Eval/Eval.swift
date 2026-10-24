@@ -43,8 +43,16 @@ public struct Scenario: Sendable {
         /// `h1` unless it says.
         public var helper: String?
         /// What a `gesture` step did to the board: `stroke`, `nose`,
-        /// `dizzy`… (render::Gesture's names, and `facedown`).
+        /// `dizzy`… (render::Gesture's names, `facedown`, and `dismiss`, a
+        /// finger held on the needs-you sign).
         public var kind: String?
+        /// A `to-do list` step's list, as `3/7`: done, of all.
+        public var todos: StateSnapshot.Todo?
+        /// The step's hooks say which process the agent is, one that runs
+        /// all through the scenario (`process: running`): the agent's
+        /// request then waits as long as it does, past the 10 silent
+        /// minutes that clear one from a hook that doesn't say.
+        public var running = false
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -99,6 +107,10 @@ public struct Scenario: Sendable {
         public var idle: Set<String>?
         public var helpers: Set<String>?
         public var when: Set<String>?
+        /// Whether the needs-you sign shows (`shown`) or not (`none`), and
+        /// the working agent's to-do list (`3/7`, or `none`).
+        public var needs: Set<String>?
+        public var todo: Set<String>?
         /// Whether a pass of the step, a heartbeat's on the way to it
         /// included, wrote the diary (`some`) or none did (`none`).
         public var diary: Set<String>?
@@ -115,7 +127,7 @@ public struct Scenario: Sendable {
             return wanted.contains { $0 == "some" || caption.range(of: $0, options: .caseInsensitive) != nil }
         }
         /// Whether any of it is about the screen.
-        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil }
+        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil }
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
             react != nil || animation != nil || feeling != nil || about != nil || kind != nil || said != nil || loops != nil
@@ -220,7 +232,8 @@ public struct Scenario: Sendable {
     public static let defaultNature = LongTerm.Nature.cheeky
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit", "wait"]
+                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
+                                "to-do list", "wait"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -321,7 +334,8 @@ public struct Scenario: Sendable {
                 if a == .codex, event == "turn failed" { throw badStep("turn failed is Claude's: Codex has no hook for it") }
                 step.agent = a
             }
-            for (key, only) in ["prompt": ["turn started"], "reading": ["turn started"], "message": ["turn finished"], "count": ["pokes", "edit"]]
+            for (key, only) in ["prompt": ["turn started"], "reading": ["turn started"], "message": ["turn finished"], "count": ["pokes", "edit"],
+                                "todos": ["to-do list"]]
             where s[key] != nil && !only.contains(event) {
                 throw badStep("\(key) is only for \(only.joined(separator: " and "))")
             }
@@ -339,6 +353,14 @@ public struct Scenario: Sendable {
             step.kind = s["kind"] as? String
             if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
+            if event == "to-do list" {
+                guard let text = s["todos"] as? String, let list = DemoScript.todos(text) else { throw badStep("to-do list needs todos, like 3/7") }
+                step.todos = list
+            }
+            if let p = s["process"] {
+                guard p as? String == "running" else { throw badStep("process is running") }
+                step.running = true
+            }
             if let c = s["count"] {
                 guard let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
                 step.count = n
@@ -362,7 +384,7 @@ public struct Scenario: Sendable {
                     return Set(values)
                 }
                 let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens", "idle",
-                            "helpers", "when", "diary", "sign"]
+                            "helpers", "when", "needs", "todo", "diary", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), animation: try set("animation"), feeling: try set("feeling"), about: try set("about"),
@@ -373,6 +395,11 @@ public struct Scenario: Sendable {
                 step.expect?.idle = idle
                 step.expect?.helpers = helpers
                 step.expect?.when = when
+                let needs = try set("needs"), todo = try set("todo")
+                guard (needs ?? []).isSubset(of: ["shown", "none"]) else { throw badStep("expect.needs is shown or none") }
+                guard (todo ?? []).allSatisfy({ $0 == "none" || DemoScript.todos($0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
+                step.expect?.needs = needs
+                step.expect?.todo = todo
                 let diary = try set("diary")
                 step.expect?.diary = diary
                 let sign = try set("sign")
@@ -474,8 +501,10 @@ public struct Eval {
         public var latencyMs: Int
         /// What a press opened, `agent thread`, for `opens`.
         public var opened: String?
-        /// What the screen showed: the idle and helper counts and the tags.
-        public var screen: (idle: Int, helpers: Int, when: [String])?
+        /// What the screen showed: the idle and helper counts, the tags,
+        /// whether the needs-you sign showed, and the to-do list (`3/7`, or
+        /// `none`).
+        public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String)?
         /// Whether the pass wrote the diary.
         public var wrote = false
 
@@ -486,6 +515,8 @@ public struct Eval {
                 if let i = expected.idle, !i.contains("\(shown.idle)") { return false }
                 if let h = expected.helpers, !h.contains("\(shown.helpers)") { return false }
                 if let w = expected.when, !w.isSubset(of: shown.when) { return false }
+                if let n = expected.needs, !n.contains(shown.needs ? "shown" : "none") { return false }
+                if let t = expected.todo, !t.contains(shown.todo) { return false }
                 return true
             }
             if let r = expected.react, !r.contains(react ?? "none") { return false }
@@ -518,10 +549,12 @@ public struct Eval {
                         expected.idle.map { "idle \($0.sorted().joined(separator: "|"))" },
                         expected.helpers.map { "helpers \($0.sorted().joined(separator: "|"))" },
                         expected.when.map { "when \($0.sorted().joined(separator: " and "))" },
+                        expected.needs.map { "needs \($0.sorted().joined(separator: "|"))" },
+                        expected.todo.map { "todo \($0.sorted().joined(separator: "|"))" },
                         expected.diary.map { "diary \($0.sorted().joined(separator: "|"))" },
                         expected.sign.map { "sign \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
             let got = opened.map { "opened \($0)" }
-                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " "))" }
+                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo)" }
                 ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), animation \(animation ?? "none"), feeling \(feeling ?? "none"), about \(about ?? "none"), kind \(kind ?? "none"), said \(said ?? "none"), loops \(loops ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
@@ -730,7 +763,9 @@ public struct Eval {
                 check.expected.idle = expect.idle
                 check.expected.helpers = expect.helpers
                 check.expected.when = expect.when
-                check.screen = (shown.idle, shown.helpers, shown.when)
+                check.expected.needs = expect.needs
+                check.expected.todo = expect.todo
+                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo.map { "\($0.done)/\($0.total)" } ?? "none")
                 checks.append(check)
                 if !expect.wantsAPass, expect.opens == nil { continue }
             }
@@ -891,8 +926,10 @@ public struct Eval {
         let source = step.agent ?? .claude
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:], subagent: String? = nil) -> (Pipeline) -> Pipeline.Step {
-            { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
-                             subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
+            var data = data
+            if step.running { data["process"] = Eval.ownProcess }
+            return { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
+                                    subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
         }
         switch step.event {
         case "turn started": return [hook(.turn, .start, "UserPromptSubmit", step.prompt.map { ["prompt": .string($0)] } ?? [:])]
@@ -911,6 +948,12 @@ public struct Eval {
         case "edit":
             let lines: [String: JSONValue] = ["tool": "Edit", "lines_added": 0, "lines_removed": .int(Int64(step.count ?? 100))]
             return [hook(.tool, .start, "PreToolUse", lines), hook(.tool, .end, "PostToolUse", lines.merging(["failed": false]) { a, _ in a })]
+        // The agent writes its to-do list: Claude's TodoWrite, its counts
+        // as the hook gives them, never the items.
+        case "to-do list":
+            let list: [String: JSONValue] = ["tool": "TodoWrite", "todos_done": .int(Int64(step.todos?.done ?? 0)),
+                                             "todos_total": .int(Int64(step.todos?.total ?? 0))]
+            return [hook(.tool, .start, "PreToolUse", list), hook(.tool, .end, "PostToolUse", ["tool": "TodoWrite", "failed": false])]
         case "poke": return [{ $0.poke(at: now) }]
         case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
         // A Claude session opens with no turn yet: Boop is awake and idle,
@@ -939,6 +982,18 @@ public struct Eval {
         default: return []  // wait
         }
     }
+
+    /// This process, as a hook names its agent's (`AgentProcess`): it runs
+    /// as long as the eval does, so a step that says `process: running`
+    /// is an agent that's still there.
+    static let ownProcess: JSONValue = {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        _ = sysctl(&mib, 4, &info, &size, nil, 0)
+        let t = info.kp_proc.p_un.__p_starttime
+        return .object(["pid": .int(Int64(getpid())), "started": .int(Int64(t.tv_sec) * 1000 + Int64(t.tv_usec) / 1000)])
+    }()
 
     /// One scenario's runs, readably: its verdict, and each failing step
     /// once.
