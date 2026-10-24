@@ -509,10 +509,10 @@ Besides drawing each mood and state, a face:
   a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
-  many sessions work and how far down its to-do list the longest turn
-  is, as `3/7`, a mini for each helper at work, up to four and then +N,
-  a parcel and the count of agents idle for BOOT to hand over, a
-  finished turn's tick or cross) and the speech bubble. The face calls
+  many sessions work, a mini for each helper at work, up to four and
+  then +N, a parcel and the count of agents idle for BOOT to hand over,
+  how far down its to-do list the longest turn is, as `3/7`, a finished
+  turn's tick or cross) and the speech bubble. The face calls
   `drawLane` to draw them.
 - **Holds up a sign.** Any reaction may carry words in `sign` (the `do`'s
   args), at most 18 glyphs of the fonts (accents folded, cut with `..`
