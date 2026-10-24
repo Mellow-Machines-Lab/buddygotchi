@@ -96,6 +96,15 @@ public final class Core {
     var expired: Set<String> = []
     /// Why a request the safety net expired cleared.
     static let expiredWhy = "nothing for 10 minutes"
+    /// The requests you dismissed on the board or in the popover, by
+    /// session: the request's number. A dismissed request stops showing,
+    /// though its agent still waits, and its session stays first in BOOT's
+    /// line; the session's next request shows again.
+    var dismissed: [String: Int] = [:]
+    /// Why a request you dismissed stopped showing.
+    static let dismissedWhy = "you dismissed it"
+    /// The board's gesture for it: a finger held on the needs-you sign.
+    public static let dismissGesture = "dismiss"
 
     // Push-to-talk.
     /// Who turned the Mac's mic on: the device's BOOT button or the app's
@@ -476,7 +485,10 @@ public final class Core {
     // MARK: - Reading
 
     public func snapshot(at now: Int64) -> StateSnapshot {
-        let (waiting, working, idle) = tracker.grouped(at: now)
+        let (all, working, waitingIdle) = tracker.grouped(at: now)
+        let waiting = shown(all)
+        // A request you dismissed waits on you as an idle session does.
+        let idle = waitingIdle + all.filter(isDismissed)
         let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
         let attn = waiting.first.map {
             StateSnapshot.Attention(
@@ -488,9 +500,12 @@ public final class Core {
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
         let helpers = working.reduce(0) { $0 + $1.helpers.count }
+        // The list of the turn that has run longest, as the tier counts it.
+        let longest = working.filter { $0.turn.startedAt != nil }.min { $0.turn.startedAt! < $1.turn.startedAt! }
+        let todo = attn == nil ? longest?.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count, idle: idle.count,
                              helpers: helpers, vol: config.volume,
-                             when: when(at: now, working: working, idle: base == "idle" ? idle : []))
+                             when: when(at: now, working: working, idle: base == "idle" ? idle : []), todo: todo)
     }
 
     /// The tags on at `now`: the calendar's, then the tier of the longest
@@ -563,7 +578,27 @@ public final class Core {
     private func day(_ now: Int64) -> String { config.time.day(wall(now)) }
 
     /// Whether "needs you" shows: then no event's pass starts.
-    public var needsYouShowing: Bool { tracker.needsYou }
+    public var needsYouShowing: Bool { sessions.values.contains { $0.needsSince != nil && !isDismissed($0) } }
+
+    /// Whether `s` waits on a request you dismissed.
+    func isDismissed(_ s: Session) -> Bool { s.needsSince != nil && dismissed[s.key] == s.request }
+
+    /// The sessions of `waiting` whose request shows: not one you dismissed.
+    func shown(_ waiting: [Session]) -> [Session] { waiting.filter { !isDismissed($0) } }
+
+    /// Dismisses the request that shows (`key`'s, if it names a session
+    /// waiting): it stops showing on the board and in the menu bar, but the
+    /// agent still waits, and nothing answers it. The session's next
+    /// request shows again. Its `needs_you` ends, saying so.
+    @discardableResult
+    public func dismiss(_ key: String? = nil, at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        let waiting = shown(tracker.grouped(at: now).waiting)
+        if let s = key == nil ? waiting.first : waiting.first(where: { $0.key == key }) { dismissed[s.key] = s.request }
+        publish(now, &fx)
+        return fx
+    }
 
     /// The first activity of a new day, for the transcript's pruning.
     func startDayIfNew(_ now: Int64, _ fx: inout [CoreEffect]) {
@@ -591,7 +626,7 @@ public final class Core {
             fx.append(.open(thread))
         }
         let name = config.pack.name
-        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread(by: name)) }
+        if let waiting = shown(tracker.grouped(at: now).waiting).first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
         fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
     }
@@ -711,7 +746,8 @@ public final class Core {
     /// the view says who needs you from its start. A session gone while it
     /// waited clears too.
     func recordNeeds(_ now: Int64, _ fx: inout [CoreEffect]) {
-        let showing = sessions.filter { $0.value.needsSince != nil }
+        dismissed = dismissed.filter { sessions[$0.key].map(isDismissed) == true }
+        let showing = sessions.filter { $0.value.needsSince != nil && !isDismissed($0.value) }
         for (key, s) in showing.sorted(by: { ($0.value.needsSince!, $0.value.request) < ($1.value.needsSince!, $1.value.request) })
         where shownNeeds[key] == nil {
             shownNeeds[key] = (s.agent, s.id)
@@ -724,7 +760,8 @@ public final class Core {
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
-            let why = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended" : nil
+            let why: String? = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended"
+                : sessions[key].map(isDismissed) == true ? Core.dismissedWhy : nil
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
