@@ -129,9 +129,15 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] Whether the Mac's mirror runs the WebAssembly engine, retiring the
       slime's JavaScript twin, so the gel's expressions can move onto
       the mixer (character-engine.md, checkpoints 5 and 6).
-- [ ] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
+- [x] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
-      terminal tab and "lines gone"). Try it in iTerm2 and Terminal.
+      terminal tab and "lines gone"): 03fad1a on AgentHooks' main,
+      bumped in db97abb.
+- [ ] Try the exact terminal tab in iTerm2 and Terminal.
+- [ ] Push AgentHooks' `lifecycle-fixes` and merge it (a turn silent an
+      hour stops working, a day forgets any session, wrappers aren't the
+      agent, `HookSocket.listed`), then bump `agent-hooks`: Boop's
+      Uninstall and its lifecycle tests need it.
 - [ ] Review the worked reference (Studio, Review: notice from the perk
       reference). It keeps Boop's `notice` clip, which no face plays yet;
       its reading still names beats for the rig's dropped `eyeCurve` and
