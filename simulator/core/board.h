@@ -1,48 +1,37 @@
-// The simulated board: the firmware's device on LinkKit, and what a front
-// end needs of it. The Mac's loops (main.cpp, live.cpp) and the browser's
-// (web.cpp) all drive this, so they show the same board.
+// The simulated board: the firmware's hosted board (board/hosted/board.h,
+// which the Mac's mirror of the board runs too), with the simulator's
+// stand-in for the hardware, and what a front end needs of it. The Mac's
+// loops (main.cpp, live.cpp) and the browser's (web.cpp) all drive this,
+// so they show the same board.
 #pragma once
 #include <cstdint>
-#include <memory>
 #include <string>
-#include <vector>
 
-#include "app/device.h"
-#include "linkkit/kit.h"
-#include "linkkit/line_reader.h"
+#include "board/hosted/board.h"
 #include "sim_hal.h"
 
 namespace sim {
 
 class Board {
  public:
-  // A frame as the panel takes it: RGB565, row by row.
-  struct Frame {
-    const uint16_t* pixels = nullptr;
-    uint16_t width = 0, height = 0;
-  };
+  using Frame = hosted::Board::Frame;
 
   // `usb` is where the board's USB lines go. A live board's clock runs,
   // and `bootId` differs each power-on; a frozen one's starts at 0 and
   // moves only by dbg.* lines, with a boot ID of 0, so every run is the same.
-  Board(linkkit::Out& usb, bool frozenClock, uint32_t bootId = 0);
+  Board(linkkit::Out& usb, bool frozenClock, uint32_t bootId = 0) : hal_(bootId), board_(hal_, usb, frozenClock) {}
 
   SimHal& hal() { return hal_; }
-  app::Device& device() { return *device_; }
+  app::Device& device() { return board_.device(); }
 
   // The card that goes in the slot at `card in`, and now unless `out`.
   void setCard(Card* card, bool out = false);
 
-  // Bytes a host sent on USB. The board handles the lines waiting in
-  // order, as the firmware's loop does, and a dbg.* line ends the batch:
-  // the lines after it wait for the next tick, since tools order their
-  // input and clock steps against ticks. Returns how many lines it handled.
-  int usb(const char* bytes, size_t n);
-  // One pass of the board's loop, then the next batch of lines waiting.
-  // True when it drew a frame.
-  bool tick();
-  // The frame it last drew.
-  Frame frame();
+  // The hosted board's (board/hosted/board.h): what a host sent on USB, a
+  // pass of the board's loop, and the frame it last drew.
+  int usb(const char* bytes, size_t n) { return board_.usb(bytes, n); }
+  bool tick() { return board_.tick(); }
+  Frame frame() { return board_.frame(); }
 
   // One of the front end's inputs: `touch X Y` (canvas pixels), `release`,
   // `boot 0|1`, `card in|out`.
@@ -54,17 +43,7 @@ class Board {
  private:
   SimHal hal_;
   Card* card_ = nullptr;
-  std::vector<uint8_t> canvas_;
-  std::vector<uint16_t> rgb_;
-  std::unique_ptr<app::Device> device_;
-  std::unique_ptr<linkkit::Kit> kit_;
-  linkkit::LineReader line_;
-  // The bytes after a batch's dbg.* line, held for after the next tick;
-  // `ticked_` is false from that line until then.
-  std::string held_;
-  bool ticked_ = true;
-
-  int lines();  // the next batch from held_
+  hosted::Board board_;
 };
 
 }  // namespace sim

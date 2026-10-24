@@ -31,7 +31,7 @@ JSON=firmware/.pio/libdeps/native/ArduinoJson/src
 
 OUT=simulator/web/dist
 mkdir -p "$OUT"
-SOURCES="$(find firmware/src/render firmware/src/app firmware/src/voice $FW/src linkkit/device/src -name '*.cpp')
+SOURCES="$(find firmware/src/render firmware/src/app firmware/src/voice firmware/src/board/hosted $FW/src linkkit/device/src -name '*.cpp')
 simulator/core/board.cpp
 simulator/core/web.cpp"
 # shellcheck disable=SC2086

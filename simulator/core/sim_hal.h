@@ -43,6 +43,8 @@ struct Card {
 };
 
 struct SimHal : app::Hal {
+  explicit SimHal(uint32_t bootId = 0) : boot(bootId) {}
+
   uint32_t realMs() override {
     using namespace std::chrono;
     return uint32_t(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());

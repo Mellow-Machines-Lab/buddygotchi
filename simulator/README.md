@@ -43,7 +43,10 @@ the next launch starts with the board (`DeviceChooser`, in
 
 **The core** (`core/`) is the firmware's portable code (`render/`, `app/`
 and `voice/`) and LinkKit's device library, with a stand-in for the
-hardware (`sim_hal.h`). It takes USB's messages as the firmware's loop
+hardware (`sim_hal.h`), on the firmware's hosted board
+(`firmware/src/board/hosted/`), a board with no hardware of its own,
+which the Mac's mirror of the board runs too
+([characters/CHARACTER.md](../characters/CHARACTER.md) §9). It takes USB's messages as the firmware's loop
 does: in order, with a `dbg.*` message ending the batch, so the messages
 after it wait for the next pass. Both builds run the same `Board` (`board.h`), so
 they show the same board:

@@ -99,16 +99,7 @@ EMSCRIPTEN_KEEPALIVE int sim_tick() {
   const double from = emscripten_get_now();
   if (!board->tick()) return 0;
   const Board::Frame f = board->frame();
-  const size_t n = size_t(f.width) * f.height;
-  rgba.resize(n * 4);
-  for (size_t i = 0; i < n; ++i) {
-    const uint16_t p = f.pixels[i];
-    const uint8_t r = p >> 11, g = (p >> 5) & 0x3f, b = p & 0x1f;
-    rgba[4 * i] = uint8_t(r << 3 | r >> 2);
-    rgba[4 * i + 1] = uint8_t(g << 2 | g >> 4);
-    rgba[4 * i + 2] = uint8_t(b << 3 | b >> 2);
-    rgba[4 * i + 3] = 255;
-  }
+  hosted::Board::rgba(f, rgba);
   width = f.width, height = f.height;
   board->device().shown(board->hal().realMs());
   board->device().noteFrame(uint32_t((emscripten_get_now() - from) * 1000), 0);  // dbg.ping's fps and draw_us
