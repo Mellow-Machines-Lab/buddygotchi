@@ -10,10 +10,6 @@ struct OnboardingBrainKey: View {
     @ViewState private var saved = false
     @FocusState private var focused: Bool
 
-    /// Jev's docs, at TypeSafe. They don't say where a key comes from, so
-    /// the link says only what it is.
-    static let docs = URL(string: "https://docs.typesafe.ai/api")!
-
     var body: some View {
         OnboardingCard {
             VStack(alignment: .leading, spacing: 10) {
@@ -21,7 +17,7 @@ struct OnboardingBrainKey: View {
                     HStack {
                         Label("Give me a brain", systemImage: "sparkles").font(.boop(15, .bold))
                         Spacer()
-                        Link(destination: Self.docs) {
+                        Link(destination: AppModel.jevDocs) {
                             HStack(spacing: 2) {
                                 Text("Jev's docs")
                                 Image(systemName: "arrow.up.right")

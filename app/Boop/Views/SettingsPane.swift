@@ -138,7 +138,7 @@ struct SettingsPane: View {
         return Card(padding: 0) {
             VStack(spacing: 0) {
                 SettingRow(icon: "rectangle.inset.filled", title: "\(model.name)'s body", detail: device.detail,
-                           detailTone: device.trouble ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft,
+                           detailTone: device.trouble != nil ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft,
                            more: device.more) {
                     // Reconnecting can't help while Boop isn't running or Bluetooth is off.
                     if model.link != .none, let status = model.status, status.linkTrouble == nil {
@@ -371,7 +371,6 @@ struct SettingRow<Trailing: View>: View {
     /// The raw detail under the plain words, behind Details.
     var more: String?
     @ViewBuilder var trailing: Trailing
-    @ViewState private var showMore = false
 
     var body: some View {
         HStack(spacing: Theme.gapSnug + 2) {
@@ -383,19 +382,7 @@ struct SettingRow<Trailing: View>: View {
                 Text(title).font(.system(size: 12, weight: .medium))
                 Text(detail).font(.system(size: 11)).foregroundStyle(detailTone)
                     .fixedSize(horizontal: false, vertical: true)
-                if let more {
-                    Button { withAnimation(.boopSettle) { showMore.toggle() } } label: {
-                        Label("Details", systemImage: showMore ? "chevron.down" : "chevron.right")
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 2)
-                    if showMore {
-                        Text(more).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .textSelection(.enabled)
-                    }
-                }
+                if let more { MoreDetails(more) }
             }
             // The words take the room the control leaves, so they wrap only
             // when they must.

@@ -1,6 +1,7 @@
 import AgentHooks
 import AppKit
 import BoopKit
+import LinkKit
 import SwiftUI
 
 /// The menu-bar app: an icon that mirrors Boop and a popover.
@@ -116,8 +117,8 @@ final class AppModel: ObservableObject {
     var backupStateDir: URL?
     let link: LinkSetting
     var runtime: Runtime?
-    /// Shows `boop.log` in Finder.
-    var showLog: () -> Void = {}
+    /// Starts the runtime again, after it couldn't start.
+    var start: () -> Void = {}
     /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
     var uninstall: () -> Void = {}
     /// Reads Jev's key. Settings calls it off the main thread, since the
@@ -267,6 +268,10 @@ final class AppModel: ObservableObject {
 
     var listening: Bool { status?.listening == true }
 
+    /// Jev's docs, at TypeSafe, the one page of theirs Boop knows. They
+    /// don't say where a key comes from, so a link says only what it is.
+    static let jevDocs = URL(string: "https://docs.typesafe.ai/api")!
+
     /// Jev's key has been read and there's none, so Boop can't react.
     /// While a Keychain prompt waits, nobody knows yet.
     var noKey: Bool { status.map { $0.keyRead && $0.brain == "none" } ?? false }
@@ -297,17 +302,40 @@ final class AppModel: ObservableObject {
     }
 
     /// How Boop's body stands, in the words the Overview's device line and
-    /// Settings both use.
+    /// notice, and Settings, use.
     struct DeviceState {
         var connected: Bool
-        /// Something only the person can fix.
-        var trouble = false
+        /// Something only the person can fix, as the Overview's notice
+        /// names it.
+        var trouble: String?
         /// A word or two, for the Overview.
         var short: String
-        /// A sentence, for Settings and the device line's help.
+        /// A sentence, for Settings, the device line's help and the notice.
         var detail: String
-        /// The fix in full, for whoever wants it: behind Settings' Details.
+        /// The fix in full, for whoever wants it: behind Details.
         var more: String?
+        /// Where the person fixes the trouble.
+        var fix: Fix?
+
+        enum Fix {
+            /// A pane of System Settings.
+            case system(label: String, url: URL)
+            /// Settings' firmware update.
+            case update
+        }
+    }
+
+    /// Where Bluetooth's trouble is fixed, by its cause: LinkKit's words
+    /// for it, matched here. None for a Mac without Bluetooth.
+    static func bluetoothFix(_ trouble: String) -> DeviceState.Fix? {
+        let settings = "x-apple.systempreferences:"
+        if trouble == BLETransport.trouble(.poweredOff, appName: BoopDevice.blePrefix) {
+            return .system(label: "Open Bluetooth Settings", url: URL(string: settings + "com.apple.BluetoothSettings")!)
+        }
+        if trouble == BLETransport.trouble(.unauthorized, appName: BoopDevice.blePrefix) {
+            return .system(label: "Open Privacy & Security", url: URL(string: settings + "com.apple.preference.security?Privacy_Bluetooth")!)
+        }
+        return nil
     }
 
     /// The simulator is for developing Boop: `make run`'s debug build
@@ -353,30 +381,36 @@ final class AppModel: ObservableObject {
             return DeviceState(connected: false, short: "No device", detail: "This copy of Boop runs without a device.")
         }
         guard status.connected else {
-            if let why = status.linkTrouble { return DeviceState(connected: false, trouble: true, short: "No \(how)", detail: why) }
+            if let why = status.linkTrouble {
+                return DeviceState(connected: false, trouble: "\(name) can't look for its body", short: "No \(how)", detail: why,
+                                   fix: Self.bluetoothFix(why))
+            }
             if usingSimulator {
                 return DeviceState(connected: false, short: "Looking…", detail: "Looking for the simulator. Open its page in a browser.")
             }
             return DeviceState(connected: false, short: "Looking…", detail: "Looking for it over \(how). Plug it into USB power.")
         }
+        // Both firmware troubles are fixed by Settings' update, when the app carries one.
+        let update: DeviceState.Fix? = firmwareOffer == nil ? nil : .update
         // Its firmware doesn't fit the app, so it gets the looks but no
         // reactions (linkkit/SPEC.md §6).
         if let why = status.deviceTrouble {
-            return DeviceState(connected: true, trouble: true, short: "Wrong firmware", detail: "Connected \(over), but \(why).")
+            return DeviceState(connected: true, trouble: "\(name)'s body has the wrong firmware", short: "Wrong firmware",
+                               detail: "Connected \(over), but \(why).", fix: update)
         }
         // Its firmware has another character pack's faces: it works, but
         // draws its startup mood for a mood it doesn't have.
         if let pack = status.device?.pack, status.device?.hasThePack == false {
-            return DeviceState(connected: true, trouble: true, short: "Other character",
+            return DeviceState(connected: true, trouble: "\(name)'s body has another character's faces", short: "Other character",
                                detail: "Connected \(over), but the board was built with the \(pack) character pack, "
                                    + "and the app runs \(DeviceInfo.appPack), so some faces won't match. "
-                                   + "Flash the board with the app's character pack.")
+                                   + "Flash the board with the app's character pack.", fix: update)
         }
         // Its card's voice isn't the app's, so it gets no takes.
         // `none` is no card, one it can't read, or no pack on it.
         if let voice = status.device?.voice, status.device?.hasTheVoice == false {
             let card = voice == "none" ? "it has no card, or no voice file on its card" : "its card's voice file isn't this app's"
-            return DeviceState(connected: true, trouble: true, short: "No voice",
+            return DeviceState(connected: true, trouble: "\(name) has lost its voice", short: "No voice",
                                detail: "Connected \(over), but \(card), so \(name) can't talk. "
                                    + "Put this app's voice file on the card, then press the board's reset button.",
                                more: "The voice file is the character pack's voice/voice.bin, copied onto the card as boop/voice.bin. "
@@ -413,13 +447,13 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// What "Boop couldn't start" says, in plain words; the log keeps the
-    /// error itself.
+    /// What "Boop couldn't start" says, in plain words, above its Try again;
+    /// the log keeps the error itself.
     static func startProblem(_ error: Error) -> String {
         switch error {
-        case Runtime.OpenError.locked: "Another copy of Boop is already running. Quit it, then open this one again."
-        case is HookServer.StartError: "Boop can't listen for your agents' hooks. Quit other copies of Boop and open it again."
-        default: "Something went wrong while starting. What happened is in boop.log, in Boop's folder."
+        case Runtime.OpenError.locked: "Another copy of Boop is already running. Quit it, then try again."
+        case is HookServer.StartError: "Boop can't listen for your agents. Quit any other copy of Boop, then try again."
+        default: "Something went wrong while starting. Try again, or quit Boop and open it again."
         }
     }
 }
@@ -505,7 +539,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                       + "or repairs them; this copy hears them as \(name).sock")
         }
         model.refreshHooks()
-        model.showLog = { [log] in NSWorkspace.shared.activateFileViewerSelecting([log.url]) }
+        model.start = { [weak self] in self?.startRuntime() }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
 

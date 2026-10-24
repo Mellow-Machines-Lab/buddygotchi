@@ -17,7 +17,7 @@ struct OverviewPane: View {
                 VStack(alignment: .leading, spacing: Theme.gapSection) {
                     if let error = model.startError {
                         notice("exclamationmark.triangle.fill", Theme.clayInk, "Boop couldn't start", error,
-                               action: ("Show boop.log", model.showLog))
+                               action: ("Try again", model.start))
                     }
                     if model.status?.uncleanExit == true {
                         notice("exclamationmark.triangle.fill", Theme.clayInk, "\(model.name) stopped unexpectedly",
@@ -26,6 +26,7 @@ struct OverviewPane: View {
                             model.runtime?.dismissUncleanExit()
                         }
                     }
+                    deviceNotice(model.device)
                     if model.noKey, !model.noKeyDismissed {
                         notice("key.fill", Theme.inkSoft, "\(model.name) can't react yet",
                                "Add a Jev API key in Settings, and \(model.name) reacts to what your agents do and answers when you talk.",
@@ -33,10 +34,7 @@ struct OverviewPane: View {
                             model.noKeyDismissed = true
                         }
                     }
-                    if let trouble = model.status?.brainTrouble {
-                        notice("exclamationmark.triangle.fill", Theme.clayInk, "Jev isn't answering",
-                               Self.brainProblem(trouble))
-                    }
+                    if let trouble = model.status?.brainTrouble { brainNotice(trouble) }
                     if let why = model.status?.micTrouble {
                         notice("mic.slash.fill", Theme.clayInk, "\(model.name) can't hear you", why) {
                             model.dismissMicTrouble()
@@ -53,7 +51,8 @@ struct OverviewPane: View {
                     ForEach(Agent.allCases.filter { model.hookErrors[$0] != nil && !model.hookErrorsDismissed.contains($0) },
                             id: \.self) { agent in
                         notice("exclamationmark.triangle.fill", Theme.clayInk, "Couldn't change \(agent.displayName)'s hooks",
-                               model.hookErrors[agent] ?? "", action: openSettings) {
+                               "\(agent.displayName)'s settings were left as they were.", action: openSettings,
+                               more: model.hookErrors[agent]) {
                             model.dismissHookError(agent)
                         }
                     }
@@ -201,10 +200,11 @@ struct OverviewPane: View {
     private var oneDevice: some View {
         let device = model.device
         return HStack(spacing: 5) {
-            Circle().fill(device.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)
+            Circle().fill(device.trouble != nil ? Theme.clayInk : device.connected ? Theme.sage : Theme.inkFaint)
+                .frame(width: 6, height: 6)
             Text(device.short)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(device.trouble ? Theme.clayInk : Theme.inkSoft)
+                .foregroundStyle(device.trouble != nil ? Theme.clayInk : Theme.inkSoft)
         }
         .fixedSize()
         .padding(.trailing, 2)
@@ -409,25 +409,45 @@ struct OverviewPane: View {
 
     // MARK: Notices
 
-    /// What "Jev isn't answering" says, in plain words, by what the person
-    /// can do about it.
-    static func brainProblem(_ trouble: BrainTrouble) -> String {
-        let meanwhile = "Until Jev answers again, Boop only reacts by its own rules."
-        return switch trouble.kind {
-        case .credit: "Jev's account is out of credit (\(trouble.why)). Top it up at TypeSafe. \(meanwhile)"
-        case .key: "Jev didn't accept the API key (\(trouble.why)). Check the key in Settings. \(meanwhile)"
-        case .failing: "The last \(trouble.inARow) tries failed (\(trouble.why)). \(meanwhile)"
+    /// The brain failing, by what the person can do about it; the brain's
+    /// own words behind Details.
+    private func brainNotice(_ trouble: BrainTrouble) -> some View {
+        let meanwhile = "\(model.name) shows what your agents do, but doesn't react."
+        let (title, detail, action): (String, String, Action?) = switch trouble.kind {
+        case .credit: ("Jev is out of credit", "Top up your Jev account at TypeSafe. Until then, \(meanwhile)",
+                       ("Jev's docs", { NSWorkspace.shared.open(AppModel.jevDocs) }))
+        case .key: ("Jev didn't accept your key", "Check the Jev API key in Settings. Until then, \(meanwhile)", openSettings)
+        case .failing: ("Jev isn't answering", "Until it answers again, \(meanwhile)", nil)
+        }
+        return notice("exclamationmark.triangle.fill", Theme.clayInk, title, detail, action: action, more: trouble.why)
+    }
+
+    /// A trouble with Boop's body that only the person can fix, and where
+    /// they fix it.
+    @ViewBuilder private func deviceNotice(_ device: AppModel.DeviceState) -> some View {
+        if let trouble = device.trouble {
+            let action: Action? = switch device.fix {
+            case .system(let label, let url)?: (label, { NSWorkspace.shared.open(url) })
+            case .update?: openSettings
+            case nil: nil
+            }
+            notice("exclamationmark.triangle.fill", Theme.clayInk, trouble, device.detail, action: action, more: device.more)
         }
     }
 
-    private var openSettings: (String, () -> Void) {
+    private var openSettings: Action {
         ("Open Settings", { model.pane = .settings })
     }
 
-    /// A notice card: what's up, in a line and a few words, with a button
-    /// for what the person can do about it, and a cross if it can go.
+    /// A notice's button: its label, and what it does.
+    private typealias Action = (String, () -> Void)
+
+    /// A notice card: what's up, in a line and a few words, the raw detail
+    /// behind Details, a button for what the person can do about it, and a
+    /// cross if it can go.
     private func notice(_ icon: String, _ tone: Color, _ title: String, _ detail: String,
-                        action: (String, () -> Void)? = nil, dismiss: (() -> Void)? = nil) -> some View {
+                        action: Action? = nil, more: String? = nil,
+                        dismiss: (() -> Void)? = nil) -> some View {
         Card {
             HStack(alignment: .top, spacing: Theme.gapSnug + 2) {
                 Image(systemName: icon).font(.system(size: 13)).foregroundStyle(tone).frame(width: 18)
@@ -435,6 +455,7 @@ struct OverviewPane: View {
                     Text(title).font(.system(size: 12, weight: .semibold))
                     Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let more { MoreDetails(more) }
                     if let action {
                         Button(action.0, action: action.1).buttonStyle(.row).padding(.top, 6)
                     }

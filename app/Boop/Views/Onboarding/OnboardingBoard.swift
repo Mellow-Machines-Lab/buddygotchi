@@ -1,6 +1,5 @@
 import AppKit
 import BoopKit
-import LinkKit
 import SwiftUI
 
 // Acts 4 and 5: the board, and how to use it.
@@ -90,19 +89,6 @@ struct BodyAct: View {
         return false
     }
 
-    /// Where Bluetooth's trouble is fixed, by its cause: LinkKit's words
-    /// for it, matched here. None for a Mac without Bluetooth.
-    static func fix(_ trouble: String) -> (label: String, url: URL)? {
-        let settings = "x-apple.systempreferences:"
-        if trouble == BLETransport.trouble(.poweredOff, appName: BoopDevice.blePrefix) {
-            return ("Open Bluetooth Settings", URL(string: settings + "com.apple.BluetoothSettings")!)
-        }
-        if trouble == BLETransport.trouble(.unauthorized, appName: BoopDevice.blePrefix) {
-            return ("Open Privacy & Security", URL(string: settings + "com.apple.preference.security?Privacy_Bluetooth")!)
-        }
-        return nil
-    }
-
     @ViewBuilder private var lookingWords: some View {
             switch model.board {
             case .found(let name):
@@ -116,8 +102,8 @@ struct BodyAct: View {
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
             case .trouble(let why):
                 ActTitle(title: "I can't look for my body", detail: why)
-                if let fix = Self.fix(why) {
-                    Button(fix.label) { NSWorkspace.shared.open(fix.url) }.buttonStyle(.row)
+                if case .system(let label, let url)? = AppModel.bluetoothFix(why) {
+                    Button(label) { NSWorkspace.shared.open(url) }.buttonStyle(.row)
                 }
             case .none:
                 // Looked at again now and then, for the hint.

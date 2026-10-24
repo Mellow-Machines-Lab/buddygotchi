@@ -175,6 +175,30 @@ struct PaneSection<Content: View>: View {
     }
 }
 
+/// The raw detail under plain words, behind Details, for whoever wants it.
+struct MoreDetails: View {
+    let text: String
+    @ViewState private var shown = false
+
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Button { withAnimation(.boopSettle) { shown.toggle() } } label: {
+                Label("Details", systemImage: shown ? "chevron.down" : "chevron.right")
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft)
+            .padding(.top, 2)
+            if shown {
+                Text(text).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+        }
+    }
+}
+
 struct Hairline: View {
     var body: some View {
         Rectangle().fill(Theme.hairline).frame(height: 1)
