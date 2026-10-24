@@ -111,7 +111,8 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The device's `hello` says who it is and which voice
     /// pack its card has; a tap names the brain's finish it landed on, when
-    /// it only dipped the face.
+    /// it only dipped the face; a hold on the sign names the request it
+    /// showed, in a request's 32 bits.
     func testWhatTheDeviceSays() throws {
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(DeviceInfo(hello), DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: Take.voiceVersion))
@@ -125,6 +126,14 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(tap(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":0}}"#), .some(nil), "no finish")
         XCTAssertEqual(tap(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":"42"}}"#), .some(nil))
         XCTAssertEqual(Wire.decode(FakeTransport.ended(5, "cut", "tap")), .ended(Ended(id: 5, how: .cut, why: "tap")))
+        func hold(_ line: String) -> Int?? {
+            guard case .event(let ev) = Wire.decode(line), ev.kind == "gesture" else { return .none }
+            return .some(BoopDevice.request(held: ev))
+        }
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":7}}"#), .some(7))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss"}"#), .some(nil))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":0}}"#), .some(nil))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":2147483648}}"#), .some(nil))
     }
 
     /// Each reaction's `do`, with its name and its `args` in

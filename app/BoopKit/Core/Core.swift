@@ -11,8 +11,8 @@ import MellowHarness
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
 /// reaction it plays (`starting`, `stopped`, `error`, `helper_return`),
-/// as a `did` named after it. A session whose agent's process ended it
-/// records as that session's end (`agentGone`). It also
+/// as a `did` named after it. A session whose agent's process ended while
+/// it waited or worked it records as its turn stopping (`agentGone`). It also
 /// keeps push-to-talk (`Talk`): when the mic
 /// goes on and off and when `listening` ends, recorded as `listen` events
 /// that make no line. What the brain hears is the view's; everything
@@ -98,12 +98,12 @@ public final class Core {
     var expired: Set<String> = []
     /// Why a request the safety net expired cleared.
     static let expiredWhy = "nothing for 10 minutes"
-    /// The sessions whose agent's process ended, until the session end that
-    /// says so is recorded.
+    /// The sessions whose agent's process ended while they waited or
+    /// worked, until the stopped turn that says so is recorded.
     var gone: [String: (agent: Agent, id: String)] = [:]
-    /// The hook name of that session end, and its why.
+    /// The hook name of that stopped turn, and its why and its request's.
     public static let agentGone = "AgentGone"
-    static let agentGoneWhy = "its process ended"
+    static let agentGoneWhy = "its agent's process ended"
     /// Set while a launch reads the transcript back: the sessions in it end
     /// as it says, never as today's processes do.
     let readingBack: Flag
@@ -112,11 +112,13 @@ public final class Core {
     /// session: the request's number, so the session's next request shows
     /// again. A dismissed request stops showing, though its agent still
     /// waits, and its session stays in BOOT's line, after the requests that
-    /// show (`groups`). An old number can't match a later request's.
+    /// show (`groups`). An old number can't match a later request's. A
+    /// launch reads them back from their `needs_you` ends (`replay`).
     var dismissed: [String: Int] = [:]
     /// Why a request you dismissed stopped showing.
     static let dismissedWhy = "you dismissed it"
-    /// The board's gesture for it: a finger held on the needs-you sign.
+    /// The board's gesture for it: a finger held on the needs-you sign,
+    /// with the number of the request the sign showed (`attn.id`).
     public static let dismissGesture = "dismiss"
 
     // Push-to-talk.
@@ -233,7 +235,8 @@ public final class Core {
     /// where the sessions folded again disagree (a launch that missed an
     /// end, or ran the timers at other times), the first publish records
     /// the start or end that's missing, with why a request the read-back
-    /// cleared did.
+    /// cleared did. A request you dismissed stays dismissed while its
+    /// session still waits on it.
     public func replay(_ event: Event) {
         readingBack.on = true
         defer { readingBack.on = false }
@@ -246,7 +249,13 @@ public final class Core {
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
             shownNeeds[key] = event.phase == .start ? (agent, session) : nil
-            if event.phase == .start { expired.remove(key) }
+            if event.phase == .start {
+                expired.remove(key)
+                dismissed[key] = nil
+            } else if event["why"]?.string == Core.dismissedWhy, let s = sessions[key], s.needsSince != nil {
+                // This launch numbers the request afresh.
+                dismissed[key] = s.request
+            }
         }
     }
 
@@ -282,9 +291,10 @@ public final class Core {
             return nil
         case .turnEnded(let outcome, let endedTurn):
             // Only a stop that ends a turn plays its reaction: Claude's idle
-            // notice after a turn that finished doesn't.
+            // notice after a turn that finished doesn't, nor an agent gone,
+            // which nobody stopped.
             held[key] = nil
-            return outcome == .stopped && endedTurn ? DeviceReaction(anim: Core.stopped) : nil
+            return outcome == .stopped && endedTurn && event.hook != Core.agentGone ? DeviceReaction(anim: Core.stopped) : nil
         case .subagentEnded(let returned):
             // A helper Boop saw start returns, while its turn goes on.
             return returned ? DeviceReaction(anim: Core.helperReturn) : nil
@@ -613,16 +623,19 @@ public final class Core {
         return (waiting.filter { !isDismissed($0) }, waiting.filter(isDismissed), working, idle)
     }
 
-    /// Dismisses the request that shows (`key`'s, if it names a session
-    /// waiting): it stops showing on the board and in the menu bar, but the
-    /// agent still waits, and nothing answers it. The session's next
-    /// request shows again. Its `needs_you` ends, saying so.
+    /// Dismisses a request that shows: the session `key`'s, from the
+    /// popover, or the one numbered `request` (`attn.id`), from the board,
+    /// which names the request its sign showed, so one that took the sign
+    /// as the first was answered isn't dismissed unseen. It stops showing
+    /// on the board and in the menu bar, but the agent still waits, and
+    /// nothing answers it. The session's next request shows again. Its
+    /// `needs_you` ends, saying so.
     @discardableResult
-    public func dismiss(_ key: String? = nil, at now: Int64) -> [CoreEffect] {
+    public func dismiss(_ key: String? = nil, request: Int? = nil, at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
         let shown = groups(at: now).shown
-        if let s = key == nil ? shown.first : shown.first(where: { $0.key == key }) { dismissed[s.key] = s.request }
+        if let s = shown.first(where: { s in key.map { s.key == $0 } ?? (s.request == request) }) { dismissed[s.key] = s.request }
         publish(now, &fx)
         return fx
     }
@@ -757,9 +770,9 @@ public final class Core {
 
     /// Runs the session table's timers due by `now`: a
     /// Codex request past its grace shows, the safety net, a session whose
-    /// agent's process is gone ends, and forgetting. Each request the
-    /// safety net expires is kept for its `needs_you` end, and each
-    /// session whose agent is gone for its own end.
+    /// agent's process is gone stops waiting and working, and forgetting.
+    /// Each request the safety net expires is kept for its `needs_you` end,
+    /// and each session whose agent is gone for its stopped turn.
     /// `sparing`'s Codex request isn't shown: its event comes first.
     func advance(to now: Int64, sparing: String? = nil) {
         let before = sessions
@@ -774,23 +787,23 @@ public final class Core {
         }
     }
 
-    /// A session whose agent's process ended is over, recorded as its
-    /// session's end by rule, so the view, and a later launch reading the
-    /// transcript back, hear of it from the transcript, not from the
-    /// processes running then.
+    /// A session whose agent's process ended while it waited or worked,
+    /// recorded by rule as its turn stopping, so the view, and a later
+    /// launch reading the transcript back, stop it from the transcript, not
+    /// from the processes running then. The session stays, idle.
     func recordGone(_ now: Int64, _ fx: inout [CoreEffect]) {
         for (_, s) in gone.sorted(by: { $0.key < $1.key }) {
-            var e = Event(AgentEvent(agent: s.agent, kind: .session, phase: .end, hook: Core.agentGone, session: s.id, at: now))
+            var e = Event(AgentEvent(agent: s.agent, kind: .turn, phase: .end, hook: Core.agentGone, session: s.id, at: now,
+                                     outcome: .stopped))
             e.data["by"] = "rule"
             e.data["why"] = .string(Core.agentGoneWhy)
             fx.append(.record(e))
         }
-        gone = [:]
     }
 
     /// "Needs you" starting or clearing for a session, as a rule action:
-    /// the view says who needs you from its start. A session gone while it
-    /// waited clears too.
+    /// the view says who needs you from its start. A session whose agent
+    /// is gone, or that ended, while it waited clears too.
     func recordNeeds(_ now: Int64, _ fx: inout [CoreEffect]) {
         let showing = sessions.filter { $0.value.needsSince != nil && !isDismissed($0.value) }
         for (key, s) in showing.sorted(by: { ($0.value.needsSince!, $0.value.request) < ($1.value.needsSince!, $1.value.request) })
@@ -805,8 +818,8 @@ public final class Core {
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
-            let why: String? = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended"
-                : sessions[key].map(isDismissed) == true ? Core.dismissedWhy : nil
+            let why: String? = expired.remove(key) != nil ? Core.expiredWhy : gone[key] != nil ? Core.agentGoneWhy
+                : sessions[key] == nil ? "the session ended" : sessions[key].map(isDismissed) == true ? Core.dismissedWhy : nil
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
@@ -818,6 +831,7 @@ public final class Core {
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordGone(now, &fx)
         recordNeeds(now, &fx)
+        gone = [:]
         updateActs(now)
         let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)

@@ -2143,11 +2143,12 @@ static void test_a_stroke_is_a_gesture() {
 }
 
 // A finger held still on the needs-you sign for TouchGesture::kHoldMs
-// dismisses it: `ev gesture` `dismiss` once, as the hold completes, and
-// nothing on release, where a shorter touch is the tap that opens the
-// thread. Nothing plays: the sign stays until the Mac's next state.
+// dismisses it: `ev gesture` `dismiss` once, as the hold completes, with
+// the request's number (`data.attn`), and nothing on release, where a
+// shorter touch is the tap that opens the thread. Nothing plays: the sign
+// stays until the Mac's next state.
 static void test_a_hold_on_the_sign_dismisses_it() {
-  const char* dismiss = "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\"}\n";
+  const char* dismiss = "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\",\"data\":{\"attn\":3}}\n";
   const char* tap = "\"kind\":\"tap\"";
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
@@ -2169,6 +2170,25 @@ static void test_a_hold_on_the_sign_dismisses_it() {
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":200,\"to_y\":120,\"ms\":1500}");
   for (int i = 0; i < 20; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
+}
+
+// The hold names the request the sign showed as the finger went down: one
+// that takes the sign during the hold (the first answered on the Mac) isn't
+// the one dismissed, and a sign with no number sends none.
+static void test_a_hold_names_the_request_it_began_on() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":1500}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":500}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"codex\",\"project\":\"api\",\"id\":4}}");
+  for (int i = 0; i < 6; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, "\"did\":\"dismiss\",\"data\":{\"attn\":3}}"));
+  TEST_ASSERT_EQUAL_INT(0, count(r.usb.text, "\"attn\":4"));
+  Rig none;
+  none.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\"}}");
+  none.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":1500}");
+  for (int i = 0; i < 11; ++i) none.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(1, count(none.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\"}\n"));
 }
 
 // Outside needs-you a hold is a tap on release, however long; a request
@@ -2265,6 +2285,7 @@ int main() {
   RUN_TEST(test_a_state_carries_its_tags_and_counts);
   RUN_TEST(test_a_state_carries_its_to_do_count);
   RUN_TEST(test_a_hold_on_the_sign_dismisses_it);
+  RUN_TEST(test_a_hold_names_the_request_it_began_on);
   RUN_TEST(test_a_hold_off_the_sign_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);

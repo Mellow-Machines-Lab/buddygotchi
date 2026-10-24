@@ -56,7 +56,7 @@ extension Runtime {
             run(pipeline.poke(at: now, finish: opens, buddy: rig.tag))
         case "gesture":
             options.log("device\(Runtime.whose(rig)): gesture \(ev.did ?? "?")")
-            if let kind = ev.did { run(pipeline.gesture(kind, at: now, buddy: rig.tag)) }
+            if let kind = ev.did { run(pipeline.gesture(kind, request: BoopDevice.request(held: ev), at: now, buddy: rig.tag)) }
         case "talk_on", "talk_off":
             options.log("device\(Runtime.whose(rig)): \(ev.kind)")
             listener = rig

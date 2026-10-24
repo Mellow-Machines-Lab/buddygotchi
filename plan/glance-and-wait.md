@@ -18,16 +18,22 @@ you is always silent, so the requests you missed (lunch, a meeting, Boop
 face-down) are the ones that vanish.
 
 - **The agent's process.** Each hook says which process the agent is
-  (its pid and start time). AgentHooks checks the silent ones every
-  5 s: running means still waiting, however long; gone means the session
-  ended (a closed terminal, a crash), which Boop's core records in the
-  transcript, so the brain and a later launch hear of it from there.
+  (its pid and start time). AgentHooks checks the silent sessions that
+  wait or work every 5 s: running means still waiting or working,
+  however long; gone (a closed terminal, a crash) means the request
+  clears and the turn stops, which Boop's core records in the transcript
+  as the turn stopping, so a later launch hears of it from there. The
+  session stays, idle: one process can outlive many sessions (the Codex
+  app's server, `/new` in a running CLI), so an idle session's process
+  isn't checked, and any idle session is forgotten after a silent day.
   The 10-minute net stays only for hooks that don't say.
 - **The escape hatch on the body.** Hold a finger on the screen for 1 s
   while the sign is up: Boop drops it. It hides the request on Boop
   only and never answers the agent; the session stays in BOOT's line,
-  after the requests that show, and a new request from it shows again. The popover's row has
-  the same Dismiss.
+  after the requests that show, and a new request from it shows again.
+  The board names the request its sign showed, so one that takes the
+  sign during the hold isn't dismissed unseen, and a relaunch keeps it
+  dismissed while it waits. The popover's row has the same Dismiss.
 
 ## 2. Opening the thread where you work
 
@@ -63,8 +69,9 @@ for an MCP tool, minis carrying boxes for helpers.
 
 **The to-do list.** Claude's tasks (`TaskCreate`, `TaskUpdate`, the
 older `TodoWrite`) and Codex's `update_plan` give done and total. The
-line under the face shows `3/7`; later, a ladder Boop climbs. Only the
-counts leave the agent: no item's words.
+line under the face shows `3/7`; later, a ladder Boop climbs. A list
+all done is dropped at the next prompt, so it doesn't show on later
+turns. Only the counts leave the agent: no item's words.
 
 **Growth.** Every stage reached is a tag (`sprout`, `buddy`, `pal`,
 `chonk`, `legend`), so a design for Pal shows from Pal on: a plant that

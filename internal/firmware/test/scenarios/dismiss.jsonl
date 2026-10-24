@@ -1,7 +1,8 @@
 // A finger held on the needs-you sign dismisses it. The press shows at
 // once; held still 1 s, the board tells the Mac (`ev gesture` `dismiss`,
-// last_input `gesture`) and plays nothing; the sign stays until the Mac's
-// next state says nothing needs you, and the release is no tap.
+// with the request's number; last_input `gesture`) and plays nothing; the
+// sign stays until the Mac's next state says nothing needs you, and the
+// release is no tap.
 {"clock":0}
 {"t":"state","base":"working","busy":1,"attn":{"agent":"claude","project":"landing","id":1}}
 {"clock":2000}
