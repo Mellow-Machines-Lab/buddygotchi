@@ -112,9 +112,10 @@ void iconMini(Canvas& c, int x, int y, uint8_t ink) {
 }
 
 namespace {
-// The counts after the names: how many sessions work and how far down its
-// to-do list the longest turn is, the helpers at work and the agents idle,
-// from x, each with the gap after it. Drawn when c
+// The counts after the names: how many sessions work, the helpers at work,
+// the agents idle and how far down its to-do list the longest turn is, from
+// x, each with the gap after it. The list comes last, clear of the working
+// looks' props that reach down to the strip's left. Drawn when c
 // is given; either way, the x after them, so the names leave them the
 // room they take.
 int drawCounts(Canvas* c, const Strip& s, int x) {
@@ -127,10 +128,6 @@ int drawCounts(Canvas* c, const Strip& s, int x) {
     if (c) drawIcon(*c, x, cy - 5, kRing, kInkGrey);
     std::snprintf(n, sizeof(n), "%d", s.busy);
     x = number(x + 15, kInkGrey) + 14;
-  }
-  if (s.todoTotal > 0) {
-    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
-    x = number(x, kInkEye) + 14;
   }
   if (s.helpers > 0) {
     const int minis = std::min(s.helpers, kMinis);
@@ -146,6 +143,10 @@ int drawCounts(Canvas* c, const Strip& s, int x) {
     if (c) iconParcel(*c, x, cy - 5, inkAt(kInkEye, kLevels));
     std::snprintf(n, sizeof(n), "%d", s.idle);
     x = number(x + 15, kInkEye) + 14;
+  }
+  if (s.todoTotal > 0) {
+    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
+    x = number(x, kInkEye) + 14;
   }
   return x;
 }
