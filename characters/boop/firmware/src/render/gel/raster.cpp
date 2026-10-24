@@ -319,11 +319,11 @@ void Raster::ring(int x, int y, int w, int h, int radius, int line, uint16_t ink
 }
 
 namespace {
-// A recorded span: its row, its first pixel and how many, its ink, and the
-// bytes of its runs, which follow it.
+// A recorded span: its row, its first pixel and how many, and its ink; its
+// runs follow it, as many as cover its pixels.
 struct Span {
   int16_t y, x0;
-  uint16_t n, ink, bytes;
+  uint16_t n, ink;
 };
 // A run's code: kRun and its length less one for that many pixels of the
 // one opacity after it; else its length less one, and that many opacities.
@@ -334,7 +334,7 @@ void Recording::add(int y, int x0, int x1, const uint8_t* alpha, uint16_t ink) {
   const int n = x1 - x0 + 1;
   if (full || n <= 0) return;
   // At most a code and an opacity a pixel.
-  if (used + int(sizeof(Span)) + 2 * n > kBytes) {
+  if (used + int(sizeof(Span)) + 2 * n > room) {
     full = true;
     return;
   }
@@ -356,7 +356,7 @@ void Recording::add(int y, int x0, int x1, const uint8_t* alpha, uint16_t ink) {
     out += j - i;
     i = j;
   }
-  const Span span{int16_t(y), int16_t(x0), uint16_t(n), ink, uint16_t(out - start)};
+  const Span span{int16_t(y), int16_t(x0), uint16_t(n), ink};
   std::memcpy(data + used, &span, sizeof span);
   used = int(out - data);
   box.x0 = std::min(box.x0, x0), box.x1 = std::max(box.x1, x1 + 1);
@@ -367,15 +367,14 @@ void Raster::replay(const Recording& r, int dx, int dy) {
   if (!s.pixels) return;
   const int top = std::max(0, bounds.y0), under = std::min(bottom(), bounds.y1);
   const int left = std::max(0, bounds.x0), right = std::min({s.width, kMaxWidth, bounds.x1});
-  for (int at = 0; at + int(sizeof(Span)) <= r.used;) {
+  for (const uint8_t* code = r.data; code + sizeof(Span) <= r.data + r.used;) {
     Span span;
-    std::memcpy(&span, r.data + at, sizeof span);
-    const uint8_t* code = r.data + at + sizeof span;
-    at += int(sizeof span) + span.bytes;
+    std::memcpy(&span, code, sizeof span);
+    code += sizeof span;
     const int y = span.y + dy, from = std::max(left, span.x0 + dx), to = std::min(right, span.x0 + dx + span.n);
-    if (y < top || y >= under || from >= to) continue;
-    touch(from, y, to, y + 1);
-    uint16_t* row = s.pixels + y * s.width;
+    // A row off the surface is only read past.
+    uint16_t* row = y >= top && y < under && from < to ? s.pixels + y * s.width : nullptr;
+    if (row) touch(from, y, to, y + 1);
     // [x0, x1) at opacity a, as composite blends it.
     auto blend = [&](int x0, int x1, int a) {
       x0 = std::max(x0, from), x1 = std::min(x1, to);
@@ -385,14 +384,16 @@ void Raster::replay(const Recording& r, int dx, int dy) {
         for (int x = x0; x < x1; ++x) row[x] = mix565(row[x], span.ink, a);
       }
     };
-    for (int x = span.x0 + dx; code < r.data + at;) {
+    for (int x = span.x0 + dx, end = x + span.n; x < end;) {
       const int c = *code++;
       if (c & kRun) {
         const int length = (c & (kRun - 1)) + 1;
-        blend(x, x + length, *code++);
-        x += length;
+        if (row) blend(x, x + length, *code);
+        ++code, x += length;
       } else {
-        for (int k = 0; k <= c; ++k, ++x) blend(x, x + 1, *code++);
+        if (row)
+          for (int k = 0; k <= c; ++k) blend(x + k, x + k + 1, code[k]);
+        code += c + 1, x += c + 1;
       }
     }
   }

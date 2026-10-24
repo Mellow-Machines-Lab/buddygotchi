@@ -477,9 +477,11 @@ Besides drawing each mood and state, a face:
   15) or idle's (`fidget` from 30 seconds after the latest session came
   to rest, its turn ended or its request dismissed, `setpiece` from 3
   minutes, `doze` from 10), one at a time
-  (`Occasions.workTiers` and `idleTiers`), and every growth stage
+  (`Occasions.workTiers` and `idleTiers`), every growth stage
   reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
-  `pal` shows from Pal on) from the Mac's `state.when`, and `busy` (2–3
+  `pal` shows from Pal on), and `reading` while the turn the latest
+  prompt's reading came for lasts, when you wrote it an essay or asked for
+  docs (`Occasions.reads`), from the Mac's `state.when`, and `busy` (2–3
   sessions working) and `frantic` (4 or more), which the board adds from
   `state.busy`. A design that fits
   only while its tags are on shows only then; a look starts on one while
@@ -507,13 +509,18 @@ Besides drawing each mood and state, a face:
   layers on the gel by the tags (`render/gel/layers.h`), at anchors the
   pose that drew its body gives (`rig::Anchors`, from
   `render/gel/painter.h`: the dome's top, a ring for a hat's brim, its
-  front lower down for its hands, its eyes),
-  so they move, squash and leave the screen with it: a nightcap at night
-  (and its lids a little lower), a party hat on a party day, New Year's
-  Day, Lunar New Year and Programmers' Day, a witch hat at Halloween, a
-  bobble hat in winter, shades on a Friday's day; snow in winter,
-  confetti on a party day and New Year's Day, hearts on Valentine's, Zs
-  while it sleeps at night. Peekaboo's gesture takes the hat off.
+  front lower down for its hands, its eyes, and two rings low on its body
+  where a gown sits), so they move, squash and leave the screen with it: a
+  nightcap at night (and its lids a little lower), with a gown while it
+  sleeps, a party hat on a party day, New Year's Day, Lunar New Year and
+  Programmers' Day, a witch hat at Halloween, a bobble hat in winter
+  (`render::outfitFor`'s order, so Halloween's hat wins over the nightcap
+  and its gown); reading glasses while `reading` is on, else shades on a
+  Friday's day, neither while it sleeps (`render::eyewearFor`); snow in
+  winter, confetti on a party day and New Year's Day, hearts on
+  Valentine's, Zs while it sleeps at night. Peekaboo's gesture takes the
+  outfit off. Pixel wears neither the gown nor the glasses; the Mac's mirror
+  is the board's own firmware, so it wears them as the board does.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.

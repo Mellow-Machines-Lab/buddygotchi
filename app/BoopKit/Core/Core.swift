@@ -88,6 +88,10 @@ public final class Core {
     /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
+    /// The turn the latest prompt's reading came for, by its session's key
+    /// and the turn's number, when that reading puts `reading` on
+    /// (`Occasions.reads`): it's on while that turn lasts.
+    var readingTurn: (key: String, number: Int)?
     /// The wall clock less the steady one, for days and times of day.
     var wallOffsetMs: Int64 = 0
     /// What the core keeps of each session beyond the tracker's table, for
@@ -254,7 +258,8 @@ public final class Core {
     /// end, or ran the timers at other times), the first publish records
     /// the start or end that's missing, with why a request the read-back
     /// cleared did. A request you dismissed stays dismissed while its
-    /// session still waits on it, resting from when you dismissed it.
+    /// session still waits on it, resting from when you dismissed it. The
+    /// latest prompt's reading decides `reading` again (`promptRead`).
     public func replay(_ event: Event) {
         readingBack.on = true
         defer { readingBack.on = false }
@@ -263,6 +268,10 @@ public final class Core {
             return
         }
         advance(to: event.at)
+        if event.type == .prompt, let agent = event.agent, let session = event.session,
+           let reading = PromptReading(facts: event.data) {
+            noteReading(reading, key: SessionFold.key(agent, session))
+        }
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -504,6 +513,21 @@ public final class Core {
         return fx
     }
 
+    /// Your prompt's reading, for the turn the session `session` of
+    /// `agent` works on now: the latest, so it decides whether `reading`
+    /// is on (`Occasions.reads`), from now while that turn lasts.
+    @discardableResult
+    public func promptRead(_ reading: PromptReading, agent: Agent, session: String, at now: Int64) -> [CoreEffect] {
+        noteReading(reading, key: SessionFold.key(agent, session))
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
+    func noteReading(_ reading: PromptReading, key: String) {
+        readingTurn = Occasions.reads(reading) ? sessions[key].map { (key, $0.turn.number) } : nil
+    }
+
     /// The mood output saved a new mood (`mood` reads it): a `state`
     /// carries it at once.
     @discardableResult
@@ -578,7 +602,8 @@ public final class Core {
     /// The tags on at `now`: the calendar's, then the working tier, from
     /// the start of the longest turn working (`workingSince`), else idle's,
     /// from when the latest session came to rest (`idleSince`), then the
-    /// growth stage's, in `Occasions.all`'s order.
+    /// growth stage's, then `reading` while its turn lasts
+    /// (`readingTurn`), in `Occasions.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let workingSince {
@@ -587,6 +612,9 @@ public final class Core {
             on += Occasions.tier(Occasions.idleTiers, after: now - idleSince).map { [$0] } ?? []
         }
         on += Occasions.stages(stage())
+        if let r = readingTurn, let s = sessions[r.key], s.turn.startedAt != nil, s.turn.number == r.number {
+            on.append(Occasions.reading)
+        }
         return Occasions.all.filter(on.contains)
     }
 

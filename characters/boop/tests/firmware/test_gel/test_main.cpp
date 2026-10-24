@@ -1208,6 +1208,19 @@ static void test_layers_follow_the_bodys_anchors() {
   TEST_ASSERT_EQUAL(int(Outfit::kPartyHat), int(outfitFor(tags({"night", "party"}))));
   TEST_ASSERT_EQUAL(int(Outfit::kPartyHat), int(outfitFor(tags({"day", "programmers"}))));
   TEST_ASSERT_EQUAL(int(Outfit::kWitchHat), int(outfitFor(tags({"night", "halloween", "party"}))));
+  // Reading glasses while `reading` is on, over a Friday's shades; shades
+  // only by day.
+  TEST_ASSERT_EQUAL(int(Eyewear::kGlasses), int(eyewearFor(tags({"night", "reading"}))));
+  TEST_ASSERT_EQUAL(int(Eyewear::kGlasses), int(eyewearFor(tags({"day", "friday", "reading"}))));
+  TEST_ASSERT_EQUAL(int(Eyewear::kShades), int(eyewearFor(tags({"day", "friday"}))));
+  TEST_ASSERT_EQUAL(int(Eyewear::kNone), int(eyewearFor(tags({"night", "friday"}))));
+  // The gown's rings: the lap's over the hem's, each from the left side to
+  // the right, the hem's front the lowest, under the hands'.
+  for (const auto* ring : {at.lap, at.hem}) {
+    TEST_ASSERT_TRUE(ring[0].x < ring[8].x && ring[8].x < ring[16].x);
+    TEST_ASSERT_TRUE(ring[0].y < ring[8].y && ring[16].y < ring[8].y);
+  }
+  TEST_ASSERT_TRUE(at.lap[8].y < at.handF.y && at.handF.y < at.hem[8].y);
   TEST_ASSERT_EQUAL_INT(0, sleepyLids(*e));
   e->setOccasion(tags({"night"}), 0);
   TEST_ASSERT_EQUAL_INT(kNightLids, sleepyLids(*e));
@@ -1225,6 +1238,47 @@ static void test_layers_follow_the_bodys_anchors() {
   for (int i = 0; i < 20; ++i) paintLayers(s, *e, at);
   allocCounting = false;
   TEST_ASSERT_EQUAL_INT(0, allocCount);
+}
+
+// The gown comes with the nightcap while it sleeps, and with no other
+// hat; the reading glasses are on its eyes but while it sleeps.
+static void test_it_sleeps_in_a_gown_and_reads_in_glasses() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  rig::Anchors at;
+  paint(s, *e, false, 0, 0, &at);
+  auto layers = [&](std::initializer_list<const char*> names, SceneState state) {
+    uint32_t when = 0;
+    for (const char* n : names) when |= tagBit(n);
+    e->setOccasion(when, 0);
+    e->scenes.route.state = state;
+    std::fill(px.begin(), px.end(), 0);
+    paintLayers(s, *e, at);
+  };
+  // Inside the gown, between the lap's front and the hem's; on the glasses'
+  // left rim.
+  const size_t gown = size_t((at.lap[8].y + at.hem[8].y) / 32) * 502 + size_t(at.hem[8].x / 16);
+  const size_t rim = size_t(at.eyeL.y / 16) * 502 + size_t((at.eyeL.x - (at.eyeR.x - at.eyeL.x) / 5) / 16);
+  layers({"night"}, SceneState::kIdle);
+  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  layers({"night"}, SceneState::kAsleep);
+  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
+  layers({"night", "winter"}, SceneState::kAsleep);  // night's cap over winter's bobble, and its gown
+  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
+  layers({"night", "halloween"}, SceneState::kAsleep);  // Halloween's hat wins, and has no gown
+  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  layers({"day"}, SceneState::kAsleep);
+  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  layers({"day", "reading"}, SceneState::kWorking);
+  TEST_ASSERT_NOT_EQUAL(0, px[rim]);
+  layers({"night", "reading"}, SceneState::kAsleep);  // the gown, its eyes bare
+  TEST_ASSERT_EQUAL_HEX16(0, px[rim]);
+  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
+  layers({"night", "reading"}, SceneState::kWorking);  // awake: the glasses, and no gown
+  TEST_ASSERT_NOT_EQUAL(0, px[rim]);
+  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
 }
 
 // A recording (render/gel/raster.h) blends again exactly what its shapes
@@ -1248,7 +1302,8 @@ static void test_a_recording_replays_as_drawn() {
     Surface sa{kW, kH, a.data()}, sb{kW, kH, b.data()};
     Raster direct{sa};
     shapes(direct, shift[0] * 16, shift[1] * 16);
-    Recording kept;
+    static uint8_t bytes[8 * 1024];
+    Recording kept{bytes, int(sizeof bytes)};
     kept.clear();
     Surface frame{512, 400, nullptr};
     Raster record{frame};
@@ -1266,7 +1321,8 @@ static void test_a_recording_replays_as_drawn() {
     }
   }
   // Past its room it keeps nothing more, and says so.
-  Recording small;
+  static uint8_t room[2000];
+  Recording small{room, int(sizeof room)};
   small.clear();
   Surface frame{512, 400, nullptr};
   Raster record{frame};
@@ -1274,7 +1330,7 @@ static void test_a_recording_replays_as_drawn() {
   record.recording = &small;
   for (int i = 0; i < 1000 && !small.full; ++i) record.round(0, i % 38 * 10, 500, 10, 0, rgb565(1, 2, 3));
   TEST_ASSERT_TRUE(small.full);
-  TEST_ASSERT_TRUE(small.used <= Recording::kBytes);
+  TEST_ASSERT_TRUE(small.used <= small.room);
 }
 
 // The outfit is drawn into a recording and blended from it
@@ -1709,6 +1765,7 @@ int main() {
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
+  RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
   return UNITY_END();

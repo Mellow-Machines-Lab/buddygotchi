@@ -49,10 +49,15 @@ and new actions. One personality (Boop's default nature) for now.
       Done on the board (`render/gel/layers.h`); peekaboo hides the hat.
       Still to do: pinning a layer to the screen ("brb"). The Mac's
       mirror draws them: it's the board's own firmware.
-- [ ] **Outfits by the time of day and the calendar.** A nightcap and
+- [x] **Outfits by the time of day and the calendar.** A nightcap and
       gown at night (and a sleepier face), a party hat, reading glasses;
       then the holidays. The gel has the hats, shades, the air and lower
-      lids at night; still to do: a gown, reading glasses.
+      lids at night, and now a gown under the nightcap while it sleeps
+      (on two rings low on the body, `rig::Anchors::lap` and `hem`) and
+      reading glasses while the Mac's new `reading` tag is on: the
+      latest prompt was an essay or for docs, for its turn
+      (`Occasions.reads`). Pixel wears neither; the Mac's mirror draws
+      them once it runs the gel's engine on WebAssembly.
 - [x] **First three scenarios**, each with evals and a demo:
       "still broken" (sad, holds up the words); its name in your prompt
       (it looks up at you); a delete or clean-up (glee, "bye bye code").

@@ -1,6 +1,7 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
 // day, the weekday, a holiday, a milestone day, a long turn's or idle's
-// tier, the growth stages reached), and how busy the agents are, which the
+// tier, the growth stages reached, and `reading` while the latest turn's
+// prompt was an essay or for docs), and how busy the agents are, which the
 // board reads from `state.busy` (busyTags). A
 // design or a gag that carries tags fits only while every one of them is on
 // (characters/CHARACTER.md §9). The Mac's list is the same, in the same
@@ -11,12 +12,12 @@
 
 namespace render {
 
-constexpr int kTagCount = 29;
-constexpr const char* kTagNames[kTagCount] = {"morning",   "day",      "evening",     "night",  "friday",     "weekend",
-                                              "friday13",  "newyear",  "valentines",  "piday",  "aprilfools", "may4",
-                                              "halloween", "winter",   "programmers", "lunar",  "party",      "busy",
-                                              "frantic",   "marathon", "camp",        "fidget", "setpiece",   "doze",
-                                              "sprout",    "buddy",    "pal",         "chonk",  "legend"};
+constexpr int kTagCount = 30;
+constexpr const char* kTagNames[kTagCount] = {
+    "morning",    "day",   "evening",    "night",    "friday",    "weekend", "friday13",    "newyear",
+    "valentines", "piday", "aprilfools", "may4",     "halloween", "winter",  "programmers", "lunar",
+    "party",      "busy",  "frantic",    "marathon", "camp",      "fidget",  "setpiece",    "doze",
+    "sprout",     "buddy", "pal",        "chonk",    "legend",    "reading"};
 static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.
@@ -39,6 +40,10 @@ int workPace(int working);
 // Day), a nightcap at night, a bobble hat in winter; else none.
 enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
 Outfit outfitFor(uint32_t when);
+// What it wears over its eyes then (the gel's layers): reading glasses
+// while `reading` is on, else shades on a Friday's day; else none.
+enum class Eyewear : uint8_t { kNone, kGlasses, kShades };
+Eyewear eyewearFor(uint32_t when);
 // What's in the air for the tags on, as bits: snow in winter, confetti on
 // a party day or New Year's Day, hearts on Valentine's.
 enum Air : uint8_t { kNoAir = 0, kSnow = 1, kConfetti = 2, kHearts = 4 };

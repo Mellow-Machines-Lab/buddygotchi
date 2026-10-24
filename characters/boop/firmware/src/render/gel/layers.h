@@ -3,10 +3,12 @@
 // (the rig's Anchors, render/gel/painter.h), so each follows the body as it
 // moves, squashes and leaves the screen, and is cut off there with it:
 //
-// - the outfit, by the tags on now (state.when): a nightcap at night, a
-//   party hat on a party day, New Year's Day, Lunar New Year and
-//   Programmers' Day, a witch hat at Halloween, a bobble hat in winter,
-//   and shades on a Friday's day;
+// - the outfit, by the tags on now (state.when): a nightcap at night, and
+//   its gown on the body's lower rings while it sleeps, a party hat on a
+//   party day, New Year's Day, Lunar New Year and Programmers' Day, a
+//   witch hat at Halloween, a bobble hat in winter; reading glasses while
+//   the latest prompt was an essay or for docs, else shades on a Friday's
+//   day, both off while it sleeps;
 // - the air around it: snow in winter, confetti on a party day and New
 //   Year's Day, hearts on Valentine's, and Zs rising while it sleeps at
 //   night;
@@ -24,22 +26,26 @@
 
 namespace render::gel {
 
-// The outfit is drawn into a recording (render/gel/raster.h) when its look
-// changes or the body has moved it more than kSlack sixteenths of a pixel
-// past a whole number of pixels, and blended from it in every other frame:
-// a hat's filled area is most of what the layers cost. While the body
-// moves (a frame of the same body up to kMovingMs before, and its anchors
-// moved within kStillMs), a frame may show it as it was kept, within
-// kSlack of where it is; still, it's drawn where it is, so a still frame
-// is the same as drawing it afresh. The nightcap's
-// swing steps every kSwingMs, as Pixel's pompom does. It's kept in a frame
-// as wide as the surface and kFrameHeight tall, with the brim's front
-// kFrameY down its middle: room around for any hat. Past its edges, or
-// the recording's room, the outfit is drawn straight on the surface.
+// Each part of the outfit (the hat, riding the brim's front; the gown,
+// riding the hem's front, or else what's over its eyes, riding the left
+// eye, since it sleeps with its eyes bare) is drawn into a recording of
+// its own (render/gel/raster.h) when its look changes or the body has
+// moved it more than kSlack sixteenths of a pixel past a whole number of
+// pixels, and blended from it in every other frame: their filled area is
+// most of what the layers cost. While the body moves (a
+// frame of the same body up to kMovingMs before, and its anchors moved
+// within kStillMs), a frame may show a part as it was kept, within kSlack
+// of where it is; still, it's drawn where it is, so a still frame is the
+// same as drawing it afresh. The nightcap's swing steps every kSwingMs, as
+// Pixel's pompom does. A part is kept in a frame as wide as the surface
+// and kFrameHeight tall, with the anchor it rides kFrameY down its middle:
+// room around for any of them. Past its edges, or the recording's room,
+// it's drawn straight on the surface.
 struct OutfitLayer {
   static constexpr int kSlack = 12, kSwingMs = 400;
   static constexpr uint32_t kMovingMs = 100, kStillMs = 200;
   static constexpr int kFrameY = 288, kFrameHeight = 512;
+  static constexpr int kHatBytes = 5 * 1024, kWornBytes = 7 * 1024;  // the hat's room, and the gown's or eyewear's
 };
 
 struct SignLayer {

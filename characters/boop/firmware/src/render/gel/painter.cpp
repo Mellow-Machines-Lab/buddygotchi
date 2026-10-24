@@ -194,6 +194,9 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     anchors->brimL = at(kBrimRing, kSectors / 2), anchors->brimF = at(kBrimRing, kSectors / 4);
     anchors->brimR = at(kBrimRing, 0);
     anchors->handF = at(kHandRing, kSectors / 4);
+    static_assert(rig::Anchors::kRingPoints == kSectors / 2 + 1, "a ring's front half, a point a column");
+    for (int i = 0; i < rig::Anchors::kRingPoints; ++i)
+      anchors->lap[i] = at(kLapRing, kSectors / 2 - i), anchors->hem[i] = at(kHemRing, kSectors / 2 - i);
   }
   auto vertex = [&](int ring, int col) {
     return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings};
