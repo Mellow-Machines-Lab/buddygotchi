@@ -188,8 +188,10 @@ final class OnboardingModel: ObservableObject {
     var detectedAgents: [Agent] { Agent.allCases.filter(app.installer.detected) }
 
     /// Connects the agents chosen; the app backs up each one's settings first.
+    /// A copy on another folder leaves the hooks to the everyday Boop, and
+    /// only listens for the hello.
     func connectAgents() {
-        for agent in Agent.allCases where app.setup.agents.contains(agent) && app.installer.detected(agent) {
+        for agent in Agent.allCases where app.ownsHooks && app.setup.agents.contains(agent) && app.installer.detected(agent) {
             app.install(agent)
         }
         withAnimation(.boopPop) { connected = true }

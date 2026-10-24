@@ -63,6 +63,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make app` | What `make run` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
+| `make onboarding` | The first launch's onboarding again, on a throwaway folder (`/tmp/boop-onboarding`, started afresh): with Bluetooth, so it's the owner's, but it never changes the real hooks or login item. Quit the everyday Boop first |
 | `make dash` | `boopctl dash`, for the app `make debug` started. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
 | `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
@@ -97,7 +98,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   popover's panes, onboarding's acts and their states, gel frames and
   menu-bar icons as PNGs (L0). With a
   state directory other than the everyday one, it never installs or
-  repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
+  repairs the hooks, but the menu-bar app lists its socket as
+  `dev-<folder>.sock` beside the everyday one's, so the hooks already
+  installed reach it too. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
   and idle time. `--buddies left:pixel:claude,right:boop:codex` runs two
   buddies side by side, each with its own pack and the agent it watches

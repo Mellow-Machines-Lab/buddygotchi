@@ -48,6 +48,7 @@ One thing that will surprise you:
 | To | Run |
 | --- | --- |
 | Run Boop and print everything it sees and decides | `make debug` |
+| Go through the first launch's onboarding again, without touching your Boop (quit it first) | `make onboarding` |
 | Watch and poke it live, in a second terminal beside `make debug` | `make dash` |
 | See what it did on the latest day `make debug` logged, and why (`DATE=YYYY-MM-DD` for another) | `make day` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |

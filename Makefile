@@ -1,7 +1,7 @@
 # Boop v1. Run from the repo root. See README.md and internal/VERIFICATION.md.
 # The development targets (tests, simulator, tools) are in internal/Makefile:
 # make -C internal <target>.
-.PHONY: build app bundle run debug dash day simulator demo flash eval clean
+.PHONY: build app bundle run debug onboarding dash day simulator demo flash eval clean
 
 PIO := firmware/tools/pio.sh
 
@@ -52,6 +52,15 @@ run: app
 # core's decisions, device messages and every brain pass.
 debug: app
 	.build/debug/Boop --debug
+
+# The first launch's onboarding again, on a throwaway folder
+# (/tmp/boop-onboarding, started afresh each time): with Bluetooth, so the
+# board pairs, but it never changes the real hooks or login item, and the
+# everyday Boop's memory stays. Quit the everyday Boop first, or the two
+# fight over the board. The owner runs this, not agents.
+onboarding: app
+	rm -rf /tmp/boop-onboarding
+	.build/debug/Boop --state-dir /tmp/boop-onboarding
 
 # The live dashboard for the app `make debug` started.
 # Run it in a second terminal.

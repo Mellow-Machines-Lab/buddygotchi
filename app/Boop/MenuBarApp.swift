@@ -474,9 +474,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             }
         } else {
             // They report to the everyday Boop's socket, so pointing them here
-            // would only break them once this folder is gone.
+            // would only break them once this folder is gone. This copy lists
+            // its own socket beside it instead, so the hooks already there
+            // reach it too (make onboarding's live hello); a link left behind
+            // costs a hook nothing.
+            let name = "dev-" + stateDir.lastPathComponent.filter { $0.isLetter || $0.isNumber || $0 == "-" }
+            try? HookSocket.register(stateDir.appendingPathComponent("boop.sock").path, as: name)
             log.write("hooks: left alone, since only the everyday Boop (\(AppSettings.defaultStateDir().path)) installs "
-                      + "or repairs them; agent hooks reach its socket, not this one")
+                      + "or repairs them; this copy hears them as \(name).sock")
         }
         model.refreshHooks()
         model.showLog = { [log] in NSWorkspace.shared.activateFileViewerSelecting([log.url]) }

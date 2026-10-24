@@ -12,7 +12,9 @@ let usage = """
     usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug]
                The menu-bar app. The owner runs this; it uses Bluetooth by default. With a --state-dir
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
-               ~/.codex: they keep reporting to the everyday app's socket, not this one.
+               ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
+               it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
+               onboarding (make onboarding).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
                 [--brain jev|scripted|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
                 [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
