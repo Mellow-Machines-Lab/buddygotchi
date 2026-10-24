@@ -23,9 +23,10 @@ public enum Occasions {
     /// run: a marathon from 8 minutes, then a camp from 15, the last. Before
     /// 8 minutes the working looks need no tag.
     public static let workTiers: [(tag: String, fromMs: Int64)] = [("marathon", 8 * 60_000), ("camp", 15 * 60_000)]
-    /// Idle's tiers, by how long since the last turn ended: fidgets from
-    /// 30 seconds, set pieces from 3 minutes, dozing from 10. Before 30
-    /// seconds Boop settles with no tag.
+    /// Idle's tiers, by how long since the latest session came to rest (a
+    /// turn ended, or you dismissed a request): fidgets from 30 seconds,
+    /// set pieces from 3 minutes, dozing from 10. Before 30 seconds Boop
+    /// settles with no tag.
     public static let idleTiers: [(tag: String, fromMs: Int64)] = [("fidget", 30_000), ("setpiece", 180_000), ("doze", 600_000)]
 
     /// The tier on after `ms` in `tiers`: one at a time, the last reached.

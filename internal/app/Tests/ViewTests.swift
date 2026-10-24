@@ -753,7 +753,8 @@ final class ViewTests: XCTestCase {
 
     /// A request you dismissed stays dismissed across a relaunch while its
     /// agent still waits on it: the read-back takes it from the request's
-    /// `needs_you` end, since this launch numbers requests afresh. The
+    /// `needs_you` end, since this launch numbers requests afresh, and
+    /// the session rests from when that end says you dismissed it. The
     /// session's next request shows, then and after another relaunch.
     func testADismissedRequestStaysDismissedAfterARelaunch() throws {
         let dir = tempDir("boop-tr")
@@ -770,13 +771,16 @@ final class ViewTests: XCTestCase {
         first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
         first.agent(rig.event(.needsYou, tool: "Bash"))
         rig.now += 1000
-        XCTAssertEqual(needs(first.dismiss(SessionFold.key(.claude, "s1"), at: rig.now)).map { $0["why"]?.string }, [Core.dismissedWhy])
+        let card = try XCTUnwrap(first.core.snapshot(at: rig.now).attn?.id)
+        XCTAssertEqual(needs(first.dismiss(SessionFold.key(.claude, "s1"), request: card, at: rig.now)).map { $0["why"]?.string },
+                       [Core.Why.dismissed.rawValue])
         rig.now += 60_000
         let second = pipeline()
         second.readBack(now: rig.now)
         XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
         XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
         XCTAssertEqual(second.core.snapshot(at: rig.now).idle, 1)
+        XCTAssertTrue(second.core.snapshot(at: rig.now).when.contains("fidget"), "resting since the dismissal, a minute ago")
         XCTAssertEqual(second.core.line(at: rig.now).map(\.id), ["s1"], "and in BOOT's line")
         second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         second.agent(rig.event(.activity, tool: "Bash", id: "t2"))
@@ -824,7 +828,7 @@ final class ViewTests: XCTestCase {
 
     /// A session's first event each day carries its
     /// name, app, app session and mode again, so a relaunch, which reads
-    /// back only the last two days' files, still finds them. Here a long
+    /// back only the last day, still finds them. Here a long
     /// thread in the Claude app that sent them first two days ago, and has
     /// worked on since with gaps under a day, asks for you, and Boop
     /// relaunches: a tap still opens the thread in its app. Before, every
@@ -861,5 +865,77 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(second.core.sessions["claude/s1"]?.name, "Fix the nav")
         XCTAssertEqual(opened(Fx(second.poke(at: rig.now))),
                        [ThreadRef(agent: "claude", session: "s1", app: "com.anthropic.claudefordesktop", appSession: "local_s1")])
+    }
+
+    /// A request carries everything its session has, so a relaunch that
+    /// reads back only the request (the day's first event, which carried
+    /// them too, is over a day old) knows the waiting agent's process,
+    /// and the request waits on past the 10 minutes that would clear one
+    /// with no process to check, and where the thread opens.
+    func testARelaunchKnowsAWaitingAgentFromItsRequestAlone() throws {
+        let dir = tempDir("boop-tr")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = rig.time
+        rig = CoreRig()
+        func pipeline() -> Pipeline {
+            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now), isRunning: { _ in true }),
+                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
+        }
+        let first = pipeline()
+        func hook(_ kind: Hook, tool: String? = nil) {
+            var e = rig.event(kind, tool: tool, app: "com.mitchellh.ghostty")
+            e.data["process"] = .object(["pid": 4242, "started": 1])
+            e.data["terminal"] = .object(["program": "ghostty", "tty": "/dev/ttys003"])
+            first.agent(e)
+        }
+        hook(.turnStart)  // 14:00, the day's first
+        rig.now += 6 * 3600 * 1000
+        hook(.activity, tool: "Bash")
+        hook(.needsYou, tool: "Bash")  // 20:00
+        rig.now += 18 * 3600 * 1000 + 60_000  // 14:01 the next day: the turn's start is over a day old
+        let second = pipeline()
+        second.readBack(now: rig.now)
+        second.tick(at: rig.now)
+        XCTAssertNotNil(second.core.snapshot(at: rig.now).attn, "its agent's process is known: it waits")
+        XCTAssertEqual(second.core.sessions["claude/s1"]?.terminal?.tty, "/dev/ttys003")
+        XCTAssertEqual(opened(Fx(second.poke(at: rig.now))).first?.app, "com.mitchellh.ghostty")
+    }
+
+    /// A request waits as long as its agent does, up to a silent day, when
+    /// the core forgets it, saying so; a launch reads back only that day,
+    /// so before it the relaunched Boop shows the request, and after it,
+    /// as the running one, doesn't.
+    func testARequestSilentADayGoesBothBeforeAndAfterARelaunch() throws {
+        let dir = tempDir("boop-tr")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = rig.time
+        rig = CoreRig()
+        func pipeline() -> Pipeline {
+            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now), isRunning: { _ in true }),
+                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
+        }
+        func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
+        let first = pipeline()
+        for var e in [rig.event(.turnStart), rig.event(.needsYou, tool: "Bash")] {
+            e.data["process"] = .object(["pid": 4242, "started": 1])
+            first.agent(e)
+        }
+        let asked = rig.now
+        rig.now = asked + SessionFold.forgetMs - 60_000
+        XCTAssertEqual(needs(first.tick(at: rig.now)), [])
+        XCTAssertNotNil(first.core.snapshot(at: rig.now).attn, "a day less a minute")
+        let before = pipeline()
+        before.readBack(now: rig.now)
+        XCTAssertEqual(needs(before.tick(at: rig.now)), [])
+        XCTAssertNotNil(before.core.snapshot(at: rig.now).attn, "a relaunch then shows it too")
+        rig.now = asked + SessionFold.forgetMs
+        XCTAssertEqual(needs(first.tick(at: rig.now)).map { $0["why"]?.string }, [Core.Why.forgotten.rawValue])
+        XCTAssertNil(first.core.snapshot(at: rig.now).attn)
+        rig.now += 60_000
+        let after = pipeline()
+        after.readBack(now: rig.now)
+        XCTAssertEqual(needs(after.tick(at: rig.now)), [])
+        XCTAssertNil(after.core.snapshot(at: rig.now).attn, "nor a relaunch after")
+        XCTAssertTrue(after.core.sessions.isEmpty)
     }
 }

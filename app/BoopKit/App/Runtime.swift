@@ -627,13 +627,14 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in open(thread, by: "click") }
     }
 
-    /// Stops `thread`'s request showing: the popover's Dismiss
-    /// (`Core.dismiss`), on whichever buddy shows it.
-    public func dismiss(_ thread: ThreadRef) {
+    /// Stops `thread`'s request numbered `request` showing, the one the
+    /// card showed: the popover's Dismiss (`Core.dismiss`), on whichever
+    /// buddy shows it.
+    public func dismiss(_ thread: ThreadRef, request: Int) {
         home.async { [self] in
             guard let agent = Agent(rawValue: thread.agent) else { return }
             let key = SessionFold.key(agent, thread.session), now = options.clock()
-            for rig in rigs { run(pipeline.dismiss(key, at: now, buddy: rig.tag)) }
+            for rig in rigs { run(pipeline.dismiss(key, request: request, at: now, buddy: rig.tag)) }
         }
     }
 

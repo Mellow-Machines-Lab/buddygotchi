@@ -40,7 +40,7 @@ clock starts at a fixed
 Wednesday 14:00 UTC and stands still while Jev answers. Every hook
 names the agent's process, as a real agent's hooks do, and the
 scenario's agents run all through it, so a request waits however long
-a step's `at` jumps.
+a step's `at` jumps, up to a silent day.
 
 | Step | Fed to the pipeline as (the transcript's raw events) |
 | --- | --- |
