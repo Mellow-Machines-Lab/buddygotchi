@@ -303,6 +303,17 @@ struct OverviewPane: View {
             needsYouCard(attn, project: project, name: name, workspace: waiting?.workspace,
                          hint: "\(agent) is waiting for you. " + (opens.map { "Click to \(openVerb($0))." } ?? "Answer it in its window."))
         }
+        .overlay(alignment: .bottomTrailing) {
+            // Hides the request on Boop, as a finger held on the sign does;
+            // the agent still waits.
+            if let thread = waiting?.thread {
+                Button("Dismiss") { model.runtime?.dismiss(thread) }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
+                    .padding(Theme.gapSnug + 2)
+                    .help("Stop showing this on \(model.status?.name ?? "Boop"). \(agent) still waits.")
+            }
+        }
         .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
         .animation(.boopPop, value: project)
     }

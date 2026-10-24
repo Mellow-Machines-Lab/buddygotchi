@@ -218,12 +218,21 @@ public final class Pipeline {
 
     /// What you did to the board (`kind`: a stroke, a shake, face down…),
     /// which it reacted to at once: logged, and it may wake the brain, as
-    /// a poke does. The core isn't told.
+    /// a poke does. The core hears only `dismiss`, a finger held on the
+    /// sign: the request that shows stops showing (`Core.dismiss`).
     @discardableResult
     public func gesture(_ kind: String, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
+            if kind == Core.dismissGesture { run(core(buddy).dismiss(at: now), buddy: buddy) }
         }
+    }
+
+    /// The popover's Dismiss on the session `key`'s request
+    /// (`Core.dismiss`), on its buddy's board.
+    @discardableResult
+    public func dismiss(_ key: String, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) { run(core(buddy).dismiss(key, at: now), buddy: buddy) }
     }
 
     /// What you said to Boop on push-to-talk, heard by the Mac's mic
