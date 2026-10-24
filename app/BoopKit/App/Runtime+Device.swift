@@ -62,6 +62,7 @@ extension Runtime {
             // on the brain's finish that names whose turn it was it only
             // dipped, and the tap opens that thread.
             run(pipeline.poke(at: now, finish: finish.flatMap { rig.reactions.opens(finish: $0) }, buddy: rig.tag))
+            if rig === rigs[0] { onTap?() }
         case "talk_on", "talk_off":
             options.log("device\(Runtime.whose(rig)): \(ev.kind)")
             listener = rig

@@ -14,6 +14,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// it says hello over Bluetooth: from then on Boop takes only it, until
     /// Settings forgets it.
     public var board: String?
+    /// The onboarding act a quit left off at, after Boop was named; none
+    /// once it's finished (`Onboarding.resume`).
+    public var onboarding: Onboarding.Act?
 
     public init() {}
 
@@ -31,9 +34,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
+        onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume, buddies, board }
+    enum CodingKeys: String, CodingKey { case personality, volume, buddies, board, onboarding }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -41,6 +45,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)
+        try c.encodeIfPresent(onboarding, forKey: .onboarding)
     }
 
     public static let file = "settings.json"

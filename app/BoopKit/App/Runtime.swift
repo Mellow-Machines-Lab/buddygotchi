@@ -175,6 +175,13 @@ public final class Runtime: @unchecked Sendable {
     /// Read-only visual mirror of the reactions sent. Never completes a handle.
     public var onReaction: ((Int, DeviceReaction) -> Void)?
 
+    /// A tap on the board (its screen or its button), after the core has
+    /// taken it: onboarding's "tap my screen" lessons listen. On `home`.
+    public var onTap: (() -> Void)?
+    /// An agent's hook that became an event, by the agent's name
+    /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
+    public var onAgentHook: ((String) -> Void)?
+
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
     /// `heardNothing`; with none set (headless), turning it off hears
@@ -433,6 +440,36 @@ public final class Runtime: @unchecked Sendable {
         try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
     }
 
+    /// Onboarding's greetings on the board, which it plays as a rule's
+    /// reaction (only if nothing else plays): Boop waking into its body once
+    /// it's paired, and a celebration for the first hook and the finale.
+    public enum Greeting: Sendable {
+        case wake, celebrate
+        var reaction: DeviceReaction {
+            switch self {
+            case .wake: DeviceReaction(anim: "wake_up")
+            case .celebrate: DeviceReaction(anim: "task_complete", outcome: "success")
+            }
+        }
+    }
+
+    public func greet(_ greeting: Greeting) {
+        home.async { [self] in
+            options.log("onboarding: \(greeting.reaction.name) on the board")
+            playRule(greeting.reaction)
+        }
+    }
+
+    /// Saves where onboarding stands (`AppSettings.onboarding`), or that
+    /// it's done (nil).
+    public func setOnboarding(_ act: Onboarding.Act?) {
+        home.async { [self] in
+            guard settings.onboarding != act else { return }
+            saveSettings { $0.onboarding = act }
+            if act == nil { options.log("onboarding: done") }
+        }
+    }
+
     /// Lets go of the remembered board: Boop takes any over Bluetooth
     /// again, and remembers the next one that says hello.
     public func forgetBoard() {
@@ -467,6 +504,7 @@ public final class Runtime: @unchecked Sendable {
         }
         guard let event else { return }
         run(pipeline.agent(event))
+        onAgentHook?(line.agent)
     }
 
     func tick() {

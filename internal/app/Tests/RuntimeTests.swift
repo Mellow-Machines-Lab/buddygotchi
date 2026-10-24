@@ -452,6 +452,35 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(kept.contains("2026-01-01-000002"), "the third oldest stays: 21 old and the new one, 20 kept")
     }
 
+    /// Onboarding listens to the runtime: a tap on the board, and the first
+    /// agent hook that becomes an event; it greets on the board with a
+    /// rule's reaction; and it saves its act in settings.json.
+    func testOnboardingHearsTapsAndHooksAndGreetsOnTheBoard() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        let taps = Lines(), agents = Lines()
+        runtime.onTap = { taps.add("tap") }
+        runtime.onAgentHook = { agents.add($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        eventually("first state on start") { transport.types().contains("state") }
+        connect(transport, runtime)
+        transport.onLine?(#"{"t":"ev","kind":"tap","did":"poked"}"#)
+        eventually("the tap") { taps.all == ["tap"] }
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        eventually("the hook") { agents.all == ["claude"] }
+        runtime.greet(.wake)
+        runtime.greet(.celebrate)
+        eventually("both greetings") { transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1 }
+        XCTAssertTrue(transport.dos("task_complete")[0].contains(#""outcome":"success""#))
+        runtime.setOnboarding(.agents)
+        runtime.home.sync {}
+        XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
+        runtime.setOnboarding(nil)
+        runtime.home.sync {}
+        XCTAssertNil(AppSettings.load(from: dir).onboarding)
+    }
+
     /// A device that doesn't see the link drop still counts the app as
     /// there, and says no `hello` unasked (linkkit/device's kit): an app
     /// relaunched within 30 s over USB, the socket's write timeout or
