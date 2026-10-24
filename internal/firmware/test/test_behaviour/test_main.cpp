@@ -2023,6 +2023,31 @@ static void test_the_lane_fades_as_the_strip_comes_and_goes() {
   TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
 }
 
+// A to-do list is something the strip shows: one alone fades the strip in
+// as any count does, and out still showing it once its turn stops working.
+static void test_a_todo_list_alone_shows_the_strip() {
+  constexpr uint32_t kFade = render::rig::kLayerFadeMs;
+  Rig r;
+  r.at(1000);
+  Model m = base("working");
+  r.state(m);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  m.todoDone = 3, m.todoTotal = 7;
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).shows());
+  TEST_ASSERT_EQUAL(7, r.b.strip(r.t).todoTotal);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(2000);
+  r.state(base("idle"));
+  r.at(2000 + kFade / 2);
+  TEST_ASSERT_EQUAL(3, r.b.strip(r.t).todoDone);  // the list it last showed, fading
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  r.at(2000 + kFade);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+}
+
 // The lane is a function of the clock, not of how often frames are drawn: a
 // board drawing every 16 ms and one drawing every 200 ms show the same lane
 // wherever both draw, mid-fade and settled, its strip coming and going
@@ -2841,6 +2866,7 @@ int main() {
   RUN_TEST(test_no_app_at_30s_and_reconnect_comes_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
   RUN_TEST(test_the_lane_fades_as_the_strip_comes_and_goes);
+  RUN_TEST(test_a_todo_list_alone_shows_the_strip);
   RUN_TEST(test_the_lane_is_the_same_whatever_the_draw_cadence);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);
   RUN_TEST(test_press_shows_within_20ms);
