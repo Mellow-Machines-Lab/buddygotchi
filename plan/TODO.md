@@ -181,9 +181,9 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       after `fw-test` the native `program` was a unit-test runner. Each
       checkout has its own folder now, the tests build in `.pio/test`,
       and a stage changes only what differs.
-- [ ] Device::reset clears a hand-kept list of the members keyed to the
-      clock (the motion sensor's were missed once): gather them in one
-      struct reset as `{}`, once the touch work in device.cpp has landed.
+- [x] Device::reset cleared a hand-kept list of the members keyed to the
+      clock (the motion sensor's were missed once): they're one struct,
+      `Device::Live`, which reset assigns `{}` (the lifecycle fixes).
 - [x] The rig channels `x`, `y`, `tilt` and `mouthWidth` were read by
       Pixel's face but set by no clip or input: dropped, with the face
       code that read them (test_rig, test_rig_face).
