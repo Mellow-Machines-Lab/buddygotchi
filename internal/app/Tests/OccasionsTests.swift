@@ -144,9 +144,22 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(Occasions.stages(2), ["sprout"])
         XCTAssertEqual(Occasions.stages(4), ["sprout", "buddy", "pal"])
         XCTAssertEqual(Occasions.stages(Growth.stages.count), Occasions.stageTags)
-        XCTAssertEqual(Occasions.stageTags, Growth.stages.dropFirst().map { $0.name.lowercased() })
+        XCTAssertEqual(Occasions.stageTags, ["sprout", "buddy", "pal", "chonk", "legend"])
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
-        core.setStage(3)
+        core.stage = { 3 }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(2), ["sprout", "buddy"])
+    }
+
+    /// A demo's hold keeps its finger down longer than the board's hold
+    /// (firmware/src/app/touch_gesture.h, TouchGesture::kHoldMs), so the
+    /// board sees one: changing either fails here.
+    func testADemosHoldOutlastsTheBoards() throws {
+        let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/app/touch_gesture.h"),
+                                encoding: .utf8)
+        let line = try XCTUnwrap(header.range(of: #"kHoldMs = [0-9]+"#, options: .regularExpression))
+        let holdMs = try XCTUnwrap(Double(header[line].split(separator: " ").last!))
+        XCTAssertEqual(holdMs, 1000)
+        XCTAssertGreaterThan(DemoScript.holdSeconds * 1000, holdMs)
+        XCTAssertEqual(DemoScript.holdSeconds, 1.2)
     }
 }

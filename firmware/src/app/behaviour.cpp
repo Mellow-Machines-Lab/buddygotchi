@@ -552,7 +552,10 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Reaction* fin
   s.busy = m.busy;
   s.idle = m.idle;
   s.helpers = m.helpers;
-  if (m.base == render::SceneState::kWorking && !m.attn) s.todoDone = m.todoDone, s.todoTotal = m.todoTotal;
+  // The Mac sends a to-do list only while an agent works and nothing
+  // needs you.
+  s.todoDone = m.todoDone;
+  s.todoTotal = m.todoTotal;
   if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
   if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
   return s;

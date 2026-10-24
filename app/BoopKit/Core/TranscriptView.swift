@@ -145,7 +145,10 @@ public final class TranscriptView {
         var at = 0
         var lastAgentLined = false
 
-        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place) }
+        /// Its tracker never asks whether an agent's process runs: the core
+        /// records a session whose agent is gone as that session's end
+        /// (`Core.agentGone`), so the fold depends on the log alone.
+        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place, isRunning: { _ in true }) }
     }
 
     /// The personality's settings: how often the working heartbeat comes
@@ -386,7 +389,8 @@ public final class TranscriptView {
         // A hook that landed after its session ended, or a stale idle
         // notice, doesn't count.
         guard let change = fold.sessions.handle(a) else { return nil }
-        noteActivity(now)
+        // An agent gone ends its session, but nobody did anything.
+        if a.hook != Core.agentGone { noteActivity(now) }
         guard let s = fold.sessions.sessions[key] else {
             fold.counts[key] = nil
             return nil

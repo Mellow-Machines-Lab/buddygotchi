@@ -174,7 +174,6 @@ final class EvalTests: XCTestCase {
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"to-do list","at":"0s","expect":{"todo":"1/4"}}]}"#, "to-do list needs todos"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"to-do list","at":"0s","todos":"5/4","expect":{"todo":"1/4"}}]}"#, "to-do list needs todos"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"command","at":"0s","todos":"1/4","expect":{"todo":"1/4"}}]}"#, "todos is only for to-do list"),
-                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"needs you","at":"0s","process":"gone","expect":{"needs":"shown"}}]}"#, "process is running"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"needs you","at":"0s","expect":{"needs":"yes"}}]}"#, "expect.needs is shown or none"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"wait","at":"0s","expect":{"todo":"lots"}}]}"#, "expect.todo is like 3/7")] {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
@@ -368,28 +367,22 @@ final class EvalTests: XCTestCase {
         }
     }
 
-    /// A request from a hook that says the agent's process waits as long
-    /// as the agent runs; one from a hook that doesn't clears after 10
-    /// silent minutes (SessionFold.safetyNetMs). A held finger (`dismiss`)
-    /// hides it, and the session's next request shows.
+    /// An eval's hooks say which process the agent is, as a real agent's
+    /// do, and its agent runs all through it: a request waits past the 10
+    /// silent minutes (SessionFold.safetyNetMs) that clear one from a hook
+    /// that doesn't say. A held finger (`dismiss`) hides it, and the
+    /// session's next request shows.
     func testARequestWaitsAsLongAsItsAgentRuns() async throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("lunch-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        func run(_ process: String) async throws -> Eval.Result {
-            let file = dir.appendingPathComponent("s.json")
-            try (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn started","at":"0s"\#(process)},"#
-                + #"{"event":"needs you","at":"1m"\#(process),"expect":{"needs":"shown"}},"#
-                + #"{"event":"wait","at":"11m1s","expect":{"needs":"shown"}},"#
-                + #"{"event":"gesture","at":"12m","kind":"dismiss","expect":{"needs":"none","idle":"1"}},"#
-                + #"{"event":"needs you","at":"13m"\#(process),"expect":{"needs":"shown","todo":"none"}}]}"#)
-                .write(to: file, atomically: true, encoding: .utf8)
-            return try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(try Scenario(file: file))
-        }
-        let running = try await run(#","process":"running""#)
-        XCTAssertTrue(running.passed, running.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
-        let silent = try await run("")
-        XCTAssertEqual(silent.checks.filter { !$0.passed }.map(\.step), [3], "cleared after 10 silent minutes")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("lunch-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn started","at":"0s"},"#
+            + #"{"event":"needs you","at":"1m","expect":{"needs":"shown"}},"#
+            + #"{"event":"wait","at":"11m1s","expect":{"needs":"shown"}},"#
+            + #"{"event":"gesture","at":"12m","kind":"dismiss","expect":{"needs":"none","idle":"1"}},"#
+            + #"{"event":"needs you","at":"13m","expect":{"needs":"shown","todo":"none"}}]}"#)
+            .write(to: file, atomically: true, encoding: .utf8)
+        let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(try Scenario(file: file))
+        XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
     }
 
     /// EVALS.md §2: every scenario is also a demo (`--to-demo`) that the

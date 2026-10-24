@@ -10,12 +10,11 @@ import Foundation
 /// play along. The firmware's list is the same, in the same order
 /// (firmware/src/render/tags.h).
 public enum Occasions {
-    /// Every tag, in the firmware's order.
-    public static let all = ["morning", "day", "evening", "night", "friday", "weekend", "friday13",
-                             "newyear", "valentines", "piday", "aprilfools", "may4", "halloween", "winter",
-                             "programmers", "lunar", "party", "busy", "frantic",
-                             "marathon", "camp", "fidget", "setpiece", "doze",
-                             "sprout", "buddy", "pal", "chonk", "legend"]
+    /// Every tag, in the firmware's order: the calendar's, the board's own
+    /// two for how busy the agents are, the tiers, then the stages.
+    public static let all = dayParts.map(\.tag) + ["friday", "weekend", "friday13"] + holidays.map(\.tag)
+        + ["programmers", "lunar", "party"] + ["busy", "frantic"] + workTiers.map(\.tag) + idleTiers.map(\.tag)
+        + stageTags
 
     /// A long turn's tiers, by how long the longest turn working now has
     /// run: a marathon from 8 minutes, then a camp from 15, the last. Before
@@ -34,7 +33,7 @@ public enum Occasions {
     /// The growth stages' tags from the second on, in `Growth.stages`'
     /// order. Every stage reached is on, so a design that needs `pal` shows
     /// at Pal and every stage after it.
-    public static let stageTags = ["sprout", "buddy", "pal", "chonk", "legend"]
+    public static let stageTags = Growth.stages.dropFirst().map { $0.name.lowercased() }
 
     /// The tags on at growth stage `stage` (from 1, a Hatchling's: none).
     public static func stages(_ stage: Int) -> [String] { Array(stageTags.prefix(max(0, stage - 1))) }

@@ -694,11 +694,11 @@ void Device::readInputs(uint32_t t) {
       // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
       // nose; then the board reacts as one, but not while the face is
       // held, where a touch is a tap.
-      // A hold that dismissed the sign was the whole touch: no tap after
-      // it. Nor is there one for a touch on a sign that has gone since, its
-      // request answered or dismissed on the Mac: it was for the sign.
+      // A touch that began on the sign was for the sign: it gives no tap
+      // once its hold dismissed it, or once the sign has gone (its request
+      // answered or dismissed on the Mac).
       render::Gesture g;
-      if (!touchDismissed_ && !(touchOnSign_ && !signShows(t))) {
+      if (!(touchOnSign_ && (touchDismissed_ || !signShows(t)))) {
         latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
         if (touchPath_.up(g) && !b_.held(t))
           gestured(g, t, touchInjected_);

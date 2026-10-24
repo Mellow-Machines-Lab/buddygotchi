@@ -161,8 +161,9 @@ more of:
   `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one;
-  `hold`, one kept there 1.2 s, past the board's hold on the needs-you
-  sign; or `press`, BOOT.
+  `hold`, one kept there for the event's `hold` seconds (the demo's
+  `DemoScript.holdSeconds`, past the board's hold on the needs-you sign;
+  1.2 for a recording that doesn't say); or `press`, BOOT.
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page

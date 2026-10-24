@@ -59,10 +59,13 @@ final class CoreRig {
     var log: [CoreEffect] = []
     var views: [ViewEvent] = []
 
-    init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules()) {
+    /// `isRunning` says whether an agent's process runs, for hooks that
+    /// name one; the rig's hooks name none unless a test adds it.
+    init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules(),
+         isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
         now = start
         let today = time.day(start)
-        let core = Core(config: .init(time: time), lastActiveDay: newDay ? nil : today)
+        let core = Core(config: .init(time: time), lastActiveDay: newDay ? nil : today, isRunning: isRunning)
         pipeline = Pipeline(core: core, view: TranscriptView(rules: rules, seed: seed))
         if !newDay { core.tick(at: start) }  // the first snapshot has gone out
     }
@@ -1493,6 +1496,59 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.activity, session: "a", tool: "Bash", failed: false)
         rig.send(.needsYou, session: "a", tool: "Bash")
         XCTAssertNotNil(rig.state.attn, "its next request shows")
+    }
+
+    /// The popover lists the request that shows before one you dismissed,
+    /// so its needs-you card (the first waiting) names the sign's; BOOT's
+    /// line puts it first too. A dismissed request doesn't move idle's
+    /// tier: it isn't a turn that ended.
+    func testADismissedRequestComesAfterTheOneThatShows() {
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "c", project: "docs")
+        rig.send(.turnEnd, session: "c", project: "docs")
+        rig.wait(4 * 60_000)
+        XCTAssertTrue(rig.state.when.contains("setpiece"))
+        rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
+        rig.wait(1000)
+        rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
+        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "a"), at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "web")
+        XCTAssertEqual(rig.sessions, [["claude", "web", "waiting"], ["claude", "api", "waiting"], ["claude", "docs", "idle"]])
+        XCTAssertEqual(rig.core.line(at: rig.now).map(\.id), ["b", "a", "c"])
+        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "b"), at: rig.now)))
+        XCTAssertNil(rig.state.attn)
+        XCTAssertEqual(rig.state.idle, 3)
+        XCTAssertTrue(rig.state.when.contains("setpiece"), "docs' turn ended 4 minutes ago; the requests aren't turns that ended")
+    }
+
+    /// A session whose agent's process ends is over: the core, the only
+    /// one that asks the OS, records its end in the transcript
+    /// (`Core.agentGone`), its request with it, and the view, which never
+    /// asks, ends it from that record, now and in a fold of the transcript
+    /// later, whatever runs then.
+    func testAnAgentGoneIsRecordedAsItsSessionsEnd() {
+        final class Running { var value = true }
+        let running = Running()
+        let rig = CoreRig(isRunning: { _ in running.value })
+        var ask = rig.event(.needsYou, tool: "Bash")
+        ask.data["process"] = .object(["pid": 4242, "started": 1])
+        rig.send(ask)
+        rig.wait(60_000)
+        XCTAssertNotNil(rig.state.attn, "its process runs: it waits")
+        XCTAssertNotNil(rig.pipeline.threads["claude/s1"])
+        running.value = false
+        let fx = rig.wait(SessionTracker.liveCheckMs)
+        let records = fx.effects.compactMap { effect -> Event? in if case .record(let e) = effect { e } else { nil } }
+        let end = records.first { $0.type == .session }
+        XCTAssertEqual(end?.specificType, Core.agentGone)
+        XCTAssertEqual(end?.phase, .end)
+        XCTAssertEqual(end?.session, "s1")
+        XCTAssertEqual(end?["why"]?.string, "its process ended")
+        XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["the session ended"])
+        XCTAssertNil(rig.state.attn)
+        XCTAssertNil(rig.pipeline.threads["claude/s1"], "the view ends it from the record")
+        let refold = TranscriptView()
+        XCTAssertNil(refold.sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"], "and so does a fold later")
     }
 
     /// The popover's Dismiss names the session: only that one goes, and

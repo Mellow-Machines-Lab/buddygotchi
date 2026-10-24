@@ -243,16 +243,17 @@ export class DemoPlayer extends EventTarget {
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
     // A finger on the screen, beside the nose (a boop there is a gesture),
-    // or kept there past the board's hold on the needs-you sign
-    // (TouchGesture::kHoldMs), or BOOT pressed, which is the board's own to
-    // react to (a press long enough to pass the button's debounce).
+    // or kept there as long as the recording's hold says, past the board's
+    // hold on the needs-you sign (a recording made before it said, 1.2 s),
+    // or BOOT pressed, which is the board's own to react to (a press long
+    // enough to pass the button's debounce).
     if (event.input === 'tap') {
       this.#board.touch(...TAP);
       this.#board.release();
     }
     if (event.input === 'hold') {
       this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
-      setTimeout(() => this.#board.release(), 1200);
+      setTimeout(() => this.#board.release(), (event.hold ?? 1.2) * 1000);
     }
     if (event.input === 'press') {
       this.#board.boot(true);

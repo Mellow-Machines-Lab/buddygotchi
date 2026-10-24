@@ -9,6 +9,12 @@ extension Runtime {
     /// After a demo's last step, time for what it starts to play out.
     public static let demoTail = 6.0
 
+    /// Whether an agent's process still runs: a demo's made-up agent's
+    /// always does (`DemoPlayer.agentProcess`).
+    static func agentRuns(_ process: AgentProcess) -> Bool {
+        process == DemoPlayer.agentProcess || AgentProcess.isRunning(process)
+    }
+
     /// Readies a demo script (`DemoScript`) to play: its steps in order,
     /// each when the one before it has ended, from `start()` on. The
     /// person's steps are a poke and talk as the socket's dev messages make
@@ -163,10 +169,10 @@ public final class DemoPlayer: @unchecked Sendable {
             runtime.pressed(who: Runtime.demoBy, buddy: step.buddy)
             then()
         case .hold:
-            // The board tells the Mac once the finger has been down a second
-            // (its TouchGesture::kHoldMs).
+            // The board tells the Mac once the finger has been down its
+            // hold; the demo's finger stays a little longer.
             heardStep(step, agent(of: step))
-            later(1) { [self] in
+            later(DemoScript.holdSeconds) { [self] in
                 runtime.gestured(Core.dismissGesture, who: Runtime.demoBy, buddy: step.buddy)
                 then()
             }
@@ -269,6 +275,12 @@ public final class DemoPlayer: @unchecked Sendable {
     /// How many agent steps ahead a hook may end, for the script to skip to it.
     static let lookahead = 3
 
+    /// The process the player's agent is, on every hook it sends, as a real
+    /// agent's hooks say theirs: it runs as long as the demo does
+    /// (`Runtime.agentRuns`), so a request waits however long the demo's
+    /// clock jumps. No real process started 1 ms into 1970.
+    public static let agentProcess = AgentProcess(pid: 4242, started: 1)
+
     // MARK: No agent: the player is it
 
     /// Sends a hook as the agent would, the buddy `buddy`'s agent's, in its
@@ -278,7 +290,8 @@ public final class DemoPlayer: @unchecked Sendable {
         let tail = [buddy, name].compactMap { $0 }.map { "-\($0)" }.joined()
         let session = "demo" + tail
         let cwd = "/demo/\(slug)" + tail
-        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd, ts: runtime.options.wallClock())
+        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd,
+                            process: Self.agentProcess, ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
     }
