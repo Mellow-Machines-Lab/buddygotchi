@@ -48,11 +48,6 @@ public struct Scenario: Sendable {
         public var kind: String?
         /// A `to-do list` step's list, as `3/7`: done, of all.
         public var todos: StateSnapshot.Todo?
-        /// The step's hooks say which process the agent is, one that runs
-        /// all through the scenario (`process: running`): the agent's
-        /// request then waits as long as it does, past the 10 silent
-        /// minutes that clear one from a hook that doesn't say.
-        public var running = false
         /// How a reaction this step's passes start ends: `done` (the
         /// default), `in progress` (it never ends), or `failed: <why>`.
         public var reaction: String?
@@ -354,12 +349,8 @@ public struct Scenario: Sendable {
             if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             if event == "to-do list" {
-                guard let text = s["todos"] as? String, let list = DemoScript.todos(text) else { throw badStep("to-do list needs todos, like 3/7") }
+                guard let text = s["todos"] as? String, let list = StateSnapshot.Todo(text: text) else { throw badStep("to-do list needs todos, like 3/7") }
                 step.todos = list
-            }
-            if let p = s["process"] {
-                guard p as? String == "running" else { throw badStep("process is running") }
-                step.running = true
             }
             if let c = s["count"] {
                 guard let n = c as? Int, n >= 1 else { throw badStep("count is for pokes, 1 or more") }
@@ -397,7 +388,7 @@ public struct Scenario: Sendable {
                 step.expect?.when = when
                 let needs = try set("needs"), todo = try set("todo")
                 guard (needs ?? []).isSubset(of: ["shown", "none"]) else { throw badStep("expect.needs is shown or none") }
-                guard (todo ?? []).allSatisfy({ $0 == "none" || DemoScript.todos($0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
+                guard (todo ?? []).allSatisfy({ $0 == "none" || StateSnapshot.Todo(text: $0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
                 step.expect?.needs = needs
                 step.expect?.todo = todo
                 let diary = try set("diary")
@@ -646,7 +637,9 @@ public struct Eval {
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
         let rules = steering.personality(scenario.personality).rules
-        let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start))
+        // Its agents are made up, and run all through it.
+        let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
+                        isRunning: { _ in true })
         core.setWallClock(start, at: start)
         let view = TranscriptView(rules: rules, seed: 1)
         let home = DispatchQueue(label: "boop.eval")
@@ -765,7 +758,7 @@ public struct Eval {
                 check.expected.when = expect.when
                 check.expected.needs = expect.needs
                 check.expected.todo = expect.todo
-                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo.map { "\($0.done)/\($0.total)" } ?? "none")
+                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo?.text ?? "none")
                 checks.append(check)
                 if !expect.wantsAPass, expect.opens == nil { continue }
             }
@@ -919,7 +912,8 @@ public struct Eval {
 
     /// A step as it reaches the pipeline: the hook events or pokes it
     /// stands for, in Claude's session (`s1` unless it says) in `landing`,
-    /// each one input.
+    /// each one input. Every hook says which process the agent is, as a
+    /// real agent's do: a demo's, which runs all through the scenario.
     public static func inputs(_ step: Scenario.Step, at now: Int64) -> [(Pipeline) -> Pipeline.Step] {
         let cwd = step.workspace.map { "/eval/landing/.worktrees/\($0)" } ?? "/eval/landing"
         let session = step.session ?? "s1"
@@ -927,7 +921,7 @@ public struct Eval {
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:], subagent: String? = nil) -> (Pipeline) -> Pipeline.Step {
             var data = data
-            if step.running { data["process"] = Eval.ownProcess }
+            data["process"] = Eval.agentProcess
             return { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
                                     subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
         }
@@ -983,17 +977,9 @@ public struct Eval {
         }
     }
 
-    /// This process, as a hook names its agent's (`AgentProcess`): it runs
-    /// as long as the eval does, so a step that says `process: running`
-    /// is an agent that's still there.
-    static let ownProcess: JSONValue = {
-        var info = kinfo_proc()
-        var size = MemoryLayout<kinfo_proc>.stride
-        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
-        _ = sysctl(&mib, 4, &info, &size, nil, 0)
-        let t = info.kp_proc.p_un.__p_starttime
-        return .object(["pid": .int(Int64(getpid())), "started": .int(Int64(t.tv_sec) * 1000 + Int64(t.tv_usec) / 1000)])
-    }()
+    /// The agent's process on every hook, as a demo's agent has it.
+    static let agentProcess: JSONValue = .object(["pid": .int(Int64(DemoPlayer.agentProcess.pid)),
+                                                  "started": .int(DemoPlayer.agentProcess.started)])
 
     /// One scenario's runs, readably: its verdict, and each failing step
     /// once.
