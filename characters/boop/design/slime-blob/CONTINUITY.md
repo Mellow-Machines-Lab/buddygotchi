@@ -601,8 +601,8 @@ takes one. An occasion whose tags go off simply isn't picked again. The
 engine has no colour channel, so no occasion tints the gel. The working
 looks' quicker pace while the agents are busy is the board's
 (`render::workPace`), not an occasion. `scripts/occasions.jsonl` plays a
-night, a party, twenty idle minutes, frantic and busy work, twenty working
-minutes, a night asleep and half an hour asleep, and the port replays it.
+night, a party, idle dozing, frantic and busy work, a long turn's
+marathon, a night asleep and half an hour asleep, and the port replays it.
 
 ### Layers over the body (the board's)
 

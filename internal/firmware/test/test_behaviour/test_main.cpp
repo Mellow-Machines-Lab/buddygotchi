@@ -2654,26 +2654,57 @@ static void test_an_occasion_shows_only_while_its_tags_are_on() {
 }
 
 // A variation with a wait (`after`) shows only once its look has shown
-// that long: happy's nodding off (idle's 6th, index 4) after 20 minutes.
+// that long: the snore (asleep's 4th, index 3) after 10 minutes asleep.
 // A new look starts the wait over.
 static void test_a_variation_waits_for_its_look() {
-  const int nodding = 4;
+  const int snore = 3;
   Rig r;
-  Model m = base("idle");
+  Model m = base("asleep");
   r.state(m);
   bool early = false, late = false;
   for (uint32_t t = 100; t <= 3600000; t += 100) {
     r.at(t);
     if (t % 10000 == 0) r.state(m);
-    if (r.b.show(t).variant != nodding) continue;
-    (t < 20 * 60000 ? early : late) = true;
+    if (r.b.show(t).variant != snore) continue;
+    (t < 10 * 60000 ? early : late) = true;
   }
   TEST_ASSERT_FALSE(early);
   TEST_ASSERT_TRUE(late);
-  r.state(base("working"));
+  r.state(base("idle"));
   r.state(m);
   r.at(r.t + 10);
-  TEST_ASSERT_NOT_EQUAL(nodding, r.b.show(r.t).variant);
+  TEST_ASSERT_NOT_EQUAL(snore, r.b.show(r.t).variant);
+}
+
+// Nodding off (happy's idle 6th, index 4) and the long stretch (working's
+// last) wait for the Mac's tiers, not for a time: idle's `doze` and a long
+// turn's `marathon`. An hour of either look without its tag never shows
+// it; with the tag on it shows.
+static void test_nodding_off_and_the_stretch_wait_for_the_tiers() {
+  const int nodding = 4;
+  const int stretch = render::variants(render::Mood::kHappy, SceneState::kWorking) - 1;
+  const auto happy = render::Mood::kHappy;
+  TEST_ASSERT_FALSE(render::fits(happy, SceneState::kIdle, nodding, 0, 7200000));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kIdle, nodding, render::tagBit("doze"), 0));
+  TEST_ASSERT_FALSE(render::fits(happy, SceneState::kWorking, stretch, 0, 7200000));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kWorking, stretch, render::tagBit("marathon"), 0));
+  auto shows = [](const char* look, int variant, uint32_t when) {
+    Rig r;
+    Model m = base(look);
+    m.when = when;
+    r.state(m);
+    bool shown = false;
+    for (uint32_t t = 100; t <= 3600000 && !shown; t += 100) {
+      r.at(t);
+      if (t % 10000 == 0) r.state(m);
+      shown = r.b.show(t).variant == variant;
+    }
+    return shown;
+  };
+  TEST_ASSERT_FALSE(shows("idle", nodding, 0));
+  TEST_ASSERT_TRUE(shows("idle", nodding, render::tagBit("doze")));
+  TEST_ASSERT_FALSE(shows("working", stretch, 0));
+  TEST_ASSERT_TRUE(shows("working", stretch, render::tagBit("marathon")));
 }
 
 // The working looks quicken with the agents working (render::workPace, which Behaviour hands the face as
@@ -2803,6 +2834,7 @@ int main() {
   RUN_TEST(test_the_looks_variations_rotate);
   RUN_TEST(test_an_occasion_shows_only_while_its_tags_are_on);
   RUN_TEST(test_a_variation_waits_for_its_look);
+  RUN_TEST(test_nodding_off_and_the_stretch_wait_for_the_tiers);
   RUN_TEST(test_the_working_looks_quicken_with_the_agents);
   RUN_TEST(test_a_reactions_occasion_wins_while_on);
   RUN_TEST(test_boot_hands_over_while_someone_waits);

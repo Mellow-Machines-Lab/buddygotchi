@@ -1247,14 +1247,15 @@ async function checkOccasions(createSlime, catalog) {
   assert.deepEqual(idle({ when: ['morning'] }), ['occasion:morning-stretch'], `${OCCASIONS}: a morning stretch`);
   assert.deepEqual(idle({ when: ['party'] }), ['occasion:party-bounce'], `${OCCASIONS}: a party bounce`);
   assert.deepEqual(idle({ when: ['newyear'] }), ['occasion:party-bounce'], `${OCCASIONS}: New Year's is the party's`);
-  assert.deepEqual(idle({ when: [], lookMs: 1199000 }), [], `${OCCASIONS}: no nod-off before twenty minutes`);
-  assert.deepEqual(idle({ when: [], lookMs: 1200000 }), ['occasion:nod-off'], `${OCCASIONS}: a nod-off after them`);
+  assert.deepEqual(idle({ when: [], lookMs: 7200000 }), [], `${OCCASIONS}: no nod-off before idle's doze, however long the look`);
+  assert.deepEqual(idle({ when: ['doze'] }), ['occasion:nod-off'], `${OCCASIONS}: a nod-off once it dozes`);
   const looks = lookOccasions(catalog.occasions), take = (state, id) => takesOf(state) + looks.findIndex(o => o.state === state && o.id === id);
   const work = (occasion, state = 'working') => [...picks(state, occasion, 60000)].filter(variant => variant >= takesOf(state)).sort();
   assert.deepEqual(work({ when: [] }), [], `${OCCASIONS}: work plays none with no tag on`);
   assert.deepEqual(work({ when: ['busy'] }), [take('working', 'busy-typing')], `${OCCASIONS}: busier typing while busy`);
   assert.deepEqual(work({ when: ['frantic'] }), [take('working', 'frantic-typing')], `${OCCASIONS}: frantic typing while frantic`);
-  assert.deepEqual(work({ when: [], lookMs: 1200000 }), [take('working', 'work-stretch')], `${OCCASIONS}: a stretch after twenty minutes' work`);
+  assert.deepEqual(work({ when: [], lookMs: 7200000 }), [], `${OCCASIONS}: no stretch before a marathon, however long the look`);
+  assert.deepEqual(work({ when: ['marathon'] }), [take('working', 'work-stretch')], `${OCCASIONS}: a stretch on a long turn's marathon`);
   assert.deepEqual(work({ when: ['night'] }, 'asleep'), [take('asleep', 'deep-snore')], `${OCCASIONS}: a deeper snore at night`);
   assert.deepEqual(work({ when: [], lookMs: 1800000 }, 'asleep'), [take('asleep', 'dream')], `${OCCASIONS}: a dream after half an hour`);
 }

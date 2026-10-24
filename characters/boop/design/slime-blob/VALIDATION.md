@@ -66,8 +66,8 @@ the pick-up stretches up, the put-down lands squashed, the startle jumps,
 peekaboo rises from below). Its occasion checks play two minutes of each
 look with tags on and off: none plays with no tag or with tags none needs,
 night drowses, morning stretches, a party and New Year bounce, the nod-off
-waits its twenty minutes, busy and frantic work type faster, twenty
-working minutes stretch, and asleep snores deeper at night and dreams
+waits for idle's `doze`, busy and frantic work type faster, a long
+turn's `marathon` stretches, and asleep snores deeper at night and dreams
 after half an hour.
 The cue check plays twenty minutes of idle and five of sleep: only the sneeze
 and the snore's breaths sound, sparsely. The builder runs the

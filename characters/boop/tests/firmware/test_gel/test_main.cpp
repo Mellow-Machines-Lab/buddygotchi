@@ -825,7 +825,9 @@ static void test_a_notice_looks_up_at_you() {
 }
 // CONTINUITY.md, Occasions: a look's takes for tags and waits, dealt only
 // while they fit. Idle at night drowses; with no tag on it never plays an
-// occasion; frantic work types frantically; twenty idle minutes nod off.
+// occasion; frantic work types frantically; idle's doze nods off and a
+// long turn's marathon stretches, each by its tag alone, however long the
+// look has shown.
 static void test_occasions_play_only_while_they_fit() {
   auto idle = [](uint32_t when, uint32_t lookMs) {
     auto e = std::make_unique<Engine>();
@@ -846,8 +848,8 @@ static void test_occasions_play_only_while_they_fit() {
   TEST_ASSERT_EQUAL_INT(0, idle(tagBit("day") | tagBit("weekend"), 0));
   TEST_ASSERT_TRUE(idle(tagBit("night"), 0) > 0);
   TEST_ASSERT_TRUE(idle(tagBit("party"), 0) > 0);
-  TEST_ASSERT_EQUAL_INT(0, idle(0, 1199000));
-  TEST_ASSERT_TRUE(idle(0, 1200000) > 0);
+  TEST_ASSERT_EQUAL_INT(0, idle(0, 7200000));
+  TEST_ASSERT_TRUE(idle(tagBit("doze"), 0) > 0);
   // Work: an occasion's take is numbered after the row's three.
   auto work = [](SceneState base, uint32_t when, uint32_t lookMs) {
     auto e = std::make_unique<Engine>();
@@ -870,6 +872,8 @@ static void test_occasions_play_only_while_they_fit() {
   TEST_ASSERT_EQUAL_INT(0, work(SceneState::kWorking, 0, 0));
   TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(5), 0) > 0);
   TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(2), 0) > 0);
+  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kWorking, 0, 7200000));
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("marathon"), 0) > 0);
   TEST_ASSERT_TRUE(work(SceneState::kAsleep, tagBit("night"), 0) > 0);
   TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1800000) > 0);
   TEST_ASSERT_EQUAL_INT(0, work(SceneState::kAsleep, 0, 1799000));
