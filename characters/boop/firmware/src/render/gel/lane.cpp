@@ -26,11 +26,6 @@ struct Lane {
 
 uint16_t inkRgb565(int ink) { return paletteAt(inkAt(ink, kLevels)); }
 
-// A strip with nothing to show: bare glass.
-bool bare(const Strip& s) {
-  return !s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp;
-}
-
 constexpr int kMargin = 18;  // from the panel's edges, as the canvas's 12 px
 constexpr int kIcon = 18;    // the strip's round icons, and the gap after them
 constexpr int kBubbleMargin = 10;
@@ -167,7 +162,7 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
-  if (bare(s)) return;
+  if (!s.shows()) return;
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
   r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
@@ -208,7 +203,7 @@ void strip(Lane& l, const Strip& s) {
 // are (FNV-1a over the line or the strip's fields; never 0).
 }  // namespace
 
-uint32_t laneKey(const char* line, const Strip& s, int alpha) {
+uint32_t laneKey(const char* line, const Strip& s) {
   uint32_t h = 2166136261u;
   auto add = [&](const void* data, size_t n) {
     for (size_t i = 0; i < n; ++i) h = (h ^ static_cast<const uint8_t*>(data)[i]) * 16777619u;
@@ -217,7 +212,7 @@ uint32_t laneKey(const char* line, const Strip& s, int alpha) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp, alpha};
+    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp, s.opacity};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -225,48 +220,30 @@ uint32_t laneKey(const char* line, const Strip& s, int alpha) {
 
 int bubbleRoom(int width) { return width - 2 * (kBubbleMargin + kBubblePad + kBubbleLine); }
 
-void paintLane(Surface& surface, const char* line, const Strip& s, int alpha) {
+void paintLane(Surface& surface, const char* line, const Strip& s) {
   if (!surface.pixels) return;
   Lane l{Raster{surface}, surface.width, surface.height};
   l.r.limit = surface.height;
   if (line) {
     bubble(l, line);
   } else {
-    l.r.alpha = alpha;
+    l.r.alpha = (s.opacity * 255 + 500) / 1000;
     strip(l, s);
   }
-  surface.laneKey = laneKey(line, s, alpha);
+  surface.laneKey = laneKey(line, s);
   surface.laneKeyFrom = l.y(kLaneTop);
 }
 
-const Strip& LaneFade::fade(const Strip& s, T time, int& alpha) {
-  if (!bare(s)) {
-    shown_ = s;
-    const char* const from[] = {s.agent, s.project, s.name, s.doneAgent, s.doneThread};
-    const char** to[] = {&shown_.agent, &shown_.project, &shown_.name, &shown_.doneAgent, &shown_.doneThread};
-    for (int i = 0; i < 5; ++i)
-      if (from[i]) {
-        std::snprintf(names_[i], sizeof names_[i], "%s", from[i]);
-        *to[i] = names_[i];
-      }
-  }
-  ramp_.retarget(bare(s) ? 0 : 1, before_ < time ? before_ : time);
-  before_ = time;
-  alpha = (ramp_.value(time) * 255).integer();
-  // Gone, it is the bare strip again.
-  return alpha ? shown_ : s;
-}
-
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
-                const Strip& s, int laneAlpha) {
+                const Strip& s) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
-  const uint32_t key = laneKey(line, s, laneAlpha);
+  const uint32_t key = laneKey(line, s);
   Anchors at;
   paint(surface, e, mouthOpen, dy, key, &at);
   if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
-  if (surface.laneKey != key) paintLane(surface, line, s, laneAlpha);
+  if (surface.laneKey != key) paintLane(surface, line, s);
 }
 
 }  // namespace render::gel

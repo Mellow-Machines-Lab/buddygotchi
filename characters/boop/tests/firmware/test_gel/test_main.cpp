@@ -409,47 +409,58 @@ static void test_the_face_never_fades_while_arts_cross_over() {
   }
 }
 // CONTINUITY.md, No prop pops: the lane's strip eases in as it comes and out
-// as it goes, no step larger than a slice of the props' ramp, and one going
-// still shows what it showed, though its names are gone.
-static void test_the_lane_fades_in_and_out() {
-  LaneFade lane;
-  char agent[16] = "claude";
-  Strip asking, none;
-  asking.agent = agent, asking.busy = 2;
-  int alpha = 0, last = 0;
-  const int step = 255 * 134 / 1000 + 1;
-  bool full = false;
-  for (int ms = 0; ms <= 1200; ms += 16) {
-    const bool on = ms < 600;
-    if (!on) agent[0] = 0;
-    const Strip& shown = lane.fade(on ? asking : none, T(ms), alpha);
-    TEST_ASSERT_TRUE(std::abs(alpha - last) <= step);
-    if (alpha) {
-      TEST_ASSERT_EQUAL_STRING("claude", shown.agent);
-      TEST_ASSERT_EQUAL_INT(2, shown.busy);
-    } else if (!on) {
-      TEST_ASSERT_NULL(shown.agent);
+// as it goes, at the opacity Behaviour gives it on the layers' ramp, which is
+// the props' (app/behaviour.h, pinned in test_behaviour), and the same
+// whatever the draw cadence: a board drawing every 16 ms and one drawing
+// every 200 ms show the same lane wherever both draw, mid-fade and settled,
+// its strip coming and going between their frames.
+static void test_the_lane_fades_whatever_the_draw_cadence() {
+  static_assert(rig::kLayerFadeMs == uint32_t(kPropRampMs), "the lane fades on the props' ramp");
+  constexpr int kW = 502, kH = 410, kLane = kH * 4 / 5;
+  struct Run {
+    linkkit::Rng rng;
+    app::Behaviour b{std::make_unique<GelFace>()};
+    std::vector<uint8_t> canvas = std::vector<uint8_t>(size_t(kWidth) * kHeight);
+    std::vector<uint16_t> px = std::vector<uint16_t>(size_t(kW) * kH);
+    Surface s{kW, kH, px.data()};
+    std::vector<std::vector<uint16_t>> lanes;
+    void play(uint32_t every) {
+      b.reset(0, rng);
+      Canvas c{canvas.data()};
+      const uint32_t messages[] = {1100, 2300}, shots[] = {1200, 1600, 2400, 2800};
+      int next = 0;
+      bool dirty = true;
+      for (uint32_t t = 0; t <= 2800; t += every) {
+        for (; next < 2 && messages[next] <= t; ++next) {
+          app::Model m;
+          m.busy = next == 0 ? 2 : 0;
+          b.advance(messages[next], rng);
+          b.onState(m, messages[next]);
+          dirty = true;
+        }
+        b.advance(t, rng);
+        b.face().draw(c, &s, b.show(t), t, b.bubble(t), b.sign(t), b.strip(t), dirty);
+        dirty = false;
+        for (uint32_t shot : shots)
+          if (shot == t) lanes.emplace_back(px.begin() + kLane * kW, px.end());
+      }
     }
-    full |= alpha == 255;
-    last = alpha;
-  }
-  TEST_ASSERT_TRUE(full);
-  TEST_ASSERT_EQUAL_INT(0, alpha);
-}
-// A strip that came between two frames fades from the earlier one: a board
-// that drew nothing while the clock jumped (frozen, 0 ms to 1504) shows what
-// a simulator that drew at the jump does.
-static void test_the_lane_fades_from_the_frame_before() {
-  LaneFade lane;
-  Strip working, none;
-  working.busy = 3;
-  int alpha = 0;
-  lane.fade(none, T(0), alpha);
-  lane.fade(working, T(1504), alpha);
-  TEST_ASSERT_EQUAL_INT(255, alpha);
-  // Its ramp is the props' 200 ms one, from the frame before: half way, half on.
-  lane.fade(none, T(1604), alpha);
-  TEST_ASSERT_INT_WITHIN(2, 128, alpha);
+  };
+  auto lit = [](const std::vector<uint16_t>& lane) {
+    long n = 0;
+    for (uint16_t p : lane) n += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+    return n;
+  };
+  auto often = std::make_unique<Run>(), seldom = std::make_unique<Run>();
+  often->play(16);
+  seldom->play(200);
+  TEST_ASSERT_EQUAL(4, int(often->lanes.size()));
+  for (int i = 0; i < 4; ++i) TEST_ASSERT_TRUE(often->lanes[i] == seldom->lanes[i]);
+  const long whole = lit(often->lanes[1]);
+  TEST_ASSERT_TRUE(whole > 1000);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often->lanes[0]));  // fading in
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often->lanes[2]));  // fading out
+  TEST_ASSERT_EQUAL(0, lit(often->lanes[3]));
 }
 // The face brings its own clips; the shared mixer plays
 // whatever samples it's handed, whichever face is built.
@@ -1280,8 +1291,7 @@ int main() {
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
-  RUN_TEST(test_the_lane_fades_in_and_out);
-  RUN_TEST(test_the_lane_fades_from_the_frame_before);
+  RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);
   RUN_TEST(test_pick_is_pure_and_started_commits_it);

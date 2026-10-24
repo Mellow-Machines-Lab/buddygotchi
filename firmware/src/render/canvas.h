@@ -33,6 +33,21 @@ class Canvas {
   uint8_t* px_;
 };
 
+// Which pixels a picture draws while it fades (the canvas has no alpha): a
+// 4 × 4 ordered dither gives each pixel a threshold, 0 … 15, and a picture
+// draws those whose threshold is in [lo, hi). Every pixel is [0, 16).
+struct Dither {
+  uint8_t lo = 0, hi = 16;
+  // The new picture's share `mix` (0 … 1000) of the way into a fade, or
+  // the old one's.
+  static Dither fade(int mix, bool incoming);
+  // This one, of what `outer` draws.
+  Dither within(Dither outer) const;
+  bool all() const { return lo == 0 && hi >= 16; }
+  bool draws(int x, int y) const;
+  bool operator==(const Dither& o) const { return lo == o.lo && hi == o.hi; }
+};
+
 // What the pusher sends (each board's display.cpp): the screen in
 // bands of kBand rows, and of each band only the columns that changed since
 // it was last pushed, found by hashing kTile-wide tiles.

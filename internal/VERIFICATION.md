@@ -330,7 +330,9 @@ gets at least one scenario. Their pictures are the golden images in
   moods and the new moods' flip-books, to the face never cutting hard:
   the same design at the same moment, or the design's own shut eyes
   showing; and what the agents are doing, the rules' reactions and the finish
-  with their facts and voice window, taps in a row and what shows first
+  with their facts and voice window, taps in a row, what shows first,
+  and the lane's strip fading in and out over 200 ms from when it came
+  or went, the same pixels at a frame every 16 ms as every 200 ms
   (`test_behaviour`); the canvas and
   renderer, the bubble in the bottom lane included (`test_canvas`,
   `test_face`); what reaches the AMOLED's panel (`test_push`): every

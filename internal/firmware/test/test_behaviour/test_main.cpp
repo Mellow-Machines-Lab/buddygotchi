@@ -11,6 +11,7 @@
 
 #include "app/behaviour.h"
 #include "app/device.h"
+#include "render/palette.h"
 #include "render/pixel/anim.h"
 #include "render/pixel/sounds.h"
 #include "render/pixel/scene.h"
@@ -1904,6 +1905,132 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
 // A tap while the brain's finish names whose turn it
 // was takes you to that thread: the press dip only, the finish plays on,
 // and the tap carries its id for the Mac. A finish the Mac doesn't wait on (no id) or that names nobody is poked.
+// The lane's fade, decided once for every face: the strip fades in over the
+// layers' 200 ms from the millisecond it came, and out from the one it went,
+// still showing what it last showed, names and all; what it shows while it
+// shows changes at once (a count going 3 to 4), and one turning back
+// mid-fade starts from where it was. No app and a finish come and go at
+// their own times.
+static void test_the_lane_fades_as_the_strip_comes_and_goes() {
+  constexpr uint32_t kFade = render::rig::kLayerFadeMs;
+  static_assert(kFade == 200, "the lane fades on the props' 200 ms");
+  Rig r;
+  r.at(1000);
+  Model m = base("idle");
+  r.state(m);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  m.busy = 3;
+  r.state(m);
+  TEST_ASSERT_EQUAL(3, r.b.strip(r.t).busy);  // what it shows, at once
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade / 2);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade - 16);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).opacity < 1000);
+  r.at(1000 + kFade);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  m.busy = 4;
+  r.state(m);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  // Going: still the 4, fading.
+  r.at(2000);
+  m.busy = 0;
+  r.state(m);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(2000 + kFade / 2);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  const int half = r.b.strip(r.t).opacity;
+  TEST_ASSERT_INT_WITHIN(5, 500, half);
+  // Back before it has gone: from where it was, with what shows now.
+  m.idle = 1;
+  r.state(m);
+  TEST_ASSERT_EQUAL(1, r.b.strip(r.t).idle);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(half, r.b.strip(r.t).opacity);
+  r.at(r.t + 16);
+  TEST_ASSERT_INT_WITHIN(134, half, r.b.strip(r.t).opacity);  // no step past a 16 ms slice of the ramp
+  r.at(3000);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  m.idle = 0;
+  r.state(m);
+  r.at(3000 + kFade);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());  // gone, it's bare glass again
+  // A finish naming whose turn: in as it starts, out as it ends, named.
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.whoAgent = "codex", in.whoThread = "fix-nav";
+  onReaction(r.b, in, r.t);
+  uint32_t left, start = r.t;
+  r.b.reaction(r.t, left);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(start + left);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(start + left + kFade / 2);
+  TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  // No app: the plug from the moment the Mac's silence turns into it.
+  const uint32_t gone = 3000 + Behaviour::kNoAppMs;
+  r.at(gone - 1);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  r.at(gone + kFade / 2);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).noApp);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+}
+
+// The lane is a function of the clock, not of how often frames are drawn: a
+// board drawing every 16 ms and one drawing every 200 ms show the same lane
+// wherever both draw, mid-fade and settled, its strip coming and going
+// between their frames. Each draws as Device does, dirty only after a
+// message, so a frame drawn mid-fade isn't skipped. Pixel's canvas has no
+// alpha: half way, half the strip's pixels, by its dither.
+static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
+  struct Run {
+    Rig r;
+    std::vector<uint8_t> px = std::vector<uint8_t>(size_t(render::kWidth) * render::kHeight);
+    render::Canvas c{px.data()};
+    bool dirty = true;
+    std::vector<std::vector<uint8_t>> lanes;
+    void play(uint32_t every) {
+      const uint32_t messages[] = {1100, 2300}, shots[] = {1200, 1600, 2400, 2800};
+      int next = 0;
+      for (uint32_t t = 0; t <= 2800; t += every) {
+        for (; next < 2 && messages[next] <= t; ++next) {
+          Model m = base("idle");
+          m.busy = next == 0 ? 2 : 0;
+          r.at(messages[next]);
+          r.state(m);
+          dirty = true;
+        }
+        r.at(t);
+        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.strip(t), dirty);
+        dirty = false;
+        for (uint32_t shot : shots)
+          if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
+      }
+    }
+  };
+  auto lit = [](const std::vector<uint8_t>& lane) {
+    int n = 0;
+    for (uint8_t p : lane) n += p != render::kBlack;
+    return n;
+  };
+  Run often, seldom;
+  often.play(16);
+  seldom.play(200);
+  TEST_ASSERT_EQUAL(4, int(often.lanes.size()));
+  TEST_ASSERT_EQUAL(4, int(seldom.lanes.size()));
+  for (int i = 0; i < 4; ++i) TEST_ASSERT_TRUE(often.lanes[i] == seldom.lanes[i]);
+  const int whole = lit(often.lanes[1]);
+  TEST_ASSERT_TRUE(whole > 100);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[0]));  // fading in
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[2]));  // fading out
+  TEST_ASSERT_EQUAL(0, lit(often.lanes[3]));
+}
+
 static void test_a_tap_on_a_named_finish_opens_its_thread() {
   Rig r;
   r.at(1000);
@@ -2640,6 +2767,8 @@ int main() {
   RUN_TEST(test_boot_hands_over_while_someone_waits);
   RUN_TEST(test_no_app_at_30s_and_reconnect_blinks_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
+  RUN_TEST(test_the_lane_fades_as_the_strip_comes_and_goes);
+  RUN_TEST(test_the_lane_is_the_same_whatever_the_draw_cadence);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);

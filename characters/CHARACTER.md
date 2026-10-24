@@ -506,7 +506,11 @@ Besides drawing each mood and state, a face:
   many sessions work, a mini for each helper at work, up to four and
   then +N, a parcel and the count of agents idle for BOOT to hand over,
   a finished turn's tick or cross) and the speech bubble. The face calls
-  `drawLane` to draw them.
+  `drawLane` to draw them. The engine fades the strip in as it comes and
+  out as it goes, over the layers' 200 ms, from the moment it came or
+  went, and hands the face its opacity with it (`Strip::opacity`):
+  `drawLane` dithers it on the canvas, and a face that draws its own
+  lane, as the gel does, draws it at that opacity.
 - **Holds up a sign.** Any reaction may carry words in `sign` (the `do`'s
   args), at most 18 glyphs of the fonts (accents folded, cut with `..`
   past that, `render::foldText`). The engine keeps them up from the

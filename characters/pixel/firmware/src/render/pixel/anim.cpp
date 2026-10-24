@@ -220,10 +220,12 @@ int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) 
 bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble,
                      const SignShow& sign, const Strip& strip, bool dirty) {
   rig_.advanceTo(t);
+  const bool laneSame = strip.opacity == drawnLane_;
+  drawnLane_ = strip.opacity;
   if (strip.agent && show.state == SceneState::kNeedsYou) {
     SignPose pose = signPose(designMs(t), show.eyesShut, show.dy);
     drew_ = Drew::kSign;
-    if (!dirty && drawnSign_ && pose == drawnPose_) return false;
+    if (!dirty && drawnSign_ && pose == drawnPose_ && laneSame) return false;
     drawnSign_ = true;
     drawnPose_ = pose;
     drawnKey_ = 0;
@@ -266,7 +268,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
       const uint32_t hat = uint32_t(uint8_t(over.hatX)) << 16 | uint32_t(uint8_t(over.hatY)) << 24;
       key = (key ^ dress ^ hat) * 1099511628211ull | uint64_t(1) << 63;
     }
-    if (!dirty && from == drew_ && key == drawnKey_) return false;
+    if (!dirty && from == drew_ && key == drawnKey_ && laneSame) return false;
     drawnKey_ = key;
     c.fill(kBlack);
     if (rig) {

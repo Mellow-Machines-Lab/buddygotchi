@@ -297,6 +297,27 @@ Where it differs from the sketch above, and why:
   one frame) to 29552. At rest the rig face is its mood's idle face as
   drawn, pixel for pixel, so it kept its craft and is the default.
 
+### Checkpoint 5, as built (2026-10-24)
+
+A scoped checkpoint: the gel's JavaScript reference and its C++ port stay
+matched frame for frame, so the slime's expressions and reactions on the
+mixer wait for the owner's decision on the Mac's mirror (retiring the
+JavaScript twin, checkpoint 6). What landed instead:
+
+- **The lane's fade is decided once, by the app, for both faces.**
+  Behaviour stamps when the strip comes or goes (every change goes
+  through one place, a message's or a time-based one advance stops at:
+  no app, a finish ending) and eases its opacity on the layers' 200 ms
+  ramp (`rig::Ramp`) from then, keeping the last strip shown, names and
+  all, while it fades out; what it shows while it shows changes at once.
+  A plain function of the time since the stamp, rather than the layer
+  stack's lane slot: the slot's rule that new content waits for the old
+  to fade out is wrong for the strip, whose content changes at once. The
+  strip carries its opacity to the face (`Strip::opacity`); the gel draws
+  it at that alpha, and the canvas lane dithers it (Pixel's checkpoint-4
+  dither, now the canvas's), so Pixel's lane no longer pops. How often
+  frames are drawn changes no frame (test_behaviour, test_gel).
+
 ## Risks
 
 - **Pixel's look** may lose craft in parts. Checkpoint 4 compares one mood

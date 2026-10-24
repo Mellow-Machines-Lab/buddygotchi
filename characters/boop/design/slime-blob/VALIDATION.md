@@ -154,8 +154,9 @@ internal/tools/boopctl sim --face gel
   ramp moving without jumps across every directed edge, a fifth art
   dropping the faintest, a face that never fades (its visible ink
   through five cross-fades, rendered: CONTINUITY.md, Continuity of what is
-  drawn), the lane's strip fading in and out on the props' ramp
-  with what it showed, voice lead, stale cues, return to the latest
+  drawn), the lane's strip fading in and out at the opacity the app
+  gives it, the same at a frame every 16 ms as every 200 ms, voice
+  lead, stale cues, return to the latest
   facts, projected face anchors against the reference camera,
   extreme-pose buffer bounds, drawing by coverage (a shape's ink is its
   area wherever it sits between pixels, a stroke keeps its width and

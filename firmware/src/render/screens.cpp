@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 
 #include "render/font.h"
 #include "render/palette.h"
@@ -144,11 +145,11 @@ int drawCounts(Canvas* c, const Strip& s, int x) {
   }
   return x;
 }
-}  // namespace
 
-void drawStrip(Canvas& c, const Strip& s) {
+// The strip, whole.
+void stripWhole(Canvas& c, const Strip& s) {
   // An empty strip is bare glass: no divider under the face.
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp) return;
+  if (!s.shows()) return;
   // The first pack's success designs for the finish fill the screen with
   // colour: the finish's names get a black band to be read on.
   if (s.doneAgent) c.fillRect(0, kStripTop, kWidth, kHeight - kStripTop, kBlack);
@@ -188,6 +189,21 @@ void drawStrip(Canvas& c, const Strip& s) {
   // for you.
   drawCounts(&c, s, x);
   if (s.noApp) iconNoApp(c, kWidth - kMargin - 16, cy - 8);
+}
+}  // namespace
+
+// While it fades, what was under it where the dither doesn't draw it. It
+// draws in its own rows only.
+void drawStrip(Canvas& c, const Strip& s) {
+  if (s.opacity >= 1000) return stripWhole(c, s);
+  if (s.opacity <= 0) return;
+  static uint8_t under[(kHeight - kStripTop) * kWidth];
+  uint8_t* rows = c.pixels() + kStripTop * kWidth;
+  std::memcpy(under, rows, sizeof under);
+  stripWhole(c, s);
+  const Dither d = Dither::fade(s.opacity, true);
+  for (int i = 0; i < int(sizeof under); ++i)
+    if (!d.draws(i % kWidth, kStripTop + i / kWidth)) rows[i] = under[i];
 }
 
 void drawLane(Canvas& c, const char* bubble, const Strip& s) {

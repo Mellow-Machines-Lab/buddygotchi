@@ -791,9 +791,11 @@ cards' reveals):
   ramp: the Hermite's steepest slope over its 200 ms, reversals included
   (sampled, with 2% margin: about 0.134 per frame). The desk moves at most
   its own spring's steepest frame from rest (about 0.074). The board's lane
-  fades its strip on the same 200 ms ramp as it comes and goes, one going
-  still showing what it showed (`render/gel/lane.h`'s `LaneFade`), and the
-  preview's lane fades who needs you with the alert's sign.
+  fades its strip over the same 200 ms as it comes and goes, one going
+  still showing what it showed: the board's app decides it for every face
+  from when the strip came or went (`app/behaviour.h`'s `strip`), so how
+  often frames are drawn doesn't change one, and the gel draws it at that
+  opacity. The preview's lane fades who needs you with the alert's sign.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling
   eyes, falling asleep and waking), the port's painter's frames, 40 ms
@@ -818,7 +820,8 @@ and interrupts alerts with listening and with a link timeout at eight points
 from 0 to 2,000 ms: every request knocks and confirms exactly once. The
 native port's `test_gel` repeats the interruption cases, the weights' and
 sizes' bounds and the alert's ramp over every directed edge, a fifth art's
-drop and the lane's fade, and checks that the face never fades.
+drop and the lane's fade (the same whatever the draw cadence), and checks
+that the face never fades.
 
 ## Variability, without chaos
 

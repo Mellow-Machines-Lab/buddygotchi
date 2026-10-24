@@ -54,7 +54,6 @@ class GelFace final : public Face {
   // The engine's seed after a reset: the reference traces' (check-port.py).
   static constexpr uint32_t kSeed = 53;
   std::unique_ptr<Engine> engine_;
-  LaneFade lane_;
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;
   // The engine's own clock, which runs quicker in the working looks while

@@ -14,6 +14,7 @@
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
+#include "render/rig/layers.h"
 #include "render/screens.h"
 #include "voice/player.h"
 
@@ -149,7 +150,9 @@ class Behaviour {
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
   // first state, rather than a face for kNoAppMs.
-  void startWithNoApp() { stale_ = true; }
+  void startWithNoApp() {
+    change(modelT_, [&] { stale_ = true; });
+  }
 
   // Messages from the Mac, at time t.
   void onState(const Model& m, uint32_t t);
@@ -218,6 +221,10 @@ class Behaviour {
   bool noApp(uint32_t t) const;
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
+  // The lane's strip at t, at its opacity: easing in over the layers' fade
+  // (render/rig/layers.h) from when it came and out from when it went, still
+  // showing what it last showed, so how often frames are drawn doesn't
+  // change one. While it shows, what it shows changes at once.
   render::Strip strip(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
@@ -331,6 +338,7 @@ class Behaviour {
     bool overridden = blOverride_;
     f();
     face_->sync(sourceAt(t), contextAt(t), t);
+    followLane(t);
     uint8_t level = blTarget(t);
     if (!blOverride_ && (level != blLevel_ || overridden)) blFade_ = true, blFrom_ = lit, blAt_ = t;
     blLevel_ = level;
@@ -353,6 +361,11 @@ class Behaviour {
   bool exprOn(uint32_t t) const;
   bool signOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
+  // What the strip shows at t, whole.
+  render::Strip stripAt(uint32_t t) const;
+  // At every change: the strip kept while it shows, and its fade turned
+  // when it comes or goes.
+  void followLane(uint32_t t);
   // What the Mac last said, as the face may use it (render::FaceContext).
   render::FaceContext contextAt(uint32_t t) const;
   std::unique_ptr<render::Face> face_;
@@ -397,6 +410,14 @@ class Behaviour {
   uint32_t alertAt_ = 0;
   uint32_t modelT_ = 0;
   uint32_t reactionSeq_ = 0;
+  // The lane: whether the strip showed at the last change, when it last
+  // came or went, its opacity's ramp from then, and the last strip shown,
+  // its names copied.
+  bool laneShown_ = false;
+  uint32_t laneAt_ = 0;
+  render::rig::Ramp lane_;
+  render::Strip kept_;
+  char keptNames_[5][48] = {};
 };
 
 }  // namespace app

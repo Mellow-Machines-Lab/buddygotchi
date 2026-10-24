@@ -32,9 +32,6 @@ struct Box {
 constexpr Box kTalk[] = {{0, 0, 14, 4}, {0, 4, 4, 4}, {10, 4, 4, 4}, {0, 8, 14, 4}};
 static_assert(kTalkW == 14 && kTalkH == 12, "the o's box");
 
-// The dither's thresholds, a 4 × 4 Bayer matrix: a picture with a share of
-// them draws its pixels spread evenly.
-constexpr uint8_t kBayer[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
 // Where the first pack's "o" sat, from its mouth's place: the "o" for a
 // mouth with nothing drawn to measure.
 constexpr int kTalkX = 153, kTalkY = 128;
@@ -261,21 +258,6 @@ SceneFrame sceneFrame(const SceneShow& s) {
   }
   if (s.mouthOpen) talk(sc, p, f.talkX, f.talkY, f.talkInk);
   return f;
-}
-
-Dither Dither::fade(int mix, bool incoming) {
-  const uint8_t at = uint8_t(clamp((mix * 16 + 500) / 1000, 0, 16));
-  return incoming ? Dither{0, at} : Dither{at, 16};
-}
-
-Dither Dither::within(Dither outer) const {
-  const int span = outer.hi - outer.lo;
-  return {uint8_t(outer.lo + span * lo / 16), uint8_t(outer.lo + span * hi / 16)};
-}
-
-bool Dither::draws(int x, int y) const {
-  const uint8_t k = kBayer[y & 3][x & 3];
-  return k >= lo && k < hi;
 }
 
 void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d) {

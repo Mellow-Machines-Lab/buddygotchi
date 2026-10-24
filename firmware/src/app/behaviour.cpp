@@ -545,7 +545,7 @@ uint32_t Behaviour::finishShown(uint32_t t) const { return finishOn(t) ? reactio
 // With no app the Mac's counts are stale, so only the unplugged
 // icon shows. While the brain's finish plays, whose
 // turn it was.
-render::Strip Behaviour::strip(uint32_t t) const {
+render::Strip Behaviour::stripAt(uint32_t t) const {
   render::Strip s;
   s.noApp = noApp(t);
   if (s.noApp) return s;
@@ -556,6 +556,32 @@ render::Strip Behaviour::strip(uint32_t t) const {
   if (finishOn(t)) {
     s.doneAgent = reaction_.agent, s.doneThread = reaction_.thread, s.doneOutcome = reaction_.outcome;
   }
+  return s;
+}
+
+// Every change goes through change(), so the strip comes and goes only at
+// one, at the exact millisecond it did: a message's, or a time-based
+// change's that advance stops at (no app, a finish ending).
+void Behaviour::followLane(uint32_t t) {
+  const render::Strip s = stripAt(t);
+  if (s.shows()) {
+    kept_ = s;
+    const char* const names[] = {s.agent, s.project, s.name, s.doneAgent, s.doneThread};
+    const char** kept[] = {&kept_.agent, &kept_.project, &kept_.name, &kept_.doneAgent, &kept_.doneThread};
+    for (int i = 0; i < 5; ++i)
+      if (names[i]) copyStr(keptNames_[i], sizeof(keptNames_[i]), names[i]), *kept[i] = keptNames_[i];
+  }
+  if (s.shows() == laneShown_) return;
+  lane_.advance(std::min(t - laneAt_, render::rig::kLayerFadeMs));
+  lane_.retarget(s.shows() ? 1000 : 0);
+  laneShown_ = s.shows(), laneAt_ = t;
+}
+
+render::Strip Behaviour::strip(uint32_t t) const {
+  render::rig::Ramp ramp = lane_;
+  ramp.advance(std::min(t - laneAt_, render::rig::kLayerFadeMs));
+  render::Strip s = laneShown_ ? stripAt(t) : ramp.value() ? kept_ : render::Strip{};
+  s.opacity = ramp.value();
   return s;
 }
 

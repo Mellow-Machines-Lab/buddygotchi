@@ -101,6 +101,7 @@ class PixelFace final : public Face {
   bool arcOn_ = false;
   uint32_t arcCovered_ = 0;
   uint64_t drawnKey_ = 0;
+  int drawnLane_ = -1;  // the strip's opacity as the last frame drew it
   bool drawnSign_ = false;
   SignPose drawnPose_{};
   RigFace rig_;

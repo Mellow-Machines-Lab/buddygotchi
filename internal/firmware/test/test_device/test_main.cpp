@@ -789,6 +789,7 @@ static void test_repeated_states_dont_redraw_the_picture() {
 
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":500}");  // the strip, faded in
   r.dev.takeFrame();
   const std::vector<uint8_t> before = r.px;
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":2}");

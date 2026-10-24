@@ -67,21 +67,7 @@ struct SceneFrame {
 bool operator==(const SceneFrame& a, const SceneFrame& b);
 inline bool operator!=(const SceneFrame& a, const SceneFrame& b) { return !(a == b); }
 
-// Which pixels a picture draws while two cross-fade: a 4 × 4 ordered dither
-// gives each pixel a threshold, 0 … 15, and a picture draws those whose
-// threshold is in [lo, hi). Every pixel is [0, 16).
-struct Dither {
-  uint8_t lo = 0, hi = 16;
-  // The new picture's share `mix` (0 … 1000) of the way into a fade, or
-  // the old one's.
-  static Dither fade(int mix, bool incoming);
-  // This one, of what `outer` draws.
-  Dither within(Dither outer) const;
-  bool all() const { return lo == 0 && hi >= 16; }
-  bool draws(int x, int y) const;
-  bool operator==(const Dither& o) const { return lo == o.lo && hi == o.hi; }
-};
-// A rectangle's pixels that `d` draws, in `color`.
+// A rectangle's pixels that `d` (render/canvas.h) draws, in `color`.
 void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d);
 // The small "o" the mouth becomes while a take is loud, at x, y (its top
 // left corner), in `ink`.
