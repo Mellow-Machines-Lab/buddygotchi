@@ -116,12 +116,14 @@ evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 Nothing, unless you add a Jev key. With one, each time Boop thinks, it
 sends TypeSafe a short text: what's been happening, in lines like
 `claude started turn 1 on "landing".`, and Boop's personality and mood.
-Your prompts don't: Boop reads each one on your Mac with Apple
-Intelligence, after taking out anything that looks like a key or a
-password, and sends only what it made of it (a fix, frustrated, in a
-sentence) and up to three short phrases of yours, such as "still
-broken". Two things in your own words go, each cut to 300 characters:
-the agent's last message, and what you say to Boop when you hold its
+Your prompts don't: Boop reads each one on your Mac, after taking out
+anything that looks like a key or a password, and sends only what it
+made of it (a fix, frustrated, in a sentence) and up to three short
+phrases of yours, such as "still broken". On macOS 26 with Apple
+Intelligence on, Apple Intelligence reads it; otherwise Boop only
+counts it (how long it is, whether you said Boop's name, a "please").
+Two things in your own words go, each cut to 300 characters: the
+agent's last message, and what you say to Boop when you hold its
 button. Your files, commands and tool output never do.
 
 ## Uninstall

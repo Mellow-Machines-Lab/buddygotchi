@@ -405,6 +405,20 @@ final class EvalTests: XCTestCase {
         }
     }
 
+    /// A demo's sign is one the eval offers: the captions that fit the
+    /// calendar at the step's time, a deploy on a Friday's included.
+    func testADemosSignKeepsToTheCalendar() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("sign-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("s.json")
+        try #"{"name":"n","case":"c","why":"w","start":"2026-10-30T09:00","steps":[{"event":"turn started","at":"0s","prompt":"ship it","reading":{"kind":"deploy"},"expect":{"sign":"friday"}}]}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+        let signs = TaggedLine.parse("- [deploy friday] on a FRIDAY?\n- [deploy] ship it?")
+        let script = DemoFromScenario.script(try Scenario(file: file), signs: signs)
+        XCTAssertTrue(script.contains(#""react.sign":"on a FRIDAY?""#), script)
+    }
+
     /// EVALS.md §3: a scenario's `start` sets the virtual clock, in UTC,
     /// which the prompt's heading shows; a step's `brain` answers for the
     /// expect brain ahead of its `expect`.

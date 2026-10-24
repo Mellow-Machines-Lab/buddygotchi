@@ -76,8 +76,11 @@ public enum DemoFromScenario {
                 var brain = ["react.mood": "excited", "react.animation": finish, "react.loops": "once", "say.feeling": "none",
                              "say.about": "start", "say.kind": "word"].merging(wanted) { $1 }
                 if let want = step.expectOrder["sign"], let prompt = step.prompt {
+                    // As the eval offers them: its calendar at the step's time.
                     let reading = PromptReading(prompt: prompt, names: [CharacterPack.active.name], labels: step.labels)
-                    let captions = Signs.offered(signs, reading: reading, calendar: [])
+                    let at = (scenario.start ?? Replay.defaultStart) + step.atMs
+                    let calendar = Occasions.tags(at: at, hatched: scenario.hatched, time: LocalTime(timeZone: TimeZone(identifier: "UTC")!))
+                    let captions = Signs.offered(signs, reading: reading, calendar: calendar)
                     brain[Signs.questionKey] = captions.first { Scenario.Expectation.sign(want, says: $0) }
                 }
                 let mood = brain.removeValue(forKey: MoodOutput.outputName)

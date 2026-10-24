@@ -321,11 +321,13 @@ public final class TranscriptView {
     }
 
     /// The buddies when there are several (`Buddy`), for whose lines are
-    /// whose: the pipeline sets them, before the first event.
+    /// whose, else the only one's name: the pipeline sets them, before the
+    /// first event.
     var buddies: [Buddy] = []
+    var onlyName = CharacterPack.active.name
 
-    /// The name of the buddy `e` is about, else the character's.
-    func name(_ e: Event) -> String { buddies.first { $0.id == e.buddy }?.name ?? CharacterPack.active.name }
+    /// The name of the buddy `e` is about, else the only one's.
+    func name(_ e: Event) -> String { buddies.first { $0.id == e.buddy }?.name ?? onlyName }
 
     /// With several buddies, an agent's line, or "needs you"'s, says whose
     /// agent it is.
@@ -572,7 +574,7 @@ public final class TranscriptView {
         guard let reading = PromptReading(facts: e.data) else { return nil }
         noteActivity(e.at)
         let t = Self.about(e, facts: nil).flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
-        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine), name: name(e)),
+        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine)),
                     notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
                     facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
     }
@@ -909,9 +911,10 @@ public enum EventLine {
 
     /// `You asked claude on "api" for a fix, in a sentence, frustrated, and
     /// said Pip's name.`: your prompt's reading, never its words; with no
-    /// labeler, only its length and the name.
-    public static func asked(_ r: PromptReading, agent: String, thread: String?, name: String) -> String {
-        let parts = [r.kind?.words, r.length.words, r.tone?.words, r.named ? "and said \(name)'s name" : nil]
+    /// labeler, only its length and the names said (`Pip's and Bo's names`).
+    public static func asked(_ r: PromptReading, agent: String, thread: String?) -> String {
+        let named = r.named.isEmpty ? nil : "and said " + listed(r.named.map { "\($0)'s" }) + (r.named.count > 1 ? " names" : " name")
+        let parts = [r.kind?.words, r.length.words, r.tone?.words, named]
         let head = "You asked \(agent)" + (thread.map { " on \($0)" } ?? "")
         return head + " " + parts.compactMap { $0 }.joined(separator: ", ") + "."
     }
@@ -959,9 +962,11 @@ public enum EventLine {
     }
 
     /// `Pixel and Boop`: every buddy, for what you said to them all.
-    static func everyone(_ buddies: [Buddy]) -> String {
-        let names = buddies.map(\.name)
-        return names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names.last!
+    static func everyone(_ buddies: [Buddy]) -> String { listed(buddies.map(\.name)) }
+
+    /// `a`, `a and b`, `a, b and c`.
+    static func listed(_ words: [String]) -> String {
+        words.count < 2 ? words.joined() : words.dropLast().joined(separator: ", ") + " and " + words.last!
     }
 
     /// `You poked Boop.`, or `You poked Boop 4 times in a row.`; `while it

@@ -92,6 +92,8 @@ public final class DemoPlayer: @unchecked Sendable {
     /// each by its `agent_id`, the first sent the first back.
     var reviewers: [String: [String]] = [:]
     var calls = 0
+    /// The runtime's labeler before the script's went in front of it.
+    var labelerBefore: (any PromptLabeler)?
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
          heardStep: @escaping @Sendable (DemoScript.Step, String) -> Void, done: @escaping @Sendable () -> Void) {
@@ -111,9 +113,9 @@ public final class DemoPlayer: @unchecked Sendable {
             guard case .agent(let a) = step.what, let text = a.text, let reading = a.reading else { return nil }
             return (Scrubber.scrub(text), reading)
         }, uniquingKeysWith: { first, _ in first })
-        // In front of the app's own labeler, not another demo's.
-        let own = (runtime.labeler as? ScriptLabeler)?.otherwise ?? runtime.labeler
-        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: own) }
+        // In front of the app's own labeler until the demo is over.
+        labelerBefore = runtime.labeler
+        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: labelerBefore) }
         if !live {
             for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
                 send("SessionStart", buddy: buddy) { $0.source = "startup" }
@@ -142,6 +144,7 @@ public final class DemoPlayer: @unchecked Sendable {
             later(Runtime.demoTail) { [self] in
                 runtime.options.log("demo: over")
                 runtime.demoHeard = nil
+                runtime.labeler = labelerBefore
                 done()
             }
             return

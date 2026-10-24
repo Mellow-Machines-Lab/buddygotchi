@@ -9,21 +9,32 @@ public protocol PromptLabeler: Sendable {
 
 /// Apple Intelligence's on-device model, so the prompt never leaves the
 /// Mac. The model is macOS 26's; Boop runs from macOS 15, where there's
-/// no labeler (`ifAvailable` is nil), as on a Mac without Apple
-/// Intelligence. It answers in three plain lines, which its permissive guardrails
-/// allow where a structured answer would be refused for a word like
-/// "kill" or "nuke"; anything off the lists is dropped. Greedy, so the same
-/// prompt reads the same way.
+/// no labeler (`onThisMac` is nil). It asks whether Apple Intelligence is
+/// on at every prompt, so turning it on later works, and labels nothing
+/// while it's off, or on an Intel Mac. It answers in three plain lines,
+/// which its permissive guardrails allow where a structured answer would
+/// be refused for a word like "kill" or "nuke"; anything off the lists is
+/// dropped. Greedy, so the same prompt reads the same way.
 public struct AppleIntelligenceLabeler: PromptLabeler {
     /// How long a reading may take before the counted one goes alone.
     public static let timeout: Duration = .seconds(3)
 
-    /// The labeler, or nil where Apple Intelligence isn't available (an
-    /// older or Intel Mac, or the feature turned off).
-    public static func ifAvailable() -> AppleIntelligenceLabeler? {
+    /// The labeler on macOS 26, nil before it.
+    public static var onThisMac: AppleIntelligenceLabeler? {
         guard #available(macOS 26.0, *) else { return nil }
-        return OnDevice.model.availability == .available ? AppleIntelligenceLabeler() : nil
+        return AppleIntelligenceLabeler()
     }
+
+    /// Whether Apple Intelligence can label now: macOS 26, an Apple
+    /// silicon Mac, and the feature turned on.
+    public static var isAvailable: Bool {
+        guard #available(macOS 26.0, *) else { return false }
+        return OnDevice.model.availability == .available
+    }
+
+    /// The labeler, or nil where Apple Intelligence isn't available now:
+    /// for the tools, which say so.
+    public static func ifAvailable() -> AppleIntelligenceLabeler? { isAvailable ? AppleIntelligenceLabeler() : nil }
 
     /// The model, where macOS has it.
     @available(macOS 26.0, *)
@@ -80,23 +91,29 @@ public struct AppleIntelligenceLabeler: PromptLabeler {
         """
 
     /// The model's answer, or nil at `timeout`, whichever comes first: the
-    /// wait ends then even if the model takes its time to stop.
+    /// wait ends then even if the model takes its time to stop. Nil at
+    /// once while Apple Intelligence is off.
     public func label(_ text: String) async -> PromptReading.Labels? {
-        guard #available(macOS 26.0, *) else { return nil }
+        guard #available(macOS 26.0, *), Self.isAvailable else { return nil }
         return await Self.within(Self.timeout) {
             await OnDevice.respond(text).map(Self.parse)
         }
     }
 
-    /// `work`'s answer, or nil at `timeout`, whichever comes first.
+    /// `work`'s answer, or nil at `timeout`, whichever comes first: the
+    /// one cancels the other.
     static func within(_ timeout: Duration, _ work: @escaping @Sendable () async -> PromptReading.Labels?) async -> PromptReading.Labels? {
         await withCheckedContinuation { (done: CheckedContinuation<PromptReading.Labels?, Never>) in
             let first = First(done)
-            let task = Task { first.resume(await work()) }
-            Task {
-                try? await Task.sleep(for: timeout)
+            let task = Task { await work() }
+            let timer = Task {
+                guard (try? await Task.sleep(for: timeout)) != nil else { return }
                 task.cancel()
                 first.resume(nil)
+            }
+            Task {
+                first.resume(await task.value)
+                timer.cancel()
             }
         }
     }

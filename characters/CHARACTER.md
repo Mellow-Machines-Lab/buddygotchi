@@ -346,13 +346,17 @@ What the brain reads, in plain Markdown:
   sign when it reacts to your prompt (`Signs`, the `react.sign`
   question, asked only when NOW is a prompt's reading). Each is
   `- [tags] words`: the tags (optional) the reading must all have (its
-  kind, tone and length, `named`, `words`, and the calendar's), and
+  kind, tone and length, `named` when you said this buddy's own name,
+  `words`, and the calendar's), and
   `{words}` (or `{WORDS}`, in capitals) is filled in once for each of
   your phrases, so your own words come back in the creature's way. Your
-  words come first, then tagged captions, then the rest: at most six,
-  each at most 18 printable ASCII characters. The board draws the one
-  picked on a sign (the `do`'s `sign`). A pack without the file holds up
-  no signs.
+  words come first, at most three of them so a tagged caption still has
+  room, then tagged captions, then the rest: at most six, each at most
+  18 characters. A line's own words are printable ASCII; your phrases
+  are kept as the board's fonts draw them (curly quotes made straight,
+  accents precomposed), and one with anything the fonts lack, such as
+  Chinese or an emoji, is dropped. The board draws the one picked on a
+  sign (the `do`'s `sign`). A pack without the file holds up no signs.
 
 Each file has a budget in tokens, the same for every pack
 (`Steering.Budget`, in `app/BoopKit/Harness/Steering.swift`). The app

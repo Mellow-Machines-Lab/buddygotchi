@@ -52,11 +52,14 @@ final class PromptTests: XCTestCase {
     }
 
     /// Pins `AppleIntelligenceLabeler.timeout`'s race: the wait ends at the
-    /// timeout even when the work ignores being cancelled.
+    /// timeout even when the work ignores being cancelled, and the work is
+    /// cancelled then.
     func testTheLabelerGivesUpAtItsTimeout() async {
         let started = ContinuousClock.now
+        let cancelled = Lines()
         let labels = await AppleIntelligenceLabeler.within(.milliseconds(100)) {
             for _ in 0..<50 { try? await Task.sleep(for: .milliseconds(100)) }  // carries on through cancelling
+            if Task.isCancelled { cancelled.add("cancelled") }
             return .init(kind: .fix)
         }
         XCTAssertNil(labels)
@@ -64,6 +67,22 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(AppleIntelligenceLabeler.timeout, .seconds(3))
         let quick = await AppleIntelligenceLabeler.within(.seconds(2)) { .init(kind: .docs) }
         XCTAssertEqual(quick?.kind, .docs, "an answer in time is kept")
+        eventually("the slow work was cancelled") { cancelled.all == ["cancelled"] }
+    }
+
+    /// The app's labeler is there on macOS 26 whether or not Apple
+    /// Intelligence is on at launch, and asks at every prompt: while it's
+    /// off, it labels nothing, at once.
+    func testTheLabelerAsksAtEveryPrompt() async {
+        if #available(macOS 26.0, *) {
+            XCTAssertNotNil(AppleIntelligenceLabeler.onThisMac)
+        } else {
+            XCTAssertNil(AppleIntelligenceLabeler.onThisMac)
+        }
+        XCTAssertEqual(AppleIntelligenceLabeler.ifAvailable() != nil, AppleIntelligenceLabeler.isAvailable, "the tools' is there only while it's on")
+        guard !AppleIntelligenceLabeler.isAvailable else { return }
+        let labels = await AppleIntelligenceLabeler().label("fix the login redirect")
+        XCTAssertNil(labels)
     }
 
     /// Pins `PromptReading.Length.bounds`: a few words under 25 characters,
@@ -76,12 +95,13 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(PromptReading.Length("   continue \n"), .words, "the spaces around it don't count")
     }
 
-    /// Counted with no model: the buddy's name as a word, in any case, and
-    /// the tone the words plainly show; capitals are shouting.
+    /// Counted with no model: the buddies' names said as words, in any
+    /// case, and the tone the words plainly show; capitals are shouting.
     func testCountingSeesTheNameAndThePlainTone() {
-        func read(_ text: String) -> PromptReading { PromptReading(counting: text, names: ["Pip"]) }
-        XCTAssertTrue(read("ok pip, watch this").named)
-        XCTAssertFalse(read("pipe the logs to a file").named, "a word, not part of one")
+        func read(_ text: String) -> PromptReading { PromptReading(counting: text, names: ["Pip", "Bo"]) }
+        XCTAssertEqual(read("ok pip, watch this").named, ["Pip"], "the name as the buddy's called")
+        XCTAssertEqual(read("pipe the logs to a file").named, [], "a word, not part of one")
+        XCTAssertEqual(read("bo and PIP, both of you").named, ["Pip", "Bo"])
         XCTAssertEqual(read("WHY IS THE LOGIN STILL BROKEN").tone, .shouting)
         XCTAssertNil(read("fix the API").tone, "a capitalised word isn't shouting")
         XCTAssertEqual(read("please add a retry").tone, .polite)
@@ -110,13 +130,57 @@ final class PromptTests: XCTestCase {
         var plain = PromptReading(counting: "ship it to prod", names: [])
         plain.label(.init(kind: .deploy, tone: .shouting), in: "ship it to prod")
         XCTAssertNil(plain.tone, "shouting is counted, never heard")
+        XCTAssertEqual(PromptReading.maxPhrase, Signs.maxLength, "a phrase is what fits on a sign")
+    }
+
+    /// The counted cue is a phrase only while its tone is the reading's:
+    /// a "please" under a frustrated tone the labeler heard would put
+    /// "please :(" on a sign.
+    func testACueStaysOnlyWithItsTone() {
+        let text = "please, it's still broken"
+        func labelled(_ labels: PromptReading.Labels) -> PromptReading {
+            var reading = PromptReading(counting: text, names: [])
+            XCTAssertEqual(reading.phrases, ["please"])
+            reading.label(labels, in: text)
+            return reading
+        }
+        let frustrated = labelled(.init(tone: .frustrated, phrases: ["still broken"]))
+        XCTAssertEqual(frustrated.tone, .frustrated)
+        XCTAssertEqual(frustrated.phrases, ["still broken"], "the labeler's tone won: no cue")
+        XCTAssertEqual(labelled(.init(tone: .polite, phrases: ["still broken"])).phrases, ["still broken", "please"], "the same tone")
+        XCTAssertEqual(labelled(.init(tone: .calm)).phrases, ["please"], "the counted tone stands over calm, and its cue")
+        XCTAssertEqual(labelled(.init()).phrases, ["please"])
+    }
+
+    /// A phrase is kept as the board's sign font draws it
+    /// (`Signs.drawn`): an accent typed as its own mark joins its letter,
+    /// curly quotes and dashes go plain, and a phrase with anything else
+    /// the board would draw as "?" is dropped, the cue's included.
+    func testPhrasesAreWhatTheBoardDraws() {
+        XCTAssertEqual(Signs.drawn("“so” — it’s fine…"), "\"so\" - it's fine...")
+        XCTAssertEqual(Signs.drawn("cafe\u{301} · déjà vu"), "café · déjà vu")
+        XCTAssertEqual(Signs.drawn("cafe\u{301}")?.utf8.count, 5, "é precomposed, which the board folds to e, not e and a ?")
+        XCTAssertNil(Signs.drawn("还是不行"))
+        XCTAssertNil(Signs.drawn("ok 🙃"))
+        XCTAssertNil(Signs.drawn("q\u{301}"), "a mark with no letter to join")
+        func read(_ text: String, _ phrases: [String]) -> [String] {
+            var reading = PromptReading(counting: text, names: [])
+            reading.label(.init(tone: .frustrated, phrases: phrases), in: text)
+            return reading.phrases
+        }
+        XCTAssertEqual(read("登录还是不行, still broken", ["登录还是不行", "still broken"]), ["still broken"], "Chinese doesn't draw")
+        XCTAssertEqual(read("it’s broken again", ["it’s broken"]), ["it's broken"], "a curly apostrophe")
+        XCTAssertEqual(read("the cafe\u{301} page is broken", ["café page"]).map(\.utf8.count), [10], "a decomposed accent, precomposed")
+        XCTAssertEqual(PromptReading(counting: "🙃 try again", names: []).tone, .playful)
+        XCTAssertEqual(PromptReading(counting: "🙃 try again", names: []).phrases, [], "a cue the board can't draw is no phrase")
     }
 
     /// The reading round-trips through an event's facts, and the labeler's
     /// three lines parse, anything off a list dropped.
     func testTheReadingAsFactsAndTheLabelersReply() {
-        let reading = PromptReading(length: .sentence, named: true, kind: .cleanup, tone: .playful, phrases: ["bye bye"])
+        let reading = PromptReading(length: .sentence, named: ["Pip"], kind: .cleanup, tone: .playful, phrases: ["bye bye"])
         XCTAssertEqual(PromptReading(facts: reading.facts), reading)
+        XCTAssertEqual(reading.facts["named"], .array(["Pip"]), "which names, as the buddies are called")
         XCTAssertNil(PromptReading(facts: ["kind": "fix"]), "not a reading without its length")
         XCTAssertEqual(AppleIntelligenceLabeler.parse("kind: fix\ntone:  Frustrated \nphrases: still broken | keep happening"),
                        .init(kind: .fix, tone: .frustrated, phrases: ["still broken", "keep happening"]))
@@ -137,9 +201,11 @@ final class PromptTests: XCTestCase {
         rig.send(.turnEnd)
         rig.wait(5000)
         XCTAssertEqual(woke(rig.send(.turnStart)), [#"claude started turn 2 on "landing"."#], "no prompt: the turn start wakes it")
-        XCTAssertEqual(EventLine.asked(PromptReading(length: .essay, named: true, kind: .fix, tone: .frustrated), agent: "codex",
-                                       thread: #""api""#, name: "Pip"),
+        XCTAssertEqual(EventLine.asked(PromptReading(length: .essay, named: ["Pip"], kind: .fix, tone: .frustrated), agent: "codex",
+                                       thread: #""api""#),
                        #"You asked codex on "api" for a fix, at length, frustrated, and said Pip's name."#)
+        XCTAssertEqual(EventLine.asked(PromptReading(length: .words, named: ["Pip", "Bo"]), agent: "codex", thread: nil),
+                       "You asked codex in a few words, and said Pip's and Bo's names.")
         XCTAssertEqual(EventLine.yourWords(["still broken", "please"]), #"Your words: "still broken", "please"."#)
         XCTAssertNil(EventLine.yourWords([]))
     }
@@ -150,7 +216,7 @@ final class PromptTests: XCTestCase {
         let home = DispatchQueue(label: "test.home")
         let got = Lines()
         PromptIntake.read("hey pip", names: ["Pip"], labeler: nil, home: home) { r in got.add("\(r.length) \(r.named)") }
-        XCTAssertEqual(got.all, ["words true"], "at once, with no labeler")
+        XCTAssertEqual(got.all, [#"words ["Pip"]"#], "at once, with no labeler")
         let seen = Seen()
         PromptIntake.read("still broken, key sk-proj-8f2aQz91kLmN0pQrStUv", names: [], labeler: seen, home: home) { r in
             got.add("\(r.kind!) \(r.phrases)")
