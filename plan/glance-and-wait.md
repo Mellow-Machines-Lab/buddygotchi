@@ -20,12 +20,13 @@ face-down) are the ones that vanish.
 - **The agent's process.** Each hook says which process the agent is
   (its pid and start time). AgentHooks checks the silent ones every
   5 s: running means still waiting, however long; gone means the session
-  ended (a closed terminal, a crash). The 10-minute net stays only for
-  hooks that don't say.
+  ended (a closed terminal, a crash), which Boop's core records in the
+  transcript, so the brain and a later launch hear of it from there.
+  The 10-minute net stays only for hooks that don't say.
 - **The escape hatch on the body.** Hold a finger on the screen for 1 s
   while the sign is up: Boop drops it. It hides the request on Boop
-  only and never answers the agent; the session stays first in BOOT's
-  line, and a new request from it shows again. The popover's row has
+  only and never answers the agent; the session stays in BOOT's line,
+  after the requests that show, and a new request from it shows again. The popover's row has
   the same Dismiss.
 
 ## 2. Opening the thread where you work
@@ -62,8 +63,8 @@ for an MCP tool, minis carrying boxes for helpers.
 
 **The to-do list.** Claude's tasks (`TaskCreate`, `TaskUpdate`, the
 older `TodoWrite`) and Codex's `update_plan` give done and total. The
-line under the face shows `3/7`; later, a ladder Boop climbs. The item
-in progress can go up on a sign, read on the Mac like your prompt.
+line under the face shows `3/7`; later, a ladder Boop climbs. Only the
+counts leave the agent: no item's words.
 
 **Growth.** Every stage reached is a tag (`sprout`, `buddy`, `pal`,
 `chonk`, `legend`), so a design for Pal shows from Pal on: a plant that

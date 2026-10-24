@@ -81,6 +81,17 @@ public struct StateSnapshot: Equatable, Sendable {
             self.done = done
             self.total = total
         }
+
+        /// As the board draws it, and demos and evals write it: `3/7`.
+        public var text: String { "\(done)/\(total)" }
+
+        /// A list written `3/7`: done, of a total of 1 or more.
+        public init?(text: String) {
+            let parts = text.split(separator: "/", omittingEmptySubsequences: false)
+            guard parts.count == 2, let done = Int(parts[0]), let total = Int(parts[1]), total >= 1, (0...total).contains(done)
+            else { return nil }
+            self.init(done: done, total: total)
+        }
     }
 
     /// The to-do list of the longest turn working, while nothing needs

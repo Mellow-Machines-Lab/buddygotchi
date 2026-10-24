@@ -227,7 +227,7 @@ public struct DemoScript: Sendable {
                 if a.waits, a.ask == nil { throw Problem(description: "\(here): only a run that asks waits") }
                 a.task = string("task"); a.prompt = string("prompt"); a.summary = string("summary")
                 if let text = string("todos") {
-                    guard kind == .todo, let list = Self.todos(text) else { throw Problem(description: "\(here): only a todo has todos, like 2/4") }
+                    guard kind == .todo, let list = StateSnapshot.Todo(text: text) else { throw Problem(description: "\(here): only a todo has todos, like 2/4") }
                     a.todos = list
                 }
                 a.byReviewer = string("by") == "reviewer"
@@ -294,13 +294,9 @@ public struct DemoScript: Sendable {
         self.start = start
     }
 
-    /// A to-do list's `2/4`, a demo's `todos` and an eval's: done, of a
-    /// total of 1 or more.
-    public static func todos(_ text: String) -> StateSnapshot.Todo? {
-        let parts = text.split(separator: "/", omittingEmptySubsequences: false)
-        guard parts.count == 2, let done = Int(parts[0]), let total = Int(parts[1]), total >= 1, (0...total).contains(done) else { return nil }
-        return StateSnapshot.Todo(done: done, total: total)
-    }
+    /// How long a `hold` keeps its finger on the sign, in seconds: past
+    /// the board's hold (TouchGesture::kHoldMs), so the board sees one.
+    public static let holdSeconds = 1.2
 
     /// `2026-10-31T09:00`, a demo's `start` and an eval's, in `timeZone`
     /// (this Mac's for a demo), as ms since 1970.
@@ -407,12 +403,13 @@ extension DemoScript.Step {
         return DemoScript.Cause(kind: found?.kind ?? "note", text: note)
     }
 
-    /// A wait's length, in words: `8 minutes`, `1 hour 30 minutes`.
-    static func minutes(_ ms: Int64) -> String {
+    /// A length of time, in words, to the nearest minute from a minute on:
+    /// `45 seconds`, `8 minutes`, `1 hour 30 minutes`.
+    public static func minutes(_ ms: Int64) -> String {
         let m = Int((Double(ms) / 60_000).rounded())
         let (h, r) = (m / 60, m % 60)
         func n(_ count: Int, _ unit: String) -> String { "\(count) \(unit)\(count == 1 ? "" : "s")" }
-        if m < 1 { return n(Int(ms / 1000), "second") }
+        if ms < 60_000 { return n(Int(ms / 1000), "second") }
         return h == 0 ? n(r, "minute") : r == 0 ? n(h, "hour") : "\(n(h, "hour")) \(n(r, "minute"))"
     }
 }

@@ -37,7 +37,10 @@ time, and hands every view event that wakes the brain to the harness as
 it's made, straight through without MellowHarness's loop (`Harness.respond`,
 with `loop` off). The
 clock starts at a fixed
-Wednesday 14:00 UTC and stands still while Jev answers.
+Wednesday 14:00 UTC and stands still while Jev answers. Every hook
+names the agent's process, as a real agent's hooks do, and the
+scenario's agents run all through it, so a request waits however long
+a step's `at` jumps.
 
 | Step | Fed to the pipeline as (the transcript's raw events) |
 | --- | --- |
@@ -241,7 +244,6 @@ file-name order:
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
-| `steps[].process` | `running`: the step's hooks say which process the agent is, one that runs all through the scenario (the eval's own), as a real agent's hooks do. Its request then waits as long as the agent does; one from a hook that doesn't say clears after 10 silent minutes |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
 | `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |

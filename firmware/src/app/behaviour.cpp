@@ -552,10 +552,10 @@ render::Strip Behaviour::stripAt(uint32_t t) const {
   s.busy = model_.busy;
   s.idle = model_.idle;
   s.helpers = model_.helpers;
-  if (model_.base == render::SceneState::kWorking && !model_.attn) {
-    s.todoDone = model_.todoDone;
-    s.todoTotal = model_.todoTotal;
-  }
+  // The Mac sends a to-do list only while an agent works and nothing
+  // needs you.
+  s.todoDone = model_.todoDone;
+  s.todoTotal = model_.todoTotal;
   if (model_.attn) s.agent = model_.agent, s.project = model_.project, s.name = model_.name, s.more = model_.more;
   if (finishOn(t)) {
     s.doneAgent = reaction_.agent, s.doneThread = reaction_.thread, s.doneOutcome = reaction_.outcome;
