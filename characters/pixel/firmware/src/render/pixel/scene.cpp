@@ -228,15 +228,15 @@ uint32_t loopMs(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s
 bool rigFaced(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].face != kNone; }
 
 namespace {
-// A face track's key k: dx, dy, ex, ey and shut.
-const int8_t* faceKey(const Track& tr, int k) { return &kValues[tr.val0 + 5 * uint32_t(k)]; }
+// A face track's key k: dx, dy, ex, ey, shut, mx and my.
+const int8_t* faceKey(const Track& tr, int k) { return &kValues[tr.val0 + 7 * uint32_t(k)]; }
 }  // namespace
 
 FaceMove faceMove(const SceneShow& s) {
   const uint16_t face = scene(s).face;
   if (face == kNone) return {};
   const int8_t* v = faceKey(kTracks[face], step(kTracks[face], s.t));
-  return {v[0], v[1], v[2], v[3], v[4] != 0};
+  return {v[0], v[1], v[2], v[3], v[4] != 0, v[5], v[6]};
 }
 
 uint8_t sceneInk(int color) { return color > 0 && color < kColorCount ? toCanvas(color) : kBlack; }

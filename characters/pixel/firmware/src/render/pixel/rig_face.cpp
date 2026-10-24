@@ -215,6 +215,7 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move, rig::Anch
   for (int i = 0; i < mouth.n; ++i) {
     Placed p = morph(mouth.part[i], mouth.other[i], move.shut ? faces::kPartShutMouth : faces::kPartMouth, mouth.q[i]);
     p.sy = int16_t(scaled(p.sy, open));
+    p.x = int16_t(p.x + move.mx), p.y = int16_t(p.y + move.my);
     p.dither = mouth.dither[i];
     if (!talking) {
       add(p);

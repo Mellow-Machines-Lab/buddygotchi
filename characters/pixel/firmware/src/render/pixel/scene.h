@@ -83,16 +83,17 @@ int sceneOf(Mood m, SceneState s, int variant = 0);
 // loopMs): what a moment's loops count.
 uint32_t loopMs(Mood m, SceneState s, int variant = 0);
 // Whether that design's face is its mood's resting face moved, under
-// decorations of its own (a sparkle, a falling tear), as facegen found at
-// every step: the rig face draws it in the design's place
-// (render/pixel/rig_face.h), as drawn (idle's plain face, near enough).
-// And where the face is, in px from where the mood's first idle has it, at
-// the show's moment: its move, and its eyes' more; and whether it's shut,
-// its eyes and its mouth those of the mood's first idle's shut face.
+// decorations of its own (a sparkle, a falling tear), at every step, as the
+// animation bank tags it: the rig face draws it in the design's place
+// (render/pixel/rig_face.h), as drawn, which facegen checks. And where the
+// face is, in px from where the mood's first idle has it, at the show's
+// moment: its move, and its eyes' and its mouth's more; and whether it's
+// shut, its eyes and its mouth those of the mood's first idle's shut face.
 bool rigFaced(Mood m, SceneState s, int variant = 0);
 struct FaceMove {
   int dx = 0, dy = 0, ex = 0, ey = 0;
   bool shut = false;
+  int mx = 0, my = 0;
 };
 FaceMove faceMove(const SceneShow& s);
 // `faceless`, the face that shows is left out but for its decorations, for

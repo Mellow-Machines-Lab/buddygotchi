@@ -66,8 +66,8 @@ class PixelFace final : public Face {
   int fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const;
   bool lookFits(Mood m, SceneState s, int v) const { return fits(m, s, v, context_.when, context_.lookMs); }
   // Whether the rig face draws mood m's state s, variation v: a design
-  // whose face is its mood's resting face moved (rigFaced: idle's plain
-  // face, and every design facegen finds draws it exactly), in a mood with
+  // whose face is its mood's resting face moved (rigFaced: as the bank
+  // tags it, at every step, which the rig face draws exactly), in a mood with
   // a pose (RigFace::pose), in the design's place. The baked designs draw
   // the rest.
   bool rigDraws(Mood m, SceneState s, int v) const { return RigFace::pose(m) && rigFaced(m, s, v); }

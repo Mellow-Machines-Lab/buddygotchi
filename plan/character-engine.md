@@ -13,11 +13,11 @@ clip or a finger moves (`squash`, `lean`, `lift`, the eyes' `eyeOpen`,
 `eyeSize` and gaze, `mouthOpen`), a mood's two styles, clips and the
 looks' clips, mixed by springs; its schema is
 [CHARACTER.md](../characters/CHARACTER.md) §15. Pixel's face draws from it
-in every design whose face is its mood's resting face, open or shut, at
-every step as the design draws it, which facegen and the board's rig
-face test both check; the rest stay baked. Every switch of Pixel's
-designs, into and out of the needs-you screen too, dissolves over the
-rig's 200 ms with no blink, one mid-way through another from the
+in every design the animation bank tags as its mood's resting face, open
+or shut, at every step, exactly as the design draws it, which facegen and
+the board's rig face test both check; the rest stay baked. Every switch of
+Pixel's designs, into and out of the needs-you screen too, dissolves over
+the rig's 200 ms with no blink, one mid-way through another from the
 picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
 gets no other blink. The gel stays on its own engine, the JavaScript
@@ -479,6 +479,53 @@ frame's changed pixels): every transition within a few percent of
 before, the reactions now playing without the look's clip (back to idle
 2107 to 2028, the notice at work 4186 to 4238, the finish at work 16524
 to 16296).
+
+### The bank tags the resting face (2026-10-24)
+
+Whether the rig face draws one of Pixel's designs is now the design's own
+say, not facegen's search. The animation bank tags the resting face's
+parts where a design places them (`data-part` `eye-l`, `eye-r`,
+`shut-l`, `shut-r`, `mouth` or `cheeks`, and `data-at`, where it's drawn
+from the resting face's place), and the decorations on it
+(`data-part="decor"`); a face drawn some other way is untagged
+([Pixel's design guide](../characters/pixel/design/README.md), The
+resting face's tags). Facegen reads the face track off the tags, and
+fails unless the rig face then draws every tagged design pixel for pixel
+at every step; its search (`landing`, the reach constants, the eighth it
+let idle's plain face miss, `PLAIN_IDLES`) is gone, and so is the rig
+face test's "near enough". Where it differs from before, and why:
+
+- **The mouth moves on its own**, a face track's sixth and seventh value
+  (`FaceMove`'s `mx`, `my`), so sad's trembling lip is drawn, not lost:
+  sad's idle, its third working look and its needs-you looks are the
+  rig face's.
+- **585 of the 1214 designs became 693.** Engaged's flip-books (62: its
+  brows, which hold still while its eyes glance, are decorations),
+  grumpy's (32: its anger mark is a decoration, so its first pack's and
+  newer states' looks are drawn), the first pack's needs-you looks (12
+  more: its face sits 24 px lower, past the search's reach) and sad's (5) came to
+  the rig face. Irritated's first two idles and its third tap spam went
+  back to baked: its twitch reshapes an eye (the third's curtains hid it
+  from the search).
+- **The parts are cut from the tags**, so a decoration at rest is no
+  longer part of an eye: grumpy's right eye loses its anger mark and
+  closes onto its own line, sad's eyes lose their corner tears, and
+  engaged's lose its brows.
+- **The bank's older designs changed bytes, not pixels.** Their SVGs
+  gained the tags (each eye drawn whole, then the next), so
+  `qa/v3-fingerprints.json` was re-captured; facegen drew every design at
+  every step the same before and after, and Chrome agrees.
+- **faces.h folds the groups only facegen needs** (a part's, a wrapper's)
+  into the group drawn before them: 17928 groups where there were 19130,
+  about 845 KB from 874, and the CYD's firmware 30 KB smaller (66.4% of
+  its flash, from 67.3%). Facegen takes about 26 to 31 s with no search,
+  from 36 to 47 s on the same busy Mac, its Chrome check as before.
+- **Measured** (internal/tools/fluid, `transitions-pixel.jsonl`, largest
+  frame's changed pixels): the change to sad 1746 to 1591, its face now
+  as its design draws it; every other transition the same, frame for
+  frame. One golden changed: grumpy at work (`expression/working-grumpy`),
+  its face a pixel off the baked one as the working look's clip moves
+  the rig face.
 
 ## Risks
 

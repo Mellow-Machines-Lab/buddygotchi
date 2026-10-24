@@ -56,8 +56,8 @@ const Placed* find(const RigFrame& f, int kind, int nth = 0) {
 }  // namespace
 
 // At rest in each drawn mood, the rig face draws that mood's own parts where
-// its art has them, whole: its idle design's face at its start, pixel for
-// pixel, for every mood whose first idle is the face alone at its start.
+// its art has them, whole: in its first idle's place at its start, with that
+// design's decorations over it, the design as drawn, pixel for pixel.
 static void test_each_mood_rests_on_its_own_art() {
   for (int d = 0; d < faces::kMoodCount; ++d) {
     const Mood m = pixelMood(d);
@@ -75,16 +75,12 @@ static void test_each_mood_rests_on_its_own_art() {
       TEST_ASSERT_EQUAL_INT(1024, p.sy);
       TEST_ASSERT_TRUE(p.dither.all());
     }
-  }
-  // Happy's and sad's first idles start on the face alone: the rig face's
-  // pixels are theirs.
-  for (const Mood m : {Mood::kHappy, Mood::kSad}) {
     Buf rig, baked;
-    drawRig(rig.c, at(m).frame(0, false));
     SceneShow s;
     s.mood = m, s.state = SceneState::kIdle;
+    drawRig(rig.c, f, sceneFrame(s, true));
     drawScene(baked.c, s);
-    TEST_ASSERT_EQUAL_MEMORY(baked.px.data(), rig.px.data(), baked.px.size());
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(baked.px.data(), rig.px.data(), baked.px.size(), faces::kMoodNames[d]);
   }
 }
 
@@ -198,13 +194,12 @@ static std::vector<uint32_t> steps(const SceneShow& show) {
 // A design whose face is its mood's resting face (facegen's rig_face), at
 // every step of its loop: drawn with the rig face at rest in its place,
 // moved and shut as the design has it, it's the design as drawn, pixel for
-// pixel, its desk and its decorations included, shut eyes and all; idle's
-// first two variations, the plain face, near enough, as facegen takes them
-// (of the rig face's pixels, all but an eighth land on the design's). The
-// design without its face draws none of the face's eyes. And a design that
-// shuts its face blinks on its own, so the device's blinks leave it be.
+// pixel, its desk and its decorations included, shut eyes, a mouth that
+// moves on its own (sad's trembling lip) and all. The design without its
+// face draws none of the face's eyes. And a design that shuts its face
+// blinks on its own, so the device's blinks leave it be.
 static void test_a_design_with_the_resting_face_draws_as_drawn() {
-  int designs = 0, shut = 0, frames = 0;
+  int designs = 0, shut = 0, trembles = 0, frames = 0;
   for (int d = 0; d < faces::kMoodCount; ++d) {
     const Mood m = pixelMood(d);
     for (int s = 0; s < int(SceneState::kCount); ++s) {
@@ -212,35 +207,23 @@ static void test_a_design_with_the_resting_face_draws_as_drawn() {
         if (!rigFaced(m, SceneState(s), v)) continue;
         SceneShow show;
         show.mood = m, show.state = SceneState(s), show.variant = uint8_t(v);
-        const bool exact = !(show.state == SceneState::kIdle && v < 2);
-        bool shuts = false;
+        bool shuts = false, mouth = false;
         for (const uint32_t t : steps(show)) {
           show.t = t;
-          Buf rig, baked, face;
+          Buf rig, baked;
           const FaceMove move = faceMove(show);
-          const RigFrame f = at(m).frame(0, false, {}, move);
-          drawRig(rig.c, f, sceneFrame(show, true));
+          drawRig(rig.c, at(m).frame(0, false, {}, move), sceneFrame(show, true));
           drawScene(baked.c, show);
           char why[96];
           std::snprintf(why, sizeof why, "%s %s %d at %u ms", faces::kMoodNames[d], faces::kStateNames[s], v + 1,
                         unsigned(t));
-          if (exact) {
-            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(baked.px.data(), rig.px.data(), baked.px.size(), why);
-          } else {
-            drawRig(face.c, f);
-            int ink = 0, missed = 0;
-            for (size_t i = 0; i < face.px.size(); ++i) {
-              if (face.px[i] == kBlack) continue;
-              ++ink;
-              missed += rig.px[i] != baked.px[i];
-            }
-            TEST_ASSERT_TRUE_MESSAGE(ink > 0 && missed <= ink / 8, why);
-          }
+          TEST_ASSERT_EQUAL_MEMORY_MESSAGE(baked.px.data(), rig.px.data(), baked.px.size(), why);
           shuts = shuts || move.shut;
+          mouth = mouth || move.mx || move.my;
           ++frames;
         }
         if (shuts) TEST_ASSERT_TRUE(blinksItself(m, show.state, v));
-        shut += shuts;
+        shut += shuts, trembles += mouth;
         show.t = 0;
         Buf baked, around;
         const FaceMove move = faceMove(show);
@@ -256,6 +239,7 @@ static void test_a_design_with_the_resting_face_draws_as_drawn() {
   }
   TEST_ASSERT_TRUE(designs > 500);
   TEST_ASSERT_TRUE(shut > 400);  // most of them blink, or squeeze their eyes shut, on their own
+  TEST_ASSERT_TRUE(trembles > 0);
   TEST_ASSERT_TRUE(frames > designs * 4);
 }
 

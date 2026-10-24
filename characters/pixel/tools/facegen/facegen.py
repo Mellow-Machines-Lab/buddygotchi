@@ -8,8 +8,9 @@ build/, which git ignores, and lists the designs in design/manifest.json. It
 reads each SVG as rectangles and step-wise timings and writes
 the Pixel pack's characters/pixel/firmware/include/faces.h, with the rig face's
 parts (cut_parts: each drawn mood's eyes, mouth and cheeks from its first idle at
-rest) and, for each design whose face is that resting face moved, where it is
-at each step and whether it's shut (rig_faces), plus the frames the firmware
+rest) and, for each design the bank tags as drawing that resting face, moved,
+at every step, where it is at each step and whether it's shut (rig_faces),
+read off the tags (characters/pixel/design/README.md), plus the frames the firmware
 test checks the device's player against (the pack's
 tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
@@ -265,6 +266,7 @@ class Group:
     fill: Track | None = None
     role: str = "none"
     part: str = ""
+    at: tuple[int, int] | None = None  # a resting face's part (TAGGED): where it's drawn from the resting face's
     blink: bool = False  # a flip-book step's face with its eyes shut (V4's data-blink)
     baking: bool = False  # a scaled or turned group, whose descendants are drawn into it
     rects: list[tuple[int, int, int, int, int]] = field(default_factory=list)  # x, y, w, h, colour
@@ -546,6 +548,9 @@ def read_scene(path: Path) -> Scene:
                 g.baking = True
             g.visible = opacity != 0
             g.part = el.get("data-part") or ""
+            if el.get("data-at") is not None:
+                assert g.part in TAGGED, f"{path.name}: data-at on a {g.part or 'group'}, not a resting face's part"
+                g.at = tuple(int(v) for v in el.get("data-at").split(","))
             g.blink = el.get("data-blink") == "1"
             for tr in tracks:
                 assert getattr(g, tr.kind) is None, f"{path.name}: one animation of each kind a group"
@@ -683,6 +688,8 @@ def assign_roles(scene: Scene, name: str) -> None:
             g.role = "face"
         elif g.part == "mouth":
             g.role = "mouth"
+        elif g.part == "decor" or (g.parent >= 0 and groups[g.parent].role == "decor"):
+            g.role = "decor"  # it, and all in it, drawn over the rig face (rig_faces)
     # A blink: two sibling groups, one showing but for a short window in its
     # loop and the other only in that window. The device blinks on its own
     # clock, so it shows the open eyes, or the closed ones while it blinks.
@@ -755,21 +762,23 @@ def place(scene: Scene, t: int, svg_blink: bool, shut: bool) -> tuple[list[tuple
     return offset, shown, fills
 
 
-def render(scene: Scene, t: int, svg_blink: bool = False, within: str | None = None, shut: bool = False,
+def render(scene: Scene, t: int, svg_blink: bool = False, within: str | int | None = None, shut: bool = False,
            blended: set[int] | None = None, face: list[tuple[int, int]] | None = None) -> bytes:
     """The scene colour of every pixel at t ms. The device blinks on its own
     clock, so it shows the open eyes, or the closed ones when `shut`; with
     `svg_blink` the eyes blink on the design's clock, as Chrome draws it.
-    `within` a role ("face", "mouth") leaves out everything outside the
-    groups of that role. With `face`, pixels (offset in the canvas, colour),
-    the face that shows is those pixels, drawn in its place, and then its
-    decorations: as the device draws a design the rig face draws a face in."""
+    `within` a role ("face", "mouth"), or a group, leaves out everything
+    outside the groups of that role, or that group. With `face`, pixels
+    (offset in the canvas, colour), the face that shows is those pixels,
+    drawn in its place, and then its decorations: as the device draws a
+    design the rig face draws a face in."""
     px = bytearray(W * H)
     offset, shown, fills = place(scene, t, svg_blink, shut)
     inside: list[bool] = []
     under: list[int] = []  # the face a group is in, -1 for none
     for i, g in enumerate(scene.groups):
-        inside.append(g.role == within or (g.parent >= 0 and inside[g.parent]))
+        mine = i == within if isinstance(within, int) else g.role == within
+        inside.append(mine or (g.parent >= 0 and inside[g.parent]))
         under.append(i if g.role == "face" else under[g.parent] if g.parent >= 0 else -1)
     cx0, cy0, cw, ch = scene.clip
     for i, g in enumerate(scene.groups):
@@ -804,6 +813,25 @@ def canvas_index(color: int) -> int:
 
 
 # ---- Writing -----------------------------------------------------------------
+
+
+def folded(scene: Scene) -> Scene:
+    """The scene with each group that only holds what's in it (one that
+    neither moves, shows, fills nor has a role: a tagged part, a wrapper)
+    folded into the group drawn just before it, its parent: drawn the same,
+    in fewer groups."""
+    groups: list[Group] = []
+    into: dict[int, int] = {}  # a group → the one it's now in
+    for i, g in enumerate(scene.groups):
+        parent = into.get(g.parent, -1)
+        if (parent >= 0 and parent == len(groups) - 1 and g.role == "none" and g.visible and not (g.tx or g.ty)
+                and not (g.move or g.show or g.fill)):
+            groups[parent] = Group(**{**groups[parent].__dict__, "rects": groups[parent].rects + g.rects})
+            into[i] = parent
+        else:
+            into[i] = len(groups)
+            groups.append(Group(**{**g.__dict__, "parent": parent}))
+    return Scene(groups, scene.clip)
 
 
 def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]],
@@ -841,7 +869,7 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
             tracks.append(f"{{{dur}, {len(kt)}, {key_lists[kt]}, {val_lists[vt]}}}")
         return track_of[(dur, kt, vt)]
 
-    for n, s in enumerate(scenes):
+    for n, s in enumerate(map(folded, scenes)):
         g0 = len(scene_groups)
         for g in s.groups:
             ids = []
@@ -949,9 +977,9 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "};",
         "// A step-wise animation: key k holds from kKeys[key0 + k] ms into each",
         "// run of `dur` ms. Its values, from kValues[val0], are two a key (dx and",
-        "// dy) to move, one a key to show (1 or 0) or to fill (a colour), and five",
+        "// dy) to move, one a key to show (1 or 0) or to fill (a colour), and seven",
         "// a key to place a face the rig face draws (dx and dy, its eyes' ex and ey",
-        "// more, and 1 while its eyes are shut).",
+        "// more, 1 while its eyes are shut, and its mouth's mx and my more).",
         "// Tracks with the same key times, or the same values, share them.",
         "struct Track {",
         "  uint16_t dur, n;",
@@ -1144,13 +1172,72 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
     return json.dumps(data, indent=1) + "\n"
 
 
-# ---- The rig face's parts ------------------------------------------------------
+# ---- The rig face's parts, as the bank tags them -------------------------------
 
+# The parts of a drawn mood's resting face, which the bank tags where a design
+# draws them (data-part, and data-at: where it's drawn, in px from where the
+# resting face draws it, before what moves it): each eye open or shut, its
+# mouth and its cheeks. A face that shows them, with its decorations
+# (data-part="decor") and nothing else, is its mood's resting face, moved.
+TAGGED = {"eye-l", "eye-r", "shut-l", "shut-r", "mouth", "cheeks"}
+# The rig face's part each tag is, in the order it draws them, its eyes open
+# and shut: a shut face's mouth is the shut face's, its cheeks the open one's.
+OPEN = {"eye-l": "eye_l", "eye-r": "eye_r", "cheeks": "cheeks", "mouth": "mouth"}
+SHUT = {"shut-l": "shut_l", "shut-r": "shut_r", "cheeks": "cheeks", "mouth": "shut_mouth"}
 # What the rig face draws a drawn mood with (render/pixel/rig_face.h), in
 # faces::PartKind's order: its eyes open and shut, its mouth, its cheeks,
 # and the mouth of its shut face (a flip-book's blink step has its own).
 PARTS = ["eye_l", "eye_r", "shut_l", "shut_r", "mouth", "cheeks", "shut_mouth"]
-CHEEK = (241, 120, 125)  # the bank's cheek pink (visual/base.mjs)
+
+
+def resting_face(scene: Scene, offset: list[tuple[int, int]],
+                 shown: list[bool]) -> dict[str, tuple[int, int, int]] | None:
+    """The face that shows, as place() has placed it, if it's its mood's
+    resting face as the bank tags it: by tag, each part's group and where
+    it's drawn on the canvas (its group's place, and its data-at). None when
+    no face shows, or it draws anything but its parts and its decorations."""
+    within: list[int] = []  # the part a group is in (the part's group), -2 for a decoration, -1 for neither
+    face: list[int] = []  # the face a group is in, -1 for none
+    parts: dict[str, tuple[int, int, int]] = {}
+    for i, g in enumerate(scene.groups):
+        up = within[g.parent] if g.parent >= 0 else -1
+        within.append(up if up != -1 else i if g.at is not None else -2 if g.role == "decor" else -1)
+        face.append(i if g.role == "face" else face[g.parent] if g.parent >= 0 else -1)
+        if face[i] < 0 or not shown[i]:
+            continue
+        if within[i] == -1 and g.rects:
+            return None
+        if within[i] == i:
+            assert g.part not in parts, f"two {g.part}s in a face"
+            parts[g.part] = (i, offset[i][0] + g.at[0], offset[i][1] + g.at[1])
+    assert not parts or set(parts) in (set(OPEN), set(SHUT)), f"a resting face's parts, not {sorted(parts)}"
+    return parts or None
+
+
+@dataclass
+class Rest:
+    """A drawn mood's resting face, from its first idle at rest, open and
+    shut: each of the rig face's parts (PARTS) as pixels on the canvas
+    (x, y, colour), and where its tag has it."""
+    pixels: dict[str, list[tuple[int, int, int]]]
+    at: dict[str, tuple[int, int]]
+
+
+def rest_of(scene: Scene, mood: str) -> Rest:
+    """A mood's resting face, from its first idle: its eyes open as it
+    starts, and shut as it blinks (at_rest)."""
+    rest = Rest({}, {})
+    for shut, names in ((False, OPEN), (True, SHUT)):
+        moment = {"t": 0, "svg_blink": False, "shut": False, **at_rest(scene, shut)}
+        offset, shown, _ = place(scene, **moment)
+        face = resting_face(scene, offset, shown)
+        assert face and set(face) == set(names), f"{mood}: its first idle starts and blinks on its resting face, tagged"
+        for tag, name in names.items():
+            if name not in rest.pixels:
+                g, x, y = face[tag]
+                rest.pixels[name] = [(p % W, p // W, c) for p, c in enumerate(render(scene, within=g, **moment)) if c]
+                rest.at[name] = (x, y)
+    return rest
 
 
 def picture(pixels: list) -> bytes:
@@ -1161,25 +1248,18 @@ def picture(pixels: list) -> bytes:
     return bytes(px)
 
 
-def cut_parts(rests: dict[int, list[tuple[list, list, list]]]) -> list[list[tuple[int, int, list]]]:
-    """Each drawn mood's parts (PARTS), cut from its first idle's face at
-    rest, open and shut, as resting() splits it: the mouth, open and shut,
-    the cheeks, and each eye, what's on its side of the face, with what's
-    drawn about it. Each part as its pivot and its rectangles from there:
-    an eye's pivot is the middle of the line its shut eye is, so it closes
-    onto it; the mouths' and the cheeks', the middle of their box."""
+def cut_parts(rests: list[Rest]) -> list[list[tuple[int, int, list]]]:
+    """Each drawn mood's parts (PARTS), cut from its resting face, each as
+    its pivot and its rectangles from there: an eye's pivot is the middle
+    of the line its shut eye is, so it closes onto it; the mouths' and the
+    cheeks', the middle of their box."""
     out = []
-    for m in range(len(MOODS)):
-        (eyes, lips, cheeks), (shut, shut_lips, _) = rests[m]
-        cut = {"mouth": lips, "cheeks": cheeks, "shut_mouth": shut_lips}
-        for i, side in enumerate("lr"):
-            cut[f"eye_{side}"] = [p for p in eyes if (p[0] < W // 2) == (i == 0)]
-            cut[f"shut_{side}"] = [p for p in shut if (p[0] < W // 2) == (i == 0)]
+    for m, rest in enumerate(rests):
         parts = []
         for name in PARTS:
-            rects = color_rects(picture(cut[name]))
+            rects = color_rects(picture(rest.pixels[name]))
             assert rects and all(c < BLEND for *_, c in rects), f"{MOODS[m]}: an opaque {name}"
-            x0, y0, x1, y1 = bbox(color_rects(picture(cut["shut_" + name[-1]])) if name.startswith("eye") else rects)
+            x0, y0, x1, y1 = bbox(color_rects(picture(rest.pixels["shut_" + name[-1]])) if name.startswith("eye") else rects)
             px, py = (x0 + x1) // 2, (y0 + y1) // 2
             parts.append((px, py, [(x - px, y - py, w, h, c) for x, y, w, h, c in rects]))
         out.append(parts)
@@ -1188,181 +1268,67 @@ def cut_parts(rests: dict[int, list[tuple[list, list, list]]]) -> list[list[tupl
 
 # ---- The designs the rig face draws a face in ----------------------------------
 
-# How far a design may move its mood's resting face, and its eyes from
-# there, in px: how far rig_face looks. And how many of idle's first
-# variations are the plain face (rig_faces).
-FACE_REACH, EYE_REACH = 24, 12
-PLAIN_IDLES = 2
 
-
-def nearest(reach: int) -> list[tuple[int, int]]:
-    """Every move within `reach` px each way, the nearest first."""
-    moves = [(dx, dy) for dx in range(-reach, reach + 1) for dy in range(-reach, reach + 1)]
-    return sorted(moves, key=lambda d: (d[0] ** 2 + d[1] ** 2, d))
-
-
-NEAR_FACE, NEAR_EYES = nearest(FACE_REACH), nearest(EYE_REACH)
-
-
-def resting(scene: Scene, shut: bool) -> tuple[list, list, list]:
-    """A first idle's face at rest, open or shut, split once for cut_parts
-    and rig_faces: its mouth's pixels (its mouth's group), its cheeks'
-    (what's left in the cheeks' pink) and its eyes' (the rest, with what's
-    drawn about them: a brow, a lid, a tear), each (x, y, colour) in the
-    order they're on the canvas."""
-    rest, cheek = at_rest(scene, shut), COLORS.index[CHEEK]
-    face, mouth = render(scene, within="face", **rest), render(scene, within="mouth", **rest)
-    eyes, lips, cheeks = [], [], []
-    for p, c in enumerate(face):
-        if c:
-            (lips if mouth[p] else cheeks if c == cheek else eyes).append((p % W, p // W, c))
-    return eyes, lips, cheeks
-
-
-def landing(pixels: list, px: bytes, moves: list[tuple[int, int]], at: tuple[int, int] = (0, 0)):
-    """The move of `moves` from `at` that lands the most of the pixels on
-    their colours in px, all but an eighth at least (those a decoration
-    covers), the nearest of equals, as a move from where they are; None
-    for none."""
-
-    def misses(some, dx, dy, most):
-        n = 0
-        for x, y, c in some:
-            if not (0 <= x + dx < W and 0 <= y + dy < H and px[(y + dy) * W + x + dx] == c):
-                n += 1
-                if n > most:
-                    break
-        return n
-
-    sample = pixels[::16]
-    best, least = None, len(pixels) // 8
-    for mx, my in moves:
-        dx, dy = at[0] + mx, at[1] + my
-        if misses(sample, dx, dy, len(sample) // 8) <= len(sample) // 8:
-            n = misses(pixels, dx, dy, least)
-            if n == 0:
-                return dx, dy
-            if best is None and n <= least or n < least:
-                best, least = (dx, dy), n
-    return best
-
-
-def landed(memo: dict, pixels: list, px: bytes, seen: bytes, moves: list[tuple[int, int]], at: tuple[int, int] = (0, 0)):
-    """landing's, remembered in memo by the pixels (their list), the face
-    drawn (its digest, seen) and where the moves start: a design draws the
-    same face at step after step, and the designs share faces."""
-    key = (id(pixels), seen, at)
-    if key not in memo:
-        memo[key] = landing(pixels, px, moves, at)
-    return memo[key]
-
-
-def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool, memo: dict) -> list[tuple[int, tuple[int, int, int, int, int]]] | None:
-    """Whether the rig face can draw this design's face, the face's moves if
-    so: at each of its steps, the face is its mood's resting face, open or
-    shut (`shut` 1, the rig face drawing its shut eyes and its shut face's
-    mouth), moved whole by (dx, dy) and its eyes by (ex, ey) more, under
-    decorations of its own (a sparkle, a falling tear), which the device
-    keeps drawing over it: `exact`, the scene drawn with the resting face,
-    so moved, in its face's place, then the decorations, is the scene as
-    drawn, pixel for pixel; else near enough, missing what the resting face
-    can't draw (a trembling lip). The rectangles drawing the decorations
-    move into groups of role "decor" of their own, in place. The moves, by
-    step: (ms, (dx, dy, ex, ey, shut)). Its landings are remembered in memo."""
+def rig_face(scene: Scene) -> list[tuple[int, dict]] | None:
+    """The design's face at each of its steps, if the bank tags it as its
+    mood's resting face at every one: (ms, its parts, as resting_face has
+    them). None for any other design, which stays baked."""
     loop = scene.loop_ms()
     timed = [tr for g in scene.groups if g.role not in ("eyes_open", "eyes_closed")
              for tr in (g.move, g.show, g.fill) if tr]
-    if any(loop % tr.dur for tr in timed):
-        return None  # the face's moves don't repeat with the loop
-    times = sorted({0} | {r * tr.dur + k for tr in timed for r in range(loop // tr.dur) for k in tr.keys})
-    face: list[bool] = []
-    for g in scene.groups:
-        face.append(g.role == "face" or (g.parent >= 0 and face[g.parent]))
-    moves, drawn, rested, decor = [], [], set(), set()
+    times = sorted({0} | {r * tr.dur + k for tr in timed for r in range(-(-loop // tr.dur)) for k in tr.keys
+                          if r * tr.dur + k < loop})
+    steps = []
     for t in times:
-        px = render(scene, t, within="face")
-        seen = hashlib.blake2b(px, digest_size=16).digest()
-        for shut, (eyes, other) in enumerate(rests):
-            d = landed(memo, other, px, seen, NEAR_FACE)
-            e = d and landed(memo, eyes, px, seen, NEAR_EYES, d)
-            if e:
-                break
-        else:
+        offset, shown, _ = place(scene, t, svg_blink=False, shut=False)
+        face = resting_face(scene, offset, shown)
+        if face is None:
             return None
-        placed = [((y + dy) * W + x + dx, c) for pixels, (dx, dy) in ((other, d), (eyes, e)) for x, y, c in pixels]
-        rest = bytearray(W * H)
-        for p, c in placed:
-            rest[p] = c
-        moves.append((t, (d[0], d[1], e[0] - d[0], e[1] - d[1], shut)))
-        drawn.append(placed)
-        # The face's rectangles that show a decoration (where the face is
-        # their colour, the resting face isn't), unless one shows some of
-        # the resting face too; those that never show are the resting face's.
-        offset, shown, fills = place(scene, t, svg_blink=False, shut=False)
-        for i, g in enumerate(scene.groups):
-            if face[i] and shown[i]:
-                ox, oy = offset[i]
-                for k, (x, y, w, h, c) in enumerate(g.rects):
-                    c = fills[i] if c == INHERIT else c
-                    x0, x1 = max(0, x + ox), min(W, x + ox + w)
-                    rests_it = shows = False
-                    for yy in range(max(0, y + oy), min(H, y + oy + h)):
-                        sa, sb = px[yy * W + x0:yy * W + x1], rest[yy * W + x0:yy * W + x1]
-                        if c not in sa:
-                            continue
-                        if sa == sb:
-                            rests_it = True
-                            continue
-                        for a, b in zip(sa, sb):
-                            if a == c and b == c:
-                                rests_it = True
-                            elif a == c:
-                                shows = True
-                    if rests_it:
-                        rested.add((i, k))
-                    if shows:
-                        decor.add((i, k))
-    decor -= rested
-    # Its decorations into groups of their own, each after the group it was
-    # in, as a child: drawn as before, which the checks below make sure of.
-    before = scene.groups
-    after: list[Group] = []
-    moved: dict[int, int] = {}
-    for i, g in enumerate(before):
-        moved[i] = len(after)
-        mine = [r for k, r in enumerate(g.rects) if (i, k) not in decor]
-        after.append(Group(**{**g.__dict__, "parent": moved.get(g.parent, -1), "rects": mine}))
-        if len(mine) < len(g.rects):
-            after.append(Group(moved[i], role="decor", rects=[r for k, r in enumerate(g.rects) if (i, k) in decor]))
-    scene.groups = after
-    for t, placed in zip(times, drawn):
-        drawn_as = render(Scene(before, scene.clip), t)
-        if render(scene, t) != drawn_as or (exact and render(scene, t, face=placed) != drawn_as):
-            scene.groups = before
-            return None
-    return [(t, m) for k, (t, m) in enumerate(moves) if k == 0 or m != moves[k - 1][1]]
+        steps.append((t, face))
+    assert not any(loop % tr.dur for tr in timed), "its moves repeat with its loop"
+    return steps
 
 
-def rig_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int], rests: dict[int, list[tuple[list, list, list]]]) -> dict[int, list]:
-    """The scenes whose face the rig face draws (rig_face), each drawn in one
-    mood only, and its face's moves. Idle's first PLAIN_IDLES variations,
-    a blink and a look-around, are the plain face, which the rig face draws
-    near enough: its morphs into and out of a mood are worth a trembling lip
-    or a twitch. Any other design, only exactly. `rests` are each drawn
-    mood's resting faces, open and shut (resting)."""
-    idle, moods, plain = STATES.index("idle"), {}, set()
+def face_moves(steps: list[tuple[int, dict]], rest: Rest, scene: Scene) -> list[tuple[int, tuple[int, ...]]]:
+    """Where a design's face is at each of its steps (rig_face), from where
+    its mood's resting face is, as the rig face moves it: whole by
+    (dx, dy), its cheeks', its eyes by (ex, ey) more and its mouth by
+    (mx, my) more, and shut (1) or open: (ms, (dx, dy, ex, ey, shut, mx,
+    my)) at each step that changes them. Drawn so, the decorations over it,
+    it's the design as drawn, pixel for pixel, at every step: checked."""
+    moves = []
+    for t, face in steps:
+        names = SHUT if "shut-l" in face else OPEN
+        move = {name: (face[tag][1] - rest.at[name][0], face[tag][2] - rest.at[name][1]) for tag, name in names.items()}
+        (lx, ly), right, (dx, dy), (mx, my) = move.values()
+        assert (lx, ly) == right, f"its eyes move together ({t} ms)"
+        key = (dx, dy, lx - dx, ly - dy, int(names is SHUT), mx - dx, my - dy)
+        assert all(-128 <= v <= 127 for v in key), f"its face moves within reach ({t} ms: {key})"
+        placed = [((y + oy) * W + x + ox, c) for name, (ox, oy) in move.items() for x, y, c in rest.pixels[name]
+                  if 0 <= x + ox < W and 0 <= y + oy < H]
+        assert render(scene, t, face=placed) == render(scene, t), f"the rig face draws it as drawn ({t} ms)"
+        if not moves or moves[-1][1] != key:
+            moves.append((t, key))
+    return moves
+
+
+def rig_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int], rests: list[Rest],
+              sources: dict[int, str]) -> dict[int, list]:
+    """The scenes whose face the rig face draws, each tagged as its mood's
+    resting face at every step (rig_face) and drawn in that mood only, and
+    its face's moves (face_moves)."""
+    moods: dict[int, set[int]] = {}
     for (m, s, v), n in table.items():
         moods.setdefault(n, set()).add(m)
-        if s == idle and v < PLAIN_IDLES:
-            plain.add(n)
-    # Each resting face's eyes, and the rest of it on the canvas's order.
-    faces = {m: [(eyes, sorted(lips + cheeks, key=lambda p: (p[1], p[0]))) for eyes, lips, cheeks in rest]
-             for m, rest in rests.items()}
-    out, memo = {}, {}
+    out = {}
     for n, ms in moods.items():
-        moves = len(ms) == 1 and rig_face(scenes[n], faces[next(iter(ms))], n not in plain, memo)
-        if moves:
-            out[n] = moves
+        try:
+            steps = rig_face(scenes[n])
+            if steps:
+                assert len(ms) == 1, f"one mood's resting face, not {sorted(MOODS[m] for m in ms)}'"
+                out[n] = face_moves(steps, rests[next(iter(ms))], scenes[n])
+        except AssertionError as e:
+            raise AssertionError(f"{sources[n]}: {e}") from e
     return out
 
 
@@ -1584,8 +1550,8 @@ def main() -> None:
         for t in scenes[n].samples():
             frames.append((m, s, v, t, zlib.crc32(render(scenes[n], t).translate(canvas))))
     idle = STATES.index("idle")
-    rests = {m: [resting(scenes[table[(m, idle, 0)]], shut) for shut in (False, True)] for m in range(len(MOODS))}
-    OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(rests), rig_faces(scenes, table, rests)))
+    rests = [rest_of(scenes[table[(m, idle, 0)]], MOODS[m]) for m in range(len(MOODS))]
+    OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(rests), rig_faces(scenes, table, rests, sources)))
     FACES_JSON.parent.mkdir(parents=True, exist_ok=True)
     FACES_JSON.write_text(emit_faces_json(scenes, table, meta, counts))
     FRAMES.parent.mkdir(parents=True, exist_ok=True)

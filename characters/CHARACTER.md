@@ -836,29 +836,30 @@ own. Wherever one does, at every step of its loop, the pixel face draws
 its face from the rig (`render/pixel/rig_face.h`) in the design's place,
 in every mood whose expression's styles it has, and the design draws the
 rest: in its looks (working's included), its occasions and its
-reactions alike. Facegen decides which
-(`rig_faces`): for each design it finds where the resting face sits at
-each step, open or shut (a blink, a squeeze), the whole face moved and
-its eyes moved within it (a glance), and splits what the face draws
-besides it (a sparkle, a falling tear) into decorations of their own,
-which the design keeps drawing over the rig face. It takes a design only
-if, drawn so at rest, it is the design as drawn, pixel for pixel, at
-every step, which the rig face test (`test_rig_face`) checks again on
-the board's own drawing; idle's first two variations, a blink and a
-look-around, Pixel's plain face, it takes near enough (of the rig face's
-pixels, all but an eighth land on the design's), missing what the rig
-face can't draw (sad's trembling lip, irritated's twitch), since the
-morphs into and out of a mood are worth it. The rest are baked: the
-finishes and wake-ups, the comedy, asleep, a face that changes shape
-(curious's eyes, whose big eye moves side to side, a yawn), tears
-pouring from the eyes (sad at work). Each design's moves are a track of
-`faces.h` (a scene's `face`): where the face is at each step and whether
+reactions alike. Which designs is each design's own say: the animation
+bank tags the resting face's parts where a design places them, each eye
+open or shut, the mouth and the cheeks, with where each is drawn, and
+the decorations on it (a sparkle, a falling tear), which the design keeps
+drawing over the rig face
+([Pixel's design guide](pixel/design/README.md), The resting face's
+tags). Facegen reads the tags (`rig_faces`): a design whose face is
+tagged at every step is the rig face's, and its tags say where the face
+sits at each step, open or shut (a blink, a squeeze), moved whole, its
+eyes moved within it (a glance) and its mouth (sad's trembling lip).
+Drawn so at rest it must be the design as drawn, pixel for pixel, at
+every step, or facegen fails, and the rig face test (`test_rig_face`)
+checks it again on the board's own drawing. The rest are untagged and
+baked: the finishes and wake-ups, the comedy, asleep, a face that
+changes shape (curious's eyes, whose big eye moves side to side,
+irritated's twitch, a yawn), tears pouring from the eyes (sad at work).
+Each design's moves are a track of `faces.h` (a scene's `face`): where
+the face is at each step, its eyes' and its mouth's more, and whether
 it's shut, which the rig face follows as the design's clock runs, so its
 sounds, timing, blinks and outcome are the design's still. Its parts are
 each drawn mood's own art, which facegen cuts from the mood's first idle
-at rest: each eye open and shut, the mouth, the cheeks and the mouth of
-its shut face, as a flip-book's blink step has its own (`faces.h`'s
-`kParts`). At rest each part draws as its art has it, and
+at rest as the bank tags them: each eye open and shut, the mouth, the
+cheeks and the mouth of its shut face, as a flip-book's blink step has
+its own (`faces.h`'s `kParts`). At rest each part draws as its art has it, and
 the channels' offsets from rest move it: `lift`, `squash` and `lean` the
 whole face; `eyeOpen` closes each eye onto the line it shuts on, its
 shut art below a third open; `eyeSize` scales the eyes, `gazeX` and

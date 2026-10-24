@@ -260,8 +260,13 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     FaceMove move = faceMove(show);
     if (stays) {
       const FaceMove was = faceMove(from_.show);
-      move = {lerp(was.dx, move.dx, in, 1000), lerp(was.dy, move.dy, in, 1000), lerp(was.ex, move.ex, in, 1000),
-              lerp(was.ey, move.ey, in, 1000), move.shut};
+      move = {lerp(was.dx, move.dx, in, 1000),
+              lerp(was.dy, move.dy, in, 1000),
+              lerp(was.ex, move.ex, in, 1000),
+              lerp(was.ey, move.ey, in, 1000),
+              move.shut,
+              lerp(was.mx, move.mx, in, 1000),
+              lerp(was.my, move.my, in, 1000)};
     }
     // The design, without its face where the rig face draws it; and what
     // it wears and holds, which move on their own. On the rig face, the hat

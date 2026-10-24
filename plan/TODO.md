@@ -156,9 +156,6 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       sketches and GIFs, heavy for long videos. Keep, or commit only the
       contact sheets?
 - [ ] Design calls the final review left, each a change to how it looks:
-      - Pixel: facegen finds each design's resting face by search (585 of
-        1214 designs); the bank could tag its parts instead, so a design
-        says whether the rig draws it. Curious and sad at work stay baked.
       - The gel: falling asleep cross-fades two arts in 480 ms (the
         longest that keeps the ink check's 85%); a morph that squashes the
         face shut would let the length be a choice.
