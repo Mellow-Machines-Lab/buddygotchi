@@ -63,21 +63,25 @@ and new actions. One personality (Boop's default nature) for now.
       over idle's and asleep's plain variations (`render/pixel/outfit.h`),
       at the place its occasion art puts them, and the sign; its working
       looks and reactions keep their own props up there, undressed.
-- [ ] **The slime's hats cost frames.** On the AMOLED board (140c9f2,
+- [x] **The slime's hats cost frames.** On the AMOLED board (140c9f2,
       measured 2026-10-23 with `boopctl ping`'s `draw_us` and `fps`): idle
       in the daytime draws in 26 ms, 37 fps; with a hat 31-35 ms, 27-30
       fps (night's cap and lower lids 33.5 ms, winter's bobble 34.7,
-      Halloween 31.3, a party 31.5). Drawing the bands as filled ribbons
-      instead of strokes didn't help (night 28 fps), so it's the filled
-      area. The slower loop reads USB less often: the e2e check's p95
-      latency went from 139 ms to 182-221 ms at night and fails its 200 ms
-      limit about half the time. Marking only the rows a shape draws as
-      changed (in place) and skipping the square root inside disks didn't
-      move the frame rate either. The fix is to cache the hat: draw it
-      into a small buffer when the brim's shape changes (about 95% of
-      frames reuse it; step the nightcap's swing every 400 ms as Pixel's
-      does) and blit it, about 4 ms back; give paintLayers its own field
-      in the gel's profile first, so `boopctl ping` shows it.
+      Halloween 31.3, a party 31.5), and the e2e check's p95 latency at
+      night neared its 200 ms limit. Now the layers have their own
+      `layers_us` in the profile build's `gel_parts` (and `boopctl perf
+      --scenes`), and the outfit is kept (`OutfitLayer`,
+      `render/gel/layers.h`): drawn into a recording when its look
+      changes or the body moves it past a slack, blended from it
+      otherwise, and drawn where it is again once the body is still, so
+      still frames are as before (the goldens didn't change); the
+      nightcap's swing steps. In a minute of 30 ms frames natively (-O2,
+      best of 15), the layers
+      take 12-14 µs a frame with a hat instead of 43-49 (night idle
+      42.9 → 11.9, winter 49.2 → 14.4 with its snow, Halloween 45.2 →
+      12.4), the frame 107-113 µs instead of 142-150 (day idle 95), the
+      hat redrawn in 4-10% of frames. Still to measure on the board:
+      `draw_us` with a hat, and the e2e p95 at night.
 - [x] **Fluid animations and interactions** (taken up as the character
       engine, below). Today the face visibly cuts
       from one state to the next (a look to a reaction and back, one mood

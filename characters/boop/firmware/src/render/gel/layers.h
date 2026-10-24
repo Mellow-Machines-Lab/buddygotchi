@@ -24,6 +24,24 @@
 
 namespace render::gel {
 
+// The outfit is drawn into a recording (render/gel/raster.h) when its look
+// changes or the body has moved it more than kSlack sixteenths of a pixel
+// past a whole number of pixels, and blended from it in every other frame:
+// a hat's filled area is most of what the layers cost. While the body
+// moves (a frame of the same body up to kMovingMs before, and its anchors
+// moved within kStillMs), a frame may show it as it was kept, within
+// kSlack of where it is; still, it's drawn where it is, so a still frame
+// is the same as drawing it afresh. The nightcap's
+// swing steps every kSwingMs, as Pixel's pompom does. It's kept in a frame
+// as wide as the surface and kFrameHeight tall, with the brim's front
+// kFrameY down its middle: room around for any hat. Past its edges, or
+// the recording's room, the outfit is drawn straight on the surface.
+struct OutfitLayer {
+  static constexpr int kSlack = 12, kSwingMs = 400;
+  static constexpr uint32_t kMovingMs = 100, kStillMs = 200;
+  static constexpr int kFrameY = 288, kFrameHeight = 512;
+};
+
 struct SignLayer {
   static constexpr int kPad = 20;                 // the words from the card's sides, clear of the hands
   static constexpr int kGap = 4;                  // the card's bottom over the lane, at the lowest
