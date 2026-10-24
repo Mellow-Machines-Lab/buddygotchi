@@ -1,0 +1,8 @@
+{
+  "about": "Idle's base: a slow, gentle breath, a little taller on the in-breath.",
+  "ms": 3600,
+  "loop": true,
+  "tracks": {
+    "squash": [[0, 0], [1800, -30], [3600, 0]]
+  }
+}

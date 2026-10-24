@@ -1,0 +1,5 @@
+{
+  "idle": {"clip": "breathe", "scene": null, "dresses": true},
+  "working": {"clip": "work", "scene": "desk", "dresses": false},
+  "asleep": {"clip": "doze", "scene": null, "dresses": true}
+}

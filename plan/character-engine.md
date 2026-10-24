@@ -1,4 +1,4 @@
-# The character engine: the plan (2026-10-23)
+# The character engine: the plan (2026-10-23, updated 2026-10-24)
 
 One small engine that both characters, the low-res Pixel face and the
 high-res gel slime, are drawn by, so any expression or animation flows into
@@ -89,12 +89,13 @@ board still decides when things play.
 characters/<pack>/
   character.json      name, renderer (gel | pixel), palette  (as now, plus renderer)
   rig/
-    expressions.json  happy: {eyeCurve: 800, eyeOpen: 250, mouthWidth: 1200, …, eyeStyle: "arc"}
-    clips/*.json      {"id": "notice", "ms": 900, "additive": true,
+    expressions.json  styles: {eyes: ["dot", "arc"], mouth: […]},
+                      expressions: {happy: {eyeCurve: 800, eyeOpen: 250, mouthWidth: 1200, …, eyes: "arc"}}
+    clips/<id>.json   {"ms": 900, "additive": true,
                        "tracks": {"lift": [[0,0],[180,14,"out"],[600,0,"inout"]], …},
                        "cues": [[120, "pop"]]}
     looks.json        idle: {clip: "breathe", scene: null, dresses: true}, working: {…}
-    accessories.json  nightcap: {anchor: "brim", art: "nightcap", tags: ["night"]}, …
+    accessories.json  nightcap: {anchor: "brim", art: "nightcap"}, …  (when: render::outfitFor)
     art/              the renderer's parts: Pixel's sprite sheets; the gel's styles
   references/         what people gave us (below)
 ```
@@ -164,6 +165,32 @@ checked it in its commit.
    baked designs, slimegen's tables that the rig covers, and the slime's
    JavaScript reference (the Studio and the Mac's mirror run the
    WebAssembly engine instead).
+
+### Checkpoint 3, as built (2026-10-24)
+
+The rig core is `firmware/src/render/rig/` and its schema is
+[CHARACTER.md](../characters/CHARACTER.md) §15. Where it differs from the
+sketch above, and why:
+
+- **The mood is the bottom of the stack, the look's clip over it.** The
+  springs carry only the mood's targets, and the look's loop plays over
+  them with a weight, as a reaction's does: so a look's loop is offsets
+  on any mood, an absolute one (asleep's shut eyes) wins over the mood,
+  and a new look fades over the old.
+- **An expression keeps every channel**, those its file doesn't name at
+  rest, so the mask is the file's and nothing needs one at run time.
+- **Accessories carry no tags.** Which outfit is `render::outfitFor`'s one
+  rule, and the air `render::airFor`'s; the file says where each outfit
+  sits and what it's drawn as.
+- **A layer shows a content**, not only on or off, and a new one waits
+  for the old to fade out (as the gel's props keep what they showed), so
+  a hat changes at midnight without a pop.
+- **A clip's id is its file's name**; clips are additive and keys ease in
+  and out unless they say. Which clip a reaction plays, by its state,
+  facts and variation, is checkpoint 4's.
+- **`rig_tables.h` is made at staging**, as `moods.h` is, not checked in,
+  and Pixel's rig is a copy of Boop's, so Pixel's pack still needs
+  nothing of Boop's.
 
 ## Risks
 

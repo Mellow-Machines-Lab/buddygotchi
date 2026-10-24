@@ -1,0 +1,9 @@
+{
+  "about": "A poke: squashed flat under the finger with its eyes squeezed shut, then a springy rebound.",
+  "ms": 520,
+  "tracks": {
+    "squash": [[0, 0], [70, 420, "out"], [230, -150], [380, 60], [520, 0]],
+    "eyeOpen": [[0, 0], [70, -800, "out"], [300, 0]]
+  },
+  "cues": [[0, "cushion"]]
+}

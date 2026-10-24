@@ -30,6 +30,7 @@ class RepoTests(unittest.TestCase):
         self.assertEqual(gen.state_problems(gen.local_packs()), [])
         for pack in gen.local_packs():
             self.assertEqual(gen.mood_problems(gen.load(pack), gen.universal_moods()), [], pack.name)
+            self.assertEqual(gen.read_rig(pack)[1], [], pack.name)
 
     def test_the_universal_moods_are_the_apps(self):
         """The one list, CharacterPack.universalMoods in the app's source: 42 moods, each once."""
@@ -161,14 +162,15 @@ class StudioRuleTests(unittest.TestCase):
         """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources."""
         pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
                          files=[("firmware/include/face.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
-                                ("steering/guide.md", ""), ("design/art.txt", "")])
+                                ("steering/guide.md", ""), ("design/art.txt", ""), ("rig/looks.json", {})])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
         staged = sorted(p.relative_to(gen.STAGE).as_posix() for p in gen.STAGE.rglob("*") if p.is_file())
         self.assertEqual([n for n in staged if not n.startswith(("firmware-test/", "staged/"))],
-                         ["firmware/include/face.h", "firmware/include/moods.h", "firmware/src/render/face/face.cpp", "pack",
-                          "packs/chosen", "packs/solo/character.json", "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
+                         ["firmware/include/face.h", "firmware/include/moods.h", "firmware/include/rig_tables.h",
+                          "firmware/src/render/face/face.cpp", "pack", "packs/chosen", "packs/solo/character.json",
+                          "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
         moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
         self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
         self.assertIn('kPackId = "solo"', moods)
@@ -188,7 +190,7 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual((view / "voice" / "voice.bin").resolve(), (self.dir / "lender" / "voice" / "voice.bin").resolve())
         self.assertEqual((view / "mac" / "takes.tsv").read_text(), "t")
         self.assertTrue((view / "mac" / "mirror" / "index.html").exists())
-        self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h"])
+        self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h", "rig_tables.h"])
         self.assertEqual((gen.STAGE / "packs" / "user" / "mac" / "takes.tsv").read_text(), "t")
         self.assertFalse((gen.STAGE / "packs" / "user" / "voice").exists())
 
@@ -214,7 +216,8 @@ class StudioRuleTests(unittest.TestCase):
         out = self.dir / "out"
         self.assertEqual(gen.firmware_to(pack, out), 0)
         self.assertEqual(sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()),
-                         ["firmware/include/art.h", "firmware/include/moods.h", "firmware/src/render/face/face.cpp"])
+                         ["firmware/include/art.h", "firmware/include/moods.h", "firmware/include/rig_tables.h",
+                          "firmware/src/render/face/face.cpp"])
         self.assertIn('kPackId = "user"', (out / "firmware" / "include" / "moods.h").read_text())
         self.assertFalse(gen.STAGE.exists())
 
@@ -274,6 +277,102 @@ class StudioRuleTests(unittest.TestCase):
             self.assertEqual(gen.in_use(), other.resolve())
             os.environ["BOOP_CHARACTER"] = str(view)
             self.assertEqual(gen.chosen(), staged.resolve())  # a staged pack's folder chooses its own
+
+
+class RigRuleTests(unittest.TestCase):
+    """CHARACTER.md §15: a pack's rig/ files, checked and written as rig_tables.h."""
+
+    MOODS, STATES = ["calm", "happy"], ["idle", "working", "asleep", "poked"]
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+
+    def rig(self, files):
+        for rel, value in files.items():
+            write(self.dir / "rig" / rel, value)
+        return gen.read_rig(self.dir, self.MOODS, self.STATES)
+
+    def test_a_pack_without_a_rig_has_an_empty_one(self):
+        rig, problems = self.rig({})
+        self.assertEqual(problems, [])
+        self.assertIn("inline constexpr Rig kRig = {{}, {}, {}, {}, {}, {}, {}};", gen.rig_h(self.dir, rig))
+
+    def test_the_tables_are_the_files(self):
+        """Each file's rows as rig.h's types hold them: a channel the file doesn't name at rest, eyeOpen both eyes,
+        a key's ease inout unless it says, clips in their files' order, a look's scene numbered from 1."""
+        rig, problems = self.rig({
+            "expressions.json": {"styles": {"eyes": ["dot", "shut"], "mouth": ["line"]},
+                                 "expressions": {"calm": {"eyeOpen": 300, "mouthCurve": -200, "eyes": "shut"}}},
+            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}, "cues": [[300, "thud"], [50, "pop"]]},
+            "clips/sway.json": {"ms": 200, "loop": True, "additive": False, "tracks": {"tilt": [[0, 100], [200, 100]]}},
+            "looks.json": {"idle": {"clip": "sway", "scene": "desk", "dresses": True}, "working": {"clip": None}},
+            "accessories.json": {"nightcap": {"anchor": "brim"}, "party_hat": {"anchor": "crown", "art": "cone"}},
+        })
+        self.assertEqual(problems, [])
+        text = gen.rig_h(self.dir, rig)
+        values = [300 if c in ("eyeOpenL", "eyeOpenR") else -200 if c == "mouthCurve" else rest
+                  for c, (_, _, rest) in gen.rig_channels().items()]
+        for row in ['"dot",', '"shut",', '"line",', '"desk",',
+                    '{"calm", {{' + ", ".join(map(str, values)) + "}}, 1, 0},",
+                    "{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
+                    "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kTilt, {kKeys + 3, 2}},",
+                    '{50, "pop"},', '{300, "thud"},',
+                    '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
+                    '{"sway", 200, true, false, {kTracks + 1, 1}, {}},',
+                    "{SceneState::kIdle, kClips + 1, 1, true},", "{SceneState::kWorking, nullptr, 0, false},",
+                    '{Outfit::kNightcap, Anchor::kBrim, "nightcap"},', '{Outfit::kPartyHat, Anchor::kCrown, "cone"},',
+                    "inline constexpr Rig kRig = {{pack::kEyeStyles, 2}, {pack::kMouthStyles, 1}, {pack::kScenes, 1}, "
+                    "{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}, {pack::kAccessories, 2}};"]:
+            self.assertIn(row, text)
+
+    def test_a_bad_edit_fails_with_its_file_and_key(self):
+        _, problems = self.rig({
+            "expressions.json": {"styles": {"eyes": ["dot"], "mouth": ["line"]}, "faces": {},
+                                 "expressions": {"happy": {"eyeCurve": 1800, "wiggle": 1, "mouth": "zigzag"},
+                                                 "calm": {"eyeOpen": 100, "eyeOpenL": 200},
+                                                 "giddy": {}}},
+            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[400, "pop"]],
+                               "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
+                                          "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
+            "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"tilt": [[0, 0], [200, 100]]}},
+            "clips/Bad Name.json": {"ms": 0},
+            "looks.json": {"idle": {"clip": "hop", "colour": "red"}, "working": {"clip": "nope", "dresses": "yes"},
+                           "dancing": {}},
+            "accessories.json": {"crown": {"anchor": "crown"}, "nightcap": {"anchor": "head"}},
+        })
+        outfits = ", ".join(gen.outfits())
+        self.assertEqual(problems, [
+            "rig/expressions.json: faces: unknown key",
+            "rig/expressions.json: expressions.happy.eyeCurve: 1800 isn't a whole number from -1000 to 1000",
+            "rig/expressions.json: expressions.happy.wiggle: unknown key",
+            "rig/expressions.json: expressions.happy.mouth: 'zigzag' isn't one of styles.mouth",
+            "rig/expressions.json: expressions.calm.eyeOpenL: sets a channel twice",
+            "rig/expressions.json: expressions.giddy: isn't a mood",
+            "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
+            "rig/clips/Bad Name.json: ms: 0 isn't a whole number of ms from 1 to 60000",
+            "rig/clips/hop.json: id: unknown key",
+            "rig/clips/hop.json: tracks.nose: isn't a channel",
+            "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
+            "rig/clips/hop.json: tracks.lift[2]: its time, 100, isn't a whole ms after the key before's and at most 400",
+            "rig/clips/hop.json: tracks.lift[3]: its ease, 'bouncy', isn't one of linear, in, out, inout",
+            "rig/clips/hop.json: cues[0]: isn't [ms before 400, a name] (at most 255 of them)",
+            "rig/clips/sway.json: tracks.tilt: loops, so it starts at 0 and ends at ms on the value it started on",
+            "rig/looks.json: idle.colour: unknown key",
+            "rig/looks.json: idle.clip: hop doesn't loop",
+            "rig/looks.json: working.clip: 'nope' isn't a clip in rig/clips/",
+            "rig/looks.json: working.dresses: 'yes' isn't true or false",
+            "rig/looks.json: dancing: isn't a state the board has",
+            f"rig/accessories.json: crown: isn't an outfit ({outfits})",
+            "rig/accessories.json: nightcap.anchor: 'head' isn't one of crown, brim, hands, eyes",
+        ])
+
+    def test_a_bad_rig_stops_the_pack(self):
+        """--check and --stage refuse a pack whose rig/ has a problem, naming it."""
+        character = {"id": "x", "version": "1", "default_mood": "calm", "moods": [], "faces": {"cyd24": "face"}}
+        write(self.dir / "firmware/src/render/face/face.cpp", "")
+        write(self.dir / "rig" / "looks.json", {"idle": {"clip": "nope"}})
+        self.assertIn("rig/looks.json: idle.clip: 'nope' isn't a clip in rig/clips/", gen.pack_problems(self.dir, character))
 
 
 if __name__ == "__main__":

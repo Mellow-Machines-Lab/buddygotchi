@@ -1,0 +1,11 @@
+{
+  "about": "Asleep's base: eyes shut whatever the mood, the mouth a little open, a slow deep breath, flatter on the out-breath.",
+  "ms": 4800,
+  "loop": true,
+  "additive": false,
+  "tracks": {
+    "eyeOpen": [[0, 0], [4800, 0]],
+    "mouthOpen": [[0, 150], [2400, 250], [4800, 150]],
+    "squash": [[0, 40], [2400, 90], [4800, 40]]
+  }
+}

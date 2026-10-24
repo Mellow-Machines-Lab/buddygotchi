@@ -30,6 +30,16 @@ rebuilds nothing that hasn't changed. Boop's draws the pixel face on the CYD and
 on the AMOLED; Pixel's names only the CYD, so built with Pixel the
 AMOLED's build stops at the start and says so.
 
+Under the faces, `src/render/` is portable C++ with no display library,
+which the boards, the native simulator and the WebAssembly one all
+build. Its `rig/` is the engine both faces are moving onto: the rig's
+channels and the types of a pack's tables (`rig.h`), the mixer that
+plays a mood, a look and reactions into the channels each frame
+(`mixer.h`), and the layers and anchors a face draws (`layers.h`).
+Staging writes the pack's rig as `rig_tables.h`
+([CHARACTER.md](../characters/CHARACTER.md) §15). No face uses it yet,
+so the boards link none of its code.
+
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages in `firmware/.platformio-core`, inside the checkout.
 It uses the `pio` on your `PATH`; without one, its first run installs

@@ -8,16 +8,17 @@
 
 --check checks a pack's character.json: its moods are exactly the
 universal ones (CHARACTER.md §5), and every move and default mood is
-one of them; what it uses from other packs is there (§6); and its
-id and version fit the board's hello (§10). Without PACK, every pack in
-characters/.
+one of them; what it uses from other packs is there (§6); its
+id and version fit the board's hello (§10); and its rig/ (§15): no
+unknown key, channel or name, and every value in its range. Without
+PACK, every pack in characters/.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
 root for the builds to read (§2), with what it uses from other packs (§6)
-and the firmware's moods.h, which it makes from character.json: the mood
-list in the pack's order with the board's startup mood. It checks the
-pack as --check does first. firmware/tools/pio.sh runs it before every
-PlatformIO build.
+and two headers it makes for the firmware: moods.h from character.json,
+the mood list in the pack's order with the board's startup mood, and
+rig_tables.h from rig/, the rig's tables. It checks the pack as --check
+does first. firmware/tools/pio.sh runs it before every PlatformIO build.
 
 --firmware-to=DIR lays out only the firmware's files for a pack, as
 --stage does, in DIR/firmware/, and changes nothing staged: for a second
@@ -55,6 +56,9 @@ CHARACTERS = ROOT / "characters"
 STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
+# The rig's channels and the outfits the tags call for, as the firmware has them.
+RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
+TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
 # The universal moods' one list, which the app's pack loader holds too.
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
@@ -168,6 +172,253 @@ constexpr const char* kPackId = {json.dumps(character["id"])};
 constexpr const char* kPackVersion = {json.dumps(character["version"])};
 
 }}  // namespace render
+"""
+
+
+EASES = {"linear": "kLinear", "in": "kIn", "out": "kOut", "inout": "kInOut"}
+ANCHORS = {"crown": "kCrown", "brim": "kBrim", "hands": "kHands", "eyes": "kEyes"}
+NAME = re.compile(r"[a-z0-9][a-z0-9_-]*$")
+# One file's rows in a List (rig.h): at most this many.
+MOST = 255
+
+
+def rig_channels(source: Path = RIG_H) -> dict[str, tuple[int, int, int]]:
+    """The rig's channels in order, each with its lowest, highest and rest
+    value: kChannelInfo in the firmware's rig.h."""
+    match = re.search(r"kChannelInfo\[kChannelCount\] = \{(.*?)\};", source.read_text(), re.S)
+    if not match:
+        raise SystemExit(f"charactergen: no kChannelInfo in {source}")
+    rows = re.findall(r'\{"(\w+)", (-?\d+), (-?\d+), (-?\d+)\}', match.group(1))
+    return {name: (int(lo), int(hi), int(rest)) for name, lo, hi, rest in rows}
+
+
+def outfits(source: Path = TAGS_H) -> dict[str, str]:
+    """The outfits render::outfitFor picks from, by their names in a pack's
+    files, each with its enumerator: {"witch_hat": "kWitchHat", ...}."""
+    match = re.search(r"enum class Outfit : uint8_t \{([^}]*)\}", source.read_text())
+    if not match:
+        raise SystemExit(f"charactergen: no Outfit in {source}")
+    names = [e for e in re.findall(r"\bk\w+", match.group(1)) if e != "kNone"]
+    return {re.sub(r"(?<!^)(?=[A-Z])", "_", e[1:]).lower(): e for e in names}
+
+
+def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | None = None) -> tuple[dict, list[str]]:
+    """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
+    wrong with it, each problem with its file and key. Every file is
+    optional, and one that's missing is empty."""
+    moods = universal_moods() if moods is None else moods
+    states = firmware_states() if states is None else states
+    channels, folder, problems = rig_channels(), pack / "rig", []
+    rig = {"eyes": [], "mouth": [], "scenes": [], "expressions": [], "clips": [], "looks": [], "accessories": []}
+
+    def fail(rel, key, what):
+        problems.append(f"rig/{rel}: {key}: {what}" if key else f"rig/{rel}: {what}")
+
+    def of(rel, key, value, kind, allowed=None):
+        """The value, when it's a `kind` (with only the `allowed` keys), else
+        an empty one; each problem failed."""
+        if not isinstance(value, kind):
+            fail(rel, key, f"isn't a JSON {'object' if kind is dict else 'list'}")
+            return kind()
+        for unknown in sorted(set(value) - set(allowed)) if allowed is not None else []:
+            fail(rel, f"{key}.{unknown}" if key else unknown, "unknown key")
+        return value
+
+    def read(rel, allowed=None):
+        if not (folder / rel).is_file():
+            return {}
+        try:
+            return of(rel, "", json.loads((folder / rel).read_text()), dict, allowed)
+        except ValueError as e:
+            fail(rel, "", f"isn't JSON ({e})")
+            return {}
+
+    def named(name):
+        """The channels a name in a file sets: eyeOpen is both eyes'."""
+        return ["eyeOpenL", "eyeOpenR"] if name == "eyeOpen" else [name] if name in channels else []
+
+    def number(value, lo, hi):
+        return isinstance(value, int) and not isinstance(value, bool) and lo <= value <= hi
+
+    rel = "expressions.json"
+    data = read(rel, ["styles", "expressions"])
+    styles = of(rel, "styles", data.get("styles", {}), dict, ["eyes", "mouth"])
+    for slot in ("eyes", "mouth") if data else ():
+        names = styles.get(slot)
+        if not (isinstance(names, list) and 0 < len(names) == len(set(names)) <= MOST
+                and all(isinstance(n, str) and NAME.match(n) for n in names)):
+            fail(rel, f"styles.{slot}", "isn't a list of names, each once")
+            names = []
+        rig[slot] = names
+    for mood, pose in of(rel, "expressions", data.get("expressions", {}), dict).items():
+        where = f"expressions.{mood}"
+        if mood not in moods:
+            fail(rel, where, "isn't a mood")
+        values, picked = {}, {"eyes": 0, "mouth": 0}
+        for key, value in of(rel, where, pose, dict).items():
+            lo, hi, _ = channels[named(key)[0]] if named(key) else (0, 0, 0)
+            if key in picked:
+                if value in rig[key]:
+                    picked[key] = rig[key].index(value)
+                else:
+                    fail(rel, f"{where}.{key}", f"{value!r} isn't one of styles.{key}")
+            elif not named(key):
+                fail(rel, f"{where}.{key}", "unknown key")
+            elif any(c in values for c in named(key)):
+                fail(rel, f"{where}.{key}", "sets a channel twice")
+            elif not number(value, lo, hi):
+                fail(rel, f"{where}.{key}", f"{value!r} isn't a whole number from {lo} to {hi}")
+            else:
+                values.update({c: value for c in named(key)})
+        rig["expressions"].append({"mood": mood, "values": [values.get(c, rest) for c, (_, _, rest) in channels.items()],
+                                   **picked})
+
+    clips = sorted((folder / "clips").glob("*.json")) if (folder / "clips").is_dir() else []
+    if len(clips) > MOST:
+        problems.append(f"rig/clips: more than {MOST} clips")
+    for path in clips:
+        rel = f"clips/{path.name}"
+        clip = read(rel, ["about", "ms", "loop", "additive", "tracks", "cues"])
+        if not NAME.match(path.stem):
+            fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
+        ms, loop, additive = clip.get("ms"), clip.get("loop", False), clip.get("additive", True)
+        if not number(ms, 1, 60000):
+            fail(rel, "ms", f"{ms!r} isn't a whole number of ms from 1 to 60000")
+            continue
+        for key, value in (("loop", loop), ("additive", additive)):
+            if not isinstance(value, bool):
+                fail(rel, key, f"{value!r} isn't true or false")
+        if not isinstance(clip.get("about", ""), str):
+            fail(rel, "about", "isn't text")
+        tracks, cues = [], []
+        for name, keys in of(rel, "tracks", clip.get("tracks", {}), dict).items():
+            where = f"tracks.{name}"
+            if not named(name):
+                fail(rel, where, "isn't a channel")
+                continue
+            if any(c == done for c in named(name) for done, _ in tracks):
+                fail(rel, where, "sets a channel twice")
+                continue
+            lo, hi, _ = channels[named(name)[0]]
+            if additive is True:
+                lo, hi = lo - hi, hi - lo  # an offset spans the whole range, either way
+            if isinstance(keys, list) and not 0 < len(keys) <= MOST:
+                fail(rel, where, f"has {len(keys)} keys, not 1 to {MOST}")
+            keys, rows = of(rel, where, keys, list), []
+            for i, key in enumerate(keys):
+                at = f"{where}[{i}]"
+                t, value, ease = (key + ["inout"])[:3] if isinstance(key, list) and len(key) in (2, 3) else (None,) * 3
+                if t is None:
+                    fail(rel, at, "isn't [ms, value] or [ms, value, ease]")
+                elif not number(t, rows[-1][0] + 1 if rows else 0, ms):
+                    fail(rel, at, f"its time, {t!r}, isn't a whole ms after the key before's and at most {ms}")
+                elif not number(value, lo, hi):
+                    fail(rel, at, f"its value, {value!r}, isn't a whole number from {lo} to {hi}")
+                elif ease not in EASES:
+                    fail(rel, at, f"its ease, {ease!r}, isn't one of {', '.join(EASES)}")
+                else:
+                    rows.append((t, value, ease))
+            if loop is True and rows and (rows[0][0], rows[-1][0], rows[-1][1]) != (0, ms, rows[0][1]):
+                fail(rel, where, "loops, so it starts at 0 and ends at ms on the value it started on")
+            tracks += [(c, rows) for c in named(name)]
+        for i, cue in enumerate(of(rel, "cues", clip.get("cues", []), list)):
+            if i == MOST or not (isinstance(cue, list) and len(cue) == 2 and number(cue[0], 0, ms - 1)
+                                 and isinstance(cue[1], str) and NAME.match(cue[1])):
+                fail(rel, f"cues[{i}]", f"isn't [ms before {ms}, a name] (at most {MOST} of them)")
+            else:
+                cues.append((cue[0], cue[1]))
+        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop is True, "additive": additive is True,
+                             "tracks": tracks, "cues": sorted(cues)})
+
+    rel, ids = "looks.json", [c["id"] for c in rig["clips"]]
+    for state, look in read(rel).items():
+        if state not in states:
+            fail(rel, state, "isn't a state the board has")
+        look = of(rel, state, look, dict, ["clip", "scene", "dresses"])
+        clip, scene, dresses = look.get("clip"), look.get("scene"), look.get("dresses", False)
+        if clip is not None and clip not in ids:
+            fail(rel, f"{state}.clip", f"{clip!r} isn't a clip in rig/clips/")
+            clip = None
+        elif clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
+            fail(rel, f"{state}.clip", f"{clip} doesn't loop")
+        if scene is not None and not (isinstance(scene, str) and NAME.match(scene)):
+            fail(rel, f"{state}.scene", f"{scene!r} isn't a name, or null")
+            scene = None
+        if not isinstance(dresses, bool):
+            fail(rel, f"{state}.dresses", f"{dresses!r} isn't true or false")
+        if scene and scene not in rig["scenes"]:
+            rig["scenes"].append(scene)
+        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip),
+                             "scene": rig["scenes"].index(scene) + 1 if scene else 0, "dresses": dresses is True})
+
+    rel, worn = "accessories.json", outfits()
+    for outfit, accessory in read(rel).items():
+        if outfit not in worn:
+            fail(rel, outfit, f"isn't an outfit ({', '.join(worn)})")
+        accessory = of(rel, outfit, accessory, dict, ["anchor", "art"])
+        anchor, art = accessory.get("anchor"), accessory.get("art", outfit)
+        if anchor not in ANCHORS:
+            fail(rel, f"{outfit}.anchor", f"{anchor!r} isn't one of {', '.join(ANCHORS)}")
+        if not (isinstance(art, str) and NAME.match(art)):
+            fail(rel, f"{outfit}.art", f"{art!r} isn't a name")
+        rig["accessories"].append({"outfit": worn.get(outfit), "anchor": ANCHORS.get(anchor), "art": art})
+    return rig, problems
+
+
+def rig_h(pack: Path, rig: dict) -> str:
+    """The firmware's rig_tables.h, which staging writes from a pack's rig/,
+    read_rig() having checked it: its rows, then kRig, which lists them."""
+    out, keys, tracks, cues = [], [], [], []
+
+    def table(kind, name, rows):
+        if rows:
+            out.append(f"inline constexpr {kind} {name}[] = {{\n" + "".join(f"    {row},\n" for row in rows) + "};")
+        return f"{{pack::{name}, {len(rows)}}}" if rows else "{}"
+
+    def run(name, start, count):
+        return f"{{{name} + {start}, {count}}}" if count else "{}"
+
+    def enum(name):
+        return "k" + name[0].upper() + name[1:]
+
+    clips = []
+    for c in rig["clips"]:
+        first, cue = len(tracks), len(cues)
+        for channel, rows in c["tracks"]:
+            tracks.append(f"{{Channel::{enum(channel)}, {run('kKeys', len(keys), len(rows))}}}")
+            keys += [f"{{{t}, {v}, Ease::{EASES[e]}}}" for t, v, e in rows]
+        cues += [f"{{{t}, {json.dumps(name)}}}" for t, name in c["cues"]]
+        clips.append(f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
+                     f"{run('kTracks', first, len(c['tracks']))}, {run('kCues', cue, len(c['cues']))}}}")
+    lists = [table("const char*", "kEyeStyles", [json.dumps(s) for s in rig["eyes"]]),
+             table("const char*", "kMouthStyles", [json.dumps(s) for s in rig["mouth"]]),
+             table("const char*", "kScenes", [json.dumps(s) for s in rig["scenes"]])]
+    table("Key", "kKeys", keys)
+    table("Track", "kTracks", tracks)
+    table("Cue", "kCues", cues)
+    lists += [table("Expression", "kExpressions",
+                    [f"{{{json.dumps(e['mood'])}, {{{{{', '.join(map(str, e['values']))}}}}}, {e['eyes']}, {e['mouth']}}}"
+                     for e in rig["expressions"]]),
+              table("Clip", "kClips", clips),
+              table("Look", "kLooks", [f"{{SceneState::{camel(l['state'])}, "
+                                       f"{'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}, "
+                                       f"{l['scene']}, {str(l['dresses']).lower()}}}" for l in rig["looks"]]),
+              table("Accessory", "kAccessories", [f"{{Outfit::{a['outfit']}, Anchor::{a['anchor']}, {json.dumps(a['art'])}}}"
+                                                  for a in rig["accessories"]])]
+    body = "\n".join(out)
+    return f"""// Generated by characters/charactergen.py from characters/{pack.name}/rig/. Do not edit.
+// The pack's rig (characters/CHARACTER.md §15): its rows, and kRig.
+#pragma once
+#include "render/rig/rig.h"
+
+namespace render::rig {{
+namespace pack {{
+{body}
+}}  // namespace pack
+
+inline constexpr Rig kRig = {{{', '.join(lists)}}};
+
+}}  // namespace render::rig
 """
 
 
@@ -372,7 +623,8 @@ def write_studio(pack: Path, check: bool) -> int:
 
 def pack_problems(pack: Path, character: dict) -> list[str]:
     """What stops a pack from staging: its moods (§5), what it uses (§6),
-    and an id or version too long for the board's hello (§10)."""
+    an id or version too long for the board's hello (§10), and its rig
+    (§15)."""
     paths, problems = used(pack, character)
     problems = mood_problems(character, universal_moods()) + problems
     if len(character.get("id", "")) > 24 or len(character.get("version", "")) > 16:
@@ -384,7 +636,7 @@ def pack_problems(pack: Path, character: dict) -> list[str]:
         folder = f"firmware/src/render/{face}"
         if not (pack / folder).is_dir() and not (folder in paths and paths[folder].is_dir()):
             problems.append(f"faces gives {board} the {face} face, and there's no {folder}/")
-    return problems
+    return problems + read_rig(pack)[1]
 
 
 def check(pack: Path) -> int:
@@ -402,7 +654,7 @@ def bundle(view: Path, name: str) -> None:
     no more: .character-build/packs/<name>/."""
     shutil.copytree(view, STAGE / "packs" / name,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
-                                                  "studio"))
+                                                  "studio", "rig"))
 
 
 def checked_pack(pack: Path) -> tuple[dict, dict[str, Path]] | None:
@@ -420,7 +672,8 @@ def stage(pack: Path) -> int:
     what it uses from other packs (§6), as links, the one folder the tests,
     boopdev and the device tools read, and the pointer to it
     (.character-build/pack); from it, the firmware's files
-    (.character-build/firmware/) with the generated moods.h, and the pack
+    (.character-build/firmware/) with the generated moods.h and
+    rig_tables.h, and the pack
     as the Mac app bundles it, with what the app reads and no more
     (.character-build/packs/<name>/), beside every other pack beside it
     for buddies that run one, with packs/chosen naming this one."""
@@ -462,12 +715,13 @@ def stage(pack: Path) -> int:
 
 
 def firmware_from(view: Path, pack: Path, character: dict, dest: Path) -> None:
-    """The firmware's files from a pack's staged view: its firmware/ folder
-    and the moods.h made from character.json."""
+    """The firmware's files from a pack's staged view: its firmware/ folder,
+    the moods.h made from character.json and the rig_tables.h from rig/."""
     if (view / "firmware").is_dir():
         shutil.copytree(view / "firmware", dest)
     (dest / "include").mkdir(parents=True, exist_ok=True)
     (dest / "include" / "moods.h").write_text(moods_h(pack, character))
+    (dest / "include" / "rig_tables.h").write_text(rig_h(pack, read_rig(view)[0]))
 
 
 def firmware_to(pack: Path, dest: Path) -> int:

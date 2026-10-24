@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-23. The contract a character pack meets, so that any
+Updated 2026-10-24. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -18,6 +18,7 @@ What a pack holds, and what it must have:
 | `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
+| `rig/` | no | Its expressions, clips, looks and accessories on the rig the faces are moving to (§15) |
 | `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
 | `mac/mirror/` | no | A web page the popover shows as the face (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
@@ -99,10 +100,11 @@ The first of these wins:
 `.character-build/` at the repo root (also ignored): `staged/<name>/`,
 the staged pack, its own files and those it uses from another pack (§6),
 each a link to the file in its pack; `pack`, the one pointer to it; and
-from it, the pack's `firmware/` and the folder the app bundles
+from it, the pack's `firmware/`, with the two headers staging makes
+(`moods.h`, §9, and `rig_tables.h`, §15), and the folder the app bundles
 (`packs/`). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
 and `make build` before every app build. The app bundles only what it
-reads of a pack (not its firmware, voice file, tools or tests): the
+reads of a pack (not its firmware, rig, voice file, tools or tests): the
 chosen pack's, which `packs/chosen` names, and beside it every other
 pack in the chosen one's folder, each with what it uses, for buddies
 that run another pack. Several buddies run side by side, each a board
@@ -154,6 +156,9 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     include/…        the faces' generated art and sounds
     src/render/…     each face's code in a folder of its own, and
                      make_face.cpp, which makes the board's (§9)
+  rig/               optional: its poses and moves on the rig (§15)
+    expressions.json, looks.json, accessories.json
+    clips/<id>.json
   voice/voice.bin    optional: the voice file, for the microSD card (§8)
   studio/            optional: the studio's preview adapter (§12)
   design/, tools/    optional: what the pack's art and sounds are
@@ -551,6 +556,8 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   no other, and defines `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for
   `makeFace()` (`firmware/tools/pack_face.py`). The simulator builds
   every face, and `makeFace()` picks by `BOOP_SIM_FACE`.
+- `include/rig_tables.h`: the pack's rig (§15), which staging also
+  makes, from `rig/`.
 - Every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
   carries that file, or uses it.
@@ -684,12 +691,127 @@ words. The app bundles the folder. How to write and play one:
    studio entry (§12) to look at every mood and state in
    `characters/studio/index.html`.
 
+## 15. The rig (optional)
+
+The rig is the one set of numbers every pack and face shares
+([plan/character-engine.md](../plan/character-engine.md)): at any instant
+a character is a value on each of its channels. A pack's `rig/` says
+what they do: its poses, its moves, its looks and where its outfits sit.
+The engine's half is `firmware/src/render/rig/`: the channels and the
+tables' types (`rig.h`), the mixer that plays them (`mixer.h`) and the
+layers a face draws (`layers.h`). No face draws from it yet; the pixel
+face and the gel move onto it next. Boop's rig has poses for the 13
+moods Pixel draws, read off the gel's faces for them
+(`design/slime-blob/expressions.json`), the looks idle, working and
+asleep, and a notice, a cheer and a poke. Pixel's is a copy of Boop's
+until Pixel's face has its own.
+
+**Channels.** The body's `x`, `y`, `squash`, `lean`, `tilt` and `lift`;
+the eyes' `eyeOpenL`, `eyeOpenR`, `eyeCurve`, `eyeSize`, `gazeX` and
+`gazeY`; the mouth's `mouthWidth`, `mouthCurve` and `mouthOpen`; and
+`cheek`, `tear` and `sweat`. Each is a whole number, in thousandths but
+for `x`, `y` and `lift` (px), with a range and a value at rest:
+`kChannelInfo` in `rig.h` says what each means, and `charactergen.py`
+checks the files by it. In the files, `eyeOpen` sets both eyes. A face
+also has two **styles**, the eyes' and the mouth's: which of the pack's
+drawings it draws, for the shapes no channel reaches (hearts, X eyes). A
+new style cross-fades in.
+
+**`expressions.json`**: the styles, the first of each the default, and a
+pose for each mood the pack has one for: a target for each channel it
+names (the others at rest) and its styles. Boop's, cut to two of its
+moods:
+
+```json
+{
+  "styles": {
+    "eyes": ["dot", "bean"],
+    "mouth": ["curve", "ring"]
+  },
+  "expressions": {
+    "calm": {"mouthWidth": 250, "mouthOpen": 300, "mouth": "ring"},
+    "happy": {"eyeCurve": 300, "eyeSize": 950, "mouthWidth": 1000, "mouthCurve": 800, "mouthOpen": 400, "cheek": 500}
+  }
+}
+```
+
+A mood without one has no pose of its own, and the face decides what it
+wears (Pixel's borrows, §9).
+
+**`clips/<id>.json`**: a clip each, its id the file's name: keyframed
+curves on some channels, timed in ms, with cues. Boop's notice:
+
+```json
+{
+  "about": "notice: it heard its name and looks up at you, eyes wide, then settles (Pixel's perk).",
+  "ms": 900,
+  "tracks": {
+    "lift": [[0, 0], [120, 10, "out"], [300, 12], [600, 10], [820, 0]],
+    "gazeY": [[0, 0], [120, -500, "out"], [700, -500], [900, 0]],
+    "eyeSize": [[0, 0], [120, 200, "out"], [600, 150], [900, 0]]
+  },
+  "cues": [[90, "swipe"], [500, "shimmer"]]
+}
+```
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `ms` | yes | Its length, 1 to 60000 |
+| `loop` | no | Whether it loops, `false` without it. A looping clip's tracks start at 0 and end at `ms` on the value they started on |
+| `additive` | no | `true` without it: its values are offsets on what's there, so it plays in any mood, each up to the channel's whole span either way. `false`: values to blend toward, each in the channel's range |
+| `tracks` | no | For each channel, its keys in order of time, `[ms, value]` or `[ms, value, ease]`, the ease into the key from the one before: `linear`, `in`, `out` or `inout`, which a key without one has. Before its first key a track holds that key's value, and after its last the last's |
+| `cues` | no | `[ms, name]`, each before `ms`: a sound or a contact, which the face plays when the clip crosses it |
+| `about` | no | What it is, for people |
+
+**`looks.json`**: for each look (§9's Looks), the clip it loops under
+the reactions (`clip`, one that loops, or null), its scene (`scene`, a name
+for the face's art, or null) and whether it dresses for the tags
+(`dresses`, `false` without it). Boop's:
+
+```json
+{
+  "idle": {"clip": "breathe", "scene": null, "dresses": true},
+  "working": {"clip": "work", "scene": "desk", "dresses": false},
+  "asleep": {"clip": "doze", "scene": null, "dresses": true}
+}
+```
+
+**`accessories.json`**: where each outfit sits and what the face draws
+for it. Which outfit the tags call for is `render::outfitFor`'s rule
+(§9), not the pack's: for each of `witch_hat`, `party_hat`, `nightcap`
+and `bobble` it draws, the pack gives an `anchor` (`crown`, `brim`,
+`hands` or `eyes`) and an `art` (a name, the outfit's without one):
+`{"nightcap": {"anchor": "brim"}}`.
+
+Every file is optional, and one that's missing is empty.
+`charactergen.py --check` fails on an unknown key, channel, mood, state,
+outfit, style or clip, a value out of its range, keys out of order and a
+loop that doesn't close, each with its file and key
+(`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
+`rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
+with a lookup by mood, clip, look and outfit. The app doesn't bundle
+`rig/`.
+
+**How it plays.** The mixer (`mixer.h`) holds a critically damped spring
+on each channel, the face's quicker than the body's, whose targets are
+the mood's pose, so a new mood never jumps. The look's clip loops over
+the springs, and reactions' clips over that, a few at once, each with a
+weight that eases in and out: an additive clip adds its offsets, an
+absolute one blends toward its values. A poke or a stroke kicks a
+spring. The layers (`layers.h`) are scene, body, face, accessories,
+held, air and lane, back to front, each fading in and out, with the
+anchors the face reports from the pose it draws (the crown, a ring for a
+brim and one for the hands, the eyes), so what's worn or held rides the
+body.
+
 ## Not yet
 
 - Pixel draws and voices 13 of the moods; the others borrow theirs
   (`characters/pixel/tools/borrowed.json`) until they have art and takes
   of their own.
 - Pixel's mood moves are Boop's; they become Pixel's own.
+- No face draws from the rig yet (§15), and Pixel's rig is a copy of
+  Boop's; it becomes Pixel's own when the pixel face moves onto it.
 - The palette lives in the pixel face's `faces.h`; it moves out of the
   art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and

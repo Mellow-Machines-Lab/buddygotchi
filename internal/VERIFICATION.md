@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-22. How we check that Boop works, including what's on its
+Updated 2026-10-24. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -332,8 +332,14 @@ gets at least one scenario. Their pictures are the golden images in
   against facegen's frames, every mood, state and variation, and the
   variations' host facts (`test_scene`, Pixel's pack's, which comes with
   the pixel face to a pack that uses it); the voice
-  player (`test_voice`); and the sound effects' assets, policies, timing
-  and mixer (`test_effects`).
+  player (`test_voice`); the sound effects' assets, policies, timing
+  and mixer (`test_effects`); and the rig the faces are moving onto
+  (`test_rig`): clips' eases, loops and cues, the mixer's springs
+  settling without overshoot and a mood changed mid-way never jumping,
+  reactions' weights easing in and out over 150 ms, additive and
+  absolute clips blending, styles cross-fading over 200 ms, the same
+  frames from the same inputs, the layers' 200 ms fades, and the staged
+  pack's `rig_tables.h` against its files.
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
