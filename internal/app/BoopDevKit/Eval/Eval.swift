@@ -966,8 +966,10 @@ public struct Eval {
         // The agent sends a helper off, and it comes back.
         case "helper started": return [hook(.subagent, .start, "SubagentStart", subagent: step.helper ?? "h1")]
         case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
-        // What you did to the board, which reacted to it at once.
-        case "gesture": return [{ $0.gesture(step.kind ?? "stroke", at: now) }]
+        // What you did to the board, which reacted to it at once: a hold
+        // names the request the sign shows, as the board does.
+        case "gesture":
+            return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you
         // lock the screen and leave now, and later unlock it.
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",

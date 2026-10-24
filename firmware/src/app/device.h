@@ -116,8 +116,10 @@ class Device : public linkkit::App {
  public:
   // A panel touch ends after this long without contact, in real ms.
   static constexpr uint32_t kTouchReleaseMs = 50;
-  // The gesture a finger held on the needs-you sign sends (`ev gesture`):
-  // the Mac stops showing that request, and the board plays nothing.
+  // The gesture a finger held on the needs-you sign sends (`ev gesture`),
+  // with the number of the request the sign showed as the touch began
+  // (`data.attn`, the state's `attn.id`): the Mac stops showing that
+  // request if it still shows, and the board plays nothing.
   static constexpr const char* kDismissGesture = "dismiss";
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
@@ -253,8 +255,10 @@ class Device : public linkkit::App {
   // The touch in progress, last in contact at real time touchSeenReal_.
   bool touchDown_ = false;
   bool touchInjected_ = false;  // it's dbg.touch's, not the panel's
-  // It began on the needs-you sign, and its hold has dismissed it.
+  // It began on the needs-you sign, showing request touchSign_ (0 when the
+  // Mac sent no number), and its hold has dismissed it.
   bool touchOnSign_ = false, touchDismissed_ = false;
+  uint32_t touchSign_ = 0;
   uint32_t touchSeenReal_ = 0;
 
   // A `say` is playing, and the reaction (Behaviour::reactionSeq) whose `say`

@@ -751,6 +751,43 @@ final class ViewTests: XCTestCase {
         XCTAssertNil(third.core.snapshot(at: rig.now).attn)
     }
 
+    /// A request you dismissed stays dismissed across a relaunch while its
+    /// agent still waits on it: the read-back takes it from the request's
+    /// `needs_you` end, since this launch numbers requests afresh. The
+    /// session's next request shows, then and after another relaunch.
+    func testADismissedRequestStaysDismissedAfterARelaunch() throws {
+        let dir = tempDir("boop-tr")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = rig.time
+        rig = CoreRig()
+        func pipeline() -> Pipeline {
+            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
+                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
+        }
+        func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
+        let first = pipeline()
+        first.agent(rig.event(.turnStart))
+        first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
+        first.agent(rig.event(.needsYou, tool: "Bash"))
+        rig.now += 1000
+        XCTAssertEqual(needs(first.dismiss(SessionFold.key(.claude, "s1"), at: rig.now)).map { $0["why"]?.string }, [Core.dismissedWhy])
+        rig.now += 60_000
+        let second = pipeline()
+        second.readBack(now: rig.now)
+        XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
+        XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
+        XCTAssertEqual(second.core.snapshot(at: rig.now).idle, 1)
+        XCTAssertEqual(second.core.line(at: rig.now).map(\.id), ["s1"], "and in BOOT's line")
+        second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
+        second.agent(rig.event(.activity, tool: "Bash", id: "t2"))
+        XCTAssertEqual(needs(second.agent(rig.event(.needsYou, tool: "Bash"))).map(\.phase), [.start], "its next request shows")
+        rig.now += 1000
+        let third = pipeline()
+        third.readBack(now: rig.now)
+        XCTAssertEqual(needs(third.tick(at: rig.now)), [])
+        XCTAssertNotNil(third.core.snapshot(at: rig.now).attn, "and shows after another relaunch")
+    }
+
     /// A request the read-back
     /// clears, which the transcript never ended, is ended by the first
     /// publish with why it cleared. Here the safety net, at another

@@ -146,7 +146,7 @@ public final class TranscriptView {
         var lastAgentLined = false
 
         /// Its tracker never asks whether an agent's process runs: the core
-        /// records a session whose agent is gone as that session's end
+        /// records a session whose agent is gone as its turn stopping
         /// (`Core.agentGone`), so the fold depends on the log alone.
         init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place, isRunning: { _ in true }) }
     }
@@ -389,8 +389,9 @@ public final class TranscriptView {
         // A hook that landed after its session ended, or a stale idle
         // notice, doesn't count.
         guard let change = fold.sessions.handle(a) else { return nil }
-        // An agent gone ends its session, but nobody did anything.
-        if a.hook != Core.agentGone { noteActivity(now) }
+        // An agent gone stops its turn, but nobody did anything.
+        let gone = a.hook == Core.agentGone
+        if !gone { noteActivity(now) }
         guard let s = fold.sessions.sessions[key] else {
             fold.counts[key] = nil
             return nil
@@ -429,6 +430,11 @@ public final class TranscriptView {
             // turn stopped, or the first Boop hears from a session)
             // finishes nothing the fold saw.
             guard case .turnEnded(_, endedTurn: true) = change, let started = before?.turn.startedAt else { return nil }
+            // An agent gone finished nothing: its turn just stops.
+            if gone {
+                c.check = nil
+                return nil
+            }
             let check = c.check
             c.check = nil
             // A turn the fold joined partway (it never saw a prompt) isn't
