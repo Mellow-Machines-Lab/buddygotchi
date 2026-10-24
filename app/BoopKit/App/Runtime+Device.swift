@@ -26,8 +26,6 @@ extension Runtime {
         let rig = rig ?? rigs[0]
         let now = options.clock()
         switch rig.link.receive(line, now: now) {
-        case .hello(let hello):
-            remember(hello, on: rig)
         case .ended(let ended):
             options.log("device\(Runtime.whose(rig)): do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
             emit(DebugLog.ended(ended, at: now))
@@ -38,14 +36,17 @@ extension Runtime {
         changed()
     }
 
-    /// The first board that fits and says hello over Bluetooth is the one
-    /// Boop takes from then on (`AppSettings.board`). Only for one Boop:
-    /// several buddies name their boards in their settings.
-    func remember(_ hello: Hello, on rig: Rig) {
-        guard settings.board == nil, !pipeline.several, rig.transport?.name == "ble", rig.link.trouble == nil else { return }
+    /// The first board that fits and is tapped over Bluetooth, on
+    /// onboarding's pairing tap or any later, is the one Boop takes from
+    /// then on (`AppSettings.board`): saying hello isn't enough, since any
+    /// board in range does. Only for one Boop: several buddies name their
+    /// boards in their settings.
+    func remember(on rig: Rig) {
+        guard settings.board == nil, !pipeline.several, rig.transport?.name == "ble", let hello = rig.link.hello else { return }
         saveSettings { $0.board = hello.id }
         options.log("device: remembering \(hello.id); Boop takes only it over Bluetooth until Settings forgets it")
         options.chooseBoard?(BoopDevice.advertised(hello.id))
+        changed()
     }
 
     /// A tap, or BOOT's push-to-talk, on `rig`'s board.
@@ -55,15 +56,17 @@ extension Runtime {
         switch ev.kind {
         case "tap":
             if rig === rigs[0], ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did)) }
-            let finish = BoopDevice.finish(tapped: ev)
+            let finish = BoopDevice.finish(tapped: ev), button = BoopDevice.button(tapped: ev)
             options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
+            remember(on: rig)
             let opens = finish.flatMap { rig.reactions.opens(finish: $0) }
-            // Onboarding hears every tap and BOOT press, after the core
-            // takes it (onTap is called on `home`, after this returns).
-            if rig === rigs[0] { home.async { [weak self] in self?.onTap?() } }
+            // Onboarding hears every tap and BOOT press, and which it was,
+            // after the core takes it (onTap is called on `home`, after
+            // this returns).
+            if rig === rigs[0] { home.async { [weak self] in self?.onTap?(button) } }
             // BOOT: the core decides whether it hands you the next agent;
             // the board has played its guess (its hand-off, or a poke).
-            if BoopDevice.button(tapped: ev) { return run(pipeline.press(at: now, finish: opens, buddy: rig.tag)) }
+            if button { return run(pipeline.press(at: now, finish: opens, buddy: rig.tag)) }
             // A poke. The device has already poked,
             // cutting the animation playing but not a reaction's `say` or face;
             // on the brain's finish that names whose turn it was it only

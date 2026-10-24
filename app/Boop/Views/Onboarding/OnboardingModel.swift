@@ -61,6 +61,8 @@ final class OnboardingModel: ObservableObject {
     var startRuntime: () -> Void = {}
     /// Onboarding is over: the app takes the menu bar.
     var finished: () -> Void = {}
+    /// Brings the window in front of the others; the app's.
+    var bringForward: () -> Void = {}
     var log: (String) -> Void = { _ in }
 
     init(app: AppModel, act: Onboarding.Act, stateDir: URL) {
@@ -75,12 +77,27 @@ final class OnboardingModel: ObservableObject {
     // MARK: Moving
 
     func go(_ to: Onboarding.Act) {
+        // Past the name, a quit comes back here; before it nothing is kept.
+        if to.afterNaming { save(to) }
+        show(to)
+    }
+
+    /// Moves to `to` without saving it.
+    private func show(_ to: Onboarding.Act) {
         forward = to.index > act.index
         OnboardingSound.play(.step)
         withAnimation(.boopEase(0.45)) { progress.move(to: to) }
-        // Past the name, a quit comes back here; before it nothing is kept.
-        if to.afterNaming { app.runtime?.setOnboarding(to) }
         entered(to)
+    }
+
+    /// Saves the act, or nil once done (`Onboarding.save`), and logs it
+    /// when it can't.
+    private func save(_ act: Onboarding.Act?) {
+        do {
+            try Onboarding.save(act, runtime: app.runtime, stateDir: stateDir)
+        } catch {
+            log("onboarding: can't save where it stands: \(error)")
+        }
     }
 
     func next() {
@@ -114,12 +131,10 @@ final class OnboardingModel: ObservableObject {
         guard draft.canContinueName else { return }
         do {
             try Runtime.setUp(stateDir: stateDir, name: draft.trimmedName, nature: draft.nature)
-            var settings = AppSettings.load(from: stateDir)
-            settings.onboarding = .body
-            try settings.save(to: stateDir)
+            try Onboarding.save(.body, runtime: app.runtime, stateDir: stateDir)
             nameError = nil
             log("onboarding: named \(draft.trimmedName), \(draft.nature.rawValue)")
-            go(.body)
+            show(.body)
         } catch {
             log("onboarding: can't save the name: \(error)")
             nameError = "I couldn't save my name. What happened is in boop.log, in my folder."
@@ -160,11 +175,12 @@ final class OnboardingModel: ObservableObject {
 
     // MARK: Taps and hooks, from the runtime
 
-    func tapped() {
+    /// A tap on the board: its screen, or its button when `button`.
+    func tapped(button: Bool) {
         var found = false
         if case .found = board { found = true }
         var next = progress
-        let tap = next.tapped(boardFound: found)
+        let tap = next.tapped(boardFound: found, button: button)
         guard tap != .nothing else { return }
         OnboardingSound.play(.success)
         withAnimation(tap == .paired ? .spring(response: 0.55, dampingFraction: 0.6) : .boopPop) { progress = next }
@@ -178,6 +194,8 @@ final class OnboardingModel: ObservableObject {
         var next = progress
         guard next.heard(agent) else { return }
         withAnimation(.boopPop) { progress = next }
+        // Act 6 sent you to your terminal: the window comes back for the hello.
+        bringForward()
         app.runtime?.greet(.celebrate)
         celebrate()
         log("onboarding: heard \(agent)'s first hook")
@@ -224,7 +242,7 @@ final class OnboardingModel: ObservableObject {
 
     func finish() {
         log("onboarding: finished")
-        app.runtime?.setOnboarding(nil)
+        save(nil)
         finished()
     }
 }

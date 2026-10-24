@@ -41,6 +41,25 @@ final class OnboardingTests: XCTestCase {
         let unknown = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"onboarding":"somethingNew"}"#.utf8))
         XCTAssertNil(unknown.onboarding, "an act this version doesn't know is none")
     }
+
+    /// With no runtime (before the board, or one that couldn't start),
+    /// where onboarding stands is saved straight into settings.json, with
+    /// the rest of the settings kept, so a launch comes back to the act,
+    /// and a finish stays finished.
+    func testWithNoRuntimeTheActIsSavedStraightToSettings() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("onboarding-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        var settings = AppSettings()
+        settings.board = "b00p-54fe"
+        try settings.save(to: dir)
+        try Onboarding.save(.agents, runtime: nil, stateDir: dir)
+        XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
+        XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe")
+        XCTAssertEqual(Onboarding.resume(isSetUp: true, saved: AppSettings.load(from: dir).onboarding), .agents)
+        try Onboarding.save(nil, runtime: nil, stateDir: dir)
+        XCTAssertNil(Onboarding.resume(isSetUp: true, saved: AppSettings.load(from: dir).onboarding), "finished")
+    }
 }
 
 final class OnboardingProgressTests: XCTestCase {
@@ -55,34 +74,64 @@ final class OnboardingProgressTests: XCTestCase {
 
     /// The rule for pairing: a tap pairs the board only in act 4, while
     /// looking, with a board found; a tap before "Look for me", or with
-    /// nothing found, does nothing.
+    /// nothing found, does nothing. The button pairs it as the screen does.
     func testATapPairsTheBoardOnlyWhileLookingWithOneFound() {
         var progress = Onboarding.Progress(act: .body)
-        XCTAssertEqual(progress.tapped(boardFound: true), .nothing, "not looking yet")
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false), .nothing, "not looking yet")
         progress.body = .looking
-        XCTAssertEqual(progress.tapped(boardFound: false), .nothing, "nothing found")
+        XCTAssertEqual(progress.tapped(boardFound: false, button: false), .nothing, "nothing found")
         XCTAssertEqual(progress.body, .looking)
-        XCTAssertEqual(progress.tapped(boardFound: true), .paired)
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false), .paired)
         XCTAssertEqual(progress.body, .joined)
-        XCTAssertEqual(progress.tapped(boardFound: true), .nothing, "paired once")
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false), .nothing, "paired once")
+
+        var pressed = Onboarding.Progress(act: .body)
+        pressed.body = .looking
+        XCTAssertEqual(pressed.tapped(boardFound: true, button: true), .paired)
     }
 
-    /// The lessons: the pairing tap counts as the first, the next tap or
-    /// press does the button, and more do nothing. Without pairing, the
-    /// first tap is the tap lesson.
-    func testTheLessonsAreDoneOnTheBoardInOrder() {
+    /// The lessons: a tap on the screen does "Tap my screen", and only a
+    /// press of the button does "Press my button", each once; the tap that
+    /// paired the board counts as its own.
+    func testEachLessonIsDoneByItsOwnTouch() {
         var paired = Onboarding.Progress(act: .body)
         paired.body = .looking
-        _ = paired.tapped(boardFound: true)
+        _ = paired.tapped(boardFound: true, button: false)
         paired.move(to: .howTo)
         XCTAssertEqual(paired.lessons, [.tap])
-        XCTAssertEqual(paired.tapped(boardFound: true), .lesson(.button))
+        XCTAssertEqual(paired.tapped(boardFound: true, button: false), .nothing, "the screen again isn't the button")
+        XCTAssertEqual(paired.lessons, [.tap])
+        XCTAssertEqual(paired.tapped(boardFound: true, button: true), .lesson(.button))
         XCTAssertEqual(paired.lessons, [.tap, .button])
-        XCTAssertEqual(paired.tapped(boardFound: true), .nothing)
+        XCTAssertEqual(paired.tapped(boardFound: true, button: true), .nothing)
 
         var later = Onboarding.Progress(act: .howTo)
-        XCTAssertEqual(later.tapped(boardFound: true), .lesson(.tap))
-        XCTAssertEqual(later.tapped(boardFound: true), .lesson(.button))
+        XCTAssertEqual(later.tapped(boardFound: true, button: true), .lesson(.button), "in either order")
+        XCTAssertEqual(later.tapped(boardFound: true, button: false), .lesson(.tap))
+        XCTAssertEqual(later.lessons, [.tap, .button])
+    }
+
+    /// The rule: Back into the board's act after it was skipped, by
+    /// "I don't have my Boop yet" or by a launch past it, starts it again
+    /// from "Plug me in", never a skipped act with nothing to show.
+    func testBackIntoTheBoardAfterSkippingItStartsItAgain() {
+        var skipped = Onboarding.Progress(act: .body)
+        skipped.body = .skipped
+        skipped.move(to: .howTo)
+        skipped.move(to: .body)
+        XCTAssertEqual(skipped.body, .intro)
+
+        var relaunched = Onboarding.Progress(act: .agents)
+        relaunched.move(to: .howTo)
+        XCTAssertEqual(relaunched.body, .skipped, "past the board it stays skipped")
+        relaunched.move(to: .body)
+        XCTAssertEqual(relaunched.body, .intro)
+
+        var joined = Onboarding.Progress(act: .body)
+        joined.body = .joined
+        joined.move(to: .howTo)
+        joined.move(to: .body)
+        XCTAssertEqual(joined.body, .joined, "a paired board stays paired")
     }
 
     /// The live hello: only in act 6, once connected, and only the first.

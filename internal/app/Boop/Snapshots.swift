@@ -175,6 +175,8 @@ enum Snapshots {
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
+            // Back from act 5 after "I don't have my Boop yet", or a launch past the board.
+            ("4-body-back-after-skipping", at(.howTo, status: status(connected: false)) { $0.progress.move(to: .body) }),
             ("5-how-to", at(.howTo, status: status()) {
                 $0.body = .joined
                 $0.lessons = [.tap]

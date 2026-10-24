@@ -46,7 +46,8 @@ public enum Onboarding {
             case looking
             /// The board was tapped while found: paired.
             case joined
-            /// "I don't have my Boop yet", or past act 4 at launch.
+            /// "I don't have my Boop yet", or past act 4 at launch. Nothing
+            /// to show: Back into act 4 makes it `intro` again.
             case skipped
         }
 
@@ -79,28 +80,27 @@ public enum Onboarding {
             connected = act.index > Act.agents.index
         }
 
-        /// Moves to `act`. Into the lessons with the board paired, the tap
-        /// that paired it counts as the first.
+        /// Moves to `act`. Back into the board's act after it was skipped,
+        /// it starts again from "Plug me in", which has buttons to go on.
         public mutating func move(to act: Act) {
             self.act = act
-            if act == .howTo, body == .joined { lessons.insert(.tap) }
+            if act == .body, body == .skipped { body = .intro }
         }
 
-        /// A tap on the board (its screen or its button). In act 4, while
-        /// looking and with a board found, it pairs it; in act 5 it does
-        /// the next lesson; anywhere else it's only a poke.
-        public mutating func tapped(boardFound: Bool) -> Tap {
+        /// A tap on the board: its screen, or its button when `button`. In
+        /// act 4, while looking and with a board found, either pairs it,
+        /// and counts as its lesson; in act 5 each does its own lesson,
+        /// once; anywhere else it's only a poke.
+        public mutating func tapped(boardFound: Bool, button: Bool) -> Tap {
+            let lesson: Lesson = button ? .button : .tap
             switch act {
             case .body where body == .looking && boardFound:
                 body = .joined
-                lessons.insert(.tap)
+                lessons.insert(lesson)
                 return .paired
-            case .howTo:
-                for lesson in [Lesson.tap, .button] where !lessons.contains(lesson) {
-                    lessons.insert(lesson)
-                    return .lesson(lesson)
-                }
-                return .nothing
+            case .howTo where !lessons.contains(lesson):
+                lessons.insert(lesson)
+                return .lesson(lesson)
             default:
                 return .nothing
             }
@@ -113,5 +113,17 @@ public enum Onboarding {
             heard = agent
             return true
         }
+    }
+
+    /// Saves where onboarding stands (`AppSettings.onboarding`), or that
+    /// it's done (nil): through `runtime` while one runs, since it keeps
+    /// the settings it saves, and straight into `stateDir` while none does
+    /// (before the board, or when it couldn't start), so a quit still
+    /// comes back to the act, and a finish stays finished.
+    public static func save(_ act: Act?, runtime: Runtime?, stateDir: URL) throws {
+        if let runtime { return runtime.setOnboarding(act) }
+        var settings = AppSettings.load(from: stateDir)
+        settings.onboarding = act
+        try settings.save(to: stateDir)
     }
 }

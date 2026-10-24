@@ -150,7 +150,7 @@ struct SettingsPane: View {
                     SettingRow(icon: "pin.fill", title: BoopDevice.advertised(board) ?? board,
                                detail: "\(model.name) talks only to this board over Bluetooth.") {
                         Button("Forget") { model.runtime?.forgetBoard() }.buttonStyle(.row).fixedSize()
-                            .help("Let \(model.name) take any board, and remember the next one it meets")
+                            .help("Let \(model.name) take any board, and remember the next one tapped")
                     }
                 }
                 // A simulator running on this Mac is a body to choose, while it runs.

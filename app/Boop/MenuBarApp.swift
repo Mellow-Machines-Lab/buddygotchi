@@ -502,8 +502,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let memory = try? MemoryStore(directory: stateDir, log: { [log] in log.write($0) })
         if let act = Onboarding.resume(isSetUp: memory?.isSetUp == true, saved: AppSettings.load(from: stateDir).onboarding) {
             log.write("onboarding: from \(act.rawValue)")
-            if act.afterNaming, act != .body { startRuntime() }
             showOnboarding(at: act)
+            if act.afterNaming, act != .body { startRuntime() }
         } else {
             makeStatusItem()
             startRuntime()
@@ -530,6 +530,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let onboarding = OnboardingModel(app: model, act: act, stateDir: stateDir)
         onboarding.startRuntime = { [weak self] in self?.startRuntime() }
         onboarding.finished = { [weak self] in self?.finishOnboarding() }
+        onboarding.bringForward = { [weak self] in self?.bringOnboardingForward() }
         onboarding.log = { [log] in log.write($0) }
         self.onboarding = onboarding
         let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(model: onboarding)))
@@ -544,13 +545,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         window.setContentSize(OnboardingView.size)
         window.center()
         onboardingWindow = window
+        bringOnboardingForward()
+    }
+
+    /// The window in front of every other app's. Until the finale Boop has
+    /// no Dock icon, ⌘Tab or menu-bar icon to find it by, so it comes back
+    /// for the agent's hello, after act 6 sent you to your terminal, and
+    /// when Boop is opened again.
+    func bringOnboardingForward() {
+        guard let window = onboardingWindow else { return }
         NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
+        // macOS may refuse an app the activation it didn't ask for; the
+        // window comes to the front either way.
+        window.orderFrontRegardless()
+        window.makeKey()
+    }
+
+    /// Opening Boop again while it runs (from Finder, Spotlight or the
+    /// Dock's folder): onboarding's window, or the popover.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if onboardingWindow != nil { bringOnboardingForward() } else if !popover.isShown { showPopover() }
+        return false
     }
 
     /// Onboarding's last button: the menu-bar icon appears, the window
     /// shrinks into it, and it blinks twice so you see where Boop went.
     func finishOnboarding() {
+        // Gone before the runtime starts, so it doesn't listen for it.
+        onboarding = nil
         startRuntime()
         makeStatusItem()
         guard let window = onboardingWindow else { return }
@@ -569,7 +591,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 Task { @MainActor in
                     window.orderOut(nil)
                     self?.onboardingWindow = nil
-                    self?.onboarding = nil
                     if !still { self?.blinkIcon(times: 2) }
                 }
             })
@@ -653,9 +674,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     }
                 }
             }
-            // Onboarding listens for a tap on the board and an agent's first hook.
-            runtime.onTap = { [weak self] in Task { @MainActor in self?.onboarding?.tapped() } }
-            runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
+            // Onboarding listens for a tap on the board and an agent's
+            // first hook, until it's done (`setOnboarding(nil)` lets go).
+            if onboarding != nil {
+                runtime.onTap = { [weak self] button in Task { @MainActor in self?.onboarding?.tapped(button: button) } }
+                runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
+            }
             presenceSignals.start { runtime.presence($0) }
             // A simulator started or stopped on this Mac: looked for while
             // Settings is open to show it.

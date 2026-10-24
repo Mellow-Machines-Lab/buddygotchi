@@ -104,7 +104,7 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
                     log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
     // The board over Bluetooth, or a simulator running on this Mac, when
     // Settings is told to use it. Over Bluetooth, the one Boop takes only
-    // the board it remembered, and narrows to the first one it meets.
+    // the board it remembered, and narrows to the first one tapped.
     let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
     let board = transport(link, only: remembered, log: log)
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath,

@@ -11,7 +11,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// one, for the one Boop.
     public var buddies: [BuddySetting] = []
     /// The one Boop's board, by its `hello.id`, remembered the first time
-    /// it says hello over Bluetooth: from then on Boop takes only it, until
+    /// it's tapped over Bluetooth: from then on Boop takes only it, until
     /// Settings forgets it.
     public var board: String?
     /// The onboarding act a quit left off at, after Boop was named; none

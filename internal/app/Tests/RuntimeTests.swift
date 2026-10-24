@@ -354,6 +354,16 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(crashed.home.sync { statuses.last?.uncleanExit }, false)
     }
 
+    /// A start that fails (the hook socket can't listen) leaves no
+    /// `running`: the next launch isn't told Boop crashed.
+    func testAStartThatFailsIsntACrash() throws {
+        var options = try options(FakeTransport())
+        options.socketPath = "/tmp/" + String(repeating: "x", count: 120) + ".sock"  // past a socket path's 103 bytes
+        let runtime = try Runtime(options)
+        try XCTAssertThrowsError(try runtime.start())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(Runtime.runningFile).path))
+    }
+
     /// A bug report copies the newest of macOS's crash reports for Boop
     /// from the last `reportCrashDays`, at most `reportCrashes` of them,
     /// and no other app's, and says what ran on which Mac.
@@ -389,12 +399,14 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(about["unclean_exit"] as? Bool, false)
     }
 
-    /// The rule: over Bluetooth, the first board that fits and says hello
+    /// The rule: over Bluetooth, the first board that fits and is tapped
+    /// (onboarding's pairing tap, or any later, its screen or its button)
     /// is the one Boop takes from then on: it's saved, and the transport
-    /// narrowed to its advertised name. Another board's hello later
+    /// narrowed to its advertised name. Its hello alone remembers nothing,
+    /// since any board in range says one. Another board's tap later
     /// changes nothing. Forgetting it saves none, and widens the transport
     /// again. Over anything but Bluetooth nothing is remembered.
-    func testBoopRemembersTheFirstBoardOverBluetoothUntilForgotten() throws {
+    func testBoopRemembersTheFirstBoardTappedOverBluetoothUntilForgotten() throws {
         let transport = FakeTransport()
         transport.name = "ble"
         var options = try options(transport)
@@ -407,10 +419,16 @@ final class RuntimeTests: XCTestCase {
             runtime.connection(true)
             runtime.device(FakeTransport.hello)
         }
+        XCTAssertNil(AppSettings.load(from: dir).board, "a hello isn't enough")
+        XCTAssertEqual(chosen.all, [])
+        runtime.home.sync { runtime.device(Self.press) }
         XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe")
         XCTAssertEqual(chosen.all, ["Boop-54FE"])
         XCTAssertEqual(runtime.home.sync { statuses.last?.board }, "b00p-54fe")
-        runtime.home.sync { runtime.device(FakeTransport.hello.replacingOccurrences(of: "b00p-54fe", with: "b00p-0001")) }
+        runtime.home.sync {
+            runtime.device(FakeTransport.hello.replacingOccurrences(of: "b00p-54fe", with: "b00p-0001"))
+            runtime.device(Self.tap)
+        }
         XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe", "the first one stays")
         XCTAssertEqual(chosen.all, ["Boop-54FE"])
         runtime.forgetBoard()
@@ -428,10 +446,15 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync {
             runtime.connection(true)
             runtime.device(FakeTransport.hello)
+            runtime.device(Self.tap)
         }
         XCTAssertNil(AppSettings.load(from: dir).board)
         XCTAssertEqual(chosen.all, [])
     }
+
+    /// A tap on the screen, and a press of BOOT, as the board says them.
+    static let tap = #"{"t":"ev","kind":"tap","did":"poked"}"#
+    static let press = #"{"t":"ev","kind":"tap","did":"poked","data":{"src":"button"}}"#
 
     /// The rule: bug-reports/ keeps the newest `reportsKept` reports;
     /// saving one more deletes the oldest past that.
@@ -453,21 +476,24 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(kept.contains("2026-01-01-000002"), "the third oldest stays: 21 old and the new one, 20 kept")
     }
 
-    /// Onboarding listens to the runtime: a tap on the board, and the first
-    /// agent hook that becomes an event; it greets on the board with a
-    /// rule's reaction; and it saves its act in settings.json.
+    /// Onboarding listens to the runtime: a tap on the board, saying
+    /// whether it was the screen or BOOT, and the first agent hook that
+    /// becomes an event; it greets on the board with a rule's reaction; and
+    /// it saves its act in settings.json. Once it's done, the runtime lets
+    /// go of both listeners, so later taps and hooks call nothing.
     func testOnboardingHearsTapsAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
         let taps = Lines(), agents = Lines()
-        runtime.onTap = { taps.add("tap") }
+        runtime.onTap = { taps.add($0 ? "button" : "screen") }
         runtime.onAgentHook = { agents.add($0) }
         try runtime.start()
         defer { runtime.stop() }
         eventually("first state on start") { transport.types().contains("state") }
         connect(transport, runtime)
-        transport.onLine?(#"{"t":"ev","kind":"tap","did":"poked"}"#)
-        eventually("the tap") { taps.all == ["tap"] }
+        transport.onLine?(Self.tap)
+        transport.onLine?(Self.press)
+        eventually("the tap and the press") { taps.all == ["screen", "button"] }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("the hook") { agents.all == ["claude"] }
         runtime.greet(.wake)
@@ -480,6 +506,7 @@ final class RuntimeTests: XCTestCase {
         runtime.setOnboarding(nil)
         runtime.home.sync {}
         XCTAssertNil(AppSettings.load(from: dir).onboarding)
+        XCTAssertTrue(runtime.home.sync { runtime.onTap == nil && runtime.onAgentHook == nil })
     }
 
     /// A device that doesn't see the link drop still counts the app as

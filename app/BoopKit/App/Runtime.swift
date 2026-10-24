@@ -182,11 +182,13 @@ public final class Runtime: @unchecked Sendable {
     /// Read-only visual mirror of the reactions sent. Never completes a handle.
     public var onReaction: ((Int, DeviceReaction) -> Void)?
 
-    /// A tap on the board (its screen or its button), after the core has
-    /// taken it: onboarding's "tap my screen" lessons listen. On `home`.
-    public var onTap: (() -> Void)?
+    /// A tap on the board, after the core has taken it: true for its
+    /// button (BOOT), false for its screen. Onboarding's pairing and its
+    /// lessons listen, until `setOnboarding(nil)`. On `home`.
+    public var onTap: ((_ button: Bool) -> Void)?
     /// An agent's hook that became an event, by the agent's name
-    /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
+    /// (`claude`, `codex`): onboarding's live hello listens, until
+    /// `setOnboarding(nil)`. On `home`.
     public var onAgentHook: ((String) -> Void)?
 
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
@@ -411,7 +413,6 @@ public final class Runtime: @unchecked Sendable {
     public func start() throws {
         let home = self.home
         if uncleanExit { options.log("boop: the last run didn't stop cleanly (crashed, or was killed)") }
-        FileManager.default.createFile(atPath: options.stateDir.appendingPathComponent(Self.runningFile).path, contents: nil)
         // Hooks are timed on the runtime's clock, which headless mode can move.
         let clock = options.clock
         let onLine: @Sendable (HookLine) -> Void = { [weak self] line in
@@ -422,6 +423,8 @@ public final class Runtime: @unchecked Sendable {
         let server = HookServer(path: options.socketPath, onLine: onLine, onOther: options.devLines ? onOther : nil)
         try server.start()
         self.server = server
+        // Only once it runs: a start that failed isn't a crash.
+        FileManager.default.createFile(atPath: options.stateDir.appendingPathComponent(Self.runningFile).path, contents: nil)
         for rig in rigs {
             rig.transport?.start(
                 onLine: { [weak self] line in self?.home.async { self?.device(line, on: rig) } },
@@ -485,9 +488,10 @@ public final class Runtime: @unchecked Sendable {
     }
 
     /// Saves where onboarding stands (`AppSettings.onboarding`), or that
-    /// it's done (nil).
+    /// it's done (nil), which lets go of `onTap` and `onAgentHook`.
     public func setOnboarding(_ act: Onboarding.Act?) {
         home.async { [self] in
+            if act == nil { (onTap, onAgentHook) = (nil, nil) }
             guard settings.onboarding != act else { return }
             saveSettings { $0.onboarding = act }
             if act == nil { options.log("onboarding: done") }
@@ -495,7 +499,7 @@ public final class Runtime: @unchecked Sendable {
     }
 
     /// Lets go of the remembered board: Boop takes any over Bluetooth
-    /// again, and remembers the next one that says hello.
+    /// again, and remembers the next one tapped.
     public func forgetBoard() {
         home.async { [self] in
             guard let board = settings.board else { return }
