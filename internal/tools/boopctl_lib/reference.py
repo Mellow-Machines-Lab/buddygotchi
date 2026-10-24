@@ -14,19 +14,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from boopctl_lib.common import REPO
+from boopctl_lib.image import sheet
 
 sys.path.insert(0, str(REPO / "characters"))
 try:
-    import charactergen as gen  # the format's one definition: its media, kinds, statuses and problems
+    import charactergen as gen  # the format's one definition: its media, kinds, statuses, frames' interval and problems
 finally:
     sys.path.pop(0)
 
-FRAME_MS = 40  # 25 fps, as the studio records the board and fluid/measure.py measures it
 LONGEST = 512  # a frame's longest side at most, in pixels: a little over the gel's 502×410 panel
-COLUMNS, THUMB, LABEL = 8, 200, 16  # a contact sheet: 8 frames a row, each 200 px wide under its ms
 
 
 def tool(name: str) -> str:
@@ -65,8 +64,8 @@ def new(pack: Path, topic: str, kind: str, note: str, files: list[Path], today: 
 
 
 def cut(source: Path, out: Path) -> int:
-    """The file's frames in out/, 0000.png on, a frame every FRAME_MS, no
-    bigger than LONGEST; returns its length in ms (a still's is 0)."""
+    """The file's frames in out/, 0000.png on, a frame every gen.FRAME_MS,
+    no bigger than LONGEST; returns its length in ms (a still's is 0)."""
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
@@ -78,25 +77,9 @@ def cut(source: Path, out: Path) -> int:
     seconds = subprocess.run([tool("ffprobe"), "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(source)],
                              check=True, capture_output=True, text=True).stdout.strip()
     fit = f"scale='min({LONGEST},iw)':'min({LONGEST},ih)':force_original_aspect_ratio=decrease"
-    subprocess.run([tool("ffmpeg"), "-v", "error", "-i", str(source), "-vf", f"fps={1000 // FRAME_MS},{fit}",
+    subprocess.run([tool("ffmpeg"), "-v", "error", "-i", str(source), "-vf", f"fps={1000 // gen.FRAME_MS},{fit}",
                     "-start_number", "0", str(out / "%04d.png")], check=True)
     return round(float(seconds) * 1000)
-
-
-def sheet(frames: Path, out: Path) -> None:
-    """A contact sheet of the frames: COLUMNS a row, each labelled with its ms."""
-    files = sorted(frames.glob("*.png"))
-    with Image.open(files[0]) as first:
-        w, h = THUMB, max(1, round(first.height * THUMB / first.width))
-    image = Image.new("RGB", (COLUMNS * w, -(-len(files) // COLUMNS) * (h + LABEL)), "white")
-    draw = ImageDraw.Draw(image)
-    for i, f in enumerate(files):
-        x, y = (i % COLUMNS) * w, (i // COLUMNS) * (h + LABEL)
-        with Image.open(f) as frame:
-            image.paste(frame.convert("RGB").resize((w, h)), (x, y + LABEL))
-        draw.text((x + 3, y + 2), f"{i * FRAME_MS} ms", fill="black")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    image.save(out)
 
 
 def read(folder: Path) -> list[str]:
@@ -107,7 +90,9 @@ def read(folder: Path) -> list[str]:
     said, frames, ms = [], 0, 0
     for source in gen.media(folder):
         length = cut(source, folder / "frames" / source.name)
-        sheet(folder / "frames" / source.name, folder / "sheets" / f"{source.name}.png")
+        # 8 frames a row, each 200 px wide under its ms
+        sheet([(f"{i * gen.FRAME_MS} ms", f) for i, f in enumerate(sorted((folder / "frames" / source.name).glob("*.png")))],
+              folder / "sheets" / f"{source.name}.png")
         n = gen.frame_count(folder, source.name)
         frames, ms = frames + n, max(ms, length)
         said.append(f"{source.name}: {n} frame{'s' * (n != 1)} over {length} ms in frames/{source.name}/, "

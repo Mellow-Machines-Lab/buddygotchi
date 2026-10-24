@@ -240,9 +240,8 @@
   function fillSoon(){if(!matrix.timer)matrix.timer=setTimeout(()=>{matrix.timer=0;fill();},80);}
   function fill(){
     if(view!=='matrix'||!adapter)return;
-    const first=matrix.hovered?[matrix.hovered]:[];
-    const on=matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered),whole=on.filter(c=>matrix.seen.get(c)===1);
-    const want=[...first,...whole,...on.filter(c=>!whole.includes(c))].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
+    const on=matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered).sort((a,b)=>matrix.seen.get(b)-matrix.seen.get(a));
+    const want=[...(matrix.hovered?[matrix.hovered]:[]),...on].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
     for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
     for(const c of want)if(!matrix.playing.has(c))mount(c);
   }
@@ -311,10 +310,12 @@
 
   // ── Views ──────────────────────────────────────────────────────────────
   // The scene, the matrix, and views.js's, each made with what it needs of the page.
+  // A board view records on the stage's board (board.js), which rests while it's shown.
   const api={root,data,packs,sel,title,stateInfo,stateIds,stateGroups,families,writeHash,
     entry:()=>entryOf(sel.pack,sel.card),
     boardCards:()=>cardsOf(sel.pack).filter(c=>entryOf(sel.pack,c)?.board),
     switchCard:card=>switchCard(sel.pack,card),
+    record:options=>instance?.record?instance.record(options):Promise.reject(Error(`${label(sel.card)} isn't a board.`)),
     open(patch){setView('scene');change({face:null,...patch});}};
   const views=Object.fromEntries(Object.entries(window.StudioViews||{}).map(([name,make])=>[name,make(api)]));
   const VIEWS=['scene','matrix',...Object.keys(views)];

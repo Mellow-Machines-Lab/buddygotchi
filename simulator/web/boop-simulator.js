@@ -15,6 +15,13 @@ const PANEL = { pixel: CANVAS, gel: [502, 410] };  // each face's panel, until i
 /// A shake, as the motion sensor reads it: each reading in mg, held so many
 /// ms, in the shapes the board knows (firmware/src/app/motion_gesture.h).
 export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
+/// A tap, in the canvas's pixels: beside the nose, since a boop on it is a gesture.
+export const TAP = [CANVAS[0] / 4, CANVAS[1] / 2];
+/// How often a page keeping a board company says its `state` again, as the
+/// app does every 10 s, so the board never takes its Mac for gone.
+export const HEARTBEAT_MS = 8000;
+// Each build's WebAssembly, fetched and compiled once for every board that runs it.
+const compiled = {};
 
 /// One simulated board: the core, switched on and off, with its USB as
 /// lines in and out. A page can have several. It fires `power` (on or
@@ -31,11 +38,20 @@ export class Board extends EventTarget {
 
   /// `pack` is the character pack it was built for: `boop-sim-PACK.js`
   /// (web/build.sh PACK), or with none the staged pack's `boop-sim.js`.
+  /// In a page, the build's WebAssembly is compiled once for all its boards.
   static async make({ pack } = {}) {
     if (pack && !/^[a-z0-9][a-z0-9_-]*$/.test(pack)) throw new Error(`no pack called ${pack}`);
-    const { default: makeCore } = await import(pack ? `./boop-sim-${pack}.js` : './boop-sim.js');
+    const build = pack ? `boop-sim-${pack}` : 'boop-sim';
+    const { default: makeCore } = await import(`./${build}.js`);
+    let options = {};
+    if (typeof document !== 'undefined') {
+      compiled[build] ??= WebAssembly.compileStreaming(fetch(new URL(`${build}.wasm`, import.meta.url)))
+        .catch(error => { delete compiled[build]; throw error; });
+      const module = await compiled[build];
+      options = { instantiateWasm: (imports, receive) => { WebAssembly.instantiate(module, imports).then(receive); return {}; } };
+    }
     const board = new Board();
-    board.#core = await makeCore();
+    board.#core = await makeCore(options);
     board.#usb = board.#core.cwrap('sim_usb', null, ['string']);
     board.#env = board.#core.cwrap('sim_env', null, ['string', 'string']);
     board.#input = board.#core.cwrap('sim_input', null, ['string']);
@@ -210,7 +226,7 @@ export class DemoPlayer extends EventTarget {
     while (this.playing && this.#next < events.length && events[this.#next].at <= now) this.#happen(events[this.#next++]);
     // The app says how things stand every 10 s; so does this, while the
     // recording doesn't (paused, or over).
-    if (this.#state && performance.now() - this.#told > 8000) this.#send(this.#state);
+    if (this.#state && performance.now() - this.#told > HEARTBEAT_MS) this.#send(this.#state);
     this.dispatchEvent(new CustomEvent('time', { detail: now }));
     if (this.playing && this.ended) {
       this.#at = this.length;
@@ -230,7 +246,7 @@ export class DemoPlayer extends EventTarget {
     // or BOOT pressed, which is the board's own to react to (a press long
     // enough to pass the button's debounce).
     if (event.input === 'tap') {
-      this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
+      this.#board.touch(...TAP);
       this.#board.release();
     }
     if (event.input === 'press') {

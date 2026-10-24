@@ -912,8 +912,11 @@ no media or a file that isn't media or its own; that's read without the
 frames and sheet of every file, or with `frames` that don't count them;
 or that's translated or later without `reading.md` or a `became`, or
 became something the rig hasn't. It checks the queue's items and their
-images, and the notes, but none of it stops a pack staging. The app
-doesn't bundle either folder.
+images, and the notes, each as the studio's server writes them, the
+same way: a key, a value or one missing, with its file and key
+(`reference.json: show.mood: …`, `queue.json: perk.status: …`,
+`notes.jsonl:2: verdict: …`), as for the rig (§15). None of it stops a
+pack staging. The app doesn't bundle either folder.
 
 ## Not yet
 

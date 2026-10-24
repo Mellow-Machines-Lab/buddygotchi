@@ -12,16 +12,19 @@
   };
   const FRAME_MS = StudioBoard.FRAME_MS, served = location.protocol !== 'file:';
   const time = ms => `${ms > 0 ? '+' : ''}${ms} ms`;
-
-  // A canvas showing one recorded frame, or a smaller copy of it.
-  function picture(canvas, image, width) {
-    if (!width) return StudioBoard.draw(canvas, image);
-    const full = h('canvas', {width: image.width, height: image.height});
-    full.getContext('2d').putImageData(image, 0, 0);
-    [canvas.width, canvas.height] = [width, Math.round(image.height * width / image.width)];
-    canvas.getContext('2d').drawImage(full, 0, 0, canvas.width, canvas.height);
-    return canvas;
-  }
+  // The everyday transitions, which Transitions' Rank records on the board
+  // and lists by their ratio, the jumpiest first: each a name, a start and
+  // an end, as the address has them (mood/state, and /fact for a state with one).
+  const EVERYDAY = [
+    ['to working', 'calm/idle', 'calm/working'],
+    ['a mood change', 'calm/working', 'happy/working'],
+    ['a finish', 'happy/working', 'excited/task_complete/success'],
+    ['back to idle', 'happy/working', 'happy/idle'],
+    ['a mood change at rest', 'happy/idle', 'sad/idle'],
+    ['a poke', 'happy/idle', 'happy/poked'],
+    ['a stroke', 'happy/idle', 'happy/gesture'],
+    ['to asleep', 'happy/idle', 'happy/asleep'],
+  ];
 
   // A transport: Play steps `show(i)` through n frames, 40 ms apart, looping; the range scrubs.
   function transport(root, show) {
@@ -37,6 +40,16 @@
     seek.addEventListener('input', () => { stop(); go(Number(seek.value)); });
     return {stop, go, set length(count) { n = count; seek.max = String(Math.max(0, count - 1)); play.disabled = seek.disabled = count < 2; }};
   }
+  // A board view's recordings: start() takes a turn and returns live(), true
+  // until a newer turn starts or stop() (leaving the view) ends them all.
+  function turns() {
+    let n = 0;
+    return {start() { const mine = ++n; return () => mine === n; }, stop() { n++; }};
+  }
+  // A board view's leave(): its recordings and its player stop.
+  const leave = (player, ...all) => () => { for (const t of all) t.stop(); player.stop(); };
+  // Recorded frames' pictures, let go of once they're replaced.
+  const release = frames => { for (const f of frames) f.image?.close(); };
 
   // The pickers for a cell: the pack's moods in their families, and the
   // board's states, one option for each fact a state has (success or failure…).
@@ -82,27 +95,30 @@
 
   // ── Transitions ─────────────────────────────────────────────────────────
   // A start and an end on the board: its frames 40 ms apart across the
-  // change, and how much each changed from the one before, with the
-  // jumpiest of the everyday transitions measure.py found.
+  // change, and how much each changed from the one before; and Rank, the
+  // everyday transitions recorded and ranked, the jumpiest first.
   function transitions(api) {
     const root = api.root.querySelector('[data-view="transitions"]'), $ = s => root.querySelector(s);
     const from = cellPicker(api, $('[data-from]')), to = cellPicker(api, $('[data-to]'));
-    const s = {from: null, to: null, frames: [], changes: [], status: '', jumpiest: null, ticket: 0};
+    const s = {from: null, to: null, frames: [], changes: [], status: '', ranked: [], ranking: false, rankSaid: '', face: null};
     const status = text => { s.status = text; $('[data-said]').textContent = text; };
+    const [strip, graphed] = [$('[data-strip]'), $('[data-graph]')], runs = turns(), ranks = turns();
+    let shown = -1;  // the frame marked in the strip and the graph
     const player = transport($('[data-player]'), i => {
       const f = s.frames[i];
       if (!f) return '';
-      picture($('[data-frame]'), f.image);
-      for (const [j, el] of [...$('[data-strip]').children].entries()) el.classList.toggle('on', j === i);
-      for (const [j, el] of [...$('[data-graph]').children].entries()) el.classList.toggle('on', j === i);
-      return `${time(f.ms)} · ${s.changes[i]} px changed`;
+      StudioBoard.draw($('[data-frame]'), f.image);
+      for (const list of [strip, graphed]) { list.children[shown]?.classList.remove('on'); list.children[i]?.classList.add('on'); }
+      shown = i;
+      return `${time(f.ms)} · ${f.change} px changed`;
     });
+    const pair = (a, b) => `${api.title(a.mood)} · ${api.title(a.state)} → ${api.title(b.mood)} · ${api.title(b.state)}`;
     let filled = '';
 
     function graph() {
-      const svg = $('[data-graph]'), max = Math.max(1, ...s.changes), n = s.changes.length, zero = s.frames.findIndex(f => f.ms === 0);
-      svg.setAttribute('viewBox', `0 0 ${n} 100`);
-      svg.replaceChildren(...s.changes.map((c, i) => {
+      const max = Math.max(1, ...s.changes), n = s.changes.length, zero = s.frames.findIndex(f => f.ms === 0);
+      graphed.setAttribute('viewBox', `0 0 ${n} 100`);
+      graphed.replaceChildren(...s.changes.map((c, i) => {
         const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         const height = Math.max(c ? 1 : 0, c / max * 96);
         Object.entries({x: i + .1, width: .8, y: 100 - height, height, 'data-i': i}).forEach(([k, v]) => bar.setAttribute(k, v));
@@ -116,49 +132,66 @@
       if (!face) return;
       s.from = from.get(), s.to = to.get();
       api.writeHash();
-      const ticket = ++s.ticket;
+      const live = runs.start(), what = `${pair(s.from, s.to)} on the ${face} board`;
       player.stop();
-      status(`Recording ${api.title(s.from.mood)} · ${api.title(s.from.state)} → ${api.title(s.to.mood)} · ${api.title(s.to.state)} on the ${face} board…`);
-      let frames;
-      try { frames = await StudioBoard.recorder(api.sel.pack, face).record({from: s.from, to: s.to, before: 5, after: 100, live: () => ticket === s.ticket}); }
-      catch (error) { if (ticket === s.ticket) status(error.message); return; }
-      if (ticket !== s.ticket) return;
+      status(`Recording ${what}…`);
+      let frames, n = 0;
+      try {
+        frames = await api.record({from: s.from, to: s.to, before: 5, after: 100, live,
+          heard: () => { if (++n % 10 === 0 && live()) status(`Recording ${what}: ${n} of 106 frames…`); }});
+      } catch (error) { if (live()) status(error.message); return; }
+      if (!live()) return release(frames || []);
+      release(s.frames);
       s.frames = frames;
-      s.changes = frames.map((f, i) => i ? StudioBoard.changed(frames[i - 1].image.data, f.image.data) : 0);
+      s.changes = frames.map(f => f.change);
       const m = StudioBoard.summary(s.changes.slice(1));
       status(`${frames.length} frames, ${FRAME_MS} ms apart. Largest change ${m.largest} px at ${time(frames[m.at + 1].ms)}, ` +
         `median ${m.median} px: ${m.ratio.toFixed(1)}× the median.`);
-      $('[data-strip]').replaceChildren(...frames.map((f, i) => h('button', {type: 'button', title: time(f.ms), 'data-i': i},
-        picture(h('canvas'), f.image, 72), h('small', {}, time(f.ms)))));
+      strip.replaceChildren(...frames.map((f, i) => h('button', {type: 'button', title: time(f.ms), 'data-i': i},
+        StudioBoard.draw(h('canvas'), f.image, 72), h('small', {}, time(f.ms)))));
       graph();
+      shown = -1;
       player.length = frames.length;
       player.go(frames.findIndex(f => f.ms === 0));
     }
-    // measure.py --json's file for the face, which charactergen puts in packs.js.
-    function jumpiest(face) {
-      const file = `characters/${api.sel.pack}/review/fluid-${face}.json`;
-      s.jumpiest = api.packs[api.sel.pack].fluid[face] || null;
-      $('[data-jumpiest-about]').replaceChildren(...(s.jumpiest
-        ? ['The everyday transitions in the Mac\'s build of the board, the jumpiest first, from ', h('code', {}, file), '. Click one to record it here.']
-        : [`None measured for the ${face} face. Record the everyday transitions in the Mac's build of the board, measure them, and run charactergen:`,
-          h('code', {}, `internal/tools/boopctl sim --face ${face} internal/tools/fluid/transitions.jsonl`),
-          h('code', {}, `internal/tools/.venv/bin/python internal/tools/fluid/measure.py /tmp/boop-sim/${face}/transitions --json ${file}`),
-          h('code', {}, 'python3 characters/charactergen.py --check')]));
-      $('[data-jumpiest]').replaceChildren(...(s.jumpiest || []).map(j => h('li', {},
-        h('button', {type: 'button', disabled: !j.from, 'data-name': j.name},
+
+    // Rank: each everyday transition recorded on the board, changes only,
+    // and listed by its ratio as it comes, the jumpiest first.
+    let ranking = () => false;  // the ranking's live(), while one runs
+    function ranked() {
+      $('[data-rank-said]').textContent = s.rankSaid;
+      Object.assign($('[data-rank-progress]'), {hidden: !s.ranking, max: EVERYDAY.length, value: s.ranked.length});
+      $('[data-jumpiest]').replaceChildren(...s.ranked.map(j => h('li', {},
+        h('button', {type: 'button', 'data-name': j.name},
           h('strong', {}, `${j.ratio.toFixed(1)}×`), ` ${j.name}`,
-          h('small', {}, j.from ? `${cellText(api, j.from)} → ${cellText(api, j.to)}, the largest frame at ${j.at} ms` : 'the recording\'s start')))));
+          h('small', {}, `${cellText(api, j.from)} → ${cellText(api, j.to)}, the largest frame at ${time(j.at)}`)))));
+    }
+    async function rank() {
+      const face = onBoard(api, status);
+      if (!face) return;
+      const live = ranking = ranks.start(), list = EVERYDAY.map(([name, a, b]) => ({name, from: cellFrom(api, a), to: cellFrom(api, b)}));
+      const done = said => { Object.assign(s, {ranking: false, rankSaid: said}); ranked(); };
+      Object.assign(s, {ranked: [], ranking: true, face});
+      for (const [i, t] of list.entries()) {
+        s.rankSaid = `Recording ${i + 1} of ${list.length} on the ${face} board: ${t.name}…`;
+        ranked();
+        let frames;
+        try { frames = await api.record({from: t.from, to: t.to, before: 5, after: 100, live, pictures: false}); }
+        catch (error) { if (live()) done(error.message); return; }
+        if (!live()) return;
+        const m = StudioBoard.summary(frames.slice(1).map(f => f.change));
+        s.ranked = [...s.ranked, {...t, ...m, at: frames[m.at + 1].ms}].sort((a, b) => b.ratio - a.ratio);
+      }
+      done(`The everyday transitions on the ${face} board, the jumpiest first. Click one to record it here.`);
     }
 
     for (const select of root.querySelectorAll('[data-from] select, [data-to] select')) select.addEventListener('change', run);
-    $('[data-strip]').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { player.stop(); player.go(Number(b.dataset.i)); } });
-    $('[data-graph]').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { player.stop(); player.go(Number(b.dataset.i)); } });
-    $('[data-jumpiest]').addEventListener('click', e => {
-      const name = e.target.closest('[data-name]')?.dataset.name, j = s.jumpiest?.find(x => x.name === name);
-      if (!j?.from) return;
-      from.set(j.from);
-      to.set(j.to);
-      run();
+    $('[data-rank]').addEventListener('click', rank);
+    root.addEventListener('click', e => {
+      const frame = e.target.closest('[data-strip] [data-i], [data-graph] [data-i]');
+      if (frame) { player.stop(); player.go(Number(frame.dataset.i)); }
+      const name = e.target.closest('[data-jumpiest] [data-name]')?.dataset.name, j = s.ranked.find(x => x.name === name);
+      if (j) { from.set(j.from); to.set(j.to); run(); }
     });
     return {
       state: s,
@@ -172,10 +205,14 @@
         if (filled !== api.sel.pack) return this.enter();
         const face = onBoard(api, status);
         if (!face) return;
-        jumpiest(face);
+        if (s.face !== face) {
+          ranks.stop();
+          Object.assign(s, {ranked: [], ranking: false, face, rankSaid: `Rank records the everyday transitions on the ${face} board and ranks them by their largest frame against their median.`});
+        } else if (s.ranking && !ranking()) Object.assign(s, {ranking: false, rankSaid: 'Ranking stopped when the view was left: Rank to start again.'});
+        ranked();
         run();
       },
-      leave() { s.ticket++; player.stop(); StudioBoard.release(); },
+      leave: leave(player, runs, ranks),
       hash(p) { if (s.from) { p.set('from', cellText(api, s.from)); p.set('to', cellText(api, s.to)); } },
     };
   }
@@ -183,18 +220,20 @@
   // ── References ──────────────────────────────────────────────────────────
   // Each of the pack's references (CHARACTER.md §16): its status, kind,
   // note, reading and what it became; its media beside the board playing
-  // its `show`, one scrubber for both, frame for frame.
+  // its `show`, one scrubber for both, frame for frame (a video not yet
+  // cut into frames seeks to the frame's time).
   function references(api) {
     const root = api.root.querySelector('[data-view="references"]'), $ = s => root.querySelector(s);
-    const s = {id: null, file: 0, board: [], status: '', ticket: 0};
-    const ref = () => api.packs[api.sel.pack].references.find(r => r.id === s.id);
+    const s = {id: null, file: 0, board: [], status: ''};
+    const ref = () => api.packs[api.sel.pack].references.find(r => r.id === s.id), runs = turns();
     const status = text => { s.status = text; $('[data-board-caption]').textContent = text; };
     const player = transport($('[data-player]'), i => {
       const r = ref(), m = r?.media[s.file];
       if (!m) return '';
       if (m.frames) $('[data-media] img').src = `${r.path}frames/${m.file}/${String(Math.min(i, m.frames - 1)).padStart(4, '0')}.png`;
+      else if (m.kind === 'video') $('[data-media] video').currentTime = i * FRAME_MS / 1000;
       const b = s.board[Math.min(i, s.board.length - 1)];
-      if (b) picture($('[data-board]'), b.image);
+      if (b) StudioBoard.draw($('[data-board]'), b.image);
       return `${i * FRAME_MS} ms`;
     });
 
@@ -221,21 +260,23 @@
       $('[data-files]').replaceChildren(...(r.media.length > 1 ? r.media.map((m, i) => h('button', {type: 'button', 'aria-pressed': String(i === s.file), 'data-file': i}, m.file)) : []));
       const m = r.media[s.file] || r.media[0], src = `${r.path}${m.file}`;
       $('[data-media]').replaceChildren(m.frames ? h('img', {alt: `${m.file}, frame by frame`})
-        : m.kind === 'video' ? h('video', {src, controls: true, muted: true, loop: true}) : h('img', {src, alt: m.file}));
+        : m.kind === 'video' ? h('video', {src, controls: true, muted: true, preload: 'auto'}) : h('img', {src, alt: m.file}));
       $('[data-media-caption]').textContent = m.frames ? `${m.file}: ${m.frames} frames, ${FRAME_MS} ms apart` : `${m.file}, not cut into frames yet (boopctl reference read)`;
+      release(s.board);
       s.board = [];
       $('[data-board]').getContext('2d').clearRect(0, 0, $('[data-board]').width, $('[data-board]').height);
       player.length = m.frames;
       player.go(0);
-      const face = onBoard(api, status), ticket = ++s.ticket;
+      const face = onBoard(api, status), live = runs.start();
       if (!face) return;
       status(`Recording it on the ${face} board…`);
+      let board;
       try {
-        const board = await StudioBoard.recorder(api.sel.pack, face).record({from: {mood: showing.mood, state: showing.state},
-          to: showing.anim ? {mood: showing.mood, state: showing.anim} : null, before: 0, after: Math.max(m.frames, 25) - 1, live: () => ticket === s.ticket});
-        if (ticket !== s.ticket) return;
-        s.board = board;
-      } catch (error) { if (ticket === s.ticket) status(error.message); return; }
+        board = await api.record({from: {mood: showing.mood, state: showing.state},
+          to: showing.anim ? {mood: showing.mood, state: showing.anim} : null, before: 0, after: Math.max(m.frames, 25) - 1, live});
+      } catch (error) { if (live()) status(error.message); return; }
+      if (!live()) return release(board || []);
+      s.board = board;
       status(`The ${face} board${showing.anim ? `, asked for ${api.stateInfo[showing.anim].label.toLowerCase()} at 0 ms` : ''}: ${s.board.length} frames, ${FRAME_MS} ms apart`);
       player.length = Math.max(m.frames, s.board.length);
       player.go(0);
@@ -255,7 +296,7 @@
         show();
       },
       card() { this.enter(); },
-      leave() { s.ticket++; player.stop(); StudioBoard.release(); },
+      leave: leave(player, runs),
       hash(p) { if (s.id) p.set('ref', s.id); },
     };
   }

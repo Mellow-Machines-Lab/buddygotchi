@@ -18,8 +18,8 @@ run it.
 `http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
 state" link opens its matrix with `&board=/board`, so it marks the cell
 the board shows now (`/board`, under USB below; the first board's, with
-several). The studio's own boards, a preview of each face and its
-Transitions and References, are this `Board` too, each its own: the
+several). The studio's own boards, a preview of each face, on which its
+Transitions and References record, are this `Board` too: the
 server serves the page's files again at `/simulator/`, where the studio
 looks for them under its own server as well
 ([characters/studio/README.md](../characters/studio/README.md), On the
@@ -107,8 +107,13 @@ The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
 board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}`,
 whenever one changes) and `power`. The script knows nothing of what the
-board's messages mean: they pass through it. `SHAKE` is a shake as the
-motion sensor reads it, for any page's hand to give `board.motion`.
+board's messages mean: they pass through it. The script exports the
+rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
+for `board.motion`; `TAP`, where a tap lands, beside the nose (on it is
+a gesture), for `board.touch`; and `HEARTBEAT_MS`, how often a page that
+keeps a board company says its `state` again, as the demo player does.
+`Board.make` compiles a build's WebAssembly once for every board a page
+makes from it.
 
 ## Demos
 

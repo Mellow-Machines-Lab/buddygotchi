@@ -131,8 +131,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
   idle's mood changes and the rig face's hand-overs, recorded with
   `boopctl sim`), each frame's
-  change against the median; `--json FILE` writes them for the Character
-  Studio's Transitions, its jumpiest list
+  change against the median, and with `--sheets DIR` a contact sheet of
+  each. The Character Studio's Transitions measures and ranks the
+  everyday transitions on the board in the page by the same rule
   ([characters/studio/README.md](../characters/studio/README.md)).
 - `node characters/studio/check.cjs`: the Character Studio in a headless
   browser, its matrix and its board's views (its README, Checking it).

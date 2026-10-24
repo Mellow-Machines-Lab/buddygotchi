@@ -25,6 +25,11 @@ class RepoTests(unittest.TestCase):
         self.assertEqual(sorted(ids), sorted(gen.firmware_states()))
         self.assertEqual(len(ids), len(set(ids)))
 
+    def test_the_acts_are_the_boards(self):
+        """What the board draws while working for a state's act, as the firmware's actFromName keeps them."""
+        self.assertEqual(gen.firmware_acts(), ["planning", "terminal", "tool_use", "searching", "analyzing", "testing", "delegating", "waiting"])
+        self.assertLess(set(gen.firmware_acts()), set(gen.firmware_states()))
+
     def test_every_pack_here_is_clean(self):
         self.assertEqual(gen.studio_problems(gen.local_packs()), [])
         self.assertEqual(gen.state_problems(gen.local_packs()), [])
@@ -154,12 +159,14 @@ class StudioRuleTests(unittest.TestCase):
         plain = self.pack("plain", [{"id": "calm", "family": "settled"}])
         data = gen.studio_data([art, plain], plain, self.studio)
         self.assertEqual(data["chosen"], "plain")
+        self.assertEqual((data["frame_ms"], data["states"]["acts"]), (40, gen.firmware_acts()),
+                         "the board's frames 40 ms apart, as a reference's are cut, and the acts it draws while working")
         self.assertEqual(data["packs"]["art"]["studio"][0],
                          {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
                  "board": "face", "scripts": [], "styles": [], "wears": {}}
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
-                                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}, "fluid": {}})
+                                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}})
 
     def test_a_board_for_each_face(self):
         """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
@@ -354,13 +361,13 @@ class RigRuleTests(unittest.TestCase):
         outfits = ", ".join(gen.outfits())
         self.assertEqual(problems, [
             "rig/expressions.json: faces: unknown key",
+            "rig/expressions.json: expressions.giddy: isn't a mood",
             "rig/expressions.json: expressions.happy.eyeCurve: 1800 isn't a whole number from -1000 to 1000",
             "rig/expressions.json: expressions.happy.wiggle: unknown key",
-            "rig/expressions.json: expressions.happy.mouth: 'zigzag' isn't one of styles.mouth",
+            "rig/expressions.json: expressions.happy.mouth: 'zigzag' isn't one of line",
             "rig/expressions.json: expressions.calm.eyeOpenL: sets a channel twice",
-            "rig/expressions.json: expressions.giddy: isn't a mood",
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
-            "rig/clips/Bad Name.json: ms: 0 isn't a whole number of ms from 1 to 60000",
+            "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
             "rig/clips/hop.json: id: unknown key",
             "rig/clips/hop.json: tracks.nose: isn't a channel",
             "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
@@ -368,11 +375,11 @@ class RigRuleTests(unittest.TestCase):
             "rig/clips/hop.json: tracks.lift[3]: its ease, 'bouncy', isn't one of linear, in, out, inout",
             "rig/clips/hop.json: cues[0]: isn't [ms before 400, a name] (at most 255 of them)",
             "rig/clips/sway.json: tracks.tilt: loops, so it starts at 0 and ends at ms on the value it started on",
+            "rig/looks.json: dancing: isn't a state the board has",
             "rig/looks.json: idle.colour: unknown key",
             "rig/looks.json: idle.clip: hop doesn't loop",
             "rig/looks.json: working.clip: 'nope' isn't a clip in rig/clips/",
             "rig/looks.json: working.dresses: 'yes' isn't true or false",
-            "rig/looks.json: dancing: isn't a state the board has",
             f"rig/accessories.json: crown: isn't an outfit ({outfits})",
             "rig/accessories.json: nightcap.anchor: 'head' isn't one of crown, brim, hands, eyes",
         ])
@@ -416,16 +423,16 @@ class ReferenceRuleTests(unittest.TestCase):
 
     def test_unknown_keys_and_values_fail(self):
         self.assertEqual(self.reference(kind="copy", status="done", note=" ", colour="red"), [
-            "reference.json has 'colour', which it doesn't take",
-            "its kind is 'copy', not one of: inspiration, direct",
-            "its status is 'done', not one of: new, read, translated, in review, approved",
-            "its note is empty"])
+            "reference.json: kind: 'copy' isn't one of inspiration, direct",
+            "reference.json: note: ' ' is empty",
+            "reference.json: status: 'done' isn't one of new, read, translated, in review, approved",
+            "reference.json: colour: unknown key"])
         self.assertEqual(self.reference(became=[{"what": "dance", "id": "x"}], show={"mood": "giddy", "state": "nap", "anim": "notice"}, frames=-1), [
-            'became is a list of {"what": clip | expression | art, "id": its name}',
-            "show's mood 'giddy' isn't one of the pack's",
-            "show's state 'nap' isn't one of the board's states",
-            "its frames isn't a whole number"])
-        self.assertEqual(self.reference(show={"state": "idle"}), ['show is {"mood", "state"}, and maybe "anim"'])
+            "reference.json: frames: -1 isn't a whole number from 0 up",
+            "reference.json: became[0].what: 'dance' isn't one of clip, expression, art",
+            "reference.json: show.mood: 'giddy' isn't one of the pack's moods",
+            "reference.json: show.state: 'nap' isn't one of the board's states"])
+        self.assertEqual(self.reference(show={"state": "idle"}), ["reference.json: show.mood: missing"])
 
     def test_what_it_became_is_in_the_rig(self):
         """CHARACTER.md §15: a clip by its file's name, an expression by its mood, art by a style, scene or accessory's art."""
@@ -441,7 +448,7 @@ class ReferenceRuleTests(unittest.TestCase):
         shutil.rmtree(self.ref)
         self.assertEqual(self.reference(files=()), ["it has no media"])
         (self.ref / "reference.json").write_text("{")
-        self.assertIn("reference.json isn't JSON", gen.reference_problems(self.ref, set(), [], self.rig)[0])
+        self.assertIn("reference.json: isn't JSON", gen.reference_problems(self.ref, set(), [], self.rig)[0])
 
     def test_what_its_status_says_is_there(self):
         """Read: the tool's frames and sheet for each file, and frames and ms that count them. Translated and on: a reading, and what it became."""
@@ -473,16 +480,16 @@ class ReferenceRuleTests(unittest.TestCase):
         self.assertEqual(gen.review(self.pack), ([item], [], []))
         write(self.pack / "review" / "queue.json", [{**item, "after": "outside.png", "status": "done", "colour": 1}, {"id": "perk"}])
         self.assertEqual(gen.review(self.pack)[2], [
-            "queue.json's perk has 'colour', which an item doesn't take",
-            "queue.json's perk has status 'done', not one of: in review, changes, approved",
-            "queue.json's perk: its after, outside.png, isn't an image in the characters folder",
-            "queue.json's perk has no title", "queue.json's perk has no what",
-            "queue.json's perk has status None, not one of: in review, changes, approved",
+            "queue.json: perk.status: 'done' isn't one of in review, changes, approved",
+            "queue.json: perk.after: 'outside.png' isn't an image in the characters folder",
+            "queue.json: perk.colour: unknown key",
+            "queue.json: perk.title: missing", "queue.json: perk.what: missing", "queue.json: perk.status: missing",
             "queue.json has two items with one id"])
         note = {"at": "2026-10-23T08:00:00Z", "id": "perk", "verdict": "approve", "text": ""}
-        write(self.pack / "review" / "notes.jsonl", json.dumps(note) + "\n{}\n")
+        write(self.pack / "review" / "notes.jsonl", json.dumps(note) + '\n{"at": "", "id": "perk", "verdict": "maybe"}\nnot json\n')
         self.assertEqual(gen.review(self.pack)[1], [note])
-        self.assertIn("notes.jsonl:2 isn't a note (at, id, verdict: approve | change, text)", gen.review(self.pack)[2])
+        self.assertEqual(gen.review(self.pack)[2][-3:], ["notes.jsonl:2: verdict: 'maybe' isn't one of approve, change",
+                                                         "notes.jsonl:2: text: missing", "notes.jsonl:3: isn't JSON"])
 
     def test_the_studio_shows_them(self):
         """packs.js has each reference with its reading and files, and the queue with its images' paths from the page."""
@@ -500,10 +507,15 @@ class ReferenceRuleTests(unittest.TestCase):
             "show": {"mood": "happy", "state": "idle"}, "id": "2026-10-23-perk", "path": "../pal/references/2026-10-23-perk/",
             "became": [], "reading": "Beats.", "media": [{"file": "perk.gif", "kind": "gif", "frames": 3}]}])
         self.assertEqual(data["review"]["queue"][0]["after"], "../pal/review/shot.png")
-        write(self.pack / "review" / "fluid-gel.json", {"recording": "/tmp/x", "transitions": [{"name": "happy", "ratio": 32.0}]})
-        write(self.pack / "review" / "fluid-pixel.json", "{")
-        self.assertEqual(gen.studio_data([self.pack], self.pack, studio)["packs"]["pal"]["fluid"], {"gel": [{"name": "happy", "ratio": 32.0}]},
-                         "measure.py --json's file for each face, and none that isn't JSON")
+
+    def test_a_run_reads_each_pack_once(self):
+        """One run's Reads reads a pack's rig/ and review/ once, however many steps ask; without one, each call reads afresh."""
+        reads = gen.Reads()
+        self.assertIs(reads.review(self.pack), reads.review(self.pack))
+        self.assertIs(reads.rig(self.pack), reads.rig(self.pack.parent / "pal"))
+        write(self.pack / "review" / "queue.json", "{")
+        self.assertEqual(reads.review(self.pack)[2], [], "what it read first")
+        self.assertEqual(gen.review(self.pack)[2][0][:24], "queue.json: isn't JSON (")
 
 
 if __name__ == "__main__":

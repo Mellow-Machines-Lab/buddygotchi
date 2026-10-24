@@ -82,17 +82,20 @@ saves no verdicts.
   a bar for each frame's change from the one before (pixels whose
   difference's luma is over 24 levels, as `internal/tools/fluid/measure.py`
   counts them, the change's bar marked), and the frames in a strip. A
-  frame several times the median is a jump. Beside it, the **jumpiest**
-  of the everyday transitions (`internal/tools/fluid/transitions.jsonl`)
-  as the Mac's build of the board measured them,
-  `characters/<pack>/review/fluid-<face>.json`, which `measure.py --json`
-  writes and git ignores; clicking one records it here.
+  frame several times the median is a jump. Beside it, **Rank** records
+  the everyday transitions (to working, a mood change, a finish, back to
+  idle, a mood change at rest, a poke, a stroke, to asleep: `EVERYDAY`
+  in `views.js`) on the same board, their changes only, and lists them
+  as each comes, the **jumpiest** first: by the ratio of the largest
+  frame to the median, the same rule as `measure.py`'s; clicking one
+  records it here.
 - **References**: each of the pack's references (CHARACTER.md §16), its
   status, kind and note, the agent's reading and what it became. Side by
   side, the reference's media and the board playing its `show`, recorded
   on the frozen clock over as many frames as the reference has, with one
   scrubber and one Play for both, frame for frame: the reference's
-  frames (`frames/<file>/`), or the file itself before it's read.
+  frames (`frames/<file>/`), or before it's read the file itself, a
+  video seeking to the frame's time.
 - **Review**: the pack's `review/queue.json`, each item with its before
   and after, its verdicts so far and a comment box: Approve, or Ask for a
   change, which needs a comment. The server appends each to
@@ -116,24 +119,32 @@ poke (in the scene), M the matrix.
 The board's preview (`board.js`) is its firmware itself: the simulator's
 `Board` ([simulator/README.md](../../simulator/README.md)), the pack's
 build (`boop-sim-PACK.js`, or `boop-sim.js` for the staged pack, checked
-by its `hello`), powered on with the face. It takes each of the studio's
-states as the Mac and a finger would ask for it: a look is a `state`
-(the activity while working, needs you an `attn`), a reaction a `do`
-over working (idle for waking up), a poke or taps in a row or a stroke a
-touch, and no Mac 30 s with no state. On the stage it plays from a
-`dbg.reset`, its clock running, and picks its own variations; a matrix
-cell steps its clock 100 ms ten times a second, so twelve can play at
-once. Its sound is the firmware's own effects (the board has no voice
-file on its card here). Recording, the views freeze its clock and step
-it a frame at a time, as the simulator's scenarios do, so a recording is
-the same every time.
+by its `hello`), powered on with the face; the page compiles each
+build's WebAssembly once for all its boards. It takes each of the
+studio's states as the Mac and a finger would ask for it: a look is a
+`state` (the activity while working, an act the firmware draws, needs
+you an `attn`), a reaction a `do` over working (idle for waking up), a
+poke or taps in a row or a stroke a touch, where the simulator taps,
+and no Mac 30 s with no state. On the stage it plays from a
+`dbg.reset`, its clock running, says its state again as often as the
+simulator's page does, and picks its own variations; a matrix cell
+steps its clock 100 ms ten times a second, so twelve can play at once.
+Its sound is the firmware's own effects (the board has no voice file on
+its card here). The views record on the stage's board, which rests while
+they're shown, one recording at a time, and back in the scene it plays
+the selection from a reset. Recording, they freeze its clock and step it
+a frame at a time, as the simulator's scenarios do, so a recording is
+the same every time; each frame's change is counted as it comes, and its
+picture kept as an `ImageBitmap`.
 
 ## Kept in sync
 
 Nothing about a character is written here. `packs.js` comes from the
-packs' `character.json` files, references, review queues and notes, the
-measured transitions, and `states.json`, and
-`python3 characters/charactergen.py --check` fails when:
+packs' `character.json` files, references, review queues and notes,
+`states.json`, the acts the board draws while working (the firmware's
+`actFromName`) and the frames' 40 ms (charactergen's `FRAME_MS`, a
+reference's too), and `python3 characters/charactergen.py --check`
+fails when:
 
 - `states.json` doesn't list the board's states (the firmware's
   `kStateNames`), each once;
@@ -191,15 +202,17 @@ cell's canvases.
 the hook browser checks drive: `ready` (a promise), `select({...})`,
 `selectAsset(id, character)`, `sel`, `adapter` (the instance), `view`
 and `setView(name)`, `matrix` (`{cells, playing, transport, board}`),
-`views` (each other view's state: `transitions`' `frames` and `changes`,
-`references`' `board`, `review`'s `notes`), and `boardCell(dbgState)`,
-the cell a board's `dbg.state` marks.
+`views` (each other view's state: `transitions`' `frames`, `changes`,
+`ranked` and `ranking`, `references`' `board`, `review`'s `notes`), and
+`boardCell(dbgState)`, the cell a board's `dbg.state` marks.
 
-The server's `POST /review` takes `{"pack", "id", "verdict": "approve" |
-"change", "text"}` from the studio's own page (its origin, as JSON): an
-id in the pack's queue, and a comment for a change. It appends the note
-with its time, `{"at", "id", "verdict", "text"}`, and answers with it;
-`GET /review?pack=PACK` is the notes so far.
+The server streams each file, a part of it for a `Range` (as a video
+seeks), and caches nothing. Its `POST /review` takes `{"pack", "id",
+"verdict": "approve" | "change", "text"}` from the studio's own page
+(its origin, as JSON): an id in the pack's queue, and a comment for a
+change. It appends the note with its time, `{"at", "id", "verdict",
+"text"}`, and answers with it; `GET /review?pack=PACK` is the notes so
+far.
 
 ## Checking it
 
@@ -207,10 +220,12 @@ with its time, `{"at", "id", "verdict", "text"}`, and answers with it;
 character of every pack here, the boards included: a cell for each mood
 and state, only cells on screen playing and never more than the limit,
 the playing cells following the scroll and a hovered one, no page
-errors, a click opening the scene, and which cell a board's `dbg.state`
-marks. Then the board's views on Boop's gel: a transition's 106 frames
-and their changes, the address keeping the pair, and one of the jumpiest
-opened; a reference with the board recorded beside it, one scrubber
+errors, each build's WebAssembly fetched once, a click opening the
+scene, and which cell a board's `dbg.state` marks. Then the board's
+views on Boop's gel: a transition's 106 frames and their changes, the
+address keeping the pair, Rank listing the everyday transitions as they
+come, the jumpiest first, and the jumpiest opened, measuring as it
+ranked; a reference with the board recorded beside it, one scrubber
 moving both; a review item's images and a verdict through the page (the
 server's answer stood in for, so nothing is saved); and the page from
 `file://`, the reading shown and the comment box saying to use the
@@ -223,10 +238,12 @@ node characters/studio/serve.cjs --port 4190
 node characters/studio/check.cjs
 ```
 
-The logic needs no browser: the change measure, held to the pixels
-`measure.py`'s test is (`internal/tools/fluid/tests/changed.json`), how
-each state is asked of the board, and the server's verdicts, in a copy
-of it beside a pack of its own (`make -C internal tools-test` runs it):
+The logic needs no browser: the change measure and its summary, held to
+the rule `measure.py`'s test is (`internal/tools/fluid/tests/changed.json`),
+how each state is asked of the board, and the server, in a copy of it
+beside a pack of its own: its verdicts, which charactergen's review
+check then takes, and its files in part (`make -C internal tools-test`
+runs it):
 
 ```sh
 node --test characters/studio/tests/*.test.cjs

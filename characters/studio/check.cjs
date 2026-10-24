@@ -1,12 +1,14 @@
 // The studio in a browser. The matrix: every mood and state for each
 // character, the boards' among them, only the cells on screen playing, at
 // most a clip character's 60 or a live one's 12, following the scroll and a
-// hovered cell, with no page errors (WebGL contexts let go as cells leave); a
-// click opens the scene, and M comes back; and the cell a board's dbg.state
-// marks. Then the board's views: a transition recorded and measured, and one
-// of the jumpiest opened; a reference beside the board on one scrubber; a
-// review item with a verdict (the server's answer stood in for, so nothing
-// is saved); and the page from file://, where what needs no server works.
+// hovered cell, with no page errors (WebGL contexts let go as cells leave),
+// and each build's WebAssembly fetched once for all its boards; a click
+// opens the scene, and M comes back; and the cell a board's dbg.state
+// marks. Then the board's views: a transition recorded and measured, the
+// everyday transitions ranked and the jumpiest opened; a reference beside
+// the board on one scrubber; a review item with a verdict (the server's
+// answer stood in for, so nothing is saved); and the page from file://,
+// where what needs no server works.
 // Run `node characters/studio/serve.cjs --port 4190`, then
 // `node characters/studio/check.cjs`. BOOP_PLAYWRIGHT_MODULE, BOOP_QA_BROWSER
 // and BOOP_QA_URL override Playwright, the browser and the page;
@@ -14,6 +16,7 @@
 if(process.argv.includes('--help')){console.log('node characters/studio/check.cjs (README.md, "Checking it")');process.exit(0);}
 const {chromium}=require(process.env.BOOP_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),path=require('node:path'),{pathToFileURL}=require('node:url');
+const {summary}=require('./board.js');
 const url=process.env.BOOP_QA_URL||'http://127.0.0.1:4190/',shots=process.env.BOOP_QA_SHOTS;
 const browserOptions=process.env.BOOP_QA_BROWSER?{executablePath:process.env.BOOP_QA_BROWSER}:{};
 const LIMIT={clip:60,live:12};
@@ -24,10 +27,12 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
   try{
     const page=await browser.newPage({viewport:{width:1400,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    let fetched={};page.on('request',r=>{const name=new URL(r.url()).pathname;if(name.endsWith('.wasm'))fetched[name]=(fetched[name]||0)+1;});
     const packs=await (async()=>{await page.goto(url);await page.evaluate(()=>document.getElementById('studio').studio.ready);
-      return page.evaluate(()=>Object.entries(document.getElementById('studio').studio.packs).map(([id,p])=>({id,cards:p.studio.map(e=>e.id),moods:p.moods.length})));})();
+      return page.evaluate(()=>Object.entries(document.getElementById('studio').studio.packs).map(([id,p])=>({id,cards:p.studio.map(e=>e.id),boards:p.studio.filter(e=>e.board).map(e=>e.id),moods:p.moods.length})));})();
     const states=await page.evaluate(()=>window.StudioData.states.groups.flatMap(g=>g.states).length);
     for(const pack of packs)for(const card of pack.cards){
+      fetched={};
       await page.goto(`${url}#pack=${pack.id}&c=${card}&view=matrix`);
       await page.evaluate(()=>document.getElementById('studio').studio.ready);
       await page.waitForTimeout(1500);
@@ -49,6 +54,7 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
       assert.ok((await visible()).every(Boolean),`${card}: the playing cells follow the scroll`);
       const far=page.locator('.cell').last();await far.scrollIntoViewIfNeeded();await far.hover();await page.waitForTimeout(600);
       assert.equal(await far.evaluate(c=>c.querySelector('.thumb').classList.contains('idle')),false,`${card}: a hovered cell plays`);
+      if(pack.boards.includes(card))assert.deepEqual(Object.values(fetched),[1],`${card}: its build's WebAssembly fetched once for all its boards, not ${JSON.stringify(fetched)}`);
     }
     const cell=page.locator('.cell[data-mood="grumpy"][data-state="testing"]');
     await cell.scrollIntoViewIfNeeded();await cell.click();await page.waitForTimeout(400);
@@ -72,7 +78,7 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
 
     // The board's views, on Boop's gel board. Each view's state is root.studio.views[name].
     const view=name=>page.evaluate(name=>{const v=document.getElementById('studio').studio.views[name];return JSON.parse(JSON.stringify(v,(k,x)=>k==='image'?undefined:x));},name);
-    const until=async(name,done,what)=>{for(let i=0;i<120;i++){const v=await view(name);if(done(v))return v;await page.waitForTimeout(250);}throw Error(`${name}: ${what}, not in 30 s`);};
+    const until=async(name,done,what,s=30)=>{for(let i=0;i<s*4;i++){const v=await view(name);if(done(v))return v;await page.waitForTimeout(250);}throw Error(`${name}: ${what}, not in ${s} s`);};
     const shoot=async name=>{if(shots)await page.screenshot({path:path.join(shots,`studio-${name}.png`),fullPage:true});};
     await page.goto(`${url}#pack=boop&c=board-gel&view=transitions&from=calm/working&to=happy/working`);
     await page.evaluate(()=>document.getElementById('studio').studio.ready);
@@ -82,13 +88,28 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.ok(Math.max(...t.changes)>0&&t.changes[0]===0,'each frame\'s change from the one before');
     assert.deepEqual(await page.evaluate(()=>[document.querySelectorAll('[data-graph] rect').length,document.querySelectorAll('[data-strip] button').length]),[106,106],'a bar and a frame for each');
     assert.match(await page.evaluate(()=>location.hash),/view=transitions.*from=calm\/working&to=happy\/working/,'the address keeps the pair');
+    // Rank: the everyday transitions recorded on the board, listed as they come, the jumpiest first.
+    await page.click('[data-view="transitions"] [data-rank]');
+    let partway=null;
+    t=await until('transitions',v=>{if(v.ranking&&v.ranked.length)partway??=v.ranked.length;return !v.ranking&&v.ranked.length;},'the everyday transitions ranked',120);
+    assert.ok(partway&&partway<t.ranked.length,`listed as they come (${partway} of ${t.ranked.length} partway)`);
+    assert.ok(t.ranked.length>=5&&t.ranked.every(j=>j.from&&j.to&&j.ratio>=0),'each with its start, end and ratio');
+    assert.deepEqual(t.ranked.map(j=>j.ratio),[...t.ranked.map(j=>j.ratio)].sort((a,b)=>b-a),'the jumpiest first');
+    assert.match(t.rankSaid,/jumpiest first/);
     await shoot('transitions');
-    if(t.jumpiest){
-      const j=t.jumpiest.find(x=>x.from);
-      await page.click(`[data-jumpiest] [data-name="${j.name}"]`);
-      t=await until('transitions',v=>v.frames.length&&v.to.state===j.to.state&&v.from.state===j.from.state&&v.status.startsWith('106'),'the jumpiest one recorded');
-      assert.deepEqual([t.from.mood,t.to.mood],[j.from.mood,j.to.mood],'clicking one of the jumpiest records it');
-    }
+    const j=t.ranked[0];
+    await page.click(`[data-jumpiest] [data-name="${j.name}"]`);
+    t=await until('transitions',v=>v.frames.length&&v.to.state===j.to.state&&v.from.state===j.from.state&&v.status.startsWith('106'),'the jumpiest one recorded');
+    assert.deepEqual([t.from.mood,t.to.mood],[j.from.mood,j.to.mood],'clicking one of the jumpiest records it');
+    assert.equal(summary(t.changes.slice(1)).ratio,j.ratio,'recorded again, it measures as it ranked');
+    // The views recorded on the stage's board; back in the scene, it plays the selection again.
+    const stage=()=>page.evaluate(()=>{const c=document.querySelector('#stage canvas'),s=document.getElementById('studio').studio;
+      return {paused:s.adapter.paused,drawn:c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i)=>i%4!==3&&v>0)};});
+    await page.evaluate(()=>{const c=document.querySelector('#stage canvas');c.getContext('2d').clearRect(0,0,c.width,c.height);});
+    assert.deepEqual(await stage(),{paused:true,drawn:false},'the stage rests while a view records on its board');
+    await page.evaluate(()=>document.getElementById('studio').studio.setView('scene'));
+    await page.waitForTimeout(800);
+    assert.deepEqual(await stage(),{paused:false,drawn:true},'back in the scene, the stage\'s board plays again');
     const ref=(await page.evaluate(()=>document.getElementById('studio').studio.packs.boop.references))[0];
     await page.goto(`${url}#pack=boop&c=board-gel&view=references&ref=${ref.id}`);
     let r=await until('references',v=>v.board.length,'the board recorded beside the reference');

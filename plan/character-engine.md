@@ -209,9 +209,10 @@ the sketch above, and why:
 - **`became` names the rig's data** (a clip by its file, an expression
   by its mood, art by a style, scene or accessory's art), checked, since
   checkpoint 3 landed first. None of it stops a pack staging.
-- **The jumpiest list is the Mac's build's**, `measure.py --json` over
-  the everyday transitions into `review/fluid-<face>.json` (not kept), and
-  clicking one records it on the board in the page.
+- **The jumpiest list is ranked in the page** (Rank): the everyday
+  transitions recorded on the stage's board, by the rule `measure.py`
+  keeps for native recordings, pinned once for both
+  (`internal/tools/fluid/tests/changed.json`); clicking one records it.
 - **A verdict goes through the Studio's server** (`POST /review`, from its
   own page only) into `review/notes.jsonl`; from `file://` the page shows
   the queue and says to use the server.

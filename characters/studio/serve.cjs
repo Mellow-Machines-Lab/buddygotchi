@@ -1,5 +1,6 @@
 // Loopback-only server for the studio: characters/ at /, and the simulator's
-// build (simulator/web/dist/) at /simulator/, for the board's own previews.
+// build (simulator/web/dist/) at /simulator/, for the board's own previews,
+// each file streamed, in part for a Range (a video seeking), and never cached.
 // Writing is limited to two things: the clip names the packs' studio entries
 // allow (`captures`, a JSON file of {cases:[{id}]}, each saved as <id>.webm,
 // with --capture-dir), and a verdict on an item of a pack's review queue,
@@ -25,15 +26,27 @@ for(const pack of fs.readdirSync(root)){
 }
 const maxCaptureBytes=8*1024*1024; // VALIDATION.md: bounded local evidence export.
 if(captureDir)fs.mkdirSync(captureDir,{recursive:true});
+// A pack's folder by its name, or null for a name that isn't one.
+const packFolder=pack=>typeof pack==='string'&&/^[a-z0-9][a-z0-9_-]*$/.test(pack)?path.join(root,pack):null;
 // A verdict on one of a pack's review items (characters/CHARACTER.md §16): the line notes.jsonl gets, or why not.
+// charactergen.py's review() checks the notes it writes (tests/studio.test.cjs holds the two together).
 const maxNoteBytes=16*1024;
 function verdict({pack,id,verdict,text}){
-  const queue=/^[a-z0-9][a-z0-9_-]*$/.test(pack||'')&&path.join(root,pack,'review','queue.json');
+  const folder=packFolder(pack),queue=folder&&path.join(folder,'review','queue.json');
   const ids=queue&&fs.existsSync(queue)?JSON.parse(fs.readFileSync(queue,'utf8')).map(item=>item.id):[];
   if(!ids.includes(id))throw Error('No such review item');
   if(!['approve','change'].includes(verdict))throw Error('A verdict is approve or change');
   if(typeof text!=='string'||text.length>4000||(verdict==='change'&&!text.trim()))throw Error('A change needs a comment, at most 4000 characters');
-  return {file:path.join(root,pack,'review','notes.jsonl'),note:{at:new Date().toISOString(),id,verdict,text:text.trim()}};
+  return {file:path.join(folder,'review','notes.jsonl'),note:{at:new Date().toISOString(),id,verdict,text:text.trim()}};
+}
+// The bytes a request's Range asks for, as a video seeks: {start, end} (end
+// included), the whole file for none or one this doesn't read (several
+// ranges), or null for one past its end.
+function span(range,size){
+  const asked=/^bytes=(\d*)-(\d*)$/.exec(range||'');
+  if(!asked||!asked[1]&&!asked[2])return {start:0,end:size-1,whole:true};
+  const [start,end]=asked[1]?[Number(asked[1]),asked[2]?Math.min(Number(asked[2]),size-1):size-1]:[Math.max(0,size-Number(asked[2])),size-1];
+  return start<=end&&start<size?{start,end,whole:false}:null;
 }
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.md':'text/plain; charset=utf-8',
   '.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.mp4':'video/mp4','.m4v':'video/mp4','.mov':'video/quicktime','.webm':'video/webm','.wasm':'application/wasm'};
@@ -42,7 +55,7 @@ http.createServer((req,res)=>{
   try{name=decodeURIComponent(new URL(req.url,'http://localhost').pathname);}catch{res.writeHead(400);res.end();return;}
   if(name==='/review'){
     if(req.method==='GET'){  // ?pack=P: its verdicts so far, which packs.js has only as charactergen last saw them
-      const pack=new URL(req.url,'http://localhost').searchParams.get('pack')||'',file=/^[a-z0-9][a-z0-9_-]*$/.test(pack)&&path.join(root,pack,'review','notes.jsonl');
+      const folder=packFolder(new URL(req.url,'http://localhost').searchParams.get('pack')),file=folder&&path.join(folder,'review','notes.jsonl');
       const notes=(file&&fs.existsSync(file)?fs.readFileSync(file,'utf8'):'').split('\n').flatMap(line=>{try{return [JSON.parse(line)];}catch{return [];}});
       res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(notes));return;
     }
@@ -83,10 +96,14 @@ http.createServer((req,res)=>{
   const [base,rel]=name.startsWith('/simulator/')?[simulator,name.slice('/simulator'.length)]:[root,name];
   const file=path.resolve(base,'.'+rel+(rel.endsWith('/')?'index.html':''));
   if(!file.startsWith(base+path.sep)){res.writeHead(403);res.end();return;}
-  if(!name.endsWith('/')&&fs.statSync(file,{throwIfNoEntry:false})?.isDirectory()){res.writeHead(302,{'Location':name+'/'});res.end();return;}
-  fs.readFile(file,(error,data)=>{
-    if(error){res.writeHead(404);res.end('Not found');return;}
-    res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
-    res.end(req.method==='HEAD'?undefined:data);
-  });
+  const stat=fs.statSync(file,{throwIfNoEntry:false});
+  if(stat?.isDirectory()&&!name.endsWith('/')){res.writeHead(302,{'Location':name+'/'});res.end();return;}
+  if(!stat?.isFile()){res.writeHead(404);res.end('Not found');return;}
+  // Streamed, and in part when a Range asks: a video seeks by its bytes.
+  const part=span(req.headers.range,stat.size);
+  if(!part){res.writeHead(416,{'Content-Range':`bytes */${stat.size}`});res.end();return;}
+  res.writeHead(part.whole?200:206,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+    'Accept-Ranges':'bytes','Content-Length':String(part.end-part.start+1),...(part.whole?{}:{'Content-Range':`bytes ${part.start}-${part.end}/${stat.size}`})});
+  if(req.method==='HEAD'||!stat.size){res.end();return;}
+  fs.createReadStream(file,{start:part.start,end:part.end}).on('error',()=>res.destroy()).pipe(res);
 }).listen(port,'127.0.0.1',()=>console.log('Character Studio: http://127.0.0.1:'+port+'/'));

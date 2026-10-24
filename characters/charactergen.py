@@ -57,6 +57,7 @@ CHARACTERS = ROOT / "characters"
 STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
+FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 # The rig's channels and the outfits the tags call for, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
@@ -178,9 +179,68 @@ constexpr const char* kPackVersion = {json.dumps(character["version"])};
 
 EASES = {"linear": "kLinear", "in": "kIn", "out": "kOut", "inout": "kInOut"}
 ANCHORS = {"crown": "kCrown", "brim": "kBrim", "hands": "kHands", "eyes": "kEyes"}
-NAME = re.compile(r"[a-z0-9][a-z0-9_-]*$")
+NAME = re.compile(r"[a-z0-9][a-z0-9_-]*")
 # One file's rows in a List (rig.h): at most this many.
 MOST = 255
+
+
+# ── A file's keys, by a schema ──────────────────────────────────────────────
+class Rule:
+    """A rule for a value that no range, type or choices say, with what's
+    wrong with a value that breaks it: Rule("isn't a name", test)."""
+
+    def __init__(self, wrong: str, test) -> None:
+        self.wrong, self.test = wrong, test
+
+
+def whole(value, lo: int, hi: int | None = None) -> bool:
+    """A whole number from lo to hi (or more, with no hi), and not a bool."""
+    return type(value) is int and lo <= value and (hi is None or value <= hi)
+
+
+A_NAME = Rule("isn't a name", lambda v: isinstance(v, str) and bool(NAME.fullmatch(v)))
+TEXT = Rule("is empty", lambda v: isinstance(v, str) and bool(v.strip()))
+TYPES = {bool: "true or false", str: "text", list: "a JSON list", dict: "a JSON object"}
+
+
+def wrong(value, rule) -> str | None:
+    """What's wrong with a value by its rule (fields()), or None."""
+    shown = "" if isinstance(value, (dict, list)) else f"{value!r} "
+    if isinstance(rule, Rule):
+        return None if rule.test(value) else shown + rule.wrong
+    if isinstance(rule, type):
+        return None if isinstance(value, rule) and (rule is bool or not isinstance(value, bool)) else f"{shown}isn't {TYPES[rule]}"
+    if len(rule) == 2 and type(rule[0]) is int:
+        lo, hi = rule
+        return None if whole(value, lo, hi) else f"{shown}isn't a whole number from {lo} " + (f"to {hi}" if hi is not None else "up")
+    return None if value in rule else f"{shown}isn't one of {', '.join('null' if c is None else str(c) for c in rule)}"
+
+
+def fields(rel: str, obj, schema: dict, problems: list[str], at: str = "", required=(), unknown: str = "unknown key") -> dict:
+    """The keys of a file's object that its schema has, each with a value
+    its rule passes, and a problem for each other, `rel: at.key: what's
+    wrong`. A key's rule is (lo, hi), a whole number from lo to hi (or
+    more, hi None); a type; a tuple of the values it may be; or a Rule. A
+    key the schema hasn't is `unknown`, and one in `required` is missing
+    without it."""
+    def fail(key, what):
+        where = ".".join(k for k in (at, key) if k)
+        problems.append(f"{rel}: {where}: {what}" if where else f"{rel}: {what}")
+
+    if not isinstance(obj, dict):
+        fail("", "isn't a JSON object")
+        return {}
+    out = {}
+    for key, value in obj.items():
+        what = unknown if key not in schema else wrong(value, schema[key])
+        if what:
+            fail(key, what)
+        else:
+            out[key] = value
+    for key in required:
+        if key not in obj:
+            fail(key, "missing")
+    return out
 
 
 def rig_channels(source: Path = RIG_H) -> dict[str, tuple[int, int, int]]:
@@ -211,158 +271,115 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
     rig = {"eyes": [], "mouth": [], "scenes": [], "expressions": [], "clips": [], "looks": [], "accessories": []}
+    # Each name a file may set, with its channel's range: eyeOpen sets both eyes.
+    ranges = {**{c: (lo, hi) for c, (lo, hi, _) in channels.items()}, "eyeOpen": channels["eyeOpenL"][:2]}
 
     def fail(rel, key, what):
         problems.append(f"rig/{rel}: {key}: {what}" if key else f"rig/{rel}: {what}")
 
-    def of(rel, key, value, kind, allowed=None):
-        """The value, when it's a `kind` (with only the `allowed` keys), else
-        an empty one; each problem failed."""
-        if not isinstance(value, kind):
-            fail(rel, key, f"isn't a JSON {'object' if kind is dict else 'list'}")
-            return kind()
-        for unknown in sorted(set(value) - set(allowed)) if allowed is not None else []:
-            fail(rel, f"{key}.{unknown}" if key else unknown, "unknown key")
-        return value
+    def check(rel, obj, schema, **how):
+        return fields(f"rig/{rel}", obj, schema, problems, **how)
 
-    def read(rel, allowed=None):
+    def read(rel, schema, **how):
+        """A file's keys, by its schema; a missing file is empty."""
         if not (folder / rel).is_file():
             return {}
         try:
-            return of(rel, "", json.loads((folder / rel).read_text()), dict, allowed)
+            return check(rel, json.loads((folder / rel).read_text()), schema, **how)
         except ValueError as e:
             fail(rel, "", f"isn't JSON ({e})")
             return {}
 
     def named(name):
-        """The channels a name in a file sets: eyeOpen is both eyes'."""
-        return ["eyeOpenL", "eyeOpenR"] if name == "eyeOpen" else [name] if name in channels else []
-
-    def number(value, lo, hi):
-        return isinstance(value, int) and not isinstance(value, bool) and lo <= value <= hi
+        """The channels a name in a file sets."""
+        return ["eyeOpenL", "eyeOpenR"] if name == "eyeOpen" else [name]
 
     rel = "expressions.json"
-    data = read(rel, ["styles", "expressions"])
-    styles = of(rel, "styles", data.get("styles", {}), dict, ["eyes", "mouth"])
-    for slot in ("eyes", "mouth") if data else ():
-        names = styles.get(slot)
-        if not (isinstance(names, list) and 0 < len(names) == len(set(names)) <= MOST
-                and all(isinstance(n, str) and NAME.match(n) for n in names)):
+    data = read(rel, {"styles": dict, "expressions": dict})
+    styles = check(rel, data.get("styles", {}), {"eyes": list, "mouth": list}, at="styles", required=("eyes", "mouth") if data else ())
+    for slot, names in styles.items():
+        if not (all(A_NAME.test(n) for n in names) and 0 < len(names) == len(set(names)) <= MOST):
             fail(rel, f"styles.{slot}", "isn't a list of names, each once")
             names = []
         rig[slot] = names
-    for mood, pose in of(rel, "expressions", data.get("expressions", {}), dict).items():
-        where = f"expressions.{mood}"
-        if mood not in moods:
-            fail(rel, where, "isn't a mood")
-        values, picked = {}, {"eyes": 0, "mouth": 0}
-        for key, value in of(rel, where, pose, dict).items():
-            lo, hi, _ = channels[named(key)[0]] if named(key) else (0, 0, 0)
-            if key in picked:
-                if value in rig[key]:
-                    picked[key] = rig[key].index(value)
-                else:
-                    fail(rel, f"{where}.{key}", f"{value!r} isn't one of styles.{key}")
-            elif not named(key):
-                fail(rel, f"{where}.{key}", "unknown key")
-            elif any(c in values for c in named(key)):
+    pose = {**ranges, "eyes": tuple(rig["eyes"]), "mouth": tuple(rig["mouth"])}
+    for mood, values in check(rel, data.get("expressions", {}), {m: dict for m in moods}, at="expressions", unknown="isn't a mood").items():
+        where, said = f"expressions.{mood}", {}
+        for key, value in check(rel, values, pose, at=where).items():
+            if key in ("eyes", "mouth"):
+                continue
+            if any(c in said for c in named(key)):
                 fail(rel, f"{where}.{key}", "sets a channel twice")
-            elif not number(value, lo, hi):
-                fail(rel, f"{where}.{key}", f"{value!r} isn't a whole number from {lo} to {hi}")
             else:
-                values.update({c: value for c in named(key)})
-        rig["expressions"].append({"mood": mood, "values": [values.get(c, rest) for c, (_, _, rest) in channels.items()],
-                                   **picked})
+                said.update({c: value for c in named(key)})
+        rig["expressions"].append({"mood": mood, "values": [said.get(c, rest) for c, (_, _, rest) in channels.items()],
+                                   **{k: rig[k].index(values[k]) if values.get(k) in rig[k] else 0 for k in ("eyes", "mouth")}})
 
     clips = sorted((folder / "clips").glob("*.json")) if (folder / "clips").is_dir() else []
     if len(clips) > MOST:
         problems.append(f"rig/clips: more than {MOST} clips")
     for path in clips:
         rel = f"clips/{path.name}"
-        clip = read(rel, ["about", "ms", "loop", "additive", "tracks", "cues"])
-        if not NAME.match(path.stem):
+        if not NAME.fullmatch(path.stem):
             fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
-        ms, loop, additive = clip.get("ms"), clip.get("loop", False), clip.get("additive", True)
-        if not number(ms, 1, 60000):
-            fail(rel, "ms", f"{ms!r} isn't a whole number of ms from 1 to 60000")
+        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict, "cues": list},
+                    required=("ms",))
+        if "ms" not in clip:
             continue
-        for key, value in (("loop", loop), ("additive", additive)):
-            if not isinstance(value, bool):
-                fail(rel, key, f"{value!r} isn't true or false")
-        if not isinstance(clip.get("about", ""), str):
-            fail(rel, "about", "isn't text")
+        ms, loop, additive = clip["ms"], clip.get("loop", False), clip.get("additive", True)
         tracks, cues = [], []
-        for name, keys in of(rel, "tracks", clip.get("tracks", {}), dict).items():
+        for name, keys in check(rel, clip.get("tracks", {}), {c: list for c in ranges}, at="tracks", unknown="isn't a channel").items():
             where = f"tracks.{name}"
-            if not named(name):
-                fail(rel, where, "isn't a channel")
-                continue
             if any(c == done for c in named(name) for done, _ in tracks):
                 fail(rel, where, "sets a channel twice")
                 continue
-            lo, hi, _ = channels[named(name)[0]]
-            if additive is True:
+            lo, hi = ranges[name]
+            if additive:
                 lo, hi = lo - hi, hi - lo  # an offset spans the whole range, either way
-            if isinstance(keys, list) and not 0 < len(keys) <= MOST:
+            if not 0 < len(keys) <= MOST:
                 fail(rel, where, f"has {len(keys)} keys, not 1 to {MOST}")
-            keys, rows = of(rel, where, keys, list), []
+            rows = []
             for i, key in enumerate(keys):
                 at = f"{where}[{i}]"
                 t, value, ease = (key + ["inout"])[:3] if isinstance(key, list) and len(key) in (2, 3) else (None,) * 3
                 if t is None:
                     fail(rel, at, "isn't [ms, value] or [ms, value, ease]")
-                elif not number(t, rows[-1][0] + 1 if rows else 0, ms):
+                elif not whole(t, rows[-1][0] + 1 if rows else 0, ms):
                     fail(rel, at, f"its time, {t!r}, isn't a whole ms after the key before's and at most {ms}")
-                elif not number(value, lo, hi):
+                elif not whole(value, lo, hi):
                     fail(rel, at, f"its value, {value!r}, isn't a whole number from {lo} to {hi}")
                 elif ease not in EASES:
                     fail(rel, at, f"its ease, {ease!r}, isn't one of {', '.join(EASES)}")
                 else:
                     rows.append((t, value, ease))
-            if loop is True and rows and (rows[0][0], rows[-1][0], rows[-1][1]) != (0, ms, rows[0][1]):
+            if loop and rows and (rows[0][0], rows[-1][0], rows[-1][1]) != (0, ms, rows[0][1]):
                 fail(rel, where, "loops, so it starts at 0 and ends at ms on the value it started on")
             tracks += [(c, rows) for c in named(name)]
-        for i, cue in enumerate(of(rel, "cues", clip.get("cues", []), list)):
-            if i == MOST or not (isinstance(cue, list) and len(cue) == 2 and number(cue[0], 0, ms - 1)
-                                 and isinstance(cue[1], str) and NAME.match(cue[1])):
+        for i, cue in enumerate(clip.get("cues", [])):
+            if i == MOST or not (isinstance(cue, list) and len(cue) == 2 and whole(cue[0], 0, ms - 1) and A_NAME.test(cue[1])):
                 fail(rel, f"cues[{i}]", f"isn't [ms before {ms}, a name] (at most {MOST} of them)")
             else:
                 cues.append((cue[0], cue[1]))
-        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop is True, "additive": additive is True,
-                             "tracks": tracks, "cues": sorted(cues)})
+        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks, "cues": sorted(cues)})
 
     rel, ids = "looks.json", [c["id"] for c in rig["clips"]]
-    for state, look in read(rel).items():
-        if state not in states:
-            fail(rel, state, "isn't a state the board has")
-        look = of(rel, state, look, dict, ["clip", "scene", "dresses"])
-        clip, scene, dresses = look.get("clip"), look.get("scene"), look.get("dresses", False)
-        if clip is not None and clip not in ids:
-            fail(rel, f"{state}.clip", f"{clip!r} isn't a clip in rig/clips/")
-            clip = None
-        elif clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
+    look_schema = {"clip": Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids),
+                   "scene": Rule("isn't a name, or null", lambda v: v is None or A_NAME.test(v)), "dresses": bool}
+    for state, look in read(rel, {s: dict for s in states}, unknown="isn't a state the board has").items():
+        look = check(rel, look, look_schema, at=state)
+        clip, scene = look.get("clip"), look.get("scene")
+        if clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
             fail(rel, f"{state}.clip", f"{clip} doesn't loop")
-        if scene is not None and not (isinstance(scene, str) and NAME.match(scene)):
-            fail(rel, f"{state}.scene", f"{scene!r} isn't a name, or null")
-            scene = None
-        if not isinstance(dresses, bool):
-            fail(rel, f"{state}.dresses", f"{dresses!r} isn't true or false")
         if scene and scene not in rig["scenes"]:
             rig["scenes"].append(scene)
         rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip),
-                             "scene": rig["scenes"].index(scene) + 1 if scene else 0, "dresses": dresses is True})
+                             "scene": rig["scenes"].index(scene) + 1 if scene else 0, "dresses": look.get("dresses", False)})
 
     rel, worn = "accessories.json", outfits()
-    for outfit, accessory in read(rel).items():
-        if outfit not in worn:
-            fail(rel, outfit, f"isn't an outfit ({', '.join(worn)})")
-        accessory = of(rel, outfit, accessory, dict, ["anchor", "art"])
-        anchor, art = accessory.get("anchor"), accessory.get("art", outfit)
-        if anchor not in ANCHORS:
-            fail(rel, f"{outfit}.anchor", f"{anchor!r} isn't one of {', '.join(ANCHORS)}")
-        if not (isinstance(art, str) and NAME.match(art)):
-            fail(rel, f"{outfit}.art", f"{art!r} isn't a name")
-        rig["accessories"].append({"outfit": worn.get(outfit), "anchor": ANCHORS.get(anchor), "art": art})
+    for outfit, accessory in read(rel, {o: dict for o in worn}, unknown=f"isn't an outfit ({', '.join(worn)})").items():
+        accessory = check(rel, accessory, {"anchor": tuple(ANCHORS), "art": A_NAME}, at=outfit, required=("anchor",))
+        rig["accessories"].append({"outfit": worn[outfit], "anchor": ANCHORS.get(accessory.get("anchor")),
+                                   "art": accessory.get("art", outfit)})
     return rig, problems
 
 
@@ -426,21 +443,20 @@ inline constexpr Rig kRig = {{{', '.join(lists)}}};
 # ── References and review (CHARACTER.md §16) ────────────────────────────────
 # A reference is a folder, references/<YYYY-MM-DD>-<topic>/: the media a
 # person gave (a still is one frame; a GIF or a video is cut a frame every
-# 40 ms), reference.json, the agent's reading.md, and what `boopctl
+# FRAME_MS), reference.json, the agent's reading.md, and what `boopctl
 # reference read` makes of each file, frames/<file>/NNNN.png and
 # sheets/<file>.png.
+FRAME_MS = 40  # 25 fps: a reference's frames, and the board's that the studio records beside them, frame for frame
 MEDIA = {".png": "still", ".jpg": "still", ".jpeg": "still", ".webp": "still", ".gif": "gif",
          ".mp4": "video", ".mov": "video", ".m4v": "video", ".webm": "video"}
 REFERENCE_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
-REFERENCE_KEYS = ("kind", "note", "status", "became", "show", "frames", "ms")
 KINDS = ("inspiration", "direct")
 STATUSES = ("new", "read", "translated", "in review", "approved")
 BECOMES = ("clip", "expression", "art")
-# An item agents put up for review (review/queue.json), and a verdict on one
-# (review/notes.jsonl, which the studio's server appends).
-REVIEW_KEYS = ("id", "title", "what", "before", "after", "status")
+# What an item agents put up for review (review/queue.json) may be, and a
+# verdict on one, as the studio's server appends it to review/notes.jsonl.
 REVIEW_STATUSES = ("in review", "changes", "approved")
-VERDICTS = ("approve", "change")
+NOTE = {"at": str, "id": str, "verdict": ("approve", "change"), "text": str}
 
 
 def reference_folders(pack: Path) -> list[Path]:
@@ -464,46 +480,32 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
     what its status says is there: the tool's frames and sheets once it's
     read, and the agent's reading.md and what it became once it's
     translated."""
+    rel = "reference.json"
     try:
-        ref = json.loads((folder / "reference.json").read_text())
+        raw = json.loads((folder / rel).read_text())
     except FileNotFoundError:
         return ["it has no reference.json"]
     except ValueError as e:
-        return [f"reference.json isn't JSON ({e})"]
-    if not isinstance(ref, dict):
-        return ["reference.json isn't an object"]
-    problems = [f"reference.json has {key!r}, which it doesn't take" for key in ref if key not in REFERENCE_KEYS]
-    for key, values in (("kind", KINDS), ("status", STATUSES)):
-        if ref.get(key) not in values:
-            problems.append(f"its {key} is {ref.get(key)!r}, not one of: {', '.join(values)}")
-    if not isinstance(ref.get("note"), str) or not ref["note"].strip():
-        problems.append("its note is empty")
-    became = ref.get("became", [])
-    if not isinstance(became, list) or not all(isinstance(b, dict) and set(b) == {"what", "id"} and b["what"] in BECOMES
-                                               and isinstance(b["id"], str) and b["id"] for b in became):
-        problems.append(f'became is a list of {{"what": {" | ".join(BECOMES)}, "id": its name}}')
-    else:
-        made = {"clip": {c["id"] for c in rig["clips"]}, "expression": {e["mood"] for e in rig["expressions"]},
-                "art": set(rig["eyes"] + rig["mouth"] + rig["scenes"]) | {a["art"] for a in rig["accessories"]}}
-        problems += [f"it became {b['what']} {b['id']}, which rig/ hasn't" for b in became if b["id"] not in made[b["what"]]]
+        return [f"{rel}: isn't JSON ({e})"]
+    problems = []
+    ref = fields(rel, raw, {"kind": KINDS, "note": TEXT, "status": STATUSES, "became": list, "show": dict,
+                            "frames": (0, None), "ms": (0, None)}, problems, required=("kind", "note", "status"))
+    made = {"clip": {c["id"] for c in rig["clips"]}, "expression": {e["mood"] for e in rig["expressions"]},
+            "art": set(rig["eyes"] + rig["mouth"] + rig["scenes"]) | {a["art"] for a in rig["accessories"]}}
+    for i, b in enumerate(ref.get("became", [])):
+        b = fields(rel, b, {"what": BECOMES, "id": A_NAME}, problems, at=f"became[{i}]", required=("what", "id"))
+        if len(b) == 2 and b["id"] not in made[b["what"]]:
+            problems.append(f"it became {b['what']} {b['id']}, which rig/ hasn't")
+    state = Rule("isn't one of the board's states", lambda v: v in states)
     if "show" in ref:
-        show = ref["show"]
-        if not isinstance(show, dict) or not {"mood", "state"} <= set(show) <= {"mood", "state", "anim"}:
-            problems.append('show is {"mood", "state"}, and maybe "anim"')
-        else:
-            if show["mood"] not in moods:
-                problems.append(f"show's mood {show['mood']!r} isn't one of the pack's")
-            problems += [f"show's {key} {show[key]!r} isn't one of the board's states"
-                         for key in ("state", "anim") if key in show and show[key] not in states]
-    for key in ("frames", "ms"):
-        if key in ref and (type(ref[key]) is not int or ref[key] < 0):
-            problems.append(f"its {key} isn't a whole number")
+        fields(rel, ref["show"], {"mood": Rule("isn't one of the pack's moods", lambda v: v in moods), "state": state, "anim": state},
+               problems, at="show", required=("mood", "state"))
     files, own = media(folder), {"reference.json", "reading.md", "frames", "sheets"}
     problems += [f"it has {p.name}, which isn't media ({' '.join(MEDIA)}) or the reference's own"
                  for p in sorted(folder.iterdir()) if p.name not in own and p not in files and not p.name.startswith(".")]
     if not files:
         problems.append("it has no media")
-    status = STATUSES.index(ref["status"]) if ref.get("status") in STATUSES else 0
+    status = STATUSES.index(ref.get("status", "new"))
     if status >= STATUSES.index("read"):
         unread = [p.name for p in files if not frame_count(folder, p.name) or not (folder / "sheets" / f"{p.name}.png").is_file()]
         cut = sum(frame_count(folder, p.name) for p in files)
@@ -514,7 +516,7 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
     if status >= STATUSES.index("translated"):
         if not (folder / "reading.md").is_file():
             problems.append(f"it's {ref['status']}, and has no reading.md")
-        if not became:
+        if not ref.get("became"):
             problems.append(f"it's {ref['status']}, and became nothing")
     return problems
 
@@ -529,35 +531,55 @@ def review(pack: Path) -> tuple[list, list, list[str]]:
         try:
             queue = json.loads((folder / "queue.json").read_text())
         except ValueError as e:
-            return [], [], [f"queue.json isn't JSON ({e})"]
+            return [], [], [f"queue.json: isn't JSON ({e})"]
         if not isinstance(queue, list) or not all(isinstance(item, dict) for item in queue):
             return [], [], ["queue.json isn't a list of items"]
-        for item in queue:
-            name = item.get("id")
-            problems += [f"queue.json's {name} has {key!r}, which an item doesn't take" for key in item if key not in REVIEW_KEYS]
-            problems += [f"queue.json's {name} has no {key}" for key in ("id", "title", "what")
-                         if not isinstance(item.get(key), str) or not item[key].strip()]
-            if item.get("status") not in REVIEW_STATUSES:
-                problems.append(f"queue.json's {name} has status {item.get('status')!r}, not one of: {', '.join(REVIEW_STATUSES)}")
-            for key in ("before", "after"):
-                image = pack.parent.parent / str(item.get(key, ""))
-                if key in item and (not image.is_file() or MEDIA.get(image.suffix.lower()) != "still"
-                                    or pack.parent.resolve() not in image.resolve().parents):
-                    problems.append(f"queue.json's {name}: its {key}, {item[key]}, isn't an image in the characters folder")
+        def still(path):
+            """A still in the characters folder, by its path from the repository's root."""
+            file = pack.parent.parent / path
+            return file.is_file() and MEDIA.get(file.suffix.lower()) == "still" and pack.parent.resolve() in file.resolve().parents
+
+        image = Rule("isn't an image in the characters folder", lambda v: isinstance(v, str) and still(v))
+        item_schema = {"id": A_NAME, "title": TEXT, "what": TEXT, "before": image, "after": image, "status": REVIEW_STATUSES}
+        for i, item in enumerate(queue):
+            fields("queue.json", item, item_schema, problems, at=item["id"] if A_NAME.test(item.get("id")) else f"[{i}]",
+                   required=("id", "title", "what", "status"))
         ids = [item.get("id") for item in queue]
-        if len(ids) != len(set(ids)):
+        if len(ids) != len(set(map(str, ids))):
             problems.append("queue.json has two items with one id")
     if (folder / "notes.jsonl").is_file():
         for number, line in enumerate((folder / "notes.jsonl").read_text().splitlines(), 1):
+            rel, said = f"notes.jsonl:{number}", len(problems)
             try:
                 note = json.loads(line)
             except ValueError:
-                note = None
-            if not isinstance(note, dict) or set(note) != {"at", "id", "verdict", "text"} or note["verdict"] not in VERDICTS:
-                problems.append(f"notes.jsonl:{number} isn't a note (at, id, verdict: {' | '.join(VERDICTS)}, text)")
-            else:
+                problems.append(f"{rel}: isn't JSON")
+                continue
+            fields(rel, note, NOTE, problems, required=tuple(NOTE))
+            if len(problems) == said:
                 notes.append(note)
     return queue, notes, problems
+
+
+class Reads:
+    """Each pack's rig/ (read_rig()) and review/ (review()), read once for
+    as long as one of these is kept: main() keeps one for its run and
+    hands it on, and a call given none reads afresh."""
+
+    def __init__(self) -> None:
+        self.seen: dict = {}
+
+    def rig(self, pack: Path) -> tuple[dict, list[str]]:
+        return self.once(read_rig, pack)
+
+    def review(self, pack: Path) -> tuple[list, list, list[str]]:
+        return self.once(review, pack)
+
+    def once(self, read, pack: Path):
+        key = (read, pack.resolve())
+        if key not in self.seen:
+            self.seen[key] = read(pack)
+        return self.seen[key]
 
 
 def load(pack: Path) -> dict:
@@ -632,6 +654,16 @@ def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     return re.findall(r'"([a-z_]+)"', match.group(1))
 
 
+def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
+    """The states the board draws while working for what the agent does, a
+    `state` message's `act`: those the firmware's actFromName keeps (any
+    other is plain working)."""
+    match = re.search(r"SceneState actFromName\(.*?\{(.*?)return s;", source.read_text(), re.S)
+    if not match:
+        raise SystemExit(f"charactergen: no actFromName in {source}")
+    return [re.sub(r"(?<!^)(?=[A-Z])", "_", e).lower() for e in re.findall(r"case SceneState::k(\w+):", match.group(1))]
+
+
 def wears(pack: Path, entry: dict) -> dict[str, str]:
     """The moods a studio preview has no art of its own for, each with the
     mood whose art it shows instead: its `wears` file's `borrows` table
@@ -641,11 +673,11 @@ def wears(pack: Path, entry: dict) -> dict[str, str]:
     return json.loads((pack / entry["wears"]).read_text())["borrows"]
 
 
-def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES) -> list[str]:
+def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES, reads: Reads | None = None) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
     board's, each pack's declared files, a preview that has a mood
     wear one that isn't the pack's, and its references and review queue."""
-    problems = []
+    problems, reads = [], reads or Reads()
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
     if sorted(ids) != sorted(board) or len(ids) != len(set(ids)):
@@ -653,13 +685,13 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         problems.append(f"{studio / 'states.json'} doesn't list the board's states (missing {missing}, extra {extra})")
     for pack in packs:
         character = load(pack)
-        moods, rig = {m["id"] for m in character["moods"]}, read_rig(pack)[0]
+        moods, rig = {m["id"] for m in character["moods"]}, reads.rig(pack)[0]
         for folder in reference_folders(pack):
             if not folder.is_dir() or not REFERENCE_FOLDER.fullmatch(folder.name):
                 problems.append(f"{pack.name}: references/{folder.name} isn't a folder named <YYYY-MM-DD>-<topic>")
                 continue
             problems += [f"{pack.name}: references/{folder.name}: {p}" for p in reference_problems(folder, moods, ids, rig)]
-        problems += [f"{pack.name}: review/{p}" for p in review(pack)[2]]
+        problems += [f"{pack.name}: review/{p}" for p in reads.review(pack)[2]]
         entries = previews(character)
         names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)] + boards(character)]
         if None in names or len(names) != len(set(names)):
@@ -729,18 +761,6 @@ def boards(character: dict) -> list[dict]:
              "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}} for face in faces]
 
 
-def fluid(pack: Path) -> dict:
-    """Each face's everyday transitions as internal/tools/fluid/measure.py
-    --json last measured them, review/fluid-<face>.json, which isn't kept."""
-    out = {}
-    for path in sorted((pack / "review").glob("fluid-*.json")):
-        try:
-            out[path.stem[len("fluid-"):]] = json.loads(path.read_text())["transitions"]
-        except (ValueError, KeyError, TypeError):
-            continue
-    return out
-
-
 def references_data(pack: Path, here) -> list[dict]:
     """Each reference, as the studio shows it: reference.json, the reading,
     and each file with the frames cut from it."""
@@ -758,13 +778,15 @@ def references_data(pack: Path, here) -> list[dict]:
     return out
 
 
-def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
-    """The studio page's data: the engine's states, the staged pack and, for
-    each pack, its moods, its studio entries (its own, those it uses and
-    a board for each face), its references, its review queue and notes,
-    and its faces' measured transitions, with paths from the page."""
-    last = staged()
-    data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None, "states": states(studio), "packs": {}}
+def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, reads: Reads | None = None) -> dict:
+    """The studio page's data: the engine's states, with the acts the board
+    draws while working; the frames' interval; the staged pack; and, for
+    each pack, its moods, its studio entries (its own, those it uses and a
+    board for each face), its references, and its review queue and notes,
+    with paths from the page."""
+    last, reads = staged(), reads or Reads()
+    data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None,
+            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -777,7 +799,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
                 entry["icon"] = page(home / entry["icon"])
             entry["wears"] = dict(sorted(borrows.items()))
             entry.pop("captures", None)
-        queue, notes, _ = review(pack)
+        queue, notes, _ = reads.review(pack)
         data["packs"][pack.name] = {
             "name": character["name"],
             "default_mood": character["default_mood"],
@@ -786,7 +808,6 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
             "references": references_data(pack, page),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
                                              if isinstance(item.get(k), str)}} for item in queue], "notes": notes},
-            "fluid": fluid(pack),
         }
     return data
 
@@ -798,19 +819,19 @@ def local_packs(also: Path | None = None) -> list[Path]:
     return packs
 
 
-def write_studio(pack: Path, check: bool) -> int:
+def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
     """Checks the studio's data and writes characters/studio/packs.js, which
     opens on `pack`. Problems fail --check and only warn otherwise."""
-    packs = local_packs(pack)
-    problems = studio_problems(packs) + state_problems(packs)
+    packs, reads = local_packs(pack), reads or Reads()
+    problems = studio_problems(packs, reads=reads) + state_problems(packs)
     for problem in problems:
         print(("CHARACTERGEN FAIL: " if check else "charactergen: warning: ") + problem, file=sys.stderr)
-    data = json.dumps(studio_data(packs, pack), indent=1)
+    data = json.dumps(studio_data(packs, pack, reads=reads), indent=1)
     (STUDIO / "packs.js").write_text(f"// Generated by characters/charactergen.py. Do not edit.\nwindow.StudioData = {data};\n")
     return 1 if check and problems else 0
 
 
-def pack_problems(pack: Path, character: dict) -> list[str]:
+def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> list[str]:
     """What stops a pack from staging: its moods (§5), what it uses (§6),
     an id or version too long for the board's hello (§10), and its rig
     (§15)."""
@@ -825,12 +846,12 @@ def pack_problems(pack: Path, character: dict) -> list[str]:
         folder = f"firmware/src/render/{face}"
         if not (pack / folder).is_dir() and not (folder in paths and paths[folder].is_dir()):
             problems.append(f"faces gives {board} the {face} face, and there's no {folder}/")
-    return problems + read_rig(pack)[1]
+    return problems + (reads or Reads()).rig(pack)[1]
 
 
-def check(pack: Path) -> int:
+def check(pack: Path, reads: Reads | None = None) -> int:
     character = load(pack)
-    problems = pack_problems(pack, character)
+    problems = pack_problems(pack, character, reads)
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
     if not problems:
@@ -846,17 +867,17 @@ def bundle(view: Path, name: str) -> None:
                                                   "studio", "rig", "references", "review"))
 
 
-def checked_pack(pack: Path) -> tuple[dict, dict[str, Path]] | None:
+def checked_pack(pack: Path, reads: Reads | None = None) -> tuple[dict, dict[str, Path]] | None:
     """A pack's character.json and what it uses from other packs (§6), or
     None, its problems printed, for a pack that can't be staged."""
     character = load(pack)
-    problems = pack_problems(pack, character)
+    problems = pack_problems(pack, character, reads)
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
     return None if problems else (character, used(pack, character)[0])
 
 
-def stage(pack: Path) -> int:
+def stage(pack: Path, reads: Reads | None = None) -> int:
     """The pack staged (.character-build/staged/<name>/): its own files and
     what it uses from other packs (§6), as links, the one folder the tests,
     boopdev and the device tools read, and the pointer to it
@@ -866,7 +887,8 @@ def stage(pack: Path) -> int:
     as the Mac app bundles it, with what the app reads and no more
     (.character-build/packs/<name>/), beside every other pack beside it
     for buddies that run one, with packs/chosen naming this one."""
-    checked = checked_pack(pack)
+    reads = reads or Reads()
+    checked = checked_pack(pack, reads)
     if checked is None:
         return 1
     character, paths = checked
@@ -882,7 +904,7 @@ def stage(pack: Path) -> int:
     # another pack (CHARACTER.md §2). The chosen one is named in
     # packs/chosen.
     for other in sorted(p.parent for p in own_folder(pack).parent.glob("*/character.json")):
-        if other.resolve() == own_folder(pack) or pack_problems(other, load(other)):
+        if other.resolve() == own_folder(pack) or pack_problems(other, load(other), reads):
             continue
         with tempfile.TemporaryDirectory() as temp:
             overlay(Path(temp) / other.name, other, used(other)[0])
@@ -942,8 +964,9 @@ def main(argv: list[str]) -> int:
     if "--which" in argv:
         print(pack)
         return 0
+    reads = Reads()  # each pack's rig/ and review/, read once this run
     if "--stage" in argv:
-        return stage(pack) | write_studio(pack, check=False)
+        return stage(pack, reads) | write_studio(pack, False, reads)
     to = [a.split("=", 1)[1] for a in argv if a.startswith("--firmware-to=")]
     if to:
         return firmware_to(pack, Path(to[0]).resolve())
@@ -952,8 +975,8 @@ def main(argv: list[str]) -> int:
         return 2
     status = 0
     for each in ([pack] if rest else [p.parent for p in sorted(CHARACTERS.glob("*/character.json"))]):
-        status |= check(each)
-    return status | write_studio(pack, check=True)
+        status |= check(each, reads)
+    return status | write_studio(pack, True, reads)
 
 
 if __name__ == "__main__":
