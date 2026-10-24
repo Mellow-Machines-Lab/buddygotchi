@@ -330,7 +330,8 @@
     setSegment($('[data-view-choice]'),view);
     if(was==='matrix'){clearTimeout(board.timer);board.timer=0;for(const c of [...matrix.playing.keys()])unmount(c);}
     views[was]?.leave?.();
-    if(view==='scene'){if(rested){instance?.setPaused(false);rested=false;}}
+    // Back in the scene, the stage takes its board back from the views: playing again if it rested, else paused as it was.
+    if(view==='scene'){if(adapter?.transport==='live')instance.setPaused(instance.paused&&!rested);rested=false;}
     else if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
     else if(instance?.playing)instance.stop();
     if(view==='matrix'){buildMatrix();fillSoon();if(!board.timer)askBoard();}

@@ -83,19 +83,20 @@ saves no verdicts.
   difference's luma is over 24 levels, as `internal/tools/fluid/measure.py`
   counts them, the change's bar marked), and the frames in a strip. A
   frame several times the median is a jump. Beside it, **Rank** records
-  the everyday transitions (to working, a mood change, a finish, back to
-  idle, a mood change at rest, a poke, a stroke, to asleep: `EVERYDAY`
-  in `views.js`) on the same board, their changes only, and lists them
-  as each comes, the **jumpiest** first: by the ratio of the largest
-  frame to the median, the same rule as `measure.py`'s; clicking one
-  records it here.
+  the everyday transitions, `internal/tools/fluid/transitions.jsonl`'s
+  so that the two measures compare (to working, a mood change, a finish
+  in its own mood, back to idle from it, a poke, a stroke, to asleep:
+  `EVERYDAY` in `views.js`), on the same board, their changes only, and
+  lists them as each comes, the **jumpiest** first: by the ratio of the
+  largest frame to the median, the same rule as `measure.py`'s; clicking
+  one records it here.
 - **References**: each of the pack's references (CHARACTER.md §16), its
   status, kind and note, the agent's reading and what it became. Side by
   side, the reference's media and the board playing its `show`, recorded
-  on the frozen clock over as many frames as the reference has, with one
-  scrubber and one Play for both, frame for frame: the reference's
-  frames (`frames/<file>/`), or before it's read the file itself, a
-  video seeking to the frame's time.
+  on the frozen clock over as many frames as the reference has, 25 (a
+  second) at the least, with one scrubber and one Play for both, frame
+  for frame: the reference's frames (`frames/<file>/`), or before it's
+  read the file itself, a video seeking to the frame's time.
 - **Review**: the pack's `review/queue.json`, each item with its before
   and after, its verdicts so far and a comment box: Approve, or Ask for a
   change, which needs a comment. The server appends each to
@@ -123,17 +124,19 @@ by its `hello`), powered on with the face; the page compiles each
 build's WebAssembly once for all its boards. It takes each of the
 studio's states as the Mac and a finger would ask for it: a look is a
 `state` (the activity while working, an act the firmware draws, needs
-you an `attn`), a reaction a `do` over working (idle for waking up), a
-poke or taps in a row or a stroke a touch, where the simulator taps,
-and no Mac 30 s with no state. On the stage it plays from a
+you an `attn`), a reaction a `do` over working (idle for waking up), or
+as a transition's end over its start's look, in its own mood, a poke or
+taps in a row or a stroke a touch, where the simulator taps, and no Mac
+30 s with no state. On the stage it plays from a
 `dbg.reset`, its clock running, says its state again as often as the
 simulator's page does, and picks its own variations; a matrix cell
 steps its clock 100 ms ten times a second, so twelve can play at once.
 Its sound is the firmware's own effects (the board has no voice file on
 its card here). The views record on the stage's board, which rests while
 they're shown, one recording at a time, and back in the scene it plays
-the selection from a reset. Recording, they freeze its clock and step it
-a frame at a time, as the simulator's scenarios do, so a recording is
+the selection from a reset again, paused if it was paused before.
+Recording, they freeze its clock and step it a frame at a time, as the
+simulator's scenarios do, so a recording is
 the same every time; each frame's change is counted as it comes, and its
 picture kept as an `ImageBitmap`.
 
@@ -225,7 +228,9 @@ scene, and which cell a board's `dbg.state` marks. Then the board's
 views on Boop's gel: a transition's 106 frames and their changes, the
 address keeping the pair, Rank listing the everyday transitions as they
 come, the jumpiest first, and the jumpiest opened, measuring as it
-ranked; a reference with the board recorded beside it, one scrubber
+ranked; the stage's board back in the scene after a view recorded on
+it, playing, and paused if it was; a reference with the board recorded
+beside it, one scrubber
 moving both; a review item's images and a verdict through the page (the
 server's answer stood in for, so nothing is saved); and the page from
 `file://`, the reading shown and the comment box saying to use the
