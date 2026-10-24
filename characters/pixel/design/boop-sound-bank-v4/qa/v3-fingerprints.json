@@ -1,73 +1,73 @@
 {
-  "source": "Boop V3 local review bank, frozen 2026-09-28; captured independently before V4 import",
+  "source": "Boop V3 local review bank, frozen 2026-09-28; captured independently before V4 import; SVGs re-captured 2026-10-24 with the resting face's tags, every frame drawn as before",
   "assetCount": 308,
   "hashes": {
     "happy.working.01": {
-      "svg": "81333fdda3449429ec7852c682fb7374f32794ed1142b729e81c72a34195dbc4",
+      "svg": "8a54b66ef84fc9bccb45c7747e45f1d46fb8ad134ded2cce8e143b7030f63f45",
       "score": "bb56f98052ceeebfde37e6462e4112c33ce09f657639c3425cc2bc44b6952e84"
     },
     "happy.working.02": {
-      "svg": "be0deb140f4554cbd69f9eca0c42a03b3c11f1e443b2dc577480fb6a4f5d155a",
+      "svg": "0cb188ba82d31419abaff89cb3f8dae4900d6309f30a559abc8b8b882970dfff",
       "score": "4408180ef0423b7c08789cd5f2ed7e8cdbc1904ab8938d70b98eb45c1cae0977"
     },
     "happy.working.03": {
-      "svg": "50e33992d5032633814d492e8aacaea1d3def77d05e80ee48f6c06f504f16467",
+      "svg": "7242984d8ef924660b17d3ea79d4cad24199f9faed4c481dc9c122e70b15d5e5",
       "score": "b24c3b7b3e034d54fd7b40bf745706c8d54dc2f872db9ac42c77ff75c67c295a"
     },
     "happy.working.04": {
-      "svg": "1be9bb2beae4acc5df1e7bf4d223da44df349f4790ab0d3a5169cf67d46f4be4",
+      "svg": "bd660c41c9c560fd3c44e258692db49370e18c7366a76f5a62187f75a4fdad0e",
       "score": "878d0faf717676a8cf7b4a41418697008ca4335324b999dca3af5c3d7ccf0807"
     },
     "happy.working.05": {
-      "svg": "3dec77bfefbec4b95b77faf0c77e7e6116cd8022820473a38fd9a0f05126529d",
+      "svg": "5676968540e150b554e89a89dab7094ac1503f364f63353be3324041c595675e",
       "score": "38068ded5ce2cdca60295abe68b5dd87fec2867a095abf6f0e4dd64045da6b8e"
     },
     "happy.needs_you.01": {
-      "svg": "c0ebdb6c818f97484205652557a1c5c07e5d1cb8e51572f40130536e1e162824",
+      "svg": "19339769bc39109434a8e8ea1c4187b72c074c261b3566d66dc275f79e0ca0f5",
       "score": "5a243dc5d41b0ecc1d095b9251d0ad2ffd57cae3478fbcaed12aab638eb43989"
     },
     "happy.needs_you.02": {
-      "svg": "29df813a3bf8d0698acb7d2c64103fb28d9ee3354b01f951157442858865a93c",
+      "svg": "81dee9e0ef841b409595c1e018f0ba0e43c2b4c035c98072302535a13aa7e222",
       "score": "4438b0b0578d0b721cb577d4f8d217aa25eab7e7af55803921b3ef68aa29bbd7"
     },
     "happy.needs_you.03": {
-      "svg": "2fb2b1206f577ce0942e88a5736685156e1b110963a5ca9354bcc58f96d284f5",
+      "svg": "94c49a6b5b9ffb2a0ba9ae187a25bad2f9454aa4e64e6459ae2b84d7f875e0a4",
       "score": "4be1cc24fbf9cb969f6e010a20214104f27ee54ddc24716f1aafa9573b726d45"
     },
     "happy.task_complete.01": {
-      "svg": "e833890b8987066b27f394cbe500bb868e15525d8539a2d323f83733a91a76d0",
+      "svg": "0c138275ef2349b4e201e2250c926a4306952df04399123e8e2ded53b81c2cff",
       "score": "5714c3768669444b098452c498bfe699fc8a51f388622c98a03b3b3c86e5c03e"
     },
     "happy.task_complete.02": {
-      "svg": "25c289e0d1809856779478c4c4d72568daba8c9aa2272dde921623318571b6c6",
+      "svg": "e9a989067aa1dace4fbc27ec5397daba38744b668c07cab6281ab6ffdec9a63b",
       "score": "39fc1b2a29667d18c065d07e22ccb3c2bec3ea239e03ee65a1d6ff1bc1f5a160"
     },
     "happy.task_complete.03": {
-      "svg": "77e97e927ac95cdaa37625f0858f4f8fa589990a6f282c780f0ac9e376197a65",
+      "svg": "41db03fba4e3005531d9f757ce17d987626931478acd52745eb9382e026327bc",
       "score": "80e7b13b723ffa32a2ddd026425b32eb4baace1b1cec937f17db972d285cdc34"
     },
     "happy.listening.01": {
-      "svg": "67f5c3a4f2b129be768ff2ac5b58f37118601d2f60695e081cf7727eb5670978",
+      "svg": "abc352ec90f7f351144d8b26ae302161af675ae1b0adee0a3d61ce86d07f85fa",
       "score": "c24d461c7e707d6ee09dc79d509a64c29f80a35f9cbfef3b42df1a12fcf639ec"
     },
     "happy.listening.02": {
-      "svg": "d43760f1bce63ec38f3adbbd18e60754bdf48da2d9c97b62aabc3182d4ad2928",
+      "svg": "16d34a937fbbb2a42949efc63e301aa3f2f220e5bc2c2f516ae277713a5d066d",
       "score": "81537cce60dcc9c2402db5bbc7f2cd525e7519782c04cb742488a32dbfd08c98"
     },
     "happy.listening.03": {
-      "svg": "e20b13db09a72c4f2ae1f1adf1a307a76c6d59fab1b4a62eaa041b41c7333ed9",
+      "svg": "016a3f932d76f3ff16ed7d804fe73edec807d6af57852066fa7ab5868006fee2",
       "score": "487a677915e5eb5f9e7ccab7313ab12b618c6c58207a3212dbefef5bd790018f"
     },
     "happy.idle.01": {
-      "svg": "974b4b7166f6bb7335cea3d02225b76849cb77d422e718490c2b583783ece0d9",
+      "svg": "91485daacd3ecccb9398879929eda0c160ed278f5c87f060c1f3d432363b2f0a",
       "score": "cf8edada1e7fef2efc4d1ec41924430294c471773ddee0c1afd9796cee6a1d23"
     },
     "happy.idle.02": {
-      "svg": "c190ac44bf6fd500cfccf97f4f7e5b0743010417d335eb826c5dfd331fe4547c",
+      "svg": "7f5ff310bb824e5d31034f9a1d30491cccf6aca3944d0d3312f4180963979078",
       "score": "b792f940e2f6de0c0d9446e0b49c986bdf7be3a6cd875de83e611f2a8014a29c"
     },
     "happy.idle.03": {
-      "svg": "4e4e7c053520a7ec544bfe6184ec378b75cae3ffb91053cf92e5b79366a3a280",
+      "svg": "90c70dea2f581d4909db35f339dfdcd4ef979f931472e8941b04c5900b6c0383",
       "score": "42056c321d5a721f907a0120622b2ec2d8bf2f2c0d0da7ea070314d961803466"
     },
     "happy.asleep.01": {
@@ -95,71 +95,71 @@
       "score": "154ad0fffb062ad016df3ac792a5dfeef491769cca080e24acf4646b8b63ba2c"
     },
     "excited.working.01": {
-      "svg": "96bd491a47b19b8fdeda2e3b295f32a8eef84002aa8a8fb6d8b47ccaaf873ddb",
+      "svg": "22590a612f1e36e99fb8c510a925315cf2747c763fb436f7da18bbf78ba88eaa",
       "score": "67e5e52aedaed84919f14e9461d51554dcac33abbf92ccbf94b0640856eae050"
     },
     "excited.working.02": {
-      "svg": "a0f877a553e6f5c695c0385f1a1ab6e9027ceeb07f9be46ee8b441f18e719aef",
+      "svg": "c55b00bf8cfc1998f63f47be8129c47e02241d7bf18b2f7c8dd28eef67f091cb",
       "score": "6482f9f81ccc9e89c8f5ce5e2fd1c7ca826f14c27a094b116acbfd29f7cce338"
     },
     "excited.working.03": {
-      "svg": "d33e5f912b063cdcce49ccd21f213dd22a0895f26692875699f37b99ad0d2f60",
+      "svg": "354698c36079c3ff02065a7296b28b74e4f714d32b79644ba8d3dfaf8a3d72c0",
       "score": "898b0554ffb45b914fb37b56bec029900bf85a6b5ee505c6f3c6196fdad8a87d"
     },
     "excited.working.04": {
-      "svg": "6c33a9683e64e1b5886752f690dc0cb4fe9cd0b8ef10397b7e4fa3245c12d226",
+      "svg": "05c61e6cd5574d772ffa5479d20c74fc9920ab85b99f48f748b43442f0736238",
       "score": "1278c2d1737f45c41cd0ba07a2efe398d724993800478cf4d827df31fe735185"
     },
     "excited.working.05": {
-      "svg": "0f6241d13602dcd4b909b957b20e7bc7e5d13f5d64a5086c21c9ae03952624ce",
+      "svg": "fd225efb5dae7a51f044d91adac1c1e155575ede0eec0a734359521315da5035",
       "score": "7ca6f9833740d6557fd1c157b41e80d624aa8ca9767cd1653265abe289d7e0d4"
     },
     "excited.needs_you.01": {
-      "svg": "7b8af48975852c661fcf23efc73823f88dd8a2c24893f7a9fe8d62b5e996c0bf",
+      "svg": "768ada75dfaa2b7973b4289c8b110cad5e44f004e82734289b8687bfd6d5445d",
       "score": "cc45b7015784cb046f47c2982039594f77a5a428f4352032127fada685909661"
     },
     "excited.needs_you.02": {
-      "svg": "078b81a83ab231414e41298ef25759fc06469c4c1ea028de5fe77cb2f62639eb",
+      "svg": "24b784fe85be26809ca0404d627cc708d9bd8574e3a688ceb4ac7fa32759a774",
       "score": "61d0e890ea11aab31886e4a4f960111c5209e1d663b797f591442d8f047850ec"
     },
     "excited.needs_you.03": {
-      "svg": "fecacc34816e6402aef488b324a829fb5e3ca52538ef5593e9424087c7bb993f",
+      "svg": "f3cb02202d0578f322f7af843bf064c82f1addba1844a2622edc2af02f50799d",
       "score": "14606914d221c5b24c038134506f919631b475d40d56d3ec8ba6349c248813d7"
     },
     "excited.task_complete.01": {
-      "svg": "29e5810a6bd95c03393e5bf2cf8772f9de475bec57b80c09800c9e94768263ff",
+      "svg": "0b3ad86641cbc8bd2ffa78f89d6ad9e8026c2f44a217ac153d04beca22c9004d",
       "score": "d7a4ad05c911e11cd2b276a4702affacb8cebf0e9a769264bced5b8221086ff1"
     },
     "excited.task_complete.02": {
-      "svg": "96d36a644f538541afdb300779135b0dbc35f8bc53c19e51f7d6938469d801d9",
+      "svg": "7bb3112ab1fb78bc6801a4cc77ff0824049e34402520f36d8e96c7f39d6d8413",
       "score": "317b57f5eed845e00d4d3cca365cd141f576ddeb657b44db50b04ac06fad8632"
     },
     "excited.task_complete.03": {
-      "svg": "62700f5ae77ae3e36ff36050bb4031e599030d107d4aa4162df692c974b2cc42",
+      "svg": "d09a72cd65b4c2923f87f1a6b3aa8662d8ae64f22bb3b257ae0f1f0566242839",
       "score": "818f25c1981679f300300849e00ce8614eeeccf22e6cece42bf470a36fff3020"
     },
     "excited.listening.01": {
-      "svg": "98cf731ac87966204fdf1bd2a09c74e1a7db855726002aacfe662d74518fdc71",
+      "svg": "4b272d9c517d28ab650e01ba2b6c81e74cc31db3540b0063815f027091a1c996",
       "score": "5bd0ec967b9580fe4254da69ded198b365dc5e9c2a7bea3f3122951af39e7c80"
     },
     "excited.listening.02": {
-      "svg": "143d7fa6a0a6e576c58ae253bec7953c5ec0c44944cb62bea2584695a50b27f4",
+      "svg": "9cb0a8009cb2bcc7557eec56a96b847024ac02dd6478d6e3f4004966d4873116",
       "score": "aa2979f9d0439bc4ee0f7a1e8e2804e584f3c421bf25c29a8c97f393ea6df1ec"
     },
     "excited.listening.03": {
-      "svg": "8b1c7036a112e1d098116f48444d79e9d6ffc1e50ca691077ec4357d480128bf",
+      "svg": "cba4ea0f0d81b3f5e20f610c46f049c961e9457ee6bb9761ac036ae85352ccd1",
       "score": "9077d388d9fa21e91f9714e66dc10b1d218fae35fad156507a7a1db642b21f9e"
     },
     "excited.idle.01": {
-      "svg": "eda50374b5416230f02663ca6a6b2c58f460d17db34b0535df068e7a6eab37a2",
+      "svg": "10829e5bf6581d1a23d72f38d9f2f05d8bb6aa2dc79e895f0e205ae663ba9453",
       "score": "2c475e2f3a7b78d53fdde9a158f681b2a547dcf263f95378d0eee071657d576e"
     },
     "excited.idle.02": {
-      "svg": "17f9810a42861a8779dde4231692d2b9774db3eb95b80acfb5cec2f31ef10ab0",
+      "svg": "4e0d7b41246c6ac15b7104f64f9541603cf9a6dadc6c02fa226bb023c7c7ec08",
       "score": "94e346192831ad22d7093720588beeb960c4428064bfd53236d9dc1cb9684dd3"
     },
     "excited.idle.03": {
-      "svg": "f3d210998141f8f80f7231a830cbd4d13101625b01c381f4b51e0619a66c03b2",
+      "svg": "9f80cedbba55e3f6fc5b0c575fbc31f973df9aedf5c4f052b81676e2208b596b",
       "score": "2f447d7512bade06fd0292c375d5368c52bedbf33ef9affb4073fe2e36668265"
     },
     "excited.asleep.01": {
@@ -187,71 +187,71 @@
       "score": "37b959ad337f5d6dd88d6bae436fcdfccd9255402e4ad0f0ce22f34c4ef4334f"
     },
     "proud.working.01": {
-      "svg": "74432479a4370cbebeed9a9830dbf90aba170c4f9da20bbd93470d66a40359e9",
+      "svg": "92c6fa62d03d9364a7319c3d9775df1ffcfa2e7124552ba4986c0b945ad545c3",
       "score": "ed5b9c78ada41dfcb1f69177c92cf9f3729c2594647f7f752bc5052343703703"
     },
     "proud.working.02": {
-      "svg": "1b61164a3f29ea9b62dd6c83ea099adaeaab0d9ee3855b1cf8b42d28900d006b",
+      "svg": "b4467ce9eeb760da9d7435ea63c710496ae1113c15efbcbcdcc8c94126169420",
       "score": "8b5a95902ba8c28d42eee96e7797149f0a3aac1b24a27ad3cf14a8424c423953"
     },
     "proud.working.03": {
-      "svg": "1c523b6f03ef6e10bdc1cb720321d757602d0a59adb434cc1b0ac622ae21ff99",
+      "svg": "80d4c4a112ecef7228fab7892a6c0aad8ded6a90e8e1da9f3c77d1b06e261ac5",
       "score": "430a1861eb34a48b1abfaa1307adff927d212cb18d10120d56bb84eec62be86b"
     },
     "proud.working.04": {
-      "svg": "d25cc9f2dd75fe27d68cc080159db3b0c0a2d1d271ff268f7d37e919f328a4e3",
+      "svg": "9b29b5b8c85b6b2c2e3dc2edccf243f8f17a98624d0f2c7485e1e2cdba3e70fa",
       "score": "67b3d4366194e23d21f6bea9f5528419d52de05ab186b51281bc1b44c318bb38"
     },
     "proud.working.05": {
-      "svg": "0bd929f85c9e2ecb07cb60686d8819c76f1e22f555e03792c10fdf6ed479738a",
+      "svg": "f3d9174247a0e580e75fed621955656d1652883b0f6b1e0e7a16afd3d42b0c8f",
       "score": "d3328b54db5e4e590bad410df5cead8e58ed7578993a37a74caf57ce1f9e4b54"
     },
     "proud.needs_you.01": {
-      "svg": "a7345b14011809edf1d4dc4204ba9af5bc1da1e832cd8ff706357b88e50d2737",
+      "svg": "2725fdd1bd17574d42da91e10cfdf7604b9f9bc0daec10f9020de695d171c1b0",
       "score": "a7f080ca82e3a165a9cef55b544295e14d09d9d143917d7d16acc1dbe56129c0"
     },
     "proud.needs_you.02": {
-      "svg": "9f416ceddd3485043a43ec9353d7baa38b0debe4743b2bc249af5fd51f78e460",
+      "svg": "429ab8c35fc7f0a21c38f9842a3be1d9ec48fcbbb61db505fcb56f746e4b429b",
       "score": "672a3a721cf636161d6f7057d751d3ce7b41f44943db77f7e4bfade2d3b527b5"
     },
     "proud.needs_you.03": {
-      "svg": "09869b19317bb81ae2c56c1a963b731d564a6c9796cdff08cc5e232fcc1e20c0",
+      "svg": "421789f7c929b8c89889d3de3fcff7d36d985c8d498c599fa6da744c693e7d65",
       "score": "71970e8300d588f22b99e1d0d93f01c6a4a5a8b4cdaca081d0cd6ebcf6b7b02b"
     },
     "proud.task_complete.01": {
-      "svg": "f9b50d039a23846c4898f64f03c259f4f955569fab39dd8974cacc76d2cb1545",
+      "svg": "03fe918e6e45428b621a7595b8643c52b32520bcc20aa6a4bd9960df349be77b",
       "score": "f64796cfc7b9f1c333241adcd63887595b832ecebedb444f263eec989a534562"
     },
     "proud.task_complete.02": {
-      "svg": "bdfaa3da5cf5d49235598f63f405e639692c8811de3eae534b871d1f65632d67",
+      "svg": "5a3cde233a106054e67aa7db3d2ec55cd4ae3be2c8a6b59b375fe890ba33603c",
       "score": "5877d79f3088904a533dadc68e638ac8ab0084697838879949b077b133b1c518"
     },
     "proud.task_complete.03": {
-      "svg": "d3b2b4d0b9e872f0d1c76c899e12367628a456db250f6447b224893a3dfac598",
+      "svg": "5799d9a7c2815afcb1249a31d6c868964fae7804e479e2c5fc84ea2f30552807",
       "score": "baf1b7d8892b0247831cb9655ba872222efd6962e7776969aae4fccb8c8ae882"
     },
     "proud.listening.01": {
-      "svg": "09925063fed0774b4ddc513a9785f55d1220a03b1afad54f8d3e9cdb34c0a4b5",
+      "svg": "452a39fb963efb7cc02c502e7984afb80d13a6102c51509e7d901e0b42291db7",
       "score": "86b43b91843ba9e92ee757c4fc8bf8292b4d8b7bb46c3ce7475077e109fcce3c"
     },
     "proud.listening.02": {
-      "svg": "61f8bca676c67e9d6ff3a029b33f775dd59e7aa4d50049d404902bfb5b5acb68",
+      "svg": "06d48e429064b558dc40d0e4f8396e7ef86ba5f51efbe1f1161020194825305b",
       "score": "feba58aaa8754938d218260174a7a9c1e238dc9a7d7434eddb43fb6ff5a11ec1"
     },
     "proud.listening.03": {
-      "svg": "5c633a5b65051f2d585b13a13b95b02ac8a9aeca6e36641add3468c2a8516883",
+      "svg": "3e1336b5b4a867a40dbabd7317f7648b25e9b6ce9f33208bf581ab92ff4f4c9c",
       "score": "78f1bf90b7a8de7c9f3f9b61c3b4796745aeffa7f3b47d4a07bd14a9a991ae89"
     },
     "proud.idle.01": {
-      "svg": "37b6ed6271dc5cb0653e9dedd0eb03d7f666ff0de2a1526cec90a85732748061",
+      "svg": "1703c763ade6ccd31813d380db4982f22dadfb6534f5d7098ce2867a2b616cb7",
       "score": "e77e0cf442a6b9887836b31ae3942e544ea5d63a84376c712bd9daddf31bf721"
     },
     "proud.idle.02": {
-      "svg": "06adca44cd8211e6d6e62d1f94be103e90ba3a0c01eb1adea7f255c16efb08b0",
+      "svg": "a2baf8a032e189e23715e3ce669e3ed26823b57adf5ac80ac859c617966c91c9",
       "score": "c8db138aa0dcab4f6ee6e0961c2b1619f6fb1671537bc082fe8a5d5d0601c0d3"
     },
     "proud.idle.03": {
-      "svg": "29bbc2c99f9b3d2fecd7c9ac50e8bdb1162394d194b0db6cf4ec841aaa470a1e",
+      "svg": "0f6edb8a2f995def420c49b5ef1417825b6c74f2858566132a1f34658064c1d8",
       "score": "105bbe472dfd72eb514918f9233b8a751eea1ed2f7b4842c7e319d128fce82bf"
     },
     "proud.asleep.01": {
@@ -279,35 +279,35 @@
       "score": "aab6090c76632daba8569c725685255444d0f0ce4622370f22db4d0d20220afa"
     },
     "curious.working.01": {
-      "svg": "6333414362fc0897c413ce44f502890ccb26f47d0aefe82f12bfba327f1368ce",
+      "svg": "aedf94ae76de144aac7b001c589c9935853de104101261be12809d8f59ed3b50",
       "score": "5beb26d0a8dc71e1b5a722b4ecdbc5e6652ceeba960192479622e0358bebad35"
     },
     "curious.working.02": {
-      "svg": "4e561af215bb14894dbe0020ae7fee608fca2075898d3c0cfe43c3e103b5f861",
+      "svg": "8c81b6fcb36184eb1bd9b6d97137928bf2c7fe13afaac9366f343e8772f3ede4",
       "score": "dffe705fc9e449ed3cf9dff5dd21f66048e9ac6ccf045cb6d2ee5ca9b66f1b84"
     },
     "curious.working.03": {
-      "svg": "70928a392df1d3f767923561b0af53a74d3888b47aac77b9dea019392ed42cee",
+      "svg": "b813a3d2578cb44578c2310a7f5232c08bbd4aae7a89714e3eb84dddf1d3e83d",
       "score": "5d6d2cd9eb4d2d8e017d63eca5969d5dd2c20b9b8f855bb13956eeab9347f584"
     },
     "curious.working.04": {
-      "svg": "6985a54eeb0ca5348678ef967616cc6a64d22c089443f33fc2c1b2a43e333764",
+      "svg": "fd607ffa4bedf8df2e8fca77b553039ce2aa65f9879f56e1707e65fddc070eb4",
       "score": "3d1e88cdce0d2c37b9210c859cb7d46da55105c91f248251e31e350095ef4275"
     },
     "curious.working.05": {
-      "svg": "1ac7244cbd077f0b2a9e762ff49dc2638743593328b4158136acc1bcc109228c",
+      "svg": "cdb4bcdd8f7fd9464354a0f818074a803ce838f89c5d1b8e3760f4f3291e60b3",
       "score": "6e81e84f63dcef4be54d09c0894e3ee0687a1191ec06810283718e161ff7165b"
     },
     "curious.needs_you.01": {
-      "svg": "9fd5cd0f1bd2582df228df8dc08ba7702dd5fb0cee4f5a24c25146a6da7709a4",
+      "svg": "e8a730c267b02d978d9e9c9ffcbccb2e9d99c800aa56f5fc297093d4fbbd9cca",
       "score": "986c83947329320a293507e6af9907704b800d40e30cbcebf8da8c44114db43c"
     },
     "curious.needs_you.02": {
-      "svg": "83a6378cc3b97bef25d971091c655ca66ff9a53992991023b90ecda7e3d13654",
+      "svg": "3175f6b28437aab1c55501a1028e8c824735f551bd1366c2e7829f1f26370a87",
       "score": "50c80710a7fa18c1fea6fb16c47ce934ee281e33f85af28a4f7e875f1f70995a"
     },
     "curious.needs_you.03": {
-      "svg": "79d89d03d0c6330b4fba9fdac8422ce084e6b9c48154d0feadbe93ed62d49566",
+      "svg": "16690df112b2c1f94fb8cec947e99bf08f8202af56001c43c0d738b082008050",
       "score": "bf732b637b30385eb25785e74a33d75e6cc7e16cbcf93582d15eaeb2db9a0090"
     },
     "curious.task_complete.01": {
@@ -323,27 +323,27 @@
       "score": "6790617b5e77263306d8cb5d87c3651be95c7eb36135f08158d2d302d6a79070"
     },
     "curious.listening.01": {
-      "svg": "ad9b2f342384c2261cf6714e8d7cc96f7f4b05d6e6eb8a6b7d371cddfebef678",
+      "svg": "6568594e3a974d0ae500d653578edf8dc514639e699b9f8bb32a3a362948f8fd",
       "score": "7461523ee48f6d29e03e2af8d31bc2024b8d34b5a44964f6af0be5a50099287a"
     },
     "curious.listening.02": {
-      "svg": "9c154aa827868cee33189204d956ec11c49eaaab6ffb2d5cdcbe71876fc371f3",
+      "svg": "c2c378704a566ad0e6df9f57b06de8abd09015ca41905492cc2814c5ea7b901a",
       "score": "8244801686c14dcf6227d58a853a1ba9fe0a4026727fb19f8b3a09eaeb60a9bc"
     },
     "curious.listening.03": {
-      "svg": "bec89a4fce16f41cebf99637296449cdba82f4233293640c4fe5cf769b0b4398",
+      "svg": "fa013d84ace3caa37880136e89224c62b83d90c56f35c6d78fa5ad785fcff709",
       "score": "f686d0665a1822b119a9ac8636391248ad7f9ce454a5535ffc646090a52205b4"
     },
     "curious.idle.01": {
-      "svg": "d5cb2fc3a816e6ca6f2c112d05b63470e62bf953c6c596dd1289325d7f310992",
+      "svg": "0c1e34c2b1eda9615cc142fad0238c1bbd8a95fcc66e7aef10a0da576cc352f4",
       "score": "25fa8d1f9aca0e4594be6ef7328202adfa6d3d6b7b7ddfb03fc4ee309bd27675"
     },
     "curious.idle.02": {
-      "svg": "be3f6bc2650656ecd71734fb8758915d504d7a374cbd207222e605460df00180",
+      "svg": "7be31fbfc2deac59546f06a31b9cfe342da9d4e0674755f09b6bae0ad68f7306",
       "score": "443dfd08f799ab00722f498a2e85ff358cd0414e9de074c167c152af9ba0fc35"
     },
     "curious.idle.03": {
-      "svg": "ab9852c39d0b4d943a6e9e69d812cf00dbee3b87be32917e6a87f722edf852d1",
+      "svg": "4424e24ab08c420daaac728a49745911c2268642bde630c2fe5540fb812532be",
       "score": "092c104eb22233a440c3326b5c75e22fe7534aaba56345e37e3663a670a77450"
     },
     "curious.asleep.01": {
@@ -371,71 +371,71 @@
       "score": "33ed6130da2feaccafb5f11b246011318453978d7f80b4efd2469643efa77fcf"
     },
     "determined.working.01": {
-      "svg": "af2e86c315fbc64c6da94653f811af80497825429bacef8d619ef3644e812cee",
+      "svg": "5458cd1dd8b3107c3d685a205837725eda9990cbee0b0e2f1845e1c18214f3ca",
       "score": "f449181697a138867ebc4881b9fe5696586031b0f1945207d948767d77ca2d1a"
     },
     "determined.working.02": {
-      "svg": "c7282427c2d3fc51f2db3803b74a7696a46d00a3b6753679593c100ec16e166b",
+      "svg": "16288d8d7a65a71aa2cfd940eb1a2d0010a9721c6199b82e3a761261fe31fca3",
       "score": "6048dec82ab6e304c10e869d088b0dd1131f8cda6d0981f054b4eef43ccf93d3"
     },
     "determined.working.03": {
-      "svg": "c7af7c45ad857d291e880f8841cc8c2f6b151ce215d6b435fed88d612ee12c8a",
+      "svg": "fb3be3088210ed57972329466b1d34e7f8bb36737bd808c60b050ac156731eb9",
       "score": "1de0a473940fc0c2ac3bb619464ee0793c2c11df6c6e86093d0f6c0427518a00"
     },
     "determined.working.04": {
-      "svg": "8caba6dd82ce44a6d588e12d534af141f6c52c34ce0ae38cfe0a23c4304b4afa",
+      "svg": "b2ea79b96a0d6ce18975aef763267f42cbb0617e04d9e86f1534431b49843271",
       "score": "600d3489c2c9e44d05a655e96af12fb390e4e6028ac5b28c57ef934109019538"
     },
     "determined.working.05": {
-      "svg": "1aa97f8e98af1668f5017506a98d1672f55ec24d94159235c8df2f06ca60897c",
+      "svg": "d1e4045d4737122eff6ffd8ad2d8a4b61009c2f75e97dc34bc6f201cdb24a6f1",
       "score": "6818791c0d3701bee14ad2ce94a8b6083b0d99988df616509e464cf2c04240c6"
     },
     "determined.needs_you.01": {
-      "svg": "33c5daa8a042a326676b4472870062275a317179afcb4d2b23070a358d451757",
+      "svg": "c43ad1f9d7ae3674f29831809ea9a16bc436ba4d5797ceef799c43504cce37c5",
       "score": "f782b825b9f991757db09e5000974c08fcf7e4230a3f71d590928fafd7da6b7b"
     },
     "determined.needs_you.02": {
-      "svg": "787803fbfb931f82752b5cd4700092c8bf1deea751cacddc537f3ffa92e61c02",
+      "svg": "84d54020494e90319ab83f719f02513fd807d13749921bf95be9942d234ac9be",
       "score": "3099567c6a71ee5ac131ff06ceb90da7e0f47f2b26ee6d34cecbf03a5beb4995"
     },
     "determined.needs_you.03": {
-      "svg": "8082b624671c6d54fcdfc01811bc850cbd800b1d5e82f37c903c01076a647469",
+      "svg": "534af5c7d184b3613da31d7358e8e1e773802c50e765531c9f69629c30d56d06",
       "score": "a8a5c906e62bbc69f69b65dfab9b9efbc8bb34413d90a01b147258dc695778dd"
     },
     "determined.task_complete.01": {
-      "svg": "05f6a635cd5b42d87a8ea587abf6f6e7b49009dc931621ada2f56a0d324ae40c",
+      "svg": "0e915689b11d8192f4335e063a69fcb593c001c7c26d2fd0648576e63f5bac2a",
       "score": "c5d7d8509f0ac34f5d82f845300795650144d62015bf432e1fc0ef8f53a7a435"
     },
     "determined.task_complete.02": {
-      "svg": "c143ec5e643cc5623d3ec2fb28d5e791fc7a3bd834476c8eb20d62b48e8daa4d",
+      "svg": "4a7e651510adfb78e65a27a7cd251276ae080743670484623bfd27feeb7929ca",
       "score": "74b9c984677cd441ed205f6229ee80b8b0fe7f4a05fe3ec7261d2fc552435c78"
     },
     "determined.task_complete.03": {
-      "svg": "b641298c5965d9fe220859c0fa802b3bef56a84324ef2127bd8de362bc517eb6",
+      "svg": "19c4a901fe51a45cd9334e38a10ca800428a16cf490a7b8b5be9d15e476a56ff",
       "score": "9c643ace52d33f9373d5a0e364206a606da52aa008cd52685e0a46bbef716319"
     },
     "determined.listening.01": {
-      "svg": "3f3f4e73d074133579c498aaf0fed1f05bb2210af17412691649feadc6fe0c55",
+      "svg": "177d01a0bea3be863ef4052b7466af2047e16fc17ad3a41905a4c00c26e4815f",
       "score": "09eafbe83986e8826fc7484de141c843952f80b36d6c6c750150a39208d34b03"
     },
     "determined.listening.02": {
-      "svg": "c92d2e14b86cbaa4d66bae55c14c2d209cb54067fa2a1f4e721449f671778924",
+      "svg": "4602ad34883e1287ef8451dc7871ad5fb70dcc09a99775a3be45f50d6a81d382",
       "score": "000427ea6a33649e33f026ce98282c9a8d317164e90489e5fcdbe1050763ec69"
     },
     "determined.listening.03": {
-      "svg": "a84b5a1166273889437d976ebf2c642cb2b6beb179aa9ef265db61d50f7a8cb3",
+      "svg": "d6a8fed0c8df49a81d60be0cba7cc9d8de5b751bd0e19d488a5a7a4ac366aa37",
       "score": "a7ee81764de8895c948d54860d84976faf6f3c0330a63474343942ac6238bdda"
     },
     "determined.idle.01": {
-      "svg": "3a758e30d17093a82f1301dce64e4c1417a2543d17b740e35d84cd362f1edde1",
+      "svg": "50a9972d4511c3f51b5e0a615c37a100f1fe42df82639183f98d4df77e0d47c6",
       "score": "7deea710ebdf621b65fc88fe383c925e24d81056bcbe314e4652c320d0483875"
     },
     "determined.idle.02": {
-      "svg": "f575eb02424d4d722e5928f7364e9b4a6cb5f557593cc1dae4ddedb1f05af714",
+      "svg": "4f23ba787cfa0403479bb3f4df65c6b47b792f22a267974949fb3cb4185b976e",
       "score": "ad2ba57d5f29b414e905f2e1119786afd99fb2c09bf130b178eaf9f905afba73"
     },
     "determined.idle.03": {
-      "svg": "2293e9c9613b811e3c1fbd7c27d53a9fcbe7caac032187d8333b3cbd1f8d7029",
+      "svg": "0867d16a4d50deb468069077cfb9ad77190b54dbea3fd67367758b0ebbda52c2",
       "score": "b3f2c59b7bfd9c464d77acab6e756d17581a6e9f73f895b8d2d7f54e16f19274"
     },
     "determined.asleep.01": {
@@ -463,71 +463,71 @@
       "score": "c10b4b38ad5694825fb88056c91cef674f912be4a8152a0fa84b910f59ce2d46"
     },
     "grumpy.working.01": {
-      "svg": "fdbd7f8392af2fc6a0c3aba1d76c0d696f9cc8c4f62b9b41a9b8ff1d73368c69",
+      "svg": "1ae0a4ef3877bdbea28a3e5b486317467f536e9e11a50b863640a2bdf1a5d5ee",
       "score": "190e669382cc2bddaad68cb2489022aa6d4620d3f87a6fa05ae223015ab5144b"
     },
     "grumpy.working.02": {
-      "svg": "497597062828746820bd6fed52d2b9ad32791eedab511d646d56396dd926445b",
+      "svg": "6176def22e82a57f693705a308e8ed4c521c33bf0b8fd14e11cd5d9618bc389d",
       "score": "2b708ee6ec12633c98bbda4da9e42dbb791fcfa46296ff32b001d787d5dbc210"
     },
     "grumpy.working.03": {
-      "svg": "35a8c1009946928fa6ad9feb15cd8ad47c21d7303f738f69d213fff0b05be2fd",
+      "svg": "f56deac97e549d591f4b111abfa458a0ae742f5fa3fb8e63ece89c79f1273e78",
       "score": "13e3cd3b39b3d3c7765b735a372752fb786e248b4b6fe2c336b06a43b5d55723"
     },
     "grumpy.working.04": {
-      "svg": "d5c55bcfaed7ae5917863b0628a6a14ea4ffe4d3212212698b2dc1c2547bb637",
+      "svg": "ce1df0e59794bcae61dbba90791618627bf9f0fd9650a62aadf5540fdbffcbef",
       "score": "0dafdc5db97c34988dbfec8cd8819ec5a23fe5ea53efb4c2e77920976d7b7c08"
     },
     "grumpy.working.05": {
-      "svg": "a5993c37b26948491766709e30cccc5f4214c2c64b085f140c29d1a1d9767a22",
+      "svg": "114a0226086e8906daf48b9ec1c498bf6404945dd656635e6d7a2f5781fc3c1e",
       "score": "ef431e7550d84fb72d43d6c6d1b50ae53eef66e37273b0fe178b3da65a96dad0"
     },
     "grumpy.needs_you.01": {
-      "svg": "46ec0224f06d58cf39e4e635460c7fd9528c9714f51fd569b3cf63449f3ad0a0",
+      "svg": "c832bce92fb50eae65fa0fdc8cd1cbce6a41e22109a1d1d4d7818cbd4ed23615",
       "score": "45c160fbb82858b75cb3c8a5aa23830d42fa9a935dd504aafae47c16a767a6f7"
     },
     "grumpy.needs_you.02": {
-      "svg": "a8273c2d912a548c8c35c9e21c33dbaeab36ce57db8f7b94a11adb567042a2c0",
+      "svg": "a4504707cad84755b2e56921ad4da858834ee49b4263ae86c50dcccaa69f17fc",
       "score": "2168d164770191be9c07354250709b1e0cb6fd17823da62ceec916c2c8c64238"
     },
     "grumpy.needs_you.03": {
-      "svg": "1cae55e4d0acc07e391985ebeb28cbc8b0c15cb1536f308c652dbaf2101b6918",
+      "svg": "e9fa782872caa2844ab8a4b167fe781f64370c2191cda39830dc57783dd57284",
       "score": "f46ca224a41a493452c576fa73ccf9fbdc0135cbef929736f3af5593cfc63e86"
     },
     "grumpy.task_complete.01": {
-      "svg": "46168e11037ea7e7f856f634dcda4828aeb4610cfbb294bd749a506774357f88",
+      "svg": "729e859f0de394e71ba7dfe6fa8fe4ddbfd7625307f51cfb28ab529885ddfe3f",
       "score": "bcdadb21ed60b64ed31c6c5009e5e1d0a4421adecedb39799153d6eac8ac3d78"
     },
     "grumpy.task_complete.02": {
-      "svg": "b4c4ac8cb3f6403c44cb493845c76408705e1ca71f32900f822bff937b62c23e",
+      "svg": "7fd4de27a8d58378398d89ab1192cab1aa0ea3fa6967b5d02f8c61812cba3dda",
       "score": "448cbeaba8f959ab5fd341422eb5b57690bb0cab93d8d9284eb5ef69c7946b63"
     },
     "grumpy.task_complete.03": {
-      "svg": "958b4813257cdfbb87da7e77147d42a7204a17198527765837b54a93846ad87c",
+      "svg": "f14ae0c0e1da8832d7af6fecd03aa6dbfdbe256284a5a963da109658e6717c0b",
       "score": "5e0512eedd70b3694fcbdcb6a5fe9273d186a3a533ad84a5e93a0cadeaa45f48"
     },
     "grumpy.listening.01": {
-      "svg": "516249666024e4e7d9318cbb3298227e07fb715da5560a0ec6156b5bc2eb540f",
+      "svg": "5e5bd1d896ea5998d93503d8660b7dcaa534808e293a9b46ca415a0c90bae155",
       "score": "766285c0d267f8d3e56f9ad273ffee41cb17f8327d2d91bf17a8e88175f3dadd"
     },
     "grumpy.listening.02": {
-      "svg": "d2351e6703cfd9cd06ac418aa21bab76f53d5ee20a5022cf6ba1c1b4f04dd67b",
+      "svg": "1af8e99c622b078d1e8aa371dbd574668a30ab6169cd1c0d8492e39ae071fcb3",
       "score": "8b884f459da32f2fcc9ba13eab42b31271f919702bd0fd8214b9177f9cf3b7be"
     },
     "grumpy.listening.03": {
-      "svg": "2e336645167db528703f4317195eb125b126c2801707ffa73453d4725134d288",
+      "svg": "c72627d10ab97491e1e6352cd5e21707f031f3f52f13ccbe4891487e5d6a05bf",
       "score": "5ec2a5d1c8ab0e4b663f0ad854a0cca987bf34e58f8dd161000bd4f1a171a04e"
     },
     "grumpy.idle.01": {
-      "svg": "d2d358c1b6821a8cc298c6427ac5d06f7a30bf966e4361e4f82a5a9fba023c6f",
+      "svg": "49c23b2a769b4beaea35aedd0485a6939cd902b0d730dec8be848e1f64aeae98",
       "score": "958cea629f19896b7b4d4205ada88a72a19353eeb6c5a5c88ce84885789b562c"
     },
     "grumpy.idle.02": {
-      "svg": "39b8253bb0df4416f1557e39229f00d6f9ce3553f96d41d060c29c301478fca6",
+      "svg": "54303df1646b5bacd0245a92729e58a8e1455fe685ba5c34d276cc13ed1a620e",
       "score": "f8ca1683b1d0c38a808e79b8c485aec9deee7b9cf636d6334ccb0acdd3ba6687"
     },
     "grumpy.idle.03": {
-      "svg": "b89fa6d2e3018a3ead11ebe696d45fe22fd9ffee851804fd8d2dc1194660bb07",
+      "svg": "4152f22cf2e75ead20e0ecc1c55a253154657a4f5a8940622b202ba3470b80d0",
       "score": "41097c59a7b5c4471654cc2b74014f5e1c1df8237d713c2a7fe9d2b5f1a1aa6c"
     },
     "grumpy.asleep.01": {
@@ -555,71 +555,71 @@
       "score": "60cc3cffc714ba76573442cc63ae17a1111cace471d5b8f6cf136a4ff22d3bfc"
     },
     "sad.working.01": {
-      "svg": "e98514c499d07727f091a1254cd298b86e5a3dd40f9786338111c148f15c1a41",
+      "svg": "079762ecd311c2931b0582c4a0ad1f08b8cdf692f74c71f07414242b97efd16d",
       "score": "25250211afdaa6eb537f37ff5a2a147042a83ad9b4fee0bfd475d018218c2271"
     },
     "sad.working.02": {
-      "svg": "e8023ca6cb59328ff9e35078c0842962202936e18dcc301b73f5b1b4f6610802",
+      "svg": "2ee067a1c1a83258732e60d3ec7bbc42d24d3023a6321e689660cdb3477d768f",
       "score": "a9c42841575c1b0f5b34f5a7d306925a5c3f47c1a52077278620fe58a558b05a"
     },
     "sad.working.03": {
-      "svg": "29cfdb9d5df6063a5728c64c36bf19c1af580b7c68346dc6145359daa50e136d",
+      "svg": "8d4bc601b2fd7bbd1631855f8b7749643c474e77130a4ff940e2332b24573c67",
       "score": "92674cd11d85d0001abc2151d25d91fd7e0a5be8a4ae3fcbcb9b13e85f28e642"
     },
     "sad.working.04": {
-      "svg": "0ef6f3120ac4b9cffbe37c9f31498a10c837cb38de2fb8ecbff641f01f664971",
+      "svg": "a3d7c81bb280b1123afe32f3273cd1b679ea90f523634e963938f0548178c459",
       "score": "5e43d6e49b660170fb77e98c466da5e7b96470c61706f507a2cb20ad1669358e"
     },
     "sad.working.05": {
-      "svg": "4faebd861f5ecda03beba000b95c2ed6c1e92421e3299e0ffa48a1c10de8a921",
+      "svg": "a08e35fe546e2a81aa2f4868368f2b56748d0db22320bdf81646237cc063406b",
       "score": "b5e24fcc71d08a329347cf1ce48787f1859f237a09b838adf75d15c67d801ec3"
     },
     "sad.needs_you.01": {
-      "svg": "05977a479002959242c64061e0c2aa6324342b51d605a6358ed46b49ac2e50d0",
+      "svg": "3eb9ee146e65f5297b9a9133797553219a1e8ced3f7060d67c7cb1403813cb04",
       "score": "52d92e29947f34dd5bc47d3b02e89a9e56efb092dbd2d31241f31354c54de9bc"
     },
     "sad.needs_you.02": {
-      "svg": "668664b05b73207ff4f4af02f498fb5f0d53a6599b9f8ef6d1eaafd5992574b6",
+      "svg": "4ff07bf588df6788e09d2bf42044dc6e97b7446245747be7ff7bb82a85a242e9",
       "score": "1d7b721b9304557af11751052bc54411b08611ba237179e2ce9bea48cb9abb4c"
     },
     "sad.needs_you.03": {
-      "svg": "850eae973c9cf8581148f16c28e02d5b185072e1ee216d6cddd994f2810e5ab0",
+      "svg": "c0902956b9035d8f84e890fa2123f6b8707b27938ed302b01d434b8d9af05f7d",
       "score": "0f28dcfe383d94ac580db452a01c9ebadd800972ed4a653aa4aeb87095c3e7dc"
     },
     "sad.task_complete.01": {
-      "svg": "8cf9c932cb00e63a40ce6cc3ecfbd6c70760ee47819cfc217edfb677ac02e6e5",
+      "svg": "a768e547e373f2f3510a74eb05980d6b9a2f7b8059d5fc0591008aa0e541482f",
       "score": "2b9cf2f51e1bc98b56540abe94ca89c266869622dbfdc4afe5ad5c524d32c98f"
     },
     "sad.task_complete.02": {
-      "svg": "37a6f3673095fe5decf762b0757950efa0ff9604f3c4c7058616b2499496b9ae",
+      "svg": "50539d5d03cbc61daf5cabf7a43dc1f1bf06ebaaa60e59427686d00f316ff6cc",
       "score": "984e565f6f83711e46f30e6e19330ec917d5b08d2a33b6518afe1039ee61c636"
     },
     "sad.task_complete.03": {
-      "svg": "4a5c522cba23ff44a6b641e57d12e5e2f91ce2a507eeec15870368d9cfa81f81",
+      "svg": "e33dbc28f9d5afa97043983ded585bf45758c4e1ca923fbf3db2fd95e3ad79d4",
       "score": "bd4b6a2d59b557371db8d807cc43d3cf69c92cb8753d041af8922a5f93f023a1"
     },
     "sad.listening.01": {
-      "svg": "b08bd002b822972ed5b67a09832a27d1447008cdefca52fead5cabd00c24948e",
+      "svg": "6c2de14bd6dbd6e6ae64ce9159c628f1da0e41ab0b9b3de09a8ca129f4f03136",
       "score": "236005acbc0b44a09848ea1f343f6699655ee6fefc70e0906e1745b2d0cad228"
     },
     "sad.listening.02": {
-      "svg": "508a2a992e2d8cf702661378772d4e12086e29cd68ae522b8274ba8808101ec2",
+      "svg": "2fb0e4923eb07d8b59f5f75508162cb1b7e79254ed00f55b723bf87742467061",
       "score": "e9e2c61b09785451eadd9292bf9e974e3cf9a807e819c592f4fb2e3d782f5ff2"
     },
     "sad.listening.03": {
-      "svg": "6f94398dd2a2c918cc0cd6a6f6aa5a35522312483e21479db544242fd30800cc",
+      "svg": "90a92ef1af0cd14b7577a8a4b03fe22048cf24c8c65348eef90003133faf1ff5",
       "score": "cede6344c1d46d539499f266e00d01166c27cf7291b68bd3663d6dadf9dc5be8"
     },
     "sad.idle.01": {
-      "svg": "8030485be46458c62a5ece5ff125a8ad46946b74c840188137de354834e57ea3",
+      "svg": "f89be2a055dc70d6805e5e09d8709519e932fd5262f351ddbad124853a3c54d1",
       "score": "a73851e4e69fad891ced61185b5faa973d29081b89df6b0faa589d648750643e"
     },
     "sad.idle.02": {
-      "svg": "f5c7dd66c017a61cc59d353d40956325e80ea8fc8e922d80bbf958581d9ce583",
+      "svg": "998baa27b8028b4ba7351bd742d38c9bce1b1019fb126cbbbaa01e34dfe0dbbd",
       "score": "8db69a5c976686f0dcc551c0389c56b55d9d2b6e8068865509f35461ec63afec"
     },
     "sad.idle.03": {
-      "svg": "3efab94caeef7a6adcd8ea03f1968ba2d3d03b5defdd502ed1ae9a1298430cd2",
+      "svg": "d9810063ff670ac611e8917b5f4a690b53c7f6c24e37210f02465072f3d372a9",
       "score": "907bdcf1e1cf4098e24c455046234884e2efe3d02de959aed2e41ec2d5f04a1f"
     },
     "sad.asleep.01": {
@@ -647,547 +647,547 @@
       "score": "144a91c7e1c7c5b513eebe49ad5efb9d07fa370c07c88ffb231dcaf65997df2d"
     },
     "happy.starting.01": {
-      "svg": "8b392b9f2fab490e06b13e658abd937f3284da391cdf9b80295f5bd05fb4341f",
+      "svg": "ea22a3b253c31590662b28a23b4567900388f90c60a6c3b3edfd27d2fa6da04b",
       "score": "32b4861dc48467076feb178d3be61243a30b4cb55df45682b450c5aed9f83759"
     },
     "excited.starting.01": {
-      "svg": "73a41b363fbeac2523a03991a2114724ccb48d0606644fa77de955ae0a6c2828",
+      "svg": "7f2d0d9d62027ce23e2dcc40b5c65b3ab2f74559d9c398ab04261ad00d180a9f",
       "score": "3d3061c09d65e9d76e323bb03d90fc260f6537d9359a0e96cf0e9dd558727c36"
     },
     "proud.starting.01": {
-      "svg": "b972e9a58b74f6050f362cd8117027757ac410dfc8c59bbdbd2dac8baabb9ecb",
+      "svg": "8f965c11b6b4a746c6e553a783770a27b1bd4d16d3d2859c02eba031e53c4dd9",
       "score": "9f12fbf06e41bf12be2914b6559f667d2d62d767fe1fc777b48be10977957f51"
     },
     "curious.starting.01": {
-      "svg": "a33cd6f2db611680132b0ebb9375078ba0b1c1ad3f26bc7708b0ab17a1a12ea5",
+      "svg": "18e412b51afb4b3babe8b1b12c60046604065b3aee8d46d426cb83995f511d5e",
       "score": "1fd8a83bf86843df1d2c81d52996d793df466086b895deb4a7cd35f33f33d53c"
     },
     "determined.starting.01": {
-      "svg": "9645c90ae9e00ddfcee38a7de00f9c567bc8fb5cc69fb2111c70ae2ce86181ce",
+      "svg": "5eac3c3a630fa2ae28acfe713f288eee051b4450129ca1ae5dd083d1fbe308b3",
       "score": "c01b295b16b351a6c66f63f45e4d0def250fcf058c91ad0101cb1108c1be8fe3"
     },
     "grumpy.starting.01": {
-      "svg": "1beb32f7991460d2dc63adc3a2acbff028516c501de059b3f8a9453535d83ad5",
+      "svg": "006734a5c6758355c6dbfe4e6e50929aaf799be32c641f1d788fd6f1446c28f9",
       "score": "4a076a0da73858804833ab10b5ba11db6adf79c71496672220abf29b339c7e46"
     },
     "sad.starting.01": {
-      "svg": "927f4166b9e6e3925a6df5fbb1c335f7441c9f38f25735fab1ba342b72bd6e7a",
+      "svg": "00d33ee79665ddadd81fd08bfdd0d78cb7241300d727a2ed74e8e7c8d278353a",
       "score": "425b96e37827fa1cd274a90b35d7981b75f09fe76ee166388da568a6354b285f"
     },
     "happy.starting.02": {
-      "svg": "5582bcae0f248104155b1cfcde264dfc9f264dd1294626efba3871bd1b8814b2",
+      "svg": "2904522a78fe8df74840ceb89acbac796dd0e5d2e7b2e4ecf5d5f79122c34d24",
       "score": "d37d14d5b7219b72dc0b84343f9564f9f85f90ff5642c19eaae08a72f69f8c51"
     },
     "excited.starting.02": {
-      "svg": "7150c9eb6a94848c3a694ed33fa6ca92369aee0376fddbb79a3340d2a186b4c9",
+      "svg": "b7a12329dc255cb2af403661eed8291a6ced057d8a30238af3eb730e6793d9e7",
       "score": "52e4b01a53b16a9df2436e74e368714eacf1b8b5d9b41db3ef3ca1fe0019ada6"
     },
     "proud.starting.02": {
-      "svg": "1a67531fc9faabe48144277f1e50edcb5f8d24c1cf1f9ad372de139d1cee163a",
+      "svg": "01abe24e0329ea1e10da2fd442bb580f08519d188ee4aa4fda2f19367be0a802",
       "score": "eb7e99a6ccaba915fda17a31ea0b48161da8e01b3c12aff60930c16839451527"
     },
     "curious.starting.02": {
-      "svg": "af0831eebf79187e8167539e97662ffc8af87f6dcbd92309520faebbd18db26b",
+      "svg": "0fb5fad751d771149f968d2b7c1aa109653899208dc9e1fff107f80dfa4cb25d",
       "score": "f71ac5ea2caffa54344eee458e446206fe85141e1f38890e82536e95a57990b5"
     },
     "determined.starting.02": {
-      "svg": "920252a42972ec00b5603fb333ea011d8554c728316aaaca47ad09637afbd3a6",
+      "svg": "bc1276121286532d617b23728609448ad637fc5b6301fd192cb541839c5117e7",
       "score": "cd279a1ffa8b7a308e0ec0ae609c06c151835abea95d521cf87e1d29032f1616"
     },
     "grumpy.starting.02": {
-      "svg": "7f59c443852cfaadb048722a969024cad488d111d63e4bde85284bb215e9ceaf",
+      "svg": "0369e44d7b4abdf57408981b5ce4a6c8985707657351af092b3add738271c8ad",
       "score": "f199defae7b4071cc240ac4814bbb1bd70fd6d1e9db76a1e1e4594d16e67f3ff"
     },
     "sad.starting.02": {
-      "svg": "70a7ff23727ab3f26983a2b5975960b962cf314a2914fb3e06d5c7610ece61da",
+      "svg": "dd809c26ae4c16e22979ff1faffbad5aa0bab2b605e6598bf629985ffba9099c",
       "score": "6a9d00fe1567c201aa9c73cb5383db7a0f8554ab003ac7110108f5697b475417"
     },
     "happy.starting.03": {
-      "svg": "12eaad82e8e2efe559a223d50d60ba8f46d37a2072a537f18639f6eeb4d76854",
+      "svg": "7c0477ce3542d5c41af3fa5802dbc26e742a3a213ac46c8e2cbd225eb0091970",
       "score": "2b4d847299f0e2074bc295c847282762ec132fdc2fc791805f233c5ea32b12f6"
     },
     "excited.starting.03": {
-      "svg": "6c0bc177101ebecd484aecb00d32379740aca5d44ccce0ccc2a9826c4e4c2f76",
+      "svg": "0225e2a861f2d654f07742841ce38f8055b87cc14f190417b06c41570b356a1d",
       "score": "ce0618c19712d95a4f60c3c618880f9e80477ae8e1f587520e5412876c0c4f11"
     },
     "proud.starting.03": {
-      "svg": "1fde3aaca637541990a509efaa3c6bf363c9642f85b241ad9c835c0eabaecf1e",
+      "svg": "44cdd998a8e484fa12548ca006b805615201ccebeb573868d265ae3dcafbec18",
       "score": "a6c2610a8986dfcd967ce7b331016ae826d8042d7c754f36805466099891e683"
     },
     "curious.starting.03": {
-      "svg": "03a0ac35dc2a2569f016cc0eaf9ba4e1ab23f68fac2f45604f149a60dfe12675",
+      "svg": "d8330486385e548d01dba50abfa2b442fe0d36885960209c2e82870f301b9e6a",
       "score": "76958729b1c6397ae31e7e9481535bc7e565d98d3129a787feceeafe5dbae6a9"
     },
     "determined.starting.03": {
-      "svg": "13463fad42ee765afa1e4be84005dd10b7fe0f812ad2a8cfb9cf4b2c8798b8b5",
+      "svg": "14863c197fe7d8b96fedcdf62a14a2d07e7a89452f793adb7853b7eb88c9c5d7",
       "score": "3c6eb711cc9945ca2afc80f7c17acd3a9828182145424efb45a2e7926c3e765f"
     },
     "grumpy.starting.03": {
-      "svg": "db6cb7d109090d96b8befca040852e2f74752cf1896be82b21c55cc1076a9ba1",
+      "svg": "a9922a09660eb529ccc9528e2b20f4f20eddeea699c51ea3d6980b414f41b163",
       "score": "bb87c960496671955a8a84702904263462874c05312afe54ba51e0d29bf52aa6"
     },
     "sad.starting.03": {
-      "svg": "c14d64bca26d7c538bfc4780d4cefbf43b12ef7271b82ef15605d698d4051950",
+      "svg": "b500b5f509cdbeaa9e771657ffdb89b1ffae64d0dd5c43e3bffbd2a9380549c2",
       "score": "296ad5dfdbc366dea39f939635f2fdba47db230b0433f3bc7cfedcc21306d921"
     },
     "happy.planning.01": {
-      "svg": "93ed352eb05d8737349cb0ed695dd40c097388b2797ceb6056ab74576ae52e5a",
+      "svg": "84b53d6b5a9e8196f079d6ea55438f0f1553236424b22fa76e7d5c0e995e1b6b",
       "score": "ec6de086456e35a40b01be48aa9dd28ef48223100a08cf71c6f05915ce8f0112"
     },
     "excited.planning.01": {
-      "svg": "4c2b3bb7e8b8941f45092f53f533f6811a6f47f17385fa5b11c0f664c28fbbb5",
+      "svg": "9d8cd2f75aaa492e62e9fb079aee65b697a5f9f0d106ebd9c53992c58dfd3395",
       "score": "92efe19f126928a41cfd28e3cd26a7ce402e810cd48fb97a86c301d5f6ca3962"
     },
     "proud.planning.01": {
-      "svg": "7a8a66d2c3676994b70ca3f5e6ff81d72e6923f20f5fefda60563660b9921d61",
+      "svg": "ee3f3dd06b790d299e5378f6701d9960b6a4670c5d042244e82165eec7e7e5d6",
       "score": "21d0b0d53a45bf8432bf44f2e9f585494f6d343a25c53f87a66796581beac192"
     },
     "curious.planning.01": {
-      "svg": "8ce9d663ba235b652073b76c84bf55ef6ee0e601b02aa13a3f38151480e9216e",
+      "svg": "059bfb3be3c63f441db62c6e2e2180c43768a2c85220cc90db419869d11fcf93",
       "score": "4ebdda0d786eb3653b1cf2e8608117aaa5770d10d49e20d04b8cf1fe5bc15f1a"
     },
     "determined.planning.01": {
-      "svg": "85925f6caed151b483c8882f1602cdb264e859bcf79707dcd0e4d31b95afb619",
+      "svg": "8d92b6c398a2173cfb236f9900b4536e0a80389693161edf13febe1c5faa4e3a",
       "score": "be33982ecd0efbcdc91a835330d4aa1cd9d720d4bccc7ebd3649b45d084f520a"
     },
     "grumpy.planning.01": {
-      "svg": "b341ecb51f495d71d24012cb401e496ac804602b3e8fc5ddcf4fb0f0945dad60",
+      "svg": "b5e775364518319f700acbe14e58bc9f70db60b33d2db0be9a13b4b36b31ab23",
       "score": "e23886276f758a9b8412375655057063486e488867d787ad3aa2a7361d1a83aa"
     },
     "sad.planning.01": {
-      "svg": "3a19d8e2f5c3c0ff02fa6862d5f7ba9b248c80d16fa9e4403d0d1ec471338691",
+      "svg": "3a5a3b4de6d6c970bb4beda8707412ed42123b6e358f610cb41858da5bc41e1d",
       "score": "77b4cb29fa627db6e0352178edff67b0c9fcdc82c35c805c89287dfbc0c297ed"
     },
     "happy.terminal.01": {
-      "svg": "56e99b68ad1b815bedef155e27b4a690a1388b209188a740c8cf5c6445da8aeb",
+      "svg": "910cb5f4c9f9c182a8789452233d223c88ce1fbacfe46675c5ad58e3b2511082",
       "score": "43de126ac815f5581d89701f7d41937fe62caf1b8c686abde3892590bf97458b"
     },
     "excited.terminal.01": {
-      "svg": "466c499f7226971fe127f5736b48345ac12000658fb31206412afc4285072118",
+      "svg": "04481863097c0c6dce7f1315c39a6117d29baf70b502ba1b37c35e4b952d1768",
       "score": "6d4c3cf72a1adfe0cf1af3d7973b6e588680c82a0d5d5e71e41963888c827d51"
     },
     "proud.terminal.01": {
-      "svg": "b80c9c5bf185b10b8fa561eab01c19da9c6551517cfa59ec32f31a7737bdaff8",
+      "svg": "d7ae7dcba3347aa63d49bade485204c8ad5c4a93bbc53a6c1bed78672f66d81a",
       "score": "71d72270d7844af9609f11e64ce7ff152fdc92a366e624541e7ce3fa17cf103e"
     },
     "curious.terminal.01": {
-      "svg": "2e4171971856bb61b795ece9f56058055292febf0cb7274d9cdeb47352a92d53",
+      "svg": "868d0565df1e9b668766a20c663f4c9aeb77a16c7a2baf912427c750c0e4e348",
       "score": "0863f23b9729ae6b6502a2e8b10dee3b13b4a325d004afa81db4ef73c8e96e42"
     },
     "determined.terminal.01": {
-      "svg": "d553dac1e3c83358be7ca7340f043a466b3d71efbb52c861ae9e0a9b8fbac813",
+      "svg": "733c54cef992dbfc3b8e251ea4dcfaa712ba492a48be1cc78a3364e1ef7fc7f6",
       "score": "de03bc848115af950124aa1388f7340a072fb2bd0789325404a309a9b37230b8"
     },
     "grumpy.terminal.01": {
-      "svg": "7f6309becaa99ea06ac87c34ccdc876f180d5f06c07b6d2e37a3d9c2388bbdd3",
+      "svg": "980fe218f9ff0bc2566d80241f97804bdb9c07bbed7258b003a6c02e34ed6c7e",
       "score": "64c8e05c623e75307f9aef88a5c2f9a9d2343d8f3f5a205a12c29d38b228a194"
     },
     "sad.terminal.01": {
-      "svg": "8345bfb95b3587a8d195369ffbdfe44ac6a3f18170a53ca6ddce0c780904b0db",
+      "svg": "08733f60f62619e3267ccb318c330e53b943d977064e8ef0e70337d42f132149",
       "score": "3d121865e6d9e399f7e2f44d04f08b74c5ff13e580c82e1660cd74d15ef9963d"
     },
     "happy.tool_use.01": {
-      "svg": "be19084acd96d582b17c7796219978a7c5a5ca012f80cba13fc88208037cdb02",
+      "svg": "ed9ac42d5f6b80ddd881df3b23161e111a315878bdd56bec07186f370a376319",
       "score": "5a74d9c1b474638781f947ed7c00c677b60827e1ad6c176af502b4e2af279127"
     },
     "excited.tool_use.01": {
-      "svg": "ef176e2acf8e9b14ca5a6f70885ce89ca13d0dcbd0709d3a31750fe222f7e4c1",
+      "svg": "c64c33354e97078e0cdd61ef7fe53cded32c5330d4211cc5709b0622c384e41a",
       "score": "053058c7358bc9dc96b80b06fdb2dbe9891953f6c3436183b8d6fced9a304069"
     },
     "proud.tool_use.01": {
-      "svg": "6df1d59dffd13694d2f05bfc38b9258730214467979463cfc4cf4fbc7c7b9233",
+      "svg": "be5126385959c55f27dc1eb6221e2229b17a629f590cc40634f7696f351cf8e5",
       "score": "9c001d0b2113a0404c9c17593fce7f586fc76de8bc6a5671bcaa8f1375ed9131"
     },
     "curious.tool_use.01": {
-      "svg": "8b4ed47ed1ca40692753506336237b6d84044415e8624a79e32a0e970b958c29",
+      "svg": "13b35a1bdb7e7aaeda7bcf2e4d614cbd2bf0d0a2086c382388a14405e62b6bd3",
       "score": "8ec4a2c2e018c81608674c261c0d52d27514b751265522b299bb1db6ba425661"
     },
     "determined.tool_use.01": {
-      "svg": "0536d624c4f65d846024e637998f3a59434ebafb441e845ce6ab489926e98ce4",
+      "svg": "47b7c914ea36af1233b17f962b32557ee5882bb0f7254803e2477f907fe1efe9",
       "score": "57abade53acfa1eb7800142956aec039f1e5fffd0382950e81043a4db0e77286"
     },
     "grumpy.tool_use.01": {
-      "svg": "802376104c0d0716d73652d3e65b54f77510fb59d534a932655fbd66b82dc9b2",
+      "svg": "0c923cb94e6245ba651060408689aad3c0526fb27c4e039acdf1e1b620ef3552",
       "score": "fbd127d7e73f249d03e68b3b6822b1b693c37e8c1a2ceb3eb1b35dd4dc861e82"
     },
     "sad.tool_use.01": {
-      "svg": "df9280fca4aa120b44d0cbda122ff8b3fb004b597890ff03096a7baac2fb0ab1",
+      "svg": "087277df9fb65d4033d5b84f50466c9207c987fe541adedb1b2dd8cc24739d0c",
       "score": "b8ad25e41ac936ab685a67c012f86bcd21efccdd88f344d7dee2d0e1d62b520d"
     },
     "happy.searching.01": {
-      "svg": "fd9501b3458bfebc60b97ac5e6f30a62f9d422cb78dbe5c6149c95e4285b565f",
+      "svg": "b8d64a09a3dcd3d75f25c6df937352fb1de413404ac4d10d186c204f3c57b15b",
       "score": "e950e5c1d1ea16d8caf613c100e0857d796e8cb53c66bd010b626ef7ce3888ac"
     },
     "excited.searching.01": {
-      "svg": "b9b03f9e99768bee72212b5f7fa707bcca309130703cb89a4cdeb5e4b1875374",
+      "svg": "5165fc24c5fb926ec11d3d1f7ca54173f3a61d6f4f8013e0272fcdc4da161dab",
       "score": "bb6020f688e43054a40953cb1b60ac6b797f1d5626434517af2a15f7d72ea31d"
     },
     "proud.searching.01": {
-      "svg": "320f84708522fae2c320afa1b28b0d7cd738c1b9e439609fc92d5702e1f2447f",
+      "svg": "492d436f47ab10ececf600237480b96da06de3ab0773d9198e58f68573a21f2f",
       "score": "a798b8f52e9ede9f0934fcf5dfbaa3d8c9db997271a5ff3345b8ca3d823361e9"
     },
     "curious.searching.01": {
-      "svg": "127f5c3708550d0eaa8fa95a7b9508c8bb43df1a10a9bfba2f937c7332a9d9f2",
+      "svg": "3feb7bde1f185c046c2a505423dc4f87479e075bfa4633e14a4ac474484028e7",
       "score": "7cca6fecb047bff220c25b08c7e1064e8f71a099459f999ba241705d3255eeba"
     },
     "determined.searching.01": {
-      "svg": "90b959b1fc349d9a97af2119428d978637dbd55b6af57949585727e78cb4d985",
+      "svg": "8466a9904f10862b7d94e4534cb8019284b8d9eeae8300c078dfc22a4e607583",
       "score": "1b1dec8f02f1ae91294e247dccbe922e70f3fc10807f1a9babe2b79c5cd4819f"
     },
     "grumpy.searching.01": {
-      "svg": "48bd2b6a302feb0368575ab241a99400b225067937d3cda76f63720cb72259cd",
+      "svg": "dee583e8526446fed35fe09227d61fdb0881020c14dde2873ee0561473e97ddc",
       "score": "d1c687579e266cb5aa2330a442c2a9f78cb2b9c81bfcbc2e4d572a3a6d17baf7"
     },
     "sad.searching.01": {
-      "svg": "8f1e274a3563e64b9436aa815d41cc7d70998e43e8b5e5101e841c7f6e1994e6",
+      "svg": "a751d3b3015cab07078f3ff54d19959d1da0b92e4a9ab21028569b29c12aab80",
       "score": "fd168bcfbd7d07aebd6262574519bacd5c580b62f1be74526f5b97463ba5a509"
     },
     "happy.analyzing.01": {
-      "svg": "786410373da7fdc1b6331840079f25cd443839692d36a577b00c7f96b3cd3fb3",
+      "svg": "7e2fea2f7f4b503a57f4b2889e1595d3e176d66ef3ed041752e20f8f54b95dff",
       "score": "5a13043400c369d3cddd15a0e7dec9479d83823eec17aa23649cce819b8a80b0"
     },
     "excited.analyzing.01": {
-      "svg": "32f1cc0fc490cde32ac912f10ec992a88e977298003d5bcbae9e75da8a910c44",
+      "svg": "7b20b439fa7e871c7171514898188da5e0c74e6233fd9e983212219bdab5bac8",
       "score": "e1c48c8d5d5645a095345c295f523a8375f514a4ca0d0bfad6899db7cb22d7a6"
     },
     "proud.analyzing.01": {
-      "svg": "0f37c5847f73c6d30924dd195d270896136321b908b1033a8b5a1ce366d36510",
+      "svg": "95955e398d54c20ebf04de88f90a8cdf202a19e05de485a7dfac96d6abaf4560",
       "score": "afe93dbb32bd8cf7132757439ef47e13fed717124f0807417505d70ea3cf1ea5"
     },
     "curious.analyzing.01": {
-      "svg": "5602f39614416dd46be2e0d85b722c8d041f672d2edecd99cdf2c2ac97cb6351",
+      "svg": "4e7cc025c784b0154a30df2071bbb739b18d2f40d34113df73c9488d968700b0",
       "score": "d097cf14b0a2d52468f05413c35b571662d246463d49d3e063a0abccdbbb1317"
     },
     "determined.analyzing.01": {
-      "svg": "8822f391d4eddfacefcb70156011d55a5774a860d808b223f5d9729ed8293f31",
+      "svg": "67c3e28d94ff22cdd9508049abb9a154f1bad511935c012d8316d1bdede59f48",
       "score": "3e619c34b24768a4108df739e0bcce8132804dba312797a486d210f8c7c27784"
     },
     "grumpy.analyzing.01": {
-      "svg": "1f07c6a52e706f9624c32d0a4c7da6e814d45a37d0275f357b85f929aa2d17f4",
+      "svg": "e169070e3531b88e67cb57e97b6300f8cf2e3dac2d269acf756b00bdd5b27f4f",
       "score": "6d66e65a79bb5f77cc40a63775fe6bbde3b40e5786c83252ce32ab8d7da06d4e"
     },
     "sad.analyzing.01": {
-      "svg": "8697ab47b29a3f054775b46d55f2fa178c076a6983cb48a0974ad7e5eba0dcc0",
+      "svg": "6ff41f8710407e1a8835aee01f0268d388ff3a60e867a61558ad35ae6c82127d",
       "score": "ba24e2eb5383df2fabc364fa9fc9fc01d1a1b181f358312edb06b35376c12267"
     },
     "happy.testing.01": {
-      "svg": "aca639c469d7b83c85f320aa151cd6799120709e36d0d450d2c8d18bf0be8b00",
+      "svg": "1e44f549e080d6ddf2e0dcd327baffbf672946754ca3069de173cac6112ea0c1",
       "score": "6b0d6a8fa8c7f06e132efffb435a0f75f7ce6dd60f7c4ffe58f795d1c94645ee"
     },
     "excited.testing.01": {
-      "svg": "4c58468b2bd84be22b2fde16e0d1d3ecb6e21dea67f03f8920b11622f1264f05",
+      "svg": "06524ea7eb74b92aae9ac6781e9874040c1e36e20f0887729deb17144ed445d8",
       "score": "a96a33d2f44d99042f546194924d323c2c48abb65b616939c68e4bfbfa81f668"
     },
     "proud.testing.01": {
-      "svg": "d48af7141f6dc37f9ca0fb1ebd4cf440a8b693611be4648f29e1bfe37baacfb2",
+      "svg": "535705715f5d11c6a3ba1f711839dc3fe733b0dccd761a21a47d10ecae261f35",
       "score": "1c4d382bbb6e09d37defbcd8e8c7b5ee02b14063acd3737d7df491c96e9a31ab"
     },
     "curious.testing.01": {
-      "svg": "55c1fa405237cb0db2b6555c870348c60df06fbe17a79aa55689361494ca3bbe",
+      "svg": "8416088a236e5214c0bb3377ba5a14c475834992fc99769de46946878863f13c",
       "score": "dc4a2572b37953df712371bfd3f7885f92795413ab75798b1be582ed47175301"
     },
     "determined.testing.01": {
-      "svg": "16b98930cb6db8789fad0574852b2fb373bd20ef29928f19176430a24d18eb02",
+      "svg": "990fec8bc8e785c9d326580b70f9410bd30267eb072d46978e3cc909396051f8",
       "score": "0d30792f4c3de0779d5ffb5ce9ed0fbcab5104680a56034406b3a1952f58f5d7"
     },
     "grumpy.testing.01": {
-      "svg": "036fc4c7611c29081271d59de180b26f3cc4098e10d6d7a863918375b5f8f709",
+      "svg": "d422a4faff5e3b761b21a54c266cd671e491c677d249d9a75991ed317cd9e7d5",
       "score": "fdab9efaed0e0c6bb32c9f8bcd8917a54db87b86cd1ca1db3bb19b06981b46a2"
     },
     "sad.testing.01": {
-      "svg": "024890fbe06eedaa117033eadf6488215025c27e24f02ba5ebf54a76f21593ec",
+      "svg": "1dd3d1af20d20bba5bfeafe9266930803fd7dd3369c8a3a7d2999b6a7e54c6f3",
       "score": "4bdd8ded731f9a62a099892b19a726977e074c21a3cc838cba89f1ac2dc261c3"
     },
     "happy.delegating.01": {
-      "svg": "2b1338b77ee037e4042bf585ba45ef8dab7d7c46ceb8eba25ec0142e4511be2e",
+      "svg": "6450f187ede18ca90b33d189404ec001b5bd78c877912347dcbef8a05caf6ff5",
       "score": "46ff10c040d7e33aab35bd35828bd4f0d3e66781daeb498acb77326e3adf1c7f"
     },
     "excited.delegating.01": {
-      "svg": "aff49f91093b367dd62ce39586f51d0683d816be41aeea56006564598264b45f",
+      "svg": "aa7fe536349d9bc65c5e2070c0959af55ebc16a63b092b46e0462e1610821c27",
       "score": "e637846c00f5adc9aa05c3ac385219a38fa9662faf4f6bad138d23a8cce297e0"
     },
     "proud.delegating.01": {
-      "svg": "69bb594bc163e591d0ba7aee5d8dd6ec3f71eb286c6a73d72a10ab6a5fa20f50",
+      "svg": "9fc9d0e0e185d7759ccf2eb01db8a2dadebb08d6f3654a50707e68a63cbfd954",
       "score": "ed40d2b9b1009fbd6237b4ead6b71e5a276fc6e9e541e77f7f16c3bc44e122ac"
     },
     "curious.delegating.01": {
-      "svg": "8ae0e98bde94a14c972476acbd97f956d6f058d94bd12545c2714e3971cb8e7d",
+      "svg": "34441886666fa4c51b77dfa398bf4180c416ac3c6536487cf6028d36092bed63",
       "score": "d5a6a829f5e308681c0e7a0a6b454b57ec03138064d5442fff29f4841ffeb6c3"
     },
     "determined.delegating.01": {
-      "svg": "64608ebad77e0db54d75830e060a3243dcf1571c21d895c9c78085e6222fc64b",
+      "svg": "7afdf77fdfff1261fc6b451ba2f6801f1bdb32f6367e3a9f0674d0672b14369d",
       "score": "03944ba0aaae4cca18c8dc02a38304ee4079940a66e91a232ce3f3b118bfc7bd"
     },
     "grumpy.delegating.01": {
-      "svg": "9a90ec6c0ed0f5be09ffa7240cccb4b566d74a4350ccc8758b5d26ac42587351",
+      "svg": "e541ebe55205501aee894543ee6c6be8db7eded91f018ac8f8faaf103db84a13",
       "score": "cdd093e7bd164c31b174edf21dcf67662613313d291759a9aa1d0d8f8f8b72d0"
     },
     "sad.delegating.01": {
-      "svg": "e8586131cc211f5f668d0afee8c88a32b331d06887df2cd08253649968e58ecf",
+      "svg": "0663d69566a1d7e4bda4ef42d919fdf38d38675f2c6b8285ceb9b27d1ed71cef",
       "score": "5b28970cd6f83da66465b4fc34cafda337dffec7db7e330f022e2b479e21479c"
     },
     "happy.delegating.02": {
-      "svg": "d6d77bf61384c413c93a7af12a7376a637f488345ff06d64e8b919b45f414b58",
+      "svg": "8a013cfa66861323f426a5259fc2fd46a545ee7e9385fe845e5158cb31f9fc35",
       "score": "998336518b6cacdbc18f2d742722cfb9d2997b91e811debc359758dc75ee950e"
     },
     "excited.delegating.02": {
-      "svg": "fe217c30d84ac7a430e2d3efc7b0395b2756eb76f9c3d645c9b91bda00cd1199",
+      "svg": "eefb36ea73ec88d1a05985b7070baa91e188e700fa1c3a92d2c84c43cc928f95",
       "score": "0616d7ed6e2493f36edca149b1a8887098313ac4caf39f43d14cbd7649534439"
     },
     "proud.delegating.02": {
-      "svg": "63d5a8b2c5630bfc9f0e7d53a67c60984cb9a8f4d94d2ba72e7d112dbe0e81e2",
+      "svg": "c917fe110a8a0117be2e421456b69fac4df1875a6ab13fd81bd6a7f511571f95",
       "score": "a5a317d18a9a36d442fedd9e8f4c1e5104debb4b3144291255c8151028ac53e7"
     },
     "curious.delegating.02": {
-      "svg": "431866a671922a9f0efb22b5dae61c393133628c18f7ff19c326ce28b86aa499",
+      "svg": "e1292755fdbe335daf79dee6d0a346ed4e2bd539f45c511897a3ef5dbcaef67b",
       "score": "9d1b16fd948fac63448c0e70a11beab2848d66230019f9e227035e777cfc5b98"
     },
     "determined.delegating.02": {
-      "svg": "a33c61cf7252c22a08e319550f6d4b9a43fa01ad9b3edbfb7799976ca7a630f9",
+      "svg": "034e72fa53b91935c718940d6427b56bad3de33e5a9af79c8076329dead35e02",
       "score": "4d2e030fc8600ea35f8b206e919f46e0084ba2d3bd6715b3a9e20f68fd3b0650"
     },
     "grumpy.delegating.02": {
-      "svg": "2111d02f12a9328b7d23657a0398bd2f5038c60e6144f0acb07c9b0e805520e4",
+      "svg": "bdc00615885952c19e56c4604ff71b3d54ee4b83f66e99d0073e350c890face5",
       "score": "96722be446674a5dd6b2ec9b216e8dd3ded2eeca3e4bbafd74b39bb8eb95f9ac"
     },
     "sad.delegating.02": {
-      "svg": "23bdb6a0772b88f02802d6473113b2b02717b1f502d7cc8ece53fdcd484c8658",
+      "svg": "0ef2f507ccebb45e4b168caac14384591f97ffaeb96363602ebb37884c81dfd5",
       "score": "f84703f6de7079cd547e45b72a58ee80c60543d51f97065b225d35c2cd0e821f"
     },
     "happy.helper_return.01": {
-      "svg": "d7d243b54d0ab011496284cc39e4ad16c72f939632ce3361d5e0b940559492c7",
+      "svg": "b0ae2f334edeb46c0a70e7d7559816bee440ab7caa73a5a10b68b8ad9fe8e63a",
       "score": "54dae75996548805a390fd38047d883d9261cc672156a4e543b0a546f14bf124"
     },
     "excited.helper_return.01": {
-      "svg": "4254f6e951013753d7123567edee30f8ccbecb1a9013b78439b7e7e15bb6f455",
+      "svg": "96a16b8daedb1c2a2ec9ea62234cc16e6312a77e7174d12db32b077ab8a45734",
       "score": "3da8e992ccf358938983ee4139bd2df9389c2f0a3516fcdc6bfe88bb0578cb16"
     },
     "proud.helper_return.01": {
-      "svg": "26c4f4c47b705bfc44611691b30ed0c97b8ea1c673641f32410845cae74891ab",
+      "svg": "ab55cb99d79ee171dc6abc16e4d3a0a5d042460b403b5b7f25a2bf4f0dce7101",
       "score": "1a50f4ddfb9a54a61f2a7e2fd97aa317d50ee9eb89f3b1c5a900461aaf96a520"
     },
     "curious.helper_return.01": {
-      "svg": "547148e6084d6287ff497ee6004375fb066f82729984f55a65bce152e7b9c4c3",
+      "svg": "885cef543cd1dc07ba4ca281d3b21a79d33034e4b741a67c11d870951a19b217",
       "score": "8750ac351d2139c72fd1d7380d0c4bf04fe8aabca3204d831a556edd3349604a"
     },
     "determined.helper_return.01": {
-      "svg": "5a3eb4d1ac3d3ef5dbd9e92053fbec1ba04317d57e6e0298fde13cb765edd214",
+      "svg": "d2f10cbf256dc9933c3172dc3693491044dd08582bdf49ea1dcb0ba157b056df",
       "score": "a9f39c8e0953e9c6ceab64a3b79dad7190d301da66b76c7e5c2740488971eece"
     },
     "grumpy.helper_return.01": {
-      "svg": "f0e392af38f326e04592dd18ca40779705fd27848329025e72e35678c87860a2",
+      "svg": "9b056df7834e5f623b828dda0f54f624263cdd7ab7b2d512258ec095ca8484b2",
       "score": "a78900ce7b7021a982814070ce9376f623e76fff31d4373c246aa455377a9ead"
     },
     "sad.helper_return.01": {
-      "svg": "0cf9c0ff23ed37768d22322513ae4b747813c5687e463af7e06226a2fab9aac3",
+      "svg": "00f108188654d6c61e5bce173001e2f245f2e43a18accd61fb7abb982267d9c1",
       "score": "474ba8d08a2dd5585f0cba56aceb9c2246232774b82e25a70912bfbe2ad3fc68"
     },
     "happy.helper_return.02": {
-      "svg": "35e90a94459a3285df039140b65281461a9c2d7ad8520251cdd425d1a27ad533",
+      "svg": "7293ea562d078ca0e4b8b9a5629ed853d301f4536672730f68be64e18423454a",
       "score": "1722c114fd311118e594e0fa841e9f6069e692e87d13c0159208ba6e4f4c287c"
     },
     "excited.helper_return.02": {
-      "svg": "ca035dc55876782d2c0f94a1c2f0a5602d64290c6e7e2e92396012751de4d6d5",
+      "svg": "cd22d40f37b8ff4728241f5218eca0528e1f6252668e75238c741e9c7ef978b2",
       "score": "35248e53fbc27cdd81ceaa307596556afdc06b449815ac6e96578d2b6adfb566"
     },
     "proud.helper_return.02": {
-      "svg": "f8db3581feeddf7dee703ef8bfdb37857d508028d75bb06b5f333e0601348c1a",
+      "svg": "dfdfef81f59a4f485199afd9fa3e6614d71638168f5438522d7c97472b039555",
       "score": "a3afd34becb8a1ae73cba1091d102a79492c648803def4f13ecf2043e9b3d0e2"
     },
     "curious.helper_return.02": {
-      "svg": "0fa525bd983fe6ddfa633e6d561eb84aeede8c9350378d21a707394d659770e5",
+      "svg": "df4e7afff2155a5860787a2ba33c0d2f6c15a5f301041347f987bf4e0124146d",
       "score": "ac0cc9d31442fd78a57101ed57e4988b0f6c0acb8852112a82addcfa144b966f"
     },
     "determined.helper_return.02": {
-      "svg": "f9b2bfb2b94002ff4e5c8b122e79540f888ab2e848fe3daf28623057730f7c18",
+      "svg": "edb82918ffd4ff1ec5c983cb7e70460202c680610a8426eb084b3e2e12fbcece",
       "score": "a3d9189f380b9fdaed042c2543cef96417dfb53e40bd83cb647309ec39c1dde6"
     },
     "grumpy.helper_return.02": {
-      "svg": "d77a9d6969d0eb630b6eb8a07035a99f433bec8bc525987a4961fd3671fb3886",
+      "svg": "c9c772c8cdc0a47e6fc066e9cbe078259b5e6ec02af00d4be3dfdc1ae13c58c8",
       "score": "7702b9004a3eaa9bad1bd1db084a1644a089c07f369e89d5c5c1a5c6b44d95da"
     },
     "sad.helper_return.02": {
-      "svg": "b0be6ae1a60ff8cae8e233b9e55d2446a25a7b4cb6892befc995245e5ed0a048",
+      "svg": "52baaa8b91727c1b87df3cc4b7ae60f3eb605f80cffbf7f4fe1601f236525e7e",
       "score": "9807d2a298235c1eb1792bb907c1e94952a3416af5476ee37a3e66d3399ba6a1"
     },
     "happy.waiting.01": {
-      "svg": "b2bd492dade8ed674f168eda5b6bf136c341aab49fa2e7831acae4aa7339696f",
+      "svg": "c8b6e374c145823f23349218c89ce3bfdbc78b4973aad4994b2d168e4c32e0f1",
       "score": "b5a7b66007b0d925ecffd066c7facf64f5a6db5cddf7e0517c616bac13cc8a3e"
     },
     "excited.waiting.01": {
-      "svg": "89676bb14c1bfbc35be8905ae347e4ca8300acaccd305dc8385425ee7c44faa5",
+      "svg": "e629d7c774491aa5153d3a352a3ef3be42edd62848fcf9b0b3cc0dde6e2fa2ef",
       "score": "b5ed4b1cb7068a7d27e6f19300bc4f82dae99b15b33299559091af7310064fbd"
     },
     "proud.waiting.01": {
-      "svg": "44a18565c42b3a4159f72ccb80dcd7d519778e3cd95c6288bcb9bd70d17bbae6",
+      "svg": "6a58d9acd693e99d6ccbc4c188c701739f35610d55ec96f9e583593447254fd1",
       "score": "d8634ddd0c77fd939ec50fff2a5938d515932ba09934a45e28af974b6e60937b"
     },
     "curious.waiting.01": {
-      "svg": "63f09f128f87a62591e55eaf291336320b1d196f10fa75a6900238e46455500d",
+      "svg": "f98fdc02ef333f12660d85966eabfd381518ebe08d87aac3cf8fdfa63f91a174",
       "score": "3e11d2b93e87d22bd756b1d2756906bac13778a44c19cb811ffd1d6b60f60457"
     },
     "determined.waiting.01": {
-      "svg": "26e66b2f6e8fb7031c598e8f4f7f2f3c307f7b4e81fd85f2c3d413f9a7ac90d7",
+      "svg": "95ab432615a0eb5c434cbb5cf48c60a43c12f9887f95ada85d7daba39109a255",
       "score": "12f469ce6a6651563a74e3c4d35893f91a31fdbb950926c1940fa299415c0d39"
     },
     "grumpy.waiting.01": {
-      "svg": "5461c81d78d40ce60f52714e0c9a862faf9ae7aebd41049422d4ac368d59cf9c",
+      "svg": "1b9d23c3d7c72eb77e350e736a834aff3817b360c8852832bd5ec94d53363ff2",
       "score": "f50f7954e3795de821e6c0457f8bcfd39d90fdb5d0647a1b840364ea4f769946"
     },
     "sad.waiting.01": {
-      "svg": "5e94ea5ee25d838e15d82751482339de4c2a238b04e7801b3e249c1beba0f975",
+      "svg": "e7f2ec35ebe82dcb845624f0ac479dba1cc43afcf2b3928f73a199655dd01294",
       "score": "c056216a86389fc5bd095bfb2cad82f851738fba02457be11377a25557b173cb"
     },
     "happy.reply_ready.01": {
-      "svg": "3632529593cb95f9dcfd55c9bff02b1a4c00b7d47b445c822fea1cec8209aa72",
+      "svg": "7272a72615a630366f92ebf2ebd35d041c3640fda92419677a4e0da384dab158",
       "score": "b01bd682e33f714d68d9bc46488f2eb0db872f8b1550fe7355527a7f095003a4"
     },
     "excited.reply_ready.01": {
-      "svg": "9dd811dae5fef88f8e7c366beac7acd27d7d6d6e0f8b79f11660b303fe7c4610",
+      "svg": "a9ca6cdd2e42bfeb0211a0779cb38c3fcaa0562ab312a3945ebc23d780a7d959",
       "score": "f3713144c97e85ebd2cdf66269be74916cee462904c18fc3238f3eabff0ab24d"
     },
     "proud.reply_ready.01": {
-      "svg": "8e16700e71f842ca5f9e64ff64948083279d345b082b6720aa1e6428ddde5c37",
+      "svg": "7b15cde29fdfb3899849812ef40ccd19a194dd8a373a01eaa9cbf6b0a1e55647",
       "score": "ab2bdcd7b187d20b8984eff73d77f9512a429a81609e86df9b922d05c6543fc8"
     },
     "curious.reply_ready.01": {
-      "svg": "447ce5ddab7140c6efb461d4d4e805826a2cbbc0212d4d96d66072d62e30472a",
+      "svg": "94a50aca34d67548428c423c1d1da8febf7c9523fe739eae054aa7b84b612c0d",
       "score": "07f65245d5bbb3a8c4eec394fa218fc30e1f88b849e9000a2995e607fc1051ce"
     },
     "determined.reply_ready.01": {
-      "svg": "41b183bc8fcc3acaecf1ffc6ac7fecd93d7f5d923a7e92eb50b6959ae4a07269",
+      "svg": "881e2063df1ed3958d3e651d910ce160f999e6f330e1a1e48e2fd45ad3227106",
       "score": "eae9b23e40feb25b141fb5c5c57e9d60e1544df705028590c5cd0ef917b98f12"
     },
     "grumpy.reply_ready.01": {
-      "svg": "ad167f89c3850dc99cb57ef8622c6ff40b29fa6e0a2dd00d5f237ad0b02d7737",
+      "svg": "55c8082581a53836d7390533780f0d7dbcf2fcbfaec80b71a6051202f40a2e77",
       "score": "611c8cdd6c0f30fdd895b86b1a8ca8f0517b58bac802fde115902d19a729da27"
     },
     "sad.reply_ready.01": {
-      "svg": "c136416f14645dad532dfa03f445375580934580a3152fad3d1ab8ea25e43738",
+      "svg": "bc6e9c5f715b869cdd4799f6ab73f7e773061132d441ff9973251ae18879d69a",
       "score": "f2cbc2a9c084199f6180f1a696c0fcf1d3218ba88d32272c35819cc3fdd2b793"
     },
     "happy.error.01": {
-      "svg": "2e19ff209c48eeee3fc728b2b478d77691716bf6bff1b2087972cceab1db7e1f",
+      "svg": "868b554083ab10acf69e89f8f584954066ac8754b0cdbcaae4fa934cadf6d100",
       "score": "d4a566ee69341aa6c65b1a5fd18d797d0f5f9436b5430958213df306e9ac1520"
     },
     "excited.error.01": {
-      "svg": "80d7eb7305344f8d468fc76f8505fed90f77c0f572577e9bec0c696919eabb3e",
+      "svg": "3b005dcd098e2a2a0756a479436ba00b930f50439cf253ff609099d67eb255fa",
       "score": "daad27c57d8a0b9e88e2792b62d21a7b34e8091c9e666928aaba95528ed56d62"
     },
     "proud.error.01": {
-      "svg": "fb124a42e9d8bb47c5f73e3edf2a72b17939a3c62428c5f56792c73186ac2987",
+      "svg": "238aaea89acbc3b8bcfe8a59d78039c0275666b79a22caa93419cebe258501eb",
       "score": "cdc474c8b186a1d15cd138395df2504c2354ce7277bf6f780e99b1470647b4c7"
     },
     "curious.error.01": {
-      "svg": "8419d4be876aaf79fdb45c0055b81d12e88e29f14436665b0a482a2d62465f10",
+      "svg": "d571245b1d751979b614296d3174cd739051d21c09b4915061adac622e6cc55f",
       "score": "dfdd88c74090db58b3d48895c1bc184e755a46a44a6074a05ac378a87b93ba6d"
     },
     "determined.error.01": {
-      "svg": "62876af8b4fdfb3831377bbc0f38dc5943fb41f305abdcde17472abf5695d655",
+      "svg": "7f4a7b9f82abb93fb061e9cfbe1f453782b791db1c75602b74fadbe829f7ceae",
       "score": "b3ed86dae477dbeb84ad4805c5b776b960c513402f096b4e72f555757faa7f0f"
     },
     "grumpy.error.01": {
-      "svg": "6e065c005ac96b80e2b8c6a2e007fe8435bb89e413d14b1b515770af2fa707df",
+      "svg": "ea233f70f69c9c5588646d806f832581b481412b7d0d295a48b7cde459657585",
       "score": "c103e154c157bf920cf0206c20bd73f6baaed9ec764815f7c55df7a6766e8921"
     },
     "sad.error.01": {
-      "svg": "e9cbcfb832f06a0336198ee9f6d62e3a7a88f88fb46b48f30586c90ff6322440",
+      "svg": "04887a536b45b243576f3dade88e4004d2a1acd55f9a0809bd65b06166cd36ea",
       "score": "5ece10aba801082ad39a9193be880f7fa7d48d3f9c6b82a773b05059891876fe"
     },
     "happy.stopped.01": {
-      "svg": "af1a5a3a27f1b34fafbf0f43c5c6704b2b569a81ab4e8ddbd1dcf1f29b6b6e71",
+      "svg": "e1321b96c3374b788e2bf93eca66e47399cdcc7b16071578f69814e16ba8afb0",
       "score": "660cb579e410328302ed93341c6944992646b2f29e9777e0a65227cf6775a894"
     },
     "excited.stopped.01": {
-      "svg": "3f20c68ae5406c55a522030299ae97a9f693c23d32a83a79605618389923131e",
+      "svg": "4b634c7081d9499237568a9605c9186f71c8f4d464206a0f6711bbc2752b4e02",
       "score": "7eb1aea0ac3d2dc9cd6b75e633e8133c9af94de7d96750cdf7b66025eafbeba2"
     },
     "proud.stopped.01": {
-      "svg": "0ba8b5757dd88ba2d27e091edf49254bb44a74980c6e73be6ba112fc73f17a69",
+      "svg": "66e4a5f8678dce65b407bd88f10dac85a2fa2c526404943e15c9992bd1262d8e",
       "score": "0f0ccd65579fb36e0f8be12d5bae3a2a1dd4f1a91a184347545435c228a9ce4e"
     },
     "curious.stopped.01": {
-      "svg": "9700241c16d57d3ac5e032acbaa28cc4b80a970237030c686f344b2d19fc7395",
+      "svg": "7fc4359ead5e411b499ad5d989c102f0b665f9890947a405fcdfcf905bd4f0f4",
       "score": "8f3626c2527500b25c9af5d0cdd2602c6eb684ea53ea09c37f7a7ba3e03ba312"
     },
     "determined.stopped.01": {
-      "svg": "d8dffbe45920f0785b735175ba45e4635b04af089fcecbb4c31449568ff6466d",
+      "svg": "71e36d8c9f87df63d65c0952c15d13bef8c6a2532174b29ac02b9a29bfc491fe",
       "score": "ec111227801f6bb3e31429ef2bf4ea61ac30f704caf9e860091393e8dede20a2"
     },
     "grumpy.stopped.01": {
-      "svg": "d8a7e2cc555b20124290e983791dfd6e3308b85a3ad0badfccea14d6a5358244",
+      "svg": "23cb3309dafa775dce36ec063f9ddd51a9adff286152f534c8c8239135c85365",
       "score": "412b672ee30c77b60bfea9f1e863b13962837a6f9a1484f636eef2e9f7f2a846"
     },
     "sad.stopped.01": {
-      "svg": "88b7ee552403a589a984e95ba26f229b9b8c17dd01f531f979a0d217f401312b",
+      "svg": "c09ba817e0c8ca69c9312c42d779d7a8d01d24f98dc1cb21b96c6058ff167f3e",
       "score": "750bb74194a2941f578c4552cffcef4dcc5d77681e78ceb06cf9b0629d7f4408"
     },
     "happy.poked.01": {
-      "svg": "43db272f0ab84fd678acd1848b512ebd320c0ebf860eff1b56f4b02dbc22a5fa",
+      "svg": "4c109e437f5a5e7a1aa8a0b1eb1976e55bf5094a347961eba0997b3220377d68",
       "score": "426a5b0a9c95b0c93de71bc1646277a8fc84296718e25dc27b5a4c02d0fbafbe"
     },
     "excited.poked.01": {
-      "svg": "85241a97fcb321f2c546c51d9c42285ce5fa9c6952d68d9a6dfaef9d7da17322",
+      "svg": "3ab026ff58b1d74695b0190c5f9d702ed1280615bb761203a3eb02b93c75b234",
       "score": "84d21dcfce801a6c3fa5f1e2c9b105475621f894a1a3b9203933de3164c2020a"
     },
     "proud.poked.01": {
-      "svg": "7a6e7641e32ca2a55f618df2476ec5d55c1ea7ad7f656d1cafd30ec8bb7fc59b",
+      "svg": "b95290112008a900e07c1fdd22b504794b1f32564ff75d159f69a8ad73ae754b",
       "score": "8ddd3458ae116c37d99da13d28cd04a7bd775c23dd523ac3074b0deb9c0547a0"
     },
     "curious.poked.01": {
-      "svg": "797523c366ee02d61ebe8523565d412431ab96ce48af0865c8377eabc6cfb494",
+      "svg": "05803b5e782381f7d001af3bb22050d13f9df847f6a8250af58e40c7a3bd3ec2",
       "score": "4452e66b01ddaf9413290e57aaabef3d8595adbfd4f8ecbd88068db098c70eb2"
     },
     "determined.poked.01": {
-      "svg": "f3e4da2ed9d9c2751e27b329d00300a02622d7a6455350cb930e6778938ea6f5",
+      "svg": "8b04bce9ea23bf4d48e335023847e7cde2a6baca6025d8bb300391a41a1176ba",
       "score": "1258c40ff2c6cd56b7e7c7e81ae2fa05432078859e8f6db04c6db589d7599f71"
     },
     "grumpy.poked.01": {
-      "svg": "338ec81bffdd72dc0a86715340adbd32db7e1d203ac982c52e2d4b9f5069ce98",
+      "svg": "c6dbceab0417ff3a4a690197888b52436f1e6eec87e4d04d8383c4466d0257b3",
       "score": "548c1cc827016fe3b1dd29ecd4905976429c7aca035b557cca7b7550fd5f2528"
     },
     "sad.poked.01": {
-      "svg": "24677a11a271351738b93e8504b24aa19ca38ed48932f6a8b86a63fab161c798",
+      "svg": "305f7f025559634619197418974f3219be2823ac65f94cb78acad4e9003cb58c",
       "score": "f8c25ca32b626d42e5caff2572fef2ff73fdfa8fe5133e516d13c539a2dfbf3a"
     },
     "happy.tap_spam.01": {
-      "svg": "d333ae7618c663158035d2e82cafcef016bb07e8629d5ffd6520860814760c39",
+      "svg": "663536c3166169dc474b476b3ac39b142618bd2d568236e9b38d502889b2bfb7",
       "score": "7eb937c73415de4d434054628df74208ff3af0201e5bea09f331c863d93d9a2a"
     },
     "excited.tap_spam.01": {
-      "svg": "6bb97931245eefff0b70d3287680526813c3159cd39250316aa923e9536be176",
+      "svg": "52487775b7b0354908d6fce8ca887e9e5bc3c0699b4eb8a8700b12064137ead1",
       "score": "f53614a87ed38a4ff51463b8be167fc2b67fe6a81fa2be503580d98ae562eda1"
     },
     "proud.tap_spam.01": {
-      "svg": "c22bffc9484dd71c802c3ca4062aefa6e13b741c6014ea02b35b4ff07877e7db",
+      "svg": "a3201086417fdfc2c01d5c2092e5c1bb016c83958862c52aeed6e43d7e8e408c",
       "score": "0b3b98eab4b6c3c4330fdc15b6d1ea5cdcf252b4e873707e5f47f5849006ea21"
     },
     "curious.tap_spam.01": {
-      "svg": "98728b6b4f0212d45dd07f9bfdd241689ee6190570b6ad59fb1533c307f96626",
+      "svg": "d947cfcd9b1422a6a176a1b45fc3b4c9b31bd930fa7a0bf5f070657e9c77740f",
       "score": "0cd40329ad591fc489b2e3edd7e2ccca17f775496a50c32fb9b763f6392c33eb"
     },
     "determined.tap_spam.01": {
-      "svg": "757c7cca11f2497c65647f8e67f8726f0649b1023f77ad1ab5efbc6de3b4f953",
+      "svg": "3eac684bcb01378b587dc97327418eb4a0cee5b374c986f5601521ac41eaf8d8",
       "score": "e02fac98f8f552ebd9006f9f9f65e90fed3ebae1ce45a292f6c5dd9d64205e36"
     },
     "grumpy.tap_spam.01": {
-      "svg": "fa3169cbd93342dd57dc9099f77c142ea4d82c7f16906c4be454e75fa8bc1e14",
+      "svg": "fceebd9485cd8f835b5380cee3c8ea5d905443edd5ef44df8a8ed70d31d3892f",
       "score": "d98fcef0f3c78e3517ff991c976359f3a2917e4346098f789dce6f9acb36c05b"
     },
     "sad.tap_spam.01": {
-      "svg": "5d829f6b79fe877a028063acedd4a33e1523c454f9981bebba7185ef265568e3",
+      "svg": "5d0a3cbdbb3dfe49948a5e725265683ee1b79d2bd7967e050c772981d622a5cd",
       "score": "addbd4c9f93210edbe487daa352a0fda621db5a440231a4c5f2a11c1e51b7695"
     },
     "happy.task_complete.04": {
-      "svg": "1c38927573889681cdf59d47b8a38da75cb30b7508c53f6d73675172827223ba",
+      "svg": "16216f4d427b065159d95e6f1f02aee9b2e7e9d38dd420cf1b1f7cc3c51da068",
       "score": "49205f9a75b60e55f4ce12e59dd286f8ae9641676e315093854f62f6cbaee5c6"
     },
     "excited.task_complete.04": {
-      "svg": "b7e6f8ae515c60a211a83be35e418cccbe08d0bf954226ade199695b9b9fb85e",
+      "svg": "a02af72008422b1f91e81b9882dc7eb942bbc84442522e70d6336501ec977def",
       "score": "490fc1f2539828e0afe8ca570191221ea2d76c605f30167e722ce5f35e152c34"
     },
     "proud.task_complete.04": {
-      "svg": "5de4ed01bcdaf9b3f01ff5627dfcc3016dd6084e8da984b9ad6c32fc393215a8",
+      "svg": "6b799d86500867bdb482205922fd5bd5ca768e187602d723fab8b23fb16c4a13",
       "score": "d3905af05fdafb57516075f3d81552fc2858a3b9a9ccceed13955365def568bc"
     },
     "curious.task_complete.04": {
@@ -1195,27 +1195,27 @@
       "score": "f5a897cf7c53995d427502e59374500e5046554f0f5ef2d67b0f109f379b7203"
     },
     "determined.task_complete.04": {
-      "svg": "c9cef8823ab7b03a880d2ac3bc72403b8c2e97711caf1dfd03199bac6c2c2705",
+      "svg": "e1af4d8a1b3ef7606c295cc522b7ef8fc26287ff560493193619d969fa26dc86",
       "score": "ace535e2dca786981056f1bba5c713e828a3a46a699755410bfc1cccb17569f3"
     },
     "grumpy.task_complete.04": {
-      "svg": "2f0de64896932e94f07587158f4501d480ecab0181e4cf9369022fab45bcab87",
+      "svg": "89cce8c0a1a1d5290c93849e165e2c2aea493f14f1328c800ce06a86188809ab",
       "score": "d0caab5b61f03acade0f49c55f4183afb304f40c5e8d184fcf8441ae0b194ca6"
     },
     "sad.task_complete.04": {
-      "svg": "11e7867901956a23b27d9b1bd66b9b00440a1aaa82332f346155a0eae403dc12",
+      "svg": "1dd6cb0543458723112fc893a6ad6a2440f097b8af94ef959a1e89666b7939ae",
       "score": "4501168785e3111ab2aaf9ac98a92e33e32c2f5afa68c973bc89c988a35e1643"
     },
     "happy.task_complete.05": {
-      "svg": "48b5d682d64c523ac49c0c9c84f15d3eeb5fb1f24ef7a3df610550ec51b4b1be",
+      "svg": "0f63205ccb5f170bee42969c2b5f434d3b5b3ecd97439e1bd21c300df996d7f3",
       "score": "8a8e61933698857fed33bd0c6f37f13993b5aa5f2ed270ee963afd0cab4968b6"
     },
     "excited.task_complete.05": {
-      "svg": "2334d9d2fefab44326d4b7be70f05a014e426e13fb742a30d788ce74eeff1110",
+      "svg": "3a4a67393803092ae321e036747e7265b89b18c0d73ac5bf2b28f513a204a42b",
       "score": "edabad6004075ed0f2fe7bac1bbc83a7e88b984d7befcc158ddb93952761b578"
     },
     "proud.task_complete.05": {
-      "svg": "69f17e96468f877f7beada884232e286e40679b9f820cc6846f2a6935ae47b4e",
+      "svg": "83871b9868260f2eaf4f659e712654193018a02088d4cf1d28c7e65303a2dc49",
       "score": "ec47eeb5d71ff9dde0e4f8eb3095e9db9cb9a6383b77a31a2a6ef41f1f013cf0"
     },
     "curious.task_complete.05": {
@@ -1223,15 +1223,15 @@
       "score": "644052716210480e8e14a857153331f5754bcdbaeaf40f1a6cab4387814bc7e1"
     },
     "determined.task_complete.05": {
-      "svg": "9c39a578b4f1296758d1571053ec1631751c574a0ebfea42b7d417112c1bdbac",
+      "svg": "bedfd06ad0d14edc35de9f704101b207eb8c3605a8b052183493ee890022aba8",
       "score": "04a93213e7c22143742dd01127803ba8758e67fb90977094322fe3d9a808deee"
     },
     "grumpy.task_complete.05": {
-      "svg": "baa1bdf205c3a1918b4029fd453b36c2fe2c99598569337981b672f82732b9cb",
+      "svg": "8ceb4fe997fa430410c35aabe4cdbd1fa1aa2217a53c84c475e06be41c8e93db",
       "score": "37829fd771a8c27acf964ae504d921ab495d79bf2acea00b158e619b645b8361"
     },
     "sad.task_complete.05": {
-      "svg": "28fe8b0226fec4d4e058896297576a4183b8fc48ba69db6c5e47435552e422f9",
+      "svg": "bb09fe08a9abaa690698b6c3578cbc61357bd876342ee36ccd868b6b54b9692d",
       "score": "4ec864d842b9d37b9087419de608ce46886ca61645fb4af7b948cf898b56546a"
     }
   }

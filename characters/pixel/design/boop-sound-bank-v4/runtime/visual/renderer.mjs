@@ -28,7 +28,6 @@ function breath(ctx,seconds=4,color=palette.prop) {
   return at(189,144,show(ctx,group(act(ctx,"0 0;0 0;9 -3;20 -5;0 0",seconds)+squares),"0;1;1;0;0",seconds));
 }
 function tearTreatment(ctx,mode="sparse") {
-  if(mode==="waterfall")return tears(ctx);
   if(mode==="none")return "";
   if(mode==="corners")return cornerTears();
   if(mode==="flick")return cornerTears()+at(80,112,show(ctx,group(act(ctx,"0 0;0 0;-13 17;-22 33;0 0",4.4)+rect(0,0,7,7,palette.blue)),"0;1;1;0;0",4.4));
@@ -120,7 +119,8 @@ function drawing(input) {
     ctx.actorMotion=m==="grumpy"&&n>1?grumpyActing(ctx):act(ctx,r.beat,r.seconds);
     ctx.gazeMotion=r.gaze?act(ctx,r.gaze,r.seconds):"";
     ctx.suppressDecor=["music","blush"].includes(r.fx);
-    if(m==="sad")ctx.tearOverride=tearTreatment(ctx,n===3?"corners":"waterfall");
+    // Sad works in its own pouring tears, which face() draws, but in its third.
+    if(m==="sad"&&n===3)ctx.tearOverride=tearTreatment(ctx,"corners");
     if(r.mouth==="sing")ctx.mouthOverride=frames(ctx,[mouth(ctx),block(154,128,12,14,ctx.ink),mouth(ctx),block(155,128,10,10,ctx.ink)],3.2,"singing-mouth");
     art=face(ctx)+drawWorkScene(ctx);
   } else if(s==="needs_you") {

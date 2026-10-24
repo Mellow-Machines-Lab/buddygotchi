@@ -1,4 +1,4 @@
-import {palette as P,rect,path,group,at,star,keycap} from './visual/base.mjs';
+import {palette as P,rect,path,group,at,part,star,keycap} from './visual/base.mjs';
 import {pixelText} from './state-art.mjs';
 import {moodProfiles} from './mood-catalog.mjs';
 import {sustainedStates} from './state-catalog.mjs';
@@ -84,25 +84,39 @@ export function moodPlan(a){
 
 function eye(x,y,w,h,c=P.ink){const hw=(w-4)/2,hh=(h-4)/2;return slab(x,y,hw,hh,c)+slab(x+hw+4,y,hw,hh,c)+slab(x,y+hh+4,hw,hh,c)+slab(x+hw+4,y+hh+4,hw,hh,c);}
 function brow(x,y,ascending,c=P.ink){return [0,1,2].map(i=>rect(x+i*12,y+(ascending?2-i:i)*3,12,4,c)).join('');}
-export function moodFace(a,s,blink=false){
+// A step's face, at `s`, `blink`ing at its blink step. Each eye is drawn with
+// what glances with it (a lid, a brow, a tear pool); the rest of what's on
+// it (engaged's brows, which hold still while its eyes glance; a falling
+// tear) is its decoration. Its parts are tagged as the resting face's
+// (visual/base.mjs part), for the device's rig face to draw in its place,
+// but in a quiet face, one on gold, a factual failure's, irritated's
+// twitch, or with `rig` false.
+export function moodFace(a,s,blink=false,rig=true){
  const m=a.mood,quiet=a.sharedQuiet,success=a.outcome==='success',ink=success?P.dark:P.ink,bg=success?P.gold:P.black;
- let eyes='',lips='',decor='',gaze=s===0?0:[0,-3,2,-2,3,0,-1,2,0][s];
- if(quiet||blink){eyes=slab(66,88,42,6,ink)+slab(212,88,42,6,ink);lips=rect(149,123,22,4,ink);}
- else if(m==='calm'){eyes=eye(65+gaze,64,48,42,ink)+eye(207+gaze,64,48,42,ink);lips=path('M149 124h5v4h12v-4h5v8h-22Z',ink);}
- else if(m==='engaged'){eyes=eye(64+gaze*2,58,48,48,ink)+eye(208+gaze*2,58,48,48,ink);lips=rect(147,125,26,5,ink);decor=rect(62,47,24,4,ink)+rect(234,47,24,4,ink);}
+ let left='',right='',lips='',decor='',gaze=s===0?0:[0,-3,2,-2,3,0,-1,2,0][s],glance=0,twitch=0;
+ if(quiet||blink){left=slab(66,88,42,6,ink);right=slab(212,88,42,6,ink);lips=rect(149,123,22,4,ink);}
+ else if(m==='calm'){glance=gaze;left=eye(65+gaze,64,48,42,ink);right=eye(207+gaze,64,48,42,ink);lips=path('M149 124h5v4h12v-4h5v8h-22Z',ink);}
+ else if(m==='engaged'){glance=gaze*2;left=eye(64+gaze*2,58,48,48,ink);right=eye(208+gaze*2,58,48,48,ink);lips=rect(147,125,26,5,ink);decor=rect(62,47,24,4,ink)+rect(234,47,24,4,ink);}
  else if(m==='annoyed'){
-  eyes=eye(68+4,70,40,36,ink)+eye(212+4,65,40,41,ink)+rect(70,68,43,14,bg)+rect(212,63,44,8,bg);lips=rect(147,126,27,5,ink)+rect(169,131,6,3,ink);decor=rect(71,60,39,4,ink)+rect(213,54,36,4,ink);
+  left=eye(68+4,70,40,36,ink)+rect(70,68,43,14,bg)+rect(71,60,39,4,ink);right=eye(212+4,65,40,41,ink)+rect(212,63,44,8,bg)+rect(213,54,36,4,ink);lips=rect(147,126,27,5,ink)+rect(169,131,6,3,ink);
  }else if(m==='irritated'){
-  const twitch=[2,3,5].includes(s)?4:0;eyes=eye(68,67+twitch,40,40-twitch,ink)+eye(211,62,42,44,ink)+rect(68,67+twitch,40,8,bg);lips=rect(145,125,12,5,ink)+rect(157,128,13,5,ink)+rect(170,125,5,5,ink);decor=brow(68,54,false,ink)+rect(213,51,38,5,ink)+(twitch?rect(268,69,8,4,P.red)+rect(276,77,4,8,P.red):'');
+  twitch=[2,3,5].includes(s)?4:0;left=eye(68,67+twitch,40,40-twitch,ink)+rect(68,67+twitch,40,8,bg)+brow(68,54,false,ink);right=eye(211,62,42,44,ink)+rect(213,51,38,5,ink);lips=rect(145,125,12,5,ink)+rect(157,128,13,5,ink)+rect(170,125,5,5,ink);decor=twitch?rect(268,69,8,4,P.red)+rect(276,77,4,8,P.red):'';
  }else if(m==='whiny'){
-  eyes=eye(62,57,52,50,ink)+eye(206,57,52,50,ink);decor=brow(67,46,true,ink)+brow(211,46,false,ink)+rect(69,91,38,9,P.blue)+rect(213,91,38,9,P.blue);lips=path('M145 126h8v-5h14v5h8v9h-8v5h-14v-5h-8Z',ink)+rect(152,128,16,5,P.cheek);
+  left=eye(62,57,52,50,ink)+brow(67,46,true,ink)+rect(69,91,38,9,P.blue);right=eye(206,57,52,50,ink)+brow(211,46,false,ink)+rect(213,91,38,9,P.blue);lips=path('M145 126h8v-5h14v5h8v9h-8v5h-14v-5h-8Z',ink)+rect(152,128,16,5,P.cheek);
   if(s>0&&s<8)for(const x of[72,222])for(let j=0;j<3;j++){const y=107+((s*10+j*17)%55);decor+=rect(x+(j%2)*8,y,j===1?4:6,j===1?4:6,[P.blue,P.lightWater,P.water][j]);}if(s===5)decor+=burst(86,162,2,P.blue,4)+burst(232,162,2,P.blue,4);
  }else if(m==='wounded'){
-  eyes=eye(66,60,46,46,ink)+eye(208,60,46,46,ink);decor=brow(68,44,true,ink)+brow(212,44,false,ink)+rect(74,93,28,7,P.blue)+rect(216,93,28,7,P.blue);lips=rect(148,126,8,4,ink)+rect(156,122,12,4,ink)+rect(168,126,4,4,ink);
+  left=eye(66,60,46,46,ink)+brow(68,44,true,ink)+rect(74,93,28,7,P.blue);right=eye(208,60,46,46,ink)+brow(212,44,false,ink)+rect(216,93,28,7,P.blue);lips=rect(148,126,8,4,ink)+rect(156,122,12,4,ink)+rect(168,126,4,4,ink);
   if(s===3||s===6)decor+=rect(77,106+(s===6?12:0),6,6,P.lightWater); // one held tear, not sad's waterfall
  }
- if(a.outcome==='failure'||a.state==='error')lips=rect(147,126,26,5,ink); // factual result overrides a smile, never the stored mood
- const cheeks=quiet?'':rect(49,115,14,8,P.cheek)+rect(68,115,14,8,P.cheek)+rect(238,115,14,8,P.cheek)+rect(257,115,14,8,P.cheek);
+ const failed=a.outcome==='failure'||a.state==='error';
+ if(failed)lips=rect(147,126,26,5,ink); // factual result overrides a smile, never the stored mood
+ let cheeks=quiet?'':rect(49,115,14,8,P.cheek)+rect(68,115,14,8,P.cheek)+rect(238,115,14,8,P.cheek)+rect(257,115,14,8,P.cheek);
+ let eyes=left+right,mouth=group(lips,'data-part="mouth"');
+ if(rig&&!quiet&&!success&&!failed&&!twitch){
+  const [l,r]=blink?['shut-l','shut-r']:['eye-l','eye-r'];
+  eyes=part(l,left,glance)+part(r,right,glance);mouth=part('mouth',lips);cheeks=part('cheeks',cheeks);
+  if(decor)decor=group(decor,'data-part="decor"');
+ }
  let dx=0,dy=0;
  if(s){const curves={calm:[[0,0],[0,0],[0,-1],[0,-1],[0,0],[0,-2],[0,-1],[0,0],[0,0]],engaged:[[0,0],[-2,0],[2,-2],[-2,0],[2,-2],[0,-3],[2,0],[-1,0],[0,0]],annoyed:[[0,0],[3,0],[4,1],[4,1],[-2,0],[-3,0],[3,1],[3,0],[0,0]],irritated:[[0,0],[-3,1],[3,-2],[-3,2],[4,0],[-2,-3],[3,1],[-2,0],[0,0]],whiny:[[0,0],[-3,2],[2,4],[-3,2],[3,4],[0,-2],[-2,3],[2,1],[0,0]],wounded:[[0,0],[0,2],[-3,5],[-4,6],[0,3],[2,1],[0,4],[-1,2],[0,0]]};[dx,dy]=quiet?[0,s<5?2:0]:curves[m][s];}
  if(a.state==='poked'&&s>=2&&s<=4)dy+=s===2?8:3;
@@ -110,7 +124,7 @@ export function moodFace(a,s,blink=false){
  // The face and its mouth are tagged, so a renderer can find the one that shows
  // in each flip-book step (facegen's face and mouth roles; the device's talking
  // mouth), and so is the step's blink (the popover's tile blinks with it).
- return at(dx,dy,group(eyes+group(lips,'data-part="mouth"')+cheeks+decor,`data-part="face" data-face="${quiet?'shared-rest':m}"${blink?' data-blink="1"':''}`));
+ return at(dx,dy,group(eyes+mouth+cheeks+decor,`data-part="face" data-face="${quiet?'shared-rest':m}"${blink?' data-blink="1"':''}`));
 }
 
 function work(a,s,press){

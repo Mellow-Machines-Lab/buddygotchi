@@ -57,11 +57,12 @@ export function sleepyFace(eyes,mouth,y){
 // The mood's own face, at rest, or blinking: the older moods' from the
 // first pack's face, the newer ones' from their flip-books. `complete`, it's
 // the face at a success, on gold, the newer moods' at a cheer's `stage`.
-export function ownFace(mood,blink,{complete=false,stage=0}={}){
- if(!oldMoods.includes(mood))return moodFace(complete?{mood,state:'task_complete',outcome:'success'}:{mood,state:'wake_up'},stage,blink);
+// Tagged for the rig face to draw (visual/base.mjs part) but at a success,
+// or with `rig` false.
+export function ownFace(mood,blink,{complete=false,stage=0,rig=true}={}){
+ if(!oldMoods.includes(mood))return moodFace(complete?{mood,state:'task_complete',outcome:'success'}:{mood,state:'wake_up'},stage,blink,rig);
  const ink=complete?P.dark:P.ink;
- const ctx={mood,state:complete?'task_complete':'idle',quiet:false,complete,motion:false,ink,bg:complete?P.gold:P.black,cheek:complete?'#D8576C':P.cheek};
- if(blink)ctx.eyeOverride=block(68,99,40,5,ink)+block(212,99,40,5,ink);
+ const ctx={mood,state:complete?'task_complete':'idle',quiet:false,complete,motion:false,ink,bg:complete?P.gold:P.black,cheek:complete?'#D8576C':P.cheek,shut:blink,rig};
  const art=baseFace(ctx);
  return blink?art.replace('data-part="face"','data-part="face" data-blink="1"'):art;
 }

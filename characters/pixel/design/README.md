@@ -63,16 +63,38 @@ check preservation of the older SVGs and scores.
 mood's eyes (open and shut), mouth and cheeks, cut from its first idle at rest
 ([CHARACTER.md](../../CHARACTER.md) §15), so its plain face is the art drawn
 here; and, for every design whose face is that resting face moved, where it
-sits at each step, so the rig face draws it in the design's place. A design
-drawn here with the resting face (`ownFace`, or the first idle's face) and
-its decorations over it stays one the rig face can draw; a face drawn some
-other way stays baked. `node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
+sits at each step, so the rig face draws it in the design's place.
+`node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
 the timelines, in the voice-first mix, into `characters/pixel/firmware/include/sfx.h`. Nothing
 is copied out of the bank by hand. The older moods' designs must come out as
 `qa/v3-fingerprints.json` has them; change one only deliberately, with the
-fingerprints in the same commit. The generator tags each flip-book step's
-face and mouth (`data-part`) and its blink (`data-blink`), which facegen and
-the device use; `qa/check.mjs` must pass after any change.
+fingerprints in the same commit (their SVGs were re-captured once, when the
+faces were tagged, every frame drawn as before). The generator tags each
+flip-book step's face and mouth (`data-part`) and its blink (`data-blink`),
+which facegen and the device use; `qa/check.mjs` must pass after any change.
+
+**The resting face's tags.** Whether the rig face draws a design is the
+design's own say. Wherever a design draws its mood's resting face, moved
+(its first idle's: `ownFace`, `own(dx, dy)`, a flip-book's step), the
+generator tags the face's parts where it places them, with `part` in
+`runtime/visual/base.mjs`: `data-part` is the part, `eye-l` and `eye-r`
+(`shut-l` and `shut-r` when the eyes are shut), `mouth` or `cheeks`, and
+`data-at="dx,dy"` where its art is drawn, in px from where the resting face
+draws it, before the transforms and moves above it carry it: `0,0`, or an
+eye's glance where the art draws the eyes aside (calm's and engaged's
+flip-books). An eye's tag holds what glances with it (a lid, a brow, a tear
+pool). Anything else on that face is its decoration, in
+`data-part="decor"`, which the design keeps drawing over the rig face: a
+sparkle, a falling tear, grumpy's anger mark, engaged's brows (which hold
+still while its eyes glance). A face drawn some other way is untagged and
+stays baked: curious's eyes looking about (the first pose, its resting one,
+is tagged), sad's own tears pouring from its eyes, irritated's twitch, a
+failure's straight mouth, a face on gold, the shared quiet face, the
+wake-up's and the comedy's sleepy faces, and the zoomies' (`rig: false`),
+which leave the screen. Facegen reads the tags: a design whose face is
+tagged at every step is the rig face's, and facegen fails unless the rig
+face, drawn where the tags say, then draws it pixel for pixel at every
+step.
 
 A new design is a new variation after a state's others, never a redrawn
 one: the device turns a look's variations by itself at the end of a loop,

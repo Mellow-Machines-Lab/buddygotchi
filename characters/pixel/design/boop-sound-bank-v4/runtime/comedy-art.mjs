@@ -70,6 +70,9 @@ const blinking=a=>ownFace(a.mood,true);
 const sleepy=(eyes,mouth,dx=0,dy=0)=>a=>at(dx,dy,sleepyFace(eyes,mouth,lineUp(a.mood)));
 const successFace=(a,stage,blink=false)=>ownFace(a.mood,blink,{complete:true,stage});
 const cheering=(stage,dy=0)=>a=>at(0,dy,successFace(a,stage));
+// The zoomies' face, which leaves the screen: further than the device's rig
+// face goes, so it's baked.
+const zip=(dx,dy)=>a=>at(dx,dy,ownFace(a.mood,false,{rig:false}));
 // Each pose's face and where it sits.
 const faces={
  home:own(),blink:blinking,
@@ -90,8 +93,8 @@ const faces={
  // The gift.
  reach:cheering(0,4),catch:cheering(0,2),raise:cheering(0,-2),wiggle:cheering(0,-4),present:cheering(0),'present-wiggle':cheering(0,-2),tuck:cheering(0),
  // Zoomies.
- crouch:own(0,6),'zip-left':own(-80,-6),'zip-right':own(80,-6),'off-right':own(240,-10),gone:own(400,0),'enter-left':own(-150,4),
- overshoot:own(20,0),recoil:own(-6,0),hop:own(0,-10)
+ crouch:zip(0,6),'zip-left':zip(-80,-6),'zip-right':zip(80,-6),'off-right':zip(240,-10),gone:zip(400,0),'enter-left':zip(-150,4),
+ overshoot:zip(20,0),recoil:zip(-6,0),hop:zip(0,-10)
 };
 // The finishes, on gold: their faces rest and blink on the success face.
 const gold=a=>['trophy-hiccups','gift'].includes(a.action);

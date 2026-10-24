@@ -10,6 +10,11 @@ const path = (d, fill = palette.ink) => `<path d="${d}" fill="${fill}"/>`;
 const block = (x, y, w, h, fill = palette.ink) => path(`M${x+1} ${y}h${w-2}v1h1v${h-2}h-1v1H${x+1}v-1h-1V${y+1}h1Z`, fill);
 const group = (art, attrs = "") => `<g${attrs ? " " + attrs : ""}>${art}</g>`;
 const at = (x, y, art) => group(art, `transform="translate(${x} ${y})"`);
+// A part of the mood's resting face, tagged where it's drawn, for the
+// device's rig face to draw in its place: an eye, open or shut (eye-l,
+// eye-r, shut-l, shut-r), the mouth or the cheeks, its art drawn `x`, `y` px
+// from where the resting face draws it, before what moves it.
+const part = (name, art, x = 0, y = 0) => group(art, `data-part="${name}" data-at="${x},${y}"`);
 function animate(ctx, attribute, values, seconds, times, repeat = "indefinite", begin = 0) {
   if (!ctx.motion) return "";
   return `<animate attributeName="${attribute}" values="${values}" keyTimes="${times}" dur="${seconds}s" begin="${begin}s" repeatCount="${repeat}" calcMode="discrete" fill="freeze"/>`;
@@ -40,37 +45,46 @@ function slopedLid(x,y,right,ctx,strength=4) {
 function sadLid(x,y,right,ctx) {
   return Array.from({length:5},(_,i)=>rect(x+i*8,y,8,3+(right?i:4-i)*4,ctx.bg)).join("");
 }
+// The two eyes, left and right, tagged as the resting face's when the face
+// is (ctx.rest) and `rest` says these are its eyes; `shut`, its shut ones.
+function pair(ctx,[left,right],rest=true,shut=false) {
+  if(!ctx.rest||!rest)return left+right;
+  return part(shut?"shut-l":"eye-l",left)+part(shut?"shut-r":"eye-r",right);
+}
 function eyePose(ctx) {
-  const {mood,state,ink}=ctx;
+  const {mood,state,ink,bg}=ctx;
   if(state==="asleep")return block(68,94,40,5,ink)+block(212,94,40,5,ink);
   if(state==="no_app")return block(68,94,40,8,ink)+block(212,94,40,8,ink);
-  if(mood==="happy")return group(fourEye(62,56,52,56,ink)+fourEye(206,56,52,56,ink)+star(77,69,24,ctx.bg)+star(221,69,24,ctx.bg),'data-part="happy-eyes"');
+  // Each eye with what's drawn with it: a star cut out of it, a lid, a brow.
+  if(mood==="happy")return group(pair(ctx,[fourEye(62,56,52,56,ink)+star(77,69,24,bg),fourEye(206,56,52,56,ink)+star(221,69,24,bg)]),'data-part="happy-eyes"');
   if(mood==="excited") {
     const steps=[0,6,12,18,12,6,0];
-    return group(steps.map((x,i)=>rect(71+x,70+i*6,12,6,ink)+rect(237-x,70+i*6,12,6,ink)).join(""),'data-part="scrunched-eyes"');
+    return group(pair(ctx,[steps.map((x,i)=>rect(71+x,70+i*6,12,6,ink)).join(""),steps.map((x,i)=>rect(237-x,70+i*6,12,6,ink)).join("")]),'data-part="scrunched-eyes"');
   }
-  if(mood==="proud")return fourEye(65,75,46,34,ink)+fourEye(211,70,42,40,ink)+rect(65,75,46,13,ctx.bg)+rect(211,70,42,6,ctx.bg)+rect(63,69,30,4,ink)+rect(221,61,30,4,ink);
+  if(mood==="proud")return pair(ctx,[fourEye(65,75,46,34,ink)+rect(65,75,46,13,bg)+rect(63,69,30,4,ink),fourEye(211,70,42,40,ink)+rect(211,70,42,6,bg)+rect(221,61,30,4,ink)]);
   if(mood==="curious") {
+    // Its eyes look about: only the first pose is its resting face's.
     const poses=[
-      fourEye(74,82,28,28,ink)+fourEye(201,53,62,62,ink),
-      fourEye(67,69,42,42,ink)+fourEye(211,69,42,42,ink),
-      fourEye(57,53,62,62,ink)+fourEye(218,82,28,28,ink),
-      fourEye(67,66,42,46,ink)+fourEye(211,70,42,42,ink)
+      [fourEye(74,82,28,28,ink),fourEye(201,53,62,62,ink)],
+      [fourEye(67,69,42,42,ink),fourEye(211,69,42,42,ink)],
+      [fourEye(57,53,62,62,ink),fourEye(218,82,28,28,ink)],
+      [fourEye(67,66,42,46,ink),fourEye(211,70,42,42,ink)]
     ];
-    return frames(ctx,poses,state==="idle"?3.6:2.8,"curious-eyes");
+    return frames(ctx,poses.map((eyes,i)=>pair(ctx,eyes,i===0)),state==="idle"?3.6:2.8,"curious-eyes");
   }
-  if(mood==="determined")return fourEye(67,80,42,30,ink)+fourEye(211,80,42,30,ink)+group(
-    rect(65,68,15,4,ink)+rect(80,70,15,4,ink)+rect(95,72,14,4,ink)+
-    rect(211,72,14,4,ink)+rect(225,70,15,4,ink)+rect(240,68,15,4,ink),'data-part="gentle-brows"');
-  if(mood==="grumpy")return fourEye(68,70,40,44,ink)+fourEye(212,70,40,44,ink)+slopedLid(68,70,false,ctx)+slopedLid(212,70,true,ctx);
-  return fourEye(68,66,40,48,ink)+fourEye(212,66,40,48,ink)+sadLid(68,66,false,ctx)+sadLid(212,66,true,ctx);
+  if(mood==="determined")return pair(ctx,[fourEye(67,80,42,30,ink)+rect(65,68,15,4,ink)+rect(80,70,15,4,ink)+rect(95,72,14,4,ink),
+    fourEye(211,80,42,30,ink)+rect(211,72,14,4,ink)+rect(225,70,15,4,ink)+rect(240,68,15,4,ink)]);
+  if(mood==="grumpy")return pair(ctx,[fourEye(68,70,40,44,ink)+slopedLid(68,70,false,ctx),fourEye(212,70,40,44,ink)+slopedLid(212,70,true,ctx)]);
+  return pair(ctx,[fourEye(68,66,40,48,ink)+sadLid(68,66,false,ctx),fourEye(212,66,40,48,ink)+sadLid(212,66,true,ctx)]);
 }
+const shutEyes=ctx=>pair(ctx,[block(68,99,40,5,ctx.ink),block(212,99,40,5,ctx.ink)],true,true);
 function eyes(ctx) {
   if(ctx.eyeOverride)return ctx.eyeOverride;
   if(["asleep","no_app"].includes(ctx.state))return eyePose(ctx);
+  if(ctx.shut)return shutEyes(ctx);
   const period=ctx.state==="listening"?8.4:7.2;
   const open=group(opacity(ctx,"1;0;1;1",period,"0;0.78;0.805;1")+eyePose(ctx));
-  const closed=group(opacity(ctx,"0;1;0;0",period,"0;0.78;0.805;1")+block(68,99,40,5,ctx.ink)+block(212,99,40,5,ctx.ink),"opacity=\"0\"");
+  const closed=group(opacity(ctx,"0;1;0;0",period,"0;0.78;0.805;1")+shutEyes(ctx),"opacity=\"0\"");
   return group(open+closed,"data-part=\"eyes\"");
 }
 function mouth(ctx) {
@@ -171,16 +185,28 @@ function faceMotion(ctx) {
   };
   return move(ctx,...work[mood]);
 }
+// Whether a face is its mood's resting face, moved, which the device's rig
+// face draws in its place: its eyes, mouth and cheeks the idle face's, in
+// its colours, and no tears of sad's own, which pour from its eyes. What
+// else it has is its decoration. `rig: false` keeps it baked.
+function resting(ctx) {
+  if(ctx.rig===false||ctx.quiet||ctx.eyeOverride||ctx.mouthOverride)return false;
+  if(ctx.mood==="sad"&&ctx.tearOverride===undefined)return false;
+  return ctx.ink===palette.ink&&ctx.bg===palette.black&&ctx.cheek===palette.cheek&&mouth(ctx)===mouth({...ctx,state:"idle"});
+}
 function face(ctx) {
-  let art=group((ctx.gazeMotion||"")+eyes(ctx),'data-part="gaze"')+cheeks(ctx);
-  const lips=ctx.mood==="sad"&&!ctx.quiet&&ctx.state!=="listening"?group(move(ctx,"0 0;1 0;-1 0;0 0;0 0",2.1,"0;0.2;0.3;0.4;1")+mouth(ctx)):mouth(ctx);
-  art+=group(lips,"data-part=\"mouth\"");
-  if(!ctx.quiet&&ctx.mood==="sad")art+=ctx.tearOverride!==undefined?ctx.tearOverride:tears(ctx);
-  if(!ctx.quiet&&ctx.mood==="grumpy")art+=anger(ctx);
-  if(!ctx.quiet&&!ctx.suppressDecor&&ctx.mood==="happy")art+=group(
+  ctx={...ctx,rest:resting(ctx)};
+  let art=group((ctx.gazeMotion||"")+eyes(ctx),'data-part="gaze"')+(ctx.rest?part("cheeks",cheeks(ctx)):cheeks(ctx));
+  const tremble=ctx.mood==="sad"&&!ctx.quiet&&ctx.state!=="listening"?move(ctx,"0 0;1 0;-1 0;0 0;0 0",2.1,"0;0.2;0.3;0.4;1"):"";
+  art+=ctx.rest?part("mouth",tremble+mouth(ctx)):group(tremble+mouth(ctx),"data-part=\"mouth\"");
+  let decor="";
+  if(!ctx.quiet&&ctx.mood==="sad")decor+=ctx.tearOverride!==undefined?ctx.tearOverride:tears(ctx);
+  if(!ctx.quiet&&ctx.mood==="grumpy")decor+=anger(ctx);
+  if(!ctx.quiet&&!ctx.suppressDecor&&ctx.mood==="happy")decor+=group(
     at(268,43,group(opacity(ctx,"1;0;1;1",2.4,"0;0.32;0.56;1")+move(ctx,"0 0;0 -3;0 0;0 0",2.4,"0;0.35;0.6;1")+star(0,0,16,ctx.complete?ctx.ink:palette.amber)))+
     at(48,49,group(opacity(ctx,"0;1;0;0",2.4,"0;0.25;0.65;1")+star(0,0,8,ctx.complete?ctx.ink:palette.amber))),'data-part="outer-sparkles"');
-  if(!ctx.quiet&&!ctx.suppressDecor&&ctx.mood==="proud")art+=at(277,106,group(opacity(ctx,"1;1;0;1",4.4,"0;0.3;0.5;1")+star(0,0,16,ctx.ink)));
+  if(!ctx.quiet&&!ctx.suppressDecor&&ctx.mood==="proud")decor+=at(277,106,group(opacity(ctx,"1;1;0;1",4.4,"0;0.3;0.5;1")+star(0,0,16,ctx.ink)));
+  art+=ctx.rest&&decor?group(decor,'data-part="decor"'):decor;
   const y=ctx.state==="needs_you"?24:ctx.complete?8:0;
   return at(0,y,group(faceMotion(ctx)+art,"data-part=\"face\""));
 }
@@ -339,4 +365,4 @@ export function renderSVG(mood,state) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" id="${id}" data-mood="${mood}" data-state="${state}" data-revision="4" role="img" aria-labelledby="${id}-title ${id}-desc" shape-rendering="crispEdges">\n<title id="${id}-title">${label(mood)} · ${label(state)}</title>\n<desc id="${id}-desc">${esc(desc)}</desc>\n<style>#${id} .boop-still{display:none}@media(prefers-reduced-motion:reduce){#${id}:not([data-motion="on"]) .boop-motion{display:none}#${id}:not([data-motion="on"]) .boop-still{display:inline}}</style>\n<rect data-part="background" width="320" height="240" fill="${ctx.bg}"/>\n<g class="boop-motion">${scene(ctx)}</g>\n<g class="boop-still">${scene({...ctx,motion:false})}</g>\n</svg>\n`;
 }
 // V4 drawing primitives are reused by the internal variation renderer.
-export {rect,path,block,group,at,animate,move,opacity,frames,fourEye,star,eyePose,eyes,mouth,face,keyboardBase,work,request,trophy,firework,goldCycle,victoryBackground,celebration,listening,disconnected,splash,tears,flood,dustPuff,flyingKeys,keycap};
+export {rect,path,block,group,at,part,animate,move,opacity,frames,fourEye,star,eyePose,eyes,mouth,face,keyboardBase,work,request,trophy,firework,goldCycle,victoryBackground,celebration,listening,disconnected,splash,tears,flood,dustPuff,flyingKeys,keycap};
