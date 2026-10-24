@@ -5,8 +5,9 @@ import MellowHarness
 /// for how long, and what it says. A reaction
 /// is a mood × a visual for a while: the device draws that mood's design
 /// of whatever look is showing, or of the animation picked (a turn's
-/// finish: task_complete for its outcome, or reply_ready; or wake_up, you
-/// back after a long break), for a number of its loops. Jev picks what Boop says as a feeling, a
+/// finish: task_complete for its outcome, or reply_ready; wake_up, you
+/// back after a long break; or notice, its name in your prompt), for a
+/// number of its loops. Jev picks what Boop says as a feeling, a
 /// topic and a kind, and Voice finds a recorded take of each in the face's
 /// mood and joins them into a `say`, or finds none, and then the face plays
 /// in silence. It waits in the device's queue until whatever plays there
@@ -123,10 +124,10 @@ public final class ReactOutput: Output {
                notFor: "A win, a poke, words to \(name), or anything about the person."),
     ] }
 
-    /// The animations a reaction can play in its face: a
-    /// turn's finish, judged from what NOW says, or a wake-up when you come
-    /// back from a long break. No rule plays either, so the brain judges
-    /// each one.
+    /// The animations a reaction can play in its face: a turn's finish,
+    /// judged from what NOW says, a wake-up when you come back from a long
+    /// break, or a notice when your prompt says its name. No rule plays
+    /// any of them, so the brain judges each one.
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
         Option("success", "NOW's line says a turn finished, done, and its last message, if any, says the work is done and working.",
@@ -150,7 +151,8 @@ public final class ReactOutput: Output {
 
     /// What the device plays for each of `animations`: the face's
     /// task_complete scene for a success or a failure, with that outcome,
-    /// its reply_ready for a reply, and its wake_up for a wake up.
+    /// its reply_ready for a reply, its wake_up for a wake up, and its
+    /// notice for a notice.
     public static let scenes: [String: (anim: String, outcome: String?)] = [
         "success": ("task_complete", "success"), "failure": ("task_complete", "failure"),
         "reply": ("reply_ready", nil), "wake up": ("wake_up", nil), "notice": ("notice", nil),
@@ -241,9 +243,9 @@ public final class ReactOutput: Output {
                                           + "or HISTORY shows \(name) still making the one it calls for (in progress).",
                                       notFor: "Anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
-            Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, or you back after a long break?",
+            Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line and the agent's last message under it",
-                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, or you back after a long break. A turn starting, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(name), a short break and a stopped turn all get none.")]
+                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after a long break, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(name), a short break and a stopped turn all get none.")]
                          + ReactOutput.animations(of: name)),
             Question(key: "react.loops", text: "If \(name) reacts, how long does it hold the face?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactOutput.holds),

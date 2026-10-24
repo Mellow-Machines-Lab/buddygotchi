@@ -7,8 +7,9 @@ import LinkKit
 /// `mood`, its expression: the device draws that mood's version of the
 /// look while it plays, and says the takes in `say`, if there are any,
 /// over it. With no animation it's a `react`; with one it's the brain's
-/// finish (task_complete, reply_ready) or its wake_up (you back after a
-/// long break). The rules' reactions never carry
+/// finish (task_complete, reply_ready), its wake_up (you back after a
+/// long break) or its notice (its name in your prompt). The rules'
+/// reactions never carry
 /// a mood. Whoever plays an animation or a face says how many `loops` of
 /// its design. The finish for a thread's turn says `who`: the device names
 /// it in the strip while the finish plays.
@@ -54,7 +55,7 @@ public struct DeviceReaction: Equatable, Sendable {
         public var text: String? { takes.isEmpty ? nil : takes.map(\.text).joined(separator: " ") }
     }
 
-    /// The animation: a rule's reaction, or the brain's finish or wake_up;
+    /// The animation: a rule's reaction, or the brain's finish, wake_up or notice;
     /// nil for a brain reaction with none, a `react`.
     public var anim: String?
     public var say: Say?
