@@ -131,7 +131,7 @@ public final class Core {
     let readingBack: Flag
     final class Flag { var on = false }
     /// The board's gesture for dismissing: a finger held on the needs-you
-    /// sign, with the number of the request the sign showed (`attn.id`).
+    /// screen, with the number of the request it showed (`attn.id`).
     public static let dismissGesture = "dismiss"
 
     // Push-to-talk.
@@ -652,12 +652,13 @@ public final class Core {
     }
 
     /// Dismisses the request numbered `request` (`attn.id`) if it shows:
-    /// the one the board's sign or the popover's card showed, so one that
-    /// took its place since isn't dismissed unseen. The popover names its
-    /// session (`key`) too, as each buddy's core numbers its own requests.
-    /// It stops showing on the board and in the menu bar, but the agent
-    /// still waits, and nothing answers it. The session rests from now,
-    /// and its next request shows again. Its `needs_you` ends, saying so.
+    /// the one the board's needs-you screen or the popover's card showed,
+    /// so one that took its place since isn't dismissed unseen. The
+    /// popover names its session (`key`) too, as each buddy's core numbers
+    /// its own requests. It stops showing on the board and in the menu
+    /// bar, but the agent still waits, and nothing answers it. The session
+    /// rests from now, and its next request shows again. Its `needs_you`
+    /// ends, saying so.
     @discardableResult
     public func dismiss(request: Int, session key: String? = nil, at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
