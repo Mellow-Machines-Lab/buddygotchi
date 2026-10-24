@@ -18,7 +18,7 @@ What a pack holds, and what it must have:
 | `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
-| `rig/` | no | Its expressions, clips, looks and accessories on the rig the faces are moving to (§15) |
+| `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
 | `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
 | `mac/mirror/` | no | A web page the popover shows as the face (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
@@ -157,8 +157,8 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     include/…        the faces' generated art and sounds
     src/render/…     each face's code in a folder of its own, and
                      make_face.cpp, which makes the board's (§9)
-  rig/               optional: its poses and moves on the rig (§15)
-    expressions.json, looks.json, accessories.json
+  rig/               optional: what its moods wear and its moves on the rig (§15)
+    expressions.json, looks.json
     clips/<id>.json
   voice/voice.bin    optional: the voice file, for the microSD card (§8)
   studio/            optional: the studio's preview adapter (§12)
@@ -507,7 +507,7 @@ Besides drawing each mood and state, a face:
   then +N, a parcel and the count of agents idle for BOOT to hand over,
   a finished turn's tick or cross) and the speech bubble. The face calls
   `drawLane` to draw them. The engine fades the strip in as it comes and
-  out as it goes, over the layers' 200 ms, from the moment it came or
+  out as it goes, over the rig's 200 ms fade, from the moment it came or
   went, and hands the face its opacity with it (`Strip::opacity`):
   `drawLane` dithers it on the canvas, and a face that draws its own
   lane, as the gel does, draws it at that opacity.
@@ -709,54 +709,44 @@ words. The app bundles the folder. How to write and play one:
 The rig is the one set of numbers every pack and face shares
 ([plan/character-engine.md](../plan/character-engine.md)): at any instant
 a character is a value on each of its channels. A pack's `rig/` says
-what they do: its poses, its moves, its looks and where its outfits sit.
-The engine's half is `firmware/src/render/rig/`: the channels and the
-tables' types (`rig.h`), the mixer that plays them (`mixer.h`) and the
-layers a face draws (`layers.h`). The pixel face draws its face from it
-wherever a design's face is its mood's resting face (below, Pixel's face
-on the rig); the gel moves onto it next.
-Pixel's rig has poses for its 13 drawn moods, fitted to their art, each
-wearing its own mood's eyes and mouth, the looks idle, working and
-asleep, a blink, a notice, a cheer and a poke. Boop's has poses for the
-same moods, read off the gel's faces for them
-(`design/slime-blob/expressions.json`), and Pixel's styles, since Boop
-wears Pixel's face on the CYD.
+what they do: what each mood wears, its moves and its looks. The
+engine's half is `firmware/src/render/rig/`: the channels, the tables'
+types, the ramp its fades ease on and the anchors a face reports
+(`rig.h`), and the mixer that plays them (`mixer.h`). The pixel face
+draws its face from it wherever a design's face is its mood's resting
+face (below, Pixel's face on the rig); the gel moves onto it next.
+Pixel's rig has expressions for its 13 drawn moods, each wearing its own
+mood's eyes and mouth, the looks idle, working and asleep, and a blink.
+Boop's is the same, since Boop wears Pixel's face on the CYD, with its
+notice besides (§16's reference became it).
 
 **Channels.** The body's `x`, `y`, `squash`, `lean`, `tilt` and `lift`;
-the eyes' `eyeOpenL`, `eyeOpenR`, `eyeCurve`, `eyeSize`, `gazeX` and
-`gazeY`; the mouth's `mouthWidth`, `mouthCurve` and `mouthOpen`; and
-`cheek`, `tear` and `sweat`. Each is a whole number, in thousandths but
-for `x`, `y` and `lift` (px), with a range and a value at rest:
-`kChannelInfo` in `rig.h` says what each means, and `charactergen.py`
-checks the files by it. In the files, `eyeOpen` sets both eyes. A face
-also has two **styles**, the eyes' and the mouth's: which of the pack's
-drawings it draws, for the shapes no channel reaches (hearts, X eyes). A
-new style cross-fades in. The pixel face's styles are its drawn moods'
-names: a style is that mood's eyes, or its mouth, as its art draws them.
+the eyes' `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and
+the mouth's `mouthWidth` and `mouthOpen`. Each is a whole number, in
+thousandths but for `x`, `y` and `lift` (px), with a range and a value
+at rest, where a face draws its art as drawn: `kChannelInfo` in `rig.h`
+says what each means, and `charactergen.py` checks the files by it. In
+the files, `eyeOpen` sets both eyes. A face also has two **styles**, the
+eyes' and the mouth's: which of its drawings it draws, for the shapes no
+channel reaches (hearts, X eyes). A new style cross-fades in. The pixel
+face's styles are its drawn moods' names: a style is that mood's eyes,
+or its mouth, as its art draws them.
 
-**`expressions.json`**: the styles, the first of each the default, and a
-pose for each mood the pack has one for: a target for each channel it
-names (the others at rest) and its styles. Pixel's, cut to two of its
-moods' poses (each style list names all 13):
+**`expressions.json`**: for each mood the pack has one for, the styles
+it wears. Pixel's, cut to two of its moods:
 
 ```json
 {
-  "styles": {
-    "eyes": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"],
-    "mouth": ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad", "calm", "engaged", "annoyed", "irritated", "whiny", "wounded"]
-  },
-  "expressions": {
-    "happy": {"eyeCurve": 300, "eyeSize": 1080, "mouthWidth": 670, "mouthCurve": 800, "mouthOpen": 300, "cheek": 1000, "eyes": "happy", "mouth": "happy"},
-    "excited": {"eyeOpen": 150, "eyeCurve": 900, "mouthWidth": 1470, "mouthCurve": 900, "mouthOpen": 800, "cheek": 1000, "eyes": "excited", "mouth": "excited"}
-  }
+  "happy": {"eyes": "happy", "mouth": "happy"},
+  "excited": {"eyes": "excited", "mouth": "excited"}
 }
 ```
 
-A mood without one has no pose of its own, and the face decides what it
+A mood without one has none of its own, and the face decides what it
 wears (Pixel's borrows, §9).
 
 **`clips/<id>.json`**: a clip each, its id the file's name: keyframed
-curves on some channels, timed in ms, with cues. Boop's notice:
+curves on some channels, timed in ms. Boop's notice:
 
 ```json
 {
@@ -766,8 +756,7 @@ curves on some channels, timed in ms, with cues. Boop's notice:
     "lift": [[0, 0], [120, 10, "out"], [300, 12], [600, 10], [820, 0]],
     "gazeY": [[0, 0], [120, -500, "out"], [700, -500], [900, 0]],
     "eyeSize": [[0, 0], [120, 200, "out"], [600, 150], [900, 0]]
-  },
-  "cues": [[90, "swipe"], [500, "shimmer"]]
+  }
 }
 ```
 
@@ -777,56 +766,45 @@ curves on some channels, timed in ms, with cues. Boop's notice:
 | `loop` | no | Whether it loops, `false` without it. A looping clip's tracks start at 0 and end at `ms` on the value they started on |
 | `additive` | no | `true` without it: its values are offsets on what's there, so it plays in any mood, each up to the channel's whole span either way. `false`: values to blend toward, each in the channel's range |
 | `tracks` | no | For each channel, its keys in order of time, `[ms, value]` or `[ms, value, ease]`, the ease into the key from the one before: `linear`, `in`, `out` or `inout`, which a key without one has. Before its first key a track holds that key's value, and after its last the last's |
-| `cues` | no | `[ms, name]`, each before `ms`: a sound or a contact, which the face plays when the clip crosses it |
 | `about` | no | What it is, for people |
 
 **`looks.json`**: for each look (§9's Looks), the clip it loops under
-the reactions (`clip`, one that loops, or null), its scene (`scene`, a name
-for the face's art, or null) and whether it dresses for the tags
-(`dresses`, `false` without it). Boop's:
+the reactions (`clip`, one that loops, or null). Boop's:
 
 ```json
 {
-  "idle": {"clip": "breathe", "scene": null, "dresses": true},
-  "working": {"clip": "work", "scene": "desk", "dresses": false},
-  "asleep": {"clip": "doze", "scene": null, "dresses": true}
+  "idle": {"clip": "breathe"},
+  "working": {"clip": "work"},
+  "asleep": {"clip": "doze"}
 }
 ```
 
-**`accessories.json`**: where each outfit sits and what the face draws
-for it. Which outfit the tags call for is `render::outfitFor`'s rule
-(§9), not the pack's: for each of `witch_hat`, `party_hat`, `nightcap`
-and `bobble` it draws, the pack gives an `anchor` (`crown`, `brim`,
-`hands` or `eyes`) and an `art` (a name, the outfit's without one):
-`{"nightcap": {"anchor": "brim"}}`.
-
 Every file is optional, and one that's missing is empty.
-`charactergen.py --check` fails on an unknown key, channel, mood, state,
-outfit, style or clip, a value out of its range, keys out of order and a
-loop that doesn't close, each with its file and key
+`charactergen.py --check` fails on an unknown key, channel, mood, state
+or clip, a style that isn't a name, a value out of its range, keys out
+of order and a loop that doesn't close, each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
-with a lookup by mood, clip, look and outfit. The app doesn't bundle
-`rig/`.
+with a lookup by mood, clip and look. The app doesn't bundle `rig/`.
 
 **How it plays.** The mixer (`mixer.h`) holds a critically damped spring
-on each channel, the face's quicker than the body's, whose targets are
-the mood's pose, so a new mood never jumps. The look's clip loops over
-the springs, and reactions' clips over that, a few at once, each with a
-weight that eases in and out over 150 ms (a quarter of a shorter clip,
-so a 180 ms blink still shuts): an additive clip adds its offsets, an
-absolute one blends toward its values. A poke or a stroke kicks a
-spring. The layers (`layers.h`) are scene, body, face, accessories,
-held, air and lane, back to front, each fading in and out, with the
-anchors the face reports from the pose it draws (the crown, a ring for a
-brim and one for the hands, the eyes), so what's worn or held rides the
-body.
+on each channel, the face's quicker than the body's, at rest: a channel
+within half a unit of rest and all but still is at rest exactly, and a
+step of a second or more sets every spring at rest at once. The look's
+clip loops over the springs, and reactions' clips over that, a few at
+once, each with a weight that eases in and out over 150 ms (a quarter of
+a shorter clip, so a 180 ms blink still shuts): an additive clip adds
+its offsets, an absolute one blends toward its values. A poke or a
+stroke kicks a spring. A new style cross-fades over the rig's fade
+(`kFadeMs`, 200 ms). The face reports where the body is each frame from
+the pose it draws (`rig::Anchors`: the crown, a ring for a brim and one
+for the hands, the eyes), so what's worn or held rides the body.
 
 **Pixel's face on the rig.** Most of Pixel's designs draw its mood's
 resting face, moved about, over a desk, props or decorations of their
 own. Wherever one does, at every step of its loop, the pixel face draws
 its face from the rig (`render/pixel/rig_face.h`) in the design's place,
-in every mood with a pose whose styles it has, and the design draws the
+in every mood whose expression's styles it has, and the design draws the
 rest: in its looks (working's included), its occasions and its
 reactions alike. Facegen decides which
 (`rig_faces`): for each design it finds where the resting face sits at
@@ -845,16 +823,14 @@ are a track of `faces.h` (a scene's `face`), which the rig face follows
 as the design's clock runs, so its sounds, timing and outcome are the
 design's still. Its parts are each drawn mood's own art, which facegen
 cuts from the mood's first idle at rest: each eye open and shut, the
-mouth and the cheeks (`faces.h`'s `kParts`, about 6 KB). At a mood's
-pose each part draws as its art has it, and the channels' difference
-from the pose moves it: `x`, `y`, `lift`, `squash` and `lean` the whole
-face; `eyeOpen` closes each eye onto the line it shuts on, its shut art
-below a third open; `eyeSize` scales the eyes, `gazeX`, `gazeY` and
-`tilt` shift them; `mouthWidth` and `mouthOpen` widen and open the mouth.
-So a pack's poses needn't be Pixel's to look right at rest (Boop's
-aren't): they shape the moves between. A new style dissolves in over the
-mixer's 200 ms, a 4 × 4 ordered dither (the canvas has no alpha), each
-part morphing from its box to the next one's. The clip of the look it's
+mouth and the cheeks (`faces.h`'s `kParts`, about 6 KB). At rest each
+part draws as its art has it, and the channels' offsets from rest move
+it: `x`, `y`, `lift`, `squash` and `lean` the whole face; `eyeOpen`
+closes each eye onto the line it shuts on, its shut art below a third
+open; `eyeSize` scales the eyes, `gazeX`, `gazeY` and `tilt` shift them;
+`mouthWidth` and `mouthOpen` widen and open the mouth. A new style
+dissolves in over the mixer's 200 ms, a 4 × 4 ordered dither (the canvas
+has no alpha), each part morphing from its box to the next one's. The clip of the look it's
 in (idle, working or asleep: the state's `base`) plays over the
 design's moves (Pixel's breathe lifts it a pixel and glances to either
 side; working's looks down at the desk), the `blink` clip at each blink;
@@ -900,7 +876,7 @@ references/2026-10-24-notice-perk/
 | `kind` | `inspiration`, what it's like, in the character's own style; or `direct`, its beats and poses made as the rig allows |
 | `note` | The person's line about it |
 | `status` | `new`, then `read` (cut into frames), `translated` (read and turned into data), `in review`, `approved` |
-| `became` | What it became on the rig (§15): each a `clip`, by its file's name, an `expression`, by its mood, or `art`, a style, a scene or an accessory's art, by its `id` |
+| `became` | What it became on the rig (§15): each a `clip`, by its file's name, an `expression`, by its mood, or `art`, a style an expression wears, by its `id` |
 | `show` | Optional: what the studio plays beside it on the board, a `mood` and a `state`, and then `anim`, a state asked for at the reference's 0 ms |
 | `frames`, `ms` | Written by the tool: the frames cut from all its files, and the longest file's length |
 
@@ -954,7 +930,7 @@ pack staging. The app doesn't bundle either folder.
   resting face (§15); a design whose face changes shape (curious's
   look-around, a yawn, a finish's face) is still baked, since the rig's
   parts are one drawing of each eye. The gel doesn't draw from the rig
-  yet, and Boop's poses serve both its faces.
+  yet.
 - The palette lives in the pixel face's `faces.h`; it moves out of the
   art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and

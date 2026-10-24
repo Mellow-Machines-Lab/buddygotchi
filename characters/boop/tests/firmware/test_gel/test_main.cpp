@@ -432,13 +432,13 @@ static void test_the_face_never_fades_while_arts_cross_over() {
   }
 }
 // CONTINUITY.md, No prop pops: the lane's strip eases in as it comes and out
-// as it goes, at the opacity Behaviour gives it on the layers' ramp, which is
+// as it goes, at the opacity Behaviour gives it on the rig's ramp, which is
 // the props' (app/behaviour.h, pinned in test_behaviour), and the same
 // whatever the draw cadence: a board drawing every 16 ms and one drawing
 // every 200 ms show the same lane wherever both draw, mid-fade and settled,
 // its strip coming and going between their frames.
 static void test_the_lane_fades_whatever_the_draw_cadence() {
-  static_assert(rig::kLayerFadeMs == uint32_t(kPropRampMs), "the lane fades on the props' ramp");
+  static_assert(rig::kFadeMs == uint32_t(kPropRampMs), "the lane fades on the props' ramp");
   constexpr int kW = 502, kH = 410, kLane = kH * 4 / 5;
   struct Run {
     linkkit::Rng rng;

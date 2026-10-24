@@ -313,75 +313,59 @@ class RigRuleTests(unittest.TestCase):
     def test_a_pack_without_a_rig_has_an_empty_one(self):
         rig, problems = self.rig({})
         self.assertEqual(problems, [])
-        self.assertIn("inline constexpr Rig kRig = {{}, {}, {}, {}, {}, {}, {}};", gen.rig_h(self.dir, rig))
+        self.assertIn("inline constexpr Rig kRig = {{}, {}, {}};", gen.rig_h(self.dir, rig))
 
     def test_the_tables_are_the_files(self):
-        """Each file's rows as rig.h's types hold them: a channel the file doesn't name at rest, eyeOpen both eyes,
-        a key's ease inout unless it says, clips in their files' order, a look's scene numbered from 1."""
+        """Each file's rows as rig.h's types hold them: an expression's styles by name, eyeOpen both eyes, a key's
+        ease inout unless it says, clips in their files' order."""
         rig, problems = self.rig({
-            "expressions.json": {"styles": {"eyes": ["dot", "shut"], "mouth": ["line"]},
-                                 "expressions": {"calm": {"eyeOpen": 300, "mouthCurve": -200, "eyes": "shut"}}},
-            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}, "cues": [[300, "thud"], [50, "pop"]]},
-            "clips/sway.json": {"ms": 200, "loop": True, "additive": False, "tracks": {"tilt": [[0, 100], [200, 100]]}},
-            "looks.json": {"idle": {"clip": "sway", "scene": "desk", "dresses": True}, "working": {"clip": None}},
-            "accessories.json": {"nightcap": {"anchor": "brim"}, "party_hat": {"anchor": "crown", "art": "cone"}},
+            "expressions.json": {"calm": {"eyes": "shut", "mouth": "line"}},
+            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}},
+            "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
+                                "tracks": {"tilt": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
+            "looks.json": {"idle": {"clip": "sway"}, "working": {"clip": None}},
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
-        values = [300 if c in ("eyeOpenL", "eyeOpenR") else -200 if c == "mouthCurve" else rest
-                  for c, (_, _, rest) in gen.rig_channels().items()]
-        for row in ['"dot",', '"shut",', '"line",', '"desk",',
-                    '{"calm", {{' + ", ".join(map(str, values)) + "}}, 1, 0},",
+        for row in ['{"calm", "shut", "line"},',
                     "{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
                     "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kTilt, {kKeys + 3, 2}},",
-                    '{50, "pop"},', '{300, "thud"},',
-                    '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
-                    '{"sway", 200, true, false, {kTracks + 1, 1}, {}},',
-                    "{SceneState::kIdle, kClips + 1, 1, true},", "{SceneState::kWorking, nullptr, 0, false},",
-                    '{Outfit::kNightcap, Anchor::kBrim, "nightcap"},', '{Outfit::kPartyHat, Anchor::kCrown, "cone"},',
-                    "inline constexpr Rig kRig = {{pack::kEyeStyles, 2}, {pack::kMouthStyles, 1}, {pack::kScenes, 1}, "
-                    "{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}, {pack::kAccessories, 2}};"]:
+                    "{Channel::kEyeOpenL, {kKeys + 5, 2}},", "{Channel::kEyeOpenR, {kKeys + 7, 2}},",
+                    '{"hop", 400, false, true, {kTracks + 0, 1}},',
+                    '{"sway", 200, true, false, {kTracks + 1, 3}},',
+                    "{SceneState::kIdle, kClips + 1},", "{SceneState::kWorking, nullptr},",
+                    "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
     def test_a_bad_edit_fails_with_its_file_and_key(self):
         _, problems = self.rig({
-            "expressions.json": {"styles": {"eyes": ["dot"], "mouth": ["line"]}, "faces": {},
-                                 "expressions": {"happy": {"eyeCurve": 1800, "wiggle": 1, "mouth": "zigzag"},
-                                                 "calm": {"eyeOpen": 100, "eyeOpenL": 200},
-                                                 "giddy": {}}},
-            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[400, "pop"]],
+            "expressions.json": {"happy": {"eyes": "Dot", "wiggle": 1}, "calm": {"mouth": "line"}, "giddy": {}},
+            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"]],
                                "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"tilt": [[0, 0], [200, 100]]}},
             "clips/Bad Name.json": {"ms": 0},
-            "looks.json": {"idle": {"clip": "hop", "colour": "red"}, "working": {"clip": "nope", "dresses": "yes"},
-                           "dancing": {}},
-            "accessories.json": {"crown": {"anchor": "crown"}, "nightcap": {"anchor": "head"}},
+            "looks.json": {"idle": {"clip": "hop", "scene": "desk"}, "working": {"clip": "nope"}, "dancing": {}},
         })
-        outfits = ", ".join(gen.outfits())
         self.assertEqual(problems, [
-            "rig/expressions.json: faces: unknown key",
-            "rig/expressions.json: expressions.giddy: isn't a mood",
-            "rig/expressions.json: expressions.happy.eyeCurve: 1800 isn't a whole number from -1000 to 1000",
-            "rig/expressions.json: expressions.happy.wiggle: unknown key",
-            "rig/expressions.json: expressions.happy.mouth: 'zigzag' isn't one of line",
-            "rig/expressions.json: expressions.calm.eyeOpenL: sets a channel twice",
+            "rig/expressions.json: giddy: isn't a mood",
+            "rig/expressions.json: happy.eyes: 'Dot' isn't a name",
+            "rig/expressions.json: happy.wiggle: unknown key",
+            "rig/expressions.json: happy.mouth: missing",
+            "rig/expressions.json: calm.eyes: missing",
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
             "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
             "rig/clips/hop.json: id: unknown key",
+            "rig/clips/hop.json: cues: unknown key",
             "rig/clips/hop.json: tracks.nose: isn't a channel",
             "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
             "rig/clips/hop.json: tracks.lift[2]: its time, 100, isn't a whole ms after the key before's and at most 400",
             "rig/clips/hop.json: tracks.lift[3]: its ease, 'bouncy', isn't one of linear, in, out, inout",
-            "rig/clips/hop.json: cues[0]: isn't [ms before 400, a name] (at most 255 of them)",
             "rig/clips/sway.json: tracks.tilt: loops, so it starts at 0 and ends at ms on the value it started on",
             "rig/looks.json: dancing: isn't a state the board has",
-            "rig/looks.json: idle.colour: unknown key",
+            "rig/looks.json: idle.scene: unknown key",
             "rig/looks.json: idle.clip: hop doesn't loop",
             "rig/looks.json: working.clip: 'nope' isn't a clip in rig/clips/",
-            "rig/looks.json: working.dresses: 'yes' isn't true or false",
-            f"rig/accessories.json: crown: isn't an outfit ({outfits})",
-            "rig/accessories.json: nightcap.anchor: 'head' isn't one of crown, brim, hands, eyes",
         ])
 
     def test_a_bad_rig_stops_the_pack(self):
@@ -403,8 +387,7 @@ class ReferenceRuleTests(unittest.TestCase):
         self.pack = self.repo / "characters" / "pal"
         write(self.pack / "character.json", {"moods": [{"id": "calm"}, {"id": "happy"}]})
         self.ref = self.pack / "references" / "2026-10-23-perk"
-        self.rig = {"eyes": ["dot"], "mouth": [], "scenes": ["desk"], "expressions": [{"mood": "happy"}], "clips": [{"id": "notice"}],
-                    "accessories": [{"art": "nightcap"}]}
+        self.rig = {"expressions": [{"mood": "happy", "eyes": "dot", "mouth": "smile"}], "clips": [{"id": "notice"}]}
 
     def reference(self, files=("perk.gif",), **ref):
         for name in files:
@@ -435,9 +418,9 @@ class ReferenceRuleTests(unittest.TestCase):
         self.assertEqual(self.reference(show={"state": "idle"}), ["reference.json: show.mood: missing"])
 
     def test_what_it_became_is_in_the_rig(self):
-        """CHARACTER.md §15: a clip by its file's name, an expression by its mood, art by a style, scene or accessory's art."""
+        """CHARACTER.md §15: a clip by its file's name, an expression by its mood, art by a style an expression wears."""
         became = [{"what": "clip", "id": "notice"}, {"what": "expression", "id": "happy"}, {"what": "art", "id": "dot"},
-                  {"what": "art", "id": "desk"}, {"what": "art", "id": "nightcap"}]
+                  {"what": "art", "id": "smile"}]
         self.assertEqual(self.reference(became=became), [])
         self.assertEqual(self.reference(became=[{"what": "clip", "id": "hop"}, {"what": "expression", "id": "calm"}]),
                          ["it became clip hop, which rig/ hasn't", "it became expression calm, which rig/ hasn't"])

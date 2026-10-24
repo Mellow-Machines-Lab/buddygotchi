@@ -257,9 +257,11 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   over.mood = show.mood, over.when = context_.when, over.ms = t;
   over.held = sign.text, over.heldOffset = sign.text ? heldOffset(sign.ms, show.dy) : 0;
   if (rig) {
-    const rig::Anchors now = rig_.anchors(move), rest = RigFace::restAnchors(show.mood);
-    over.hatX = now.brimF.x - rest.brimF.x, over.hatY = now.brimF.y - rest.brimF.y;
-    if (sign.text) over.heldOffset += now.handF.y - rest.handF.y;
+    rig::Anchors now;
+    rig_.frame(show.dy, show.mouthOpen, {}, move, &now);
+    const RigFace::Pose& rest = *RigFace::pose(show.mood);
+    over.hatX = now.brimF.x - rest.brim.x, over.hatY = now.brimF.y - rest.brim.y;
+    if (sign.text) over.heldOffset += now.handF.y - rest.hand.y;
   }
   const uint32_t dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
   over.dressed = dress != 0;

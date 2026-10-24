@@ -1906,13 +1906,13 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
 // was takes you to that thread: the press dip only, the finish plays on,
 // and the tap carries its id for the Mac. A finish the Mac doesn't wait on (no id) or that names nobody is poked.
 // The lane's fade, decided once for every face: the strip fades in over the
-// layers' 200 ms from the millisecond it came, and out from the one it went,
+// rig's 200 ms from the millisecond it came, and out from the one it went,
 // still showing what it last showed, names and all; what it shows while it
 // shows changes at once (a count going 3 to 4), and one turning back
 // mid-fade starts from where it was. No app and a finish come and go at
 // their own times.
 static void test_the_lane_fades_as_the_strip_comes_and_goes() {
-  constexpr uint32_t kFade = render::rig::kLayerFadeMs;
+  constexpr uint32_t kFade = render::rig::kFadeMs;
   static_assert(kFade == 200, "the lane fades on the props' 200 ms");
   Rig r;
   r.at(1000);

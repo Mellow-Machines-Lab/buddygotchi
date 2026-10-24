@@ -1,5 +1,5 @@
 #pragma once
-#include "render/rig/layers.h"
+#include "render/rig/rig.h"
 #include "render/surface.h"
 namespace render::gel {
 // Q12 raster controls, fed by the deterministic engine.
@@ -9,7 +9,7 @@ struct PaintControls {
   int slide = 0;  // a gag's slide: the whole dome, sideways
 };
 // Where the body is this frame, from the same pose that draws it: the rig's
-// anchors (render/rig/layers.h), in sixteenths of a pixel, which a layer
+// anchors (render/rig/rig.h), in sixteenths of a pixel, which a layer
 // (render/gel/layers.h) sits on, so it moves, squashes and leaves the screen
 // with the body; the face art adds the eyes' middles. The brim's and the
 // hands' are on these rings of the mesh, from the top (0) down.

@@ -354,13 +354,13 @@ gets at least one scenario. Their pictures are the golden images in
   cross-fade's two pictures sharing the pixels; the voice
   player (`test_voice`); the sound effects' assets, policies, timing
   and mixer (`test_effects`); and the rig the faces are moving onto
-  (`test_rig`): clips' eases, loops and cues, the mixer's springs
-  settling without overshoot and a mood changed mid-way never jumping,
-  reactions' weights easing in and out over 150 ms (a quarter of a
-  shorter clip, so a blink shuts), additive and
-  absolute clips blending, styles cross-fading over 200 ms, the same
-  frames from the same inputs, the layers' 200 ms fades, and the staged
-  pack's `rig_tables.h` against its files.
+  (`test_rig`): clips' eases and loops, reactions' weights easing in
+  and out over 150 ms (a quarter of a shorter clip, so a blink shuts),
+  additive and absolute clips blending, a new look fading over the old,
+  styles cross-fading over 200 ms, an impulse's spring settling without
+  overshoot and coming to rest exactly (a step of a second or more at
+  once), the same frames from the same inputs, the ramp's 200 ms fade,
+  and the staged pack's `rig_tables.h` against its files.
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal

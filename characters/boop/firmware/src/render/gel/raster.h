@@ -9,12 +9,11 @@
 #include "render/surface.h"
 #include "render/palette.h"
 #include "render/font.h"
+#include "render/rig/rig.h"
 #include <algorithm>
 #include <cstring>
 namespace render::gel {
-struct Point {
-  int x, y;
-};
+using Point = rig::Point;
 inline uint16_t mix565(uint16_t old, uint16_t ink, int alpha) {
   // Round to the closest RGB565 channel value. At either end, the maximum
   // possible channel change is 2*63/255 < 0.5, so no blend is necessary.

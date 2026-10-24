@@ -545,17 +545,15 @@ uint32_t Behaviour::finishShown(uint32_t t) const { return finishOn(t) ? reactio
 // With no app the Mac's counts are stale, so only the unplugged
 // icon shows. While the brain's finish plays, whose
 // turn it was.
-render::Strip Behaviour::stripAt(uint32_t t) const {
+render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Reaction* finish) {
   render::Strip s;
-  s.noApp = noApp(t);
+  s.noApp = noApp;
   if (s.noApp) return s;
-  s.busy = model_.busy;
-  s.idle = model_.idle;
-  s.helpers = model_.helpers;
-  if (model_.attn) s.agent = model_.agent, s.project = model_.project, s.name = model_.name, s.more = model_.more;
-  if (finishOn(t)) {
-    s.doneAgent = reaction_.agent, s.doneThread = reaction_.thread, s.doneOutcome = reaction_.outcome;
-  }
+  s.busy = m.busy;
+  s.idle = m.idle;
+  s.helpers = m.helpers;
+  if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
+  if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
   return s;
 }
 
@@ -563,25 +561,18 @@ render::Strip Behaviour::stripAt(uint32_t t) const {
 // one, at the exact millisecond it did: a message's, or a time-based
 // change's that advance stops at (no app, a finish ending).
 void Behaviour::followLane(uint32_t t) {
-  const render::Strip s = stripAt(t);
-  if (s.shows()) {
-    kept_ = s;
-    const char* const names[] = {s.agent, s.project, s.name, s.doneAgent, s.doneThread};
-    const char** kept[] = {&kept_.agent, &kept_.project, &kept_.name, &kept_.doneAgent, &kept_.doneThread};
-    for (int i = 0; i < 5; ++i)
-      if (names[i]) copyStr(keptNames_[i], sizeof(keptNames_[i]), names[i]), *kept[i] = keptNames_[i];
-  }
-  if (s.shows() == laneShown_) return;
-  lane_.advance(std::min(t - laneAt_, render::rig::kLayerFadeMs));
-  lane_.retarget(s.shows() ? 1000 : 0);
-  laneShown_ = s.shows(), laneAt_ = t;
+  const bool shows = stripAt(t).shows();
+  if (shows) laneModel_ = model_, laneFinish_ = reaction_, laneNoApp_ = noApp(t), laneFinishes_ = finishOn(t);
+  lane_.retarget(shows ? 1000 : 0, t);
 }
 
 render::Strip Behaviour::strip(uint32_t t) const {
-  render::rig::Ramp ramp = lane_;
-  ramp.advance(std::min(t - laneAt_, render::rig::kLayerFadeMs));
-  render::Strip s = laneShown_ ? stripAt(t) : ramp.value() ? kept_ : render::Strip{};
-  s.opacity = ramp.value();
+  render::Strip s;
+  if (lane_.target())
+    s = stripAt(t);
+  else if (lane_.value(t))
+    s = stripOf(laneModel_, laneNoApp_, laneFinishes_ ? &laneFinish_ : nullptr);
+  s.opacity = lane_.value(t);
   return s;
 }
 

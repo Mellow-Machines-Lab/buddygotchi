@@ -38,6 +38,12 @@ RigFace at(Mood m, uint32_t t = 0) {
   f.advanceTo(t);
   return f;
 }
+// Where the body is now.
+rig::Anchors anchors(const RigFace& f) {
+  rig::Anchors a;
+  f.frame(0, false, {}, {}, &a);
+  return a;
+}
 // The part of a frame of this kind, or nullptr.
 const Placed* find(const RigFrame& f, int kind, int nth = 0) {
   for (int i = 0; i < f.count; ++i)
@@ -138,7 +144,7 @@ static void test_a_press_squashes_and_a_stroke_leans() {
   for (int x = 110; x <= 200; x += 10) f.finger(true, x, 120);
   f.finger(false, 0, 0);
   f.advanceTo(160);
-  TEST_ASSERT_TRUE(f.anchors().crown.x > RigFace::restAnchors(Mood::kCalm).crown.x);  // its top leans right
+  TEST_ASSERT_TRUE(anchors(f).crown.x > anchors(at(Mood::kCalm)).crown.x);  // its top leans right
   f.advanceTo(3000);
   TEST_ASSERT_TRUE(f.frame(0, false) == at(Mood::kCalm, 3000).frame(0, false));
 }
@@ -152,17 +158,18 @@ static void test_talking_shows_the_o_in_the_mouths_place() {
   TEST_ASSERT_EQUAL_INT(sceneInk(1), f.talkInk);
 }
 
-// The anchors at rest are the mood's; a lift raises them with the face.
+// The anchors at rest are the mood's pose's; a press moves them with the
+// face.
 static void test_the_anchors_ride_the_face() {
   RigFace f = at(Mood::kHappy);
-  const rig::Anchors rest = RigFace::restAnchors(Mood::kHappy), now = f.anchors();
-  TEST_ASSERT_EQUAL_INT(rest.brimF.y, now.brimF.y);
-  TEST_ASSERT_EQUAL_INT(rest.handF.y, now.handF.y);
+  const RigFace::Pose& rest = *RigFace::pose(Mood::kHappy);
+  TEST_ASSERT_EQUAL_INT(rest.brim.y, anchors(f).brimF.y);
+  TEST_ASSERT_EQUAL_INT(rest.hand.y, anchors(f).handF.y);
   const faces::Part& eye = faces::kParts[pixelIndex(Mood::kHappy)][faces::kPartEyeL];
-  TEST_ASSERT_EQUAL_INT(eye.y + eye.y0, rest.brimF.y);  // the top of its eyes
-  f.finger(true, 160, 120);                             // a press: the face squashes down, and its brim with it
+  TEST_ASSERT_EQUAL_INT(eye.y + eye.y0, rest.brim.y);  // the top of its eyes
+  f.finger(true, 160, 120);                            // a press: the face squashes down, and its brim with it
   f.advanceTo(60);
-  TEST_ASSERT_TRUE(f.anchors().brimF.y > rest.brimF.y);
+  TEST_ASSERT_TRUE(anchors(f).brimF.y > rest.brim.y);
 }
 
 // A design whose face is its mood's resting face (facegen's rig_face): its

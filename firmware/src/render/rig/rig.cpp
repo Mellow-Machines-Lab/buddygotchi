@@ -2,8 +2,6 @@
 
 #include <cstring>
 
-#include "render/maths.h"
-
 namespace render::rig {
 
 int eased(Ease e, int t, int ms) {
@@ -27,24 +25,6 @@ int sample(const Track& track, uint32_t local) {
   return keys[keys.count - 1].value;
 }
 
-int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int max) {
-  int n = 0;
-  if (!clip.cues.count || !after(to, from)) return 0;
-  // Each loop's start from the one `from` is in; a clip that doesn't loop
-  // has only its first.
-  for (uint32_t start = clip.loop ? from - from % clip.ms : 0; after(to, start); start += clip.ms) {
-    for (const Cue& cue : clip.cues) {
-      const uint32_t at = start + cue.ms;
-      if (!after(from, at) && after(to, at)) {
-        if (n == max) return n;
-        out[n++] = cue.name;
-      }
-    }
-    if (!clip.loop) break;
-  }
-  return n;
-}
-
 namespace {
 template <class T, class Match>
 const T* find(const List<T>& list, Match match) {
@@ -63,8 +43,17 @@ const Clip* Rig::clip(const char* id) const {
 const Look* Rig::look(SceneState state) const {
   return find(looks, [&](const Look& l) { return l.state == state; });
 }
-const Accessory* Rig::accessory(Outfit outfit) const {
-  return find(accessories, [&](const Accessory& a) { return a.outfit == outfit; });
+
+Hermite Ramp::at(uint32_t t) const {
+  if (!within(t, start_, kFadeMs)) return {to_, 0};
+  const Hermite h = hermite(from_, tangent_, to_, int(t - start_) * 1024 / int(kFadeMs));
+  return {clamp(h.value, 0, 1000), h.slope};
+}
+
+void Ramp::retarget(int to, uint32_t t) {
+  if (to == to_) return;
+  const Hermite h = at(t);
+  from_ = h.value, tangent_ = h.slope, to_ = to, start_ = t;
 }
 
 }  // namespace render::rig

@@ -58,9 +58,8 @@ STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
 FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
-# The rig's channels and the outfits the tags call for, as the firmware has them.
+# The rig's channels, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
-TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
 # The universal moods' one list, which the app's pack loader holds too.
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
@@ -178,7 +177,6 @@ constexpr const char* kPackVersion = {json.dumps(character["version"])};
 
 
 EASES = {"linear": "kLinear", "in": "kIn", "out": "kOut", "inout": "kInOut"}
-ANCHORS = {"crown": "kCrown", "brim": "kBrim", "hands": "kHands", "eyes": "kEyes"}
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]*")
 # One file's rows in a List (rig.h): at most this many.
 MOST = 255
@@ -253,16 +251,6 @@ def rig_channels(source: Path = RIG_H) -> dict[str, tuple[int, int, int]]:
     return {name: (int(lo), int(hi), int(rest)) for name, lo, hi, rest in rows}
 
 
-def outfits(source: Path = TAGS_H) -> dict[str, str]:
-    """The outfits render::outfitFor picks from, by their names in a pack's
-    files, each with its enumerator: {"witch_hat": "kWitchHat", ...}."""
-    match = re.search(r"enum class Outfit : uint8_t \{([^}]*)\}", source.read_text())
-    if not match:
-        raise SystemExit(f"charactergen: no Outfit in {source}")
-    names = [e for e in re.findall(r"\bk\w+", match.group(1)) if e != "kNone"]
-    return {re.sub(r"(?<!^)(?=[A-Z])", "_", e[1:]).lower(): e for e in names}
-
-
 def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | None = None) -> tuple[dict, list[str]]:
     """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
     wrong with it, each problem with its file and key. Every file is
@@ -270,7 +258,7 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     moods = universal_moods() if moods is None else moods
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
-    rig = {"eyes": [], "mouth": [], "scenes": [], "expressions": [], "clips": [], "looks": [], "accessories": []}
+    rig = {"expressions": [], "clips": [], "looks": []}
     # Each name a file may set, with its channel's range: eyeOpen sets both eyes.
     ranges = {**{c: (lo, hi) for c, (lo, hi, _) in channels.items()}, "eyeOpen": channels["eyeOpenL"][:2]}
 
@@ -295,25 +283,10 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
         return ["eyeOpenL", "eyeOpenR"] if name == "eyeOpen" else [name]
 
     rel = "expressions.json"
-    data = read(rel, {"styles": dict, "expressions": dict})
-    styles = check(rel, data.get("styles", {}), {"eyes": list, "mouth": list}, at="styles", required=("eyes", "mouth") if data else ())
-    for slot, names in styles.items():
-        if not (all(A_NAME.test(n) for n in names) and 0 < len(names) == len(set(names)) <= MOST):
-            fail(rel, f"styles.{slot}", "isn't a list of names, each once")
-            names = []
-        rig[slot] = names
-    pose = {**ranges, "eyes": tuple(rig["eyes"]), "mouth": tuple(rig["mouth"])}
-    for mood, values in check(rel, data.get("expressions", {}), {m: dict for m in moods}, at="expressions", unknown="isn't a mood").items():
-        where, said = f"expressions.{mood}", {}
-        for key, value in check(rel, values, pose, at=where).items():
-            if key in ("eyes", "mouth"):
-                continue
-            if any(c in said for c in named(key)):
-                fail(rel, f"{where}.{key}", "sets a channel twice")
-            else:
-                said.update({c: value for c in named(key)})
-        rig["expressions"].append({"mood": mood, "values": [said.get(c, rest) for c, (_, _, rest) in channels.items()],
-                                   **{k: rig[k].index(values[k]) if values.get(k) in rig[k] else 0 for k in ("eyes", "mouth")}})
+    for mood, styles in read(rel, {m: dict for m in moods}, unknown="isn't a mood").items():
+        styles = check(rel, styles, {"eyes": A_NAME, "mouth": A_NAME}, at=mood, required=("eyes", "mouth"))
+        if len(styles) == 2:
+            rig["expressions"].append({"mood": mood, **styles})
 
     clips = sorted((folder / "clips").glob("*.json")) if (folder / "clips").is_dir() else []
     if len(clips) > MOST:
@@ -322,12 +295,11 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
         rel = f"clips/{path.name}"
         if not NAME.fullmatch(path.stem):
             fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
-        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict, "cues": list},
-                    required=("ms",))
+        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict}, required=("ms",))
         if "ms" not in clip:
             continue
         ms, loop, additive = clip["ms"], clip.get("loop", False), clip.get("additive", True)
-        tracks, cues = [], []
+        tracks = []
         for name, keys in check(rel, clip.get("tracks", {}), {c: list for c in ranges}, at="tracks", unknown="isn't a channel").items():
             where = f"tracks.{name}"
             if any(c == done for c in named(name) for done, _ in tracks):
@@ -355,38 +327,22 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
             if loop and rows and (rows[0][0], rows[-1][0], rows[-1][1]) != (0, ms, rows[0][1]):
                 fail(rel, where, "loops, so it starts at 0 and ends at ms on the value it started on")
             tracks += [(c, rows) for c in named(name)]
-        for i, cue in enumerate(clip.get("cues", [])):
-            if i == MOST or not (isinstance(cue, list) and len(cue) == 2 and whole(cue[0], 0, ms - 1) and A_NAME.test(cue[1])):
-                fail(rel, f"cues[{i}]", f"isn't [ms before {ms}, a name] (at most {MOST} of them)")
-            else:
-                cues.append((cue[0], cue[1]))
-        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks, "cues": sorted(cues)})
+        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks})
 
     rel, ids = "looks.json", [c["id"] for c in rig["clips"]]
-    look_schema = {"clip": Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids),
-                   "scene": Rule("isn't a name, or null", lambda v: v is None or A_NAME.test(v)), "dresses": bool}
+    look_schema = {"clip": Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)}
     for state, look in read(rel, {s: dict for s in states}, unknown="isn't a state the board has").items():
-        look = check(rel, look, look_schema, at=state)
-        clip, scene = look.get("clip"), look.get("scene")
+        clip = check(rel, look, look_schema, at=state).get("clip")
         if clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
             fail(rel, f"{state}.clip", f"{clip} doesn't loop")
-        if scene and scene not in rig["scenes"]:
-            rig["scenes"].append(scene)
-        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip),
-                             "scene": rig["scenes"].index(scene) + 1 if scene else 0, "dresses": look.get("dresses", False)})
-
-    rel, worn = "accessories.json", outfits()
-    for outfit, accessory in read(rel, {o: dict for o in worn}, unknown=f"isn't an outfit ({', '.join(worn)})").items():
-        accessory = check(rel, accessory, {"anchor": tuple(ANCHORS), "art": A_NAME}, at=outfit, required=("anchor",))
-        rig["accessories"].append({"outfit": worn[outfit], "anchor": ANCHORS.get(accessory.get("anchor")),
-                                   "art": accessory.get("art", outfit)})
+        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip)})
     return rig, problems
 
 
 def rig_h(pack: Path, rig: dict) -> str:
     """The firmware's rig_tables.h, which staging writes from a pack's rig/,
     read_rig() having checked it: its rows, then kRig, which lists them."""
-    out, keys, tracks, cues = [], [], [], []
+    out, keys, tracks, clips = [], [], [], []
 
     def table(kind, name, rows):
         if rows:
@@ -396,33 +352,20 @@ def rig_h(pack: Path, rig: dict) -> str:
     def run(name, start, count):
         return f"{{{name} + {start}, {count}}}" if count else "{}"
 
-    def enum(name):
-        return "k" + name[0].upper() + name[1:]
-
-    clips = []
     for c in rig["clips"]:
-        first, cue = len(tracks), len(cues)
+        first = len(tracks)
         for channel, rows in c["tracks"]:
-            tracks.append(f"{{Channel::{enum(channel)}, {run('kKeys', len(keys), len(rows))}}}")
+            tracks.append(f"{{Channel::k{channel[0].upper()}{channel[1:]}, {run('kKeys', len(keys), len(rows))}}}")
             keys += [f"{{{t}, {v}, Ease::{EASES[e]}}}" for t, v, e in rows]
-        cues += [f"{{{t}, {json.dumps(name)}}}" for t, name in c["cues"]]
         clips.append(f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
-                     f"{run('kTracks', first, len(c['tracks']))}, {run('kCues', cue, len(c['cues']))}}}")
-    lists = [table("const char*", "kEyeStyles", [json.dumps(s) for s in rig["eyes"]]),
-             table("const char*", "kMouthStyles", [json.dumps(s) for s in rig["mouth"]]),
-             table("const char*", "kScenes", [json.dumps(s) for s in rig["scenes"]])]
+                     f"{run('kTracks', first, len(c['tracks']))}}}")
     table("Key", "kKeys", keys)
     table("Track", "kTracks", tracks)
-    table("Cue", "kCues", cues)
-    lists += [table("Expression", "kExpressions",
-                    [f"{{{json.dumps(e['mood'])}, {{{{{', '.join(map(str, e['values']))}}}}}, {e['eyes']}, {e['mouth']}}}"
-                     for e in rig["expressions"]]),
-              table("Clip", "kClips", clips),
-              table("Look", "kLooks", [f"{{SceneState::{camel(l['state'])}, "
-                                       f"{'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}, "
-                                       f"{l['scene']}, {str(l['dresses']).lower()}}}" for l in rig["looks"]]),
-              table("Accessory", "kAccessories", [f"{{Outfit::{a['outfit']}, Anchor::{a['anchor']}, {json.dumps(a['art'])}}}"
-                                                  for a in rig["accessories"]])]
+    lists = [table("Expression", "kExpressions", ["{" + ", ".join(json.dumps(e[k]) for k in ("mood", "eyes", "mouth")) + "}"
+                                                  for e in rig["expressions"]]),
+             table("Clip", "kClips", clips),
+             table("Look", "kLooks", [f"{{SceneState::{camel(l['state'])}, "
+                                      f"{'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}}}" for l in rig["looks"]])]
     body = "\n".join(out)
     return f"""// Generated by characters/charactergen.py from characters/{pack.name}/rig/. Do not edit.
 // The pack's rig (characters/CHARACTER.md §15): its rows, and kRig.
@@ -491,7 +434,7 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
     ref = fields(rel, raw, {"kind": KINDS, "note": TEXT, "status": STATUSES, "became": list, "show": dict,
                             "frames": (0, None), "ms": (0, None)}, problems, required=("kind", "note", "status"))
     made = {"clip": {c["id"] for c in rig["clips"]}, "expression": {e["mood"] for e in rig["expressions"]},
-            "art": set(rig["eyes"] + rig["mouth"] + rig["scenes"]) | {a["art"] for a in rig["accessories"]}}
+            "art": {e[k] for e in rig["expressions"] for k in ("eyes", "mouth")}}
     for i, b in enumerate(ref.get("became", [])):
         b = fields(rel, b, {"what": BECOMES, "id": A_NAME}, problems, at=f"became[{i}]", required=("what", "id"))
         if len(b) == 2 and b["id"] not in made[b["what"]]:

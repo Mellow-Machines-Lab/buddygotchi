@@ -26,64 +26,13 @@ constexpr int kLeanPer = 8000, kGazePx = 8, kTiltPx = 10;
 // An eye this little open, of its art, shows its shut art.
 constexpr int kShutBelow = kOne / 3;
 
-int lerp(int a, int b, int q) { return a + (b - a) * q / kOne; }
 int scaled(int v, int s) { return (v * s + kOne / 2) >> 10; }
-
-// Each style of the rig's, as the part style it names (a drawn mood's,
-// faces::kMoodNames), and the pose of the first expression wearing it,
-// which its art is drawn at; rest for one no expression wears.
-constexpr int kMaxStyles = 32;
-struct Styles {
-  int8_t part[2][kMaxStyles];
-  Channels pose[2][kMaxStyles];
-};
-const Styles& styles() {
-  static const Styles s = [] {
-    Styles s{};
-    for (int slot = 0; slot < 2; ++slot) {
-      const rig::List<const char*>& names = slot ? kRig.mouthStyles : kRig.eyeStyles;
-      for (int i = 0; i < kMaxStyles; ++i) {
-        s.part[slot][i] = -1;
-        s.pose[slot][i] = rig::kRest;
-        for (int m = 0; i < names.count && m < faces::kMoodCount; ++m)
-          if (!std::strcmp(names[i], faces::kMoodNames[m])) s.part[slot][i] = int8_t(m);
-      }
-      for (int e = kRig.expressions.count - 1; e >= 0; --e) {
-        const rig::Expression& x = kRig.expressions[e];
-        const int i = slot ? x.mouth : x.eyes;
-        if (i < kMaxStyles) s.pose[slot][i] = x.values;
-      }
-    }
-    return s;
-  }();
-  return s;
-}
-int partOf(int slot, int style) { return style < kMaxStyles ? styles().part[slot][style] : -1; }
-
-// The pose under the mixer's channels: its styles' poses, blended as they
-// cross-fade (the eyes' for every channel but the mouth's).
-Channels poseUnder(const rig::Mixer& m) {
-  Channels p;
-  const Styles& s = styles();
-  for (int c = 0; c < rig::kChannelCount; ++c) {
-    const bool lips = c >= int(Channel::kMouthWidth) && c <= int(Channel::kMouthOpen);
-    const rig::Style& st = lips ? m.mouth() : m.eyes();
-    const Channels& a = s.pose[lips][std::min<int>(st.index, kMaxStyles - 1)];
-    const Channels& b = s.pose[lips][std::min<int>(st.next, kMaxStyles - 1)];
-    p.v[c] = int16_t(a.v[c] + (b.v[c] - a.v[c]) * st.mix / 1000);
-  }
-  return p;
-}
-// The mixer's channels' difference from the pose under them.
-Channels deviation(const rig::Mixer& m, const Channels& under) {
-  Channels d;
-  for (int c = 0; c < rig::kChannelCount; ++c) d.v[c] = int16_t(m.channels().v[c] - under.v[c]);
-  return d;
-}
+// A channel's offset from rest, in thousandths, as a scale of the art.
+int scale(int offset) { return kOne + offset * kOne / 1000; }
 
 // The body: the whole face scaled about the ground's middle (1024ths),
-// moved and leaned, from the channels' difference from the pose, and moved
-// as its design moves it.
+// moved and leaned, from the channels' offsets from rest, and moved as its
+// design moves it.
 struct Body {
   int sx = kOne, sy = kOne, dx = 0, dy = 0, lean = 0;
   Body(const Channels& d, int press, FaceMove m)
@@ -115,8 +64,8 @@ struct Body {
 // moved and scaled toward b's box. Without b, as its art has it.
 Placed morph(int a, int b, int kind, int q) {
   const faces::Part &A = faces::kParts[a][kind], &B = faces::kParts[b][kind];
-  const int x0 = lerp(A.x + A.x0, B.x + B.x0, q), x1 = lerp(A.x + A.x1, B.x + B.x1, q);
-  const int y0 = lerp(A.y + A.y0, B.y + B.y0, q), y1 = lerp(A.y + A.y1, B.y + B.y1, q);
+  const int x0 = lerp(A.x + A.x0, B.x + B.x0, q, kOne), x1 = lerp(A.x + A.x1, B.x + B.x1, q, kOne);
+  const int y0 = lerp(A.y + A.y0, B.y + B.y0, q, kOne), y1 = lerp(A.y + A.y1, B.y + B.y1, q, kOne);
   Placed p;
   p.style = uint8_t(a), p.kind = uint8_t(kind);
   p.sx = int16_t((x1 - x0) * kOne / std::max(1, A.x1 - A.x0));
@@ -128,27 +77,22 @@ Placed morph(int a, int b, int kind, int q) {
 // A style fader's drawn styles: the one fading out (or the only one) and
 // the one fading in, and each one's share of `outer`.
 struct Faded {
-  int n = 0, part[2] = {}, other[2] = {}, q[2] = {};
+  int n = 1, part[2] = {}, other[2] = {}, q[2] = {};
   Dither dither[2];
 };
-Faded faded(int slot, const rig::Style& s, Dither outer) {
+Faded faded(const rig::Style& s, Dither outer) {
   Faded f;
-  const int a = partOf(slot, s.index), b = partOf(slot, s.next);
-  if (a < 0 || b < 0) return f;
+  f.part[0] = f.other[1] = s.index, f.other[0] = f.part[1] = s.next, f.dither[0] = outer;
+  if (s.index == s.next) return f;
   const int q = s.mix * kOne / 1000;
-  if (a == b || s.index == s.next) {
-    f.n = 1, f.part[0] = f.other[0] = a, f.dither[0] = outer;
-    return f;
-  }
-  f.n = 2;
-  f.part[0] = a, f.other[0] = b, f.q[0] = q, f.dither[0] = Dither::fade(s.mix, false).within(outer);
-  f.part[1] = b, f.other[1] = a, f.q[1] = kOne - q, f.dither[1] = Dither::fade(s.mix, true).within(outer);
+  f.n = 2, f.q[0] = q, f.q[1] = kOne - q;
+  f.dither[0] = Dither::fade(s.mix, false).within(outer), f.dither[1] = Dither::fade(s.mix, true).within(outer);
   return f;
 }
 
 rig::Anchors anchorsOf(const rig::Style& eyes, const Body& body) {
-  const Faded f = faded(0, eyes, {});
-  // The eyes' boxes, as they show (the one coming in's, as it fades in).
+  const Faded f = faded(eyes, {});
+  // The eyes' boxes, as they show (the one going out's, as it morphs).
   const Placed l = morph(f.part[0], f.other[0], faces::kPartEyeL, f.q[0]);
   const Placed r = morph(f.part[0], f.other[0], faces::kPartEyeR, f.q[0]);
   const faces::Part &L = faces::kParts[f.part[0]][faces::kPartEyeL], &R = faces::kParts[f.part[0]][faces::kPartEyeR];
@@ -157,12 +101,17 @@ rig::Anchors anchorsOf(const rig::Style& eyes, const Body& body) {
   rig::Anchors a;
   a.crown = a.brimF = body.at(kMiddle, top);
   a.brimL = body.at(left, top), a.brimR = body.at(right, top);
-  a.handL = body.at(l.x, kGround), a.handF = body.at(kMiddle, kGround), a.handR = body.at(r.x, kGround);
+  a.handF = body.at(kMiddle, kGround);
   a.eyeL = body.at(l.x, l.y), a.eyeR = body.at(r.x, r.y);
   return a;
 }
 
-const rig::Expression kAtRest = {"", rig::kRest, 0, 0};
+// The drawn mood a style names, -1 for none.
+int drawn(const char* style) {
+  for (int i = 0; i < faces::kMoodCount; ++i)
+    if (!std::strcmp(style, faces::kMoodNames[i])) return i;
+  return -1;
+}
 
 }  // namespace
 
@@ -171,31 +120,37 @@ bool RigFrame::operator==(const RigFrame& o) const {
   return !std::memcmp(this, &o, sizeof o);
 }
 
-const rig::Expression* RigFace::pose(Mood m) {
+const RigFace::Pose* RigFace::pose(Mood m) {
   static const auto poses = [] {
     struct Poses {
-      const rig::Expression* of[kMoodCount];
+      Pose of[kMoodCount];
+      bool has[kMoodCount];
     } p{};
     for (int i = 0; i < kMoodCount; ++i) {
       const rig::Expression* e = kRig.expression(kMoodNames[i]);
-      const int drawn = pixelIndex(Mood(i));
-      if (!e && drawn >= 0) e = kRig.expression(faces::kMoodNames[drawn]);
-      p.of[i] = e && partOf(0, e->eyes) >= 0 && partOf(1, e->mouth) >= 0 ? e : nullptr;
+      const int wears = pixelIndex(Mood(i));
+      if (!e && wears >= 0) e = kRig.expression(faces::kMoodNames[wears]);
+      const int eyes = e ? drawn(e->eyes) : -1, mouth = e ? drawn(e->mouth) : -1;
+      if (eyes < 0 || mouth < 0) continue;
+      const rig::Anchors rest = anchorsOf({uint8_t(eyes), uint8_t(eyes), 0}, Body(Channels{}, 0, {}));
+      p.of[i] = {uint8_t(eyes), uint8_t(mouth), rest.brimF, rest.handF};
+      p.has[i] = true;
     }
     return p;
   }();
-  return int(m) < kMoodCount ? poses.of[int(m)] : nullptr;
+  return int(m) < kMoodCount && poses.has[int(m)] ? &poses.of[int(m)] : nullptr;
 }
 
 void RigFace::reset(Mood m, SceneState base, uint32_t t) {
+  const Pose* p = pose(m);
   const rig::Look* look = kRig.look(base);
-  mixer_.reset(pose(m) ? *pose(m) : kAtRest, look ? look->clip : nullptr);
+  mixer_.reset(p ? p->eyes : 0, p ? p->mouth : 0, look ? look->clip : nullptr);
   at_ = t;
   finger_ = false;
 }
 
 void RigFace::setMood(Mood m) {
-  if (pose(m)) mixer_.setMood(*pose(m));
+  if (const Pose* p = pose(m)) mixer_.setStyles(p->eyes, p->mouth);
 }
 
 void RigFace::setLook(SceneState base) {
@@ -224,31 +179,29 @@ void RigFace::finger(bool down, int x, int) {
   }
 }
 
-RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move) const {
-  const Channels& ch = mixer_.channels();
-  const Channels under = poseUnder(mixer_), dev = deviation(mixer_, under);
-  const Body body(dev, dy, move);
+RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move, rig::Anchors* anchors) const {
+  Channels off;  // the channels' offsets from rest, where the art is drawn
+  for (int c = 0; c < rig::kChannelCount; ++c) off.v[c] = int16_t(mixer_.channels().v[c] - rig::kRest.v[c]);
+  const Body body(off, dy, move);
   RigFrame f;
   auto add = [&](const Placed& p) {
     if (f.count < RigFrame::kMaxParts) f.parts[f.count++] = body.place(p);
   };
-  // Each eye: closed onto its pivot and sized by how open and how big it is
-  // of its art's pose; moved by the gaze and the tilt.
-  const Faded eyes = faded(0, mixer_.eyes(), d);
-  const int size =
-      clamp(ch[Channel::kEyeSize] * kOne / std::max<int>(under[Channel::kEyeSize], 1), kOne / 2, kOne * 3 / 2);
+  // Each eye: closed onto its pivot and sized by how open and how big it
+  // is; moved by the gaze and the tilt.
+  const Faded eyes = faded(mixer_.eyes(), d);
+  const int size = scale(off[Channel::kEyeSize]);
   for (int i = 0; i < eyes.n; ++i) {
     for (int side = 0; side < 2; ++side) {
-      const Channel openness = side ? Channel::kEyeOpenR : Channel::kEyeOpenL;
-      const int open = ch[openness] * kOne / std::max<int>(under[openness], 1);
+      const int open = scale(off[side ? Channel::kEyeOpenR : Channel::kEyeOpenL]);
       const bool shut = open < kShutBelow;
       const int kind = (shut ? faces::kPartShutL : faces::kPartEyeL) + side;
       Placed p = morph(eyes.part[i], eyes.other[i], kind, eyes.q[i]);
       p.sx = int16_t(scaled(p.sx, size));
-      p.sy = int16_t(scaled(scaled(p.sy, size), shut ? kOne : std::min(open, kOne * 5 / 4)));
-      p.x = int16_t(p.x + move.ex + dev[Channel::kGazeX] * kGazePx / 1000);
-      p.y = int16_t(p.y + move.ey + dev[Channel::kGazeY] * kGazePx / 1000 +
-                    (side ? 1 : -1) * dev[Channel::kTilt] * kTiltPx / 1000);
+      p.sy = int16_t(scaled(scaled(p.sy, size), shut ? kOne : open));
+      p.x = int16_t(p.x + move.ex + off[Channel::kGazeX] * kGazePx / 1000);
+      p.y = int16_t(p.y + move.ey + off[Channel::kGazeY] * kGazePx / 1000 +
+                    (side ? 1 : -1) * off[Channel::kTilt] * kTiltPx / 1000);
       p.dither = eyes.dither[i];
       add(p);
     }
@@ -258,10 +211,9 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move) const {
   }
   // The mouth, widened and opened from the art's, or while talking the "o"
   // at its middle, in its ink.
-  const Faded mouth = faded(1, mixer_.mouth(), d);
-  const int wide =
-      clamp(ch[Channel::kMouthWidth] * kOne / std::max<int>(under[Channel::kMouthWidth], 1), kOne / 2, kOne * 3 / 2);
-  const int open = clamp(kOne + dev[Channel::kMouthOpen] * kOne / 2000, kOne / 2, kOne * 3 / 2);
+  const Faded mouth = faded(mixer_.mouth(), d);
+  const int wide = std::max(scale(off[Channel::kMouthWidth]), kOne / 2);
+  const int open = kOne + off[Channel::kMouthOpen] * kOne / 2000;
   for (int i = 0; i < mouth.n; ++i) {
     Placed p = morph(mouth.part[i], mouth.other[i], faces::kPartMouth, mouth.q[i]);
     p.sx = int16_t(scaled(p.sx, wide)), p.sy = int16_t(scaled(p.sy, open));
@@ -277,18 +229,8 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move) const {
       f.talk = d;
     }
   }
+  if (anchors) *anchors = anchorsOf(mixer_.eyes(), body);
   return f;
-}
-
-rig::Anchors RigFace::anchors(FaceMove move) const {
-  return anchorsOf(mixer_.eyes(), Body(deviation(mixer_, poseUnder(mixer_)), 0, move));
-}
-
-rig::Anchors RigFace::restAnchors(Mood m) {
-  const rig::Expression* p = pose(m);
-  const uint8_t eyes = p ? p->eyes : 0;
-  Channels none{};
-  return anchorsOf({eyes, eyes, 0}, Body(none, 0, {}));
 }
 
 void drawRig(Canvas& c, const RigFrame& f) {

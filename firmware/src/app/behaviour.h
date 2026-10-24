@@ -14,7 +14,7 @@
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
-#include "render/rig/layers.h"
+#include "render/rig/rig.h"
 #include "render/screens.h"
 #include "voice/player.h"
 
@@ -221,8 +221,8 @@ class Behaviour {
   bool noApp(uint32_t t) const;
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
-  // The lane's strip at t, at its opacity: easing in over the layers' fade
-  // (render/rig/layers.h) from when it came and out from when it went, still
+  // The lane's strip at t, at its opacity: easing in over the rig's fade
+  // (render::rig::Ramp) from when it came and out from when it went, still
   // showing what it last showed, so how often frames are drawn doesn't
   // change one. While it shows, what it shows changes at once.
   render::Strip strip(uint32_t t) const;
@@ -361,8 +361,10 @@ class Behaviour {
   bool exprOn(uint32_t t) const;
   bool signOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
-  // What the strip shows at t, whole.
-  render::Strip stripAt(uint32_t t) const;
+  // What the strip shows: what the Mac last said, with no app or not, and
+  // the brain's finish playing (null for none), whole.
+  static render::Strip stripOf(const Model& m, bool noApp, const Reaction* finish);
+  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t) ? &reaction_ : nullptr); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
   void followLane(uint32_t t);
@@ -410,14 +412,12 @@ class Behaviour {
   uint32_t alertAt_ = 0;
   uint32_t modelT_ = 0;
   uint32_t reactionSeq_ = 0;
-  // The lane: whether the strip showed at the last change, when it last
-  // came or went, its opacity's ramp from then, and the last strip shown,
-  // its names copied.
-  bool laneShown_ = false;
-  uint32_t laneAt_ = 0;
+  // The lane: its opacity's ramp, and what the strip showed from at the
+  // last change while it showed, copied, which it shows as it fades out.
   render::rig::Ramp lane_;
-  render::Strip kept_;
-  char keptNames_[5][48] = {};
+  Model laneModel_;
+  Reaction laneFinish_;
+  bool laneNoApp_ = false, laneFinishes_ = false;
 };
 
 }  // namespace app

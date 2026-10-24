@@ -33,9 +33,9 @@ AMOLED's build stops at the start and says so.
 Under the faces, `src/render/` is portable C++ with no display library,
 which the boards, the native simulator and the WebAssembly one all
 build. Its `rig/` is the engine both faces are moving onto: the rig's
-channels and the types of a pack's tables (`rig.h`), the mixer that
-plays a mood, a look and reactions into the channels each frame
-(`mixer.h`), and the layers and anchors a face draws (`layers.h`).
+channels, the types of a pack's tables, the ramp its fades ease on and
+the anchors a face reports (`rig.h`), and the mixer that plays a mood's
+styles, a look and reactions into the channels each frame (`mixer.h`).
 Staging writes the pack's rig as `rig_tables.h`
 ([CHARACTER.md](../characters/CHARACTER.md) §15). The pixel face draws
 its face from it, with its moods' own art as parts, wherever a design's

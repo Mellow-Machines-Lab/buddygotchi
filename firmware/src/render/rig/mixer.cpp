@@ -1,9 +1,8 @@
 #include "render/rig/mixer.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <initializer_list>
-
-#include "render/maths.h"
 
 namespace render::rig {
 
@@ -26,29 +25,27 @@ void Mixer::Fader::advance(uint32_t dt) {
     style.next = want;
     age = 0;
   }
-  age = age + dt < kStyleMs ? age + dt : kStyleMs;
-  style.mix = int16_t(ease(int(age), int(kStyleMs)) * 1000 / 1024);
+  age = age + dt < kFadeMs ? age + dt : kFadeMs;
+  style.mix = int16_t(ease1000(int(age), int(kFadeMs)));
   // Whole: the next style is the one drawn. A newer one fades in after.
-  if (age == kStyleMs) style = {style.next, style.next, 0};
+  if (age == kFadeMs) style = {style.next, style.next, 0};
 }
 
-void Mixer::reset(const Expression& mood, const Clip* look) {
-  targets_ = mood.values;
-  for (int c = 0; c < kChannelCount; ++c) springs_[c] = {targets_.v[c] * 256, 0};
-  eyes_ = {{mood.eyes, mood.eyes, 0}, mood.eyes, 0};
-  mouth_ = {{mood.mouth, mood.mouth, 0}, mood.mouth, 0};
-  playing_ = cueCount_ = 0;
+void Mixer::reset(uint8_t eyes, uint8_t mouth, const Clip* look) {
+  for (int c = 0; c < kChannelCount; ++c) springs_[c] = {kRest.v[c] * 256, 0};
+  eyes_ = {{eyes, eyes, 0}, eyes, 0};
+  mouth_ = {{mouth, mouth, 0}, mouth, 0};
+  playing_ = 0;
   if (look) {
     start(*look, true);
-    plays_[0].in = kFadeMs;
+    plays_[0].in = kWeightMs;
   }
   mix();
 }
 
-void Mixer::setMood(const Expression& mood) {
-  targets_ = mood.values;
-  eyes_.want = mood.eyes;
-  mouth_.want = mood.mouth;
+void Mixer::setStyles(uint8_t eyes, uint8_t mouth) {
+  eyes_.want = eyes;
+  mouth_.want = mouth;
 }
 
 void Mixer::setLook(const Clip* clip) {
@@ -62,11 +59,6 @@ void Mixer::setLook(const Clip* clip) {
 }
 
 void Mixer::play(const Clip& clip) { start(clip, false); }
-
-void Mixer::cut() {
-  for (int i = 0; i < playing_; ++i)
-    if (!plays_[i].base && !plays_[i].cut) fadeOut(plays_[i]);
-}
 
 void Mixer::impulse(Channel channel, int velocity) {
   Spring& s = springs_[int(channel)];
@@ -93,7 +85,7 @@ void Mixer::fadeOut(Play& p) {
   p.out = 0;
 }
 
-uint32_t Mixer::fadeMs(const Clip& clip) { return std::min<uint32_t>(kFadeMs, clip.ms / 4); }
+uint32_t Mixer::fadeMs(const Clip& clip) { return std::min<uint32_t>(kWeightMs, clip.ms / 4); }
 
 int Mixer::weight(const Play& p) {
   const int fade = int(fadeMs(*p.clip));
@@ -104,30 +96,31 @@ int Mixer::weight(const Play& p) {
 }
 
 void Mixer::advance(uint32_t dt) {
-  cueCount_ = 0;
   int kept = 0;
   for (int i = 0; i < playing_; ++i) {
     Play p = plays_[i];
-    const uint32_t was = p.age;
     p.age += dt;
-    p.in = std::min(p.in + dt, kFadeMs);
-    if (p.cut) p.out = std::min(p.out + dt, kFadeMs);
-    if (!p.cut) cueCount_ += crossed(*p.clip, was, p.age, cues_ + cueCount_, kMaxCues - cueCount_);
+    p.in = std::min(p.in + dt, kWeightMs);
+    if (p.cut) p.out = std::min(p.out + dt, kWeightMs);
     if (p.clip->loop) p.age %= p.clip->ms;
     const bool over = (!p.clip->loop && p.age >= p.clip->ms) || (p.cut && p.out >= fadeMs(*p.clip));
     if (!over) plays_[kept++] = p;
   }
   playing_ = kept;
-  for (uint32_t left = dt; left;) {
-    const uint32_t h = std::min(left, kStepMs);
-    for (int c = 0; c < kChannelCount; ++c) {
-      Spring& s = springs_[c];
-      const int64_t rate = body(Channel(c)) ? kBodyRate : kFaceRate;
-      const int64_t a = rate * rate * (int64_t(targets_.v[c]) * 256 - s.x) - 2 * rate * s.v;
-      s.v = held(s.v + a * int64_t(h) / 1000);
-      s.x += int32_t(int64_t(s.v) * int64_t(h) / 1000);
+  for (int c = 0; c < kChannelCount; ++c) {
+    Spring& s = springs_[c];
+    const int32_t rest = kRest.v[c] * 256;
+    const int64_t rate = body(Channel(c)) ? kBodyRate : kFaceRate;
+    if (dt >= kSettledMs) s = {rest, 0};
+    // A step at a time while it moves; within half a unit of rest and all
+    // but still, it's at rest. |v| · h fits: v is held.
+    for (uint32_t left = dt; left && (s.v || s.x != rest);) {
+      const uint32_t h = std::min(left, kStepMs);
+      s.v = held(s.v + (rate * rate * (rest - s.x) - 2 * rate * s.v) * int64_t(h) / 1000);
+      s.x += s.v * int32_t(h) / 1000;
+      if (std::abs(s.x - rest) < 128 && std::abs(s.v) < 128) s = {rest, 0};
+      left -= h;
     }
-    left -= h;
   }
   eyes_.advance(dt);
   mouth_.advance(dt);
