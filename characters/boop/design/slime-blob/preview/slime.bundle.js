@@ -343,9 +343,12 @@ function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[]
     const ended=scenes.advance(dt,time,{grabActive:grab.active});
     if(ended){router.finish(ended);sync(time);}
     acting.advance(dt,motion.time,grab.active);
+    // Held, the pull follows the finger quickly; let go, it settles back on
+    // a softer spring, a wobble rather than a snap.
+    const [stiffness,damping]=grab.active?[256,8]:[100,10];
     for(let i=0;i<3;i++){
       const m=grab.pull[i];let left=dt;
-      while(left>0){const h=Math.min(left,1/240);m.v+=(256*(grab.target[i]-m.x)-8*m.v)*h;m.x+=m.v*h;left-=h;}
+      while(left>0){const h=Math.min(left,1/240);m.v+=(stiffness*(grab.target[i]-m.x)-damping*m.v)*h;m.x+=m.v*h;left-=h;}
       m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-6,6);
     }
     face.advance(dt);
@@ -737,7 +740,7 @@ const sceneConstants=Object.freeze({
   entryMs:240,recoveryMs:480,contactMs:120,cycleMs:Object.freeze([3200,3700,4200]),
   timingJitterMs:40,gainJitter:.10,activityFrequency:12,activityDamping:10,
   activityVelocity:1.2,activityBounds:Object.freeze({lean:.08,squash:.06,forward:.05}),
-  propFrequency:10,propDamping:14,propRampMs:200,hostLaneTop:.8,
+  propFrequency:10,propDamping:14,propRampMs:200,cardRevealMs:400,hostLaneTop:.8,
   poseBounds:Object.freeze([1.25,1.32,1.14,.72]),lifeBounds:Object.freeze([.24,.12,.23])
 });
 const implementedStates=Object.freeze(['no_app','asleep','idle','listening','starting','planning','working','terminal',
@@ -781,14 +784,17 @@ const mouthDimensions={
 };
 
 // CONTINUITY.md, Phase 1 channel bounds: each semantic control is a critically
-// damped spring (frequency 20, or 30 with reduced motion) that keeps its
-// velocity across retargets.
+// damped spring (frequency 20, or 30 with reduced motion; falling asleep has
+// its own, below) that keeps its velocity across retargets.
 const faceTransition=Object.freeze({durationMs:180,frequency:20,reducedFrequency:30});
 // CONTINUITY.md, Directed edge bridges: the drawn art's size ratios stay in
 // (0.75, 4/3), and at most four arts are drawn at once.
 const faceRender=Object.freeze({ratioLow:.75,ratioHigh:4/3,layers:4});
 // The shared sleeping face: the tired art, squashed to these dimensions.
 const sleepTarget=Object.freeze({eyeOpen:.004,mouthWidth:.018,curve:.008,cheekAlpha:0,tearAmount:0});
+// Falling asleep: the lids droop shut over a longer window, on a slower
+// spring, until the face wakes.
+const sleepTransition=Object.freeze({durationMs:480,frequency:8});
 const controlKeys=['eyeX','eyeY','eyeOpen','mouthY','mouthWidth','curve','cheekAlpha','tearAmount'];
 
 function faceTarget(profile) {
@@ -826,9 +832,10 @@ function createFace({profiles,initialEmotion,reduced}) {
     const sum=layers.reduce((total,layer)=>total+layer.weight,0);
     for(const layer of layers)layer.weight/=sum;
   }
-  // The window the arts cross over in, and how far into it they are.
-  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationMs};
-  function retarget({durationMs=faceTransition.durationMs}={}) {
+  // The window the arts cross over in, how far into it they are, and the
+  // controls' spring until the next.
+  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationMs,frequency:faceTransition.frequency};
+  function retarget({durationMs=faceTransition.durationMs,frequency=faceTransition.frequency}={}) {
     const artId=targetSleeping?'tired':targetId,sleeping=targetSleeping,s=transition.elapsedMs/transition.durationMs;
     target=dimensions(profiles,{artId,sleeping});
     for(const layer of layers){const {value,slope}=hermite(layer,s);Object.assign(layer,{from:value,tangent:slope*durationMs/transition.durationMs,to:0});}
@@ -841,7 +848,7 @@ function createFace({profiles,initialEmotion,reduced}) {
     layers=layers.filter(layer=>layer===top||layer.from>0||layer.tangent>0);
     if(layers.length>faceRender.layers)layers.splice(layers.indexOf(layers.slice(0,-1).reduce((a,b)=>b.from<a.from?b:a)),1);
     weigh(0);
-    transition={from:{...controls},to:{...target},elapsedMs:0,durationMs};
+    transition={from:{...controls},to:{...target},elapsedMs:0,durationMs,frequency};
   }
   function setMood(id,options) {
     if(id===targetId)return;
@@ -849,7 +856,7 @@ function createFace({profiles,initialEmotion,reduced}) {
   }
   function setSleeping(value) {
     value=Boolean(value);if(value===targetSleeping)return;
-    targetSleeping=value;retarget();
+    targetSleeping=value;retarget(value?sleepTransition:{});
   }
   // Each layer is drawn at the live ratio over its own size, so the arts
   // crossing over are drawn near one size while the controls move.
@@ -861,7 +868,7 @@ function createFace({profiles,initialEmotion,reduced}) {
   return {
     setMood,setSleeping,
     advance(dt) {
-      const frequency=reduced.matches?faceTransition.reducedFrequency:faceTransition.frequency;
+      const frequency=reduced.matches?faceTransition.reducedFrequency:transition.frequency;
       for(const key of controlKeys){
         let x=controls[key],v=velocity[key],left=dt;
         while(left>0){const h=Math.min(left,1/240);v+=(frequency*frequency*(target[key]-x)-2*frequency*v)*h;x+=v*h;left-=h;}
@@ -883,7 +890,7 @@ function createFace({profiles,initialEmotion,reduced}) {
   };
 }
 
-return {faceTransition,faceRender,sleepTarget,faceTarget,dimensions,sleepScale,softRatio,createFace};
+return {faceTransition,faceRender,sleepTarget,sleepTransition,faceTarget,dimensions,sleepScale,softRatio,createFace};
 },
 12:()=>{
 // CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
@@ -1264,9 +1271,9 @@ function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[]
   function recoveryFactor() {
     return phase==='recover'?smooth((recipe.duration-ageMs)/sceneConstants.recoveryMs):phase==='sustain'?0:1;
   }
-  // A card rises over the prop ramp from its reveal contact and fades in recovery.
+  // A card rises in over its own reveal from its reveal contact and fades in recovery.
   function cardReveal() {
-    return resultRevealed?smooth((ageMs-revealAt)/sceneConstants.propRampMs)*recoveryFactor():0;
+    return resultRevealed?smooth((ageMs-revealAt)/sceneConstants.cardRevealMs)*recoveryFactor():0;
   }
   function focus() {
     const progress=clamp(ageMs/recipe.duration,0,1);
@@ -1298,15 +1305,21 @@ function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[]
   function drawnFactor(name,content) {
     return name==='result'||name==='start'?content.reveal:name==='helpers'?content.presence:1;
   }
-  // A prop whose route ends fades out with its last content. New content
-  // (a new request, or the helpers' next cycle) waits until nothing of the
-  // old is drawn, then fades in from zero.
+  // A prop whose route ends fades out with its last content, a card still
+  // rising keeping on rising (at its recovery then), so it never stops dead.
+  // New content (a new request, or the helpers' next cycle) waits until
+  // nothing of the old is drawn, then fades in from zero.
   function updateProps(time) {
     for(const name of propNames){
-      const slot=slots[name],key=propKey(name);
-      if(slot.key!==key&&slot.ramp.value(time)*drawnFactor(name,slot.content)===0){slot.key=key;slot.ramp.reset();}
-      if(key!==null&&slot.key===key){slot.content=liveContent(name);slot.ramp.retarget(1,time);}
-      else slot.ramp.retarget(0,time);
+      const slot=slots[name],key=propKey(name),card=name==='result'||name==='start';
+      if(slot.key!==key&&slot.ramp.value(time)*drawnFactor(name,slot.content)===0){slot.key=key;slot.ramp.reset();slot.rise=null;}
+      if(key!==null&&slot.key===key){
+        slot.content=liveContent(name);slot.ramp.retarget(1,time);
+        slot.rise=card&&resultRevealed?{at:started+revealAt,recovery:recoveryFactor()}:null;
+      }else {
+        slot.ramp.retarget(0,time);
+        if(slot.rise)slot.content.reveal=smooth((time-slot.rise.at)/sceneConstants.cardRevealMs)*slot.rise.recovery;
+      }
     }
   }
   function inspect(time) {

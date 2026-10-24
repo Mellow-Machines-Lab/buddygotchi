@@ -1,5 +1,6 @@
 // All 23 gel states, plus explicit failure and neutral finish.
-// The error and failure shots wait 200 ms longer, for their card to finish rising;
+// The stopped and neutral finish shots wait 200 ms longer, and the error and
+// failure shots 400 ms, for their card to finish rising;
 // no app draws a frame 200 ms before its shot, for its lane to fade in.
 {"t":"dbg.reset"}
 {"clock":0}
@@ -101,13 +102,13 @@
 {"clock":0}
 {"t":"state","base":"working","mood":"sad","vol":0}
 {"t":"do","id":118,"name":"error","args":{}}
-{"clock":1704}
+{"clock":1904}
 {"shot":"error"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"frightened","vol":0}
 {"t":"do","id":119,"name":"stopped","args":{}}
-{"clock":1504}
+{"clock":1704}
 {"shot":"stopped"}
 {"t":"dbg.reset"}
 {"clock":0}
@@ -129,13 +130,13 @@
 {"clock":0}
 {"t":"state","base":"working","mood":"sad","vol":0}
 {"t":"do","id":122,"name":"task_complete","args":{"outcome":"failure"}}
-{"clock":1704}
+{"clock":1904}
 {"shot":"failure"}
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"frightened","vol":0}
 {"t":"do","id":123,"name":"task_complete","args":{}}
-{"clock":1504}
+{"clock":1704}
 {"shot":"neutral_finish"}
 {"t":"dbg.reset"}
 {"clock":0}

@@ -317,6 +317,31 @@ JavaScript twin, checkpoint 6). What landed instead:
   it at that alpha, and the canvas lane dithers it (Pixel's checkpoint-4
   dither, now the canvas's), so Pixel's lane no longer pops. How often
   frames are drawn changes no frame (test_behaviour, test_gel).
+- **The gel's remaining cuts**, found on the transition recording's
+  contact sheets, changed in both engines, matched (check-port):
+  - a card's reveal rises in over 400 ms (`cardRevealMs`), twice the
+    props' ramp; a card whose route ends while it rises keeps rising as
+    it fades, or its rise would stop dead (the jolt check found it);
+  - let go, the dome settles back on a softer spring (stiffness 100,
+    damping 10, from 256 and 8, which it keeps while held), so a stroke's
+    release is a wobble rather than a snap from stretched to round in a
+    frame;
+  - falling asleep crosses over in its own 480 ms with its controls on a
+    slower spring (ω 8 from 20), so the lids droop shut; waking keeps
+    the face's 180 ms. Longer windows dimmed the half-way face below the
+    85% floor (test_gel); 480 keeps falling asleep's least at 87%.
+
+  The poke stays a hit, and idle's first gesture, going to work (the desk
+  and the lane fading in together) and a mood change read as motion.
+  Measured (internal/tools/fluid, largest 40 ms frame's changed pixels,
+  and its ratio to the median):
+
+  | Transition | Before | After |
+  | --- | --- | --- |
+  | finish | 3474 (33.1x) | 2095 (20.0x), its largest now a blink over the rising card |
+  | stroke | 15043 (15.0x) | 8706 (11.7x) |
+  | to asleep | 824 (10.4x) | 640 (4.1x) |
+  | to working, idle, poke, mood, to idle | 10.3x, 9.0x, 8.9x, 11.1x, 5.8x | unchanged |
 
 ## Risks
 

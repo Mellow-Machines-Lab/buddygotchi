@@ -44,7 +44,9 @@ void Engine::step(uint32_t ms) {
     sync();
   }
   acting.advance(dt, motion.time, grab, reduced, random);
-  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], 16, 8, q(.72), 6);
+  // Held, the pull follows the finger quickly; let go, it settles back on a
+  // softer spring, a wobble rather than a snap.
+  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], grab ? 16 : 10, grab ? 8 : 10, q(.72), 6);
   face.advance(dt, reduced);
   const F w = reduced ? 25 : 10;
   for (int i = 0; i < slime::kProfiles; ++i) {

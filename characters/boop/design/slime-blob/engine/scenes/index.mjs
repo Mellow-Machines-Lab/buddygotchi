@@ -188,9 +188,9 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
   function recoveryFactor() {
     return phase==='recover'?smooth((recipe.duration-ageMs)/sceneConstants.recoveryMs):phase==='sustain'?0:1;
   }
-  // A card rises over the prop ramp from its reveal contact and fades in recovery.
+  // A card rises in over its own reveal from its reveal contact and fades in recovery.
   function cardReveal() {
-    return resultRevealed?smooth((ageMs-revealAt)/sceneConstants.propRampMs)*recoveryFactor():0;
+    return resultRevealed?smooth((ageMs-revealAt)/sceneConstants.cardRevealMs)*recoveryFactor():0;
   }
   function focus() {
     const progress=clamp(ageMs/recipe.duration,0,1);
@@ -222,15 +222,21 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
   function drawnFactor(name,content) {
     return name==='result'||name==='start'?content.reveal:name==='helpers'?content.presence:1;
   }
-  // A prop whose route ends fades out with its last content. New content
-  // (a new request, or the helpers' next cycle) waits until nothing of the
-  // old is drawn, then fades in from zero.
+  // A prop whose route ends fades out with its last content, a card still
+  // rising keeping on rising (at its recovery then), so it never stops dead.
+  // New content (a new request, or the helpers' next cycle) waits until
+  // nothing of the old is drawn, then fades in from zero.
   function updateProps(time) {
     for(const name of propNames){
-      const slot=slots[name],key=propKey(name);
-      if(slot.key!==key&&slot.ramp.value(time)*drawnFactor(name,slot.content)===0){slot.key=key;slot.ramp.reset();}
-      if(key!==null&&slot.key===key){slot.content=liveContent(name);slot.ramp.retarget(1,time);}
-      else slot.ramp.retarget(0,time);
+      const slot=slots[name],key=propKey(name),card=name==='result'||name==='start';
+      if(slot.key!==key&&slot.ramp.value(time)*drawnFactor(name,slot.content)===0){slot.key=key;slot.ramp.reset();slot.rise=null;}
+      if(key!==null&&slot.key===key){
+        slot.content=liveContent(name);slot.ramp.retarget(1,time);
+        slot.rise=card&&resultRevealed?{at:started+revealAt,recovery:recoveryFactor()}:null;
+      }else {
+        slot.ramp.retarget(0,time);
+        if(slot.rise)slot.content.reveal=smooth((time-slot.rise.at)/sceneConstants.cardRevealMs)*slot.rise.recovery;
+      }
     }
   }
   function inspect(time) {

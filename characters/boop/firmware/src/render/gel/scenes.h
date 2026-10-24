@@ -62,6 +62,8 @@ constexpr bool comedy(int kind) { return kind >= kSneeze; }
 // the current value and slope: a smoothstep from rest, continuous in value and
 // velocity on a reversal, exact at its end.
 constexpr int kPropRampMs = 200;
+// constants.mjs cardRevealMs: a card's reveal, from its reveal contact.
+constexpr int kCardRevealMs = 400;
 struct Ramp {
   F from, to, tangent;
   T start;
@@ -106,6 +108,11 @@ struct Scenes {
     std::string id;
     int iteration = 0;
     Ramp ramp;
+    // A card's reveal, from its contact at riseAt, at its recovery then,
+    // which it keeps rising on as it fades out.
+    bool rising = false;
+    T riseAt;
+    F riseRecovery;
   } slots[kProps];
   struct {
     std::string requestId, agent, project, name;
@@ -149,8 +156,8 @@ struct Scenes {
                                              : F(1);
   }
   F entry() const { return smooth(ageMs / 240); }
-  // A card rises over the prop ramp from its reveal contact and fades in recovery.
-  F cardReveal() const { return resultRevealed ? smooth((ageMs - revealAt) / kPropRampMs) * recovery() : F(0); }
+  // A card rises in over its own reveal from its reveal contact and fades in recovery.
+  F cardReveal() const { return resultRevealed ? smooth((ageMs - revealAt) / kCardRevealMs) * recovery() : F(0); }
   F focus(bool reduced) const {
     return reduced ? q(.5) : q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus);
   }

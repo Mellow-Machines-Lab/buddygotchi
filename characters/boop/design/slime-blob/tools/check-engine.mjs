@@ -101,7 +101,7 @@ function checkTraceNumber(value, inspection, at, before, motion) {
 }
 
 async function checkSemanticFace(catalog) {
-  const { createFace, faceTarget, faceTransition, faceRender } = await import('../engine/face.mjs');
+  const { createFace, faceTarget, faceTransition, faceRender, sleepTransition } = await import('../engine/face.mjs');
   // CONTINUITY.md, "Phase 1 channel bounds": the new semantic layer owns
   // these values; accepted spring/blink source remains byte-for-byte locked.
   assert.deepEqual(faceTransition, { durationMs: 180, frequency: 20, reducedFrequency: 30 },
@@ -159,6 +159,23 @@ async function checkSemanticFace(catalog) {
   near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: dropping keeps the sum`);
   for (let frame = 0; frame < 12; frame++) { face.advance(STEP_MS / 1000); near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: the weights sum to one`); }
   assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['pleased'], `${SPEC}, Directed edge bridges: a chain settles on its last art`);
+  // Falling asleep crosses over in its own longer window, its controls on a
+  // slower spring; waking is the face's own window and spring again.
+  assert.deepEqual(sleepTransition, { durationMs: 480, frequency: 8 }, `${SPEC}, Representative activity scenes: falling asleep's timing`);
+  {
+    const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
+    const open = face.inspect().eyeOpen;
+    face.setSleeping(true);
+    let x = open, v = 0;
+    for (let ms = STEP_MS; ms <= 640; ms += STEP_MS) {
+      face.advance(STEP_MS / 1000);
+      for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); v += (64 * (0.004 - x) - 16 * v) * h; x += v * h; left -= h; }
+      near(face.inspect().eyeOpen, x, `${SPEC}, Representative activity scenes: falling asleep's spring`);
+      if (ms < 480) near(face.inspect().layers.at(-1).weight, smoothstep(ms / 480), `${SPEC}, Representative activity scenes: the sleeping art fades in over its window`);
+    }
+    face.setSleeping(false);
+    assert.equal(face.inspect().transition.durationMs, faceTransition.durationMs, `${SPEC}, Representative activity scenes: waking takes the face's own window`);
+  }
   for (const reducedMotion of [false, true]) {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: reducedMotion } });
     const before = face.inspect(), target = faceTarget(profiles.frightened);

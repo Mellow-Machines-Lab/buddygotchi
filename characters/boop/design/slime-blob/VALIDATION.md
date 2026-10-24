@@ -26,7 +26,8 @@ springs; that the face never fades is checked on the port's painter
 (`test_gel`, below). The engine check also pins the crossing itself: a new
 art fading in on a smoothstep over the window, the weights summing to one, a
 retarget mid-window keeping every weight, at most four arts at once, a fifth
-dropping the faintest. Trace generation is explicit:
+dropping the faintest, and falling asleep's own longer window and slower
+spring. Trace generation is explicit:
 
 ```sh
 node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53

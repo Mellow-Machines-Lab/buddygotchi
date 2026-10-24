@@ -89,7 +89,7 @@ void SemanticFace::weigh(F s) {
   }
   for (int i = 0; i < count; ++i) layers[i].weight = layers[i].weight / sum;
 }
-void SemanticFace::retarget(T ms) {
+void SemanticFace::retarget(T ms, F spring) {
   const int art = targetSleeping ? slime::kTired : targetId;
   for (int i = 0; i < 8; ++i) target[i] = slime::kProfile[art].face[i];
   if (targetSleeping) {
@@ -133,6 +133,7 @@ void SemanticFace::retarget(T ms) {
   to = target;
   elapsedMs = 0;
   durationMs = ms;
+  frequency = spring;
 }
 void SemanticFace::setMood(int id, T ms) {
   if (id == targetId) return;
@@ -142,10 +143,13 @@ void SemanticFace::setMood(int id, T ms) {
 void SemanticFace::setSleeping(bool value) {
   if (value == targetSleeping) return;
   targetSleeping = value;
-  retarget();
+  if (value)
+    retarget(kSleepMs, kSleepFrequency);
+  else
+    retarget();
 }
 void SemanticFace::advance(T dt, bool reduced) {
-  const F w = reduced ? 30 : 20;
+  const F w = reduced ? F(30) : frequency;
   for (int i = 0; i < 8; ++i) {
     F x = scaled[i], v = velocity[i], goal = target[i] * kScale;
     for (F left = dt; left > F(0);) {

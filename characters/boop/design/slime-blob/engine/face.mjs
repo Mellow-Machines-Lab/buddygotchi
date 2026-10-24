@@ -33,14 +33,17 @@ const mouthDimensions={
 };
 
 // CONTINUITY.md, Phase 1 channel bounds: each semantic control is a critically
-// damped spring (frequency 20, or 30 with reduced motion) that keeps its
-// velocity across retargets.
+// damped spring (frequency 20, or 30 with reduced motion; falling asleep has
+// its own, below) that keeps its velocity across retargets.
 export const faceTransition=Object.freeze({durationMs:180,frequency:20,reducedFrequency:30});
 // CONTINUITY.md, Directed edge bridges: the drawn art's size ratios stay in
 // (0.75, 4/3), and at most four arts are drawn at once.
 export const faceRender=Object.freeze({ratioLow:.75,ratioHigh:4/3,layers:4});
 // The shared sleeping face: the tired art, squashed to these dimensions.
 export const sleepTarget=Object.freeze({eyeOpen:.004,mouthWidth:.018,curve:.008,cheekAlpha:0,tearAmount:0});
+// Falling asleep: the lids droop shut over a longer window, on a slower
+// spring, until the face wakes.
+export const sleepTransition=Object.freeze({durationMs:480,frequency:8});
 const controlKeys=['eyeX','eyeY','eyeOpen','mouthY','mouthWidth','curve','cheekAlpha','tearAmount'];
 
 export function faceTarget(profile) {
@@ -78,9 +81,10 @@ export function createFace({profiles,initialEmotion,reduced}) {
     const sum=layers.reduce((total,layer)=>total+layer.weight,0);
     for(const layer of layers)layer.weight/=sum;
   }
-  // The window the arts cross over in, and how far into it they are.
-  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationMs};
-  function retarget({durationMs=faceTransition.durationMs}={}) {
+  // The window the arts cross over in, how far into it they are, and the
+  // controls' spring until the next.
+  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationMs,frequency:faceTransition.frequency};
+  function retarget({durationMs=faceTransition.durationMs,frequency=faceTransition.frequency}={}) {
     const artId=targetSleeping?'tired':targetId,sleeping=targetSleeping,s=transition.elapsedMs/transition.durationMs;
     target=dimensions(profiles,{artId,sleeping});
     for(const layer of layers){const {value,slope}=hermite(layer,s);Object.assign(layer,{from:value,tangent:slope*durationMs/transition.durationMs,to:0});}
@@ -93,7 +97,7 @@ export function createFace({profiles,initialEmotion,reduced}) {
     layers=layers.filter(layer=>layer===top||layer.from>0||layer.tangent>0);
     if(layers.length>faceRender.layers)layers.splice(layers.indexOf(layers.slice(0,-1).reduce((a,b)=>b.from<a.from?b:a)),1);
     weigh(0);
-    transition={from:{...controls},to:{...target},elapsedMs:0,durationMs};
+    transition={from:{...controls},to:{...target},elapsedMs:0,durationMs,frequency};
   }
   function setMood(id,options) {
     if(id===targetId)return;
@@ -101,7 +105,7 @@ export function createFace({profiles,initialEmotion,reduced}) {
   }
   function setSleeping(value) {
     value=Boolean(value);if(value===targetSleeping)return;
-    targetSleeping=value;retarget();
+    targetSleeping=value;retarget(value?sleepTransition:{});
   }
   // Each layer is drawn at the live ratio over its own size, so the arts
   // crossing over are drawn near one size while the controls move.
@@ -113,7 +117,7 @@ export function createFace({profiles,initialEmotion,reduced}) {
   return {
     setMood,setSleeping,
     advance(dt) {
-      const frequency=reduced.matches?faceTransition.reducedFrequency:faceTransition.frequency;
+      const frequency=reduced.matches?faceTransition.reducedFrequency:transition.frequency;
       for(const key of controlKeys){
         let x=controls[key],v=velocity[key],left=dt;
         while(left>0){const h=Math.min(left,1/240);v+=(frequency*frequency*(target[key]-x)-2*frequency*v)*h;x+=v*h;left-=h;}

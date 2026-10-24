@@ -90,16 +90,20 @@ values remain in the motion contract. The imported additive gesture
 springs retain frequencies 11 (lift), 10 (roll), 9 (other channels), damping
 6.4 and the same 1/240 s substeps. Displacement limits are 0.24 for lift,
 0.12 for roll, 0.18 for forward and 0.42 otherwise, velocity limit 5.
-Grab spring stiffness is 256, damping 8, displacement limit 0.72 and
-velocity limit 6; target magnitude is at most 0.64, reduced to 35% with
+Grab spring stiffness is 256 and damping 8 while held (100 and 10 once let
+go, so the dome settles back with a wobble rather than snapping),
+displacement limit 0.72 and velocity limit 6; target magnitude is at most
+0.64, reduced to 35% with
 reduced motion. Reduced gesture impulses are 18%. Gesture cadence retains
 the authored duration plus 7–15 seconds, starting after one second, or
 0.4 seconds after retarget; release defers the next gesture three seconds.
 These are the imported audition constants, not approved production pacing.
-The face's own window defaults to 180 ms; directed edge variants select
+The face's own window defaults to 180 ms (falling asleep takes 480,
+below); directed edge variants select
 the face windows below, over which one art crosses over another. Each
 semantic control is a critically damped spring,
-`a = ω²(target − x) − 2ωv`, with ω = 20 (30 with reduced motion), in the
+`a = ω²(target − x) − 2ωv`, with ω = 20 (8 from falling asleep until it
+wakes; 30 with reduced motion), in the
 same 1/240 s substeps: it starts from rest without a jump in velocity, and a
 retarget keeps both its position and its velocity. Cheek and tear opacity
 stay in [0, 1]. Dimensional endpoints come from the original face
@@ -190,7 +194,10 @@ them. Factual alert/result reveals still happen while held, so dragging
 cannot hide a real completion or its outcome. Release never plays an
 elapsed contact again. Rest retains the stored mood, cancels acting and
 contacts immediately, and lets residual springs settle. The shared sleepy
-art crosses over the awake one in the face's own window. Its semantic
+art crosses over the awake one in a window of its own, 480 ms, its
+controls on the slower spring, so the lids droop shut rather than snap;
+waking takes the face's own 180 ms (`sleepTransition`,
+[engine/face.mjs](engine/face.mjs)). Its semantic
 targets are eye openness 0.004, mouth width 0.018, curve 0.008, and zero
 cheek/tear opacity; changing the stored mood during rest leaves this face
 quiet.
@@ -266,9 +273,12 @@ the request's arrival, with no opacity floor, and ramps out when attention
 clears; `props.alert.confirmation` uses the contact envelope to brighten it
 once at the reveal, then returns to zero. Its reveal strength is invariant
 at 1. A result receives the mood's delay and strength while its success or
-failure remains factual. A card's reveal is a smoothstep over the prop ramp
-from its reveal contact; it fades during recovery and is cleared before an
-explicitly repeated loop. Contacts carry unique request,
+failure remains factual. A card's reveal is a smoothstep over 400 ms from
+its reveal contact (`cardRevealMs`, twice the prop ramp, so it rises in
+rather than appears); it fades during recovery and is cleared before an
+explicitly repeated loop. A card whose route ends while it still rises
+keeps rising, at its recovery then, as its ramp fades it out, so it never
+stops dead. Contacts carry unique request,
 generation, iteration and index identity; the `cues` audio output is consumed once per contact by the synchronized
 scheduler (sound/README.md).
 
@@ -784,7 +794,7 @@ cards' reveals):
   being at most one.
 - **Arts cross over without pops.** A layer's weight moves at most a 16 ms
   slice of the Hermite over the shortest face window, the face's own 180 ms
-  (going to sleep and waking), reversals
+  (waking), reversals
   included (sampled, with 2% margin: about 0.149 per frame), a new art's
   first frame included; the weights sum to one.
 - **No prop pops.** A prop's `visible` moves at most a 16 ms slice of its
@@ -808,9 +818,9 @@ cards' reveals):
   showing). Where two shapes don't overlap, the frames half way are dimmer
   by a stricter count: of the pixels taken at least half way to the ink,
   calm to frightened keeps 48% of the fainter face's, scared to frightened
-  50% and falling asleep 73%; of those three quarters of the way, 13%, 12%
-  and 21%. Each shape is at about half its strength there, which is the
-  cross-fade.
+  50% and falling asleep, over its longer window, 76%; of those three
+  quarters of the way, 13%, 12% and 31%. Each shape is at about half its
+  strength there, which is the cross-fade.
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).

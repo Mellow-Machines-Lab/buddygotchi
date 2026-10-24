@@ -124,9 +124,10 @@ void Scenes::refresh(Prop prop, bool reduced) {
       touchKnown = true;
   }
 }
-// A prop whose route ends fades out with its last content. New content (a new
-// request, or the helpers' next cycle) waits until nothing of the old is
-// drawn, then fades in from zero.
+// A prop whose route ends fades out with its last content, a card still
+// rising keeping on rising (at its recovery then), so it never stops dead.
+// New content (a new request, or the helpers' next cycle) waits until nothing
+// of the old is drawn, then fades in from zero.
 void Scenes::updateProps(T time, bool reduced) {
   for (int p = 0; p < kProps; ++p) {
     const Prop prop = Prop(p);
@@ -139,13 +140,22 @@ void Scenes::updateProps(T time, bool reduced) {
       if (want && slot.id != requestId) slot.id = requestId;
       slot.iteration = iteration;
       slot.ramp.reset();
+      slot.rising = false;
       same = true;
     }
+    const bool card = prop == kResultProp || prop == kStartProp;
     if (want && same) {
       refresh(prop, reduced);
       slot.ramp.retarget(1, time);
-    } else
+      slot.rising = card && resultRevealed;
+      slot.riseAt = started + revealAt;
+      slot.riseRecovery = recovery();
+    } else {
       slot.ramp.retarget(0, time);
+      if (slot.rising)
+        (prop == kResultProp ? resultProp.reveal : startProp.reveal) =
+            smooth((time - slot.riseAt) / kCardRevealMs) * slot.riseRecovery;
+    }
   }
 }
 void Scenes::pickRecipe(T time, Random& random) {

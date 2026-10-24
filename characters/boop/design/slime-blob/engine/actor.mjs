@@ -48,9 +48,12 @@ export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occas
     const ended=scenes.advance(dt,time,{grabActive:grab.active});
     if(ended){router.finish(ended);sync(time);}
     acting.advance(dt,motion.time,grab.active);
+    // Held, the pull follows the finger quickly; let go, it settles back on
+    // a softer spring, a wobble rather than a snap.
+    const [stiffness,damping]=grab.active?[256,8]:[100,10];
     for(let i=0;i<3;i++){
       const m=grab.pull[i];let left=dt;
-      while(left>0){const h=Math.min(left,1/240);m.v+=(256*(grab.target[i]-m.x)-8*m.v)*h;m.x+=m.v*h;left-=h;}
+      while(left>0){const h=Math.min(left,1/240);m.v+=(stiffness*(grab.target[i]-m.x)-damping*m.v)*h;m.x+=m.v*h;left-=h;}
       m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-6,6);
     }
     face.advance(dt);

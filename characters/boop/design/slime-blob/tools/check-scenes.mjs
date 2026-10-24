@@ -612,7 +612,7 @@ async function checkSceneConstants(createSlime, catalog) {
   assert.deepEqual(constants, {
     entryMs: 240, recoveryMs: 480, contactMs: 120, cycleMs: [3200, 3700, 4200], timingJitterMs: 40,
     gainJitter: 0.1, activityFrequency: 12, activityDamping: 10, activityVelocity: 1.2,
-    activityBounds: { lean: 0.08, squash: 0.06, forward: 0.05 }, propFrequency: 10, propDamping: 14, propRampMs: 200,
+    activityBounds: { lean: 0.08, squash: 0.06, forward: 0.05 }, propFrequency: 10, propDamping: 14, propRampMs: 200, cardRevealMs: 400,
     hostLaneTop: 0.8, poseBounds: [1.25, 1.32, 1.14, 0.72], lifeBounds: [0.24, 0.12, 0.23],
   }, `${SPEC}: provisional representative-scene numbers are pinned for owner review`);
   assert.deepEqual(sceneMoodTraits, {
@@ -697,7 +697,7 @@ async function checkSceneConstants(createSlime, catalog) {
   const sleepy = driver(createSlime, catalog, 'frightened');
   sleepy.slime.setFacts({ base: 'asleep' });
   let crossed = false;
-  sleepy.advance(1600, frame => {
+  sleepy.advance(2592, frame => {
     const layers = frame.face.layers;
     if (layers.length > 1) {
       crossed = true;
