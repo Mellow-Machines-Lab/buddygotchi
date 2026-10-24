@@ -262,6 +262,9 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   {
     Measure measure(profile.art);
     paintArt(surface, e, c, mouthOpen, anchors);
+  }
+  {
+    Measure measure(profile.layers);
     paintLayers(surface, e, *anchors);
   }
   {

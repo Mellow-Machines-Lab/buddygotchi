@@ -16,6 +16,7 @@
 #include <new>
 #include "render/gel/lane.h"
 #include "render/gel/layers.h"
+#include "render/gel/raster.h"
 #include "render/tags.h"
 #include "fonts_gel.h"
 using namespace render;
@@ -1226,6 +1227,111 @@ static void test_layers_follow_the_bodys_anchors() {
   TEST_ASSERT_EQUAL_INT(0, allocCount);
 }
 
+// A recording (render/gel/raster.h) blends again exactly what its shapes
+// would have drawn, and as they'd have drawn a whole number of pixels
+// over: the pixels and the rows marked changed, over the body and black,
+// cut at the surface's edges.
+static void test_a_recording_replays_as_drawn() {
+  constexpr int kW = 120, kH = 100;
+  std::vector<uint16_t> a(kW * kH), b(kW * kH);
+  auto shapes = [](Raster& r, int dx, int dy) {
+    const Point cap[] = {{dx + 200, dy + 900}, {dx + 1500, dy + 260}, {dx + 1700, dy + 1300}, {dx + 400, dy + 1500}};
+    r.polygon16(cap, 4, rgb565(58, 62, 150));
+    const Point band[] = {{dx + 100, dy + 1200}, {dx + 900, dy + 1450}, {dx + 1800, dy + 1150}};
+    r.stroke16(band, 3, 150, rgb565(246, 240, 226));
+    r.alpha = 140;
+    r.disk16(dx + 1650, dy + 300, 120, rgb565(246, 240, 226));
+    r.alpha = 255;
+  };
+  for (const auto& shift : {std::array<int, 2>{0, 0}, {3, 2}, {-2, -14}, {40, 30}}) {
+    for (int i = 0; i < kW * kH; ++i) a[i] = b[i] = i % 7 ? rgb565(89, 169, 224) : 0;  // the body, and black
+    Surface sa{kW, kH, a.data()}, sb{kW, kH, b.data()};
+    Raster direct{sa};
+    shapes(direct, shift[0] * 16, shift[1] * 16);
+    Recording kept;
+    kept.clear();
+    Surface frame{512, 400, nullptr};
+    Raster record{frame};
+    record.limit = frame.height;
+    record.recording = &kept;
+    shapes(record, 200 * 16, 150 * 16);  // kept 200, 150 px over: on no pixels, and uncut
+    TEST_ASSERT_FALSE(kept.full);
+    TEST_ASSERT_TRUE(kept.box.x0 > 195 && kept.box.y0 > 150 && kept.box.x1 < 320 && kept.box.y1 < 250);
+    Raster replayed{sb};
+    replayed.replay(kept, shift[0] - 200, shift[1] - 150);
+    TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), a.size() * 2);
+    for (int y = 0; y < kH; ++y) {
+      TEST_ASSERT_EQUAL_INT(sa.written[y].first, sb.written[y].first);
+      TEST_ASSERT_EQUAL_INT(sa.written[y].last, sb.written[y].last);
+    }
+  }
+  // Past its room it keeps nothing more, and says so.
+  Recording small;
+  small.clear();
+  Surface frame{512, 400, nullptr};
+  Raster record{frame};
+  record.limit = frame.height;
+  record.recording = &small;
+  for (int i = 0; i < 1000 && !small.full; ++i) record.round(0, i % 38 * 10, 500, 10, 0, rgb565(1, 2, 3));
+  TEST_ASSERT_TRUE(small.full);
+  TEST_ASSERT_TRUE(small.used <= Recording::kBytes);
+}
+
+// The outfit is drawn into a recording and blended from it
+// (OutfitLayer): while the body moves, a frame shows it as kept within
+// kSlack (12 sixteenths) of where it is; once it's still (the same time,
+// a frame over kMovingMs (100 ms) after the last, or anchors unmoved for
+// kStillMs (200 ms)), it's drawn where it is, the same as afresh. The
+// nightcap's swing steps every kSwingMs (400 ms).
+static void test_the_outfit_is_kept_while_the_body_moves() {
+  static_assert(OutfitLayer::kSlack == 12 && OutfitLayer::kMovingMs == 100 && OutfitLayer::kStillMs == 200 &&
+                    OutfitLayer::kSwingMs == 400,
+                "the rules this test pins");
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  rig::Anchors home;
+  paint(s, *e, false, 0, 0, &home);
+  uint32_t night = tagBit("night");
+  e->setOccasion(night, 0);
+  // The layers alone, at `at`, `ms` into the engine's clock.
+  auto frame = [&](const rig::Anchors& at, uint32_t ms) {
+    std::fill(px.begin(), px.end(), 0);
+    s.invalidate();
+    e->elapsedMs = ms;
+    paintLayers(s, *e, at);
+    return px;
+  };
+  auto raised = [&](int crown) {  // the crown alone moved, the brim's front where it was
+    rig::Anchors at = home;
+    at.crown.y -= crown;
+    return at;
+  };
+  const auto kept = frame(home, 1200);
+  TEST_ASSERT_TRUE(kept == frame(home, 1599));  // the swing's step, by the time alone: the same
+  TEST_ASSERT_TRUE(kept != frame(home, 1600));  // the next
+  frame(home, 1200);
+  TEST_ASSERT_TRUE(kept == frame(raised(12), 1230));  // moving, within kSlack: as kept
+  TEST_ASSERT_TRUE(kept == frame(raised(12), 1330));  // still moving: it moved 100 ms ago
+  const auto still = frame(raised(12), 1430);         // unmoved for kStillMs: drawn where it is
+  TEST_ASSERT_TRUE(kept != still);
+  TEST_ASSERT_TRUE(still == frame(raised(12), 1430));  // and kept so
+  frame(home, 1200);
+  TEST_ASSERT_TRUE(kept != frame(raised(13), 1230));  // past kSlack: drawn again
+  frame(home, 1200);
+  TEST_ASSERT_TRUE(still == frame(raised(12), 1200));  // the same time: as still
+  frame(home, 1200);
+  TEST_ASSERT_TRUE(still == frame(raised(12), 1301));  // a frame over kMovingMs after: the same
+  // A whole number of pixels over, it's the kept one moved that far.
+  frame(home, 1200);
+  rig::Anchors down = home;
+  for (rig::Point* p : {&down.crown, &down.brimL, &down.brimF, &down.brimR}) p->y += 3 * 16;
+  const auto lower = frame(down, 1230);
+  for (int y = 3; y < 410 * 4 / 5; ++y)
+    TEST_ASSERT_EQUAL_MEMORY(kept.data() + (y - 3) * 502, lower.data() + y * 502, 502 * 2);
+}
+
 static void test_steady_frames_allocate_nothing() {
   struct Hal : app::Hal {
     uint32_t realMs() override { return 0; }
@@ -1603,5 +1709,7 @@ int main() {
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
+  RUN_TEST(test_a_recording_replays_as_drawn);
+  RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
   return UNITY_END();
 }

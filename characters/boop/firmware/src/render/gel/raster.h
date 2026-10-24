@@ -27,6 +27,22 @@ inline uint16_t mix565(uint16_t old, uint16_t ink, int alpha) {
   green = (green + (green >> 8)) >> 8;
   return uint16_t((pair & 31) | ((pair >> 5) & 0xf800) | (green << 5));
 }
+// Shapes kept instead of drawn (Raster::recording), to blend again where
+// they were or a whole number of pixels away (Raster::replay), as they'd
+// have blended there: each row's span, its ink, and each pixel's opacity
+// as the shape would have blended it, run-length coded. It holds at most
+// kBytes; a shape past that is lost, and the recording is `full`.
+struct Recording {
+  static constexpr int kBytes = 10 * 1024;
+  uint8_t data[kBytes];
+  int used = 0;
+  bool full = false;
+  Box box;  // the pixels its spans cover
+  void clear() { used = 0, full = false, box = {1 << 30, 1 << 30, -(1 << 30), -(1 << 30)}; }
+  // A row's span [x0, x1], each pixel's opacity `alpha[x]` (0–255).
+  void add(int y, int x0, int x1, const uint8_t* alpha, uint16_t ink);
+};
+
 struct Raster {
   // The widest surface a row of coverage holds.
   static constexpr int kMaxWidth = 512;
@@ -40,8 +56,17 @@ struct Raster {
   // must again (render/gel/props.cpp).
   static constexpr Box kEverywhere{0, 0, 1 << 30, 1 << 30};
   Box bounds = kEverywhere;
+  // When set, the shapes (but text) are kept in it, not drawn: the surface
+  // is left as it was.
+  Recording* recording = nullptr;
+  // What `r` kept, blended into the surface `dx`, `dy` pixels from where
+  // it was kept, inside the bounds: pixel for pixel what its shapes would
+  // have drawn there, had they been drawn that far over.
+  void replay(const Recording& r, int dx, int dy);
 
-  void touch(int x0, int y0, int x1, int y1) { s.touch(x0, y0, x1, std::min(y1, bottom())); }
+  void touch(int x0, int y0, int x1, int y1) {
+    if (!recording) s.touch(x0, y0, x1, std::min(y1, bottom()));
+  }
   void pixel(int x, int y, uint16_t ink) {
     if (x >= std::max(0, bounds.x0) && x < std::min(s.width, bounds.x1) && y >= std::max(0, bounds.y0) &&
         y < std::min(bottom(), bounds.y1)) {
@@ -136,6 +161,8 @@ struct Raster {
 
  private:
   int bottom() const { return limit ? limit : s.height * 4 / 5; }
+  // Nowhere to draw a shape: no pixels, and no recording.
+  bool off() const { return !s.pixels && !recording; }
   // Composites the row's coverage where it was written, and zeroes it.
   void flush(int y, uint16_t ink);
   // Blends [x0, x1] of a row, wholly covered, with the ink.

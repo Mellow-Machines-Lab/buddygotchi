@@ -1,5 +1,7 @@
 #include "render/gel/layers.h"
 
+#include <algorithm>
+#include <climits>
 #include <initializer_list>
 
 #include "render/font.h"
@@ -8,7 +10,6 @@
 #include "render/gel/raster.h"
 #include "render/palette.h"
 #include "render/tags.h"
-
 namespace render::gel {
 
 namespace {
@@ -51,6 +52,7 @@ int wave(int ms, int period, int amp) {
   return (p < period / 2 ? p : period - p) * 2 * amp / period;
 }
 
+// Its tip swings out and back every 2 s: `ms` into the swing.
 void nightcap(Raster& r, const Head& h, int ms) {
   const int w = h.width, swing = wave(ms, 2000, w / 30);
   const Point tip{h.cx + w * 11 / 20 + swing, h.top - w / 20};
@@ -194,6 +196,101 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
   r.alpha = 255;
 }
 
+// What the outfit looks like besides where it sits: the hat, the party
+// hat's colours, and how far into its swing the nightcap is, on a step of
+// kSwingMs; as one number.
+struct Look {
+  Outfit hat;
+  int colors, swing;
+  uint32_t key() const { return uint32_t(hat) | uint32_t(colors) << 4 | uint32_t(swing) << 8; }
+};
+Look lookFor(uint32_t when, int ms) {
+  const Outfit hat = outfitFor(when);
+  const int colors = hasTag(when, "lunar") ? 1 : hasTag(when, "programmers") && !hasTag(when, "party") ? 2 : 0;
+  return {hat, hat == Outfit::kPartyHat ? colors : 0,
+          hat == Outfit::kNightcap ? ms % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs : 0};
+}
+
+void dress(Raster& r, const rig::Anchors& at, const Look& look) {
+  const Head h = head(at, 0);
+  switch (look.hat) {
+    case Outfit::kWitchHat: witchHat(r, h); break;
+    case Outfit::kPartyHat: {
+      static constexpr uint16_t kColors[][2] = {{rgb565(240, 80, 150), rgb565(250, 210, 70)},  // a party's
+                                                {rgb565(210, 40, 40), rgb565(250, 200, 60)},   // Lunar New Year's
+                                                {rgb565(30, 40, 36), rgb565(90, 230, 120)}};   // Programmers' Day's
+      partyHat(r, h, kColors[look.colors][0], kColors[look.colors][1]);
+      break;
+    }
+    case Outfit::kNightcap: nightcap(r, h, look.swing); break;
+    case Outfit::kBobble: bobble(r, h); break;
+    default: break;
+  }
+}
+
+// The outfit as last drawn into a recording (OutfitLayer), with where it
+// was drawn, and the last frame it was blended into.
+struct Kept {
+  static constexpr int kAnchors = 4;
+  Recording shapes;
+  bool valid = false;
+  uint32_t look = 0;
+  Point at[kAnchors]{};  // the anchors it was drawn at
+  int dx = 0, dy = 0;    // the surface's pixels from the recording's
+  // The last frame's body, time and anchors, and when its anchors last
+  // moved.
+  const Engine* engine = nullptr;
+  uint32_t ms = 0, movedAt = 0;
+  Point last[kAnchors]{};
+};
+Kept kept;
+
+int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
+
+// The outfit, blended from what was kept while that fits, else drawn into
+// a recording first; drawn straight on the surface when it doesn't fit
+// the recording's frame or its room.
+void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look) {
+  const Point now[Kept::kAnchors] = {at.crown, at.brimL, at.brimF, at.brimR};
+  // Moving: a frame of the same body just before, and its anchors moved
+  // within kStillMs.
+  const uint32_t t = e.elapsedMs;
+  for (int i = 0; i < Kept::kAnchors; ++i)
+    if (now[i].x != kept.last[i].x || now[i].y != kept.last[i].y) kept.movedAt = t;
+  const bool moving = kept.engine == &e && t != kept.ms && t - kept.ms <= OutfitLayer::kMovingMs &&
+                      t - kept.movedAt < OutfitLayer::kStillMs;
+  kept.engine = &e, kept.ms = t;
+  std::copy(now, now + Kept::kAnchors, kept.last);
+  // How far the body has moved it since it was kept, to the nearest pixel,
+  // and the most any anchor is off once it's moved that far.
+  int ox = 0, oy = 0, off = INT_MAX;
+  if (kept.valid && kept.look == look.key()) {
+    ox = floor16(at.brimF.x - kept.at[2].x + 8), oy = floor16(at.brimF.y - kept.at[2].y + 8);
+    off = 0;
+    for (int i = 0; i < Kept::kAnchors; ++i)
+      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy * 16)});
+  }
+  if (off != 0 && !(moving && off <= OutfitLayer::kSlack)) {
+    // Kept in a frame as wide as the surface and taller, the brim's front a
+    // whole number of pixels from its middle, as far into its pixel as it
+    // was.
+    const int fx = r.s.width / 2 - floor16(at.brimF.x), fy = OutfitLayer::kFrameY - floor16(at.brimF.y);
+    rig::Anchors framed = at;
+    for (Point* p : {&framed.crown, &framed.brimL, &framed.brimF, &framed.brimR}) p->x += fx * 16, p->y += fy * 16;
+    Raster record{r.s};
+    record.limit = OutfitLayer::kFrameHeight;
+    record.recording = &kept.shapes;
+    kept.shapes.clear();
+    dress(record, framed, look);
+    const Box& b = kept.shapes.box;
+    kept.valid = !kept.shapes.full && b.x0 > 0 && b.y0 > 0 && b.x1 < r.s.width && b.y1 < OutfitLayer::kFrameHeight;
+    if (!kept.valid) return dress(r, at, look);  // past the frame's edge, or its room
+    kept.look = look.key(), kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
+    std::copy(now, now + Kept::kAnchors, kept.at);
+  }
+  r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
+}
+
 }  // namespace
 
 int sleepyLids(const Engine& e) {
@@ -212,26 +309,7 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {
   const SceneState state = e.scenes.route.state;
   const bool peekaboo = state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo);
   if (hasTag(when, "friday") && !hasTag(when, "night") && state != SceneState::kAsleep && !peekaboo) shades(r, at);
-  if (!peekaboo) {
-    const Head h = head(at, 0);
-    switch (outfitFor(when)) {
-      case Outfit::kWitchHat: witchHat(r, h); break;
-      case Outfit::kPartyHat: {
-        const bool lunar = hasTag(when, "lunar"), coder = hasTag(when, "programmers") && !hasTag(when, "party");
-        partyHat(r, h,
-                 lunar   ? rgb565(210, 40, 40)
-                 : coder ? rgb565(30, 40, 36)
-                         : rgb565(240, 80, 150),
-                 lunar   ? rgb565(250, 200, 60)
-                 : coder ? rgb565(90, 230, 120)
-                         : rgb565(250, 210, 70));
-        break;
-      }
-      case Outfit::kNightcap: nightcap(r, h, ms); break;
-      case Outfit::kBobble: bobble(r, h); break;
-      default: break;
-    }
-  }
+  if (!peekaboo && outfitFor(when) != Outfit::kNone) outfit(r, e, at, lookFor(when, ms));
   const uint8_t air = airFor(when);
   if (air & kSnow) snow(r, s.width, bottom, ms);
   if (air & kConfetti) confetti(r, s.width, bottom, ms);

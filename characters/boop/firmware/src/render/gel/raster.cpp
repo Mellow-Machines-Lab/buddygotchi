@@ -1,6 +1,7 @@
 #include "render/gel/raster.h"
 
 #include <climits>
+#include <cstring>
 
 #include "render/gel/geometry.h"
 
@@ -13,6 +14,8 @@ namespace {
 // It's all zero between rows; [touchedLo, touchedHi] is what a row wrote.
 uint16_t coverage[Raster::kMaxWidth];
 int touchedLo = Raster::kMaxWidth, touchedHi = -1;
+// A row's opacities for a recording (Raster::recording).
+uint8_t kept[Raster::kMaxWidth];
 void touched(int x) { touchedLo = std::min(touchedLo, x), touchedHi = std::max(touchedHi, x); }
 
 // Floor division by 16 that's right for negative coordinates too.
@@ -111,6 +114,10 @@ int edgeCoverage(int inside) { return std::clamp((inside + 8) * 16, 0, 256); }
 }  // namespace
 
 void Raster::composite(int y, int x0, int x1, const uint16_t* row, uint16_t ink) {
+  if (recording) {
+    for (int x = x0; x <= x1; ++x) kept[x - x0] = uint8_t(std::min<int>(row[x], 256) * alpha >> 8);
+    return recording->add(y, x0, x1, kept, ink);
+  }
   auto* out = s.pixels + y * s.width;
   for (int x = x0; x <= x1; ++x) {
     const int a = std::min<int>(row[x], 256) * alpha >> 8;
@@ -134,6 +141,10 @@ void Raster::flush(int y, uint16_t ink) {
 
 void Raster::fill(int y, int x0, int x1, uint16_t ink) {
   if (x0 > x1) return;
+  if (recording) {
+    std::fill(kept, kept + (x1 - x0 + 1), uint8_t(alpha));
+    return recording->add(y, x0, x1, kept, ink);
+  }
   auto* out = s.pixels + y * s.width;
   if (alpha >= 253)
     std::fill(out + x0, out + x1 + 1, ink);
@@ -142,7 +153,7 @@ void Raster::fill(int y, int x0, int x1, uint16_t ink) {
 }
 
 void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, int clipCount) {
-  if (!s.pixels || n < 3 || alpha <= 2) return;
+  if (off() || n < 3 || alpha <= 2) return;
   int minX = INT_MAX, minY = INT_MAX, maxX = INT_MIN, maxY = INT_MIN;
   for (int i = 0; i < n; ++i) {
     minX = std::min(minX, v[i].x), maxX = std::max(maxX, v[i].x);
@@ -175,7 +186,7 @@ void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, i
 }
 
 void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
-  if (!s.pixels || n < 1 || alpha <= 2) return;
+  if (off() || n < 1 || alpha <= 2) return;
   const int radius = std::max(4, width16 / 2), outer = radius + 8;
   int minX = INT_MAX, minY = INT_MAX, maxX = INT_MIN, maxY = INT_MIN;
   for (int i = 0; i < n; ++i) {
@@ -223,7 +234,7 @@ void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
 }
 
 void Raster::round(int x, int y, int w, int h, int radius, uint16_t ink) {
-  if (!s.pixels || w <= 0 || h <= 0 || alpha <= 2) return;
+  if (off() || w <= 0 || h <= 0 || alpha <= 2) return;
   radius = std::clamp(radius, 0, std::min(w, h) / 2);
   const int y0 = std::max({0, y, bounds.y0}), y1 = std::min({bottom(), y + h, bounds.y1}) - 1;
   const int x0 = std::max({0, x, bounds.x0}), x1 = std::min({s.width, kMaxWidth, x + w, bounds.x1}) - 1;
@@ -254,7 +265,7 @@ void Raster::round(int x, int y, int w, int h, int radius, uint16_t ink) {
 }
 
 void Raster::ring(int x, int y, int w, int h, int radius, int line, uint16_t ink) {
-  if (!s.pixels || line <= 0 || w <= 2 * line || h <= 2 * line || alpha <= 2) return;
+  if (off() || line <= 0 || w <= 2 * line || h <= 2 * line || alpha <= 2) return;
   radius = std::clamp(radius, line, std::min(w, h) / 2);
   const int y0 = std::max({0, y, bounds.y0}), y1 = std::min({bottom(), y + h, bounds.y1}) - 1;
   const int x0 = std::max({0, x, bounds.x0}), x1 = std::min({s.width, kMaxWidth, x + w, bounds.x1}) - 1;
@@ -304,6 +315,86 @@ void Raster::ring(int x, int y, int w, int h, int radius, int line, uint16_t ink
     if (rightStart > leftEnd) composite(row, std::max(x0, rightStart), x1, coverage, ink);
     if (x0 <= leftEnd) std::fill(coverage + x0, coverage + leftEnd + 1, 0);
     if (rightStart <= x1) std::fill(coverage + std::max(x0, rightStart), coverage + x1 + 1, 0);
+  }
+}
+
+namespace {
+// A recorded span: its row, its first pixel and how many, its ink, and the
+// bytes of its runs, which follow it.
+struct Span {
+  int16_t y, x0;
+  uint16_t n, ink, bytes;
+};
+// A run's code: kRun and its length less one for that many pixels of the
+// one opacity after it; else its length less one, and that many opacities.
+constexpr int kRun = 0x80, kMaxRun = 128;
+}  // namespace
+
+void Recording::add(int y, int x0, int x1, const uint8_t* alpha, uint16_t ink) {
+  const int n = x1 - x0 + 1;
+  if (full || n <= 0) return;
+  // At most a code and an opacity a pixel.
+  if (used + int(sizeof(Span)) + 2 * n > kBytes) {
+    full = true;
+    return;
+  }
+  uint8_t* const start = data + used + sizeof(Span);
+  uint8_t* out = start;
+  for (int i = 0; i < n;) {
+    int run = 1;
+    while (i + run < n && run < kMaxRun && alpha[i + run] == alpha[i]) ++run;
+    if (run >= 3) {
+      *out++ = uint8_t(kRun | (run - 1)), *out++ = alpha[i];
+      i += run;
+      continue;
+    }
+    // One by one, up to where three alike start.
+    int j = i;
+    while (j < n && j - i < kMaxRun && !(j + 2 < n && alpha[j] == alpha[j + 1] && alpha[j] == alpha[j + 2])) ++j;
+    *out++ = uint8_t(j - i - 1);
+    std::memcpy(out, alpha + i, size_t(j - i));
+    out += j - i;
+    i = j;
+  }
+  const Span span{int16_t(y), int16_t(x0), uint16_t(n), ink, uint16_t(out - start)};
+  std::memcpy(data + used, &span, sizeof span);
+  used = int(out - data);
+  box.x0 = std::min(box.x0, x0), box.x1 = std::max(box.x1, x1 + 1);
+  box.y0 = std::min(box.y0, y), box.y1 = std::max(box.y1, y + 1);
+}
+
+void Raster::replay(const Recording& r, int dx, int dy) {
+  if (!s.pixels) return;
+  const int top = std::max(0, bounds.y0), under = std::min(bottom(), bounds.y1);
+  const int left = std::max(0, bounds.x0), right = std::min({s.width, kMaxWidth, bounds.x1});
+  for (int at = 0; at + int(sizeof(Span)) <= r.used;) {
+    Span span;
+    std::memcpy(&span, r.data + at, sizeof span);
+    const uint8_t* code = r.data + at + sizeof span;
+    at += int(sizeof span) + span.bytes;
+    const int y = span.y + dy, from = std::max(left, span.x0 + dx), to = std::min(right, span.x0 + dx + span.n);
+    if (y < top || y >= under || from >= to) continue;
+    touch(from, y, to, y + 1);
+    uint16_t* row = s.pixels + y * s.width;
+    // [x0, x1) at opacity a, as composite blends it.
+    auto blend = [&](int x0, int x1, int a) {
+      x0 = std::max(x0, from), x1 = std::min(x1, to);
+      if (a >= 253) {
+        if (x0 < x1) std::fill(row + x0, row + x1, span.ink);
+      } else if (a > 2) {
+        for (int x = x0; x < x1; ++x) row[x] = mix565(row[x], span.ink, a);
+      }
+    };
+    for (int x = span.x0 + dx; code < r.data + at;) {
+      const int c = *code++;
+      if (c & kRun) {
+        const int length = (c & (kRun - 1)) + 1;
+        blend(x, x + length, *code++);
+        x += length;
+      } else {
+        for (int k = 0; k <= c; ++k, ++x) blend(x, x + 1, *code++);
+      }
+    }
   }
 }
 
