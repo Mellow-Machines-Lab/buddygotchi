@@ -104,15 +104,21 @@ struct SettingsPane: View {
             case .outdated?: ("Needs a repair", Theme.clayInk)
             case .unreadable(let why)?: ("Can't read its settings: \(why)", Theme.clayInk)
             case .clientMissing?: (AppModel.clientMissing, Theme.clayInk)
-            case .hooksOff(let file)?: ("Its hooks are turned off in \((file as NSString).abbreviatingWithTildeInPath)", Theme.clayInk)
+            case .hooksOff?: ("Its hooks are turned off in its own settings, so \(model.name) can't see it. Turn them on there.",
+                              Theme.clayInk)
             default: ("Not connected", Theme.inkSoft)
             }
         }
         return SettingRow(icon: agentSymbol(agent.rawValue), title: agent.displayName,
                           detail: text, detailTone: tone) {
             switch health {
-            case .installed?, .hooksOff?:
+            case .installed?:
                 Button("Remove") { model.remove(agent) }.buttonStyle(.row)
+            case .hooksOff(let file)?:
+                // Boop never turns an agent's hooks back on: the person turned them off.
+                Button("Show file") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: file)]) }
+                    .buttonStyle(.row)
+                    .help((file as NSString).abbreviatingWithTildeInPath)
             case .outdated?:
                 Button("Repair") { model.install(agent) }.buttonStyle(.rowFilled)
             case .unreadable?, .clientMissing?:
@@ -132,7 +138,8 @@ struct SettingsPane: View {
         return Card(padding: 0) {
             VStack(spacing: 0) {
                 SettingRow(icon: "rectangle.inset.filled", title: "\(model.name)'s body", detail: device.detail,
-                           detailTone: device.trouble ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft) {
+                           detailTone: device.trouble ? Theme.clayInk : device.connected ? Theme.sageInk : Theme.inkSoft,
+                           more: device.more) {
                     // Reconnecting can't help while Boop isn't running or Bluetooth is off.
                     if model.link != .none, let status = model.status, status.linkTrouble == nil {
                         Button("Reconnect") { model.runtime?.reconnectDevice() }.buttonStyle(.row).fixedSize()
@@ -178,7 +185,7 @@ struct SettingsPane: View {
         case .done(let v): ("Updated to \(v). \(model.name)'s body is starting it.", Theme.sageInk)
         case .failed(let why): ("Couldn't update: \(why)", Theme.clayInk)
         }
-        return SettingRow(icon: "arrow.down.circle", title: version.isEmpty ? "Firmware" : "Firmware \(version)",
+        return SettingRow(icon: "arrow.down.circle", title: version.isEmpty ? "Firmware" : "Update to \(version)",
                           detail: text, detailTone: tone) {
             switch model.firmwareWrite {
             case .idle: Button("Update") { model.updateFirmware() }.buttonStyle(.rowFilled).fixedSize()
@@ -212,7 +219,7 @@ struct SettingsPane: View {
             case .on: ("\(model.name) opens when you log in, so it's there for your agents.", Theme.inkSoft)
             case .off: ("\(model.name) only watches your agents while it's open.", Theme.inkSoft)
             case .needsApproval: ("Allow \(model.name) in System Settings, under General, Login Items.", Theme.clayInk)
-            case .unavailable: ("Only Boop.app opens at login. Build it with make bundle.", Theme.inkSoft)
+            case .unavailable: ("Only Boop.app opens at login, and this copy isn't it. Turn this on in Boop.app.", Theme.inkSoft)
             }
         }
         return SettingRow(icon: "power", title: "Open at login", detail: text, detailTone: tone) {
@@ -220,17 +227,13 @@ struct SettingsPane: View {
                 Button("Open") { NSWorkspace.shared.open(LoginItem.settingsURL) }.buttonStyle(.row)
             } else {
                 Toggle("Open at login", isOn: Binding(get: { state == .on }, set: { model.setOpenAtLogin($0) }))
-                    .toggleStyle(.switch).controlSize(.mini).labelsHidden()
+                    .toggleStyle(.boop).labelsHidden()
                     .disabled(state == .unavailable)
             }
         }
     }
 
     // MARK: Personality
-
-    /// What each personality does, in one line: the
-    /// character pack's (characters/CHARACTER.md §4).
-    private func about(_ personality: Personality) -> String { personality.about ?? "" }
 
     /// What Boop does without a brain, if it has none:
     /// the rules' looks and reactions, but no brain reaction or mood change.
@@ -244,9 +247,6 @@ struct SettingsPane: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     PersonalityPicker(personality: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
-                    Text(about(model.personality))
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
                     if let note = brainNote {
                         Text(note)
                             .font(.system(size: 11)).foregroundStyle(Theme.ink)
@@ -303,34 +303,46 @@ struct SettingsPane: View {
     }
 }
 
-/// Boop or Chatter: equal segments on a well, the chosen one raised on
-/// paper. Drawn here rather than the system's segmented control,
-/// which doesn't stretch, and draws grey in the popover's inactive window.
+/// The pack's personalities, each with what it does (its `about`), so a
+/// name like "Boop" reads as a choice: rows on a well, the chosen one
+/// raised on paper and ticked. Drawn here rather than the system's
+/// segmented control, which doesn't stretch, and draws grey in the
+/// popover's inactive window.
 struct PersonalityPicker: View {
     @Binding var personality: Personality
     @Namespace private var chosen
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
             ForEach(Personality.allCases, id: \.self) { p in
                 let on = p == personality
                 Button {
                     withAnimation(.boopSettle) { personality = p }
                 } label: {
-                    Text(p.rawValue.capitalized)
-                        .font(.system(size: 11, weight: on ? .semibold : .medium))
-                        .foregroundStyle(on ? Theme.ink : Theme.inkSoft)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                        .background {
-                            if on {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Theme.paper)
-                                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
-                                    .matchedGeometryEffect(id: "chosen", in: chosen)
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.rawValue.capitalized)
+                                .font(.system(size: 12, weight: on ? .semibold : .medium))
+                                .foregroundStyle(on ? Theme.ink : Theme.inkSoft)
+                            if let about = p.about {
+                                Text(about).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
-                        .contentShape(Rectangle())
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Theme.ink).opacity(on ? 1 : 0)
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background {
+                        if on {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Theme.paper)
+                                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
+                                .matchedGeometryEffect(id: "chosen", in: chosen)
+                        }
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])
@@ -350,7 +362,10 @@ struct SettingRow<Trailing: View>: View {
     let title: String
     let detail: String
     var detailTone: Color = Theme.inkSoft
+    /// The raw detail under the plain words, behind Details.
+    var more: String?
     @ViewBuilder var trailing: Trailing
+    @ViewState private var showMore = false
 
     var body: some View {
         HStack(spacing: Theme.gapSnug + 2) {
@@ -362,6 +377,19 @@ struct SettingRow<Trailing: View>: View {
                 Text(title).font(.system(size: 12, weight: .medium))
                 Text(detail).font(.system(size: 11)).foregroundStyle(detailTone)
                     .fixedSize(horizontal: false, vertical: true)
+                if let more {
+                    Button { withAnimation(.boopSettle) { showMore.toggle() } } label: {
+                        Label("Details", systemImage: showMore ? "chevron.down" : "chevron.right")
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 2)
+                    if showMore {
+                        Text(more).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                }
             }
             // The words take the room the control leaves, so they wrap only
             // when they must.

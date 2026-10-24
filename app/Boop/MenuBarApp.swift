@@ -245,7 +245,7 @@ final class AppModel: ObservableObject {
     private func changeHooks(_ agent: Agent, _ change: () throws -> Void) {
         hookErrorsDismissed.remove(agent)
         guard ownsHooks else {
-            hookErrors[agent] = "only the everyday Boop changes them"
+            hookErrors[agent] = "only your everyday Boop does that. Change them there."
             return
         }
         var why: String?
@@ -306,6 +306,8 @@ final class AppModel: ObservableObject {
         var short: String
         /// A sentence, for Settings and the device line's help.
         var detail: String
+        /// The fix in full, for whoever wants it: behind Settings' Details.
+        var more: String?
     }
 
     /// The simulator is for developing Boop: `make run`'s debug build
@@ -376,7 +378,9 @@ final class AppModel: ObservableObject {
             let card = voice == "none" ? "it has no card, or no voice file on its card" : "its card's voice file isn't this app's"
             return DeviceState(connected: true, trouble: true, short: "No voice",
                                detail: "Connected \(over), but \(card), so \(name) can't talk. "
-                                   + "Put the app's voice file on a FAT32 card in the board, then press the board's reset button.")
+                                   + "Put this app's voice file on the card, then press the board's reset button.",
+                               more: "The voice file is the character pack's voice/voice.bin, copied onto the card as boop/voice.bin. "
+                                   + "The card must be FAT32: cards over 32 GB come as exFAT, so format one first.")
         }
         return DeviceState(connected: true, short: "Connected", detail: "Connected \(over).")
     }
