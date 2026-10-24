@@ -471,8 +471,10 @@ public final class Runtime: @unchecked Sendable {
     }
 
     /// Onboarding's greetings on the board, which it plays as a rule's
-    /// reaction (only if nothing else plays): Boop waking into its body once
-    /// it's paired, and a celebration for the first hook and the finale.
+    /// reaction (only if nothing else plays, and never while something
+    /// needs you), recorded in the transcript as the rules' others are, and
+    /// waking no brain: Boop waking into its body once it's paired, and a
+    /// celebration for the first hook and the finale.
     public enum Greeting: Sendable {
         case wake, celebrate
         var reaction: DeviceReaction {
@@ -486,7 +488,7 @@ public final class Runtime: @unchecked Sendable {
     public func greet(_ greeting: Greeting) {
         home.async { [self] in
             options.log("onboarding: \(greeting.reaction.name) on the board")
-            playRule(greeting.reaction)
+            run(core(rigs[0]).greet(greeting.reaction, at: options.clock()), on: rigs[0])
         }
     }
 

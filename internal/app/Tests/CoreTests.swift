@@ -2043,6 +2043,25 @@ final class CorePersonalityTests: XCTestCase {
 // MARK: - The working heartbeat, screen and inputs
 
 final class CoreRulesTests: XCTestCase {
+    /// Onboarding's greeting is a rule's reaction: it plays, and the
+    /// transcript records it as a `did` by the rules for no event, which
+    /// wakes no brain; and as the rules' others, it never plays while
+    /// something needs you.
+    func testOnboardingsGreetingIsARulesReactionInTheTranscript() {
+        let rig = CoreRig()
+        let wake = DeviceReaction(anim: "wake_up")
+        let step = rig.pipeline.effects(rig.core.greet(wake, at: rig.now), at: rig.now)
+        XCTAssertEqual(deviceReactions(step.effects), [wake])
+        let did = step.recorded.filter { $0.kind == Event.did }
+        XCTAssertEqual(did.map(\.action), ["wake_up"])
+        XCTAssertEqual(did.map { [$0["by"], $0["for"], $0["ok"]] }, [[.string("rule"), .null, .bool(true)]])
+        XCTAssertTrue(rig.pipeline.harness.log.events.contains { $0.seq == did.first?.seq }, "in the transcript")
+        XCTAssertEqual(step.waking, [], "no brain wakes")
+        rig.send(.turnStart)
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertEqual(rig.core.greet(DeviceReaction(anim: "task_complete", outcome: "success"), at: rig.now), [])
+    }
+
     /// Asleep only with no sessions, whatever the time.
     func testAsleepOnlyWithNoSessionsEvenLateAtNight() {
         let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
