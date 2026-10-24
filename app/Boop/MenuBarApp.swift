@@ -543,23 +543,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         window.makeKeyAndOrderFront(nil)
     }
 
-    /// Onboarding's last button: the menu-bar icon appears, and the window
-    /// shrinks into it.
+    /// Onboarding's last button: the menu-bar icon appears, the window
+    /// shrinks into it, and it blinks twice so you see where Boop went.
     func finishOnboarding() {
         startRuntime()
         makeStatusItem()
         guard let window = onboardingWindow else { return }
-        let target = statusItem?.button?.window?.frame ?? NSRect(x: window.frame.maxX - 40, y: window.frame.maxY - 30, width: 30, height: 22)
+        let still = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        // A turn of the run loop, so the menu bar has placed the new icon.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else { return }
+            let target = statusItem?.button?.window?.frame
+                ?? NSRect(x: window.frame.maxX - 40, y: window.frame.maxY - 30, width: 30, height: 22)
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = still ? 0 : 0.45
+                context.timingFunction = CAMediaTimingFunction(controlPoints: 0.5, 0, 0.75, 0)
+                window.animator().setFrame(NSRect(x: target.midX - 30, y: target.midY - 20, width: 60, height: 40), display: true)
+                window.animator().alphaValue = 0
+            }, completionHandler: { [weak self] in
+                Task { @MainActor in
+                    window.orderOut(nil)
+                    self?.onboardingWindow = nil
+                    self?.onboarding = nil
+                    if !still { self?.blinkIcon(times: 2) }
+                }
+            })
+        }
+    }
+
+    /// The menu-bar icon dims and comes back, `times` times.
+    func blinkIcon(times: Int) {
+        guard times > 0, let button = statusItem?.button else { return }
         NSAnimationContext.runAnimationGroup({ context in
-            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.45
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.5, 0, 0.75, 0)
-            window.animator().setFrame(NSRect(x: target.midX - 30, y: target.midY - 20, width: 60, height: 40), display: true)
-            window.animator().alphaValue = 0
+            context.duration = 0.18
+            button.animator().alphaValue = 0.15
         }, completionHandler: { [weak self] in
             Task { @MainActor in
-                window.orderOut(nil)
-                self?.onboardingWindow = nil
-                self?.onboarding = nil
+                NSAnimationContext.runAnimationGroup({ context in
+                    context.duration = 0.22
+                    button.animator().alphaValue = 1
+                }, completionHandler: { [weak self] in
+                    Task { @MainActor in self?.blinkIcon(times: times - 1) }
+                })
             }
         })
     }
