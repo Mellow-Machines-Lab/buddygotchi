@@ -52,7 +52,7 @@ class MeasureTests(unittest.TestCase):
             self.assertEqual([line.split() for line in out[1:]], [["rest", "2", "1", "1", "1.0", "80", "ms"],
                                                                   ["nap", "3", "1", "57", "57.0", "200", "ms"]])
             with Image.open(sheets / "nap.png") as sheet:
-                self.assertEqual(sheet.size, (8 * 200, 16 + 2), "8 frames a row, each 200 px wide under its ms")
+                self.assertEqual(sheet.size, (8 * 200, 24 + 2), "8 frames a row, each 200 px wide under its 24 px label of its ms")
 
 
 if __name__ == "__main__":

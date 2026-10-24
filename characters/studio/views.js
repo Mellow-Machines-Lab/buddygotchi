@@ -52,6 +52,13 @@
   const leave = (player, ...all) => () => { for (const t of all) t.stop(); player.stop(); };
   // Recorded frames' pictures, let go of once they're replaced.
   const release = frames => { for (const f of frames) f.image?.close(); };
+  // Why the board can't run (from file://, or with no build), inside its
+  // pane, where the board would be; none to clear it.
+  function paneNote(screen, text = '') {
+    const note = screen.querySelector('.board-note') || screen.appendChild(h('p', {className: 'board-note'}));
+    note.textContent = text;
+    note.hidden = !text;
+  }
 
   // The pickers for a cell: the pack's moods in their families, and the
   // board's states, one option for each fact a state has (success or failure…).
@@ -137,11 +144,15 @@
       const live = runs.start(), what = `${pair(s.from, s.to)} on the ${face} board`;
       player.stop();
       status(`Recording ${what}…`);
+      paneNote($('.screen'));
       let frames, n = 0;
       try {
         frames = await api.record({from: s.from, to: s.to, before: 5, after: 100, live,
           heard: () => { if (++n % 10 === 0 && live()) status(`Recording ${what}: ${n} of 106 frames…`); }});
-      } catch (error) { if (live()) status(error.message); return; }
+      } catch (error) {
+        if (live()) { status(''); paneNote($('.screen'), error.message); }
+        return;
+      }
       if (!live()) return release(frames || []);
       release(s.frames);
       s.frames = frames;
@@ -254,7 +265,8 @@
       $('[data-heading]').textContent = r.id;
       $('[data-kind]').textContent = r.kind === 'direct' ? 'Direct: make this' : 'Inspiration';
       $('[data-ref-note]').textContent = r.note;
-      $('[data-reading]').textContent = r.reading || 'Not read yet: boopctl reference read, then the reading in reading.md.';
+      $('[data-reading]').replaceChildren(...(r.reading ? StudioMarkdown.render(r.reading, h)
+        : [h('p', {}, 'Not read yet: boopctl reference read, then the reading in reading.md.')]));
       $('[data-became]').replaceChildren(...(r.became.length ? r.became.map(b => api.stateInfo[b.id]
         ? h('button', {type: 'button', className: 'chip', 'data-open': b.id}, `${b.what} ${b.id}`) : h('span', {className: 'chip'}, `${b.what} ${b.id}`)) : ['Nothing yet']));
       const showing = r.show || {mood: api.packs[api.sel.pack].default_mood, state: 'idle'};
@@ -272,11 +284,15 @@
       const face = onBoard(api, status), live = runs.start();
       if (!face) return;
       status(`Recording it on the ${face} board…`);
+      paneNote($('.screen'));
       let board;
       try {
         board = await api.record({from: {mood: showing.mood, state: showing.state},
           to: showing.anim ? {mood: showing.mood, state: showing.anim} : null, before: 0, after: Math.max(m.frames, 25) - 1, live});
-      } catch (error) { if (live()) status(error.message); return; }
+      } catch (error) {
+        if (live()) { status(''); paneNote($('.screen'), error.message); }
+        return;
+      }
       if (!live()) return release(board || []);
       s.board = board;
       status(`The ${face} board${showing.anim ? `, asked for ${api.stateInfo[showing.anim].label.toLowerCase()} at 0 ms` : ''}: ${s.board.length} frames, ${FRAME_MS} ms apart`);

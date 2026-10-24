@@ -81,7 +81,7 @@ class ReferenceTests(unittest.TestCase):
         with Image.open(folder / "frames" / "pose.png" / "0000.png") as pose:
             self.assertEqual(pose.size, (512, 256), "a still, no bigger than 512 px a side")
         with Image.open(folder / "sheets" / "perk.gif.png") as sheet:
-            self.assertEqual(sheet.size, (8 * 200, 4 * (150 + 16)), "8 frames a row, 4 rows for 25")
+            self.assertEqual(sheet.size, (8 * 200, 4 * (150 + 24)), "8 frames a row, 4 rows for 25, each under its 24 px label")
         ref = json.loads((folder / "reference.json").read_text())
         self.assertEqual((ref["frames"], ref["ms"], ref["status"]), (26, 1000, "read"))
         self.assertEqual(reference.problems(folder), [])

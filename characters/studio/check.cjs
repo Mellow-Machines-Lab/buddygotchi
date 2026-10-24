@@ -7,9 +7,11 @@
 // marks. Then the board's views: a transition recorded and measured, the
 // everyday transitions ranked and the jumpiest opened, and the stage's
 // board back in the scene after, playing or paused as it was; a reference
-// beside the board on one scrubber; a review item with a verdict (the server's
-// answer stood in for, so nothing is saved); and the page from file://,
-// where what needs no server works.
+// beside the board on one scrubber, its reading rendered from Markdown; a
+// review item with a verdict (the server's answer stood in for, so nothing
+// is saved); and the page from file://, where what needs no server works,
+// a board saying in its pane that it needs the server, and four
+// characters' cards two by two.
 // Run `node characters/studio/serve.cjs --port 4190`, then
 // `node characters/studio/check.cjs`. BOOP_PLAYWRIGHT_MODULE, BOOP_QA_BROWSER
 // and BOOP_QA_URL override Playwright, the browser and the page;
@@ -126,6 +128,15 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.deepEqual(await page.evaluate(()=>[document.querySelector('[data-view="references"] [data-media] img').getAttribute('src').split('/').pop(),
       document.querySelector('[data-view="references"] [data-at]').textContent]),['0012.png','480 ms'],'one scrubber moves both');
     assert.ok(await page.evaluate(()=>{const c=document.querySelector('[data-view="references"] [data-board]');return c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i)=>i%4!==3&&v>0);}),'the board drawn beside it');
+    // Its reading, rendered from its Markdown: a heading for each, a table for each, its code, and no marks left.
+    const lines=ref.reading.split('\n'),read=await page.evaluate(()=>{const r=document.querySelector('[data-view="references"] [data-reading]');
+      return {headings:r.querySelectorAll('h3,h4,h5,h6').length,tables:r.querySelectorAll('table').length,heads:[...r.querySelectorAll('table:first-of-type th')].map(e=>e.textContent),
+        code:r.querySelectorAll('code').length,text:r.innerText};});
+    assert.equal(read.headings,lines.filter(l=>/^#{1,6} /.test(l)).length,'a heading for each of the reading\'s');
+    assert.equal(read.tables,lines.filter(l=>/^\s*\|?\s*:?-{3,}:?\s*\|/.test(l)).length,'a table for each');
+    assert.deepEqual(read.heads,['ms','Beat','What happens'],'the first table\'s header row, as cells');
+    assert.ok(read.code>0,'its code as code');
+    assert.ok(!read.text.split('\n').some(l=>/^\s*(#{1,6} |\|)/.test(l)),'no Markdown marks left');
     await shoot('references');
     // A verdict, through the page; the server's answer stood in for, so notes.jsonl is left alone.
     await page.route(u=>new URL(u).pathname==='/review',route=>route.request().method()==='POST'
@@ -151,8 +162,18 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.ok(await page.locator('[data-view="review"] button[value="approve"]').first().isDisabled());
     await page.goto(`${file}#pack=boop&c=board-gel&view=references&ref=${ref.id}`);
     await page.waitForTimeout(500);
-    assert.match(await page.textContent('[data-view="references"] [data-reading]'),/\S/,'the reading, from packs.js');
-    assert.match(await page.textContent('[data-view="references"] [data-board-caption]'),/serve\.cjs/,'the board says it needs the server');
+    assert.ok(await page.evaluate(()=>document.querySelector('[data-view="references"] [data-reading] table')),'the reading, from packs.js, rendered');
+    assert.ok(await page.isVisible('[data-view="references"] .screen .board-note'),'the board says in its pane that it needs the server');
+    assert.match(await page.textContent('[data-view="references"] .screen .board-note'),/serve\.cjs/);
+    assert.equal(await page.textContent('[data-view="references"] [data-board-caption]'),'','and not again under it');
+    await page.goto(`${file}#pack=boop&c=board-gel`);
+    await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    await page.waitForTimeout(500);
+    assert.match(await page.textContent('#stage .board-note'),/serve\.cjs/,'the stage\'s board says so in its pane too');
+    assert.doesNotMatch(await page.textContent('[data-status]'),/serve\.cjs/,'and not again under it');
+    // Four characters' cards sit two by two.
+    const rows=await page.evaluate(()=>[...document.querySelectorAll('[data-cards] .character')].map(c=>Math.round(c.getBoundingClientRect().top)));
+    assert.deepEqual([rows.length,new Set(rows).size,rows[0]===rows[1],rows[2]===rows[3]],[4,2,true,true],`the cards two by two, not ${rows}`);
     await shoot('file');
     assert.deepEqual(errors,[],'no page errors');
     console.log('STUDIO VIEWS PASS: transitions, references, review, file://');

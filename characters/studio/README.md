@@ -41,10 +41,10 @@ saves no verdicts.
 ## What's on the page
 
 - **Pack**, when there's more than one here, and the **characters** for
-  it: each preview the pack declares or uses (Boop's pack shows its gel slime
-  and Pixel's pixel face), and then a board for each face its boards
-  have (On the board, below). Switching keeps the mood and state,
-  so the same moment can be compared on all of them.
+  it, two a row: each preview the pack declares or uses (Boop's pack
+  shows its gel slime and Pixel's pixel face), and then a board for each
+  face its boards have (On the board, below). Switching keeps the mood
+  and state, so the same moment can be compared on all of them.
 - **Mood**: the pack's moods in their families, each with the colour its
   studio entry gives the family. When a character has no art of its own
   for a mood, its chip is dashed with an arrow, and the stage plays the
@@ -91,7 +91,9 @@ saves no verdicts.
   largest frame to the median, the same rule as `measure.py`'s; clicking
   one records it here.
 - **References**: each of the pack's references (CHARACTER.md §16), its
-  status, kind and note, the agent's reading and what it became. Side by
+  status, kind and note, the agent's reading (its `reading.md`, rendered
+  by `markdown.js`: headings, paragraphs, lists, tables and code) and
+  what it became. Side by
   side, the reference's media and the board playing its `show`, recorded
   on the frozen clock over as many frames as the reference has, 25 (a
   second) at the least, with one scrubber and one Play for both, frame
@@ -132,7 +134,8 @@ taps in a row or a stroke a touch, where the simulator taps, and no Mac
 simulator's page does, and picks its own variations; a matrix cell
 steps its clock 100 ms ten times a second, so twelve can play at once.
 Its sound is the firmware's own effects (the board has no voice file on
-its card here). The views record on the stage's board, which rests while
+its card here). A board that can't run (from `file://`, or with no build)
+says why in its pane, where it would be. The views record on the stage's board, which rests while
 they're shown, one recording at a time, and back in the scene it plays
 the selection from a reset again, paused if it was paused before.
 Recording, they freeze its clock and step it a frame at a time, as the
@@ -231,10 +234,12 @@ come, the jumpiest first, and the jumpiest opened, measuring as it
 ranked; the stage's board back in the scene after a view recorded on
 it, playing, and paused if it was; a reference with the board recorded
 beside it, one scrubber
-moving both; a review item's images and a verdict through the page (the
-server's answer stood in for, so nothing is saved); and the page from
-`file://`, the reading shown and the comment box saying to use the
-server. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points at another
+moving both, and its reading rendered from its Markdown (a heading and a
+table for each of its own, no marks left); a review item's images and a
+verdict through the page (the server's answer stood in for, so nothing
+is saved); and the page from `file://`, the reading shown, the comment
+box saying to use the server, the board saying so in its pane and not
+again under it, and Boop's four characters' cards two by two. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points at another
 copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above) and
 the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
 
@@ -245,10 +250,10 @@ node characters/studio/check.cjs
 
 The logic needs no browser: the change measure and its summary, held to
 the rule `measure.py`'s test is (`internal/tools/fluid/tests/changed.json`),
-how each state is asked of the board, and the server, in a copy of it
-beside a pack of its own: its verdicts, which charactergen's review
-check then takes, and its files in part (`make -C internal tools-test`
-runs it):
+how each state is asked of the board, the server, in a copy of it
+beside a pack of its own (its verdicts, which charactergen's review
+check then takes, and its files in part), and `markdown.js`'s rendering
+(`make -C internal tools-test` runs it):
 
 ```sh
 node --test characters/studio/tests/*.test.cjs

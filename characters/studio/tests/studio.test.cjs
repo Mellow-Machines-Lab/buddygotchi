@@ -3,7 +3,8 @@
 // (internal/tools/fluid/tests/changed.json), and how it asks the board for
 // each state; and serve.cjs's review verdicts, which charactergen's review
 // check takes, and its files in part, in a copy of it beside a pack of its
-// own. Run: node --test characters/studio/tests/
+// own; and markdown.js's rendering of a reading. Run: node --test
+// characters/studio/tests/
 const assert=require('node:assert/strict'),{test}=require('node:test'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawn,execFileSync}=require('node:child_process');
 const studio=path.resolve(__dirname,'..'),repo=path.resolve(studio,'../..');
@@ -94,4 +95,27 @@ test('serve.cjs saves a verdict charactergen takes, only from its own page, and 
   assert.deepEqual(await get('bytes=6-99'),[206,'bytes 6-9/10',[6,7,8,9]]);
   assert.deepEqual(await get('bytes=20-'),[416,'bytes */10',[]],'past its end');
   assert.deepEqual((await get('bytes=0-1,4-5'))[0],200,'several ranges: the whole file');
+});
+
+test('a reading\'s Markdown, as elements: headings, paragraphs, lists, tables and code', () => {
+  const {render}=require(path.join(studio,'markdown.js'));
+  // h as plain objects, and back to a compact form to compare.
+  const h=(tag,props,...children)=>({tag,props,children});
+  const show=n=>typeof n==='string'?n:`<${n.tag}${n.props.href?` ${n.props.href}`:''}>${n.children.map(show).join('')}`;
+  const md=['# Notice: the reading','','Read from `sheets/perk.gif.png`, **slowly**,','then *again*. See [the bank](https://example.com) or [here](frames/).',
+    '','## Beats','','| ms | Beat |','| --- | --- |','| 0–160 | Dozing |','| 200 | The `!` |','',
+    '- Resting squash','  is flat.','- Perk: tall','','1. one','2. two','','```','a | b','# not a heading','```','---','| a lone bar'].join('\n');
+  assert.deepEqual(render(md,h).map(show),[
+    '<h3>Notice: the reading',
+    '<p>Read from <code>sheets/perk.gif.png, <strong>slowly, then <em>again. See <a https://example.com>the bank or here.',
+    '<h4>Beats',
+    '<table><thead><tr><th>ms<th>Beat<tbody><tr><td>0–160<td>Dozing<tr><td>200<td>The <code>!',
+    '<ul><li>Resting squash is flat.<li>Perk: tall',
+    '<ol><li>one<li>two',
+    '<pre><code>a | b\n# not a heading',
+    '<hr>',
+    '<p>| a lone bar',
+  ]);
+  assert.deepEqual(render('',h),[]);
+  assert.deepEqual(render('snake_case_name and 2*3*4',h).map(show),['<p>snake_case_name and 2*3*4'],'no emphasis inside words');
 });

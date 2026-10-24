@@ -197,7 +197,15 @@
         said = '';
         play();
         ctx.onChange();
-      }, error => { said = error.message; ctx.onChange(); });
+      }, error => {
+        // Why it can't run, in the pane where the board would be.
+        const note = document.createElement('p');
+        note.className = 'board-note';
+        note.textContent = error.message;
+        ctx.stage.append(note);
+        said = null;
+        ctx.onChange();
+      });
       return {
         select(s) {
           cell = {mood: s.mood, state: s.state, outcome: s.outcome, context: s.context};
@@ -236,6 +244,7 @@
           if (look && !lent) say();
         },
         status() {
+          if (said === null) return '';  // the pane says why it can't run
           return said || `The ${face} face's firmware, picking its own variations · ${paused ? 'paused' : 'running'} · ${kit.board.audible ? 'sound on' : 'silent'}`;
         },
         destroy() {
@@ -244,6 +253,7 @@
           clearInterval(stepping);
           kit?.board.power(false);
           canvas.remove();
+          ctx.stage.querySelector('.board-note')?.remove();
         },
       };
     }};

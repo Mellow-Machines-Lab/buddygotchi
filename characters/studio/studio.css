@@ -42,7 +42,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .pack-choice select{width:auto}
 .missing{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:18px}
 .missing code{font:13px ui-monospace,monospace}
-.characters{display:flex;gap:10px;flex-wrap:wrap}
+/* Two cards a row, so four sit two by two */
+.characters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .character{display:flex;align-items:center;gap:12px;text-align:left;padding:8px 14px 8px 8px;border-radius:14px;min-height:64px}
 .character[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
 .character-text{display:flex;flex-direction:column;line-height:1.25}
@@ -134,12 +135,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
 /* The board's own preview, on the stage and in a matrix cell */
 .board-screen{object-fit:contain;image-rendering:pixelated}
+/* Why the board can't run, in its pane where it would be */
+.board-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;margin:0;color:#c8c8c8;font-size:14px;overflow-wrap:anywhere}
+.thumb .board-note{display:none}
 
 /* Transitions, References and Review */
 .board-view{display:flex;flex-direction:column;gap:14px}
 .view-head{color:var(--muted);font-size:13.5px;max-width:90ch}
 .view-head code,.missing code{font:12.5px ui-monospace,monospace}
-.screen{background:var(--stage);border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.screen{position:relative;background:var(--stage);border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center}
 .screen canvas{display:block;max-width:100%;max-height:100%;image-rendering:pixelated}
 .badge{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--ink);white-space:nowrap}
 .badge[data-level="in review"]{background:#fbe7bf;color:#6b4700}
@@ -188,7 +192,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .ref-media img,.ref-media video{width:100%;height:100%;object-fit:contain}
 figcaption{font-size:12.5px;color:var(--muted)}
 .ref .meaning{margin-top:12px}
-.reading{white-space:pre-wrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;max-height:520px;overflow:auto}
+.reading{font-size:14px;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 16px 14px;margin:0;max-height:620px;overflow:auto}
+.reading :is(h3,h4,h5,h6){margin:14px 0 6px}
+.reading h3{font-size:17px}
+.reading h4{font-size:15px}
+.reading :is(h5,h6){font-size:14px}
+.reading :is(p,ul,ol,table,pre){margin:0 0 10px}
+.reading :is(ul,ol){padding-left:22px}
+.reading code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);border-radius:4px;padding:1px 4px}
+.reading pre{background:var(--soft);border-radius:8px;padding:10px 12px;overflow:auto}
+.reading pre code{background:none;padding:0}
+.reading table{border-collapse:collapse;width:100%;font-size:13.5px}
+.reading :is(th,td){border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.reading th{background:var(--soft);font-weight:600}
+.reading hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .review-items{display:grid;gap:16px}
 .review-item{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .review-item header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
