@@ -873,8 +873,10 @@ fade, through the same dither, with no blink: the whole picture, or
 between two designs the rig face draws, their desks while the face
 stays whole, moving from where the one had it to where the other has
 it. A switch mid-way through a dissolve dissolves from the picture that
-shows more, as it last showed. Into and out of the needs-you screen it
-cuts: the placard rises in and drops away on its own. The hat
+shows more, as it last showed. Into and out of the needs-you screen, and
+from one request's screen to the next's, each picture dissolves whole:
+the screen with its own strip and words, the face with its lane and what
+it wears; then the placard rises on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
 

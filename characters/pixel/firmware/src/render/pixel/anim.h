@@ -73,29 +73,36 @@ class PixelFace final : public Face {
   bool rigDraws(Mood m, SceneState s, int v) const { return RigFace::pose(m) && rigFaced(m, s, v); }
   bool rigDraws() const { return rigDraws(src_.mood, src_.state(), src_.variant()); }
   // A frame draws the needs-you screen, a design, or a design with the rig
-  // face in it.
-  enum class Drew : uint8_t { kNeedsYou, kDesign, kRig };
-  // A picture shown: what it drew, and the design's show.
+  // face in it; kNone, nothing yet.
+  enum class Drew : uint8_t { kNone, kNeedsYou, kDesign, kRig };
+  // A picture shown: what it drew, and the design's show; for the
+  // needs-you screen, its pose and what it asked (the strip's agent, its
+  // thread else project, and how many more), which the strip no longer
+  // has once it's answered.
   struct Shown {
-    Drew kind = Drew::kNeedsYou;
+    Drew kind = Drew::kNone;
     SceneShow show;
+    NeedsYouPose needsYou;
+    char agent[16] = "", what[64] = "";
+    int more = 0;
   };
   // A switch dissolves what shows into what's next over the rig's fade
   // (rig::kFadeMs), the whole picture; from the rig face to the rig face,
   // the designs around it, the face staying whole as it moves from where
   // the one had it to where the other has it. Into and out of the
-  // needs-you screen, which rises in on its own, it cuts. One mid-way
-  // through a dissolve dissolves from the picture that shows more, as it
-  // last showed, so nothing comes back.
+  // needs-you screen, which has a lane of its own, the face's lane and what
+  // it wears and holds go with the face. One mid-way through a dissolve
+  // dissolves from the picture that shows more, as it last showed, so
+  // nothing comes back.
   void startSwitch(uint32_t t);
   // How much of what comes in shows, 0 … 1000: all of it but while a
   // switch dissolves.
   int mix(uint32_t t) const {
-    const bool fading = from_.kind != Drew::kNeedsYou && within(t, switchAt_, rig::kFadeMs);
+    const bool fading = from_.kind != Drew::kNone && within(t, switchAt_, rig::kFadeMs);
     return fading ? ease1000(int(t - switchAt_), int(rig::kFadeMs)) : 1000;
   }
   // Everything a frame's pixels depend on but the words it shows: what it
-  // draws, what a switch dissolves it from (kNeedsYou for nothing) and the
+  // draws, what a switch dissolves it from (kNone for nothing) and the
   // pixels of it that come in, the lane's dither level and whether the
   // bubble shows, the held sign's place, the hat's, the outfit's look, and
   // the needs-you screen's pose or the frames laid out. Two equal pictures draw the
@@ -136,7 +143,7 @@ class PixelFace final : public Face {
   uint32_t arcCovered_ = 0;
   RigFace rig_;
   // What the last frame drew (coming in, while a switch dissolves) and its
-  // picture's key; and what a switch dissolves from, kNeedsYou for nothing.
+  // picture's key; and what a switch dissolves from, kNone for nothing.
   Shown drawn_, from_;
   uint64_t drawnKey_ = 0;
   Picture picture_;

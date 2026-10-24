@@ -269,7 +269,7 @@ static void test_tap_during_needs_you_is_only_the_dip_and_stays_amber() {
 }
 
 // Answered on the Mac, the face goes back to the base
-// look with no reaction: the needs-you screen cuts away, with no blink.
+// look with no reaction: the needs-you screen dissolves away, with no blink.
 static void test_answering_on_the_mac_goes_back() {
   Rig r;
   r.state(attn());
@@ -315,7 +315,7 @@ static void test_needs_you_wins_over_reactions() {
 }
 
 // Attention arriving under a finish (which it ends) or a poke shows the
-// needs-you design at once, its clock starting at the change: its sign
+// needs-you design at once, its clock starting at the change: its placard
 // rises in on its own, with no blink.
 static void test_changes_mid_motion_start_the_new_design() {
   const SceneState anims[] = {SceneState::kTaskComplete, SceneState::kPoked};
@@ -345,8 +345,7 @@ static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
   render::Canvas c{px.data()};
   r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.strip(r.t), dirty);
 }
-// The needs-you screen shows, which a switch to or from cuts: it rises in,
-// and drops, on its own.
+// The needs-you screen shows.
 static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
 // A switch of design doesn't cut hard: it dissolves over the rig's fade,
 // its first frame a sixteenth of the new design's pixels, so the frame
@@ -382,8 +381,8 @@ static ReactionIn animated(SceneState a, int variant = 0, const char* take = nul
 // Every way round: whatever state Boop is in, whatever is playing, and
 // whatever arrives (any message or input), the design just after the
 // change is the design just before it, at the same instant of its clock, or
-// else the face dissolves from the one to the other, but for the needs-you
-// sign, which cuts in and out. The states
+// else the face dissolves from the one to the other, the needs-you screen
+// too, into it, out of it and from one to another. The states
 // span the first pack's moods and the new moods' flip-books and what the
 // agents are doing; what plays includes a reaction's borrowed face, a
 // finish in a mood, a rule's reaction and a poke; what arrives the same, a finish
@@ -446,7 +445,6 @@ static void test_no_change_ever_cuts_hard() {
           }
           r.at(r.t + when);
           SceneShow before = r.b.show(r.t);
-          const bool neededYou = needsYouShows(r);
           drawFace(r, was, true);
           if (event < kStates) {
             r.state(states[event]);
@@ -476,7 +474,7 @@ static void test_no_change_ever_cuts_hard() {
           SceneShow after = r.b.show(r.t);
           bool same = designOf(before) == designOf(after) && before.t == after.t;
           drawFace(r, now, true);
-          if (!same && !neededYou && !needsYouShows(r) && !dissolves(was, now)) {
+          if (!same && !dissolves(was, now)) {
             char why[160];
             std::snprintf(why, sizeof(why), "from state %d, playing %d, event %d at +%u ms: design %d at %u, then %d at %u",
                           from, playing, event, unsigned(when), designOf(before), unsigned(before.t), designOf(after),
@@ -577,6 +575,77 @@ static void test_a_switch_mid_dissolve_dissolves_from_what_shows_more() {
   }
 }
 
+// The needs-you screen dissolves as a picture, its lane in it, both ways
+// over the rig's fade: 100 ms into a switch from asleep's design to it, and
+// from it back to asleep's, every pixel of the frame is one of the two
+// pictures' as a board that drew nothing before draws each whole, above
+// the lane the one the dither gives it, and it holds some of each.
+static void test_the_needs_you_screen_dissolves_both_ways() {
+  const render::Dither in = render::Dither::fade(render::ease1000(100, int(render::rig::kFadeMs)), true);
+  for (bool into : {true, false}) {
+    Rig r, fresh;
+    const Model from = into ? base("asleep") : attn(), to = into ? attn() : base("asleep");
+    for (Rig* x : {&r, &fresh}) x->state(from), x->at(3000);
+    std::vector<uint8_t> was(size_t(render::kWidth) * render::kHeight), px(was.size()), whole(was.size());
+    drawFace(r, was, true);
+    TEST_ASSERT_EQUAL(!into, needsYouShows(r));
+    for (Rig* x : {&r, &fresh}) x->state(to), x->at(3100);
+    TEST_ASSERT_EQUAL(into, needsYouShows(r));
+    drawFace(r, px, true);
+    drawFace(fresh, whole, true);
+    int ofWas = 0, ofNew = 0;
+    for (int y = 0; y < render::kHeight; ++y) {
+      for (int x = 0; x < render::kWidth; ++x) {
+        const size_t i = size_t(y) * render::kWidth + x;
+        if (px[i] != was[i] && px[i] != whole[i]) {
+          char why[96];
+          std::snprintf(why, sizeof why, "%s: pixel (%d, %d) is neither's", into ? "into" : "out of", x, y);
+          TEST_FAIL_MESSAGE(why);
+        }
+        if (y < render::kLaneTop) TEST_ASSERT_EQUAL_UINT8(in.draws(x, y) ? whole[i] : was[i], px[i]);
+        ofWas += px[i] == was[i] && px[i] != whole[i], ofNew += px[i] == whole[i] && px[i] != was[i];
+      }
+    }
+    TEST_ASSERT_TRUE(ofWas > 1000 && ofNew > 1000);
+  }
+}
+
+// A switch back mid-way through the needs-you screen's dissolve dissolves
+// from the picture that shows more, as it last showed, so neither pops:
+// answered 150 ms into asleep dissolving into it, every pixel of the
+// screen that showed still shows in the frame just after, but for the new
+// dissolve's first sixteenth; answered 50 ms in, every pixel of asleep's.
+static void test_a_switch_back_mid_needs_you_dissolve_doesnt_pop() {
+  for (uint32_t gap : {50u, 150u}) {
+    Rig r;
+    r.state(base("asleep"));
+    r.at(3000);
+    std::vector<uint8_t> before(size_t(render::kWidth) * render::kHeight), after(before.size());
+    drawFace(r, before, true);
+    r.state(attn());
+    for (uint32_t ms = 10; ms <= gap; ms += 10) {
+      r.at(3000 + ms);
+      drawFace(r, before, true);
+    }
+    TEST_ASSERT_TRUE(needsYouShows(r));
+    r.state(base("asleep"));
+    drawFace(r, after, true);
+    const render::Dither shown = render::Dither::fade(render::ease1000(int(gap), int(render::rig::kFadeMs)), true);
+    const render::Dither more = gap > render::rig::kFadeMs / 2 ? shown : render::Dither{shown.hi, 16};
+    const render::Dither stays = more.both({1, 16});
+    int kept = 0;
+    for (int y = 0; y < render::kLaneTop; ++y) {
+      for (int x = 0; x < render::kWidth; ++x) {
+        if (!stays.draws(x, y)) continue;
+        const size_t i = size_t(y) * render::kWidth + x;
+        TEST_ASSERT_EQUAL_UINT8(before[i], after[i]);
+        kept += before[i] != render::kBlack;
+      }
+    }
+    TEST_ASSERT_TRUE(kept > 100);
+  }
+}
+
 // Two taps 150 ms apart: the second poke dissolves from the first as it
 // showed, which shows more by then, so idle doesn't flash back between
 // them. The frame just after the second shares no more of idle's pixels
@@ -619,9 +688,9 @@ static void test_a_poke_while_asleep_has_its_own_eyes() {
 }
 
 // A press kicks the rig face only if it began while the rig face showed:
-// held on the needs-you screen through its dismissal, the face that cuts in
-// isn't poked (it draws as one with no finger); a press that begins on it
-// squashes it.
+// held on the needs-you screen through its dismissal, the face that
+// dissolves in isn't poked (it draws as one with no finger); a press that
+// begins on it squashes it.
 static void test_only_a_press_on_the_rig_face_kicks_it() {
   Rig held, none, pressed;
   std::vector<uint8_t> a(size_t(render::kWidth) * render::kHeight), b(a.size()), c(a.size());
@@ -630,6 +699,8 @@ static void test_only_a_press_on_the_rig_face_kicks_it() {
     r->at(1000);
   }
   drawFace(held, a, true);
+  drawFace(none, b, true);
+  drawFace(pressed, c, true);
   TEST_ASSERT_TRUE(needsYouShows(held));
   held.b.face().finger(true, 160, 120);
   for (Rig* r : {&held, &none, &pressed}) {
@@ -678,8 +749,7 @@ static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
 // finish or across a look change, a poke, a rule's reaction, a `say`, a finish
 // held on for its `say`, the Mac going quiet), the face never cuts hard.
 // From one 20 ms frame to the next the design goes on at the same instant of
-// its clock, or the face dissolves from the one to the other (but for the
-// needs-you screen, which cuts in and out). An animation's design
+// its clock, or the face dissolves from the one to the other. An animation's design
 // starting over at each of its loop boundaries is its clock going on, and
 // so is resting on its last frame.
 static void test_nothing_cuts_hard_as_it_plays_out() {
@@ -737,7 +807,6 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
         default: break;
       }
       SceneShow before = r.b.show(r.t);
-      bool neededYou = needsYouShows(r);
       drawFace(r, now, true);
       const uint32_t end = playing == kQuiet ? Behaviour::kNoAppMs + 2000 : r.t + 60000;
       bool moved = false;
@@ -759,15 +828,14 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
         const bool goesOn = same && (after.t == next || rests);
         if (!goesOn) was = now;
         drawFace(r, now, false);
-        const bool needsYou = needsYouShows(r);
-        if (!goesOn && !neededYou && !needsYou && !dissolves(was, now)) {
+        if (!goesOn && !dissolves(was, now)) {
           char why[112];
           std::snprintf(why, sizeof(why), "state %d/%d, playing %d: design %d at %u, then %d at %u, at t=%u",
                         int(m.base), int(m.mood), playing, designOf(before), unsigned(before.t), designOf(after),
                         unsigned(after.t), unsigned(t));
           TEST_FAIL_MESSAGE(why);
         }
-        before = after, neededYou = needsYou;
+        before = after;
         ++frames;
       }
     }
@@ -2978,6 +3046,8 @@ int main() {
   RUN_TEST(test_no_change_ever_cuts_hard);
   RUN_TEST(test_a_switch_dissolves_over_200_ms);
   RUN_TEST(test_a_switch_mid_dissolve_dissolves_from_what_shows_more);
+  RUN_TEST(test_the_needs_you_screen_dissolves_both_ways);
+  RUN_TEST(test_a_switch_back_mid_needs_you_dissolve_doesnt_pop);
   RUN_TEST(test_a_double_tap_doesnt_flash_back);
   RUN_TEST(test_a_poke_while_asleep_has_its_own_eyes);
   RUN_TEST(test_only_a_press_on_the_rig_face_kicks_it);

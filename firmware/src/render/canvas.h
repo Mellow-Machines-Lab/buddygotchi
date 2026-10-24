@@ -25,6 +25,9 @@ struct Dither {
   static Dither fade(int mix, bool incoming);
   // This one, of what `outer` draws.
   Dither within(Dither outer) const;
+  // The pixels this one and `other` both draw: a picture's own fade, drawn
+  // under another's.
+  Dither both(Dither other) const { return {lo > other.lo ? lo : other.lo, hi < other.hi ? hi : other.hi}; }
   bool all() const { return lo == 0 && hi >= 16; }
   bool draws(int x, int y) const { return kBayer[y & 3][x & 3] >= lo && kBayer[y & 3][x & 3] < hi; }
 };
@@ -40,6 +43,7 @@ class Canvas {
   // Which pixels fillRect and plot draw, every one unless it's set: a
   // picture faded by the dither, drawn whole.
   void setMask(Dither d) { mask_ = d; }
+  Dither mask() const { return mask_; }
 
   void fill(uint8_t color);
   // A rectangle's pixels that the mask draws, or that `d` draws.
