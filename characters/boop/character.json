@@ -879,7 +879,7 @@
     {
       "id": "boop",
       "label": "Gel slime",
-      "about": "AMOLED board & Mac",
+      "about": "The design's reference engine",
       "icon": "studio/icon.svg",
       "scripts": [
         "design/slime-blob/preview/catalog.js",

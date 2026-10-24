@@ -228,17 +228,21 @@ class Link:
 
 
 class Sim(Link):
-    """The native simulator as a subprocess: the device core on the Mac."""
+    """The native simulator as a subprocess: the device core on the Mac.
+    `program` is its path, or a command that behaves as it does on its
+    stdin and stdout (the Mac's mirror of the board, mirror_board.mjs)."""
 
     name = "the native simulator"
 
-    def __init__(self, program: str) -> None:
+    def __init__(self, program: str | list[str], name: str | None = None) -> None:
         super().__init__()
-        self._program = program
+        self._program = [program] if isinstance(program, str) else program
         self._proc: subprocess.Popen[bytes] | None = None
+        if name:
+            self.name = name
 
     def __enter__(self) -> "Sim":
-        self._proc = subprocess.Popen([self._program], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._proc = subprocess.Popen(self._program, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         os.set_blocking(self._proc.stdout.fileno(), False)  # type: ignore[union-attr]
         return self
 

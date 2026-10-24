@@ -254,7 +254,7 @@ struct FinaleAct: View {
                 .buttonStyle(ProminentButtonStyle())
                 .keyboardShortcut(.defaultAction)
         }
-        .task { model.feed.reaction(id: 0, DeviceReaction(anim: "task_complete", outcome: "success")) }
+        .task { model.feed.reaction(DeviceReaction(anim: "task_complete", outcome: "success")) }
     }
 
     /// A tip; amber's, which is what it means, has its dot.

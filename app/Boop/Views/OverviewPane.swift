@@ -85,7 +85,7 @@ struct OverviewPane: View {
             HStack(spacing: Theme.gap) {
                 HStack(spacing: Theme.gap) {
                     if let status = model.status, status.connected, status.device?.face == .gel, SlimeFeed.folder != nil {
-                        SlimeFace(feed: model.slime, snapshot: status.snapshot, live: model.shown, listening: status.faceListening, size: faceSize)
+                        SlimeFace(feed: model.slime, snapshot: status.snapshot, live: model.shown, size: faceSize)
                     } else {
                         BoopFace(mood: FaceMood(model.status), design: model.status?.snapshot.mood ?? MoodOutput.initial,
                                  size: faceSize)

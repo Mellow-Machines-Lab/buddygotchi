@@ -5,7 +5,7 @@ families are implemented, idle, sleep and a finish have their comedy
 (Comedy, below), the board's gestures have a take each (Gestures), the
 looks have occasions (Occasions), and one face flows into the next
 (Directed edge bridges: its arts morph or cross-fade, never closing). Q1 representative art review was approved on
-2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph, Mac mirror and native integer port are implemented. Contact-synchronized
+2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph and native integer port are implemented, and the Mac shows the port itself (the board's firmware as WebAssembly, characters/CHARACTER.md §9). Contact-synchronized
 reference sound is implemented; timbres remain sketches.
 
 ## Keep the object; change its targets
@@ -615,8 +615,8 @@ A look may have takes that need tags (`when`, every one on: the board's
 `render/tags.h`, the part of the day, the holidays, `party`, `busy` and
 `frantic`) or a wait (`after`, seconds the look has shown), as Pixel's
 designs do (characters/CHARACTER.md §9). The host says them with
-`setOccasion({when, lookMs})`; the board does on every sync, the Mac's
-mirror with the Mac's tags and no wait. While one fits, a pick goes to one
+`setOccasion({when, lookMs})`; the board does on every sync (and so does
+the Mac's mirror of it, the board's own firmware). While one fits, a pick goes to one
 of those that fit 67% of the time (`occasionShare`), any one alike;
 otherwise, and while none fits, the look deals as it always has, drawing
 no randomness of its own, so no trace without occasions changed.
@@ -666,8 +666,8 @@ squashes, dips under a finger and slides off the screen with the body
 and is cut off there with it. Peekaboo's gesture hides the hat. At night
 the lids hang a little lower (`kNightLids`) on the awake face, easing out
 as the sleeping face crosses in and back as it wakes. The layers read
-the engine and never change it, so the traces don't see them; the Mac's
-mirror doesn't draw them yet.
+the engine and never change it, so the traces don't see them. The Mac's
+mirror of the board draws them, as the board's own code.
 
 ## States share one scene
 
@@ -951,10 +951,10 @@ texture, full scene targets and bloom require capabilities/memory the
 original ESP32 does not have. The owner has selected one face per board at
 build time: the CYD keeps its pixel bank; the AMOLED uses the integer gel renderer behind the common face interface. There
 is no runtime character switcher and no frame streaming over the link.
-The bundled Mac mirror now uses this engine; firmware uses the separately tested integer port. Facegen does not convert
-the gel shader. `clearTransient()` drops
-elapsed one-shots/listening when the popover hides without resetting any
-body spring. The host restores its current listening hold when it reopens.
+The Mac's popover no longer bundles this engine: it shows the integer
+port, the board's own firmware built to WebAssembly (characters/CHARACTER.md
+§9), which `boopctl mirror` checks draws every gel scenario as the native
+simulator does, pixel for pixel. Facegen does not convert the gel shader.
 
 The original handoff called for hardware review before the full port. The
 owner subsequently asked to continue through the rendered buddy without routine

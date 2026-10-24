@@ -2,7 +2,8 @@
 
 Everything in the repo that doesn't ship. What ships is in `app/` (the Mac
 app and its library, BoopKit), `firmware/` (the board's firmware, its
-generated assets and the scripts that build it), and three packages of
+generated assets and the scripts that build it, the Mac's mirror of the
+board among them, built into the character pack's `mac/mirror/`), and three packages of
 their own, each with its own tests beside its code
 ([documentation/architecture.html](../documentation/architecture.html#joins)): `agent-hooks/` (the hook client
 and its library), `mellowharness/` (the brain's harness, `mellowharness-emit` and
@@ -20,7 +21,7 @@ tests, evals, dev tools and skills.
 | `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make build` runs it) |
 | `firmware/test/` | The firmware's unit tests, the simulator scenarios and their golden pictures. LinkKit's device library tests in its own project (`linkkit/device/test/`) |
 | `firmware/voice_file.h` | The voice file read from the chosen character pack's `voice/voice.bin`, for the firmware's tests, which have no SD card |
-| `tools/` | `appicon` (draws the app's placeholder icon, `app/Boop/AppIcon.icns`, until a designed one replaces it), `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), `fluid/` (each frame's change across the everyday transitions, recorded in the simulator, by the rule the Character Studio's Transitions measures with too), and the `webcam/` recorder. `boopctl reference` takes in a reference a person gave and cuts it into frames ([characters/CHARACTER.md](../characters/CHARACTER.md) §16). The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`, `gel-trace`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
+| `tools/` | `appicon` (draws the app's placeholder icon, `app/Boop/AppIcon.icns`, until a designed one replaces it), `boopctl` (the board over USB, the simulator and the Mac's mirror of the board checked against it, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), `fluid/` (each frame's change across the everyday transitions, recorded in the simulator, by the rule the Character Studio's Transitions measures with too), and the `webcam/` recorder. `boopctl reference` takes in a reference a person gave and cuts it into frames ([characters/CHARACTER.md](../characters/CHARACTER.md) §16). The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`, `gel-trace`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
 | `sessions/` | The projects a pack's demo scripts run in when a real agent plays them, for videos (`make demo IN=…`, [sessions/README.md](sessions/README.md)) |
 | `characters/` | The tests of `characters/charactergen.py` (`make -C internal tools-test`, and CI): the studio lists the board's states, each once; every pack here passes the studio's rules; those rules on small made-up packs (a studio entry is optional, states match the board's, declared files exist, a preview wears only the pack's moods, and the data's paths are from the page), and every pack's moods are exactly the universal ones; a pack's rig/ (every pack here clean, a bad edit failing with its file and key, the tables written as its files say); a pack's references and review queue (every key, value and file, what each status says is there, what it became on the rig) and the studio's data from them, a board for each face among it; and `--stage` takes the chosen pack's own files only, with the two headers it makes |
 | `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/` and `.codex/skills/` |
@@ -59,8 +60,10 @@ tests, evals, dev tools and skills.
   `../.character-build/firmware-test`, which `characters/charactergen.py
   --stage` fills with links to the suites here (`firmware/test/test_*`)
   and the chosen pack's own (`tests/firmware/test_*`). The
-  `native` env's `build_src_filter` adds the simulator's core,
-  `simulator/core/` (the filter is relative to `firmware/src/`). Both envs link LinkKit's
+  `native` env's `build_src_filter` adds the hosted board,
+  `firmware/src/board/hosted/`, which the Mac's mirror of the board runs
+  too, and the simulator's core on it, `simulator/core/` (the filter is
+  relative to `firmware/src/`). Both envs link LinkKit's
   device library, `linkkit/device/`, through `lib_deps`
   (`symlink://../linkkit/device`), so the tests and the simulator run the
   same kit as the board. The library's own tests are in its folder, with

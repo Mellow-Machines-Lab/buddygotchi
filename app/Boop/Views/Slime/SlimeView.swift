@@ -8,8 +8,6 @@ struct SlimeView: NSViewRepresentable {
     let feed: SlimeFeed
     let snapshot: StateSnapshot
     let visible: Bool
-    let reduced: Bool
-    let listening: Bool
 
     static func webView() -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -25,7 +23,7 @@ struct SlimeView: NSViewRepresentable {
         feed.attach(view)
         return view
     }
-    func updateNSView(_ view: WKWebView, context: Context) { feed.update(snapshot, visible: visible, reduced: reduced, listening: listening) }
+    func updateNSView(_ view: WKWebView, context: Context) { feed.update(snapshot, visible: visible) }
     func makeCoordinator() -> SlimeFeed { feed }
     static func dismantleNSView(_ view: WKWebView, coordinator: SlimeFeed) { coordinator.detach(view) }
 }
@@ -34,18 +32,21 @@ struct SlimeFace: View {
     let feed: SlimeFeed
     let snapshot: StateSnapshot
     let live: Bool
-    let listening: Bool
     let size: CGFloat
-    /// Taller or shorter than `size`, for a tile that isn't square: the
-    /// engine's own 4:3 keeps the needs-you screen whole.
+    /// Taller or shorter than `size`, for a tile that isn't square: a 4:3
+    /// one shows the board's whole screen, which a square one crops a little.
     var height: CGFloat?
     @Environment(\.stillMotion) private var still
-    @Environment(\.accessibilityReduceMotion) private var reduced
 
     var body: some View {
         Group {
-            if still, let image = feed.stillImage { Image(nsImage: image).resizable().scaledToFill() }
-            else { SlimeView(feed: feed, snapshot: snapshot, visible: live && !still, reduced: reduced, listening: listening) }
+            if still, let image = feed.stillImage {
+                // As tall as the tile, as the page draws the board's screen.
+                let tall = height ?? size
+                Image(nsImage: image).resizable().frame(width: tall * image.size.width / max(image.size.height, 1), height: tall)
+            } else {
+                SlimeView(feed: feed, snapshot: snapshot, visible: live && !still)
+            }
         }
         .frame(width: size, height: height ?? size)
         .background(Theme.glass)

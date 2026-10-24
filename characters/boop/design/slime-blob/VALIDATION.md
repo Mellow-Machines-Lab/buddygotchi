@@ -214,6 +214,14 @@ internal/tools/boopctl sim --face gel
   of two swipes down, a slow stroke down part way and its reaction).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
+- `boopctl mirror` plays the same scenarios on the Mac's mirror of the
+  board (`characters/boop/mac/mirror/board.js`, the firmware built to
+  WebAssembly, which the popover and onboarding show) and on the native
+  simulator, both with no card, and checks every shot is the same, pixel
+  for pixel: the Mac draws what the board draws. `make -C internal
+  mirror` runs it, the mirror page's tests, and
+  `firmware/tools/mirror.sh --check`, which builds the mirror again and
+  checks it's the one checked in.
 
 These are simulator and host checks. Display throughput on the board
 and speaker review are separate.
@@ -253,7 +261,7 @@ and are not committed. No runtime assets depend on those pictures.
 - The full reference scene matrix and host-fact router are implemented.
   The owner approved the representative set. Directed bridges are implemented
   and checked; the selected clips require the owner's spot-check. The opt-in host
-  graph and bundled Mac mirror are implemented; the native port now passes the separate `check-port.py` gate. Contact audio is implemented;
+  graph is implemented; the native port passes the separate `check-port.py` gate, and the Mac shows the port itself (`boopctl mirror`). Contact audio is implemented;
   timbres remain sketches pending speaker review.
 - All expressions are browser-selectable. Prior recipe execution checked
   three happy gestures; it did not exhaustively play every recipe.

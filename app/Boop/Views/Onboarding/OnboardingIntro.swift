@@ -51,7 +51,7 @@ struct HelloAct: View {
         try? await Task.sleep(for: .milliseconds(90))
         withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) { squash = false }
         try? await Task.sleep(for: .milliseconds(700))
-        model.feed.reaction(id: 0, DeviceReaction(anim: "poked"))
+        model.feed.poke()
         OnboardingSound.play(.step)
         withAnimation(.boopPop) { greeted = true }
     }
@@ -166,7 +166,7 @@ struct WhatIDoAct: View {
         while !Task.isCancelled {
             for beat in Step.allCases {
                 withAnimation(.boopSettle) { step = beat }
-                if beat == .finished { model.feed.reaction(id: 0, DeviceReaction(anim: "task_complete", outcome: "success")) }
+                if beat == .finished { model.feed.reaction(DeviceReaction(anim: "task_complete", outcome: "success")) }
                 if beat == .asking { OnboardingSound.play(.step) }
                 try? await Task.sleep(for: .seconds(beat.seconds))
                 if Task.isCancelled { return }

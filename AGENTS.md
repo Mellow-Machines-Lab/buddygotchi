@@ -21,10 +21,10 @@ cheap ESP32 board with a screen is the body. Start with
 | `agent-hooks/` | The hook layer, a Swift package of its own: a submodule of [Mellow-Machines-Lab/AgentHooks](https://github.com/Mellow-Machines-Lab/AgentHooks) (below, Repositories; [its README](agent-hooks/README.md), [how it works](agent-hooks/ARCHITECTURE.md)): the `agent-hook` hook client, the `agent-hooks` command line, and the `AgentHooks` library that turns hooks into events and keeps the sessions and "needs you". It depends on nothing else in the repo; Boop depends on it |
 | `mellowharness/` | The brain's harness, a Swift package of its own: a submodule of [Mellow-Machines-Lab/MellowHarness](https://github.com/Mellow-Machines-Lab/MellowHarness) (below, Repositories; [its README](mellowharness/README.md), [how it works](mellowharness/ARCHITECTURE.md)): the `MellowHarness` library (events and the log, each kind's line, rules, outputs and `Choice`, the prompt, Jev and the loop that asks it), `mellowharness-emit`, and its worked example Beacon (`beacon`). It depends on nothing else in the repo; Boop's brain runs on it |
 | `linkkit/` | The device link, a package of its own meant to be open-sourced ([its README](linkkit/README.md), [how it works](linkkit/ARCHITECTURE.md), [its spec](linkkit/SPEC.md)): the protocol (four JSON messages, and the queue, by which the device decides what plays when), the Swift host library `LinkKit` with its Bluetooth and socket transports, `linkkit-bridge` (the USB bridge), `linkkit-flash` (firmware onto a board over USB), and the C++ device library in `linkkit/device/` ([its README](linkkit/device/README.md)), with its own PlatformIO project for its tests, that Boop's firmware plugs into. It depends on nothing else in the repo; Boop depends on it |
-| `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`, `rig/`, what its moods wear and its moves on the rig the faces are moving onto, and `demo/`, scripted demos, [characters/DEMOS.md](characters/DEMOS.md)) and what makes it (`design/`, `tools/`, `tests/`, and `references/` and `review/`, what people gave to make it from and what's up for review). Each stands alone: the engine reads a pack's files from its own folder only. `pixel/`, the open default, with the animation bank ([its design guide](characters/pixel/design/README.md)), the recorded voice as built files (`voice/voice.bin`, `mac/takes.tsv`), and `tools/borrowed.json`, the table that lends its 13 drawn moods' art and takes to the other universal moods; and `boop/`, Boop's own and the default: its prompts, gel slime, evals and goldens, its own copies of Pixel's face and of the voice, and the voice's recordings. Both are public. Also `studio/`, the Character Studio, one page for any pack's moods, states and preview ([its README](characters/studio/README.md)), and `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds |
+| `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`, `rig/`, what its moods wear and its moves on the rig the faces are moving onto, and `demo/`, scripted demos, [characters/DEMOS.md](characters/DEMOS.md)) and what makes it (`design/`, `tools/`, `tests/`, and `references/` and `review/`, what people gave to make it from and what's up for review). Each stands alone: the engine reads a pack's files from its own folder only. `pixel/`, the open default, with the animation bank ([its design guide](characters/pixel/design/README.md)), the recorded voice as built files (`voice/voice.bin`, `mac/takes.tsv`), and `tools/borrowed.json`, the table that lends its 13 drawn moods' art and takes to the other universal moods; and `boop/`, Boop's own and the default: its prompts, gel slime, evals and goldens, the Mac's mirror of its gel board (`mac/mirror/`), its own copies of Pixel's face and of the voice, and the voice's recordings. Both are public. Also `studio/`, the Character Studio, one page for any pack's moods, states and preview ([its README](characters/studio/README.md)), and `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds |
 | `app/` | The Mac side that ships: the menu-bar app (`Boop`, with its placeholder icon, `app/Boop/AppIcon.icns`, and `app/tools/bundle.sh`, which builds it into a signed `Boop.app`, `make bundle`) and the `BoopKit` library, Boop's own code on the three packages, and `CBoopVersion`, which compiles in `VERSION`, the one place the version is written (the firmware's build reads it too) |
-| `firmware/` | PlatformIO firmware for the two boards ([its README](firmware/README.md): the boards, building, flashing, quirks): Boop's app on LinkKit's device library, with its generated assets and build scripts |
-| `simulator/` | The board with no board, for development, tests and demos ([its README](simulator/README.md)): `core/`, the firmware's portable code and LinkKit's device library as a simulated board, built for the Mac as `firmware/.pio/build/native/program` (PlatformIO's `native` env) and for a browser as WebAssembly; `web/`, the page that is its screen, finger, speaker and card (`<boop-simulator>`, one script to embed), which also plays a pack's recorded demo, with the local server that gives it a USB cable; `tools/`, which record a demo and cut its voice. Neither ships in the app or the firmware |
+| `firmware/` | PlatformIO firmware for the two boards ([its README](firmware/README.md): the boards, building, flashing, quirks): Boop's app on LinkKit's device library, with its generated assets and build scripts, and the boards with no hardware: `src/board/hosted/`, the loop the simulator and the Mac's mirror run, and `src/board/mirror/`, the Mac's mirror of the board, which `tools/mirror.sh` builds to WebAssembly into a pack's `mac/mirror/` |
+| `simulator/` | The board with no board, for development, tests and demos ([its README](simulator/README.md)): `core/`, the firmware's portable code and LinkKit's device library as a simulated board on the firmware's hosted board, built for the Mac as `firmware/.pio/build/native/program` (PlatformIO's `native` env) and for a browser as WebAssembly; `web/`, the page that is its screen, finger, speaker and card (`<boop-simulator>`, one script to embed), which also plays a pack's recorded demo, with the local server that gives it a USB cable; `tools/`, which record a demo and cut its voice. Neither ships in the app or the firmware |
 | `internal/` | Everything that doesn't ship ([its README](internal/README.md)), with [VERIFICATION.md](internal/VERIFICATION.md), how everything is checked, [EVALS.md](internal/EVALS.md), the brain's eval scenarios, and [RELEASING.md](internal/RELEASING.md), how a version goes out: `boopdev` and its library, Boop's Swift tests and eval scenarios, the sources of `Boop --headless` and `--snapshots`, and the firmware's unit tests and the simulator's scenarios (env `native`), and `sessions/`, the projects a real agent plays a demo in ([internal/sessions/README.md](internal/sessions/README.md)) |
 | `internal/tools/` | The dev tools: `boopctl` (the board over USB, the simulator, the logs, references people give), `fluid/` (how fluid the transitions are), `appicon` (the app's placeholder icon), `fontgen`, `mediagen`, `session/` and `webcam/` ([internal/README.md](internal/README.md)). The faces' and voice's generators live in their packs' `tools/` |
 | `internal/skills/` | `doctor` (hook self-check) and `webcam-verify`, symlinked for Claude and Codex |
@@ -51,7 +51,7 @@ Delete code that nothing uses; git keeps it.
 The everyday entry points are in [README.md](README.md), which stays a
 short overview. The root `Makefile` has only what the owner uses: `build`,
 `app`, `bundle`, `run`, `debug`, `onboarding`, `dash`, `day`, `simulator`, `demo`, `flash`, `eval` and `clean`. The development targets
-(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `sim-test`, `e2e`, `faces`, `tools`, `eval-pixel`)
+(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `sim-test`, `mirror`, `e2e`, `faces`, `tools`, `eval-pixel`)
 are in `internal/Makefile`; run them from the repo root as
 `make -C internal <target>`. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its
@@ -99,10 +99,11 @@ make -C internal test                                 # Swift unit tests: Boop's
   `/dev/cu.usbserial-*` (the AMOLED board, env `amoled206`, as
   `/dev/cu.usbmodem*`; [firmware/README.md](firmware/README.md)), and the serial port needs no
   special permissions.
-- The simulator's page needs Emscripten (`brew install emscripten`), which
-  builds the firmware's portable code to WebAssembly
-  (`simulator/web/build.sh`), and Node for its tests. Nothing else in the
-  repo needs either.
+- The simulator's page and the Mac's mirror of the board need Emscripten
+  (`brew install emscripten`), which builds the firmware's portable code
+  to WebAssembly (`simulator/web/build.sh`, `firmware/tools/mirror.sh`),
+  and Node for their tests. The mirror is checked in, so nothing else in
+  the repo needs Emscripten.
 - The build's own scripts run on the Mac's `/usr/bin/python3` (3.9);
   keep them to it. System Python has no pyserial, Pillow or Textual. The
   tools use `internal/tools/.venv`, which `internal/tools/boopctl` makes
@@ -292,6 +293,13 @@ MellowHarness, LinkKit), is
   play at once and never times it. It receives the same messages over
   Bluetooth and USB. Its drawing code stays independent of the display
   library, so the simulator and a later ESP-IDF + LVGL port can reuse it.
+- **The Mac's face is the board's firmware.** The popover and onboarding
+  show the gel through the pack's mirror of the board
+  (`characters/boop/mac/mirror/board.js`), the firmware built to
+  WebAssembly and checked in: a change to what the gel board draws
+  rebuilds it (`firmware/tools/mirror.sh`) in the same commit, and
+  `make -C internal mirror` fails until it does. It's fed what the board
+  gets and never answers.
 
 ## Docs stay in sync
 

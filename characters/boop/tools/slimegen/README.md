@@ -14,15 +14,11 @@ mood's `moves` are the pack's own, and the design's edges seed only a
 mood the pack doesn't have yet. The design's pixel `fallback`s, `brief`
 markers and `hostPolicy` aren't written: every pack has every mood, and
 pacing is the steering's.
-The same tool bundles the reference engine, WebGL/Canvas renderer and a
-silent adapter into Boop's character pack, `characters/boop/mac/mirror/`. The shipped files have no
-dependency on this tool at runtime. `check-mirror.mjs` checks interruption and
-resource policy, and runs the generated `slime.js` on stubs to check its
-drawing: none while the popover is closed, a frame at once when it opens,
-60 frames a second while it is open on a 120 Hz display as on a 60 Hz
-one, and the renderer's supersampling tiers. Edit
-`mirror.mjs` or the design's `render/` sources, never `slime.js`, and
-regenerate. `check-headless.py --output FILE` exercises the real scripted
+The Mac's popover and onboarding show the board's own firmware, not this
+engine: the pack's `mac/mirror/` is the firmware built to WebAssembly
+(`firmware/tools/mirror.sh`, [CHARACTER.md](../../../CHARACTER.md) §9),
+so a change here that changes what the board draws builds it again.
+`check-headless.py --output FILE` exercises the real scripted
 app against an isolated synthetic gel USB peer. Add `--native` to connect it
 to the real gel firmware simulator and check hello, mood/attention updates
 and device completion events. Both modes use temporary HOME/state directories.

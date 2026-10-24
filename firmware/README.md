@@ -134,6 +134,24 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 Waveshare's example repo (`waveshareteam/ESP32-S3-Touch-AMOLED-2.06`) has
 a recovery image in `FirmWare/` if you ever need the factory firmware back.
 
+### The boards with no hardware
+
+Two more folders in `src/board/` are boards on a computer, which neither
+board's env builds:
+
+- `hosted/`: the firmware's device on LinkKit, fed what a host sends on
+  its USB, ticked as the firmware's loop ticks it, and its frames read.
+  The simulator ([simulator/README.md](../simulator/README.md)) and the
+  Mac's mirror run it, each behind a Hal of its own.
+- `mirror/`: the Mac's mirror of the board, the face the popover and
+  onboarding show: the hosted board with the page's clock and nothing
+  else (no touch, motion sensor, light, sound or card), with the face a
+  character pack gives the AMOLED, built to WebAssembly by
+  `tools/mirror.sh` into the pack's `mac/mirror/board.js`
+  ([characters/CHARACTER.md](../characters/CHARACTER.md) §9). It needs
+  Emscripten (`brew install emscripten`); `tools/mirror.sh --check`
+  builds it again and checks it's the one checked in.
+
 ## Bringing up a board
 
 1. **Backlight:** a dark screen right after flashing almost always means

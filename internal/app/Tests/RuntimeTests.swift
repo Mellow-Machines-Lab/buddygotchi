@@ -56,44 +56,21 @@ final class RuntimeTests: XCTestCase {
         runtime.home.sync {
             runtime.connection(true)
             runtime.device(FakeTransport.hello)
-            var mirrored: [(Int, DeviceReaction)] = [], ends: [Pending.End] = []
-            runtime.onReaction = { mirrored.append(($0, $1)) }
+            var mirrored: [(Int, DeviceReaction, Wire.Play)] = [], ends: [Pending.End] = []
+            runtime.onReaction = { mirrored.append(($0, $1, $2)) }
             let pending = Pending()
             pending.bind { ends.append($0) }
             let reaction = DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success")
             runtime.queue(reaction, pending)
             XCTAssertEqual(mirrored.count, 1)
             XCTAssertEqual(mirrored[0].1.mood, "happy")
+            XCTAssertEqual(mirrored[0].2, .next)
             XCTAssertTrue(ends.isEmpty)
             runtime.device(FakeTransport.ended(mirrored[0].0, "done"))
             XCTAssertEqual(ends, [.done])
             runtime.playRule(DeviceReaction(anim: "starting"))
             XCTAssertEqual(mirrored.last?.1.name, "starting")
-        }
-    }
-
-    /// The mirror follows the
-    /// core's reply hold, independently of the mic's recording status.
-    func testTheMirrorKeepsListeningWhileTheReplyIsPending() throws {
-        let clock = VirtualClock(1000)
-        var options = try options(nil)
-        options.clock = { clock.now }
-        let runtime = try Runtime(options)
-        runtime.home.sync {
-            var statuses: [Runtime.Status] = []
-            runtime.onChange = { statuses.append($0) }
-            _ = runtime.core.listen(true, at: clock.now)
-            runtime.changed()
-            XCTAssertTrue(statuses.last!.listening)
-            XCTAssertTrue(statuses.last!.faceListening)
-            clock.now += 100
-            _ = runtime.core.listen(false, at: clock.now)
-            runtime.changed()
-            XCTAssertFalse(statuses.last!.listening)
-            XCTAssertTrue(statuses.last!.faceListening)
-            clock.now += Core.replyWaitMs
-            runtime.changed()
-            XCTAssertFalse(statuses.last!.faceListening)
+            XCTAssertEqual(mirrored.last?.2, .ifFree)
         }
     }
 

@@ -1,14 +1,20 @@
 import AppKit
 import BoopKit
 import Foundation
+import LinkKit
 import WebKit
 
-/// Real WKWebView rendering of bundled assets, with an injected fixed clock.
-/// The bounded wait belongs only to this command, never the runtime.
+/// The pack's mirror of the board in a real WKWebView: a board on a frozen
+/// clock in the snapshot's state, drawn as a scenario's shot draws it, which
+/// must say it shows that state. The bounded wait belongs only to this
+/// command, never the runtime.
 @MainActor
 enum SlimeSnapshots {
     static let timeout: TimeInterval = 15
-    static func image(_ snapshot: StateSnapshot, to output: URL, size: NSSize = NSSize(width: 640, height: 480)) throws -> NSImage {
+    /// The board's own screen, so a still fits any tile as the live page does.
+    static let panel = NSSize(width: 502, height: 410)
+
+    static func image(_ snapshot: StateSnapshot, to output: URL, size: NSSize = panel) throws -> NSImage {
         let feed = SlimeFeed(), view = SlimeView.webView()
         let window = NSWindow(contentRect: NSRect(x: -2000, y: 0, width: size.width, height: size.height),
                               styleMask: .borderless, backing: .buffered, defer: false)
@@ -19,13 +25,13 @@ enum SlimeSnapshots {
         var image: NSImage?, failure: String?
         feed.didFail = { failure = $0 }
         feed.didLoad = {
-            view.callAsyncJavaScript("return window.BoopSlime.snapshot(value)",
-                                     arguments: ["value": SlimeFeed.object(snapshot.fields)], in: nil, in: .page) { result in
+            view.callAsyncJavaScript("return await window.BoopMirror.snapshot(line)",
+                                     arguments: ["line": Wire.state(snapshot.fields)], in: nil, in: .page) { result in
                 switch result {
                 case .failure(let error): failure = error.localizedDescription
                 case .success(let raw):
-                    guard let info = raw as? [String: String], info["state"] == snapshot.visual else {
-                        failure = "slime snapshot did not render the requested facts: \(raw)"; return
+                    guard let said = raw as? [String: Any], shows(snapshot, said) else {
+                        failure = "the mirror's board doesn't show \(Wire.state(snapshot.fields)): it says \(raw)"; return
                     }
                     view.takeSnapshot(with: nil) { result, error in
                         if let error { failure = error.localizedDescription }
@@ -43,7 +49,16 @@ enum SlimeSnapshots {
                           userInfo: [NSLocalizedDescriptionKey: failure ?? "WebKit did not render within \(timeout) seconds"])
         }
         try png.write(to: output)
-        print("\(output.lastPathComponent) \(bitmap.pixelsWide)×\(bitmap.pixelsHigh), real bundled WebKit render")
+        print("\(output.lastPathComponent) \(bitmap.pixelsWide)×\(bitmap.pixelsHigh), the mirror's board in WebKit")
         return image
+    }
+
+    /// Whether the board's dbg.state says it shows the snapshot: its base,
+    /// act and mood (a mood it doesn't know reads as its startup mood), and
+    /// needs you exactly when the snapshot does.
+    static func shows(_ snapshot: StateSnapshot, _ state: [String: Any]) -> Bool {
+        state["base"] as? String == snapshot.base && state["act"] as? String == snapshot.act
+            && state["mood"] as? String == snapshot.mood
+            && state["screen"] as? String == (snapshot.attn == nil ? "face" : "needs_you")
     }
 }

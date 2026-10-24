@@ -723,7 +723,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }
-            runtime.onReaction = { [weak self] id, reaction in Task { @MainActor in self?.model.slime.reaction(id: id, reaction) } }
+            runtime.onReaction = { [weak self] id, reaction, play in
+                Task { @MainActor in self?.model.slime.reaction(reaction, id: id, play: play) }
+            }
             // Push-to-talk: the core says when the mic
             // is on; what it heard goes back to the runtime.
             let listener = SpeechListener(log: { [log] in log.write($0) })

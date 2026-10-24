@@ -14,9 +14,10 @@ isn't needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
 (`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
 snapshots) also need a newer Python than the Mac's own
-(`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page also needs Emscripten, to
-build the firmware for a browser, and Node, to test it
-(`brew install emscripten node`). Making the faces again
+(`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page and the Mac's mirror of
+the board also need Emscripten, to build the firmware for a browser (the
+mirror is checked in, so it's rebuilt only when what the board draws
+changes), and Node, to test them (`brew install emscripten node`). Making the faces again
 (`make -C internal faces`) needs Node and Google Chrome, and takes
 several minutes. The first firmware build downloads the ESP32 toolchain
 into the checkout, which takes about five minutes.

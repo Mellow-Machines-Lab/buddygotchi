@@ -20,7 +20,7 @@ What a pack holds, and what it must have:
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
 | `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
-| `mac/mirror/` | no | A web page the popover shows as the face (§9) |
+| `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
@@ -154,7 +154,8 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     mood/<mood>.md
   mac/               what the app reads at run time (§9)
     faces.json       the popover's face designs
-    mirror/          optional: a web page the popover shows as the face
+    mirror/          optional: the board's firmware in a web page, the
+                     popover's and onboarding's face
     takes.tsv        optional: the voice's take table (§8)
   firmware/          what the firmware compiles in (§9)
     include/…        the faces' generated art and sounds
@@ -170,7 +171,8 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
   design/, tools/    optional: what the pack's art and sounds are
                      made from, and the tools that make them
   tests/, evals/     optional: the pack's own goldens, eval scenarios
-                     and tests (tests/firmware/, tests/tools/)
+                     and tests (tests/firmware/, tests/tools/,
+                     tests/mirror/)
 ```
 
 The engine reads built files only. How a pack makes them (by hand, a
@@ -511,8 +513,7 @@ Besides drawing each mood and state, a face:
   Day, Lunar New Year and Programmers' Day, a witch hat at Halloween, a
   bobble hat in winter, shades on a Friday's day; snow in winter,
   confetti on a party day and New Year's Day, hearts on Valentine's, Zs
-  while it sleeps at night. Peekaboo's gesture takes the hat off. The
-  Mac's mirror of the gel doesn't draw them yet.
+  while it sleeps at night. Peekaboo's gesture takes the hat off.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
   start.
@@ -613,8 +614,27 @@ facegen writes it into the Pixel pack. It holds:
   `<mood>/<look>` for `idle`, `working` and `needs_you`, and
   `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.
 
-`mac/mirror/`, if present, is a web page the popover shows instead, fed
-the same state the board gets (the gel slime has one).
+`mac/mirror/`, if present, is the board's own firmware in a web page,
+which the popover shows as the face in place of the still one while a
+board drawing a native face (the gel) is connected, and onboarding shows
+in its tiles and its demo. Boop's has one:
+
+- `board.js`, the firmware for a board with no hardware
+  (`firmware/src/board/mirror/`) with the face the pack gives the AMOLED,
+  as WebAssembly inside a script, which `firmware/tools/mirror.sh` builds
+  from the firmware's portable code, LinkKit's device library and the
+  pack's firmware, and nothing else. Rebuild it when what the board
+  draws changes: `make -C internal mirror` fails until it's the build of
+  its sources.
+- `index.html`, `mirror.css` and `mirror.js`, the page, written by hand.
+  The app hands it the `state` and `do` lines the board gets (`SlimeFeed`),
+  and a tap on the board as a finger on the mirror's screen; the page
+  draws the board's screen as tall as its tile, centred, and only while
+  it's shown. It makes no sound, and nothing the board says leaves the
+  page, so it can't answer the Mac.
+- `tests/mirror/` holds the page's own tests (`node --test`), and
+  `internal/tools/boopctl mirror` plays the gel's scenarios on the mirror
+  and the simulator and checks every shot is the same, pixel for pixel.
 
 A board a pack names no face for doesn't build with it: Pixel's names
 only the CYD, as the gel face, Boop's own, is the AMOLED's only one.

@@ -234,7 +234,7 @@ final class OnboardingModel: ObservableObject {
 
     /// A click on the on-screen Boop: it pokes back, as the board does.
     func pokeOnScreen() {
-        feed.reaction(id: 0, DeviceReaction(anim: "poked"))
+        feed.poke()
         OnboardingSound.play(.step)
     }
 

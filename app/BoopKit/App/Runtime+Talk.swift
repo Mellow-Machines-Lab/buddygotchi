@@ -42,7 +42,7 @@ extension Runtime {
             if onListen != nil { onListen?(false) } else { heardNothing() }
             return
         }
-        if by == .device { onReaction?(0, DeviceReaction(anim: BoopDevice.listening)) }
+        if by == .device { onReaction?(0, DeviceReaction(anim: BoopDevice.listening), .now) }
         onListen?(true)
     }
 

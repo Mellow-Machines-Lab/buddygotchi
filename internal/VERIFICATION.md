@@ -36,7 +36,10 @@ Python 3.9 (`python3 characters/charactergen.py --check`, and the
 `internal/tools/session/tests/` and each pack's `tests/tools/`: the
 part of `make -C internal tools-test` without boopctl's venv or the
 webcam recorder); `make -C internal fw-test` (L0 for the firmware and
-LinkKit's device library), all as Boop, the default pack; and both
+LinkKit's device library), then the Mac's mirror of the board: its
+page's tests and `boopctl mirror` (the part of `make -C internal mirror`
+without Emscripten, which the runners don't have; the board.js checked
+in is what they test), all as Boop, the default pack; and both
 boards' firmware: the CYD's with Pixel
 (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`) and the AMOLED's
 with Boop's gel face (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).
@@ -75,6 +78,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/`, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
+| `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario played on it and on the native simulator, each shot the same on both pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and checked to be the one checked in, byte for byte (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
@@ -87,7 +91,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
   `send`, `play`, `takes`, `card`, `calibrate`), a board's factory test,
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
-  `run`), measurements (`perf`, `latency`, `soak`), the pipeline check
+  `run`, and `mirror`, which plays the gel's on the Mac's mirror of the
+  board and on the simulator, both with no card, and compares every shot), measurements (`perf`, `latency`, `soak`), the pipeline check
   (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
   `workday`), and a reference a person gave, taken in and cut into frames
   and contact sheets to read (`reference`,
@@ -136,7 +141,10 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/facegen/facegen.py` (what `make -C internal faces` runs),
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
-  assets, [its README](../characters/boop/tools/slimegen/README.md)).
+  assets, [its README](../characters/boop/tools/slimegen/README.md)), and
+  the engine's `firmware/tools/mirror.sh` (the Mac's mirror of the
+  board, `characters/boop/mac/mirror/board.js`, with Emscripten;
+  `--check` builds it again and compares).
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   draws the app's placeholder icon at every size and packs it with
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
@@ -419,8 +427,13 @@ gets at least one scenario. Their pictures are the golden images in
 3. Only then does `internal/tools/boopctl sim <scenario> --accept` update
    the goldens, with a one-line reason in the commit message (§7).
 
+4. When what the gel board draws changes, `firmware/tools/mirror.sh`
+   builds the Mac's mirror of the board again, and
+   `make -C internal mirror` checks it draws every scenario's shots as
+   the simulator does.
+
 **Pass:** every golden matches, or the changed ones were looked at and
-accepted.
+accepted; the mirror's shots are the simulator's.
 
 ### L2: device over USB
 

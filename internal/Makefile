@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test eval-pixel
+.PHONY: test tools faces fw fw-test sim sim-test mirror e2e tools-test eval-pixel
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -91,6 +91,16 @@ sim-test:
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && simulator/web/build.sh pixel
 	cd $(ROOT) && node --test simulator/tests/*.test.mjs
+
+# The Mac's mirror of the board (characters/CHARACTER.md §9): its page's
+# own tests, then every gel scenario played on it and on the native
+# simulator, each shot the same on both, pixel for pixel, then its
+# board.js built again and checked to be the one checked in (it needs
+# Emscripten and Node).
+mirror:
+	cd $(ROOT) && node --test characters/boop/tests/mirror/page.test.mjs
+	cd $(ROOT) && internal/tools/boopctl mirror
+	cd $(ROOT) && firmware/tools/mirror.sh --check
 
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:

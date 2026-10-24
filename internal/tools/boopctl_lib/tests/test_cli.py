@@ -18,7 +18,7 @@ from facegen import facegen  # noqa: E402
 from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
-COMMANDS = ["ping", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "run", "perf", "latency", "soak", "e2e",
+COMMANDS = ["ping", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "mirror", "run", "perf", "latency", "soak", "e2e",
             "cam", "dash", "day", "workday", "reference", "calibrate"]
 
 

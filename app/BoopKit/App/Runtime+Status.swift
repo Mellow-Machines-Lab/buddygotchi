@@ -30,8 +30,6 @@ extension Runtime {
         public var brainTrouble: BrainTrouble?
         /// The Mac's mic is on for push-to-talk.
         public var listening: Bool
-        /// The face holds listening through the reply wait, after the mic stops.
-        public var faceListening: Bool
         /// Why push-to-talk couldn't hear you, until the next try.
         public var micTrouble: String?
         /// Boop's XP and stage.
@@ -84,7 +82,7 @@ extension Runtime {
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
                     device: DeviceInfo?, linkTrouble: String? = nil, deviceTrouble: String? = nil, personality: Personality,
                     brain: String, keyRead: Bool = true, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
-                    micTrouble: String? = nil, growth: Growth? = nil, faceListening: Bool? = nil) {
+                    micTrouble: String? = nil, growth: Growth? = nil) {
             self.name = name
             self.snapshot = snapshot
             self.sessions = sessions
@@ -97,7 +95,6 @@ extension Runtime {
             self.keyRead = keyRead
             self.brainTrouble = brainTrouble
             self.listening = listening
-            self.faceListening = faceListening ?? listening
             self.micTrouble = micTrouble
             self.growth = growth
         }
@@ -109,7 +106,7 @@ extension Runtime {
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
-                            micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+                            micTrouble: core.talk.trouble, growth: growth.growth)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line, today: options.time.day(wall)) }

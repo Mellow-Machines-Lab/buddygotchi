@@ -9,6 +9,7 @@ import random
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -173,6 +174,35 @@ def cmd_sim(args: argparse.Namespace) -> int:
                 print(f"same  {png}")
     print(f"{len(dirs)} scenarios, {failures} expect failures, {changed} new or changed pictures")
     return 1 if failures or changed else 0
+
+
+def cmd_mirror(args: argparse.Namespace) -> int:
+    """The gel face's scenarios on the Mac's mirror of the board (the pack's
+    mac/mirror/board.js, under Node) and on the native simulator, each shot
+    the same on both, pixel for pixel. The mirror has no card, so the
+    simulator's is an empty one."""
+    os.environ["BOOP_SIM_FACE"] = "gel"
+    board = REPO / "characters" / args.pack / "mac" / "mirror" / "board.js"
+    if not board.is_file():
+        raise DeviceError(f"no mirror at {board.relative_to(REPO)}: build it with firmware/tools/mirror.sh {args.pack}")
+    mirror = ["node", str(Path(__file__).with_name("mirror_board.mjs")), str(board)]
+    build_sim()
+    failures = differ = shots = 0
+    with tempfile.TemporaryDirectory() as card:
+        os.environ["BOOP_SIM_CARD"] = card
+        for path in pick(args.scenario):
+            out = {side: SIM_OUT / "mirror" / side / path.stem for side in ("native", "mirror")}
+            for side, program in (("native", str(SIM_PROGRAM)), ("mirror", mirror)):
+                shutil.rmtree(out[side], ignore_errors=True)
+                with Sim(program, name=f"the {side} board") as sim:
+                    failures += len(scenario.play(sim, path, out[side]))
+            for png in sorted(out["native"].glob("*.png")):
+                theirs = out["mirror"] / png.name
+                n = diff(png, theirs, theirs.with_suffix(".diff.png")) if theirs.exists() else 1
+                shots, differ = shots + 1, differ + bool(n)
+                print(("same  " if not n else f"DIFF  ({n} px) ") + f"{theirs} vs {png}")
+    print(f"{shots} shots, {failures} expect failures, {differ} differ between the mirror and the simulator")
+    return 1 if failures or differ or not shots else 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -1034,6 +1064,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--face", choices=["pixel", "gel"], help="native face (default: BOOP_SIM_FACE, else pixel)")
     p.add_argument("--accept", action="store_true", help="copy the pictures into the goldens (after looking!)")
     p.set_defaults(func=cmd_sim)
+    p = sub.add_parser("mirror", help="play the gel scenarios on the Mac's mirror of the board and the simulator, and "
+                                      "check every shot is the same, pixel for pixel")
+    p.add_argument("scenario", nargs="*", help="names or paths (default: all the gel face's)")
+    p.add_argument("--pack", default="boop", help="the character pack whose mac/mirror/ it plays (default: boop)")
+    p.set_defaults(func=cmd_mirror)
     p = sub.add_parser("run", help="play scenarios on the device and compare with the simulator (L2)")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all)")
     p.set_defaults(func=cmd_run)

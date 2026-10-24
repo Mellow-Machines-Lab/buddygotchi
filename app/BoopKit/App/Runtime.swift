@@ -179,8 +179,11 @@ public final class Runtime: @unchecked Sendable {
 
     /// After every change the menu bar might show. Called on `home`.
     public var onChange: ((Status) -> Void)?
-    /// Read-only visual mirror of the reactions sent. Never completes a handle.
-    public var onReaction: ((Int, DeviceReaction) -> Void)?
+    /// What the first buddy's board plays, for the Mac's mirror of it: each
+    /// reaction sent, with its id and play, and the board's own (a tap's
+    /// poke, push-to-talk's `listening`), with id 0 and `now`. Never
+    /// completes a handle.
+    public var onReaction: ((Int, DeviceReaction, Wire.Play) -> Void)?
 
     /// A tap on the board, after the core has taken it: true for its
     /// button (BOOT), false for its screen. Onboarding's pairing and its

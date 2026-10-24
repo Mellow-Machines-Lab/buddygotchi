@@ -120,7 +120,7 @@ struct OnboardingBuddy: View {
     var body: some View {
         Group {
             if SlimeFeed.folder != nil {
-                SlimeFace(feed: model.feed, snapshot: snapshot, live: true, listening: false, size: size, height: height)
+                SlimeFace(feed: model.feed, snapshot: snapshot, live: true, size: size, height: height)
             } else {
                 BoopFace(mood: face, size: size)
             }

@@ -1,7 +1,9 @@
 # The checks anyone can run without a board, a key or Bluetooth
 # (internal/VERIFICATION.md L0 and L1): Boop's Swift tests and the
 # packages', the Python tests that need only the standard library, then
-# the firmware's and LinkKit's device tests on the Mac,
+# the firmware's and LinkKit's device tests on the Mac, and the Mac's
+# mirror of the board against the simulator (with no Emscripten here, the
+# mirror checked in, not built again),
 # all as Boop, the default pack, and the boards' firmware: the CYD's with
 # Pixel and the AMOLED's with Boop's gel face, so each pack builds.
 #
@@ -77,6 +79,10 @@ jobs:
           key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
       - name: Boop's firmware tests, then LinkKit's device tests
         run: make -C internal fw-test
+      - name: The Mac's mirror of the board, its page and every gel scenario's shots against the simulator
+        run: |
+          node --test characters/boop/tests/mirror/page.test.mjs
+          internal/tools/boopctl mirror
 
   boards:
     name: Board builds

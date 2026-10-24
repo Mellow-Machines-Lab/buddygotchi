@@ -258,7 +258,7 @@ struct HowToAct: View {
             guard !paired, !still else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(3))
-                model.feed.reaction(id: 0, DeviceReaction(anim: "poked"))
+                model.feed.poke()
             }
         }
     }

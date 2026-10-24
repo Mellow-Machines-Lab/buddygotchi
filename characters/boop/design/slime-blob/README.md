@@ -1,8 +1,10 @@
 # VideoG Slime Blob — colleague handover
 
 Updated 2026-10-24. Imported from `VideoG-Slime-Blob` and integrated on
-`main`: this engine is the reference the AMOLED's gel face ports and the
-Mac's popover bundles. This is a separate, code-rendered character series, not
+`main`: this engine is the reference the AMOLED's gel face ports, and
+what slimegen renders the board's face art from. The Mac's popover shows
+the port itself, the board's firmware as WebAssembly
+([CHARACTER.md](../../../CHARACTER.md) §9). This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
 
 ## Start here
