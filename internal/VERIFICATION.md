@@ -59,9 +59,11 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 
 | Target | What it does |
 | --- | --- |
-| `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon` and `linkkit-bridge`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
+| `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make app` | What `make run` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
+| `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
+| `make onboarding` | The first launch's onboarding again, on a throwaway folder (`/tmp/boop-onboarding`, started afresh): with Bluetooth, so it's the owner's, but it never changes the real hooks or login item. Quit the everyday Boop first |
 | `make dash` | `boopctl dash`, for the app `make debug` started. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
 | `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
@@ -83,7 +85,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 **Tools.**
 
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
-  `send`, `play`, `takes`, `card`, `calibrate`), the scenarios (`sim`,
+  `send`, `play`, `takes`, `card`, `calibrate`), a board's factory test,
+  pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`), measurements (`perf`, `latency`, `soak`), the pipeline check
   (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
   `workday`), and a reference a person gave, taken in and cut into frames
@@ -100,9 +103,12 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
-  popover's panes, gel frames and menu-bar icons as PNGs (L0). With a
+  popover's panes, onboarding's acts and their states, gel frames and
+  menu-bar icons as PNGs (L0). With a
   state directory other than the everyday one, it never installs or
-  repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
+  repairs the hooks, but the menu-bar app lists its socket as
+  `dev-<folder>.sock` beside the everyday one's, so the hooks already
+  installed reach it too. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
   and idle time. `--buddies left:pixel:claude,right:boop:codex` runs two
   buddies side by side, each with its own pack and the agent it watches
@@ -115,6 +121,10 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).
 - `.build/debug/linkkit-bridge`: the USB bridge (below).
+- `.build/debug/linkkit-flash`: writes firmware onto a board over USB
+  through its ROM bootloader, without PlatformIO
+  ([linkkit/ARCHITECTURE.md](../linkkit/ARCHITECTURE.md)); `make flash`
+  still builds and uploads with PlatformIO.
 - `agent-hooks`: agent-hooks' own command line, built in `agent-hooks/`
   with `swift build`. In tests, give it a temporary `HOME` and `--home`
   together, as for `boopdev hooks`.
@@ -127,6 +137,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
+- `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
+  draws the app's placeholder icon at every size and packs it with
+  `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
 - `internal/tools/fluid/measure.py`: how fluid the everyday transitions
   are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
   idle's mood changes, the rig face's hand-overs and a working day, recorded with
@@ -368,8 +381,9 @@ gets at least one scenario. Their pictures are the golden images in
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
   look. The run fails by itself on low contrast.
-  It also checks setup-name character limits and validation, and includes
-  Unicode names, invalid names and a crowded Overview at a bounded height.
+  It also checks the name's character limits and validation, and includes
+  Unicode names, invalid names, every onboarding act (`onboarding-*`) and
+  a crowded Overview at a bounded height.
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.

@@ -110,6 +110,12 @@ struct Hal : linkkit::Platform {
     return false;
   }
   virtual const char* gitSha() = 0;
+  // Why the board last restarted, in a word, for hello's `reset`: power,
+  // button, software, panic, watchdog, brownout, sleep, usb or other.
+  virtual const char* resetReason() { return "power"; }
+  // Which board it is, by its env's name (cyd24, amoled206), for hello's
+  // `board`; empty for none (the simulator, tests), which says nothing.
+  virtual const char* boardName() { return ""; }
 };
 
 class Device : public linkkit::App {

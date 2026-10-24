@@ -36,17 +36,20 @@ struct SlimeFace: View {
     let live: Bool
     let listening: Bool
     let size: CGFloat
+    /// Taller or shorter than `size`, for a tile that isn't square: the
+    /// engine's own 4:3 keeps the "needs you" sign whole.
+    var height: CGFloat?
     @Environment(\.stillMotion) private var still
     @Environment(\.accessibilityReduceMotion) private var reduced
 
     var body: some View {
         Group {
-            if still, let image = feed.stillImage { Image(nsImage: image).resizable() }
+            if still, let image = feed.stillImage { Image(nsImage: image).resizable().scaledToFill() }
             else { SlimeView(feed: feed, snapshot: snapshot, visible: live && !still, reduced: reduced, listening: listening) }
         }
-        .frame(width: size, height: size)
+        .frame(width: size, height: height ?? size)
         .background(Theme.glass)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.27))
+        .clipShape(RoundedRectangle(cornerRadius: min(size, height ?? size) * 0.27))
         .accessibilityLabel("Boop, \(snapshot.mood), \(snapshot.visual)")
     }
 }

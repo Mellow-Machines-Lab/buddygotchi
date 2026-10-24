@@ -55,6 +55,13 @@ public final class Runtime: @unchecked Sendable {
         /// stand in.
         public var idleMs: (@Sendable () -> Int64)?
         public var log: @Sendable (String) -> Void = { _ in }
+        /// Narrows the board's Bluetooth transport to the one advertised
+        /// name (`Boop-54FE`), or widens it again for nil: remembering the
+        /// board, and forgetting it. Nil with no Bluetooth.
+        public var chooseBoard: (@Sendable (String?) -> Void)?
+        /// Where macOS keeps crash reports, which a bug report copies
+        /// Boop's from.
+        public var crashReports = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Logs/DiagnosticReports")
         /// Every message sent to the device, as it's sent, for whoever
         /// records them (`DemoRecorder`). On whichever thread sends it.
         public var onDeviceLine: (@Sendable (String) -> Void)?
@@ -133,6 +140,12 @@ public final class Runtime: @unchecked Sendable {
     /// them.
     var launchOptions: [String: [String]] = [:]
     let lock: InstanceLock
+    /// `running` is in the state directory from `start` to `stop`, so one
+    /// still there at the next launch means Boop crashed or was killed.
+    public static let runningFile = "running"
+    /// The last run didn't stop cleanly, until the person closes the
+    /// notice. Touched only on `home`.
+    var uncleanExit: Bool
     var server: HookServer?
     var timer: DispatchSourceTimer?
     /// Keeps macOS from napping the app while it runs.
@@ -168,6 +181,13 @@ public final class Runtime: @unchecked Sendable {
     public var onChange: ((Status) -> Void)?
     /// Read-only visual mirror of the reactions sent. Never completes a handle.
     public var onReaction: ((Int, DeviceReaction) -> Void)?
+
+    /// A tap on the board (its screen or its button), after the core has
+    /// taken it: onboarding's "tap my screen" lessons listen. On `home`.
+    public var onTap: (() -> Void)?
+    /// An agent's hook that became an event, by the agent's name
+    /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
+    public var onAgentHook: ((String) -> Void)?
 
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
@@ -210,6 +230,8 @@ public final class Runtime: @unchecked Sendable {
         debugLogURL = options.stateDir.appendingPathComponent(DebugLog.fileName)
         guard let lock = InstanceLock(directory: options.stateDir) else { throw OpenError.locked(options.stateDir.path) }
         self.lock = lock
+        // Read under the lock: another copy's marker is never this one's.
+        uncleanExit = FileManager.default.fileExists(atPath: options.stateDir.appendingPathComponent(Self.runningFile).path)
         let log = options.log
         let wall = options.wallClock(), wallAt = options.clock()
         let today = options.time.day(wall)
@@ -388,6 +410,8 @@ public final class Runtime: @unchecked Sendable {
 
     public func start() throws {
         let home = self.home
+        if uncleanExit { options.log("boop: the last run didn't stop cleanly (crashed, or was killed)") }
+        FileManager.default.createFile(atPath: options.stateDir.appendingPathComponent(Self.runningFile).path, contents: nil)
         // Hooks are timed on the runtime's clock, which headless mode can move.
         let clock = options.clock
         let onLine: @Sendable (HookLine) -> Void = { [weak self] line in
@@ -437,6 +461,57 @@ public final class Runtime: @unchecked Sendable {
         server?.stop()
         server = nil
         for rig in rigs { rig.transport?.stop() }
+        try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
+    }
+
+    /// Onboarding's greetings on the board, which it plays as a rule's
+    /// reaction (only if nothing else plays): Boop waking into its body once
+    /// it's paired, and a celebration for the first hook and the finale.
+    public enum Greeting: Sendable {
+        case wake, celebrate
+        var reaction: DeviceReaction {
+            switch self {
+            case .wake: DeviceReaction(anim: "wake_up")
+            case .celebrate: DeviceReaction(anim: "task_complete", outcome: "success")
+            }
+        }
+    }
+
+    public func greet(_ greeting: Greeting) {
+        home.async { [self] in
+            options.log("onboarding: \(greeting.reaction.name) on the board")
+            playRule(greeting.reaction)
+        }
+    }
+
+    /// Saves where onboarding stands (`AppSettings.onboarding`), or that
+    /// it's done (nil).
+    public func setOnboarding(_ act: Onboarding.Act?) {
+        home.async { [self] in
+            guard settings.onboarding != act else { return }
+            saveSettings { $0.onboarding = act }
+            if act == nil { options.log("onboarding: done") }
+        }
+    }
+
+    /// Lets go of the remembered board: Boop takes any over Bluetooth
+    /// again, and remembers the next one that says hello.
+    public func forgetBoard() {
+        home.async { [self] in
+            guard let board = settings.board else { return }
+            saveSettings { $0.board = nil }
+            options.log("device: forgot \(board); taking any board over Bluetooth")
+            options.chooseBoard?(nil)
+            changed()
+        }
+    }
+
+    /// Closes the "stopped unexpectedly" notice.
+    public func dismissUncleanExit() {
+        home.async { [self] in
+            uncleanExit = false
+            changed()
+        }
     }
 
     // MARK: Inputs (on `home`)
@@ -455,6 +530,7 @@ public final class Runtime: @unchecked Sendable {
         }
         guard let event else { return }
         run(pipeline.agent(event))
+        onAgentHook?(line.agent)
         guard let prompt else { return }
         PromptIntake.read(prompt, names: rigs.map(\.buddy.name), labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }

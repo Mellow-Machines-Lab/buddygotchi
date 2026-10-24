@@ -149,6 +149,21 @@ final class Box<T>: @unchecked Sendable {
         #expect(!left.isOurs("Lamp-54fe0") && !left.isOurs("lamp-54fe") && !left.isOurs(nil))
     }
 
+    /// An app narrows a transport to the device it met first, and widens
+    /// it again when told to forget: `take(only:)` changes what's ours.
+    /// Not started, so it only changes the matching.
+    @Test func testBluetoothCanBeToldToTakeOnlyOneDeviceAndToForgetIt() {
+        let ble = BLETransport(prefix: "Lamp")
+        ble.take(only: "Lamp-54fe")
+        ble.queue.sync {}
+        #expect(ble.only == "Lamp-54fe")
+        #expect(ble.isOurs("Lamp-54fe") && !ble.isOurs("Lamp-0001"))
+        ble.take(only: nil)
+        ble.queue.sync {}
+        #expect(ble.only == nil)
+        #expect(ble.isOurs("Lamp-54fe") && ble.isOurs("Lamp-0001"))
+    }
+
     /// Bluetooth off, refused or missing is said in plain words, with what
     /// to do and the app's name; on, or on its way, is no trouble. Only
     /// the words: nothing here may start Bluetooth.

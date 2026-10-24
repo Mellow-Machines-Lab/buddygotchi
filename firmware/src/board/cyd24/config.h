@@ -6,6 +6,10 @@
 
 #include "render/canvas.h"
 
+// Its env's name in firmware/platformio.ini, which hello's `board` says, so
+// the Mac knows which firmware it takes.
+constexpr const char* kBoardName = "cyd24";
+
 namespace pins {
 // Screen, ST7789 on SPI2 (HSPI).
 constexpr int kLcdSclk = 14;

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include <esp_system.h>
 #include <esp_heap_caps.h>
 #include <esp_random.h>
 
@@ -40,6 +41,31 @@ uint32_t BoardHal::bootId() {
   return id;
 }
 const char* BoardHal::gitSha() { return BOOP_GIT_SHA; }
+
+const char* BoardHal::resetReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:
+      return "power";
+    case ESP_RST_EXT:
+      return "button";
+    case ESP_RST_SW:
+      return "software";
+    case ESP_RST_PANIC:
+      return "panic";
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT:
+      return "watchdog";
+    case ESP_RST_BROWNOUT:
+      return "brownout";
+    case ESP_RST_DEEPSLEEP:
+      return "sleep";
+    case ESP_RST_USB:
+      return "usb";
+    default:
+      return "other";
+  }
+}
 
 const char* BoardHal::deviceId() { return ble_ ? ble_->id() : Hal::deviceId(); }
 const char* BoardHal::bleState() { return ble_ ? ble_->state() : "off"; }

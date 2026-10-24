@@ -32,8 +32,17 @@ enum Snapshots {
 
             // The slime mirror's, when the character pack has one (Boop's).
             let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
-            var gelImage: NSImage?
+            var gelImage: NSImage?, onboardingGel: NSImage?
+            OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
+                onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"),
+                                                         size: NSSize(width: 300, height: 300))
+                // Every look onboarding uses, through the engine: one it
+                // doesn't know fails here.
+                for (name, look) in StateSnapshot.onboardingLooks {
+                    _ = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"),
+                                                 size: NSSize(width: 320, height: 240))
+                }
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
                 gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"), size: NSSize(width: 46, height: 46))
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
@@ -59,6 +68,7 @@ enum Snapshots {
                 try? installer.install(.claude)
                 settings.refreshHooks()
                 settings.restartAgents = true
+                settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
                 try? installer.remove(.claude)
                 shot("settings-chatter", model(installer, status: status(personality: Personality.other)), pane: .settings)
@@ -80,6 +90,23 @@ enum Snapshots {
                 let stopped = model(installer, status: nil)
                 stopped.startError = AppModel.startProblem(Runtime.OpenError.locked("/tmp/boop"))
                 shot("settings-not-running", stopped, pane: .settings)
+                // Opening at login waits for System Settings, and a bare binary can't.
+                let approval = model(installer, status: status())
+                approval.loginItem = LoginItem(state: { .needsApproval }, set: { _ in })
+                approval.refreshLoginItem()
+                shot("settings-login-approval", approval, pane: .settings)
+                let bare = model(installer, status: status())
+                bare.loginItem = .unavailable
+                bare.refreshLoginItem()
+                shot("settings-login-unavailable", bare, pane: .settings)
+                // The board runs older firmware than the app carries, and then it's being written.
+                let behind = model(installer, status: status())
+                behind.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                shot("settings-firmware-offer", behind, pane: .settings)
+                behind.firmwareWrite = .writing(0.42)
+                shot("settings-firmware-writing", behind, pane: .settings)
+                behind.firmwareWrite = .failed("plug Mochi's body into this Mac with a USB cable that carries data, then try again.")
+                shot("settings-firmware-failed", behind, pane: .settings)
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))),
                      pane: .settings)
                 // A simulator running on this Mac: a body to choose, and chosen.
@@ -96,29 +123,9 @@ enum Snapshots {
                 shot("settings-old-firmware", model(installer, status: status(deviceTrouble: "the device's firmware is too old for this app: flash it")),
                      pane: .settings)
 
-                for step in SetupDraft.Step.allCases {
-                    let setup = model(installer, status: nil)
-                    setup.setup.step = step
-                    setup.setup.agents = [.claude]
-                    if step.rawValue >= SetupDraft.Step.name.rawValue { setup.setup.name = "Mochi" }
-                    shot("setup-\(step.rawValue + 1)-\(step)", setup, pane: .setup)
+                for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
+                    render(OnboardingView(model: onboarding), "onboarding-\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
                 }
-                let cheeky = model(installer, status: nil)
-                cheeky.setup.step = .name
-                cheeky.setup.name = "Mochi"
-                cheeky.setup.nature = .cheeky
-                shot("setup-2-name-cheeky", cheeky, pane: .setup)
-                for (name, text) in [("unicode", "우리의작은친구말랑이"), ("invalid", "Mochi: Pip")] {
-                    let named = model(installer, status: nil)
-                    named.setup.step = .name
-                    named.setup.editName(text)
-                    shot("setup-2-name-\(name)", named, pane: .setup)
-                }
-                let setup = model(unbuilt, status: nil)
-                setup.setup.step = .agents
-                setup.setup.agents = [.claude]
-                setup.setup.name = "Mochi"
-                shot("setup-3-agents-no-hook", setup, pane: .setup)
                 if let crowded = overviews(installer).first(where: { $0.0 == "crowded" })?.1 {
                     crowded.status?.snapshot.vol = 0
                     crowded.status?.personality = Personality.other
@@ -131,6 +138,62 @@ enum Snapshots {
             fail("snapshots: \(error)")
         }
         exit(0)
+    }
+
+    /// Onboarding's acts, and the states of them worth seeing, each on a
+    /// model of its own.
+    static func onboardings(_ installer: HookInstaller, gel: NSImage?) -> [(String, OnboardingModel)] {
+        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
+            let app = model(installer, status: status)
+            app.setup.name = act.index >= Onboarding.Act.makeMeYours.index ? "Mochi" : ""
+            let onboarding = OnboardingModel(app: app, act: act, stateDir: URL(fileURLWithPath: "/tmp/boop-snapshots-onboarding"))
+            onboarding.feed.stillImage = gel
+            set(onboarding)
+            return onboarding
+        }
+        let behind = at(.body, status: status()) {
+            $0.body = .joined
+            $0.app.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+        }
+        return [
+            ("1-hello", at(.hello)),
+            ("2-what-i-do", at(.whatIDo)),
+            ("3-name", at(.makeMeYours)),
+            ("3-name-cheeky", at(.makeMeYours) { $0.app.setup.nature = .cheeky }),
+            ("3-name-invalid", at(.makeMeYours) { $0.app.setup.editName("Mochi: Pip") }),
+            ("3-name-unicode", at(.makeMeYours) { $0.app.setup.editName("우리의작은친구말랑이") }),
+            ("4-body-intro", at(.body)),
+            ("4-body-looking", at(.body, status: status(connected: false)) { $0.body = .looking }),
+            ("4-body-bluetooth-off", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))) {
+                $0.body = .looking
+            }),
+            ("4-body-found", at(.body, status: status()) { $0.body = .looking }),
+            ("4-body-cant-start", at(.body) {
+                $0.body = .looking
+                $0.app.startError = AppModel.startProblem(Runtime.OpenError.locked("/tmp/boop"))
+            }),
+            ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
+            ("4-body-joined-hungry", behind),
+            ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
+            ("5-how-to", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.lessons = [.tap]
+            }),
+            ("5-how-to-done", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.lessons = [.tap, .button]
+            }),
+            ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
+            ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
+            ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
+            ("6-agents-heard", at(.agents, status: status()) {
+                $0.connected = true
+                $0.heard = "claude"
+            }),
+            ("7-small-things", at(.smallThings, status: status())),
+            ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
+            ("8-finale", at(.finale, status: status())),
+        ]
     }
 
     /// The setup field uses the memory name's
@@ -158,6 +221,10 @@ enum Snapshots {
         let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link)
         model.status = status
         model.readKey = { nil }  // fixtures only: never the real Keychain
+        model.boardFirmware = []  // fixtures only: never the bundle's
+        // Fixtures only: never the real login item. On, as after setup.
+        model.loginItem = LoginItem(state: { .on }, set: { _ in })
+        model.refreshLoginItem()
         return model
     }
 
@@ -254,6 +321,11 @@ enum Snapshots {
                                                               brainTrouble: BrainTrouble(kind: .credit, why: "jev: HTTP 402",
                                                                                          inARow: 1)))),
             ("listening", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], listening: true))),
+            ("unclean-exit", {
+                var crashed = status(base: "idle", sessions: [["claude", "jetpack", "idle"]])
+                crashed.uncleanExit = true
+                return model(installer, status: crashed)
+            }()),
             ("cant-hear", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           micTrouble: "Allow Boop in System Settings → Privacy & Security → Microphone."))),
             // No card, or no voice file on it.

@@ -127,7 +127,12 @@ bool BoardHal::copyAppend(const uint8_t* d, size_t n, uint32_t& have) {
 static __attribute__((noinline)) void readBack(uint32_t& got, uint32_t& sum) {
   File f = SD.open(kCopyPath);
   uint8_t buf[1024];
-  for (size_t n; f && (n = f.read(buf, sizeof(buf))) > 0; got += n) sum = linkkit::crc32(buf, n, sum);
+  // Megabytes at about 900 KB/s: seconds, past the loop's watchdog, so
+  // each piece tells it the loop is still alive.
+  for (size_t n; f && (n = f.read(buf, sizeof(buf))) > 0; got += n) {
+    sum = linkkit::crc32(buf, n, sum);
+    feedLoopWDT();
+  }
   if (f) f.close();
 }
 

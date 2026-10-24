@@ -21,7 +21,8 @@ final class FakeTransport: Transport, @unchecked Sendable {
     var lines: [String] = []
     var onLine: (@Sendable (String) -> Void)?
     var onConnection: (@Sendable (Bool) -> Void)?
-    var name: String { "fake" }
+    /// `ble` plays the Bluetooth transport for the app.
+    var name = "fake"
     var why: String?
     var trouble: String? { lock.withLock { why } }
     /// What the device says when the app first speaks on a link; nil says
@@ -134,6 +135,26 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss"}"#), .some(nil))
         XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":0}}"#), .some(nil))
         XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":2147483648}}"#), .some(nil))
+    }
+
+    /// The rule: the board's `hello` says why it last restarted, and the
+    /// log says so only when something went wrong (a crash, the watchdog,
+    /// power sagging); a power-up, the button or a flash isn't news.
+    func testTheLogSaysWhenTheBoardRestartedAfterTrouble() throws {
+        func info(_ reset: String?) throws -> DeviceInfo {
+            let line = reset.map { FakeTransport.hello.replacingOccurrences(of: "}", with: #","reset":"\#($0)"}"#) } ?? FakeTransport.hello
+            guard case .hello(let hello) = Wire.decode(line) else { throw Refusal("no hello") }
+            return DeviceInfo(hello)
+        }
+        let watchdog = try info("watchdog"), panic = try info("panic"), older = try info(nil)
+        XCTAssertEqual(watchdog.reset, "watchdog")
+        XCTAssertTrue(watchdog.logLines.contains("device: it restarted after a watchdog"))
+        XCTAssertTrue(panic.logLines.contains("device: it restarted after a panic"))
+        for ordinary in ["power", "button", "usb", "software"] {
+            let lines = try info(ordinary).logLines
+            XCTAssertEqual(lines.count, 1, ordinary)
+        }
+        XCTAssertNil(older.reset, "older firmware doesn't say")
     }
 
     /// Each reaction's `do`, with its name and its `args` in

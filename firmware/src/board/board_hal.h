@@ -6,6 +6,7 @@
 // are in its own hal.cpp (cyd24/, amoled206/).
 #pragma once
 #include "app/device.h"
+#include "board/config.h"
 
 namespace linkkit {
 class Ble;
@@ -51,6 +52,8 @@ class BoardHal : public app::Hal {
   const char* fwVersion() override;
   uint32_t bootId() override;
   const char* gitSha() override;
+  const char* resetReason() override;
+  const char* boardName() override { return kBoardName; }
 
  private:
   // The board's own start-up (its hal.cpp): its pins, buses, touch and

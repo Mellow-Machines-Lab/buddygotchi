@@ -9,7 +9,9 @@ import PackageDescription
 
 // There's no Xcode here, so the tests are an executable that `@testable
 // import`s the libraries, which must be built with testability enabled.
-let testable: [SwiftSetting] = [.unsafeFlags(["-enable-testing"])]
+// Debug builds only: the tests build debug, and a release build
+// (`make bundle`) is optimised without it.
+let testable: [SwiftSetting] = [.unsafeFlags(["-enable-testing"], .when(configuration: .debug))]
 
 /// agent-hooks' library, which every Boop target that sees agents imports.
 let agentHooks: Target.Dependency = .product(name: "AgentHooks", package: "agent-hooks")
@@ -44,13 +46,17 @@ func excludingAllBut(_ kept: [String]) -> [String] {
 }
 
 var packageTargets: [Target] = [
+    // The repo's VERSION file, compiled in for BoopVersion: the one place
+    // the version is written, which the firmware reads too. C, because its
+    // #embed has the compiler read the file and rebuild when it changes.
+    .target(name: "CBoopVersion", path: "app/CBoopVersion", cSettings: [.unsafeFlags(["-std=c23"])]),
     // Everything that isn't the app shell: Adapters, Core, Harness, Brains,
     // Outputs, Voice, Memory, DeviceLink (Boop's vocabulary on LinkKit),
     // the hook installer (Install) and the Runtime that wires them together
     // (App) (documentation/architecture.html).
     .target(
         name: "BoopKit",
-        dependencies: [mellowharness, agentHooks, linkKit],
+        dependencies: ["CBoopVersion", mellowharness, agentHooks, linkKit],
         path: "app/BoopKit",
         swiftSettings: testable
     ),
@@ -60,7 +66,10 @@ var packageTargets: [Target] = [
     // Push-to-talk's mic lives in the app, in app/Boop/Talk.swift.
     // Info.plist is linked into the binary with -sectcreate, so macOS finds
     // LSUIElement (a menu-bar app, no Dock icon) and the Bluetooth,
-    // microphone and speech usage descriptions without an app bundle.
+    // microphone and speech usage descriptions without an app bundle. It
+    // has no version: that's VERSION's (BoopVersion). AppIcon.icns and
+    // Boop.entitlements are for the app bundle (app/tools/bundle.sh), which
+    // a bare binary has no use for.
     // The character pack is bundled as `make build` stages it
     // (characters/charactergen.py --stage, characters/CHARACTER.md §2):
     // the chosen pack, from .character-build/packs.
@@ -69,7 +78,7 @@ var packageTargets: [Target] = [
         dependencies: ["BoopKit", agentHooks, mellowharness, linkKit],
         path: ".",
         exclude: excludingAllBut(["app/Boop", "internal/app/Boop"])
-            + ["app/Boop/Info.plist"],
+            + ["app/Boop/Info.plist", "app/Boop/AppIcon.icns", "app/Boop/Boop.entitlements"],
         sources: ["app/Boop/main.swift", "app/Boop/MenuBarApp.swift", "app/Boop/PresenceSignals.swift",
                   "app/Boop/Talk.swift", "app/Boop/Views", "internal/app/Boop"],
         resources: [.copy(".character-build/packs")],
@@ -117,7 +126,7 @@ packageTargets += [
 
 let package = Package(
     name: "Boop",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "Boop", targets: ["Boop"]),
         .executable(name: "boopdev", targets: ["BoopDev"]),

@@ -1,7 +1,7 @@
 # Boop v1. Run from the repo root. See README.md and internal/VERIFICATION.md.
 # The development targets (tests, simulator, tools) are in internal/Makefile:
 # make -C internal <target>.
-.PHONY: build app run debug dash day simulator demo flash eval clean
+.PHONY: build app bundle run debug onboarding dash day simulator demo flash eval clean
 
 PIO := firmware/tools/pio.sh
 
@@ -9,7 +9,7 @@ PIO := firmware/tools/pio.sh
 # BoopTests runner, whose main is generated first; then agent-hooks' hook
 # client, agent-hook, which the app copies from next to it, MellowHarness'
 # tools, mellowharness-emit and beacon (mellowharness/README.md), and LinkKit's USB
-# bridge, linkkit-bridge (linkkit/README.md).
+# bridge, linkkit-bridge, and its flasher, linkkit-flash (linkkit/README.md).
 # SWIFT_CHECK makes importing a target that isn't a declared dependency an
 # error, not a warning, so app/ can't reach internal/ code (internal/README.md).
 # `make -C internal test` runs this target, then the tests. Both targets
@@ -24,6 +24,7 @@ build:
 	swift build $(SWIFT_CHECK) --product mellowharness-emit
 	swift build $(SWIFT_CHECK) --product beacon
 	swift build $(SWIFT_CHECK) --product linkkit-bridge
+	swift build $(SWIFT_CHECK) --product linkkit-flash
 
 # The Mac app, the agent-hook it copies from next to it and boopdev, without
 # the tests' generated runner, which is most of `build`'s time after a
@@ -33,6 +34,13 @@ app:
 	swift build $(SWIFT_CHECK) --product Boop
 	swift build $(SWIFT_CHECK) --product agent-hook
 	swift build $(SWIFT_CHECK) --product boopdev  # the doctor skill checks the hooks with it
+
+# Boop.app, as it ships, in .build/Boop.app (app/tools/bundle.sh): a release
+# build for Apple silicon and Intel, with both boards' firmware to update
+# them with, signed ad hoc until there's a Developer ID (SIGN_IDENTITY=…).
+# Open it to run it; that's Bluetooth, so the owner's.
+bundle:
+	app/tools/bundle.sh
 
 # The Mac app with Bluetooth. The owner runs this, not agents. Builds the
 # app, then starts the binary: `swift run` would check the build all over
@@ -44,6 +52,15 @@ run: app
 # core's decisions, device messages and every brain pass.
 debug: app
 	.build/debug/Boop --debug
+
+# The first launch's onboarding again, on a throwaway folder
+# (/tmp/boop-onboarding, started afresh each time): with Bluetooth, so the
+# board pairs, but it never changes the real hooks or login item, and the
+# everyday Boop's memory stays. Quit the everyday Boop first, or the two
+# fight over the board. The owner runs this, not agents.
+onboarding: app
+	rm -rf /tmp/boop-onboarding
+	.build/debug/Boop --state-dir /tmp/boop-onboarding
 
 # The live dashboard for the app `make debug` started.
 # Run it in a second terminal.

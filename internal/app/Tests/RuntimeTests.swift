@@ -321,6 +321,167 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(about["connected"] as? Bool, true)
     }
 
+    /// The rule: `running` is in the state directory from `start` to
+    /// `stop`, so a run that stopped leaves none and the next launch has no
+    /// notice, and one still there (a crash, or a kill) makes the next
+    /// launch say so until the notice is closed.
+    func testALaunchAfterACrashSaysSo() throws {
+        let marker = dir.appendingPathComponent(Runtime.runningFile)
+        var runtime: Runtime? = try makeRuntime(FakeTransport())
+        let options = runtime!.options
+        try runtime!.start()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: marker.path), "running while it runs")
+        runtime!.stop()
+        runtime!.home.sync {}
+        runtime = nil
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path), "gone once it stopped")
+
+        var clean: Runtime? = try Runtime(options)
+        XCTAssertEqual(clean!.home.sync { clean!.uncleanExit }, false)
+        clean = nil
+
+        // A run that never stopped.
+        FileManager.default.createFile(atPath: marker.path, contents: nil)
+        let crashed = try Runtime(options)
+        var statuses: [Runtime.Status] = []  // on `home`
+        crashed.onChange = { statuses.append($0) }
+        try crashed.start()
+        defer { crashed.stop() }
+        eventually("a status") { crashed.home.sync { !statuses.isEmpty } }
+        XCTAssertEqual(crashed.home.sync { statuses.last?.uncleanExit }, true)
+        crashed.dismissUncleanExit()
+        crashed.home.sync {}
+        XCTAssertEqual(crashed.home.sync { statuses.last?.uncleanExit }, false)
+    }
+
+    /// A bug report copies the newest of macOS's crash reports for Boop
+    /// from the last `reportCrashDays`, at most `reportCrashes` of them,
+    /// and no other app's, and says what ran on which Mac.
+    func testABugReportKeepsBoopsRecentCrashReports() throws {
+        let crashes = dir.appendingPathComponent("DiagnosticReports")
+        try FileManager.default.createDirectory(at: crashes, withIntermediateDirectories: true)
+        let now = Date()
+        func report(_ name: String, daysAgo: Double) throws {
+            let url = crashes.appendingPathComponent(name)
+            try Data("{}".utf8).write(to: url)
+            try FileManager.default.setAttributes([.modificationDate: now.addingTimeInterval(-daysAgo * 86_400)], ofItemAtPath: url.path)
+        }
+        try report("Boop-2026-10-22-010000.ips", daysAgo: 0.1)
+        try report("Boop-2026-10-21-010000.ips", daysAgo: 1)
+        try report("Boop-2026-10-20-010000.ips", daysAgo: 2)
+        try report("Boop-2026-10-19-010000.ips", daysAgo: 3)  // the fourth: left out
+        try report("Boop-2026-10-01-010000.ips", daysAgo: 21)  // too old
+        try report("Safari-2026-10-22-010000.ips", daysAgo: 0.1)  // another app's
+        var options = try options(FakeTransport())
+        options.crashReports = crashes
+        let runtime = try Runtime(options)
+        let saved = Lines()
+        runtime.saveReport { saved.add($0?.path ?? "none") }
+        eventually("the report") { !saved.all.isEmpty }
+        let folder = URL(fileURLWithPath: saved.all[0])
+        let copied = try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent("crashes").path).sorted()
+        XCTAssertEqual(copied, ["Boop-2026-10-20-010000.ips", "Boop-2026-10-21-010000.ips", "Boop-2026-10-22-010000.ips"])
+        let about = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("about.json"))) as? [String: Any])
+        XCTAssertEqual(about["crashes"] as? Int, 3)
+        XCTAssertEqual(about["build"] as? String, "dev")
+        XCTAssertEqual(about["macos"] as? String, AboutThisMac.macOS)
+        XCTAssertNotNil(about["mac"] as? String)
+        XCTAssertEqual(about["unclean_exit"] as? Bool, false)
+    }
+
+    /// The rule: over Bluetooth, the first board that fits and says hello
+    /// is the one Boop takes from then on: it's saved, and the transport
+    /// narrowed to its advertised name. Another board's hello later
+    /// changes nothing. Forgetting it saves none, and widens the transport
+    /// again. Over anything but Bluetooth nothing is remembered.
+    func testBoopRemembersTheFirstBoardOverBluetoothUntilForgotten() throws {
+        let transport = FakeTransport()
+        transport.name = "ble"
+        var options = try options(transport)
+        let chosen = Lines()
+        options.chooseBoard = { chosen.add($0 ?? "any") }
+        let runtime = try Runtime(options)
+        var statuses: [Runtime.Status] = []  // on `home`
+        runtime.onChange = { statuses.append($0) }
+        runtime.home.sync {
+            runtime.connection(true)
+            runtime.device(FakeTransport.hello)
+        }
+        XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe")
+        XCTAssertEqual(chosen.all, ["Boop-54FE"])
+        XCTAssertEqual(runtime.home.sync { statuses.last?.board }, "b00p-54fe")
+        runtime.home.sync { runtime.device(FakeTransport.hello.replacingOccurrences(of: "b00p-54fe", with: "b00p-0001")) }
+        XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe", "the first one stays")
+        XCTAssertEqual(chosen.all, ["Boop-54FE"])
+        runtime.forgetBoard()
+        runtime.home.sync {}
+        XCTAssertNil(AppSettings.load(from: dir).board)
+        XCTAssertEqual(chosen.all, ["Boop-54FE", "any"])
+        XCTAssertNil(runtime.home.sync { statuses.last?.board })
+    }
+
+    func testNothingIsRememberedOverUSB() throws {
+        var options = try options(FakeTransport())
+        let chosen = Lines()
+        options.chooseBoard = { chosen.add($0 ?? "any") }
+        let runtime = try Runtime(options)
+        runtime.home.sync {
+            runtime.connection(true)
+            runtime.device(FakeTransport.hello)
+        }
+        XCTAssertNil(AppSettings.load(from: dir).board)
+        XCTAssertEqual(chosen.all, [])
+    }
+
+    /// The rule: bug-reports/ keeps the newest `reportsKept` reports;
+    /// saving one more deletes the oldest past that.
+    func testBugReportsAreCappedAtTheNewest() throws {
+        let reports = dir.appendingPathComponent(Runtime.reportsDir)
+        // 21 old ones, named as saveReport names them, a second in one second among them.
+        var names = (1...20).map { String(format: "2026-01-01-0000%02d", $0) }
+        names.insert("2026-01-01-000001.2", at: 1)
+        for name in names { try FileManager.default.createDirectory(at: reports.appendingPathComponent(name), withIntermediateDirectories: true) }
+        let runtime = try makeRuntime(FakeTransport())
+        let saved = Lines()
+        runtime.saveReport { saved.add($0?.lastPathComponent ?? "none") }
+        eventually("the report") { !saved.all.isEmpty }
+        let kept = try FileManager.default.contentsOfDirectory(atPath: reports.path)
+        XCTAssertEqual(kept.count, Runtime.reportsKept)
+        XCTAssertTrue(kept.contains(saved.all[0]), "the new one stays")
+        XCTAssertFalse(kept.contains("2026-01-01-000001"), "the oldest goes")
+        XCTAssertFalse(kept.contains("2026-01-01-000001.2"))
+        XCTAssertTrue(kept.contains("2026-01-01-000002"), "the third oldest stays: 21 old and the new one, 20 kept")
+    }
+
+    /// Onboarding listens to the runtime: a tap on the board, and the first
+    /// agent hook that becomes an event; it greets on the board with a
+    /// rule's reaction; and it saves its act in settings.json.
+    func testOnboardingHearsTapsAndHooksAndGreetsOnTheBoard() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        let taps = Lines(), agents = Lines()
+        runtime.onTap = { taps.add("tap") }
+        runtime.onAgentHook = { agents.add($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        eventually("first state on start") { transport.types().contains("state") }
+        connect(transport, runtime)
+        transport.onLine?(#"{"t":"ev","kind":"tap","did":"poked"}"#)
+        eventually("the tap") { taps.all == ["tap"] }
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        eventually("the hook") { agents.all == ["claude"] }
+        runtime.greet(.wake)
+        runtime.greet(.celebrate)
+        eventually("both greetings") { transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1 }
+        XCTAssertTrue(transport.dos("task_complete")[0].contains(#""outcome":"success""#))
+        runtime.setOnboarding(.agents)
+        runtime.home.sync {}
+        XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
+        runtime.setOnboarding(nil)
+        runtime.home.sync {}
+        XCTAssertNil(AppSettings.load(from: dir).onboarding)
+    }
+
     /// A device that doesn't see the link drop still counts the app as
     /// there, and says no `hello` unasked (linkkit/device's kit): an app
     /// relaunched within 30 s over USB, the socket's write timeout or

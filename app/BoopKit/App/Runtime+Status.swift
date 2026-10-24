@@ -51,6 +51,10 @@ extension Runtime {
                 self.line = line
             }
         }
+        /// The last run crashed or was killed, until the notice is closed.
+        public var uncleanExit = false
+        /// The one board Boop takes over Bluetooth, by its `hello.id`.
+        public var board: String?
         /// Each buddy, when there are several; empty for one, which the
         /// fields above are.
         public var buddies: [BuddyStatus] = []
@@ -97,6 +101,8 @@ extension Runtime {
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: options.wallClock()) }
         status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line) }
+        status.uncleanExit = uncleanExit
+        status.board = settings.board
         if pipeline.several {
             status.buddies = rigs.map { rig in
                 Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),

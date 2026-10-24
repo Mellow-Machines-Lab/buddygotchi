@@ -2,8 +2,8 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// The popover. One 360 pt column on warm paper; Overview,
-/// Settings and Setup all open inside it.
+/// The popover. One 360 pt column on warm paper; Overview and Settings
+/// open inside it. Setup is onboarding's, in its own window.
 struct PopoverView: View {
     @ObservedObject var model: AppModel
     var onClose: () -> Void = {}
@@ -22,7 +22,6 @@ struct PopoverView: View {
                 switch model.pane {
                 case .overview: OverviewPane(model: model, maxHeight: limit - 44)
                 case .settings: SettingsPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
-                case .setup: SetupPane(model: model)
                 }
             }
             .transition(.opacity)

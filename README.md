@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black?logo=apple">
+  <img alt="macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-black?logo=apple">
   <img alt="Swift 6.2 or later" src="https://img.shields.io/badge/Swift-6.2%2B-F05138?logo=swift&logoColor=white">
   <img alt="ESP32" src="https://img.shields.io/badge/board-ESP32-E7352C?logo=espressif&logoColor=white">
   <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
@@ -53,7 +53,7 @@ with a screen is the body:
 
 | You need | Why |
 | --- | --- |
-| 💻 **A Mac** | macOS 26 or later, with Command Line Tools (`xcode-select --install`) |
+| 💻 **A Mac** | macOS 15 or later, with Command Line Tools (`xcode-select --install`) |
 | 🐍 **A newer Python** | For flashing the board, unless you already have PlatformIO's `pio`: `brew install python` ([why](firmware/README.md#build-and-flash)). PlatformIO installs itself |
 | 🟨 **A board** | One of the two below, and a USB cable that carries data |
 | 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks Boop's reactions. It needs a key from TypeSafe, which may cost money. Without one, Boop still shows what your agents are doing and when you're needed, but doesn't react or celebrate. Add it in Boop's Settings |
@@ -81,10 +81,12 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
    and the ESP32 toolchain inside the checkout, which takes a few
    minutes; a `pio` already on your `PATH` is used instead.
 2. **Run it.** From your own terminal, run `make run`. The first build
-   takes a minute or two, then Boop appears in the menu bar.
-3. **Say hello.** Give it a name, pick sweet or cheeky, and choose which
-   agents to watch. Restart open agent sessions so they pick up Boop's
-   hooks.
+   takes a minute or two, then Boop says hello in a window of its own.
+3. **Meet Boop.** It walks you through what it does, gets a name and a
+   nature (sweet or cheeky), finds its body on your desk (tap its screen
+   when it asks), shows you how to use it, and connects your agents.
+   Then it lives in the menu bar. Restart open agent sessions so they
+   pick up Boop's hooks.
 
 Then tap the screen to poke it. Press BOOT while an agent waits for you
 and it opens that agent on the Mac; with nobody waiting, BOOT pokes it
@@ -102,6 +104,7 @@ run ([characters/CHARACTER.md](characters/CHARACTER.md) §2).
 | --- | --- |
 | Flash the firmware (over USB) | `make flash` |
 | Run Boop in the menu bar | `make run` |
+| Build `Boop.app`, to open from Finder or put in Applications | `make bundle` (then `open .build/Boop.app`) |
 | Try Boop with no board, in a browser (needs `brew install emscripten`) | `make simulator` ([simulator/README.md](simulator/README.md)) |
 
 Start `make run` from your own terminal: macOS stops anything that uses
@@ -123,8 +126,13 @@ button. Your files, commands and tool output never do.
 
 ## Uninstall
 
-Quit Boop from its menu, then take its hooks out of Claude Code and
-Codex:
+In Boop's Settings, under App, choose **Uninstall…**. Boop takes its
+hooks out of Claude Code and Codex, stops opening at login, moves
+`Boop.app` to the Trash and quits. Its memory stays in
+`~/Library/Application Support/Boop`, so a Boop installed again
+remembers; delete that folder to forget it too.
+
+Without the app, from this folder, this takes the hooks out:
 
 ```sh
 .build/debug/boopdev hooks remove --home ~

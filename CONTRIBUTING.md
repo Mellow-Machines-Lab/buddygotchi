@@ -6,7 +6,7 @@ same file), but every rule in it applies to people too.
 
 ## Build and test
 
-You need macOS 26 or later and Command Line Tools. Xcode works but isn't
+You need macOS 15 or later and Command Line Tools. Xcode works but isn't
 needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
 (`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
@@ -26,6 +26,7 @@ empty. A change to one of them is a pull request in its own repository
 
 ```sh
 make build                 # the Mac app, the dev tools and the hook client
+make bundle                # Boop.app as it ships, in .build/Boop.app
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal fw-test   # the firmware's and LinkKit's device tests, on the Mac
 make -C internal sim       # the firmware's drawing, as PNGs, against the goldens
@@ -47,6 +48,7 @@ One thing that will surprise you:
 | To | Run |
 | --- | --- |
 | Run Boop and print everything it sees and decides | `make debug` |
+| Go through the first launch's onboarding again, without touching your Boop (quit it first) | `make onboarding` |
 | Watch and poke it live, in a second terminal beside `make debug` | `make dash` |
 | See what it did on the latest day `make debug` logged, and why (`DATE=YYYY-MM-DD` for another) | `make day` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
