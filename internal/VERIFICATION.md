@@ -344,7 +344,9 @@ gets at least one scenario. Their pictures are the golden images in
   the same design at the same moment, or the frame drawn just after the
   change the one before but for an eighth of the face (a switch
   dissolving over 200 ms, which `test_a_switch_dissolves_over_200_ms`
-  follows frame by frame), but into or out of the needs-you screen; and
+  follows frame by frame, and one mid-way through another dissolving
+  from the picture that shows more), but into or out of the needs-you
+  screen; and
   what the agents are doing, the rules' reactions and the finish
   with their facts and voice window, taps in a row, what shows first,
   and the lane's strip fading in and out over 200 ms from when it came
@@ -366,13 +368,15 @@ gets at least one scenario. Their pictures are the golden images in
   Pixel's pack's too): every drawn mood at rest on its own art, as its
   idle design draws it, an eye squashing onto its pivot and shut below a
   third open, a mood change's parts morphing and dithering, a press's
-  squash and a stroke's lean, the talking "o", the anchors, and a
-  cross-fade's two pictures sharing the pixels; the voice
+  squash and a stroke's lean, the talking "o", the anchors, a
+  cross-fade's two pictures sharing the pixels, and every design it draws
+  a face in, at every step of its loop, as drawn; the voice
   player (`test_voice`); the sound effects' assets, policies, timing
   and mixer (`test_effects`); and the rig the faces are moving onto
   (`test_rig`): clips' eases and loops, reactions' weights easing in
   and out over 150 ms (a quarter of a shorter clip, so a blink shuts),
   additive and absolute clips blending, a new look fading over the old,
+  a full mixer keeping its look,
   styles cross-fading over 200 ms, an impulse's spring settling without
   overshoot and coming to rest exactly (a step of a second or more at
   once), the same frames from the same inputs, the ramp's 200 ms fade,

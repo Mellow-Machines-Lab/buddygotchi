@@ -735,17 +735,17 @@ mood's eyes and mouth, the looks idle, working and asleep, and a blink.
 Boop's is the same, since Boop wears Pixel's face on the CYD, with its
 notice besides (§16's reference became it).
 
-**Channels.** The body's `x`, `y`, `squash`, `lean`, `tilt` and `lift`;
-the eyes' `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and
-the mouth's `mouthWidth` and `mouthOpen`. Each is a whole number, in
-thousandths but for `x`, `y` and `lift` (px), with a range and a value
-at rest, where a face draws its art as drawn: `kChannelInfo` in `rig.h`
-says what each means, and `charactergen.py` checks the files by it. In
-the files, `eyeOpen` sets both eyes. A face also has two **styles**, the
-eyes' and the mouth's: which of its drawings it draws, for the shapes no
-channel reaches (hearts, X eyes). A new style cross-fades in. The pixel
-face's styles are its drawn moods' names: a style is that mood's eyes,
-or its mouth, as its art draws them.
+**Channels.** The body's `squash`, `lean` and `lift`; the eyes'
+`eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
+`mouthOpen`: those a clip or a finger moves. Each is a whole number, in
+thousandths but for `lift` (px), with a range and a value at rest, where
+a face draws its art as drawn: `kChannelInfo` in `rig.h` says what each
+means, and `charactergen.py` checks the files by it. In the files,
+`eyeOpen` sets both eyes. A face also has two **styles**, the eyes' and
+the mouth's: which of its drawings it draws, for the shapes no channel
+reaches (hearts, X eyes). A new style cross-fades in. The pixel face's
+styles are its drawn moods' names: a style is that mood's eyes, or its
+mouth, as its art draws them.
 
 **`expressions.json`**: for each mood the pack has one for, the styles
 it wears. Pixel's, cut to two of its moods:
@@ -796,8 +796,9 @@ the reactions (`clip`, one that loops, or null). Boop's:
 
 Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state
-or clip, a style that isn't a name, a value out of its range, keys out
-of order and a loop that doesn't close, each with its file and key
+or clip, a style that isn't a mood the pixel face the pack has or uses
+draws (its `faces.h`'s), a value out of its range, keys out of order and
+a loop that doesn't close, each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
 with a lookup by mood, clip and look. The app doesn't bundle `rig/`.
@@ -809,8 +810,9 @@ step of a second or more sets every spring at rest at once. The look's
 clip loops over the springs, and reactions' clips over that, a few at
 once, each with a weight that eases in and out over 150 ms (a quarter of
 a shorter clip, so a 180 ms blink still shuts): an additive clip adds
-its offsets, an absolute one blends toward its values. A poke or a
-stroke kicks a spring. A new style cross-fades over the rig's fade
+its offsets, an absolute one blends toward its values. With the mixer
+full, the oldest gives way, but the look's own. A poke or a stroke kicks
+a spring. A new style cross-fades over the rig's fade
 (`kFadeMs`, 200 ms). The face reports where the body is each frame from
 the pose it draws (`rig::Anchors`: the crown, a ring for a brim, the
 front lower down for the hands, the eyes), so what's worn or held rides
@@ -824,37 +826,47 @@ in every mood whose expression's styles it has, and the design draws the
 rest: in its looks (working's included), its occasions and its
 reactions alike. Facegen decides which
 (`rig_faces`): for each design it finds where the resting face sits at
-each step, the whole face moved and its eyes moved within it (a
-glance), and splits what the face draws besides it (a sparkle, a
-falling tear) into decorations of their own, which the design keeps
-drawing over the rig face. It takes a design only if, drawn so at rest,
-it is the design as drawn, pixel for pixel; idle's first two variations,
-a blink and a look-around, Pixel's plain face, it takes near enough,
-missing what the rig face can't draw (sad's trembling lip, irritated's
-twitch), since the morphs into and out of a mood are worth it. The rest
-are baked: the finishes and wake-ups, the comedy, asleep, a face that
-changes shape (curious's eyes, whose big eye moves side to side, a
-yawn), tears pouring from the eyes (sad at work). Each design's moves
-are a track of `faces.h` (a scene's `face`), which the rig face follows
-as the design's clock runs, so its sounds, timing and outcome are the
-design's still. Its parts are each drawn mood's own art, which facegen
-cuts from the mood's first idle at rest: each eye open and shut, the
-mouth and the cheeks (`faces.h`'s `kParts`, about 6 KB). At rest each
-part draws as its art has it, and the channels' offsets from rest move
-it: `x`, `y`, `lift`, `squash` and `lean` the whole face; `eyeOpen`
-closes each eye onto the line it shuts on, its shut art below a third
-open; `eyeSize` scales the eyes, `gazeX`, `gazeY` and `tilt` shift them;
-`mouthWidth` and `mouthOpen` widen and open the mouth. A new style
-dissolves in over the mixer's 200 ms, a 4 × 4 ordered dither (the canvas
-has no alpha), each part morphing from its box to the next one's. The clip of the look it's
-in (idle, working or asleep: the state's `base`) plays over the
+each step, open or shut (a blink, a squeeze), the whole face moved and
+its eyes moved within it (a glance), and splits what the face draws
+besides it (a sparkle, a falling tear) into decorations of their own,
+which the design keeps drawing over the rig face. It takes a design only
+if, drawn so at rest, it is the design as drawn, pixel for pixel, at
+every step, which the rig face test (`test_rig_face`) checks again on
+the board's own drawing; idle's first two variations, a blink and a
+look-around, Pixel's plain face, it takes near enough (of the rig face's
+pixels, all but an eighth land on the design's), missing what the rig
+face can't draw (sad's trembling lip, irritated's twitch), since the
+morphs into and out of a mood are worth it. The rest are baked: the
+finishes and wake-ups, the comedy, asleep, a face that changes shape
+(curious's eyes, whose big eye moves side to side, a yawn), tears
+pouring from the eyes (sad at work). Each design's moves are a track of
+`faces.h` (a scene's `face`): where the face is at each step and whether
+it's shut, which the rig face follows as the design's clock runs, so its
+sounds, timing, blinks and outcome are the design's still. Its parts are
+each drawn mood's own art, which facegen cuts from the mood's first idle
+at rest: each eye open and shut, the mouth, the cheeks and the mouth of
+its shut face, as a flip-book's blink step has its own (`faces.h`'s
+`kParts`). At rest each part draws as its art has it, and
+the channels' offsets from rest move it: `lift`, `squash` and `lean` the
+whole face; `eyeOpen` closes each eye onto the line it shuts on, its
+shut art below a third open; `eyeSize` scales the eyes, `gazeX` and
+`gazeY` shift them; `mouthOpen` opens the mouth. On a step whose face is
+shut the eyes are their shut art and the mouth its shut face's, still
+morphing from style to style. A new style dissolves in over the mixer's
+200 ms, a 4 × 4 ordered dither (the canvas has no alpha), each part
+morphing from its box to the next one's. The clip of the look it's in
+(idle, working or asleep: the state's `base`) plays over a look's
 design's moves (Pixel's breathe lifts it a pixel and glances to either
-side; working's looks down at the desk), the `blink` clip at each blink;
-a press kicks the squash and a stroke the lean. Every switch of design
-dissolves over the rig's 200 ms fade, through the same dither, with no
-blink: the whole picture, or between two designs the rig face draws,
-their desks while the face stays whole, moving from where the one had
-it to where the other has it. Into and out of the needs-you screen it
+side; working's looks down at the desk); a reaction's design plays its
+own moves alone, so a poke while asleep opens its eyes. The `blink`
+clip plays at each blink but in a design that blinks on its own; a
+press that begins while the rig face shows kicks the squash, and its
+stroke the lean. Every switch of design dissolves over the rig's 200 ms
+fade, through the same dither, with no blink: the whole picture, or
+between two designs the rig face draws, their desks while the face
+stays whole, moving from where the one had it to where the other has
+it. A switch mid-way through a dissolve dissolves from the picture that
+shows more, as it last showed. Into and out of the needs-you screen it
 cuts: the placard rises in and drops away on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
