@@ -15,8 +15,12 @@ public struct DemoRecording: Codable, Sendable, Equatable {
         public var effect: String?
         /// What happened then (`DemoScript.Cause`).
         public var cause: DemoScript.Cause?
-        /// What to do to the device itself then: `tap`, a finger on its screen.
+        /// What to do to the device itself then: `tap`, a finger on its
+        /// screen, `hold`, one kept there, or `press`, BOOT.
         public var input: String?
+        /// How long a `hold`'s finger stays down, in seconds
+        /// (`DemoScript.holdSeconds`).
+        public var hold: Double?
     }
 
     public static let version = 1
@@ -77,7 +81,8 @@ public final class DemoRecorder: @unchecked Sendable {
     /// A beat of the demo: what it was, and what it does to the device.
     public func happened(_ cause: DemoScript.Cause?, input: String? = nil) {
         guard cause != nil || input != nil else { return }
-        lock.withLock { events.append(.init(at: now, cause: cause, input: input)) }
+        let hold = input == "hold" ? DemoScript.holdSeconds : nil
+        lock.withLock { events.append(.init(at: now, cause: cause, input: input, hold: hold)) }
     }
 
     public func recording(character: String, face: String) -> DemoRecording {

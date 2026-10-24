@@ -260,7 +260,7 @@ public final class Runtime: @unchecked Sendable {
         let cores = plans.enumerated().map { i, plan in
             var config = Core.Config(volume: volume, time: options.time, pack: plan.buddy.pack, hatched: longTerm.hatched)
             config.firstAsk = SessionTracker.randomFirstRequest()
-            let core = Core(config: config, lastActiveDay: today, place: places.place)
+            let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
             core.setWallClock(wall, at: wallAt)
             return (plan.buddy, core)
         }
@@ -317,7 +317,9 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
-        for rig in rigs { core(rig).setStage(growth.growth.stage) }
+        // The cores read the growth stage where the growth store keeps it.
+        // Weak: the runtime holds the cores.
+        for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
@@ -354,10 +356,7 @@ public final class Runtime: @unchecked Sendable {
             grew = true
             // A stage reached makes the rest of the day a party.
             if growth.growth.stage > before {
-                for rig in rigs {
-                    core(rig).setStage(growth.growth.stage)
-                    run(core(rig).reachedStage(growth.growth.name, at: now), on: rig)
-                }
+                for rig in rigs { run(core(rig).reachedStage(growth.growth.name, at: now), on: rig) }
             }
         }
     }
@@ -444,10 +443,6 @@ public final class Runtime: @unchecked Sendable {
 
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
-        // The agent's to-do titles are its words, which only its last
-        // message may bring: Boop keeps the counts.
-        var line = line
-        line.todoTitle = nil
         // Your prompt goes no further than the intake: the turn start is
         // logged without it, and its reading follows.
         let (event, prompt) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)

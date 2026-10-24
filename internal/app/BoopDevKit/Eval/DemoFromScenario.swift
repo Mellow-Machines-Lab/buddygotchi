@@ -26,7 +26,7 @@ public enum DemoFromScenario {
             let gapMs = step.atMs - lastMs
             lastMs = step.atMs
             var after = min(maxGap, Double(gapMs) / 1000)
-            var note: String? = gapMs > Int64(maxGap * 1000) ? "\(minutes(gapMs)) later" : nil
+            var note: String? = gapMs > Int64(maxGap * 1000) ? "\(DemoScript.Step.minutes(gapMs)) later" : nil
             func add(_ o: [String: Any]) {
                 var o = o
                 o["after"] = (after * 10).rounded() / 10
@@ -59,7 +59,7 @@ public enum DemoFromScenario {
                 } ?? 20
                 add(["agent": "run", "cmd": "npm install", "ask": max(0.5, (ask * 10).rounded() / 10), "waits": true])
             case "compact": add(["agent": "compact", "summary": "Where the work stands."])
-            case "to-do list": add(["agent": "todo", "todos": "\(step.todos?.done ?? 0)/\(step.todos?.total ?? 0)"])
+            case "to-do list": add(["agent": "todo", "todos": step.todos?.text ?? "0/0"])
             case "gesture" where step.kind == Core.dismissGesture: add(["you": "hold"])
             case "poke": add(["you": "poke"])
             case "pokes": for _ in 0..<(step.count ?? 4) { add(["you": "poke"]) }
@@ -113,10 +113,6 @@ public enum DemoFromScenario {
         case "docs": "npx markdownlint docs"
         default: "ls"
         }
-    }
-
-    static func minutes(_ ms: Int64) -> String {
-        ms >= 3_600_000 ? "\(ms / 3_600_000) h \(ms / 60_000 % 60) min" : ms >= 60_000 ? "\((ms + 30_000) / 60_000) min" : "\(ms / 1000) s"
     }
 
     /// A UTC start as the demo's local `start`: the same clock reading.
