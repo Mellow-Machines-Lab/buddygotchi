@@ -2026,7 +2026,7 @@ static void test_the_lane_fades_as_the_strip_comes_and_goes() {
 // A to-do list is something the strip shows: one alone fades the strip in
 // as any count does, and out still showing it once its turn stops working.
 static void test_a_todo_list_alone_shows_the_strip() {
-  constexpr uint32_t kFade = render::rig::kLayerFadeMs;
+  constexpr uint32_t kFade = render::rig::kFadeMs;
   Rig r;
   r.at(1000);
   Model m = base("working");
