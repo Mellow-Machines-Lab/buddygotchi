@@ -2,7 +2,8 @@ import Foundation
 
 /// What's true now, as tags: the part of the day, the weekday, a holiday, a
 /// milestone day since Boop hatched, how long the agents have worked or
-/// sat idle, and Boop's growth stage. The core sends them in the `state`
+/// sat idle, Boop's growth stage, and whether the latest turn's prompt was
+/// an essay or for docs. The core sends them in the `state`
 /// message (`when`), and the board shows only the designs whose tags are
 /// all on (characters/CHARACTER.md §9). The board adds `busy` and
 /// `frantic` itself, from the `state` message's count of sessions working.
@@ -11,8 +12,17 @@ import Foundation
 /// (firmware/src/render/tags.h).
 public enum Occasions {
     /// Every tag, in the firmware's order: the calendar's, the board's own
-    /// two for how busy the agents are, the tiers, then the stages.
+    /// two for how busy the agents are, the tiers, the stages, then the
+    /// latest turn's `reading`.
     public static let all = calendarTags + ["busy", "frantic"] + workTiers.map(\.tag) + idleTiers.map(\.tag) + stageTags
+        + [reading]
+
+    /// On while the latest turn you prompted lasts, when its prompt's
+    /// reading `reads`: the board's reading glasses.
+    public static let reading = "reading"
+    /// Whether a prompt's reading puts `reading` on for its turn: you wrote
+    /// an essay of a prompt, or asked for docs.
+    public static func reads(_ prompt: PromptReading) -> Bool { prompt.length == .essay || prompt.kind == .docs }
 
     /// The calendar's tags, the ones `tags(at:)` gives: the part of the
     /// day, the weekday, the holidays and a party.

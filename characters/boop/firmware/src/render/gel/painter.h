@@ -11,9 +11,10 @@ struct PaintControls {
 // Where the body is this frame, from the same pose that draws it: the rig's
 // anchors (render/rig/rig.h), in sixteenths of a pixel, which a layer
 // (render/gel/layers.h) sits on, so it moves, squashes and leaves the screen
-// with the body; the face art adds the eyes' middles. The brim's and the
-// hands' are on these rings of the mesh, from the top (0) down.
-constexpr int kBrimRing = 6, kHandRing = 15;
+// with the body; the face art adds the eyes' middles. The brim's, the
+// hands', the lap's and the hem's are on these rings of the mesh, from the
+// top (0) down: the hem's is the lowest the camera sees at the front.
+constexpr int kBrimRing = 6, kHandRing = 15, kLapRing = 14, kHemRing = 17;
 // The body; the surface's clear first keeps what this frame covers again
 // (Surface::clear). Its anchors into `anchors`, when given.
 void paint(Surface& surface, const PaintControls& controls, const Box* keep = nullptr, int keepCount = 0,

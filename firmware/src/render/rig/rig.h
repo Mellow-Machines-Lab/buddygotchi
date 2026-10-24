@@ -157,10 +157,14 @@ struct Point {
 };
 // Where the body is this frame: the top of its head; a ring a little lower,
 // at its sides and the middle of its front, where a hat's brim sits; the
-// middle of its front lower down, where it holds things; and its eyes'
-// middles.
+// middle of its front lower down, where it holds things; its eyes'
+// middles; and, on a face with them, two rings low on the body, each its
+// front half from its left side to its right in kRingPoints: where a gown
+// starts (lap) and the bottom of the body's outline (hem).
 struct Anchors {
+  static constexpr int kRingPoints = 17;
   Point crown{}, brimL{}, brimF{}, brimR{}, handF{}, eyeL{}, eyeR{};
+  Point lap[kRingPoints]{}, hem[kRingPoints]{};
 };
 
 }  // namespace render::rig

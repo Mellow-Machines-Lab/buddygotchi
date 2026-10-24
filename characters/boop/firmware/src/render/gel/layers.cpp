@@ -10,6 +10,7 @@
 #include "render/gel/raster.h"
 #include "render/palette.h"
 #include "render/tags.h"
+
 namespace render::gel {
 
 namespace {
@@ -19,6 +20,21 @@ namespace {
 constexpr uint16_t kCardInk = rgb565(27, 55, 78), kCardRim = rgb565(0x78, 0xa4, 0xc8);
 constexpr uint16_t kWords = rgb565(184, 233, 245), kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245);
 constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
+// The nightcap's and the gown's cloth, and the reading glasses' wire.
+constexpr uint16_t kNightcloth = rgb565(58, 62, 150), kWire = rgb565(206, 164, 92);
+
+// The point `i` thirty-seconds of a turn round a circle, as cosine and
+// sine (Q12).
+Point turn(int i) {
+  static constexpr int16_t kCos[] = {4096, 4017, 3784, 3406, 2896, 2276, 1567, 799, 0};  // a quarter's
+  const int j = i % 8;
+  switch (i / 8 % 4) {
+    case 0: return {kCos[j], kCos[8 - j]};
+    case 1: return {-kCos[8 - j], kCos[j]};
+    case 2: return {-kCos[j], -kCos[8 - j]};
+    default: return {kCos[8 - j], -kCos[j]};
+  }
+}
 
 // The ring through its left side, its front and its right side, as a
 // curve (sixteenths), its `n` + 1 points from left to right, raised `up`.
@@ -64,7 +80,7 @@ void nightcap(Raster& r, const Head& h, int ms) {
   v[n++] = {h.cx + w * 7 / 20, h.top - w * 7 / 20};
   v[n++] = {h.cx + w / 6, h.top - w * 9 / 20};  // its peak
   v[n++] = {h.cx - w / 6, h.top - w * 3 / 10};
-  r.polygon16(v, n, rgb565(58, 62, 150));
+  r.polygon16(v, n, kNightcloth);
   r.stroke16(h.band, 9, w / 9, kCream);  // the band
   r.disk16(tip.x, tip.y, w / 13, kCream);
 }
@@ -139,6 +155,77 @@ void shades(Raster& r, const rig::Anchors& at) {
   r.stroke16(bridge, 2, d / 30 + 16, kInk);
 }
 
+// Reading glasses: a round wire rim about each eye, a glint on its glass,
+// and a bridge arching between them.
+void glasses(Raster& r, const rig::Anchors& at) {
+  const int d = std::max(16, at.eyeR.x - at.eyeL.x), radius = d / 5, wire = d / 50 + 16;
+  for (const rig::Point& e : {at.eyeL, at.eyeR}) {
+    Point rim[33], glint[4];
+    for (int i = 0; i <= 32; ++i) rim[i] = {e.x + radius * turn(i).x / 4096, e.y + radius * turn(i).y / 4096};
+    for (int i = 0; i < 4; ++i)  // up and to the left, inside the rim
+      glint[i] = {e.x + radius * 7 / 10 * turn(18 + i).x / 4096, e.y + radius * 7 / 10 * turn(18 + i).y / 4096};
+    r.alpha = 170;
+    r.stroke16(glint, 4, wire, kCream);
+    r.alpha = 255;
+    r.stroke16(rim, 33, wire, kWire);
+  }
+  const Point bridge[] = {{at.eyeL.x + radius, at.eyeL.y - radius / 5},
+                          {(at.eyeL.x + at.eyeR.x) / 2, (at.eyeL.y + at.eyeR.y) / 2 - radius * 2 / 5},
+                          {at.eyeR.x - radius, at.eyeR.y - radius / 5}};
+  r.stroke16(bridge, 3, wire, kWire);
+}
+
+// The nightcap's gown, while it sleeps: from the lap's ring down past the
+// body's hem, flaring out a little to it, in a lighter cloth than the
+// cap's with soft pleats down it and a cream frill along the top.
+void gown(Raster& r, const rig::Anchors& at) {
+  constexpr int n = rig::Anchors::kRingPoints;
+  const int w = std::max(16, at.lap[n - 1].x - at.lap[0].x), flare = w / 22, lip = w / 90 + 8;
+  // The hem a lip below the body's outline, flared out to the sides.
+  Point hem[n];
+  for (int i = 0; i < n; ++i) hem[i] = {at.hem[i].x + flare * (2 * i - (n - 1)) / (n - 1), at.hem[i].y + lip};
+  // A side from the lap's end down to the hem's, bowed out as the body is
+  // between them: a quadratic's points a quarter, a half and three quarters
+  // down.
+  Point v[2 * n + 6];
+  int k = 0;
+  auto side = [&](Point from, Point to, int out) {
+    const Point c{(from.x + to.x) / 2 + out, (from.y + to.y) / 2};
+    for (int t : {1, 2, 3})
+      v[k++] = {((4 - t) * (4 - t) * from.x + 2 * t * (4 - t) * c.x + t * t * to.x) / 16,
+                ((4 - t) * (4 - t) * from.y + 2 * t * (4 - t) * c.y + t * t * to.y) / 16};
+  };
+  for (int i = 0; i < n; ++i) v[k++] = at.lap[i];
+  side(at.lap[n - 1], hem[n - 1], w / 24);
+  for (int i = n - 1; i >= 0; --i) v[k++] = hem[i];
+  side(hem[0], at.lap[0], -w / 24);
+  r.polygon16(v, k, rgb565(88, 92, 184));
+  r.alpha = 110;
+  for (int i : {5, 11}) {  // a pleat from under the frill to the hem
+    const Point &a = at.lap[i], &b = hem[i];
+    const Point pleat[] = {{a.x + (b.x - a.x) / 4, a.y + (b.y - a.y) / 4}, {b.x, b.y - lip}};
+    r.stroke16(pleat, 2, w / 70 + 8, kNightcloth);
+  }
+  r.alpha = 255;
+  // The frill: a cream band along the top short of the sides, where the
+  // ring turns away, and under it a scallop between each two of its
+  // points, as one shape: from inside the band, along its lower edge and
+  // back.
+  const int band = w / 34, first = 1, last = n - 2;
+  r.stroke16(at.lap + first, last - first + 1, band, kCream);
+  static constexpr int kScallop[] = {0, 3, 4, 3};  // eighths of the band, down past its edge
+  Point f[n + 4 * (n - 1) + 1];
+  int m = 0;
+  for (int i = first; i <= last; ++i) f[m++] = at.lap[i];
+  for (int i = last; i > first; --i)
+    for (int q = 0; q < 4; ++q) {
+      const Point &a = at.lap[i], &b = at.lap[i - 1];
+      f[m++] = {a.x + (b.x - a.x) * q / 4, a.y + (b.y - a.y) * q / 4 + band / 2 + band * kScallop[q] / 8};
+    }
+  f[m++] = {at.lap[first].x, at.lap[first].y + band / 2};
+  r.polygon16(f, m, kCream);
+}
+
 // A number below `range` from a particle's index, for where it starts.
 int spread(int i, int salt, int range) {
   return int(((uint32_t(i) + 1) * 2654435761u ^ uint32_t(salt) * 40503u) % uint32_t(range));
@@ -196,22 +283,36 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
   r.alpha = 255;
 }
 
-// What the outfit looks like besides where it sits: the hat, the party
-// hat's colours, and how far into its swing the nightcap is, on a step of
-// kSwingMs; as one number.
+// What it wears besides where it sits: the hat, the party hat's colours,
+// how far into its swing the nightcap is, on a step of kSwingMs (the hat's
+// as one number), what's over its eyes, and the gown under the nightcap
+// while it sleeps.
 struct Look {
   Outfit hat;
   int colors, swing;
-  uint32_t key() const { return uint32_t(hat) | uint32_t(colors) << 4 | uint32_t(swing) << 8; }
+  Eyewear eyes;
+  bool gown;
+  uint32_t hatKey() const { return uint32_t(hat) | uint32_t(colors) << 4 | uint32_t(swing) << 8; }
 };
-Look lookFor(uint32_t when, int ms) {
+// Peekaboo's gesture takes it all off, and it sleeps with its eyes bare.
+Look lookFor(const Engine& e) {
+  const uint32_t when = e.scenes.when;
+  const SceneState state = e.scenes.route.state;
+  if (state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo)) return {};
   const Outfit hat = outfitFor(when);
   const int colors = hasTag(when, "lunar") ? 1 : hasTag(when, "programmers") && !hasTag(when, "party") ? 2 : 0;
+  const bool nightcap = hat == Outfit::kNightcap, asleep = state == SceneState::kAsleep;
   return {hat, hat == Outfit::kPartyHat ? colors : 0,
-          hat == Outfit::kNightcap ? ms % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs : 0};
+          nightcap ? int(e.elapsedMs % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs) : 0,
+          asleep ? Eyewear::kNone : eyewearFor(when), nightcap && asleep};
 }
 
-void dress(Raster& r, const rig::Anchors& at, const Look& look) {
+void eyewear(Raster& r, const rig::Anchors& at, Eyewear eyes) {
+  if (eyes == Eyewear::kGlasses) glasses(r, at);
+  if (eyes == Eyewear::kShades) shades(r, at);
+}
+
+void hat(Raster& r, const rig::Anchors& at, const Look& look) {
   const Head h = head(at, 0);
   switch (look.hat) {
     case Outfit::kWitchHat: witchHat(r, h); break;
@@ -228,67 +329,98 @@ void dress(Raster& r, const rig::Anchors& at, const Look& look) {
   }
 }
 
-// The outfit as last drawn into a recording (OutfitLayer), with where it
-// was drawn, and the last frame it was blended into.
+// The anchors `at` moved `dx`, `dy` sixteenths.
+rig::Anchors moved(rig::Anchors at, int dx, int dy) {
+  for (Point* p : {&at.crown, &at.brimL, &at.brimF, &at.brimR, &at.handF, &at.eyeL, &at.eyeR}) p->x += dx, p->y += dy;
+  for (int i = 0; i < rig::Anchors::kRingPoints; ++i) {
+    at.lap[i].x += dx, at.lap[i].y += dy;
+    at.hem[i].x += dx, at.hem[i].y += dy;
+  }
+  return at;
+}
+
+// Part of what it wears as last drawn into a recording (OutfitLayer): what
+// it looked like, the anchors it was drawn at, the one it rides first, and
+// the last frame it was blended into.
 struct Kept {
-  static constexpr int kAnchors = 4;
+  static constexpr int kAnchors = 6;
   Recording shapes;
   bool valid = false;
   uint32_t look = 0;
-  Point at[kAnchors]{};  // the anchors it was drawn at
-  int dx = 0, dy = 0;    // the surface's pixels from the recording's
+  Point at[kAnchors]{};
+  int dx = 0, dy = 0;  // the surface's pixels from the recording's
   // The last frame's body, time and anchors, and when its anchors last
   // moved.
   const Engine* engine = nullptr;
   uint32_t ms = 0, movedAt = 0;
   Point last[kAnchors]{};
 };
-Kept kept;
+uint8_t hatBytes[OutfitLayer::kHatBytes], wornBytes[OutfitLayer::kWornBytes];
+// The hat, on the brim's front; and the gown, on the hem's front, or else
+// what's over its eyes, on the left eye (it never wears both).
+Kept keptHat{{hatBytes, OutfitLayer::kHatBytes}}, keptWorn{{wornBytes, OutfitLayer::kWornBytes}};
 
 int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
 
-// The outfit, blended from what was kept while that fits, else drawn into
-// a recording first; drawn straight on the surface when it doesn't fit
-// the recording's frame or its room.
-void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look) {
-  const Point now[Kept::kAnchors] = {at.crown, at.brimL, at.brimF, at.brimR};
+// `draw` at `at`, which looks like `look` and rides the `n` anchors `now`:
+// blended from what `kept` holds while that fits, else drawn into its
+// recording first; drawn straight on the surface when it doesn't fit the
+// recording's frame or its room.
+template <typename Draw>
+void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const Point* now, int n, uint32_t look,
+          Draw draw) {
   // Moving: a frame of the same body just before, and its anchors moved
   // within kStillMs.
   const uint32_t t = e.elapsedMs;
-  for (int i = 0; i < Kept::kAnchors; ++i)
+  for (int i = 0; i < n; ++i)
     if (now[i].x != kept.last[i].x || now[i].y != kept.last[i].y) kept.movedAt = t;
   const bool moving = kept.engine == &e && t != kept.ms && t - kept.ms <= OutfitLayer::kMovingMs &&
                       t - kept.movedAt < OutfitLayer::kStillMs;
   kept.engine = &e, kept.ms = t;
-  std::copy(now, now + Kept::kAnchors, kept.last);
+  std::copy(now, now + n, kept.last);
   // How far the body has moved it since it was kept, to the nearest pixel,
-  // and the most any anchor is off once it's moved that far.
+  // by the anchor it rides, and the most any is off once it's moved that far.
   int ox = 0, oy = 0, off = INT_MAX;
-  if (kept.valid && kept.look == look.key()) {
-    ox = floor16(at.brimF.x - kept.at[2].x + 8), oy = floor16(at.brimF.y - kept.at[2].y + 8);
+  if (kept.valid && kept.look == look) {
+    ox = floor16(now[0].x - kept.at[0].x + 8), oy = floor16(now[0].y - kept.at[0].y + 8);
     off = 0;
-    for (int i = 0; i < Kept::kAnchors; ++i)
+    for (int i = 0; i < n; ++i)
       off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy * 16)});
   }
   if (off != 0 && !(moving && off <= OutfitLayer::kSlack)) {
-    // Kept in a frame as wide as the surface and taller, the brim's front a
-    // whole number of pixels from its middle, as far into its pixel as it
-    // was.
-    const int fx = r.s.width / 2 - floor16(at.brimF.x), fy = OutfitLayer::kFrameY - floor16(at.brimF.y);
-    rig::Anchors framed = at;
-    for (Point* p : {&framed.crown, &framed.brimL, &framed.brimF, &framed.brimR}) p->x += fx * 16, p->y += fy * 16;
+    // Kept in a frame as wide as the surface and taller, the anchor it rides
+    // a whole number of pixels from its middle, as far into its pixel as it
+    // is.
+    const int fx = r.s.width / 2 - floor16(now[0].x), fy = OutfitLayer::kFrameY - floor16(now[0].y);
     Raster record{r.s};
     record.limit = OutfitLayer::kFrameHeight;
     record.recording = &kept.shapes;
     kept.shapes.clear();
-    dress(record, framed, look);
+    draw(record, moved(at, fx * 16, fy * 16));
     const Box& b = kept.shapes.box;
     kept.valid = !kept.shapes.full && b.x0 > 0 && b.y0 > 0 && b.x1 < r.s.width && b.y1 < OutfitLayer::kFrameHeight;
-    if (!kept.valid) return dress(r, at, look);  // past the frame's edge, or its room
-    kept.look = look.key(), kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
-    std::copy(now, now + Kept::kAnchors, kept.at);
+    if (!kept.valid) return draw(r, at);  // past the frame's edge, or its room
+    kept.look = look, kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
+    std::copy(now, now + n, kept.at);
   }
   r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
+}
+
+// The gown or what's over its eyes, then the hat.
+void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look) {
+  constexpr int kEnd = rig::Anchors::kRingPoints - 1;
+  if (look.gown) {
+    const Point now[] = {at.hem[kEnd / 2], at.hem[0], at.hem[kEnd], at.lap[0], at.lap[kEnd / 2], at.lap[kEnd]};
+    wear(r, keptWorn, e, at, now, 6, 1u << 8, gown);  // a look no eyewear has
+  } else if (look.eyes != Eyewear::kNone) {
+    const Point now[] = {at.eyeL, at.eyeR};
+    wear(r, keptWorn, e, at, now, 2, uint32_t(look.eyes),
+         [&look](Raster& r, const rig::Anchors& at) { eyewear(r, at, look.eyes); });
+  }
+  if (look.hat != Outfit::kNone) {
+    const Point now[] = {at.brimF, at.crown, at.brimL, at.brimR};
+    wear(r, keptHat, e, at, now, 4, look.hatKey(), [&look](Raster& r, const rig::Anchors& at) { hat(r, at, look); });
+  }
 }
 
 }  // namespace
@@ -307,9 +439,7 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {
   const uint32_t when = e.scenes.when;
   const int ms = int(e.elapsedMs % 3600000u), bottom = s.height * 4 / 5;
   const SceneState state = e.scenes.route.state;
-  const bool peekaboo = state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo);
-  if (hasTag(when, "friday") && !hasTag(when, "night") && state != SceneState::kAsleep && !peekaboo) shades(r, at);
-  if (!peekaboo && outfitFor(when) != Outfit::kNone) outfit(r, e, at, lookFor(when, ms));
+  outfit(r, e, at, lookFor(e));
   const uint8_t air = airFor(when);
   if (air & kSnow) snow(r, s.width, bottom, ms);
   if (air & kConfetti) confetti(r, s.width, bottom, ms);

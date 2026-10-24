@@ -137,6 +137,32 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(tiers(), [], "back to work")
     }
 
+    /// Pins `Occasions.reads`: a prompt's reading puts `reading` on when
+    /// you wrote an essay or asked for docs, and the board hears it while
+    /// that turn lasts, as the latest prompt's reading says.
+    func testAnEssayOrDocsPutsReadingOnForItsTurn() {
+        XCTAssertTrue(Occasions.reads(PromptReading(length: .essay)))
+        XCTAssertTrue(Occasions.reads(PromptReading(length: .words, kind: .docs)))
+        XCTAssertFalse(Occasions.reads(PromptReading(length: .paragraph, kind: .fix)))
+        let rig = CoreRig()
+        let reading = { rig.state.when.contains(Occasions.reading) }
+        rig.send(.turnStart, prompt: String(repeating: "Write the whole thing up for me, please. ", count: 20))
+        XCTAssertTrue(reading(), "an essay of a prompt")
+        rig.send(.activity, tool: "Edit")
+        rig.wait(60_000)
+        XCTAssertTrue(reading(), "while its turn lasts")
+        rig.send(.turnEnd)
+        XCTAssertFalse(reading(), "its turn ended")
+        rig.note(Fx(rig.pipeline.agent(rig.event(.turnStart, prompt: "update the readme"), labels: .init(kind: .docs))))
+        XCTAssertTrue(reading(), "a prompt for docs")
+        rig.send(.turnStart, session: "s2", prompt: "fix the login bug")
+        XCTAssertFalse(reading(), "the latest prompt is neither")
+        rig.send(.turnEnd, session: "s2")
+        rig.send(.turnEnd)
+        rig.send(.turnStart, prompt: "and the next")
+        XCTAssertFalse(reading(), "a turn has its own prompt's")
+    }
+
     /// Every growth stage reached is a tag, so a design for Pal shows at
     /// Pal and after; a Hatchling has none.
     func testEveryStageReachedIsOn() {

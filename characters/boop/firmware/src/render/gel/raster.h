@@ -30,11 +30,12 @@ inline uint16_t mix565(uint16_t old, uint16_t ink, int alpha) {
 // Shapes kept instead of drawn (Raster::recording), to blend again where
 // they were or a whole number of pixels away (Raster::replay), as they'd
 // have blended there: each row's span, its ink, and each pixel's opacity
-// as the shape would have blended it, run-length coded. It holds at most
-// kBytes; a shape past that is lost, and the recording is `full`.
+// as the shape would have blended it, run-length coded, into the owner's
+// `data`. It holds at most `room` bytes; a shape past that is lost, and the
+// recording is `full`.
 struct Recording {
-  static constexpr int kBytes = 10 * 1024;
-  uint8_t data[kBytes];
+  uint8_t* data;
+  int room;
   int used = 0;
   bool full = false;
   Box box;  // the pixels its spans cover

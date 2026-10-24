@@ -323,11 +323,11 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
-    /// A long turn's tier and every growth stage are tags too; and the
-    /// to-do count goes only with nothing needing you. The widest line
+    /// A long turn's tier, every growth stage and `reading` are tags too;
+    /// and the to-do count goes only with nothing needing you. The widest line
     /// either way, with every tag that can be on at once, fits.
     func testTheTiersStagesAndToDoCountFitTheLine() {
-        let every = mostTags + ["marathon"] + Occasions.stageTags
+        let every = mostTags + ["marathon"] + Occasions.stageTags + [Occasions.reading]
         let needs = StateSnapshot(base: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   busy: 999, idle: 999, helpers: 999, vol: 10, when: every)
