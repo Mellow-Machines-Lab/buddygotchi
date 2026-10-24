@@ -8,10 +8,10 @@
     {"event": "turn started", "at": "0s", "prompt": "rename the config loader", "reading": {"kind": "refactor"}, "expect": {"mood": "calm"}},
     {"event": "command", "at": "10s", "topic": "tests", "failed": false, "expect": {"mood": "calm"}},
     {"event": "command", "at": "20s", "expect": {"mood": "calm"}},
-    {"event": "turn finished", "at": "30s", "message": "Renamed the config loader in 3 files.", "expect": {"mood": "calm"}},
+    {"event": "turn finished", "at": "30s", "message": "Renamed the config loader in 3 files.", "reading": {"kind": "done"}, "expect": {"mood": "calm"}},
     {"event": "turn started", "at": "1m", "prompt": "tidy the imports", "reading": {"kind": "cleanup"}},
     {"event": "command", "at": "1m10s", "expect": {"mood": "calm"}},
     {"event": "command", "at": "1m20s", "topic": "build", "failed": false, "expect": {"mood": "calm"}},
-    {"event": "turn finished", "at": "1m30s", "message": "Tidied the imports; the build passes.", "expect": {"mood": "calm"}}
+    {"event": "turn finished", "at": "1m30s", "message": "Tidied the imports; the build passes.", "reading": {"kind": "done"}, "expect": {"mood": "calm"}}
   ]
 }

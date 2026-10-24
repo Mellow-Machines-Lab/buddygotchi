@@ -7,7 +7,7 @@
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"offered": "calm|comfy|curious|engaged|pleased|tired|uneasy|happy|annoyed|surprised|wounded|excited|sad", "mood": "annoyed"}},
     {"event": "command", "at": "2m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "2m30s", "message": "Fixed the flaky test; everything is green."},
+    {"event": "turn finished", "at": "2m30s", "message": "Fixed the flaky test; everything is green.", "reading": {"kind": "done"}},
     {"event": "turn started", "at": "10m"},
     {"event": "turn failed", "at": "35m", "error": "api_error", "expect": {"mood": "sad|wounded"}}
   ]

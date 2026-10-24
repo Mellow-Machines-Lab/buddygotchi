@@ -6,9 +6,9 @@
   "steps": [
     {"event": "turn started", "at": "2m", "prompt": "fix the flaky login test", "reading": {"kind": "fix"}},
     {"event": "command", "at": "3m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "3m30s", "message": "Done: the fix is in and all the tests pass.", "expect": {"animation": "success"}},
+    {"event": "turn finished", "at": "3m30s", "message": "Done: the fix is in and all the tests pass.", "reading": {"kind": "done"}, "expect": {"animation": "success"}},
     {"event": "pokes", "at": "5m"},
     {"event": "turn started", "at": "5m30s", "prompt": "add the health endpoint", "reading": {"kind": "feature"}},
-    {"event": "turn finished", "at": "6m30s", "message": "All set: the health endpoint works and its test is green.", "expect": {"animation": "success"}}
+    {"event": "turn finished", "at": "6m30s", "message": "All set: the health endpoint works and its test is green.", "reading": {"kind": "done"}, "expect": {"animation": "success"}}
   ]
 }

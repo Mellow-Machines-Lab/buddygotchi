@@ -6,6 +6,6 @@
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "fix the failing date test and push", "reading": {"kind": "fix"}},
     {"event": "command", "at": "1m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "1m30s", "message": "All tests pass, and I pushed the branch.", "expect": {"animation": "success"}}
+    {"event": "turn finished", "at": "1m30s", "message": "All tests pass, and I pushed the branch.", "reading": {"kind": "done"}, "expect": {"animation": "success"}}
   ]
 }

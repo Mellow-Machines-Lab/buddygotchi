@@ -26,8 +26,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -46,6 +46,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -164,8 +168,7 @@ just now: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Rrr... tik".
 
 NOW (14:00, Wednesday)
-claude finished turn 1 on "landing": done, a short turn, 2 tool calls.
-  Its last message: "Renamed the config loader in 3 files."
+claude finished turn 1 on "landing": done, a short turn, 2 tool calls, saying it's done.
 Boop did nothing on its own.
 === pass 5
 --- head
@@ -195,8 +198,8 @@ How to choose:
 - When NOW moves the mood, react with the new mood's face.
 How to read HISTORY and NOW:
 - HISTORY is oldest first. Each line says how long ago it happened.
-  Lines indented under it add to it: an agent's last message, then
-  what Boop did. A line of what Boop did ending in (in progress)
+  Lines indented under it add to it: the words it quotes or a note,
+  then what Boop did. A line of what Boop did ending in (in progress)
   hasn't finished yet.
 - NOW is what to react to. Its last line is what Boop already did on
   its own, by reflex.
@@ -215,6 +218,10 @@ How to read HISTORY and NOW:
 - "You asked" is the person's prompt to an agent, read on their Mac:
   what they asked for, how long, how they sound, and whether they said
   Boop's name. Never their words but the few under "Your words".
+- A finished turn says what the agent's last message said, read on the
+  person's Mac: that it's done, couldn't finish, asks them something
+  or only answers, and how it sounds. Never its words but the few under
+  "Its words".
 - "You said to Boop" quotes the person talking to Boop. It can't talk
   back: it answers with a face, and maybe a word or a sound.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
@@ -305,8 +312,7 @@ just now: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Hup".
 just now: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Rrr... tik".
-just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls.
-  Its last message: "Renamed the config loader in 3 files."
+just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls, saying it's done.
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Ahh... Finished".
 just now: claude started turn 2 on "landing".
@@ -324,8 +330,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Hup".
 just now: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Rrr... tik".
-just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls.
-  Its last message: "Renamed the config loader in 3 files."
+just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls, saying it's done.
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Ahh... Finished".
 just now: claude started turn 2 on "landing".
@@ -345,8 +350,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Hup".
 1 min ago: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Rrr... tik".
-just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls.
-  Its last message: "Renamed the config loader in 3 files."
+just now: claude finished turn 1 on "landing": done, a short turn, 2 tool calls, saying it's done.
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Ahh... Finished".
 just now: claude started turn 2 on "landing".
@@ -368,8 +372,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Hup".
 1 min ago: claude ran a command on "landing".
   Boop made an engaged face, held once, and said "Rrr... tik".
-1 min ago: claude finished turn 1 on "landing": done, a short turn, 2 tool calls.
-  Its last message: "Renamed the config loader in 3 files."
+1 min ago: claude finished turn 1 on "landing": done, a short turn, 2 tool calls, saying it's done.
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Ahh... Finished".
 just now: claude started turn 2 on "landing".
@@ -382,6 +385,5 @@ just now: claude ran a command on "landing".
 Boop has been curious for 1 min.
 
 NOW (14:01, Wednesday)
-claude finished turn 2 on "landing": done, a short turn, 2 tool calls, the 2nd quick win of a streak.
-  Its last message: "Tidied the imports; the build passes."
+claude finished turn 2 on "landing": done, a short turn, 2 tool calls, the 2nd quick win of a streak, saying it's done.
 Boop did nothing on its own.

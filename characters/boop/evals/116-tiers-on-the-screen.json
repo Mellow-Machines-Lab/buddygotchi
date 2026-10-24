@@ -8,7 +8,7 @@
     {"event": "wait", "at": "8m", "expect": {"when": "marathon"}},
     {"event": "command", "at": "12m", "topic": "tests"},
     {"event": "wait", "at": "15m", "expect": {"when": "camp"}},
-    {"event": "turn finished", "at": "20m", "message": "The payments service runs on the new queue."},
+    {"event": "turn finished", "at": "20m", "message": "The payments service runs on the new queue.", "reading": {"kind": "done"}},
     {"event": "wait", "at": "20m30s", "expect": {"when": "fidget", "idle": "1"}},
     {"event": "wait", "at": "23m", "expect": {"when": "setpiece"}},
     {"event": "wait", "at": "30m", "expect": {"when": "doze"}}
