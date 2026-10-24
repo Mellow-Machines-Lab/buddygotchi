@@ -510,10 +510,10 @@ Besides drawing each mood and state, a face:
   a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
-  many sessions work and how far down its to-do list the longest turn
-  is, as `3/7`, a mini for each helper at work, up to four and then +N,
-  a parcel and the count of agents idle for BOOT to hand over, a
-  finished turn's tick or cross) and the speech bubble. The face calls
+  many sessions work, a mini for each helper at work, up to four and
+  then +N, a parcel and the count of agents idle for BOOT to hand over,
+  how far down its to-do list the longest turn is, as `3/7`, a finished
+  turn's tick or cross) and the speech bubble. The face calls
   `drawLane` to draw them. The engine fades the strip in as it comes and
   out as it goes, over the rig's 200 ms fade, from the moment it came or
   went, and hands the face its opacity with it (`Strip::opacity`):
