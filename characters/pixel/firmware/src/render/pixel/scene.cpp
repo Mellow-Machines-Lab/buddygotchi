@@ -227,18 +227,25 @@ uint32_t loopMs(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s
 
 bool rigFaced(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].face != kNone; }
 
+namespace {
+// A face track's key k: dx, dy, ex, ey and shut.
+const int8_t* faceKey(const Track& tr, int k) { return &kValues[tr.val0 + 5 * uint32_t(k)]; }
+}  // namespace
+
 FaceMove faceMove(const SceneShow& s) {
   const uint16_t face = scene(s).face;
   if (face == kNone) return {};
-  const Track& tr = kTracks[face];
-  const int8_t* v = &kValues[tr.val0 + 4 * uint32_t(step(tr, s.t))];
-  return {v[0], v[1], v[2], v[3]};
+  const int8_t* v = faceKey(kTracks[face], step(kTracks[face], s.t));
+  return {v[0], v[1], v[2], v[3], v[4] != 0};
 }
 
 uint8_t sceneInk(int color) { return color > 0 && color < kColorCount ? toCanvas(color) : kBlack; }
 
 bool blinksItself(Mood m, SceneState s, int variant) {
   const Scene& sc = kScenes[sceneOf(m, s, variant)];
+  for (int k = 0; sc.face != kNone && k < kTracks[sc.face].n; ++k) {
+    if (faceKey(kTracks[sc.face], k)[4]) return true;
+  }
   for (int i = 0; i < sc.groups; ++i) {
     if (kGroups[kSceneGroups[sc.group0 + i]].role == kRoleBlinkStep) return true;
   }

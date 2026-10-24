@@ -1,5 +1,6 @@
 // Switching designs: each switch dissolves over 200 ms, and a switch
-// mid-switch goes on dissolving from what that one dissolved from. Idle's
+// mid-switch dissolves from the picture that shows more: working's, 150 ms
+// in, then still working's for the stopped 75 ms into the cheer. Idle's
 // plain face is the rig face, and so is working's, so going to work the face
 // stays whole as the desk dissolves in around it.
 {"clock":0}

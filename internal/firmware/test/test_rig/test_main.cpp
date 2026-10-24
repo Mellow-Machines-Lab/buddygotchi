@@ -271,6 +271,21 @@ static void test_the_mixer_is_deterministic_and_bounded() {
   }
 }
 
+// With kPlays playing, the oldest gives way but the look's own clip: a
+// burst of reactions never stops the look, and the newest of them plays.
+static void test_a_full_mixer_keeps_its_look() {
+  Mixer m;
+  m.reset(0, 0, &kLeanLoop);
+  for (int i = 0; i < Mixer::kPlays * 2; ++i) {
+    m.play(kWider);
+    m.advance(10);
+  }
+  m.play(kShutLoop);
+  m.advance(Mixer::kWeightMs);
+  TEST_ASSERT_EQUAL_INT(500, m.channels()[Channel::kLean]);    // the look's, whole
+  TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kEyeOpenL]);  // the newest, absolute, shuts it
+}
+
 // ---- The ramp ----------------------------------------------------------------
 
 // The fades' ramp: from rest, render::ease's smoothstep over kFadeMs (half
@@ -352,6 +367,7 @@ int main() {
   RUN_TEST(test_an_impulse_kicks_a_spring_and_it_settles);
   RUN_TEST(test_a_spring_comes_to_rest_exactly);
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
+  RUN_TEST(test_a_full_mixer_keeps_its_look);
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
   RUN_TEST(test_the_staged_rig_is_whole);
   RUN_TEST(test_the_staged_rig_is_the_packs_files);

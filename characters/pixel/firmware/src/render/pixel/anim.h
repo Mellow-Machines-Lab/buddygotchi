@@ -75,22 +75,33 @@ class PixelFace final : public Face {
   // A frame draws the needs-you screen, a design, or a design with the rig
   // face in it.
   enum class Drew : uint8_t { kSign, kDesign, kRig };
-  // A switch dissolves what showed into what's next over the rig's fade
+  // A picture shown: what it drew, and the design's show.
+  struct Shown {
+    Drew kind = Drew::kSign;
+    SceneShow show;
+  };
+  // A switch dissolves what shows into what's next over the rig's fade
   // (rig::kFadeMs), the whole picture; from the rig face to the rig face,
   // the designs around it, the face staying whole as it moves from where
   // the one had it to where the other has it. Into and out of the
-  // needs-you screen, which rises in on its own, it cuts. One mid-way through
-  // a dissolve goes on dissolving from what that one did.
+  // needs-you screen, which rises in on its own, it cuts. One mid-way
+  // through a dissolve dissolves from the picture that shows more, as it
+  // last showed, so nothing comes back.
   void startSwitch(uint32_t t);
-  bool fading(uint32_t t) const { return switched_ && within(t, switchAt_, rig::kFadeMs) && fadeFrom_ != Drew::kSign; }
+  // How much of what comes in shows, 0 … 1000: all of it but while a
+  // switch dissolves.
+  int mix(uint32_t t) const {
+    const bool fading = from_.kind != Drew::kSign && within(t, switchAt_, rig::kFadeMs);
+    return fading ? ease1000(int(t - switchAt_), int(rig::kFadeMs)) : 1000;
+  }
   // Everything a frame's pixels depend on but the words it shows: what it
   // draws, what a switch dissolves it from (kSign for nothing) and the
-  // pixels of it that come in, the lane's opacity and whether the bubble
-  // shows, the held sign's place, the hat's, the outfit's look, and the
-  // sign's pose or the frames laid out. Two equal pictures draw the same
-  // pixels, so a frame whose picture hashes as the last one's isn't drawn
-  // again. Each is laid out once, into picture_: off the stack, which a
-  // dissolve's outgoing frame needs.
+  // pixels of it that come in, the lane's dither level and whether the
+  // bubble shows, the held sign's place, the hat's, the outfit's look, and
+  // the sign's pose or the frames laid out. Two equal pictures draw the
+  // same pixels, so a frame whose picture hashes as the last one's isn't
+  // drawn again. Each is laid out once, into picture_: off the stack, which
+  // a dissolve's outgoing frame needs.
   struct Picture {
     Drew kind, from;
     bool bubble, held;
@@ -110,8 +121,10 @@ class PixelFace final : public Face {
   bool pending_ = true;
   // The working looks' pace now, in percent (FaceContext::pace).
   int pace_ = 100;
-  bool switched_ = false, blink_ = false;
+  bool blink_ = false;
   uint32_t switchAt_ = 0, blinkAt_ = 0, nextBlink_ = 0;
+  // A finger is down, and its press began while the rig face showed.
+  bool pressing_ = false, rigPress_ = false;
   // What nextDue found due, at dueAt_: Due bits, 0 for nothing.
   uint8_t due_ = 0;
   uint32_t dueAt_ = 0;
@@ -122,11 +135,10 @@ class PixelFace final : public Face {
   bool arcOn_ = false;
   uint32_t arcCovered_ = 0;
   RigFace rig_;
-  // What the last frame drew, its picture's key, and the show it drew last
-  // but while a switch dissolves; and what the switch dissolves from.
-  Drew drew_ = Drew::kSign, fadeFrom_ = Drew::kSign;
+  // What the last frame drew (coming in, while a switch dissolves) and its
+  // picture's key; and what a switch dissolves from, kSign for nothing.
+  Shown drawn_, from_;
   uint64_t drawnKey_ = 0;
-  SceneShow drawnShow_;
   Picture picture_;
 };
 }  // namespace render::pixel

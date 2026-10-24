@@ -13,42 +13,35 @@
 
 namespace render::rig {
 
-// The body's, the eyes' and the mouth's.
+// The body's, the eyes' and the mouth's: those a clip or a finger moves.
 enum class Channel : uint8_t {
-  kX,
-  kY,
   kSquash,
   kLean,
-  kTilt,
   kLift,
   kEyeOpenL,
   kEyeOpenR,
   kEyeSize,
   kGazeX,
   kGazeY,
-  kMouthWidth,
   kMouthOpen,
   kCount
 };
 constexpr int kChannelCount = int(Channel::kCount);
 
 // Each channel's name in a pack's rig/ files, its range and its value at
-// rest, where a face draws its art as drawn. In thousandths, but for x, y
-// and lift: px of the 320 × 240 canvas, x right, y down and lift up.
-// squash runs from tall (-1000) to flat; lean, the body's, from left to
-// right; tilt, the head's, anticlockwise to clockwise; eyeOpen from shut
-// (0); gaze from left or up (-1000) to right or down; eyeSize and
-// mouthWidth around the art's own (1000). charactergen.py reads this table
-// to check a pack's files.
+// rest, where a face draws its art as drawn. In thousandths, but for lift:
+// px of the 320 × 240 canvas, up. squash runs from tall (-1000) to flat;
+// lean, the body's, from left to right; eyeOpen from shut (0); gaze from
+// left or up (-1000) to right or down; eyeSize around the art's own
+// (1000). charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;
   int16_t lo, hi, rest;
 };
 constexpr ChannelInfo kChannelInfo[kChannelCount] = {
-    {"x", -320, 320, 0},          {"y", -240, 240, 0},       {"squash", -1000, 1000, 0},  {"lean", -1000, 1000, 0},
-    {"tilt", -1000, 1000, 0},     {"lift", -240, 240, 0},    {"eyeOpenL", 0, 1000, 1000}, {"eyeOpenR", 0, 1000, 1000},
-    {"eyeSize", 500, 1500, 1000}, {"gazeX", -1000, 1000, 0}, {"gazeY", -1000, 1000, 0},   {"mouthWidth", 0, 1500, 1000},
-    {"mouthOpen", 0, 1000, 0}};
+    {"squash", -1000, 1000, 0},  {"lean", -1000, 1000, 0},    {"lift", -240, 240, 0},
+    {"eyeOpenL", 0, 1000, 1000}, {"eyeOpenR", 0, 1000, 1000}, {"eyeSize", 500, 1500, 1000},
+    {"gazeX", -1000, 1000, 0},   {"gazeY", -1000, 1000, 0},   {"mouthOpen", 0, 1000, 0}};
 // The body's channels, whose springs are slower than the face's.
 constexpr bool body(Channel c) { return c <= Channel::kLift; }
 
