@@ -1,4 +1,4 @@
-// The needs-you sign: Boop holds up an amber sign that
+// The needs-you screen: Boop holds up an amber sign that
 // fills the screen, with who's asking in large type, and peeks over its top
 // edge, ducking and popping up at the left corner, the right, then the
 // middle. The longer the request waits, the harder it asks (Arc): it sways

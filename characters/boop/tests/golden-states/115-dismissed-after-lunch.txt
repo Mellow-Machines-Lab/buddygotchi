@@ -239,5 +239,5 @@ HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You came back to the Mac after a very long break.
 
 NOW (16:03, Wednesday)
-You held a finger on Boop's sign, to stop it showing that an agent needs you; the agent still waits.
+You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
 Boop did nothing on its own.

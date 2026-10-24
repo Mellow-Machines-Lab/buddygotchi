@@ -224,8 +224,8 @@ public final class Pipeline {
     /// What you did to the board (`kind`: a stroke, a shake, face down…),
     /// which it reacted to at once: logged, and it may wake the brain, as
     /// a poke does. The core hears only `dismiss`, a finger held on the
-    /// sign: the request numbered `request`, the one the sign showed,
-    /// stops showing if it still shows (`Core.dismiss`).
+    /// needs-you screen: the request numbered `request`, the one it
+    /// showed, stops showing if it still shows (`Core.dismiss`).
     @discardableResult
     public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {

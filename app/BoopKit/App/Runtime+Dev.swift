@@ -92,7 +92,7 @@ extension Runtime {
     }
 
     /// What you did to the device, the buddy `buddy`'s, as it reports it
-    /// (`ev gesture`): `dismiss`, a finger held on the needs-you sign, names
+    /// (`ev gesture`): `dismiss`, a finger held on the needs-you screen, names
     /// the request its last state showed, as the board does.
     func gestured(_ kind: String, who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)

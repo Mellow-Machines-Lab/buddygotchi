@@ -65,7 +65,7 @@ A generic one, not the CYD or the AMOLED board:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`). Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). Held still a second on the needs-you sign, it dismisses it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | With `motion`, buttons that move the board as the AMOLED's motion sensor feels it: Shake, Pick up and Put down, Thump, Face down and Face up. Without them the board has no sensor, as the CYD hasn't |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
@@ -162,7 +162,7 @@ more of:
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one;
   `hold`, one kept there for the event's `hold` seconds (the demo's
-  `DemoScript.holdSeconds`, past the board's hold on the needs-you sign;
+  `DemoScript.holdSeconds`, past the board's hold on the needs-you screen;
   1.2 for a recording that doesn't say); or `press`, BOOT.
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,

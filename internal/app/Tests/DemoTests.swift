@@ -61,14 +61,14 @@ final class DemoTests: XCTestCase {
         try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, press, hold, talk, back or wait")) }
     }
 
-    /// A hold is a finger kept on the needs-you sign, which a recording
+    /// A hold is a finger kept on the needs-you screen, which a recording
     /// replays on the board as one (`input`); a wait is minutes passing at
     /// once, which it says.
     func testAHoldDismissesAndAWaitPassesTime() throws {
         let hold = try DemoScript(#"{"you": "hold"}"#).steps[0]
         XCTAssertEqual(hold.what, .hold)
         XCTAssertEqual(hold.input, "hold")
-        XCTAssertEqual(hold.cause(creature: "Pip", agent: "claude")?.text, "You hold a finger on Pip's sign")
+        XCTAssertEqual(hold.cause(creature: "Pip", agent: "claude")?.text, "You hold a finger on Pip's needs-you screen")
         let wait = try DemoScript(#"{"you": "wait", "minutes": 8}"#).steps[0]
         XCTAssertEqual(wait.what, .wait(ms: 480_000))
         XCTAssertNil(wait.input)

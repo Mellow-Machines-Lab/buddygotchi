@@ -44,7 +44,7 @@ public struct Scenario: Sendable {
         public var helper: String?
         /// What a `gesture` step did to the board: `stroke`, `nose`,
         /// `dizzy`… (render::Gesture's names, `facedown`, and `dismiss`, a
-        /// finger held on the needs-you sign).
+        /// finger held on the needs-you screen).
         public var kind: String?
         /// A `to-do list` step's list, as `3/7`: done, of all.
         public var todos: StateSnapshot.Todo?
@@ -102,7 +102,7 @@ public struct Scenario: Sendable {
         public var idle: Set<String>?
         public var helpers: Set<String>?
         public var when: Set<String>?
-        /// Whether the needs-you sign shows (`shown`) or not (`none`), and
+        /// Whether the needs-you screen shows (`shown`) or not (`none`), and
         /// the working agent's to-do list (`3/7`, or `none`).
         public var needs: Set<String>?
         public var todo: Set<String>?
@@ -493,7 +493,7 @@ public struct Eval {
         /// What a press opened, `agent thread`, for `opens`.
         public var opened: String?
         /// What the screen showed: the idle and helper counts, the tags,
-        /// whether the needs-you sign showed, and the to-do list (`3/7`, or
+        /// whether the needs-you screen showed, and the to-do list (`3/7`, or
         /// `none`).
         public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String)?
         /// Whether the pass wrote the diary.
@@ -967,7 +967,7 @@ public struct Eval {
         case "helper started": return [hook(.subagent, .start, "SubagentStart", subagent: step.helper ?? "h1")]
         case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
         // What you did to the board, which reacted to it at once: a hold
-        // names the request the sign shows, as the board does.
+        // names the request the needs-you screen shows, as the board does.
         case "gesture":
             return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you

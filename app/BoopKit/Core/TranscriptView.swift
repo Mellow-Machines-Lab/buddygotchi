@@ -1003,7 +1003,7 @@ public enum EventLine {
         case "startle": "You thumped the desk next to \(name)."
         case "facedown": "You turned \(name) face down."
         case "peekaboo": "You turned \(name) back up."
-        case Core.dismissGesture: "You held a finger on \(name)'s sign, to stop it showing that an agent needs you; the agent still waits."
+        case Core.dismissGesture: "You held a finger on \(name)'s needs-you screen, to stop it showing; the agent still waits."
         default: nil
         }
     }

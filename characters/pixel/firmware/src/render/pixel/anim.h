@@ -72,14 +72,14 @@ class PixelFace final : public Face {
   // the rest.
   bool rigDraws(Mood m, SceneState s, int v) const { return RigFace::pose(m) && rigFaced(m, s, v); }
   bool rigDraws() const { return rigDraws(src_.mood, src_.state(), src_.variant()); }
-  // A frame draws the needs-you sign, a design, or a design with the rig
+  // A frame draws the needs-you screen, a design, or a design with the rig
   // face in it.
   enum class Drew : uint8_t { kSign, kDesign, kRig };
   // A switch dissolves what showed into what's next over the rig's fade
   // (rig::kFadeMs), the whole picture; from the rig face to the rig face,
   // the designs around it, the face staying whole as it moves from where
   // the one had it to where the other has it. Into and out of the
-  // needs-you sign, which rises in on its own, it cuts. One mid-way through
+  // needs-you screen, which rises in on its own, it cuts. One mid-way through
   // a dissolve goes on dissolving from what that one did.
   void startSwitch(uint32_t t);
   bool fading(uint32_t t) const { return switched_ && within(t, switchAt_, rig::kFadeMs) && fadeFrom_ != Drew::kSign; }

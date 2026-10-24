@@ -1,13 +1,13 @@
 // Twenty-five seconds: not now. The agent asks to run a command while
-// you're busy with something else, and its request waits on the sign. You
-// hold a finger on it for a second: the sign goes, though the agent still
+// you're busy with something else, and its request waits on the needs-you screen.
+// You hold a finger on it for a second: it goes, though the agent still
 // waits, a parcel in the line under the face. You allow it on the Mac a
-// little later, and when the agent asks again, the sign comes back.
+// little later, and when the agent asks again, the screen comes back.
 {"demo": 1, "title": "Not now"}
 {"agent": "prompt", "text": "Set up the local database"}
 {"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
 {"agent": "run", "cmd": "brew install postgresql", "about": "Install Postgres", "ask": 8, "waits": true, "after": 1}
-{"you": "hold", "after": 3, "note": "You hold a finger on the sign: not now"}
+{"you": "hold", "after": 3, "note": "You hold a finger on the needs-you screen: not now"}
 {"agent": "run", "cmd": "createdb app_dev", "about": "Create the database", "ask": 4, "after": 6}
 {"agent": "reply", "text": "Postgres is installed and app_dev is created.", "after": 1}
 {"brain": {"react.mood": "pleased", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}

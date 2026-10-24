@@ -244,7 +244,7 @@ export class DemoPlayer extends EventTarget {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
     // A finger on the screen, beside the nose (a boop there is a gesture),
     // or kept there as long as the recording's hold says, past the board's
-    // hold on the needs-you sign (a recording made before it said, 1.2 s),
+    // hold on the needs-you screen (a recording made before it said, 1.2 s),
     // or BOOT pressed, which is the board's own to react to (a press long
     // enough to pass the button's debounce).
     if (event.input === 'tap') {

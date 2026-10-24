@@ -299,7 +299,7 @@ struct OverviewPane: View {
     /// The card names the session that has waited longest, as the device
     /// does, but in full: the snapshot's project and thread name are cut to
     /// fit the device. The session list puts it first.
-    /// A click opens it, as a tap on the device's sign does.
+    /// A click opens it, as a tap on the board's needs-you screen does.
     private func needsYou(_ attn: StateSnapshot.Attention, _ sessions: [SessionSummary]) -> some View {
         let waiting = sessions.first { $0.status == .waiting }
         let project = waiting?.project ?? attn.project
@@ -311,8 +311,8 @@ struct OverviewPane: View {
                          hint: "\(agent) is waiting for you. " + (opens.map { "Click to \(openVerb($0))." } ?? "Answer it in its window."))
         }
         .overlay(alignment: .bottomTrailing) {
-            // Hides the request on Boop, as a finger held on the sign does;
-            // the agent still waits.
+            // Hides the request on Boop, as a finger held on the needs-you
+            // screen does; the agent still waits.
             if let thread = waiting?.thread {
                 Button("Dismiss") { model.runtime?.dismiss(thread) }
                     .buttonStyle(.plain)

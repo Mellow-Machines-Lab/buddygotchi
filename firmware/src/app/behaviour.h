@@ -34,7 +34,7 @@ struct Model {
   render::Mood mood = render::kStartupMood;
   bool attn = false;
   char agent[12] = "";
-  // Both show on the needs-you sign, three lines of 16.
+  // Both show on the needs-you screen, three lines of 16.
   char project[48] = "";
   char name[48] = "";  // the thread's name; "" when the Mac sends none
   int more = 0;
@@ -183,7 +183,7 @@ class Behaviour {
   const char* tap(uint32_t t, Rng& rng);
   // BOOT: while something needs you or an agent sits idle, it hands you
   // the next one on the Mac ("handoff"), and the board plays its hand-off
-  // but over needs you's sign, which stays; else it's a tap.
+  // but over the needs-you screen, which stays; else it's a tap.
   const char* press(uint32_t t, Rng& rng);
   // The board's own reaction to a gesture: gesture's variation for it,
   // unless the face is held.
