@@ -1213,20 +1213,20 @@ final class CoreNeedsYouTests: XCTestCase {
     }
 
     /// The sign shows the thread's name
-    /// in the project's place, cut to the sign's 47 bytes. The session keeps
+    /// in the project's place, cut at a word to the sign's 47 bytes. The session keeps
     /// the last name an event brought, and one with none sends no `name`.
     func testTheStripNamesTheThreadThatAsks() {
         let rig = CoreRig()
         var ask = rig.event(.needsYou, project: "landing", tool: "Bash")
         ask.data["name"] = "Thread name on \"needs you\" screen, with a sign on it"
         rig.send(ask)
-        XCTAssertEqual(rig.state.attn?.name, "Thread name on \"needs you\" screen, with a sig..")
-        XCTAssertTrue(rig.state.jsonLine.contains(#""project":"landing","name":"Thread name on \"needs you\" screen, with a sig..","more":0"#))
+        XCTAssertEqual(rig.state.attn?.name, "Thread name on \"needs you\" screen, with a..")
+        XCTAssertTrue(rig.state.jsonLine.contains(#""project":"landing","name":"Thread name on \"needs you\" screen, with a..","more":0"#))
         XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.name, "Thread name on \"needs you\" screen, with a sign on it",
                        "the popover shows it whole")
         rig.send(.activity, tool: "Bash")  // approved
         rig.send(.needsYou, tool: "Edit")  // a request that brings no name
-        XCTAssertEqual(rig.state.attn?.name, "Thread name on \"needs you\" screen, with a sig..", "the session keeps it")
+        XCTAssertEqual(rig.state.attn?.name, "Thread name on \"needs you\" screen, with a..", "the session keeps it")
         rig.send(.needsYou, session: "s2", project: "jetpack", tool: "Bash")
         rig.send(.activity)  // s1 answered: s2 is shown
         XCTAssertEqual(rig.state.attn?.project, "jetpack")
@@ -2191,6 +2191,30 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(finder.sessions.first?[1], "cafe\u{301}", "the popover shows it as it came")
         let resume = "re\u{301}sume\u{301}-re\u{301}sume\u{301}-re\u{301}sume\u{301}"
         XCTAssertEqual(Array(StateSnapshot.clip(resume, marked: true).utf8), Array("r\u{E9}sum\u{E9}-r\u{E9}sum\u{E9}-r\u{E9}..".utf8), "23 bytes")
+    }
+
+    /// A cut name is cut where the board cuts its own text (render::cutAt,
+    /// pinned with these examples in the firmware's test_face): at the end
+    /// of its last word within the room, after the last "·", when that
+    /// keeps at least half the room, else mid-word; never ending on a space
+    /// or a "·"; and "..", within the bytes.
+    func testACutNameEndsAtAWordAsTheBoardsTextDoes() {
+        // Cut to the room of `most` characters: their bytes, then "..".
+        func cut(_ text: String, _ most: Int) -> String {
+            StateSnapshot.clip(text, marked: true, max: String(text.prefix(most)).utf8.count + 2)
+        }
+        XCTAssertEqual(cut("still broken after all", 16), "still broken..")
+        XCTAssertEqual(cut("what does the turn do", 14), "what does the..", "no space before the ..")
+        XCTAssertEqual(cut("a supercalifragilistic", 16), "a supercalifragi..", "\"a\" is under half: mid-word")
+        XCTAssertEqual(cut("claude · a-very-long-project", 16), "claude · a-very-..", "not \"claude..\"")
+        XCTAssertEqual(cut("claude · Make the device answer", 17), "claude · Make the..")
+        XCTAssertEqual(cut("hello · world", 7), "hello..", "not \"hello ·..\"")
+        XCTAssertEqual(cut("anything", 0), "..")
+        // As the Mac sends a thread's name: at a word, within the sign's 47 bytes.
+        let thread = StateSnapshot.clip("Make the device answer when something needs you right away", marked: true,
+                                        max: StateSnapshot.maxSignBytes)
+        XCTAssertEqual(thread, "Make the device answer when something needs..")
+        XCTAssertLessThanOrEqual(thread.utf8.count, StateSnapshot.maxSignBytes)
     }
 
     func testSnapshotsGoOutOnlyWhenSomethingChanged() {

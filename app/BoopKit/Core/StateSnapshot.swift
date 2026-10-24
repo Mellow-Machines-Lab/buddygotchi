@@ -35,20 +35,44 @@ public struct StateSnapshot: Equatable, Sendable {
     /// U+0301), which the device would draw as "e?"; precomposed, é shows as
     /// e. Control characters, which the device can't draw and JSON escapes
     /// to six bytes each, become spaces. With `marked`, a cut text ends in
-    /// "..", within those bytes, so the device shows it was cut.
+    /// "..", within those bytes, so the device shows it was cut, and it's
+    /// cut where the board cuts its own text (`cutAt`).
     public static func clip(_ text: String, marked: Bool = false, max: Int = maxNameBytes) -> String {
         var text = text.precomposedStringWithCanonicalMapping
         if text.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }) {
             text = String(String.UnicodeScalarView(text.unicodeScalars.map { $0.value < 0x20 || $0.value == 0x7F ? " " : $0 }))
         }
         guard text.utf8.count > max else { return text }
+        let chars = Array(text)
         let room = marked ? max - 2 : max
-        var out = ""
-        for ch in text {
-            if out.utf8.count + String(ch).utf8.count > room { break }
-            out.append(ch)
+        var fit = 0, bytes = 0
+        while fit < chars.count, bytes + chars[fit].utf8.count <= room {
+            bytes += chars[fit].utf8.count
+            fit += 1
         }
-        return marked ? out + ".." : out
+        return marked ? String(chars[..<cutAt(chars, fit)]) + ".." : String(chars[..<fit])
+    }
+
+    /// How many of `chars` to keep when they're cut to at most `most`, ".."
+    /// after them: the board's rule for its own text (render::cutAt), a
+    /// character for a glyph. At the end of the last word within them after
+    /// the last "·", when that keeps at least half; else mid-word; never on
+    /// a space or a "·".
+    static func cutAt(_ chars: [Character], _ most: Int) -> Int {
+        var word = 0, solid = 0
+        var prev: Character = " "
+        for i in 0...most {
+            let c: Character? = i < chars.count ? chars[i] : nil
+            if c == "·" {
+                word = 0  // the cut stays in what follows the last "·"
+            } else if c == nil || c == " ", prev != " ", prev != "·" {
+                word = i  // a word ends before character i
+            }
+            guard let c else { break }
+            if c != " ", c != "·", i < most { solid = i + 1 }
+            prev = c
+        }
+        return word > 0 && 2 * word >= most ? word : solid
     }
 
     /// `asleep`, `idle` or `working`.
