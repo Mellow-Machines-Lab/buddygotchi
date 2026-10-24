@@ -47,6 +47,9 @@ extension Event {
         /// Your prompt's reading, after the turn start it came with: its
         /// facts are `PromptReading`'s, never the prompt.
         case prompt
+        /// The agent's last message's reading, after the turn end it came
+        /// with: its facts are `MessageReading`'s, never the message.
+        case lastMessage = "last_message"
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

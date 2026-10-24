@@ -2253,15 +2253,20 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// A reading that comes once its turn is over (a slow labeler takes up
-    /// to `AppleIntelligenceLabeler.timeout`) is dropped: the brain heard
-    /// the turn end, so it isn't woken for the prompt after it. One that
-    /// comes in time is logged.
+    /// A reading that comes once its session moved on (a slow labeler takes
+    /// up to `AppleIntelligenceLabeler.timeout`) is dropped: a prompt's
+    /// once its turn ended, as the brain heard the turn end; a last
+    /// message's once the next turn started. One that comes in time is
+    /// logged.
     func testAReadingAfterItsTurnIsDropped() throws {
         struct Slow: PromptLabeler {
             func label(_ text: String) async -> PromptReading.Labels? {
                 try? await Task.sleep(for: .milliseconds(200))
                 return .init(kind: .fix)
+            }
+            func label(message text: String) async -> MessageReading.Labels? {
+                try? await Task.sleep(for: .milliseconds(200))
+                return .init(kind: .answer)
             }
         }
         var options = try options(nil)
@@ -2269,21 +2274,32 @@ final class RuntimeTests: XCTestCase {
         options.log = { logged.add($0) }
         options.labeler = Slow()
         let runtime = try Runtime(options)
-        func hook(_ name: String, prompt: String? = nil) {
+        func hook(_ name: String, prompt: String? = nil, message: String? = nil) {
             runtime.home.sync {
                 var line = HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/jetpack", ts: 0)
                 line.prompt = prompt
+                line.message = message
                 runtime.hook(line, received: runtime.options.clock())
             }
         }
-        func readings() -> [Event] { runtime.home.sync { runtime.harness.log.events.filter { $0.type == .prompt } } }
+        func readings(_ kind: Event.Kind = .prompt) -> [Event] { runtime.home.sync { runtime.harness.log.events.filter { $0.type == kind } } }
         hook("UserPromptSubmit", prompt: "fix the login")
         hook("Stop")
-        eventually("the late reading came") { logged.all.contains { $0.hasPrefix("prompt: claude's turn on s1 was over before its reading") } }
+        eventually("the late reading came") { logged.all.contains { $0.hasPrefix("prompt: claude's session s1 moved on before its reading") } }
         XCTAssertEqual(readings().count, 0, "dropped")
         hook("UserPromptSubmit", prompt: "now the docs")
         eventually("the reading in time") { readings().count == 1 }
         XCTAssertEqual(readings().first?["kind"], "fix")
+        hook("Stop", message: "The docs are in.")
+        hook("UserPromptSubmit")
+        eventually("the late message's reading came") {
+            logged.all.contains { $0.hasPrefix("last_message: claude's session s1 moved on before its reading") }
+        }
+        XCTAssertEqual(readings(.lastMessage).count, 0, "dropped")
+        hook("Stop", message: "It's in the README.")
+        eventually("the message's reading in time") { readings(.lastMessage).count == 1 }
+        XCTAssertEqual(readings(.lastMessage).first?["kind"], "answer")
+        XCTAssertFalse(runtime.home.sync { runtime.harness.log.events.contains { $0.agent != nil && $0["message"] != nil } }, "no message logged")
     }
 }
 

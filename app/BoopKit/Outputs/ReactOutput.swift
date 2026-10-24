@@ -130,11 +130,11 @@ public final class ReactOutput: Output {
     /// any of them, so the brain judges each one.
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
-        Option("success", "NOW's line says a turn finished, done, and its last message, if any, says the work is done and working.",
-               notFor: "A check that passed while the turn goes on, a turn that finished failed, a message saying it couldn't finish or something is broken, or only an answer or a question back."),
-        Option("failure", "NOW's line says a turn finished, failed; or finished done, but its last message says the agent couldn't finish or something is broken.",
-               notFor: "A check that failed while the turn goes on, or a turn done whose message says the work is working."),
-        Option("reply", "NOW's line says a turn finished, done, and its last message only answers something or asks something back, often with no tool calls: no task finished.",
+        Option("success", "NOW's line says a turn finished, done, and doesn't say the agent couldn't finish, asks you something or only answers.",
+               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something or only answering."),
+        Option("failure", "NOW's line says a turn finished, failed; or finished done, but saying it couldn't finish.",
+               notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
+        Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
         Option("wake up", "NOW's line says you came back to the Mac after a long or very long break: \(name) stretches, yawns and wakes up for you.",
                notFor: "A short break, a turn, a poke, or words to \(name)."),
@@ -244,7 +244,7 @@ public final class ReactOutput: Output {
                                       notFor: "Anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
             Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
-                     about: "the NOW section", judgeBy: "NOW's line and the agent's last message under it",
+                     about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
                      options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after a long break, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, words to \(name), a short break and a stopped turn all get none.")]
                          + ReactOutput.animations(of: name)),
             Question(key: "react.loops", text: "If \(name) reacts, how long does it hold the face?", about: "the NOW section",

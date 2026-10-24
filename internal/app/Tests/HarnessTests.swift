@@ -64,8 +64,8 @@ final class HarnessTests: XCTestCase {
         let printer = DebugLog.Printer()
         let stateJSON = #"You are.\nPERSONALITY\nx\n\nHISTORY (oldest first)\nh\n\nNOW (14:23, Tuesday)\nn"#
         let lines: [(String, String?)] = [
-            (#"{"view":{"facts":{},"from":[3],"id":1,"line":"claude finished turn 1.","notes":["Its last message: \"ok\""],"phase":"end","type":"turn","wakes_brain":true},"received_at_ms":5}"#,
-             "▸ 1 turn end: claude finished turn 1.\n    Its last message: \"ok\""),
+            (#"{"view":{"facts":{},"from":[3],"id":1,"line":"claude finished turn 1.","notes":["Its words: \"ok\"."],"phase":"end","type":"turn","wakes_brain":true},"received_at_ms":5}"#,
+             "▸ 1 turn end: claude finished turn 1.\n    Its words: \"ok\"."),
             (#"{"view":{"facts":{},"from":[4],"id":2,"line":"claude needs you.","notes":[],"phase":"wait","type":"tool","wakes_brain":false},"received_at_ms":6}"#,
              "▸ 2 tool wait (no pass): claude needs you."),
             (#"{"event":{"seq":4,"at":6,"source":"claude","kind":"turn_end","data":{"session":"s","specific_type":"Stop"}},"received_at_ms":6}"#, nil),

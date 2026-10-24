@@ -144,6 +144,9 @@ public final class TranscriptView {
         /// line: a request it answered says so only when it didn't.
         var at = 0
         var lastAgentLined = false
+        /// The finishes whose last message's reading comes next, by
+        /// session: its line, for the reading's.
+        var unread: [String: Line] = [:]
 
         /// Its tracker never asks whether an agent's process runs: the core
         /// records a session whose agent is gone as its turn stopping
@@ -229,10 +232,11 @@ public final class TranscriptView {
 
     /// Each kind's `wake`: what you said goes ahead
     /// of a finished turn, which goes ahead of the rest. A turn start
-    /// whose prompt is being read waits for its reading (`hold`).
+    /// whose prompt is being read waits for its reading (`hold`), and a
+    /// finish whose last message is has its line in its reading's place.
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "prompt": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
-        "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
+        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -268,7 +272,7 @@ public final class TranscriptView {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
-        if e[PromptIntake.readingFollows]?.bool == true { return "its prompt's reading wakes the brain" }
+        if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
@@ -289,7 +293,7 @@ public final class TranscriptView {
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
-             (.heartbeat?, nil),
+             (.lastMessage?, nil), (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
@@ -345,6 +349,12 @@ public final class TranscriptView {
         if let a = AgentEvent(e) {
             let line = agentEvent(a)
             fold.lastAgentLined = line != nil
+            // A finish whose last message is being read is heard in its
+            // reading's line.
+            if let line, a.kind == .turn, a.phase == .end, e[PromptIntake.readingFollows]?.bool == true {
+                fold.unread[a.key] = line
+                return nil
+            }
             return line
         }
         advance(to: e.at)
@@ -356,6 +366,8 @@ public final class TranscriptView {
             return Line(EventLine.pressed(name: name(e)))
         case .prompt?:
             return promptRead(e)
+        case .lastMessage?:
+            return messageRead(e)
         case .gesture?:
             noteActivity(e.at)
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
@@ -379,6 +391,7 @@ public final class TranscriptView {
         fold.sessions.advance(to: now, sparing: sparing)
         if fold.counts.keys.contains(where: { fold.sessions.sessions[$0] == nil }) {
             fold.counts = fold.counts.filter { fold.sessions.sessions[$0.key] != nil }
+            fold.unread = fold.unread.filter { fold.sessions.sessions[$0.key] != nil }
         }
     }
 
@@ -409,6 +422,8 @@ public final class TranscriptView {
         case .turnStart:
             c.topic = nil
             resetCounts(&c)
+            // The last finish's reading came too late, if it's still to come.
+            fold.unread[key] = nil
             return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
                         facts: ["thread": threadFacts(t)])
         case .activity:
@@ -450,8 +465,7 @@ public final class TranscriptView {
             }
             let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
             c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
-            return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
-                             message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
+            return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started))
         case .sessionStart:
             // The agent's context was compacted: it carries on from a
             // summary. Any other session start is no line.
@@ -535,20 +549,21 @@ public final class TranscriptView {
         }
     }
 
-    func turnEnded(_ t: Thread, _ c: Counts, outcome: String, error: String?, message: String?, lengthMs: Int64) -> Line {
+    /// A finish: what the turn did, never the agent's words, which only
+    /// its message's reading tells (`messageRead`).
+    func turnEnded(_ t: Thread, _ c: Counts, outcome: String, error: String?, lengthMs: Int64) -> Line {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
                                      lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
                                      ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak),
                                      linesGone: c.linesRemoved - c.linesAdded)
-        return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
-                    facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
+        return Line(text, facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
                             "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
                             "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
-                            "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
+                            "topics": .object(topicFacts), "comeback": .of(c.comeback)])
     }
 
     /// The thread's facts.
@@ -577,6 +592,19 @@ public final class TranscriptView {
         return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine)),
                     notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
                     facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
+    }
+
+    // MARK: The agent's last message
+
+    /// The agent's last message's reading, in its finish's place: the
+    /// finish's line, saying what the message claims and how it sounds,
+    /// and its words for a sign as a note. None for a finish the fold
+    /// didn't line.
+    func messageRead(_ e: Event) -> Line? {
+        guard let key = Self.about(e, facts: nil), let finish = fold.unread.removeValue(forKey: key),
+              let reading = MessageReading(facts: e.data) else { return nil }
+        return Line(EventLine.finished(finish.text, saying: reading), notes: EventLine.itsWords(reading.phrases).map { [$0] } ?? [],
+                    facts: finish.facts.merging(["message": .object(reading.facts)]) { _, b in b })
     }
 
     // MARK: Pokes
@@ -902,12 +930,18 @@ public enum EventLine {
         n == 0 ? "no tool calls" : n == 1 ? "1 tool call" : "\(n) tool calls"
     }
 
-    /// The longest prompt, last message or thing you said that the state
-    /// quotes, in characters.
+    /// The longest thing you said that the state quotes, in characters.
     public static let messageMax = 300
 
-    /// `Its last message: "…"`: the agent's last message, quoted.
-    public static func lastMessage(_ message: String) -> String? { quote("Its last message", message) }
+    /// `claude finished turn 4 on "api": done, a short turn, 1 tool call,
+    /// saying it's done, apologetic.`: a finish's line with its last
+    /// message's reading, never its words; as it was for a reading that
+    /// says nothing.
+    public static func finished(_ finish: String, saying r: MessageReading) -> String {
+        let parts = [r.kind?.words, r.tone?.words].compactMap { $0 }
+        guard !parts.isEmpty else { return finish }
+        return (finish.hasSuffix(".") ? String(finish.dropLast()) : finish) + ", " + parts.joined(separator: ", ") + "."
+    }
 
     /// `You asked claude on "api" for a fix, in a sentence, frustrated, and
     /// said Pip's name.`: your prompt's reading, never its words; with no
@@ -921,8 +955,14 @@ public enum EventLine {
 
     /// `Your words: "still broken", "thank you".`, the phrases a sign may
     /// show; nil for none.
-    public static func yourWords(_ phrases: [String]) -> String? {
-        phrases.isEmpty ? nil : "Your words: " + phrases.map { "\"\($0)\"" }.joined(separator: ", ") + "."
+    public static func yourWords(_ phrases: [String]) -> String? { quoted("Your words", phrases) }
+
+    /// `Its words: "absolutely right".`, the agent's.
+    public static func itsWords(_ phrases: [String]) -> String? { quoted("Its words", phrases) }
+
+    /// `label: "a", "b".`; nil for no phrases.
+    static func quoted(_ label: String, _ phrases: [String]) -> String? {
+        phrases.isEmpty ? nil : "\(label): " + phrases.map { "\"\($0)\"" }.joined(separator: ", ") + "."
     }
 
     /// Words on one line, cut to `messageMax`, after `label`. Nil for none.
@@ -1049,8 +1089,8 @@ public enum EventLine {
         """
             How to read HISTORY and NOW:
             - HISTORY is oldest first. Each line says how long ago it happened.
-              Lines indented under it add to it: an agent's last message, then
-              what \(name) did. A line of what \(name) did ending in (in progress)
+              Lines indented under it add to it: the words it quotes or a note,
+              then what \(name) did. A line of what \(name) did ending in (in progress)
               hasn't finished yet.
             - NOW is what to react to. Its last line is what \(name) already did on
               its own, by reflex.
@@ -1075,6 +1115,10 @@ public enum EventLine {
         - "You asked" is the person's prompt to an agent, read on their Mac:
           what they asked for, how long, how they sound, and whether they said
           \(name)'s name. Never their words but the few under "Your words".
+        - A finished turn says what the agent's last message said, read on the
+          person's Mac: that it's done, couldn't finish, asks them something
+          or only answers, and how it sounds. Never its words but the few under
+          "Its words".
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
         - An idle check-in ("Nothing has happened for 20 min") means the person is

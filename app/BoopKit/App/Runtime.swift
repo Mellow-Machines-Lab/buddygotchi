@@ -527,9 +527,9 @@ public final class Runtime: @unchecked Sendable {
 
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
-        // Your prompt goes no further than the intake: the turn start is
-        // logged without it, and its reading follows.
-        let (event, prompt) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)
+        // Your prompt and the agent's last message go no further than the
+        // intake: the turn event is logged without it, and its reading follows.
+        let (event, text) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)
         // Debug mode logs every hook with what it became; the doctor skill
         // arms the plain line to see hooks arrive. Otherwise hooks aren't logged.
         if options.debug {
@@ -541,11 +541,11 @@ public final class Runtime: @unchecked Sendable {
         let step = pipeline.agent(event)
         run(step)
         onAgentHook?(line.agent)
-        guard let prompt, let start = step.recorded.first else { return }
-        PromptIntake.read(prompt, names: pipeline.buddies.map(\.name), labeler: labeler, home: home) { [weak self] reading in
+        guard let text, let turn = step.recorded.first else { return }
+        PromptIntake.read(text, names: pipeline.buddies.map(\.name), labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }
-            guard let step = pipeline.promptRead(reading, about: start, at: options.clock()) else {
-                return options.log("prompt: \(line.agent)'s turn on \(line.session) was over before its reading; dropped it")
+            guard let step = pipeline.read(reading, about: turn, at: options.clock()) else {
+                return options.log("\(reading.kind.rawValue): \(line.agent)'s session \(line.session) moved on before its reading; dropped it")
             }
             run(step)
         }

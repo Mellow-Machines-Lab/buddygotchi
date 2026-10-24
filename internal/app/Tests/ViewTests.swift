@@ -54,14 +54,15 @@ final class ViewTests: XCTestCase {
 
         rig.wait(60_000)
         let end = try XCTUnwrap(hook(.turnEnd, message: "All green now.").first)
-        XCTAssertEqual(end.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls."#,
+        XCTAssertEqual(end.name, "last_message", "the finish is heard in its message's reading")
+        XCTAssertEqual(end.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, saying it's done."#,
                        "4 min is long; failed calls count the same")
-        XCTAssertEqual(end.notes, [#"Its last message: "All green now.""#])
+        XCTAssertEqual(end.notes, [], "a claim is no phrase")
         XCTAssertTrue(end.did.isEmpty, "no rule cheers")
         XCTAssertEqual(end.facts["comeback"], "tests", "the facts keep what the line leaves out")
         XCTAssertEqual(end.facts["tools_failed"], .int(3))
         XCTAssertEqual(end.facts["outcome"], "done")
-        XCTAssertEqual(end.facts["message"], "All green now.")
+        XCTAssertEqual(end.facts["message"], .object(["length": "words", "kind": "done"]), "its reading, never its words")
     }
 
     /// A failed turn says how many checks failed on the way, so a failure
@@ -101,11 +102,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(line(-800), line(0))
     }
 
-    /// A long prompt or message is cut, on one line.
+    /// What you said, long, is cut, on one line.
     func testLongWordsAreCut() {
         let long = String(repeating: "word ", count: 200)
-        let note = EventLine.lastMessage(long)!
-        XCTAssertEqual(note.count, "Its last message: \"\"".count + EventLine.messageMax)
+        let note = EventLine.said(long, to: "Boop")!
+        XCTAssertEqual(note.count, "You said to Boop: \"\"".count + EventLine.messageMax)
         XCTAssertTrue(note.hasSuffix("…\""))
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 1),
                        #"claude finished turn 1 on "x": done, a short turn, 1 tool call."#)

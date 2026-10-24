@@ -211,5 +211,19 @@ class HookEnvironmentTests(unittest.TestCase):
             self.assertEqual(line["pid"], os.getpid(), "the agent is the process running the fixture, not CLAUDE_PID's")
 
 
+class PrivacyTests(unittest.TestCase):
+    def test_no_marker_is_kept_not_even_the_agents_last_message(self):
+        with tempfile.TemporaryDirectory() as d:
+            state = Path(d)
+            (state / "debug.jsonl").write_text('{"view":{"line":"claude finished turn 1."}}\n')
+            run = Recorder("")
+            run.state, run.debug_log = state, state / "debug.jsonl"
+            e2e.check_after(run, [])
+            self.assertEqual(run.failed, [])
+            (state / "transcript.jsonl").write_text('{"kind":"turn_end","data":{"message":"PRIVATE_CLOSING_9825 done"}}\n')
+            e2e.check_after(run, [])
+            self.assertTrue(any(f.startswith("PRIVATE_ markers") for f in run.failed), run.failed)
+
+
 if __name__ == "__main__":
     unittest.main()
