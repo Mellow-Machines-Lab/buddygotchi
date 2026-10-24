@@ -2160,6 +2160,23 @@ static void test_face_down_is_do_not_disturb() {
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"peekaboo\"}\n"));
 }
 
+// dbg.reset starts the motion sensor's readings again with the clock: a
+// board that had run a minute before a scenario reads its motion as the
+// simulator, which starts at 0, does.
+static void test_reset_reads_motion_from_0() {
+  Rig r;
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":60000}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  r.usbLine("{\"t\":\"dbg.reset\"}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n"));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -2170,6 +2187,7 @@ int main() {
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
   RUN_TEST(test_face_down_is_do_not_disturb);
+  RUN_TEST(test_reset_reads_motion_from_0);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);
   RUN_TEST(test_a_finishs_say_starts_at_its_voice_window);

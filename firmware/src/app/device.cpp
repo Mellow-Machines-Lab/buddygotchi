@@ -173,8 +173,12 @@ void Device::reset() {
   pattern_ = false;
   patternFill_ = -1;
   targetX_ = targetY_ = -1;
-  injPress_ = injTouch_ = bootInjected_ = touchDown_ = touchInjected_ = false;
+  injPress_ = injTouch_ = injMotion_ = bootInjected_ = touchDown_ = touchInjected_ = false;
   boot_ = ButtonGesture{};
+  // The motion sensor's readings start again with the clock, so one taken
+  // before (its time far past the new clock's) can't hold the next back.
+  motion_ = MotionGesture{};
+  motionAt_ = 0;
   last_ = LastInput{};
   drawnT_ = 0;
   dirty_ = true;

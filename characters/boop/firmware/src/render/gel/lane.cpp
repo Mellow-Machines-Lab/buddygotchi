@@ -246,7 +246,8 @@ const Strip& LaneFade::fade(const Strip& s, T time, int& alpha) {
         *to[i] = names_[i];
       }
   }
-  ramp_.retarget(bare ? 0 : 1, time);
+  ramp_.retarget(bare ? 0 : 1, before_ < time ? before_ : time);
+  before_ = time;
   alpha = (ramp_.value(time) * 255).integer();
   // Gone, it is the bare strip again.
   return alpha ? shown_ : s;

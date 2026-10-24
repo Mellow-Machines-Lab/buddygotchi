@@ -26,6 +26,9 @@ uint32_t laneKey(const char* bubble, const Strip& strip, int alpha = 255);
 // The strip, eased in as it comes and out as it goes on the props' 200 ms
 // ramp, as the desk comes and goes: one going still shows what it last
 // showed, its names copied; while it shows, what it shows changes at once.
+// A strip that came or went since the frame before fades from that frame's
+// time, so how often frames are drawn (a board's 37 a second, a
+// simulator's one a step) doesn't change what a frame shows.
 class LaneFade {
  public:
   // What to draw at `time` (the engine's ms) for `strip`, and how strongly.
@@ -33,6 +36,7 @@ class LaneFade {
 
  private:
   Ramp ramp_;
+  T before_;  // the frame before's time
   Strip shown_;
   char names_[5][48]{};
 };

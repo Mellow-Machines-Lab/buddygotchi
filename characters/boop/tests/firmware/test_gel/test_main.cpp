@@ -348,6 +348,21 @@ static void test_the_lane_fades_in_and_out() {
   TEST_ASSERT_TRUE(full);
   TEST_ASSERT_EQUAL_INT(0, alpha);
 }
+// A strip that came between two frames fades from the earlier one: a board
+// that drew nothing while the clock jumped (frozen, 0 ms to 1504) shows what
+// a simulator that drew at the jump does.
+static void test_the_lane_fades_from_the_frame_before() {
+  LaneFade lane;
+  Strip working, none;
+  working.busy = 3;
+  int alpha = 0;
+  lane.fade(none, T(0), alpha);
+  lane.fade(working, T(1504), alpha);
+  TEST_ASSERT_EQUAL_INT(255, alpha);
+  // Its ramp is the props' 200 ms one, from the frame before: half way, half on.
+  lane.fade(none, T(1604), alpha);
+  TEST_ASSERT_INT_WITHIN(2, 128, alpha);
+}
 // The face brings its own clips; the shared mixer plays
 // whatever samples it's handed, whichever face is built.
 static void test_gel_clips_use_the_shared_mixer() {
@@ -1175,6 +1190,7 @@ int main() {
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_the_lane_fades_in_and_out);
+  RUN_TEST(test_the_lane_fades_from_the_frame_before);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);
   RUN_TEST(test_pick_is_pure_and_started_commits_it);
