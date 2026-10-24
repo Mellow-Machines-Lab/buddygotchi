@@ -345,6 +345,15 @@ public final class Core {
         fx.append(.record(did))
     }
 
+    /// Onboarding's greeting on the board, `reaction`: a rule's reaction
+    /// for no event, played and recorded as the rules' others are.
+    @discardableResult
+    public func greet(_ reaction: DeviceReaction, at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        play(reaction, for: nil, now, &fx)
+        return fx
+    }
+
     /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
     /// reacted to the error on its own.` None for `starting`: every turn
     /// starts with it, so the brain hears the start itself and nothing

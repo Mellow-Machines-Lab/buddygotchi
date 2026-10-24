@@ -520,6 +520,10 @@ final class RuntimeTests: XCTestCase {
         runtime.greet(.celebrate)
         eventually("both greetings") { transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1 }
         XCTAssertTrue(transport.dos("task_complete")[0].contains(#""outcome":"success""#))
+        let greetings = runtime.home.sync {
+            runtime.harness.log.events.filter { $0.kind == Event.did && $0["by"]?.string == "rule" && $0.about == nil }.map(\.action)
+        }
+        XCTAssertEqual(greetings, ["wake_up", "task_complete"], "in the transcript, as the rules' reactions are")
         runtime.setOnboarding(.agents)
         runtime.home.sync {}
         XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
