@@ -508,7 +508,11 @@ does all of it:
 3. The fixtures in `internal/app/Tests/Fixtures/hooks/e2e/` go through the
    real `agent-hook`, run as Boop installs it (`--keep-text`): a Claude
    session, a Codex approval answered within the 2 s grace period, and one
-   left for 10 s. Between payloads they hold
+   left for 10 s. The hook runs with the run's socket and an empty home
+   and no other variables, so the app, Claude session, process and
+   terminal of whoever runs the check never reach the app as a fixture's.
+   Only a terminal's tty still can: the hook finds it in the processes
+   above it. Between payloads they hold
    checkpoints: `expect` (poll `dbg.state` until it matches, within
    `within_ms`, 2000 by default; `shot` on the line saves a screenshot),
    `expect_not` (no match for `for_ms`, or until `until_ms` after the last
