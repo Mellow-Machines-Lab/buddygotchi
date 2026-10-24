@@ -1,8 +1,9 @@
 // The rig face (render/pixel/rig_face.h): each drawn mood at rest on its own
 // art, as its idle design draws it; its parts chosen and placed by the
 // channels (an eye shut below a third open, the body's squash and lean, the
-// gaze); a style change's morph and dither; the "o" while it talks; and the
-// anchors that what it wears rides.
+// gaze); a style change's morph and dither; the "o" while it talks; the
+// anchors that what it wears rides; and the designs it draws a face in, as
+// they're drawn.
 #include <unity.h>
 
 #include <vector>
@@ -30,10 +31,10 @@ struct Buf {
   }
 };
 
-// At rest in mood m from 0, at t: its look's clip playing, nothing else.
+// At rest in mood m from 0, at t: idle's clip playing, nothing else.
 RigFace at(Mood m, uint32_t t = 0) {
   RigFace f;
-  f.reset(m, 0);
+  f.reset(m, SceneState::kIdle, 0);
   f.advanceTo(t);
   return f;
 }
@@ -164,6 +165,52 @@ static void test_the_anchors_ride_the_face() {
   TEST_ASSERT_TRUE(f.anchors().brimF.y > rest.brimF.y);
 }
 
+// A design whose face is its mood's resting face (facegen's rig_face): its
+// own start, drawn with the rig face at rest in its place, is the design as
+// drawn, pixel for pixel, its desk and its decorations included; and the
+// design without its face draws none of the face's eyes.
+static void test_a_design_with_the_resting_face_draws_as_drawn() {
+  int designs = 0;
+  for (int d = 0; d < faces::kMoodCount; ++d) {
+    const Mood m = pixelMood(d);
+    for (int s = 0; s < int(SceneState::kCount); ++s) {
+      for (int v = 0; v < variants(m, SceneState(s)); ++v) {
+        if (!rigFaced(m, SceneState(s), v)) continue;
+        SceneShow show;
+        show.mood = m, show.state = SceneState(s), show.variant = uint8_t(v);
+        Buf rig, baked, around;
+        const FaceMove move = faceMove(show);
+        const SceneFrame design = sceneFrame(show, true);
+        drawRig(rig.c, at(m).frame(0, false, {}, move), design);
+        drawScene(baked.c, show);
+        TEST_ASSERT_EQUAL_MEMORY(baked.px.data(), rig.px.data(), baked.px.size());
+        drawScene(around.c, design);
+        const faces::Part& eye = faces::kParts[d][faces::kPartEyeL];
+        const faces::Rect& ink = faces::kPartRects[eye.rect0];  // a pixel of its art, unless a prop covers it
+        const size_t px = size_t(eye.y + ink.y + move.dy + move.ey) * kWidth + eye.x + ink.x + move.dx + move.ex;
+        if (baked.px[px] == sceneInk(ink.color)) TEST_ASSERT_EQUAL(kBlack, around.px[px]);
+        ++designs;
+      }
+    }
+  }
+  TEST_ASSERT_TRUE(designs > 200);
+}
+
+// The rig face sits where its design moves the face: calm's perk lifts it
+// to look up at you, and the rig face drawn there is the design as drawn.
+static void test_the_rig_face_moves_as_its_design_moves_it() {
+  SceneShow show;
+  show.mood = moodFromName("calm"), show.state = SceneState::kNotice;
+  TEST_ASSERT_TRUE(rigFaced(show.mood, show.state, 0));
+  show.t = loopMs(show.mood, show.state) * 4 / 10;  // its second step up
+  const FaceMove move = faceMove(show);
+  TEST_ASSERT_TRUE(move.dy < -5);
+  Buf rig, baked;
+  drawRig(rig.c, at(show.mood).frame(0, false, {}, move), sceneFrame(show, true));
+  drawScene(baked.c, show);
+  TEST_ASSERT_EQUAL_MEMORY(baked.px.data(), rig.px.data(), baked.px.size());
+}
+
 // A cross-fade's two pictures share the pixels: each threshold is one's.
 static void test_a_dither_shares_the_pixels() {
   for (int mix = 0; mix <= 1000; mix += 125) {
@@ -188,6 +235,8 @@ int main(int, char**) {
   RUN_TEST(test_a_press_squashes_and_a_stroke_leans);
   RUN_TEST(test_talking_shows_the_o_in_the_mouths_place);
   RUN_TEST(test_the_anchors_ride_the_face);
+  RUN_TEST(test_a_design_with_the_resting_face_draws_as_drawn);
+  RUN_TEST(test_the_rig_face_moves_as_its_design_moves_it);
   RUN_TEST(test_a_dither_shares_the_pixels);
   return UNITY_END();
 }

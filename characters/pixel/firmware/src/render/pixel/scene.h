@@ -56,6 +56,9 @@ bool eyesClosed(const SceneShow& s);
 struct SceneFrame {
   static constexpr int kMaxGroups = 288;  // groups in a scene; faces.h checks it
   uint16_t scene = 0xFFFF;
+  // Where the face that shows is among the groups, kMaxGroups for none: a
+  // faceless frame's rig face is drawn there (drawScene's `from` and `to`).
+  uint16_t faceAt = kMaxGroups;
   // The talking "o": where it goes, and its colour, which is never black;
   // -1, -1 and black while the mouth doesn't talk.
   int16_t talkX = -1, talkY = -1;
@@ -80,11 +83,25 @@ int sceneOf(Mood m, SceneState s, int variant = 0);
 // How long that design takes to play once through, in ms (faces.h's
 // loopMs): what a moment's loops count.
 uint32_t loopMs(Mood m, SceneState s, int variant = 0);
-SceneFrame sceneFrame(const SceneShow& s);
+// Whether that design's face is its mood's resting face moved, under
+// decorations of its own (a sparkle, a falling tear), as facegen found at
+// every step: the rig face draws it in the design's place
+// (render/pixel/rig_face.h), as drawn (idle's plain face, near enough).
+// And where the face is, in px from where the mood's first idle has it, at
+// the show's moment: its move, and its eyes' more.
+bool rigFaced(Mood m, SceneState s, int variant = 0);
+struct FaceMove {
+  int dx = 0, dy = 0, ex = 0, ey = 0;
+};
+FaceMove faceMove(const SceneShow& s);
+// `faceless`, the face that shows is left out but for its decorations, for
+// the rig face to draw in its place, and so are its blink and talking.
+SceneFrame sceneFrame(const SceneShow& s, bool faceless = false);
 // Draws a frame sceneFrame made over what's on the canvas, the pixels `d`
-// draws; the screen clears it first. The device draws the frame it
-// compared, so it lays each frame out once. The show's overload lays one out.
-void drawScene(Canvas& c, const SceneFrame& f, Dither d = {});
+// draws, its groups from `from` up to `to`; the screen clears it first.
+// The device draws the frame it compared, so it lays each frame out once.
+// The show's overload lays one out.
+void drawScene(Canvas& c, const SceneFrame& f, Dither d = {}, int from = 0, int to = SceneFrame::kMaxGroups);
 inline void drawScene(Canvas& c, const SceneShow& s, Dither d = {}) { drawScene(c, sceneFrame(s), d); }
 // The palette entry for a design colour (faces::kColors).
 uint8_t sceneInk(int color);

@@ -1402,7 +1402,7 @@ final class RuntimeTests: XCTestCase {
             }
         }
         let faces = try String(contentsOf: assets.appendingPathComponent("faces.h"), encoding: .utf8)
-        let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+\}"#)
+        let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
             .map { Int64($0[0])! }
         let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+, \d+, \d+\}"#).map { Int($0[0])! }
         let sfx = try String(contentsOf: assets.appendingPathComponent("sfx.h"), encoding: .utf8)

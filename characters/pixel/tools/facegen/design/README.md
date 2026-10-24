@@ -4,7 +4,8 @@ The device's faces come from the animation bank,
 [`characters/pixel/design/boop-sound-bank-v4/`](../../../design/boop-sound-bank-v4/README.md):
 its generator makes every design's SVG, and `facegen` turns them into
 `characters/pixel/firmware/include/faces.h` (with the rig face's parts, cut from each
-mood's first idle at rest), the popover's tiles and the Mac's loop lengths.
+mood's first idle at rest, and where that face sits in each design that draws it),
+the popover's tiles and the Mac's loop lengths.
 Nothing here is drawn
 by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
 `../build/` (ignored) each time.

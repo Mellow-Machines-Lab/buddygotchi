@@ -712,8 +712,9 @@ a character is a value on each of its channels. A pack's `rig/` says
 what they do: its poses, its moves, its looks and where its outfits sit.
 The engine's half is `firmware/src/render/rig/`: the channels and the
 tables' types (`rig.h`), the mixer that plays them (`mixer.h`) and the
-layers a face draws (`layers.h`). The pixel face draws idle's plain face
-from it (below, Pixel's face on the rig); the gel moves onto it next.
+layers a face draws (`layers.h`). The pixel face draws its face from it
+wherever a design's face is its mood's resting face (below, Pixel's face
+on the rig); the gel moves onto it next.
 Pixel's rig has poses for its 13 drawn moods, fitted to their art, each
 wearing its own mood's eyes and mouth, the looks idle, working and
 asleep, a blink, a notice, a cheer and a poke. Boop's has poses for the
@@ -821,11 +822,28 @@ anchors the face reports from the pose it draws (the crown, a ring for a
 brim and one for the hands, the eyes), so what's worn or held rides the
 body.
 
-**Pixel's face on the rig.** Idle's first two variations, a blink and a
-look-around, are Pixel's plain face, and the pixel face draws them from
-the rig (`render/pixel/rig_face.h`) in every mood with a pose whose
-styles it has; its other looks, its occasions and the reactions are its
-baked designs. Its parts are each drawn mood's own art, which facegen
+**Pixel's face on the rig.** Most of Pixel's designs draw its mood's
+resting face, moved about, over a desk, props or decorations of their
+own. Wherever one does, at every step of its loop, the pixel face draws
+its face from the rig (`render/pixel/rig_face.h`) in the design's place,
+in every mood with a pose whose styles it has, and the design draws the
+rest: in its looks (working's included), its occasions and its
+reactions alike. Facegen decides which
+(`rig_faces`): for each design it finds where the resting face sits at
+each step, the whole face moved and its eyes moved within it (a
+glance), and splits what the face draws besides it (a sparkle, a
+falling tear) into decorations of their own, which the design keeps
+drawing over the rig face. It takes a design only if, drawn so at rest,
+it is the design as drawn, pixel for pixel; idle's first two variations,
+a blink and a look-around, Pixel's plain face, it takes near enough,
+missing what the rig face can't draw (sad's trembling lip, irritated's
+twitch), since the morphs into and out of a mood are worth it. The rest
+are baked: the finishes and wake-ups, the comedy, asleep, a face that
+changes shape (curious's eyes, whose big eye moves side to side, a
+yawn), tears pouring from the eyes (sad at work). Each design's moves
+are a track of `faces.h` (a scene's `face`), which the rig face follows
+as the design's clock runs, so its sounds, timing and outcome are the
+design's still. Its parts are each drawn mood's own art, which facegen
 cuts from the mood's first idle at rest: each eye open and shut, the
 mouth and the cheeks (`faces.h`'s `kParts`, about 6 KB). At a mood's
 pose each part draws as its art has it, and the channels' difference
@@ -836,11 +854,15 @@ below a third open; `eyeSize` scales the eyes, `gazeX`, `gazeY` and
 So a pack's poses needn't be Pixel's to look right at rest (Boop's
 aren't): they shape the moves between. A new style dissolves in over the
 mixer's 200 ms, a 4 × 4 ordered dither (the canvas has no alpha), each
-part morphing from its box to the next one's. The look's clip plays
-under it (Pixel's breathe lifts it a pixel and glances to either side),
-the `blink` clip at each blink; a press kicks the squash and a stroke
-the lean. A switch between the rig face and a design dissolves the same
-way over 150 ms as the design blinks open, and the hat
+part morphing from its box to the next one's. The clip of the look it's
+in (idle, working or asleep: the state's `base`) plays over the
+design's moves (Pixel's breathe lifts it a pixel and glances to either
+side; working's looks down at the desk), the `blink` clip at each blink;
+a press kicks the squash and a stroke the lean. A switch between the rig
+face and a baked design dissolves the whole picture over 150 ms as the
+design blinks open; between two designs the rig face draws, their desks
+dissolve over the same 150 ms while the face stays whole, moving from
+where the one had it to where the other has it. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
 
@@ -928,11 +950,11 @@ pack staging. The app doesn't bundle either folder.
   (`characters/pixel/tools/borrowed.json`) until they have art and takes
   of their own.
 - Pixel's mood moves are Boop's; they become Pixel's own.
-- Pixel's face draws only idle's plain face from the rig (§15): its
-  working looks, occasions and reactions are still baked designs, and
-  its rig face holds still what some drawn idles move (curious's eyes,
-  whiny's falling tears). The gel doesn't draw from the rig yet, and
-  Boop's poses serve both its faces.
+- Pixel's rig face draws only the designs whose face is its mood's
+  resting face (§15); a design whose face changes shape (curious's
+  look-around, a yawn, a finish's face) is still baked, since the rig's
+  parts are one drawing of each eye. The gel doesn't draw from the rig
+  yet, and Boop's poses serve both its faces.
 - The palette lives in the pixel face's `faces.h`; it moves out of the
   art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and

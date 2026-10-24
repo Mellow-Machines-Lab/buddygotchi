@@ -105,10 +105,13 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       Idle's plain face in every drawn mood: mood changes dissolve and
       morph, and the hand-overs to and from the baked designs cross-fade
       (character-engine.md, Checkpoint 4 as built).
-- [ ] **Pixel's rig face, the rest**: in the working looks over their
-      desk and in the reactions (which clip a reaction plays), parts that
-      move as some drawn idles do (curious's eyes, falling tears), and its
-      frame cost on the CYD (`boopctl ping`'s `draw_us`).
+- [x] **Pixel's rig face, the rest**: in its designs' place wherever they
+      draw the resting face, the working looks over their desk and the
+      reactions included; whiny's tears as its design's decorations;
+      curious's idle baked again (character-engine.md, Checkpoint 4b as
+      built).
+- [ ] **Pixel's rig face on the board**: its frame cost on the CYD
+      (`boopctl ping`'s `draw_us`), and a look at the working day on it.
 - [ ] **5. The slime on the rig**: the mixer drives the gel face. Done
       so far (character-engine.md, Checkpoint 5 as built): the lane's
       fade decided once for both faces, the gel's remaining cuts, one

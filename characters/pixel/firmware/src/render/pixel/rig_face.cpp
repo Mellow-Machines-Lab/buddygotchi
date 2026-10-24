@@ -82,26 +82,33 @@ Channels deviation(const rig::Mixer& m, const Channels& under) {
 }
 
 // The body: the whole face scaled about the ground's middle (1024ths),
-// moved and leaned, from the channels' difference from the pose.
+// moved and leaned, from the channels' difference from the pose, and moved
+// as its design moves it.
 struct Body {
   int sx = kOne, sy = kOne, dx = 0, dy = 0, lean = 0;
-  explicit Body(const Channels& d, int press)
+  Body(const Channels& d, int press, FaceMove m)
       : sx(kOne + d[Channel::kSquash] * kSquashWide / 1000),
         sy(kOne - d[Channel::kSquash] * kSquashTall / 1000),
-        dx(d[Channel::kX]),
-        dy(d[Channel::kY] - d[Channel::kLift] + press),
+        dx(d[Channel::kX] + m.dx),
+        dy(d[Channel::kY] - d[Channel::kLift] + press + m.dy),
         lean(d[Channel::kLean]) {}
   rig::Point at(int x, int y) const {
     return {kMiddle + scaled(x - kMiddle, sx) + dx + lean * (kGround - y) / kLeanPer,
             kGround + scaled(y - kGround, sy) + dy};
   }
-  // A part placed by its pivot and scale before the body, through it.
+  // A part placed by its pivot and scale before the body, through it, each
+  // scale the nearest that draws its art a whole pixel wider or taller: two
+  // scales drawing the same pixels are one, so a frame changes only when
+  // its picture does (the device skips drawing an unchanged one).
   Placed place(Placed p) const {
     const rig::Point at = this->at(p.x, p.y);
+    const faces::Part& art = faces::kParts[p.style][p.kind];
     p.x = int16_t(at.x), p.y = int16_t(at.y);
-    p.sx = int16_t(scaled(p.sx, sx)), p.sy = int16_t(scaled(p.sy, sy));
+    p.sx = int16_t(whole(scaled(p.sx, sx), art.x1 - art.x0));
+    p.sy = int16_t(whole(scaled(p.sy, sy), art.y1 - art.y0));
     return p;
   }
+  static int whole(int s, int px) { return px > 0 ? (s * px + kOne / 2) / kOne * kOne / px : s; }
 };
 
 // Part `kind` of style a, q of the way (0 … kOne) to style b's: its box
@@ -180,15 +187,20 @@ const rig::Expression* RigFace::pose(Mood m) {
   return int(m) < kMoodCount ? poses.of[int(m)] : nullptr;
 }
 
-void RigFace::reset(Mood m, uint32_t t) {
-  const rig::Look* idle = kRig.look(SceneState::kIdle);
-  mixer_.reset(pose(m) ? *pose(m) : kAtRest, idle ? idle->clip : nullptr);
+void RigFace::reset(Mood m, SceneState base, uint32_t t) {
+  const rig::Look* look = kRig.look(base);
+  mixer_.reset(pose(m) ? *pose(m) : kAtRest, look ? look->clip : nullptr);
   at_ = t;
   finger_ = false;
 }
 
 void RigFace::setMood(Mood m) {
   if (pose(m)) mixer_.setMood(*pose(m));
+}
+
+void RigFace::setLook(SceneState base) {
+  const rig::Look* look = kRig.look(base);
+  mixer_.setLook(look ? look->clip : nullptr);
 }
 
 void RigFace::advanceTo(uint32_t t) {
@@ -212,10 +224,10 @@ void RigFace::finger(bool down, int x, int) {
   }
 }
 
-RigFrame RigFace::frame(int dy, bool talking, Dither d) const {
+RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move) const {
   const Channels& ch = mixer_.channels();
   const Channels under = poseUnder(mixer_), dev = deviation(mixer_, under);
-  const Body body(dev, dy);
+  const Body body(dev, dy, move);
   RigFrame f;
   auto add = [&](const Placed& p) {
     if (f.count < RigFrame::kMaxParts) f.parts[f.count++] = body.place(p);
@@ -234,9 +246,9 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d) const {
       Placed p = morph(eyes.part[i], eyes.other[i], kind, eyes.q[i]);
       p.sx = int16_t(scaled(p.sx, size));
       p.sy = int16_t(scaled(scaled(p.sy, size), shut ? kOne : std::min(open, kOne * 5 / 4)));
-      p.x = int16_t(p.x + dev[Channel::kGazeX] * kGazePx / 1000);
-      p.y =
-          int16_t(p.y + dev[Channel::kGazeY] * kGazePx / 1000 + (side ? 1 : -1) * dev[Channel::kTilt] * kTiltPx / 1000);
+      p.x = int16_t(p.x + move.ex + dev[Channel::kGazeX] * kGazePx / 1000);
+      p.y = int16_t(p.y + move.ey + dev[Channel::kGazeY] * kGazePx / 1000 +
+                    (side ? 1 : -1) * dev[Channel::kTilt] * kTiltPx / 1000);
       p.dither = eyes.dither[i];
       add(p);
     }
@@ -268,15 +280,15 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d) const {
   return f;
 }
 
-rig::Anchors RigFace::anchors() const {
-  return anchorsOf(mixer_.eyes(), Body(deviation(mixer_, poseUnder(mixer_)), 0));
+rig::Anchors RigFace::anchors(FaceMove move) const {
+  return anchorsOf(mixer_.eyes(), Body(deviation(mixer_, poseUnder(mixer_)), 0, move));
 }
 
 rig::Anchors RigFace::restAnchors(Mood m) {
   const rig::Expression* p = pose(m);
   const uint8_t eyes = p ? p->eyes : 0;
   Channels none{};
-  return anchorsOf({eyes, eyes, 0}, Body(none, 0));
+  return anchorsOf({eyes, eyes, 0}, Body(none, 0, {}));
 }
 
 void drawRig(Canvas& c, const RigFrame& f) {
@@ -291,6 +303,12 @@ void drawRig(Canvas& c, const RigFrame& f) {
     }
   }
   if (f.talkInk) drawTalk(c, f.talkX, f.talkY, f.talkInk, f.talk);
+}
+
+void drawRig(Canvas& c, const RigFrame& f, const SceneFrame& design, Dither d) {
+  drawScene(c, design, d, 0, design.faceAt);
+  drawRig(c, f);
+  drawScene(c, design, d, design.faceAt);
 }
 
 }  // namespace render::pixel

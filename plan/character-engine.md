@@ -297,6 +297,58 @@ Where it differs from the sketch above, and why:
   one frame) to 29552. At rest the rig face is its mood's idle face as
   drawn, pixel for pixel, so it kept its craft and is the default.
 
+### Checkpoint 4b, as built (2026-10-24)
+
+The rig face in more of Pixel's looks, [CHARACTER.md](../characters/CHARACTER.md)
+§15, Pixel's face on the rig. Where it differs from the sketch above, and
+from what this step set out to do, and why:
+
+- **The rig face draws a face in its design's place**, not a look of its
+  own. Pixel's working looks, occasions and most reactions draw the
+  mood's resting face, moved about, with a desk or props round it and
+  decorations on it, so facegen finds, for each design, where that face
+  sits at each step (moved whole, its eyes moved within it) and splits
+  the decorations (a sparkle, a falling tear, an anger mark) into groups
+  of their own. The board draws the design without its face, the rig
+  face in the face's place, then the decorations: at rest, the design as
+  drawn, pixel for pixel, which facegen checks at every step and the rig
+  face test checks on the board. 585 of the 1214 designs, 195 of the 312
+  working looks'. Idle's first two variations are taken near enough, as
+  checkpoint 4 took them (sad's trembling lip and irritated's twitch are
+  lost, the morphs kept); the rest only exactly.
+- **So a reaction plays its design's own choreography**, not the rig's
+  notice, cheer or poke clip: following its design keeps its props, its
+  sounds, its timing and its outcome exactly as the queue and the Mac have
+  them, and the face no longer cuts to a baked one. Pixel's rig clips stay
+  for Boop's gel on the mixer (checkpoint 5's rest); Pixel plays its blink and its looks'.
+- **A switch between two designs the rig face draws** dissolves their
+  desks over the 150 ms the hand-overs take while the face stays whole,
+  moving from where the one had it to where the other has it; the look's
+  clip changes with the state's base, so going to work the eyes look down
+  at the desk. Design to design still blinks and cuts.
+- **What stays baked, and why**: a face that changes shape, which the
+  rig's one drawing of each eye can't (curious's eyes, whose big eye
+  moves side to side: a look-around clip on eyeOpen, tilt and gaze read
+  as a squint, so curious's idle is baked again and its look-around
+  back); tears that pour from inside the eyes (sad's working looks); the
+  comedy (a yawn, nodding off, a sneeze), the finishes, wake-ups, asleep
+  and no app, whose faces are their own. Whiny's falling tears came back
+  without a tear part: they're its idle design's decorations.
+- **Measured** (internal/tools/fluid, `transitions-pixel.jsonl`, now with
+  a happy working day after the rest, Boop's rig on Pixel's face, largest
+  frame's changed pixels, on checkpoint 5's lane): going to work, the
+  switch's frames 1576 to 4479 fell to 1196 to 1816 (the largest is now
+  the conveyor's own step);
+  mood changes at work 12475 and 10643 to 4511 and 3942; a notice at
+  work 6891 to 4186 (its perk's own step); the finish 63173 (a cut) to
+  23723 (a dissolve), and back to idle the same. Sad's working rows are
+  unchanged (its working look stays baked), idle's mood changes within a
+  hundred pixels of before; waking from asleep went 1708 to 2919, the rig
+  face opening its eyes as it dissolves in. A part's scale is now whole
+  pixels, so a still face isn't redrawn. The CYD's firmware grew 27 KB
+  (67.3% of flash); a native frame with its shot took 1136 µs on the Mac,
+  1134 before, within the noise. The board's `draw_us` is still to measure.
+
 ### Checkpoint 5, as built (2026-10-24)
 
 A scoped checkpoint: the gel's JavaScript reference and its C++ port stay

@@ -8,7 +8,8 @@ build/, which git ignores, and lists the designs in design/manifest.json. It
 reads each SVG as rectangles and step-wise timings and writes
 the Pixel pack's characters/pixel/firmware/include/faces.h, with the rig face's
 parts (cut_parts: each drawn mood's eyes, mouth and cheeks from its first idle at
-rest), plus the frames the firmware test checks the device's
+rest) and, for each design whose face is that resting face moved, where it is
+at each step (rig_faces), plus the frames the firmware test checks the device's
 player against (the pack's tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
 faces the Mac's popover shows, and each design's loop length and host fact
@@ -114,8 +115,11 @@ SCENE_BASE = 48
 # moves and the mouth it opens to talk; the first pack's eyes, open and
 # shut, which it blinks on its own clock; and a flip-book's steps, each a
 # face, one of them the face with its eyes shut, which it shows to hide a
-# change of design, as it shuts the others' eyes (render/scene.cpp).
-ROLES = ["none", "face", "mouth", "eyes_open", "eyes_closed", "step", "blink_step"]
+# change of design, as it shuts the others' eyes (render/scene.cpp); and
+# what a face draws besides its mood's resting face (a sparkle, a falling
+# tear), which the device keeps drawing where the rig face draws the rest
+# (rig_faces).
+ROLES = ["none", "face", "mouth", "eyes_open", "eyes_closed", "step", "blink_step", "decor"]
 # A blink's closed eyes show for at most this long in a loop.
 BLINK_MAX_MS = 400
 # Moments the check and the frames sample, in ms; each scene skips those
@@ -751,20 +755,27 @@ def place(scene: Scene, t: int, svg_blink: bool, shut: bool) -> tuple[list[tuple
 
 
 def render(scene: Scene, t: int, svg_blink: bool = False, within: str | None = None, shut: bool = False,
-           blended: set[int] | None = None) -> bytes:
+           blended: set[int] | None = None, face: list[tuple[int, int]] | None = None) -> bytes:
     """The scene colour of every pixel at t ms. The device blinks on its own
     clock, so it shows the open eyes, or the closed ones when `shut`; with
     `svg_blink` the eyes blink on the design's clock, as Chrome draws it.
     `within` a role ("face", "mouth") leaves out everything outside the
-    groups of that role."""
+    groups of that role. With `face`, pixels (offset in the canvas, colour),
+    the face that shows is those pixels, drawn in its place, and then its
+    decorations: as the device draws a design the rig face draws a face in."""
     px = bytearray(W * H)
     offset, shown, fills = place(scene, t, svg_blink, shut)
     inside: list[bool] = []
-    for g in scene.groups:
+    under: list[int] = []  # the face a group is in, -1 for none
+    for i, g in enumerate(scene.groups):
         inside.append(g.role == within or (g.parent >= 0 and inside[g.parent]))
+        under.append(i if g.role == "face" else under[g.parent] if g.parent >= 0 else -1)
     cx0, cy0, cw, ch = scene.clip
     for i, g in enumerate(scene.groups):
-        if not shown[i] or (within and not inside[i]):
+        if face is not None and g.role == "face" and shown[i]:
+            for p, c in face:
+                px[p] = c
+        if not shown[i] or (within and not inside[i]) or (face is not None and under[i] >= 0 and g.role != "decor"):
             continue
         ox, oy = offset[i]
         for x, y, w, h, c in g.rects:
@@ -795,7 +806,8 @@ def canvas_index(color: int) -> int:
 
 
 def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]],
-         sources: dict[int, str], counts: dict[tuple[int, int], int], parts: list[list[tuple[int, int, list]]]) -> str:
+         sources: dict[int, str], counts: dict[tuple[int, int], int], parts: list[list[tuple[int, int, list]]],
+         faces: dict[int, list]) -> str:
     # The designs share much: the same rectangles, the same tracks, the same
     # key times and values. Each is stored once, however many use it.
     tracks: list[str] = []
@@ -815,6 +827,19 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
     lists: dict[tuple, tuple[int, int]] = {}
     scene_rows: list[str] = []
     max_groups = 0
+
+    def track(dur: int, kt: tuple[int, ...], vt: tuple[int, ...]) -> int:
+        if (dur, kt, vt) not in track_of:
+            if kt not in key_lists:
+                key_lists[kt] = len(keys)
+                keys.extend(kt)
+            if vt not in val_lists:
+                val_lists[vt] = len(vals)
+                vals.extend(vt)
+            track_of[(dur, kt, vt)] = len(tracks)
+            tracks.append(f"{{{dur}, {len(kt)}, {key_lists[kt]}, {val_lists[vt]}}}")
+        return track_of[(dur, kt, vt)]
+
     for n, s in enumerate(scenes):
         g0 = len(scene_groups)
         for g in s.groups:
@@ -825,18 +850,8 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
                 if tr is None or g.role in ("eyes_open", "eyes_closed"):
                     ids.append(0xFFFF)
                     continue
-                kt = tuple(tr.keys)
-                vt = tuple(x for v in tr.values for x in (v if tr.kind == "move" else v[:1]))
-                if (tr.dur, kt, vt) not in track_of:
-                    if kt not in key_lists:
-                        key_lists[kt] = len(keys)
-                        keys.extend(kt)
-                    if vt not in val_lists:
-                        val_lists[vt] = len(vals)
-                        vals.extend(vt)
-                    track_of[(tr.dur, kt, vt)] = len(tracks)
-                    tracks.append(f"{{{tr.dur}, {len(tr.keys)}, {key_lists[kt]}, {val_lists[vt]}}}")
-                ids.append(track_of[(tr.dur, kt, vt)])
+                ids.append(track(tr.dur, tuple(tr.keys),
+                                 tuple(x for v in tr.values for x in (v if tr.kind == "move" else v[:1]))))
             key = tuple(g.rects)
             if key not in lists:
                 lists[key] = (len(rect_slots), len(g.rects))
@@ -858,13 +873,16 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         max_groups = max(max_groups, len(s.groups))
         assert 0 < s.loop_ms() < 65536, "a loop fits a uint16_t"
         cx, cy, cw, ch = s.clip
-        scene_rows.append(f"{{{g0}, {len(s.groups)}, {s.loop_ms()}, {cx}, {cy}, {cw}, {ch}}},  // {n}: {sources[n]}")
+        face = 0xFFFF
+        if n in faces:
+            face = track(s.loop_ms(), tuple(t for t, _ in faces[n]), tuple(x for _, m in faces[n] for x in m))
+        scene_rows.append(f"{{{g0}, {len(s.groups)}, {s.loop_ms()}, {cx}, {cy}, {cw}, {ch}, {face}}},  // {n}: {sources[n]}")
     assert all(-128 <= v <= 127 for v in vals) and all(k < 65536 for k in keys)
     assert len(tracks) < 0xFFFF and len(rect_slots) < 65536, "tracks and rectangle lists fit a group's indexes"
     assert len(groups) < 65536 and len(rects) < 65536, "groups and rectangles fit their indexes"
     assert len(COLORS.rgb) + SCENE_BASE - 1 <= 256, "the scene colours fit the palette"
     size = (len(rects) * 8 + len(rect_slots) * 2 + len(groups) * 18 + len(scene_groups) * 2 + len(tracks) * 12 + len(keys) * 2 + len(vals)
-            + len(scenes) * 16 + len(BLENDS.pairs) * len(COLORS.rgb) + len(table) * 4 + len(counts) * 3)
+            + len(scenes) * 20 + len(BLENDS.pairs) * len(COLORS.rgb) + len(table) * 4 + len(counts) * 3)
     maxv = max(counts.values())
 
     def block(name: str, ctype: str, rows: list[str], per_line: int = 1) -> list[str]:
@@ -930,7 +948,8 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "};",
         "// A step-wise animation: key k holds from kKeys[key0 + k] ms into each",
         "// run of `dur` ms. Its values, from kValues[val0], are two a key (dx and",
-        "// dy) to move, and one a key to show (1 or 0) or to fill (a colour).",
+        "// dy) to move, one a key to show (1 or 0) or to fill (a colour), and four",
+        "// a key to place a face the rig face draws (dx and dy, and its eyes' ex and ey more).",
         "// Tracks with the same key times, or the same values, share them.",
         "struct Track {",
         "  uint16_t dur, n;",
@@ -939,12 +958,15 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "// A scene's groups are kGroups[kSceneGroups[group0]] on, parents first. Its `loopMs` is",
         "// how long it takes to play once through: its longest track but the",
         "// blink, which the device times itself. A moment's loops count these.",
-        "// Nothing is drawn outside its clip.",
+        "// Nothing is drawn outside its clip. Where its face is its mood's resting",
+        "// face moved, under decorations of its own, the rig face draws it",
+        "// (render/pixel/rig_face.h): `face` is the track of its moves, 0xFFFF for none.",
         "struct Scene {",
         "  uint32_t group0;",
         "  uint16_t groups;",
         "  uint16_t loopMs;",
         "  int16_t clipX, clipY, clipW, clipH;",
+        "  uint16_t face;",
         "};",
         "",
         f"constexpr int kMaxGroups = {max_groups};",
@@ -1159,6 +1181,155 @@ def cut_parts(scenes: list[Scene], table: dict[tuple[int, int, int], int]) -> li
             px, py = (x0 + x1) // 2, (y0 + y1) // 2
             parts.append((px, py, [(x - px, y - py, w, h, c) for x, y, w, h, c in rects]))
         out.append(parts)
+    return out
+
+
+# ---- The designs the rig face draws a face in ----------------------------------
+
+# How far a design may move its mood's resting face, and its eyes from
+# there, in px: how far rig_face looks. And how many of idle's first
+# variations are the plain face (rig_faces).
+FACE_REACH, EYE_REACH = 24, 12
+PLAIN_IDLES = 2
+
+
+def nearest(reach: int) -> list[tuple[int, int]]:
+    """Every move within `reach` px each way, the nearest first."""
+    moves = [(dx, dy) for dx in range(-reach, reach + 1) for dy in range(-reach, reach + 1)]
+    return sorted(moves, key=lambda d: (d[0] ** 2 + d[1] ** 2, d))
+
+
+NEAR_FACE, NEAR_EYES = nearest(FACE_REACH), nearest(EYE_REACH)
+
+
+def resting(scene: Scene, shut: bool) -> tuple[list, list]:
+    """A first idle's face at rest, open or shut, as cut_parts cuts it: its
+    eyes' pixels and the rest's (its mouth and cheeks), each (x, y, colour)."""
+    rest, cheek = at_rest(scene, shut), COLORS.index[CHEEK]
+    face, mouth = render(scene, within="face", **rest), render(scene, within="mouth", **rest)
+    eyes, other = [], []
+    for p, c in enumerate(face):
+        if c:
+            (other if c == cheek or mouth[p] else eyes).append((p % W, p // W, c))
+    return eyes, other
+
+
+def landing(pixels: list, px: bytes, moves: list[tuple[int, int]], at: tuple[int, int] = (0, 0)):
+    """The move of `moves` from `at` that lands the most of the pixels on
+    their colours in px, all but an eighth at least (those a decoration
+    covers), the nearest of equals, as a move from where they are; None
+    for none."""
+
+    def misses(some, dx, dy, most):
+        n = 0
+        for x, y, c in some:
+            if not (0 <= x + dx < W and 0 <= y + dy < H and px[(y + dy) * W + x + dx] == c):
+                n += 1
+                if n > most:
+                    break
+        return n
+
+    sample = pixels[::16]
+    best, least = None, len(pixels) // 8
+    for mx, my in moves:
+        dx, dy = at[0] + mx, at[1] + my
+        if misses(sample, dx, dy, len(sample) // 8) <= len(sample) // 8:
+            n = misses(pixels, dx, dy, least)
+            if n == 0:
+                return dx, dy
+            if best is None and n <= least or n < least:
+                best, least = (dx, dy), n
+    return best
+
+
+def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool) -> list[tuple[int, tuple[int, int, int, int]]] | None:
+    """Whether the rig face can draw this design's face, the face's moves if
+    so: at each of its steps, the face is its mood's resting face (open, or
+    shut), moved whole by (dx, dy) and its eyes by (ex, ey) more, under
+    decorations of its own (a sparkle, a falling tear), which the device
+    keeps drawing over it: `exact`, the scene drawn with the resting face,
+    so moved, in its face's place, then the decorations, is the scene as
+    drawn, pixel for pixel; else near enough, missing what the resting face
+    can't draw (a trembling lip). The rectangles drawing the decorations
+    move into groups of role "decor" of their own, in place. The moves, by
+    step: (ms, (dx, dy, ex, ey))."""
+    loop = scene.loop_ms()
+    timed = [tr for g in scene.groups if g.role not in ("eyes_open", "eyes_closed")
+             for tr in (g.move, g.show, g.fill) if tr]
+    if any(loop % tr.dur for tr in timed):
+        return None  # the face's moves don't repeat with the loop
+    times = sorted({0} | {r * tr.dur + k for tr in timed for r in range(loop // tr.dur) for k in tr.keys})
+    face: list[bool] = []
+    for g in scene.groups:
+        face.append(g.role == "face" or (g.parent >= 0 and face[g.parent]))
+    moves, drawn, rested, decor = [], [], set(), set()
+    for t in times:
+        px = render(scene, t, within="face")
+        for eyes, other in rests:
+            d = landing(other, px, NEAR_FACE)
+            e = d and landing(eyes, px, NEAR_EYES, d)
+            if e:
+                break
+        else:
+            return None
+        placed = [((y + dy) * W + x + dx, c) for pixels, (dx, dy) in ((other, d), (eyes, e)) for x, y, c in pixels]
+        rest = bytearray(W * H)
+        for p, c in placed:
+            rest[p] = c
+        moves.append((t, (d[0], d[1], e[0] - d[0], e[1] - d[1])))
+        drawn.append(placed)
+        # The face's rectangles that show a decoration (where the face is
+        # their colour, the resting face isn't), unless one shows some of
+        # the resting face too; those that never show are the resting face's.
+        offset, shown, fills = place(scene, t, svg_blink=False, shut=False)
+        for i, g in enumerate(scene.groups):
+            if face[i] and shown[i]:
+                ox, oy = offset[i]
+                for k, (x, y, w, h, c) in enumerate(g.rects):
+                    c = fills[i] if c == INHERIT else c
+                    x0, x1 = max(0, x + ox), min(W, x + ox + w)
+                    for yy in range(max(0, y + oy), min(H, y + oy + h)):
+                        for a, b in zip(px[yy * W + x0:yy * W + x1], rest[yy * W + x0:yy * W + x1]):
+                            if a == c:
+                                (rested if b == c else decor).add((i, k))
+    decor -= rested
+    # Its decorations into groups of their own, each after the group it was
+    # in, as a child: drawn as before, which the checks below make sure of.
+    before = scene.groups
+    after: list[Group] = []
+    moved: dict[int, int] = {}
+    for i, g in enumerate(before):
+        moved[i] = len(after)
+        mine = [r for k, r in enumerate(g.rects) if (i, k) not in decor]
+        after.append(Group(**{**g.__dict__, "parent": moved.get(g.parent, -1), "rects": mine}))
+        if len(mine) < len(g.rects):
+            after.append(Group(moved[i], role="decor", rects=[r for k, r in enumerate(g.rects) if (i, k) in decor]))
+    scene.groups = after
+    for t, placed in zip(times, drawn):
+        drawn_as = render(Scene(before, scene.clip), t)
+        if render(scene, t) != drawn_as or (exact and render(scene, t, face=placed) != drawn_as):
+            scene.groups = before
+            return None
+    return [(t, m) for k, (t, m) in enumerate(moves) if k == 0 or m != moves[k - 1][1]]
+
+
+def rig_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int]) -> dict[int, list]:
+    """The scenes whose face the rig face draws (rig_face), each drawn in one
+    mood only, and its face's moves. Idle's first PLAIN_IDLES variations,
+    a blink and a look-around, are the plain face, which the rig face draws
+    near enough: its morphs into and out of a mood are worth a trembling lip
+    or a twitch. Any other design, only exactly."""
+    idle, moods, plain = STATES.index("idle"), {}, set()
+    for (m, s, v), n in table.items():
+        moods.setdefault(n, set()).add(m)
+        if s == idle and v < PLAIN_IDLES:
+            plain.add(n)
+    rests = {m: [resting(scenes[table[(m, idle, 0)]], shut) for shut in (False, True)] for m in range(len(MOODS))}
+    out = {}
+    for n, ms in moods.items():
+        moves = len(ms) == 1 and rig_face(scenes[n], rests[next(iter(ms))], n not in plain)
+        if moves:
+            out[n] = moves
     return out
 
 
@@ -1378,7 +1549,7 @@ def main() -> None:
             continue  # a shared design, checked once
         for t in scenes[n].samples():
             frames.append((m, s, v, t, zlib.crc32(render(scenes[n], t).translate(canvas))))
-    OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(scenes, table)))
+    OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(scenes, table), rig_faces(scenes, table)))
     FACES_JSON.parent.mkdir(parents=True, exist_ok=True)
     FACES_JSON.write_text(emit_faces_json(scenes, table, meta, counts))
     FRAMES.parent.mkdir(parents=True, exist_ok=True)

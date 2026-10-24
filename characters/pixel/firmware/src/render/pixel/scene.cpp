@@ -59,25 +59,29 @@ int step(const Track& tr, uint32_t t) {
 // shows, which talking opens.
 struct Placed {
   // A group is drawn (kOn); shows in the design, the mouth included while
-  // it talks (kShown); is the mouth that shows, or in it (kInMouth).
-  static constexpr uint8_t kOn = 1, kShown = 2, kInMouth = 4;
+  // it talks (kShown); is the mouth that shows, or in it (kInMouth); is a
+  // face, or in one (kInFace).
+  static constexpr uint8_t kOn = 1, kShown = 2, kInMouth = 4, kInFace = 8;
   int16_t x[kMaxGroups], y[kMaxGroups];
   uint8_t flags[kMaxGroups];
   uint8_t fill[kMaxGroups];
-  int mouth = -1;
+  int mouth = -1, face = -1;  // the mouth and the face that show
   bool on(int i) const { return flags[i] & kOn; }
 };
 
-void place(const Scene& sc, const SceneShow& s, Placed& p) {
+// `faceless`, a face's groups but its decorations aren't drawn: the rig
+// face draws the rest in the face's place.
+void place(const Scene& sc, const SceneShow& s, Placed& p, bool faceless = false) {
   for (int i = 0; i < sc.groups; ++i) {
     const Group& g = kGroups[kSceneGroups[sc.group0 + i]];
     int x = g.tx, y = g.ty;
-    bool own = g.visible, shown = true, mouth = false;
+    bool own = g.visible, shown = true, mouth = false, face = g.role == kRoleFace;
     uint8_t fill = 0;
     if (g.parent != kNone) {
       x += p.x[g.parent], y += p.y[g.parent], fill = p.fill[g.parent];
       shown = p.flags[g.parent] & Placed::kShown;
       mouth = p.flags[g.parent] & Placed::kInMouth;
+      face = face || (p.flags[g.parent] & Placed::kInFace);
     }
     if (g.move != kNone) {
       const Track& tr = kTracks[g.move];
@@ -105,9 +109,11 @@ void place(const Scene& sc, const SceneShow& s, Placed& p) {
     }
     shown = shown && own;
     if (g.role == kRoleMouth && shown && p.mouth < 0) p.mouth = i, mouth = true;
+    if (g.role == kRoleFace && shown && p.face < 0) p.face = i;
+    const bool drawn = !(mouth && s.mouthOpen) && !(faceless && face && g.role != kRoleDecor);
     p.x[i] = int16_t(x), p.y[i] = int16_t(y), p.fill[i] = fill;
-    p.flags[i] = uint8_t((shown ? Placed::kShown : 0) | (mouth ? Placed::kInMouth : 0) |
-                         (shown && !(mouth && s.mouthOpen) ? Placed::kOn : 0));
+    p.flags[i] = uint8_t((shown ? Placed::kShown : 0) | (mouth ? Placed::kInMouth : 0) | (face ? Placed::kInFace : 0) |
+                         (shown && drawn ? Placed::kOn : 0));
   }
 }
 
@@ -219,6 +225,16 @@ int sceneOf(Mood m, SceneState s, int variant) { return design(m, s, variant).sc
 
 uint32_t loopMs(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].loopMs; }
 
+bool rigFaced(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].face != kNone; }
+
+FaceMove faceMove(const SceneShow& s) {
+  const uint16_t face = scene(s).face;
+  if (face == kNone) return {};
+  const Track& tr = kTracks[face];
+  const int8_t* v = &kValues[tr.val0 + 4 * uint32_t(step(tr, s.t))];
+  return {v[0], v[1], v[2], v[3]};
+}
+
 uint8_t sceneInk(int color) { return color > 0 && color < kColorCount ? toCanvas(color) : kBlack; }
 
 bool blinksItself(Mood m, SceneState s, int variant) {
@@ -244,14 +260,17 @@ bool eyesClosed(const SceneShow& s) {
 
 bool operator==(const SceneFrame& a, const SceneFrame& b) { return std::memcmp(&a, &b, sizeof a) == 0; }
 
-SceneFrame sceneFrame(const SceneShow& s) {
+SceneFrame sceneFrame(const SceneShow& show, bool faceless) {
+  SceneShow s = show;
+  if (faceless) s.eyesShut = s.mouthOpen = false;  // the rig face blinks and talks
   SceneFrame f;
   std::memset(&f, 0, sizeof f);  // padding too, since frames compare as bytes
   f.scene = uint16_t(sceneOf(s.mood, s.state, s.variant));
   f.talkX = f.talkY = -1;
   const Scene& sc = kScenes[f.scene];
   Placed p;
-  place(sc, s, p);
+  place(sc, s, p, faceless);
+  f.faceAt = uint16_t(p.face >= 0 ? p.face : SceneFrame::kMaxGroups);
   for (int i = 0; i < sc.groups; ++i) {
     if (!p.on(i)) continue;
     f.x[i] = p.x[i], f.y[i] = p.y[i], f.on[i] = 1, f.fill[i] = p.fill[i];
@@ -273,9 +292,9 @@ void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d) {
   for (const Box& b : kTalk) fillDithered(c, x + b.x, y + b.y, b.w, b.h, ink, d);
 }
 
-void drawScene(Canvas& c, const SceneFrame& f, Dither d) {
+void drawScene(Canvas& c, const SceneFrame& f, Dither d, int from, int to) {
   const Scene& sc = kScenes[f.scene];
-  for (int i = 0; i < sc.groups; ++i) {
+  for (int i = from; i < sc.groups && i < to; ++i) {
     if (!f.on[i]) continue;
     const Group& g = kGroups[kSceneGroups[sc.group0 + i]];
     for (int k = 0; k < g.rects; ++k) {

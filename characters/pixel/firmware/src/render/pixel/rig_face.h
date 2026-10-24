@@ -11,8 +11,10 @@
 // third open), scale them and shift them; the mouth's widen and open it.
 // The cheeks stay as the style's art has them. A style changing cross-fades
 // over the mixer's style mix: each part dithers out as the next one's
-// dithers in, both morphing from the one's box to the other's. Pure: a
-// function of the mixer's state.
+// dithers in, both morphing from the one's box to the other's. In a design
+// whose face is its mood's resting face (render::rigFaced), it's drawn in
+// the face's place, moved as the design moves it. Pure: a function of the
+// mixer's state.
 #pragma once
 #include <cstdint>
 
@@ -50,20 +52,25 @@ class RigFace {
   // it, else for the drawn mood it wears, when both its styles name drawn
   // moods. nullptr for none: the baked designs draw that mood.
   static const rig::Expression* pose(Mood m);
-  // At rest in mood m (one without a pose: at rest), at t.
-  void reset(Mood m, uint32_t t);
+  // At rest in mood m (one without a pose: at rest), at t, with the clip of
+  // the look `base` (idle, working or asleep) playing.
+  void reset(Mood m, SceneState base, uint32_t t);
   // A mood without a pose keeps the one it has.
   void setMood(Mood m);
+  // The look's clip fades in over the one before.
+  void setLook(SceneState base);
   void advanceTo(uint32_t t);
   // Plays the rig's blink clip, if it has one.
   void blink();
   // A finger on the screen: a press squashes the face, a stroke leans it.
   void finger(bool down, int x, int y);
   // The face now, `dy` px lower (the press's dip), with the "o" in its
-  // mouth's place while `talking`, of the pixels `d` draws.
-  RigFrame frame(int dy, bool talking, Dither d = {}) const;
-  // Where the body is now, in canvas px, and where it is at rest in mood m.
-  rig::Anchors anchors() const;
+  // mouth's place while `talking`, of the pixels `d` draws, moved as a
+  // design moves its face when the rig face draws it there (`move`).
+  RigFrame frame(int dy, bool talking, Dither d = {}, FaceMove move = {}) const;
+  // Where the body is now, so moved, in canvas px, and where it is at rest
+  // in mood m.
+  rig::Anchors anchors(FaceMove move = {}) const;
   static rig::Anchors restAnchors(Mood m);
 
  private:
@@ -74,5 +81,8 @@ class RigFace {
 };
 
 void drawRig(Canvas& c, const RigFrame& f);
+// The rig face in its design's place: the design (a faceless sceneFrame),
+// of the pixels `d` draws, up to its face, the rig face, then the rest.
+void drawRig(Canvas& c, const RigFrame& f, const SceneFrame& design, Dither d = {});
 
 }  // namespace render::pixel

@@ -129,7 +129,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
 - `internal/tools/fluid/measure.py`: how fluid the everyday transitions
   are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
-  idle's mood changes and the rig face's hand-overs, recorded with
+  idle's mood changes, the rig face's hand-overs and a working day, recorded with
   `boopctl sim`), each frame's
   change against the median, and with `--sheets DIR` a contact sheet of
   each. The Character Studio's Transitions measures and ranks the

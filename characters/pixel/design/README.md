@@ -62,7 +62,11 @@ check preservation of the older SVGs and scores.
 `characters/pixel/firmware/include/faces.h`, with the rig face's parts: each
 mood's eyes (open and shut), mouth and cheeks, cut from its first idle at rest
 ([CHARACTER.md](../../CHARACTER.md) §15), so its plain face is the art drawn
-here; `node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
+here; and, for every design whose face is that resting face moved, where it
+sits at each step, so the rig face draws it in the design's place. A design
+drawn here with the resting face (`ownFace`, or the first idle's face) and
+its decorations over it stays one the rig face can draw; a face drawn some
+other way stays baked. `node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
 the timelines, in the voice-first mix, into `characters/pixel/firmware/include/sfx.h`. Nothing
 is copied out of the bank by hand. The older moods' designs must come out as
 `qa/v3-fingerprints.json` has them; change one only deliberately, with the
