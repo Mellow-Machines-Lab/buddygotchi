@@ -154,9 +154,10 @@ class StudioRuleTests(unittest.TestCase):
         plain = self.pack("plain", [{"id": "calm", "family": "settled"}])
         data = gen.studio_data([art, plain], plain, self.studio)
         self.assertEqual(data["chosen"], "plain")
-        self.assertEqual(data["packs"]["art"]["studio"],
-                         [{"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}}])
-        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}], "studio": []})
+        self.assertEqual(data["packs"]["art"]["studio"][0],
+                         {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
+        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
+                                                  "studio": [], "references": [], "review": {"queue": [], "notes": []}})
 
     def test_staging_takes_the_packs_own_files_only(self):
         """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources."""
@@ -248,7 +249,7 @@ class StudioRuleTests(unittest.TestCase):
         user = self.pack("user", [{"id": "calm"}], uses={"face": "lender"})
         self.assertEqual(self.problems(user), [])
         data = gen.studio_data([user], user, self.studio)
-        self.assertEqual(data["packs"]["user"]["studio"], [{"id": "face", "scripts": ["../lender/studio/a.js"], "styles": [], "wears": {}}])
+        self.assertEqual(data["packs"]["user"]["studio"][0], {"id": "face", "scripts": ["../lender/studio/a.js"], "styles": [], "wears": {}})
 
     def test_the_pack_in_use(self):
         """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
@@ -373,6 +374,123 @@ class RigRuleTests(unittest.TestCase):
         write(self.dir / "firmware/src/render/face/face.cpp", "")
         write(self.dir / "rig" / "looks.json", {"idle": {"clip": "nope"}})
         self.assertIn("rig/looks.json: idle.clip: 'nope' isn't a clip in rig/clips/", gen.pack_problems(self.dir, character))
+
+
+class ReferenceRuleTests(unittest.TestCase):
+    """CHARACTER.md §16: a pack's references and review queue, in a temporary repo."""
+
+    STATES = ["idle", "notice"]
+
+    def setUp(self):
+        self.repo = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.repo)
+        self.pack = self.repo / "characters" / "pal"
+        write(self.pack / "character.json", {"moods": [{"id": "calm"}, {"id": "happy"}]})
+        self.ref = self.pack / "references" / "2026-10-23-perk"
+        self.rig = {"eyes": ["dot"], "mouth": [], "scenes": ["desk"], "expressions": [{"mood": "happy"}], "clips": [{"id": "notice"}],
+                    "accessories": [{"art": "nightcap"}]}
+
+    def reference(self, files=("perk.gif",), **ref):
+        for name in files:
+            write(self.ref / name, "")
+        write(self.ref / "reference.json", {"kind": "inspiration", "note": "Like a dog hearing its name.", "status": "new", **ref})
+        return gen.reference_problems(self.ref, {"calm", "happy"}, self.STATES, self.rig)
+
+    def read(self, frames=3):
+        for i in range(frames):
+            write(self.ref / "frames" / "perk.gif" / f"{i:04d}.png", "")
+        write(self.ref / "sheets" / "perk.gif.png", "")
+
+    def test_a_new_reference(self):
+        self.assertEqual(self.reference(), [])
+        self.assertEqual(self.reference(became=[], show={"mood": "happy", "state": "idle", "anim": "notice"}), [])
+
+    def test_unknown_keys_and_values_fail(self):
+        self.assertEqual(self.reference(kind="copy", status="done", note=" ", colour="red"), [
+            "reference.json has 'colour', which it doesn't take",
+            "its kind is 'copy', not one of: inspiration, direct",
+            "its status is 'done', not one of: new, read, translated, in review, approved",
+            "its note is empty"])
+        self.assertEqual(self.reference(became=[{"what": "dance", "id": "x"}], show={"mood": "giddy", "state": "nap", "anim": "notice"}, frames=-1), [
+            'became is a list of {"what": clip | expression | art, "id": its name}',
+            "show's mood 'giddy' isn't one of the pack's",
+            "show's state 'nap' isn't one of the board's states",
+            "its frames isn't a whole number"])
+        self.assertEqual(self.reference(show={"state": "idle"}), ['show is {"mood", "state"}, and maybe "anim"'])
+
+    def test_what_it_became_is_in_the_rig(self):
+        """CHARACTER.md §15: a clip by its file's name, an expression by its mood, art by a style, scene or accessory's art."""
+        became = [{"what": "clip", "id": "notice"}, {"what": "expression", "id": "happy"}, {"what": "art", "id": "dot"},
+                  {"what": "art", "id": "desk"}, {"what": "art", "id": "nightcap"}]
+        self.assertEqual(self.reference(became=became), [])
+        self.assertEqual(self.reference(became=[{"what": "clip", "id": "hop"}, {"what": "expression", "id": "calm"}]),
+                         ["it became clip hop, which rig/ hasn't", "it became expression calm, which rig/ hasn't"])
+
+    def test_its_files(self):
+        self.assertEqual(self.reference(files=("perk.gif", "notes.txt")),
+                         ["it has notes.txt, which isn't media (.png .jpg .jpeg .webp .gif .mp4 .mov .m4v .webm) or the reference's own"])
+        shutil.rmtree(self.ref)
+        self.assertEqual(self.reference(files=()), ["it has no media"])
+        (self.ref / "reference.json").write_text("{")
+        self.assertIn("reference.json isn't JSON", gen.reference_problems(self.ref, set(), [], self.rig)[0])
+
+    def test_what_its_status_says_is_there(self):
+        """Read: the tool's frames and sheet for each file, and frames and ms that count them. Translated and on: a reading, and what it became."""
+        self.assertEqual(self.reference(status="read"),
+                         ["it's read, and perk.gif has no frames or sheet (boopctl reference read)"])
+        self.read(3)
+        self.assertEqual(self.reference(status="read", frames=2, ms=80),
+                         ["it's read, and its frames and ms aren't what frames/ holds (3 frames; boopctl reference read)"])
+        self.assertEqual(self.reference(status="read", frames=3, ms=80), [])
+        self.assertEqual(self.reference(status="in review", frames=3, ms=80),
+                         ["it's in review, and has no reading.md", "it's in review, and became nothing"])
+        write(self.ref / "reading.md", "Beats.")
+        self.assertEqual(self.reference(status="approved", frames=3, ms=80, became=[{"what": "clip", "id": "notice"}]), [])
+
+    def test_a_badly_named_folder(self):
+        write(self.pack / "references" / "perk" / "reference.json", "{}")
+        studio = self.repo / "studio"
+        write(studio / "states.json", {"groups": [{"label": "All", "states": [{"id": "idle", "about": ""}]}], "facts": {}})
+        firmware = self.repo / "types.cpp"
+        write(firmware, 'constexpr const char* kStateNames[1] = {"idle"};')
+        self.assertEqual(gen.studio_problems([self.pack], studio, firmware), ["pal: references/perk isn't a folder named <YYYY-MM-DD>-<topic>"])
+
+    def test_the_review_queue(self):
+        """Items with their keys and a status, before and after images in the characters folder; notes as the server writes them."""
+        write(self.pack / "review" / "shot.png", "")
+        write(self.repo / "outside.png", "")
+        item = {"id": "perk", "title": "Notice", "what": "A perk.", "before": "characters/pal/review/shot.png", "status": "in review"}
+        write(self.pack / "review" / "queue.json", [item])
+        self.assertEqual(gen.review(self.pack), ([item], [], []))
+        write(self.pack / "review" / "queue.json", [{**item, "after": "outside.png", "status": "done", "colour": 1}, {"id": "perk"}])
+        self.assertEqual(gen.review(self.pack)[2], [
+            "queue.json's perk has 'colour', which an item doesn't take",
+            "queue.json's perk has status 'done', not one of: in review, changes, approved",
+            "queue.json's perk: its after, outside.png, isn't an image in the characters folder",
+            "queue.json's perk has no title", "queue.json's perk has no what",
+            "queue.json's perk has status None, not one of: in review, changes, approved",
+            "queue.json has two items with one id"])
+        note = {"at": "2026-10-23T08:00:00Z", "id": "perk", "verdict": "approve", "text": ""}
+        write(self.pack / "review" / "notes.jsonl", json.dumps(note) + "\n{}\n")
+        self.assertEqual(gen.review(self.pack)[1], [note])
+        self.assertIn("notes.jsonl:2 isn't a note (at, id, verdict: approve | change, text)", gen.review(self.pack)[2])
+
+    def test_the_studio_shows_them(self):
+        """packs.js has each reference with its reading and files, and the queue with its images' paths from the page."""
+        self.reference(status="read", frames=3, ms=80, show={"mood": "happy", "state": "idle"})
+        self.read(3)
+        write(self.ref / "reading.md", "Beats.")
+        write(self.pack / "review" / "shot.png", "")
+        write(self.pack / "review" / "queue.json", [{"id": "perk", "title": "Notice", "what": "A perk.", "after": "characters/pal/review/shot.png", "status": "in review"}])
+        studio = self.repo / "characters" / "studio"
+        write(studio / "states.json", {"groups": [], "facts": {}})
+        write(self.pack / "character.json", {"id": "pal", "name": "Pal", "default_mood": "calm", "moods": [{"id": "calm"}], "faces": {}})
+        data = gen.studio_data([self.pack], self.pack, studio)["packs"]["pal"]
+        self.assertEqual(data["references"], [{
+            "kind": "inspiration", "note": "Like a dog hearing its name.", "status": "read", "frames": 3, "ms": 80,
+            "show": {"mood": "happy", "state": "idle"}, "id": "2026-10-23-perk", "path": "../pal/references/2026-10-23-perk/",
+            "became": [], "reading": "Beats.", "media": [{"file": "perk.gif", "kind": "gif", "frames": 3}]}])
+        self.assertEqual(data["review"]["queue"][0]["after"], "../pal/review/shot.png")
 
 
 if __name__ == "__main__":

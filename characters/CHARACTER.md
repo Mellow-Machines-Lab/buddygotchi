@@ -24,6 +24,7 @@ What a pack holds, and what it must have:
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
+| `references/`, `review/` | no | What people gave to make it from, and what's up for review (§16) |
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
 | `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
@@ -161,6 +162,8 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     clips/<id>.json
   voice/voice.bin    optional: the voice file, for the microSD card (§8)
   studio/            optional: the studio's preview adapter (§12)
+  references/        optional: what people gave to make it from (§16)
+  review/            optional: what's up for review, and the verdicts (§16)
   design/, tools/    optional: what the pack's art and sounds are
                      made from, and the tools that make them
   tests/, evals/     optional: the pack's own goldens, eval scenarios
@@ -803,6 +806,81 @@ held, air and lane, back to front, each fading in and out, with the
 anchors the face reports from the pose it draws (the crown, a ring for a
 brim and one for the hands, the eyes), so what's worn or held rides the
 body.
+
+## 16. References and review (optional)
+
+A person gives a short reference, a sketch, a still, a GIF or a video,
+with a line: inspiration, or "make this". An agent reads it and turns it
+into the pack's data, and the studio (§12) shows the two side by side.
+Each reference is a folder, `references/<YYYY-MM-DD>-<topic>/`, Boop's
+worked one:
+
+```
+references/2026-10-24-notice-perk/
+  perk.gif              what was given: stills (.png .jpg .jpeg .webp), GIFs, videos (.mp4 .mov .m4v .webm)
+  reference.json        what it is, and what became of it
+  frames/perk.gif/      0000.png on, a frame every 40 ms (a still is one)
+  sheets/perk.gif.png   the frames on one sheet, 8 a row, each with its ms
+  reading.md            the agent's reading of it
+```
+
+```json
+{
+  "kind": "inspiration",
+  "note": "Inspiration for notice: like a dog hearing its name.",
+  "status": "in review",
+  "became": [{"what": "clip", "id": "notice"}],
+  "show": {"mood": "calm", "state": "idle", "anim": "notice"},
+  "frames": 25,
+  "ms": 1000
+}
+```
+
+| Key | What |
+| --- | --- |
+| `kind` | `inspiration`, what it's like, in the character's own style; or `direct`, its beats and poses made as the rig allows |
+| `note` | The person's line about it |
+| `status` | `new`, then `read` (cut into frames), `translated` (read and turned into data), `in review`, `approved` |
+| `became` | What it became on the rig (§15): each a `clip`, by its file's name, an `expression`, by its mood, or `art`, a style, a scene or an accessory's art, by its `id` |
+| `show` | Optional: what the studio plays beside it on the board, a `mood` and a `state`, and then `anim`, a state asked for at the reference's 0 ms |
+| `frames`, `ms` | Written by the tool: the frames cut from all its files, and the longest file's length |
+
+The steps, each by a tool or an agent:
+
+```sh
+internal/tools/boopctl reference new PACK TOPIC --kind inspiration --note "LINE" FILE...
+internal/tools/boopctl reference read characters/boop/references/2026-10-24-notice-perk
+```
+
+1. **Intake.** `reference new` makes the folder, with today's date, and
+   copies the files in.
+2. **Read.** `reference read` cuts each file into frames (ffmpeg) and a
+   sheet, and moves the status to `read`. The agent looks at the sheets
+   and writes `reading.md`: the beats and their timing, the poses, squash
+   and stretch, the eyes' and mouth's shapes, the colours and the
+   silhouette. A reference that needs more than the character has (arms,
+   ears, a new body) says so, for the owner, and is never faked.
+3. **Translate.** The agent makes it into the rig's data (§15), sets `became` and `show`,
+   and puts it up for review.
+4. **Review.** Agents list what's up in `review/queue.json`, each item
+   `{"id", "title", "what", "before", "after", "status"}`: `before` and
+   `after` are images in `characters/`, by their paths from the
+   repository's root, and the status is `in review`, `changes` or
+   `approved`. The owner approves or asks for a change in the studio's
+   Review, and its server appends each verdict to `review/notes.jsonl`,
+   a line each: `{"at", "id", "verdict": "approve" | "change", "text"}`.
+   Agents read the notes, act on them, and update the item and the
+   reference.
+
+`charactergen.py --check` fails on a reference whose folder isn't named
+so, whose `reference.json` has a key or a value it doesn't take, whose
+`show` names a mood the pack hasn't or a state the board hasn't, that has
+no media or a file that isn't media or its own; that's read without the
+frames and sheet of every file, or with `frames` that don't count them;
+or that's translated or later without `reading.md` or a `became`, or
+became something the rig hasn't. It checks the queue's items and their
+images, and the notes, but none of it stops a pack staging. The app
+doesn't bundle either folder.
 
 ## Not yet
 

@@ -29,9 +29,10 @@ after a build reads (in_use()).
 
 Every form but --which and --firmware-to also checks the board's states
 where they're named (CHARACTER.md §9 and each pack's mac/faces.json), each
-pack's studio entry (§12), and writes characters/studio/packs.js, the studio
-page's data for the packs in this checkout, which git ignores. --check
-fails on a problem with any of them; --stage only warns.
+pack's studio entry (§12), references and review queue (§16), and writes
+characters/studio/packs.js, the studio page's data for the packs in this
+checkout, which git ignores. --check fails on a problem with any of them;
+--stage only warns.
 
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
@@ -422,6 +423,143 @@ inline constexpr Rig kRig = {{{', '.join(lists)}}};
 """
 
 
+# ── References and review (CHARACTER.md §16) ────────────────────────────────
+# A reference is a folder, references/<YYYY-MM-DD>-<topic>/: the media a
+# person gave (a still is one frame; a GIF or a video is cut a frame every
+# 40 ms), reference.json, the agent's reading.md, and what `boopctl
+# reference read` makes of each file, frames/<file>/NNNN.png and
+# sheets/<file>.png.
+MEDIA = {".png": "still", ".jpg": "still", ".jpeg": "still", ".webp": "still", ".gif": "gif",
+         ".mp4": "video", ".mov": "video", ".m4v": "video", ".webm": "video"}
+REFERENCE_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
+REFERENCE_KEYS = ("kind", "note", "status", "became", "show", "frames", "ms")
+KINDS = ("inspiration", "direct")
+STATUSES = ("new", "read", "translated", "in review", "approved")
+BECOMES = ("clip", "expression", "art")
+# An item agents put up for review (review/queue.json), and a verdict on one
+# (review/notes.jsonl, which the studio's server appends).
+REVIEW_KEYS = ("id", "title", "what", "before", "after", "status")
+REVIEW_STATUSES = ("in review", "changes", "approved")
+VERDICTS = ("approve", "change")
+
+
+def reference_folders(pack: Path) -> list[Path]:
+    folder = pack / "references"
+    return sorted(p for p in folder.iterdir() if not p.name.startswith(".")) if folder.is_dir() else []
+
+
+def media(folder: Path) -> list[Path]:
+    """A reference's media files."""
+    return sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in MEDIA)
+
+
+def frame_count(folder: Path, name: str) -> int:
+    """How many frames `boopctl reference read` cut from one of a reference's files."""
+    return len(list((folder / "frames" / name).glob("*.png")))
+
+
+def reference_problems(folder: Path, moods: set[str], states: list[str], rig: dict) -> list[str]:
+    """What's wrong with one reference: reference.json's keys and values,
+    what it became against the pack's rig (read_rig's), its files, and
+    what its status says is there: the tool's frames and sheets once it's
+    read, and the agent's reading.md and what it became once it's
+    translated."""
+    try:
+        ref = json.loads((folder / "reference.json").read_text())
+    except FileNotFoundError:
+        return ["it has no reference.json"]
+    except ValueError as e:
+        return [f"reference.json isn't JSON ({e})"]
+    if not isinstance(ref, dict):
+        return ["reference.json isn't an object"]
+    problems = [f"reference.json has {key!r}, which it doesn't take" for key in ref if key not in REFERENCE_KEYS]
+    for key, values in (("kind", KINDS), ("status", STATUSES)):
+        if ref.get(key) not in values:
+            problems.append(f"its {key} is {ref.get(key)!r}, not one of: {', '.join(values)}")
+    if not isinstance(ref.get("note"), str) or not ref["note"].strip():
+        problems.append("its note is empty")
+    became = ref.get("became", [])
+    if not isinstance(became, list) or not all(isinstance(b, dict) and set(b) == {"what", "id"} and b["what"] in BECOMES
+                                               and isinstance(b["id"], str) and b["id"] for b in became):
+        problems.append(f'became is a list of {{"what": {" | ".join(BECOMES)}, "id": its name}}')
+    else:
+        made = {"clip": {c["id"] for c in rig["clips"]}, "expression": {e["mood"] for e in rig["expressions"]},
+                "art": set(rig["eyes"] + rig["mouth"] + rig["scenes"]) | {a["art"] for a in rig["accessories"]}}
+        problems += [f"it became {b['what']} {b['id']}, which rig/ hasn't" for b in became if b["id"] not in made[b["what"]]]
+    if "show" in ref:
+        show = ref["show"]
+        if not isinstance(show, dict) or not {"mood", "state"} <= set(show) <= {"mood", "state", "anim"}:
+            problems.append('show is {"mood", "state"}, and maybe "anim"')
+        else:
+            if show["mood"] not in moods:
+                problems.append(f"show's mood {show['mood']!r} isn't one of the pack's")
+            problems += [f"show's {key} {show[key]!r} isn't one of the board's states"
+                         for key in ("state", "anim") if key in show and show[key] not in states]
+    for key in ("frames", "ms"):
+        if key in ref and (type(ref[key]) is not int or ref[key] < 0):
+            problems.append(f"its {key} isn't a whole number")
+    files, own = media(folder), {"reference.json", "reading.md", "frames", "sheets"}
+    problems += [f"it has {p.name}, which isn't media ({' '.join(MEDIA)}) or the reference's own"
+                 for p in sorted(folder.iterdir()) if p.name not in own and p not in files and not p.name.startswith(".")]
+    if not files:
+        problems.append("it has no media")
+    status = STATUSES.index(ref["status"]) if ref.get("status") in STATUSES else 0
+    if status >= STATUSES.index("read"):
+        unread = [p.name for p in files if not frame_count(folder, p.name) or not (folder / "sheets" / f"{p.name}.png").is_file()]
+        cut = sum(frame_count(folder, p.name) for p in files)
+        if unread:
+            problems.append(f"it's {ref['status']}, and {', '.join(unread)} has no frames or sheet (boopctl reference read)")
+        elif ref.get("frames") != cut or "ms" not in ref:
+            problems.append(f"it's {ref['status']}, and its frames and ms aren't what frames/ holds ({cut} frames; boopctl reference read)")
+    if status >= STATUSES.index("translated"):
+        if not (folder / "reading.md").is_file():
+            problems.append(f"it's {ref['status']}, and has no reading.md")
+        if not became:
+            problems.append(f"it's {ref['status']}, and became nothing")
+    return problems
+
+
+def review(pack: Path) -> tuple[list, list, list[str]]:
+    """A pack's review queue (review/queue.json, which agents write), the
+    notes on it (review/notes.jsonl, which the studio's server appends),
+    and what's wrong with them. An item's before and after are images in
+    the characters folder, by their paths from the repository's root."""
+    folder, queue, notes, problems = pack / "review", [], [], []
+    if (folder / "queue.json").is_file():
+        try:
+            queue = json.loads((folder / "queue.json").read_text())
+        except ValueError as e:
+            return [], [], [f"queue.json isn't JSON ({e})"]
+        if not isinstance(queue, list) or not all(isinstance(item, dict) for item in queue):
+            return [], [], ["queue.json isn't a list of items"]
+        for item in queue:
+            name = item.get("id")
+            problems += [f"queue.json's {name} has {key!r}, which an item doesn't take" for key in item if key not in REVIEW_KEYS]
+            problems += [f"queue.json's {name} has no {key}" for key in ("id", "title", "what")
+                         if not isinstance(item.get(key), str) or not item[key].strip()]
+            if item.get("status") not in REVIEW_STATUSES:
+                problems.append(f"queue.json's {name} has status {item.get('status')!r}, not one of: {', '.join(REVIEW_STATUSES)}")
+            for key in ("before", "after"):
+                image = pack.parent.parent / str(item.get(key, ""))
+                if key in item and (not image.is_file() or MEDIA.get(image.suffix.lower()) != "still"
+                                    or pack.parent.resolve() not in image.resolve().parents):
+                    problems.append(f"queue.json's {name}: its {key}, {item[key]}, isn't an image in the characters folder")
+        ids = [item.get("id") for item in queue]
+        if len(ids) != len(set(ids)):
+            problems.append("queue.json has two items with one id")
+    if (folder / "notes.jsonl").is_file():
+        for number, line in enumerate((folder / "notes.jsonl").read_text().splitlines(), 1):
+            try:
+                note = json.loads(line)
+            except ValueError:
+                note = None
+            if not isinstance(note, dict) or set(note) != {"at", "id", "verdict", "text"} or note["verdict"] not in VERDICTS:
+                problems.append(f"notes.jsonl:{number} isn't a note (at, id, verdict: {' | '.join(VERDICTS)}, text)")
+            else:
+                notes.append(note)
+    return queue, notes, problems
+
+
 def load(pack: Path) -> dict:
     return json.loads((pack / "character.json").read_text())
 
@@ -505,8 +643,8 @@ def wears(pack: Path, entry: dict) -> dict[str, str]:
 
 def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
-    board's, each pack's declared files, and a preview that has a mood
-    wear one that isn't the pack's."""
+    board's, each pack's declared files, a preview that has a mood
+    wear one that isn't the pack's, and its references and review queue."""
     problems = []
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
@@ -515,6 +653,13 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         problems.append(f"{studio / 'states.json'} doesn't list the board's states (missing {missing}, extra {extra})")
     for pack in packs:
         character = load(pack)
+        moods, rig = {m["id"] for m in character["moods"]}, read_rig(pack)[0]
+        for folder in reference_folders(pack):
+            if not folder.is_dir() or not REFERENCE_FOLDER.fullmatch(folder.name):
+                problems.append(f"{pack.name}: references/{folder.name} isn't a folder named <YYYY-MM-DD>-<topic>")
+                continue
+            problems += [f"{pack.name}: references/{folder.name}: {p}" for p in reference_problems(folder, moods, ids, rig)]
+        problems += [f"{pack.name}: review/{p}" for p in review(pack)[2]]
         entries = previews(character)
         names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)]]
         if None in names or len(names) != len(set(names)):
@@ -576,28 +721,49 @@ def shared_previews(pack: Path, character: dict) -> list[tuple[Path, dict]]:
     return out
 
 
+def references_data(pack: Path, here) -> list[dict]:
+    """Each reference, as the studio shows it: reference.json, the reading,
+    and each file with the frames cut from it."""
+    out = []
+    for folder in reference_folders(pack):
+        try:
+            ref = json.loads((folder / "reference.json").read_text())
+        except (OSError, ValueError):
+            continue  # --check says why
+        reading = folder / "reading.md"
+        out.append({**ref, "id": folder.name, "path": here(folder) + "/", "became": ref.get("became", []),
+                    "reading": reading.read_text() if reading.is_file() else None,
+                    "media": [{"file": p.name, "kind": MEDIA[p.suffix.lower()], "frames": frame_count(folder, p.name)}
+                              for p in media(folder)]})
+    return out
+
+
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
     """The studio page's data: the engine's states and, for each pack, its
-    moods and its studio entries, its own and those it uses, with paths
-    from the page."""
+    moods, its studio entries (its own and those it uses), its references
+    and its review queue and notes, with paths from the page."""
     data = {"chosen": chosen_pack.name, "states": states(studio), "packs": {}}
+    page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
         entries = [(pack, e) for e in previews(character)] + shared_previews(pack, character)
         for home, entry in entries:
             borrows = wears(home, entry)
-            here = lambda name, home=home: Path(os.path.relpath(home / name, studio)).as_posix()
             for key in ("scripts", "styles"):
-                entry[key] = [here(name) for name in entry.get(key, [])]
+                entry[key] = [page(home / name) for name in entry.get(key, [])]
             if entry.get("icon"):
-                entry["icon"] = here(entry["icon"])
+                entry["icon"] = page(home / entry["icon"])
             entry["wears"] = dict(sorted(borrows.items()))
             entry.pop("captures", None)
+        queue, notes, _ = review(pack)
         data["packs"][pack.name] = {
             "name": character["name"],
             "default_mood": character["default_mood"],
             "moods": [{k: m[k] for k in ("id", "meaning", "family") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries],
+            "references": references_data(pack, page),
+            "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
+                                             if isinstance(item.get(k), str)}} for item in queue], "notes": notes},
         }
     return data
 
@@ -654,7 +820,7 @@ def bundle(view: Path, name: str) -> None:
     no more: .character-build/packs/<name>/."""
     shutil.copytree(view, STAGE / "packs" / name,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
-                                                  "studio", "rig"))
+                                                  "studio", "rig", "references", "review"))
 
 
 def checked_pack(pack: Path) -> tuple[dict, dict[str, Path]] | None:

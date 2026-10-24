@@ -85,9 +85,12 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
   `send`, `play`, `takes`, `card`, `calibrate`), the scenarios (`sim`,
   `run`), measurements (`perf`, `latency`, `soak`), the pipeline check
-  (`e2e`), the webcam (`cam`), and the debug logs (`dash`, `day`,
-  `workday`). `--port` picks the serial port; without it, while a bridge
-  runs (below), commands go through the bridge.
+  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
+  `workday`), and a reference a person gave, taken in and cut into frames
+  and contact sheets to read (`reference`,
+  [CHARACTER.md](../characters/CHARACTER.md) §16). `--port` picks the
+  serial port; without it, while a bridge runs (below), commands go
+  through the bridge.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
   (character packs, [CHARACTER.md](../characters/CHARACTER.md)),
   `read-check` (Apple Intelligence's readings of the sample prompts in
