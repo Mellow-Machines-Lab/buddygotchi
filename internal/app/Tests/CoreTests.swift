@@ -1443,6 +1443,76 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.ruleActions, before, "and no poke")
     }
 
+    /// The `state` message carries the to-do list of the turn that has
+    /// run longest, as counts, while nothing needs you.
+    func testTheStateCarriesTheLongestTurnsToDos() {
+        let rig = CoreRig()
+        func list(_ done: Int, _ total: Int, session: String) {
+            var e = rig.event(.activity, session: session, tool: "TodoWrite")
+            e.data["todos_done"] = .int(Int64(done))
+            e.data["todos_total"] = .int(Int64(total))
+            rig.send(e)
+        }
+        rig.send(.turnStart, session: "a")
+        XCTAssertNil(rig.state.todo)
+        rig.wait(1000)
+        rig.send(.turnStart, session: "b")
+        list(1, 4, session: "b")
+        XCTAssertNil(rig.state.todo, "a's turn is the longest, and has no list")
+        list(3, 7, session: "a")
+        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 3, total: 7))
+        XCTAssertTrue(rig.state.jsonLine.contains(#""todo":{"done":3,"total":7}"#), rig.state.jsonLine)
+        rig.send(.needsYou, session: "b", tool: "Bash")
+        XCTAssertNil(rig.state.todo, "not while something needs you")
+    }
+
+    /// A finger held on the sign dismisses the request that shows: the
+    /// sign goes, the session counts as idle and stays first in BOOT's
+    /// line, a tap is a poke again, and the brain may wake. Nothing answers
+    /// the agent, and its next request shows again.
+    func testHoldingTheSignDismissesItsRequest() {
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "a")
+        rig.send(.needsYou, session: "a", tool: "Bash")
+        XCTAssertNotNil(rig.state.attn)
+        XCTAssertNotNil(rig.core.needsYouBlock)
+        let fx = rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, at: rig.now)))
+        XCTAssertNil(rig.state.attn, "the sign goes")
+        XCTAssertNil(rig.core.needsYouBlock, "the brain may wake")
+        XCTAssertEqual(rig.state.idle, 1, "it waits on you as an idle session does")
+        let ended = fx.effects.compactMap { effect -> Event? in
+            guard case .record(let e) = effect, e.specificType == Core.needsYou, e.phase == .end else { return nil }
+            return e
+        }
+        XCTAssertEqual(ended.map { $0["why"]?.string }, [Core.dismissedWhy])
+        XCTAssertEqual(rig.sessions.first?.last, "waiting", "the popover still lists it as waiting")
+        rig.wait(1000)
+        XCTAssertEqual(opened(rig.poke()), [], "a tap is a poke again")
+        XCTAssertEqual(opened(rig.note(Fx(rig.pipeline.press(at: rig.now)))).map(\.session), ["a"], "first in BOOT's line")
+        rig.wait(1000)
+        rig.send(.activity, session: "a", tool: "Bash", failed: false)
+        rig.send(.needsYou, session: "a", tool: "Bash")
+        XCTAssertNotNil(rig.state.attn, "its next request shows")
+    }
+
+    /// The popover's Dismiss names the session: only that one goes, and
+    /// the next that needs you shows.
+    func testDismissingOneSessionShowsTheNext() {
+        let rig = CoreRig()
+        rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
+        rig.wait(1000)
+        rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
+        XCTAssertEqual(rig.state.attn?.project, "api")
+        XCTAssertEqual(rig.state.attn?.more, 1)
+        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "b"), at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "api")
+        XCTAssertEqual(rig.state.attn?.more, 0)
+        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "nobody"), at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "api", "an unknown session dismisses nothing")
+        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "a"), at: rig.now)))
+        XCTAssertNil(rig.state.attn)
+    }
+
     /// Face down is do not disturb until it's turned back up: nothing
     /// wakes the brain in between, and turning it up does.
     func testFaceDownHoldsTheBrainUntilItsTurnedUp() {

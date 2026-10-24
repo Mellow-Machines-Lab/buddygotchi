@@ -72,9 +72,23 @@ public struct StateSnapshot: Equatable, Sendable {
     /// busy the agents are. The device shows the designs whose tags are
     /// all on, and picks each look's variation itself.
     public var when: [String]
+    /// An agent's to-do list, as counts.
+    public struct Todo: Equatable, Sendable {
+        public var done: Int
+        public var total: Int
+
+        public init(done: Int, total: Int) {
+            self.done = done
+            self.total = total
+        }
+    }
+
+    /// The to-do list of the longest turn working, while nothing needs
+    /// you; nil sends none.
+    public var todo: Todo?
 
     public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
-                vol: Int, when: [String] = []) {
+                vol: Int, when: [String] = [], todo: Todo? = nil) {
         self.base = base
         self.act = act
         self.mood = mood
@@ -84,6 +98,7 @@ public struct StateSnapshot: Equatable, Sendable {
         self.helpers = helpers
         self.vol = vol
         self.when = when
+        self.todo = todo
     }
 
     /// The look the device shows when nothing needs you: what the agents
@@ -116,6 +131,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
         if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
+        if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         return fields
     }
 
