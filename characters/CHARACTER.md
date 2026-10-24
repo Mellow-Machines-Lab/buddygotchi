@@ -458,15 +458,21 @@ Besides drawing each mood and state, a face:
   `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
   (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
-  hatching, New Year's Day, a growth stage reached) from the Mac's
-  `state.when`, and `busy` (2–3 sessions working) and `frantic` (4 or
-  more), which the board adds from `state.busy`. A design that fits
+  hatching, New Year's Day, a growth stage reached), a long turn's tier
+  (`marathon` from 8 minutes into the longest turn working, `camp` from
+  15) or idle's (`fidget` from 30 seconds after the last turn ended,
+  `setpiece` from 3 minutes, `doze` from 10), one at a time
+  (`Occasions.workTiers` and `idleTiers`), and every growth stage
+  reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
+  `pal` shows from Pal on) from the Mac's `state.when`, and `busy` (2–3
+  sessions working) and `frantic` (4 or more), which the board adds from
+  `state.busy`. A design that fits
   only while its tags are on shows only then; a look starts on one while
   it fits, turns to one two times in three, and a reaction always takes
   one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
   morning, a nightcap at night, a party hat, Halloween, winter,
-  Valentine's, Friday's shades, a frantic sweat, a stretch after twenty
-  minutes' work, a dream after half an hour's sleep. Over idle's and
+  Valentine's, Friday's shades, a frantic sweat, a stretch on a long
+  turn's marathon, a dream after half an hour's sleep. Over idle's and
   asleep's other variations Pixel draws the same hats and air itself, by
   the tags (`render/pixel/outfit.h`, `render::outfitFor` in
   `render/tags.h` the one rule for which hat), so it's dressed whichever
@@ -479,8 +485,8 @@ Besides drawing each mood and state, a face:
   `expressions.json`, which slimegen bakes into `slime.h`): idle drowses
   at night, stretches in the morning, bounces on a party day or a New
   Year, sways on a Friday, shivers in winter, wobbles at Halloween,
-  swoons on Valentine's and nods off after twenty minutes; busy and
-  frantic work type faster, twenty minutes' work ends in a stretch, and
+  swoons on Valentine's and nods off once it dozes; busy and
+  frantic work type faster, a long turn's marathon brings a stretch, and
   sleep snores deeper at night and dreams after half an hour. Its idle
   picks one in place of a gesture. Over every state the board also draws
   layers on the gel by the tags (`render/gel/layers.h`), at anchors the
