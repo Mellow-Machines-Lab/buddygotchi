@@ -16,7 +16,17 @@ enum MenuBarApp {
             let delegate = AppDelegate(stateDir: stateDir, link: link, debug: debug)
             app.delegate = delegate
             app.setActivationPolicy(.accessory)
-            withExtendedLifetime(delegate) { app.run() }
+            // Ctrl-C on `make run`, or a kill: quit as the menu's Quit does,
+            // so the runtime stops and the next launch doesn't count it as
+            // a crash.
+            let signals = [SIGINT, SIGTERM].map { sig in
+                signal(sig, SIG_IGN)
+                let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+                source.setEventHandler { NSApp.terminate(nil) }
+                source.resume()
+                return source
+            }
+            withExtendedLifetime((delegate, signals)) { app.run() }
         }
         exit(0)
     }
@@ -83,16 +93,39 @@ final class AppModel: ObservableObject {
     }
     /// The "can't react yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
+    /// The firmware Boop.app carries for each board (none for `make run`).
+    var boardFirmware = BoardFirmware.bundled()
+    /// Writing firmware onto the board over USB, from Settings.
+    enum FirmwareWrite: Equatable {
+        case idle
+        case writing(Double)
+        case done(String)
+        case failed(String)
+    }
+    @Published var firmwareWrite = FirmwareWrite.idle
+    /// Writes to `boop.log`.
+    var log: @Sendable (String) -> Void = { _ in }
+
+    /// Opening Boop at login, and how it stands.
+    var loginItem = LoginItem.system()
+    @Published var loginItemState = LoginItem.State.unavailable
+    /// Why the last change to it failed, until the next try.
+    @Published var loginItemError: String?
 
     let installer: HookInstaller
     /// False on a folder other than the everyday one: then this copy never
     /// changes the real hooks.
     let ownsHooks: Bool
+    /// Where `HookBackup` keeps the agents' settings from before Boop
+    /// changed them; nil keeps none (snapshots).
+    var backupStateDir: URL?
     let link: LinkSetting
     var runtime: Runtime?
     var finishSetup: () -> Void = {}
     /// Shows `boop.log` in Finder.
     var showLog: () -> Void = {}
+    /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
+    var uninstall: () -> Void = {}
     /// Reads Jev's key. Settings calls it off the main thread, since the
     /// Keychain may stop to ask for access; snapshots read none.
     var readKey: @Sendable () -> String? = { Keychain.jevKey() }
@@ -105,6 +138,74 @@ final class AppModel: ObservableObject {
     }
 
     var name: String { status?.name ?? "Boop" }
+
+    /// The firmware the board should take: its board's, when it runs
+    /// another version than the app carries; or, when its firmware doesn't
+    /// fit the app at all, the app's, for whichever board is on USB when
+    /// it's written.
+    var firmwareOffer: BoardFirmware? {
+        if let device = status?.device { return BoardFirmware.update(for: device, among: boardFirmware) }
+        return status?.deviceTrouble == nil ? nil : boardFirmware.first
+    }
+
+    /// Writes the app's firmware onto the board on USB, off the main
+    /// thread, and says how it goes in `firmwareWrite`.
+    func updateFirmware() {
+        if case .usb = link {
+            firmwareWrite = .failed("this Boop is using the board's USB port itself. Update it from Boop.app, over Bluetooth.")
+            return
+        }
+        let ports = BoardFirmware.usbPorts()
+        guard let port = ports.first else {
+            firmwareWrite = .failed("plug \(name)'s body into this Mac with a USB cable that carries data, then try again.")
+            return
+        }
+        guard ports.count == 1 else {
+            firmwareWrite = .failed("more than one board is plugged in. Leave only \(name)'s, then try again.")
+            return
+        }
+        guard let firmware = BoardFirmware.forPort(port, among: boardFirmware) else {
+            firmwareWrite = .failed("this app has no firmware for the board on \(port).")
+            return
+        }
+        firmwareWrite = .writing(0)
+        let log = self.log
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var shown = -1
+            do {
+                try firmware.install(port: port, log: log) { done in
+                    let percent = Int(done * 100)
+                    guard percent != shown else { return }
+                    shown = percent
+                    Task { @MainActor in self?.firmwareWrite = .writing(done) }
+                }
+                Task { @MainActor in self?.firmwareWrite = .done(firmware.version) }
+            } catch {
+                log("firmware: couldn't update: \(error)")
+                Task { @MainActor in self?.firmwareWrite = .failed("\(error)") }
+            }
+        }
+    }
+
+    func refreshLoginItem() {
+        loginItemState = loginItem.state()
+    }
+
+    /// Turns opening at login on or off. Only the everyday Boop does: a copy
+    /// on another folder would open at login in its place.
+    func setOpenAtLogin(_ on: Bool) {
+        guard ownsHooks else {
+            loginItemError = "only the everyday Boop opens at login"
+            return
+        }
+        do {
+            try loginItem.set(on)
+            loginItemError = nil
+        } catch {
+            loginItemError = error.localizedDescription
+        }
+        refreshLoginItem()
+    }
     /// Who Boop is, chosen in settings.
     var personality: Personality { status?.personality ?? .default }
 
@@ -133,6 +234,7 @@ final class AppModel: ObservableObject {
             return
         }
         var why: String?
+        if let backupStateDir { HookBackup.once(installer, agent, stateDir: backupStateDir) }
         do {
             try change()
             restartAgents = true
@@ -191,10 +293,30 @@ final class AppModel: ObservableObject {
         var detail: String
     }
 
+    /// The simulator is for developing Boop: `make run`'s debug build
+    /// offers it, and the release build `make bundle` makes never looks.
+    static let offersSimulator: Bool = {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+    }()
+
+    /// Running as Boop.app, as people install it, rather than `make run`'s
+    /// bare binary: what's missing is fixed by installing again, not by
+    /// building.
+    static let bundled = Bundle.main.bundleURL.pathExtension == "app"
+
+    /// What Settings says when the hook client is missing.
+    static var clientMissing: String {
+        bundled ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make build, then restart Boop."
+    }
+
     /// Looks for a running simulator, off the main thread: it's a look at
     /// a socket. Only while there's someone to show it to: Settings, open.
     func lookForSimulator() {
-        guard let devices else { return }
+        guard Self.offersSimulator, let devices else { return }
         DispatchQueue.global(qos: .utility).async {
             let found: Simulator = devices.choice == .simulator ? .inUse : devices.simulatorIsThere() ? .there : .none
             Task { @MainActor in if found != self.simulator { self.simulator = found } }
@@ -311,6 +433,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model = AppModel(installer: .boop(home: URL(fileURLWithPath: NSHomeDirectory()),
                                           hookPath: hookDir.appendingPathComponent("bin/\(HookInstaller.client)").path),
                          ownsHooks: everyday, link: link)
+        model.backupStateDir = everyday ? stateDir : nil
         super.init()
     }
 
@@ -346,6 +469,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             } catch {
                 log.write("hooks: can't list boop.sock in \(HookSocket.directory()): \(error)")
             }
+            // A repair edits the agents' settings, so they're kept first.
+            for agent in Agent.allCases where model.installer.health(agent) == .outdated {
+                HookBackup.once(model.installer, agent, stateDir: stateDir)
+            }
             let repaired = model.installer.repair()
             if !repaired.isEmpty {
                 log.write("hooks: repaired \(repaired.map(\.rawValue).joined(separator: ", "))")
@@ -360,6 +487,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.refreshHooks()
         model.finishSetup = { [weak self] in self?.finishSetup() }
         model.showLog = { [log] in NSWorkspace.shared.activateFileViewerSelecting([log.url]) }
+        model.uninstall = { [weak self] in self?.uninstall() }
+        model.log = { [log] in log.write($0) }
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.target = self
@@ -490,6 +619,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func showPopover() {
         guard let button = statusItem?.button else { return }
         model.refreshHooks()
+        model.refreshLoginItem()
         model.runtime?.refresh()
         NSApp.activate()
         model.shown = true
@@ -500,7 +630,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Settings closes back to the overview; setup stays where it was.
     func popoverDidClose(_ notification: Notification) {
         model.shown = false
+        // A finished update's word has been seen; one going on keeps going.
+        if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
         if model.pane == .settings { model.pane = .overview }
+    }
+
+    /// Settings' Uninstall: asks first, then takes out the hooks, the
+    /// socket's listing, the hook client's copy and the login item, keeps
+    /// the memory, moves Boop.app to the Trash and quits.
+    func uninstall() {
+        let name = model.name
+        let bundled = Bundle.main.bundleURL.pathExtension == "app"
+        let folder = (stateDir.path as NSString).abbreviatingWithTildeInPath
+        popover.performClose(nil)
+        NSApp.activate()
+        let ask = NSAlert()
+        ask.alertStyle = .warning
+        ask.messageText = "Uninstall \(name)?"
+        ask.informativeText = "\(name) takes its hooks out of Claude Code and Codex, stops opening at login"
+            + (bundled ? ", moves Boop.app to the Trash" : "") + " and quits.\n\n"
+            + "Its memory stays in \(folder), so a Boop installed again remembers. Delete that folder to forget it too."
+        ask.addButton(withTitle: "Uninstall")
+        ask.addButton(withTitle: "Cancel")
+        guard ask.runModal() == .alertFirstButtonReturn else { return }
+        guard model.ownsHooks else {
+            log.write("uninstall: refused, since only the everyday Boop (\(AppSettings.defaultStateDir().path)) uninstalls")
+            return
+        }
+        model.runtime?.stop()
+        for agent in Agent.allCases { HookBackup.once(model.installer, agent, stateDir: stateDir) }
+        let result = Uninstall.run(installer: model.installer, stateDir: stateDir, loginItem: model.loginItem)
+        log.write("uninstall: removed " + (result.removed.isEmpty ? "nothing" : result.removed.joined(separator: ", "))
+                  + (result.problems.isEmpty ? "" : "; couldn't remove " + result.problems.joined(separator: "; ")))
+        if !result.problems.isEmpty {
+            let told = NSAlert()
+            told.messageText = "\(name) couldn't take everything out"
+            told.informativeText = result.problems.joined(separator: "\n")
+            told.runModal()
+        }
+        if bundled {
+            NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, error in
+                if let error { self.log.write("uninstall: can't move Boop.app to the Trash: \(error)") }
+                Task { @MainActor in NSApp.terminate(nil) }
+            }
+        } else {
+            NSApp.terminate(nil)
+        }
     }
 
     func finishSetup() {
@@ -517,6 +692,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             model.install(agent)
         }
         startRuntime()
+        // Boop watches agents only while it runs, so it opens at login from
+        // now on; Settings turns that off.
+        model.refreshLoginItem()
+        if model.ownsHooks, model.loginItemState == .off { model.setOpenAtLogin(true) }
         withAnimation(.boopSettle) { model.pane = .overview }
     }
 }

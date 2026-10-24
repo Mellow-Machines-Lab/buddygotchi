@@ -59,6 +59,7 @@ enum Snapshots {
                 try? installer.install(.claude)
                 settings.refreshHooks()
                 settings.restartAgents = true
+                settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
                 try? installer.remove(.claude)
                 shot("settings-chatter", model(installer, status: status(personality: Personality.other)), pane: .settings)
@@ -80,6 +81,23 @@ enum Snapshots {
                 let stopped = model(installer, status: nil)
                 stopped.startError = AppModel.startProblem(Runtime.OpenError.locked("/tmp/boop"))
                 shot("settings-not-running", stopped, pane: .settings)
+                // Opening at login waits for System Settings, and a bare binary can't.
+                let approval = model(installer, status: status())
+                approval.loginItem = LoginItem(state: { .needsApproval }, set: { _ in })
+                approval.refreshLoginItem()
+                shot("settings-login-approval", approval, pane: .settings)
+                let bare = model(installer, status: status())
+                bare.loginItem = .unavailable
+                bare.refreshLoginItem()
+                shot("settings-login-unavailable", bare, pane: .settings)
+                // The board runs older firmware than the app carries, and then it's being written.
+                let behind = model(installer, status: status())
+                behind.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                shot("settings-firmware-offer", behind, pane: .settings)
+                behind.firmwareWrite = .writing(0.42)
+                shot("settings-firmware-writing", behind, pane: .settings)
+                behind.firmwareWrite = .failed("plug Mochi's body into this Mac with a USB cable that carries data, then try again.")
+                shot("settings-firmware-failed", behind, pane: .settings)
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))),
                      pane: .settings)
                 // A simulator running on this Mac: a body to choose, and chosen.
@@ -158,6 +176,10 @@ enum Snapshots {
         let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link)
         model.status = status
         model.readKey = { nil }  // fixtures only: never the real Keychain
+        model.boardFirmware = []  // fixtures only: never the bundle's
+        // Fixtures only: never the real login item. On, as after setup.
+        model.loginItem = LoginItem(state: { .on }, set: { _ in })
+        model.refreshLoginItem()
         return model
     }
 
@@ -249,6 +271,11 @@ enum Snapshots {
                                                               brainTrouble: BrainTrouble(kind: .credit, why: "jev: HTTP 402",
                                                                                          inARow: 1)))),
             ("listening", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], listening: true))),
+            ("unclean-exit", {
+                var crashed = status(base: "idle", sessions: [["claude", "jetpack", "idle"]])
+                crashed.uncleanExit = true
+                return model(installer, status: crashed)
+            }()),
             ("cant-hear", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           micTrouble: "Allow Boop in System Settings → Privacy & Security → Microphone."))),
             // No card, or no voice file on it.

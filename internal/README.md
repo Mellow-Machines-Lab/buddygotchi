@@ -20,7 +20,7 @@ tests, evals, dev tools and skills.
 | `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make build` runs it) |
 | `firmware/test/` | The firmware's unit tests, the simulator scenarios and their golden pictures. LinkKit's device library tests in its own project (`linkkit/device/test/`) |
 | `firmware/voice_file.h` | The voice file read from the chosen character pack's `voice/voice.bin`, for the firmware's tests, which have no SD card |
-| `tools/` | `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), and the `webcam/` recorder. The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`, `gel-trace`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
+| `tools/` | `appicon` (draws the app's placeholder icon, `app/Boop/AppIcon.icns`, until a designed one replaces it), `boopctl` (the board over USB, the simulator, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), and the `webcam/` recorder. The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`, `gel-trace`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
 | `sessions/` | The projects a pack's demo scripts run in when a real agent plays them, for videos (`make demo IN=…`, [sessions/README.md](sessions/README.md)) |
 | `characters/` | The tests of `characters/charactergen.py` (`make -C internal tools-test`, and CI): the studio lists the board's states, each once; every pack here passes the studio's rules; those rules on small made-up packs (a studio entry is optional, states match the board's, declared files exist, a preview wears only the pack's moods, and the data's paths are from the page), and every pack's moods are exactly the universal ones; and `--stage` takes the chosen pack's own files only |
 | `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/` and `.codex/skills/` |
@@ -29,7 +29,7 @@ tests, evals, dev tools and skills.
 
 - **Swift.** `Package.swift` is at the repo root, because SwiftPM takes no
   target outside the package's root and the targets live in both `app/`
-  and here. The production targets (`BoopKit`, `Boop`, and the products
+  and here. The production targets (`BoopKit`, `Boop`, `CBoopVersion`, and the products
   they take from the three local packages the root one depends on,
   `agent-hooks`, `mellowharness` and `linkkit`) never depend on the internal
   ones (`BoopDevKit`, `BoopDev`, `BoopTests`, `XCTest`). SwiftPM alone only warns about an import of a
@@ -45,7 +45,10 @@ tests, evals, dev tools and skills.
   `make -C internal test` runs after Boop's.
   SwiftPM builds no app bundle here, so the app's `Info.plist`
   (`LSUIElement`, and the Bluetooth, microphone and speech usage
-  descriptions) is linked into the `Boop` binary with `-sectcreate`.
+  descriptions) is linked into the `Boop` binary with `-sectcreate`;
+  `make bundle` (`app/tools/bundle.sh`) builds the real `Boop.app`.
+  Testability (`-enable-testing`) is for debug builds only, which the
+  tests use.
 - **Stable contracts.** What the parts build against, and so changes
   only with care: the common event (`app/BoopKit/Adapters/`), the
   memory file (`app/BoopKit/Memory/`), the harness's two contracts,

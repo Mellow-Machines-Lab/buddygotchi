@@ -6,6 +6,10 @@
 
 #include "render/canvas.h"
 
+// Its env's name in firmware/platformio.ini, which hello's `board` says, so
+// the Mac knows which firmware it takes.
+constexpr const char* kBoardName = "amoled206";
+
 namespace pins {
 // Screen, CO5300 AMOLED on quad SPI (SPI2).
 constexpr int kLcdSclk = 11;

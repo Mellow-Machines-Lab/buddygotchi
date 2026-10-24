@@ -60,19 +60,35 @@ public struct DeviceInfo: Equatable, Sendable {
     /// The character pack its firmware was built with, as `id version`
     /// (`pixel 0.1.0`), or nil from firmware that doesn't say.
     public var pack: String?
+    /// Why it last restarted, in a word (`power`, `watchdog`, `panic`…), or
+    /// nil from firmware that doesn't say.
+    public var reset: String?
+    /// Which board it is (`cyd24`, `amoled206`), or nil from firmware that
+    /// doesn't say (`BoardFirmware.board(of:)` works it out).
+    public var board: String?
 
-    public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel, pack: String? = nil) {
+    public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel, pack: String? = nil, reset: String? = nil,
+                board: String? = nil) {
         self.id = id
         self.fw = fw
         self.voice = voice
         self.face = face
         self.pack = pack
+        self.reset = reset
+        self.board = board
     }
+
+    /// Restarts that mean something went wrong on the board: a crash, a
+    /// loop stuck past the watchdog, power sagging, or a reason it can't
+    /// name. A power-up, the button, a flash over USB or a restart it asked
+    /// for are ordinary.
+    public static let troubledResets: Set<String> = ["panic", "watchdog", "brownout", "other"]
 
     public init(_ hello: Hello) {
         let pack = hello.fields["pack"]?.string.map { "\($0) \(hello.fields["pack_version"]?.string ?? "")" }
         self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string,
-                  face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack)
+                  face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack,
+                  reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string)
     }
 
     /// Whether it plays the takes the app picks from: its card has the
@@ -91,6 +107,7 @@ public struct DeviceInfo: Equatable, Sendable {
     /// character pack or its card's voice isn't the app's.
     var logLines: [String] {
         ["device: \(id) firmware \(fw)" + (pack.map { " pack \($0)" } ?? "") + (voice.map { " voice \($0)" } ?? "")]
+            + (reset.map { Self.troubledResets.contains($0) ? ["device: it restarted after a \($0)"] : [] } ?? [])
             + (hasThePack ? [] : ["device: its firmware is built with the \(pack!) character pack, the app runs "
                                   + "\(Self.appPack): some of its faces won't match the app's moods"])
             + (hasTheVoice ? [] : ["device: its card's voice is \(voice!), the app's \(Take.voiceVersion): "

@@ -6,7 +6,7 @@ same file), but every rule in it applies to people too.
 
 ## Build and test
 
-You need macOS 26 or later and Command Line Tools. Xcode works but isn't
+You need macOS 15 or later and Command Line Tools. Xcode works but isn't
 needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
 (`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
@@ -26,6 +26,7 @@ empty. A change to one of them is a pull request in its own repository
 
 ```sh
 make build                 # the Mac app, the dev tools and the hook client
+make bundle                # Boop.app as it ships, in .build/Boop.app
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal fw-test   # the firmware's and LinkKit's device tests, on the Mac
 make -C internal sim       # the firmware's drawing, as PNGs, against the goldens

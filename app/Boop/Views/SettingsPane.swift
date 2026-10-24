@@ -3,7 +3,7 @@ import BoopKit
 import SwiftUI
 
 /// Settings, inside the popover: sound, agents and hooks, the
-/// device, and the personality with Jev's key.
+/// device, the personality with Jev's key, and the app itself.
 struct SettingsPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -33,6 +33,7 @@ struct SettingsPane: View {
                     PaneSection("Agents") { agents }
                     PaneSection("Device") { device }
                     PaneSection("Personality") { personality }
+                    PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
                 .padding(.bottom, Theme.gapLoose)
@@ -102,7 +103,7 @@ struct SettingsPane: View {
             case .installed?: ("Connected", Theme.sageInk)
             case .outdated?: ("Needs a repair", Theme.clayInk)
             case .unreadable(let why)?: ("Can't read its settings: \(why)", Theme.clayInk)
-            case .clientMissing?: ("agent-hook isn't built. Run make build, then restart Boop.", Theme.clayInk)
+            case .clientMissing?: (AppModel.clientMissing, Theme.clayInk)
             case .hooksOff(let file)?: ("Its hooks are turned off in \((file as NSString).abbreviatingWithTildeInPath)", Theme.clayInk)
             default: ("Not connected", Theme.inkSoft)
             }
@@ -138,6 +139,20 @@ struct SettingsPane: View {
                             .help("Drop the connection and look for \(model.name)'s body again now")
                     }
                 }
+                // Newer firmware for the board, which the app writes over USB.
+                if model.firmwareOffer != nil || model.firmwareWrite != .idle {
+                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    firmwareRow
+                }
+                // The one board Boop takes over Bluetooth, once it has met one.
+                if model.link == .bluetooth, let board = model.status?.board {
+                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    SettingRow(icon: "pin.fill", title: BoopDevice.advertised(board) ?? board,
+                               detail: "\(model.name) talks only to this board over Bluetooth.") {
+                        Button("Forget") { model.runtime?.forgetBoard() }.buttonStyle(.row).fixedSize()
+                            .help("Let \(model.name) take any board, and remember the next one it meets")
+                    }
+                }
                 // A simulator running on this Mac is a body to choose, while it runs.
                 if model.simulator != .none {
                     Hairline().padding(.leading, 40).padding(.trailing, 12)
@@ -150,6 +165,63 @@ struct SettingsPane: View {
                             .help(model.usingSimulator ? "Go back to \(model.name)'s board" : "Use the simulator as \(model.name)'s body until it stops")
                     }
                 }
+            }
+        }
+    }
+
+    private var firmwareRow: some View {
+        let version = model.firmwareOffer?.version ?? ""
+        let runs = model.status?.device.map { "\(model.name)'s body runs \($0.fw). " } ?? ""
+        let (text, tone): (String, Color) = switch model.firmwareWrite {
+        case .idle: (runs + "Plug it into this Mac with a USB cable, then update. It takes about half a minute.", Theme.inkSoft)
+        case .writing(let done): ("Writing… \(Int(done * 100))%. Keep the cable in.", Theme.inkSoft)
+        case .done(let v): ("Updated to \(v). \(model.name)'s body is starting it.", Theme.sageInk)
+        case .failed(let why): ("Couldn't update: \(why)", Theme.clayInk)
+        }
+        return SettingRow(icon: "arrow.down.circle", title: version.isEmpty ? "Firmware" : "Firmware \(version)",
+                          detail: text, detailTone: tone) {
+            switch model.firmwareWrite {
+            case .idle: Button("Update") { model.updateFirmware() }.buttonStyle(.rowFilled).fixedSize()
+            case .failed: Button("Try again") { model.updateFirmware() }.buttonStyle(.row).fixedSize()
+            case .writing, .done: EmptyView()
+            }
+        }
+    }
+
+    // MARK: App
+
+    private var app: some View {
+        Card(padding: 0) {
+            VStack(spacing: 0) {
+                loginRow
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "trash", title: "Uninstall",
+                           detail: "Takes \(model.name) out of your agents and off this Mac. Its memory stays.") {
+                    Button("Uninstall…") { model.uninstall() }.buttonStyle(.row)
+                }
+            }
+        }
+    }
+
+    private var loginRow: some View {
+        let state = model.loginItemState
+        let (text, tone): (String, Color) = if let why = model.loginItemError {
+            ("Couldn't change it: \(why)", Theme.clayInk)
+        } else {
+            switch state {
+            case .on: ("\(model.name) opens when you log in, so it's there for your agents.", Theme.inkSoft)
+            case .off: ("\(model.name) only watches your agents while it's open.", Theme.inkSoft)
+            case .needsApproval: ("Allow \(model.name) in System Settings, under General, Login Items.", Theme.clayInk)
+            case .unavailable: ("Only Boop.app opens at login. Build it with make bundle.", Theme.inkSoft)
+            }
+        }
+        return SettingRow(icon: "power", title: "Open at login", detail: text, detailTone: tone) {
+            if state == .needsApproval {
+                Button("Open") { NSWorkspace.shared.open(LoginItem.settingsURL) }.buttonStyle(.row)
+            } else {
+                Toggle("Open at login", isOn: Binding(get: { state == .on }, set: { model.setOpenAtLogin($0) }))
+                    .toggleStyle(.switch).controlSize(.mini).labelsHidden()
+                    .disabled(state == .unavailable)
             }
         }
     }

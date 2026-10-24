@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-16. The tour of LinkKit: the four messages, the queue, and
+Updated 2026-10-22. The tour of LinkKit: the four messages, the queue, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -145,7 +145,9 @@ final class LampHost: @unchecked Sendable {
 - **Bluetooth:** `BLETransport(prefix: "Lamp")` finds `Lamp-XXXX` on the
   Nordic UART service; `BLETransport(prefix: "Lamp", only: "Lamp-54FE")`
   takes that device alone, so an app with two devices runs two transports,
-  one `DeviceLink` each, side by side. It cuts messages to the write size and keeps a newer
+  one `DeviceLink` each, side by side. `take(only:)` changes that while
+  it runs: an app remembering the device it met first, or forgetting it.
+  It cuts messages to the write size and keeps a newer
   `state` from queueing behind an old one; it never drops a `do`, and
   gives up a link too stuck to take them. macOS kills a process that
   touches Bluetooth without the right to, so tests, and anything started
@@ -158,6 +160,17 @@ final class LampHost: @unchecked Sendable {
   default), `--baud` the board's
   rate (460800 by default). An app can run one itself (`Bridge`), and ask
   whether one answers on a socket (`SocketTransport.answers`).
+- **Firmware:** `Flasher` writes images onto an ESP32 or ESP32-S3 over
+  its USB serial port through the chip's ROM bootloader, as esptool does:
+  DTR and RTS reset it into the bootloader (the S3's own USB and a
+  USB-serial chip's auto-reset circuit each take their own sequence),
+  each image goes in compressed a kilobyte at a time and is checked
+  against the chip's MD5 of it, and EN restarts it into the new firmware.
+  Only the images given are written, so the bootloader, partition table
+  and settings stay; an app image whose header names the other chip is
+  refused before the board is touched. The port must be free: stop the
+  bridge first. `linkkit-flash --chip esp32s3 --flash-size 16MB
+  0xe000:boot_app0.bin 0x10000:firmware.bin` does it from a terminal.
 
 `Wire` builds and reads the messages themselves, and `JSON` and `JSONObject`
 (keys in order) are the app's parts of them.

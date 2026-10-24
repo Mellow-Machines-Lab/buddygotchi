@@ -28,8 +28,10 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     /// The one device to take, by its exact advertised name (`Lamp-54fe`),
     /// or nil for the first whose name has the prefix. Several transports,
     /// each with its own device, can run side by side this way: none takes
-    /// another's.
-    public let only: String?
+    /// another's. `take(only:)` changes it.
+    public var only: String? { onlyLock.withLock { chosen } }
+    let onlyLock = NSLock()
+    var chosen: String?
     /// The app's name in the words `trouble` says: `Lamp isn't allowed to use Bluetooth.`
     public let appName: String
     /// Read from any thread, so it's kept apart from `peripheral`.
@@ -63,7 +65,7 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     public init(prefix: String, only: String? = nil, appName: String? = nil,
                 log: @escaping @Sendable (String) -> Void = { _ in }) {
         self.prefix = prefix
-        self.only = only
+        chosen = only
         self.appName = appName ?? prefix
         self.log = log
         super.init()
@@ -108,6 +110,22 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
         guard up, let peripheral, let rxCharacteristic else { return }
         while peripheral.canSendWriteWithoutResponse, let chunk = outbox.next() {
             peripheral.writeValue(chunk, for: rxCharacteristic, type: .withoutResponse)
+        }
+    }
+
+    /// Takes only the device named `name` from now on, or any with the
+    /// prefix for nil: an app remembering the device it met first, or
+    /// forgetting it. The device connected now stays when it's still ours;
+    /// any other is let go, and the right one looked for at once.
+    public func take(only name: String?) {
+        queue.async { [self] in
+            onlyLock.withLock { chosen = name }
+            guard running, let device = peripheral, !isOurs(device.name) else { return }
+            log("ble: \(device.name ?? prefix) isn't \(name ?? prefix), letting it go")
+            central?.cancelPeripheralConnection(device)
+            forget()
+            backoff.reset()
+            findDevice()
         }
     }
 

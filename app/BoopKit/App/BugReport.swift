@@ -4,8 +4,14 @@ import MellowHarness
 extension Runtime {
     /// Where `saveReport` puts its folders, in the state directory.
     public static let reportsDir = "bug-reports"
+    /// The newest reports kept: saving one deletes those past it, oldest
+    /// first, as the logs are capped.
+    public static let reportsKept = 20
     /// How much of the end of `boop.log` a report copies.
     static let reportLogBytes = 1 << 20
+    /// The newest of macOS's crash reports for Boop a report copies, from
+    /// this many days.
+    static let reportCrashes = 3, reportCrashDays = 7
 
     /// A bug report: everything needed to work out
     /// afterwards what Boop saw and did, in a new folder under
@@ -41,9 +47,18 @@ extension Runtime {
                     .write(to: dir.appendingPathComponent("boop.log"))
                 try? fm.copyItem(at: options.stateDir.appendingPathComponent(AppSettings.file),
                                  to: dir.appendingPathComponent(AppSettings.file))
+                let crashes = Self.crashReports(in: options.crashReports, since: Date().addingTimeInterval(-Double(Self.reportCrashDays) * 86_400))
+                if !crashes.isEmpty {
+                    let folder = dir.appendingPathComponent("crashes")
+                    try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+                    for crash in crashes { try? fm.copyItem(at: crash, to: folder.appendingPathComponent(crash.lastPathComponent)) }
+                }
                 let now = options.clock()
                 let about: [String: Any] = [
-                    "app": BoopVersion.current, "firmware": link.hello?.fw ?? NSNull(), "device": link.hello?.id ?? NSNull(),
+                    "app": BoopVersion.current, "build": AboutThisMac.build, "macos": AboutThisMac.macOS,
+                    "mac": AboutThisMac.model, "arch": AboutThisMac.arch, "unclean_exit": uncleanExit, "crashes": crashes.count,
+                    "firmware": link.hello?.fw ?? NSNull(), "device": link.hello?.id ?? NSNull(),
+                    "device_reset": link.hello.flatMap { DeviceInfo($0).reset } ?? NSNull(),
                     // Why the device connected gets no `do`: its firmware
                     // doesn't fit, and boop.log says whose it is.
                     "device_trouble": link.trouble?.description ?? NSNull(),
@@ -53,6 +68,7 @@ extension Runtime {
                     "sessions": core.sessionList(at: now).map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] },
                 ]
                 try Data(Event.json(about).utf8).write(to: dir.appendingPathComponent("about.json"))
+                Self.pruneReports(in: options.stateDir.appendingPathComponent(Self.reportsDir))
                 options.log("report: saved \(dir.path)")
                 done(dir)
             } catch {
@@ -60,6 +76,33 @@ extension Runtime {
                 done(nil)
             }
         }
+    }
+
+    /// Deletes all but the newest `reportsKept` reports in `folder`. Their
+    /// names are when they were taken, so the oldest sort first, a second
+    /// one in the same second (`.2`) after its first.
+    static func pruneReports(in folder: URL) {
+        let fm = FileManager.default
+        let names = ((try? fm.contentsOfDirectory(atPath: folder.path)) ?? []).filter { !$0.hasPrefix(".") }
+            .sorted { a, b in
+                let (x, y) = (a.split(separator: ".", maxSplits: 1), b.split(separator: ".", maxSplits: 1))
+                return x[0] != y[0] ? x[0] < y[0] : (Int(x.dropFirst().first ?? "1") ?? 1) < (Int(y.dropFirst().first ?? "1") ?? 1)
+            }
+        for name in names.dropLast(reportsKept) { try? fm.removeItem(at: folder.appendingPathComponent(name)) }
+    }
+
+    /// macOS's crash reports for Boop in `folder` (`Boop-….ips`, or the
+    /// older `.crash`) changed since `since`, the newest `reportCrashes`.
+    static func crashReports(in folder: URL, since: Date) -> [URL] {
+        let fm = FileManager.default
+        let names = (try? fm.contentsOfDirectory(atPath: folder.path)) ?? []
+        let dated: [(URL, Date)] = names.compactMap { name in
+            guard name.hasPrefix("Boop-") || name.hasPrefix("Boop_"), name.hasSuffix(".ips") || name.hasSuffix(".crash") else { return nil }
+            let url = folder.appendingPathComponent(name)
+            guard let at = (try? fm.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date, at >= since else { return nil }
+            return (url, at)
+        }
+        return dated.sorted { $0.1 > $1.1 }.prefix(reportCrashes).map(\.0)
     }
 
     /// The last `bytes` of the file at `url`, from the start of a line;

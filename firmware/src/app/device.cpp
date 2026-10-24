@@ -142,6 +142,8 @@ void Device::hello(JsonObject extra) {
   extra["face"] = b_.face().name();
   extra["pack"] = render::kPackId;  // the character pack it was built with
   extra["pack_version"] = render::kPackVersion;
+  extra["reset"] = hal_.resetReason();  // why it last restarted: the Mac logs a crash or a watchdog
+  if (*hal_.boardName()) extra["board"] = hal_.boardName();  // which firmware the Mac updates it with
 }
 
 void Device::begin() {
@@ -402,6 +404,7 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
 
 void Device::ping(JsonObject d) {
   d["sha"] = hal_.gitSha();
+  d["reset"] = hal_.resetReason();
   d["heap"] = hal_.heapFree();
   d["heap_min"] = hal_.heapMin();
   d["fps"] = fps_;

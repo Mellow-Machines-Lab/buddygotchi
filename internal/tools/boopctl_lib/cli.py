@@ -43,6 +43,17 @@ def cmd_card(args: argparse.Namespace) -> int:
         return card.copy(dev, Path(args.voice), force=args.force, fresh=args.fresh)
 
 
+def cmd_factory(args: argparse.Namespace) -> int:
+    """A board's factory test: pass or fail (factory.py)."""
+    from boopctl_lib import factory
+
+    def ask(question: str) -> bool:
+        return input(question + " [y/n] ").strip().lower().startswith("y")
+
+    with Device(args.port) as dev:
+        return factory.run(dev, auto=args.auto, ask=ask)
+
+
 def cmd_state(args: argparse.Namespace) -> int:
     with Device(args.port) as dev:
         emit(dev.request({"t": "dbg.state"}))
@@ -965,6 +976,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
     sub.add_parser("ping", help="firmware version, uptime, heap, fps, link").set_defaults(func=cmd_ping)
     sub.add_parser("state", help="the device's own view of itself").set_defaults(func=cmd_state)
+    p = sub.add_parser("factory", help="a board's factory test, pass or fail: firmware, restart, card, voice, Bluetooth "
+                                       "and memory, then the screen, speaker and touch, asked of a person")
+    p.add_argument("--auto", action="store_true", help="only what a machine can check; ask nothing")
+    p.set_defaults(func=cmd_factory)
     p = sub.add_parser("shot", help="screenshot the device's canvas")
     p.add_argument("--out", default="/tmp/boop-shot.png")
     p.set_defaults(func=cmd_shot)

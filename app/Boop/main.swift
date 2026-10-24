@@ -63,14 +63,20 @@ func bundledCharacter() -> CharacterPack {
     guard let packs = bundledPacks,
           let chosen = (try? String(contentsOf: packs.appendingPathComponent("chosen"), encoding: .utf8))?
               .trimmingCharacters(in: .whitespacesAndNewlines) else {
-        fail("the character pack is missing from the app: build it with make build, which stages it")
+        fail("the character pack is missing from the app: build it with make build, or make bundle, which stage it")
     }
     do { return try CharacterPack(directory: packs.appendingPathComponent(chosen)) } catch { fail("the app's character pack is broken: \(error)") }
 }
 
 /// The folder of every character pack the app holds, for buddies that run
-/// another pack.
-let bundledPacks = Bundle.module.url(forResource: "packs", withExtension: nil)
+/// another pack. In `Boop.app` it's in Contents/Resources, where
+/// `make bundle` puts it: SwiftPM's `Bundle.module` looks at the top of the
+/// app, where code signing allows nothing, and when that fails falls back
+/// to the build folder, which on the Mac that built it would quietly
+/// work. A bare binary uses SwiftPM's resource bundle beside it.
+let bundledPacks = Bundle.main.bundleURL.pathExtension == "app"
+    ? Bundle.main.url(forResource: "packs", withExtension: nil)
+    : Bundle.module.url(forResource: "packs", withExtension: nil)
 
 /// The steering folder of a character pack, the app's by default.
 func bundledSteering(_ pack: CharacterPack = .active) -> Steering {
@@ -94,10 +100,13 @@ func transport(_ link: LinkSetting, only: String? = nil, log: LogFile) -> Transp
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
     // The board over Bluetooth, or a simulator running on this Mac, when
-    // Settings is told to use it.
-    let board = transport(link, log: log)
+    // Settings is told to use it. Over Bluetooth, the one Boop takes only
+    // the board it remembered, and narrows to the first one it meets.
+    let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
+    let board = transport(link, only: remembered, log: log)
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath,
                                   link: board.map { DeviceChooser(board: $0, log: { log.write($0) }) }, steering: bundledSteering())
+    if let ble = board as? BLETransport, buddies.count <= 1 { options.chooseBoard = { ble.take(only: $0) } }
     // Several buddies: each its own board, over Bluetooth the one its
     // `board` names, else its own link in `links`, in order.
     if buddies.count > 1 {
@@ -139,6 +148,8 @@ final class LogFile: @unchecked Sendable {
         handle = try? FileHandle(forWritingTo: url)
         _ = try? handle?.seekToEnd()
         self.echo = echo
+        // What ran, at the top of each launch's lines.
+        write("boop: " + AboutThisMac.line)
     }
 
     func write(_ message: String) {

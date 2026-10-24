@@ -98,6 +98,10 @@ void setup() {
   // Bluetooth after the canvas, so the canvas got its contiguous block.
   if (ble.begin(app::kBleNamePrefix, app::kIdPrefix)) kit->setOut(linkkit::Link::kBle, &ble);
   hal.setBle(&ble);
+  // From here a loop that stops coming round for 5 s (the core's task
+  // watchdog) restarts the board, and its next hello says `watchdog`.
+  // Setup's slow start (the screen, the card) comes before it.
+  enableLoopWDT();
 }
 
 void loop() {

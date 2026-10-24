@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-21. How we check that Boop works, including what's on its
+Updated 2026-10-22. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -59,8 +59,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 
 | Target | What it does |
 | --- | --- |
-| `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon` and `linkkit-bridge`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
+| `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make app` | What `make run` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
+| `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
 | `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
 | `make dash` | `boopctl dash`, for the app `make debug` started. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would |
 | `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
@@ -82,7 +83,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 **Tools.**
 
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
-  `send`, `play`, `takes`, `card`, `calibrate`), the scenarios (`sim`,
+  `send`, `play`, `takes`, `card`, `calibrate`), a board's factory test,
+  pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`), measurements (`perf`, `latency`, `soak`), the pipeline check
   (`e2e`), the webcam (`cam`), and the debug logs (`dash`, `day`,
   `workday`). `--port` picks the serial port; without it, while a bridge
@@ -107,6 +109,10 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).
 - `.build/debug/linkkit-bridge`: the USB bridge (below).
+- `.build/debug/linkkit-flash`: writes firmware onto a board over USB
+  through its ROM bootloader, without PlatformIO
+  ([linkkit/ARCHITECTURE.md](../linkkit/ARCHITECTURE.md)); `make flash`
+  still builds and uploads with PlatformIO.
 - `agent-hooks`: agent-hooks' own command line, built in `agent-hooks/`
   with `swift build`. In tests, give it a temporary `HOME` and `--home`
   together, as for `boopdev hooks`.
@@ -119,6 +125,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
+- `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
+  draws the app's placeholder icon at every size and packs it with
+  `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with

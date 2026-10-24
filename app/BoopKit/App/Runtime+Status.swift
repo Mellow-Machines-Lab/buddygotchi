@@ -36,6 +36,10 @@ extension Runtime {
         public var micTrouble: String?
         /// Boop's XP and stage.
         public var growth: Growth?
+        /// The last run crashed or was killed, until the notice is closed.
+        public var uncleanExit = false
+        /// The one board Boop takes over Bluetooth, by its `hello.id`.
+        public var board: String?
         /// Each buddy, when there are several; empty for one, which the
         /// fields above are.
         public var buddies: [BuddyStatus] = []
@@ -80,6 +84,8 @@ extension Runtime {
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+        status.uncleanExit = uncleanExit
+        status.board = settings.board
         if pipeline.several {
             status.buddies = rigs.map { rig in
                 Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),

@@ -13,8 +13,14 @@ make -C internal fw          # build the firmware for both boards (envs cyd24 an
 make flash                   # build and upload over USB, for whichever board is plugged in
 make -C internal fw-test     # the firmware's unit tests on the Mac (env native)
 make -C internal sim         # every scenario in the simulator, against the goldens
-internal/tools/boopctl ping  # firmware version and SHA, uptime, heap, fps, link
+internal/tools/boopctl ping  # firmware version and SHA, why it last restarted, uptime, heap, fps, link
 ```
+
+A loop that stops coming round for 5 seconds restarts the board (the
+core's task watchdog, on from the end of setup). Its `hello` and
+`ping` say why it last restarted in `reset`: `power`, `button`,
+`software`, `usb`, or trouble, `panic`, `watchdog`, `brownout` or
+`other`, which the Mac's `boop.log` notes.
 
 `make flash` runs `firmware/tools/flash.sh`, which tells the boards apart
 by their port: `/dev/cu.usbserial-*` or `/dev/cu.wchusbserial*` is the CYD
@@ -43,6 +49,26 @@ at the same 460800, because its CH340 on macOS's own driver can't do
 921600; the AMOLED board's native USB flashes at 921600.
 Opening the port must not change DTR or RTS, or the auto-reset circuit
 reboots the board; `boopctl` leaves them alone.
+
+### Updating from the app
+
+`make bundle` builds both boards' firmware into `Boop.app`, packed by
+`firmware/tools/package.py` with a manifest of the board, its chip and
+flash, the version and SHA, and where each image goes, read from the
+board's own partition table. A board's `hello` names it (`board`, its
+env); from firmware before that, its face does, since only the AMOLED
+draws the gel. When the board runs another version than the app
+carries, Settings offers the update: plugged in over USB, the app writes
+the app image and the boot-slot record through the chip's ROM
+bootloader (LinkKit's `Flasher`) and restarts it, leaving the
+bootloader, partition table and NVS as they were. From a terminal,
+`linkkit-flash` writes the same images:
+
+```sh
+linkkit/.build/debug/linkkit-flash --chip esp32s3 --flash-size 16MB \
+  0xe000:.build/Boop.app/Contents/Resources/firmware/amoled206/boot_app0.bin \
+  0x10000:.build/Boop.app/Contents/Resources/firmware/amoled206/firmware.bin
+```
 
 ## The boards
 

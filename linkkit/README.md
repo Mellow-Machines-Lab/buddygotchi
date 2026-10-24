@@ -30,6 +30,10 @@ flowchart LR
   or skipped.
 - 🔌 **Bluetooth or USB, same messages.** A USB bridge shares the board
   with your app and your tools at once.
+- ⬆️ **Firmware updates from your app.** `Flasher` writes new firmware
+  onto an ESP32 or ESP32-S3 over USB through the chip's own bootloader,
+  checks it, and restarts it; `linkkit-flash` does the same from a
+  terminal.
 - 🧪 **Runs on a Mac too.** The device library's core has no Arduino
   headers, so its tests and simulators run anywhere.
 

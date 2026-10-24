@@ -9,6 +9,12 @@ import SQLite3
 /// crash keeps all of them or none. Touched only on `home`.
 public final class KeyValueStore {
     public static let fileName = "boop.sqlite"
+    /// The shape of the file, in SQLite's `user_version`: 1 is the one
+    /// `kv` table. A release that changes the shape raises it and moves an
+    /// older file over when it opens one; a file from a newer release than
+    /// this one is left alone (`init` refuses it, and the runtime keeps its
+    /// values in memory for the launch).
+    public static let schema = 1
 
     var db: OpaquePointer?
 
@@ -24,8 +30,16 @@ public final class KeyValueStore {
             db = nil
             throw Refusal("can't open \(path): \(why)")
         }
+        let version = try userVersion()
+        guard version <= Self.schema else {
+            sqlite3_close(db)
+            db = nil
+            throw Refusal("\(path) is from a newer Boop (schema \(version), this one knows \(Self.schema)), so it's left alone")
+        }
         try exec("PRAGMA journal_mode=WAL")
         try exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        // A file from before the version was kept (0) has schema 1's shape.
+        if version < Self.schema { try exec("PRAGMA user_version = \(Self.schema)") }
     }
 
     deinit { sqlite3_close(db) }
@@ -60,6 +74,15 @@ public final class KeyValueStore {
             try? exec("ROLLBACK")
             throw error
         }
+    }
+
+    /// The file's `user_version`: 0 for a new file, or one from before it was kept.
+    func userVersion() throws -> Int {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &statement, nil) == SQLITE_OK else { throw error() }
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_ROW else { throw error() }
+        return Int(sqlite3_column_int(statement, 0))
     }
 
     func exec(_ sql: String) throws {

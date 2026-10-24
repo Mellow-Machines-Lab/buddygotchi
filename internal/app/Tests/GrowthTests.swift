@@ -1,5 +1,6 @@
 import Foundation
 import MellowHarness
+import SQLite3
 import XCTest
 @testable import BoopKit
 
@@ -75,6 +76,36 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(again.int("a"), 3)
         XCTAssertEqual(again.string("b"), "two")
         XCTAssertTrue(FileManager.default.fileExists(atPath: dir.appendingPathComponent("boop.sqlite").path))
+    }
+
+    /// The rule: `boop.sqlite` says its shape in `user_version`. A file from
+    /// before it was kept (0) is schema 1's shape and keeps its values; a
+    /// file from a newer Boop is refused, and left as it was.
+    func testTheStoreKeepsItsSchemaAndLeavesANewerOneAlone() throws {
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set(["growth.xp": "40"])
+            let made = try store.userVersion()
+            XCTAssertEqual(made, KeyValueStore.schema)
+            try store.exec("PRAGMA user_version = 0")  // as every file before this release
+        }
+        do {
+            let older = try KeyValueStore(directory: dir)
+            XCTAssertEqual(older.int("growth.xp"), 40)
+            let moved = try older.userVersion()
+            XCTAssertEqual(moved, KeyValueStore.schema)
+            try older.exec("PRAGMA user_version = \(KeyValueStore.schema + 1)")
+        }
+        try XCTAssertThrowsError(try KeyValueStore(directory: dir))
+        // Untouched: the newer Boop finds it as it left it.
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open_v2(dir.appendingPathComponent(KeyValueStore.fileName).path, &db, SQLITE_OPEN_READONLY, nil), SQLITE_OK)
+        defer { sqlite3_close(db) }
+        var statement: OpaquePointer?
+        sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &statement, nil)
+        defer { sqlite3_finalize(statement) }
+        XCTAssertEqual(sqlite3_step(statement), SQLITE_ROW)
+        XCTAssertEqual(Int(sqlite3_column_int(statement, 0)), KeyValueStore.schema + 1)
     }
 
     /// Each event counts once: one at or before the last counted is left

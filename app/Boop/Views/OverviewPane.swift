@@ -19,6 +19,13 @@ struct OverviewPane: View {
                         notice("exclamationmark.triangle.fill", Theme.clayInk, "Boop couldn't start", error,
                                action: ("Show boop.log", model.showLog))
                     }
+                    if model.status?.uncleanExit == true {
+                        notice("exclamationmark.triangle.fill", Theme.clayInk, "\(model.name) stopped unexpectedly",
+                               "It didn't close properly last time. A bug report keeps what it knew, with macOS's crash report if there is one.",
+                               action: ("Save a bug report", model.saveReport)) {
+                            model.runtime?.dismissUncleanExit()
+                        }
+                    }
                     if model.noKey, !model.noKeyDismissed {
                         notice("key.fill", Theme.inkSoft, "\(model.name) can't react yet",
                                "Add a Jev API key in Settings, and \(model.name) reacts to what your agents do and answers when you talk.",

@@ -11,6 +11,7 @@ let package = Package(
     products: [
         .library(name: "LinkKit", targets: ["LinkKit"]),
         .executable(name: "linkkit-bridge", targets: ["LinkKitBridge"]),
+        .executable(name: "linkkit-flash", targets: ["LinkKitFlash"]),
     ],
     targets: [
         // The four messages, the transports, the USB bridge and the host's
@@ -19,6 +20,9 @@ let package = Package(
         // `linkkit-bridge`: shares a board's USB serial port on a socket
         // (`Bridge`), for `SocketTransport`.
         .executableTarget(name: "LinkKitBridge", dependencies: ["LinkKit"]),
+        // `linkkit-flash`: writes firmware onto an ESP32 or ESP32-S3 over
+        // USB, through its ROM bootloader (`Flasher`).
+        .executableTarget(name: "LinkKitFlash", dependencies: ["LinkKit"]),
         .testTarget(name: "LinkKitTests", dependencies: ["LinkKit"]),
     ]
 )
