@@ -61,7 +61,7 @@ the owner's. For agents:
 make build                                            # Mac app, boopdev, the tests' runner, agent-hook, mellowharness-emit, beacon, linkkit-bridge and linkkit-flash (make -C internal test builds it too)
 make -C internal test                                 # Swift unit tests: Boop's, then swift test in agent-hooks/, mellowharness/ and linkkit/
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth, printing everything
-.build/debug/Boop --snapshots DIR                     # the popover's panes and the menu-bar icons as PNGs, then exits
+.build/debug/Boop --snapshots DIR                     # the popover's panes, onboarding's acts and the menu-bar icons as PNGs, then exits
 ```
 
 ## Environment notes

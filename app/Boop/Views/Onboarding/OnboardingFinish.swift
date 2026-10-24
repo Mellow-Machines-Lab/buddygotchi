@@ -1,0 +1,280 @@
+import AgentHooks
+import BoopKit
+import SwiftUI
+
+// Acts 6 to 8: the agents, a few small things, and the finale.
+
+/// Act 6: which agents to watch, then a live hello from one of them, which
+/// proves the hooks reach Boop.
+struct AgentsAct: View {
+    @ObservedObject var model: OnboardingModel
+    @ObservedObject var app: AppModel
+
+    init(model: OnboardingModel) {
+        self.model = model
+        app = model.app
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Spacer(minLength: 0)
+            if !model.connected {
+                OnboardingBuddy(model: model, snapshot: .onboarding(mood: "curious"), size: 104)
+            }
+            ActTitle(title: model.connected ? "Say hi from your agent" : "Which agents should I watch?",
+                     detail: model.connected ? nil : "I listen through their hooks. I never approve, deny or block anything.")
+            if model.connected {
+                hello
+            } else if model.detectedAgents.isEmpty {
+                OnboardingCard {
+                    Text("I can't find Claude Code or Codex on this Mac. Install one, then connect me in Settings.")
+                        .font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
+                }
+            } else {
+                choose
+            }
+            Spacer(minLength: 0)
+            Spacer(minLength: 0)
+            nav
+        }
+        .padding(.horizontal, 48)
+        .padding(.bottom, 30)
+    }
+
+    // MARK: Choosing
+
+    private var choose: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                ForEach(Agent.allCases, id: \.self) { agent in agentCard(agent) }
+            }
+            if !app.installer.clientInPlace {
+                Text(AppModel.bundled ? "My hook helper is missing, so I can't add hooks yet. Install Boop again, then connect them in Settings."
+                                      : "agent-hook isn't built, so I can't add hooks yet. Run make build, then connect them in Settings.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.clayInk).multilineTextAlignment(.center)
+            }
+            Button {
+                withAnimation(.boopSettle) { model.showHooks.toggle() }
+            } label: {
+                Label("See exactly what gets added", systemImage: model.showHooks ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.quiet)
+            if model.showHooks {
+                ScrollView {
+                    Text(Agent.allCases.filter(app.installer.detected)
+                            .map { "\(app.installer.configURL($0).path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))\n"
+                                + app.installer.preview($0) }
+                            .joined(separator: "\n\n"))
+                        .font(.system(size: 10.5, design: .monospaced))
+                        .foregroundStyle(Theme.inkSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(height: 110)
+                .padding(10)
+                .background(Theme.well, in: RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+
+    private func agentCard(_ agent: Agent) -> some View {
+        let found = app.installer.detected(agent)
+        let on = found && app.installer.clientInPlace && app.setup.agents.contains(agent)
+        return OnboardingCard(highlight: on ? Theme.ink : nil) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(agent.displayName).font(.boop(16, .bold))
+                    Text(found ? "Found on this Mac" : "Not found on this Mac")
+                        .font(.system(size: 12, weight: found ? .semibold : .regular))
+                        .foregroundStyle(found ? Theme.sageInk : Theme.inkSoft)
+                }
+                Spacer()
+                Toggle("Watch \(agent.displayName)", isOn: Binding(get: { on }, set: { value in
+                    if value { app.setup.agents.insert(agent) } else { app.setup.agents.remove(agent) }
+                }))
+                .toggleStyle(.switch).labelsHidden()
+                .disabled(!found || !app.installer.clientInPlace)
+            }
+        }
+        .opacity(found ? 1 : 0.6)
+    }
+
+    // MARK: The live hello
+
+    private var hello: some View {
+        let names = Agent.allCases.filter { app.setup.agents.contains($0) && app.installer.detected($0) }.map(\.displayName)
+        let which = names.first ?? "Claude Code"
+        return VStack(spacing: 12) {
+            HStack(spacing: 18) {
+                OnboardingBuddy(model: model, snapshot: model.heard == nil ? .onboarding(mood: "curious") : .onboarding(mood: "excited"),
+                                size: 104)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(model.heard == nil ? "Open a new \(which) session and type anything" : "Heard you!")
+                        .font(.boop(17, .bold)).foregroundStyle(Color(hex: Palette.inkDark))
+                    Text(model.heard == nil ? "I'll wave when your agent's first hook reaches me."
+                                            : "\(Agent(rawValue: model.heard ?? "")?.displayName ?? which) is connected. I'll be watching.")
+                        .font(.system(size: 13)).foregroundStyle(Color(hex: Palette.inkSoftDark))
+                    if model.heard != nil {
+                        Label("Connected", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(hex: Palette.sageInkDark))
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(18)
+            .background(Color(hex: Palette.paperDark), in: RoundedRectangle(cornerRadius: 16))
+            .animation(.boopPop, value: model.heard)
+            ForEach(Agent.allCases.filter { app.hookErrors[$0] != nil }, id: \.self) { agent in
+                Text("Couldn't connect \(agent.displayName): \(app.hookErrors[agent] ?? "")")
+                    .font(.system(size: 12)).foregroundStyle(Theme.clayInk)
+            }
+            Text("Sessions already open need a restart to pick up my hooks.")
+                .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+        }
+    }
+
+    /// Until an agent says hi, moving on is "later".
+    private var later: (label: String, action: () -> Void)? {
+        guard model.heard == nil else { return nil }
+        let model = model
+        return (label: "I'll try it later", action: { model.next() })
+    }
+
+    @ViewBuilder private var nav: some View {
+        if model.connected {
+            ActNav(model: model, next: "Next", quiet: later)
+        } else if model.detectedAgents.isEmpty || !app.installer.clientInPlace {
+            ActNav(model: model)
+        } else {
+            ActNav(model: model, next: "Connect", enabled: !app.setup.agents.isEmpty) { model.connectAgents() }
+        }
+    }
+}
+
+/// Act 7: opening at login, the microphone, and the brain's key, each one
+/// card and each skippable.
+struct SmallThingsAct: View {
+    @ObservedObject var model: OnboardingModel
+    @ObservedObject var app: AppModel
+
+    init(model: OnboardingModel) {
+        self.model = model
+        app = model.app
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ActTitle(title: "A few small things")
+            login
+            mic
+            OnboardingBrainKey(app: app)
+            Spacer(minLength: 0)
+            ActNav(model: model)
+        }
+        .padding(.horizontal, 56)
+        .padding(.top, 2)
+        .padding(.bottom, 30)
+    }
+
+    private var login: some View {
+        OnboardingCard {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("I'll be here when you log in", systemImage: "power").font(.boop(15, .bold))
+                    Text(loginDetail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                if app.loginItemState == .needsApproval {
+                    Button("Open") { NSWorkspace.shared.open(LoginItem.settingsURL) }.buttonStyle(.row)
+                } else {
+                    Toggle("Open at login", isOn: Binding(get: { app.loginItemState == .on }, set: {
+                        model.loginTouched = true
+                        app.setOpenAtLogin($0)
+                    }))
+                    .toggleStyle(.switch).labelsHidden()
+                    .disabled(app.loginItemState == .unavailable)
+                }
+            }
+        }
+    }
+
+    private var loginDetail: String {
+        if let why = app.loginItemError { return "Couldn't change it: \(why)" }
+        return switch app.loginItemState {
+        case .on, .off: "I only watch your agents while I'm open."
+        case .needsApproval: "Allow me in System Settings, under General, Login Items."
+        case .unavailable: "Only Boop.app opens at login."
+        }
+    }
+
+    private var mic: some View {
+        OnboardingCard {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Want to talk to me?", systemImage: "mic").font(.boop(15, .bold))
+                    Text(micDetail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                switch model.mic {
+                case .notAsked: Button("Allow") { model.askForMic() }.buttonStyle(.row)
+                case .asking: ProgressView().controlSize(.small)
+                case .allowed: Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.sage)
+                case .refused: EmptyView()
+                }
+            }
+        }
+    }
+
+    private var micDetail: String {
+        switch model.mic {
+        case .refused(let why): why
+        case .allowed: "All set: hold my button, or press Talk, and speak."
+        default: "macOS will ask for the microphone and speech. What you say stays on this Mac; only the words reach my brain."
+        }
+    }
+}
+
+/// Act 8: a celebration, on screen and on the board, the four things worth
+/// remembering, and off to the menu bar.
+struct FinaleAct: View {
+    @ObservedObject var model: OnboardingModel
+
+    var body: some View {
+        VStack(spacing: 16) {
+            OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: 150)
+                .rotationEffect(.degrees(-4))
+                .padding(.top, 6)
+            Text("\(model.name) is all set!").font(.boop(30, .heavy))
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                tip("hand.tap", "Tap my screen", "to poke me")
+                tip("mic", "Hold my button", "and talk")
+                tip("bell", "Amber? Tap me", "to open who's waiting", amber: true)
+                tip("menubar.arrow.up.rectangle", "Find me", "in the menu bar, up top")
+            }
+            .frame(maxWidth: 520)
+            Spacer(minLength: 0)
+            Button("Let's go!") { model.finish() }
+                .buttonStyle(ProminentButtonStyle())
+                .keyboardShortcut(.defaultAction)
+        }
+        .padding(.horizontal, 56)
+        .padding(.top, 10)
+        .padding(.bottom, 30)
+        .task { model.feed.reaction(id: 0, DeviceReaction(anim: "task_complete", outcome: "success")) }
+    }
+
+    private func tip(_ icon: String, _ title: String, _ detail: String, amber: Bool = false) -> some View {
+        OnboardingCard(highlight: amber ? Theme.amber : nil) {
+            HStack(spacing: 10) {
+                Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.inkSoft).frame(width: 20)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).font(.boop(14, .bold))
+                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                }
+            }
+        }
+    }
+}

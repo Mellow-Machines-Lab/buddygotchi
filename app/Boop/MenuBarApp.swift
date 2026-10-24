@@ -33,21 +33,16 @@ enum MenuBarApp {
 }
 
 enum Pane: Equatable {
-    case overview, settings, setup
+    case overview, settings
 }
 
-/// What the person has chosen so far in setup. It lives in the model, so
-/// closing the popover halfway through loses nothing.
+/// What the person has chosen so far in onboarding: a name, a nature, and
+/// which agents to watch. It lives in the app's model, so moving between
+/// acts loses nothing.
 struct SetupDraft {
-    enum Step: Int, CaseIterable {
-        case hello, name, agents, ready
-    }
-
-    var step = Step.hello
     var name = ""
     var nature = LongTerm.Nature.sweet
     var agents = Set(Agent.allCases)
-    var error: String?
 
     var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -121,7 +116,6 @@ final class AppModel: ObservableObject {
     var backupStateDir: URL?
     let link: LinkSetting
     var runtime: Runtime?
-    var finishSetup: () -> Void = {}
     /// Shows `boop.log` in Finder.
     var showLog: () -> Void = {}
     /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
@@ -485,16 +479,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                       + "or repairs them; agent hooks reach its socket, not this one")
         }
         model.refreshHooks()
-        model.finishSetup = { [weak self] in self?.finishSetup() }
         model.showLog = { [log] in NSWorkspace.shared.activateFileViewerSelecting([log.url]) }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
-
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.target = self
-        item.button?.action = #selector(togglePopover)
-        statusItem = item
-        updateIcon()
 
         let host = NSHostingController(rootView: PopoverView(model: model) { [weak self] in self?.popover.performClose(nil) })
         host.sizingOptions = [.preferredContentSize]
@@ -504,16 +491,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.animates = false
         popover.delegate = self
 
+        // The first launch is onboarding, in its own window, and the menu
+        // bar waits for it. Past the name, the runtime runs, except while
+        // the board's act waits to explain Bluetooth before asking.
         let memory = try? MemoryStore(directory: stateDir, log: { [log] in log.write($0) })
-        if memory?.isSetUp == true {
-            startRuntime()
+        if let act = Onboarding.resume(isSetUp: memory?.isSetUp == true, saved: AppSettings.load(from: stateDir).onboarding) {
+            log.write("onboarding: from \(act.rawValue)")
+            if act.afterNaming, act != .body { startRuntime() }
+            showOnboarding(at: act)
         } else {
-            // First launch: open the popover on setup, once, so the person
-            // sees where Boop lives.
-            model.pane = .setup
-            model.setup.agents = Set(Agent.allCases.filter(model.installer.detected))
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in self?.showPopover() }
+            makeStatusItem()
+            startRuntime()
         }
+    }
+
+    /// The menu-bar icon and its popover: the app, once onboarding is done.
+    func makeStatusItem() {
+        guard statusItem == nil else { return }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.button?.target = self
+        item.button?.action = #selector(togglePopover)
+        statusItem = item
+        iconMood = nil
+        updateIcon()
+    }
+
+    // MARK: Onboarding
+
+    var onboardingWindow: NSWindow?
+    var onboarding: OnboardingModel?
+
+    func showOnboarding(at act: Onboarding.Act) {
+        let onboarding = OnboardingModel(app: model, act: act, stateDir: stateDir)
+        onboarding.startRuntime = { [weak self] in self?.startRuntime() }
+        onboarding.finished = { [weak self] in self?.finishOnboarding() }
+        onboarding.log = { [log] in log.write($0) }
+        self.onboarding = onboarding
+        let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(model: onboarding)))
+        // No close button: it ends at the finale; ⌘Q quits, and the next
+        // launch picks up where it left off.
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.title = "Welcome to Boop"
+        window.isMovableByWindowBackground = true
+        window.isReleasedWhenClosed = false
+        window.setContentSize(OnboardingView.size)
+        window.center()
+        onboardingWindow = window
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    /// Onboarding's last button: the menu-bar icon appears, and the window
+    /// shrinks into it.
+    func finishOnboarding() {
+        startRuntime()
+        makeStatusItem()
+        guard let window = onboardingWindow else { return }
+        let target = statusItem?.button?.window?.frame ?? NSRect(x: window.frame.maxX - 40, y: window.frame.maxY - 30, width: 30, height: 22)
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.45
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.5, 0, 0.75, 0)
+            window.animator().setFrame(NSRect(x: target.midX - 30, y: target.midY - 20, width: 60, height: 40), display: true)
+            window.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            Task { @MainActor in
+                window.orderOut(nil)
+                self?.onboardingWindow = nil
+                self?.onboarding = nil
+            }
+        })
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -545,7 +593,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     let presenceSignals = PresenceSignals()
 
+    /// Starts the runtime, once.
     func startRuntime() {
+        guard model.runtime == nil else { return }
         // In debug mode the dashboard can drive `make debug`; plain `make
         // run` stays deaf to it.
         var options = runtimeOptions(stateDir: stateDir, socketPath: stateDir.appendingPathComponent("boop.sock").path,
@@ -571,6 +621,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     }
                 }
             }
+            // Onboarding listens for a tap on the board and an agent's first hook.
+            runtime.onTap = { [weak self] in Task { @MainActor in self?.onboarding?.tapped() } }
+            runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
             presenceSignals.start { runtime.presence($0) }
             // A simulator started or stopped on this Mac: looked for while
             // Settings is open to show it.
@@ -676,26 +729,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         } else {
             NSApp.terminate(nil)
         }
-    }
-
-    func finishSetup() {
-        let draft = model.setup
-        do {
-            try Runtime.setUp(stateDir: stateDir, name: draft.trimmedName, nature: draft.nature)
-        } catch {
-            log.write("setup: \(error)")
-            model.setup.error = "Boop couldn't save its memory. What happened is in boop.log, in Boop's folder."
-            return
-        }
-        for agent in Agent.allCases
-        where model.ownsHooks && draft.agents.contains(agent) && model.installer.detected(agent) {
-            model.install(agent)
-        }
-        startRuntime()
-        // Boop watches agents only while it runs, so it opens at login from
-        // now on; Settings turns that off.
-        model.refreshLoginItem()
-        if model.ownsHooks, model.loginItemState == .off { model.setOpenAtLogin(true) }
-        withAnimation(.boopSettle) { model.pane = .overview }
     }
 }

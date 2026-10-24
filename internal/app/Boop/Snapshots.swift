@@ -32,8 +32,11 @@ enum Snapshots {
 
             // The slime mirror's, when the character pack has one (Boop's).
             let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
-            var gelImage: NSImage?
+            var gelImage: NSImage?, onboardingGel: NSImage?
+            OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
+                onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"),
+                                                         size: NSSize(width: 300, height: 300))
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
                 gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"), size: NSSize(width: 46, height: 46))
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
@@ -114,29 +117,9 @@ enum Snapshots {
                 shot("settings-old-firmware", model(installer, status: status(deviceTrouble: "the device's firmware is too old for this app: flash it")),
                      pane: .settings)
 
-                for step in SetupDraft.Step.allCases {
-                    let setup = model(installer, status: nil)
-                    setup.setup.step = step
-                    setup.setup.agents = [.claude]
-                    if step.rawValue >= SetupDraft.Step.name.rawValue { setup.setup.name = "Mochi" }
-                    shot("setup-\(step.rawValue + 1)-\(step)", setup, pane: .setup)
+                for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
+                    render(OnboardingView(model: onboarding), "onboarding-\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
                 }
-                let cheeky = model(installer, status: nil)
-                cheeky.setup.step = .name
-                cheeky.setup.name = "Mochi"
-                cheeky.setup.nature = .cheeky
-                shot("setup-2-name-cheeky", cheeky, pane: .setup)
-                for (name, text) in [("unicode", "우리의작은친구말랑이"), ("invalid", "Mochi: Pip")] {
-                    let named = model(installer, status: nil)
-                    named.setup.step = .name
-                    named.setup.editName(text)
-                    shot("setup-2-name-\(name)", named, pane: .setup)
-                }
-                let setup = model(unbuilt, status: nil)
-                setup.setup.step = .agents
-                setup.setup.agents = [.claude]
-                setup.setup.name = "Mochi"
-                shot("setup-3-agents-no-hook", setup, pane: .setup)
                 if let crowded = overviews(installer).first(where: { $0.0 == "crowded" })?.1 {
                     crowded.status?.snapshot.vol = 0
                     crowded.status?.personality = Personality.other
@@ -149,6 +132,58 @@ enum Snapshots {
             fail("snapshots: \(error)")
         }
         exit(0)
+    }
+
+    /// Onboarding's acts, and the states of them worth seeing, each on a
+    /// model of its own.
+    static func onboardings(_ installer: HookInstaller, gel: NSImage?) -> [(String, OnboardingModel)] {
+        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
+            let app = model(installer, status: status)
+            app.setup.name = act.index >= Onboarding.Act.makeMeYours.index ? "Mochi" : ""
+            let onboarding = OnboardingModel(app: app, act: act, stateDir: URL(fileURLWithPath: "/tmp/boop-snapshots-onboarding"))
+            onboarding.feed.stillImage = gel
+            set(onboarding)
+            return onboarding
+        }
+        let behind = at(.body, status: status()) {
+            $0.body = .joined
+            $0.app.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+        }
+        return [
+            ("1-hello", at(.hello)),
+            ("2-what-i-do", at(.whatIDo)),
+            ("3-name", at(.makeMeYours)),
+            ("3-name-cheeky", at(.makeMeYours) { $0.app.setup.nature = .cheeky }),
+            ("3-name-invalid", at(.makeMeYours) { $0.app.setup.editName("Mochi: Pip") }),
+            ("3-name-unicode", at(.makeMeYours) { $0.app.setup.editName("우리의작은친구말랑이") }),
+            ("4-body-intro", at(.body)),
+            ("4-body-looking", at(.body, status: status(connected: false)) { $0.body = .looking }),
+            ("4-body-bluetooth-off", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))) {
+                $0.body = .looking
+            }),
+            ("4-body-found", at(.body, status: status()) { $0.body = .looking }),
+            ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
+            ("4-body-joined-hungry", behind),
+            ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
+            ("5-how-to", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.lessons = [.tap]
+            }),
+            ("5-how-to-done", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.lessons = [.tap, .button]
+            }),
+            ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
+            ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
+            ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
+            ("6-agents-heard", at(.agents, status: status()) {
+                $0.connected = true
+                $0.heard = "claude"
+            }),
+            ("7-small-things", at(.smallThings, status: status())),
+            ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
+            ("8-finale", at(.finale, status: status())),
+        ]
     }
 
     /// The setup field uses the memory name's

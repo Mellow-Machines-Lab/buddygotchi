@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-22. How we check that Boop works, including what's on its
+Updated 2026-10-24. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -94,7 +94,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
-  popover's panes, gel frames and menu-bar icons as PNGs (L0). With a
+  popover's panes, onboarding's acts and their states, gel frames and
+  menu-bar icons as PNGs (L0). With a
   state directory other than the everyday one, it never installs or
   repairs the hooks. Besides the `{"dev":…}` lines `--help` lists, a
   headless socket takes `{"dev":"presence",…}`, the Mac's lock, sleep
@@ -342,8 +343,9 @@ gets at least one scenario. Their pictures are the golden images in
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
   look. The run fails by itself on low contrast.
-  It also checks setup-name character limits and validation, and includes
-  Unicode names, invalid names and a crowded Overview at a bounded height.
+  It also checks the name's character limits and validation, and includes
+  Unicode names, invalid names, every onboarding act (`onboarding-*`) and
+  a crowded Overview at a bounded height.
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.

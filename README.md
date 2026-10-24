@@ -79,10 +79,12 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
    and the ESP32 toolchain inside the checkout, which takes a few
    minutes; a `pio` already on your `PATH` is used instead.
 2. **Run it.** From your own terminal, run `make run`. The first build
-   takes a minute or two, then Boop appears in the menu bar.
-3. **Say hello.** Give it a name, pick sweet or cheeky, and choose which
-   agents to watch. Restart open agent sessions so they pick up Boop's
-   hooks.
+   takes a minute or two, then Boop says hello in a window of its own.
+3. **Meet Boop.** It walks you through what it does, gets a name and a
+   nature (sweet or cheeky), finds its body on your desk (tap its screen
+   when it asks), shows you how to use it, and connects your agents.
+   Then it lives in the menu bar. Restart open agent sessions so they
+   pick up Boop's hooks.
 
 Then tap the screen or press BOOT to poke it.
 
