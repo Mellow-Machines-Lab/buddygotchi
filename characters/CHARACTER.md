@@ -515,28 +515,28 @@ Besides drawing each mood and state, a face:
   a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the
   bottom 48 px are the engine's: the status strip (who needs you, how
-  many sessions work, a mini for each helper at work, up to four and
-  then +N, a parcel and the count of agents idle for BOOT to hand over,
-  and last how far down its to-do list the longest turn with one is, as
-  `3/7`, in both packs; a finished turn's tick or cross) and the speech
-  bubble. The face calls
-  `drawLane` to draw them. The engine fades the strip in as it comes and
-  out as it goes, over the rig's 200 ms fade, from the moment it came or
-  went, and hands the face its opacity with it (`Strip::opacity`):
-  `drawLane` dithers it on the canvas, and a face that draws its own
-  lane, as the gel does, draws it at that opacity.
+  many sessions work by a half-filled ring, a mini for each helper at
+  work, up to four and then +N, a parcel and the count of agents idle for
+  BOOT to hand over, and last how far down its to-do list the longest
+  turn with one is, as `3/7`, in both packs; a finished turn's tick in
+  sage or cross in clay) and the speech bubble, their text cut by
+  `render::cutAt`. The face calls `drawLane` to draw them. The engine
+  fades the strip in as it comes and out as it goes, over the rig's 200 ms
+  fade, from the moment it came or went, and hands the face its opacity
+  with it (`Strip::opacity`): `drawLane` dithers it on the canvas, and a
+  face that draws its own lane, as the gel does, draws it at that opacity.
 - **Holds up a sign.** Any reaction may carry words in `sign` (the `do`'s
-  args), at most 18 glyphs of the fonts (accents folded, cut with `..`
-  past that, `render::foldText`). The engine keeps them up from the
-  reaction's start for as long as any part of it plays, and at least
-  2.5 s to be read (`Behaviour::kSignMinMs`); a newer reaction's
-  animation or `say`, listening and needs you take them down, a tap's
-  poke doesn't. A face gets them as `SignShow` (the words, and how long
-  they've shown) and draws them as its own: Pixel's a card under its face
-  gripped by two mitts (`render/pixel/held.h`), the gel's a card in front
-  of its body with a little gel hand at either side
-  (`render/gel/layers.h`). Each slides up as it starts and bobs while
-  it's held.
+  args), at most 18 glyphs of the fonts (accents folded, and past that
+  cut at a word with `..` as all the lane's text is, `render::foldText`).
+  The engine keeps them up from the reaction's start for as long as any
+  part of it plays, and at least 2.5 s to be read
+  (`Behaviour::kSignMinMs`); a newer reaction's animation or `say`,
+  listening and needs you take them down, a tap's poke doesn't. A face
+  gets them as `SignShow` (the words, and how long they've shown) and
+  draws them as its own: Pixel's a card under its face gripped by two
+  mitts (`render/pixel/held.h`), the gel's a card in front of its body
+  with a little gel hand at either side (`render/gel/layers.h`). Each
+  slides up as it starts and bobs while it's held.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the

@@ -1193,8 +1193,8 @@ static void test_the_lane_is_native_and_tracked() {
     for (int x = 0; x < kW; ++x) TEST_ASSERT_EQUAL_HEX16(0, a[size_t(y) * kW + x]);
 }
 // The strip fades as one: at any opacity each pixel is the whole strip's,
-// blended once over the lane's black, so its holes (the working ring's
-// inside, the minis' eyes) stay holes, and where its marks meet blends once.
+// blended once over the lane's black, so its holes (the working mark's open
+// half, the minis' eyes) stay holes, and where its marks meet blends once.
 static void test_the_strip_fades_as_one() {
   constexpr int kW = 502, kH = 410;
   std::vector<uint16_t> a(kW * kH), b(a.size());
@@ -1210,6 +1210,39 @@ static void test_the_strip_fades_as_one() {
     paintLane(faded, nullptr, partial);
     const int alpha = (opacity * 255 + 500) / 1000;
     for (size_t i = 0; i < a.size(); ++i) TEST_ASSERT_EQUAL_HEX16(mix565(0, a[i], alpha), b[i]);
+  }
+}
+// The lane's text is cut by the rule every face's is (render::cutAt): a
+// line too long for its room draws as the words cutAt keeps and "..". The
+// working count's mark is a ring with its left half filled, which no digit
+// reads as; a finished turn's tick is sage and its cross clay.
+static void test_the_lane_cuts_and_marks_as_the_canvas_does() {
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> a(kW * kH), b(a.size());
+  Surface cut{kW, kH, a.data()}, whole{kW, kH, b.data()};
+  Raster rc{cut}, rw{whole};
+  rc.limit = rw.limit = kH;
+  text(rc, kSign, 0, 0, "claude \xC2\xB7 what does the turn do", 0xffff, 24 * kSign.w);
+  text(rw, kSign, 0, 0, "claude \xC2\xB7 what does the..", 0xffff);
+  TEST_ASSERT_EQUAL_MEMORY(b.data(), a.data(), cut.bytes());
+  // With no names, the counts start at the margin: the mark's middle 9 px in.
+  Strip s;
+  s.busy = 2;
+  cut.invalidate(), cut.clear();
+  paintLane(cut, nullptr, s);
+  const int cy = kH * ((kStripTop + kHeight) / 2) / kHeight;
+  TEST_ASSERT_EQUAL_HEX16(paletteAt(inkAt(kInkGrey, kLevels)), a[size_t(cy) * kW + 18 + 6]);
+  TEST_ASSERT_EQUAL_HEX16(0, a[size_t(cy) * kW + 18 + 12]);
+  for (auto [outcome, ink] :
+       {std::pair{Outcome::kSuccess, rgb565(kSageRgb)}, std::pair{Outcome::kFailure, rgb565(kClayRgb)}}) {
+    Strip done;
+    done.doneAgent = "claude", done.doneThread = "fix-nav", done.doneOutcome = outcome;
+    cut.invalidate(), cut.clear();
+    paintLane(cut, nullptr, done);
+    int lit = 0;
+    for (int y = cy - 8; y <= cy + 8; ++y)
+      for (int x = 18; x < 18 + 18; ++x) lit += a[size_t(y) * kW + x] == ink;
+    TEST_ASSERT_TRUE(lit > 10);
   }
 }
 // What a frame keeps from its surface's last (a card's
@@ -1452,6 +1485,7 @@ int main() {
   RUN_TEST(test_steady_frames_allocate_nothing);
   RUN_TEST(test_the_lane_is_native_and_tracked);
   RUN_TEST(test_the_strip_fades_as_one);
+  RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);

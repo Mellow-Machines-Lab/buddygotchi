@@ -816,7 +816,7 @@ card's reveal while the card is drawn):
   often frames are drawn doesn't change one. The gel draws the strip whole
   and blends it once at that opacity: its rows hold nothing else, over
   black, so that is scaling the pixels it wrote, in place, with no buffer,
-  and a hole (the working ring's inside, a mini's eyes) stays one. The
+  and a hole (the working mark's open half, a mini's eyes) stays one. The
   preview's lane fades who needs you with the alert's card.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling

@@ -1747,9 +1747,9 @@ static void test_the_next_reaction_waits_half_a_second_after_a_bubble() {
 }
 
 // A reaction's `sign`: its words as the fonts draw them, at most 18 glyphs
-// (app::kSignGlyphs), cut with ".."; dbg.state says it while it's up. A
-// `react` with one rests only once it's down, so the next can't take it
-// down before it's been read (Behaviour::kSignMinMs).
+// (app::kSignGlyphs), cut at a word with ".." (render::cutAt); dbg.state
+// says it while it's up. A `react` with one rests only once it's down, so
+// the next can't take it down before it's been read (Behaviour::kSignMinMs).
 static void test_a_reaction_holds_up_its_sign() {
   TEST_ASSERT_EQUAL_INT(18, app::kSignGlyphs);
   Rig r;
@@ -1766,7 +1766,7 @@ static void test_a_reaction_holds_up_its_sign() {
   clockAt(r, 10000);
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   doLine(r, 3, "react", "now", "{\"sign\":\"still broken after all that\"}");
-  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"still broken aft..\""));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"still broken..\""));
   doLine(r, 4, "react", "now", "{\"sign\":\"caf\xC3\xA9\\nna\xC3\xAFve \xC2\xB7 \xE2\x9C\x93\"}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"sign\":\"cafe naive \xC2\xB7 ?\""));
   // Not a string, or nothing but spaces: no sign, and nothing to play.

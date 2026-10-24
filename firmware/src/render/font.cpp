@@ -1,5 +1,7 @@
 #include "render/font.h"
 
+#include <algorithm>
+
 #include "fonts.h"
 #include "render/palette.h"
 
@@ -16,6 +18,16 @@ namespace {
 constexpr char kLatin1[] = "AAAAAAACEEEEIIIIDNOOOOOxOUUUUYPsaaaaaaaceeeeiiiidnooooo/ouuuuypy";
 static_assert(sizeof(kLatin1) == 64 + 1, "one letter per code point");
 
+constexpr int kDot = 95;  // "·", the first extra after '~'
+
+// The bytes of `text`'s first `glyphs` glyphs.
+int bytesOf(const char* text, int glyphs) {
+  const char* p = text;
+  for (int i = 0; i < glyphs && nextGlyph(p) >= 0; ++i) {
+  }
+  return int(p - text);
+}
+
 }  // namespace
 
 int nextGlyph(const char*& p) {
@@ -25,7 +37,7 @@ int nextGlyph(const char*& p) {
   unsigned char next = static_cast<unsigned char>(*p);
   if (c == 0xC2 && next == 0xB7) {
     ++p;
-    return 95;  // "·", the first extra after '~'
+    return kDot;
   }
   if (c == 0xC3 && (next & 0xC0) == 0x80) {
     ++p;
@@ -68,8 +80,8 @@ int stringWidth(const Font& f, const char* text) { return glyphCount(text) * f.w
 
 int drawStringFit(Canvas& c, const Font& f, int x, int y, const char* text, int ink, int maxWidth) {
   if (stringWidth(f, text) <= maxWidth) return drawString(c, f, x, y, text, ink);
-  int room = maxWidth / f.w - 2;  // leave space for ".."
-  for (int g; room > 0 && (g = nextGlyph(text)) >= 0; --room, x += f.w) drawGlyph(c, f, x, y, g, ink);
+  for (int keep = cutAt(text, maxWidth / f.w - 2), g; keep > 0 && (g = nextGlyph(text)) >= 0; --keep, x += f.w)
+    drawGlyph(c, f, x, y, g, ink);
   for (int i = 0; i < 2; ++i, x += f.w) drawGlyph(c, f, x, y, '.' - 0x20, ink);
   return x;
 }
@@ -78,6 +90,22 @@ int glyphCount(const char* text) {
   int n = 0;
   while (nextGlyph(text) >= 0) ++n;
   return n;
+}
+
+int cutAt(const char* text, int most) {
+  int word = 0, solid = 0, prev = 0;
+  const char* p = text;
+  for (int i = 0; i <= most; ++i) {
+    const int g = nextGlyph(p);
+    if (g == kDot)
+      word = 0;  // the cut stays in what follows the last "·"
+    else if (g <= 0 && prev > 0 && prev != kDot)
+      word = i;  // a word ends before glyph i
+    if (g < 0) break;
+    if (g > 0 && g != kDot && i < most) solid = i + 1;
+    prev = g;
+  }
+  return word > 0 && 2 * word >= most ? word : solid;
 }
 
 int wrapText(const char* text, int cols, int maxLines, char* out, int lineBytes) {
@@ -92,17 +120,21 @@ int wrapText(const char* text, int cols, int maxLines, char* out, int lineBytes)
   };
   const char* p = text;
   while (*p == ' ') ++p;
+  bool spaced = false;  // a space comes before the next piece
   while (*p && !cut) {
+    // The next piece: a word, or a word's part up to and with its hyphen,
+    // after which a line may break.
     const char* end = p;
-    while (*end && *end != ' ') ++end;
+    while (*end && *end != ' ' && *end != '-') ++end;
+    while (*end == '-') ++end;
     int wg = 0;
     for (const char* q = p; q < end; ++wg) nextGlyph(q);
-    if (n == 0 || g + 1 + wg > cols) {
+    if (n == 0 || g + spaced + wg > cols) {
       if (!next()) cut = true;
-    } else {
+    } else if (spaced) {
       line[b++] = ' ', line[b] = 0, ++g;
     }
-    // The word, a glyph at a time, onto more lines when it's longer than one.
+    // The piece, a glyph at a time, onto more lines when it's longer than one.
     while (!cut && p < end) {
       if (g == cols && !next()) {
         cut = true;
@@ -118,15 +150,13 @@ int wrapText(const char* text, int cols, int maxLines, char* out, int lineBytes)
       for (int i = 0; i < nb; ++i) line[b++] = p[i];
       line[b] = 0, ++g, p = q;
     }
+    spaced = *p == ' ';
     while (*p == ' ') ++p;
   }
-  if (cut && n > 0) {  // the last line ends "..", within its columns and bytes
-    int keep = g < cols - 2 ? g : cols - 2;
-    const char* q = line;
-    for (int i = 0; i < keep; ++i) nextGlyph(q);
-    int at = int(q - line);
-    while (at > 0 && line[at - 1] == ' ') --at;
-    if (at + 3 > lineBytes) at = lineBytes - 3;
+  if (cut && n > 0) {  // the last line ends "..", within its columns and bytes, where cutAt cuts it
+    int most = cols - 2, keep = g <= most ? g : cutAt(line, most);
+    while (keep > 0 && bytesOf(line, keep) + 3 > lineBytes) keep = cutAt(line, --most);
+    const int at = bytesOf(line, keep);
     line[at] = '.', line[at + 1] = '.', line[at + 2] = 0;
   }
   return n;
@@ -149,27 +179,29 @@ int foldText(const char* text, int maxGlyphs, char* out, size_t n) {
     ++total;
     if (g) last = total;
   }
+  // Folded: all of them when they fit, else a cut's room and the glyph
+  // after it, which says whether a word ends there (cutAt).
   const bool cut = last > maxGlyphs;
-  const int keep = cut ? maxGlyphs - 2 : last;
   size_t b = 0;
   int written = 0;
   p = text;
-  for (int g; written < keep && (g = glyphOf(p)) >= 0;) {
+  for (int g; written < (cut ? maxGlyphs - 1 : last) && (g = glyphOf(p)) >= 0;) {
     if (g == 0 && written == 0) continue;
-    const size_t len = g == 95 ? 2 : 1;  // "·", the one glyph of two bytes
-    if (b + len + (cut ? 2 : 0) >= n) break;
+    const size_t len = g == kDot ? 2 : 1;  // "·", the one glyph of two bytes
+    if (b + len >= n) break;
     if (len == 2)
       out[b] = '\xC2', out[b + 1] = '\xB7';
     else
       out[b] = char(g + 0x20);
     b += len, ++written;
   }
-  if (cut && b + 2 < n) {
-    while (b > 0 && out[b - 1] == ' ') --b, --written;  // "done.." rather than "done .."
-    out[b++] = '.', out[b++] = '.', written += 2;
-  }
   out[b] = 0;
-  return written;
+  if (!cut || n < 3) return written;
+  int most = std::min(maxGlyphs - 2, written), keep = cutAt(out, most);
+  while (keep > 0 && size_t(bytesOf(out, keep)) + 3 > n) keep = cutAt(out, --most);
+  b = size_t(bytesOf(out, keep));
+  out[b] = '.', out[b + 1] = '.', out[b + 2] = 0;
+  return keep + 2;
 }
 
 }  // namespace render

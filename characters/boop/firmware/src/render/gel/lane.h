@@ -13,8 +13,8 @@ namespace render::gel {
 
 struct Raster;
 // Text in the fonts' glyphs (render::nextGlyph), its cells' top left at
-// (x, y): at most `room` px of it, ending ".." when cut, as the canvas's
-// drawStringFit. Returns the x after it.
+// (x, y): at most `room` px of it, cut as render::cutAt cuts it, as the
+// canvas's drawStringFit. Returns the x after it.
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20);
 
 // The bubble, or else the strip at its opacity.

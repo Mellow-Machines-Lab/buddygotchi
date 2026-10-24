@@ -1,7 +1,7 @@
 // A reaction's sign: the words held up on a card under the face, from the
 // reaction's start for as long as it plays, and at least 2.5 s. Cut past
-// 18 glyphs with "..", and accents folded as the fonts draw them. A state
-// now and then keeps the link alive.
+// 18 glyphs at a word with "..", and accents folded as the fonts draw
+// them. A state now and then keeps the link alive.
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy"}
 {"clock":1000}
@@ -14,10 +14,11 @@
 {"expect":{"sign":"bye bye code"}}
 {"clock":3500}
 {"expect":{"sign":null}}
-// Too long for one card: cut at 16 glyphs and "..", in the large font.
+// Too long for one card: cut at its last word within 16 glyphs, and "..",
+// in the large font.
 {"clock":5000}
 {"t":"do","name":"react","play":"now","args":{"sign":"  still broken after all of that  "}}
-{"expect":{"sign":"still broken aft.."}}
+{"expect":{"sign":"still broken.."}}
 {"clock":5600}
 {"shot":"cut"}
 // Accents fold, and "·" stays.

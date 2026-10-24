@@ -27,11 +27,12 @@ constexpr int kBubbleLine = 2;
 void plotInk(Canvas& c, int x, int y, int level, int ink) { c.plot(x, y, inkAt(ink, level)); }
 
 // The strip's two round icons, 10 × 10 px, as anti-aliased levels (0 is
-// bare glass): the dot by who needs you and the ring by the working count.
+// bare glass): the dot by who needs you, and by the working count a ring
+// with its left half filled, which no digit reads as.
 constexpr char kDot[10][11] = {"0026886200", "0488888840", "2888888882", "6888888886", "7888888887",
                                "7888888887", "6888888886", "2888888882", "0488888840", "0026886200"};
-constexpr char kRing[10][11] = {"0026886200", "0488888840", "2884004882", "6840000486", "7810000187",
-                                "7810000187", "6840000486", "2884004882", "0488888840", "0026886200"};
+constexpr char kWorking[10][11] = {"0026886200", "0488888840", "2888804882", "6888800486", "7888800187",
+                                   "7888800187", "6888800486", "2888804882", "0488888840", "0026886200"};
 
 void drawIcon(Canvas& c, int x, int y, const char (&icon)[10][11], int ink) {
   for (int j = 0; j < 10; ++j) {
@@ -125,7 +126,7 @@ int drawCounts(Canvas* c, const Strip& s, int x) {
     return c ? drawString(*c, kSmall, at, ty, n, ink) : at + stringWidth(kSmall, n);
   };
   if (s.busy > 0) {
-    if (c) drawIcon(*c, x, cy - 5, kRing, kInkGrey);
+    if (c) drawIcon(*c, x, cy - 5, kWorking, kInkGrey);
     std::snprintf(n, sizeof(n), "%d", s.busy);
     x = number(x + 15, kInkGrey) + 14;
   }
@@ -181,9 +182,12 @@ void stripWhole(Canvas& c, const Strip& s) {
     x += 14;
   } else if (s.doneAgent) {
     uint8_t eye = inkAt(kInkEye, kLevels);
-    if (s.doneOutcome == Outcome::kSuccess) iconTick(c, x - 1, cy - 8, eye);
-    else if (s.doneOutcome == Outcome::kFailure) iconCross(c, x - 1, cy - 8, eye);
-    else iconDots(c, x - 1, cy - 8, eye);
+    if (s.doneOutcome == Outcome::kSuccess)
+      iconTick(c, x - 1, cy - 8, kSage);
+    else if (s.doneOutcome == Outcome::kFailure)
+      iconCross(c, x - 1, cy - 8, kClay);
+    else
+      iconDots(c, x - 1, cy - 8, eye);
     // Who finished, cut to leave room for the working count.
     const int fit = kWidth - kMargin - (x + 15) - counts;
     char who[48];

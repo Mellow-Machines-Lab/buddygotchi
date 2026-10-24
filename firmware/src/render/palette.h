@@ -1,7 +1,8 @@
 // The canvas palette: index → RGB565. Every colour on
 // the screen comes from this one table: "Warm Terminal", black glass with
 // grey text and one amber accent, plus the bring-up colours; then the
-// animation bank's colours, flat, which faces.h lists.
+// animation bank's colours, flat, which faces.h lists; then the finish's
+// sage and clay.
 //
 // Anti-aliased edges (the text, and the strip's round icons) use ramps: 8 steps
 // from black up to an ink colour. The table is computed with integer maths
@@ -23,10 +24,14 @@ struct Rgb {
 
 // The Warm Terminal colours.
 constexpr Rgb kGlass = {0, 0, 0};          // the backlit black
-constexpr Rgb kEyeRgb = {246, 244, 238};   // warm white: whose turn it was, the finish's mark
+constexpr Rgb kEyeRgb = {246, 244, 238};   // warm white: whose turn it was, a reply's dots
 constexpr Rgb kAmberRgb = {255, 176, 0};   // the one accent: needs you, the bubble's text
 constexpr Rgb kGreyRgb = {140, 132, 121};  // secondary text
 constexpr Rgb kDimRgb = {74, 68, 62};      // faint text, dividers, rings, the bubble's box
+// The finish's marks on the strip: a success's tick in sage, a failure's
+// cross in clay, the Mac's own inks for them on dark (its Theme).
+constexpr Rgb kSageRgb = {163, 204, 144};
+constexpr Rgb kClayRgb = {240, 147, 132};
 
 // Fixed entries: the bring-up pattern's colours.
 enum Color : uint8_t {
@@ -59,7 +64,9 @@ constexpr int kInkOnAmber = 0x40;
 static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the amber ramp fits before the inks");
 constexpr int kPaletteUsed = kInkBase + kInkCount * kLevels;
 static_assert(kPaletteUsed == faces::kSceneBase, "the scene colours start after the ramps");
-static_assert(faces::kSceneBase + faces::kColorCount - 1 <= 256, "palette overflow");
+// The finish's marks, flat, in the entries after the scene colours.
+constexpr uint8_t kSage = faces::kSceneBase + faces::kColorCount - 1, kClay = kSage + 1;
+static_assert(faces::kSceneBase + faces::kColorCount - 1 + 2 <= 256, "palette overflow");
 
 // The index for ink `ink` at coverage `level` (0..8) over black.
 constexpr uint8_t inkAt(int ink, int level) {
@@ -106,6 +113,7 @@ constexpr PaletteTable makePalette() {
     const faces::Color& c = faces::kColors[i];
     p.c[faces::kSceneBase + i - 1] = rgb565(c.r, c.g, c.b);
   }
+  p.c[kSage] = rgb565(kSageRgb), p.c[kClay] = rgb565(kClayRgb);
   return p;
 }
 

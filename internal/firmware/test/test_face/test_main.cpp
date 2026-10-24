@@ -315,9 +315,23 @@ static void test_the_bubble_takes_the_lane() {
   }
 }
 
+// The working count's mark is a ring with its left half filled, which no
+// digit reads as: inside it, the left of its middle is lit and the right
+// is bare glass.
+static void test_the_working_mark_is_half_filled() {
+  Strip s;
+  s.busy = 2;
+  Buf b;
+  drawStrip(b.c, s);
+  const int left = 12, top = (kStripTop + kHeight) / 2 - 5;  // its 10 × 10 box
+  TEST_ASSERT_EQUAL_UINT8(inkAt(kInkGrey, kLevels), b.at(left + 3, top + 5));
+  TEST_ASSERT_EQUAL_UINT8(kBlack, b.at(left + 6, top + 5));
+}
+
 // While the brain's finish plays, the strip names whose
-// turn it was after a mark for its result: a tick for a success, a cross
-// for a failure, three dots for a reply; each draws differently.
+// turn it was after a mark for its result: a tick for a success in sage, a
+// cross for a failure in clay, three dots for a reply in the names' white;
+// each draws differently.
 static void test_the_strip_marks_the_finish() {
   auto mark = [](Outcome o) {
     Strip s;
@@ -332,11 +346,15 @@ static void test_the_strip_marks_the_finish() {
   };
   auto tick = mark(Outcome::kSuccess), cross = mark(Outcome::kFailure), dots = mark(Outcome::kNone);
   TEST_ASSERT_TRUE(tick != cross && cross != dots && tick != dots);
-  for (const auto& icon : {tick, cross, dots}) {
+  const std::pair<const std::vector<uint8_t>*, uint8_t> inks[] = {
+      {&tick, kSage}, {&cross, kClay}, {&dots, inkAt(kInkEye, kLevels)}};
+  for (const auto& [icon, ink] : inks) {
     int lit = 0;
-    for (uint8_t v : icon) lit += v == inkAt(kInkEye, kLevels);
+    for (uint8_t v : *icon) lit += v == ink;
     TEST_ASSERT_TRUE(lit > 0);
   }
+  TEST_ASSERT_EQUAL_HEX16(rgb565(kSageRgb), paletteAt(kSage));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(kClayRgb), paletteAt(kClay));
 }
 
 static void test_fonts_are_monospaced_and_utf8_aware() {
@@ -520,24 +538,51 @@ void test_the_placard_is_black_on_amber() {
   TEST_ASSERT_TRUE(b.count(sceneInk(1)) > 100);  // the head and the mitts
 }
 
-void test_text_wraps_at_spaces() {
+// Text that doesn't fit is cut by one rule on every face (cutAt): at the
+// end of its last word within the room, after the last "·", when that
+// keeps at least half the room, else mid-word; never ending on a space or
+// a "·", and ".." after it.
+void test_text_is_cut_at_a_word_where_one_fits() {
+  TEST_ASSERT_EQUAL_INT(12, cutAt("still broken after all", 16));               // "still broken.."
+  TEST_ASSERT_EQUAL_INT(13, cutAt("what does the turn do", 14));                // no space before ".."
+  TEST_ASSERT_EQUAL_INT(16, cutAt("a supercalifragilistic", 16));               // "a" is under half: mid-word
+  TEST_ASSERT_EQUAL_INT(16, cutAt("claude \xC2\xB7 a-very-long-project", 16));  // not "claude.."
+  TEST_ASSERT_EQUAL_INT(17, cutAt("claude \xC2\xB7 Make the device answer", 17));
+  TEST_ASSERT_EQUAL_INT(5, cutAt("hello \xC2\xB7 world", 7));  // not "hello ·.."
+  TEST_ASSERT_EQUAL_INT(0, cutAt("anything", 0));
+  // The canvas draws the cut as the rule has it.
+  Buf cut, whole;
+  drawStringFit(cut.c, kSmall, 0, 0, "still broken after all", kInkAmber, 16 * kSmall.w);
+  drawString(whole.c, kSmall, 0, 0, "still broken..", kInkAmber);
+  TEST_ASSERT_TRUE(cut.px == whole.px);
+}
+
+// A long thread or project wraps at spaces, and after a hyphen where a
+// name has no space ("a-very-long-" then "project-name"), inside a word
+// only when there's neither.
+void test_text_wraps_at_spaces_and_hyphens() {
   char lines[3][48];
   TEST_ASSERT_EQUAL_INT(2, wrapText("Thread name on \"needs..", 16, 3, &lines[0][0], 48));
   TEST_ASSERT_EQUAL_STRING("Thread name on", lines[0]);
   TEST_ASSERT_EQUAL_STRING("\"needs..", lines[1]);
   TEST_ASSERT_EQUAL_INT(2, wrapText("a-very-long-project-n..", 16, 3, &lines[0][0], 48));
-  TEST_ASSERT_EQUAL_STRING("a-very-long-proj", lines[0]);
-  TEST_ASSERT_EQUAL_STRING("ect-n..", lines[1]);
+  TEST_ASSERT_EQUAL_STRING("a-very-long-", lines[0]);
+  TEST_ASSERT_EQUAL_STRING("project-n..", lines[1]);
+  TEST_ASSERT_EQUAL_INT(2, wrapText("fix a-very-long-project-name", 16, 3, &lines[0][0], 48));
+  TEST_ASSERT_EQUAL_STRING("fix a-very-long-", lines[0]);
+  TEST_ASSERT_EQUAL_STRING("project-name", lines[1]);
   TEST_ASSERT_EQUAL_INT(2, wrapText("one two three four five six", 10, 2, &lines[0][0], 48));
   TEST_ASSERT_EQUAL_STRING("one two", lines[0]);
-  TEST_ASSERT_EQUAL_STRING("three fo..", lines[1]);
+  TEST_ASSERT_EQUAL_STRING("three..", lines[1]);  // the last line cut as cutAt cuts
+  TEST_ASSERT_EQUAL_INT(1, wrapText("supercalifragilistic expialidocious", 10, 1, &lines[0][0], 48));
+  TEST_ASSERT_EQUAL_STRING("supercal..", lines[0]);
   TEST_ASSERT_EQUAL_INT(1, wrapText("caf\xC3\xA9 \xC2\xB7 ok", 16, 3, &lines[0][0], 48));
   TEST_ASSERT_EQUAL_INT(9, glyphCount(lines[0]));
   TEST_ASSERT_EQUAL_INT(0, wrapText("   ", 16, 3, &lines[0][0], 48));
 }
 
 // A sign's words (foldText): as the fonts draw them, trimmed, and at most
-// the glyphs asked for, cut with "..".
+// the glyphs asked for, cut as cutAt cuts them, with "..".
 void test_text_folds_and_cuts_to_its_glyphs() {
   char out[40];
   TEST_ASSERT_EQUAL_INT(12, foldText("  bye bye code ", 18, out, sizeof out));
@@ -548,20 +593,23 @@ void test_text_folds_and_cuts_to_its_glyphs() {
   TEST_ASSERT_EQUAL_STRING("nineteen glyphs,..", out);
   TEST_ASSERT_EQUAL_INT(14, foldText("still broken after", 15, out, sizeof out));  // no space before ".."
   TEST_ASSERT_EQUAL_STRING("still broken..", out);
-  TEST_ASSERT_EQUAL_INT(18, foldText("still broken  aft\xC3\xA9r all", 18, out, sizeof out));
-  TEST_ASSERT_EQUAL_STRING("still broken  af..", out);
+  TEST_ASSERT_EQUAL_INT(14, foldText("still broken  aft\xC3\xA9r all", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("still broken..", out);
+  TEST_ASSERT_EQUAL_INT(7, foldText("hello \xC2\xB7 world", 9, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("hello..", out);
   TEST_ASSERT_EQUAL_INT(7, foldText("\xC3\xA9t\xC3\xA9\t\xC2\xB7 \xE2\x9C\x93", 18, out, sizeof out));
   TEST_ASSERT_EQUAL_STRING("ete \xC2\xB7 ?", out);
-  std::string dots, kept;  // "·" is two bytes: 18 of them still fit app::kSignBytes
-  for (int i = 0; i < 20; ++i) dots += "\xC2\xB7";
-  for (int i = 0; i < 16; ++i) kept += "\xC2\xB7";
+  std::string dots;  // "·" is two bytes: 18 of them still fit app::kSignBytes
+  for (int i = 0; i < 18; ++i) dots += "\xC2\xB7";
   TEST_ASSERT_EQUAL_INT(18, foldText(dots.c_str(), 18, out, 37));
-  TEST_ASSERT_EQUAL_STRING((kept + "..").c_str(), out);
+  TEST_ASSERT_EQUAL_STRING(dots.c_str(), out);
   TEST_ASSERT_EQUAL_INT(0, foldText("   ", 18, out, sizeof out));
   TEST_ASSERT_EQUAL_STRING("", out);
   TEST_ASSERT_EQUAL_INT(0, foldText(nullptr, 18, out, sizeof out));
   TEST_ASSERT_EQUAL_INT(4, foldText("abcdefgh", 18, out, 5));  // a short buffer holds what fits
   TEST_ASSERT_EQUAL_STRING("abcd", out);
+  TEST_ASSERT_EQUAL_INT(4, foldText("ab cdefghijklmnopqrstu", 18, out, 6));  // and a cut, with its ".."
+  TEST_ASSERT_EQUAL_STRING("ab..", out);
 }
 
 int main(int, char**) {
@@ -577,13 +625,15 @@ int main(int, char**) {
   RUN_TEST(test_a_cut_name_leaves_the_counts_their_room);
   RUN_TEST(test_the_bubble_fits_every_take);
   RUN_TEST(test_the_bubble_takes_the_lane);
+  RUN_TEST(test_the_working_mark_is_half_filled);
   RUN_TEST(test_the_strip_marks_the_finish);
   RUN_TEST(test_fonts_are_monospaced_and_utf8_aware);
   RUN_TEST(test_the_placard_rises_then_peeks);
   RUN_TEST(test_the_head_plays_peekaboo);
   RUN_TEST(test_it_asks_harder_the_longer_it_waits);
   RUN_TEST(test_the_placard_is_black_on_amber);
-  RUN_TEST(test_text_wraps_at_spaces);
+  RUN_TEST(test_text_is_cut_at_a_word_where_one_fits);
+  RUN_TEST(test_text_wraps_at_spaces_and_hyphens);
   RUN_TEST(test_text_folds_and_cuts_to_its_glyphs);
   return UNITY_END();
 }

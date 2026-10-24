@@ -51,9 +51,10 @@ void glyph(Raster& r, const Font& f, int x, int y, int g, uint16_t ink) {
 }  // namespace
 
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room) {
-  const bool fits = glyphCount(s) * f.w <= room;
-  int left = fits ? room : room / f.w - 2;  // leave space for ".."
-  for (int g; left > 0 && (g = nextGlyph(s)) >= 0; --left, x += f.w) glyph(r, f, x, y, g, ink);
+  const int n = glyphCount(s);
+  const bool fits = n * f.w <= room;
+  for (int left = fits ? n : cutAt(s, room / f.w - 2), g; left > 0 && (g = nextGlyph(s)) >= 0; --left, x += f.w)
+    glyph(r, f, x, y, g, ink);
   if (!fits)
     for (int i = 0; i < 2; ++i, x += f.w) glyph(r, f, x, y, '.' - 0x20, ink);
   return x;
@@ -82,9 +83,14 @@ void bubble(Lane& l, const char* line) {
 
 // The strip's marks, each in a kIcon box with its middle at (x + 9, cy).
 void dot(Raster& r, int x, int cy, uint16_t ink) { r.disk(x + 9, cy, 8, ink); }
-void ring(Raster& r, int x, int cy, uint16_t ink) {
+// The working count's: a ring with its left half filled, which no digit
+// reads as.
+void working(Raster& r, int x, int cy, uint16_t ink) {
   r.disk(x + 9, cy, 8, ink);
   r.disk(x + 9, cy, 5, 0);
+  r.bounds = {x, cy - 9, x + 9, cy + 10};
+  r.disk(x + 9, cy, 5, ink);
+  r.bounds = Raster::kEverywhere;
 }
 void tick(Raster& r, int x, int cy, uint16_t ink) {
   r.line({x + 2, cy}, {x + 7, cy + 5}, 3, ink);
@@ -117,7 +123,7 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
   char n[24];
   auto number = [&](int at, uint16_t ink) { return r ? text(*r, f, at, ty, n, ink) : at + glyphCount(n) * f.w; };
   if (s.busy > 0) {
-    if (r) ring(*r, x, cy, grey);
+    if (r) working(*r, x, cy, grey);
     std::snprintf(n, sizeof(n), "%d", s.busy);
     x = number(x + kIcon + 8, grey) + kIcon;
   }
@@ -178,9 +184,9 @@ void strip(Lane& l, const Strip& s) {
   } else if (s.doneAgent) {
     const uint16_t eye = inkRgb565(kInkEye);
     if (s.doneOutcome == Outcome::kSuccess)
-      tick(r, x, cy, eye);
+      tick(r, x, cy, rgb565(kSageRgb));
     else if (s.doneOutcome == Outcome::kFailure)
-      cross(r, x, cy, eye);
+      cross(r, x, cy, rgb565(kClayRgb));
     else
       dots(r, x, cy, eye);
     char who[48];
@@ -195,8 +201,9 @@ void strip(Lane& l, const Strip& s) {
 
 // The strip, drawn at full strength, blended once at its opacity (0–255):
 // its rows hold nothing else, over black, so that is scaling each pixel it
-// wrote, in place, with no buffer of its own; a hole (a ring's inside, a
-// mini's eyes) stays one, and where its shapes meet it blends once.
+// wrote, in place, with no buffer of its own; a hole (the working mark's
+// open half, a mini's eyes) stays one, and where its shapes meet it blends
+// once.
 void fade(Surface& s, int from, int alpha) {
   if (alpha >= 253) return;
   const bool tracked = s.height <= Surface::kTrackedRows;
