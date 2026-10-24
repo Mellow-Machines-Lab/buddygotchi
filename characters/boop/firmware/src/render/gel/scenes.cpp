@@ -125,14 +125,15 @@ void Scenes::refresh(Prop prop, bool reduced) {
 }
 // A card's reveal is its slot's own ramp: up over kCardRevealMs from its
 // reveal contact, down over the recovery, each from its time on the route's
-// clock. Once the route ends, nothing retargets it, so it carries on as it
-// was going while the slot's ramp fades the card out.
+// clock, but not down before it's up: revealed late in the recipe, it rises
+// whole, then falls. Once the route ends, nothing retargets it, so it
+// carries on as it was going while the slot's ramp fades the card out.
 void Scenes::cardReveal(Ramp& reveal) const {
   if (!resultRevealed) {
     reveal.reset();
     return;
   }
-  const T down = recipe.duration - T(480);
+  const T down = max(recipe.duration - T(480), revealAt + T(kCardRevealMs));
   if (ageMs >= down)
     reveal.retarget(0, started + down, 480);
   else

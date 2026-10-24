@@ -896,13 +896,15 @@ return {faceTransition,faceRender,sleepTarget,sleepTransition,faceTarget,dimensi
 // CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
 // A cubic Hermite from the current value and slope to the target over a fixed
 // window: from rest it is a smoothstep; a reversal keeps the current slope,
-// so it is continuous in value and velocity. The end is exact.
+// so it is continuous in value and velocity. The end is exact. Held within
+// [0, 1], it's flat where it's held: the cubic's own slope there would bring
+// back, at a retarget, what it held at zero (a faded art, at about 3%).
 function hermite({from,tangent,to},s) {
   if(s>=1)return {value:to,slope:0};
   const s2=s*s,s3=s2*s;
   const value=(2*s3-3*s2+1)*from+(s3-2*s2+s)*tangent+(3*s2-2*s3)*to;
   const slope=(6*s2-6*s)*from+(3*s2-4*s+1)*tangent+(6*s-6*s2)*to;
-  return {value:Math.min(1,Math.max(0,value)),slope};
+  return value<0||value>1?{value:Math.min(1,Math.max(0,value)),slope:0}:{value,slope};
 }
 function createRamp(durationMs) {
   let from=0,to=0,tangent=0,start=0,windowMs=durationMs,active=false;
@@ -1278,11 +1280,12 @@ function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[]
   }
   // A card's reveal is its slot's own ramp: up over cardRevealMs from its
   // reveal contact, down over the recovery, each from its time on the route's
-  // clock. Once the route ends, nothing retargets it, so it carries on as it
-  // was going while the slot's ramp fades the card out.
+  // clock, but not down before it's up: revealed late in the recipe, it
+  // rises whole, then falls. Once the route ends, nothing retargets it, so
+  // it carries on as it was going while the slot's ramp fades the card out.
   function cardReveal(ramp) {
     if(!resultRevealed)return ramp.reset();
-    const down=recipe.duration-sceneConstants.recoveryMs;
+    const down=Math.max(recipe.duration-sceneConstants.recoveryMs,revealAt+sceneConstants.cardRevealMs);
     if(ageMs>=down)ramp.retarget(0,started+down,sceneConstants.recoveryMs);
     else ramp.retarget(1,started+revealAt);
   }

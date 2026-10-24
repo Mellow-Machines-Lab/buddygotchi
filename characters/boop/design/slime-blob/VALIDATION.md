@@ -26,8 +26,9 @@ springs; that the face never fades is checked on the port's painter
 (`test_gel`, below). The engine check also pins the crossing itself: a new
 art fading in on a smoothstep over the window, the weights summing to one, a
 retarget mid-window keeping every weight, at most four arts at once, a fifth
-dropping the faintest, and falling asleep's own longer window and slower
-spring, kept through a mood change until it wakes to the face's own again.
+dropping the faintest, a faded art held at zero never coming back, and
+falling asleep's own longer window and slower spring, kept through a mood
+change until it wakes to the face's own again.
 Trace generation is explicit:
 
 ```sh
@@ -156,10 +157,13 @@ internal/tools/boopctl sim --face gel
   (weights summing to one and stepping no more than a slice of the face
   window's ramp, drawn sizes following their controls) and the alert's
   ramp moving without jumps across every directed edge, a fifth art
-  dropping the faintest, a face that never fades (its visible ink
-  through five cross-fades, rendered: CONTINUITY.md, Continuity of what is
-  drawn), the lane's strip fading in and out at the opacity the app
-  gives it, the same at a frame every 16 ms as every 200 ms, and
+  dropping the faintest, a faded art held at zero never coming back, a
+  card revealed late still rising whole, the night's lids easing out as
+  it falls asleep, a reset letting go of the finger, a face that never
+  fades (its visible ink through five cross-fades, rendered:
+  CONTINUITY.md, Continuity of what is drawn), the lane's strip fading
+  in and out at the opacity the app gives it, the same at a frame every
+  16 ms as every 200 ms, and
   blended once (each pixel the whole strip's at that opacity), sleep's
   spring kept through a mood change until the face wakes, voice
   lead, stale cues, return to the latest

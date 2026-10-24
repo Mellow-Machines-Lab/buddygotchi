@@ -38,6 +38,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   engineMs_ = engineFrac_ = 0;
   pace_ = 100;
   source_ = {};
+  finger_ = false;  // the new engine has no drag: a finger still down grabs it afresh
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
 }
