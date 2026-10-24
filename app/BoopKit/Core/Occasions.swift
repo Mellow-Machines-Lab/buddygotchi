@@ -12,9 +12,12 @@ import Foundation
 public enum Occasions {
     /// Every tag, in the firmware's order: the calendar's, the board's own
     /// two for how busy the agents are, the tiers, then the stages.
-    public static let all = dayParts.map(\.tag) + ["friday", "weekend", "friday13"] + holidays.map(\.tag)
-        + ["programmers", "lunar", "party"] + ["busy", "frantic"] + workTiers.map(\.tag) + idleTiers.map(\.tag)
-        + stageTags
+    public static let all = calendarTags + ["busy", "frantic"] + workTiers.map(\.tag) + idleTiers.map(\.tag) + stageTags
+
+    /// The calendar's tags, the ones `tags(at:)` gives: the part of the
+    /// day, the weekday, the holidays and a party.
+    public static let calendarTags = dayParts.map(\.tag) + ["friday", "weekend", "friday13"] + holidays.map(\.tag)
+        + ["programmers", "lunar", "party"]
 
     /// A long turn's tiers, by how long the longest turn working now has
     /// run: a marathon from 8 minutes, then a camp from 15, the last. Before

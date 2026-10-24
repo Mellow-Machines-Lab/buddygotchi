@@ -76,7 +76,7 @@ public final class Pipeline {
         self.buddies = buddies.map(\.buddy)
         cores = Dictionary(uniqueKeysWithValues: buddies.map { ($0.buddy.id, $0.core) })
         self.view = view
-        if buddies.count > 1 { view.buddies = buddies.map(\.buddy) }
+        if buddies.count > 1 { view.buddies = buddies.map(\.buddy) } else { view.onlyName = buddies[0].buddy.name }
         var options = Harness.Options()
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
@@ -84,7 +84,7 @@ public final class Pipeline {
         // The time and weekday, then the calendar's occasions in words
         // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
         // The first core's, read as the prompt is built, on the pipeline's queue.
-        let first = FirstCore(buddies.first?.core), name = CharacterPack.active.name
+        let first = FirstCore(buddies.first?.core), name = buddies[0].buddy.name
         options.heading = { wall in
             ([time.clock(wall), time.weekday(wall)]
                 + Occasions.words(at: wall, hatched: first.core?.config.hatched, name: name, stage: first.core?.config.stageReached,
@@ -93,7 +93,7 @@ public final class Pipeline {
         }
         options.loop = loop
         let input = inputTime
-        harness = Harness(name: CharacterPack.active.name, brain: nil, log: transcript,
+        harness = Harness(name: name, brain: nil, log: transcript,
                           clock: clock ?? Harness.Clock(now: { input.now }), queue: queue, options: options, note: note)
         view.register(on: harness) { [unowned self] buddy in self.core(buddy).needsYouBlock }
         // With several buddies, one's reaction is an event the others hear,
@@ -178,12 +178,17 @@ public final class Pipeline {
         several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
     }
 
-    /// Your prompt's reading, for the turn start `turn` that brought it:
-    /// logged, with the session and the buddy of that turn, and it wakes
-    /// the brain (the turn start no longer does). The core isn't told.
+    /// Your prompt's reading, for the turn start `turn` that brought it, as
+    /// logged: logged, with the session and the buddy of that turn, and it
+    /// wakes the brain (the turn start no longer does). The core isn't
+    /// told. Nil, logging nothing, once the turn is over (a slow labeler):
+    /// it ended, or another began, and the brain has heard that instead.
     @discardableResult
-    public func promptRead(_ reading: PromptReading, about turn: Event, at now: Int64) -> Step {
-        input(at: now) { emit(reading, about: turn, at: now) }
+    public func promptRead(_ reading: PromptReading, about turn: Event, at now: Int64) -> Step? {
+        let over = transcript.view(now: now).events(after: turn.seq).contains {
+            $0.type == .turn && $0.agent == turn.agent && $0.session == turn.session
+        }
+        return over ? nil : input(at: now) { emit(reading, about: turn, at: now) }
     }
 
     func emit(_ reading: PromptReading, about turn: Event, at now: Int64) {

@@ -73,8 +73,8 @@ public final class Runtime: @unchecked Sendable {
         /// `steering`, as Boop always has.
         public var buddies: [BuddyOptions] = []
         /// Labels your prompts on the Mac: the menu-bar app's is Apple
-        /// Intelligence where it's on. None (headless's unless it asks,
-        /// and the tests') counts them only.
+        /// Intelligence on macOS 26, which labels while it's on. None
+        /// (headless's unless it asks, and the tests') counts them only.
         public var labeler: (any PromptLabeler)?
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
@@ -260,8 +260,11 @@ public final class Runtime: @unchecked Sendable {
         personality = options.personality ?? settings.personality
         let rules = options.steering.personality(personality).rules
         let places = self.places
+        // The only buddy goes by the name you gave it, in what it hears and
+        // what it counts as its name.
         let plans = options.buddies.isEmpty
-            ? [BuddyOptions(buddy: .only(), link: options.link, steering: options.steering)] : options.buddies
+            ? [BuddyOptions(buddy: .only(CharacterPack.active.named(longTerm.name)), link: options.link, steering: options.steering)]
+            : options.buddies
         let several = plans.count > 1
         rigs = plans.map { Rig($0, tag: several ? $0.buddy.id : nil, log: log) }
         for rig in rigs {
@@ -533,12 +536,16 @@ public final class Runtime: @unchecked Sendable {
             options.log("hook: \(line.agent) \(line.hook) \(line.session)")
         }
         guard let event else { return }
-        run(pipeline.agent(event))
+        let step = pipeline.agent(event)
+        run(step)
         onAgentHook?(line.agent)
-        guard let prompt else { return }
-        PromptIntake.read(prompt, names: rigs.map(\.buddy.name), labeler: labeler, home: home) { [weak self] reading in
+        guard let prompt, let start = step.recorded.first else { return }
+        PromptIntake.read(prompt, names: pipeline.buddies.map(\.name), labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }
-            run(pipeline.promptRead(reading, about: event, at: options.clock()))
+            guard let step = pipeline.promptRead(reading, about: start, at: options.clock()) else {
+                return options.log("prompt: \(line.agent)'s turn on \(line.session) was over before its reading; dropped it")
+            }
+            run(step)
         }
     }
 

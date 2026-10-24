@@ -133,7 +133,13 @@ extension Runtime {
             }
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
-            h.section { _, v in mine(v) ? m.steering.guide + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil }
+            // The only buddy goes by the name you gave it, which the pack's
+            // own words don't know.
+            let own = CharacterPack.active.name
+            let renamed = voice != nil || pack.name == own ? "" : "\n\(own) goes by \(pack.name) here: the name the person gave it."
+            h.section { _, v in
+                mine(v) ? m.steering.guide + renamed + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil
+            }
             h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
             h.section { _, v in mine(v) ? m.nature.flatMap(m.steering.nature) : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }

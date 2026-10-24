@@ -7,23 +7,28 @@ import Foundation
 /// broken :(", "'just', sure". The brain picks one, or none (`react.sign`).
 public enum Signs {
     public static let questionKey = "react.sign"
-    /// The most captions offered, and the longest a sign shows, in
-    /// characters: the board cuts a longer one.
-    public static let maxOffered = 6, maxLength = 18
+    /// The most captions offered, the most of them your words, so a
+    /// tagged caption (`named`, `frustrated`…) still has room, and the
+    /// longest a sign shows, in characters: the board cuts a longer one
+    /// (firmware `kSignGlyphs`).
+    public static let maxOffered = 6, maxYourWords = 3, maxLength = 18
 
-    /// The tags a reading has: its kind, tone and length, `named` when you
-    /// said the buddy's name, `words` when it kept a phrase of yours, and
-    /// the calendar's (`Occasions`, `night`, `friday`…).
-    public static func tags(_ r: PromptReading, calendar: [String]) -> Set<String> {
-        Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named ? "named" : nil, r.phrases.isEmpty ? nil : "words"]
-            .compactMap { $0 } + calendar)
+    /// The tags a reading has for the buddy called `name`: its kind, tone
+    /// and length, `named` when you said its name, `words` when it kept a
+    /// phrase of yours, and the calendar's (`Occasions`, `night`,
+    /// `friday`…).
+    public static func tags(_ r: PromptReading, name: String, calendar: [String]) -> Set<String> {
+        Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named.contains(name) ? "named" : nil,
+             r.phrases.isEmpty ? nil : "words"].compactMap { $0 } + calendar)
     }
 
-    /// The captions that fit `reading`, filled in, that fit a sign: your
-    /// words in a tagged line first, then your words as they are, then the
+    /// The captions that fit `reading`, for the buddy called `name`,
+    /// filled in, that fit a sign: your words in a tagged line first, then
+    /// your words as they are, at most `maxYourWords` of them, then the
     /// tagged captions, then the rest, each once, at most `maxOffered`.
-    public static func offered(_ lines: [TaggedLine], reading: PromptReading, calendar: [String]) -> [String] {
-        let on = tags(reading, calendar: calendar)
+    public static func offered(_ lines: [TaggedLine], reading: PromptReading, name: String = CharacterPack.active.name,
+                               calendar: [String]) -> [String] {
+        let on = tags(reading, name: name, calendar: calendar)
         let fit = lines.filter { $0.fits(on) }
         func filled(_ line: TaggedLine) -> [String] {
             guard line.hasWords else { return [line.text] }
@@ -32,8 +37,42 @@ public enum Signs {
             }
         }
         func rank(_ line: TaggedLine) -> Int { (line.hasWords ? 0 : 2) + (line.tags.isEmpty ? 1 : 0) }
-        let ordered = (0..<4).flatMap { r in fit.filter { rank($0) == r }.flatMap(filled) }
         var seen: Set<String> = []
-        return Array(ordered.filter { $0.count <= maxLength && seen.insert($0.lowercased()).inserted }.prefix(maxOffered))
+        func captions(_ ranks: [Int], max: Int) -> [String] {
+            var out: [String] = []
+            for r in ranks {
+                for text in fit.filter({ rank($0) == r }).flatMap(filled).compactMap(drawn)
+                where out.count < max && text.count <= maxLength && seen.insert(text.lowercased()).inserted {
+                    out.append(text)
+                }
+            }
+            return out
+        }
+        let words = captions([0, 1], max: maxYourWords)
+        return words + captions([2, 3], max: maxOffered - words.count)
+    }
+
+    /// Typed marks the board's fonts don't have, as the plain ones they
+    /// stand for.
+    static let plain: [Unicode.Scalar: String] = [
+        "\u{2018}": "'", "\u{2019}": "'", "\u{201C}": "\"", "\u{201D}": "\"", "\u{2013}": "-", "\u{2014}": "-",
+        "\u{2026}": "...", "\u{00A0}": " ",
+    ]
+
+    /// `text` as a sign draws it, or nil where the board would draw any of
+    /// it as "?": precomposed (an accent typed as its own mark joins its
+    /// letter), with curly quotes, dashes, an ellipsis and a no-break
+    /// space made plain. The fonts have printable ASCII and "·", and fold
+    /// the Latin-1 letters (U+00C0 to U+00FF) to plain ones themselves
+    /// (firmware `render::foldText`); nothing else draws.
+    public static func drawn(_ text: String) -> String? {
+        var out = ""
+        for s in text.precomposedStringWithCanonicalMapping.unicodeScalars {
+            let mark = plain[s] ?? String(s)
+            guard mark.unicodeScalars.allSatisfy({ (0x20...0x7E).contains($0.value) || $0.value == 0xB7 || (0xC0...0xFF).contains($0.value) })
+            else { return nil }
+            out += mark
+        }
+        return out
     }
 }

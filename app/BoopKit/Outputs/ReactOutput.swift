@@ -221,7 +221,7 @@ public final class ReactOutput: Output {
     func offered(_ now: Event?, _ log: LogView) -> [String] {
         guard let about = now ?? log.events.last(where: { !$0.fromHarness }), about.type == .prompt,
               let reading = PromptReading(facts: about.data) else { return [] }
-        return Signs.offered(signs, reading: reading, calendar: calendar(about))
+        return Signs.offered(signs, reading: reading, name: pack.name, calendar: calendar(about))
     }
 
     /// The questions asked: a character pack with no voice is never asked

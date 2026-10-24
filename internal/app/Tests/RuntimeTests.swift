@@ -28,11 +28,13 @@ final class RuntimeTests: XCTestCase {
 
     static let steeringDir = CharacterPack.active.directory.appendingPathComponent("steering")
     static let steering = try! Steering(directory: steeringDir)
+    /// The name the runtime's buddy is given at setup, which it goes by.
+    static let name = "Pip"
 
     /// A runtime whose brain is `brain` once the key reads, or none.
     func options(_ transport: FakeTransport?, brain: ScriptedBrain = .pipelineCheck,
                  readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime.Options {
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+        try Runtime.setUp(stateDir: dir, name: Self.name, nature: .sweet)
         var options = Runtime.Options(stateDir: dir, socketPath: socketPath, link: transport, steering: Self.steering)
         options.devLines = true
         options.readJevKey = readJevKey
@@ -587,7 +589,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(heads[0].contains(opening("calm")), "the first pass read calm")
         XCTAssertTrue(heads[1].contains(opening("engaged")), "the next reads the new mood's file")
         XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.moods.contains("grumpy")
-                          && passes()[1].contains(#"\#(creature) made a grumpy face, held once, and said \"\#($0.text)\"."#) },
+                          && passes()[1].contains(#"\#(Self.name) made a grumpy face, held once, and said \"\#($0.text)\"."#) },
                       "HISTORY shows what the outputs did")
         XCTAssertFalse(lines.lock.withLock { lines.log.contains { $0.contains("PERSONALITY") } }, "the state stays out of boop.log")
     }
@@ -725,9 +727,9 @@ final class RuntimeTests: XCTestCase {
         let pass = try XCTUnwrap(printed.first { $0.hasPrefix("  pass scripted") })
         XCTAssertTrue(pass.contains("react.mood excited 1.00"), pass)
         XCTAssertTrue(pass.contains("    │ You are the mind of \(creature)"), "the first state in full")
-        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(creature) made an excited face, held once") }, "\(printed)")
+        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(Self.name) made an excited face, held once") }, "\(printed)")
         if !Take.all.isEmpty {  // a pack with a voice says a start take with it
-            let word = String(started.dropFirst("  … react: \(creature) made an excited face, held once, and said \"".count).dropLast(2))
+            let word = String(started.dropFirst("  … react: \(Self.name) made an excited face, held once, and said \"".count).dropLast(2))
             XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "start" && $0.moods.contains("excited") }, "a start take: \(word)")
         }
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
@@ -975,12 +977,12 @@ final class RuntimeTests: XCTestCase {
                        ["calm"] + MoodGraph.moves["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
-        XCTAssertEqual(questions[1]["text"] as? String, "How should \(creature) react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
+        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a face, "
-                       + "or HISTORY shows \(creature) still making the one it calls for (in progress).")
-        XCTAssertEqual(none["not_for"] as? String, "Anything PERSONALITY's Examples react to that \(creature) isn't already doing.")
+                       + "or HISTORY shows \(Self.name) still making the one it calls for (in progress).")
+        XCTAssertEqual(none["not_for"] as? String, "Anything PERSONALITY's Examples react to that \(Self.name) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.
@@ -1100,11 +1102,11 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual((pass["answers"] as? [String: [String: Any]])?["react.mood"]?["p"] as? [String: Double], ["grumpy": 1])
         let actions = debugActions().filter { $0.actionPhase != .end && $0["by"] == "dashboard" }
         let worked = try XCTUnwrap(actions.first?["message"]?.string)
-        XCTAssertTrue(Take.all.contains { worked == "\(creature) made a grumpy face, held once, and said \"\($0.text)\"." && $0.meaning == "work"
+        XCTAssertTrue(Take.all.contains { worked == "\(Self.name) made a grumpy face, held once, and said \"\($0.text)\"." && $0.meaning == "work"
             && $0.moods.contains("grumpy") }, worked)
-        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(creature)'s mood changed: calm → grumpy.",
-                                                              "\(creature)'s mood changed: grumpy → happy.",
-                                                              "\(creature)'s mood changed: happy → excited."])
+        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(Self.name)'s mood changed: calm → grumpy.",
+                                                              "\(Self.name)'s mood changed: grumpy → happy.",
+                                                              "\(Self.name)'s mood changed: happy → excited."])
         XCTAssertEqual(actions.map(\.actionName), ["react", "mood", "mood", "mood"])
         for action in actions { XCTAssertEqual(action["for"], .null) }
         let moods = lines.compactMap { ($0["sent"] as? [String: Any])?["mood"] as? String }
@@ -1388,7 +1390,7 @@ final class RuntimeTests: XCTestCase {
         transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("the finished thread opened") { opened.all == ["claude://code/continue?session=local_7db5"] }
         let action = try XCTUnwrap(recorded().last { $0.actionName == Core.openThread })
-        XCTAssertEqual(action["message"]?.string, Core.openedFinished())
+        XCTAssertEqual(action["message"]?.string, Core.openedFinished(by: Self.name))
         let poke = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
         XCTAssertEqual(poke.type, .poke)
         XCTAssertFalse(poke.wakesBrain, "it doesn't wake the brain")
@@ -1964,10 +1966,12 @@ final class RuntimeTests: XCTestCase {
     /// own hook for it, however long that takes, and the person's and the
     /// brain's steps after it wait too. A hook the script doesn't have
     /// passes by. The step due is in the cursor file, then the step count.
+    /// The script's readings stand in front of the runtime's labeler
+    /// until it's over.
     func testALiveDemoKeepsToTheAgent() throws {
         let runtime = try makeRuntime(FakeTransport())
         let script = try DemoScript("""
-            {"agent": "prompt", "text": "Go"}
+            {"agent": "prompt", "text": "Go", "reading": {"kind": "carry_on"}}
             {"brain": {"react.mood": "curious"}, "after": 0}
             {"you": "poke", "after": 0}
             {"agent": "run", "cmd": "npm test", "fails": true}
@@ -1993,6 +1997,7 @@ final class RuntimeTests: XCTestCase {
         settle()
         XCTAssertEqual(due(), "0", "the prompt is due")
         XCTAssertEqual(forced(), [], "nothing before the agent's prompt")
+        XCTAssertTrue(runtime.home.sync { runtime.labeler is ScriptLabeler }, "the script's readings")
         hook("SessionStart")  // not in the script: it passes by
         hook("UserPromptSubmit")
         XCTAssertEqual(forced(), ["curious"])
@@ -2006,6 +2011,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(due(), "5", "over: the step count")
         for _ in 0..<Int((Runtime.demoTail + 2) * 10) where over.all.isEmpty { Thread.sleep(forTimeInterval: 0.1) }
         XCTAssertEqual(over.all, ["over"], "it ends after its tail")
+        XCTAssertNil(runtime.home.sync { runtime.labeler }, "the runtime's own labeler again, none here")
     }
 
 
@@ -2193,6 +2199,69 @@ final class RuntimeTests: XCTestCase {
                 .compactMap { $0["answers"]?.object?["react.mood"]?.object?["choice"]?.string }
         }
         XCTAssertEqual(forced, ["confused"], agent)
+    }
+
+    /// The only buddy goes by the name you gave it at setup (`long-term.md`,
+    /// here Pip): your prompt saying it counts as saying its name, and the
+    /// brain hears it by that name.
+    func testTheOnlyBuddyGoesByTheNameYouGaveIt() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        func prompt(_ text: String) -> (facts: [String: JSONValue], line: String?) {
+            runtime.home.sync {
+                var line = HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/jetpack", ts: 0)
+                line.prompt = text
+                runtime.hook(line, received: runtime.options.clock())
+                return (runtime.harness.log.events.last { $0.type == .prompt }?.data ?? [:], runtime.pipeline.views.last?.line)
+            }
+        }
+        let pip = prompt("thanks pip!")
+        XCTAssertEqual(pip.facts["named"], .array(["Pip"]))
+        XCTAssertTrue(pip.line?.hasSuffix("and said Pip's name.") == true, pip.line ?? "")
+        let own = prompt("thanks \(creature)!")
+        XCTAssertNotNil(own.facts["length"])
+        XCTAssertNil(own.facts["named"], "the pack's name isn't its name")
+        runtime.home.sync {
+            XCTAssertEqual(runtime.buddies.map(\.name), ["Pip"])
+            let log = runtime.harness.log.view(now: runtime.options.clock())
+            XCTAssertEqual(runtime.mood.questions(now: nil, log: log).first?.text, "After NOW, what is Pip's mood?")
+            let state = runtime.harness.prompt(for: runtime.harness.log.events.last { $0.type == .prompt }!)
+            XCTAssertTrue(state.contains("\n\(creature) goes by Pip here: the name the person gave it.\nHow to read HISTORY"),
+                          "the pack's words use its own name, so the guide says who that is")
+            XCTAssertTrue(state.contains("NOW (") && state.contains("and said Pip's name."))
+        }
+    }
+
+    /// A reading that comes once its turn is over (a slow labeler takes up
+    /// to `AppleIntelligenceLabeler.timeout`) is dropped: the brain heard
+    /// the turn end, so it isn't woken for the prompt after it. One that
+    /// comes in time is logged.
+    func testAReadingAfterItsTurnIsDropped() throws {
+        struct Slow: PromptLabeler {
+            func label(_ text: String) async -> PromptReading.Labels? {
+                try? await Task.sleep(for: .milliseconds(200))
+                return .init(kind: .fix)
+            }
+        }
+        var options = try options(nil)
+        let logged = Lines()
+        options.log = { logged.add($0) }
+        options.labeler = Slow()
+        let runtime = try Runtime(options)
+        func hook(_ name: String, prompt: String? = nil) {
+            runtime.home.sync {
+                var line = HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/jetpack", ts: 0)
+                line.prompt = prompt
+                runtime.hook(line, received: runtime.options.clock())
+            }
+        }
+        func readings() -> [Event] { runtime.home.sync { runtime.harness.log.events.filter { $0.type == .prompt } } }
+        hook("UserPromptSubmit", prompt: "fix the login")
+        hook("Stop")
+        eventually("the late reading came") { logged.all.contains { $0.hasPrefix("prompt: claude's turn on s1 was over before its reading") } }
+        XCTAssertEqual(readings().count, 0, "dropped")
+        hook("UserPromptSubmit", prompt: "now the docs")
+        eventually("the reading in time") { readings().count == 1 }
+        XCTAssertEqual(readings().first?["kind"], "fix")
     }
 }
 

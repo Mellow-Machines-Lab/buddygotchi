@@ -32,11 +32,39 @@ final class SignTests: XCTestCase {
         XCTAssertEqual(Signs.offered(lines, reading: shouted, calendar: []).first, "STILL BROKEN!!", "{WORDS} in capitals")
     }
 
+    /// Pins `Signs.maxYourWords`: at most three of the six are your words,
+    /// so a named or frustrated prompt with two or three phrases still
+    /// gets its tagged captions, as the pack's signs.md fills them.
+    func testYourWordsLeaveRoomForTaggedCaptions() {
+        let pack = TaggedLine.parse("""
+            - [frustrated] {words} :(
+            - [frustrated] {words}?!
+            - [frustrated] {words}. again.
+            - [named] me?!
+            - [named] you rang?
+            - [fix frustrated] bug, again
+            - [fix] bug hunt
+            - [words] {words}
+            """)
+        XCTAssertEqual(Signs.maxYourWords, 3)
+        let two = PromptReading(length: .sentence, named: ["Boop"], kind: .fix, tone: .frustrated, phrases: ["still broken", "why"])
+        XCTAssertEqual(Signs.offered(pack, reading: two, name: "Boop", calendar: []),
+                       ["still broken :(", "why :(", "still broken?!", "me?!", "you rang?", "bug, again"])
+        var three = two
+        three.phrases = ["still broken", "why", "again"]
+        XCTAssertEqual(Signs.offered(pack, reading: three, name: "Boop", calendar: []),
+                       ["still broken :(", "why :(", "again :(", "me?!", "you rang?", "bug, again"])
+        three.named = []
+        XCTAssertEqual(Signs.offered(pack, reading: three, name: "Boop", calendar: []),
+                       ["still broken :(", "why :(", "again :(", "bug, again", "bug hunt"], "three of your words at most, whatever's left")
+    }
+
     /// A caption fits only a reading with every one of its tags: your
     /// name said, the kind, and the calendar's (a deploy on a Friday).
     func testTagsNeedTheReadingAndTheCalendar() {
-        let named = PromptReading(length: .words, named: true, kind: .feature)
-        XCTAssertEqual(Signs.offered(lines, reading: named, calendar: []), ["me?!", "plain caption"])
+        let named = PromptReading(length: .words, named: ["Pip"], kind: .feature)
+        XCTAssertEqual(Signs.offered(lines, reading: named, name: "Pip", calendar: []), ["me?!", "plain caption"])
+        XCTAssertEqual(Signs.offered(lines, reading: named, name: "Bo", calendar: []), ["plain caption"], "only its own name")
         let deploy = PromptReading(length: .words, kind: .deploy)
         XCTAssertEqual(Signs.offered(lines, reading: deploy, calendar: ["friday", "day"]), ["on a FRIDAY?", "plain caption"])
         XCTAssertEqual(Signs.offered(lines, reading: deploy, calendar: ["day"]), ["plain caption"])
@@ -67,12 +95,34 @@ final class SignTests: XCTestCase {
         XCTAssertNil(queued.last?.sign, "only an offered caption")
     }
 
+    /// With several buddies, the reading records whose names you said, its
+    /// line names them, and each buddy's sign question offers its `named`
+    /// captions only when you said its own name.
+    func testEachBuddyHearsWhetherYouSaidItsOwnName() throws {
+        let pack = CharacterPack.active
+        let buddies = [Buddy(id: "left", pack: pack.named("Pip")), Buddy(id: "right", pack: pack.named("Bo"))]
+        let pipeline = Pipeline(buddies.map { ($0, Core(config: .init(pack: $0.pack))) }, view: TranscriptView(rules: .init(), seed: 1))
+        let step = pipeline.agent(Event(at: 1, source: .claude, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: "s1",
+                                        data: ["prompt": "nice one bo, now the docs"]))
+        let reading = try XCTUnwrap(step.recorded.first { $0.type == .prompt })
+        XCTAssertEqual(reading.buddy, "left", "the session's buddy")
+        XCTAssertEqual(reading["named"], .array(["Bo"]))
+        XCTAssertTrue(step.views.contains { $0.line.contains("and said Bo's name.") }, "\(step.views.map(\.line))")
+        let log = pipeline.transcript.view(now: 1)
+        func signs(_ buddy: Buddy) -> [String] {
+            ReactOutput(queue: { _, _ in }, blocked: { nil }, pack: buddy.pack, signs: lines).offered(reading, log)
+        }
+        XCTAssertEqual(signs(buddies[1]), ["me?!", "plain caption"])
+        XCTAssertEqual(signs(buddies[0]), ["plain caption"], "its own name wasn't said")
+    }
+
     /// Every caption in each pack's signs.md fits a sign once filled in
     /// with a short phrase, in the board's fonts (printable ASCII), and
-    /// its tags are ones a reading or the calendar can have.
+    /// its tags are ones a reading or the calendar can have: the calendar
+    /// signs hear is `Core.calendar`, never the board's or the tiers' tags.
     func testThePacksSignsFit() throws {
         let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-            + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words"] + Occasions.all)
+            + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words"] + Occasions.calendarTags)
         for pack in ["boop", "pixel"] {
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))

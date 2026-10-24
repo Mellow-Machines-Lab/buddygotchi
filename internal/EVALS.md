@@ -236,7 +236,7 @@ file-name order:
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
 | `steps[].error` | A failed turn's error class |
-| `steps[].prompt` | What the person asked, on a `turn started`. Jev never sees it: it reaches NOW as its reading, counted (its length, the buddy's name, a tone its words plainly show) and labelled with the step's `reading` |
+| `steps[].prompt` | What the person asked, on a `turn started`. Jev never sees it: it reaches NOW as its reading, counted (its length, whether it says the buddy's name, a tone its words plainly show) and labelled with the step's `reading` |
 | `steps[].reading` | What Apple Intelligence would make of the prompt, standing in for it: its `kind` (`fix`, `feature`, `cleanup`, `refactor`, `tests`, `deploy`, `docs`, `question`, `carry_on`, `other`), its `tone` (`calm`, `frustrated`, `rushed`, `polite`, `playful`, `shouting`, `careful`) and its `phrases`, kept only if they're in the prompt. `--labeler apple` reads the prompt for real instead |
 | `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
