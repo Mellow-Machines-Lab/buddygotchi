@@ -71,22 +71,6 @@ public enum FaceLoops {
         return designs.isEmpty ? [Design(ms: 0, voiceMs: 0, outcome: nil, ctx: nil)] : designs
     }
 
-    /// How many variations `mood` has for `state`.
-    public static func count(mood: String, state: String, in pack: CharacterPack = .active) -> Int {
-        row(mood: mood, state: state, in: pack).count
-    }
-
-    /// The variations (from 1) of `mood`'s `state` for an outcome and a
-    /// context, nil matching any; all of them when none match.
-    public static func variants(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
-                                in pack: CharacterPack = .active) -> [Int] {
-        let row = row(mood: mood, state: state, in: pack)
-        let fit = row.indices.filter { i in
-            (outcome == nil || row[i].outcome == outcome) && (ctx == nil || row[i].ctx == ctx)
-        }.map { $0 + 1 }
-        return fit.isEmpty ? Array(1...row.count) : fit
-    }
-
     /// A design's loop length: `mood`'s design for `state`, variation
     /// `variant` (from 1), the first variation for one out of range.
     public static func ms(mood: String, state: String, variant: Int = 1) -> Int64 {

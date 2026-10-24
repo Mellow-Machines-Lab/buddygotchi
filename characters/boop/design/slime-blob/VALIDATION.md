@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-16. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-24. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -20,8 +20,15 @@ that fixed-step traces reproduce, and that fact/mood retargets preserve
 the actor's displacement and velocity. The engine, bridge and scene checks
 also bound what is drawn in every frame they run
 ([CONTINUITY.md](CONTINUITY.md), Continuity of what is drawn): no jolt at an
-event, drawn face ratios in range, props without pops, a face that never
-fades and body modes that move only by their springs. Trace generation is explicit:
+event, drawn sizes that follow their controls, arts that cross over and
+props that come and go without pops, and body modes that move only by their
+springs; that the face never fades is checked on the port's painter
+(`test_gel`, below). The engine check also pins the crossing itself: a new
+art fading in on a smoothstep over the window, the weights summing to one, a
+retarget mid-window keeping every weight, at most four arts at once, a fifth
+dropping the faintest, and falling asleep's own longer window and slower
+spring, kept through a mood change until it wakes to the face's own again.
+Trace generation is explicit:
 
 ```sh
 node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53
@@ -36,12 +43,34 @@ approval or equivalence of the C++ port.
 
 The scene check exercises all routing IDs separately from choreography
 coverage. Its representative script covers 24 cases in 20 distinct cells;
-full-matrix checks execute every canonical mood/state cell, all three active
-variants, all start contexts and completion outcomes, a wake-up with no
+full-matrix checks execute every canonical mood/state cell, all its active
+variants (idle's gags and a success's hiccups among them), all start contexts
+and completion outcomes, a wake-up with no
 start card, plus a
 ten-minute work run, attention identity, alerts interrupted at every stage
-(each request knocks and confirms exactly once), drag interruption, quiet rest,
-latest-facts recovery and truthful success/failure. The builder runs the
+(each request knocks and confirms exactly once), drag interruption, quiet rest
+(a minute asleep snores, two breaths at a time, and a lost link never does),
+latest-facts recovery and truthful success/failure, and a card's reveal on
+its own ramp (rising from its contact, falling over the recovery, going on
+as it was when its route ends mid-way). Its comedy checks pin the
+gags' catalogue and durations, their springs and keys, the bag that deals them
+from its second round, the hiccups' timings, the gift on proud's lifted success
+alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
+and sinks then blinks awake, the sneeze is one contact a second in, the zoomies
+reach both edges, small under reduced motion) and sleep's still first 12.8 s.
+Its gesture checks pin the ten gestures in the board's order, each gag's
+shape, the face each borrows and gives back, a contact apiece and what each
+does (the hand-off lifts and leans in, the stroke melts with eyes shut, the
+ruffle bristles, the nose squishes, the tickle and the shake go both ways,
+the pick-up stretches up, the put-down lands squashed, the startle jumps,
+peekaboo rises from below). Its occasion checks play two minutes of each
+look with tags on and off: none plays with no tag or with tags none needs,
+night drowses, morning stretches, a party and New Year bounce, the nod-off
+waits for idle's `doze`, busy and frantic work type faster, a long
+turn's `marathon` stretches, and asleep snores deeper at night and dreams
+after half an hour.
+The cue check plays twenty minutes of idle and five of sleep: only the sneeze
+and the snore's breaths sound, sparsely. The builder runs the
 full coverage check before updating `coverage.json`; no cell earns a
 status merely from a scene name or counter. `preview/script-catalog.js` must match the scripts
 and verified review manifest.
@@ -49,9 +78,12 @@ and verified review manifest.
 The bridge check walks all 295 directed edges from mid-gesture in each of
 their three variants, verifies that face controls stay between their current
 values and the target (within the span of every target in a rapid chain),
-and permits primitive changes only while the single face is fully closed.
-It checks that every primitive's targets fit inside their bounds and that
-the face painter never fades the face through the edge review script. It also covers every edge during rest, drag and pending attention,
+that a retarget changes nothing drawn at once (but that a fifth art drops
+the faintest of four, the others' shares growing to fill what it leaves),
+and that the arts cross over: the new one fading in from nothing and drawn
+last, each art once, at most four (a rapid chain reaches four, drops four
+times and settles on its last). It checks that every primitive's targets
+fit inside their bounds. It also covers every edge during rest, drag and pending attention,
 rapid interrupted retargets, reduced motion, direction, bounded springs and
 the drag expiry boundary. Its 13-case script includes ordinary and dramatic
 edges. Passing earns `transitions.json` status; visual approval is separate.
@@ -103,34 +135,67 @@ The C++ gel face (`characters/boop/firmware/src/render/gel/`) is checked
 against this package's reference engine, from the repository root:
 
 ```sh
-make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against
+make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against, and stages the pack
 python3 characters/boop/tools/slimegen/check-port.py --output /tmp/boop-gel-port
 internal/tools/boopctl sim --face gel
 ```
 
 - `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
   the one build that keeps the recipes' `intent`) and replays every
-  `scripts/*.jsonl` against the saved traces. It checks every scalar,
+  `scripts/*.jsonl` against the saved traces, `comedy.jsonl`'s gags,
+  hiccups, gift and snore, `gestures.jsonl`'s ten and
+  `occasions.jsonl`'s picks included. It checks every scalar,
   categorical field, cue and frame count within its tolerance, and fails
-  on unexpected extra fields too.
+  on unexpected extra fields too. It reads the staged pack's `moods.h`
+  (`.character-build/`, which `fw-test` stages) after the pack's own headers.
 - `test_gel` (in the pack's `tests/firmware/`, run by `fw-test`) checks
-  arithmetic, reference clock rounding, every expression buffer's
-  bounds, deterministic pixels, request identity, bounded caches, alerts
-  interrupted by listening or a link timeout signalling exactly once,
-  drawn face ratios and the alert's ramp moving without jumps across
-  every directed edge, voice lead, stale cues, return to the latest
+  arithmetic (a `Divisor`'s quotients exactly `/`'s), reference clock
+  rounding, every expression buffer's bounds, deterministic pixels,
+  request identity, bounded caches, alerts interrupted by listening or a
+  link timeout signalling exactly once, the face's two arts crossing over
+  (weights summing to one and stepping no more than a slice of the face
+  window's ramp, drawn sizes following their controls) and the alert's
+  ramp moving without jumps across every directed edge, a fifth art
+  dropping the faintest, a face that never fades (its visible ink
+  through five cross-fades, rendered: CONTINUITY.md, Continuity of what is
+  drawn), the lane's strip fading in and out at the opacity the app
+  gives it, the same at a frame every 16 ms as every 200 ms, and
+  blended once (each pixel the whole strip's at that opacity), sleep's
+  spring kept through a mood change until the face wakes, voice
+  lead, stale cues, return to the latest
   facts, projected face anchors against the reference camera,
   extreme-pose buffer bounds, drawing by coverage (a shape's ink is its
   area wherever it sits between pixels, a stroke keeps its width and
   blends once, the body's outline is soft with no seam inside), and
   tracked-clear parity with full clearing across pose and prop changes.
   RGB565 opacity rounding is checked against an independent scalar
-  reference across every channel value and all 256 opacity levels.
+  reference across every channel value and all 256 opacity levels. Its
+  comedy test pins each row's takes, the hiccups' and the snore's
+  recipes, the one gift, idle's takes per expression, the bag's rounds,
+  the doze's lids and sink, the zoomies' reach, a sneeze that allocates
+  nothing, and sleep that snores after its still start (never with the
+  link lost); the extreme pose includes the slide at its bound. Its
+  gesture test pins a take for each of `render::Gesture` (ten, the same in
+  every mood, each its own gag and a face there is), the take the board
+  names, a start that draws no randomness, and a shake played through the
+  face: baffled, sliding both ways, then the mood's face back. Its
+  occasion test plays two minutes of idle and one of work and sleep with
+  tags on and off: an occasion plays only while it fits, and does.
 - `boopctl sim --face gel` plays the pack's `tests/scenarios-gel/`
   against its `tests/golden-gel/`: every canonical mood and factual
-  state, failure and neutral-finish frames, and the host lane at the
+  state, failure and neutral-finish frames, the host lane at the
   panel's size (`lane.jsonl`: the working count, a long name that needs
-  you, the finish's marks and the bubble in each of its fonts).
+  you, the finish's marks and the bubble in each of its fonts), and the
+  comedy (`comedy.jsonl`: the yawn, the sneeze's wind-up, the doze, the
+  long yawn, the zoomies at either edge, a snore, the hiccups and the
+  gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
+  on the nose, a shake and peekaboo, each by the board's own input, its
+  variation expected), the occasions (`occasions.jsonl`: a party's
+  bounce, a night's drowse, frantic typing, in a nightcap and a party
+  hat), the layers (`layers.jsonl`: each outfit and air by its tags, Zs
+  asleep at night, a sign under the nightcap) and a reaction's sign
+  (`sign.jsonl`: the card held up over idle and over a finish, with how
+  long it stays).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
 

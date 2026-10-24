@@ -1,6 +1,6 @@
 # Slime asset generator
 
-Updated 2026-10-15.
+Updated 2026-10-24.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
@@ -29,12 +29,20 @@ and device completion events. Both modes use temporary HOME/state directories.
 See [verification](../../../../internal/VERIFICATION.md).
 
 The generator also writes `characters/boop/firmware/include/slime.h` (expression profiles,
-scene recipes, bridges and baked cue clips) and `slime_art.h` (authored vector
-face paths). `slime_mesh.h` samples the reference dome geometry and analytic
+the idle gags and which expressions play them, scene recipes with each row's
+takes and the two rows' fourth takes, the gesture state's ten takes, each
+with a gag of its own and the face it borrows, the notice state's three
+takes' faces, the looks' occasions with
+their tags as `firmware/src/render/tags.h` numbers them, bridges and baked
+cue clips) and `slime_art.h` (authored vector
+face paths, and each art's groups' shapes: two arts of one shape there
+morph, path by path and point by point). `slime_mesh.h` samples the reference dome geometry and analytic
 studio lighting into a mesh and a dense material lookup. These are not animation
 frames: the board deforms and projects geometry on every draw.
 `check-port.py --output /tmp/boop-gel-port` builds the native
-trace adapter and compares every saved script/trace against the C++ engine.
+trace adapter and compares every saved script/trace against the C++ engine;
+it needs `make -C internal fw-test` first, for ArduinoJson and the staged
+pack's `moods.h`.
 After `firmware/tools/pio.sh run -e native`, `internal/tools/boopctl sim --face
 gel` checks native RGB565 screenshots against the gel goldens. These checks
 do not measure physical display throughput or speaker quality.

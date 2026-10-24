@@ -19,8 +19,11 @@ void Engine::sync(int forced) {
     face.setMood(next, ms);
   }
   face.setSleeping(route.quiet);
-  acting.setSuppressed(route.state != SceneState::kIdle || grab, motion.time);
   scenes.setRoute(route, timeMs(), expression, random);
+  // Acting plays in idle, and wherever the scene's recipe carries a gag.
+  const int gag = scenes.gag();
+  acting.setSuppressed((route.state != SceneState::kIdle && gag < 0) || grab, motion.time);
+  acting.hold(gag, scenes.generation, scenes.iteration, motion.time);
   if (route.moment) router.duration(*route.requestId, scenes.recipe.duration);
 }
 void Engine::step(uint32_t ms) {
@@ -41,7 +44,9 @@ void Engine::step(uint32_t ms) {
     sync();
   }
   acting.advance(dt, motion.time, grab, reduced, random);
-  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], 16, 8, q(.72), 6);
+  // Held, the pull follows the finger quickly; let go, it settles back on a
+  // softer spring, a wobble rather than a snap.
+  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], grab ? 16 : 10, grab ? 8 : 10, q(.72), 6);
   face.advance(dt, reduced);
   const F w = reduced ? 25 : 10;
   for (int i = 0; i < slime::kProfiles; ++i) {
@@ -107,6 +112,24 @@ std::array<F, 3> Engine::life() const {
   return {clamp(max(0, acting.channels[3].x), q(-.24), q(.24)), clamp(acting.channels[4].x, q(-.12), q(.12)),
           clamp(acting.channels[5].x + scenes.activity[2].x + bridge.channels[2].x, q(-.23), q(.23))};
 }
+bool Engine::admits(const ContactEvent& c, SceneState state, bool quiet, bool protect) {
+  // Comedy sounds even in a quiet state, with the routine chance.
+  if (comedy(c.kind)) return soundRandom.unit() < slime::kRoutineProbability;
+  if (quiet) return false;
+  if (protect && reveals(c.kind)) {
+    // The reference's "requestId:kind", as its key.
+    const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
+    if (revealed_.find([&](uint64_t k) { return k == identity; })) return false;
+    revealed_.add(identity);
+  }
+  if (isDesk(state) && state != SceneState::kDelegating) {
+    if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) return false;
+    if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) return false;
+    ++cueCount_;
+    return true;
+  }
+  return !scenes.iteration;
+}
 void Engine::consumeCues() {
   auto state = scenes.route.state;
   if (cueGeneration_ != scenes.generation || cueIteration_ != scenes.iteration) {
@@ -114,38 +137,29 @@ void Engine::consumeCues() {
     cueIteration_ = scenes.iteration;
     cueCount_ = 0;
   }
-  if (state == SceneState::kIdle || state == SceneState::kAsleep || state == SceneState::kNoApp ||
-      state == SceneState::kListening || state == SceneState::kWaiting)
-    return;
-  static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed",
-                                  nullptr,    "squish", "squish", "squish", "failed",   "squish"};
-  for (const auto& c : scenes.contacts) {
-    const char* recipe = recipes[c.kind];
-    if (!recipe) continue;
-    bool protect = state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
-    if (protect && c.kind >= kAlert) {
-      // The reference's "requestId:kind", as its key.
-      const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
-      if (revealed_.find([&](uint64_t k) { return k == identity; })) continue;
-      revealed_.add(identity);
+  const bool quiet = state == SceneState::kIdle || state == SceneState::kAsleep || state == SceneState::kNoApp ||
+                     state == SceneState::kListening || state == SceneState::kWaiting;
+  const bool protect =
+      state == SceneState::kNeedsYou || state == SceneState::kTaskComplete || state == SceneState::kError;
+  static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed", nullptr, "squish",
+                                  "squish",   "squish", "failed", "squish", "sneeze",   "breath", "bounce"};
+  static_assert(std::size(recipes) == slime::kContactKinds, "a recipe, or none, for every contact kind");
+  // The scene's contacts, then a gag's (cues.mjs reads them in this order).
+  for (const auto* list : {&scenes.contacts, &acting.contacts})
+    for (const auto& c : *list) {
+      const char* recipe = recipes[c.kind];
+      if (!recipe || !admits(c, state, quiet, protect)) continue;
+      int mood = slime::kProfile[emotion].canonical;
+      const auto& p = slime::kProfile[mood];
+      SoundCue cue{c, recipe, mood, 0, 53, 1, q(.45), protect};
+      if (c.kind != kAlert) {
+        cue.variant = soundRandom.index(3);
+        cue.seed = soundRandom.next();
+        cue.pitch = p.pitch * (slime::kPitchLo + soundRandom.unit() * (slime::kPitchHi - slime::kPitchLo));
+        cue.gain =
+            min(q(.8), p.gain * c.strength * (slime::kGainLo + soundRandom.unit() * (slime::kGainHi - slime::kGainLo)));
+      }
+      cues.push_back(cue);
     }
-    if (isDesk(state) && state != SceneState::kDelegating) {
-      if (scenes.recipe.duration < slime::kShortLoopMs && scenes.iteration % slime::kShortLoopEvery) continue;
-      if (cueCount_ >= slime::kMaxRoutine || soundRandom.unit() >= slime::kRoutineProbability) continue;
-      ++cueCount_;
-    } else if (scenes.iteration)
-      continue;
-    int mood = slime::kProfile[emotion].canonical;
-    const auto& p = slime::kProfile[mood];
-    SoundCue cue{c, recipe, mood, 0, 53, 1, q(.45), protect};
-    if (c.kind != kAlert) {
-      cue.variant = soundRandom.index(3);
-      cue.seed = soundRandom.next();
-      cue.pitch = p.pitch * (slime::kPitchLo + soundRandom.unit() * (slime::kPitchHi - slime::kPitchLo));
-      cue.gain =
-          min(q(.8), p.gain * c.strength * (slime::kGainLo + soundRandom.unit() * (slime::kGainHi - slime::kGainLo)));
-    }
-    cues.push_back(cue);
-  }
 }
 }  // namespace render::gel

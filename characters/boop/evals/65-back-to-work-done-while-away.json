@@ -3,7 +3,7 @@
   "case": "The person asks the agent for a feature and steps away a minute later. Half an hour on, the agent finishes a very long turn well while they're gone, and Boop celebrates it as a success as usual. When they come back an hour after that, Boop greets them with a glad face, happy, excited, curious or still proud, and wakes up for them after the long break, but doesn't play the finish again: no success, failure or reply, since this is them coming back, not a turn ending.",
   "why": "An away changes nothing, so the finish is judged as ever; the back wakes the brain on its own line; react.animation is wake up for a back after a long break, and a finish only for a turn that finished",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "add dark mode to the settings page"},
+    {"event": "turn started", "at": "0s", "prompt": "add dark mode to the settings page", "reading": {"kind": "feature"}},
     {"event": "away", "at": "1m"},
     {"event": "command", "at": "20m", "topic": "tests", "failed": false},
     {"event": "turn finished", "at": "30m", "message": "Dark mode is in: the settings page has a toggle, it follows the system by default, and the tests pass.", "expect": {"animation": "success"}},

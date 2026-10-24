@@ -2,7 +2,7 @@
 # Run them as `make -C internal <target>` from the repo root. Every recipe
 # runs from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test
+.PHONY: test tools faces fw fw-test sim sim-test e2e tools-test eval-pixel
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -30,6 +30,13 @@ test:
 	    echo "$$pkg: the TestingMacros flake; trying again"; \
 	  done; \
 	done
+
+# Pixel's own eval scenarios against Jev (L5, internal/EVALS.md §4), with
+# its pack and steering, one run each. It needs BOOP_JEV_KEY.
+eval-pixel:
+	$(MAKE) -C $(ROOT) build
+	cd $(ROOT) && CHARACTER=pixel .build/debug/boopdev eval --runs 1 \
+	  --scenarios characters/pixel/evals --steering characters/pixel/steering
 
 # internal/tools/.venv with pyserial, Pillow and Textual, for boopctl.
 # internal/tools/boopctl makes it through this when it's missing; this also
@@ -83,7 +90,7 @@ sim-test:
 	cd $(ROOT) && python3 -m unittest discover -s simulator/tests
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && simulator/web/build.sh pixel
-	cd $(ROOT) && node --test simulator/tests/
+	cd $(ROOT) && node --test simulator/tests/*.test.mjs
 
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:
@@ -91,12 +98,15 @@ e2e:
 	cd $(ROOT) && internal/tools/boopctl e2e
 
 # The tools' own tests, with no board or camera: boopctl's commands (the
-# working day's script and report among them, and the takes they read from
-# the voice pack), the webcam recorder on synthetic video, charactergen's
-# staging and studio rules (internal/characters/), and each character
-# pack's own (its tests/tools/).
+# working day's script and report among them, the takes they read from
+# the voice pack, and a reference cut into frames with ffmpeg), the
+# fluidity measure, the webcam recorder on synthetic video, charactergen's
+# staging and studio rules (internal/characters/), the studio's own logic
+# and server (with Node), and each character pack's own (its tests/tools/).
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
+	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/fluid/tests
+	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters

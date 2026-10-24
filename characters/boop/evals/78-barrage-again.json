@@ -1,0 +1,10 @@
+{
+  "name": "Poking again right after a barrage gets a louder grumble",
+  "case": "The person pokes Boop four times in a row, and a minute later does it again. The second barrage comes before Boop has calmed down, so it says so: a grumpy or irritated face with a sound, a word or a phrase, said aloud, never a swear.",
+  "why": "The poke's line says a run came again within 2 minutes of the last (TranscriptView.againMs); PERSONALITY's Example: grumpy, upset in a phrase, twice; characters/boop/steering/mood/grumpy.md: a barrage again makes it say so",
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "pokes", "at": "1s"},
+    {"event": "pokes", "at": "1m", "expect": {"react": "grumpy|irritated", "kind": "phrase|word|sound", "said": "some"}}
+  ]
+}

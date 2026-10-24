@@ -71,11 +71,15 @@ function checkTraceNumber(value, inspection, at, before, motion) {
     `${SPEC}, Keep the object; change its targets: gaze`);
   // CONTINUITY.md, "Phase 1 channel bounds": original additive audition
   // layers retain their limits; these are not new physics tuning values.
+  // A gag's own channels (CONTINUITY.md, Comedy): the slide and the lids.
   for (const [name, channel] of Object.entries(value.actorChannels)) {
-    const cap = { lift: 0.24, roll: 0.12, forward: 0.18 }[name] ?? 0.42;
+    const cap = { lift: 0.24, roll: 0.12, forward: 0.18, slide: 0.7, lids: 1 }[name] ?? 0.42;
+    const speed = { lids: 20 }[name] ?? 5;
     range(channel.x, -cap, cap, `${SPEC}, Phase 1 channel bounds: ${name} displacement`);
-    range(channel.v, -5, 5, `${SPEC}, Phase 1 channel bounds: ${name} velocity`);
+    range(channel.v, -speed, speed, `${SPEC}, Phase 1 channel bounds: ${name} velocity`);
   }
+  if ('slide' in value) range(value.slide, -0.7, 0.7, `${SPEC}, Comedy: composed slide`);
+  range(value.face.blink, 0, 1, `${SPEC}, Comedy: a gag's lids close the eyes no further than a blink`);
   for (const [name, channel] of Object.entries(value.bridgeChannels ?? {})) {
     const cap = { lean: 0.06, squash: 0.05, forward: 0.04 }[name];
     range(channel.x, -cap, cap, `${SPEC}, Directed edge bridges: ${name} displacement`);
@@ -97,41 +101,87 @@ function checkTraceNumber(value, inspection, at, before, motion) {
 }
 
 async function checkSemanticFace(catalog) {
-  const { createFace, faceTarget, faceTransition } = await import('../engine/face.mjs');
+  const { createFace, faceTarget, faceTransition, faceRender, sleepTransition } = await import('../engine/face.mjs');
   // CONTINUITY.md, "Phase 1 channel bounds": the new semantic layer owns
   // these values; accepted spring/blink source remains byte-for-byte locked.
-  assert.deepEqual(faceTransition, { durationSeconds: 0.18, frequency: 20, reducedFrequency: 30 },
+  assert.deepEqual(faceTransition, { durationMs: 180, frequency: 20, reducedFrequency: 30 },
     `${SPEC}, Phase 1 channel bounds: semantic face timing`);
   const profiles = catalog.expressions, ids = Object.keys(profiles);
-  const presentation = face => { const { transition, ...rendered } = face; return rendered; };
+  // What is drawn: the controls and every layer with any weight.
+  const presentation = face => { const { transition, artId, sleeping, layers, ...rendered } = face;
+    return { ...rendered, layers: layers.filter(layer => layer.weight > 0) }; };
+  const sum = face => face.layers.reduce((total, layer) => total + layer.weight, 0);
+  const smoothstep = s => s * s * (3 - 2 * s);
   for (const [i, from] of ids.entries()) {
     const to = ids[(i + 1) % ids.length], start = faceTarget(profiles[from]), target = faceTarget(profiles[to]);
     const face = createFace({ profiles, initialEmotion: from, reduced: { matches: false } });
     const before = face.inspect();
     face.setMood(to);
-    assert.deepEqual(presentation(face.inspect()), presentation(before), `${SPEC}, Proposed layer ownership: semantic face retarget preserves current controls`);
-    let oldArt = from, artChanges = 0;
-    for (let frame = 0; frame < 24; frame++) {
+    assert.deepEqual(presentation(face.inspect()), presentation(before), `${SPEC}, Directed edge bridges: a retarget changes nothing drawn at once`);
+    for (let frame = 1; frame <= 24; frame++) {
       face.advance(STEP_MS / 1000);
-      const value = face.inspect();
-      assert.ok([from, to].includes(value.artId), `${SPEC}, Proposed layer ownership: only one endpoint art primitive`);
-      assert.equal(typeof value.art.eyes, 'string', `${SPEC}, Proposed layer ownership: one eye primitive`);
-      assert.equal(typeof value.art.mouth, 'string', `${SPEC}, Proposed layer ownership: one mouth primitive`);
-      assert.ok(!('weights' in value), `${SPEC}, Proposed layer ownership: no overlapping silhouette weights`);
+      const value = face.inspect(), ms = Math.min(180, frame * STEP_MS);
       for (const key of Object.keys(start)) {
         range(value[key], Math.min(start[key], target[key]), Math.max(start[key], target[key]),
           `${SPEC}, Proposed layer ownership: convex semantic ${key} (${from} -> ${to})`);
       }
-      for (const key of ['cheekAlpha', 'tearAmount', 'bridgeBlink', 'blink']) {
-        range(value[key], 0, 1, `${SPEC}, Phase 1 channel bounds: ${key}`);
-      }
-      if (value.artId !== oldArt) {
-        near(value.bridgeBlink, 1, `${SPEC}, Proposed layer ownership: discrete primitive changes only at full closure`);
-        artChanges++; oldArt = value.artId;
-      }
+      for (const key of ['cheekAlpha', 'tearAmount', 'blink']) range(value[key], 0, 1, `${SPEC}, Phase 1 channel bounds: ${key}`);
+      // The new art crosses over the old on a smoothstep over the window, the
+      // two summing to one; then only it is drawn.
+      assert.deepEqual(value.layers.map(layer => layer.artId), ms < 180 ? [from, to] : [to], `${SPEC}, Directed edge bridges: ${from} -> ${to} draws both arts until the window ends`);
+      near(value.layers.at(-1).weight, smoothstep(ms / 180), `${SPEC}, Directed edge bridges: the new art fades in on a smoothstep`);
+      near(sum(value), 1, `${SPEC}, Directed edge bridges: the arts' weights sum to one`);
+      assert.equal(value.artId, to, `${SPEC}, Directed edge bridges: the current art is the new one`);
     }
-    assert.equal(artChanges, 1, `${SPEC}, Proposed layer ownership: no double-faced frame`);
-    near(face.inspect().bridgeBlink, 0, `${SPEC}, Phase 1 channel bounds: bridge ends after 180 ms`);
+  }
+  // A retarget mid-window starts from what is drawn: every weight keeps its
+  // value, the newest goes last; a fifth art drops the faintest, the others'
+  // shares growing to fill what it leaves.
+  const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
+  face.setMood('frightened'); for (let frame = 0; frame < 4; frame++) face.advance(STEP_MS / 1000);
+  const crossing = face.inspect();
+  face.setMood('happy');
+  assert.deepEqual(presentation(face.inspect()), presentation(crossing), `${SPEC}, Directed edge bridges: a mid-window retarget keeps every weight`);
+  assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['calm', 'frightened', 'happy'], `${SPEC}, Directed edge bridges: the newest art is drawn last`);
+  let drops = 0;
+  for (const mood of ['sad', 'angry', 'pleased']) {
+    face.advance(STEP_MS / 1000);
+    const four = face.inspect().layers;
+    face.setMood(mood);
+    if (four.length < faceRender.layers) continue;
+    const faintest = four.reduce((a, b) => b.weight < a.weight ? b : a), rest = four.filter(layer => layer !== faintest), after = face.inspect().layers;
+    assert.deepEqual(after.map(layer => layer.artId), [...rest.map(layer => layer.artId), mood], `${SPEC}, Directed edge bridges: a fifth art drops the faintest`);
+    for (const [index, layer] of rest.entries()) near(after[index].weight, layer.weight / (1 - faintest.weight), `${SPEC}, Directed edge bridges: the others' shares grow to fill what the faintest leaves`);
+    drops++;
+  }
+  assert.equal(drops, 2, `${SPEC}, Directed edge bridges: the chain's fifth and sixth arts each drop one`);
+  assert.equal(face.inspect().layers.length, faceRender.layers, `${SPEC}, Directed edge bridges: at most four arts at once`);
+  near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: dropping keeps the sum`);
+  for (let frame = 0; frame < 12; frame++) { face.advance(STEP_MS / 1000); near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: the weights sum to one`); }
+  assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['pleased'], `${SPEC}, Directed edge bridges: a chain settles on its last art`);
+  // Falling asleep crosses over in its own longer window, its controls on a
+  // slower spring until it wakes, a mood changing meanwhile; waking is the
+  // face's own window and spring again.
+  assert.deepEqual(sleepTransition, { durationMs: 480, frequency: 8 }, `${SPEC}, Representative activity scenes: falling asleep's timing`);
+  {
+    const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
+    const open = face.inspect().eyeOpen;
+    face.setSleeping(true);
+    let x = open, v = 0;
+    for (let ms = STEP_MS; ms <= 640; ms += STEP_MS) {
+      if (ms === 160) face.setMood('happy');
+      face.advance(STEP_MS / 1000);
+      for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); v += (64 * (0.004 - x) - 16 * v) * h; x += v * h; left -= h; }
+      near(face.inspect().eyeOpen, x, `${SPEC}, Representative activity scenes: falling asleep's spring`);
+      if (ms < 480) near(face.inspect().layers.at(-1).weight, smoothstep(ms / 480), `${SPEC}, Representative activity scenes: the sleeping art fades in over its window`);
+    }
+    face.setSleeping(false);
+    assert.equal(face.inspect().transition.durationMs, faceTransition.durationMs, `${SPEC}, Representative activity scenes: waking takes the face's own window`);
+    const awake = face.inspect(), goal = faceTarget(profiles.happy).eyeOpen, w = faceTransition.frequency;
+    let ex = awake.eyeOpen, ev = awake.velocity.eyeOpen;
+    face.advance(STEP_MS / 1000);
+    for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); ev += (w * w * (goal - ex) - 2 * w * ev) * h; ex += ev * h; left -= h; }
+    near(face.inspect().eyeOpen, ex, `${SPEC}, Representative activity scenes: waking is the face's own spring, toward the mood it has now`);
   }
   for (const reducedMotion of [false, true]) {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: reducedMotion } });
@@ -150,7 +200,7 @@ async function checkSemanticFace(catalog) {
     face.advance(STEP_MS / 1000);
     const interrupted = face.inspect();
     face.setMood('happy');
-    assert.deepEqual(presentation(face.inspect()), presentation(interrupted), `${SPEC}, Proposed layer ownership: mid-bridge retarget does not reset controls`);
+    assert.deepEqual(presentation(face.inspect()), presentation(interrupted), `${SPEC}, Proposed layer ownership: mid-bridge retarget does not reset what is drawn`);
     // A retarget keeps each control's velocity: the next frame continues the
     // motion rather than starting again from rest.
     assert.ok(Math.abs(interrupted.velocity.eyeOpen) > 0.01, `${SPEC}, Phase 1 channel bounds: the face is moving when retargeted`);
@@ -250,7 +300,7 @@ async function checkExtensionEquations(createSlime, catalog) {
   }
   // Directed edge bridges: drawn ratios saturate smoothly inside (0.75, 4/3).
   const { softRatio, faceRender } = await import('../engine/face.mjs');
-  assert.deepEqual(faceRender, { ratioLow: 0.75, ratioHigh: 4 / 3, mouthDot: 0.8 }, `${SPEC}, Directed edge bridges: drawn ratio bounds`);
+  assert.deepEqual(faceRender, { ratioLow: 0.75, ratioHigh: 4 / 3, layers: 4 }, `${SPEC}, Directed edge bridges: drawn ratio bounds and arts at once`);
   near(softRatio(1), 1, `${SPEC}, Directed edge bridges: a settled face is drawn at its authored size`);
   range((softRatio(1 + 1e-7) - softRatio(1 - 1e-7)) / 2e-7, 1 - 1e-5, 1 + 1e-5, `${SPEC}, Directed edge bridges: unit slope at rest`);
   for (let value = 0; value <= 12; value += 0.01) {
@@ -359,13 +409,17 @@ export async function checkEngine() {
     await checkExtensionEquations(createSlime, catalog);
     for (const file of scriptFiles) {
       const script = readScript(path.join(root, 'scripts', file));
-      const smooth = createSmoothness(file), observe = smooth.run();
+      const smooth = createSmoothness(file), observe = smooth.run(catalog.expressions);
       let before, event = false;
       const a = runScript(createSlime, catalog, script, 53, observation => {
         if (observation.kind === 'event') {
           before = structuredClone(observation.after); event = true;
           if (['mood', 'facts', 'oneShot', 'linkTimedOut'].includes(observation.event.type)) {
             const before = physical(observation.before), after = physical(observation.after);
+            // A gag's own springs (the slide, the lids) join the inspection
+            // at rest when its first gag starts (a gesture's, at its event).
+            for (const [name, spring] of Object.entries(after.actorChannels))
+              if (!(name in before.actorChannels) && spring.x === 0 && spring.v === 0) delete after.actorChannels[name];
             const reflex = observation.event.type === 'oneShot' && ['poked', 'tap_spam'].includes(observation.event.moment.name);
             if (reflex) {
               for (const [name, mode] of Object.entries(after.modes)) {

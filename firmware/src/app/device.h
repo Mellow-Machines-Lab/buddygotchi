@@ -11,6 +11,8 @@
 
 #include "app/behaviour.h"
 #include "app/gesture.h"
+#include "app/motion_gesture.h"
+#include "app/touch_gesture.h"
 #include "app/latency.h"
 #include "app/touch_cal.h"
 #include "linkkit/kit.h"
@@ -63,6 +65,12 @@ struct Hal : linkkit::Platform {
   virtual TouchCal touchCal() { return {}; }
   virtual void setLed(uint32_t rgb) { (void)rgb; }
   virtual void setBacklight(uint8_t level) { (void)level; }
+  // The motion sensor's reading in milli-g (z out of the screen), if the
+  // board has one; false for none.
+  virtual bool motion(int& ax, int& ay, int& az) {
+    (void)ax, (void)ay, (void)az;
+    return false;
+  }
   // The panel's own pixels, landscape, for a face that draws natively
   // (render::Face::drawsNative): empty where the board pushes only the
   // 8-bit canvas. The simulator's is the AMOLED's. Such a
@@ -114,6 +122,11 @@ class Device : public linkkit::App {
  public:
   // A panel touch ends after this long without contact, in real ms.
   static constexpr uint32_t kTouchReleaseMs = 50;
+  // The gesture a finger held on the needs-you sign sends (`ev gesture`),
+  // with the number of the request the sign showed as the touch began
+  // (`data.attn`, the state's `attn.id`): the Mac stops showing that
+  // request if it still shows, and the board plays nothing.
+  static constexpr const char* kDismissGesture = "dismiss";
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -184,7 +197,14 @@ class Device : public linkkit::App {
   ReactionIn parse(const linkkit::Do& c);
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
-  void tapped(uint32_t t, bool injected);  // a tap, from BOOT or the panel
+  void tapped(uint32_t t, bool injected, bool button);  // a tap, from BOOT or the panel
+  // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
+  // `did` its name); `facedown` plays nothing.
+  void gestured(render::Gesture g, uint32_t t, bool injected);
+  void readMotion(uint32_t t);
+  // Whether the needs-you sign is on screen: something needs you, and the
+  // app is there to say so.
+  bool signShows(uint32_t t) const;
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();
@@ -226,12 +246,25 @@ class Device : public linkkit::App {
   bool injPress_ = false;
   uint32_t injPressUntil_ = 0;
   bool injTouch_ = false;
-  uint32_t injTouchUntil_ = 0;
-  int injX_ = 0, injY_ = 0;
+  uint32_t injTouchUntil_ = 0, injTouchFrom_ = 0;
+  int injX_ = 0, injY_ = 0, injToX_ = 0, injToY_ = 0;  // a dbg.touch moves from x, y to to_x, to_y
+  // The motion sensor's reading dbg.imu holds, in place of the board's.
+  bool injMotion_ = false;
+  int injAx_ = 0, injAy_ = 0, injAz_ = 1000;
+  // What the touch in progress traces, and what the motion sensor feels,
+  // read every kMotionMs.
+  TouchGesture touchPath_;
+  MotionGesture motion_;
+  uint32_t motionAt_ = 0;
+  static constexpr uint32_t kMotionMs = 20;
   bool bootInjected_ = false;  // the BOOT press in progress is dbg.press's
   // The touch in progress, last in contact at real time touchSeenReal_.
   bool touchDown_ = false;
   bool touchInjected_ = false;  // it's dbg.touch's, not the panel's
+  // It began on the needs-you sign, showing request touchSign_ (0 when the
+  // Mac sent no number), and its hold has dismissed it.
+  bool touchOnSign_ = false, touchDismissed_ = false;
+  uint32_t touchSign_ = 0;
   uint32_t touchSeenReal_ = 0;
 
   // A `say` is playing, and the reaction (Behaviour::reactionSeq) whose `say`

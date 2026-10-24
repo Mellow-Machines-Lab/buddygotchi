@@ -626,8 +626,8 @@ def classify(event: dict[str, Any]) -> str | None:
 
 def new_hour() -> dict[str, Any]:
     return {"turns": 0, "passes": 0, "dropped": 0, "held": 0, "reactions": 0, "mood_changes": 0, "mood_after_routine": 0,
-            "back_to_rest": 0, "lines": Counter(), "reacted": Counter(), "faces": Counter(), "loops": Counter(),
-            "words": Counter()}
+            "back_to_rest": 0, "check_ins": 0, "lines": Counter(), "reacted": Counter(), "faces": Counter(),
+            "loops": Counter(), "words": Counter()}
 
 
 def reaction(p: dict[str, Any]) -> dict[str, Any]:
@@ -674,6 +674,8 @@ def summarize(path: Path) -> dict[str, Any]:
                 hr["turns"] += 1
             if ev.get("wakes_brain") and ev["class"]:
                 hr["lines"][ev["class"]] += 1
+            if ev.get("wakes_brain") and "idle_minutes" in ev.get("facts", {}):
+                hr["check_ins"] += 1
         elif k == "pass" and body.get("for") in events and body.get("brain"):
             # The brain's passes; a forced one (`by`) is the dashboard's.
             passes[body["for"]] = body
@@ -732,9 +734,11 @@ def summarize(path: Path) -> dict[str, Any]:
 # ------------------------------------------------------------- liveliness
 
 # The loose limits `check` holds a day to (internal/EVALS.md §5): each catches
-# a clear failure of the owner's brief (2026-09-28), an animated Boop that
-# reacts often, never idles for long and doesn't flail (repeats are fine),
-# and is to be tightened once the day meets it.
+# a clear failure of the owner's brief (2026-09-28, and its fun brief of
+# 2026-10-21), an animated Boop that reacts often, never idles for long,
+# doesn't flail, doesn't say the same thing again and again, and says
+# something more often than not; each is to be tightened once the day
+# meets it.
 LIMITS = {
     "longest_quiet_min": 8,       # the longest stretch of work with no reaction
     "quiet_over_6_min": 3,        # stretches of work over 6 minutes with no reaction
@@ -742,7 +746,23 @@ LIMITS = {
     "mood_bounces": 1,            # a mood changing back to the one it left within a minute
     "min_mood_changes": 10,       # over the day
     "longest_rest_working_min": 45,  # the longest stretch of work in the resting mood all through
+    "repeat_pct": 40,             # reactions the same as the one before (face, finish and what it said)
+    "longest_same_run": 3,        # the same reaction in a row
+    "min_words_said": 0.5,        # the share of reactions that said something
 }
+
+
+def kind(r: dict[str, Any]) -> tuple[str, str, str]:
+    """A reaction's kind: its face, its finish and what it said."""
+    return (r["face"], r["finish"], r["word"])
+
+
+def same_runs(reactions: list[dict[str, Any]]) -> list[int]:
+    """How many reactions of each one's kind end in a row at it, from 1."""
+    runs: list[int] = []
+    for i, r in enumerate(reactions):
+        runs.append(runs[-1] + 1 if i and kind(reactions[i - 1]) == kind(r) else 1)
+    return runs
 
 
 def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
@@ -755,14 +775,13 @@ def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
         marks = [a] + [t for t in times if a < t < b] + [b]
         gaps += [(y - x, x) for x, y in zip(marks, marks[1:])]
     longest = max(gaps, default=(0, 0))
-    same = lambda x, y: (x["face"], x["finish"], x["word"]) == (y["face"], y["finish"], y["word"])
-    run, best, best_what, repeats = 0, 0, "", 0
-    for i, r in enumerate(reactions):
-        again = i > 0 and same(reactions[i - 1], r)
-        repeats += again
-        run = run + 1 if again else 1
-        if run > best:
-            best, best_what = run, r["face"] + (f" {r['finish']}" if r["finish"] else "") + (f' "{r["word"]}"' if r["word"] else "")
+    runs = same_runs(reactions)
+    best = max(runs, default=0)
+    best_what = ""
+    if runs:
+        r = reactions[runs.index(best)]
+        best_what = r["face"] + (f" {r['finish']}" if r["finish"] else "") + (f' "{r["word"]}"' if r["word"] else "")
+    repeats = sum(1 for n in runs if n > 1)
     bounces = [f'{a["at"]} {a["from"]} → {a["to"]}, back at {b["at"]}' for a, b in zip(changes, changes[1:])
                if b["to"] == a["from"] and b["ms"] - a["ms"] < 60_000]
     # The longest stretch of work with Boop in the resting mood all through.
@@ -789,7 +808,24 @@ def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
         "mood_bounces": len(bounces), "bounces": bounces, "min_mood_changes": len(changes),
         "longest_rest_working_min": round(longest_rest[0] / 60_000, 1),
         "longest_rest_working_at": daylog.clock(longest_rest[1]) if rest else "–",
+        "min_words_said": round(sum(1 for r in reactions if r["word"]) / max(1, len(reactions)), 2),
     }
+
+
+def ledger(reactions: list[dict[str, Any]], hours: dict[int, dict[str, Any]]) -> list[str]:
+    """The fun ledger, an hour a row: reactions, how many said something,
+    how many kinds (face, finish and what it said), the longest run of the
+    same, and the idle check-ins."""
+    out = ["| Hour | Reactions | Said something | Kinds | Longest same run | Idle check-ins |",
+           "| --- | --- | --- | --- | --- | --- |"]
+    by_hour: dict[int, list[dict[str, Any]]] = {}
+    for r in reactions:
+        by_hour.setdefault(daylog.hour_of(r["ms"]), []).append(r)
+    for h in sorted(hours):
+        rs = by_hour.get(h, [])
+        out.append(f"| {h:02d}:00 | {len(rs)} | {sum(1 for r in rs if r['word'])} | {len({kind(r) for r in rs})} "
+                   f"| {max(same_runs(rs), default=0)} | {hours[h]['check_ins']} |")
+    return out
 
 
 def check(paths: list[Path]) -> tuple[str, bool]:
@@ -804,10 +840,9 @@ def check(paths: list[Path]) -> tuple[str, bool]:
             ok &= held
             note = {"longest_quiet_min": f' (from {lv["longest_quiet_at"]})',
                     "mood_bounces": "".join(f"; {b}" for b in lv["bounces"]),
-                    "longest_rest_working_min": f' (from {lv["longest_rest_working_at"]})'}.get(key, "")
+                    "longest_rest_working_min": f' (from {lv["longest_rest_working_at"]})',
+                    "longest_same_run": f' ({lv["longest_same_what"] or "–"})'}.get(key, "")
             out.append(f'{"ok  " if held else "FAIL"}  {key} {"≥" if key.startswith("min_") else "≤"} {limit}: {got}{note}')
-        out.append(f'      (repeats, not held to a limit: {lv["repeat_pct"]}% the same as the one before, '
-                   f'at most {lv["longest_same_run"]} in a row)')
     return "\n".join(out), ok
 
 
@@ -849,6 +884,7 @@ def report(paths: list[Path], as_json: bool = False) -> str:
                 f'at most {lv["longest_same_run"]} in a row ({lv["longest_same_what"] or "–"}); '
                 f'{lv["mood_bounces"]} mood bounces; longest stretch of work {REST} all through '
                 f'{lv["longest_rest_working_min"]} min (from {lv["longest_rest_working_at"]})']
+        out += ["", "Fun ledger:", ""] + ledger(r["reactions"], r["hours"])
         out += ["", "Holds: " + fmt(all_hours["loops"]),
                 "", "Takes said (none: a reaction that said nothing): " + fmt(all_hours["words"]),
                 "", "Time in each mood: " + ", ".join(f"{k} {v} min" for k, v in r["mood_minutes"].items()),

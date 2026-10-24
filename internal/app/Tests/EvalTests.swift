@@ -16,6 +16,9 @@ final class EvalTests: XCTestCase {
     }
 
     func testEveryScenarioReads() throws {
+        // Pixel's own, which make -C internal eval-pixel runs, read too.
+        let pixels = try Scenario.load(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel/evals"))
+        XCTAssertEqual(pixels.count, 5)
         let all = try Scenario.load(directory: try Self.scenarios())
         XCTAssertGreaterThanOrEqual(all.count, 7)
         XCTAssertTrue(all.allSatisfy { !$0.story.isEmpty }, "every scenario says its case in plain words")
@@ -24,12 +27,16 @@ final class EvalTests: XCTestCase {
     }
 
     func testRangesAndDurationsRead() {
-        XCTAssertEqual(Scenario.range("1-3"), 1...3)
-        XCTAssertEqual(Scenario.range("2-"), 2...Int.max)
-        XCTAssertEqual(Scenario.range("-4"), 0...4)
-        XCTAssertEqual(Scenario.range("3"), 3...3)
-        XCTAssertNil(Scenario.range("3-1"))
-        XCTAssertNil(Scenario.range("-"))
+        let counts = 0...Int.max, shares = 0...1.0
+        XCTAssertEqual(Scenario.range("1-3", within: counts), 1...3)
+        XCTAssertEqual(Scenario.range("2-", within: counts), 2...Int.max)
+        XCTAssertEqual(Scenario.range("-4", within: counts), 0...4)
+        XCTAssertEqual(Scenario.range("3", within: counts), 3...3)
+        XCTAssertNil(Scenario.range("3-1", within: counts))
+        XCTAssertNil(Scenario.range("-", within: counts))
+        XCTAssertEqual(Scenario.range("0.5-", within: shares), 0.5...1)
+        XCTAssertEqual(Scenario.range("-0.3", within: shares), 0...0.3)
+        XCTAssertNil(Scenario.range("0.5-1.5", within: shares), "a share is 1 at most")
         XCTAssertEqual(Scenario.ms("2m30s"), 150_000)
         XCTAssertEqual(Scenario.ms("1h5m"), 3_900_000)
         XCTAssertNil(Scenario.ms("5x"))
@@ -113,9 +120,9 @@ final class EvalTests: XCTestCase {
         }
     }
 
-    /// EVALS.md §3: a turn start's `prompt` and a finish's `message` reach
-    /// Jev as NOW's notes (`27-agent-gives-up`); on any other step they
-    /// don't load.
+    /// EVALS.md §3: a turn start's `prompt` reaches Jev as its reading,
+    /// never its words, and a finish's `message` as NOW's note
+    /// (`27-agent-gives-up`); on any other step they don't load.
     func testAStepCarriesThePromptAndLastMessage() async throws {
         let states = Lines()
         let brain = ScriptedBrain { state, _ in
@@ -124,7 +131,8 @@ final class EvalTests: XCTestCase {
         }
         _ = try await Eval(brain: brain, steering: RuntimeTests.steering)
             .run(try Scenario(file: try Self.scenarios().appendingPathComponent("27-agent-gives-up.json")))
-        XCTAssertTrue(states.all.first?.contains("\n  You asked: \"fix the login redirect\"") == true, states.all.first ?? "no pass")
+        XCTAssertTrue(states.all.first?.contains("\nYou asked claude on \"landing\" for a fix, in a few words.") == true, states.all.first ?? "no pass")
+        XCTAssertFalse(states.all.joined().contains("fix the login redirect"), "the prompt's words never reach Jev")
         XCTAssertTrue(states.all.last?.contains("\n  Its last message: \"I couldn't get the login working.") == true, states.all.last ?? "no pass")
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","prompt":"hi","expect":{"react":"none"}}]}"#, "step 1: prompt is only"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","message":"hi","expect":{"react":"none"}}]}"#, "step 1: message is only")] {
@@ -148,7 +156,7 @@ final class EvalTests: XCTestCase {
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
         XCTAssertEqual(report.first, "FAIL  05-pokes-glad-miffed-grumpy.json  Pokes make Boop curious, then miffed, then fed up")
-        XCTAssertTrue(report[1].contains("wanted react curious|excited|happy, animation none, mood curious|happy; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
+        XCTAssertTrue(report[1].contains("wanted react amused|curious|excited|happy|mischievous, animation none, said some, mood curious|happy; got react none, animation none, feeling none, about none, kind none, said none, loops none, mood calm"), report[1])
         XCTAssertEqual(Eval.summary([[result]]), "0/1 passed")
     }
 
@@ -158,7 +166,16 @@ final class EvalTests: XCTestCase {
         for (json, why) in [(#"{"name":"n","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "needs name, case"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"max_fun":2},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks has only"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"reactions":"lots"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.reactions"),
-                            (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count")] {
+                            (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count"),
+                            (#"{"name":"n","case":"c","why":"w","nature":"grumpy","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "nature is sweet or cheeky"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","agent":"codex","expect":{"react":"none"}}]}"#, "Codex has no hook"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","count":0,"expect":{"react":"none"}}]}"#, "count is for pokes"),
+                            (#"{"name":"n","case":"c","why":"w","checks":{"words_said":"half"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.words_said"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"to-do list","at":"0s","expect":{"todo":"1/4"}}]}"#, "to-do list needs todos"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"to-do list","at":"0s","todos":"5/4","expect":{"todo":"1/4"}}]}"#, "to-do list needs todos"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"command","at":"0s","todos":"1/4","expect":{"todo":"1/4"}}]}"#, "todos is only for to-do list"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"needs you","at":"0s","expect":{"needs":"yes"}}]}"#, "expect.needs is shown or none"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"wait","at":"0s","expect":{"todo":"lots"}}]}"#, "expect.todo is like 3/7")] {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
             try Data(json.utf8).write(to: file)
             defer { try? FileManager.default.removeItem(at: file) }
@@ -168,6 +185,27 @@ final class EvalTests: XCTestCase {
             } catch {
                 XCTAssertTrue("\(error)".contains(why), "\(error)")
             }
+        }
+    }
+
+    /// EVALS.md §1: a run's prompt has the NATURE the person chose at
+    /// setup, as the app's always does: cheeky unless the scenario says
+    /// sweet.
+    func testAScenarioRunsWithItsNature() async throws {
+        for (nature, words) in [(nil, "At heart Boop is cheeky."), ("sweet", "At heart Boop is sweet.")] {
+            let states = Lines()
+            let brain = ScriptedBrain { state, _ in
+                states.add(state)
+                return [:]
+            }
+            let field = nature.map { #","nature":"\#($0)""# } ?? ""
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("nature-\(UUID().uuidString).json")
+            try Data(#"{"name":"n","case":"c","why":"w"\#(field),"steps":[{"event":"poke","at":"0s","expect":{"mood":"calm"}}]}"#.utf8).write(to: file)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let scenario = try Scenario(file: file)
+            XCTAssertEqual(scenario.nature.rawValue, nature ?? "cheeky")
+            _ = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
+            XCTAssertTrue(states.all.first?.contains(words) ?? false, states.all.first ?? "no state")
         }
     }
 
@@ -200,7 +238,7 @@ final class EvalTests: XCTestCase {
                 + #"{"event":"turn finished","at":"\#(i)m30s"}"#
         }.joined(separator: ",")
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("19-same-win-again.json")
-        try Data(#"{"name":"n","case":"c","why":"w","checks":{"max_same_in_a_row":2,"min_variety":2,"reactions":"2-","mood_changes":"-2"},"steps":[\#(steps)]}"#.utf8)
+        try Data(#"{"name":"n","case":"c","why":"w","checks":{"max_same_in_a_row":2,"min_variety":2,"reactions":"2-","mood_changes":"-2","words_said":"0.5-"},"steps":[\#(steps)]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         let scenario = try Scenario(file: file)
@@ -213,6 +251,8 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(failed["min_variety 2"]?.passed, false)
         XCTAssertEqual(failed["reactions 2 or more"]?.passed, true)
         XCTAssertEqual(failed["mood_changes 0-2"]?.passed, true)
+        XCTAssertEqual(failed["words_said 0.5-1.0"]?.passed, false, "it never says anything")
+        XCTAssertEqual(failed["words_said 0.5-1.0"]?.detail, "0 of 10 reactions said something")
         let report = Eval.report([result], story: scenario.story)
         XCTAssertEqual(report[1], "  case: " + scenario.story)
         let asGap = Eval.report([result], story: scenario.story, gap: "why")
@@ -311,5 +351,91 @@ final class EvalTests: XCTestCase {
         let right = try await Eval(brain: steps, steering: RuntimeTests.steering).run(scenario)
         XCTAssertTrue(right.passed, right.runChecks.map(\.summary).joined(separator: "\n"))
         XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → skeptical")
+    }
+
+    /// EVALS.md §2: every scenario passes with the expect brain, which
+    /// answers each pass as its step expects (its own `brain`, else the
+    /// first of each `expect` set, the mood a move at a time toward what a
+    /// step wants). What it checks is everything but Jev: that each step
+    /// wakes the brain as it says, that the moods it expects lie on the
+    /// graph's paths, and the whole-run checks a run can fail without Jev.
+    func testEveryScenarioPassesWithTheExpectBrain() async throws {
+        for scenario in try Scenario.load(directory: try Self.scenarios()) {
+            let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(scenario)
+            XCTAssertTrue(result.passed, "\(scenario.file):\n" + (result.checks.filter { !$0.passed }.map(\.summary)
+                + result.runChecks.filter { !$0.passed }.map(\.summary)).joined(separator: "\n"))
+        }
+    }
+
+    /// An eval's hooks say which process the agent is, as a real agent's
+    /// do, and its agent runs all through it: a request waits past the 10
+    /// silent minutes (SessionFold.safetyNetMs) that clear one from a hook
+    /// that doesn't say. A held finger (`dismiss`) hides it, and the
+    /// session's next request shows.
+    func testARequestWaitsAsLongAsItsAgentRuns() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("lunch-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn started","at":"0s"},"#
+            + #"{"event":"needs you","at":"1m","expect":{"needs":"shown"}},"#
+            + #"{"event":"wait","at":"11m1s","expect":{"needs":"shown"}},"#
+            + #"{"event":"gesture","at":"12m","kind":"dismiss","expect":{"needs":"none","idle":"1"}},"#
+            + #"{"event":"needs you","at":"13m","expect":{"needs":"shown","todo":"none"}}]}"#)
+            .write(to: file, atomically: true, encoding: .utf8)
+        let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(try Scenario(file: file))
+        XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
+    }
+
+    /// EVALS.md §2: every scenario is also a demo (`--to-demo`) that the
+    /// pack can play: a demo is an eval with its brain's answers written in.
+    func testEveryScenarioPlaysAsADemo() throws {
+        for scenario in try Scenario.load(directory: try Self.scenarios()) {
+            let text = DemoFromScenario.script(scenario)
+            let script = try DemoScript(text, named: scenario.file)
+            XCTAssertEqual(script.problems(), [], scenario.file)
+            XCTAssertEqual(script.title, scenario.name)
+            let brains = script.steps.filter { if case .brain = $0.what { true } else { false } }.count
+            XCTAssertEqual(brains, scenario.steps.filter { $0.expect != nil }.count, "\(scenario.file): a brain step after each expecting step")
+            let longest = script.steps.map(\.after).max() ?? 0
+            XCTAssertLessThanOrEqual(longest, DemoFromScenario.maxGap, "\(scenario.file): the gaps are cut short")
+            // A held finger is the demo's hold, a to-do list its todo.
+            let holds = script.steps.filter { $0.what == .hold }.count
+            XCTAssertEqual(holds, scenario.steps.filter { $0.event == "gesture" && $0.kind == Core.dismissGesture }.count, scenario.file)
+            let lists = script.steps.compactMap { if case .agent(let a) = $0.what, a.does == .todo { a.todos } else { nil } }
+            XCTAssertEqual(lists, scenario.steps.compactMap(\.todos), scenario.file)
+        }
+    }
+
+    /// EVALS.md §3: a scenario's `start` sets the virtual clock, in UTC,
+    /// which the prompt's heading shows; a step's `brain` answers for the
+    /// expect brain ahead of its `expect`.
+    func testAScenarioStartsAtItsStartAndAStepMayAnswer() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("start-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("s.json")
+        try #"{"name":"n","case":"c","why":"w","start":"2026-10-31T09:00","steps":[{"event":"poke","at":"0s","brain":{"react.mood":"amused"},"expect":{"react":"curious|amused"}}]}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+        let scenario = try Scenario(file: file)
+        XCTAssertEqual(scenario.start, 1_793_437_200_000, "2026-10-31 09:00 UTC")
+        let states = Lines()
+        final class Seeing: Brain, @unchecked Sendable {
+            let id = "seeing"
+            let inner = ExpectBrain()
+            let states: Lines
+            init(_ states: Lines) { self.states = states }
+            func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
+                states.add(state)
+                return try await inner.answer(state: state, questions: questions, deadline: deadline)
+            }
+        }
+        let expect = ExpectBrain()
+        let result = try await Eval(brain: expect, steering: RuntimeTests.steering).run(scenario)
+        XCTAssertTrue(result.passed)
+        XCTAssertEqual(result.checks.first?.react, "amused", "the step's own answer comes first")
+        _ = try await Eval(brain: Seeing(states), steering: RuntimeTests.steering).run(scenario)
+        XCTAssertTrue(states.all.first?.contains("NOW (09:00, Saturday, Halloween)") == true, "the heading says the occasion: " + (states.all.first ?? ""))
+        try #"{"name":"n","case":"c","why":"w","start":"Halloween","steps":[{"event":"poke","at":"0s","expect":{"react":"none"}}]}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+        try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }
     }
 }

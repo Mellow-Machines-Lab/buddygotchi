@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-21. A board with no board: the firmware's own code in a
+Updated 2026-10-24. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -18,7 +18,12 @@ run it.
 `http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
 state" link opens its matrix with `&board=/board`, so it marks the cell
 the board shows now (`/board`, under USB below; the first board's, with
-several).
+several). The studio's own boards, a preview of each face, on which its
+Transitions and References record, are this `Board` too: the
+server serves the page's files again at `/simulator/`, where the studio
+looks for them under its own server as well
+([characters/studio/README.md](../characters/studio/README.md), On the
+board).
 
 **With the Mac app.** While the simulator runs, Boop's Settings shows it
 under Device: **Use it** makes it Boop's body, with your real hooks and
@@ -60,8 +65,9 @@ A generic one, not the CYD or the AMOLED board:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`). Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a tap, as on the boards. The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a tickle, a boop on the nose). Held still a second on the needs-you sign, it dismisses it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
+| Motion | With `motion`, buttons that move the board as the AMOLED's motion sensor feels it: Shake, Pick up and Put down, Thump, Face down and Face up. Without them the board has no sensor, as the CYD hasn't |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click: Sound on |
 | Light | The dot under the screen, in the LED's colour |
 | Backlight | The screen dims as the firmware dims it |
@@ -87,6 +93,7 @@ local page, in `web/dist/`:
 | `voice` | A voice file to fetch for the card |
 | `usb` | A WebSocket that is the board's USB cable, one WebSocket message per LinkKit message each way |
 | `controls` | Adds the Power, Reset and card buttons. Sound on is always there |
+| `motion` | Adds the motion sensor's buttons. The page's own `index.html` has them |
 | `demo` | A recording to play (below). The board's face is then the recording's |
 | `board-id` | The board's id, its `hello`'s, so boards on one page differ (`b00p-0000` without it) |
 | `pack` | The character pack whose build it runs, `boop-sim-PACK.js` (below); the staged pack's `boop-sim.js` without it |
@@ -100,7 +107,13 @@ The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
 board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}`,
 whenever one changes) and `power`. The script knows nothing of what the
-board's messages mean: they pass through it.
+board's messages mean: they pass through it. The script exports the
+rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
+for `board.motion`; `TAP`, where a tap lands, beside the nose (on it is
+a gesture), for `board.touch`; and `HEARTBEAT_MS`, how often a page that
+keeps a board company says its `state` again, as the demo player does.
+`Board.make` compiles a build's WebAssembly once for every board a page
+makes from it.
 
 ## Demos
 
@@ -128,7 +141,7 @@ A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
   "version": 1, "character": "boop", "name": "Boop", "face": "pixel", "length": 79,
   "takes": ["…"],
   "events": [
-    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"variant\":3}"},
+    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6}"},
     {"at": 0.001, "line": "{\"t\":\"do\",\"id\":1493456480,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"variant\":5,\"ctx\":\"session\"}}"},
     {"at": 2.003, "cause": {"kind": "prompt", "text": "You ask Claude: “Add keyboard shortcuts”"}}
   ]
@@ -144,10 +157,13 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `talk`, `back`,
-  `done`, `failed`, `stopped` or `note`.
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `press`,
+  `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
-  screen, which the board reacts to by itself, as it does to a real one.
+  screen, which the board reacts to by itself, as it does to a real one;
+  `hold`, one kept there for the event's `hold` seconds (the demo's
+  `DemoScript.holdSeconds`, past the board's hold on the needs-you sign;
+  1.2 for a recording that doesn't say); or `press`, BOOT.
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page
@@ -264,6 +280,7 @@ make -C internal sim-test
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing, a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
+  shake and face down and up through the motion sensor, a
   `say`'s sound asked for a chunk at a time, and the card staying in its
   slot through a reset. Boards side by side each say their own id, and
   Pixel's build (`build.sh pixel`, which `sim-test` makes) says its pack.
@@ -273,8 +290,9 @@ make -C internal sim-test
   client's message over 512 bytes dropped whole; two cables, each page's
   messages reaching its own socket and no other's; `/board` answering with
   the board's `dbg.state` and not a line before it, a tool hearing it too,
-  and `null` with no page; the studio served beside the page, and a `..`
-  kept inside `characters/`; a recording played into a board in
+  and `null` with no page; the studio served beside the page, a `..`
+  kept inside `characters/`, and the page again at `/simulator/`; a
+  recording played into a board in
   order; and a voice file cut down to a demo's takes that the board plays
   from.
 

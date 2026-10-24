@@ -554,6 +554,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
+        // Your prompts, read on this Mac where Apple Intelligence is on.
+        options.labeler = AppleIntelligenceLabeler.ifAvailable()
         model.devices = options.link as? DeviceChooser
         do {
             let runtime = try Runtime(options)

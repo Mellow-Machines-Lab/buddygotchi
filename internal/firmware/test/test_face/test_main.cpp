@@ -3,6 +3,7 @@
 #include <unity.h>
 
 #include <cstring>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -33,6 +34,14 @@ struct Buf {
   }
 };
 
+// A design's screen, as the pixel face draws one: on black, with the
+// bubble, else the strip.
+void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s) {
+  c.fill(kBlack);
+  drawScene(c, face);
+  drawLane(c, bubble, s);
+}
+
 }  // namespace
 
 static void test_ease_is_monotonic_from_0_to_1024() {
@@ -55,17 +64,19 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
 }
 
 // The animations, each by its design's state's name, and
-// nothing else: the brain's finish (task_complete, reply_ready) and wake_up,
-// the rules' reactions (starting, stopped, error, helper_return), a tap's
-// (poked, tap_spam) and listening. The older names ("cheer", "wiggle") are gone
+// nothing else: the brain's finish (task_complete, reply_ready), wake_up
+// and notice, the rules' reactions (starting, stopped, error, helper_return), a tap's
+// (poked, tap_spam), the board's own to a gesture (gesture) and listening.
+// The older names ("cheer", "wiggle") are gone
 // with the reaction message. Each plays its own design, and every design
 // has a loop.
 static void test_every_anim_has_a_name_and_ends() {
   const char* names[] = {"task_complete", "reply_ready", "starting",  "stopped", "error",
-                         "helper_return", "poked",       "tap_spam",  "wake_up", "listening"};
+                         "helper_return", "poked",       "tap_spam",  "wake_up", "listening", "gesture",
+                         "notice"};
   int reactions = 0;
   for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isReaction(SceneState(i));
-  TEST_ASSERT_EQUAL_INT(10, reactions);
+  TEST_ASSERT_EQUAL_INT(12, reactions);
   for (const char* name : names) {
     const SceneState a = reactionFromName(name);
     TEST_ASSERT_TRUE_MESSAGE(isReaction(a), name);
@@ -110,14 +121,15 @@ static void test_every_mood_has_a_name() {
   TEST_ASSERT_TRUE(moodFromName(nullptr) == Mood::kHappy);
 }
 
-// The designs' 23 states by name, in faces.h's order, the
+// The designs' 25 states by name, in faces.h's order, the
 // first seven keeping their numbers; a missing or unknown one is idle.
 static void test_every_state_has_a_name() {
-  TEST_ASSERT_EQUAL_INT(23, int(SceneState::kCount));
+  TEST_ASSERT_EQUAL_INT(25, int(SceneState::kCount));
   const char* names[] = {"idle",      "working",   "needs_you",  "task_complete", "asleep",  "no_app",
                          "listening", "starting",  "planning",   "terminal",      "tool_use", "searching",
                          "analyzing", "testing",   "delegating", "helper_return", "waiting", "reply_ready",
-                         "error",     "stopped",   "poked",      "tap_spam",      "wake_up"};
+                         "error",     "stopped",   "poked",      "tap_spam",      "wake_up", "gesture",
+                         "notice"};
   for (int i = 0; i < int(sizeof names / sizeof names[0]); ++i) {
     TEST_ASSERT_EQUAL_STRING(names[i], stateName(SceneState(i)));
     TEST_ASSERT_TRUE(stateFromName(names[i]) == SceneState(i));
@@ -198,6 +210,24 @@ static void test_the_strip_says_who_needs_you() {
   drawStrip(asName.c, named);
   drawStrip(asProject.c, longWho);
   TEST_ASSERT_EQUAL_MEMORY(asProject.c.pixels(), asName.c.pixels(), kWidth * kHeight);
+}
+
+// A cut name leaves the counts after it the room they're drawn in: the
+// working count, the helpers (minis, and "+N" past kMinis) and the idle
+// count all end inside the strip's 12 px margin.
+static void test_a_cut_name_leaves_the_counts_their_room() {
+  for (int helpers : {2, kMinis, kMinis + 3}) {
+    Strip s;
+    s.agent = "codex", s.project = "a-really-long-project-name-that-is-cut";
+    s.busy = 3, s.helpers = helpers, s.idle = 12;
+    Buf b;
+    drawStrip(b.c, s);
+    int last = -1;
+    for (int x = 0; x < kWidth; ++x)
+      for (int y = kStripTop + 1; y < kHeight; ++y)
+        if (b.at(x, y) != kBlack) last = x;
+    TEST_ASSERT_TRUE_MESSAGE(last >= 0 && last < kWidth - 12, "the counts run into the margin");
+  }
 }
 
 // The bubble shows the take's text, in amber, centred;
@@ -504,6 +534,34 @@ void test_text_wraps_at_spaces() {
   TEST_ASSERT_EQUAL_INT(0, wrapText("   ", 16, 3, &lines[0][0], 48));
 }
 
+// A sign's words (foldText): as the fonts draw them, trimmed, and at most
+// the glyphs asked for, cut with "..".
+void test_text_folds_and_cuts_to_its_glyphs() {
+  char out[40];
+  TEST_ASSERT_EQUAL_INT(12, foldText("  bye bye code ", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("bye bye code", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("exactly eighteen!!", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("exactly eighteen!!", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("nineteen glyphs, ok", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("nineteen glyphs,..", out);
+  TEST_ASSERT_EQUAL_INT(14, foldText("still broken after", 15, out, sizeof out));  // no space before ".."
+  TEST_ASSERT_EQUAL_STRING("still broken..", out);
+  TEST_ASSERT_EQUAL_INT(18, foldText("still broken  aft\xC3\xA9r all", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("still broken  af..", out);
+  TEST_ASSERT_EQUAL_INT(7, foldText("\xC3\xA9t\xC3\xA9\t\xC2\xB7 \xE2\x9C\x93", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("ete \xC2\xB7 ?", out);
+  std::string dots, kept;  // "·" is two bytes: 18 of them still fit app::kSignBytes
+  for (int i = 0; i < 20; ++i) dots += "\xC2\xB7";
+  for (int i = 0; i < 16; ++i) kept += "\xC2\xB7";
+  TEST_ASSERT_EQUAL_INT(18, foldText(dots.c_str(), 18, out, 37));
+  TEST_ASSERT_EQUAL_STRING((kept + "..").c_str(), out);
+  TEST_ASSERT_EQUAL_INT(0, foldText("   ", 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_STRING("", out);
+  TEST_ASSERT_EQUAL_INT(0, foldText(nullptr, 18, out, sizeof out));
+  TEST_ASSERT_EQUAL_INT(4, foldText("abcdefgh", 18, out, 5));  // a short buffer holds what fits
+  TEST_ASSERT_EQUAL_STRING("abcd", out);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
     RUN_TEST(test_ease_is_monotonic_from_0_to_1024);
@@ -514,6 +572,7 @@ int main(int, char**) {
   RUN_TEST(test_an_empty_strip_is_bare_glass);
   RUN_TEST(test_the_divider_leaves_the_design_alone);
   RUN_TEST(test_the_strip_says_who_needs_you);
+  RUN_TEST(test_a_cut_name_leaves_the_counts_their_room);
   RUN_TEST(test_the_bubble_fits_every_take);
   RUN_TEST(test_the_bubble_takes_the_lane);
   RUN_TEST(test_the_strip_marks_the_finish);
@@ -523,5 +582,6 @@ int main(int, char**) {
   RUN_TEST(test_it_asks_harder_the_longer_it_waits);
   RUN_TEST(test_the_sign_is_black_on_amber);
   RUN_TEST(test_text_wraps_at_spaces);
+  RUN_TEST(test_text_folds_and_cuts_to_its_glyphs);
   return UNITY_END();
 }

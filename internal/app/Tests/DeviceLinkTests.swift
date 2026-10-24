@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","wake_up","listening","stop_listening"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","wake_up","listening","stop_listening","notice"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -112,7 +112,8 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The device's `hello` says who it is and which voice
     /// pack its card has; a tap names the brain's finish it landed on, when
-    /// it only dipped the face.
+    /// it only dipped the face; a hold on the sign names the request it
+    /// showed, in a request's 32 bits.
     func testWhatTheDeviceSays() throws {
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(DeviceInfo(hello), DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: Take.voiceVersion))
@@ -126,6 +127,14 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(tap(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":0}}"#), .some(nil), "no finish")
         XCTAssertEqual(tap(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":"42"}}"#), .some(nil))
         XCTAssertEqual(Wire.decode(FakeTransport.ended(5, "cut", "tap")), .ended(Ended(id: 5, how: .cut, why: "tap")))
+        func hold(_ line: String) -> Int?? {
+            guard case .event(let ev) = Wire.decode(line), ev.kind == "gesture" else { return .none }
+            return .some(BoopDevice.request(held: ev))
+        }
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":7}}"#), .some(7))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss"}"#), .some(nil))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":0}}"#), .some(nil))
+        XCTAssertEqual(hold(#"{"t":"ev","kind":"gesture","did":"dismiss","data":{"attn":2147483648}}"#), .some(nil))
     }
 
     /// The rule: the board's `hello` says why it last restarted, and the
@@ -158,24 +167,24 @@ final class DeviceLinkTests: XCTestCase {
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(DeviceReaction(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "starting", variant: 3, ctx: "new_task").line(id: 558386701, play: .ifFree),
-                       #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"variant":3,"ctx":"new_task"}}"#)
+        XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
+                       #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(DeviceReaction(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
-        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud", variant: 2,
+        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
-                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":2,"who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
+                       #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
-        let quoted = DeviceReaction(anim: "reply_ready", variant: 1,
+        let quoted = DeviceReaction(anim: "reply_ready",
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
-        XCTAssertEqual(quoted.args.json, #"{"variant":1,"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
+        XCTAssertEqual(quoted.args.json, #"{"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
         XCTAssertEqual(DeviceReaction.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
         let longest = DeviceReaction.Say(takes: [byLength[0], byLength[1]])
         let longestWho = DeviceReaction.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
         XCTAssertLessThanOrEqual(DeviceReaction(anim: "task_complete", say: longest, mood: "determined", loops: DeviceReaction.maxLoops,
-                                              variant: 5, who: longestWho, outcome: "failure")
+                                              who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)
     }
 
@@ -295,30 +304,50 @@ final class DeviceLinkTests: XCTestCase {
     private let widest = StateSnapshot.clip(String(repeating: "\"", count: 60), max: StateSnapshot.maxSignBytes)
     private let esc = String(repeating: #"\""#, count: 47)
 
+    /// The most calendar tags that can be on at once: a part of the day,
+    /// a Friday the 13th that's also a holiday, Programmers' Day, Lunar
+    /// New Year and a party.
+    private let mostTags = ["morning", "friday", "friday13", "aprilfools", "programmers", "lunar", "party"]
+
     /// A line is at most 512 bytes. The biggest `state`,
     /// with a 47-byte project and name that escape to two bytes a
-    /// character, fits.
+    /// character, the counts at their widest and the most tags, fits.
     func testEveryStateLineFitsTheProtocol() {
         XCTAssertEqual(StateSnapshot.clip("a\u{1}b\u{7F}c\td"), "a b c d")
         let s = StateSnapshot(base: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, vol: 10, variant: 5)
+                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"vol":10,"variant":5}"#)
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","friday13","aprilfools","programmers","lunar","party"]}"#)
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
+    }
+
+    /// A long turn's tier and every growth stage are tags too; and the
+    /// to-do count goes only with nothing needing you. The widest line
+    /// either way, with every tag that can be on at once, fits.
+    func testTheTiersStagesAndToDoCountFitTheLine() {
+        let every = mostTags + ["marathon"] + Occasions.stageTags
+        let needs = StateSnapshot(base: "working", mood: "determined",
+                                  attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
+                                  busy: 999, idle: 999, helpers: 999, vol: 10, when: every)
+        XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
+        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, busy: 999, idle: 999, helpers: 999,
+                                 vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
+        XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
+        XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
     }
 
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, busy: 2, vol: 6, variant: 3)
-        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6,"variant":3}"#)
+        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, busy: 2, vol: 6)
+        XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
         XCTAssertEqual(working.visual, "delegating")
         XCTAssertEqual(working.look, "delegating")
         let s = StateSnapshot(base: "working", act: "delegating", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, vol: 10, variant: 9)
+                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertEqual(s.visual, "needs_you", "needs you wins")
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)

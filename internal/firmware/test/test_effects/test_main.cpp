@@ -103,12 +103,35 @@ bool guarded(int s) {
   return s == int(SceneState::kNeedsYou) || s == int(SceneState::kTaskComplete) || s == int(SceneState::kError);
 }
 
+// The comedy designs (the bank's comedy-art.mjs) that break a quiet look's
+// silence, by variation from 0: idle's yawn (3) once, as the face turns to
+// it; its sneeze (5) every third loop; excited's zoomies (6) as routine work
+// sounds; asleep's snore (3) every fourth loop. Nodding off (idle 4) and
+// the rest stay silent.
+render::pixel::Policy quietPolicy(SceneState s, int v, int& every, bool excited) {
+  every = 1;
+  if (s == SceneState::kIdle && v == 3) return render::pixel::Policy::kEntry;
+  if (s == SceneState::kIdle && v == 5) return every = 3, render::pixel::Policy::kSparse;
+  // Excited's zoomies; every other occasion (occasion-art.mjs) is silent.
+  if (s == SceneState::kIdle && v == 6 && excited) return render::pixel::Policy::kLoop;
+  if (s == SceneState::kAsleep && v == 3) return every = 4, render::pixel::Policy::kSparse;
+  return render::pixel::Policy::kSilent;
+}
+
+int count(const std::vector<voice::FxEvent>& evs, const char* clip) {
+  int n = 0;
+  for (const voice::FxEvent& e : evs) n += e.clip == render::pixel::clips().index(clip);
+  return n;
+}
+
 // Every design the device draws has a timeline, with clips it has: the
-// bank's 46 that the timelines use and its 3 newer ones (brake,
-// failedAttempt and the new moods' knock).
+// bank's 46 that the timelines use, its 3 newer ones (brake,
+// failedAttempt and the new moods' knock) and the comedy designs' 4 (yawn,
+// sneeze, snore and hiccup).
 void test_every_design_has_a_timeline() {
-  TEST_ASSERT_EQUAL(49, render::pixel::clips().count());
-  for (const char* name : {"brake", "failedAttempt", "knock", "alertDing", "trophyA"}) {
+  TEST_ASSERT_EQUAL(53, render::pixel::clips().count());
+  for (const char* name :
+       {"brake", "failedAttempt", "knock", "alertDing", "trophyA", "yawn", "sneeze", "snore", "hiccup"}) {
     TEST_ASSERT_TRUE_MESSAGE(render::pixel::clips().index(name) >= 0, name);
   }
   // About 180 KB was budgeted.
@@ -141,7 +164,7 @@ void test_every_design_has_a_timeline() {
 }
 
 // The bank's voice-first mix, by state: the quiet states
-// are silent; needs you's knocks end in the ding, and it, the finish and
+// are silent but for the comedy's breaks (quietPolicy); needs you's knocks end in the ding, and it, the finish and
 // an error play on their first loop only and never duck under a `say`;
 // routine designs sound a few of their contacts, picked afresh each loop.
 // Each design's voice window is where the bank puts it: a wake-up's once
@@ -164,7 +187,12 @@ void test_each_state_sounds_as_the_bank_says() {
         else TEST_ASSERT_TRUE(sc.voiceMs >= (first.empty() ? 0 : first.back().atMs) + 120);
         switch (SceneState(s)) {
           case SceneState::kIdle:
-          case SceneState::kAsleep:
+          case SceneState::kAsleep: {
+            int every;
+            TEST_ASSERT_TRUE(sc.policy == quietPolicy(SceneState(s), v, every, render::pixelMood(m) == Mood::kExcited));
+            TEST_ASSERT_EQUAL(every, sc.every);
+            break;
+          }
           case SceneState::kNoApp:
           case SceneState::kListening:
           case SceneState::kWaiting:
@@ -181,6 +209,11 @@ void test_each_state_sounds_as_the_bank_says() {
           case SceneState::kError:
             TEST_ASSERT_TRUE(sc.policy == render::pixel::Policy::kEntry);
             TEST_ASSERT_TRUE(render::pixel::events(sc, 0).n > 0);
+            // Trophy, then hiccups: the cheer's fanfare, then three clicks.
+            if (count(first, "hiccup")) {
+              TEST_ASSERT_EQUAL(3, count(first, "hiccup"));
+              TEST_ASSERT_EQUAL(1, count(first, "trophyA") + count(first, "trophyB"));
+            }
             break;
           case SceneState::kWorking: {
             TEST_ASSERT_TRUE(sc.policy == render::pixel::Policy::kLoop || sc.policy == render::pixel::Policy::kSparse);
@@ -419,6 +452,69 @@ void test_a_short_loop_sounds_every_other_loop() {
   }
 }
 
+// The comedy breaks the quiet now and then, counted in loops from the
+// design's start as the bank's player counts them: a yawn on its first loop
+// only, a sneeze on loops 0, 3, 6, a snore on 0, 4, 8, nodding off never;
+// all soft, and a line turns them down. Each mood has the idle ones, and
+// the snore is the same in every mood.
+void test_the_quiet_breaks_now_and_then() {
+  struct Case {
+    Mood mood;
+    SceneState state;
+    uint8_t variant;
+    const char* clip;
+    int every, perLoop;  // every: 0 for the first loop only
+  };
+  const Case cases[] = {
+      {Mood::kHappy, SceneState::kIdle, 3, "yawn", 0, 1},   {Mood::kWounded, SceneState::kIdle, 3, "yawn", 0, 1},
+      {Mood::kHappy, SceneState::kIdle, 4, nullptr, 0, 0},  {Mood::kGrumpy, SceneState::kIdle, 5, "sneeze", 3, 1},
+      {Mood::kCalm, SceneState::kIdle, 5, "sneeze", 3, 1},  {Mood::kHappy, SceneState::kAsleep, 3, "snore", 4, 2},
+      {Mood::kWhiny, SceneState::kAsleep, 3, "snore", 4, 2}};
+  for (const Case& c : cases) {
+    render::pixel::EffectTrack track;
+    const uint32_t loop = render::loopMs(c.mood, c.state, c.variant);
+    const uint32_t loops = 9;
+    Heard h = follow(track, c.mood, c.state, c.variant, 0, loops * loop - render::pixel::EffectTrack::kLeadMs - 10);
+    std::vector<int> per(loops, 0);
+    for (size_t i = 0; i < h.ev.size(); ++i) {
+      if (c.clip && h.ev[i].clip == render::pixel::clips().index(c.clip)) {
+        ++per[(h.at[i] + render::pixel::EffectTrack::kLeadMs) / loop];
+        TEST_ASSERT_TRUE(h.ev[i].duck);
+      }
+    }
+    for (uint32_t n = 0; n < loops; ++n) {
+      const bool sounds = c.clip && (c.every ? n % c.every == 0 : n == 0);
+      TEST_ASSERT_EQUAL_MESSAGE(sounds ? c.perLoop : 0, per[n], c.clip ? c.clip : "nodding off");
+    }
+    if (!c.clip) TEST_ASSERT_EQUAL(0, int(h.ev.size()));
+    TEST_ASSERT_TRUE(track.duck());
+  }
+  // Soft: no quiet break is louder than a routine key press at its loudest.
+  int keys = 0, breaks = 0;
+  for (int m = 0; m < render::pixelMoods(); ++m) {
+    for (int v = 0; v < render::variants(render::pixelMood(m), SceneState::kWorking); ++v) {
+      render::pixel::Score sc = render::pixel::score(m, int(SceneState::kWorking), v);
+      for (uint32_t n = 0; n < uint32_t(render::pixel::kLoops); ++n)
+        for (const voice::FxEvent& e : loopEvents(sc, n)) keys = e.gain > keys ? e.gain : keys;
+    }
+    for (SceneState s : {SceneState::kIdle, SceneState::kAsleep}) {
+      for (int v = 0; v < render::variants(render::pixelMood(m), s); ++v) {
+        int every;
+        if (quietPolicy(s, v, every, render::pixelMood(m) == Mood::kExcited) == render::pixel::Policy::kLoop)
+          continue;  // zoomies: routine work's level
+        for (const voice::FxEvent& e : loopEvents(render::pixel::score(m, int(s), v), 0))
+          breaks = e.gain > breaks ? e.gain : breaks;
+      }
+    }
+  }
+  TEST_ASSERT_TRUE(breaks > 0 && breaks < keys);
+  // The snore is the same in every mood, as asleep is.
+  for (int m = 1; m < render::pixelMoods(); ++m) {
+    TEST_ASSERT_TRUE(same(loopEvents(render::pixel::score(0, int(SceneState::kAsleep), 3), 0),
+                          loopEvents(render::pixel::score(m, int(SceneState::kAsleep), 3), 0)));
+  }
+}
+
 // A new design stops the last one's sounds; a mood changing mid-loop picks
 // its timeline up where the clock is, without replaying the loop so far.
 void test_a_change_of_design_starts_where_its_clock_is() {
@@ -473,6 +569,7 @@ int main() {
   RUN_TEST(test_listening_is_silent);
   RUN_TEST(test_the_needs_you_arc_cues_once_each);
   RUN_TEST(test_a_short_loop_sounds_every_other_loop);
+  RUN_TEST(test_the_quiet_breaks_now_and_then);
   RUN_TEST(test_a_change_of_design_starts_where_its_clock_is);
   RUN_TEST(test_a_stall_drops_late_events);
   return UNITY_END();

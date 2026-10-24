@@ -81,12 +81,23 @@ struct SimHal : app::Hal {
     booted = false;
     return was;
   }
+  // The motion sensor, once something has tilted it: until then the board
+  // has none, as the CYD hasn't.
+  void setMotion(int x, int y, int z) { tilt[0] = x, tilt[1] = y, tilt[2] = z, tilted = true; }
+  bool motion(int& ax, int& ay, int& az) override {
+    if (!tilted) return false;
+    ax = tilt[0], ay = tilt[1], az = tilt[2];
+    return true;
+  }
   bool touch(int& tx, int& ty) override {
     const bool was = down || touched;
     touched = false;
     tx = x, ty = y;
     return was;
   }
+
+  int tilt[3] = {0, 0, 1000};
+  bool tilted = false;
 
   // The light, the backlight and the amp, to be shown.
   uint32_t led = 0;

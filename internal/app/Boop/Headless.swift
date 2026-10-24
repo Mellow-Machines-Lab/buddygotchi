@@ -28,6 +28,8 @@ enum Headless {
         // A demo needs no brain: its script says how Boop reacts.
         let demo = args["--demo"]
         let brain = args.choice("--brain", of: ["jev", "scripted", "none"]) ?? (demo == nil ? "jev" : "none")
+        let labeler = args.choice("--labeler", of: ["apple", "none"]) == "apple" ? AppleIntelligenceLabeler.ifAvailable() : nil
+        if args["--labeler"] == "apple", labeler == nil { fail("--labeler apple: Apple Intelligence isn't available on this Mac") }
         if args["--record"] != nil, demo == nil { fail("--record needs --demo") }
         if args.has("--live"), demo == nil { fail("--live needs --demo") }
         var script: DemoScript?
@@ -76,13 +78,16 @@ enum Headless {
         options.readJevKey = { _ in JevKey.environment() }
         if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck } }
         if brain == "none" { options.brain = { _ in nil } }
+        options.labeler = labeler
         // `--record` listens from the start, so the recording opens with
         // how things stood when the demo began (DemoRecorder.begin).
         let recorder = args["--record"].map { _ in DemoRecorder() }
         if let recorder { options.onDeviceLine = { recorder.sent($0) } }
         // The clock can be moved forward with `{"dev":"advance","ms":N}`, so
         // the pipeline check can finish a 6-minute turn without waiting it out.
-        let skew = OSAllocatedUnfairLock(initialState: Int64(0))
+        // A demo with a `start` begins at that date and time.
+        let startSkew = script?.start.map { $0 - options.wallClock() } ?? 0
+        let skew = OSAllocatedUnfairLock(initialState: startSkew)
         let (clock, wallClock) = (options.clock, options.wallClock)
         options.clock = { clock() + skew.withLock { $0 } }
         options.wallClock = { wallClock() + skew.withLock { $0 } }

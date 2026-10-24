@@ -81,7 +81,16 @@ public final class Pipeline {
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
         options.reading = .none
-        options.heading = { wall in "\(time.clock(wall)), \(time.weekday(wall))" }
+        // The time and weekday, then the calendar's occasions in words
+        // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
+        // The first core's, read as the prompt is built, on the pipeline's queue.
+        let first = FirstCore(buddies.first?.core), name = CharacterPack.active.name
+        options.heading = { wall in
+            ([time.clock(wall), time.weekday(wall)]
+                + Occasions.words(at: wall, hatched: first.core?.config.hatched, name: name, stage: first.core?.config.stageReached,
+                                  time: time))
+                .joined(separator: ", ")
+        }
         options.loop = loop
         let input = inputTime
         harness = Harness(name: CharacterPack.active.name, brain: nil, log: transcript,
@@ -148,15 +157,38 @@ public final class Pipeline {
     /// tagged with it. It's logged without what its session already has
     /// (`Core.unrepeated`).
     @discardableResult
-    public func agent(_ event: Event) -> Step {
-        input(at: event.at) {
+    /// One that still carries your prompt (the tools', tests' and evals';
+    /// the app takes it out first, `Runtime.hook`) has its reading at
+    /// once, labelled with `labels` if given.
+    public func agent(_ event: Event, labels: PromptReading.Labels? = nil) -> Step {
+        let (event, prompt) = PromptIntake.split(event)
+        return input(at: event.at) {
             var event = event
-            let id = several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
+            let id = buddy(watching: event)
             if let id { event.data["voice"] = .string(id) }
             let core = core(id)
             let e = harness.emit(core.unrepeated(event))
             run(core.handle(e), buddy: id)
+            if let prompt { emit(PromptReading(prompt: prompt, names: buddies.map(\.name), labels: labels), about: event, at: event.at) }
         }
+    }
+
+    /// With several buddies, the one watching `event`'s session.
+    func buddy(watching event: Event) -> String? {
+        several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
+    }
+
+    /// Your prompt's reading, for the turn start `turn` that brought it:
+    /// logged, with the session and the buddy of that turn, and it wakes
+    /// the brain (the turn start no longer does). The core isn't told.
+    @discardableResult
+    public func promptRead(_ reading: PromptReading, about turn: Event, at now: Int64) -> Step {
+        input(at: now) { emit(reading, about: turn, at: now) }
+    }
+
+    func emit(_ reading: PromptReading, about turn: Event, at now: Int64) {
+        harness.emit(Event(at: now, source: turn.from ?? .mac, type: .prompt, specificType: "reading", session: turn.session,
+                           buddy: buddy(watching: turn), data: reading.facts))
     }
 
     /// The device's poke, on the buddy `buddy` (nil for the only one): the
@@ -169,6 +201,39 @@ public final class Pipeline {
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
             run(core(buddy).poke(at: now, seq: e.seq, finish: finish), buddy: buddy)
         }
+    }
+
+    /// BOOT pressed: the core opens the next agent in line on the Mac
+    /// (`Core.line`). With nobody in line it's a poke, on `finish` if the
+    /// board pressed on one. With several buddies, the board's buddy's.
+    @discardableResult
+    public func press(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
+        let core = core(buddy)
+        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, buddy: buddy) }
+        return input(at: now) {
+            let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
+            run(core.press(at: now, seq: e.seq), buddy: buddy)
+        }
+    }
+
+    /// What you did to the board (`kind`: a stroke, a shake, face down…),
+    /// which it reacted to at once: logged, and it may wake the brain, as
+    /// a poke does. The core hears only `dismiss`, a finger held on the
+    /// sign: the request numbered `request`, the one the sign showed,
+    /// stops showing if it still shows (`Core.dismiss`).
+    @discardableResult
+    public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) {
+            harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
+            if kind == Core.dismissGesture { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
+        }
+    }
+
+    /// The popover's Dismiss on the session `key`'s request
+    /// (`Core.dismiss`), on its buddy's board.
+    @discardableResult
+    public func dismiss(_ key: String, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) { run(core(buddy).dismiss(key, at: now), buddy: buddy) }
     }
 
     /// What you said to Boop on push-to-talk, heard by the Mac's mic
@@ -254,6 +319,13 @@ public final class Pipeline {
     public func whyNotWake(_ e: Event) -> String? {
         if !brain { return "no brain" }
         let core = core(e.buddy)
-        return view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock })
+        return view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock })
     }
+}
+
+/// The first buddy's core for the prompt's heading, which reads its
+/// hatch day and stage on the pipeline's own queue.
+private final class FirstCore: @unchecked Sendable {
+    weak var core: Core?
+    init(_ core: Core?) { self.core = core }
 }

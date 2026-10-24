@@ -36,6 +36,17 @@ extension Event {
         /// One buddy's reaction, which the other buddies hear: only with
         /// several (`Buddy`).
         case reacted
+        /// BOOT pressed while something needs you or an agent sits idle:
+        /// the board handed you the next one (its `handoff`), and the core
+        /// opens it on the Mac.
+        case press
+        /// What you did to the board, which it already reacted to: a
+        /// stroke, a boop on the nose, a shake, a pick-up, face down…, as the
+        /// event's `specific_type` (render::Gesture's names, and `facedown`).
+        case gesture
+        /// Your prompt's reading, after the turn start it came with: its
+        /// facts are `PromptReading`'s, never the prompt.
+        case prompt
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

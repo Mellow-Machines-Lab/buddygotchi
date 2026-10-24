@@ -1,6 +1,6 @@
 # Boop V4 — six new moods, full new-mood variation coverage
 
-Built 2026-09-28; the COMPACTED start card added 2026-10-11; wake_up added 2026-10-16. The V2 production assets and the 308 V3 performances are kept alongside it.
+Built 2026-09-28; the COMPACTED start card added 2026-10-11; wake_up added 2026-10-16; the comedy added 2026-10-21; the occasions, gesture and notice added 2026-10-22. The V2 production assets and the 308 V3 performances are kept alongside it.
 
 Review it as **Pixel Boop** in the [Character Studio](../../../studio/README.md) (`#pack=pixel`), whose adapter for it is Pixel's `studio/adapter.js`. The studio works offline, plays synchronized procedural sound once sound is on, loops or plays once, and scrubs frames silently.
 
@@ -10,13 +10,15 @@ Review it as **Pixel Boop** in the [Character Studio](../../../studio/README.md)
 - Add: calm, engaged, annoyed, irritated, whiny, wounded — 480 performances, 80 per mood.
 - Delete: none. All old mood names map directly to themselves. Curious already has art even though the inspected production selector did not expose it.
 - Add a 23rd state, wake_up (you back at the Mac after a long break): one flip-book per mood, 13 in all (`runtime/wake-art.mjs`). The eyes droop, a big yawn with both mitts up, a long stretch with a joint's creak, a shake, then the mood's own face, awake, with a hop and its flourish (sparkles, a huff or a tear), and a blink. It starts and ends on the mood's resting face, and a line said over it waits until it's awake.
-- Combined: **13 moods × 23 states = 299 mood/state pairs, 808 selectable performances.**
+- Add the comedy (`runtime/comedy-art.mjs`), 68 performances, each a new variation after a state's others, so nothing earlier is renumbered: in every mood a yawn and stretch (idle 4), nodding off (idle 5), a sneeze (idle 6), a snore (asleep 4, the same in every mood, as asleep is) and a trophy cheer that ends in three hiccups (task_complete's next success); proud's gift, a little pixel bug it caught and holds up (its last success); and excited's zoomies, the face zipping off the screen and back (working 6 and idle 7). Each is one flip-book at the mood's own pace and face that starts and ends at rest; the looks' variations take turns on the device by themselves.
+- Add the occasions (`runtime/occasion-art.mjs`, 169), the 24th state, gesture (`runtime/gesture-art.mjs`, ten a mood, 130), and the 25th, notice (`runtime/notice-art.mjs`, three a mood, 39): you named it in your prompt, and it looks up at you, surprised and pleased: a perk with an exclamation either side, a happy hop with its eyes squeezed, or a beam with sparkles.
+- Combined: **13 moods × 25 states = 325 mood/state pairs, 1,214 selectable performances.**
 
 Every **new** mood gets three distinct actions for every state, with five working actions, twelve starting selections (three actions × four factual contexts: new task, session, continuation and compacted), and six task-complete selections (three success + three failure). Shared sleeping/disconnected routines are intentional: those 36 selections are not 36 uniquely emotional sleeping animations. Each new mood therefore has 74 expressive performances and six shared-quiet selections. This bank does not claim to have filled the older seven moods' single-action V3 state gaps.
 
-`coverage.json` is the exact per-mood/state count. `manifest.json` lists all IDs, captions, source actions, timings, sound scores and suggested new-scene voice windows. “Variation count” means selectable performances; some share reusable choreography and all share primitive code, not 808 hand-drawn film strips.
+`coverage.json` is the exact per-mood/state count. `manifest.json` lists all IDs, captions, source actions, timings, sound scores and suggested new-scene voice windows. “Variation count” means selectable performances; some share reusable choreography and all share primitive code, not 876 hand-drawn film strips.
 
-The 23 states: no_app, asleep, idle, listening, starting, planning, working, terminal, tool_use, searching, analyzing, testing, delegating, helper_return, waiting, needs_you, reply_ready, task_complete, error, stopped, poked, tap_spam, wake_up.
+The 25 states: no_app, asleep, idle, listening, starting, planning, working, terminal, tool_use, searching, analyzing, testing, delegating, helper_return, waiting, needs_you, reply_ready, task_complete, error, stopped, poked, tap_spam, wake_up, gesture, notice.
 
 ## Design grammar
 
@@ -49,7 +51,7 @@ Graph design history and JEV handover: `../boop-mood-spectrum-v2/HANDOVER.md`; t
 
 No audio recordings are stored. Existing synthesis primitives and the accepted natural, voice-first mix are reused. All 308 V3 SVGs and scores are compared byte-for-byte / structurally against V3 during QA.
 
-- Idle, asleep, no_app, listening and waiting are silent by default.
+- Idle, asleep, no_app, listening and waiting are silent by default. The comedy breaks the quiet on purpose, softly and under a line (quiet-mix.mjs keeps its scored cues): the yawn's tone once, as the face turns to it; a sneeze every third loop; a snore, two soft breaths, every fourth; nodding off stays silent, and the zoomies sound as routine work does. The hiccups' three clicks follow the cheer's fanfare, once.
 - New routine actions keep only a few contact sounds, with irregular seed-dependent selection. Every selected cue stays at its actual visible contact time; no audio-only jitter. A fresh seed can change which gestures are audible without changing the scene's timing.
 - Every needs_you variant has broad taps followed by the same pitch/timbre of alertDing. Tap pace/strength depends on mood. The alert does not approve anything; the host must keep the pending indication until resolved.
 - Task success/failure and tool error use entry-only protected cues. Repeating their visual loop does not repeat the attention sound. A failed task does not play a trophy sound regardless of mood.
@@ -66,7 +68,7 @@ node characters/pixel/design/boop-sound-bank-v4/qa/browser.mjs
 node characters/pixel/design/boop-sound-bank-v4/source/build.mjs --svg
 ```
 
-Run those commands from the repository root. The final command is optional and exports all 808 SVG selections to `dist/svg/`. Sound remains procedural in the runtime and manifest, not embedded audio files in SVG. The browser QA script uses installed Playwright, pngjs and Chromium; see the [dependency setup](../README.md). Optional BOOP_PLAYWRIGHT_MODULE, BOOP_PNGJS_MODULE and BOOP_QA_BROWSER select existing installations. No hard-coded workstation paths are required.
+Run those commands from the repository root. The final command is optional and exports all 1175 SVG selections to `dist/svg/`. Sound remains procedural in the runtime and manifest, not embedded audio files in SVG. The browser QA script uses installed Playwright, pngjs and Chromium; see the [dependency setup](../README.md). Optional BOOP_PLAYWRIGHT_MODULE, BOOP_PNGJS_MODULE and BOOP_QA_BROWSER select existing installations. No hard-coded workstation paths are required.
 
 The checked-in compact player and coverage/storage reports are generated by the builder. The large per-scene manifest, expanded SVG files and QA screenshots are ignored build outputs. The immutable `qa/v3-fingerprints.json` was captured from V3 independently at import; QA compares the exact SVG bytes and serialized score hashes against it, without needing the old workspace folder.
 

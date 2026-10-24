@@ -1,0 +1,9 @@
+{
+  "about": "Working's base: looking down at the desk, breathing a little quicker.",
+  "ms": 2400,
+  "loop": true,
+  "tracks": {
+    "gazeY": [[0, 350], [2400, 350]],
+    "squash": [[0, 0], [1200, -25], [2400, 0]]
+  }
+}

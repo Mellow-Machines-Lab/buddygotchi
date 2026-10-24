@@ -14,6 +14,7 @@
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
+#include "render/rig/rig.h"
 #include "render/screens.h"
 #include "voice/player.h"
 
@@ -31,9 +32,6 @@ struct Model {
   // design shows in working's place. kWorking for none.
   render::SceneState act = render::SceneState::kWorking;
   render::Mood mood = render::kStartupMood;
-  // The variation of the visual the Mac shows (needs you's while something
-  // does, else the look's), from 0: the wire's `variant` less one.
-  uint8_t variant = 0;
   bool attn = false;
   char agent[12] = "";
   // Both show on the needs-you sign, three lines of 16.
@@ -41,8 +39,17 @@ struct Model {
   char name[48] = "";  // the thread's name; "" when the Mac sends none
   int more = 0;
   uint32_t attnId = 0;  // the needs-you shown's number; 0 when the Mac sends none
-  int busy = 0;
-  int vol = 6;  // 0–10
+  int busy = 0;     // sessions working
+  int idle = 0;     // sessions idle, waiting for your next prompt
+  int helpers = 0;  // helpers working, over every session
+  // The to-do list of the longest turn working (`todo`), done of total;
+  // 0 of 0 for none.
+  int todoDone = 0, todoTotal = 0;
+  int vol = 6;      // 0–10
+  // The tags on now (`when`, render/tags.h): the part of the day, an
+  // occasion, how busy the agents are. The face shows only the designs
+  // whose tags are all on, and picks each look's variation itself.
+  uint32_t when = 0;
   // The look while nothing needs you: what the agents are doing while
   // they work, else the base.
   render::SceneState look() const { return base == render::SceneState::kWorking ? act : base; }
@@ -69,9 +76,15 @@ struct PlayedOut {
   CutBy by = CutBy::kNone;
 };
 
+// A reaction's sign (`sign`): at most kSignGlyphs glyphs of the board's
+// fonts, cut with ".." past them (render::foldText), in kSignBytes.
+constexpr int kSignGlyphs = 18;
+constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+
 // A reaction from the Mac as Device parsed its args, already
 // held in range: the do's name as an animation (none for `react`), a
-// `say`, a face. With no anim, only the `say`, or only the face.
+// `say`, a face, a sign. With no anim, only the `say`, the face or the
+// sign.
 struct ReactionIn {
   render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isReaction)
   // It had a `say` field: the reply `listening` waits for, even with no
@@ -102,6 +115,8 @@ struct ReactionIn {
   uint32_t key = 0;
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
+  // The words the buddy holds up on a sign while it plays, "" for none.
+  char sign[kSignBytes] = "";
 };
 
 class Behaviour {
@@ -131,11 +146,16 @@ class Behaviour {
   // together.
   static constexpr uint32_t kTapRunMs = 3000;
   static constexpr int kTapSpamFrom = 3;
+  // A reaction's sign shows from its start for as long as any part of it
+  // plays, and at least this long, to be read.
+  static constexpr uint32_t kSignMinMs = 2500;
 
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
   // first state, rather than a face for kNoAppMs.
-  void startWithNoApp() { stale_ = true; }
+  void startWithNoApp() {
+    change(modelT_, [&] { stale_ = true; });
+  }
 
   // Messages from the Mac, at time t.
   void onState(const Model& m, uint32_t t);
@@ -161,6 +181,21 @@ class Behaviour {
   // BOOT, or a touch anywhere: what it did, "poked" or "tap_spam", or
   // "dip" when it only dipped the face.
   const char* tap(uint32_t t, Rng& rng);
+  // BOOT: while something needs you or an agent sits idle, it hands you
+  // the next one on the Mac ("handoff"), and the board plays its hand-off
+  // but over needs you's sign, which stays; else it's a tap.
+  const char* press(uint32_t t, Rng& rng);
+  // The board's own reaction to a gesture: gesture's variation for it,
+  // unless the face is held.
+  void gesture(render::Gesture g, uint32_t t);
+  // Laid face down: do not disturb. Every reaction but listening is
+  // refused ("facedown") and the screen dims; needs you still shows.
+  void setFaceDown(bool down, uint32_t t);
+  bool faceDown() const { return faceDown_; }
+  // No app, something needs you, or `listening` waits for the reply: a
+  // tap or another animation doesn't take the face over, and a touch is a
+  // tap, never a gesture.
+  bool held(uint32_t t) const;
   // The id of the brain's finish showing whose turn it was at t, which a
   // tap opens on the Mac instead of poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;
@@ -189,10 +224,19 @@ class Behaviour {
   bool noApp(uint32_t t) const;
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
+  // The lane's strip at t, at its opacity: easing in over the rig's fade
+  // (render::rig::Ramp) from when it came and out from when it went, still
+  // showing what it last showed, so how often frames are drawn doesn't
+  // change one. While it shows, what it shows changes at once.
   render::Strip strip(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
+  // The sign a reaction holds up, while it shows: no text with no app or
+  // while something needs you.
+  render::SignShow sign(uint32_t t) const;
+  // When the sign shown last goes.
+  uint32_t signEnd() const { return sign_.at + sign_.ms; }
   // A `say` has arrived that waits for its animation's voice window:
   // it starts later, if nothing replaces it first.
   bool sayAhead(uint32_t t) const;
@@ -214,7 +258,8 @@ class Behaviour {
   // message, hook and tick.
   bool takePlayedOut(PlayedOut& p);
   // The first instant after `from`, at most `to`, at which a part ends
-  // (an animation, a `say` with its bubble, a borrowed face); false for none.
+  // (an animation, a `say` with its bubble, a borrowed face, a sign); false
+  // for none.
   bool nextEnd(uint32_t from, uint32_t to, uint32_t& at) const;
   // When the `say`'s bubble goes, from its start at its voice window.
   uint32_t sayEnd() const { return say_.at + say_.ms; }
@@ -263,6 +308,12 @@ class Behaviour {
     uint32_t speakMs = 0;  // the takes play this long, the gap included
     uint32_t key = 0;
   };
+  // A sign: its words from `at` for `ms`, for its reaction (`key`).
+  struct Sign {
+    char text[kSignBytes] = "";
+    uint32_t at = 0, ms = 0;
+    uint32_t key = 0;
+  };
   using Source = render::FaceSource;
 
   // An animation plays `loops` times in `mood`'s design (listening until
@@ -290,6 +341,7 @@ class Behaviour {
     bool overridden = blOverride_;
     f();
     face_->sync(sourceAt(t), contextAt(t), t);
+    followLane(t);
     uint8_t level = blTarget(t);
     if (!blOverride_ && (level != blLevel_ || overridden)) blFade_ = true, blFrom_ = lit, blAt_ = t;
     blLevel_ = level;
@@ -306,21 +358,29 @@ class Behaviour {
   // The brain's finish plays, naming whose turn it was (the strip shows it).
   bool finishOn(uint32_t t) const;
   bool listening(uint32_t t) const;  // `listening` is playing
-  // No app, something needs you, or `listening` waits
-  // for the reply: a tap or another animation doesn't take
-  // the face over.
-  bool held(uint32_t t) const;
   uint8_t blTarget(uint32_t t) const;  // the level the state asks for at t
   bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
+  bool signOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
+  // What the strip shows: what the Mac last said, with no app or not, and
+  // the brain's finish playing (null for none), whole.
+  static render::Strip stripOf(const Model& m, bool noApp, const Reaction* finish);
+  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t) ? &reaction_ : nullptr); }
+  // At every change: the strip kept while it shows, and its fade turned
+  // when it comes or goes.
+  void followLane(uint32_t t);
   // What the Mac last said, as the face may use it (render::FaceContext).
   render::FaceContext contextAt(uint32_t t) const;
   std::unique_ptr<render::Face> face_;
 
   Model model_;
   uint32_t lastState_ = 0;
+  bool faceDown_ = false;
+  // When the look (or needs you) last changed: the face's variations may
+  // wait for it to have shown a while (`after`).
+  uint32_t lookAt_ = 0;
   // Latched once the Mac has been silent kNoAppMs, so "no app" holds
   // however long the silence (the clock's differences wrap after 24 days).
   bool stale_ = false;
@@ -334,6 +394,7 @@ class Behaviour {
   uint32_t blAt_ = 0;
   Reaction reaction_;
   Say say_;
+  Sign sign_;
   // The reaction's expression: its mood from exprAt_ for exprMs_: as long
   // as the animation with it plays, or its loops; and at least as long as
   // the `say` with it.
@@ -354,6 +415,12 @@ class Behaviour {
   uint32_t alertAt_ = 0;
   uint32_t modelT_ = 0;
   uint32_t reactionSeq_ = 0;
+  // The lane: its opacity's ramp, and what the strip showed from at the
+  // last change while it showed, copied, which it shows as it fades out.
+  render::rig::Ramp lane_;
+  Model laneModel_;
+  Reaction laneFinish_;
+  bool laneNoApp_ = false, laneFinishes_ = false;
 };
 
 }  // namespace app

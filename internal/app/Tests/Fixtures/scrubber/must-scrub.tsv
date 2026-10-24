@@ -1,0 +1,20 @@
+# Text that holds a secret, a tab, then the secret, which must be gone
+# after scrubbing. Every key here is made up, in the real format.
+use sk-ant-api03-Zq8xR2vLmN4pT7wYb1cD9eF3gH5jK0aS6uV8iO2qW4eR6tY8uI0oP2aS4dF6gH8jK0lZ to call it	sk-ant-api03-Zq8xR2vLmN4pT7wYb1cD9eF3gH5jK0aS6uV8iO2qW4eR6tY8uI0oP2aS4dF6gH8jK0lZ
+my openai key is sk-proj-4fJk2LmNq8RtVwXyZ1aB3cD5eF7gH9iJ	sk-proj-4fJk2LmNq8RtVwXyZ1aB3cD5eF7gH9iJ
+push with ghp_9aB8cD7eF6gH5iJ4kL3mN2oP1qR0sT9uV8wX	ghp_9aB8cD7eF6gH5iJ4kL3mN2oP1qR0sT9uV8wX
+the token is github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyzABCDEF	github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyzABCDEF
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE	AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY	wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+post it with xoxb-123456789012-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx	xoxb-123456789012-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx
+stripe sk_live_51HqLyjWDarjtT1zdp7dcXyZ9aBcDeFgHiJkL in prod	sk_live_51HqLyjWDarjtT1zdp7dcXyZ9aBcDeFgHiJkL
+maps key AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY works	AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY
+curl -H "Authorization: Bearer 8f2aQz91kLmN0pQrStUvWx" the api	8f2aQz91kLmN0pQrStUvWx
+decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c please	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+DATABASE_URL=postgres://admin:s3cr3tPa55@db.internal:5432/app	s3cr3tPa55
+webhook https://hooks.example.com/in?api_key=a8f9d7c6b5e4a3f2&x=1	a8f9d7c6b5e4a3f2
+set STRIPE_SECRET_KEY=whsec_Zx9Yw8Vu7Ts6Rq5Po4 before deploying	whsec_Zx9Yw8Vu7Ts6Rq5Po4
+"password": "correct-horse-battery" in the seed	correct-horse-battery
+npm token npm_aB3dE5fG7hI9jK1lM3nO5pQ7rS9tU1vW3xY5 for publishing	npm_aB3dE5fG7hI9jK1lM3nO5pQ7rS9tU1vW3xY5
+email the report to jo.smith+billing@acme-corp.example	jo.smith+billing@acme-corp.example
+-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmU=\n-----END OPENSSH PRIVATE KEY-----	b3BlbnNzaC1rZXktdjEAAAAABG5vbmU=

@@ -1,0 +1,9 @@
+{
+  "about": "notice: it heard its name and looks up at you, eyes wide, then settles (Pixel's perk).",
+  "ms": 900,
+  "tracks": {
+    "lift": [[0, 0], [120, 10, "out"], [300, 12], [600, 10], [820, 0]],
+    "gazeY": [[0, 0], [120, -500, "out"], [700, -500], [900, 0]],
+    "eyeSize": [[0, 0], [120, 200, "out"], [600, 150], [900, 0]]
+  }
+}

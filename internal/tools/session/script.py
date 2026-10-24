@@ -75,6 +75,15 @@ def target(l: Dict[str, Any]) -> Optional[str]:
     return l.get("file") or l.get("cmd")
 
 
+def todos(l: Dict[str, Any]) -> List[Dict[str, str]]:
+    """A todo step's list, `todos` done of all ("2/4"), as items: the done
+    ones completed, the next in progress, the rest pending. Only the counts
+    reach Boop, so the items are numbered steps."""
+    done, total = (int(n) for n in l["todos"].split("/"))
+    status = lambda i: "completed" if i < done else "in_progress" if i == done else "pending"
+    return [{"content": f"Step {i + 1}", "activeForm": f"Doing step {i + 1}", "status": status(i)} for i in range(total)]
+
+
 def cursor_at(path: Path) -> int:
     """The step Boop's cursor file says is due: -1 before the script starts."""
     try:

@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "board/amoled206/i2c.h"
 #include "board/config.h"
 
 namespace board {
@@ -44,11 +45,8 @@ void touchRaw(int& x, int& y, int& z, bool& irq) {
   bool active = digitalRead(pins::kTouchIrq) == LOW || millis() - lastEdgeMs < kQuietMs;
   if (!active && !down) return;
   down = false;
-  Wire.beginTransmission(kAddr);
-  Wire.write(kRegPoints);
-  if (Wire.endTransmission(false) != 0 || Wire.requestFrom(kAddr, uint8_t(5)) != 5) return;
   uint8_t d[5];
-  for (uint8_t& b : d) b = uint8_t(Wire.read());
+  if (!i2cRead(kAddr, kRegPoints, d, 5)) return;
   int n = d[0] & 0x0F;
   if (n < 1 || n > 2) return;
   irq = down = true;

@@ -1,5 +1,6 @@
 #include "render/screens.h"
 
+#include <algorithm>
 #include <cstdio>
 
 #include "render/font.h"
@@ -23,7 +24,7 @@ constexpr int kBubbleCy = (kBubbleTop + kBubbleBottom) / 2;
 constexpr int kBubblePad = 10;  // from the outline to what's inside, left and right
 constexpr int kBubbleLine = 2;
 
-void plotInk(Canvas& c, int x, int y, int level, int ink) { c.pixels()[y * kWidth + x] = inkAt(ink, level); }
+void plotInk(Canvas& c, int x, int y, int level, int ink) { c.plot(x, y, inkAt(ink, level)); }
 
 // The strip's two round icons, 10 × 10 px, as anti-aliased levels (0 is
 // bare glass): the dot by who needs you and the ring by the working count.
@@ -94,33 +95,88 @@ void iconDots(Canvas& c, int x, int y, uint8_t ink) {  // three dots: something 
 
 }  // namespace
 
-void drawStrip(Canvas& c, const Strip& s) {
+// A parcel, 10 × 10: the idle count's, what BOOT hands you.
+void iconParcel(Canvas& c, int x, int y, uint8_t ink) {
+  c.fillRect(x, y + 2, 10, 8, ink);
+  c.fillRect(x + 4, y, 2, 2, ink);
+  c.fillRect(x + 1, y + 5, 8, 1, inkAt(kInkDim, kLevels));
+  c.fillRect(x + 4, y + 2, 2, 8, inkAt(kInkDim, kLevels));
+}
+
+// A mini, 10 × 10: a helper at work, a tiny face with two eyes.
+void iconMini(Canvas& c, int x, int y, uint8_t ink) {
+  c.fillRect(x + 1, y, 8, 10, ink);
+  c.fillRect(x, y + 1, 10, 8, ink);
+  c.fillRect(x + 2, y + 4, 2, 2, kBlack);
+  c.fillRect(x + 6, y + 4, 2, 2, kBlack);
+}
+
+namespace {
+// The counts after the names: how many sessions work, the helpers at work,
+// the agents idle and how far down its to-do list the longest turn is, from
+// x, each with the gap after it. The list comes last, clear of the working
+// looks' props that reach down to the strip's left. Drawn when c
+// is given; either way, the x after them, so the names leave them the
+// room they take.
+int drawCounts(Canvas* c, const Strip& s, int x) {
+  const int cy = kStripCy, ty = cy - 10;
+  char n[24];
+  auto number = [&](int at, uint8_t ink) {
+    return c ? drawString(*c, kSmall, at, ty, n, ink) : at + stringWidth(kSmall, n);
+  };
+  if (s.busy > 0) {
+    if (c) drawIcon(*c, x, cy - 5, kRing, kInkGrey);
+    std::snprintf(n, sizeof(n), "%d", s.busy);
+    x = number(x + 15, kInkGrey) + 14;
+  }
+  if (s.helpers > 0) {
+    const int minis = std::min(s.helpers, kMinis);
+    for (int i = 0; c && i < minis; ++i) iconMini(*c, x + i * 12, cy - 5, inkAt(kInkEye, kLevels));
+    x += minis * 12 + 2;
+    if (s.helpers > minis) {
+      std::snprintf(n, sizeof(n), "+%d", s.helpers - minis);
+      x = number(x, kInkGrey);
+    }
+    x += 12;
+  }
+  if (s.idle > 0) {
+    if (c) iconParcel(*c, x, cy - 5, inkAt(kInkEye, kLevels));
+    std::snprintf(n, sizeof(n), "%d", s.idle);
+    x = number(x + 15, kInkEye) + 14;
+  }
+  if (s.todoTotal > 0) {
+    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
+    x = number(x, kInkEye) + 14;
+  }
+  return x;
+}
+
+// The strip, whole.
+void stripWhole(Canvas& c, const Strip& s) {
   // An empty strip is bare glass: no divider under the face.
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && !s.noApp) return;
+  if (!s.shows()) return;
   // The first pack's success designs for the finish fill the screen with
   // colour: the finish's names get a black band to be read on.
   if (s.doneAgent) c.fillRect(0, kStripTop, kWidth, kHeight - kStripTop, kBlack);
   // The divider, only over bare glass: an older mood's working look draws
   // its props down into the lane, and the divider mustn't cut through them.
-  uint8_t* divider = c.pixels() + kStripTop * kWidth;
+  const uint8_t* divider = c.pixels() + kStripTop * kWidth;
   for (int x = kMargin; x < kWidth - kMargin; ++x) {
-    if (divider[x] == kBlack) divider[x] = inkAt(kInkDim, kLevels);
+    if (divider[x] == kBlack) c.plot(x, kStripTop, inkAt(kInkDim, kLevels));
   }
   const int cy = kStripCy, ty = cy - 10;
   int x = kMargin;
-  char busy[12];
-  std::snprintf(busy, sizeof(busy), "%d", s.busy);
+  const int counts = drawCounts(nullptr, s, 0);
   if (s.agent) {
     drawIcon(c, x, cy - 5, kDot, kInkAmber);
     // Who needs you, cut to leave room for "+N" and the working count.
     char more[12] = "";
     if (s.more > 0) std::snprintf(more, sizeof(more), "+%d", s.more);
-    int room = kWidth - kMargin - (x + 15) - (more[0] ? stringWidth(kSmall, more) + 8 : 0) -
-               (s.busy > 0 ? 29 + stringWidth(kSmall, busy) : 0);
+    const int fit = kWidth - kMargin - (x + 15) - (more[0] ? stringWidth(kSmall, more) + 8 : 0) - counts;
     char who[48];
     const char* what = s.name && *s.name ? s.name : s.project;
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, what);
-    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkAmber, room);
+    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkAmber, fit);
     if (more[0]) x = drawString(c, kSmall, x + 8, ty, more, kInkGrey);
     x += 14;
   } else if (s.doneAgent) {
@@ -129,16 +185,25 @@ void drawStrip(Canvas& c, const Strip& s) {
     else if (s.doneOutcome == Outcome::kFailure) iconCross(c, x - 1, cy - 8, eye);
     else iconDots(c, x - 1, cy - 8, eye);
     // Who finished, cut to leave room for the working count.
-    int room = kWidth - kMargin - (x + 15) - (s.busy > 0 ? 29 + stringWidth(kSmall, busy) : 0);
+    const int fit = kWidth - kMargin - (x + 15) - counts;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
-    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkEye, room) + 14;
+    x = drawStringFit(c, kSmall, x + 15, ty, who, kInkEye, fit) + 14;
   }
-  if (s.busy > 0) {
-    drawIcon(c, x, cy - 5, kRing, kInkGrey);
-    drawString(c, kSmall, x + 15, ty, busy, kInkGrey);
-  }
+  // Then how many work, the helpers at work, and the agents idle, waiting
+  // for you.
+  drawCounts(&c, s, x);
   if (s.noApp) iconNoApp(c, kWidth - kMargin - 16, cy - 8);
+}
+}  // namespace
+
+// While it fades, the pixels of it the canvas's mask draws: what's under it
+// shows through the rest.
+void drawStrip(Canvas& c, const Strip& s) {
+  if (s.opacity <= 0) return;
+  c.setMask(Dither::fade(s.opacity, true));
+  stripWhole(c, s);
+  c.setMask({});
 }
 
 void drawLane(Canvas& c, const char* bubble, const Strip& s) {

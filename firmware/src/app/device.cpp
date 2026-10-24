@@ -1,4 +1,5 @@
 #include "app/device.h"
+#include "render/tags.h"
 
 #include <ArduinoJson.h>
 
@@ -6,12 +7,15 @@
 #include <cstring>
 
 #include "linkkit/codec.h"
+#include "render/font.h"
 #include "render/maths.h"
 #include "render/palette.h"
 #include "render/pattern.h"
 #include "render/screens.h"
 
 namespace app {
+
+using render::after;
 
 namespace {
 
@@ -30,14 +34,13 @@ static_assert(ButtonGesture::kTalkCapMs == Behaviour::kListenMs, "the talk cap i
 static_assert(sizeof(render::kPalette.c) == 512, "the palette is 256 entries");
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out as it's stored");
 
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }  // a later than b
-
 // A repeated state keeps the link alive but doesn't invalidate the picture.
 // Compare fields, not bytes: Model has padding and its strings are terminated.
 bool sameModel(const Model& a, const Model& b) {
-  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.variant == b.variant &&
-         a.attn == b.attn && a.attnId == b.attnId && a.more == b.more && a.busy == b.busy && a.vol == b.vol &&
-         !std::strcmp(a.agent, b.agent) && !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
+  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
+         a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
+         a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
+         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -55,15 +58,18 @@ enum DoIndex : uint8_t {
   kWakeUp,
   kListening,
   kStopListening,
+  kNotice,
   kDoCount
 };
-constexpr const char* kDoNames[kDoCount] = {"react", "task_complete", "reply_ready", "starting",  "stopped",
-                                            "error", "helper_return", "wake_up",     "listening", "stop_listening"};
+constexpr const char* kDoNames[kDoCount] = {"react",         "task_complete", "reply_ready", "starting",
+                                            "stopped",       "error",         "helper_return", "wake_up",
+                                            "listening",     "stop_listening", "notice"};
 constexpr render::SceneState kDoAnims[kDoCount] = {render::SceneState::kNone,         render::SceneState::kTaskComplete,
                                                    render::SceneState::kReplyReady,   render::SceneState::kStarting,
                                                    render::SceneState::kStopped,      render::SceneState::kError,
                                                    render::SceneState::kHelperReturn, render::SceneState::kWakeUp,
-                                                   render::SceneState::kListening,    render::SceneState::kNone};
+                                                   render::SceneState::kListening,    render::SceneState::kNone,
+                                                   render::SceneState::kNotice};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -169,8 +175,13 @@ void Device::reset() {
   pattern_ = false;
   patternFill_ = -1;
   targetX_ = targetY_ = -1;
-  injPress_ = injTouch_ = bootInjected_ = touchDown_ = touchInjected_ = false;
+  injPress_ = injTouch_ = injMotion_ = bootInjected_ = touchDown_ = touchInjected_ = touchOnSign_ = touchDismissed_ =
+      false;
   boot_ = ButtonGesture{};
+  // The motion sensor's readings start again with the clock, so one taken
+  // before (its time far past the new clock's) can't hold the next back.
+  motion_ = MotionGesture{};
+  motionAt_ = 0;
   last_ = LastInput{};
   drawnT_ = 0;
   dirty_ = true;
@@ -203,10 +214,15 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     m.attnId = attn["id"] | 0u;
   }
   m.busy = doc["busy"] | 0;
+  m.idle = doc["idle"] | 0;
+  m.helpers = doc["helpers"] | 0;
+  JsonObjectConst todo = doc["todo"];
+  m.todoDone = todo["done"] | 0;
+  m.todoTotal = todo["total"] | 0;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
-  // The visual's variation, from 1: missing reads as 1, and one out of range is held to it.
-  m.variant = uint8_t(
-      heldTo(doc["variant"], 1, b_.face().variants(m.mood, m.attn ? render::SceneState::kNeedsYou : m.look()), 1) - 1);
+  // A tag the board doesn't know is left out.
+  for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
+  m.when |= render::busyTags(m.busy);
   if (!sameModel(m, b_.model()) || pattern_ || b_.noApp(at)) dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
   b_.onState(m, at);
   if (m.attn || m.vol == 0) hush();
@@ -250,6 +266,8 @@ ReactionIn Device::parse(const Do& c) {
   // is still a `say` (the reply listening waits for) but plays nothing.
   mo.take = voice::takeIndex(args["say"]["take"].as<const char*>());
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
+  // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
+  render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
   return mo;
 }
 
@@ -269,9 +287,9 @@ const char* Device::refuse(const Do& c, uint32_t t) {
 // it may be replaced: a
 // `react` half a second after its `say` and bubble have played, or 1.7 s
 // in for a face with no `say` (it ends sooner if nothing of it plays by
-// then); a finish and the compacted start never, until they're over; the
-// rules' other reactions, a poke and listening at once; stop_listening is
-// over as it starts. The Mac's
+// then), and not before its sign comes down; a finish and the compacted
+// start never, until they're over; the rules' other reactions, a poke and
+// listening at once; stop_listening is over as it starts. The Mac's
 // `listening` drops the reactions its own host has waiting in the queue.
 void Device::onDo(const Do& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
@@ -289,10 +307,12 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kReact:
       restKey_ = c.key;
       restAt_ = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
+      if (mo.sign[0] && b_.sign(t).text && after(b_.signEnd(), restAt_)) restAt_ = b_.signEnd();
       break;
     case kTaskComplete:
     case kReplyReady:
     case kWakeUp:  // the brain's, like a finish: it plays through
+    case kNotice:
       break;
     case kListening:
       kit().dropWaiting("mic_on", c.from);  // the mic went on: the reactions waiting would end it
@@ -341,14 +361,28 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     pattern_ = true;
     dirty_ = true;
     kit().reply(from, "{\"t\":\"dbg.pattern\"}", 19);
+  } else if (!std::strcmp(type, "dbg.look")) {
+    // A look's variation, from 1, shown until it turns: for scenarios and
+    // tools, since the face picks its own.
+    b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1));
+    dirty_ = true;
+    kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
   } else if (!std::strcmp(type, "dbg.press")) {
     injPress_ = true;
     injPressUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.press\"}", 17);
+  } else if (!std::strcmp(type, "dbg.imu")) {
+    // The motion sensor's reading, held until the next ("off" lets go).
+    injMotion_ = !(doc["off"] | false);
+    injAx_ = doc["ax"] | 0, injAy_ = doc["ay"] | 0, injAz_ = doc["az"] | 1000;
+    kit().reply(from, "{\"t\":\"dbg.imu\"}", 15);
   } else if (!std::strcmp(type, "dbg.touch")) {
     injTouch_ = true;
     injX_ = doc["x"] | 0;
     injY_ = doc["y"] | 0;
+    injToX_ = doc["to_x"] | injX_;  // a stroke: from x, y to these, over its ms
+    injToY_ = doc["to_y"] | injY_;
+    injTouchFrom_ = kit().now();
     injTouchUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.touch\"}", 17);
   } else if (!std::strcmp(type, "dbg.touchcal")) {
@@ -433,8 +467,28 @@ void Device::state(JsonObject d, uint32_t t) {
   if (m.act != render::SceneState::kWorking) d["act"] = render::stateName(m.act);
   else d["act"] = nullptr;
   d["mood"] = render::moodName(m.mood);
-  d["variant"] = m.variant + 1;
   d["look_variant"] = b_.lookVariant() + 1;
+  // The motion sensor's reading now, in milli-g, for tuning its gestures;
+  // null on a board with none.
+  int ax = injAx_, ay = injAy_, az = injAz_;
+  if (injMotion_ || hal_.motion(ax, ay, az)) {
+    JsonArray imu = d["imu"].to<JsonArray>();
+    imu.add(ax), imu.add(ay), imu.add(az);
+  } else {
+    d["imu"] = nullptr;
+  }
+  d["face_down"] = b_.faceDown();
+  d["idle"] = m.idle;
+  d["helpers"] = m.helpers;
+  JsonArray when = d["when"].to<JsonArray>();
+  for (int i = 0; i < render::kTagCount; ++i)
+    if (m.when >> i & 1) when.add(render::kTagNames[i]);
+  if (m.todoTotal > 0) {
+    d["todo"]["done"] = m.todoDone;
+    d["todo"]["total"] = m.todoTotal;
+  } else {
+    d["todo"] = nullptr;
+  }
   if (m.attn) {
     d["attn"]["agent"] = m.agent;
     d["attn"]["project"] = m.project;
@@ -456,6 +510,9 @@ void Device::state(JsonObject d, uint32_t t) {
   render::Mood expr;
   if (b_.expression(t, expr)) d["expr"] = render::moodName(expr);
   else d["expr"] = nullptr;
+  const render::SignShow sign = b_.sign(t);
+  if (sign.text) d["sign"] = sign.text;
+  else d["sign"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;
@@ -538,13 +595,15 @@ bool Device::shot(linkkit::Shot& s, uint32_t t) {
 // A tap goes to the Mac as what the device did about it: the poke, or the
 // press dip while the face is held or a finish names whose turn it was,
 // with that finish's id, the thread the Mac opens.
-void Device::tapped(uint32_t t, bool injected) {
+void Device::tapped(uint32_t t, bool injected, bool button) {
   uint32_t finish = b_.finishShown(t);
-  const char* did = b_.tap(t, kit().rng());
+  const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
-  char data[32];
-  bool on = finish && std::snprintf(data, sizeof(data), "{\"on\":%lu}", (unsigned long)finish) > 0;
-  kit().emit("tap", did, on ? data : nullptr, injected);
+  // Where it came from (`src`), and the finish it landed on, if any.
+  char on[24] = "", data[48];
+  if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
+  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s}", button ? "button" : "screen", on);
+  kit().emit("tap", did, data, injected);
   drain();  // the poke cuts an animation
 }
 
@@ -557,7 +616,7 @@ void Device::readInputs(uint32_t t) {
   // A tool's input then times its release exactly (dbg.latency).
   auto letGo = [&](uint32_t until) { return kit().frozen() ? real : real - (t - until); };
   uint32_t pressGone = real, touchGone = real;
-  if (injPress_ && int32_t(t - injPressUntil_) >= 0) injPress_ = false, pressGone = letGo(injPressUntil_);
+  if (injPress_ && !after(injPressUntil_, t)) injPress_ = false, pressGone = letGo(injPressUntil_);
   switch (boot_.update(hal_.bootDown() || injPress_, t)) {
     case ButtonGesture::kDown:
       bootInjected_ = !hal_.bootDown();
@@ -568,7 +627,7 @@ void Device::readInputs(uint32_t t) {
     case ButtonGesture::kTap:
       b_.pressUp();
       latency_.mark(Latency::kTap, bootInjected_ ? pressGone : real);
-      tapped(t, bootInjected_);
+      tapped(t, bootInjected_, true);
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
@@ -589,41 +648,118 @@ void Device::readInputs(uint32_t t) {
       break;
   }
 
-  // A touch anywhere is a tap, sent on release however long it was held.
-  // The press shows at once. The panel misses readings under a light
-  // press, so its touch ends only after kTouchReleaseMs without contact,
-  // in real time so that it ends while a tool has the clock frozen; an
-  // injected one ends when it says. The debug pattern ignores touches.
-  if (injTouch_ && int32_t(t - injTouchUntil_) >= 0) injTouch_ = false, touchGone = letGo(injTouchUntil_);
+  // A touch anywhere is a tap, sent on release however long it was held,
+  // but for a finger held still on the needs-you sign (TouchGesture::held):
+  // that's the gesture `dismiss`, sent as the hold completes with the
+  // number of the request the sign showed as the finger went down, so the
+  // Mac dismisses that one or none, never one that took the sign during
+  // the hold. Its release does nothing, as a touch's on a sign that has
+  // gone does. The press shows at once. The panel misses readings under a
+  // light press, so its touch ends only after kTouchReleaseMs without
+  // contact, in real time so that it ends while a tool has the clock
+  // frozen; an injected one ends when it says. The debug pattern ignores
+  // touches.
+  if (injTouch_ && !after(injTouchUntil_, t)) injTouch_ = false, touchGone = letGo(injTouchUntil_);
   int x = 0, y = 0;
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
+  if (injTouch_ && injTouchUntil_ != injTouchFrom_) {  // a stroke's way along
+    const int64_t along = int64_t(t - injTouchFrom_), ms = int64_t(injTouchUntil_ - injTouchFrom_);
+    x = injX_ + int((injToX_ - injX_) * along / ms), y = injY_ + int((injToY_ - injY_) * along / ms);
+  }
   if (contact) touchSeenReal_ = real, touchInjected_ = injTouch_;
   bool touching = contact || (touchDown_ && !touchInjected_ && real - touchSeenReal_ < kTouchReleaseMs);
   bool faced = !pattern_;
   if (touching && !touchDown_) {
     input("touch", t, x, y);
+    touchPath_.down(x, y, t);
+    // Only a touch that began on the sign holds it: a request that comes
+    // up under a finger already down isn't dismissed by it.
+    touchOnSign_ = faced && signShows(t);
+    touchSign_ = touchOnSign_ ? b_.model().attnId : 0;
+    touchDismissed_ = false;
     if (faced) {
       b_.pressDown(t);
+      b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
+  } else if (touching && contact) {
+    touchPath_.move(x, y);
+    if (faced) b_.face().finger(true, x, y);
+  }
+  if (touching && touchOnSign_ && !touchDismissed_ && signShows(t) && touchPath_.held(t)) {
+    // Nothing plays: the sign goes when the Mac's next state says so.
+    touchDismissed_ = true;
+    input("gesture", t);
+    char data[24];
+    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)touchSign_);
+    kit().emit("gesture", kDismissGesture, touchSign_ ? data : nullptr, touchInjected_);
   }
   if (!touching && touchDown_) {
     b_.pressUp();
+    b_.face().finger(false, 0, 0);
     if (faced) {
       // The panel's touch let go when it was last in contact, so its tap
-      // counts the kTouchReleaseMs the device waits to be sure.
-      latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
-      tapped(t, touchInjected_);
+      // counts the kTouchReleaseMs the device waits to be sure. Its path
+      // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
+      // nose; then the board reacts as one, but not while the face is
+      // held, where a touch is a tap.
+      // A touch that began on the sign was for the sign: it gives no tap
+      // once its hold dismissed it, or once the sign has gone (its request
+      // answered or dismissed on the Mac).
+      render::Gesture g;
+      if (!(touchOnSign_ && (touchDismissed_ || !signShows(t)))) {
+        latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
+        if (touchPath_.up(g) && !b_.held(t))
+          gestured(g, t, touchInjected_);
+        else
+          tapped(t, touchInjected_, false);
+      }
     }
   }
   if (touching != touchDown_) dirty_ = true;
   touchDown_ = touching;
 }
 
+bool Device::signShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
+
+void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
+  b_.gesture(g, t);
+  input("gesture", t);
+  kit().emit("gesture", render::gestureName(g), nullptr, injected);
+  drain();  // the gesture cuts an animation, as a poke does
+}
+
+// The motion sensor, every kMotionMs: picked up, put down, shaken, a thump
+// on the desk, laid face down (do not disturb) and turned back up.
+void Device::readMotion(uint32_t t) {
+  if (int32_t(t - motionAt_) < int32_t(kMotionMs)) return;
+  motionAt_ = t;
+  int ax = injAx_, ay = injAy_, az = injAz_;
+  if (!injMotion_ && !hal_.motion(ax, ay, az)) return;
+  switch (motion_.update(ax, ay, az, t)) {
+    case MotionGesture::kPickup: gestured(render::Gesture::kPickup, t, injMotion_); break;
+    case MotionGesture::kPutdown: gestured(render::Gesture::kPutdown, t, injMotion_); break;
+    case MotionGesture::kShake: gestured(render::Gesture::kDizzy, t, injMotion_); break;
+    case MotionGesture::kThump: gestured(render::Gesture::kStartle, t, injMotion_); break;
+    case MotionGesture::kFaceDown:
+      b_.setFaceDown(true, t);
+      hush();
+      kit().emit("gesture", "facedown", nullptr, injMotion_);
+      dirty_ = true;
+      break;
+    case MotionGesture::kFaceUp:
+      b_.setFaceDown(false, t);
+      gestured(render::Gesture::kPeekaboo, t, injMotion_);
+      break;
+    default: break;
+  }
+}
+
 void Device::tick(uint32_t t) {
   uint32_t real = hal_.realMs();
   if (real - fpsSinceReal_ >= 1000) fps_ = frames_ * 1000 / (real - fpsSinceReal_), frames_ = 0, fpsSinceReal_ = real;
   readInputs(t);
+  readMotion(t);
   followSound(t);
   drain();
 
@@ -717,8 +853,8 @@ void Device::render(uint32_t t) {
       render::blit(canvas_, native->back(), 0);
     }
   } else {
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.strip(t),
-                        dirty_))
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
+                        b_.strip(t), dirty_))
       return;
   }
   if (native) native->drew();

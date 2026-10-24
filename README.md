@@ -22,7 +22,9 @@ them has been waiting on you for ten minutes. Boop noticed.
 - ⌨️ **Works along** while they work: tests, the terminal, planning.
 - 🟧 **Lights up amber** and knocks when one needs your approval, and says who.
 - 🏆 **Celebrates** a finish that earns it, and grumbles at a failed test (never at you).
+- 📦 **Counts who's done** under its face, and its button hands you the next one: whoever needs you, then the agent that finished last, at its thread on the Mac.
 - 👉 **Pokes back** when you tap it, and answers when you hold its button and talk.
+- 📔 **Keeps a diary**, a line a day about the one before, and dresses for the day: coffee in the morning, a nightcap at night, a costume on Halloween, a party hat on its milestone days.
 
 It has moods of its own, and there's no reset button. It only watches:
 it never approves, denies or blocks anything an agent does.
@@ -84,7 +86,9 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
    agents to watch. Restart open agent sessions so they pick up Boop's
    hooks.
 
-Then tap the screen or press BOOT to poke it.
+Then tap the screen to poke it. Press BOOT while an agent waits for you
+and it opens that agent on the Mac; with nobody waiting, BOOT pokes it
+too.
 
 **Which character.** A clone runs Boop, the repository's own character:
 the gel slime on the AMOLED board, and a pixel face on the CYD. Pixel is
@@ -110,9 +114,13 @@ evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 Nothing, unless you add a Jev key. With one, each time Boop thinks, it
 sends TypeSafe a short text: what's been happening, in lines like
 `claude started turn 1 on "landing".`, and Boop's personality and mood.
-Three things in your own words go too, each cut to 300 characters: your
-prompt, the agent's last message, and what you say to Boop when you hold
-its button. Your files, commands and tool output never do.
+Your prompts don't: Boop reads each one on your Mac with Apple
+Intelligence, after taking out anything that looks like a key or a
+password, and sends only what it made of it (a fix, frustrated, in a
+sentence) and up to three short phrases of yours, such as "still
+broken". Two things in your own words go, each cut to 300 characters:
+the agent's last message, and what you say to Boop when you hold its
+button. Your files, commands and tool output never do.
 
 ## Uninstall
 

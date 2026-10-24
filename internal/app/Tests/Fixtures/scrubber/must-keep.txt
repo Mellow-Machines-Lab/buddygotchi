@@ -1,0 +1,17 @@
+# Ordinary prompt text that must come through the scrubber untouched.
+fix src/components/UploadButton.tsx: the 413 at 5MB, then run npm test
+bump the version to v1.4.0-beta.2 and tag it
+see https://github.com/acme/app/pull/1234 for the review comments
+at UploadButton (src/components/UploadButton.tsx:42:13)
+SELECT id, email FROM users WHERE id = 42 AND deleted_at IS NULL
+set max_tokens: 4096 and temperature: 0.2
+the sortKey: name option is ignored
+the password reset flow is broken again
+the token count in the header is wrong
+why does the secret santa page 404?
+id 123e4567-e89b-12d3-a456-426614174000 is missing
+revert 3f78685 and cherry-pick a1b2c3d
+color #ff00aa on .btn-primary:hover
+cache_key: user-profile-v2
+TODO: rename getUserById to fetchUser in api/users.ts
+run ./scripts/deploy.sh --env=staging --dry-run

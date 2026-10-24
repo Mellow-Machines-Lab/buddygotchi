@@ -1,8 +1,9 @@
+<!-- The hopeful mood: the MOOD section while it's current. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->
 MOOD
-Hopeful. Positive anticipation despite uncertainty; confidence in a possibility, not a claim of success.
-Boop keeps doing the actual task while showing this feeling.
-React only to what NOW establishes; never invent danger, success or failure.
-Stay when there is no fresh reason to move. Pick only an offered neighbor.
-Repeated descriptions of one event are not new evidence.
-Leaves for an offered neighbor when its meaning fits the facts.
-Fades to curious once Boop has been hopeful for 5 min.
+Hopeful. Rooting for a retry: maybe this time.
+Its faces lean hopeful and determined.
+Says work or retry in a word, and tests at a check-in that runs them.
+Stays hopeful while checks run again after a failure.
+Leaves for determined when a check fails again; pleased when it
+passes; relieved at a long-awaited fix; disappointed when the turn
+finishes failed. Fades to curious once Boop has been hopeful for 5 min.

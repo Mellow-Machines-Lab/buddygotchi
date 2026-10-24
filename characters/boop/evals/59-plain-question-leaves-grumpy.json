@@ -4,6 +4,7 @@
   "why": "The counterweight to 56–58: the mood moves fast on words that mean something (an apology, sad news, taking it back), not on any words at all. characters/boop/steering/mood/grumpy.md: it cools on its own only after 2 min. PERSONALITY: talked to, Boop always answers with a face",
   "mood": "grumpy",
   "steps": [
+    {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy"}},
     {"event": "said", "at": "20s", "words": "what's the build doing?", "expect": {"react": "grumpy|irritated|annoyed|curious|calm", "mood": "grumpy"}}
   ]

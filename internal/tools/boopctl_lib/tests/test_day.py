@@ -162,7 +162,7 @@ class FixtureTests(unittest.TestCase):
         lines = text.splitlines()
         self.assertEqual(lines[0], "Boop's day: Monday 2026-09-28, 01:34–06:01, 2 launches")
         head = next(i for i, x in enumerate(lines) if x.startswith("hour"))
-        self.assertEqual(lines[head].split(), ["hour", "finishes", "chatter", "reacts", "alerts", "moods", "passes",
+        self.assertEqual(lines[head].split(), ["hour", "finishes", "chatter", "reacts", "said", "alerts", "moods", "passes",
                                                "dropped", "missed", "pokes", "needs", "you", "faces"])
         self.assertEqual([x.split()[0] for x in lines[head + 1:head + 8]], ["01", "02", "03", "04", "05", "06", "all"])
         self.assertIn("  01:47  codex · landing → claude · jetpack  6 min 4 s, 2 alerts", lines)

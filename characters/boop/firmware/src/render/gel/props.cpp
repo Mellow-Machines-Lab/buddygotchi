@@ -268,6 +268,22 @@ void paintProps(Surface& surface, const Engine& e) {
                    : rgb565(0xd5, 0xe8, 0xf2),
            kLarge);
     });
+    if (card.gift) {
+      // A gift beside the card: the small bug Boop caught, held up proudly
+      // (render/props.mjs draws the same).
+      const int bx = 795, by = 180;
+      const uint16_t ink = rgb565(44, 37, 29);
+      for (int side : {-1, 1}) {
+        for (int row = -1; row <= 1; ++row)
+          r.line({x(bx + side * 18), y(by + row * 16)}, {x(bx + side * 34), y(by + row * 20 + 6)}, 2, ink);
+        r.line({x(bx + side * 6), y(by - 46)}, {x(bx + side * 16), y(by - 64)}, 2, ink);
+      }
+      r.disk(x(bx), y(by - 36), x(12), ink);
+      round(bx - 24, by - 32, 48, 64, 24, amber);
+      round(bx - 2, by - 30, 4, 60, 1, ink);
+      for (const Point spot : {Point{-11, -12}, Point{11, -12}, Point{-12, 10}, Point{12, 10}})
+        r.disk(x(bx + spot.x), y(by + spot.y), 2, ink);
+    }
   }
   // Nothing after the cards draws over them.
   surface.cardKey = cards;

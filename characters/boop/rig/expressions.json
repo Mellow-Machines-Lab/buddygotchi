@@ -1,0 +1,15 @@
+{
+  "calm": {"eyes": "calm", "mouth": "calm"},
+  "happy": {"eyes": "happy", "mouth": "happy"},
+  "excited": {"eyes": "excited", "mouth": "excited"},
+  "curious": {"eyes": "curious", "mouth": "curious"},
+  "engaged": {"eyes": "engaged", "mouth": "engaged"},
+  "determined": {"eyes": "determined", "mouth": "determined"},
+  "proud": {"eyes": "proud", "mouth": "proud"},
+  "annoyed": {"eyes": "annoyed", "mouth": "annoyed"},
+  "irritated": {"eyes": "irritated", "mouth": "irritated"},
+  "grumpy": {"eyes": "grumpy", "mouth": "grumpy"},
+  "sad": {"eyes": "sad", "mouth": "sad"},
+  "whiny": {"eyes": "whiny", "mouth": "whiny"},
+  "wounded": {"eyes": "wounded", "mouth": "wounded"}
+}

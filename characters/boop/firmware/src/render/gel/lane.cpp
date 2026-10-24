@@ -1,10 +1,12 @@
 #include "render/gel/lane.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
 #include "fonts_gel.h"
 #include "render/font.h"
+#include "render/gel/layers.h"
 #include "render/gel/painter.h"
 #include "render/gel/profile.h"
 #include "render/gel/raster.h"
@@ -46,9 +48,9 @@ void glyph(Raster& r, const Font& f, int x, int y, int g, uint16_t ink) {
   r.alpha = opacity;
 }
 
-// Text whose cells start at (x, y): at most `room` px of it, ending ".."
-// when cut, as the canvas's drawStringFit. Returns the x after it.
-int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20) {
+}  // namespace
+
+int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room) {
   const bool fits = glyphCount(s) * f.w <= room;
   int left = fits ? room : room / f.w - 2;  // leave space for ".."
   for (int g; left > 0 && (g = nextGlyph(s)) >= 0; --left, x += f.w) glyph(r, f, x, y, g, ink);
@@ -56,6 +58,8 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
     for (int i = 0; i < 2; ++i, x += f.w) glyph(r, f, x, y, '.' - 0x20, ink);
   return x;
 }
+
+namespace {
 
 // The line in its bubble, which takes the whole lane: a box with round
 // corners and a short tail up to the face, the text centred in the
@@ -100,18 +104,65 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
   r.round(x + 17, cy + 3, 7, 3, 1, ink);
 }
 
+// The counts after the names: how many sessions work and how far down its
+// to-do list the longest turn is ("3/7"), the helpers at work (a mini
+// each, a little droplet of the gel with two eyes) and the agents idle (a
+// parcel each for BOOT to hand over), from x, each with the gap after it.
+// Drawn when r is given; either way, the x after them, so the names leave
+// them the room they take.
+int counts(Raster* r, const Strip& s, int x, int cy) {
+  const Font& f = kSign;
+  const int ty = cy - f.h / 2;
+  const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey), eye = inkRgb565(kInkEye);
+  char n[24];
+  auto number = [&](int at, uint16_t ink) { return r ? text(*r, f, at, ty, n, ink) : at + glyphCount(n) * f.w; };
+  if (s.busy > 0) {
+    if (r) ring(*r, x, cy, grey);
+    std::snprintf(n, sizeof(n), "%d", s.busy);
+    x = number(x + kIcon + 8, grey) + kIcon;
+  }
+  if (s.todoTotal > 0) {
+    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
+    x = number(x, eye) + kIcon;
+  }
+  if (s.helpers > 0) {
+    const int minis = std::min(s.helpers, kMinis), miniW = 20;
+    const uint16_t gel = 0x75BE, ink = 0x0000;
+    for (int i = 0; r && i < minis; ++i) {
+      const int mx = x + i * miniW;
+      r->round(mx, cy - 7, 16, 15, 7, gel);
+      r->round(mx + 4, cy - 2, 3, 3, 1, ink);
+      r->round(mx + 9, cy - 2, 3, 3, 1, ink);
+    }
+    x += minis * miniW;
+    if (s.helpers > minis) {
+      std::snprintf(n, sizeof(n), "+%d", s.helpers - minis);
+      x = number(x + 2, grey);
+    }
+    x += kIcon;
+  }
+  if (s.idle > 0) {
+    if (r) {
+      r->round(x, cy - 6, 16, 13, 2, eye);
+      r->round(x + 7, cy - 6, 2, 13, 0, dim);
+      r->round(x, cy - 1, 16, 2, 0, dim);
+    }
+    std::snprintf(n, sizeof(n), "%d", s.idle);
+    x = number(x + kIcon + 10, eye) + kIcon;
+  }
+  return x;
+}
+
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && !s.noApp) return;  // bare glass, no divider
+  if (!s.shows()) return;
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
   r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
   const Font& f = kSign;
   const int cy = l.y((kStripTop + kHeight) / 2), ty = cy - f.h / 2;
-  char busy[12];
-  std::snprintf(busy, sizeof(busy), "%d", s.busy);
-  const int busyRoom = s.busy > 0 ? kIcon + 8 + glyphCount(busy) * f.w + kIcon : 0;
+  const int countsWidth = counts(nullptr, s, 0, cy);
   int x = kMargin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
@@ -121,7 +172,7 @@ void strip(Lane& l, const Strip& s) {
     const int moreRoom = more[0] ? glyphCount(more) * f.w + 12 : 0;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, s.name && *s.name ? s.name : s.project);
-    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - kMargin - (x + 2 * kIcon) - moreRoom - busyRoom);
+    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - kMargin - (x + 2 * kIcon) - moreRoom - countsWidth);
     if (more[0]) x = text(r, f, x + 12, ty, more, grey);
     x += kIcon;
   } else if (s.doneAgent) {
@@ -134,13 +185,27 @@ void strip(Lane& l, const Strip& s) {
       dots(r, x, cy, eye);
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
-    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - kMargin - (x + 2 * kIcon) - busyRoom) + kIcon;
+    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - kMargin - (x + 2 * kIcon) - countsWidth) + kIcon;
   }
-  if (s.busy > 0) {
-    ring(r, x, cy, grey);
-    text(r, f, x + kIcon + 8, ty, busy, grey);
-  }
+  // Then how many work, the helpers at work, and the agents idle, waiting
+  // for you.
+  counts(&r, s, x, cy);
   if (s.noApp) plug(r, l.w - kMargin - 24, cy, grey);
+}
+
+// The strip, drawn at full strength, blended once at its opacity (0–255):
+// its rows hold nothing else, over black, so that is scaling each pixel it
+// wrote, in place, with no buffer of its own; a hole (a ring's inside, a
+// mini's eyes) stays one, and where its shapes meet it blends once.
+void fade(Surface& s, int from, int alpha) {
+  if (alpha >= 253) return;
+  const bool tracked = s.height <= Surface::kTrackedRows;
+  for (int y = from; y < s.height; ++y) {
+    uint16_t* row = s.pixels + y * s.width;
+    const int x1 = tracked ? s.written[y].last : s.width;
+    for (int x = tracked ? s.written[y].first : 0; x < x1; ++x)
+      if (row[x]) row[x] = mix565(0, row[x], alpha);
+  }
 }
 
 // What the lane shows, as a key that's the same exactly when its pixels
@@ -156,7 +221,7 @@ uint32_t laneKey(const char* line, const Strip& s) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.noApp};
+    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.todoDone, s.todoTotal, s.noApp, s.opacity};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -168,19 +233,24 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
   if (!surface.pixels) return;
   Lane l{Raster{surface}, surface.width, surface.height};
   l.r.limit = surface.height;
-  if (line)
+  if (line) {
     bubble(l, line);
-  else
+  } else {
     strip(l, s);
+    fade(surface, l.y(kLaneTop), (s.opacity * 255 + 500) / 1000);
+  }
   surface.laneKey = laneKey(line, s);
   surface.laneKeyFrom = l.y(kLaneTop);
 }
 
-void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const Strip& s) {
+void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
+                const Strip& s) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
-  paint(surface, e, mouthOpen, dy, key);
+  rig::Anchors at;
+  paint(surface, e, mouthOpen, dy, key, &at);
+  if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);
 }

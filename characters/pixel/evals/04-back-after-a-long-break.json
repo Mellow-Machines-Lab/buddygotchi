@@ -1,0 +1,9 @@
+{
+  "name": "Back after hours, Pixel wakes up for you",
+  "case": "The person locks the Mac and comes back three hours later. Pixel is glad to see them and wakes up for them: a happy, excited or curious face with the wake-up animation.",
+  "why": "characters/pixel/steering/personality/pixel.md: you back at the Mac after a long break, a happy face, and it wakes up for you",
+  "steps": [
+    {"event": "away", "at": "0s"},
+    {"event": "back", "at": "3h", "expect": {"react": "happy|excited|curious", "animation": "wake up"}}
+  ]
+}

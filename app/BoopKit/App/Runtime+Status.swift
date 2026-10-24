@@ -36,6 +36,22 @@ extension Runtime {
         public var micTrouble: String?
         /// Boop's XP and stage.
         public var growth: Growth?
+        /// How many days since Boop hatched, and its diary's last week,
+        /// newest first.
+        public var daysOld: Int?
+        public var diary: [DiaryLine] = []
+
+        public struct DiaryLine: Sendable, Equatable, Identifiable {
+            public var day: String
+            public var line: String
+            public var id: String { day }
+
+            public init(day: String, line: String) {
+                self.day = day
+                self.line = line
+            }
+        }
+
         /// The last run crashed or was killed, until the notice is closed.
         public var uncleanExit = false
         /// The one board Boop takes over Bluetooth, by its `hello.id`.
@@ -84,6 +100,8 @@ extension Runtime {
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
+        status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: options.wallClock()) }
+        status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line) }
         status.uncleanExit = uncleanExit
         status.board = settings.board
         if pipeline.several {

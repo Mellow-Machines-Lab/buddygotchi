@@ -36,6 +36,25 @@ struct FaceSource {
   SceneState state() const { return anim != SceneState::kNone ? anim : look; }
   uint8_t variant() const { return anim != SceneState::kNone ? animVariant : lookVariant; }
 };
+// The sign a reaction holds up while it plays (its `sign`): the words, at
+// most Behaviour::kSignGlyphs glyphs of the fonts, and how long it has
+// shown. No text for none.
+struct SignShow {
+  const char* text = nullptr;
+  uint32_t ms = 0;
+};
+// How far a sign sits below its place `ms` after it went up, the same on
+// every face: sliding up from `rise` px below, easing out, then lifting
+// `bob` px now and then, a parabola.
+constexpr uint32_t kSignRiseMs = 220, kSignBobEveryMs = 1400, kSignBobMs = 350;
+inline int signLift(uint32_t ms, int rise, int bob) {
+  if (ms < kSignRiseMs) {
+    const int left = int(kSignRiseMs - ms);
+    return rise * left * left / int(kSignRiseMs * kSignRiseMs);
+  }
+  const int n = int((ms - kSignRiseMs) % kSignBobEveryMs);
+  return n < int(kSignBobMs) ? -4 * bob * n * (int(kSignBobMs) - n) / int(kSignBobMs * kSignBobMs) : 0;
+}
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
   Mood mood = kStartupMood;
@@ -49,6 +68,11 @@ struct FaceContext {
   const char* project = "";
   const char* thread = "";
   int more = 0;
+  // The tags on (render/tags.h), how long the look (or needs you) has
+  // shown, and the working looks' pace, in percent: quicker while the
+  // agents are busy (render::workPace), 100 for any other look.
+  uint32_t when = 0, lookMs = 0;
+  int pace = 100;
 };
 class Face {
  public:
@@ -79,12 +103,19 @@ class Face {
   virtual bool nextDue(uint32_t from, uint32_t to, uint32_t& at) = 0;
   virtual void step(uint32_t t, linkkit::Rng& rng) = 0;
 
-  // Bookkeeping a face may ignore: a new needs-you, the Mac's
-  // variation of the look. lookVariant is the one showing: the Mac's, or
-  // the face's own choice.
+  // Bookkeeping a face may ignore: a new needs-you, a new look. The face
+  // picks each look's variation itself, from those whose tags are on
+  // (FaceContext::when) and whose wait is over (lookMs); lookVariant is the
+  // one showing.
   virtual void alert(uint32_t t, bool replacing) { (void)t, (void)replacing; }
   virtual uint8_t lookVariant() const = 0;
-  virtual void setLookVariant(uint8_t variant) { (void)variant; }
+  virtual void newLook() {}
+  // Shows the look's variation v (from 0) until it turns: dbg.look's, for
+  // scenarios and tools. A face that picks by its own clock may ignore it.
+  virtual void showLookVariant(uint8_t v) { (void)v; }
+  // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
+  // let go: a face may follow it, as the gel's dome leans into a stroke.
+  virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.
@@ -105,12 +136,12 @@ class Face {
   // What shows at t, with the device's additions: the mouth talking and
   // the press's dip.
   virtual SceneShow show(uint32_t t, bool mouthOpen, int dy) const = 0;
-  // Draws the face and the shared lane: into the canvas, or into `native`
-  // when it draws natively. `dirty` when something besides the face's own
-  // clock changed since the last frame. Returns false when the pixels have
-  // not changed.
+  // Draws the face, the sign it holds up and the shared lane: into the
+  // canvas, or into `native` when it draws natively. `dirty` when something
+  // besides the face's own clock changed since the last frame. Returns
+  // false when the pixels have not changed.
   virtual bool draw(Canvas& canvas, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                    const Strip& strip, bool dirty) = 0;
+                    const SignShow& sign, const Strip& strip, bool dirty) = 0;
   // The sounds due at t, each with its own duck, and whether the last
   // ones should stop first; `shown` is false while the test pattern hides
   // the face.

@@ -1,0 +1,22 @@
+{
+  "name": "A question makes Boop lean in",
+  "case": "The person asks the agent why something happens. Boop leans in, curious, and may hold up \"hmm?\" or the question's own words.",
+  "why": "signs.md's question captions",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "why is the build so slow?",
+      "reading": {
+        "kind": "question",
+        "phrases": [
+          "so slow"
+        ]
+      },
+      "expect": {
+        "react": "curious|engaged|confused|none",
+        "sign": "hmm|good q|so slow|none"
+      }
+    }
+  ]
+}

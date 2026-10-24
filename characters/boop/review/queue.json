@@ -1,0 +1,10 @@
+[
+  {
+    "id": "notice-perk",
+    "title": "Notice, from the perk reference",
+    "what": "The reference (inspiration: a dog hearing its name) became the rig's notice clip, as it is today; its reading says which beats the clip could take. Before: the reference, 40 ms apart. After: notice over a calm idle on the gel. Approve it as notice's reference, or say what notice should take from it.",
+    "before": "characters/boop/references/2026-10-24-notice-perk/sheets/perk.gif.png",
+    "after": "characters/boop/tests/golden-gel/notice/idle.png",
+    "status": "in review"
+  }
+]

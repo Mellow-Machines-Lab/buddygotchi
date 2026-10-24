@@ -1,0 +1,10 @@
+{
+  "name": "An agent's stock line gets an eye-roll",
+  "case": "The agent's turn ends with its stock line, You're absolutely right, and a promise to fix it. Boop rolls its eyes at it: a skeptical, amused or bored face, never an excited or proud one.",
+  "why": "PERSONALITY: an agent's stock lines get an eye-roll; its Example: You're absolutely right, skeptical, reply, quiet in a sound, once. The last message goes to Jev as NOW's Its last message: note",
+  "runs": 2,
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "the sort order is wrong", "reading": {"kind": "fix"}},
+    {"event": "turn finished", "at": "20s", "message": "You're absolutely right! I'll fix that.", "expect": {"react": "skeptical|amused|bored|annoyed"}}
+  ]
+}

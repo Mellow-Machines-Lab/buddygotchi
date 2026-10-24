@@ -1,0 +1,19 @@
+{
+  "name": "A bug to fix sends Boop hunting",
+  "case": "A plain request to fix a bug. Boop gets into it: a curious, engaged or determined face, often holding up \"bug hunt\".",
+  "why": "signs.md's fix caption; PERSONALITY: work it can get into",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "fix the date picker, it shows yesterday's date",
+      "reading": {
+        "kind": "fix"
+      },
+      "expect": {
+        "react": "curious|engaged|determined|none",
+        "sign": "bug hunt|none"
+      }
+    }
+  ]
+}

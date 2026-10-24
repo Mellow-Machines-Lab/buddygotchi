@@ -58,7 +58,52 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
-        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, talk or back")) }
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, press, hold, talk, back or wait")) }
+    }
+
+    /// A hold is a finger kept on the needs-you sign, which a recording
+    /// replays on the board as one (`input`); a wait is minutes passing at
+    /// once, which it says.
+    func testAHoldDismissesAndAWaitPassesTime() throws {
+        let hold = try DemoScript(#"{"you": "hold"}"#).steps[0]
+        XCTAssertEqual(hold.what, .hold)
+        XCTAssertEqual(hold.input, "hold")
+        XCTAssertEqual(hold.cause(creature: "Pip", agent: "claude")?.text, "You hold a finger on Pip's sign")
+        let wait = try DemoScript(#"{"you": "wait", "minutes": 8}"#).steps[0]
+        XCTAssertEqual(wait.what, .wait(ms: 480_000))
+        XCTAssertNil(wait.input)
+        XCTAssertEqual(wait.cause(creature: "Pip", agent: "claude")?.text, "8 minutes later")
+        XCTAssertEqual(DemoScript.Step.minutes(90 * 60_000), "1 hour 30 minutes")
+        XCTAssertEqual(DemoScript.Step.minutes(60_000), "1 minute")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wait"}"#)) { XCTAssertTrue("\($0)".contains("a wait's minutes are more than 0")) }
+        // A request to hold a finger on: it waits while the next steps play.
+        let asks = try DemoScript(#"{"agent": "run", "cmd": "npm i", "about": "Install the packages", "ask": 30, "waits": true}"#).steps[0]
+        XCTAssertEqual(asks.cause(creature: "Pip", agent: "claude")?.text, "Claude asks to install the packages, and waits for you")
+        try XCTAssertThrowsError(try DemoScript(#"{"agent": "run", "cmd": "npm i", "waits": true}"#)) { XCTAssertTrue("\($0)".contains("only a run that asks waits")) }
+    }
+
+    /// A todo is the agent writing its to-do list: done of all.
+    func testATodoIsTheAgentsList() throws {
+        let step = try DemoScript(#"{"agent": "todo", "todos": "2/4"}"#).steps[0]
+        guard case .agent(let a) = step.what else {
+            XCTFail("\(step.what)")
+            return
+        }
+        XCTAssertEqual(a.todos, StateSnapshot.Todo(done: 2, total: 4))
+        XCTAssertEqual(step.cause(creature: "Pip", agent: "claude")?.text, "Claude ticks off its to-do list: 2 of 4 done")
+        for bad in [#"{"agent": "todo"}"#, #"{"agent": "todo", "todos": "5/4"}"#, #"{"agent": "todo", "todos": "2 of 4"}"#,
+                    #"{"agent": "read", "file": "a.js", "todos": "1/2"}"#] {
+            try XCTAssertThrowsError(try DemoScript(bad)) { XCTAssertTrue("\($0)".contains("todo"), "\($0)") }
+        }
+    }
+
+    /// A press is BOOT: the board hands you the next agent, which a
+    /// recording replays on the board as a press (`input`).
+    func testAPressIsBOOT() throws {
+        let step = try DemoScript(#"{"you": "press"}"#).steps[0]
+        XCTAssertEqual(step.what, .press)
+        XCTAssertEqual(step.input, "press")
+        XCTAssertEqual(step.cause(creature: "Pip", agent: "claude")?.text, "You press Pip's button")
     }
 
     func testABadLineSaysWhere() {
@@ -212,5 +257,33 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.mood has no choice jolly; it has none, \(pack.moods[0].id)"))
         XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
         XCTAssertTrue(problems[3].hasPrefix("line 4: say.kind has no choice wrod"))
+    }
+
+    /// characters/DEMOS.md: a header's `start` is when the demo's clock
+    /// starts, on this Mac's clock; an agent step's `session` is another
+    /// of its threads; a reply that `fails` is a failed turn, and only a
+    /// run or a reply fails.
+    func testAStartSessionsAndAFailedTurn() throws {
+        let script = try DemoScript("""
+            {"demo": 1, "title": "Two at once", "start": "2026-10-31T09:00"}
+            {"agent": "prompt", "text": "Go"}
+            {"agent": "prompt", "text": "And you", "session": "docs"}
+            {"agent": "reply", "text": "Oops", "fails": true}
+            """)
+        let local = DateComponents(calendar: Calendar.current, year: 2026, month: 10, day: 31, hour: 9).date!
+        XCTAssertEqual(script.start, Int64(local.timeIntervalSince1970 * 1000))
+        guard case .agent(let second) = script.steps[1].what, case .agent(let reply) = script.steps[2].what else {
+            XCTFail("agent steps")
+            return
+        }
+        XCTAssertEqual(second.session, "docs")
+        XCTAssertTrue(reply.fails)
+        XCTAssertEqual(script.steps[2].cause(creature: "Pip", agent: "claude")?.text, "Claude's turn fails")
+        try XCTAssertThrowsError(try DemoScript(#"{"agent": "read", "file": "a", "fails": true}"#)) { error in
+            XCTAssertTrue("\(error)".contains("only a run or a reply fails"))
+        }
+        try XCTAssertThrowsError(try DemoScript(#"{"demo": 1, "start": "soon"}"#)) { error in
+            XCTAssertTrue("\(error)".contains("start is a date and time"))
+        }
     }
 }

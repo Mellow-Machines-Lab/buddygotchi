@@ -14,11 +14,11 @@ export const slab=(x,y,w,h,c=P.ink)=>path(`M${x+4} ${y}h${w-8}v4h4v${h-8}h-4v4H$
 export const pad=(x,y,w=28,h=20)=>slab(x,y,w,h,P.ink);
 const cube=(x,y,s=20,c=P.blue)=>rect(x,y,s,s,c)+rect(x+4,y+4,s-8,4,P.ink)+rect(x+s-4,y+4,4,s-4,P.dim);
 const card=(s,y=155,c=P.blue)=>{const w=Math.max(112,(s.length*6-1)*2+20);return slab((320-w)/2,y,w,30,c)+centered(s,y+8,2,P.black);};
-const held=(s,y=155,c=P.blue)=>card(s,y,c)+pad(74,y+11,24,16)+pad(222,y+11,24,16);
+export const held=(s,y=155,c=P.blue)=>card(s,y,c)+pad(74,y+11,24,16)+pad(222,y+11,24,16);
 const paper=(x,y,w=42,h=32,c=P.blue,pattern=0)=>rect(x,y,w,h,P.prop)+rect(x+4,y+4,w-8,h-8,P.black)+rect(x+8,y+8,8,6,c)+rect(x+20,y+8,w-28,4,c)+rect(x+8,y+20,w-16,4,c)+(pattern?rect(x+8,y+26,12,3,P.dim):'');
 const board=(x=83,y=158,w=154,press=-1)=>slab(x,y,w,28,P.dim)+rect(x+4,y+4,w-8,20,P.black)+Array.from({length:20},(_,i)=>rect(x+8+(i%10)*((w-16)/10),y+7+Math.floor(i/10)*9,Math.max(5,(w-36)/10),5,i===press%20?P.ink:P.prop)).join('');
 const desk=()=>rect(45,188,230,4,P.dim);
-const burst=(x,y,phase=1,c=P.prop,n=8)=>Array.from({length:n},(_,i)=>{const dx=[-1,1,-.6,.6,0,-1,1,0][i%8],dy=[-.3,-.3,-1,-1,-1,.5,.5,1][i%8],s=phase>2?4:8;return rect(Math.round(x+dx*(16+phase*9)),Math.round(y+dy*(10+phase*7)),s,s,i%3?c:P.ink);}).join('');
+export const burst=(x,y,phase=1,c=P.prop,n=8)=>Array.from({length:n},(_,i)=>{const dx=[-1,1,-.6,.6,0,-1,1,0][i%8],dy=[-.3,-.3,-1,-1,-1,.5,.5,1][i%8],s=phase>2?4:8;return rect(Math.round(x+dx*(16+phase*9)),Math.round(y+dy*(10+phase*7)),s,s,i%3?c:P.ink);}).join('');
 const lens=(x,y,c=P.blue)=>at(x,y,path('M8 0h28v8h8v28h-8v8H8v-8H0V8h8Zm4 8v4H8v20h4v4h20v-4h4V12h-4V8Z',c)+rect(34,34,8,8,c)+rect(40,40,12,12,P.prop));
 const robot=(x,y,phase=0,c=P.blue,cargo=false)=>at(x,y,rect(12,-5,6,5,P.dim)+slab(0,0,32,24,c)+rect(4,5,24,12,P.black)+rect(8,8,5,5,P.ink)+rect(20,8,5,5,P.ink)+rect(5,24,22,8,P.dim)+rect(phase%2?2:5,32,8,6,c)+rect(phase%2?22:19,32,8,6,c)+(phase===3?pad(29,-5,12,12):pad(-7,20,12,12))+(cargo?cube(26,20,16,P.amber):''));
 const cog=(x,y,r=28,c=P.prop,phase=0)=>at(x,y,rect(-r,-r/2,r*2,r,c)+rect(-r/2,-r,r,r*2,c)+rect(-r/2,-r/2,r,r,P.black)+rect(phase%2?-5:-r/2+4,phase%2?-r/2+4:-5,10,10,c));
@@ -26,7 +26,9 @@ const plug=(x,y,c=P.prop)=>slab(x,y,34,26,c)+rect(x+34,y+4,12,5,c)+rect(x+34,y+1
 const arrow=(x,y,c=P.blue)=>rect(x,y+6,24,6,c)+path(`M${x+20} ${y}h6v6h6v6h-6v6h-6Z`,c);
 const bang=(x,y,c=P.amber)=>rect(x,y,16,40,c)+rect(x,y+48,16,12,c);
 const folder=(x,y,w=80,h=50,c=P.dim)=>rect(x,y,30,8,c)+slab(x,y+8,w,h,c)+rect(x+8,y+16,w-16,4,P.prop);
-const cup=(x,y,s=1)=>at(x,y,group(path('M0 0h56v30h-8v12H8V30H0ZM-14 4H0v7h-7v12H4v7h-18ZM56 4h14v26H52v-7h11V11h-7ZM22 42h12v15h14v8H8v-8h14Z',P.ochre)+rect(9,4,8,22,P.ink),`transform="scale(${s})"`));
+export const cup=(x,y,s=1)=>at(x,y,group(path('M0 0h56v30h-8v12H8V30H0ZM-14 4H0v7h-7v12H4v7h-18ZM56 4h14v26H52v-7h11V11h-7ZM22 42h12v15h14v8H8v-8h14Z',P.ochre)+rect(9,4,8,22,P.ink),`transform="scale(${s})"`));
+// The trophy's card, held up under the cup: COMPLETE in gold.
+export const completeCard=()=>held('COMPLETE',155,P.dark).replaceAll(`fill="${P.black}"`,`fill="${P.gold}"`);
 const quietStates=['no_app','asleep','idle','listening','waiting'];
 const typingActions=['flow-keys','split-keys','tear-type','tissue-type','umbrella-work','cautious-key','matrix','console'];
 
@@ -149,7 +151,7 @@ function work(a,s,press){
  throw new Error('Unauthored working action '+k);
 }
 
-function props(a,step){
+export function props(a,step){
  const s=step.stage,k=a.action,active=s>0&&s<8,n=Math.min(3,Math.max(0,s-1)),dx=[0,0,18,36,54,72,90,40,0][s],c=a.outcome==='success'?P.dark:P.blue;
  if(a.state==='working')return work(a,s,step.press);
  if(a.state==='asleep'){
@@ -227,7 +229,7 @@ function props(a,step){
  if(a.state==='task_complete'){
   if(a.outcome==='success'){
    const fireworks=active?[burst(42,52,s%4,P.ochre),burst(272,57,(s+2)%4,P.ochre),burst(60,145,s%3,P.cheek,5)].join(''):'';
-   if(k==='cup')return fireworks+(active?cup(139,106,.75)+held('COMPLETE',155,P.dark).replaceAll(`fill="${P.black}"`,`fill="${P.gold}"`):'');
+   if(k==='cup')return fireworks+(active?cup(139,106,.75)+completeCard():'');
    if(k==='ribbon')return fireworks+(active?at(135,104,star(0,0,52,P.ochre)+rect(7,37,10,18,P.dark)+rect(33,37,10,18,P.dark))+card('COMPLETE',158,P.prop):'');
    return fireworks+rect(68,178,184,10,P.ochre)+rect(116,165,88,16,P.dark)+(active?cup(143,100,.6)+card('COMPLETE',143,P.prop):'');
   }
@@ -276,7 +278,7 @@ function requestArt(a,step){
  return art;
 }
 
-function background(a,s){
+export function background(a,s){
  if(a.outcome!=='success')return '';
  // Slow tone shifts and traveling coarse tiles, not a full-screen strobe.
  const colors=[P.gold,'#FFD14A','#FFC54A','#FFBA4A','#FFC54A','#FFD14A',P.gold,'#FFD84A',P.gold];

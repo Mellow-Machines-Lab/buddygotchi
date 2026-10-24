@@ -6,14 +6,14 @@
   "mood": "grumpy",
   "checks": {"moves_on_graph": true},
   "steps": [
-    {"event": "turn started", "at": "30s", "prompt": "fix the typo on the pricing page", "expect": {"offered": "grumpy|irritated|whiny|determined|angry|disgusted|annoyed|wounded|sad|frightened|calm|proud", "mood": "grumpy|irritated|annoyed|determined"}},
+    {"event": "turn started", "at": "30s", "prompt": "fix the typo on the pricing page", "reading": {"kind": "fix"}, "expect": {"offered": "grumpy|irritated|whiny|determined|angry|disgusted|annoyed|wounded|sad|frightened|calm|proud", "mood": "grumpy|irritated|annoyed|determined"}},
     {"event": "turn finished", "at": "1m30s", "message": "Fixed the typo; the page renders."},
-    {"event": "turn started", "at": "4m", "prompt": "add validation to the signup form"},
+    {"event": "turn started", "at": "4m", "prompt": "add validation to the signup form", "reading": {"kind": "feature"}},
     {"event": "command", "at": "5m", "topic": "tests", "failed": false},
     {"event": "turn finished", "at": "6m", "message": "Done: the form validates and the tests pass.", "expect": {"mood": "irritated|annoyed|determined|engaged|calm|proud|whiny|happy"}},
-    {"event": "turn started", "at": "9m", "prompt": "update the footer links"},
+    {"event": "turn started", "at": "9m", "prompt": "update the footer links", "reading": {"kind": "feature"}},
     {"event": "turn finished", "at": "10m", "message": "Updated the footer links."},
-    {"event": "turn started", "at": "13m", "prompt": "bump the version"},
+    {"event": "turn started", "at": "13m", "prompt": "bump the version", "reading": {"kind": "deploy"}},
     {"event": "turn finished", "at": "14m", "message": "Bumped the version to 2.1.0.", "expect": {"mood": "calm|engaged|annoyed|happy|curious|proud"}}
   ]
 }

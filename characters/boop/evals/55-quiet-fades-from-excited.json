@@ -1,13 +1,13 @@
 {
-  "name": "Hours of nothing fade an excited Boop a step at a time",
-  "case": "Boop is excited when a quick turn finishes, and then nothing happens for hours. Each hour of nothing fades its mood one step toward calm: to happy after the first (excited has no move straight to calm), then calm after the second.",
-  "why": "characters/boop/steering/guide.md: after an hour of nothing a mood fades a step toward calm; the mood graph has no move from excited to calm, so it goes through happy (characters/boop/steering/mood/excited.md)",
+  "name": "Quiet time fades an excited Boop a step at a time",
+  "case": "Boop is excited when a quick turn finishes, and then nothing happens for hours, with the session still open. Boop's idle check-ins let its mood fade a step at a time once its minutes are up: to happy first (excited has no move straight to calm), then calm. By half an hour it's happy or calm, and two hours on it's calm.",
+  "why": "characters/boop/steering/guide.md: after the minutes MOOD gives a mood fades a step toward calm, at the next pass, which while you're around is an idle check-in; the mood graph has no move from excited to calm, so it goes through happy (characters/boop/steering/mood/excited.md)",
   "mood": "excited",
   "checks": {"moves_on_graph": true},
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "turn finished", "at": "10s"},
-    {"event": "wait", "at": "1h5m", "expect": {"offered": "excited|happy|proud|mischievous|amused|hopeful|curious|determined|frightened|angry|wounded|grumpy|sad", "mood": "happy"}},
+    {"event": "wait", "at": "35m", "expect": {"mood": "happy|calm"}},
     {"event": "wait", "at": "2h5m", "expect": {"mood": "calm"}}
   ]
 }

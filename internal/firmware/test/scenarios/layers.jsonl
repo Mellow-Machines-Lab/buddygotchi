@@ -1,0 +1,54 @@
+// What Pixel wears and the air around it by the tags on
+// (render/pixel/outfit.h), over idle's and asleep's plain variations, the
+// first pinned (dbg.look); its occasions keep their own art, never doubled.
+// Each after a reset, its clock frozen.
+// Night: a nightcap.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","when":["night"]}
+{"t":"dbg.look","variant":1}
+{"clock":500}
+{"shot":"night"}
+// The nightcap occasion itself (happy's eighth idle): its own cap, only one.
+{"t":"dbg.look","variant":8}
+{"clock":900}
+{"shot":"night-occasion"}
+// Asleep at night, in a newer mood: the cap sits as its own does.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","when":["night"]}
+{"t":"dbg.look","variant":1}
+{"clock":500}
+{"shot":"asleep-night"}
+// A party day: a party hat and confetti.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"excited","when":["day","party"]}
+{"t":"dbg.look","variant":1}
+{"clock":500}
+{"shot":"party"}
+// Halloween, winter, Valentine's.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"curious","when":["evening","halloween"]}
+{"t":"dbg.look","variant":1}
+{"clock":500}
+{"shot":"halloween"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","when":["morning","winter"]}
+{"t":"dbg.look","variant":1}
+{"clock":1300}
+{"shot":"winter"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"pleased","when":["day","valentines"]}
+{"t":"dbg.look","variant":1}
+{"clock":500}
+{"shot":"valentines"}
+// Working draws its own props up there: it stays as it is.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"happy","busy":1,"when":["night"]}
+{"clock":500}
+{"shot":"working-night"}

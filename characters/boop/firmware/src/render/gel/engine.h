@@ -15,9 +15,9 @@ class Engine {
  public:
   explicit Engine(uint32_t seed = 53) : random(seed), soundRandom(seed ^ 0xa511e9b3u) {
     postureWeights[slime::kCalm].x = 1;
-    // A step's cues are its contacts, at most a recipe's: room for them now
-    // keeps every frame off the heap (test_gel).
-    cues.reserve(std::size(slime::Recipe{}.contacts));
+    // A step's cues are its contacts, at most a recipe's and a gag's: room
+    // for them now keeps every frame off the heap (test_gel).
+    cues.reserve(std::size(slime::Recipe{}.contacts) + std::size(slime::Gag{}.contacts));
     sync();
   }
   Random random, soundRandom;
@@ -47,6 +47,12 @@ class Engine {
   void setFacts(const Facts& value) {
     router.setFacts(value);
     sync();
+  }
+  // The tags on now (render/tags.h bits) and how long the look has shown:
+  // an occasion's take fits by them at its next pick.
+  void setOccasion(uint32_t when, uint32_t lookMs) {
+    acting.when = scenes.when = when;
+    acting.lookMs = scenes.lookMs = lookMs;
   }
   bool oneShot(const Request& value) {
     bool ok = router.oneShot(value, timeMs());
@@ -95,6 +101,9 @@ class Engine {
   // The mood posture's lean and squash, after the quiet blend.
   std::array<F, 2> posture() const;
   T timeMs() const { return motion.time * 1000; }
+  // How closed the eyes are drawn: the idle blink or a gag's lids, whichever
+  // is more.
+  F blink() const { return max(motion.blink(), acting.closure()); }
 
  private:
   bool stamped_ = false;
@@ -102,5 +111,9 @@ class Engine {
   int cueGeneration_ = -1, cueIteration_ = -1, cueCount_ = 0;
   History<uint64_t, 64> revealed_;
   void consumeCues();
+  // Whether a contact sounds: a gag's anywhere, at the routine chance; a
+  // scene's never in a quiet state, a reveal once per request, a desk loop's
+  // within its cycle's routine budget and any other's on its first loop.
+  bool admits(const ContactEvent& c, SceneState state, bool quiet, bool protect);
 };
 }  // namespace render::gel

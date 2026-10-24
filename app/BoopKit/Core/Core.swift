@@ -11,7 +11,8 @@ import MellowHarness
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
 /// reaction it plays (`starting`, `stopped`, `error`, `helper_return`),
-/// as a `did` named after it. It also
+/// as a `did` named after it. A session whose agent's process ended while
+/// it waited or worked it records as its turn stopping (`agentGone`). It also
 /// keeps push-to-talk (`Talk`): when the mic
 /// goes on and off and when `listening` ends, recorded as `listen` events
 /// that make no line. What the brain hears is the view's; everything
@@ -26,7 +27,6 @@ public final class Core {
     public struct Config: Sendable {
         public var volume: Int
         public var time: LocalTime
-        public var seed: UInt64
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
         /// app starts each launch somewhere random
@@ -36,12 +36,19 @@ public final class Core {
         /// Whose rules these are: the buddy's character, the process's by
         /// default.
         public var pack: CharacterPack
+        /// The day Boop hatched (`yyyy-MM-dd`), for its milestone days; nil
+        /// for none.
+        public var hatched: String?
+        /// The growth stage Boop reached last and the day it did: that day
+        /// is a party (`Occasions`).
+        public var stageReached: (name: String, day: String)?
 
-        public init(volume: Int = 6, time: LocalTime = LocalTime(), seed: UInt64 = 1, pack: CharacterPack = .active) {
+        public init(volume: Int = 6, time: LocalTime = LocalTime(), pack: CharacterPack = .active,
+                    hatched: String? = nil) {
             self.volume = volume
             self.time = time
-            self.seed = seed
             self.pack = pack
+            self.hatched = hatched
         }
     }
 
@@ -53,11 +60,14 @@ public final class Core {
     /// reactions are drawn in: the runtime reads it from the transcript,
     /// where the mood output keeps it. The resting mood until it's set.
     var mood: () -> String
+    /// The growth stage Boop is at, from 1, which every `state` carries as
+    /// its tags (`Occasions.stages`): the runtime reads it from the growth
+    /// store. A Hatchling's until it's set.
+    var stage: () -> Int = { 1 }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
     var sessions: [String: Session] { tracker.sessions }
-    var rng: SplitMix64
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
     var lastActiveDay: String?
@@ -65,14 +75,16 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
-    /// The visual the device shows and its variation, from 1, and the last
-    /// variation each visual showed, which the next one there avoids.
-    var shown: (visual: String, variant: Int) = ("", 1)
-    var lastVariant: [String: Int] = [:]
+    /// The session a BOOT press opened last, and when.
+    var lastHanded: (key: String, at: Int64)?
     /// The activity the working look shows (`updateActs`), and each
     /// working session's, held.
     var shownAct: Timed?
     var held: [String: Timed] = [:]
+    /// The calendar's tags, worked out once a quarter of an hour: every
+    /// time zone's hours start on one, so the part of the day and the date
+    /// can't change within it.
+    var whenCache: (slot: Int64, hatched: String?, stage: String?, tags: [String])?
     /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
@@ -86,6 +98,28 @@ public final class Core {
     var expired: Set<String> = []
     /// Why a request the safety net expired cleared.
     static let expiredWhy = "nothing for 10 minutes"
+    /// The sessions whose agent's process ended while they waited or
+    /// worked, until the stopped turn that says so is recorded.
+    var gone: [String: (agent: Agent, id: String)] = [:]
+    /// The hook name of that stopped turn, and its why and its request's.
+    public static let agentGone = "AgentGone"
+    static let agentGoneWhy = "its agent's process ended"
+    /// Set while a launch reads the transcript back: the sessions in it end
+    /// as it says, never as today's processes do.
+    let readingBack: Flag
+    final class Flag { var on = false }
+    /// The requests you dismissed on the board or in the popover, by
+    /// session: the request's number, so the session's next request shows
+    /// again. A dismissed request stops showing, though its agent still
+    /// waits, and its session stays in BOOT's line, after the requests that
+    /// show (`groups`). An old number can't match a later request's. A
+    /// launch reads them back from their `needs_you` ends (`replay`).
+    var dismissed: [String: Int] = [:]
+    /// Why a request you dismissed stopped showing.
+    static let dismissedWhy = "you dismissed it"
+    /// The board's gesture for it: a finger held on the needs-you sign,
+    /// with the number of the request the sign showed (`attn.id`).
+    public static let dismissGesture = "dismiss"
 
     // Push-to-talk.
     /// Who turned the Mac's mic on: the device's BOOT button or the app's
@@ -134,14 +168,19 @@ public final class Core {
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
-    /// `place` names a working directory's project.
+    /// `place` names a working directory's project. `isRunning` says
+    /// whether an agent's process still runs (evals and demos, whose agents
+    /// are made up, say yes).
     public init(config: Config, lastActiveDay: String? = nil,
-                place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
+                place: @escaping (String) -> Place = { Place.at(cwd: $0) },
+                isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
         self.config = config
         mood = { config.pack.defaultMood }
         self.lastActiveDay = lastActiveDay
-        tracker = SessionTracker(firstRequest: config.firstAsk, place: place)
-        rng = SplitMix64(seed: config.seed)
+        let readingBack = Flag()
+        self.readingBack = readingBack
+        tracker = SessionTracker(firstRequest: config.firstAsk, place: place,
+                                 isRunning: { readingBack.on || isRunning($0) })
     }
 
     /// The rules' reactions.
@@ -196,8 +235,11 @@ public final class Core {
     /// where the sessions folded again disagree (a launch that missed an
     /// end, or ran the timers at other times), the first publish records
     /// the start or end that's missing, with why a request the read-back
-    /// cleared did.
+    /// cleared did. A request you dismissed stays dismissed while its
+    /// session still waits on it.
     public func replay(_ event: Event) {
+        readingBack.on = true
+        defer { readingBack.on = false }
         if let agentEvent = AgentEvent(event) {
             _ = fold(agentEvent, ref: event.seq)
             return
@@ -207,7 +249,13 @@ public final class Core {
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
             shownNeeds[key] = event.phase == .start ? (agent, session) : nil
-            if event.phase == .start { expired.remove(key) }
+            if event.phase == .start {
+                expired.remove(key)
+                dismissed[key] = nil
+            } else if event["why"]?.string == Core.dismissedWhy, let s = sessions[key], s.needsSince != nil {
+                // This launch numbers the request afresh.
+                dismissed[key] = s.request
+            }
         }
     }
 
@@ -243,16 +291,17 @@ public final class Core {
             return nil
         case .turnEnded(let outcome, let endedTurn):
             // Only a stop that ends a turn plays its reaction: Claude's idle
-            // notice after a turn that finished doesn't.
+            // notice after a turn that finished doesn't, nor an agent gone,
+            // which nobody stopped.
             held[key] = nil
-            return outcome == .stopped && endedTurn ? DeviceReaction(anim: Core.stopped) : nil
+            return outcome == .stopped && endedTurn && event.hook != Core.agentGone ? DeviceReaction(anim: Core.stopped) : nil
         case .subagentEnded(let returned):
             // A helper Boop saw start returns, while its turn goes on.
             return returned ? DeviceReaction(anim: Core.helperReturn) : nil
         case .sessionEnded:
             held[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .requestExpired, .other:
+        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .other:
             return nil
         }
     }
@@ -270,14 +319,10 @@ public final class Core {
             if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
             lastErrorAt = now
         }
-        var reaction = rule
-        reaction.variant = Core.pickVariant(mood: mood(), state: anim, ctx: rule.ctx,
-                                            avoiding: lastVariant[anim], in: config.pack, &rng)
-        lastVariant[anim] = reaction.variant
-        fx.append(.reaction(reaction))
-        let played = Core.played(reaction, by: config.pack.name)
+        fx.append(.reaction(rule))
+        let played = Core.played(rule, by: config.pack.name)
         var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
-                            facts: reaction.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+                            facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
         if played == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
@@ -306,6 +351,18 @@ public final class Core {
         advance(to: now)
         startDayIfNew(now, &fx)
         poked(now, seq: seq, finish: finish, &fx)
+        publish(now, &fx)
+        return fx
+    }
+
+    /// BOOT pressed with someone in line (`line`), recorded as `seq`: it
+    /// hands you the next agent (`pressed`).
+    @discardableResult
+    public func press(at now: Int64, seq: Int? = nil) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        startDayIfNew(now, &fx)
+        pressed(now, seq: seq, &fx)
         publish(now, &fx)
         return fx
     }
@@ -409,6 +466,17 @@ public final class Core {
         return fx
     }
 
+    /// Boop reached the growth stage `name` on `day` (today's at `now` by
+    /// default): the rest of that day is a party, which a `state` carries
+    /// at once.
+    @discardableResult
+    public func reachedStage(_ name: String, day: String? = nil, at now: Int64) -> [CoreEffect] {
+        config.stageReached = (name, day ?? self.day(now))
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     /// The mood output saved a new mood (`mood` reads it): a `state`
     /// carries it at once.
     @discardableResult
@@ -444,21 +512,54 @@ public final class Core {
     // MARK: - Reading
 
     public func snapshot(at now: Int64) -> StateSnapshot {
-        let (waiting, working, _) = tracker.grouped(at: now)
+        let (shown, dismissed, working, idle) = groups(at: now)
         let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
-        let attn = waiting.first.map {
+        let attn = shown.first.map {
             StateSnapshot.Attention(
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
                 name: $0.name.map { StateSnapshot.clip($0, marked: true, max: StateSnapshot.maxSignBytes) } ?? "",
-                more: waiting.count - 1, id: $0.request)
+                more: shown.count - 1, id: $0.request)
         }
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
-        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
-                                     vol: config.volume, variant: 1)
-        if shown.visual == snapshot.visual { snapshot.variant = shown.variant }
-        return snapshot
+        let helpers = working.reduce(0) { $0 + $1.helpers.count }
+        // The turn that has run longest: the working tier counts from its
+        // start, and the board shows its list.
+        let longest = working.filter { $0.turn.startedAt != nil }
+            .min { ($0.turn.startedAt!, $0.order) < ($1.turn.startedAt!, $1.order) }
+        let todo = attn == nil ? longest?.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil
+        // Idle's tier counts from the last turn to end, once nothing works:
+        // a request you dismissed is still waiting, not idle.
+        let idleSince = working.isEmpty ? idle.map { $0.turn.lastEndedAt ?? $0.lastEventAt }.max() : nil
+        // A request you dismissed waits on you as an idle session does.
+        return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
+                             idle: idle.count + dismissed.count, helpers: helpers, vol: config.volume,
+                             when: when(at: now, workingSince: longest?.turn.startedAt, idleSince: idleSince), todo: todo)
+    }
+
+    /// The tags on at `now`: the calendar's, then the working tier, from
+    /// the start of the longest turn working (`workingSince`), else idle's,
+    /// from the last turn's end (`idleSince`), then the growth stage's, in
+    /// `Occasions.all`'s order.
+    func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
+        var on = calendar(at: now)
+        if let workingSince {
+            on += Occasions.tier(Occasions.workTiers, after: now - workingSince).map { [$0] } ?? []
+        } else if let idleSince {
+            on += Occasions.tier(Occasions.idleTiers, after: now - idleSince).map { [$0] } ?? []
+        }
+        on += Occasions.stages(stage())
+        return Occasions.all.filter(on.contains)
+    }
+
+    /// The calendar's tags, worked out once a quarter of an hour.
+    func calendar(at now: Int64) -> [String] {
+        let wall = wall(now), slot = wall / 900_000, stage = config.stageReached?.day
+        if let c = whenCache, c.slot == slot, c.hatched == config.hatched, c.stage == stage { return c.tags }
+        let tags = Occasions.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
+        whenCache = (slot, config.hatched, stage, tags)
+        return tags
     }
 
     /// starting's `ctx` for a session whose context was compacted.
@@ -476,24 +577,13 @@ public final class Core {
         }
     }
 
-    /// A variation of `mood`'s design for `state` at random, from 1, among
-    /// those for `outcome` and `ctx` (FaceLoops.variants), never `last`
-    /// when there's another: the rules pick it for now,
-    /// and the harness may later.
-    public static func pickVariant(mood: String, state: String, outcome: String? = nil, ctx: String? = nil,
-                                   avoiding last: Int?, in pack: CharacterPack = .active, _ rng: inout SplitMix64) -> Int {
-        let fit = FaceLoops.variants(mood: mood, state: state, outcome: outcome, ctx: ctx, in: pack)
-        let choices = fit.filter { $0 != last }
-        guard !choices.isEmpty else { return fit.first ?? 1 }
-        return choices[rng.int(in: 0...(choices.count - 1))]
-    }
-
-    /// Every session, for the popover's list, in the tracker's order:
-    /// those that need you (oldest first), then working, then idle. The
-    /// device doesn't get these.
+    /// Every session, for the popover's list, in `groups`' order: those
+    /// whose request shows, then those whose request you dismissed, both
+    /// waiting, then working, then idle. The first waiting is the one the
+    /// sign names. The device doesn't get these.
     public func sessionList(at now: Int64) -> [SessionSummary] {
-        let (waiting, working, idle) = tracker.grouped(at: now)
-        return waiting.map { SessionSummary($0, .waiting) } + working.map { SessionSummary($0, .working) }
+        let (shown, dismissed, working, idle) = groups(at: now)
+        return (shown + dismissed).map { SessionSummary($0, .waiting) } + working.map { SessionSummary($0, .working) }
             + idle.map { SessionSummary($0, .idle) }
     }
 
@@ -520,7 +610,35 @@ public final class Core {
     private func day(_ now: Int64) -> String { config.time.day(wall(now)) }
 
     /// Whether "needs you" shows: then no event's pass starts.
-    public var needsYouShowing: Bool { tracker.needsYou }
+    public var needsYouShowing: Bool { sessions.values.contains { $0.needsSince != nil && !isDismissed($0) } }
+
+    /// Whether `s` waits on a request you dismissed.
+    func isDismissed(_ s: Session) -> Bool { s.needsSince != nil && dismissed[s.key] == s.request }
+
+    /// The sessions as Boop shows them at `now`, each in the tracker's
+    /// order: those whose request shows (oldest first), those waiting on a
+    /// request you dismissed, then working, then idle.
+    func groups(at now: Int64) -> (shown: [Session], dismissed: [Session], working: [Session], idle: [Session]) {
+        let (waiting, working, idle) = tracker.grouped(at: now)
+        return (waiting.filter { !isDismissed($0) }, waiting.filter(isDismissed), working, idle)
+    }
+
+    /// Dismisses a request that shows: the session `key`'s, from the
+    /// popover, or the one numbered `request` (`attn.id`), from the board,
+    /// which names the request its sign showed, so one that took the sign
+    /// as the first was answered isn't dismissed unseen. It stops showing
+    /// on the board and in the menu bar, but the agent still waits, and
+    /// nothing answers it. The session's next request shows again. Its
+    /// `needs_you` ends, saying so.
+    @discardableResult
+    public func dismiss(_ key: String? = nil, request: Int? = nil, at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        let shown = groups(at: now).shown
+        if let s = shown.first(where: { s in key.map { s.key == $0 } ?? (s.request == request) }) { dismissed[s.key] = s.request }
+        publish(now, &fx)
+        return fx
+    }
 
     /// The first activity of a new day, for the transcript's pruning.
     func startDayIfNew(_ now: Int64, _ fx: inout [CoreEffect]) {
@@ -548,9 +666,45 @@ public final class Core {
             fx.append(.open(thread))
         }
         let name = config.pack.name
-        if let waiting = tracker.grouped(at: now).waiting.first { return open(waiting.thread, Core.openedThread(by: name)) }
+        if let waiting = groups(at: now).shown.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
         fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
+    }
+
+    /// Presses within this long of the last walk down the line: each opens
+    /// the one after the one opened last. After it, a press starts again
+    /// at the top.
+    public static let walkMs: Int64 = 8_000
+
+    /// Who a BOOT press hands you, in order: those that need you, oldest
+    /// first, the request that shows before one you dismissed; then the
+    /// idle ones, the one that finished last first (the oldest idle session
+    /// is usually one you've left).
+    func line(at now: Int64) -> [Session] {
+        let (shown, dismissed, _, idle) = groups(at: now)
+        return shown + dismissed + idle.sorted { ($0.lastEventAt, $0.order) > ($1.lastEventAt, $1.order) }
+    }
+
+    /// A BOOT press: opens the next session in the line on the Mac,
+    /// recorded as the `open_thread` action, by the button.
+    func pressed(_ now: Int64, seq: Int?, _ fx: inout [CoreEffect]) {
+        guard !showsListening(at: now) else { return }
+        let line = line(at: now)
+        guard !line.isEmpty else { return }
+        var next = 0
+        if let last = lastHanded, now - last.at < Self.walkMs, let i = line.firstIndex(where: { $0.key == last.key }) {
+            next = (i + 1) % line.count
+        }
+        let s = line[next]
+        lastHanded = (s.key, now)
+        let thread = TranscriptView.Thread(s).name
+        let more = line.count - 1
+        let message = "\(config.pack.name) handed you \(s.agent.rawValue) on \(EventLine.thread(name: thread, project: s.project))"
+            + (more > 0 ? "; \(more) more in line." : ".")
+        fx.append(.record(Event.did(message, for: seq, action: Core.openThread, by: "button",
+                                    facts: ["agent": .string(s.agent.rawValue), "thread": .string(thread), "more": .int(Int64(more)),
+                                            "waiting": .bool(s.needsSince != nil)], at: now)))
+        fx.append(.open(s.thread))
     }
 
     /// Turns the mic on, if it's off, recorded as `listen_start`. After the
@@ -615,20 +769,43 @@ public final class Core {
     public static let needsYou = "needs_you"
 
     /// Runs the session table's timers due by `now`: a
-    /// Codex request past its grace shows, the safety net, and forgetting.
-    /// Each request the safety net expires is kept for its `needs_you` end.
+    /// Codex request past its grace shows, the safety net, a session whose
+    /// agent's process is gone stops waiting and working, and forgetting.
+    /// Each request the safety net expires is kept for its `needs_you` end,
+    /// and each session whose agent is gone for its stopped turn.
     /// `sparing`'s Codex request isn't shown: its event comes first.
     func advance(to now: Int64, sparing: String? = nil) {
-        for (key, change) in tracker.advance(to: now, sparing: sparing) where change == .requestExpired {
-            expired.insert(key)
+        let before = sessions
+        for (key, change) in tracker.advance(to: now, sparing: sparing) {
+            switch change {
+            case .requestExpired: expired.insert(key)
+            case .agentGone:
+                held[key] = nil
+                if let s = before[key] { gone[key] = (s.agent, s.id) }
+            default: break
+            }
+        }
+    }
+
+    /// A session whose agent's process ended while it waited or worked,
+    /// recorded by rule as its turn stopping, so the view, and a later
+    /// launch reading the transcript back, stop it from the transcript, not
+    /// from the processes running then. The session stays, idle.
+    func recordGone(_ now: Int64, _ fx: inout [CoreEffect]) {
+        for (_, s) in gone.sorted(by: { $0.key < $1.key }) {
+            var e = Event(AgentEvent(agent: s.agent, kind: .turn, phase: .end, hook: Core.agentGone, session: s.id, at: now,
+                                     outcome: .stopped))
+            e.data["by"] = "rule"
+            e.data["why"] = .string(Core.agentGoneWhy)
+            fx.append(.record(e))
         }
     }
 
     /// "Needs you" starting or clearing for a session, as a rule action:
-    /// the view says who needs you from its start. A session gone while it
-    /// waited clears too.
+    /// the view says who needs you from its start. A session whose agent
+    /// is gone, or that ended, while it waited clears too.
     func recordNeeds(_ now: Int64, _ fx: inout [CoreEffect]) {
-        let showing = sessions.filter { $0.value.needsSince != nil }
+        let showing = sessions.filter { $0.value.needsSince != nil && !isDismissed($0.value) }
         for (key, s) in showing.sorted(by: { ($0.value.needsSince!, $0.value.request) < ($1.value.needsSince!, $1.value.request) })
         where shownNeeds[key] == nil {
             shownNeeds[key] = (s.agent, s.id)
@@ -641,7 +818,8 @@ public final class Core {
         }
         for (key, was) in shownNeeds.sorted(by: { $0.key < $1.key }) where showing[key] == nil {
             shownNeeds[key] = nil
-            let why = expired.remove(key) != nil ? Core.expiredWhy : sessions[key] == nil ? "the session ended" : nil
+            let why: String? = expired.remove(key) != nil ? Core.expiredWhy : gone[key] != nil ? Core.agentGoneWhy
+                : sessions[key] == nil ? "the session ended" : sessions[key].map(isDismissed) == true ? Core.dismissedWhy : nil
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(was.agent.rawValue),
                                              "outcome": why == nil ? "done" : "failed"]
             if let why { data["why"] = .string(why) }
@@ -651,17 +829,11 @@ public final class Core {
     }
 
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
+        recordGone(now, &fx)
         recordNeeds(now, &fx)
+        gone = [:]
         updateActs(now)
-        var snapshot = snapshot(at: now)
-        if snapshot.visual != shown.visual || shown.variant > FaceLoops.count(mood: snapshot.mood, state: snapshot.visual, in: config.pack) {
-            // A new visual, or a new mood with fewer variations of it than
-            // the one showing: a variation of it at random.
-            shown = (snapshot.visual, Core.pickVariant(mood: snapshot.mood, state: snapshot.visual,
-                                                         avoiding: lastVariant[snapshot.visual], in: config.pack, &rng))
-            lastVariant[snapshot.visual] = shown.variant
-            snapshot.variant = shown.variant
-        }
+        let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
         defer { lastSessions = sessions }
         if snapshot != lastPublished {

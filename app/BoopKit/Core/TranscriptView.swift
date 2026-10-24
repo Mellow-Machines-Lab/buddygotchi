@@ -73,6 +73,9 @@ public final class TranscriptView {
         /// This turn's tool calls, and how many failed.
         var tools = 0
         var toolsFailed = 0
+        /// The lines this turn's edits added and removed: counts, never
+        /// the text.
+        var linesAdded = 0, linesRemoved = 0
         /// This turn's topics, in the order first seen, with their last state.
         var topicStates: [(topic: String, state: String)] = []
         /// A topic that passed after failing this turn.
@@ -82,6 +85,14 @@ public final class TranscriptView {
         var check: (topic: String, failed: Bool)?
         /// Failures in a row of each check topic, across turns.
         var failRuns: [String: Int] = [:]
+        /// This turn's failed checks, which a failed finish counts.
+        var checksFailed = 0
+        /// Quick wins in a row on the thread, across turns, and when the
+        /// last one finished: a finish done in under `quickWinMs` within
+        /// `winRunGapMs` of the last.
+        var wins: (run: Int, at: Int64)?
+        /// This turn's working heartbeats.
+        var checkIns = 0
     }
 
     /// A thread as the lines name it: its session's agent, project and
@@ -115,19 +126,29 @@ public final class TranscriptView {
         /// The sessions, and what each one's turn did.
         var sessions: SessionTracker
         var counts: [String: Counts] = [:]
-        /// The run of pokes going on, on each buddy (`""` for the only one).
-        var pokes: [String: [Int64]] = [:]
+        /// The run of pokes going on, on each buddy (`""` for the only one):
+        /// when each came, and whether the run came again, within `againMs`
+        /// of the run before.
+        var pokes: [String: (at: [Int64], again: Bool)] = [:]
         /// The away you haven't come back from: its
         /// event's `seq` and when you left.
         var awaySince: (seq: Int, at: Int64)?
+        /// The buddies lying face down (`""` for the only one), from their
+        /// `facedown` until their `peekaboo`.
+        var faceDown: Set<String> = []
         /// The last agent event, poke, thing you said or coming back, and
         /// the idle heartbeats since.
         var lastActivityAt: Int64?
         var heartbeats = 0
-        /// The last event folded.
+        /// The last event folded, and whether the last agent event had a
+        /// line: a request it answered says so only when it didn't.
         var at = 0
+        var lastAgentLined = false
 
-        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place) }
+        /// Its tracker never asks whether an agent's process runs: the core
+        /// records a session whose agent is gone as its turn stopping
+        /// (`Core.agentGone`), so the fold depends on the log alone.
+        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place, isRunning: { _ in true }) }
     }
 
     /// The personality's settings: how often the working heartbeat comes
@@ -145,6 +166,9 @@ public final class TranscriptView {
     /// a reaction (the newest `react` start it has seen), with its random
     /// waits.
     var nextWorkBeatAt: Int64?
+    /// The idle check-in's schedule: the activity it follows, and when it's
+    /// next due, drawn after that activity and after each check-in.
+    var idleBeat: (after: Int64, due: Int64)?
     var reactSeen = 0
     var rng: SplitMix64
 
@@ -164,6 +188,15 @@ public final class TranscriptView {
     /// The topics whose failing command fails a turn.
     static let checks: Set<String> = ["tests", "build", "deploy"]
 
+    /// A finish done in under this is a quick win, and quick wins within
+    /// `winRunGapMs` of each other are a run the line counts, as it counts
+    /// pokes, in streaks of `EventLine.streak`: the brain answers each rung
+    /// differently, where it would answer the same line the same way every
+    /// time, and a long run goes round the ladder again rather than staying
+    /// on its top rung.
+    public static let quickWinMs: Int64 = 5 * 60_000
+    public static let winRunGapMs: Int64 = 10 * 60_000
+
     /// A poke within this of the one before is another in a row, which its
     /// line counts.
     public static let inARowMs: Int64 = 3000
@@ -174,25 +207,38 @@ public final class TranscriptView {
     /// While no thread works, a heartbeat after this long with no event,
     /// and again every time as long again passes.
     public static let heartbeatMs: Int64 = 60 * 60 * 1000
+    /// For this long after the last agent event, poke, thing you said or
+    /// coming back, while a session is open and you're at the Mac, the
+    /// idle heartbeat comes at the personality's `idle_heartbeat` pace
+    /// instead: an idle check-in, so Boop has something to fidget at
+    /// while you're around.
+    public static let idleWindowMs: Int64 = 2 * 60 * 60 * 1000
+    /// A run of pokes within this of the run before it is that run again,
+    /// which its line says.
+    public static let againMs: Int64 = 2 * 60_000
 
     /// A new personality's settings, from the next event on. The working
     /// heartbeat starts its wait again at the new pace.
     public func setRules(_ rules: Personality.Rules) {
         self.rules = rules
         nextWorkBeatAt = nil
+        idleBeat = nil
     }
 
     // MARK: - Registration
 
     /// Each kind's `wake`: what you said goes ahead
-    /// of a finished turn, which goes ahead of the rest.
+    /// of a finished turn, which goes ahead of the rest. A turn start
+    /// whose prompt is being read waits for its reading (`hold`).
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
-        "reacted": 0,
+        "turn_start": 0, "prompt": 0, "turn_end": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "heartbeat": 0,
+        "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
     ]
 
-    /// The kinds with lines that never wake the brain.
-    public static let quiet = ["presence_start", "needs_you_start"]
+    /// The kinds with lines that never wake the brain: a BOOT press that
+    /// opens an agent is the board's own reaction, as a tap that opens a
+    /// thread is.
+    public static let quiet = ["presence_start", "needs_you_start", "press"]
 
     /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
@@ -202,7 +248,7 @@ public final class TranscriptView {
     public func register(on h: Harness, needsYou: @escaping (_ buddy: String?) -> String?) {
         for (kind, wake) in Self.wakes {
             h.input(kind, wake: wake) { [weak self] e, log in self?.line(e, log) }
-            h.hold(kind) { [weak self] e, log, voice in self?.hold(e, log, needsYou: { needsYou(voice?.id) }) }
+            h.hold(kind) { [weak self] e, log, voice in self?.hold(e, log, buddy: voice?.id, needsYou: { needsYou(voice?.id) }) }
         }
         for kind in Self.quiet {
             h.input(kind) { [weak self] e, log in self?.line(e, log) }
@@ -213,12 +259,22 @@ public final class TranscriptView {
     /// Why `e` may not wake the brain now, or nil if it may:
     /// nothing but what you said while something needs you; not a tap that
     /// opened a thread; and not a poke while the brain's reaction to its
-    /// run is in progress, with the mood unchanged.
-    public func hold(_ e: Event, _ log: LogView, needsYou: () -> String?) -> String? {
+    /// run is in progress, with the mood unchanged; and nothing but what
+    /// you said while the buddy (`e`'s, else `buddy`, else any) lies face
+    /// down, which is do not disturb: the board would refuse a reaction.
+    public func hold(_ e: Event, _ log: LogView, buddy: String? = nil, needsYou: () -> String?) -> String? {
         if let type = e.type, !Self.wakesWhileNeeded.contains(type), let why = needsYou() { return why }
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
+        if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
+        if e[PromptIntake.readingFollows]?.bool == true { return "its prompt's reading wakes the brain" }
+        // Folded up to `e` at most: `e` itself, if folded, is neither of
+        // the two gestures that change it, so the fold says as before it.
+        for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
+        let key = e.buddy ?? buddy
+        let down = key.map { fold.faceDown.contains($0) || fold.faceDown.contains("") } ?? !fold.faceDown.isEmpty
+        if down, e.type != .talk, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
@@ -232,8 +288,9 @@ public final class TranscriptView {
     /// `tool_uses: all`).
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.talk?, nil), (.heartbeat?, nil),
-             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?): true
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
+             (.heartbeat?, nil),
+             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable || allToolEnds
         default: false
         }
@@ -283,11 +340,25 @@ public final class TranscriptView {
     /// them.
     func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
-        if let a = AgentEvent(e) { return agentEvent(a) }
+        if let a = AgentEvent(e) {
+            let line = agentEvent(a)
+            fold.lastAgentLined = line != nil
+            return line
+        }
         advance(to: e.at)
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return nil
         case .poke?: return poke(e)
+        case .press?:
+            noteActivity(e.at)
+            return Line(EventLine.pressed(name: name(e)))
+        case .prompt?:
+            return promptRead(e)
+        case .gesture?:
+            noteActivity(e.at)
+            if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
+            if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
+            return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .talk?: return talk(e)
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
@@ -318,7 +389,9 @@ public final class TranscriptView {
         // A hook that landed after its session ended, or a stale idle
         // notice, doesn't count.
         guard let change = fold.sessions.handle(a) else { return nil }
-        noteActivity(now)
+        // An agent gone stops its turn, but nobody did anything.
+        let gone = a.hook == Core.agentGone
+        if !gone { noteActivity(now) }
         guard let s = fold.sessions.sessions[key] else {
             fold.counts[key] = nil
             return nil
@@ -335,8 +408,7 @@ public final class TranscriptView {
             c.topic = nil
             resetCounts(&c)
             return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
-                        notes: a.prompt.flatMap(EventLine.prompt).map { [$0] } ?? [],
-                        facts: ["thread": threadFacts(t), "prompt": .of(a.prompt)])
+                        facts: ["thread": threadFacts(t)])
         case .activity:
             var topic = a.topic
             var line: Line?
@@ -358,6 +430,11 @@ public final class TranscriptView {
             // turn stopped, or the first Boop hears from a session)
             // finishes nothing the fold saw.
             guard case .turnEnded(_, endedTurn: true) = change, let started = before?.turn.startedAt else { return nil }
+            // An agent gone finished nothing: its turn just stops.
+            if gone {
+                c.check = nil
+                return nil
+            }
             let check = c.check
             c.check = nil
             // A turn the fold joined partway (it never saw a prompt) isn't
@@ -369,9 +446,16 @@ public final class TranscriptView {
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
+            let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
+            c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
             return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil,
                              message: step == .turnEnd ? a.message : nil, lengthMs: max(0, now - started))
-        case .sessionStart, .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
+        case .sessionStart:
+            // The agent's context was compacted: it carries on from a
+            // summary. Any other session start is no line.
+            guard case .sessionStarted(let source) = change, source == Mapping.compacted else { return nil }
+            return Line(EventLine.compacted(agent: t.agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
+        case .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
             return nil
         }
     }
@@ -382,9 +466,13 @@ public final class TranscriptView {
     func resetCounts(_ c: inout Counts) {
         c.tools = 0
         c.toolsFailed = 0
+        c.linesAdded = 0
+        c.linesRemoved = 0
         c.topicStates = []
         c.comeback = nil
         c.check = nil
+        c.checksFailed = 0
+        c.checkIns = 0
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
@@ -394,6 +482,7 @@ public final class TranscriptView {
         let tookMs = started.map { max(0, a.at - $0) }
         c.tools += 1
         if failed == true { c.toolsFailed += 1 }
+        if failed != true { c.linesAdded += a.linesAdded ?? 0; c.linesRemoved += a.linesRemoved ?? 0 }
 
         var failedBefore = 0
         var notable = false
@@ -402,6 +491,7 @@ public final class TranscriptView {
                 failedBefore = c.failRuns[topic] ?? 0
                 if failed {
                     c.failRuns[topic] = failedBefore + 1
+                    c.checksFailed += 1
                     notable = true
                 } else {
                     c.failRuns[topic] = 0
@@ -419,7 +509,8 @@ public final class TranscriptView {
         let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
         let text = notable
-            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!)
+            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
+                              inARow: failedBefore + 1)
             : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
             "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
@@ -446,11 +537,15 @@ public final class TranscriptView {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
-                                     lengthMs: lengthMs, tools: c.tools)
+                                     lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
+                                     ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak),
+                                     linesGone: c.linesRemoved - c.linesAdded)
         return Line(text, notes: message.flatMap(EventLine.lastMessage).map { [$0] } ?? [],
                     facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
+                            "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
+                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "message": .of(message)])
     }
 
@@ -469,6 +564,19 @@ public final class TranscriptView {
         fold.heartbeats = 0
     }
 
+    // MARK: Your prompt
+
+    /// Your prompt's reading, under its turn's thread: what you asked for,
+    /// how long and how you sound, and your words for a sign as a note.
+    func promptRead(_ e: Event) -> Line? {
+        guard let reading = PromptReading(facts: e.data) else { return nil }
+        noteActivity(e.at)
+        let t = Self.about(e, facts: nil).flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
+        return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine), name: name(e)),
+                    notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
+                    facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
+    }
+
     // MARK: Pokes
 
     /// A poke, with how many came in a row: each within `inARowMs` of the
@@ -477,14 +585,17 @@ public final class TranscriptView {
         let now = e.at
         noteActivity(now)
         let who = e.buddy ?? ""
-        var pokes = fold.pokes[who] ?? []
-        if let last = pokes.last, now - last >= Self.inARowMs { pokes.removeAll() }
-        pokes.append(now)
-        fold.pokes[who] = pokes
-        let count = pokes.count
-        let seconds = max(1, Int((now - pokes[0] + 999) / 1000))
-        return Line(EventLine.poke(inARow: count, name: name(e)),
-                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds))])
+        var run = fold.pokes[who] ?? ([], false)
+        if let last = run.at.last, now - last >= Self.inARowMs { run = ([], now - last < Self.againMs) }
+        run.at.append(now)
+        fold.pokes[who] = run
+        let count = run.at.count
+        let seconds = max(1, Int((now - run.at[0] + 999) / 1000))
+        // The first poke of a run wakes Boop; the rest find it awake.
+        let asleep = count == 1 && fold.sessions.sessions.isEmpty
+        return Line(EventLine.poke(inARow: count, name: name(e), asleep: asleep, again: run.again),
+                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds)), "asleep": .bool(asleep),
+                            "again": .bool(run.again)])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to
@@ -623,9 +734,17 @@ public final class TranscriptView {
             return Event(at: now, source: .clock, type: .heartbeat, specificType: "working")
         }
         nextWorkBeatAt = nil
-        guard !working, let last = fold.lastActivityAt, (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else {
-            return nil
+        guard !working, let last = fold.lastActivityAt else { return nil }
+        // An idle check-in, at the personality's pace: a session is open,
+        // you're at the Mac, and it's within `idleWindowMs` of the last
+        // activity. Nights and weekends stay hourly.
+        if let gap = rules.idleBeatMs, fold.awaySince == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+            if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
+            guard let beat = idleBeat, now >= beat.due else { return nil }
+            idleBeat = (last, now + Int64(rng.int(in: gap)))
+            return Event(at: now, source: .clock, type: .heartbeat, specificType: "check_in")
         }
+        guard (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else { return nil }
         return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
     }
 
@@ -635,11 +754,26 @@ public final class TranscriptView {
         if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
             let t = Thread(s)
             let ms = max(0, now - (s.turn.startedAt ?? now))
-            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms),
-                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(fold.counts[s.key]?.topic)])
+            // Each check-in on a turn is a rung of a ladder, as quick wins
+            // are: the line says which.
+            var c = fold.counts[s.key] ?? Counts()
+            c.checkIns += 1
+            fold.counts[s.key] = c
+            return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms, topic: c.topic),
+                        notes: EventLine.checkIn(EventLine.rung(c.checkIns, of: EventLine.round), name: name(e)).map { [$0] } ?? [],
+                        facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
+                                "check_in": .int(Int64(c.checkIns))])
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.heartbeatMs
+        if e.specificType == "check_in",
+           let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) {
+            // An idle check-in: you're around, and no agent works.
+            fold.heartbeats = Int(hours)
+            let t = Thread(s), minutes = (now - last) / 60_000
+            return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
+                        facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
+        }
         guard hours > 0 else { return nil }
         fold.heartbeats = Int(hours)
         return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
@@ -647,13 +781,23 @@ public final class TranscriptView {
 
     // MARK: Needs you
 
-    /// "Needs you" showing (the core's) is a line; its clearing isn't.
-    /// Whether a session waits is the fold's own sessions', not these
-    /// records'.
+    /// "Needs you" showing (the core's) is a line, and so is its clearing
+    /// when you answered (allowed or denied it) and the agent works on,
+    /// unless what answered it has a line of its own (tests failing right
+    /// after you allowed them): one moment, one line. One that cleared for
+    /// any other reason (forgotten, the session ended) or with the turn (a
+    /// stop) isn't. Whether a
+    /// session waits is the fold's own sessions', not these records'.
     func needs(_ e: Event) -> Line? {
-        guard e.phase == .start, let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)),
-              let session = e.session else { return nil }
-        let t = fold.sessions.sessions[SessionFold.key(agent, session)].map(Thread.init) ?? Thread(agent: agent, id: session)
+        guard let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session else { return nil }
+        let s = fold.sessions.sessions[SessionFold.key(agent, session)]
+        let t = s.map(Thread.init) ?? Thread(agent: agent, id: session)
+        if e.phase == .end {
+            guard e["outcome"]?.string == "done", s?.turn.startedAt != nil, !fold.lastAgentLined else { return nil }
+            noteActivity(e.at)
+            return Line(EventLine.answered(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
+        }
+        guard e.phase == .start else { return nil }
         // The request's own event is a tool call's wait; "needs you"
         // showing is when it has a line, after Codex's grace.
         return Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
@@ -690,7 +834,7 @@ public final class TranscriptView {
     /// A `ViewEvent` for `e` and its line, for what an input reports.
     func view(_ e: Event, _ line: Line, wakes: Bool, log: LogView) -> ViewEvent? {
         guard let type = e.type else { return nil }
-        let (shownType, shownPhase) = type == .needsYou ? (Event.Kind.tool, Event.Phase.wait) : (type, e.phase)
+        let (shownType, shownPhase) = type == .needsYou && e.phase == .start ? (Event.Kind.tool, Event.Phase.wait) : (type, e.phase)
         let from = type == .needsYou ? (e["for"]?.int.map { [Int($0), e.seq] } ?? [e.seq])
             : type == .presence && e.phase == .end ? [log.last(Event.kind(.presence, .start))?.seq, e.seq].compactMap { $0 }
             : [e.seq]
@@ -716,11 +860,40 @@ public enum EventLine {
 
     /// `claude finished turn 7 on "fix-nav" (landing): done, a very long
     /// turn, 12 tool calls.`: the outcome, the length band and how many
-    /// tool calls it made.
+    /// tool calls it made; a failed one, how many checks failed on the way
+    /// (`, after 2 failed checks`), so a failure that follows others reads
+    /// as more than the first: the brain can't count them back in HISTORY.
+    /// A turn whose edits removed `bigDeletion` lines or more, net, says
+    /// how many are gone (`, 1,200 lines gone`).
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int) -> String {
+                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
-        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))."
+        let after = how != "failed" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
+            : ", after \(failedChecks) failed checks"
+        let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
+        let gone = linesGone < bigDeletion ? "" : ", \(linesGone.formatted(.number.locale(Locale(identifier: "en_US")))) lines gone"
+        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(gone)\(after)\(run)."
+    }
+
+    /// The lines a turn must remove, net of those it added, for its finish
+    /// to say how many are gone.
+    public static let bigDeletion = 500
+
+    /// Quick wins in a row come in streaks of this many, and a turn's
+    /// check-ins in rounds of this many: the lines say which rung, and a
+    /// long run starts the ladder again.
+    public static let streak = 5, round = 4
+
+    /// Which rung of a ladder of `size` the `n`th in a row is, from 1: the
+    /// 6th quick win is the 1st of a new streak.
+    public static func rung(_ n: Int, of size: Int) -> Int { n < 1 ? 0 : (n - 1) % size + 1 }
+
+    static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
+
+    /// A working heartbeat's note for its rung of a round, from the second:
+    /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
+    public static func checkIn(_ rung: Int, name: String = CharacterPack.active.name) -> String? {
+        rung > 1 ? "\(name)'s \(nth(rung)) check-in of a round on this turn." : nil
     }
 
     static func toolCalls(_ n: Int) -> String {
@@ -734,8 +907,20 @@ public enum EventLine {
     /// `Its last message: "…"`: the agent's last message, quoted.
     public static func lastMessage(_ message: String) -> String? { quote("Its last message", message) }
 
-    /// `You asked: "…"`: your prompt, quoted.
-    public static func prompt(_ prompt: String) -> String? { quote("You asked", prompt) }
+    /// `You asked claude on "api" for a fix, in a sentence, frustrated, and
+    /// said Pip's name.`: your prompt's reading, never its words; with no
+    /// labeler, only its length and the name.
+    public static func asked(_ r: PromptReading, agent: String, thread: String?, name: String) -> String {
+        let parts = [r.kind?.words, r.length.words, r.tone?.words, r.named ? "and said \(name)'s name" : nil]
+        let head = "You asked \(agent)" + (thread.map { " on \($0)" } ?? "")
+        return head + " " + parts.compactMap { $0 }.joined(separator: ", ") + "."
+    }
+
+    /// `Your words: "still broken", "thank you".`, the phrases a sign may
+    /// show; nil for none.
+    public static func yourWords(_ phrases: [String]) -> String? {
+        phrases.isEmpty ? nil : "Your words: " + phrases.map { "\"\($0)\"" }.joined(separator: ", ") + "."
+    }
 
     /// Words on one line, cut to `messageMax`, after `label`. Nil for none.
     static func quote(_ label: String, _ text: String) -> String? {
@@ -746,9 +931,11 @@ public enum EventLine {
     }
 
     /// A tool use that woke the brain: a check that failed, or passed after
-    /// failing.
-    public static func check(agent: String, topic: String, thread: String, failed: Bool) -> String {
-        "\(agent)'s \(topic) \(failed ? "failed" : "passed") on \(thread)\(failed ? "" : " after failing")."
+    /// failing. A check failing again says how many times in a row:
+    /// `claude's tests failed again on "api", 3 times in a row.`
+    public static func check(agent: String, topic: String, thread: String, failed: Bool, inARow: Int = 1) -> String {
+        guard failed else { return "\(agent)'s \(topic) passed on \(thread) after failing." }
+        return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
     }
 
     /// Any other tool use, with the personality's `tool_uses: all`.
@@ -777,9 +964,16 @@ public enum EventLine {
         return names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names.last!
     }
 
-    /// `You poked Boop.`, or `You poked Boop 4 times in a row.`
-    public static func poke(inARow count: Int, name: String = CharacterPack.active.name) -> String {
-        count <= 1 ? "You poked \(name)." : "You poked \(name) \(count) times in a row."
+    /// `You poked Boop.`, or `You poked Boop 4 times in a row.`; `while it
+    /// slept` for a run's first poke with no session open, and `, again` (`again` for one poke) when
+    /// the run before ended under `againMs` ago: the brain can't count the
+    /// runs back in HISTORY.
+    public static func poke(inARow count: Int, name: String = CharacterPack.active.name, asleep: Bool = false,
+                            again: Bool = false) -> String {
+        let poked = count <= 1 ? "You poked \(name)" : "You poked \(name) \(count) times in a row"
+        if asleep { return poked + " while it slept." }
+        if again { return poked + (count <= 1 ? " again." : ", again.") }
+        return poked + "."
     }
 
     /// You stepping away from the Mac.
@@ -790,15 +984,58 @@ public enum EventLine {
         "You came back to the Mac after a \(Band.away(ms: ms)) break."
     }
 
+    /// What you did to the board, which reacted at once; nil for a gesture
+    /// it doesn't know.
+    public static func gesture(_ kind: String, name: String = CharacterPack.active.name) -> String? {
+        switch kind {
+        case "stroke": "You stroked \(name)."
+        case "ruffle": "You stroked \(name) the wrong way."
+        case "nose": "You booped \(name)'s nose."
+        case "tickle": "You tickled \(name)."
+        case "dizzy": "You shook \(name)."
+        case "pickup": "You picked \(name) up."
+        case "putdown": "You put \(name) down."
+        case "startle": "You thumped the desk next to \(name)."
+        case "facedown": "You turned \(name) face down."
+        case "peekaboo": "You turned \(name) back up."
+        case Core.dismissGesture: "You held a finger on \(name)'s sign, to stop it showing that an agent needs you; the agent still waits."
+        default: nil
+        }
+    }
+
+    /// A BOOT press that handed you an agent; what it opened is the core's
+    /// record under it.
+    public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }
+
     public static func heartbeat(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."
     }
 
-    /// The working heartbeat: `claude is still working on "fix-nav"
-    /// (landing), a long turn.`, the band of the turn so far.
-    public static func working(agent: String, thread: String, ms: Int64) -> String {
-        "\(agent) is still working on \(thread), a \(Band.length(ms: ms)) turn."
+    /// The idle check-in: `Nothing has happened for 20 min; claude sits
+    /// idle on "api".`, the thread last active.
+    public static func idle(minutes: Int, agent: String, thread: String) -> String {
+        "Nothing has happened for \(minutes) min; \(agent) sits idle on \(thread)."
     }
+
+    /// The agent's context compacted, mid-work.
+    public static func compacted(agent: String, thread: String) -> String {
+        "\(agent)'s context on \(thread) was compacted; it picks up where it left off."
+    }
+
+    /// You answered a request ("needs you" cleared): allowed or denied.
+    public static func answered(agent: String, thread: String) -> String {
+        "You answered \(agent) on \(thread)."
+    }
+
+    /// The working heartbeat: `claude is still working on "fix-nav"
+    /// (landing), a long turn, running tests.`, the band of the turn so far
+    /// and what its latest command or edit was about.
+    public static func working(agent: String, thread: String, ms: Int64, topic: String? = nil) -> String {
+        "\(agent) is still working on \(thread), a \(Band.length(ms: ms)) turn\(topic.flatMap { doing[$0] }.map { ", \($0)" } ?? "")."
+    }
+
+    /// What a turn is doing, by its latest topic, as a check-in says it.
+    static let doing = ["tests": "running tests", "build": "running a build", "deploy": "deploying", "docs": "editing docs"]
 
     /// How to read HISTORY and NOW: Boop's own
     /// words for MellowHarness's layout, after the guide, with the
@@ -825,9 +1062,19 @@ public enum EventLine {
         - Tests, build, deploy and docs are what a command was about; failed
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
-          long (5 minutes or more).
+          long (5 minutes or more). Quick wins in a row are turns done in under
+          \(TranscriptView.quickWinMs / 60_000) minutes, one after another on a thread, in streaks of up to \(streak): the
+          line says which of its streak it is, and the \(nth(streak + 1)) starts a new one.
+        - A check-in is \(name) looking in on a turn that's still going, in
+          rounds of \(round); the note under it says which of its round it is.
+        - "You asked" is the person's prompt to an agent, read on their Mac:
+          what they asked for, how long, how they sound, and whether they said
+          \(name)'s name. Never their words but the few under "Your words".
         - "You said to \(name)" quotes the person talking to \(name). It can't talk
           back: it answers with a face, and maybe a word or a sound.
+        - An idle check-in ("Nothing has happened for 20 min") means the person is
+          around but no agent is working. A compacted context means the agent's
+          memory was squeezed to make room; it carries on from a summary.
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
           hours or more).

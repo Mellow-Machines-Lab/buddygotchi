@@ -28,20 +28,21 @@ final class ViewTests: XCTestCase {
 
     /// The tests-fail-then-pass turn, line by line, with the
     /// thread named after its workspace and its project. A repeat failure
-    /// reads as the first did; streaks are left to the facts.
+    /// says it's again, and how many in a row: the brain can't count them
+    /// back in HISTORY.
     func testATurnOfFailuresAndAComeback() throws {
         let start = hook(.turnStart, prompt: "fix the nav\nplease")
-        XCTAssertEqual(start.map(\.line), [#"claude started turn 1 on "fix-nav" (landing)."#])
-        XCTAssertEqual(start.map(\.name), ["turn start"])
-        XCTAssertEqual(start[0].notes, [#"You asked: "fix the nav please""#], "on one line")
-        XCTAssertTrue(start[0].wakesBrain)
+        XCTAssertEqual(start.map(\.line), [#"claude started turn 1 on "fix-nav" (landing)."#,
+                                           #"You asked claude on "fix-nav" (landing) in a few words, politely."#])
+        XCTAssertEqual(start.map(\.name), ["turn start", "prompt"])
+        XCTAssertEqual(start.map(\.wakesBrain), [false, true], "the prompt's reading wakes the brain, not the turn start")
 
         XCTAssertEqual(tests(failed: true, id: "t1").map(\.line), [#"claude's tests failed on "fix-nav" (landing)."#])
         XCTAssertEqual(tests(failed: true, id: "t2").map(\.line),
-                       [#"claude's tests failed on "fix-nav" (landing)."#])
+                       [#"claude's tests failed again on "fix-nav" (landing), 2 times in a row."#])
         let third = try XCTUnwrap(tests(failed: true, id: "t3").first)
         XCTAssertEqual(third.name, "tool end")
-        XCTAssertEqual(third.line, #"claude's tests failed on "fix-nav" (landing)."#)
+        XCTAssertEqual(third.line, #"claude's tests failed again on "fix-nav" (landing), 3 times in a row."#)
         XCTAssertEqual(third.facts["failed_before"], .int(2))
         XCTAssertEqual(third.facts["took"], "short", "40 s is short")
         XCTAssertEqual(third.facts["took_ms"], .int(40_000))
@@ -63,13 +64,49 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(end.facts["message"], "All green now.")
     }
 
+    /// A failed turn says how many checks failed on the way, so a failure
+    /// after others reads as bigger than the first; a done one doesn't, and
+    /// the next turn starts counting again.
+    func testAFailedFinishCountsItsFailedChecks() throws {
+        hook(.turnStart)
+        tests(failed: true, id: "t1")
+        tests(failed: true, id: "t2")
+        let failed = try XCTUnwrap(hook(.turnFailed, error: "api_error").first)
+        XCTAssertEqual(failed.line, #"claude finished turn 1 on "fix-nav" (landing): failed, a long turn, 2 tool calls, after 2 failed checks."#)
+        XCTAssertEqual(failed.facts["checks_failed"], .int(2))
+
+        hook(.turnStart)
+        tests(failed: true, id: "t3")
+        XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
+                       [#"claude finished turn 2 on "fix-nav" (landing): failed, a short turn, 1 tool call, after a failed check."#])
+
+        hook(.turnStart)
+        XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
+                       [#"claude finished turn 3 on "fix-nav" (landing): failed, a short turn, no tool calls."#],
+                       "a turn counts only its own failed checks")
+        XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 2),
+                       #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
+    }
+
+    /// Pins `EventLine.bigDeletion`: a turn whose edits removed 500 lines
+    /// or more, net, says how many are gone; fewer, or as many added back,
+    /// says nothing.
+    func testABigDeletionSaysHowManyLinesAreGone() {
+        func line(_ gone: Int) -> String {
+            EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 3, linesGone: gone)
+        }
+        XCTAssertEqual(line(1200), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 1,200 lines gone."#)
+        XCTAssertEqual(line(500), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 500 lines gone."#)
+        XCTAssertEqual(line(499), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls."#)
+        XCTAssertEqual(line(-800), line(0))
+    }
+
     /// A long prompt or message is cut, on one line.
     func testLongWordsAreCut() {
         let long = String(repeating: "word ", count: 200)
         let note = EventLine.lastMessage(long)!
         XCTAssertEqual(note.count, "Its last message: \"\"".count + EventLine.messageMax)
         XCTAssertTrue(note.hasSuffix("…\""))
-        XCTAssertNil(EventLine.prompt("  \n "))
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 1),
                        #"claude finished turn 1 on "x": done, a short turn, 1 tool call."#)
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 0),
@@ -88,7 +125,8 @@ final class ViewTests: XCTestCase {
         XCTAssertTrue(keeps(.tool, .wait, notable: false))
         XCTAssertFalse(keeps(.tool, .end, notable: false))
         XCTAssertTrue(keeps(.tool, .end, notable: true))
-        XCTAssertFalse(keeps(.session, .start, notable: true))
+        XCTAssertFalse(keeps(.session, .start, notable: true), "only a compaction's start has a line")
+        XCTAssertTrue(keeps(.needsYou, .end, notable: false), "answering a request has a line")
         XCTAssertFalse(keeps(.subagent, .start, notable: true))
         XCTAssertFalse(keeps(.subagent, .end, notable: true))
         XCTAssertTrue(keeps(.poke, nil, notable: false))
@@ -250,6 +288,7 @@ final class ViewTests: XCTestCase {
     /// counted in a row, and its wiggle goes under it.
     func testPokes() {
         XCTAssertEqual(TranscriptView.inARowMs, 3000)
+        hook(.sessionStart)  // awake: a poke with no session open finds Boop asleep
         let one = events(rig.poke())
         XCTAssertEqual(one.map(\.line), ["You poked \(creature)."])
         XCTAssertEqual(one.map(\.name), ["poke"])
@@ -262,7 +301,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(last[0].facts["in_a_row"], .int(4))
         XCTAssertTrue(last[0].wakesBrain, "no limit")
         rig.wait(3000)
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked \(creature)."], "3 s apart starts again")
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked \(creature) again."], "3 s apart starts a new run, the last one again")
         // While something needs you there's no wiggle: the tap opens the
         // thread, and doesn't wake the brain.
         hook(.turnStart)
@@ -406,6 +445,147 @@ final class ViewTests: XCTestCase {
         XCTAssertTrue(beats.allSatisfy(\.wakesBrain))
         rig.poke()
         XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "a poke starts the hour again")
+    }
+
+    /// Quick wins in a row on a thread are counted on the finish in streaks
+    /// of 5, so the brain answers each rung differently and a long run goes
+    /// round again; a failure, a stop, a turn of 5 minutes or more, or 10
+    /// minutes between wins starts again.
+    func testTheFinishCountsQuickWinsInARow() {
+        XCTAssertEqual(TranscriptView.quickWinMs, 5 * 60_000)
+        XCTAssertEqual(TranscriptView.winRunGapMs, 10 * 60_000)
+        XCTAssertEqual(EventLine.streak, 5)
+        for i in 1...7 {
+            hook(.turnStart)
+            rig.wait(30_000)
+            let run = ["", "", ", the 2nd quick win of a streak", ", the 3rd quick win of a streak", ", the 4th quick win of a streak",
+                       ", the 5th quick win of a streak", "", ", the 2nd quick win of a streak"][i]
+            XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn \#(i) on "fix-nav" (landing): done, a short turn, no tool calls\#(run)."#])
+            rig.wait(60_000)
+        }
+        func win(after ms: Int64 = 30_000) -> JSONValue? {
+            hook(.turnStart)
+            rig.wait(ms)
+            return hook(.turnEnd).first?.facts["wins_in_a_row"]
+        }
+        hook(.turnStart)
+        hook(.turnFailed, error: "api_error")
+        XCTAssertEqual(win(), .int(1), "a failure ends the run, which the facts count whole")
+        XCTAssertEqual(win(), .int(2))
+        XCTAssertEqual(win(after: 5 * 60_000), .int(0), "a very long turn is no quick win, and ends the run")
+        XCTAssertEqual(win(), .int(1))
+        rig.wait(10 * 60_000)
+        XCTAssertEqual(win(), .int(1), "10 minutes after the last win starts again")
+    }
+
+    /// Each working heartbeat on a turn is numbered in a note from the
+    /// second of each round of 4, and says what the turn's latest command
+    /// was about; the next turn starts counting again.
+    func testCheckInsAreNumberedAndSayTheTopic() {
+        hook(.turnStart)
+        hook(.activity, tool: "Bash", topic: "tests", id: "t")
+        rig.wait(20 * 60_000)
+        let beats = rig.views.filter { $0.type == .heartbeat }
+        XCTAssertGreaterThan(beats.count, 5)
+        XCTAssertTrue(beats.allSatisfy { $0.line.hasSuffix(" turn, running tests.") }, beats.map(\.line).joined(separator: "\n"))
+        XCTAssertEqual(EventLine.round, 4)
+        XCTAssertEqual(beats.prefix(6).map(\.notes), [[], ["Boop's 2nd check-in of a round on this turn."],
+                                                     ["Boop's 3rd check-in of a round on this turn."],
+                                                     ["Boop's 4th check-in of a round on this turn."], [],
+                                                     ["Boop's 2nd check-in of a round on this turn."]], "and round again")
+        XCTAssertEqual(beats.last?.facts["check_in"], .int(Int64(beats.count)))
+        hook(.turnEnd)
+        hook(.turnStart)
+        let before = rig.views.count
+        rig.wait(4 * 60_000)
+        let next = rig.views.dropFirst(before).filter { $0.type == .heartbeat }
+        XCTAssertEqual(next.first?.notes, [], "a new turn's first check-in")
+        XCTAssertTrue(next.first?.line.hasSuffix(" turn.") ?? false, "and no topic yet: \(next.first?.line ?? "none")")
+        XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a short turn."#)
+    }
+
+    /// The agent's context compacting mid-turn is a line that wakes the
+    /// brain; a session starting any other way isn't.
+    func testACompactionIsALine() {
+        hook(.turnStart)
+        let compacted = events(rig.send(.sessionStart, workspace: "fix-nav", source: "compact"))
+        XCTAssertEqual(compacted.map(\.line), [#"claude's context on "fix-nav" (landing) was compacted; it picks up where it left off."#])
+        XCTAssertEqual(compacted.map(\.name), ["session start"])
+        XCTAssertTrue(compacted.allSatisfy(\.wakesBrain))
+        XCTAssertEqual(events(rig.send(.sessionStart, session: "s2", workspace: "fix-nav", source: "startup")), [], "a fresh session isn't")
+        XCTAssertEqual(events(rig.send(.sessionStart, session: "s3", workspace: "fix-nav", source: "resume")), [], "nor a resumed one")
+    }
+
+    /// Answering a request (allowing or denying it) is a line that wakes
+    /// the brain once "needs you" clears; one forgotten after 10 minutes
+    /// isn't.
+    func testAnsweringARequestIsALine() throws {
+        hook(.turnStart)
+        hook(.needsYou, tool: "Bash")
+        rig.wait(30_000)
+        let answered = hook(.activity, tool: "Bash", failed: false, done: true).filter { $0.type == .needsYou }
+        XCTAssertEqual(answered.map(\.line), [#"You answered claude on "fix-nav" (landing)."#])
+        XCTAssertEqual(answered.map(\.name), ["needs_you end"])
+        XCTAssertTrue(answered.allSatisfy(\.wakesBrain))
+
+        hook(.needsYou, tool: "Bash")
+        let forgotten = events(rig.wait(11 * 60_000)).filter { $0.type == .needsYou }
+        XCTAssertEqual(forgotten, [], "the safety net cleared it: nobody answered")
+    }
+
+    /// A poke with no session open says Boop was asleep; a run of pokes
+    /// within 2 minutes of the run before says it's again.
+    func testAPokeSaysWhetherBoopSleptAndWhetherItsAgain() {
+        XCTAssertEqual(TranscriptView.againMs, 2 * 60_000)
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop while it slept."])
+        rig.wait(1000)
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop 2 times in a row."], "the first poke woke it")
+        rig.wait(3 * 60_000)
+        hook(.sessionStart)
+        rig.wait(10_000)
+        for _ in 0..<3 { rig.poke() }
+        rig.wait(60_000)
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop again."])
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop 2 times in a row, again."])
+        rig.wait(2 * 60_000)
+        let fresh = events(rig.poke())
+        XCTAssertEqual(fresh.map(\.line), ["You poked Boop."], "2 minutes after the last run, a fresh one")
+        XCTAssertEqual(fresh.first?.facts["again"], .bool(false))
+        XCTAssertEqual(fresh.first?.facts["asleep"], .bool(false))
+    }
+
+    /// With a personality's `idle_heartbeat`, the idle heartbeat comes at
+    /// that pace for 2 hours after the last activity while a session is
+    /// open, as a check-in naming the thread last active; then hourly as
+    /// ever. Never while you're away, and never with no session open.
+    func testIdleCheckIns() {
+        XCTAssertEqual(TranscriptView.idleWindowMs, 2 * 60 * 60_000)
+        rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        XCTAssertEqual(rig.view.rules.idleBeatMs, 900_000...1_800_000)
+        hook(.turnStart)
+        hook(.turnEnd)
+        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .heartbeat } }
+        let beats = idle(events(rig.wait(3 * 60 * 60_000)))
+        let checkIns = beats.filter { $0.facts["idle_minutes"] != nil }
+        XCTAssertGreaterThanOrEqual(checkIns.count, 4, beats.map(\.line).joined(separator: "\n"))
+        XCTAssertLessThanOrEqual(checkIns.count, 8)
+        XCTAssertTrue(checkIns.allSatisfy { $0.line.hasPrefix("Nothing has happened for ") && $0.line.hasSuffix(#" min; claude sits idle on "fix-nav" (landing)."#) && $0.wakesBrain })
+        let minutes = checkIns.compactMap { $0.facts["idle_minutes"]?.int }
+        XCTAssertTrue(zip(minutes, minutes.dropFirst()).allSatisfy { $1 - $0 >= 15 && $1 - $0 <= 30 }, "\(minutes)")
+        XCTAssertLessThan(minutes.last ?? 0, 120, "only within 2 hours of the last activity")
+        XCTAssertEqual(beats.filter { $0.facts["idle_hours"] != nil }.map(\.line), ["Nothing has happened for 2 hours.", "Nothing has happened for 3 hours."],
+                       "then hourly")
+
+        // Away from the Mac: hourly only.
+        rig.poke()
+        rig.pipeline.presence(PresenceDetector.awayEvent(why: "locked", since: rig.now, at: rig.now))
+        XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "no check-in while you're away")
+
+        // No session open: hourly only, as before check-ins.
+        let asleep = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        asleep.poke()
+        XCTAssertEqual(asleep.views.filter { $0.type == .heartbeat }, [])
+        XCTAssertEqual(asleep.wait(61 * 60_000).views.filter { $0.type == .heartbeat }.map(\.line), ["Nothing has happened for 1 hour."])
     }
 
     /// The length band, at its edges: short under a minute,
@@ -569,6 +749,43 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(ended.map(\.phase), [.end])
         XCTAssertEqual(ended.first?.data["outcome"], "done")
         XCTAssertNil(third.core.snapshot(at: rig.now).attn)
+    }
+
+    /// A request you dismissed stays dismissed across a relaunch while its
+    /// agent still waits on it: the read-back takes it from the request's
+    /// `needs_you` end, since this launch numbers requests afresh. The
+    /// session's next request shows, then and after another relaunch.
+    func testADismissedRequestStaysDismissedAfterARelaunch() throws {
+        let dir = tempDir("boop-tr")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = rig.time
+        rig = CoreRig()
+        func pipeline() -> Pipeline {
+            Pipeline(core: Core(config: .init(time: time), lastActiveDay: time.day(rig.now)),
+                     view: TranscriptView(), transcript: Transcript.log(folder: dir, time: time))
+        }
+        func needs(_ step: Pipeline.Step) -> [Event] { step.recorded.filter { $0.specificType == Core.needsYou } }
+        let first = pipeline()
+        first.agent(rig.event(.turnStart))
+        first.agent(rig.event(.activity, tool: "Bash", id: "t1"))
+        first.agent(rig.event(.needsYou, tool: "Bash"))
+        rig.now += 1000
+        XCTAssertEqual(needs(first.dismiss(SessionFold.key(.claude, "s1"), at: rig.now)).map { $0["why"]?.string }, [Core.dismissedWhy])
+        rig.now += 60_000
+        let second = pipeline()
+        second.readBack(now: rig.now)
+        XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
+        XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
+        XCTAssertEqual(second.core.snapshot(at: rig.now).idle, 1)
+        XCTAssertEqual(second.core.line(at: rig.now).map(\.id), ["s1"], "and in BOOT's line")
+        second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
+        second.agent(rig.event(.activity, tool: "Bash", id: "t2"))
+        XCTAssertEqual(needs(second.agent(rig.event(.needsYou, tool: "Bash"))).map(\.phase), [.start], "its next request shows")
+        rig.now += 1000
+        let third = pipeline()
+        third.readBack(now: rig.now)
+        XCTAssertEqual(needs(third.tick(at: rig.now)), [])
+        XCTAssertNotNil(third.core.snapshot(at: rig.now).attn, "and shows after another relaunch")
     }
 
     /// A request the read-back

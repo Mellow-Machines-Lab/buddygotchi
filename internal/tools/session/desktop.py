@@ -18,7 +18,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List
 
-from script import git, said
+from script import git, said, todos
 
 
 def prepare(ws: Path, settings: Dict[str, Any], demo: str) -> None:
@@ -54,6 +54,9 @@ def call_words(l: Dict[str, Any], prompt: str = "") -> str:
                 f"with exactly this text:\n\n{fence(l['new'])}")
     if does == "run":
         return f"Use the Bash tool to run exactly `{l['cmd']}`, with the description \"{l.get('about', l['cmd'])}\"."
+    if does == "todo":
+        items = "\n".join(f"- {t['content']}: {t['status']}" for t in todos(l))
+        return f"Use the TodoWrite tool to set your to-do list to exactly these items and statuses:\n\n{items}"
     return (f"Use the Agent tool, with the description \"{l['task']}\" and exactly this prompt:\n\n"
             f"{fence(prompt)}\n\nIt runs in the background.")
 

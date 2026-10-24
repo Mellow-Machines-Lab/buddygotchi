@@ -12,6 +12,19 @@
 {"t":"state","base":"working","busy":3}
 {"clock":900}
 {"shot":"working-busy"}
+// The counts under the face: sessions working, helpers at work, and the
+// agents idle, a parcel each for BOOT to hand over.
+{"t":"state","base":"working","busy":2,"helpers":4,"idle":3}
+{"clock":1000}
+{"expect":{"idle":3,"helpers":4}}
+{"shot":"working-counts"}
+// One helper is one mini; seven are four, then +3.
+{"t":"state","base":"working","busy":1,"helpers":1}
+{"clock":1100}
+{"shot":"helpers-one"}
+{"t":"state","base":"working","busy":1,"helpers":7}
+{"clock":1200}
+{"shot":"helpers-seven"}
 {"t":"state","base":"asleep","busy":0}
 {"clock":1200}
 {"expect":{"base":"asleep"}}
@@ -25,10 +38,16 @@
 {"expect":{"screen":"no_app","bl":60}}
 {"clock":31500}
 {"shot":"no-app"}
-// Reconnect: the next state, its design behind a blink (100 ms of 150 in).
+// Reconnect: the next state, idle's rig face cross-fading in over no app's
+// design (100 ms of 150 in).
 {"t":"state","base":"idle","busy":0}
 {"clock":31600}
 {"expect":{"screen":"face","life":null}}
 {"shot":"reconnect"}
 {"clock":31650}
 {"expect":{"bl":255}}
+// The working agent's to-do list, done of total, after the working count.
+{"t":"state","base":"working","busy":2,"helpers":2,"idle":1,"todo":{"done":3,"total":7}}
+{"clock":31900}
+{"expect":{"todo":{"done":3,"total":7}}}
+{"shot":"working-todo"}

@@ -149,7 +149,7 @@ final class BuddiesTests: XCTestCase {
         let step = runtime.home.sync { runtime.pipeline.poke(at: runtime.options.clock(), buddy: "right") }
         let poke = try XCTUnwrap(step.recorded.first)
         XCTAssertEqual(poke.buddy, "right")
-        XCTAssertEqual(runtime.home.sync { runtime.harness.line(poke.seq)?.text }, "You poked Boop.")
+        XCTAssertEqual(runtime.home.sync { runtime.harness.line(poke.seq)?.text }, "You poked Boop while it slept.", "no session is open")
         XCTAssertEqual(step.recorded.last?["message"]?.string, "Boop wiggled on its own.", "its own core, in its own name")
     }
 }

@@ -4,7 +4,10 @@
 #include <cstring>
 
 #include "faces.h"
+#include "render/maths.h"
 #include "render/palette.h"
+#include "render/pixel/held.h"
+#include "render/pixel/outfit.h"
 
 namespace render {
 
@@ -27,7 +30,8 @@ struct Box {
   int16_t x, y, w, h;
 };
 constexpr Box kTalk[] = {{0, 0, 14, 4}, {0, 4, 4, 4}, {10, 4, 4, 4}, {0, 8, 14, 4}};
-constexpr int kTalkW = 14, kTalkH = 12;
+static_assert(kTalkW == 14 && kTalkH == 12, "the o's box");
+
 // Where the first pack's "o" sat, from its mouth's place: the "o" for a
 // mouth with nothing drawn to measure.
 constexpr int kTalkX = 153, kTalkY = 128;
@@ -55,25 +59,29 @@ int step(const Track& tr, uint32_t t) {
 // shows, which talking opens.
 struct Placed {
   // A group is drawn (kOn); shows in the design, the mouth included while
-  // it talks (kShown); is the mouth that shows, or in it (kInMouth).
-  static constexpr uint8_t kOn = 1, kShown = 2, kInMouth = 4;
+  // it talks (kShown); is the mouth that shows, or in it (kInMouth); is a
+  // face, or in one (kInFace).
+  static constexpr uint8_t kOn = 1, kShown = 2, kInMouth = 4, kInFace = 8;
   int16_t x[kMaxGroups], y[kMaxGroups];
   uint8_t flags[kMaxGroups];
   uint8_t fill[kMaxGroups];
-  int mouth = -1;
+  int mouth = -1, face = -1;  // the mouth and the face that show
   bool on(int i) const { return flags[i] & kOn; }
 };
 
-void place(const Scene& sc, const SceneShow& s, Placed& p) {
+// `faceless`, a face's groups but its decorations aren't drawn: the rig
+// face draws the rest in the face's place.
+void place(const Scene& sc, const SceneShow& s, Placed& p, bool faceless = false) {
   for (int i = 0; i < sc.groups; ++i) {
     const Group& g = kGroups[kSceneGroups[sc.group0 + i]];
     int x = g.tx, y = g.ty;
-    bool own = g.visible, shown = true, mouth = false;
+    bool own = g.visible, shown = true, mouth = false, face = g.role == kRoleFace;
     uint8_t fill = 0;
     if (g.parent != kNone) {
       x += p.x[g.parent], y += p.y[g.parent], fill = p.fill[g.parent];
       shown = p.flags[g.parent] & Placed::kShown;
       mouth = p.flags[g.parent] & Placed::kInMouth;
+      face = face || (p.flags[g.parent] & Placed::kInFace);
     }
     if (g.move != kNone) {
       const Track& tr = kTracks[g.move];
@@ -101,9 +109,11 @@ void place(const Scene& sc, const SceneShow& s, Placed& p) {
     }
     shown = shown && own;
     if (g.role == kRoleMouth && shown && p.mouth < 0) p.mouth = i, mouth = true;
+    if (g.role == kRoleFace && shown && p.face < 0) p.face = i;
+    const bool drawn = !(mouth && s.mouthOpen) && !(faceless && face && g.role != kRoleDecor);
     p.x[i] = int16_t(x), p.y[i] = int16_t(y), p.fill[i] = fill;
-    p.flags[i] = uint8_t((shown ? Placed::kShown : 0) | (mouth ? Placed::kInMouth : 0) |
-                         (shown && !(mouth && s.mouthOpen) ? Placed::kOn : 0));
+    p.flags[i] = uint8_t((shown ? Placed::kShown : 0) | (mouth ? Placed::kInMouth : 0) | (face ? Placed::kInFace : 0) |
+                         (shown && drawn ? Placed::kOn : 0));
   }
 }
 
@@ -135,18 +145,18 @@ bool talk(const Scene& sc, const Placed& p, int16_t& ox, int16_t& oy, uint8_t& i
   return true;
 }
 
-// A rectangle cut to the scene's clip and the screen, in colour `color`:
-// translucent from kBlend on, where each pixel it covers becomes the blend
-// of its colour over what's there.
-void clipRect(Canvas& c, int x, int y, int w, int h, int color, const Scene& sc) {
+// A rectangle cut to the scene's clip and the screen, in colour `color`, the
+// pixels `d` draws: translucent from kBlend on, where each pixel it covers
+// becomes the blend of its colour over what's there.
+void clipRect(Canvas& c, int x, int y, int w, int h, int color, const Scene& sc, Dither d) {
   int x0 = std::max({x, int(sc.clipX), 0}), y0 = std::max({y, int(sc.clipY), 0});
   int x1 = std::min({x + w, sc.clipX + sc.clipW, kWidth}), y1 = std::min({y + h, sc.clipY + sc.clipH, kHeight});
-  if (color < kBlend) return c.fillRect(x0, y0, x1 - x0, y1 - y0, toCanvas(color));
+  if (color < kBlend) return c.fillRect(x0, y0, x1 - x0, y1 - y0, toCanvas(color), d);
   uint8_t* px = c.pixels();
   for (int yy = y0; yy < y1; ++yy) {
     for (int xx = x0; xx < x1; ++xx) {
-      uint8_t& d = px[yy * kWidth + xx];
-      d = toCanvas(kBlendOver[color - kBlend][fromCanvas(d)]);
+      uint8_t& p = px[yy * kWidth + xx];
+      if (d.draws(xx, yy)) p = toCanvas(kBlendOver[color - kBlend][fromCanvas(p)]);
     }
   }
 }
@@ -204,9 +214,26 @@ int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out) {
   return k;
 }
 
+bool fits(Mood m, SceneState s, int variant, uint32_t when, uint32_t lookMs) {
+  const Design& d = design(m, s, variant);
+  return (d.when & ~when) == 0 && uint32_t(d.after) * 1000 <= lookMs;
+}
+
+bool tagged(Mood m, SceneState s, int variant) { return design(m, s, variant).when != 0; }
+
 int sceneOf(Mood m, SceneState s, int variant) { return design(m, s, variant).scene; }
 
 uint32_t loopMs(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].loopMs; }
+
+bool rigFaced(Mood m, SceneState s, int variant) { return kScenes[sceneOf(m, s, variant)].face != kNone; }
+
+FaceMove faceMove(const SceneShow& s) {
+  const uint16_t face = scene(s).face;
+  if (face == kNone) return {};
+  const Track& tr = kTracks[face];
+  const int8_t* v = &kValues[tr.val0 + 4 * uint32_t(step(tr, s.t))];
+  return {v[0], v[1], v[2], v[3]};
+}
 
 uint8_t sceneInk(int color) { return color > 0 && color < kColorCount ? toCanvas(color) : kBlack; }
 
@@ -233,14 +260,17 @@ bool eyesClosed(const SceneShow& s) {
 
 bool operator==(const SceneFrame& a, const SceneFrame& b) { return std::memcmp(&a, &b, sizeof a) == 0; }
 
-SceneFrame sceneFrame(const SceneShow& s) {
+SceneFrame sceneFrame(const SceneShow& show, bool faceless) {
+  SceneShow s = show;
+  if (faceless) s.eyesShut = s.mouthOpen = false;  // the rig face blinks and talks
   SceneFrame f;
   std::memset(&f, 0, sizeof f);  // padding too, since frames compare as bytes
   f.scene = uint16_t(sceneOf(s.mood, s.state, s.variant));
   f.talkX = f.talkY = -1;
   const Scene& sc = kScenes[f.scene];
   Placed p;
-  place(sc, s, p);
+  place(sc, s, p, faceless);
+  f.faceAt = uint16_t(p.face >= 0 ? p.face : SceneFrame::kMaxGroups);
   for (int i = 0; i < sc.groups; ++i) {
     if (!p.on(i)) continue;
     f.x[i] = p.x[i], f.y[i] = p.y[i], f.on[i] = 1, f.fill[i] = p.fill[i];
@@ -249,24 +279,26 @@ SceneFrame sceneFrame(const SceneShow& s) {
   return f;
 }
 
-void drawScene(Canvas& c, const SceneFrame& f) {
+void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d) {
+  for (const Box& b : kTalk) c.fillRect(x + b.x, y + b.y, b.w, b.h, ink, d);
+}
+
+void drawScene(Canvas& c, const SceneFrame& f, Dither d, int from, int to) {
   const Scene& sc = kScenes[f.scene];
-  for (int i = 0; i < sc.groups; ++i) {
+  for (int i = from; i < sc.groups && i < to; ++i) {
     if (!f.on[i]) continue;
     const Group& g = kGroups[kSceneGroups[sc.group0 + i]];
     for (int k = 0; k < g.rects; ++k) {
       const Rect& r = kRects[kRectIdx[g.rect0 + k]];
-      clipRect(c, r.x + f.x[i], r.y + f.y[i], r.w, r.h, r.color == kInherit ? f.fill[i] : r.color, sc);
+      clipRect(c, r.x + f.x[i], r.y + f.y[i], r.w, r.h, r.color == kInherit ? f.fill[i] : r.color, sc, d);
     }
   }
-  if (f.talkInk != kBlack) {
-    for (const Box& b : kTalk) c.fillRect(f.talkX + b.x, f.talkY + b.y, b.w, b.h, f.talkInk);
-  }
+  if (f.talkInk != kBlack) drawTalk(c, f.talkX, f.talkY, f.talkInk, d);
 }
 
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s) {
-  c.fill(kBlack);
-  drawScene(c, face);
+void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over) {
+  if (over.dressed) drawOutfit(c, over.when, over.mood, over.ms, over.hatX, over.hatY);
+  if (over.held) drawHeld(c, over.held, over.heldOffset);
   drawLane(c, bubble, s);
 }
 

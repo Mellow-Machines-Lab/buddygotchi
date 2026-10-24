@@ -6,18 +6,23 @@ import {createRouter} from './router.mjs';
 import {createScenes} from './scenes/index.mjs';
 import {sceneConstants} from './scenes/constants.mjs';
 import {createBridges} from './bridges.mjs';
+import {gestureGagName,gestureGag} from './scenes/gesture.mjs';
+import {idleOccasions,occasionGags} from './scenes/occasion.mjs';
 
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
-export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'}) {
+export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
   const grab={active:false,point:[0,.2],target:[0,0,0],pull:[{x:0,v:0},{x:0,v:0},{x:0,v:0}]};
-  const acting=createActing({profiles,rand,reduced,initialEmotion});
+  // The host's tags and how long its look has shown (setOccasion).
+  const occasion={when:new Set(),lookMs:0};
+  const extraGags=Object.fromEntries([...[...gestures,...notices].map(gesture=>[gestureGagName(gesture),gestureGag(gesture)]),...occasionGags(occasions)]);
+  const acting=createActing({profiles,gags,idleGags,extraGags,idleLooks:idleOccasions(occasions),rand,reduced,initialEmotion,occasion});
   const face=createFace({profiles,initialEmotion,reduced});
   const router=createRouter({hasMood:id=>Object.hasOwn(profiles,id)});
-  const scenes=createScenes({rand,reduced,profiles});
+  const scenes=createScenes({rand,reduced,profiles,gestures,notices,occasions,occasion});
   const bridges=createBridges({graph,profiles,rand,reduced});
   const posture=createPostureWeights({emotions,initialEmotion,reduced});
   function sync(time,options) {
@@ -28,8 +33,11 @@ export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'})
       expression=nextExpression;motion.setEmotion(expression);acting.setMood(expression,time/1000);face.setMood(expression,faceOptions);
     }
     face.setSleeping(route.quiet);
-    acting.setSuppressed(route.state!=='idle'||grab.active,time/1000);
     scenes.setRoute(route,time,expression);
+    // Acting plays in idle, and wherever the scene's recipe carries a gag.
+    const gag=scenes.gag();
+    acting.setSuppressed((route.state!=='idle'&&!gag)||grab.active,time/1000);
+    acting.hold(gag?gag.name:null,gag?gag.key:null,time/1000);
     if(route.moment)router.setMomentDuration(route.moment.requestId,scenes.inspect(time).scene.loopDurationMs);
     return route;
   }
@@ -40,9 +48,12 @@ export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'})
     const ended=scenes.advance(dt,time,{grabActive:grab.active});
     if(ended){router.finish(ended);sync(time);}
     acting.advance(dt,motion.time,grab.active);
+    // Held, the pull follows the finger quickly; let go, it settles back on
+    // a softer spring, a wobble rather than a snap.
+    const [stiffness,damping]=grab.active?[256,8]:[100,10];
     for(let i=0;i<3;i++){
       const m=grab.pull[i];let left=dt;
-      while(left>0){const h=Math.min(left,1/240);m.v+=(256*(grab.target[i]-m.x)-8*m.v)*h;m.x+=m.v*h;left-=h;}
+      while(left>0){const h=Math.min(left,1/240);m.v+=(stiffness*(grab.target[i]-m.x)-damping*m.v)*h;m.x+=m.v*h;left-=h;}
       m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-6,6);
     }
     face.advance(dt);
@@ -55,8 +66,11 @@ export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'})
     const mood=moodPosture({weights:posture.weights,emotions,profiles,time:motion.time,reduced}).map(value=>value*(1-scene.scene.quietMix));
     const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
     const life=lifePose(acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.lifeBounds[index],sceneConstants.lifeBounds[index]));
+    // A gag's lids close the eyes as a blink does; its slide is drawn once
+    // one has played. Its contacts follow the scene's.
     return {...base,...performance,...scene,...bridges.inspect(),mood:profiles[emotion].mood,expression,reducedMotion:reduced.matches,
-      pose,life,posture:[mood[0],mood[1]],face:face.inspect(motion.blink()),facts:router.facts(),
+      pose,life,...(acting.gagged?{slide:acting.slide()}:{}),posture:[mood[0],mood[1]],face:face.inspect(Math.max(motion.blink(),acting.lids())),
+      contacts:[...scene.contacts,...acting.contacts.map(contact=>({...contact}))],facts:router.facts(),
       grab:{active:grab.active,point:[...grab.point],target:[...grab.target],pull:grab.pull.map(m=>({...m}))}};
   }
   return {
@@ -72,6 +86,11 @@ export function createActor({profiles,graph,rand,reduced,initialEmotion='calm'})
     },
     setFacts(value) {
       router.setFacts(value);sync(motion.time*1000);
+    },
+    // The tags on now and how long the look has shown, in milliseconds: an
+    // occasion's take fits by them at its next pick (CONTINUITY.md, Occasions).
+    setOccasion({when=[],lookMs=0}={}) {
+      occasion.when=new Set(when);occasion.lookMs=Math.max(0,Number(lookMs)||0);
     },
     oneShot(value) {
       const result=router.oneShot(value,motion.time*1000,sceneConstants.cycleMs[0]);

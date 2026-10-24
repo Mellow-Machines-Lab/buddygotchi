@@ -78,6 +78,10 @@ class Run:
             shutil.rmtree(self.root)
         self.root.mkdir(parents=True)
         self.out.mkdir(parents=True, exist_ok=True)
+        # Silent: a run plays every reaction on the board, and nobody wants
+        # to hear them all. The app reads its volume from here at launch.
+        self.state.mkdir(parents=True, exist_ok=True)
+        (self.state / "settings.json").write_text(json.dumps({"volume": 0}))
         for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
                 raise DeviceError(f"no {BIN / name}; run make build")
@@ -187,9 +191,9 @@ def check_after(run: Run, events: list[str]) -> None:
     for want in events:
         (run.say if want in brain_log else run.fail)(f"the harness saw an event with {want!r}: {want in brain_log}")
     # Nothing private may reach the app's files, debug.jsonl and the
-    # transcript included, but your prompt and the agent's last message,
-    # which `--keep-text` keeps: the fixtures mark them
-    # PRIVATE_PROMPT and PRIVATE_CLOSING.
+    # transcript included, but the agent's last message, which
+    # `--keep-text` keeps: the fixtures mark it PRIVATE_CLOSING. Your prompt
+    # (PRIVATE_PROMPT) is read on the Mac and never kept.
     leaks = []
     for f in run.state.rglob("*"):
         if f.is_file() and set(re.findall(r"PRIVATE_[A-Z]*", f.read_text(errors="replace"))) - KEPT_WORDS:
@@ -197,8 +201,8 @@ def check_after(run: Run, events: list[str]) -> None:
     (run.fail if leaks else run.say)(f"PRIVATE_ markers in app files or the brain log: {leaks or 'none'}")
 
 
-# The fixtures' markers for the words that do get through.
-KEPT_WORDS = {"PRIVATE_PROMPT", "PRIVATE_CLOSING"}
+# The fixtures' marker for the words that do get through.
+KEPT_WORDS = {"PRIVATE_CLOSING"}
 
 
 def order(log: str) -> list[dict[str, Any]]:

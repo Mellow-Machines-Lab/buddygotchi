@@ -7,6 +7,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { root, STEP_MS, loadEngine, loadCatalog, readScript, runScript } from './trace.mjs';
 import { createSmoothness, tracked } from './smooth.mjs';
+import { takesOf } from '../engine/scenes/index.mjs';
 
 const FULL_SPEC = 'CONTINUITY.md, Full activity scene matrix';
 const graph = JSON.parse(fs.readFileSync(path.join(root, 'emotion-graph.json'), 'utf8'));
@@ -146,15 +147,21 @@ async function checkFullFamilyConstants(createSlime, catalog) {
   }
   const idle = driver(createSlime, catalog), automatic = [];
   let count = idle.channels.performanceCount;
-  while (automatic.length < 12) {
+  // Calm's idle takes: its three gestures, then the three idle gags.
+  const idleTakes = catalog.expressions.calm.performances.length + catalog.idleGags.length;
+  assert.equal(idleTakes, 6, `${FULL_SPEC}: calm idles with three gestures and three gags`);
+  while (automatic.length < 3 + 2 * idleTakes) {
     const frame = idle.step();
     if (frame.performanceCount === count) continue;
     count = frame.performanceCount; automatic.push(frame.performance.index);
     const gap = frame.nextPerformance - frame.time - frame.performance.duration;
     assert.ok(gap >= 7 && gap < 15, `${FULL_SPEC}: automatic idle retains the original quiet interval`);
   }
-  for (let offset = 0; offset < automatic.length; offset += 3) assert.deepEqual(automatic.slice(offset, offset + 3).sort(), [0, 1, 2],
-    `${FULL_SPEC}: automatic idle consumes all three gestures in each shuffle bag`);
+  // The bag's first round is the three gestures, as it always was; from the
+  // second, every take, the gags too.
+  assert.deepEqual(automatic.slice(0, 3).sort(), [0, 1, 2], `${FULL_SPEC}: automatic idle opens with the three gestures`);
+  for (let offset = 3; offset < automatic.length; offset += idleTakes) assert.deepEqual(automatic.slice(offset, offset + idleTakes).sort(),
+    [...Array(idleTakes).keys()], `${FULL_SPEC}: automatic idle then consumes every take, gags included, in each shuffle bag`);
   for (let index = 1; index < automatic.length; index++) assert.notEqual(automatic[index], automatic[index - 1],
     `${FULL_SPEC}: automatic idle never immediately repeats across bag boundaries`);
   for (const state of ['poked', 'tap_spam']) {
@@ -197,6 +204,8 @@ function validateMatrixFrame(frame, sample, context) {
     assert.equal(frame.props.result.state, 'task_complete', `${FULL_SPEC}: only task completion can display a trophy`);
     assert.equal(frame.props.result.outcome, 'success', `${FULL_SPEC}: trophy requires explicit success`);
   }
+  if (frame.props.result.gift) assert.ok(frame.props.result.state === 'task_complete' && frame.props.result.outcome === 'success'
+    && sample.mood === 'proud', `${FULL_SPEC}: only proud's successful finish shows off a gift`);
   for (const [name, bound] of Object.entries({ lean: 0.08, squash: 0.06, forward: 0.05 })) {
     const spring = frame.activityChannels[name];
     assert.ok(Number.isFinite(spring.x) && Math.abs(spring.x) <= bound + 1e-12,
@@ -211,7 +220,7 @@ function validateMatrixFrame(frame, sample, context) {
   for (const [name, value] of Object.entries(frame.face)) {
     if (typeof value === 'number') assert.ok(Number.isFinite(value), `${FULL_SPEC}: ${context} semantic face ${name} is finite`);
   }
-  for (const key of ['cheekAlpha', 'tearAmount', 'bridgeBlink']) {
+  for (const key of ['cheekAlpha', 'tearAmount', 'blink']) {
     assert.ok(frame.face[key] >= 0 && frame.face[key] <= 1, `${FULL_SPEC}: ${context} ${key} stays in [0,1]`);
   }
   assert.equal(typeof frame.face.artId, 'string', `${FULL_SPEC}: ${context} emits one semantic face identity`);
@@ -246,10 +255,10 @@ export async function checkFullMatrix() {
   await checkProfileContract();
   await checkFullFamilyConstants(createSlime, catalog);
   assert.equal(canonicalMoods.length, 42, `${FULL_SPEC}: canonical mood count`);
-  assert.equal(states.length, 23, `${FULL_SPEC}: factual state count`);
-  assert.equal(fullMatrixCells.length, 966, `${FULL_SPEC}: every canonical mood/state cell is required`);
+  assert.equal(states.length, 25, `${FULL_SPEC}: factual state count`);
+  assert.equal(fullMatrixCells.length, 1050, `${FULL_SPEC}: every canonical mood/state cell is required`);
   const { implementedStates } = await import('../engine/scenes/constants.mjs');
-  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 23 scenes have implementations`);
+  assert.deepEqual([...implementedStates].sort(), states.map(state => state.id).sort(), `${FULL_SPEC}: all 25 scenes have implementations`);
   const verified = new Set();
   let frameCount = 0, variantsChecked = 0, factCasesChecked = 0, quietAliases = 0;
   for (const mood of canonicalMoods) for (const definition of states) {
@@ -258,6 +267,10 @@ export async function checkFullMatrix() {
       const sample = { mood, state, args }, context = [mood, state, args.ctx, args.outcome].filter(Boolean).join('.');
       const d = driver(createSlime, catalog, mood), variants = new Set(), contactIds = new Set(), evidence = new Map();
       let activeFrames = 0, previous, lastVariant, lastIteration, idleVariant;
+      // CONTINUITY.md, Comedy: idle's takes are the gestures, the mood's own
+      // gags and the idle gags; a successful finish has a fourth, its hiccups.
+      const takes = state === 'idle' ? 3 + (catalog.expressions[mood].gags || []).length + catalog.idleGags.length
+        : takesOf(state, args.outcome ?? null);
       const observe = frame => {
         frameCount++;
         validateMatrixFrame(frame, sample, context);
@@ -284,18 +297,23 @@ export async function checkFullMatrix() {
           }
         }
         for (const contact of frame.contacts) {
-          assert.equal(contact.requestId, frame.scene.requestId, `${FULL_SPEC}: ${context} cannot emit an interrupted contact`);
+          // A gag's contacts are its performance's, while it plays.
+          if (contact.requestId === 'gag') assert.ok(frame.performance, `${FULL_SPEC}: ${context} a gag's contact comes from a playing gag`);
+          else assert.equal(contact.requestId, frame.scene.requestId, `${FULL_SPEC}: ${context} cannot emit an interrupted contact`);
           assert.ok(!contactIds.has(contact.id), `${FULL_SPEC}: ${context} cannot repeat a consumed contact`);
           contactIds.add(contact.id);
         }
         previous = frame;
       };
-      const entered = admitState(d, state, args, `${context}-0`); observe(entered);
+      // A gesture's take is the one the board names: each in turn.
+      const ask = activation => (state === 'gesture' ? { ...args, variant: activation } : args);
+      const entered = admitState(d, state, ask(0), `${context}-0`); observe(entered);
       if (quietStates.has(state)) {
         d.advance(3200, observe); quietAliases++;
         assert.equal(d.channels.mood, mood, `${FULL_SPEC}: quiet alias retains mood for later wake`);
       } else if (state === 'idle') {
-        for (let index = 0; index < 3; index++) {
+        // Idle's takes: the mood's three gestures, then its comedy.
+        for (let index = 0; index < takes; index++) {
           idleVariant = index;
           d.slime.perform(index);
           const performance = d.slime.inspect().performance;
@@ -321,8 +339,9 @@ export async function checkFullMatrix() {
           route(d, 'working', `${context} ends only on actual stop input`);
         }
       } else {
-        for (let activation = 0; activation < 3; activation++) {
-          const started = activation === 0 ? entered : admitState(d, state, args, `${context}-${activation}`);
+        // A fourth take (the hiccups) joins the bag's second round.
+        for (let activation = 0; activation < 3 || (variants.size < takes && activation < 3 + 2 * takes); activation++) {
+          const started = activation === 0 ? entered : admitState(d, state, ask(activation), `${context}-${activation}`);
           variants.add(started.scene.variant);
           if (activation) observe(started);
           const requestId = started.scene.requestId;
@@ -345,9 +364,9 @@ export async function checkFullMatrix() {
       }
       assert.ok(activeFrames > 0, `${FULL_SPEC}: ${context} was actually advanced`);
       if (!quietStates.has(state)) {
-        assert.deepEqual([...variants].sort(), [0, 1, 2], `${FULL_SPEC}: ${context} exercises all three active variants`);
+        assert.deepEqual([...variants].sort(), [...Array(takes).keys()], `${FULL_SPEC}: ${context} exercises all ${takes} active variants`);
         const signatures = [...evidence.values()].map(item => JSON.stringify({ contacts: item.contacts, samples: item.samples }));
-        assert.equal(new Set(signatures).size, 3, `${FULL_SPEC}: ${context} needs three physically different rhythms or poses, not metadata-only variants`);
+        assert.equal(new Set(signatures).size, takes, `${FULL_SPEC}: ${context} needs ${takes} physically different rhythms or poses, not metadata-only variants`);
         for (const item of evidence.values()) {
           assert.ok(item.peak > 0.0001, `${FULL_SPEC}: ${context} each active variant participates in actual body motion`);
           assert.ok(item.samples.every(sample => sample !== null), `${FULL_SPEC}: ${context} physically samples all 24 normalized phases`);
@@ -391,7 +410,7 @@ function physical(slime) {
 const smooth = createSmoothness('scene matrix');
 function driver(createSlime, catalog, mood = 'happy') {
   let event = false;
-  const slime = tracked(createSlime({ seed: 53, catalog }), () => { event = true; }), observe = smooth.run();
+  const slime = tracked(createSlime({ seed: 53, catalog }), () => { event = true; }), observe = smooth.run(catalog.expressions);
   slime.setMood(mood);
   let at = 0, channels = slime.step(at).channels;
   observe(channels, event); event = false;
@@ -525,14 +544,14 @@ function checkRouting(createSlime, catalog) {
   d.slime.oneShot({ id: 3, name: 'react', args: { say: {} } }); expect('needs_you', 'empty say ends listening');
   d.slime.setFacts({ base: 'working' }); expect('working', 'full snapshot without attn clears attention');
   let id = 10;
-  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam', 'wake_up']) {
+  for (const name of ['starting', 'stopped', 'error', 'helper_return', 'reply_ready', 'task_complete', 'poked', 'tap_spam', 'wake_up', 'gesture', 'notice']) {
     const single = driver(createSlime, catalog);
     single.slime.setFacts({ base: 'working' });
     single.slime.oneShot({ id: id++, name, args: { outcome: 'failure', ctx: 'continuation', loops: 1 } });
     route(single, name); visited.add(name);
   }
   const planned = JSON.parse(fs.readFileSync(path.join(root, 'state-plan.json'), 'utf8')).states.map(state => state.id);
-  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 23 existing state IDs from current facts`);
+  assert.deepEqual([...visited].sort(), [...planned].sort(), `${SPEC}: route all 25 existing state IDs from current facts`);
   const stopped = driver(createSlime, catalog);
   stopped.slime.oneShot({ id: 1, name: 'task_complete', args: { outcome: 'failure' } }); route(stopped, 'task_complete');
   stopped.slime.oneShot({ id: 2, name: 'stop_listening' }); route(stopped, 'task_complete', 'stop_listening does not end unrelated moments');
@@ -593,7 +612,7 @@ async function checkSceneConstants(createSlime, catalog) {
   assert.deepEqual(constants, {
     entryMs: 240, recoveryMs: 480, contactMs: 120, cycleMs: [3200, 3700, 4200], timingJitterMs: 40,
     gainJitter: 0.1, activityFrequency: 12, activityDamping: 10, activityVelocity: 1.2,
-    activityBounds: { lean: 0.08, squash: 0.06, forward: 0.05 }, propFrequency: 10, propDamping: 14, propRampMs: 200,
+    activityBounds: { lean: 0.08, squash: 0.06, forward: 0.05 }, propFrequency: 10, propDamping: 14, propRampMs: 200, cardRevealMs: 400,
     hostLaneTop: 0.8, poseBounds: [1.25, 1.32, 1.14, 0.72], lifeBounds: [0.24, 0.12, 0.23],
   }, `${SPEC}: provisional representative-scene numbers are pinned for owner review`);
   assert.deepEqual(sceneMoodTraits, {
@@ -677,12 +696,15 @@ async function checkSceneConstants(createSlime, catalog) {
   }
   const sleepy = driver(createSlime, catalog, 'frightened');
   sleepy.slime.setFacts({ base: 'asleep' });
-  let wasSleeping = sleepy.channels.face.sleeping;
-  sleepy.advance(1600, frame => {
-    if (!wasSleeping && frame.face.sleeping) near(frame.face.bridgeBlink, 1, 'shared sleepy primitive changes only at bridge closure');
-    wasSleeping = frame.face.sleeping;
+  let crossed = false;
+  sleepy.advance(2592, frame => {
+    const layers = frame.face.layers;
+    if (layers.length > 1) {
+      crossed = true;
+      assert.ok(layers.at(-1).sleeping && layers.slice(0, -1).every(layer => !layer.sleeping), 'the shared sleepy art fades in over the awake one');
+    }
   });
-  assert.ok(wasSleeping, `${SPEC}: explicit quiet face is exercised`);
+  assert.ok(crossed && sleepy.channels.face.sleeping && sleepy.channels.face.layers.length === 1, `${SPEC}: explicit quiet face is exercised`);
   for (const [key, value] of Object.entries({ eyeOpen: 0.004, mouthWidth: 0.018, curve: 0.008, cheekAlpha: 0, tearAmount: 0 })) {
     near(sleepy.channels.face[key], value, `shared quiet target ${key}`, 1e-8);
   }
@@ -803,17 +825,29 @@ function checkQuietAndTimeout(createSlime, catalog) {
   d.slime.setFacts({ base: 'working' }); d.slime.perform(0); d.advance(160);
   setWithoutReset(d.slime, () => d.slime.setFacts({ base: 'asleep' }), 'asleep interruption');
   const quietCount = d.slime.inspect().performanceCount;
+  let snoring = 0, swell = 0, breaths = 0;
   d.advance(60000, frame => {
     assert.equal(frame.scene.state, 'asleep'); assert.ok(frame.scene.quiet);
     assert.equal(frame.mood, 'frightened', `${SPEC}: rest preserves stored mood`);
     assert.equal(frame.performance, null, `${SPEC}: rest suppresses acting recipes`);
     assert.equal(frame.performanceCount, quietCount, `${SPEC}: no hidden acting scheduler runs during rest`);
-    assert.equal(frame.contacts.length, 0, `${SPEC}: no contacts during quiet rest`);
+    // CONTINUITY.md, Comedy: asleep's fourth take is a snore, two breaths.
+    assert.ok(frame.contacts.every(contact => contact.kind === 'breath_contact' && frame.scene.variant === 3),
+      `${SPEC}: no contacts during quiet rest but a snore's breaths`);
+    breaths += frame.contacts.length;
+    if (frame.scene.variant === 3) { snoring++; swell = Math.max(swell, frame.activityChannels.squash.x); }
+    else assert.ok(Math.abs(frame.activityChannels.squash.x) < 0.03, `${SPEC}: still rests stay still`);
   });
+  assert.ok(snoring > 0 && breaths > 0 && breaths % 2 === 0, `${SPEC}: a minute asleep snores, two breaths at a time`);
+  assert.ok(swell > 0.01 && swell < 0.03, `${SPEC}: a snore's breath is a slight swell (${swell})`);
   d.slime.setFacts({ base: 'working' }); d.advance(32000);
   assert.equal(d.channels.scene.state, 'working', `${SPEC}: elapsed wall/presentation time cannot infer device no_app timeout`);
   setWithoutReset(d.slime, () => d.slime.setLinkTimedOut(true), 'explicit link timeout');
   route(d, 'no_app');
+  d.advance(32000, frame => {
+    assert.equal(frame.scene.variant, 0, `${SPEC}: a lost link rests still, and never snores`);
+    assert.equal(frame.contacts.length, 0, `${SPEC}: no contacts while the link is lost`);
+  });
   d.slime.setFacts({ base: 'working', act: 'terminal' });
   d.advance(320, frame => assert.equal(frame.scene.state, 'no_app', `${SPEC}: facts cannot clear explicit link timeout`));
   d.slime.setLinkTimedOut(false); route(d, 'terminal', 'restored link returns to latest facts');
@@ -866,6 +900,49 @@ function checkContactInterruption(createSlime, catalog) {
   }
 }
 
+// A card's reveal is its slot's own: a smoothstep up over cardRevealMs from
+// its reveal contact, and down over the recovery. A route that ends while it
+// rises or falls leaves it going as it was while the card's ramp fades it out.
+async function checkCardReveal(createSlime, catalog) {
+  const { sceneConstants: c } = await import('../engine/scenes/constants.mjs');
+  const smoothstep = x => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+  const revealAt = 680; // happy's first success take: the mood adds no delay
+  const finish = () => {
+    const d = driver(createSlime, catalog);
+    d.slime.setFacts({ base: 'idle' }); d.step();
+    d.slime.oneShot({ id: 940, name: 'task_complete', args: { outcome: 'success', variant: 0, hold: true } });
+    const frame = d.step();
+    return { d, start: d.at - frame.scene.ageMs, duration: frame.scene.loopDurationMs };
+  };
+  const reveal = (start, duration, time) => {
+    const age = time - start;
+    return age < revealAt ? 0 : age < duration - c.recoveryMs ? smoothstep((age - revealAt) / c.cardRevealMs)
+      : smoothstep((duration - age) / c.recoveryMs);
+  };
+  {
+    const { d, start, duration } = finish();
+    d.advance(duration + 320, frame => near(frame.props.result.reveal, reveal(start, duration, d.at),
+      'a card rises in over cardRevealMs from its reveal contact and goes over the recovery', 1e-9));
+  }
+  // Ended while it rises, 160 ms after its contact, and while it falls.
+  for (const end of [revealAt + 160, null]) {
+    const { d, start, duration } = finish(), endAge = end ?? duration - c.recoveryMs + 160;
+    d.advance(Math.ceil((endAge - d.channels.scene.ageMs) / STEP_MS) * STEP_MS);
+    const endedAt = d.at;
+    d.slime.clearTransient();
+    let shown = 0;
+    d.advance(Math.ceil(c.propRampMs / STEP_MS) * STEP_MS + 2 * STEP_MS, frame => {
+      // Its ramp turns at the first frame after the end, and is at zero a ramp later.
+      if (d.at - endedAt < STEP_MS + c.propRampMs) {
+        near(frame.props.result.reveal, reveal(start, duration, d.at), `a card ended as it ${end ? 'rises' : 'falls'} goes on as it was`, 1e-9);
+        assert.ok(frame.props.result.visible > 0, `${SPEC}: a card ended mid-reveal fades out over its ramp`);
+        shown++;
+      } else assert.equal(frame.props.result.visible, 0, `${SPEC}: a card ended mid-reveal is gone once its ramp is`);
+    });
+    assert.ok(shown >= 10, `${SPEC}: a card ended mid-reveal is drawn while it fades`);
+  }
+}
+
 function checkLongWork(createSlime, catalog) {
   const d = driver(createSlime, catalog, 'happy');
   d.slime.setFacts({ base: 'working' });
@@ -895,6 +972,294 @@ function checkLongWork(createSlime, catalog) {
   return { iterations, contacts };
 }
 
+// CONTINUITY.md, Comedy: the gags' catalogue, their channels, the bag that
+// deals comedy from its second round, the hiccups, the gift and the snore.
+async function checkComedy(createSlime, catalog) {
+  const COMEDY = 'CONTINUITY.md, Comedy';
+  const { gagSprings, keyed } = await import('../engine/acting.mjs');
+  const { createVariations } = await import('../engine/variation.mjs');
+  const { resultRecipe, hiccups } = await import('../engine/scenes/result.mjs');
+  const { restRecipe, snore } = await import('../engine/scenes/rest.mjs');
+  const { comedyKinds } = await import('../engine/cues.mjs');
+  const idle = plan.states.find(state => state.id === 'idle'), asleep = plan.states.find(state => state.id === 'asleep');
+  assert.deepEqual(catalog.idleGags, ['yawn-and-settle', 'doze-and-snap', 'sneeze-and-shake'], `${COMEDY}: every mood's three idle gags`);
+  assert.deepEqual(idle.variations.slice(3), catalog.idleGags, `${COMEDY}: idle's variations 4 to 6 are its gags`);
+  assert.deepEqual(asleep.variations, ['still-rest', 'slow-settle', 'one-sleepy-shift', 'snore'], `${COMEDY}: asleep's fourth variation snores`);
+  assert.deepEqual(idle.variationAudio, { 'sneeze-and-shake': 'sparse_contacts' }, `${COMEDY}: idle sounds only its sneeze`);
+  assert.deepEqual(asleep.variationAudio, { snore: 'sparse_contacts' }, `${COMEDY}: asleep sounds only its snore`);
+  const own = Object.fromEntries(Object.entries(catalog.expressions).filter(([, profile]) => profile.gags).map(([id, profile]) => [id, profile.gags]));
+  assert.deepEqual(own, { comfy: ['long-yawn'], lazy: ['long-yawn'], bored: ['long-yawn'], tired: ['long-yawn'], excited: ['zoomies'],
+    'comfy:rosy': ['long-yawn'] }, `${COMEDY}: the low moods yawn, excited has the zoomies`);
+  assert.deepEqual(Object.fromEntries(Object.entries(catalog.gags).map(([id, gag]) => [id, gag.duration])),
+    { 'yawn-and-settle': 2.9, 'doze-and-snap': 3.6, 'sneeze-and-shake': 2.7, 'long-yawn': 4.2, zoomies: 2.6 }, `${COMEDY}: gag durations`);
+  const impulses = ['lean', 'squash', 'ripple', 'lift', 'roll', 'forward', 'slide'], keyedChannels = [...impulses, 'lids'];
+  for (const [id, gag] of Object.entries(catalog.gags)) {
+    assert.ok(typeof gag.label === 'string' && gag.label.length > 3, `${COMEDY}: ${id} has a label`);
+    // The port's fixed arrays: seven cues, twenty-four keys, four contacts.
+    assert.ok(gag.cues.length <= 7 && gag.keys.length <= 24 && gag.contacts.length <= 4, `${COMEDY}: ${id} fits the port's arrays`);
+    for (const list of [gag.cues, gag.keys, gag.contacts]) for (let i = 0; i < list.length; i++) {
+      assert.ok(list[i][0] >= 0 && list[i][0] < gag.duration && (!i || list[i][0] >= list[i - 1][0]), `${COMEDY}: ${id} times rise within the gag`);
+    }
+    for (const [, channel] of gag.cues) assert.ok(impulses.includes(channel), `${COMEDY}: ${id} cue channel ${channel}`);
+    for (const channel of keyedChannels) {
+      const keys = gag.keys.filter(key => key[1] === channel);
+      for (let i = 1; i < keys.length; i++) assert.ok(keys[i][0] > keys[i - 1][0], `${COMEDY}: ${id} ${channel} keys rise strictly`);
+      if (keys.length) assert.equal(keys.at(-1)[2], 0, `${COMEDY}: ${id} ${channel} ends where it began`);
+    }
+    for (const key of gag.keys) assert.ok(keyedChannels.includes(key[1]), `${COMEDY}: ${id} key channel ${key[1]}`);
+    for (const [, kind] of gag.contacts) assert.ok(comedyKinds.has(kind), `${COMEDY}: ${id} contact kind ${kind}`);
+  }
+  assert.deepEqual(catalog.gags['sneeze-and-shake'].contacts.map(contact => contact[1]), ['sneeze_contact'], `${COMEDY}: one sneeze`);
+  assert.deepEqual(catalog.gags.zoomies.contacts.map(contact => contact[1]), Array(4).fill('zoom_contact'), `${COMEDY}: a landing at each edge`);
+  assert.deepEqual(gagSprings, { slide: { frequency: 10, damping: 9, limit: 0.7, velocity: 5 }, lids: { frequency: 24, damping: 48, limit: 1, velocity: 20 } },
+    `${COMEDY}: the slide and lids springs`);
+  const keys = [[1, 'lids', 1], [2, 'lids', 0.5]];
+  for (const [age, expected] of [[0, 0], [0.5, 0.5], [1, 1], [1.5, 0.75], [2, 0.5], [9, 0.5]]) near(keyed(keys, 'lids', age), expected, `${COMEDY}: keys smoothstep from (0, 0)`);
+  assert.equal(keyed(keys, 'slide', 1), 0, `${COMEDY}: a channel without keys stays at rest`);
+  // The bag deals its first three takes first, then every take, never the last again.
+  const bag = createVariations(() => 0.99), dealt = Array.from({ length: 11 }, () => bag.next('key', 4));
+  assert.deepEqual(dealt.slice(0, 3).sort(), [0, 1, 2], `${COMEDY}: a bag's first round is its first three takes`);
+  assert.deepEqual(dealt.slice(3, 7).sort(), [0, 1, 2, 3], `${COMEDY}: its later rounds deal every take`);
+  for (let i = 1; i < dealt.length; i++) assert.notEqual(dealt[i], dealt[i - 1], `${COMEDY}: never the take just dealt`);
+  // The hiccups: the first take's card, then three little contacts; only a success has them.
+  const hiccup = resultRecipe('success', 3, 'happy');
+  assert.deepEqual(hiccup.contacts.map(contact => [contact.at, contact.kind, contact.strength]),
+    [[680, 'success_reveal', 1.05], [1640, 'body_contact', 0.45], [2060, 'body_contact', 0.45], [2480, 'body_contact', 0.45]], `${COMEDY}: hiccup timings`);
+  assert.equal(hiccup.duration, 3700, `${COMEDY}: the hiccups' take lasts the second cycle`);
+  assert.deepEqual(hiccups, { revealMs: 680, atMs: [1640, 2060, 2480], strength: 0.45 }, `${COMEDY}: hiccup constants`);
+  assert.deepEqual([['task_complete', 'success'], ['task_complete', 'failure'], ['task_complete', null], ['asleep', null], ['no_app', null],
+    ['reply_ready', null]].map(([state, outcome]) => takesOf(state, outcome)), [4, 3, 3, 4, 3, 3], `${COMEDY}: which states have a fourth take`);
+  assert.deepEqual(snore, { durationMs: 4800, breathsMs: [600, 2600], strength: 0.35, swellMs: 1200, swell: 0.07 }, `${COMEDY}: snore constants`);
+  assert.deepEqual(restRecipe(3).contacts.map(contact => [contact.at, contact.kind]), [[600, 'breath_contact'], [2600, 'breath_contact']],
+    `${COMEDY}: a snore is two breaths`);
+  for (const variant of [0, 1, 2]) assert.deepEqual(restRecipe(variant), restRecipe(), `${COMEDY}: the other rests are the still one`);
+  // The gift: proud's lifted success shows a bug beside its card; no other take does.
+  for (const [mood, variant, gift] of [['proud', 1, true], ['proud', 0, false], ['proud', 2, false], ['proud', 3, false], ['happy', 1, false]]) {
+    const d = driver(createSlime, catalog, mood);
+    d.slime.setFacts({ base: 'working' });
+    d.slime.oneShot({ id: `gift-${mood}-${variant}`, name: 'task_complete', hold: true, args: { outcome: 'success', variant } });
+    let shown = false;
+    d.advance(2400, frame => { if (frame.props.result.visible > 0.5) shown ||= Boolean(frame.props.result.gift); });
+    assert.equal(d.channels.scene.variant, variant, `${COMEDY}: the host's take plays`);
+    assert.equal(shown, gift, `${COMEDY}: ${mood} take ${variant} ${gift ? 'shows' : 'has no'} gift`);
+  }
+  // A take its state hasn't is the bag's, not an invented one.
+  const refused = driver(createSlime, catalog);
+  refused.slime.setFacts({ base: 'working' });
+  refused.slime.oneShot({ id: 'no-fourth', name: 'reply_ready', hold: true, args: { variant: 3 } });
+  assert.ok([0, 1, 2].includes(refused.step().scene.variant), `${COMEDY}: a fourth take only where a state has one`);
+  // Each gag, played in calm idle, does what it says.
+  const play = (mood, index, reduced = false) => {
+    const d = driver(createSlime, catalog, mood); d.slime.setReducedMotion(reduced); d.advance(160);
+    d.slime.perform(index); const frames = [];
+    const performance = d.slime.inspect().performance;
+    d.advance(Math.ceil((performance.duration * 1000 + 1200) / STEP_MS) * STEP_MS, frame => frames.push(frame));
+    return { performance, frames, at: seconds => frames[Math.round(seconds * 1000 / STEP_MS) - 1] };
+  };
+  const yawn = play('calm', 3);
+  assert.equal(yawn.performance.type, 'yawn-and-settle', `${COMEDY}: calm's fourth take`);
+  assert.ok(yawn.at(1.2).life[0] > 0.04 && yawn.at(1.2).face.blink > 0.7, `${COMEDY}: the yawn stretches up with its eyes squeezed`);
+  const doze = play('calm', 4);
+  assert.equal(doze.performance.type, 'doze-and-snap', `${COMEDY}: calm's fifth take`);
+  for (const second of [1.2, 1.6, 2.0, 2.4]) assert.ok(doze.at(second).face.blink > 0.55, `${COMEDY}: the lids droop at ${second} s`);
+  assert.ok(doze.at(1.8).pose[1] < yawn.at(0.1).pose[1] - 0.03, `${COMEDY}: the dome sinks while it dozes`);
+  assert.ok(Math.max(...doze.frames.slice(160, 180).map(frame => frame.face.blink)) > 0.7 && doze.at(3.2).face.blink < 0.05,
+    `${COMEDY}: it snaps back with a blink, then its eyes are open`);
+  const sneeze = play('calm', 5);
+  assert.deepEqual(sneeze.frames.flatMap(frame => frame.contacts.map(contact => [Math.round((frame.time - sneeze.frames[0].time) * 1000) + 16, contact.kind])),
+    [[1008, 'sneeze_contact']], `${COMEDY}: one sneeze, a second in`);
+  assert.ok(sneeze.at(1.15).life[2] > 0.08, `${COMEDY}: the sneeze lurches forward`);
+  const zoomies = play('excited', 3), slides = zoomies.frames.map(frame => frame.slide);
+  assert.equal(zoomies.performance.type, 'zoomies', `${COMEDY}: excited's fourth take`);
+  assert.ok(Math.max(...slides) > 0.45 && Math.min(...slides) < -0.45, `${COMEDY}: the zoomies reach both edges`);
+  assert.ok(Math.abs(slides.at(-1)) < 0.02, `${COMEDY}: and come back to the middle`);
+  const calmer = play('excited', 3, true);
+  assert.ok(Math.max(...calmer.frames.map(frame => Math.abs(frame.slide))) < 0.15, `${COMEDY}: reduced motion keeps the zoomies small`);
+  const reducedDoze = play('calm', 4, true);
+  assert.ok(reducedDoze.at(1.6).face.blink > 0.55, `${COMEDY}: reduced motion still droops the lids`);
+  const longYawn = play('tired', 3);
+  assert.equal(longYawn.performance.type, 'long-yawn', `${COMEDY}: tired's fourth take`);
+  assert.ok(longYawn.at(3.2).face.blink > 0.35 && longYawn.at(5).face.blink < 0.05, `${COMEDY}: the long yawn ends heavy-lidded, then wakes`);
+  // Falling asleep rests still through the bag's first round: no snore for 12.8 s.
+  const sleepy = driver(createSlime, catalog);
+  sleepy.slime.setFacts({ base: 'asleep' });
+  let firstSnore = null;
+  sleepy.advance(60000, frame => { if (frame.scene.variant === 3 && firstSnore === null) firstSnore = sleepy.at; });
+  assert.ok(firstSnore >= 12800, `${COMEDY}: the first snore comes after a round of still rests (${firstSnore} ms)`);
+  return { gags: Object.keys(catalog.gags).length, firstSnoreMs: firstSnore };
+}
+
+// CONTINUITY.md, Gestures: a take for each of the board's gestures, in its
+// order, each a gag under a borrowed face that does what it says.
+async function checkGestures(createSlime, catalog) {
+  const GESTURES = 'CONTINUITY.md, Gestures';
+  const { gestureNames, gestureRecipe, gestureTailMs } = await import('../engine/scenes/gesture.mjs');
+  const gesture = plan.states.find(state => state.id === 'gesture');
+  assert.deepEqual(gestureNames, ['handoff', 'stroke', 'ruffle', 'nose', 'tickle', 'dizzy', 'pickup', 'putdown', 'startle', 'peekaboo'],
+    `${GESTURES}: render::Gesture's order`);
+  assert.deepEqual(catalog.gestures.map(g => g.id), gestureNames, `${GESTURES}: the catalogue's gestures in that order`);
+  assert.deepEqual(gesture.variations, gestureNames, `${GESTURES}: the state's variations are the gestures`);
+  assert.equal(takesOf('gesture'), 10, `${GESTURES}: ten takes`);
+  checkGagShapes(catalog.gestures, GESTURES);
+  for (const [variant, g] of catalog.gestures.entries()) {
+    assert.ok(catalog.expressions[g.face], `${GESTURES}: ${g.id} borrows a face there is (${g.face})`);
+    const recipe = gestureRecipe(catalog.gestures, variant);
+    assert.equal(recipe.duration, Math.round(g.duration * 1000) + gestureTailMs, `${GESTURES}: ${g.id} outlasts its gag`);
+    assert.ok(recipe.contacts.length >= 1 && recipe.contacts.length <= 6 && recipe.contacts.every(c => c.kind === 'body_contact'),
+      `${GESTURES}: ${g.id} dents and sounds with one to six body contacts`);
+    assert.equal(recipe.gag, `gesture:${g.id}`, `${GESTURES}: ${g.id} names its gag`);
+  }
+  // Each played as the board plays it: held, with its face, then cleared.
+  const play = (variant, base = 'idle') => {
+    const d = driver(createSlime, catalog, 'calm');
+    d.slime.setFacts({ base, ...(base === 'working' ? { act: 'terminal' } : {}) }); d.advance(160);
+    const g = catalog.gestures[variant];
+    d.slime.oneShot({ id: `gesture-${variant}`, name: 'gesture', hold: true, args: { variant, mood: g.face } });
+    const frames = [];
+    d.advance(Math.ceil((g.duration * 1000 + gestureTailMs) / STEP_MS) * STEP_MS, frame => frames.push(frame));
+    d.slime.clearTransient(); d.slime.holdExpression(null);
+    const after = route(d, base === 'working' ? 'terminal' : base, `${GESTURES}: ${g.id} returns to its look`);
+    return { frames, after, at: seconds => frames[Math.round(seconds * 1000 / STEP_MS) - 1] };
+  };
+  const played = gestureNames.map((_, variant) => play(variant));
+  for (const [variant, { frames, after }] of played.entries()) {
+    const g = catalog.gestures[variant];
+    assert.ok(frames.every(frame => frame.scene.state === 'gesture' && frame.scene.variant === variant), `${GESTURES}: ${g.id} is its take`);
+    assert.ok(frames.slice(8).every(frame => frame.expression === g.face && frame.mood === 'calm'), `${GESTURES}: ${g.id} borrows ${g.face}, the mood stays`);
+    assert.ok(frames.slice(1).every(frame => frame.performance?.type === `gesture:${g.id}`), `${GESTURES}: ${g.id} plays its gag`);
+    assert.equal(frames.flatMap(frame => frame.contacts).length, g.contacts.length, `${GESTURES}: ${g.id} makes each contact once`);
+    assert.equal(after.expression, 'calm', `${GESTURES}: ${g.id} gives the face back`);
+  }
+  const [handoff, stroke, ruffle, nose, tickle, dizzy, pickup, putdown, startle, peekaboo] = played;
+  const most = (frames, read) => Math.max(...frames.map(read)), least = (frames, read) => Math.min(...frames.map(read));
+  assert.ok(handoff.at(1).life[0] > 0.04 && handoff.at(1).life[2] > 0.08, `${GESTURES}: the hand-off lifts and leans in`);
+  assert.ok(stroke.at(1.5).face.blink > 0.8 && stroke.at(1.5).pose[1] < handoff.at(0.1).pose[1], `${GESTURES}: a stroke melts with eyes closed`);
+  assert.ok(most(ruffle.frames.slice(0, 40), f => Math.abs(f.actorChannels.ripple.x)) > 0.05, `${GESTURES}: a ruffle bristles`);
+  assert.ok(nose.at(0.2).actorChannels.squash.x < -0.05, `${GESTURES}: a boop on the nose squishes`);
+  assert.ok(most(tickle.frames, f => f.pose[0]) > 0.05 && least(tickle.frames, f => f.pose[0]) < -0.05, `${GESTURES}: a tickle jiggles both ways`);
+  assert.ok(most(dizzy.frames, f => f.slide) > 0.05 && least(dizzy.frames, f => f.slide) < -0.05, `${GESTURES}: dizzy wobbles side to side`);
+  assert.ok(pickup.at(0.8).life[0] > 0.12, `${GESTURES}: a pick-up stretches up`);
+  assert.ok(putdown.at(0.2).actorChannels.squash.x < -0.06, `${GESTURES}: a put-down lands squashed`);
+  assert.ok(most(startle.frames.slice(0, 40), f => f.life[0]) > 0.1, `${GESTURES}: a startle jumps`);
+  assert.ok(peekaboo.at(0.4).actorChannels.squash.x < -0.12 && peekaboo.at(1.1).life[0] > 0.08, `${GESTURES}: peekaboo rises from below`);
+  for (const { frames } of played) assert.ok(Math.abs(frames.at(-1).slide ?? 0) < 0.02, `${GESTURES}: every gesture comes back to the middle`);
+  // Without the board's take, the first; from work, acting plays it and stops after.
+  const plain = driver(createSlime, catalog);
+  plain.slime.setFacts({ base: 'idle' });
+  plain.slime.oneShot({ id: 'no-take', name: 'gesture', args: {} });
+  assert.equal(route(plain, 'gesture').scene.variant, 0, `${GESTURES}: no take asked is the first`);
+  const working = play(5, 'working');
+  assert.ok(working.frames.slice(1).every(frame => !frame.actingSuppressed), `${GESTURES}: acting plays a gesture's gag at work`);
+  assert.equal(working.after.actingSuppressed, true, `${GESTURES}: and stops when the work comes back`);
+}
+
+// CONTINUITY.md, Notice: it hears its name and looks up at you, three takes
+// dealt as any state's, each a gag under a face it borrows, leaning in.
+async function checkNotices(createSlime, catalog) {
+  const NOTICE = 'CONTINUITY.md, Notice';
+  const { noticeNames, gestureRecipe } = await import('../engine/scenes/gesture.mjs');
+  assert.deepEqual(catalog.notices.map(g => g.id), noticeNames, `${NOTICE}: the catalogue's takes in order`);
+  assert.deepEqual(plan.states.find(state => state.id === 'notice').variations, noticeNames, `${NOTICE}: the state's variations`);
+  assert.equal(takesOf('notice'), 3, `${NOTICE}: three takes`);
+  checkGagShapes(catalog.notices, NOTICE);
+  for (const [variant, g] of catalog.notices.entries()) {
+    assert.ok(catalog.expressions[g.face], `${NOTICE}: ${g.id} borrows a face there is (${g.face})`);
+    assert.equal(gestureRecipe(catalog.notices, variant).gag, `gesture:${g.id}`, `${NOTICE}: ${g.id} names its gag`);
+    const d = driver(createSlime, catalog, 'calm');
+    d.slime.setFacts({ base: 'working', act: 'terminal' }); d.advance(160);
+    d.slime.oneShot({ id: `notice-${variant}`, name: 'notice', hold: true, args: { variant, mood: g.face } });
+    const frames = [];
+    d.advance(Math.ceil(g.duration * 1000 / STEP_MS) * STEP_MS, frame => frames.push(frame));
+    assert.ok(frames.every(frame => frame.scene.state === 'notice' && frame.scene.variant === variant), `${NOTICE}: ${g.id} is its take`);
+    assert.ok(frames.slice(1).every(frame => frame.performance?.type === `gesture:${g.id}`), `${NOTICE}: ${g.id} plays its gag`);
+    assert.equal(frames.slice(1).filter(frame => frame.props.start.visible > 0).length, 0, `${NOTICE}: ${g.id} shows no start card`);
+    assert.ok(Math.max(...frames.map(f => f.life[2])) > 0.04, `${NOTICE}: ${g.id} leans in toward you`);
+    d.slime.clearTransient(); d.slime.holdExpression(null);
+    route(d, 'terminal', `${NOTICE}: ${g.id} returns to its look`);
+  }
+  // Without a take asked, one is dealt.
+  const dealt = driver(createSlime, catalog);
+  dealt.slime.setFacts({ base: 'idle' });
+  dealt.slime.oneShot({ id: 'notice-dealt', name: 'notice', args: {} });
+  assert.ok(route(dealt, 'notice').scene.variant < 3, `${NOTICE}: a take is dealt`);
+}
+
+// The gag shapes the port's arrays take: seven cues, twenty-four keys,
+// times within the gag, each channel's keys rising and ending at rest.
+function checkGagShapes(gags, spec) {
+  const impulses = ['lean', 'squash', 'ripple', 'lift', 'roll', 'forward', 'slide'], keyed = [...impulses, 'lids'];
+  for (const gag of gags) {
+    assert.ok(gag.cues.length <= 7 && gag.keys.length <= 24 && (gag.contacts ?? []).length <= 6, `${spec}: ${gag.id} fits the port's arrays`);
+    for (const list of [gag.cues, gag.keys]) for (let i = 0; i < list.length; i++) {
+      assert.ok(list[i][0] >= 0 && list[i][0] < gag.duration && (!i || list[i][0] >= list[i - 1][0]), `${spec}: ${gag.id} times rise within it`);
+    }
+    for (const [, channel] of gag.cues) assert.ok(impulses.includes(channel), `${spec}: ${gag.id} cue channel ${channel}`);
+    for (const channel of keyed) {
+      const keys = gag.keys.filter(key => key[1] === channel);
+      for (let i = 1; i < keys.length; i++) assert.ok(keys[i][0] > keys[i - 1][0], `${spec}: ${gag.id} ${channel} keys rise strictly`);
+      if (keys.length) assert.equal(keys.at(-1)[2], 0, `${spec}: ${gag.id} ${channel} ends where it began`);
+    }
+    for (const key of gag.keys) assert.ok(keyed.includes(key[1]), `${spec}: ${gag.id} key channel ${key[1]}`);
+  }
+}
+
+// CONTINUITY.md, Occasions: a look's takes for tags and waits, dealt only
+// while they fit, never otherwise.
+async function checkOccasions(createSlime, catalog) {
+  const OCCASIONS = 'CONTINUITY.md, Occasions';
+  const { occasionShare, idleOccasions, lookOccasions, occasionGags } = await import('../engine/scenes/occasion.mjs');
+  const { comedyKinds } = await import('../engine/cues.mjs');
+  const tagNames = [...fs.readFileSync(path.join(root, '../../../../firmware/src/render/tags.h'), 'utf8')
+    .match(/kTagNames\[kTagCount\] = \{([\s\S]*?)\};/)[1].matchAll(/"(\w+)"/g)].map(m => m[1]);
+  assert.equal(occasionShare, 0.67, `${OCCASIONS}: two picks in three while one fits`);
+  const ids = new Set();
+  for (const o of catalog.occasions) {
+    assert.ok(!ids.has(o.id), `${OCCASIONS}: ${o.id} once`); ids.add(o.id);
+    assert.ok(o.when.every(tag => tagNames.includes(tag)), `${OCCASIONS}: ${o.id} needs tags the board knows`);
+    assert.ok(o.when.length || o.after > 0, `${OCCASIONS}: ${o.id} needs a tag or a wait`);
+    assert.ok(o.looks.length && o.looks.every(look => plan.states.some(state => state.id === look && state.kind !== 'one_shot')),
+      `${OCCASIONS}: ${o.id} is for looks`);
+    assert.ok(o.looks.includes('idle') ? o.gag && !o.recipe : Boolean(o.recipe), `${OCCASIONS}: idle's are gags, the other looks' recipes`);
+    if (typeof o.gag === 'string') assert.ok(catalog.occasions.some(other => other.id === o.gag && typeof other.gag === 'object'),
+      `${OCCASIONS}: ${o.id} borrows a gag there is`);
+    if (o.recipe) assert.ok(o.recipe.contacts.length <= 6, `${OCCASIONS}: ${o.id} fits the port's six contacts`);
+  }
+  const gags = occasionGags(catalog.occasions).map(([id, gag]) => ({ id, ...gag }));
+  checkGagShapes(gags, OCCASIONS);
+  for (const gag of gags) for (const [, kind] of gag.contacts) assert.ok(comedyKinds.has(kind), `${OCCASIONS}: ${gag.id} sounds as comedy does`);
+  assert.ok(idleOccasions(catalog.occasions).length >= 8 && lookOccasions(catalog.occasions).length >= 8, `${OCCASIONS}: idle's and the looks'`);
+  // Played: what's picked for a while, with what's on.
+  const picks = (base, occasion, ms, mood = 'calm') => {
+    const d = driver(createSlime, catalog, mood);
+    d.slime.setFacts({ base, ...(base === 'working' ? { act: 'working' } : {}) });
+    d.slime.setOccasion(occasion);
+    const seen = new Set();
+    d.advance(ms, frame => {
+      if (base === 'idle' && frame.performance) seen.add(frame.performance.type);
+      if (base !== 'idle') seen.add(frame.scene.variant);
+    });
+    return seen;
+  };
+  const idle = (occasion, ms = 120000) => [...picks('idle', occasion, ms)].filter(type => type.startsWith('occasion:'));
+  assert.deepEqual(idle({ when: [] }), [], `${OCCASIONS}: idle plays none with no tag on`);
+  assert.deepEqual(idle({ when: ['day', 'weekend'] }), [], `${OCCASIONS}: nor with tags none needs`);
+  assert.deepEqual(idle({ when: ['night'] }), ['occasion:night-drowse'], `${OCCASIONS}: drowsy at night`);
+  assert.deepEqual(idle({ when: ['morning'] }), ['occasion:morning-stretch'], `${OCCASIONS}: a morning stretch`);
+  assert.deepEqual(idle({ when: ['party'] }), ['occasion:party-bounce'], `${OCCASIONS}: a party bounce`);
+  assert.deepEqual(idle({ when: ['newyear'] }), ['occasion:party-bounce'], `${OCCASIONS}: New Year's is the party's`);
+  assert.deepEqual(idle({ when: [], lookMs: 7200000 }), [], `${OCCASIONS}: no nod-off before idle's doze, however long the look`);
+  assert.deepEqual(idle({ when: ['doze'] }), ['occasion:nod-off'], `${OCCASIONS}: a nod-off once it dozes`);
+  const looks = lookOccasions(catalog.occasions), take = (state, id) => takesOf(state) + looks.findIndex(o => o.state === state && o.id === id);
+  const work = (occasion, state = 'working') => [...picks(state, occasion, 60000)].filter(variant => variant >= takesOf(state)).sort();
+  assert.deepEqual(work({ when: [] }), [], `${OCCASIONS}: work plays none with no tag on`);
+  assert.deepEqual(work({ when: ['busy'] }), [take('working', 'busy-typing')], `${OCCASIONS}: busier typing while busy`);
+  assert.deepEqual(work({ when: ['frantic'] }), [take('working', 'frantic-typing')], `${OCCASIONS}: frantic typing while frantic`);
+  assert.deepEqual(work({ when: [], lookMs: 7200000 }), [], `${OCCASIONS}: no stretch before a marathon, however long the look`);
+  assert.deepEqual(work({ when: ['marathon'] }), [take('working', 'work-stretch')], `${OCCASIONS}: a stretch on a long turn's marathon`);
+  assert.deepEqual(work({ when: ['night'] }, 'asleep'), [take('asleep', 'deep-snore')], `${OCCASIONS}: a deeper snore at night`);
+  assert.deepEqual(work({ when: [], lookMs: 1800000 }, 'asleep'), [take('asleep', 'dream')], `${OCCASIONS}: a dream after half an hour`);
+}
+
 export async function checkScenes({ coverageOnly = false } = {}) {
   const coverage = await checkRepresentative();
   const matrix = await checkFullMatrix();
@@ -909,19 +1274,24 @@ export async function checkScenes({ coverageOnly = false } = {}) {
   checkAlertInterruption(createSlime, catalog);
   checkQuietAndTimeout(createSlime, catalog);
   checkContactInterruption(createSlime, catalog);
+  await checkCardReveal(createSlime, catalog);
+  const comedy = await checkComedy(createSlime, catalog);
+  await checkGestures(createSlime, catalog);
+  await checkNotices(createSlime, catalog);
+  await checkOccasions(createSlime, catalog);
   const longWork = checkLongWork(createSlime, catalog);
   smooth.finish();
   return { status: 'FULL SCENE MATRIX PASS', cases: coverage.cases.length, cells: coverage.cells.length, smoothness: smooth.summary(),
     traceFrames: representativeCases.length * CASE_MS / STEP_MS + 1, matrixFrames: matrix.frames,
-    activeVariants: matrix.variants, factualCases: matrix.factCases, quietAliases: matrix.quietAliases, longWork,
+    activeVariants: matrix.variants, factualCases: matrix.factCases, quietAliases: matrix.quietAliases, comedy, longWork,
     ownerReview: 'Representative art approved at Q1; full matrix has executed engineering evidence',
-    scope: '42 canonical moods × 23 factual states; sound, graph bridges and production ports checked separately' };
+    scope: '42 canonical moods × 25 factual states; sound, graph bridges and production ports checked separately' };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--help') {
-    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 966 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:966 verified cells} for the builder.');
+    console.log('node tools/check-scenes.mjs [--coverage]\nChecks all 1050 Phase 2 cells, active variants, factual contexts/outcomes and routing invariants.\n--coverage executes the full matrix, then prints {cases:24 representative reviews,cells:1050 verified cells} for the builder.');
   } else if (args.length > 0 && !(args.length === 1 && args[0] === '--coverage')) {
     console.error('Unknown arguments; use --help'); process.exitCode = 1;
   } else {

@@ -4,7 +4,7 @@
   "always": true,
   "why": "No code overrides a failed turn; NOW's line already says it failed (a turn whose last check failed counts as failed), and react.animation's success isn't for a failed turn, whatever its message says",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "make the checkout tests pass"},
+    {"event": "turn started", "at": "0s", "prompt": "make the checkout tests pass", "reading": {"kind": "tests"}},
     {"event": "command", "at": "2m", "topic": "tests", "failed": true},
     {"event": "turn finished", "at": "2m30s", "message": "All done! Everything is working great now.", "expect": {"animation": "failure"}},
     {"event": "turn started", "at": "5m"},

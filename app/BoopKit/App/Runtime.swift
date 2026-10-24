@@ -72,6 +72,10 @@ public final class Runtime: @unchecked Sendable {
         /// the one buddy, the process's character, on `link` with
         /// `steering`, as Boop always has.
         public var buddies: [BuddyOptions] = []
+        /// Labels your prompts on the Mac: the menu-bar app's is Apple
+        /// Intelligence where it's on. None (headless's unless it asks,
+        /// and the tests') counts them only.
+        public var labeler: (any PromptLabeler)?
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -110,6 +114,9 @@ public final class Runtime: @unchecked Sendable {
     public var latest: StateSnapshot? { rigs[0].latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
+    /// Boop's memory: long-term.md, read at launch, and the diary, which
+    /// the brain's diary output writes a line to each day.
+    public let memory: MemoryStore
     public private(set) var settings: AppSettings
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
@@ -190,6 +197,8 @@ public final class Runtime: @unchecked Sendable {
     /// Hears every agent's hook as it comes, before Boop takes it: a live
     /// demo's player (`play`), which keeps its script to the agent's pace.
     var demoHeard: ((HookLine) -> Void)?
+    /// Labels your prompts: the options', or a demo's script in front of it.
+    lazy var labeler: (any PromptLabeler)? = options.labeler
 
     /// A clock that never steps and keeps counting while the Mac sleeps,
     /// starting at the wall clock's time: the keepalive and the link's
@@ -219,8 +228,9 @@ public final class Runtime: @unchecked Sendable {
         let log = options.log
         let wall = options.wallClock(), wallAt = options.clock()
         let today = options.time.day(wall)
-        guard let longTerm = try MemoryStore(directory: options.stateDir, today: today, log: log).longTerm
-        else { throw OpenError.notSetUp }
+        let memory = try MemoryStore(directory: options.stateDir, today: today, log: log)
+        guard let longTerm = memory.longTerm else { throw OpenError.notSetUp }
+        self.memory = memory
         name = longTerm.name
         settings = AppSettings.load(from: options.stateDir)
         let recent = DebugLog.Recent()
@@ -263,10 +273,9 @@ public final class Runtime: @unchecked Sendable {
         // prunes the transcript, so today isn't a new day.
         let volume = settings.volume
         let cores = plans.enumerated().map { i, plan in
-            var config = Core.Config(volume: volume, time: options.time, seed: longTerm.seed ^ UInt64(now) ^ UInt64(i),
-                                     pack: plan.buddy.pack)
+            var config = Core.Config(volume: volume, time: options.time, pack: plan.buddy.pack, hatched: longTerm.hatched)
             config.firstAsk = SessionTracker.randomFirstRequest()
-            let core = Core(config: config, lastActiveDay: today, place: places.place)
+            let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
             core.setWallClock(wall, at: wallAt)
             return (plan.buddy, core)
         }
@@ -291,7 +300,11 @@ public final class Runtime: @unchecked Sendable {
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        nature: rig === rigs[0] ? longTerm.nature : nil)
+                        nature: rig === rigs[0] ? longTerm.nature : nil,
+                        diary: rig === rigs[0] ? { day, line in
+                            // The pass that wrote it changes the popover.
+                            do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
+                        } : nil)
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -319,6 +332,10 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
+        // The cores read the growth stage where the growth store keeps it.
+        // Weak: the runtime holds the cores.
+        for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
+        if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         for rig in rigs {
@@ -348,8 +365,14 @@ public final class Runtime: @unchecked Sendable {
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were counted.
         harness.on("*") { [weak self] e in
-            guard let self, growth.count(e) else { return }
+            guard let self else { return }
+            let before = growth.growth.stage, now = options.clock()
+            guard growth.count(e, day: options.time.day(options.wallClock())) else { return }
             grew = true
+            // A stage reached makes the rest of the day a party.
+            if growth.growth.stage > before {
+                for rig in rigs { run(core(rig).reachedStage(growth.growth.name, at: now), on: rig) }
+            }
         }
     }
 
@@ -359,9 +382,10 @@ public final class Runtime: @unchecked Sendable {
     /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
-                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil) -> (harness: Harness, mood: Choice) {
+                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil,
+                               diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, nature: nature)
+                        queue: queue, speaks: speaks, nature: nature, diary: diary)
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -457,7 +481,9 @@ public final class Runtime: @unchecked Sendable {
 
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
-        let event = Adapter.event(from: line, receivedAt: received)
+        // Your prompt goes no further than the intake: the turn start is
+        // logged without it, and its reading follows.
+        let (event, prompt) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)
         // Debug mode logs every hook with what it became; the doctor skill
         // arms the plain line to see hooks arrive. Otherwise hooks aren't logged.
         if options.debug {
@@ -467,6 +493,11 @@ public final class Runtime: @unchecked Sendable {
         }
         guard let event else { return }
         run(pipeline.agent(event))
+        guard let prompt else { return }
+        PromptIntake.read(prompt, names: rigs.map(\.buddy.name), labeler: labeler, home: home) { [weak self] reading in
+            guard let self else { return }
+            run(pipeline.promptRead(reading, about: event, at: options.clock()))
+        }
     }
 
     func tick() {
@@ -545,6 +576,16 @@ public final class Runtime: @unchecked Sendable {
     /// Opens `thread` where it runs: a session clicked in the popover.
     public func openThread(_ thread: ThreadRef) {
         home.async { [self] in open(thread, by: "click") }
+    }
+
+    /// Stops `thread`'s request showing: the popover's Dismiss
+    /// (`Core.dismiss`), on whichever buddy shows it.
+    public func dismiss(_ thread: ThreadRef) {
+        home.async { [self] in
+            guard let agent = Agent(rawValue: thread.agent) else { return }
+            let key = SessionFold.key(agent, thread.session), now = options.clock()
+            for rig in rigs { run(pipeline.dismiss(key, at: now, buddy: rig.tag)) }
+        }
     }
 
     /// Opens a thread on the Mac, after a tap or a click.

@@ -5,17 +5,18 @@
 #include <cstring>
 
 #include "render/maths.h"
+#include "render/tags.h"
 #include "voice/effects.h"
 #include "voice/player.h"
 
 namespace app {
 
+using render::after;
+using render::within;
+
 namespace {
 
 constexpr uint32_t kAmberDim = 0x805800;  // needs you: amber at half
-
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }  // a later than b
-bool within(uint32_t t, uint32_t from, uint32_t ms) { return int32_t(t - from) >= 0 && int32_t(t - from) < int32_t(ms); }
 
 }  // namespace
 
@@ -85,6 +86,8 @@ bool Behaviour::sayDue(uint32_t t) const {
 
 bool Behaviour::exprOn(uint32_t t) const { return expr_ && within(t, exprAt_, exprMs_); }
 
+bool Behaviour::signOn(uint32_t t) const { return sign_.text[0] && within(t, sign_.at, sign_.ms); }
+
 bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
   if (!exprOn(t)) return false;
   mood = exprMood_;
@@ -92,7 +95,7 @@ bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
 }
 
 void Behaviour::advance(uint32_t t, Rng& rng) {
-  if (int32_t(t - modelT_) < 0) {  // the clock went back: no history to replay
+  if (after(modelT_, t)) {  // the clock went back: no history to replay
     modelT_ = t;
     face_->rewind(t, rng);
     resync(t);
@@ -107,6 +110,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     if (reaction_.anim != render::SceneState::kNone) consider(reaction_.at + reaction_.ms);
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
+    if (sign_.text[0]) consider(sign_.at + sign_.ms);
     consider(lastState_ + kNoAppMs);
     uint32_t faceAt;
     if (face_->nextDue(modelT_, t, faceAt)) consider(faceAt);
@@ -126,6 +130,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
 // face doesn't change.
 void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
+  if (sign_.text[0] && !signOn(t)) sign_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms)) {
@@ -139,13 +144,15 @@ void Behaviour::resync(uint32_t t) {
 // ---- The reaction playing: how it ended (`ended`) -----------------------
 
 // A reaction is played out when none of its parts plays: the animation,
-// the `say` and its bubble, the expression. It was cut if its animation or
-// its `say` was stopped early. Its expression holds on after its `say`, and
-// ending that early doesn't cut it: the reaction was seen and heard. Only
+// the `say` and its bubble, the expression, the sign. It was cut if its
+// animation or its `say` was stopped early. Its expression holds on after
+// its `say`, and ending that early doesn't cut it: the reaction was seen
+// and heard. Only
 // the reaction that last played is followed: it's the one the kit has
 // playing, and the kit ended any before it when the queue started this one.
 bool Behaviour::holds(uint32_t key, uint32_t t) const {
-  return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) || (exprOn(t) && exprKey_ == key);
+  return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) ||
+         (exprOn(t) && exprKey_ == key) || (signOn(t) && sign_.key == key);
 }
 
 // The first cut is the one reported.
@@ -172,6 +179,7 @@ bool Behaviour::nextEnd(uint32_t from, uint32_t to, uint32_t& at) const {
   if (reaction_.anim != render::SceneState::kNone) consider(reaction_.at + reaction_.ms);
   if (say_.take >= 0) consider(say_.at + say_.ms);
   if (expr_) consider(exprAt_ + exprMs_);
+  if (sign_.text[0]) consider(sign_.at + sign_.ms);
   return found;
 }
 
@@ -184,11 +192,11 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     bool had = model_.attn;
     bool fresh = m.attn && (!had || m.attnId != model_.attnId || std::strncmp(model_.agent, m.agent, sizeof(m.agent)) ||
                             std::strncmp(model_.project, m.project, sizeof(m.project)));
-    // Another visual, or another variation of it from the Mac, starts the
-    // looks' rotation over from the Mac's; the same one again leaves it.
-    bool look = m.attn != model_.attn || m.look() != model_.look() || m.variant != model_.variant;
+    // Another visual starts the looks' rotation over: the face picks its
+    // first variation itself, from those that fit now.
+    bool look = m.attn != model_.attn || m.look() != model_.look();
     model_ = m;
-    if (look) face_->setLookVariant(m.variant);
+    if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
     stale_ = false;
     blOverride_ = false;
@@ -200,11 +208,12 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       if (reactionOn(t) && !listening(t))
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
-      say_ = Say{};  // no `say` while something needs you
+      say_ = Say{};  // no `say` or sign while something needs you
+      sign_ = Sign{};
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
-    // blinks into what the state says.
+    // shows what the state says.
   });
 }
 
@@ -217,7 +226,10 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // the design showing in its mood for as long as its animation plays, or
 // with none for its loops of the design it's drawn in, and at least as long
 // as its `say` and bubble; a face on its own (no animation, no `say`) plays
-// just that, leaving any `say` playing. What outranks the reactions:
+// just that, leaving any `say` playing. A reaction's sign is held up from
+// its start for as long as any of its other parts plays, and at least
+// kSignMinMs; a newer reaction's animation or `say` takes it down with the
+// `say`, and a sign on its own plays too. What outranks the reactions:
 // no app, and while something needs you no animation
 // takes the face over and no `say` or face on its own plays. A reaction
 // that would play nothing isn't admitted: the kit skips it, with why.
@@ -233,10 +245,12 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   const bool wasListening = listening(t);
   if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { reaction_.anim = render::SceneState::kNone; });
   if (in.empty) return wasListening ? nullptr : "not_listening";
+  if (faceDown_ && !listen) return "facedown";  // do not disturb
   bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool say = in.take >= 0 && !model_.attn && !noApp(t);
   bool face = in.expr && !held(t);  // listening, if it's still on, holds the face
-  if (anim || say || face) return nullptr;
+  bool sign = in.sign[0] && !held(t);
+  if (anim || say || face || sign) return nullptr;
   if (noApp(t)) return "no_app";
   if (listening(t)) return "listening";
   if (model_.attn) return "needs_you";
@@ -248,7 +262,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool say = in.take >= 0 && !model_.attn && !noApp(t);
   bool face = in.expr && !held(t);
-  if (!anim && !say && !face) return false;  // stop_listening: admit did it all
+  bool sign = in.sign[0] && !held(t);
+  if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
   change(t, [&] {
     const render::Mood mood = in.expr ? in.mood : model_.mood;  // the mood it's drawn in
     uint32_t voice = 0;  // when its `say` starts, from t
@@ -280,6 +295,15 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       exprMs_ = anim ? reaction_.ms : holdMs(in.mood, in.loops, t);
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
+    }
+    if (sign) {  // as long as the rest of it plays, from now, and long enough to read
+      copyStr(sign_.text, sizeof(sign_.text), in.sign);
+      sign_.at = t;
+      sign_.ms = kSignMinMs;
+      if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
+      if (say) sign_.ms = std::max(sign_.ms, voice + say_.ms);
+      if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
+      sign_.key = in.key;
     }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
   });
@@ -314,11 +338,12 @@ void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, 
 }
 
 // A new reaction replaces the `say` playing, cut short by `by`, and its
-// expression.
+// expression and sign.
 void Behaviour::endSay(uint32_t t, CutBy by) {
   if (by != CutBy::kNone && sayDue(t)) cut(say_.key, by);
   say_ = Say{};
   expr_ = false;
+  sign_ = Sign{};
   ++reactionSeq_;
 }
 
@@ -368,6 +393,21 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
   return render::stateName(a);
 }
 
+const char* Behaviour::press(uint32_t t, Rng& rng) {
+  if (noApp(t) || !(model_.attn || model_.idle > 0)) return tap(t, rng);
+  taps_ = 0;
+  // While something needs you its sign stays up: the Mac opens it.
+  gesture(render::Gesture::kHandoff, t);
+  return "handoff";
+}
+
+void Behaviour::gesture(render::Gesture g, uint32_t t) {
+  if (held(t)) return;
+  const int n = face_->variants(model_.mood, render::SceneState::kGesture);
+  const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
+  change(t, [&] { playAnim(render::SceneState::kGesture, t, CutBy::kTap, 1, model_.mood, v); });
+}
+
 // BOOT held: listening at once, even while something needs you, cutting
 // whatever else plays as a tap would. Already listening (the Mac's own
 // mic), it carries on with the same design.
@@ -411,13 +451,8 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     return s;
   }
   s.mood = exprOn(t) ? exprMood_ : model_.mood;  // the reaction's expression, or the mood
-  if (model_.attn) {
-    s.look = render::SceneState::kNeedsYou;
-    s.lookVariant = model_.variant;
-  } else {
-    s.look = model_.look();
-    s.lookVariant = face_->lookVariant();
-  }
+  s.look = model_.attn ? render::SceneState::kNeedsYou : model_.look();
+  s.lookVariant = face_->lookVariant();
   if (reactionOn(t)) {
     s.anim = reaction_.anim;
     s.at = reaction_.at;
@@ -446,6 +481,9 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.project = model_.project;
   c.thread = model_.name;
   c.more = model_.more;
+  c.when = model_.when;
+  c.lookMs = t - lookAt_;
+  c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }
 
@@ -480,9 +518,18 @@ uint8_t Behaviour::backlight(uint32_t t) const {
   return uint8_t(blFrom_ + (target - blFrom_) * render::ease(int(t - blAt_), int(kBacklightEaseMs)) / 1024);
 }
 
+void Behaviour::setFaceDown(bool down, uint32_t t) {
+  change(t, [&] {
+    faceDown_ = down;
+    if (down && say_.take >= 0) endSay(t, CutBy::kNone);
+    if (down) sign_ = Sign{};
+  });
+}
+
 uint8_t Behaviour::blTarget(uint32_t t) const {
   if (noApp(t)) return 60;      // dimmed like asleep
   if (model_.attn) return 255;  // dimming never hides "needs you"
+  if (faceDown_) return 20;     // face down: do not disturb
   if (model_.base == render::SceneState::kAsleep) return 60;
   return 255;
 }
@@ -498,20 +545,49 @@ uint32_t Behaviour::finishShown(uint32_t t) const { return finishOn(t) ? reactio
 // With no app the Mac's counts are stale, so only the unplugged
 // icon shows. While the brain's finish plays, whose
 // turn it was.
+render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Reaction* finish) {
+  render::Strip s;
+  s.noApp = noApp;
+  if (s.noApp) return s;
+  s.busy = m.busy;
+  s.idle = m.idle;
+  s.helpers = m.helpers;
+  // The Mac sends a to-do list only while an agent works and nothing
+  // needs you.
+  s.todoDone = m.todoDone;
+  s.todoTotal = m.todoTotal;
+  if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
+  if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
+  return s;
+}
+
+// Every change goes through change(), so the strip comes and goes only at
+// one, at the exact millisecond it did: a message's, or a time-based
+// change's that advance stops at (no app, a finish ending).
+void Behaviour::followLane(uint32_t t) {
+  const bool shows = stripAt(t).shows();
+  if (shows) laneModel_ = model_, laneFinish_ = reaction_, laneNoApp_ = noApp(t), laneFinishes_ = finishOn(t);
+  lane_.retarget(shows ? 1000 : 0, t);
+}
+
 render::Strip Behaviour::strip(uint32_t t) const {
   render::Strip s;
-  s.noApp = noApp(t);
-  if (s.noApp) return s;
-  s.busy = model_.busy;
-  if (model_.attn) s.agent = model_.agent, s.project = model_.project, s.name = model_.name, s.more = model_.more;
-  if (finishOn(t)) {
-    s.doneAgent = reaction_.agent, s.doneThread = reaction_.thread, s.doneOutcome = reaction_.outcome;
-  }
+  if (lane_.target())
+    s = stripAt(t);
+  else if (lane_.value(t))
+    s = stripOf(laneModel_, laneNoApp_, laneFinishes_ ? &laneFinish_ : nullptr);
+  s.opacity = lane_.value(t);
   return s;
 }
 
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
+
+render::SignShow Behaviour::sign(uint32_t t) const {
+  render::SignShow s;
+  if (signOn(t) && !noApp(t) && !model_.attn) s.text = sign_.text, s.ms = t - sign_.at;
+  return s;
+}
 
 bool Behaviour::sayAhead(uint32_t t) const { return sayDue(t) && !sayOn(t); }
 

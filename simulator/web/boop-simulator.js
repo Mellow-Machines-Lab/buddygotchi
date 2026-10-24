@@ -12,6 +12,16 @@ const CHUNK = 512;       // app::Sound::kChunk
 const OUT_RATE = 22050;  // voice::kOutRate
 const CANVAS = [320, 240];  // a touch is in the canvas's pixels on every board
 const PANEL = { pixel: CANVAS, gel: [502, 410] };  // each face's panel, until its first frame says
+/// A shake, as the motion sensor reads it: each reading in mg, held so many
+/// ms, in the shapes the board knows (firmware/src/app/motion_gesture.h).
+export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
+/// A tap, in the canvas's pixels: beside the nose, since a boop on it is a gesture.
+export const TAP = [CANVAS[0] / 4, CANVAS[1] / 2];
+/// How often a page keeping a board company says its `state` again, as the
+/// app does every 10 s, so the board never takes its Mac for gone.
+export const HEARTBEAT_MS = 8000;
+// Each build's WebAssembly, fetched and compiled once for every board that runs it.
+const compiled = {};
 
 /// One simulated board: the core, switched on and off, with its USB as
 /// lines in and out. A page can have several. It fires `power` (on or
@@ -28,11 +38,20 @@ export class Board extends EventTarget {
 
   /// `pack` is the character pack it was built for: `boop-sim-PACK.js`
   /// (web/build.sh PACK), or with none the staged pack's `boop-sim.js`.
+  /// In a page, the build's WebAssembly is compiled once for all its boards.
   static async make({ pack } = {}) {
     if (pack && !/^[a-z0-9][a-z0-9_-]*$/.test(pack)) throw new Error(`no pack called ${pack}`);
-    const { default: makeCore } = await import(pack ? `./boop-sim-${pack}.js` : './boop-sim.js');
+    const build = pack ? `boop-sim-${pack}` : 'boop-sim';
+    const { default: makeCore } = await import(`./${build}.js`);
+    let options = {};
+    if (typeof document !== 'undefined') {
+      compiled[build] ??= WebAssembly.compileStreaming(fetch(new URL(`${build}.wasm`, import.meta.url)))
+        .catch(error => { delete compiled[build]; throw error; });
+      const module = await compiled[build];
+      options = { instantiateWasm: (imports, receive) => { WebAssembly.instantiate(module, imports).then(receive); return {}; } };
+    }
     const board = new Board();
-    board.#core = await makeCore();
+    board.#core = await makeCore(options);
     board.#usb = board.#core.cwrap('sim_usb', null, ['string']);
     board.#env = board.#core.cwrap('sim_env', null, ['string', 'string']);
     board.#input = board.#core.cwrap('sim_input', null, ['string']);
@@ -71,6 +90,9 @@ export class Board extends EventTarget {
   touch(x, y) { this.#say(`touch ${Math.round(x)} ${Math.round(y)}`); }
   release() { this.#say('release'); }
   boot(down) { this.#say(`boot ${down ? 1 : 0}`); }
+  /// The motion sensor's reading in mg, held until the next: flat on the
+  /// desk is 0 0 1000.
+  motion(ax, ay, az) { this.#say(`motion ${ax} ${ay} ${az}`); }
 
   /// The card: a voice file's bytes go in, the card that came out goes
   /// back (no bytes), or it comes out.
@@ -204,7 +226,7 @@ export class DemoPlayer extends EventTarget {
     while (this.playing && this.#next < events.length && events[this.#next].at <= now) this.#happen(events[this.#next++]);
     // The app says how things stand every 10 s; so does this, while the
     // recording doesn't (paused, or over).
-    if (this.#state && performance.now() - this.#told > 8000) this.#send(this.#state);
+    if (this.#state && performance.now() - this.#told > HEARTBEAT_MS) this.#send(this.#state);
     this.dispatchEvent(new CustomEvent('time', { detail: now }));
     if (this.playing && this.ended) {
       this.#at = this.length;
@@ -220,10 +242,22 @@ export class DemoPlayer extends EventTarget {
 
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
-    // A finger on the screen, which is the board's own to react to.
+    // A finger on the screen, beside the nose (a boop there is a gesture),
+    // or kept there as long as the recording's hold says, past the board's
+    // hold on the needs-you sign (a recording made before it said, 1.2 s),
+    // or BOOT pressed, which is the board's own to react to (a press long
+    // enough to pass the button's debounce).
     if (event.input === 'tap') {
-      this.#board.touch(CANVAS[0] / 2, CANVAS[1] / 2);
+      this.#board.touch(...TAP);
       this.#board.release();
+    }
+    if (event.input === 'hold') {
+      this.#board.touch(CANVAS[0] / 4, CANVAS[1] / 2);
+      setTimeout(() => this.#board.release(), (event.hold ?? 1.2) * 1000);
+    }
+    if (event.input === 'press') {
+      this.#board.boot(true);
+      setTimeout(() => this.#board.boot(false), 60);
     }
     if (event.line) {
       if (event.line.startsWith('{"t":"state"')) this.#state = event.line;
@@ -264,18 +298,21 @@ const STYLE = `
 `;
 
 // A cause's kind, as an icon (DemoScript.Cause).
-const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', needs_you: '✋', talk: '🎙', back: '☀', done: '✓', failed: '✕', stopped: '■' };
+const ICONS = { prompt: '💬', tool: '⚙', tool_failed: '✕', compact: '⇊', tap: '👆', hold: '☝', needs_you: '✋', talk: '🎙', back: '☀',
+                wait: '⏳', done: '✓', failed: '✕', stopped: '■' };
 
 // Outside a browser (the tests, under Node) there's no element to be.
 const Element = globalThis.HTMLElement ?? class {};
 
 /// <boop-simulator face="pixel|gel" zoom="2" voice="voice.bin" usb="ws://…/usb" demo="demo.json"
-///                 board-id="b00p-left" pack="pixel" controls>
+///                 board-id="b00p-left" pack="pixel" controls motion>
 /// The board, drawn as a thing on a desk, with its BOOT button and a Sound
 /// button (a browser plays nothing until a click). `voice` is a voice file
 /// to fetch for its card; `usb` a WebSocket that is its USB cable, one
 /// line a message each way (serve.py's, which leads to the Mac app and the
-/// tools); `controls` adds power, reset and card buttons. `demo` is a
+/// tools); `controls` adds power, reset and card buttons, and `motion`
+/// the motion sensor's: shake, pick up and put down, a thump on the desk,
+/// face down and up (the AMOLED board's; the CYD has none). `demo` is a
 /// recording to play (DemoPlayer), told as a story under the board: what
 /// happens, and what the creature does about it. The board's face is then
 /// the recording's. `board-id` is the board's id, its hello's, so boards on
@@ -444,6 +481,36 @@ export class BoopSimulator extends Element {
                    () => this.#parts.card === 'no card' ? board.insertCard() : board.ejectCard());
     }
     this.#button(tools, () => board.audible ? 'Sound off' : 'Sound on', () => board.audible ? board.mute() : board.unmute());
+    if (this.hasAttribute('motion')) this.#motion(tools);
+  }
+
+  // The motion sensor's buttons: readings in mg, in the shapes the board
+  // knows (firmware/src/app/motion_gesture.h). Flat and still is 0 0 1000.
+  #motion(tools) {
+    const board = this.board, flat = [0, 0, 1000];
+    let held = null, down = false;
+    const play = async readings => {
+      for (const [az, ms] of readings) { board.motion(0, 0, az); await new Promise(r => setTimeout(r, ms)); }
+    };
+    // Held in a hand: never quite still, never a jolt.
+    const hold = () => { let up = false; held = setInterval(() => board.motion(0, 0, (up = !up) ? 1100 : 900), 100); };
+    this.#button(tools, () => 'Shake', () => play(SHAKE));
+    this.#button(tools, () => held ? 'Put down' : 'Pick up', async () => {
+      if (held) { clearInterval(held); held = null; board.motion(...flat); return; }
+      await play([[1250, 300]]);
+      hold();
+    });
+    this.#button(tools, () => 'Thump', () => play([[1500, 40], [1000, 0]]));
+    this.#button(tools, () => down ? 'Face up' : 'Face down', () => {
+      down = !down;
+      board.motion(0, 0, down ? -1000 : 1000);
+    });
+    // Each board powered on lies flat on the desk, so it's still.
+    board.addEventListener('power', () => {
+      clearInterval(held);
+      held = null, down = false;
+      if (board.on) board.motion(...flat);
+    });
   }
 
   // A demo, told under the board: what happens, and what the creature does.

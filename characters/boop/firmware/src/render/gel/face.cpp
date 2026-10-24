@@ -3,8 +3,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "render/gel/lane.h"
 #include "render/gel/profile.h"
+#include "render/maths.h"
 #include "render/palette.h"
 #include "render/gel/sounds.h"
 
@@ -25,14 +25,18 @@ constexpr int kTakes = int(sizeof(slime::kRecipes[0][0]) / sizeof(slime::kRecipe
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
 const slime::Recipe& GelFace::recipe(Mood mood, SceneState state, int variant, Outcome outcome, StartCtx ctx) {
-  return slime::kRecipes[profileFor(mood)][recipeState(state, outcome, ctx)]
-                        [std::max(0, std::min(kTakes - 1, variant))];
+  int row = recipeState(state, outcome, ctx);
+  // A finish timed without its outcome: its fourth take is a success's.
+  if (state == SceneState::kTaskComplete && variant >= takes(row)) row = recipeState(state, Outcome::kSuccess, ctx);
+  return take(profileFor(mood), row, std::max(0, std::min(takes(row) - 1, variant)));
 }
 
 void GelFace::reset(uint32_t t, linkkit::Rng&) {
   engine_ = std::make_unique<Engine>(kSeed);
   engine_->step(0);
   origin_ = lastTick_ = lookAt_ = t;
+  engineMs_ = engineFrac_ = 0;
+  pace_ = 100;
   source_ = {};
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
@@ -47,7 +51,7 @@ void GelFace::seed(uint32_t s) {
 // The engine steps on the reference's 16 ms grid from the last reset.
 bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   uint32_t next = origin_ + ((from - origin_) / 16 + 1) * 16;
-  if (int32_t(to - next) < 0) return false;
+  if (after(next, to)) return false;
   at = next;
   return true;
 }
@@ -60,7 +64,10 @@ void GelFace::restartCues() {
 void GelFace::advanceTo(uint32_t t) {
   if (t == lastTick_) return;
   Measure measure(gel::profile.engine);
-  engine_->step(t - origin_);
+  const uint64_t scaled = uint64_t(t - lastTick_) * pace_ + engineFrac_;
+  engineMs_ += uint32_t(scaled / 100);
+  engineFrac_ = uint32_t(scaled % 100);
+  engine_->step(engineMs_);
   lastTick_ = t;
   int kept = 0;
   for (int i = 0; i < pendingCount_; ++i)
@@ -82,6 +89,21 @@ void GelFace::advanceTo(uint32_t t) {
   }
 }
 
+void GelFace::finger(bool down, int x, int y) {
+  if (!down) {
+    if (finger_) engine_->dragEnd();
+    finger_ = false;
+    return;
+  }
+  // The canvas's 320 × 240, as the engine's -1 … 1 each way.
+  if (!finger_) {
+    finger_ = true, fingerX_ = x, fingerY_ = y;
+    engine_->dragStart(F(x - 160) / 160, F(y - 120) / 120);
+    return;
+  }
+  engine_->dragMove(F(x - fingerX_) / 160, F(y - fingerY_) / 120, F(0));
+}
+
 // At every stop of Behaviour's, on the grid or not.
 void GelFace::step(uint32_t t, linkkit::Rng&) { advanceTo(t); }
 
@@ -98,6 +120,7 @@ bool GelFace::factsChanged(const FaceContext& c) const {
 
 void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_t t) {
   advanceTo(t);
+  pace_ = context.pace;
   Measure measure(gel::profile.sync);
   auto& e = *engine_;
   if (factsChanged(context)) {
@@ -117,7 +140,14 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
   e.setMood(expressionFromName(moodName(context.mood)));
   bool timeout = source.look == SceneState::kNoApp;
   if (timeout != e.router.timedOut) e.linkTimedOut(timeout);
-  const int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
+  e.setOccasion(context.when, context.lookMs);
+  // The Mac's borrowed expression, else a gesture's or a notice's own face
+  // while it plays.
+  int borrowed = context.borrowed ? expressionFromName(moodName(source.mood)) : -1;
+  if (borrowed < 0 && source.anim == SceneState::kGesture)
+    borrowed = slime::kGestureFaces[std::min<int>(source.animVariant, slime::kGestureCount - 1)];
+  if (borrowed < 0 && source.anim == SceneState::kNotice)
+    borrowed = slime::kNoticeFaces[std::min<int>(source.animVariant, slime::kNoticeCount - 1)];
   bool nextMoment = source.anim != SceneState::kNone && (source.anim != source_.anim || source.at != source_.at);
   if (nextMoment) {
     // Behaviour times the moment (its loops, its line), so the engine
@@ -150,17 +180,22 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
 // The engine's shuffle bag for the moment, drawn from copies: a call
 // refused after its pick (Device::refuse) leaves the bag and the engine's
 // randomness as they were. started draws the same take for real.
-uint8_t GelFace::pick(SceneState a, Mood mood, int, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
-  Bag bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)];
+uint8_t GelFace::pick(SceneState a, Mood mood, int wanted, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
+  // A gesture's take is the gesture asked for (from 1), never dealt.
+  if (a == SceneState::kGesture) return uint8_t(wanted > 0 && wanted <= slime::kGestureCount ? wanted - 1 : 0);
+  const int row = recipeState(a, outcome, ctx);
+  auto bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row];
   Random random = engine_->random;
-  return uint8_t(bag.next(random));
+  return uint8_t(bag.next(random, takes(row)));
 }
 
 void GelFace::started(SceneState a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
-  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][recipeState(a, outcome, ctx)].next(engine_->random);
+  if (a == SceneState::kGesture) return;
+  const int row = recipeState(a, outcome, ctx);
+  engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row].next(engine_->random, takes(row));
 }
 
-int GelFace::variants(Mood, SceneState) const { return kTakes; }
+int GelFace::variants(Mood, SceneState s) const { return s == SceneState::kGesture ? slime::kGestureCount : kTakes; }
 
 uint32_t GelFace::loopMs(Mood mood, SceneState state, int variant) const {
   return uint32_t(F(recipe(mood, state, variant, Outcome::kNone, StartCtx::kNone).duration).integer());
@@ -171,7 +206,7 @@ uint32_t GelFace::loopMs(Mood mood, SceneState state, int variant) const {
 uint32_t GelFace::voiceMs(Mood mood, SceneState state, int variant) const {
   const auto& r = recipe(mood, state, variant, Outcome::kNone, StartCtx::kNone);
   for (int i = 0; i < r.count; ++i)
-    if (r.contacts[i].kind >= kAlert) return uint32_t(F(r.contacts[i].at).integer() + 70);
+    if (reveals(r.contacts[i].kind)) return uint32_t(F(r.contacts[i].at).integer() + 70);
   return 0;
 }
 
@@ -192,10 +227,10 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 
 // The lane is drawn at the panel's size too (render/gel/lane.h), so the
 // canvas is left to the test pattern.
-bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble, const Strip& strip,
-                   bool) {
+bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
+                   const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, strip);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip);
   return true;
 }
 

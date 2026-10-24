@@ -210,11 +210,16 @@ enum Snapshots {
                                         name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1)
             },
             busy: sessions.filter { $0.status == .working }.count, vol: vol)
-        return Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
+        var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
                               device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
+        // Its age and the diary's last days.
+        status.daysOld = 47
+        status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave."),
+                        .init(day: "2026-10-20", line: "Tuesday. 9 turns, not one broken. Smug all day, and fairly.")]
+        return status
     }
 
     static func overviews(_ installer: HookInstaller) -> [(String, AppModel)] {

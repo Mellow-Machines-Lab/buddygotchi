@@ -90,29 +90,25 @@ struct Sign {
 };
 
 // Where everything is at one moment. Two equal poses draw the same pixels
-// for the same text, so the device skips redrawing an unchanged one.
+// for the same text, so the device skips redrawing an unchanged one: the
+// pose has no padding, so two compare as bytes.
 struct SignPose {
   int16_t signY = 0;             // the sign's top
   int16_t headX = 0, headY = 0;  // the face's centre
+  int16_t handX = 0, handY = 0;  // the spot the mitts are for, and their top
+  int16_t signX = 0;             // the sign swayed from its place, and the mitts with it
+  int16_t waveX = 0, waveY = 0;  // the waving mitt's centre (the right one, with both) and top
+  int16_t waveX2 = 0;            // with both, the left one's centre
   uint8_t scale = 64;            // the face's size in 64ths
   int8_t glance = 0;             // the eyes look left (-1), ahead or right (1)
   bool eyesShut = false;         // a blink
   bool whole = true;             // the cheeks and mouth show, before the sign hides them
   bool hands = false;            // the mitts on the sign's top edge, either side of the head
-  int16_t handX = 0, handY = 0;  // the spot the mitts are for, and their top
-  int16_t signX = 0;             // the sign swayed from its place, and the mitts with it
   uint8_t waving = 0;            // mitts let go to wave over the edge: none, the one at waveX, or both
-  int16_t waveX = 0, waveY = 0;  // the waving mitt's centre (the right one, with both) and top
-  int16_t waveX2 = 0;            // with both, the left one's centre
   int8_t tilt = 0;               // how far the mitts' knuckles lean, left (-) or right
   bool flat = false;             // the stare's flat mouth, in place of the "o"
-  bool operator==(const SignPose& o) const {
-    return signY == o.signY && headX == o.headX && headY == o.headY && scale == o.scale && glance == o.glance &&
-           eyesShut == o.eyesShut && whole == o.whole && hands == o.hands && handX == o.handX && handY == o.handY &&
-           signX == o.signX && waving == o.waving && waveX == o.waveX && waveY == o.waveY && waveX2 == o.waveX2 &&
-           tilt == o.tilt && flat == o.flat;
-  }
 };
+static_assert(sizeof(SignPose) == 9 * 2 + 8, "a pose has no padding to compare");
 
 // The pose `ms` after the request, with the device's blink (none while it
 // stares) and press dip.

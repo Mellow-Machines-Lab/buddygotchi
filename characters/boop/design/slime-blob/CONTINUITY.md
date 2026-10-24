@@ -1,7 +1,10 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-16. The pure reference engine and all activity scene
-families are implemented. Q1 representative art review was approved on
+Updated 2026-10-24. The pure reference engine and all activity scene
+families are implemented, idle, sleep and a finish have their comedy
+(Comedy, below), the board's gestures have a take each (Gestures), the
+looks have occasions (Occasions), and one face flows into the next
+(Directed edge bridges: its arts morph or cross-fade, never closing). Q1 representative art review was approved on
 2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph, Mac mirror and native integer port are implemented. Contact-synchronized
 reference sound is implemented; timbres remain sketches.
 
@@ -48,12 +51,12 @@ actual contact/card-reveal cues ──> sparse procedural SFX ──────
 ```
 
 Preserve current displacement and velocity when changing any target.
-The present face painter draws one set of semantic controls. Eye and mouth
-geometry, cheek opacity and tear amount move on springs outside the locked
-code; a short blink hides incompatible primitive changes while the mouth
-shrinks through a dot. The original face weights remain only for the locked
-timing; the mood posture reads its own critically damped weights. The face
-is never faded, and there is no second face silhouette.
+Eye and mouth geometry, cheek opacity and tear amount move on springs
+outside the locked code. While one face gives way to another, the painters
+draw both arts, features of the same shape morphing and the others
+cross-fading (Directed edge bridges, below), so the face never closes or
+fades. The original face weights remain only for the locked timing; the
+mood posture reads its own critically damped weights.
 
 ## Headless reference traces
 
@@ -87,22 +90,27 @@ values remain in the motion contract. The imported additive gesture
 springs retain frequencies 11 (lift), 10 (roll), 9 (other channels), damping
 6.4 and the same 1/240 s substeps. Displacement limits are 0.24 for lift,
 0.12 for roll, 0.18 for forward and 0.42 otherwise, velocity limit 5.
-Grab spring stiffness is 256, damping 8, displacement limit 0.72 and
-velocity limit 6; target magnitude is at most 0.64, reduced to 35% with
+Grab spring stiffness is 256 and damping 8 while held (100 and 10 once let
+go, so the dome settles back with a wobble rather than snapping),
+displacement limit 0.72 and velocity limit 6; target magnitude is at most
+0.64, reduced to 35% with
 reduced motion. Reduced gesture impulses are 18%. Gesture cadence retains
 the authored duration plus 7–15 seconds, starting after one second, or
 0.4 seconds after retarget; release defers the next gesture three seconds.
 These are the imported audition constants, not approved production pacing.
-The original face-only bridge defaults to 180 ms; directed edge variants
-select the face windows below. Primitive replacement occurs on a fully
-closed frame. Each semantic control is a critically damped spring,
-`a = ω²(target − x) − 2ωv`, with ω = 20 (30 with reduced motion), in the
+The face's own window defaults to 180 ms (falling asleep takes 480,
+below); directed edge variants select
+the face windows below, over which one art crosses over another. Each
+semantic control is a critically damped spring,
+`a = ω²(target − x) − 2ωv`, with ω = 20 (8 while it sleeps, from falling
+asleep until it wakes, a mood changing meanwhile; 30 with reduced motion),
+in the
 same 1/240 s substeps: it starts from rest without a jump in velocity, and a
 retarget keeps both its position and its velocity. Cheek and tear opacity
 stay in [0, 1]. Dimensional endpoints come from the original face
-primitives; the painters draw the selected primitive at the engine's
-`face.render` ratios (Directed edge bridges, below), so settled faces retain
-their authored proportions.
+primitives; the painters draw each of the engine's `face.layers` at its
+ratios (Directed edge bridges, below), so settled faces retain their
+authored proportions.
 
 The mood posture (the per-mood squash, and the excited, scared, frightened,
 crying and irritated oscillations) is weighted by one critically damped
@@ -123,7 +131,8 @@ each (success and failure separately): 24 cases, 20 mood/state cells.
 gives each case an eight-second window. `tools/check-scenes.mjs --coverage`
 validates those windows and the full matrix described below before the
 builder marks cells implemented or quiet-alias. Sleeping is a justified
-shared alias, not three newly authored sleep animations. The 24 clips
+shared alias, not three newly authored sleep animations; its one addition
+is a snore (Comedy, below). The 24 clips
 record the approved representative set; they do not claim separate owner
 review of every cell in the expanded matrix.
 
@@ -173,7 +182,8 @@ continues, so elapsed moments are not replayed when the link returns.
 
 One desk, id `desk-1` with normalized anchor (0.5, 0.64), persists across
 work modes. Three shuffle-bag recipes per mood/state/factual outcome or context differ
-in rhythm, with no adjacent repeats. Routine work changes variation after
+in rhythm, with no adjacent repeats; asleep and a successful finish have a
+fourth (Comedy, below). Routine work changes variation after
 recovery; alert/result requests choose once at entry. Mood retargeting does
 not restart an existing recipe or alert. Original emotion gesture recipes
 run only in idle without a grab; the activity scene owns the choreography
@@ -184,8 +194,11 @@ A drag consumes elapsed physical keyboard/knock contacts without emitting
 them. Factual alert/result reveals still happen while held, so dragging
 cannot hide a real completion or its outcome. Release never plays an
 elapsed contact again. Rest retains the stored mood, cancels acting and
-contacts immediately, and lets residual springs settle. Shared sleepy art
-switches only at the existing face bridge's closed midpoint. Its semantic
+contacts immediately, and lets residual springs settle. The shared sleepy
+art crosses over the awake one in a window of its own, 480 ms, its
+controls on the slower spring, so the lids droop shut rather than snap;
+waking takes the face's own 180 ms (`sleepTransition`,
+[engine/face.mjs](engine/face.mjs)). Its semantic
 targets are eye openness 0.004, mouth width 0.018, curve 0.008, and zero
 cheek/tear opacity; changing the stored mood during rest leaves this face
 quiet.
@@ -261,9 +274,13 @@ the request's arrival, with no opacity floor, and ramps out when attention
 clears; `props.alert.confirmation` uses the contact envelope to brighten it
 once at the reveal, then returns to zero. Its reveal strength is invariant
 at 1. A result receives the mood's delay and strength while its success or
-failure remains factual. A card's reveal is a smoothstep over the prop ramp
-from its reveal contact; it fades during recovery and is cleared before an
-explicitly repeated loop. Contacts carry unique request,
+failure remains factual. A card's reveal is its own, a second ramp of its
+prop's: up over 400 ms from its reveal contact (`cardRevealMs`, twice the
+prop ramp, so it rises in rather than appears) and down over the recovery's
+480 ms, each from its time on the route's clock; it is cleared before an
+explicitly repeated loop. A route that ends while its card rises or falls
+leaves the reveal going as it was while the card's ramp fades it out, so it
+never stops dead. Contacts carry unique request,
 generation, iteration and index identity; the `cues` audio output is consumed once per contact by the synchronized
 scheduler (sound/README.md).
 
@@ -285,18 +302,21 @@ safe envelope or produce competing repeated impacts.
 
 ## Full activity scene matrix
 
-The reference engine implements all 23 factual states in the nine scene
+The reference engine implements all 25 factual states in the nine scene
 families from [state-plan.json](state-plan.json). The full check executes
-all 42 canonical moods × 23 states: 966 cells, including 84 quiet aliases
+all 42 canonical moods × 25 states: 1,050 cells, including 84 quiet aliases
 for asleep/no-app. Starting is exercised with each of its four contexts,
-and task-complete with success and failure, giving 1,134 factual test
-cases. Every active case exercises all three variants; quiet aliases
-retain mood and use the shared sleeping face without contacts or acting.
+and task-complete with success and failure, giving 1,218 factual test
+cases. Every active case exercises all its variants: three, a successful
+finish's four, a gesture's ten (each asked for, as the board does), and
+idle's takes (an expression's three gestures and its comedy, six or
+seven); quiet aliases retain mood and use the shared
+sleeping face without acting, and without contacts but a snore's breaths.
 The two optional face alternates are outside this canonical matrix.
 
 Coverage requires actual execution, bounded physical channels, factual
-labels, three distinct motion/contact signatures and visible props for
-each variant. Signatures use the same number of normalized phase samples
+labels, a distinct motion/contact signature and visible props for each
+variant. Signatures use the same number of normalized phase samples
 so duration or metadata alone cannot make identical acting pass. The
 builder consumes the checked cells; declaring a state implemented is
 insufficient. These tests establish engineering coverage, not separate
@@ -306,10 +326,11 @@ The activity scene selects a shuffle bag keyed by mood, state and factual
 outcome/context. Desk modes, delegating and listening select again only
 after recovery. A one-shot selects once per request and keeps that recipe
 across explicit loops; an attention entry selects once and then holds.
-Idle uses its expression's three original gesture recipes, with a separate
-automatic shuffle bag per expression and the quiet interval specified
-above. Each bag exhausts all three entries before refill and prevents an
-adjacent repeat across refills. Explicit review `perform(index)` remains
+Idle uses its expression's three original gesture recipes, then its comedy,
+with a separate automatic shuffle bag per expression and the quiet interval
+specified above. A bag's first round deals its first three entries; every
+later round deals all of them (Comedy, below). Each round is exhausted
+before the next and no entry repeats across a refill. Explicit review `perform(index)` remains
 an exact selection. Changing targets never replaces the body or its
 springs. The intentional idle scheduler change updates seeded reference
 traces; the seven V1 source locks remain unchanged.
@@ -415,6 +436,193 @@ preview remains a local visual reference: LinkKit admission, actual
 microphone deadlines, Voice playback, finish-thread taps and production
 ports remain their existing owners' responsibilities.
 
+## Comedy
+
+Idle, sleep and a finish have comedy, all of it the same body: a squash,
+a stretch, a tilt, a slide or a rebound, never a new silhouette or another
+asset.
+
+| Comedy | Where | Its takes | Sound |
+| --- | --- | --- | --- |
+| Yawn and settle (2.9 s), doze off and snap awake (3.6 s), sneeze and shake it off (2.7 s) | Idle, every expression | Idle's takes 4 to 6 (`idleGags`) | The sneeze's one contact |
+| A long, slow yawn (4.2 s) | Idle, bored, tired, lazy and comfy (and comfy's rosy face) | Their own take 4 | None |
+| Zoomies, edge to edge (2.6 s) | Idle, excited | Its own take 4 | A landing (`bounce`) at each edge |
+| A snore: two breaths, each a slight swell | Asleep | Asleep's fourth take | Each breath |
+| Hiccups: the first take's card, then three small hiccups | A successful finish | Its fourth take | The card's fanfare, then three squishes |
+| A gift: a small bug beside the card | Proud's successful finish | Its second take, lifted | As that take |
+
+**Idle's comedy is gags, beside the gestures.** Idle's variations are an
+expression's performances, so its comedy is more of them, dealt by acting's
+bag: an expression's three gestures, its own `gags` (expressions.json), then
+everyone's `idleGags`. A gag is in `gags` once, shared. It is a performance
+(its `cues`, impulses on the gesture springs) with `keys`, which set a
+channel's target (from (0, 0) at its start, a smoothstep to each of the
+channel's keys in turn, then its last value), and `contacts`, which sound
+and move nothing. The six gesture springs follow their keys under-damped,
+as gel does; a gag has two springs of its own, its `slide` (frequency 10,
+damping 9, at most 0.7) and its `lids` (critically damped, frequency 24).
+The lids close the eyes as a blink does: the drawn blink is the largest of
+the natural one, the bridge's and the lids'. The slide carries the whole
+dome sideways, its face and its shadow with it, and leaves its shape as it
+is. Reduced motion scales a gag's body keys as it scales impulses (0.18),
+not its lids. The three gestures stay as they were, so the traits the scene
+recipes take from them, and every existing recipe, are unchanged.
+
+**A scene's fourth take is a table of its own.** Every row of
+`slime::kRecipes` keeps its three takes; asleep and a successful finish
+have a fourth, in `slime::kFourthTakes`, and `slime::kRecipeTakes` says how
+many each row has. Widening every row to four would have carried 296 KB of
+empty recipes on the AMOLED; the fourths are about 20 KB. A host may ask
+for a take from 0 to 3; one its state hasn't is dealt from the bag. A
+finish timed without its outcome finds a success's fourth (`GelFace::recipe`).
+A fourth take has no gesture of its own, so no recovery gesture.
+
+**Comedy joins a bag's second round.** One rule for every bag, acting's
+and the scenes': its first round deals the first three takes, the ones every
+state has always had; every later round deals all of them, never opening on
+the take just dealt. A fresh mood, a reset and every first round play as
+they always did, and the joke comes once the straight takes have been seen.
+Acting's bags hold at most seven (`kMaxGestures`: three gestures, an own
+gag, three idle gags), the scenes' four (`kMaxTakes`). In calm idle, with a
+gesture every 10 to 20 seconds, the first gag plays after about 40 seconds,
+then each about once a round, a minute and a half.
+
+**Asleep picks again after each take**, as routine work does. Its first
+rest is always the still one, drawn from no bag, so sleep starts still for at
+least 12.8 s (the first rest and the bag's first round). The snore lasts
+4.8 s: breaths at 600 and 2,600 ms, strength 0.35, each swelling the body's
+squash by sin² over 1,200 ms, times its strength, times 0.07, even while
+quiet. They are quiet rest's only contacts. A lost link rests still and
+never snores.
+
+**The hiccups** reveal the first take's card at 680 ms (plus the mood's
+delay), then three body contacts at 1,640, 2,060 and 2,480 ms, strength
+0.45, in a 3.7 s take. **The gift** is a flag on proud's second success
+take: the result card's content carries it (`props.result.gift`, present
+only with one), and both painters draw an amber bug beside the card.
+
+**Comedy's contacts sound in any state**, each with the routine chance (a
+quarter): a sneeze's (`sneeze`), a zoomies landing (`bounce`), a snore's
+breath (`breath`). They are routine sounds, ducked under a line. The
+reference sounds 4 of 14 sneezes over twenty minutes of idle, and 11 of 40
+snore breaths over five minutes of sleep.
+
+**Traces keep their columns.** A gag's channels (`actorChannels.slide`,
+`actorChannels.lids` and the drawn `slide`) join the inspection once a gag
+has played, and `gift` appears only with one, so a trace with no comedy
+keeps its columns. Of the twelve earlier reference traces only two changed:
+`idle-60s` from its second round (40 s), and `representative-matrix` from
+asleep's first pick again (3.2 s into each sleep). `scripts/comedy.jsonl`
+plays every gag, the hiccups, the gift and a snore, sounds included, and
+the port replays it frame for frame.
+
+## Gestures
+
+`gesture` is the board's own reaction to what you do to it, a one-shot
+in the touch family. Its takes are the board's gestures, in its order
+(`render::Gesture`, [engine/scenes/gesture.mjs](engine/scenes/gesture.mjs)):
+the board names one (`args.variant`, 0 to 9), no bag deals them, and a
+gesture asked for without one plays the first. Each is the same in every
+mood: a scene recipe whose body contacts dent the dome, pulse the touch
+mark and sound a squish on its first loop, and a gag of its own
+(`expressions.json` `gestures`, keyed as Comedy's are) that acting plays
+with it. The board borrows a face for each while it plays, as a react's
+expression is borrowed, and the mood stays.
+
+| Gesture | What the body does | Face it borrows | Gag |
+| --- | --- | --- | --- |
+| handoff (BOOT hands you an agent) | Lifts and leans in, offering | pleased | 2.4 s |
+| stroke | Melts under the hand, eyes shut | affectionate | 3 s |
+| ruffle (stroked the wrong way) | Bristles in ripples, then huffs | annoyed | 2.2 s |
+| nose | Squished in at the nose, pops back | surprised | 1.8 s |
+| tickle | Giggles, jiggling side to side, eyes squeezed | excited | 2.4 s |
+| dizzy (shaken) | Wobbles round, sliding and rolling side to side | baffled | 3.2 s |
+| pickup | Stretches up tall | surprised | 2.2 s |
+| putdown | Lands squashed and settles | relieved | 2 s |
+| startle (a thump on the desk) | Flinches, jumps, lands | stunned | 1.9 s |
+| peekaboo (turned face up again) | Squashed low with eyes shut, then rises | happy | 2.6 s |
+
+A scene lasts its gag and 200 ms more. **A recipe may carry a gag.**
+The scene names it (`gag`), and acting plays it once for each pass of the
+recipe (its generation and iteration), in any state, then waits: its own
+next gesture comes three seconds after the gag ends, and none is dealt
+while one is held. Acting is suppressed outside idle only while the
+recipe has no gag. A recipe with a gag recovers with the gag, not with the
+expression's recovery gesture. `scripts/gestures.jsonl` plays all ten as
+the board does (held, with their faces), one from work and one with no
+take named, and the port replays it frame for frame.
+
+## Notice
+
+The brain's reaction when you name it in your prompt: it heard its name and
+looks up at you, surprised and pleased. Its three takes are `notices` in
+`expressions.json`, each a gesture's shape (a gag of keys and impulses
+under a face it borrows, the scene's contacts) and played as one
+(`gestureRecipe`), but dealt from its bag as any state's takes are:
+`notice-perk` perks up and leans in (surprised), `notice-hop` hops and
+beams (happy), `notice-tilt` tilts toward you and leans in (pleased). It
+is the start family with no card. The board borrows each take's face
+(`kNoticeFaces`) unless the Mac sends a mood with it.
+
+## Occasions
+
+A look may have takes that need tags (`when`, every one on: the board's
+`render/tags.h`, the part of the day, the holidays, `party`, `busy` and
+`frantic`) or a wait (`after`, seconds the look has shown), as Pixel's
+designs do (characters/CHARACTER.md §9). The host says them with
+`setOccasion({when, lookMs})`; the board does on every sync, the Mac's
+mirror with the Mac's tags and no wait. While one fits, a pick goes to one
+of those that fit 67% of the time (`occasionShare`), any one alike;
+otherwise, and while none fits, the look deals as it always has, drawing
+no randomness of its own, so no trace without occasions changed.
+`expressions.json` `occasions` holds them ([engine/scenes/occasion.mjs](engine/scenes/occasion.mjs)):
+
+| Look | Occasion | Needs | What plays |
+| --- | --- | --- | --- |
+| idle | morning-stretch | morning | A big stretch up, eyes squeezed, a lean each way |
+| idle | night-drowse | night | Heavy lids, sunk a little, a slow sway |
+| idle | nod-off | 1,200 s idle | Nods three times deeper, lids closing, then jerks awake |
+| idle | party-bounce (and New Year's, Lunar New Year's, Programmers' Day's) | party (newyear, lunar, programmers) | Three hops side to side, eyes squinting; each landing a bounce at comedy's chance |
+| idle | friday-sway | friday | A little dance, leaning and sliding |
+| idle | winter-shiver | winter | Huddled down, shivering |
+| idle | halloween-wobble | halloween | A slow spooky roll and drift, lids half shut |
+| idle | valentines-swoon | valentines | Eyes shut, lifted, a lean |
+| working, terminal, tool_use | busy-typing | busy | Two quick three-key bursts, leaning in |
+| working, terminal, tool_use | frantic-typing | frantic | Six keys in 0.6 s, leaning in harder |
+| working | work-stretch | 1,200 s at work | A desk recipe with a stretch-up gag |
+| asleep | deep-snore | night | Three deeper breaths |
+| asleep | dream | 1,800 s asleep | Two soft breaths and a twitch-and-wriggle gag |
+
+Idle's are gags acting plays in place of its next gesture (numbered after
+the expression's takes); the other looks' are recipes the scene deals at
+a pick (numbered after the row's takes), the same in every mood, and a
+jittered one takes the desk's jitter. A gesture or a host's moment never
+takes one. An occasion whose tags go off simply isn't picked again. The
+engine has no colour channel, so no occasion tints the gel. The working
+looks' quicker pace while the agents are busy is the board's
+(`render::workPace`), not an occasion. `scripts/occasions.jsonl` plays a
+night, a party, idle dozing, frantic and busy work, a long turn's
+marathon, a night asleep and half an hour asleep, and the port replays it.
+
+### Layers over the body (the board's)
+
+The engine draws no costume, but the board's port draws layers over the
+body by the same tags, after the face art and before the props
+(`firmware/src/render/gel/layers.h`): a hat by the first tag that has one
+(Halloween's witch hat; a party hat for party, New Year's, Lunar New Year
+and Programmers' Day; a nightcap at night; a bobble hat in winter),
+shades on a Friday's day, and the air (snow, confetti, hearts, Zs asleep
+at night), and last the sign a reaction holds up. Each sits on anchors
+the painter takes from the very vertices it projects for the body
+(the rig's `Anchors`, both faces' one type: the dome's apex, ring 6's
+sides and front for a brim, ring 15's front for the hands) and the face art's
+eye centres, so a layer leans,
+squashes, dips under a finger and slides off the screen with the body
+and is cut off there with it. Peekaboo's gesture hides the hat. At night,
+but asleep, the lids hang a little lower (`kNightLids`). The layers read
+the engine and never change it, so the traces don't see them; the Mac's
+mirror doesn't draw them yet.
+
 ## States share one scene
 
 Build a persistent desk and computer once. Working, terminal, searching,
@@ -454,12 +662,15 @@ primitive and does not create a new graph edge.
 | --- | --- | --- | --- |
 | Ordinary primitive | Soft retarget | Gather/settle | Blink retarget |
 | Ordinary body duration (ms) | 420 | 680 | 360 |
-| Ordinary face window (ms) | 180 | 180 | 260 |
+| Ordinary face window (ms) | 320 | 360 | 460 |
 | Dramatic primitive | Recoil/compress | Recoil/compress, second motion | Blink retarget with a short hold |
 | Dramatic body duration (ms) | 760 | 920 | 560 |
-| Dramatic face window (ms) | 220 | 240 | 280 |
+| Dramatic face window (ms) | 240 | 280 | 340 |
 
-Direction follows the authored source and destination profiles. Using
+The blink retarget keeps its name from when the face closed behind a
+blink to swap its art; now its face window crosses over as the others do,
+and the name is its body's hold. Direction follows the authored source and
+destination profiles. Using
 their lean `L`, strength `G`, delay `D`, eye openness `E` and mouth width
 `M`, the directional score is
 `(Lto − Lfrom) + (Gto − Gfrom) × 0.025 + (Dfrom − Dto) / 10000 + (Eto − Efrom) × 0.01 + (Mto − Mfrom) × 0.005`.
@@ -501,28 +712,49 @@ velocities. From rest, their critically damped springs stay between those
 captured values and the new semantic target; a rapid A→B→C retarget uses
 the in-progress controls and their velocity as C's start, so it may coast
 briefly past its captured value but stays within the span of every value it
-started from or was asked for. Exactly one art primitive is drawn; a
-primitive changes only on a fully closed bridge-blink frame. A mid-blink
-retarget retains its current closure. Sleeping continues to use the shared
-quiet face. Tests check scalar semantic controls separately from art
-identity, art baselines and blink closure; those are not interpolated
-second silhouettes.
+started from or was asked for. Sleeping continues to use the shared quiet
+face.
 
-The face is never faded. `face.render` carries what the painters draw: the
-art's eye, mouth-width and mouth-height size ratios, the mouth's swap dot,
-and the cheek and tear opacities. Outside a bridge each ratio is the live
-control over the drawn art's own dimension, passed through a smooth
-saturation `1 + x·r / (r + |x|)` (with `x = ratio − 1`, `r = 1/3` above
-one and `1/4` below), so it has slope one at rest and never leaves
-(0.75, 4/3). During a bridge the old art eases with the blink's sin² from
-the ratio it was drawn at to its own size by the closed frame, and the new
-art eases from its own size to the live ratio as the eyes reopen. The
-eyelids' closure hides the eye swap; the mouth is drawn at
-`1 − 0.8 × bridgeBlink`, a small dot at the swap. A cheek or tear style
-that changes between the two arts dips to zero opacity at the swap; one
-that stays keeps its opacity. The shared sleeping face is the tired art
-drawn at its own squashed size (eye 0.004, mouth 0.018 × 0.008), so its
-ratios also settle at one. Pen widths never stretch with a feature's scale.
+**The face's layers.** `face.layers` are the arts drawn, oldest first and
+the current one (`face.artId`) last, at most four. At a retarget every
+layer's weight starts again from its value and slope then, a cubic Hermite
+over the transition's face window toward one for the new art and zero for
+the others (`hermite` in [engine/scenes/ramp.mjs](engine/scenes/ramp.mjs),
+the props' ramp): from rest a smoothstep, and a retarget mid-window keeps
+every weight's velocity. The window is counted in milliseconds,
+`face.transition`'s `elapsedMs` of its `durationMs`, the one clock both
+engines keep. A layer's weight is its share of them all, so the weights sum
+to one. An art still fading comes back from the weight it has; a layer at
+zero that can only stay there is dropped; a fifth art drops the faintest of
+the four, the others' shares growing to fill what it leaves: the one step
+there is, and only when more than four arts change within one window (a
+rapid chain, moods 48 ms apart, drops the art that came 48 ms before, at 5
+to 11%). When the window ends, only the current art is left. Natural blinks
+and a gag's lids close the eyes; nothing else does.
+
+**Morph or cross-fade, feature by feature.** The painters draw each layer's
+features: each eye, the mouth, the tears and the cheeks. Where layers draw
+a feature in the same shape, the same calls, colours and styles with only
+their numbers differing (the reference painter records each feature's
+drawing to compare them; the port's `slime_art.h` names each group's
+`shape`, the same paths with the same point counts and colours), it is
+drawn once, its numbers averaged by weight (positions, sizes, curves,
+angles, pen widths, opacities), at their summed weight: two bean eyes ease
+into each other, a closed arc eases into a droop. Different shapes
+cross-fade, each at its weight, the newer over the older, so the eyes' and
+the mouth's opacity, summed over the arts, stays one: a ring of a mouth
+gives way to an open U. The cheeks and tears are drawn at their opacity
+controls.
+
+**Drawn ratios.** Each layer's art is drawn at the live control over its
+own dimension, passed through a smooth saturation `1 + x·r / (r + |x|)`
+(with `x = ratio − 1`, `r = 1/3` above one and `1/4` below), so it has
+slope one at rest and never leaves (0.75, 4/3), and at rest is one: the
+arts crossing over are drawn near one size as the controls move. The
+shared sleeping face is the tired art drawn at its own squashed size (eye
+0.004, mouth 0.018 × 0.008), so its ratios also settle at one. Pen widths
+never stretch with a feature's scale. The port draws a second art only
+while one crosses over.
 
 Quiet rest and active attention permanently suppress the current bridge's
 body gesture, with existing bridge springs settling toward zero. Clearing
@@ -548,25 +780,53 @@ timbres remain sketches pending speaker review.
 (check-engine), every directed edge in all three variants with its rapid,
 rest, drag and attention runs (check-bridges), and the full scene matrix
 with its routing and interruption runs (check-scenes). For each channel the
-painters draw (the eight face controls, the three drawn ratios, the mood
-posture's lean and squash, every prop's `visible` and the cards' reveals):
+painters draw (the eight face controls, each layer's weight and drawn
+sizes, the mood posture's lean and squash, every prop's `visible` and a
+card's reveal while the card is drawn):
 
 - **No jolt at an event.** Let `Δ²` be a frame's change in per-frame
   velocity, `x[n+1] − 2x[n] + x[n−1]`. Where an event (a mood, fact,
   one-shot or input) lands in a frame, its `Δ²` is at most **2×** the largest
   `Δ²` the same channel makes anywhere else in that corpus. A first-order
   filter fails this (about 5×: its velocity jumps from rest to its maximum
-  in one frame); a critically damped spring passes (about 1.1×).
-- **Ratios stay in range and continuous.** Each drawn ratio stays in
-  [0.75, 4/3] and moves at most the bridge ease's steepest 16 ms across that
-  whole range, `(π/2) × 16 / 90 × (4/3 − 0.75)` ≈ 0.163 per frame; the mouth
-  equals `1 − 0.8 × bridgeBlink`; cheek and tear opacities stay in [0, 1].
+  in one frame); a critically damped spring passes (about 1.1×). Every
+  art's weight counts as one channel, and a drawn size as its control's.
+- **Sizes follow their controls.** Each layer's drawn ratios stay in
+  [0.75, 4/3], and a drawn size (a ratio times its art's own) moves no
+  further in a frame than the control it follows, the saturation's slope
+  being at most one.
+- **Arts cross over without pops.** A layer's weight moves at most a 16 ms
+  slice of the Hermite over the shortest face window, the face's own 180 ms
+  (waking), reversals
+  included (sampled, with 2% margin: about 0.149 per frame), a new art's
+  first frame included; the weights sum to one.
 - **No prop pops.** A prop's `visible` moves at most a 16 ms slice of its
   ramp: the Hermite's steepest slope over its 200 ms, reversals included
   (sampled, with 2% margin: about 0.134 per frame). The desk moves at most
-  its own spring's steepest frame from rest (about 0.074).
-- **The face never fades.** Over the edge review script, the face painter
-  draws the eyes and mouth at full opacity in every frame.
+  its own spring's steepest frame from rest (about 0.074). The board's lane
+  fades its strip over the same 200 ms as it comes and goes, one going
+  still showing what it showed: the board's app decides it for every face
+  from when the strip came or went (`app/behaviour.h`'s `strip`), so how
+  often frames are drawn doesn't change one. The gel draws the strip whole
+  and blends it once at that opacity: its rows hold nothing else, over
+  black, so that is scaling the pixels it wrote, in place, with no buffer,
+  and a hole (the working ring's inside, a mini's eyes) stays one. The
+  preview's lane fades who needs you with the alert's sign.
+- **The face never fades.** Through a cross-fade between differently
+  shaped arts (calm to happy, happy to sad, calm to frightened's welling
+  eyes, falling asleep and waking), the port's painter's frames, 40 ms
+  apart, keep at least 85% of the visible ink of the fainter of the two
+  faces settled: the pixels the face takes at least a quarter of the way
+  from the body's luminance to the ink's, eyes and mouth (a water eye's
+  fill, the cheeks and the tears are paler than the body and don't count).
+  The least is 87%, falling asleep (waking 88%, happy to sad 97%; calm to
+  happy and to frightened show more than the fainter end, both arts
+  showing). Where two shapes don't overlap, the frames half way are dimmer
+  by a stricter count: of the pixels taken at least half way to the ink,
+  calm to frightened keeps 48% of the fainter face's, scared to frightened
+  50% and falling asleep, over its longer window, 76%; of those three
+  quarters of the way, 13%, 12% and 31%. Each shape is at about half its
+  strength there, which is the cross-fade.
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).
@@ -574,8 +834,11 @@ posture's lean and squash, every prop's `visible` and the cards' reveals):
 The scene check also replays [scripts/alert-interrupted.jsonl](scripts/alert-interrupted.jsonl)
 and interrupts alerts with listening and with a link timeout at eight points
 from 0 to 2,000 ms: every request knocks and confirms exactly once. The
-native port's `test_gel` repeats the interruption cases and the ratio, mouth
-and alert-ramp bounds over every directed edge.
+native port's `test_gel` repeats the interruption cases, the weights' and
+sizes' bounds and the alert's ramp over every directed edge, a fifth art's
+drop, sleep's spring kept through a mood change, and the lane's fade (the
+same whatever the draw cadence, the strip blended once), and checks that
+the face never fades.
 
 ## Variability, without chaos
 

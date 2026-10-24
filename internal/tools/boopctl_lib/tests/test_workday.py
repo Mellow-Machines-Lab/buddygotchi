@@ -221,8 +221,8 @@ class ReportTests(unittest.TestCase):
             text, ok = workday.check([path])
         self.assertEqual(lv["longest_quiet_min"], 17.0)
         self.assertEqual(lv["quiet_over_6_min"], 1)
-        self.assertEqual((lv["longest_same_run"], lv["longest_same_what"], lv["repeat_pct"]), (2, "happy", 100),
-                         "reported, not held to a limit")
+        self.assertEqual((lv["longest_same_run"], lv["longest_same_what"], lv["repeat_pct"]), (2, "happy", 100))
+        self.assertEqual(lv["min_words_said"], 0.0, "neither said anything")
         self.assertEqual(lv["mood_bounces"], 1)
         self.assertEqual(lv["min_mood_changes"], 2)
         self.assertEqual(lv["longest_rest_working_min"], 17.0)
@@ -231,7 +231,14 @@ class ReportTests(unittest.TestCase):
         self.assertIn("ok    quiet_over_6_min ≤ 3: 1", text)
         self.assertEqual(lv["min_reactions_per_turn"], 2.0, "two reactions, one turn ended")
         self.assertIn("ok    min_reactions_per_turn ≥ 0.8: 2.0", text)
-        self.assertIn("(repeats, not held to a limit: 100% the same as the one before, at most 2 in a row)", text)
+        self.assertIn("FAIL  repeat_pct ≤ 40: 100", text)
+        self.assertIn("ok    longest_same_run ≤ 3: 2 (happy)", text)
+        self.assertIn("FAIL  min_words_said ≥ 0.5: 0.0", text)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "debug.jsonl"
+            path.write_text("\n".join(lines) + "\n")
+            report = workday.report([path])
+        self.assertIn("| Hour | Reactions | Said something | Kinds | Longest same run | Idle check-ins |", report)
 
     def test_held_and_forced_passes_arent_the_brains(self) -> None:
         """A pass held back when its turn came never asked the brain,
@@ -389,7 +396,7 @@ class FakeDeviceTests(unittest.TestCase):
         read(5)
         self.assertEqual(got[0], {"t": "hello", "kit": 1, "app": "boop", "id": "b00p-fake", "fw": "workday",
                                   "does": ["react", "task_complete", "reply_ready", "starting", "stopped", "error",
-                                           "helper_return", "wake_up", "listening", "stop_listening"]},
+                                           "helper_return", "wake_up", "listening", "stop_listening", "notice"]},
                          "once for the app's first line, its hello; no voice, so the app's lines are taken as played")
         self.assertEqual(got[1:], [{"t": "ev", "kind": "ended", "data": {"id": 558386701, "how": "done"}},
                                    {"t": "ev", "kind": "ended", "data": {"id": 558386702, "how": "done"}},

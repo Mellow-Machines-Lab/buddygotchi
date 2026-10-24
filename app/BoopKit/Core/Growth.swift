@@ -1,8 +1,8 @@
 import MellowHarness
 
 /// How Boop grows: XP from what its agents get done, by
-/// plain rules, and a stage for the XP. Only the Mac app shows them; nothing
-/// Boop does depends on them yet.
+/// plain rules, and a stage for the XP. The Mac app shows them, and the
+/// board gets the stage as tags (`Occasions.stages`), so a pack can show it.
 public struct Growth: Equatable, Sendable {
     /// Every XP ever earned.
     public var xp: Int

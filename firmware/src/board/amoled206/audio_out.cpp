@@ -3,9 +3,9 @@
 #include "board/audio_out.h"
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <driver/i2s_std.h>
 
+#include "board/amoled206/i2c.h"
 #include "board/config.h"
 #include "voice/player.h"
 
@@ -24,18 +24,12 @@ constexpr uint8_t kCodecVolume = 0xBF;
 i2s_chan_handle_t tx = nullptr;
 int16_t wide[kChunk];  // the chunk as the codec takes it
 
-bool codecWrite(uint8_t reg, uint8_t v) {
-  Wire.beginTransmission(kCodec);
-  Wire.write(reg);
-  Wire.write(v);
-  return Wire.endTransmission() == 0;
-}
+bool codecWrite(uint8_t reg, uint8_t v) { return i2cWrite(kCodec, reg, v); }
 
+// The register, or 0 if the codec didn't answer.
 uint8_t codecRead(uint8_t reg) {
-  Wire.beginTransmission(kCodec);
-  Wire.write(reg);
-  if (Wire.endTransmission(false) != 0 || Wire.requestFrom(kCodec, uint8_t(1)) != 1) return 0;
-  return uint8_t(Wire.read());
+  uint8_t v = 0;
+  return i2cRead(kCodec, reg, &v, 1) ? v : 0;
 }
 
 // The ES8311 as Espressif's driver sets it up: I2S slave, 16 bits, MCLK

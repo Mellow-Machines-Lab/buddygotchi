@@ -34,8 +34,7 @@ enum FaceMood: Hashable {
 /// Boop's face on a small black-glass tile: the face of the device's design
 /// for Boop's mood and look (FaceDesigns, which facegen writes from the same
 /// designs as the device's), at rest, without the props. It blinks now and
-/// then, and blinks into a new face when the mood or the look changes, as
-/// the device does.
+/// then, and blinks into a new face when the mood or the look changes.
 struct BoopFace: View {
     var mood: FaceMood
     /// Boop's mood, which picks the set of designs.

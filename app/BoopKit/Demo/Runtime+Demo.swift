@@ -9,6 +9,12 @@ extension Runtime {
     /// After a demo's last step, time for what it starts to play out.
     public static let demoTail = 6.0
 
+    /// Whether an agent's process still runs: a demo's made-up agent's
+    /// always does (`DemoPlayer.agentProcess`).
+    static func agentRuns(_ process: AgentProcess) -> Bool {
+        process == DemoPlayer.agentProcess || AgentProcess.isRunning(process)
+    }
+
     /// Readies a demo script (`DemoScript`) to play: its steps in order,
     /// each when the one before it has ended, from `start()` on. The
     /// person's steps are a poke and talk as the socket's dev messages make
@@ -80,6 +86,11 @@ public final class DemoPlayer: @unchecked Sendable {
     /// With no agent: whether each buddy's agent's main thread's turn is
     /// going (`""` for the only one).
     var turnOpen: Set<String> = []
+    /// The named sessions started so far, `buddy/session`.
+    var sessions: Set<String> = []
+    /// The reviewers sent off and not yet back, by session (`buddy/session`),
+    /// each by its `agent_id`, the first sent the first back.
+    var reviewers: [String: [String]] = [:]
     var calls = 0
 
     init(script: DemoScript, live: Bool, cursor: URL?, runtime: Runtime,
@@ -95,6 +106,14 @@ public final class DemoPlayer: @unchecked Sendable {
     /// Plays the script, on `home`.
     public func start() {
         runtime.options.log("demo: \(script.steps.count) steps\(live ? ", with a live agent" : "")")
+        // The script's prompts read as it says, on any Mac.
+        let readings = Dictionary(script.steps.compactMap { step -> (String, PromptReading.Labels)? in
+            guard case .agent(let a) = step.what, let text = a.text, let reading = a.reading else { return nil }
+            return (Scrubber.scrub(text), reading)
+        }, uniquingKeysWith: { first, _ in first })
+        // In front of the app's own labeler, not another demo's.
+        let own = (runtime.labeler as? ScriptLabeler)?.otherwise ?? runtime.labeler
+        if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: own) }
         if !live {
             for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
                 send("SessionStart", buddy: buddy) { $0.source = "startup" }
@@ -145,6 +164,22 @@ public final class DemoPlayer: @unchecked Sendable {
             heardStep(step, agent(of: step))
             runtime.tapped(who: Runtime.demoBy, buddy: step.buddy)
             then()
+        case .press:
+            heardStep(step, agent(of: step))
+            runtime.pressed(who: Runtime.demoBy, buddy: step.buddy)
+            then()
+        case .hold:
+            // The board tells the Mac once the finger has been down its
+            // hold; the demo's finger stays a little longer.
+            heardStep(step, agent(of: step))
+            later(DemoScript.holdSeconds) { [self] in
+                runtime.gestured(Core.dismissGesture, who: Runtime.demoBy, buddy: step.buddy)
+                then()
+            }
+        case .wait(let ms):
+            heardStep(step, agent(of: step))
+            runtime.advanceClock(ms, who: Runtime.demoBy)
+            then()
         case .talk(let words, let hold):
             heardStep(step, agent(of: step))
             runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)
@@ -186,10 +221,15 @@ public final class DemoPlayer: @unchecked Sendable {
         // Codex reads with a shell command.
         case .read: return { toolEnd([.read])($0) || ($0.agent == "codex" && toolEnd([.shell])($0)) }
         case .edit: return toolEnd([.edit])
+        // A request that waits ends its step as it's asked.
+        case .run where a.waits: return { Mapping.kind(of: $0).map { $0 == (.tool, .wait) } == true }
         case .run: return toolEnd([.shell])
         case .review: return { $0.hook == "SubagentStart" }
         // Claude's `SessionStart` with the source `compact`, Codex's `PostCompact`.
         case .compact: return { Mapping.event(from: $0)?.source == Mapping.compacted }
+        // A whole list (Claude's TodoWrite, Codex's update_plan), or one
+        // of Claude's tasks.
+        case .todo: return { $0.todosTotal != nil || $0.todoID != nil }
         case .reply: return a.byReviewer ? { $0.hook == "SubagentStop" } : { $0.hook == "Stop" }
         }
     }
@@ -235,14 +275,23 @@ public final class DemoPlayer: @unchecked Sendable {
     /// How many agent steps ahead a hook may end, for the script to skip to it.
     static let lookahead = 3
 
+    /// The process the player's agent is, on every hook it sends, as a real
+    /// agent's hooks say theirs: it runs as long as the demo does
+    /// (`Runtime.agentRuns`), so a request waits however long the demo's
+    /// clock jumps. No real process started 1 ms into 1970.
+    public static let agentProcess = AgentProcess(pid: 4242, started: 1)
+
     // MARK: No agent: the player is it
 
-    /// Sends a hook as the agent would, the buddy `buddy`'s agent's (its
-    /// own session), with `set`'s fields.
-    func send(_ hook: String, buddy: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
-        let session = buddy.map { "demo-\($0)" } ?? "demo"
-        let cwd = "/demo/\(slug)" + (buddy.map { "-\($0)" } ?? "")
-        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd, ts: runtime.options.wallClock())
+    /// Sends a hook as the agent would, the buddy `buddy`'s agent's, in its
+    /// session `session` (nil for its first), with `set`'s fields. Each
+    /// session is its own thread, in a folder of its own.
+    func send(_ hook: String, buddy: String? = nil, session name: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
+        let tail = [buddy, name].compactMap { $0 }.map { "-\($0)" }.joined()
+        let session = "demo" + tail
+        let cwd = "/demo/\(slug)" + tail
+        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd,
+                            process: Self.agentProcess, ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
     }
@@ -256,11 +305,19 @@ public final class DemoPlayer: @unchecked Sendable {
         calls += 1
         let buddy = step.buddy
         let codex = script.agent(of: buddy) == "codex"
-        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, set) }
-        let open = buddy ?? ""
+        // A session the script hasn't used yet starts first, as an agent's would.
+        let key = (buddy ?? "") + "/" + (a.session ?? "")
+        if let name = a.session, !sessions.contains(key) {
+            sessions.insert(key)
+            self.send("SessionStart", buddy: buddy, session: name) { $0.source = "startup" }
+        }
+        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, session: a.session, set) }
+        let open = key
         let id = "t\(calls)"
         let finish = { [self] in heardStep(step, agent(of: step)); then() }
-        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil) {
+        // A request that `waits` ends the step as it's asked: the steps
+        // after it play while it waits, and you allow it `ask` seconds on.
+        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil, waits: Bool = false) {
             let call = { (l: inout HookLine) in l.tool = name; l.toolUseID = id; l.topic = topic }
             send("PreToolUse", call)
             let ends = { [self] in
@@ -269,12 +326,13 @@ public final class DemoPlayer: @unchecked Sendable {
                         call(&$0)
                         if fails { $0.toolError = "exit_code" }
                     }
-                    finish()
+                    if !waits { finish() }
                 }
             }
             guard let ask else { return ends() }
             later(0.2) { [self] in
                 send("PermissionRequest") { $0.tool = name; $0.toolUseID = id }
+                if waits { finish() }
                 later(ask, ends)
             }
         }
@@ -290,11 +348,25 @@ public final class DemoPlayer: @unchecked Sendable {
             finish()
         case .read: tool(codex ? "Bash" : "Read")
         case .edit: tool(codex ? "apply_patch" : "Edit")
-        case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask)
+        case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask, waits: a.waits)
+        case .todo:
+            // The whole list, as Claude's TodoWrite and Codex's update_plan
+            // give it: the counts, never the items.
+            let list = { (l: inout HookLine) in l.tool = codex ? "update_plan" : "TodoWrite"; l.toolUseID = id }
+            send("PreToolUse") {
+                list(&$0)
+                $0.todosDone = a.todos?.done
+                $0.todosTotal = a.todos?.total
+            }
+            later(step.takes) { [self] in
+                send("PostToolUse", list)
+                finish()
+            }
         case .review:
             send("PreToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
+            reviewers[key, default: []].append("reviewer-\(id)")
             later(0.2) { [self] in
-                send("SubagentStart")
+                send("SubagentStart") { $0.agentID = "reviewer-\(id)" }
                 send("PostToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
                 finish()
             }
@@ -312,7 +384,12 @@ public final class DemoPlayer: @unchecked Sendable {
         case .reply:
             later(step.takes) { [self] in
                 if a.byReviewer {
-                    send("SubagentStop")
+                    let reviewer = reviewers[key]?.isEmpty == false ? reviewers[key]!.removeFirst() : nil
+                    send("SubagentStop") { $0.agentID = reviewer }
+                } else if a.fails, !codex {
+                    // Codex has no hook for a failed turn.
+                    send("StopFailure") { $0.error = "api_error" }
+                    turnOpen.remove(open)
                 } else {
                     send("Stop") { $0.message = a.text ?? "" }
                     turnOpen.remove(open)
@@ -325,4 +402,16 @@ public final class DemoPlayer: @unchecked Sendable {
 
 private extension String {
     func ifEmpty(_ other: String) -> String { isEmpty ? other : self }
+}
+
+/// A demo's readings: each prompt step's own, by its scrubbed text, and
+/// the labeler it stands in front of for any other prompt.
+struct ScriptLabeler: PromptLabeler {
+    let readings: [String: PromptReading.Labels]
+    let otherwise: (any PromptLabeler)?
+
+    func label(_ text: String) async -> PromptReading.Labels? {
+        if let reading = readings[text] { return reading }
+        return await otherwise?.label(text)
+    }
 }

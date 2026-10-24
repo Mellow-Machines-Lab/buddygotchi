@@ -39,9 +39,20 @@ public enum BoopDevice {
     /// The `do` id of the brain's finish a tap landed on, when the device
     /// says so (`data.on`): it only dipped the face, and
     /// the tap opens that thread.
+    /// Whether a `tap` was BOOT (`src` `button`), not the screen.
+    public static func button(tapped ev: DeviceEvent) -> Bool { ev.data["src"]?.string == "button" }
+
     public static func finish(tapped ev: DeviceEvent) -> Int? {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }
         return on
+    }
+
+    /// The number of the request a finger held on the sign dismisses
+    /// (`data.attn`, the `attn.id` the sign showed as the touch began), or
+    /// nil when the gesture names none. A request's number fits 32 bits.
+    public static func request(held ev: DeviceEvent) -> Int? {
+        guard let attn = ev.data["attn"]?.int, (1...Int(Int32.max)).contains(attn) else { return nil }
+        return attn
     }
 }
 

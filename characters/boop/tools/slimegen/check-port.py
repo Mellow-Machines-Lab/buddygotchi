@@ -23,11 +23,14 @@ def main():
     parser.add_argument('--output',type=pathlib.Path,required=True,help='local report directory')
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
     exe=args.output/'gel-trace'
-    if not (ROOT/'firmware/.pio/libdeps/native/ArduinoJson/src').is_dir():
-        raise SystemExit('check-port needs ArduinoJson from the native env: run make -C internal fw-test first')
-    sources=[ROOT/'characters/boop/tools/gel-trace/main.cpp',ROOT/'firmware/src/render/types.cpp']
+    if not (ROOT/'firmware/.pio/libdeps/native/ArduinoJson/src').is_dir() or not (ROOT/'.character-build/firmware/include/moods.h').is_file():
+        raise SystemExit('check-port needs ArduinoJson from the native env and the staged pack: run make -C internal fw-test first')
+    sources=[ROOT/'characters/boop/tools/gel-trace/main.cpp',ROOT/'firmware/src/render/types.cpp',ROOT/'firmware/src/render/tags.cpp']
     sources += [ROOT/f'characters/boop/firmware/src/render/gel/{name}.cpp' for name in ['engine','scenes','acting','motion','router']]
-    subprocess.run(['clang++','-O2','-std=c++17','-DBOOP_GEL_TRACE',*[f'-I{ROOT/path}' for path in ['firmware/src','firmware/assets','characters/boop/firmware/src','characters/boop/firmware/include','firmware/.pio/libdeps/native/ArduinoJson/src']],*map(str,sources),'-o',str(exe)],check=True)
+    # The pack's own headers first, as slimegen just wrote them; the staged
+    # build's last, for the moods.h only staging makes (characters/CHARACTER.md §2).
+    includes=['firmware/src','firmware/assets','characters/boop/firmware/src','characters/boop/firmware/include','firmware/.pio/libdeps/native/ArduinoJson/src','.character-build/firmware/include']
+    subprocess.run(['clang++','-O2','-std=c++17','-DBOOP_GEL_TRACE',*[f'-I{ROOT/path}' for path in includes],*map(str,sources),'-o',str(exe)],check=True)
     report={'tolerance':TOLERANCE,'timing':'No frame shift or omitted channel; categorical fields and cue counts must match exactly.','scripts':[]}
     for script in sorted((BASE/'scripts').glob('*.jsonl')):
         reference=json.loads((BASE/'traces'/f'{script.stem}.json').read_text())

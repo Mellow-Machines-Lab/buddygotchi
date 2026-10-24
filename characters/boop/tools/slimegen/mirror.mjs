@@ -16,7 +16,9 @@ const props=createProps(stage,{hostLane:false});
 const framePeriod=1000/60;
 function draw(){const result=engine.step(elapsed);renderer.draw(result.channels);props.draw(result.channels,canvas.width,canvas.height);frames++;return result.channels;}
 function resize(){const rect=stage.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(rect.width*ratio));canvas.height=Math.max(1,Math.round(rect.height*ratio));if(visible||still)draw();}
-function facts(value){engine.setFacts(value);engine.setMood(value.mood||'calm');}
+// The Mac's tags pick the occasions; the mirror keeps no look clock, so
+// none that waits plays here, and busy and frantic are the board's own.
+function facts(value){engine.setFacts(value);engine.setMood(value.mood||'calm');engine.setOccasion({when:Array.isArray(value.when)?value.when:[]});}
 window.BoopSlime={
   // Facts and moments change the engine at once; only an open popover draws.
   feed(message){

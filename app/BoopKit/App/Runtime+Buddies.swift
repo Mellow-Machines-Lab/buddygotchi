@@ -74,9 +74,14 @@ extension Runtime {
         public var queue: (DeviceReaction, Pending) -> Void
         public var speaks: () -> Bool
         public var nature: LongTerm.Nature?
+        /// Writes a day's diary line, for the buddy that keeps one (the
+        /// first, the one long-term.md set up); nil for none.
+        public var diary: ((_ day: String, _ line: String) -> Void)?
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
-                    queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool, nature: LongTerm.Nature?) {
+                    queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool, nature: LongTerm.Nature?,
+                    diary: ((_ day: String, _ line: String) -> Void)? = nil) {
+            self.diary = diary
             self.buddy = buddy
             self.steering = steering
             self.personality = personality
@@ -120,9 +125,12 @@ extension Runtime {
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
                 return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
-            }, speaks: m.speaks, pack: pack, voice: voice)
+            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+            if let write = m.diary, !m.steering.diary.isEmpty {
+                h.output(DiaryOutput(templates: m.steering.diary, time: core.config.time, creature: m.buddy.name, voice: voice, write: write))
+            }
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
             h.section { _, v in mine(v) ? m.steering.guide + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil }

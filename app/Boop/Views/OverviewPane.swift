@@ -63,7 +63,10 @@ struct OverviewPane: View {
                             sessions(status)
                         }
                         if let growth = status.growth {
-                            PaneSection("Growth") { growthCard(growth) }
+                            PaneSection("Growth") { growthCard(growth, daysOld: status.daysOld) }
+                        }
+                        if !status.diary.isEmpty {
+                            PaneSection("Diary") { diaryCard(status.diary) }
                         }
                     }
                 }
@@ -247,7 +250,7 @@ struct OverviewPane: View {
 
     /// Boop's stage and XP: the stage's name, how far
     /// through it, and what's left to the next.
-    private func growthCard(_ growth: Growth) -> some View {
+    private func growthCard(_ growth: Growth, daysOld: Int?) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -266,9 +269,26 @@ struct OverviewPane: View {
                 }
                 .frame(height: 6)
                 .animation(.boopSettle, value: growth.progress)
-                Text(growth.nextAt.map { "\(($0 - growth.xp).formatted()) XP to \(Growth.stages[growth.stage].name)" }
-                     ?? "Fully grown")
+                Text((growth.nextAt.map { "\(($0 - growth.xp).formatted()) XP to \(Growth.stages[growth.stage].name)" }
+                      ?? "Fully grown") + (daysOld.map { " · \($0 == 1 ? "1 day" : "\($0) days") old" } ?? ""))
                     .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Diary
+
+    /// The diary's last week: a line a day, newest first.
+    private func diaryCard(_ lines: [Runtime.Status.DiaryLine]) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                ForEach(lines) { entry in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.day).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft).monospacedDigit()
+                        Text(entry.line).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
         .accessibilityElement(children: .combine)
@@ -289,6 +309,17 @@ struct OverviewPane: View {
         return Opens(waiting?.thread, radius: Theme.cardRadius, model: model) {
             needsYouCard(attn, project: project, name: name, workspace: waiting?.workspace,
                          hint: "\(agent) is waiting for you. " + (opens.map { "Click to \(openVerb($0))." } ?? "Answer it in its window."))
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // Hides the request on Boop, as a finger held on the sign does;
+            // the agent still waits.
+            if let thread = waiting?.thread {
+                Button("Dismiss") { model.runtime?.dismiss(thread) }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
+                    .padding(Theme.gapSnug + 2)
+                    .help("Stop showing this on \(model.status?.name ?? "Boop"). \(agent) still waits.")
+            }
         }
         .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
         .animation(.boopPop, value: project)
@@ -466,6 +497,7 @@ func openVerb(_ target: ThreadLink.Target) -> String {
     case .url(let url) where url.hasPrefix("codex:"): "open it in Codex"
     case .url: "open it"
     case .app(let id): "switch to " + appName(id)
+    case .terminal(let app, _): "open its tab in " + appName(app)
     }
 }
 

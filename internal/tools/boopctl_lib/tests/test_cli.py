@@ -18,8 +18,8 @@ from facegen import facegen  # noqa: E402
 from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
-COMMANDS = ["ping", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "run", "perf", "latency", "soak", "e2e",
-            "cam", "dash", "day", "workday", "calibrate"]
+COMMANDS = ["ping", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "run", "perf", "latency", "soak",
+            "e2e", "cam", "dash", "day", "workday", "reference", "calibrate"]
 
 
 def firmware_names(path: str, start: str, item: str = r'"(\w+)"', end: str = "};") -> list:
@@ -138,14 +138,15 @@ class PlayTests(unittest.TestCase):
         """The names boopctl plays are the device's own, the names of the
         states whose designs they play (firmware/src/render/types.cpp
         isReaction; faces.h names them), and all of them are in Boop's
-        `hello.does`, but for a tap's, which the device plays itself. The
+        `hello.does`, but for a tap's and a gesture's, which the device
+        plays itself. The
         older one is play's own, sent by today's name."""
         names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
         self.assertEqual(names, facegen.STATES)
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
         plays = firmware_names("render/types.cpp", "bool isReaction(SceneState s) {", r"case SceneState::(k\w+):",
                                end="\n}\n")
-        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "listening"], [states[s] for s in plays])
+        self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "gesture", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
         self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
         self.assertTrue(set(cli.OLD_ANIMS.values()) <= set(cli.ANIMS))
@@ -548,7 +549,7 @@ class SoakTests(unittest.TestCase):
         self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
                                  "helper_return": ("if_free", None),
                                  "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
-                                 "react": ("next", 5000)})
+                                 "notice": ("next", 5000), "react": ("next", 5000)})
 
     def test_each_reaction_ends_once(self):
         ended = [{"id": 1, "how": "done"}, {"id": 2, "how": "cut", "why": "tap"}, {"id": 3, "how": "skipped"}]

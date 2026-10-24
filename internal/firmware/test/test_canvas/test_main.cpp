@@ -37,6 +37,35 @@ static void test_fill_covers_everything() {
   TEST_ASSERT_EQUAL_UINT8(5, at(c, 319, 239));
 }
 
+// A dithered rectangle, or one under the canvas's mask, draws exactly the
+// pixels the dither draws, whatever its corner and width (four at a time
+// where it can); a plot draws only where the mask does; and with no mask
+// everything is drawn again.
+static void test_a_mask_draws_the_dithers_pixels() {
+  std::vector<uint8_t> buf(render::kWidth * render::kHeight, 0);
+  Canvas c(buf.data());
+  for (const render::Dither d : {render::Dither{3, 11}, render::Dither::fade(375, true), render::Dither{0, 0}}) {
+    for (int x = 0; x < 6; ++x) {
+      for (int w : {1, 3, 4, 9, 30}) {
+        c.fill(0);
+        c.fillRect(x, 2, w, 5, 9, d);
+        c.setMask(d);
+        c.fillRect(x, 10, w, 5, 9);
+        c.plot(x, 20, 9);
+        c.setMask({});
+        for (int y = 0; y < 24; ++y) {
+          for (int i = 0; i < 40; ++i) {
+            const bool in = i >= x && i < x + w && ((y >= 2 && y < 7) || (y >= 10 && y < 15) || (y == 20 && i == x));
+            TEST_ASSERT_EQUAL_UINT8(in && d.draws(i, y) ? 9 : 0, at(c, i, y));
+          }
+        }
+      }
+    }
+  }
+  c.plot(1, 1, 4);
+  TEST_ASSERT_EQUAL_UINT8(4, at(c, 1, 1));
+}
+
 static void test_triangle_fills_inside_only() {
   std::vector<uint8_t> buf(render::kWidth * render::kHeight, 0);
   Canvas c(buf.data());
@@ -112,6 +141,7 @@ int main() {
   UNITY_BEGIN();
   RUN_TEST(test_fill_rect_clips_to_canvas);
   RUN_TEST(test_fill_covers_everything);
+  RUN_TEST(test_a_mask_draws_the_dithers_pixels);
   RUN_TEST(test_triangle_fills_inside_only);
   RUN_TEST(test_hash_tracks_changes);
   RUN_TEST(test_changes_find_the_columns_to_push);

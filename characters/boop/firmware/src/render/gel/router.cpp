@@ -46,7 +46,8 @@ Family family(SceneState s) {
     case SceneState::kIdle: return Family::kIdle;
     case SceneState::kListening: return Family::kListen;
     case SceneState::kStarting:
-    case SceneState::kWakeUp: return Family::kStart;
+    case SceneState::kWakeUp:
+    case SceneState::kNotice: return Family::kStart;
     case SceneState::kDelegating:
     case SceneState::kHelperReturn: return Family::kHelpers;
     case SceneState::kNeedsYou: return Family::kAlert;
@@ -55,7 +56,8 @@ Family family(SceneState s) {
     case SceneState::kError:
     case SceneState::kStopped: return Family::kResult;
     case SceneState::kPoked:
-    case SceneState::kTapSpam: return Family::kTouch;
+    case SceneState::kTapSpam:
+    case SceneState::kGesture: return Family::kTouch;
     default: return Family::kDesk;
   }
 }

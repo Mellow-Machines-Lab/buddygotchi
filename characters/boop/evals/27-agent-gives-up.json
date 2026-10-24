@@ -3,7 +3,7 @@
   "case": "The agent's turn ends without an error, but its last message says it couldn't get the login working and is stuck. Boop is deflated along with it: its mood turns sad, with a sad face, and the finish plays as a failure. It isn't grumpy, since nothing failed on the agent's side.",
   "why": "characters/boop/steering/guide.md: a turn isn't routine when the agent's last message is giving up; characters/boop/steering/mood/calm.md: calm leaves for sad when the agent gives up; react.animation: a message saying the agent couldn't finish is a failure; PERSONALITY's Examples: that message is sad, a failure, says nothing, once",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "fix the login redirect"},
+    {"event": "turn started", "at": "0s", "prompt": "fix the login redirect", "reading": {"kind": "fix"}},
     {"event": "turn finished", "at": "2m", "message": "I couldn't get the login working. The token keeps expiring before the redirect, and I'm stuck without access to the auth server's config.", "expect": {"react": "sad|whiny|wounded", "animation": "failure", "mood": "sad"}}
   ]
 }

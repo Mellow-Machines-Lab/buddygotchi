@@ -83,6 +83,24 @@ extension Runtime {
         changed()
     }
 
+    /// BOOT pressed, as the board reports it (a `tap` from the button).
+    func pressed(who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): press\(Runtime.whose(rig))")
+        run(pipeline.press(at: options.clock(), buddy: rig.tag))
+        changed()
+    }
+
+    /// What you did to the device, the buddy `buddy`'s, as it reports it
+    /// (`ev gesture`): `dismiss`, a finger held on the needs-you sign, names
+    /// the request its last state showed, as the board does.
+    func gestured(_ kind: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): gesture \(kind)\(Runtime.whose(rig))")
+        run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock(), buddy: rig.tag))
+        changed()
+    }
+
     /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
 }

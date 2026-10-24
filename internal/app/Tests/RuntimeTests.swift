@@ -1,6 +1,7 @@
 import AgentHooks
 import Foundation
 import MellowHarness
+import os
 import LinkKit
 import XCTest
 @testable import BoopDevKit
@@ -225,7 +226,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish") {
             transport.dos("task_complete").contains {
-                $0.contains(#""play":"next","ttl":5000,"args":{"outcome":"success","variant":"#) && $0.contains(#""say":"#)
+                $0.contains(#""play":"next","ttl":5000,"args":{"outcome":"success","#) && $0.contains(#""say":"#)
                     && $0.contains(#""mood":"excited""#)
             }
         }
@@ -760,6 +761,23 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(exists(kept))
     }
 
+    /// The agent's to-do list reaches the transcript as its counts.
+    func testToDoCountsReachTheTranscript() throws {
+        var options = try options(nil)
+        let clock = VirtualClock(harnessT0)
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        let runtime = try Runtime(options)
+        var line = HookLine(agent: "claude", hook: "PreToolUse", session: "s1", cwd: "/tmp/jetpack", tool: "TodoWrite", ts: clock.now)
+        line.todosDone = 2
+        line.todosTotal = 5
+        runtime.home.sync { runtime.hook(line, received: clock.now) }
+        let folder = dir.appendingPathComponent(Transcript.folderName)
+        let kept = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .map { try String(contentsOf: $0, encoding: .utf8) }.joined()
+        XCTAssertTrue(kept.contains(#""todos_done":2"#) && kept.contains(#""todos_total":5"#), kept)
+    }
+
     /// The 10 s keepalive's `state`, the same as the
     /// last one sent, is in debug.jsonl (the dashboard's sign that the app
     /// is running) but not in boop.log, which names each change once.
@@ -940,10 +958,10 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// The `state` message carries no idle count, so a second idle
-    /// session sends the device nothing; debug.jsonl's `status`, which the
-    /// dashboard counts idle sessions from, and the popover still hear of it.
-    func testASecondIdleSessionReachesTheStatusNotTheDevice() throws {
+    /// A second idle session reaches the device as its idle count, and
+    /// debug.jsonl's `status`, which the dashboard counts idle sessions
+    /// from, and the popover hear of it too.
+    func testASecondIdleSessionReachesTheStatusAndTheDevice() throws {
         var options = try options(nil)
         options.debug = true
         let runtime = try Runtime(options)
@@ -963,7 +981,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(second, to: socketPath))
         eventually("the second session") { sessions().count == 2 }
         XCTAssertEqual(sessions().map { $0["status"] }, ["idle", "idle"])
-        XCTAssertEqual(states(runtime.home.sync { sentLines.all }), states(sent), "no new state")
+        eventually("a state with both idle") { states(runtime.home.sync { sentLines.all }).last?.contains(#""idle":2"#) == true }
     }
 
     /// The mood lives only in the log: a change reaches the device in a
@@ -1187,17 +1205,23 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood, both natures and the two
-    /// personalities. The static parts stay within their budgets, and the
+    /// characters/boop/steering/ has the guide, a file per mood, both natures, the two
+    /// personalities, the diary's lines and the signs' captions. The static parts stay within their budgets, and the
     /// personalities' settings are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its two personalities and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
-        XCTAssertEqual(files, (["guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md"]).sorted())
+        XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
+                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
-        XCTAssertEqual(Self.steering.personality(.default).rules, Personality.Rules(workBeatMs: 90_000...180_000, toolUses: .notable))
-        XCTAssertEqual(Self.steering.personality(.chatter).rules, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))
+        XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
+        XCTAssertEqual(Self.steering.personality(.default).rules,
+                       Personality.Rules(workBeatMs: 90_000...180_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable))
+        XCTAssertEqual(Self.steering.personality(.chatter).rules,
+                       Personality.Rules(workBeatMs: 30_000...60_000, idleBeatMs: 300_000...600_000, toolUses: .all))
+        XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
         XCTAssertTrue(Self.steering.personality(.default).text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
@@ -1287,7 +1311,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(transport.dos("task_complete").isEmpty && transport.dos("reply_ready").isEmpty, "a start gets no finish")
         let starting = transport.dos("starting")
         XCTAssertEqual(starting.count, 1, "only the rule's reaction")
-        XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"variant":"#), starting[0])
+        XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"ctx":"#), starting[0])
         transport.endDos()  // the device says each has played
         eventually("the start's reaction has played") {
             runtime.home.sync { self.recorded().contains { $0.actionPhase == .end && $0.actionName == "react" } }
@@ -1298,7 +1322,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish", timeout: 4) { transport.dos.count >= before + 1 }
         let finish = transport.dos[before]
-        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","variant":"#),
+        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","#),
                       "one do, a variation for its outcome: \(finish)")
         XCTAssertTrue(finish.contains(#""who":{"agent":"claude","thread":"jetpack"},"say":"#), "names whose turn: \(finish)")
         XCTAssertTrue(finish.hasSuffix(#","mood":"excited","loops":1}}"#), "in its face, held once: \(finish)")
@@ -1481,13 +1505,13 @@ final class RuntimeTests: XCTestCase {
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
     /// end it. The loops are the designs' (`FaceLoops`), so a new design
-    /// with a long loop fails here rather than in HISTORY: wounded's 13 s
-    /// idle, held four times, is 52 s.
+    /// with a long loop fails here rather than in HISTORY: wounded's 14.3 s
+    /// of nodding off, held four times, is 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(ReactOutput.holds.count)
         func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
             MoodOutput.moods.map(\.name).flatMap { mood in
-                FaceLoops.states.flatMap { state in (1...FaceLoops.count(mood: mood, state: state)).map { ms(mood, state, $0) } }
+                FaceLoops.states.flatMap { state in (1...FaceLoops.row(mood: mood, state: state).count).map { ms(mood, state, $0) } }
             }.max() ?? 0
         }
         let longestLoop = longest { FaceLoops.ms(mood: $0, state: $1, variant: $2) }
@@ -1528,9 +1552,9 @@ final class RuntimeTests: XCTestCase {
             }
         }
         let faces = try String(contentsOf: assets.appendingPathComponent("faces.h"), encoding: .utf8)
-        let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+\}"#)
+        let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
             .map { Int64($0[0])! }
-        let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+\}"#).map { Int($0[0])! }
+        let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+, \d+, \d+\}"#).map { Int($0[0])! }
         let sfx = try String(contentsOf: assets.appendingPathComponent("sfx.h"), encoding: .utf8)
         let windows = rows(block(sfx, "static const Score kScore[] = {"), #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},\s*// (\S+)"#)
         func names(_ array: String) -> [String] {
@@ -1543,7 +1567,7 @@ final class RuntimeTests: XCTestCase {
         var n = 0
         for mood in drawn {
             for state in FaceLoops.states {
-                for v in 1...FaceLoops.count(mood: mood, state: state) {
+                for v in 1...FaceLoops.row(mood: mood, state: state).count {
                     XCTAssertEqual(FaceLoops.ms(mood: mood, state: state, variant: v), loops[scenes[n]], "\(mood) \(state) \(v)")
                     XCTAssertEqual(windows[n][1], "\(mood).\(state).\(String(format: "%02d", v))")
                     XCTAssertEqual(FaceLoops.voiceMs(mood: mood, state: state, variant: v), Int64(windows[n][0])!,
@@ -1552,7 +1576,7 @@ final class RuntimeTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(n, 808)
+        XCTAssertEqual(n, 1214)
         XCTAssertEqual(scenes.count, n)
         XCTAssertEqual(windows.count, n)
     }
@@ -1576,8 +1600,8 @@ final class RuntimeTests: XCTestCase {
         let start = try XCTUnwrap(sent.firstIndex { $0.contains(#""name":"starting""#) })
         XCTAssertTrue(sent[start - 1].hasPrefix(#"{"t":"state""#) && sent[start - 1].contains(#""base":"working""#),
                       "\(sent)")
-        XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"variant":"#)
-                      && sent[start].hasSuffix(#","ctx":"new_task"}}"#), sent[start])
+        XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"ctx":"#)
+                      && sent[start].hasSuffix(#"{"ctx":"new_task"}}"#), sent[start])
         let id = FakeTransport.id(sent[start])
         transport.endDos("skipped", why: "busy")
         eventually("its end logged") { lines.all.contains("device: do \(id) ended skipped (busy)") }
@@ -1686,7 +1710,7 @@ final class RuntimeTests: XCTestCase {
         let pending = Pending()
         pending.bind { ends.append($0) }
         runtime.home.sync {
-            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud", variant: 1,
+            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud",
                                        who: .init(agent: "claude", thread: "jetpack", opens: thread), outcome: "success"), pending)
         }
         let id = FakeTransport.id(try XCTUnwrap(transport.dos("task_complete").first))
@@ -1991,6 +2015,67 @@ final class RuntimeTests: XCTestCase {
     /// ctx `compacted`, while the turn goes on working.
     func testADemoWithNoAgentCompactsAsClaudeDoes() throws { try compactsWithNoAgent("claude") }
     func testADemoWithNoAgentCompactsAsCodexDoes() throws { try compactsWithNoAgent("codex") }
+
+    /// characters/DEMOS.md: with no agent, each `session` a script names is
+    /// a session of its own, started before its first step, a thread
+    /// beside the first: two working at once, then one failing.
+    func testADemoWithNoAgentRunsSeveralSessions() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let script = try DemoScript("""
+            {"demo": 1, "title": "Two"}
+            {"agent": "prompt", "text": "Go", "after": 0}
+            {"agent": "prompt", "text": "And you", "session": "docs", "after": 0}
+            {"agent": "reply", "text": "Oops", "fails": true, "session": "docs", "after": 0, "takes": 0.1}
+            """)
+        runtime.home.sync { runtime.play(script) }
+        eventually("both sessions, and the failure") {
+            runtime.home.sync { runtime.harness.log.events.contains { $0.specificType == "StopFailure" } }
+        }
+        let sessions = runtime.home.sync { Set(runtime.harness.log.events.compactMap(\.session)) }
+        XCTAssertEqual(sessions, ["demo", "demo-docs"])
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).busy }, 1, "the first still works")
+    }
+
+    /// characters/DEMOS.md, with no agent: a todo sends the list's counts;
+    /// a wait moves the clock on where it can be moved (headless), here
+    /// past a long turn's 8 minutes; a run that `waits` lets the next steps
+    /// play while its request waits; and a hold, a second on, dismisses
+    /// that request on Boop.
+    func testADemoTicksOffItsListWaitsAndHolds() throws {
+        let transport = FakeTransport()
+        var options = try options(transport)
+        let skew = OSAllocatedUnfairLock(initialState: Int64(0))
+        let clock = options.clock
+        options.clock = { clock() + skew.withLock { $0 } }
+        options.advance = { ms in skew.withLock { $0 += ms } }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let script = try DemoScript("""
+            {"agent": "prompt", "text": "Go", "after": 0}
+            {"agent": "todo", "todos": "2/4", "after": 0, "takes": 0}
+            {"you": "wait", "minutes": 8, "after": 0}
+            {"agent": "run", "cmd": "npm install", "ask": 30, "waits": true, "after": 0}
+            {"you": "hold", "after": 0}
+            """)
+        runtime.home.sync { runtime.play(script) }
+        eventually("the hold") { runtime.home.sync { runtime.harness.log.events.contains { $0.specificType == Core.dismissGesture } } }
+        let hooks = runtime.home.sync { runtime.harness.log.events.filter { $0.agent != nil && $0.type == .tool }.map(\.specificType) }
+        XCTAssertEqual(hooks.suffix(2), ["PreToolUse", "PermissionRequest"], "still waiting: nobody allowed it")
+        let states = transport.sent.filter { $0.hasPrefix(#"{"t":"state""#) }
+        XCTAssertTrue(states.contains { $0.contains(#""marathon""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
+        XCTAssertTrue(states.contains { $0.contains(#""attn""#) })
+        runtime.home.sync {
+            let now = runtime.core.snapshot(at: runtime.options.clock())
+            XCTAssertNil(now.attn, "dismissed")
+            XCTAssertEqual(now.idle, 1)
+        }
+    }
 
     func compactsWithNoAgent(_ agent: String) throws {
         let transport = FakeTransport()

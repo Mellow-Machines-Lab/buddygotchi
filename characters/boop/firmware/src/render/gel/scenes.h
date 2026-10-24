@@ -13,6 +13,28 @@ inline int recipeState(SceneState state, Outcome outcome, StartCtx ctx) {
   return int(state);
 }
 static_assert(int(SceneState::kCount) + 2 + 4 == slime::kRecipeStates, "recipe rows: states, outcomes, contexts");
+// A row's takes: three, and a fourth for two rows, asleep's snore and a
+// successful finish's hiccups (scenes/index.mjs takesOf). The fourths are a
+// table of their own, so the other rows stay three.
+static_assert(slime::kMaxTakes == 4 && slime::kFourthRows == 2, "two rows have a fourth take");
+static_assert(slime::kRecipeTakes[int(SceneState::kAsleep)] == 4 && slime::kRecipeTakes[int(SceneState::kCount)] == 4 &&
+                  slime::kRecipeTakes[int(SceneState::kCount) + 1] == 3 &&
+                  slime::kRecipeTakes[int(SceneState::kNoApp)] == 3,
+              "asleep and a success have a fourth take; a failure and a lost link don't");
+inline int takes(int row) { return slime::kRecipeTakes[row]; }
+static_assert(int(std::size(slime::kRecipes[0][0])) == kGestures, "a row's first takes, one for each gesture");
+// The gesture state's takes are render::Gesture's, one for each, the same in
+// every mood (kGestureTakes); the board names one, and no bag deals them.
+static_assert(slime::kGestureCount == int(Gesture::kCount), "a take for each of render::Gesture");
+static_assert(slime::kRecipeTakes[int(SceneState::kGesture)] == slime::kGestureCount, "the gesture row's takes");
+inline const slime::Recipe& take(int profile, int row, int variant) {
+  if (row == int(SceneState::kGesture)) return slime::kGestureTakes[variant < slime::kGestureCount ? variant : 0];
+  return variant < kGestures ? slime::kRecipes[profile][row][variant]
+                             : slime::kFourthTakes[profile][slime::kFourthRow[row]];
+}
+// Idle's takes: an expression's three gestures, its own gags, then the idle
+// gags (acting.h Acting::takes), at most this many.
+static_assert(slime::kMaxGestures == 7, "three gestures, an own gag and three idle gags");
 enum ContactKind {
   kKey,
   kKnock,
@@ -25,30 +47,32 @@ enum ContactKind {
   kHelper,
   kReply,
   kError,
-  kStopped
+  kStopped,
+  // Comedy's: a gag's sneeze and zoomies, a snore's breath.
+  kSneeze,
+  kBreath,
+  kZoom
 };
-// A contact as it fires. The reference's id for it is
-// "requestId:generation:iteration:index", which nothing on the device
-// reads, so only the trace check spells it out (gel-trace): building it on
-// every contact cost the board's heap a few allocations each.
-struct ContactEvent {
-  std::string requestId;
-  int generation = 0, iteration = 0, index = 0;
-  uint8_t kind = 0;
-  int side = 0;
-  T timeMs;
-  F strength;
-};
+static_assert(kZoom + 1 == slime::kContactKinds, "contact kinds as slimegen numbers them");
+// A reveal: the alert's, or a card's or a start's.
+constexpr bool reveals(int kind) { return kind >= kAlert && kind <= kStopped; }
+// Comedy's contacts sound even in a quiet state, with the routine chance.
+constexpr bool comedy(int kind) { return kind >= kSneeze; }
 // scenes/ramp.mjs: a prop's visibility over kPropRampMs. A cubic Hermite from
 // the current value and slope: a smoothstep from rest, continuous in value and
 // velocity on a reversal, exact at its end.
 constexpr int kPropRampMs = 200;
+// constants.mjs cardRevealMs: a card's reveal, from its reveal contact.
+constexpr int kCardRevealMs = 400;
 struct Ramp {
   F from, to, tangent;
   T start;
+  int windowMs = kPropRampMs;
   bool active = false;
   F value(T time) const;
-  void retarget(F next, T time);
+  // Toward next from time, over `overMs`; the slope it has carries over into
+  // the new window.
+  void retarget(F next, T time, int overMs = kPropRampMs);
   void reset() { *this = Ramp{}; }
 
  private:
@@ -66,7 +90,7 @@ struct Scenes {
   ContactEvent last;
   bool hasLast = false, resultRevealed = false, completed = false, quietRestored = false;
   const char* phase = "sustain";
-  Bag bags[slime::kCanonical][slime::kRecipeStates];
+  Bag<slime::kMaxTakes> bags[slime::kCanonical][slime::kRecipeStates];
   // The catalog is immutable. Keep its address and the jitter seed instead
   // of copying every contact into each of the two 64-entry histories. An
   // alert also keeps how far it got, so an interrupted one resumes there.
@@ -87,6 +111,7 @@ struct Scenes {
     std::string id;
     int iteration = 0;
     Ramp ramp;
+    Ramp reveal;  // a card's (cardReveal)
   } slots[kProps];
   struct {
     std::string requestId, agent, project, name;
@@ -95,15 +120,13 @@ struct Scenes {
   } alertProp;
   struct {
     SceneState state = SceneState::kIdle;
-    bool known = false;
+    bool known = false, gift = false;  // a gift: proud's bug beside its card
     const char* label = "FINISHED";
     Outcome outcome = Outcome::kNone;
-    F reveal;
   } resultProp;
   struct {
     const char* label = "START";
     StartCtx ctx = StartCtx::kNone;
-    F reveal;
   } startProp;
   struct {
     bool returning = false, report = false;
@@ -113,6 +136,13 @@ struct Scenes {
   F listeningPulse = q(.5);
   SceneState touchKind = SceneState::kIdle;
   bool touchKnown = false;
+  // The tags on and how long the look has shown (Engine::setOccasion): a
+  // look's occasion (kLookOccasions) is dealt by them, numbered after the
+  // row's takes.
+  uint32_t when = 0, lookMs = 0;
+  // The gag the recipe playing carries for acting (a gesture's, an
+  // occasion's), as kGags numbers it, or -1.
+  int gag() const { return generation ? recipe.gag : -1; }
   void setRoute(const Route&, T time, int expression, Random&);
   void pickRecipe(T time, Random&);
   std::string advance(T dt, T time, bool grab, bool reduced, Random&);
@@ -123,22 +153,21 @@ struct Scenes {
                                              : F(1);
   }
   F entry() const { return smooth(ageMs / 240); }
-  // A card rises over the prop ramp from its reveal contact and fades in recovery.
-  F cardReveal() const { return resultRevealed ? smooth((ageMs - revealAt) / kPropRampMs) * recovery() : F(0); }
   F focus(bool reduced) const {
     return reduced ? q(.5) : q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus);
   }
   // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
-  F visible(Prop prop, T time) const { return slots[prop].ramp.value(time) * drawnFactor(prop); }
+  F visible(Prop prop, T time) const {
+    const auto& slot = slots[prop];
+    return slot.ramp.value(time) * (card(prop)             ? slot.reveal.value(time)
+                                    : prop == kHelpersProp ? helpersProp.presence
+                                                           : F(1));
+  }
+  static bool card(Prop prop) { return prop == kResultProp || prop == kStartProp; }
 
  private:
-  F drawnFactor(Prop prop) const {
-    return prop == kResultProp    ? resultProp.reveal
-           : prop == kStartProp   ? startProp.reveal
-           : prop == kHelpersProp ? helpersProp.presence
-                                  : F(1);
-  }
   const char* phaseAt(T age) const;
+  void cardReveal(Ramp& reveal) const;
   bool wants(Prop prop) const;
   void refresh(Prop prop, bool reduced);
   void updateProps(T time, bool reduced);

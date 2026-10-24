@@ -28,7 +28,11 @@ final class ReplayTests: XCTestCase {
             let who = attn.map { "\($0["agent"]!)/\($0["project"]!)" } ?? "-"
             let waiting = attn.map { ($0["more"] as! Int) + 1 } ?? 0
             let look = (object["base"] as! String) + ((object["act"] as? String).map { "/" + $0 } ?? "")
-            return "\(parts[0]) \(look) \(who) \(waiting)"
+            let helpers = (object["helpers"] as? Int).map { " +\($0) helper" + ($0 == 1 ? "" : "s") } ?? ""
+            // A long turn's or idle's tier, which a state is sent for.
+            let tiers = Set((Occasions.workTiers + Occasions.idleTiers).map(\.tag))
+            let tier = (object["when"] as? [String] ?? []).first(where: tiers.contains).map { " " + $0 } ?? ""
+            return "\(parts[0]) \(look) \(who) \(waiting)\(helpers)\(tier)"
         }
     }
 
@@ -46,6 +50,7 @@ final class ReplayTests: XCTestCase {
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/jetpack 1",
             "+125.0s working - 0",
+            "+481.0s working - 0 marathon",
             "+526.0s idle - 0",
         ])
     }
@@ -90,6 +95,7 @@ final class ReplayTests: XCTestCase {
             "+32.0s helper_return",
             "+34.0s working/tool_use - 0",
             "+35.0s idle - 0",
+            "+65.0s idle - 0 fidget",
         ])
     }
 
@@ -144,6 +150,8 @@ final class ReplayTests: XCTestCase {
             "+17.0s working/testing - 0",
             "+18.0s error",
             "+20.0s working/delegating - 0",
+            "+20.0s working/delegating - 0 +1 helper",
+            "+23.0s working/delegating - 0",
             "+23.0s helper_return",
             "+26.0s working/terminal - 0",
             "+46.0s working/waiting - 0",

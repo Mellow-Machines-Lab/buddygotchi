@@ -1,0 +1,9 @@
+{
+  "name": "A failed turn puts Pixel out, held",
+  "case": "The agent's turn fails after a couple of minutes on a rate limit. Pixel is put out and shows it for a while: an annoyed, irritated, grumpy, disappointed or sad face played as a failure, held twice or more. Its mood turns annoyed.",
+  "why": "characters/pixel/steering/personality/pixel.md: a turn fails, an annoyed face held twice for a small one; characters/pixel/steering/mood/calm.md: leaves for annoyed at a failure",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn failed", "at": "2m", "error": "rate_limit", "expect": {"react": "annoyed|irritated|grumpy|disappointed|sad", "animation": "failure", "loops": "twice|three times|four times", "mood": "annoyed"}}
+  ]
+}

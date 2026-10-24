@@ -46,6 +46,8 @@ enum class SceneState : uint8_t {
   kPoked,
   kTapSpam,
   kWakeUp,
+  kGesture,
+  kNotice,
   kCount,
   kNone = 0xFF
 };
@@ -55,11 +57,32 @@ const char* stateName(SceneState s);
 SceneState stateFromName(const char* name);  // kIdle if missing or unknown
 // The reactions' animations: the brain's finish (task_complete, a turn done
 // or failed; reply_ready, an answer or a question back) and its wake_up
-// (you back at the Mac after a long break), the rules'
+// (you back at the Mac after a long break) and its notice (you named it in
+// your prompt: it looks up at you), the rules'
 // reactions (starting, stopped, error, helper_return), a tap's (poked, and
-// tap_spam from the third in a row) and push-to-talk's listening, until
-// the reply.
+// tap_spam from the third in a row), the board's own to a gesture
+// (gesture) and push-to-talk's listening, until the reply.
 bool isReaction(SceneState s);
+
+// What a gesture is, for the board's own reaction to it (SceneState::
+// kGesture): its variations are these, in this order, and a face with
+// fewer draws its first. A BOOT press that hands you an agent; a stroke,
+// one the wrong way, a boop on the nose, a tickle (touch); a shake, a
+// pick-up, a put-down, a thump on the desk, turned face up again (motion).
+enum class Gesture : uint8_t {
+  kHandoff,
+  kStroke,
+  kRuffle,
+  kNose,
+  kTickle,
+  kDizzy,
+  kPickup,
+  kPutdown,
+  kStartle,
+  kPeekaboo,
+  kCount
+};
+const char* gestureName(Gesture g);  // "handoff", "stroke", ...
 SceneState reactionFromName(const char* name);  // kNone for any other name
 
 // The host fact a variation is for, when it's for one: task_complete's

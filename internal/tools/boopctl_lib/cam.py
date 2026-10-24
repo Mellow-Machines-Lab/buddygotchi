@@ -17,6 +17,7 @@ from PIL import Image, ImageChops, ImageStat
 
 from boopctl_lib.common import REPO, do
 from boopctl_lib.device import Device, DeviceError
+from boopctl_lib.image import sheet
 
 WEBCAM = REPO / "internal" / "tools" / "webcam" / "webcam.sh"
 BUILT_IN = "6C707041-05AC-0010-000D-000000000001"  # the MacBook Air's own camera
@@ -215,8 +216,6 @@ def clip(dev: Device, name: str, camera: str, seconds: int = 8, frames: int = 18
 
     `play`, if given, is called once recording has started and drives the
     board itself (L4's live session, where the headless app owns `state`)."""
-    from PIL import ImageDraw
-
     if play is None and name not in CLIPS:
         raise DeviceError(f"no clip {name!r}; choose from {', '.join(CLIPS)}")
     seconds = min(seconds, 10)
@@ -253,14 +252,6 @@ def clip(dev: Device, name: str, camera: str, seconds: int = 8, frames: int = 18
             shutil.rmtree(fdir, ignore_errors=True)
     finally:
         movie.unlink(missing_ok=True)  # raw video never lingers
-    cols = 6
-    cw, ch = SCREEN[0] + 10, SCREEN[1] + 20
-    sheet = Image.new("RGB", (cols * cw, ((len(shots) + cols - 1) // cols) * ch), (40, 40, 40))
-    draw = ImageDraw.Draw(sheet)
-    for i, (t, img) in enumerate(shots):
-        x, y = (i % cols) * cw, (i // cols) * ch
-        sheet.paste(img, (x + 5, y + 16))
-        draw.text((x + 6, y + 2), f"{t:.2f} s", fill=(255, 255, 255))
-    path = WORK / f"clip-{name}.png"
-    sheet.save(path)
+    path = sheet([(f"{t:.2f} s", img) for t, img in shots], WORK / f"clip-{name}.png", columns=6, width=None, pad=5,
+                 background=(40, 40, 40), ink=(255, 255, 255))
     return {"ok": True, "clip": name, "frames": len(shots), "sheet": str(path)}

@@ -48,3 +48,16 @@
 {"t":"do","name":"react","args":{"say":{"take":"previous.tsk","then":"phase1.word.test.validate__annoyed__contained"}}}
 {"clock":400}
 {"shot":"bubble-two-takes"}
+// The counts after it: helpers at work, and the agents idle.
+{"clock":9000}
+{"t":"state","base":"working","mood":"happy","busy":2,"helpers":4,"idle":3,"vol":0}
+{"clock":9600}
+{"shot":"working-counts"}
+// Seven helpers: four minis, then +3.
+{"t":"state","base":"working","mood":"happy","busy":1,"helpers":7,"vol":0}
+{"clock":9800}
+{"shot":"helpers-seven"}
+// The working agent's to-do list, done of total, after the working count.
+{"t":"state","base":"working","mood":"happy","busy":2,"helpers":2,"idle":1,"todo":{"done":3,"total":7},"vol":0}
+{"clock":10000}
+{"shot":"working-todo"}

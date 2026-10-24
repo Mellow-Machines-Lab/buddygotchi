@@ -1,7 +1,7 @@
 // The simulator's core as the browser runs it (simulator/README.md): the
 // WebAssembly build, driven as the page drives it, the page's demo player,
 // and its USB cable (web/serve.py). Needs simulator/web/build.sh to have run.
-//   node --test simulator/tests/
+//   node --test simulator/tests/*.test.mjs
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -121,8 +121,9 @@ test('a touch is a tap however soon it lifts, and power-on is a new boot', { ski
   const first = (await b.request({ t: 'hello' })).boot;
   b.send(WORKING);
   await b.run(200);
-  // A click: down and up before the board has looked once.
-  b.input('touch 160 120');
+  // A click, off the nose (a boop there is a gesture): down and up before
+  // the board has looked once.
+  b.input('touch 60 120');
   b.input('release');
   await b.run(400);
   assert.ok(b.lines.some(m => m.t === 'ev' && m.kind === 'tap'));
@@ -137,6 +138,22 @@ test('a touch is a tap however soon it lifts, and power-on is a new boot', { ski
   const second = (await b.request({ t: 'hello' })).boot;
   assert.ok(first && second && first !== second);
   assert.equal(b.lines.filter(m => m.t === 'ev').length, 0, 'nothing of the board before is left');
+});
+
+test('the motion sensor: a shake is a gesture, and face down and up again', { skip }, async () => {
+  const b = await board();
+  b.send(QUIET);
+  b.input('motion 0 0 1000');
+  await b.run(1300);
+  for (const az of [1700, 300, 1700, 300, 1700, 300]) { b.input(`motion 0 0 ${az}`); await b.run(60); }
+  b.input('motion 0 0 1000');
+  await b.run(2000);
+  b.input('motion 0 0 -1000');
+  await b.run(1400);
+  b.input('motion 0 0 1000');
+  await b.run(300);
+  const did = b.lines.filter(m => m.t === 'ev' && m.kind === 'gesture').map(m => m.did);
+  assert.deepEqual(did, ['dizzy', 'facedown', 'peekaboo']);
 });
 
 test('a line plays for as long as its samples last, from the card in the slot', { skip: needsVoice }, async () => {
@@ -238,7 +255,8 @@ test('the cable never waits on a client, and drops a line too long for the board
 
 // /board asks the page's board for dbg.state, as a tool on the cable would,
 // and the tools hear the reply too; with no board it says so. The Character
-// Studio is served beside the page, and nothing outside characters/.
+// Studio is served beside the page, and nothing outside characters/; the
+// page's files again at /simulator/, as the studio's own server has them.
 // Needs no build: an empty dist and a page that answers by itself.
 test('the board says what it shows, and the studio is beside it', async t => {
   const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
@@ -254,6 +272,7 @@ test('the board says what it shows, and the studio is beside it', async t => {
   const studio = await fetch(`${url}/characters/studio/`);
   assert.equal(studio.status, 200);
   assert.match(await studio.text(), /Character Studio/);
+  assert.equal((await fetch(`${url}/simulator/boop-sim.wasm`)).status, 200, 'the page again at /simulator/, where the studio finds the board');
   // Sent as it is: fetch would tidy the .. away first.
   const raw = await new Promise(ok => { let got = ''; const c = net.connect(port, '127.0.0.1', () => c.write('GET /characters/../Package.swift HTTP/1.0\r\n\r\n'));
     c.on('data', d => { got += d; }); c.on('close', () => ok(got)); });
@@ -335,7 +354,7 @@ test('a recording plays into the board in order, and knows nothing of what its l
   player.play();
   await ended;
   player.stop();
-  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 160, 120], ['release'], ['line', 'anything']]);
+  assert.deepEqual(did, [['line', 'state'], ['line', 'do'], ['touch', 80, 120], ['release'], ['line', 'anything']]);
   assert.deepEqual(told, ['You ask Claude: “Fix it”', 'Pip makes an excited face and says “Go”', 'You poke Pip']);
   assert.ok(player.ended && !player.playing);
   assert.throws(() => new DemoPlayer(fake, { ...recording, version: 2 }), /version 2/);

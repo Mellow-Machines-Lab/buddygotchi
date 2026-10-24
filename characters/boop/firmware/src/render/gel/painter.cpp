@@ -3,6 +3,7 @@
 #include "render/gel/engine.h"
 #include "render/gel/profile.h"
 #include "render/gel/geometry.h"
+#include "render/gel/layers.h"
 #include "slime_mesh.h"
 #include <algorithm>
 #include <array>
@@ -161,7 +162,8 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned soft) {
   }
 }
 }  // namespace
-void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane) {
+void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane,
+           rig::Anchors* anchors) {
   if (!s.pixels) return;
   {
     Measure measure(profile.clear);
@@ -186,6 +188,13 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       px[ring][col] = int16_t(std::clamp(p.x, -32000, 32000));
       py[ring][col] = int16_t(std::clamp(p.y, -32000, 32000));
     }
+  if (anchors) {  // the sides are the columns at the ends of x, the front's the quarter turn toward the camera
+    auto at = [&](int ring, int col) { return rig::Point{px[ring][col], py[ring][col]}; };
+    anchors->crown = at(0, 0);
+    anchors->brimL = at(kBrimRing, kSectors / 2), anchors->brimF = at(kBrimRing, kSectors / 4);
+    anchors->brimR = at(kBrimRing, 0);
+    anchors->handF = at(kHandRing, kSectors / 4);
+  }
   auto vertex = [&](int ring, int col) {
     return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings};
   };
@@ -225,16 +234,16 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       triangle(s, u[0], u[1], u[2], secondSoft);
     }
 }
-void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane) {
+void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors) {
   auto pose = e.pose();
   auto life = e.life();
-  auto scalar = [](F v) { return int(v.raw / (F::scale / 4096)); };
   PaintControls c;
   c.lean = scalar(pose[0]);
   c.squash = scalar(pose[1]);
   c.ripple = scalar(pose[2]);
   c.dent = scalar(pose[3]);
-  c.blink = scalar(max(e.face.bridgeBlink, e.motion.blink()));
+  c.blink = scalar(e.blink());
+  c.slide = scalar(e.acting.slide.x);
   c.gaze = scalar(e.motion.gaze);
   c.lift = scalar(life[0]);
   c.roll = scalar(life[1]);
@@ -242,14 +251,18 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.grabX = scalar(e.pull[0].x);
   c.grabY = scalar(e.pull[1].x);
   c.dy = dy;
+  c.blink = std::max(c.blink, sleepyLids(e));
+  rig::Anchors local;
+  if (!anchors) anchors = &local;
   {
     Measure measure(profile.body);
     Box cards[Surface::kMaxKeep];
-    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane);
+    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors);
   }
   {
     Measure measure(profile.art);
-    paintArt(surface, e, c, mouthOpen);
+    paintArt(surface, e, c, mouthOpen, anchors);
+    paintLayers(surface, e, *anchors);
   }
   {
     Measure measure(profile.props);

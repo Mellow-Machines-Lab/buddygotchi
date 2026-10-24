@@ -63,9 +63,6 @@ public struct DeviceReaction: Equatable, Sendable {
     /// and no animation, how many loops of the design it's drawn in the
     /// face holds. Nil sends none, which the device reads as 1.
     public var loops: Int?
-    /// The animation's variation, from 1; nil sends none, and the device
-    /// picks one for the reaction's facts.
-    public var variant: Int?
     /// With the finish, whose turn it was; nil sends none.
     public var who: Who?
     /// With task_complete, the turn's outcome: `success` or `failure`;
@@ -74,24 +71,27 @@ public struct DeviceReaction: Equatable, Sendable {
     /// With starting, what started: `new_task`, `session`,
     /// `continuation` or `compacted`. Nil sends none.
     public var ctx: String?
+    /// What the buddy holds up on a sign while it plays (`Signs`); nil
+    /// for none.
+    public var sign: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
-                variant: Int? = nil, who: Who? = nil, outcome: String? = nil, ctx: String? = nil) {
+                who: Who? = nil, outcome: String? = nil, ctx: String? = nil, sign: String? = nil) {
         self.anim = anim
         self.say = say
         self.mood = mood
         self.loops = loops
-        self.variant = variant
         self.who = who
         self.outcome = outcome
         self.ctx = ctx
+        self.sign = sign
     }
 
     /// The animations the Mac asks the device to play, each its design
     /// state's name, besides `listening`, which only push-to-talk plays
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "wake_up", "starting", "helper_return", "error", "stopped"]
+    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting", "helper_return", "error", "stopped"]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 
@@ -106,8 +106,8 @@ public struct DeviceReaction: Equatable, Sendable {
     public var args: JSONObject {
         var args = JSONObject()
         if let outcome { args["outcome"] = .string(outcome) }
-        if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
+        if let sign { args["sign"] = .string(sign) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

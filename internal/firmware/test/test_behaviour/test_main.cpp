@@ -11,8 +11,11 @@
 
 #include "app/behaviour.h"
 #include "app/device.h"
+#include "render/palette.h"
 #include "render/pixel/anim.h"
 #include "render/pixel/sounds.h"
+#include "render/pixel/scene.h"
+#include "render/tags.h"
 #include "linkkit/kit.h"
 #include "voice/player.h"
 
@@ -48,6 +51,11 @@ struct Rig {
     b.advance(t, rng);
   }
   void state(Model m) { b.onState(m, t); }
+  // Pins the look's variation `v` (from 0), as dbg.look does, from now.
+  void look(uint8_t v) {
+    b.face().showLookVariant(v);
+    b.advance(t, rng);
+  }
   void react(SceneState a) {
     ReactionIn m;
     m.anim = a;
@@ -110,21 +118,23 @@ bool onFace(const Behaviour& b, uint32_t t) {
 
 }  // namespace
 
-// A look's variations rotate. Each
+// A look's variations rotate, the face's own picks. Each
 // shows at least render::pixel::PixelFace::kTurnMinMs, then each end of its loop moves
 // to another (never itself) or plays another loop, and the move blinks
-// and starts the new one's clock. The Mac's same state again doesn't
-// start them over; its new variation does. Needs you and a finish hold the
-// variation showing.
+// and starts the new one's clock. Only those that fit turn up: with no
+// tags on and the look new, never an occasion's (working's coffee and
+// sweat) nor one that waits (its stretch, after 20 minutes). The Mac's
+// same state again doesn't start them over. Needs you and a finish hold
+// the variation showing.
 static void test_the_looks_variations_rotate() {
   Rig r;
   Model m = base("working");
-  m.variant = 2;
   r.state(m);
+  r.look(2);
   uint8_t shown = 2;
   uint32_t since = 0;
   int turns = 0, stays = 0;
-  bool seen[5] = {};
+  bool seen[8] = {};
   seen[2] = true;
   for (uint32_t t = 10; t <= 600000; t += 10) {
     r.at(t);
@@ -135,29 +145,29 @@ static void test_the_looks_variations_rotate() {
     uint32_t loop = loopMs(render::Mood::kHappy, SceneState::kWorking, shown);
     TEST_ASSERT_TRUE(t - since >= render::pixel::PixelFace::kTurnMinMs);
     TEST_ASSERT_EQUAL_UINT32(0, (t - since) % loop);  // at a loop's end
-    TEST_ASSERT_TRUE(s.eyesShut);
     TEST_ASSERT_EQUAL_UINT32(0, s.t);
     if (t - since >= render::pixel::PixelFace::kTurnMinMs + loop) ++stays;  // it played another loop first
     shown = s.variant, since = t, ++turns;
     seen[shown] = true;
   }
-  for (bool v : seen) TEST_ASSERT_TRUE(v);
+  for (int v = 0; v < 5; ++v) TEST_ASSERT_TRUE(seen[v]);
+  for (int v = 5; v < 8; ++v) TEST_ASSERT_FALSE(seen[v]);
   TEST_ASSERT_TRUE(turns >= 40 && turns <= 110);  // about one every 8 s
   TEST_ASSERT_TRUE(stays > 0);
 
-  // The Mac's own new variation shows at once.
-  m.variant = uint8_t((shown + 1) % 5);
-  r.state(m);
-  TEST_ASSERT_EQUAL(m.variant, r.b.show(r.t).variant);
+  // A pinned variation (dbg.look) shows at once.
+  r.look(uint8_t((shown + 1) % 5));
+  TEST_ASSERT_EQUAL((shown + 1) % 5, r.b.show(r.t).variant);
 
   // Needs you holds its variation, and so does a finish.
   Model a = attn();
-  a.variant = 1;
   r.state(a);
+  r.at(r.t);
+  const int held = r.b.show(r.t).variant;
   for (uint32_t t = r.t; t <= r.t + 60000; t += 1000) {
     r.at(t);
     if (t % 10000 == 0) r.state(a);
-    TEST_ASSERT_EQUAL(1, r.b.show(t).variant);
+    TEST_ASSERT_EQUAL(held, r.b.show(t).variant);
   }
   r.state(m);
   r.at(r.t + 20000);
@@ -258,9 +268,9 @@ static void test_tap_during_needs_you_is_only_the_dip_and_stays_amber() {
   TEST_ASSERT_EQUAL_STRING("alert@0", r.alert().c_str());
 }
 
-// Answered on the Mac, the face blinks back to the
-// base look with no reaction.
-static void test_answering_on_the_mac_blinks_back() {
+// Answered on the Mac, the face goes back to the base
+// look with no reaction: the needs-you sign cuts away, with no blink.
+static void test_answering_on_the_mac_goes_back() {
   Rig r;
   r.state(attn());
   r.at(5000);
@@ -269,8 +279,7 @@ static void test_answering_on_the_mac_blinks_back() {
   TEST_ASSERT_TRUE(onFace(r.b, r.t));
   TEST_ASSERT_EQUAL_HEX32(0, r.b.led(r.t));
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWorking);
-  TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);  // a blink hides the switch
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWorking);
+  TEST_ASSERT_FALSE(r.b.show(r.t).eyesShut);
   TEST_ASSERT_EQUAL(0u, r.b.reactionSeq());
 }
 
@@ -305,10 +314,10 @@ static void test_needs_you_wins_over_reactions() {
   TEST_ASSERT_NULL(m.b.bubble(m.t));
 }
 
-// Nothing cuts hard. Attention arriving under a finish (which it
-// ends) or a poke shows the needs-you design behind a blink of
-// kBlendMs, and the design's clock starts at the change.
-static void test_changes_mid_motion_blink_into_the_new_design() {
+// Attention arriving under a finish (which it ends) or a poke shows the
+// needs-you design at once, its clock starting at the change: its sign
+// rises in on its own, with no blink.
+static void test_changes_mid_motion_start_the_new_design() {
   const SceneState anims[] = {SceneState::kTaskComplete, SceneState::kPoked};
   const char* const bases[] = {"working", "idle"};
   for (int i = 0; i < 2; ++i) {
@@ -320,11 +329,8 @@ static void test_changes_mid_motion_blink_into_the_new_design() {
       r.state(attn());
       SceneShow s = r.b.show(r.t);
       TEST_ASSERT_TRUE(s.state == SceneState::kNeedsYou);
-      TEST_ASSERT_TRUE(s.eyesShut);
+      TEST_ASSERT_FALSE(s.eyesShut);
       TEST_ASSERT_EQUAL_UINT32(0, s.t);
-      TEST_ASSERT_TRUE(r.b.show(r.t + render::pixel::PixelFace::kBlendMs - 1).eyesShut);
-      r.at(r.t + render::pixel::PixelFace::kBlendMs);
-      TEST_ASSERT_TRUE(!r.b.show(r.t).eyesShut || r.b.blinking(r.t));
     }
   }
 }
@@ -333,10 +339,25 @@ static void test_changes_mid_motion_blink_into_the_new_design() {
 // across moods, so a mood change there switches nothing.
 static int designOf(const SceneShow& s) { return render::sceneOf(s.mood, s.state, s.variant); }
 
-// A change of design is hidden when the eyes are shut and show shut: the
-// first pack's closed eyes, or a new mood's flip-book on its blink step
-// (render::eyesClosed).
-static bool hidden(const SceneShow& s) { return s.eyesShut && render::eyesClosed(s); }
+// The face's frame at t, drawn into `px` as Device draws one: `dirty`
+// after a message, when an unchanged picture is drawn again too.
+static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
+  render::Canvas c{px.data()};
+  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.strip(r.t), dirty);
+}
+// The needs-you sign shows, which a switch to or from cuts: it rises in,
+// and drops, on its own.
+static bool signShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
+// A switch of design doesn't cut hard: it dissolves over the rig's fade,
+// its first frame a sixteenth of the new design's pixels, so the frame
+// just after it is the frame before but for at most an eighth of the
+// pixels above the lane (the strip and the bubble come and go on their
+// own).
+static bool dissolves(const std::vector<uint8_t>& before, const std::vector<uint8_t>& after) {
+  int changed = 0;
+  for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) changed += before[i] != after[i];
+  return changed <= render::kWidth * render::kLaneTop / 8;
+}
 
 // A brain's reaction: a `say` with a mood, held for
 // `loops` loops of the design it's drawn in.
@@ -361,7 +382,8 @@ static ReactionIn animated(SceneState a, int variant = 0, const char* take = nul
 // Every way round: whatever state Boop is in, whatever is playing, and
 // whatever arrives (any message or input), the design just after the
 // change is the design just before it, at the same instant of its clock, or
-// else the eyes are shut, and show shut, to hide the switch. The states
+// else the face dissolves from the one to the other, but for the needs-you
+// sign, which cuts in and out. The states
 // span the first pack's moods and the new moods' flip-books and what the
 // agents are doing; what plays includes a reaction's borrowed face, a
 // finish in a mood, a rule's reaction and a poke; what arrives the same, a finish
@@ -395,6 +417,7 @@ static void test_no_change_ever_cuts_hard() {
   };
   const int kEvents = kStates + 14;  // every state, then the reactions and inputs
   int checked = 0;
+  std::vector<uint8_t> was(size_t(render::kWidth) * render::kHeight), now(was.size());
   for (int from = 0; from < kStates; ++from) {
     for (int playing = 0; playing < kPlayingCount; ++playing) {
       for (int event = 0; event < kEvents; ++event) {
@@ -423,6 +446,8 @@ static void test_no_change_ever_cuts_hard() {
           }
           r.at(r.t + when);
           SceneShow before = r.b.show(r.t);
+          const bool signed_ = signShows(r);
+          drawFace(r, was, true);
           if (event < kStates) {
             r.state(states[event]);
           } else {
@@ -450,7 +475,8 @@ static void test_no_change_ever_cuts_hard() {
           }
           SceneShow after = r.b.show(r.t);
           bool same = designOf(before) == designOf(after) && before.t == after.t;
-          if (!same && !hidden(after)) {
+          drawFace(r, now, true);
+          if (!same && !signed_ && !signShows(r) && !dissolves(was, now)) {
             char why[160];
             std::snprintf(why, sizeof(why), "from state %d, playing %d, event %d at +%u ms: design %d at %u, then %d at %u",
                           from, playing, event, unsigned(when), designOf(before), unsigned(before.t), designOf(after),
@@ -465,12 +491,40 @@ static void test_no_change_ever_cuts_hard() {
   TEST_ASSERT_EQUAL(kStates * kPlayingCount * kEvents * 3, checked);
 }
 
+// A switch of design dissolves over the rig's fade (render::rig::kFadeMs,
+// 200 ms), with no blink: from asleep's design to a finish's, each frame
+// shows as much of the finish as the one before or more, by the face's
+// ordered dither, and at 200 ms it's the finish whole, as a board that drew
+// nothing before the switch draws it.
+static void test_a_switch_dissolves_over_200_ms() {
+  static_assert(render::rig::kFadeMs == 200, "a switch dissolves over the rig's 200 ms");
+  Rig r, fresh;
+  for (Rig* x : {&r, &fresh}) x->state(base("asleep")), x->at(1000);
+  std::vector<uint8_t> px(size_t(render::kWidth) * render::kHeight), whole(px.size());
+  drawFace(r, px, true);
+  for (Rig* x : {&r, &fresh}) x->react(SceneState::kTaskComplete);
+  int last = 0;
+  for (uint32_t ms = 0; ms <= render::rig::kFadeMs; ms += 20) {
+    for (Rig* x : {&r, &fresh}) x->at(1000 + ms);
+    drawFace(r, px, true);
+    drawFace(fresh, whole, true);
+    int shown = 0;
+    for (size_t i = 0; i < px.size(); ++i) shown += px[i] == whole[i];
+    TEST_ASSERT_FALSE(r.b.show(r.t).eyesShut);
+    TEST_ASSERT_TRUE(shown >= last);
+    if (ms == 0) TEST_ASSERT_TRUE(shown < int(px.size()));  // some of asleep's still
+    last = shown;
+  }
+  TEST_ASSERT_TRUE(px == whole);
+}
+
 // Over time: as whatever plays runs out on its own (a finish's loops, a
 // reaction's borrowed face at its loop boundary, over a look, over the
 // finish or across a look change, a poke, a rule's reaction, a `say`, a finish
 // held on for its `say`, the Mac going quiet), the face never cuts hard.
 // From one 20 ms frame to the next the design goes on at the same instant of
-// its clock, or the eyes are shut and show shut. An animation's design
+// its clock, or the face dissolves from the one to the other (but for the
+// needs-you sign, which cuts in and out). An animation's design
 // starting over at each of its loop boundaries is its clock going on, and
 // so is resting on its last frame.
 static void test_nothing_cuts_hard_as_it_plays_out() {
@@ -489,6 +543,7 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
     kWiggle, kSay, kQuiet, kRuleReaction, kFinishLine, kNewMoodReaction, kPlayingCount
   };
   int frames = 0;
+  std::vector<uint8_t> was(size_t(render::kWidth) * render::kHeight), now(was.size());
   for (const Model& m : states) {
     for (int playing = 0; playing < kPlayingCount; ++playing) {
       Rig r;
@@ -527,6 +582,8 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
         default: break;
       }
       SceneShow before = r.b.show(r.t);
+      bool signed_ = signShows(r);
+      drawFace(r, now, true);
       const uint32_t end = playing == kQuiet ? Behaviour::kNoAppMs + 2000 : r.t + 60000;
       bool moved = false;
       uint32_t alive = r.t + 10000;
@@ -544,14 +601,18 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
                          after.state != SceneState::kNoApp;
         if (same && animation) next %= loopMs(after.mood, after.state, after.variant);
         bool rests = same && animation && after.t >= before.t && after.t - before.t <= 20;
-        if (!(same && (after.t == next || rests)) && !hidden(after)) {
+        const bool goesOn = same && (after.t == next || rests);
+        if (!goesOn) was = now;
+        drawFace(r, now, false);
+        const bool signs = signShows(r);
+        if (!goesOn && !signed_ && !signs && !dissolves(was, now)) {
           char why[112];
           std::snprintf(why, sizeof(why), "state %d/%d, playing %d: design %d at %u, then %d at %u, at t=%u",
                         int(m.base), int(m.mood), playing, designOf(before), unsigned(before.t), designOf(after),
                         unsigned(after.t), unsigned(t));
           TEST_FAIL_MESSAGE(why);
         }
-        before = after;
+        before = after, signed_ = signs;
         ++frames;
       }
     }
@@ -730,7 +791,6 @@ static void test_the_empty_reaction_ends_only_listening() {
   TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
   r.stop();
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
-  TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);  // blending back
   // After the release, too.
   r.at(r.t + 1000);
   r.talkOn();
@@ -780,7 +840,6 @@ static void test_push_to_talk_timeouts() {
   r.at(3000 + 8000);
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());  // no reply came
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kIdle);
-  TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);
   // BOOT's own 30 s cap is a release: 8 s more for the reply.
   Rig c;
   c.state(m);
@@ -1012,7 +1071,6 @@ static void test_a_face_alone_plays_its_loops() {
   render::Mood e;
   TEST_ASSERT_TRUE(r.b.expression(r.t, e) && e == render::Mood::kProud);
   TEST_ASSERT_TRUE(r.b.show(r.t).mood == render::Mood::kProud);
-  TEST_ASSERT_TRUE(r.b.show(r.t).eyesShut);  // it blinks into the face
   TEST_ASSERT_NULL(r.b.bubble(r.t));
   r.at(end - 1);
   TEST_ASSERT_TRUE(r.b.expression(r.t, e));
@@ -1046,7 +1104,10 @@ static void test_a_face_alone_plays_its_loops() {
 }
 
 // Starts of blinks between 0 and `to` ms, with the Mac sending `m` every
-// 10 s (or never, for no app).
+// 10 s (or never, for no app). A design that blinks in a step of its own,
+// as the comedy's idles the look's variations turn to do, gets none of the
+// device's blinks: kSelfBlink marks where one showed, and no gap spans it.
+constexpr uint32_t kSelfBlink = 0xFFFFFFFF;
 std::vector<uint32_t> blinkStarts(const Model& m, bool mac, uint32_t to) {
   Rig r;
   r.state(m);
@@ -1056,17 +1117,30 @@ std::vector<uint32_t> blinkStarts(const Model& m, bool mac, uint32_t to) {
     if (mac && t % 10000 == 0) r.at(t), r.state(m);
     r.at(t);
     bool blink = r.b.blinking(t);
-    if (blink) TEST_ASSERT_TRUE(r.b.show(t).eyesShut);
+    SceneShow s = r.b.show(t);
+    if (blink) TEST_ASSERT_TRUE(s.eyesShut);
+    if (render::blinksItself(s.mood, s.state, s.variant)) {
+      TEST_ASSERT_FALSE(blink);
+      if (starts.empty() || starts.back() != kSelfBlink) starts.push_back(kSelfBlink);
+    }
     if (blink && !prev) starts.push_back(t);
     prev = blink;
   }
   return starts;
 }
 
+// The device's own blinks among them, without the marks.
+std::vector<uint32_t> deviceBlinks(const std::vector<uint32_t>& starts) {
+  std::vector<uint32_t> out;
+  for (uint32_t t : starts)
+    if (t != kSelfBlink) out.push_back(t);
+  return out;
+}
+
 void checkGaps(const std::vector<uint32_t>& starts, uint32_t from, uint32_t lo, uint32_t hi) {
   int n = 0;
   for (size_t i = 1; i < starts.size(); ++i) {
-    if (starts[i - 1] < from) continue;
+    if (starts[i] == kSelfBlink || starts[i - 1] == kSelfBlink || starts[i - 1] < from) continue;
     uint32_t gap = starts[i] - starts[i - 1];
     TEST_ASSERT_TRUE(gap >= lo + render::pixel::PixelFace::kBlinkMs);  // the gap follows the blink
     TEST_ASSERT_TRUE(gap <= hi + render::pixel::PixelFace::kBlinkMs);
@@ -1076,13 +1150,13 @@ void checkGaps(const std::vector<uint32_t>& starts, uint32_t from, uint32_t lo, 
 }
 
 // Idle and working life is blinks only, every 2–6 s idle,
-// 2–5 s working, however many agents are busy. Asleep, as with no app,
-// never blinks.
+// 2–5 s working, however many agents are busy, except while a design that
+// blinks itself shows. Asleep, as with no app, never blinks.
 // A reaction's `mood` is its expression. With no animation,
 // the look is drawn in that mood for the reaction's loops of the design it's
 // drawn in, ending on a loop boundary of that design's clock (so the first
 // loop ends at the next boundary), and at least as long as the `say` and
-// its bubble; then it goes back to the state's mood behind a blink. A look
+// its bubble; then it goes back to the state's mood. A look
 // change meanwhile keeps the expression and its end; a new reaction, a tap
 // or "needs you" ends it.
 static ReactionIn expressive(render::Mood mood, const char* take = kGo, int loops = 1) {
@@ -1106,7 +1180,6 @@ static void test_an_expression_holds_its_loops() {
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kWorking);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kProud);
-  TEST_ASSERT_TRUE(s.eyesShut);  // it blinks into the expression
   TEST_ASSERT_EQUAL_UINT32(1000, s.t);  // the look's clock goes on
   // "Go"'s 638 ms, then the bubble's 1.2 s: the line is over first, and
   // the face holds to the design's next boundary.
@@ -1122,7 +1195,6 @@ static void test_an_expression_holds_its_loops() {
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kHappy);  // back to the state's mood
   TEST_ASSERT_TRUE(s.state == SceneState::kWorking);
-  TEST_ASSERT_TRUE(s.eyesShut);  // behind a blink
 
   // Three loops, from partway into one: to the third boundary of the
   // look's clock, which a change of variation may have started over.
@@ -1300,6 +1372,88 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
   return m;
 }
 
+// A reaction's sign (Behaviour::kSignMinMs, 2.5 s): held up from the
+// reaction's start for as long as any of its parts plays, and at least
+// 2.5 s so it can be read; the reaction isn't played out until it's down.
+// A tap's poke leaves it up; a newer reaction's animation and needs you
+// take it down.
+static void test_a_sign_shows_while_its_reaction_plays() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  auto holding = [](const char* text, uint32_t key) {
+    ReactionIn m;
+    std::snprintf(m.sign, sizeof m.sign, "%s", text);
+    m.key = key;
+    return m;
+  };
+  auto sign = [&] {
+    const char* text = r.b.sign(r.t).text;
+    return std::string(text ? text : "-");
+  };
+  // On its own: 2.5 s.
+  TEST_ASSERT_NULL(r.b.admit(holding("bye bye code", 1), r.t));
+  r.b.play(holding("bye bye code", 1), r.t);
+  TEST_ASSERT_EQUAL_STRING("bye bye code", sign().c_str());
+  r.at(1000 + Behaviour::kSignMinMs - 1);
+  TEST_ASSERT_EQUAL_STRING("bye bye code", sign().c_str());
+  TEST_ASSERT_EQUAL_UINT32(Behaviour::kSignMinMs - 1, r.b.sign(r.t).ms);
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
+  r.at(1000 + Behaviour::kSignMinMs);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("1 done", ended(r).c_str());
+
+  // With a finish longer than that: as long as the finish plays.
+  r.at(10000);
+  r.state(base("idle"));
+  ReactionIn cheer = holding("ship it", 2);
+  cheer.anim = SceneState::kTaskComplete;
+  onReaction(r.b, cheer, r.t);
+  uint32_t left;
+  r.b.reaction(r.t, left);
+  TEST_ASSERT_TRUE(left > Behaviour::kSignMinMs);
+  r.at(10000 + left - 1);
+  TEST_ASSERT_EQUAL_STRING("ship it", sign().c_str());
+  r.at(10000 + left);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("2 done", ended(r).c_str());
+
+  // A short `say` (638 ms, and 1.2 s to read it) holds it 2.5 s, after
+  // its bubble has gone.
+  if (voice::takeIndex(kGo) >= 0) {
+    r.at(20000);
+    r.state(base("idle"));
+    ReactionIn brief = holding("oops", 3);
+    brief.said = true, brief.take = voice::takeIndex(kGo);
+    onReaction(r.b, brief, r.t);
+    r.at(20000 + kGoMs + Behaviour::kBubbleReadMs);
+    TEST_ASSERT_NULL(r.b.bubble(r.t));
+    TEST_ASSERT_EQUAL_STRING("oops", sign().c_str());
+    r.at(20000 + Behaviour::kSignMinMs - 1);
+    TEST_ASSERT_EQUAL_STRING("oops", sign().c_str());
+    r.at(20000 + Behaviour::kSignMinMs);
+    TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  }
+
+  // A tap's poke plays under it; a newer reaction's animation takes it down.
+  r.at(30000);
+  r.state(base("idle"));
+  onReaction(r.b, holding("hello", 4), r.t);
+  r.at(30100);
+  TEST_ASSERT_EQUAL_STRING("poked", r.b.tap(r.t, r.rng));
+  TEST_ASSERT_EQUAL_STRING("hello", sign().c_str());
+  r.react(SceneState::kStarting);
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+
+  // Needs you takes it down, and no sign plays while it waits.
+  r.at(40000);
+  r.state(base("idle"));
+  onReaction(r.b, holding("hello", 5), r.t);
+  r.state(attn());
+  TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(holding("again", 6), r.t));
+}
+
 static void test_a_waited_reaction_says_how_it_ended() {
   NEEDS_VOICE_PACK();
   Rig r;
@@ -1389,13 +1543,23 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // reaction: it was seen and heard, so it's done. A tap's poke plays in it.
   Rig h;
   Model hm = base("idle");
-  hm.variant = 1;  // the idle design's second variation, a long loop, its clock from 0
   h.state(hm);
+  h.look(1);  // the idle design's second variation, a long loop, its clock from 0
   const uint32_t idle = loopMs(render::Mood::kProud, SceneState::kIdle, 1);
+  // The look's variations take turns at their loops' ends between the
+  // parts below, so each part pins the second again, its clock from the
+  // part's start: another variation from the Mac, then this one, starts
+  // the turns over from it.
+  auto pin = [&](Rig& g) {
+    g.state(hm);
+    g.look(0);
+    g.look(1);
+  };
   render::Mood face;
   {
     Rig p;
     p.state(hm);
+    p.look(1);
     p.at(1000);
     onReaction(p.b, waited(17), p.t);
     p.at(1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
@@ -1409,7 +1573,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
     TEST_ASSERT_EQUAL_STRING("17 done", ended(p).c_str());
   }
   h.at(2 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(18), h.t);
   h.at(2 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   TEST_ASSERT_NULL(h.b.bubble(h.t));
@@ -1417,13 +1581,13 @@ static void test_a_waited_reaction_says_how_it_ended() {
   h.state(attn());
   TEST_ASSERT_EQUAL_STRING("18 done", ended(h).c_str());
   h.at(4 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(19), h.t);
   h.at(4 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   h.react(SceneState::kTaskComplete);
   TEST_ASSERT_EQUAL_STRING("19 done", ended(h).c_str());
   h.at(6 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(20), h.t);
   h.at(6 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs + 100);
   h.say();  // a newer `say`
@@ -1431,7 +1595,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // During its bubble, after the take, it's still its `say`, which a tap
   // doesn't cut.
   h.at(8 * idle + 1000);
-  h.state(hm);
+  pin(h);
   onReaction(h.b, waited(21), h.t);
   h.at(8 * idle + 1000 + kGoMs + Behaviour::kBubbleReadMs - 1);
   TEST_ASSERT_NOT_NULL(h.b.bubble(h.t));
@@ -1444,7 +1608,7 @@ static void test_a_waited_reaction_says_how_it_ended() {
   // it replaces the face held for its loops, and this one is done, as the
   // kit said when the next started.
   h.at(10 * idle + 1000);
-  h.state(hm);
+  pin(h);
   ReactionIn held = expressive(render::Mood::kProud, kGo, 4);  // held four times
   held.key = 22;
   onReaction(h.b, held, h.t);
@@ -1505,7 +1669,7 @@ static void test_life_is_blinks_at_their_pace() {
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
   w.busy = 3;
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
-  std::vector<uint32_t> none = blinkStarts(base("idle"), false, 180000);
+  std::vector<uint32_t> none = deviceBlinks(blinkStarts(base("idle"), false, 180000));
   TEST_ASSERT_TRUE(none.empty() || none.back() < 30000);  // no app: no blinks after 30 s
 }
 
@@ -1568,7 +1732,6 @@ static void test_each_look_shows_its_design_in_the_mood() {
   TEST_ASSERT_TRUE(s.state == SceneState::kTaskComplete);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kProud);
   TEST_ASSERT_EQUAL_UINT32(500, s.t);
-  TEST_ASSERT_TRUE(s.eyesShut);
   r.at(1000 + loopMs(render::Mood::kProud, SceneState::kTaskComplete));  // the finish is over: back to working, still proud
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kWorking);
@@ -1576,8 +1739,7 @@ static void test_each_look_shows_its_design_in_the_mood() {
 }
 
 // A tap plays the mood's poked design once, from
-// its start and behind the blink that hides any change of design, then the
-// look comes back. The third tap in a row, and each after it, plays
+// its start, then the look comes back. The third tap in a row, and each after it, plays
 // tap_spam instead. A tap is in a row when it comes within
 // Behaviour::kTapRunMs of the one before, and tap_spam starts at
 // Behaviour::kTapSpamFrom: the Mac's TranscriptView.inARowMs (3000) and
@@ -1595,7 +1757,7 @@ static void test_taps_poke_and_a_run_spams() {
   TEST_ASSERT_TRUE(s.state == SceneState::kPoked);
   TEST_ASSERT_TRUE(s.mood == render::Mood::kHappy);
   TEST_ASSERT_EQUAL_UINT32(0, s.t);
-  TEST_ASSERT_TRUE(s.eyesShut && render::eyesClosed(s));
+  TEST_ASSERT_FALSE(s.eyesShut);
   uint32_t left;
   r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kHappy, SceneState::kPoked), left);  // once
@@ -1612,7 +1774,7 @@ static void test_taps_poke_and_a_run_spams() {
     TEST_ASSERT_EQUAL(SceneState::kTapSpam, r.anim());
     TEST_ASSERT_EQUAL_INT(i, r.b.taps());
     s = r.b.show(r.t);
-    TEST_ASSERT_TRUE(s.state == SceneState::kTapSpam && s.t == 0 && s.eyesShut);
+    TEST_ASSERT_TRUE(s.state == SceneState::kTapSpam && s.t == 0);
   }
   r.b.reaction(r.t, left);
   TEST_ASSERT_EQUAL_UINT32(loopMs(render::Mood::kHappy, SceneState::kTapSpam), left);
@@ -1622,12 +1784,12 @@ static void test_taps_poke_and_a_run_spams() {
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
   TEST_ASSERT_EQUAL_INT(1, r.b.taps());
-  // Played once, the look comes back, behind a blink.
+  // Played once, the look comes back.
   r.b.reaction(r.t, left);
   r.at(r.t + left);
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.state == SceneState::kWorking && s.eyesShut);
+  TEST_ASSERT_TRUE(s.state == SceneState::kWorking);
 }
 
 // A mood with several poked or tap_spam designs plays one
@@ -1696,8 +1858,8 @@ static void test_a_held_face_counts_taps_but_only_dips() {
 
 // With no state for 30 s the device shows the no-app
 // design (backlight 60), with the unplugged icon in the strip; on
-// reconnect the face blinks into whatever the next state says.
-static void test_no_app_at_30s_and_reconnect_blinks_back() {
+// reconnect the face dissolves into whatever the next state says.
+static void test_no_app_at_30s_and_reconnect_comes_back() {
   Rig r;
   r.at(1000);
   Model m = attn();  // even a stale "needs you" gives way
@@ -1709,15 +1871,15 @@ static void test_no_app_at_30s_and_reconnect_blinks_back() {
   r.at(31000);
   TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);
-  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));  // dimming over kBlendMs
-  TEST_ASSERT_TRUE(r.b.backlight(r.t + render::pixel::PixelFace::kBlendMs / 2) < 255);
+  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));  // dimming over kBacklightEaseMs
+  TEST_ASSERT_TRUE(r.b.backlight(r.t + Behaviour::kBacklightEaseMs / 2) < 255);
   TEST_ASSERT_EQUAL_HEX32(0, r.b.led(r.t));
   // The strip keeps only the unplugged icon: the counts are stale.
   render::Strip strip = r.b.strip(r.t);
   TEST_ASSERT_TRUE(strip.noApp);
   TEST_ASSERT_NULL(strip.agent);
   TEST_ASSERT_EQUAL(0, strip.busy);
-  r.at(31000 + render::pixel::PixelFace::kBlendMs);
+  r.at(31000 + Behaviour::kBacklightEaseMs);
   TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kNoApp);
@@ -1729,10 +1891,9 @@ static void test_no_app_at_30s_and_reconnect_blinks_back() {
   TEST_ASSERT_FALSE(r.b.blinking(r.t));
   s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kIdle);
-  TEST_ASSERT_TRUE(s.eyesShut);  // a blink hides the switch
-  TEST_ASSERT_FALSE(r.b.show(r.t + render::pixel::PixelFace::kBlendMs).eyesShut);
+  TEST_ASSERT_FALSE(s.eyesShut);
   TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t + render::pixel::PixelFace::kBlendMs));
+  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t + Behaviour::kBacklightEaseMs));
 }
 
 // The brain's finish with `who` names that agent and
@@ -1786,6 +1947,157 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
 // A tap while the brain's finish names whose turn it
 // was takes you to that thread: the press dip only, the finish plays on,
 // and the tap carries its id for the Mac. A finish the Mac doesn't wait on (no id) or that names nobody is poked.
+// The lane's fade, decided once for every face: the strip fades in over the
+// rig's 200 ms from the millisecond it came, and out from the one it went,
+// still showing what it last showed, names and all; what it shows while it
+// shows changes at once (a count going 3 to 4), and one turning back
+// mid-fade starts from where it was. No app and a finish come and go at
+// their own times.
+static void test_the_lane_fades_as_the_strip_comes_and_goes() {
+  constexpr uint32_t kFade = render::rig::kFadeMs;
+  static_assert(kFade == 200, "the lane fades on the props' 200 ms");
+  Rig r;
+  r.at(1000);
+  Model m = base("idle");
+  r.state(m);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  m.busy = 3;
+  r.state(m);
+  TEST_ASSERT_EQUAL(3, r.b.strip(r.t).busy);  // what it shows, at once
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade / 2);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade - 16);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).opacity < 1000);
+  r.at(1000 + kFade);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  m.busy = 4;
+  r.state(m);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  // Going: still the 4, fading.
+  r.at(2000);
+  m.busy = 0;
+  r.state(m);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(2000 + kFade / 2);
+  TEST_ASSERT_EQUAL(4, r.b.strip(r.t).busy);
+  const int half = r.b.strip(r.t).opacity;
+  TEST_ASSERT_INT_WITHIN(5, 500, half);
+  // Back before it has gone: from where it was, with what shows now.
+  m.idle = 1;
+  r.state(m);
+  TEST_ASSERT_EQUAL(1, r.b.strip(r.t).idle);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).busy);
+  TEST_ASSERT_EQUAL(half, r.b.strip(r.t).opacity);
+  r.at(r.t + 16);
+  TEST_ASSERT_INT_WITHIN(134, half, r.b.strip(r.t).opacity);  // no step past a 16 ms slice of the ramp
+  r.at(3000);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  m.idle = 0;
+  r.state(m);
+  r.at(3000 + kFade);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());  // gone, it's bare glass again
+  // A finish naming whose turn: in as it starts, out as it ends, named.
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.whoAgent = "codex", in.whoThread = "fix-nav";
+  onReaction(r.b, in, r.t);
+  uint32_t left, start = r.t;
+  r.b.reaction(r.t, left);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(start + left);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(start + left + kFade / 2);
+  TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  // No app: the plug from the moment the Mac's silence turns into it.
+  const uint32_t gone = 3000 + Behaviour::kNoAppMs;
+  r.at(gone - 1);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  r.at(gone + kFade / 2);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).noApp);
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+}
+
+// A to-do list is something the strip shows: one alone fades the strip in
+// as any count does, and out still showing it once its turn stops working.
+static void test_a_todo_list_alone_shows_the_strip() {
+  constexpr uint32_t kFade = render::rig::kFadeMs;
+  Rig r;
+  r.at(1000);
+  Model m = base("working");
+  r.state(m);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  m.todoDone = 3, m.todoTotal = 7;
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).shows());
+  TEST_ASSERT_EQUAL(7, r.b.strip(r.t).todoTotal);
+  TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
+  r.at(1000 + kFade);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(2000);
+  r.state(base("idle"));
+  r.at(2000 + kFade / 2);
+  TEST_ASSERT_EQUAL(3, r.b.strip(r.t).todoDone);  // the list it last showed, fading
+  TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
+  r.at(2000 + kFade);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+}
+
+// The lane is a function of the clock, not of how often frames are drawn: a
+// board drawing every 16 ms and one drawing every 200 ms show the same lane
+// wherever both draw, mid-fade and settled, its strip coming and going
+// between their frames. Each draws as Device does, dirty only after a
+// message, so a frame drawn mid-fade isn't skipped. Pixel's canvas has no
+// alpha: half way, half the strip's pixels, by its dither.
+static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
+  struct Run {
+    Rig r;
+    std::vector<uint8_t> px = std::vector<uint8_t>(size_t(render::kWidth) * render::kHeight);
+    render::Canvas c{px.data()};
+    bool dirty = true;
+    std::vector<std::vector<uint8_t>> lanes;
+    void play(uint32_t every) {
+      const uint32_t messages[] = {1100, 2300}, shots[] = {1200, 1600, 2400, 2800};
+      int next = 0;
+      for (uint32_t t = 0; t <= 2800; t += every) {
+        for (; next < 2 && messages[next] <= t; ++next) {
+          Model m = base("idle");
+          m.busy = next == 0 ? 2 : 0;
+          r.at(messages[next]);
+          r.state(m);
+          dirty = true;
+        }
+        r.at(t);
+        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.strip(t), dirty);
+        dirty = false;
+        for (uint32_t shot : shots)
+          if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
+      }
+    }
+  };
+  auto lit = [](const std::vector<uint8_t>& lane) {
+    int n = 0;
+    for (uint8_t p : lane) n += p != render::kBlack;
+    return n;
+  };
+  Run often, seldom;
+  often.play(16);
+  seldom.play(200);
+  TEST_ASSERT_EQUAL(4, int(often.lanes.size()));
+  TEST_ASSERT_EQUAL(4, int(seldom.lanes.size()));
+  for (int i = 0; i < 4; ++i) TEST_ASSERT_TRUE(often.lanes[i] == seldom.lanes[i]);
+  const int whole = lit(often.lanes[1]);
+  TEST_ASSERT_TRUE(whole > 100);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[0]));  // fading in
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[2]));  // fading out
+  TEST_ASSERT_EQUAL(0, lit(often.lanes[3]));
+}
+
 static void test_a_tap_on_a_named_finish_opens_its_thread() {
   Rig r;
   r.at(1000);
@@ -1850,19 +2162,20 @@ static void test_an_act_shows_in_workings_place() {
   TEST_ASSERT_TRUE(app::actFromName(nullptr) == SceneState::kWorking);
   Rig r;
   Model m = base("working");
-  m.act = SceneState::kTerminal, m.mood = Mood::kCalm, m.variant = 2;
+  m.act = SceneState::kTerminal, m.mood = Mood::kCalm;
   r.state(m);
+  r.look(2);
   r.at(700);
   SceneShow s = r.b.show(r.t);
   TEST_ASSERT_TRUE(s.state == SceneState::kTerminal && s.mood == Mood::kCalm);
   TEST_ASSERT_EQUAL_INT(2, s.variant);
   TEST_ASSERT_EQUAL_UINT32(700, s.t);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kTerminal);
-  // Another activity: its design from its start, behind a blink.
-  m.act = SceneState::kAnalyzing, m.variant = 0;
+  // Another activity: its design from its start.
+  m.act = SceneState::kAnalyzing;
   r.state(m);
   s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.state == SceneState::kAnalyzing && s.t == 0 && s.eyesShut && render::eyesClosed(s));
+  TEST_ASSERT_TRUE(s.state == SceneState::kAnalyzing && s.t == 0 && !s.eyesShut);
   // None: working's.
   m.act = SceneState::kWorking;
   r.state(m);
@@ -1912,7 +2225,7 @@ static void test_an_acts_variations_rotate() {
 
 // The rules' reactions (starting,
 // stopped, error, helper_return) play their design once in Boop's mood,
-// from its start behind a blink, then the look comes back behind another.
+// from its start, then the look comes back.
 // They carry no id, so no `ended` goes back.
 static void test_a_rules_reaction_plays_once() {
   for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn}) {
@@ -1927,7 +2240,7 @@ static void test_a_rules_reaction_plays_once() {
       TEST_ASSERT_FALSE(onReaction(r.b, in, r.t));  // no `say`
       SceneShow s = r.b.show(r.t);
       TEST_ASSERT_TRUE(s.state == a && s.mood == mood && s.variant == in.variant);
-      TEST_ASSERT_TRUE(s.t == 0 && s.eyesShut && render::eyesClosed(s));
+      TEST_ASSERT_TRUE(s.t == 0 && !s.eyesShut);
       const uint32_t loop = loopMs(mood, a, in.variant);
       r.at(1000 + loop - 1);
       TEST_ASSERT_EQUAL(a, r.anim());
@@ -1935,7 +2248,7 @@ static void test_a_rules_reaction_plays_once() {
       r.at(1000 + loop);
       TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
       s = r.b.show(r.t);
-      TEST_ASSERT_TRUE(s.state == SceneState::kTerminal && s.eyesShut && render::eyesClosed(s));
+      TEST_ASSERT_TRUE(s.state == SceneState::kTerminal && !s.eyesShut);
       app::PlayedOut e;
       TEST_ASSERT_FALSE(r.b.takePlayedOut(e));
     }
@@ -2196,14 +2509,14 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
 
 // A new mood's flip-book blinks in a step
 // of its own, so the device gives it none of its blinks; a change of design
-// to or from one shows its blink step, as the first pack's shut their eyes.
+// to or from one dissolves as any other does, its eyes open.
 static void test_flip_books_blink_by_themselves() {
   Model calm = base("idle");
   calm.mood = render::Mood::kCalm;
-  TEST_ASSERT_TRUE(blinkStarts(calm, true, 120000).empty());
+  TEST_ASSERT_TRUE(deviceBlinks(blinkStarts(calm, true, 120000)).empty());
   Model working = base("working");
   working.mood = render::Mood::kWounded;
-  TEST_ASSERT_TRUE(blinkStarts(working, true, 120000).empty());
+  TEST_ASSERT_TRUE(deviceBlinks(blinkStarts(working, true, 120000)).empty());
   TEST_ASSERT_TRUE(render::blinksItself(render::Mood::kCalm, SceneState::kIdle, 0));
   TEST_ASSERT_FALSE(render::blinksItself(render::Mood::kHappy, SceneState::kIdle, 0));
   Rig r;
@@ -2212,10 +2525,8 @@ static void test_flip_books_blink_by_themselves() {
   const SceneShow open = r.b.show(r.t);  // between its own blinks
   TEST_ASSERT_FALSE(open.eyesShut || render::eyesClosed(open));
   r.state(working);
-  SceneShow s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.eyesShut && render::eyesClosed(s));
-  r.at(3000 + render::pixel::PixelFace::kBlendMs);
-  TEST_ASSERT_FALSE(r.b.show(r.t).eyesShut);
+  const SceneShow s = r.b.show(r.t);
+  TEST_ASSERT_FALSE(s.eyesShut || render::eyesClosed(s));
 }
 
 // ---- Through the device core: gestures and the input messages ------------
@@ -2322,17 +2633,195 @@ static void test_a_long_touch_during_needs_you_is_a_tap() {
   TEST_ASSERT_TRUE(r.has("\"moment\":null"));
 }
 
+// Occasions (render/tags.h): a look's variation that needs tags shows
+// only while they're all on. A new look starts on it while it fits, the
+// turns keep to those that fit (an occasion's kTaggedPct of the time), and
+// one whose tags go off turns away at its loop's end. Happy's idle: the
+// morning coffee is its 7th variation (index 6), the nightcap its 8th.
+static void test_an_occasion_shows_only_while_its_tags_are_on() {
+  using render::pixel::PixelFace;
+  const int coffee = 6, nightcap = 7;
+  TEST_ASSERT_TRUE(render::tagged(render::Mood::kHappy, SceneState::kIdle, coffee));
+  TEST_ASSERT_FALSE(render::tagged(render::Mood::kHappy, SceneState::kIdle, 0));
+  Rig r;
+  r.state(base("asleep"));
+  r.at(5);
+  Model m = base("idle");
+  m.when = render::tagBit("morning");
+  r.state(m);
+  r.at(10);
+  TEST_ASSERT_EQUAL_INT(coffee, r.b.show(r.t).variant);  // a new look starts on it
+  // Of the turns from an ordinary variation, about two in three go to the
+  // coffee, the only occasion that fits; a turn from it goes elsewhere.
+  int shown = coffee, occasions = 0, turns = 0;
+  for (uint32_t t = 20; t <= 1800000; t += 10) {
+    r.at(t);
+    if (t % 10000 == 0) r.state(m);
+    int v = r.b.show(t).variant;
+    TEST_ASSERT_TRUE(v != nightcap);  // night isn't on
+    if (v == shown) continue;
+    if (shown != coffee) ++turns, occasions += v == coffee;
+    shown = v;
+  }
+  TEST_ASSERT_TRUE(turns >= 30);
+  TEST_ASSERT_TRUE(occasions * 100 >= turns * (PixelFace::kTaggedPct - 15));
+  TEST_ASSERT_TRUE(occasions * 100 <= turns * (PixelFace::kTaggedPct + 15));
+  // Morning ends: the coffee turns away at its loop's end, whatever the odds.
+  r.look(uint8_t(coffee));
+  m.when = render::tagBit("day");
+  r.state(m);
+  const uint32_t loop = render::loopMs(render::Mood::kHappy, SceneState::kIdle, coffee);
+  r.at(r.t + loop + 10);
+  TEST_ASSERT_NOT_EQUAL(coffee, r.b.show(r.t).variant);
+  // A tag the board doesn't know is no tag.
+  TEST_ASSERT_EQUAL_UINT32(0, render::tagBit("someday"));
+  TEST_ASSERT_EQUAL_UINT32(1u << 18, render::tagBit("frantic"));
+}
+
+// A variation with a wait (`after`) shows only once its look has shown
+// that long: the snore (asleep's 4th, index 3) after 10 minutes asleep.
+// A new look starts the wait over.
+static void test_a_variation_waits_for_its_look() {
+  const int snore = 3;
+  Rig r;
+  Model m = base("asleep");
+  r.state(m);
+  bool early = false, late = false;
+  for (uint32_t t = 100; t <= 3600000; t += 100) {
+    r.at(t);
+    if (t % 10000 == 0) r.state(m);
+    if (r.b.show(t).variant != snore) continue;
+    (t < 10 * 60000 ? early : late) = true;
+  }
+  TEST_ASSERT_FALSE(early);
+  TEST_ASSERT_TRUE(late);
+  r.state(base("idle"));
+  r.state(m);
+  r.at(r.t + 10);
+  TEST_ASSERT_NOT_EQUAL(snore, r.b.show(r.t).variant);
+}
+
+// Nodding off (happy's idle 6th, index 4) and the long stretch (working's
+// last) wait for the Mac's tiers, not for a time: idle's `doze` and a long
+// turn's `marathon`. An hour of either look without its tag never shows
+// it; with the tag on it shows.
+static void test_nodding_off_and_the_stretch_wait_for_the_tiers() {
+  const int nodding = 4;
+  const int stretch = render::variants(render::Mood::kHappy, SceneState::kWorking) - 1;
+  const auto happy = render::Mood::kHappy;
+  TEST_ASSERT_FALSE(render::fits(happy, SceneState::kIdle, nodding, 0, 7200000));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kIdle, nodding, render::tagBit("doze"), 0));
+  TEST_ASSERT_FALSE(render::fits(happy, SceneState::kWorking, stretch, 0, 7200000));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kWorking, stretch, render::tagBit("marathon"), 0));
+  auto shows = [](const char* look, int variant, uint32_t when) {
+    Rig r;
+    Model m = base(look);
+    m.when = when;
+    r.state(m);
+    bool shown = false;
+    for (uint32_t t = 100; t <= 3600000 && !shown; t += 100) {
+      r.at(t);
+      if (t % 10000 == 0) r.state(m);
+      shown = r.b.show(t).variant == variant;
+    }
+    return shown;
+  };
+  TEST_ASSERT_FALSE(shows("idle", nodding, 0));
+  TEST_ASSERT_TRUE(shows("idle", nodding, render::tagBit("doze")));
+  TEST_ASSERT_FALSE(shows("working", stretch, 0));
+  TEST_ASSERT_TRUE(shows("working", stretch, render::tagBit("marathon")));
+}
+
+// The working looks quicken with the agents working (render::workPace, which Behaviour hands the face as
+// FaceContext::pace): calm with one, busy (125%) with two or three,
+// frantic (160%) with four or more; the loop keeps its place as it changes.
+static void test_the_working_looks_quicken_with_the_agents() {
+  TEST_ASSERT_EQUAL_INT(100, render::workPace(1));
+  TEST_ASSERT_EQUAL_INT(125, render::workPace(2));
+  TEST_ASSERT_EQUAL_INT(125, render::workPace(3));
+  TEST_ASSERT_EQUAL_INT(160, render::workPace(4));
+  Rig r;
+  Model m = base("working");
+  m.busy = 1;
+  r.state(m);
+  r.look(0);
+  r.at(1000);
+  uint32_t calm = r.b.show(r.t).t;
+  m.busy = 4;
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL_UINT32(calm, r.b.show(r.t).t);  // no jump as it changes
+  r.at(1500);
+  TEST_ASSERT_UINT32_WITHIN(1, calm + 800, r.b.show(r.t).t);  // half a second at 160%
+  r.state(base("idle"));
+  r.at(1600);
+  uint32_t idle = r.b.show(r.t).t;
+  r.at(2100);
+  TEST_ASSERT_EQUAL_UINT32(idle + 500, r.b.show(r.t).t);  // idle keeps its pace
+  // So does needs you, however busy the agents.
+  m.attn = true;
+  r.state(m);
+  r.at(2200);
+  uint32_t asking = r.b.face().designMs(r.t);
+  r.at(2700);
+  TEST_ASSERT_EQUAL_UINT32(asking + 500, r.b.face().designMs(r.t));
+}
+
+// A reaction whose occasion is on plays it, whatever the Mac asked for:
+// the party wake-up (wake_up's 2nd) on a party day, else the plain one.
+static void test_a_reactions_occasion_wins_while_on() {
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(10);
+  for (int i = 0; i < 20; ++i)
+    TEST_ASSERT_EQUAL_INT(0, r.b.face().pick(SceneState::kWakeUp, render::Mood::kHappy, 1, render::Outcome::kNone,
+                                               render::StartCtx::kNone, r.rng));
+  m.when = render::tagBit("party") | render::tagBit("morning");
+  r.state(m);
+  r.at(20);
+  for (int i = 0; i < 20; ++i)
+    TEST_ASSERT_EQUAL_INT(1, r.b.face().pick(SceneState::kWakeUp, render::Mood::kHappy, 1, render::Outcome::kNone,
+                                               render::StartCtx::kNone, r.rng));
+}
+
+// BOOT (Behaviour::press): while something needs you or an agent sits
+// idle, it hands you the next one, and the board plays gesture's hand-off
+// (its first variation, render::Gesture::kHandoff); with neither, it's a
+// tap, a poke.
+static void test_boot_hands_over_while_someone_waits() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  TEST_ASSERT_EQUAL_STRING("poked", r.b.press(r.t, r.rng));
+  TEST_ASSERT_TRUE(r.anim() == SceneState::kPoked);
+  Model m = base("idle");
+  m.idle = 2;
+  r.state(m);
+  r.at(5000);
+  TEST_ASSERT_EQUAL_STRING("handoff", r.b.press(r.t, r.rng));
+  TEST_ASSERT_TRUE(r.anim() == SceneState::kGesture);
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kHandoff), r.b.show(r.t).variant);
+  r.at(9000);
+  r.state(attn());
+  r.at(9100);
+  TEST_ASSERT_EQUAL_STRING("handoff", r.b.press(r.t, r.rng));  // needs you, idle or not
+  TEST_ASSERT_EQUAL_STRING("handoff", render::gestureName(render::Gesture::kHandoff));
+  TEST_ASSERT_EQUAL_STRING("peekaboo", render::gestureName(render::Gesture::kPeekaboo));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);
-  RUN_TEST(test_answering_on_the_mac_blinks_back);
+  RUN_TEST(test_answering_on_the_mac_goes_back);
   RUN_TEST(test_needs_you_wins_over_reactions);
-  RUN_TEST(test_changes_mid_motion_blink_into_the_new_design);
+  RUN_TEST(test_changes_mid_motion_start_the_new_design);
   RUN_TEST(test_no_app_holds_for_weeks);
   RUN_TEST(test_no_change_ever_cuts_hard);
+  RUN_TEST(test_a_switch_dissolves_over_200_ms);
   RUN_TEST(test_nothing_cuts_hard_as_it_plays_out);
   RUN_TEST(test_push_to_talk_listens_then_waits);
   RUN_TEST(test_listening_holds_until_the_reply);
@@ -2368,11 +2857,21 @@ int main() {
   RUN_TEST(test_flip_books_blink_by_themselves);
   RUN_TEST(test_each_look_shows_its_design_in_the_mood);
   RUN_TEST(test_the_looks_variations_rotate);
-  RUN_TEST(test_no_app_at_30s_and_reconnect_blinks_back);
+  RUN_TEST(test_an_occasion_shows_only_while_its_tags_are_on);
+  RUN_TEST(test_a_variation_waits_for_its_look);
+  RUN_TEST(test_nodding_off_and_the_stretch_wait_for_the_tiers);
+  RUN_TEST(test_the_working_looks_quicken_with_the_agents);
+  RUN_TEST(test_a_reactions_occasion_wins_while_on);
+  RUN_TEST(test_boot_hands_over_while_someone_waits);
+  RUN_TEST(test_no_app_at_30s_and_reconnect_comes_back);
   RUN_TEST(test_a_cheer_names_whose_turn_in_the_strip);
+  RUN_TEST(test_the_lane_fades_as_the_strip_comes_and_goes);
+  RUN_TEST(test_a_todo_list_alone_shows_the_strip);
+  RUN_TEST(test_the_lane_is_the_same_whatever_the_draw_cadence);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_is_a_tap);
+  RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();
 }

@@ -112,7 +112,7 @@ td.where{font-size:13px;white-space:nowrap}
 <header>
   <h1>Boop's architecture</h1>
   <p class="lede">How Boop's pieces fit together, and what each one sends to the next. The code is the detail: each piece below names where it lives, and the packages' own <code>ARCHITECTURE.md</code> files explain them.</p>
-  <p class="small">Updated 2026-10-16.</p>
+  <p class="small">Updated 2026-10-24.</p>
 </header>
 
 <nav class="toc" aria-label="Sections">
@@ -190,13 +190,14 @@ td.where{font-size:13px;white-space:nowrap}
   "base": "idle",
   "mood": "calm",
   "busy": 0,
+  "idle": 1,
   "vol": 6,
-  "variant": 1
-}</pre></div>
+  "when": ["day"]
+}</pre><span class="small"><code>idle</code> and <code>helpers</code> count sessions waiting for your next prompt and helpers at work; while an agent works and nothing needs you, <code>todo</code> is the longest turn's to-do list (<code>{"done": 3, "total": 7}</code>), drawn as <code>3/7</code> under the face. <code>when</code> is what's true now (<code>Occasions</code>: the part of the day, a holiday, a milestone day, every growth stage reached, and one tier: a long turn's <code>marathon</code> from 8 minutes and <code>camp</code> from 15, or, once the last turn has ended, <code>fidget</code> from 30 seconds, <code>setpiece</code> from 3 minutes and <code>doze</code> from 10), and the board picks each look's variation itself from the designs whose tags are all on. The prompt's heading says the calendar's in words (<code>14:05, Saturday, Halloween</code>).</span></div>
       </li>
       <li class="link"><div class="wire"><span>the event, read from the transcript</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. A finished turn is worth asking Jev about.</p></div>
+        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. It counts runs on the line, as it does pokes: a check failing again, quick wins in a row (in streaks of five), the check-ins on a long turn (in rounds of four), a barrage again. It also says what the brain would otherwise miss: you answering a request, a compacted context, a poke while Boop sleeps, and idle check-ins while you're around and no agent works. Jev answers the same line the same way, so each rung of a run gets a line of its own. A finished turn is worth asking Jev about.</p></div>
         <div class="pay"><span class="what">The end of the prompt Jev reads</span>
 <pre>HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "api".
@@ -209,7 +210,7 @@ Boop did nothing on its own.</pre></div>
       </li>
       <li class="link"><div class="wire"><span>the sentence, with recent history</span></div></li>
       <li class="hop">
-        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality, the nature you chose at setup (sweet or cheeky) and its rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't.</p></div>
+        <div class="box b"><b>MellowHarness + Jev</b> <span class="small">package</span><p>Builds the prompt: Boop's personality, the nature you chose at setup (sweet or cheeky) and its rules (the steering files), then recent history, then the new event. It asks all of Boop's questions in one request to Jev, the multiple-choice model. Every question is multiple choice, and each option says when it applies and when it doesn't. Once a day, on the first pass of a new one, the diary asks one more: which of the pack's lines, filled in with yesterday's counts from the transcript, Boop writes about it.</p></div>
         <div class="pay"><span class="what">Two of the questions (options trimmed), and the answers</span>
 <pre>After NOW, what is Boop's mood?
   calm      Stay calm: NOW is no reason MOOD gives to leave it…
@@ -225,7 +226,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
       </li>
       <li class="link"><div class="wire"><span>Jev's answers</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, then sends the reaction to the device. Boop counts it as in progress until the device says it's finished.</p></div>
+        <div class="box boop"><b>Outputs and Voice</b><p><code>mood</code> keeps or changes Boop's mood, and records it in the log, where the core reads it for the screen. <code>react</code> picks a recorded voice clip (a take) that fits the face, and, for your prompt's reading, maybe a sign to hold up (a caption from the pack's <code>signs.md</code>, often your own words), then sends the reaction to the device, which picks the animation's variation. Boop counts it as in progress until the device says it's finished.</p></div>
         <div class="pay"><span class="what"><code>do</code> to the device: play this when you can</span>
 <pre>{
   "t": "do",
@@ -235,7 +236,6 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
   "ttl": 5000,
   "args": {
     "outcome": "success",
-    "variant": 2,
     "who": { "agent": "claude", "thread": "api" },
     "say": { "take": "new.d02" },
     "mood": "proud"
@@ -270,9 +270,10 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
 <pre>{
   "t": "ev",
   "kind": "tap",
-  "did": "poked"
+  "did": "poked",
+  "data": { "src": "screen" }
 }</pre>
-        <span class="small">Boop records it as a poke, which also prompts Jev.</span></div>
+        <span class="small">Boop records it as a poke, which also prompts Jev. BOOT's says <code>"src": "button"</code>, and the Mac makes it a press (below); <code>"did": "handoff"</code> says the board played its hand-off. A touch that travels or wiggles, or the AMOLED's motion sensor, sends <code>"kind": "gesture"</code> instead, <code>did</code> what it was (<code>stroke</code>, <code>nose</code>, <code>dizzy</code>, <code>facedown</code>…): a line for Jev, as a poke is. A finger held still a second on the needs-you sign is <code>dismiss</code>, with the number of the request the sign showed as the finger went down (<code>"data": {"attn": 3}</code>, the state's <code>attn.id</code>): the core stops showing that request if it still shows (<code>Core.dismiss</code>), never one that took the sign during the hold, though the agent still waits, and the board plays nothing. A launch reads a dismissal back from the transcript, so the sign stays down while that request waits.</span></div>
     </li>
   </ol>
   </div>
@@ -297,14 +298,15 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
     <thead><tr><th>From → to</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
       <tr><td>agent-hooks → Boop</td><td><code>Adapter.event(from:)</code>, <code>Runtime.hook</code></td><td>Each hook line becomes an <code>AgentEvent</code>, kept as a MellowHarness <code>Event</code> with its facts in <code>data</code></td></tr>
-      <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' reactions</td></tr>
-      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is written to the transcript and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's, so the two agree. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
+      <tr><td>Your prompt → its reading</td><td><code>PromptIntake</code>, <code>PromptReading</code>, <code>Pipeline.promptRead</code> (<code>app/BoopKit/Prompt/</code>)</td><td><code>Runtime.hook</code> takes the prompt out of a turn start before it's logged (<code>PromptIntake.split</code>). Its reading scrubs it (<code>Scrubber</code>), counts its length, the buddy's name and a tone its words plainly show, and, in the menu-bar app, has Apple Intelligence label its kind and tone and pick up to three of its phrases (<code>AppleIntelligenceLabeler</code>, on the Mac; headless with <code>--labeler apple</code>). Then the text is let go. Tools, tests and evals hand <code>Pipeline.agent</code> the event with its prompt still in, and get the reading at once. The reading is an event of its own, <code>prompt</code>, which wakes the brain in the turn start's place: <code>You asked claude on "api" for a fix, in a sentence, frustrated.</code>, with <code>Your words: "still broken".</code> under it</td></tr>
+      <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' reactions. Only the core's asks whether an agent's process still runs, and only for a session that waits or works: when one has ended, the core records the session's turn stopping in the transcript (a <code>turn</code> end, <code>stopped</code>, <code>AgentGone</code>), so the view's tracker clears its request and work too, and the session stays, idle</td></tr>
+      <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is written to the transcript and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's and never asking about processes, so the two agree, and a fold of the transcript later does too. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>
       <tr><td>Boop → LinkKit (a rule's reaction)</td><td><code>Runtime.playRule</code></td><td><code>play: if_free</code>: sent at once, and skipped unless nothing plays on the device or what plays is resting. The core records each one it plays, so the next prompt says Boop already reacted on its own (a turn's <code>starting</code> is recorded but left out of the prompt). Push-to-talk's <code>listening</code> after the app's mic button is <code>play: now</code></td></tr>
       <tr><td>Jev → LinkKit (reactions)</td><td><code>ReactOutput</code> → <code>Runtime.queue</code></td><td><code>play: next</code> with a 5 s <code>ttl</code>. The reaction stays in progress until the device's <code>ended</code>, which <code>Reactions</code> reads</td></tr>
       <tr><td>Boop → which device</td><td><code>DeviceChooser</code></td><td>The board over Bluetooth, or, while one runs on this Mac and Settings is told to use it, the simulator (<code>simulator/</code>: the firmware's own code in a web page) over its USB socket. Nothing above the transport knows which</td></tr>
       <tr><td>A demo → Boop</td><td><code>Runtime.play</code></td><td>A character pack's script (<code>demo/demo.jsonl</code>, or another in <code>demo/</code>) comes in through the same doors as real work: the agent's hooks as hooks (sent by the player, or with <code>--live</code> a real agent's, which the rest keeps to), a poke as the device's, talk as the mic's; the brain's steps are forced passes. <code>DemoRecorder</code> keeps what the device was sent, for the simulator's page to play back</td></tr>
-      <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline; <code>talk_on</code> and <code>talk_off</code> go to the core, which keeps push-to-talk, as it does for the app's mic button: it says when the Mac's mic goes on and off and when <code>listening</code> ends, records each step as a <code>listen</code> event with no sentence, and the runtime carries it out</td></tr>
+      <tr><td>LinkKit → Boop</td><td><code>Runtime.device</code>, <code>Runtime.deviceEvent</code></td><td>A <code>tap</code> becomes a poke through the pipeline, or, BOOT's (<code>src: button</code>) with someone in line, a <code>press</code>, which opens the next one (<code>Core.pressed</code>: who needs you, then who finished last), and with nobody in line a poke; <code>talk_on</code> and <code>talk_off</code> go to the core, which keeps push-to-talk, as it does for the app's mic button: it says when the Mac's mic goes on and off and when <code>listening</code> ends, records each step as a <code>listen</code> event with no sentence, and the runtime carries it out</td></tr>
       <tr><td>Several buddies → one transcript</td><td><code>Buddy</code>, <code>Pipeline</code>, <code>Runtime+Buddies</code></td><td>Boop runs one buddy or several side by side, each a board with its own character pack, core and agents, all equals; one is the same code with a list of one. The pipeline owns every buddy's core, and <code>BuddyBinding</code> gives each agent session to one buddy (the one whose agents name it, else the least busy). With several, each event about a buddy is tagged with it (<code>data.voice</code>, <code>Event.buddy</code>), and each buddy is one of MellowHarness's voices: the brain answers an event once for each buddy, its own first, in a prompt that opens with whom it answers for (<code>Buddy.header</code>) and asks only that buddy's outputs, each built with its pack. A buddy's reaction becomes an event of its own (<code>reacted</code>, from the pipeline) that wakes the others, one more in its <code>chain</code> when it answers another's; past <code>Buddy.maxRepliesInARow</code> it no longer wakes anyone</td></tr>
     </tbody>
   </table></div>

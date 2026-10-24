@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-22. How we check that Boop works, including what's on its
+Updated 2026-10-24. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -78,7 +78,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal eval-pixel` | `make build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
 
@@ -86,12 +87,19 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `send`, `play`, `takes`, `card`, `calibrate`), a board's factory test,
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`), measurements (`perf`, `latency`, `soak`), the pipeline check
-  (`e2e`), the webcam (`cam`), and the debug logs (`dash`, `day`,
-  `workday`). `--port` picks the serial port; without it, while a bridge
-  runs (below), commands go through the bridge.
+  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
+  `workday`), and a reference a person gave, taken in and cut into frames
+  and contact sheets to read (`reference`,
+  [CHARACTER.md](../characters/CHARACTER.md) §16). `--port` picks the
+  serial port; without it, while a bridge runs (below), commands go
+  through the bridge.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
-  (character packs, [CHARACTER.md](../characters/CHARACTER.md)) and
-  `hooks` (Boop's hook installer, against any `--home`).
+  (character packs, [CHARACTER.md](../characters/CHARACTER.md)),
+  `read-check` (Apple Intelligence's readings of the sample prompts in
+  `internal/app/Tests/Fixtures/prompt-readings.json`, on a Mac that has
+  it: their kind, tone and phrases scored against floors, planted
+  secrets that must never come back, and how long a typical reading
+  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, gel frames and menu-bar icons as PNGs (L0). With a
@@ -125,6 +133,16 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
+- `internal/tools/fluid/measure.py`: how fluid the everyday transitions
+  are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
+  idle's mood changes, the rig face's hand-overs and a working day, recorded with
+  `boopctl sim`), each frame's
+  change against the median, and with `--sheets DIR` a contact sheet of
+  each. The Character Studio's Transitions measures and ranks the
+  everyday transitions on the board in the page by the same rule
+  ([characters/studio/README.md](../characters/studio/README.md)).
+- `node characters/studio/check.cjs`: the Character Studio in a headless
+  browser, its matrix and its board's views (its README, Checking it).
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   draws the app's placeholder icon at every size and packs it with
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
@@ -247,7 +265,7 @@ gets at least one scenario. Their pictures are the golden images in
   that subagent's request, isn't activity, and makes its session work
   again only while its turn goes on, and its start changes none of that.
   It also checks what the agents are doing shows only in the working
-  look, every variation is one the visual has, and the rules' reactions
+  look, every tag sent is one the board knows, and the rules' reactions
   never go out while something needs you or with an `id`, the error one
   at most every 30 s.
   `GoldenStateTests` runs every eval scenario with a scripted brain that
@@ -319,12 +337,17 @@ gets at least one scenario. Their pictures are the golden images in
   every reaction running out (a brain reaction's borrowed face, a finish's loops
   and its `say`, a rule's reaction and a poke included), in the first pack's
   moods and the new moods' flip-books, to the face never cutting hard:
-  the same design at the same moment, or the design's own shut eyes
-  showing; and what the agents are doing, the rules' reactions and the finish
-  with their facts and voice window, taps in a row and what shows first
+  the same design at the same moment, or the frame drawn just after the
+  change the one before but for an eighth of the face (a switch
+  dissolving over 200 ms, which `test_a_switch_dissolves_over_200_ms`
+  follows frame by frame), but into or out of the needs-you sign; and
+  what the agents are doing, the rules' reactions and the finish
+  with their facts and voice window, taps in a row, what shows first,
+  and the lane's strip fading in and out over 200 ms from when it came
+  or went, the same pixels at a frame every 16 ms as every 200 ms
   (`test_behaviour`); the canvas and
-  renderer, the bubble in the bottom lane included (`test_canvas`,
-  `test_face`); what reaches the AMOLED's panel (`test_push`): every
+  renderer, its dither mask drawing exactly the pixels it draws and the
+  bubble in the bottom lane included (`test_canvas`, `test_face`); what reaches the AMOLED's panel (`test_push`): every
   window a frame's push plan sends, applied through the board's own code
   to a model panel, which must show the frame drawn after every frame of
   random drawing, lane changes, test patterns and frames without the lane,
@@ -335,9 +358,21 @@ gets at least one scenario. Their pictures are the golden images in
   scenes send a frame; the animation bank's player
   against facegen's frames, every mood, state and variation, and the
   variations' host facts (`test_scene`, Pixel's pack's, which comes with
-  the pixel face to a pack that uses it); the voice
-  player (`test_voice`); and the sound effects' assets, policies, timing
-  and mixer (`test_effects`).
+  the pixel face to a pack that uses it); Pixel's rig face (`test_rig_face`,
+  Pixel's pack's too): every drawn mood at rest on its own art, as its
+  idle design draws it, an eye squashing onto its pivot and shut below a
+  third open, a mood change's parts morphing and dithering, a press's
+  squash and a stroke's lean, the talking "o", the anchors, and a
+  cross-fade's two pictures sharing the pixels; the voice
+  player (`test_voice`); the sound effects' assets, policies, timing
+  and mixer (`test_effects`); and the rig the faces are moving onto
+  (`test_rig`): clips' eases and loops, reactions' weights easing in
+  and out over 150 ms (a quarter of a shorter clip, so a blink shuts),
+  additive and absolute clips blending, a new look fading over the old,
+  styles cross-fading over 200 ms, an impulse's spring settling without
+  overshoot and coming to rest exactly (a step of a second or more at
+  once), the same frames from the same inputs, the ramp's 200 ms fade,
+  and the staged pack's `rig_tables.h` against its files.
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
@@ -443,7 +478,8 @@ does all of it:
    everyday ones:
    `.build/debug/Boop --headless --state-dir /tmp/boop-e2e/state --link usb:/tmp/boop-e2e/usb.sock --socket /tmp/boop-e2e/boop.sock --brain scripted --name Pip --no-open --debug`.
    The scripted brain makes runs repeatable; `boopctl e2e --brain jev`
-   asks Jev, with `BOOP_JEV_KEY`.
+   asks Jev, with `BOOP_JEV_KEY`. The state's `settings.json` sets the
+   volume to 0 first, so a run is silent on the board.
 3. The fixtures in `internal/app/Tests/Fixtures/hooks/e2e/` go through the
    real `agent-hook`, run as Boop installs it (`--keep-text`): a Claude
    session, a Codex approval answered within the 2 s grace period, and one
@@ -458,8 +494,8 @@ does all of it:
    the fixtures' `expect.json` (for the whole run, not named fixtures or
    `--clip`), that no `PRIVATE_` marker from the
    fixtures reached any app file (`debug.jsonl` and the transcript
-   included) but `PRIVATE_PROMPT` and `PRIVATE_CLOSING`, which mark your
-   prompt and the agent's last message, and, from `boop.log`
+   included) but `PRIVATE_CLOSING`, which marks the agent's last message
+   (`PRIVATE_PROMPT`, your prompt, is read on the Mac and never kept), and, from `boop.log`
    (`link brain → …` and `device: do N ended HOW (WHY)`), that every
    brain reaction came after the rules' reaction, that the board said how
    every one it was sent ended (`ended`, [linkkit/SPEC.md](../linkkit/SPEC.md) §4),
@@ -483,10 +519,21 @@ retried once and counted as a link glitch.
 
 ### L5: brain
 
-1. While developing, `boopdev eval --only TEXT` (with `BOOP_JEV_KEY`)
+1. First, with no key, `boopdev eval --scripted`: every scenario with the
+   expect brain, which answers as each step expects, so anything that
+   fails is the pipeline's, the screen's or the scenario's, not Jev's
+   (`EvalTests` runs it too). While developing, `boopdev eval --only TEXT` (with `BOOP_JEV_KEY`)
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
+   After a change to how prompts are read (the scrubber, the cues or the
+   labeler's instructions), `boopdev read-check`, which fails under its
+   floors, and the scenarios with prompts again with `--labeler apple`,
+   which reads them with Apple Intelligence instead of the steps' own
+   `reading`. The scrubber's own corpora, `must-scrub.tsv` and
+   `must-keep.txt` in `internal/app/Tests/Fixtures/scrubber/`, run with
+   the unit tests; a secret format it missed goes in the first, and text
+   it scrubbed by mistake in the second.
 2. Read a sample of its passes (`--timeline`, or the run's file it names)
    against the steering files (`characters/boop/steering/`): are the reactions and
    mood changes in character and never nagging, and the words and how
@@ -509,7 +556,8 @@ Only a person can check Bluetooth (`make run`), real touches and
 calibration (`boopctl calibrate`), sound by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
-feels. A day of real use under `make debug` reads back with `make day`:
+feels. A day of real
+use under `make debug` reads back with `make day`:
 what Boop did each hour and why, relaunches included.
 
 ## 6. Webcam

@@ -9,7 +9,7 @@ export const root = fileURLToPath(new URL('../', import.meta.url));
 export const STEP_MS = 16;
 export const TRACE_DECIMALS = 6;
 const operations = new Set(['facts', 'mood', 'poke', 'shake', 'perform', 'dragStart', 'dragMove', 'dragEnd', 'oneShot', 'linkTimedOut',
-  'clearTransient', 'holdExpression', 'end']);
+  'clearTransient', 'holdExpression', 'occasion', 'end']);
 
 export function readScript(file) {
   const source = fs.readFileSync(file, 'utf8');
@@ -55,6 +55,7 @@ export function applyEvent(slime, event) {
     case 'linkTimedOut': slime.setLinkTimedOut(event.value); break;
     case 'clearTransient': slime.clearTransient(); break;
     case 'holdExpression': slime.holdExpression(event.mood ?? null); break;
+    case 'occasion': slime.setOccasion({ when: event.when ?? [], lookMs: event.lookMs ?? 0 }); break;
     case 'end': break;
     default: throw new Error(`Unsupported event type: ${event.type}`);
   }
@@ -104,12 +105,11 @@ function rounded(value) {
 
 export function serializeTrace(script, seed, result) {
   const flat = result.frames.map(frame => {
-    // The script already records host facts; artwork and its prose are fixed
-    // by artId in expressions.json. Internal face weights are not a rendered
-    // control: semantic face dimensions, drawn ratios and composed pose are the
-    // port contract. Control velocities are internal spring state.
+    // The script already records host facts. Internal face weights are not a
+    // rendered control: semantic face dimensions, drawn ratios and composed
+    // pose are the port contract. Control velocities are internal spring state.
     const { facts, weights, frames, ...channels } = frame;
-    const { art, artBaseline, velocity, ...face } = channels.face;
+    const { velocity, ...face } = channels.face;
     const performance = channels.performance && Object.fromEntries(
       Object.entries(channels.performance).filter(([key]) => key !== 'label'));
     return flatten({ ...channels, face, performance });
@@ -130,11 +130,12 @@ export function serializeTrace(script, seed, result) {
 export function usage() {
   return 'node tools/trace.mjs --script scripts/idle-60s.jsonl [--seed 53]\n'
     + 'Writes a deterministic channel trace to stdout at a fixed 16 ms step.\n'
-    + 'JSONL rows: {"at":milliseconds,"type":"facts|mood|poke|shake|perform|dragStart|dragMove|dragEnd|oneShot|linkTimedOut|clearTransient|holdExpression|end",...}.\n'
+    + 'JSONL rows: {"at":milliseconds,"type":"facts|mood|poke|shake|perform|dragStart|dragMove|dragEnd|oneShot|linkTimedOut|clearTransient|holdExpression|occasion|end",...}.\n'
     + 'Use facts, mood, x/y, index, point, delta, moment, or value for the corresponding operation.\n'
     + 'A mood event may include bridgeVariant:0|1|2 for a repeatable directed-edge review.\n'
-    + 'A oneShot moment may carry hold:true and args.variant:0|1|2, as a host that times its own moments sends;\n'
+    + 'A oneShot moment may carry hold:true and args.variant (0 to 3, a gesture\'s 0 to 9), as a host that times its own moments sends;\n'
     + 'holdExpression takes a mood (or null) that the host holds until the next holdExpression.\n'
+    + 'occasion takes when (the tags on, as names) and lookMs (how long the look has shown).\n'
     + 'The final end timestamp is the duration, a multiple of 16 ms. Events run on the first frame at or after at.\n'
     + 'Channel scalars retain six decimal places; every frame is kept. No DOM, network, or device is used.';
 }

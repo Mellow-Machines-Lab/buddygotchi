@@ -1,8 +1,9 @@
 # State coverage and event mapping
 
-Updated 2026-10-16. The exact 23 state IDs, trigger descriptions, three
-authored variations and nine visual scene families are in
-[state-plan.json](state-plan.json). The router and reference scene modules
+Updated 2026-10-23. The exact 25 state IDs, trigger descriptions, authored
+variations (three each; idle's six and asleep's four, with their comedy,
+and a gesture's ten)
+and nine visual scene families are in [state-plan.json](state-plan.json). The router and reference scene modules
 cover this vocabulary. The owner approved the representative set before the
 remaining matrix was implemented and exercised. Production integration and
 synchronized sound remain separate work.
@@ -11,19 +12,19 @@ synchronized sound remain separate work.
 
 | Shared scene | States | Distinction to preserve |
 | --- | --- | --- |
-| Quiet rest | no_app, asleep | Lost app vs no sessions; both quiet, retained mood suppressed visually |
-| Idle | idle | Available but not working; face/microgesture carries mood |
+| Quiet rest | no_app, asleep | Lost app vs no sessions; both quiet, retained mood suppressed visually; only asleep snores now and then |
+| Idle | idle | Available but not working; face/microgesture carries mood, then now and then a yawn, a doze or a sneeze (excited has zoomies, the low moods a long yawn) |
 | Listen | listening | Actual mic-on, not every input event |
-| Start | starting, wake_up | ctx new_task/session/continuation/compacted selects truthful card; wake_up (you back after a long break) stretches with no card |
+| Start | starting, wake_up, notice | ctx new_task/session/continuation/compacted selects truthful card; wake_up (you back after a long break) stretches with no card; notice (you named it) looks up at you, a gag under a borrowed face, with no card |
 | Desk | planning, working, terminal, tool_use, searching, analyzing, testing, waiting | One computer, different activity rhythms/cues |
 | Helpers | delegating, helper_return | Dispatch/live helpers vs an observed returning helper |
 | Alert | needs_you | Permission/input pending, stable recognizable ding and sign |
 | Result | reply_ready, task_complete, error, stopped | Reply vs whole-task success/failure vs tool error vs interruption |
-| Touch | poked, tap_spam | Ordinary local response vs repeated-tap response |
+| Touch | poked, tap_spam, gesture | Ordinary local response vs repeated-tap response vs the board's own gesture (a stroke, a shake, BOOT's hand-off: a gag each, under a borrowed face) |
 
 The generated [coverage.json](coverage.json) enumerates every mood and
-state pairing. Each row has the expression, scene, three variation IDs,
-state/mood sound profile and required host facts. All 966 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
+state pairing. Each row has the expression, scene, its variation IDs,
+state/mood sound profile and required host facts. All 1,050 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
 separately. Shared rest rows explicitly alias one quiet
 family; they still preserve the mood in host storage. Active cells are
 compositions, not isolated exported assets.
@@ -34,6 +35,18 @@ moods/states or choose an outcome at random. A sad success is a small
 tearful-but-valid achievement; a happy failure is still visibly failure,
 never a misleading trophy.
 
+Comedy adds takes, never states or moods ([CONTINUITY.md](CONTINUITY.md),
+Comedy). Idle's variations 4 to 6 are its gags (yawn and settle, doze off
+and snap awake, sneeze and shake it off), after an expression's own gag:
+excited's zoomies, the low moods' long yawn. Asleep's fourth is a snore
+(`variationAudio`: only it sounds). A successful finish's fourth is the
+trophy, then hiccups; failure keeps its three. Proud's lifted success
+shows a gift, a small bug beside its card. Each joins its bag's second
+round, so a fresh state opens as it always has.
+
+Occasions add takes too ([CONTINUITY.md](CONTINUITY.md), Occasions): idle,
+the typing desk modes and asleep deal one that needs the tags on or the
+wait the look has shown, two picks in three while one fits.
 ## Source events: account for everything, do not animate everything
 
 Rules own activity truth and urgent attention. Mood is independent.

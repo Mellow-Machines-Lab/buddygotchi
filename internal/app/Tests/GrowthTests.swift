@@ -134,6 +134,16 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(lines.all, ["growth: reached stage 2, Sprout, at 200 XP"])
     }
 
+    /// The day a stage was reached is kept, so a relaunch that day still
+    /// has its party.
+    func testTheDayAStageWasReachedIsKept() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertNil(growth.reachedDay)
+        for seq in 1...40 { growth.count(event(seq, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22") }
+        let reopened = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(reopened.reachedDay, "2026-10-22")
+    }
+
     /// A transcript whose files are all gone numbers from 1 again: counting
     /// follows it rather than skipping what's new.
     func testCountingFollowsATranscriptThatStartsAgain() throws {

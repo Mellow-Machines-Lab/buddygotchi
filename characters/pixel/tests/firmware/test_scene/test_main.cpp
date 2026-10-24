@@ -11,7 +11,9 @@
 #include "linkkit/codec.h"
 #include "frames.h"
 #include "render/palette.h"
+#include "render/pixel/outfit.h"
 #include "render/pixel/scene.h"
+#include "render/tags.h"
 
 using namespace render;
 
@@ -84,15 +86,27 @@ static void test_every_scene_matches_facegen() {
 // have the first pack's (three a state, working five), one or two of each
 // newer state and four starts (one a context); the six new ones three of
 // each, twelve starts (three a context)
-// and six finishes (three a result). Every mood has one wake-up. Asleep and
-// with no app, Boop looks the same in every older mood, and in every new one.
+// and six finishes (three a result). Every mood has one wake-up. Then the
+// comedy (the bank's comedy-art.mjs), after them: three more idles (a yawn,
+// nodding off, a sneeze), a fourth asleep (a snore) and one more success
+// (trophy, then hiccups) in every mood; proud's gift, one more success; and
+// excited's zoomies, one more working and idle. Asleep and with no app,
+// Boop looks the same in every older mood, and in every new one, and snores
+// the same in all of them.
 static void test_variations_and_shared_designs() {
-  const int older[] = {3, 5, 3, 5, 3, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1};
-  const int newer[] = {3, 5, 3, 6, 3, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1};
+  // Then the occasions (occasion-art.mjs): seven more idle, three more
+  // working, two more asleep and a party wake-up.
+  // And gesture's ten, one for each render::Gesture (gesture-art.mjs), and
+  // notice's three (notice-art.mjs).
+  const int older[] = {13, 8, 3, 6, 6, 3, 3, 4, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 10, 3};
+  const int newer[] = {13, 8, 3, 7, 6, 3, 3, 12, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 10, 3};
   for (int m = 0; m < pixelMoods(); ++m) {
+    const Mood mood = render::pixelMood(m);
     for (int s = 0; s < int(SceneState::kCount); ++s) {
-      int n = variants(render::pixelMood(m), SceneState(s));
-      TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? older[s] : newer[s], n);
+      int n = variants(mood, SceneState(s));
+      const bool zoomies = mood == Mood::kExcited && (s == int(SceneState::kIdle) || s == int(SceneState::kWorking));
+      const bool gift = mood == Mood::kProud && s == int(SceneState::kTaskComplete);
+      TEST_ASSERT_EQUAL_INT((m < pixelIndex(Mood::kCalm) ? older[s] : newer[s]) + (zoomies || gift), n);
       TEST_ASSERT_TRUE(n >= 1 && n <= kMaxVariants);
       for (int v = 1; v < n; ++v) {
         TEST_ASSERT_NOT_EQUAL(sceneOf(render::pixelMood(m), SceneState(s), 0), sceneOf(render::pixelMood(m), SceneState(s), v));
@@ -105,6 +119,8 @@ static void test_variations_and_shared_designs() {
       TEST_ASSERT_EQUAL_INT(sceneOf(family, SceneState::kAsleep, v), sceneOf(render::pixelMood(m), SceneState::kAsleep, v));
       TEST_ASSERT_EQUAL_INT(sceneOf(family, SceneState::kNoApp, v), sceneOf(render::pixelMood(m), SceneState::kNoApp, v));
     }
+    TEST_ASSERT_EQUAL_INT(sceneOf(Mood::kHappy, SceneState::kAsleep, 3),
+                          sceneOf(render::pixelMood(m), SceneState::kAsleep, 3));
     if (m) TEST_ASSERT_NOT_EQUAL(sceneOf(Mood::kHappy, SceneState::kIdle), sceneOf(render::pixelMood(m), SceneState::kIdle));
   }
   // A mood or state the device doesn't know draws happy's, and idle's.
@@ -127,7 +143,9 @@ static void test_variations_for_a_result_or_a_context() {
       TEST_ASSERT_TRUE(variantCtx(mood, SceneState::kTaskComplete, v) == StartCtx::kNone);
       (o == Outcome::kSuccess ? wins : fails)++;
     }
-    TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? 4 : 3, wins);  // the first pack's three successes, and the newer ones
+    // The first pack's three successes, and the newer ones; then the
+    // hiccups, and proud's gift.
+    TEST_ASSERT_EQUAL_INT((m < pixelIndex(Mood::kCalm) ? 4 : 3) + 1 + (mood == Mood::kProud), wins);
     TEST_ASSERT_EQUAL_INT(m < pixelIndex(Mood::kCalm) ? 1 : 3, fails);
     for (Outcome o : {Outcome::kSuccess, Outcome::kFailure}) {
       int n = fitting(mood, SceneState::kTaskComplete, o, StartCtx::kNone, out);
@@ -162,6 +180,39 @@ static void test_variations_for_a_result_or_a_context() {
   TEST_ASSERT_TRUE(ctxFromName("continuation") == StartCtx::kContinuation);
   TEST_ASSERT_TRUE(ctxFromName("compacted") == StartCtx::kCompacted);
   TEST_ASSERT_TRUE(ctxFromName("resume") == StartCtx::kNone);
+}
+
+// The comedy's flip-books (the bank's comedy-art.mjs), each at its mood's
+// pace: happy's, at pace 1, are 9 s of yawn, 11 s of nodding off, 10 s of
+// sneeze, 8 s of hiccups; the snore is 12 s in every mood, proud's gift 7 s,
+// excited's zoomies 3.9 s (5 s at its pace, 0.78), one design idle and
+// working. Each but the snore blinks in a step of its own; the snore's eyes
+// never open. Held four times, the longest of them in any mood still ends
+// inside the link's minute: under 15 s.
+static void test_the_comedy_designs() {
+  TEST_ASSERT_EQUAL_UINT32(9000, loopMs(Mood::kHappy, SceneState::kIdle, 3));
+  TEST_ASSERT_EQUAL_UINT32(11000, loopMs(Mood::kHappy, SceneState::kIdle, 4));
+  TEST_ASSERT_EQUAL_UINT32(10000, loopMs(Mood::kHappy, SceneState::kIdle, 5));
+  TEST_ASSERT_EQUAL_UINT32(8000, loopMs(Mood::kHappy, SceneState::kTaskComplete, 5));
+  TEST_ASSERT_EQUAL_UINT32(8000, loopMs(Mood::kCalm, SceneState::kTaskComplete, 6));
+  TEST_ASSERT_EQUAL_UINT32(7000, loopMs(Mood::kProud, SceneState::kTaskComplete, 6));
+  TEST_ASSERT_EQUAL_UINT32(3900, loopMs(Mood::kExcited, SceneState::kWorking, 5));
+  TEST_ASSERT_EQUAL_INT(sceneOf(Mood::kExcited, SceneState::kWorking, 5),
+                        sceneOf(Mood::kExcited, SceneState::kIdle, 6));
+  for (int m = 0; m < pixelMoods(); ++m) {
+    const Mood mood = render::pixelMood(m);
+    TEST_ASSERT_EQUAL_UINT32(12000, loopMs(mood, SceneState::kAsleep, 3));
+    for (int v = 3; v < variants(mood, SceneState::kIdle); ++v) {
+      TEST_ASSERT_TRUE(blinksItself(mood, SceneState::kIdle, v));
+      TEST_ASSERT_TRUE(loopMs(mood, SceneState::kIdle, v) < 15000);
+      TEST_ASSERT_FALSE(eyesClosed(show(mood, SceneState::kIdle, 0, v)));
+    }
+    TEST_ASSERT_FALSE(blinksItself(mood, SceneState::kAsleep, 3));
+    for (uint32_t t = 0; t < 12000; t += 500) TEST_ASSERT_TRUE(eyesClosed(show(mood, SceneState::kAsleep, t, 3)));
+    for (int v = 0; v < variants(mood, SceneState::kTaskComplete); ++v) {
+      TEST_ASSERT_TRUE(loopMs(mood, SceneState::kTaskComplete, v) < 15000);
+    }
+  }
 }
 
 // Shut eyes, a blink's or the one that hides a change of design, show the
@@ -343,12 +394,43 @@ static void test_a_fade_changes_the_frame() {
   TEST_ASSERT_TRUE(changed);
 }
 
+// What Pixel wears (render/pixel/outfit.h): only over idle's and asleep's
+// variations that aren't occasions, which have their own; nothing without
+// a tag for it; the air moves a step every 400 ms, and the hat is drawn
+// where the occasion art puts it.
+static void test_it_dresses_for_the_tags_over_its_plain_looks() {
+  const Mood happy = moodFromName("happy");
+  TEST_ASSERT_TRUE(dresses(happy, SceneState::kIdle, 0));
+  TEST_ASSERT_TRUE(dresses(happy, SceneState::kAsleep, 0));
+  TEST_ASSERT_FALSE(dresses(happy, SceneState::kWorking, 0));
+  TEST_ASSERT_FALSE(dresses(happy, SceneState::kTaskComplete, 0));
+  int occasions = 0;
+  for (int v = 0; v < variants(happy, SceneState::kIdle); ++v)
+    if (tagged(happy, SceneState::kIdle, v)) {
+      TEST_ASSERT_FALSE(dresses(happy, SceneState::kIdle, v));
+      ++occasions;
+    }
+  TEST_ASSERT_TRUE(occasions > 0);
+  const uint32_t night = tagBit("night"), winter = tagBit("winter"), friday = tagBit("friday");
+  TEST_ASSERT_EQUAL_UINT32(0, outfitKey(0, happy, 0));
+  TEST_ASSERT_EQUAL_UINT32(0, outfitKey(friday, happy, 0));  // Friday's shades are its occasion's alone
+  TEST_ASSERT_NOT_EQUAL(0, outfitKey(night, happy, 0));
+  TEST_ASSERT_EQUAL_UINT32(outfitKey(winter, happy, 0), outfitKey(winter, happy, 399));
+  TEST_ASSERT_NOT_EQUAL(outfitKey(winter, happy, 0), outfitKey(winter, happy, 400));
+  Buf b;
+  drawOutfit(b.c, night, happy, 0);
+  TEST_ASSERT_NOT_EQUAL(kBlack, b.at(160, 30));  // the cap
+  TEST_ASSERT_NOT_EQUAL(kBlack, b.at(160, 44));  // its band
+  TEST_ASSERT_EQUAL(kBlack, b.at(160, 120));     // the face is left alone
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_every_scene_matches_facegen);
   RUN_TEST(test_variations_and_shared_designs);
   RUN_TEST(test_variations_for_a_result_or_a_context);
+  RUN_TEST(test_the_comedy_designs);
   RUN_TEST(test_a_blink_shows_the_closed_eyes);
   RUN_TEST(test_the_mouth_opens_to_talk);
   RUN_TEST(test_a_flip_book_talks_with_the_face_that_shows);
@@ -357,5 +439,6 @@ int main(int, char**) {
   RUN_TEST(test_needs_you_leaves_the_bottom_lane);
   RUN_TEST(test_frames_change_only_when_the_picture_can);
   RUN_TEST(test_a_fade_changes_the_frame);
+  RUN_TEST(test_it_dresses_for_the_tags_over_its_plain_looks);
   return UNITY_END();
 }

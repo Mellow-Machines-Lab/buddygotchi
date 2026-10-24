@@ -1,39 +1,79 @@
 #include "render/pixel/anim.h"
+#include <algorithm>
 #include <cstring>
+
+#include "render/maths.h"
+#include "render/palette.h"
 namespace render::pixel {
 static_assert(EffectTrack::kMaxOut == Face::kMaxCues, "face cue buffer holds the pixel scheduler output");
 namespace {
-bool after(uint32_t a, uint32_t b) { return int32_t(a - b) > 0; }
-bool within(uint32_t t, uint32_t from, uint32_t ms) {
-  return int32_t(t - from) >= 0 && int32_t(t - from) < int32_t(ms);
-}
-uint64_t frameKey(const SceneFrame& f, bool bubble) {
-  static_assert(sizeof f % 4 == 0, "a frame hashes as whole words");
+// A hash of a frame's picture, as its bytes.
+template <class Picture>
+uint64_t frameKey(const Picture& f) {
   const uint8_t* p = reinterpret_cast<const uint8_t*>(&f);
   uint64_t h = 14695981039346656037ull;
   for (size_t i = 0; i < sizeof f; i += 4) {
-    uint32_t w;
-    std::memcpy(&w, p + i, 4);
+    uint32_t w = 0;
+    std::memcpy(&w, p + i, sizeof f - i < 4 ? sizeof f - i : 4);
     h = (h ^ w) * 1099511628211ull;
     h ^= h >> 29;
   }
-  return (h << 1 | (bubble ? 1 : 0)) | (uint64_t(1) << 63);
+  return h;
+}
+// Variations of a design, split in their order into the plain ones and
+// the occasions' (those with tags).
+struct Split {
+  uint8_t plain[kMaxVariants], occasions[kMaxVariants];
+  int np = 0, no = 0;
+};
+Split split(Mood m, SceneState s, const uint8_t* vs, int n) {
+  Split out;
+  for (int i = 0; i < n; ++i) {
+    if (tagged(m, s, vs[i]))
+      out.occasions[out.no++] = vs[i];
+    else
+      out.plain[out.np++] = vs[i];
+  }
+  return out;
 }
 }  // namespace
 void PixelFace::reset(uint32_t t, linkkit::Rng& rng) {
   *this = PixelFace{};
   nextBlink_ = t + blinkGap(rng);
   lookAt_ = t;
+  rig_.reset(src_.mood, context_.base, t);
 }
 void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_t t) {
+  rig_.advanceTo(t);
   context_ = context;
-  if (switched_ && !within(t, switchAt_, kBlendMs)) switched_ = false;
-  if (!(next == src_)) {
-    bool restart = next.anim != SceneState::kNone && next.at != src_.at;
-    if (sceneOf(next.mood, next.state(), next.variant()) != sceneOf(src_.mood, src_.state(), src_.variant()) || restart)
-      switched_ = true, switchAt_ = t;
-    if (next.look != src_.look || next.lookVariant != src_.lookVariant) lookAt_ = t;
-    src_ = next;
+  rig_.setLook(context.base);
+  if (switched_ && !within(t, switchAt_, rig::kFadeMs)) switched_ = false;
+  // A new look starts on its first variation, or on an occasion's while
+  // one fits; so does the look again when the mood has fewer of them. The
+  // turns bring the rest.
+  FaceSource wanted = next;
+  if (pending_ || wanted.lookVariant >= variants(wanted.mood, wanted.look)) {
+    lookVariant_ = firstLook(wanted.mood, wanted.look);
+    pending_ = false;
+    wanted.lookVariant = lookVariant_;
+  }
+  // The working looks keep their place in the loop as the pace changes.
+  if (context.pace != pace_) {
+    uint32_t into = designMs(t);
+    pace_ = context.pace;
+    lookAt_ = t - uint32_t((uint64_t(into) * 100 + pace_ - 1) / pace_);  // never a step back
+  }
+  if (!(wanted == src_)) {
+    bool restart = wanted.anim != SceneState::kNone && wanted.at != src_.at;
+    if (sceneOf(wanted.mood, wanted.state(), wanted.variant()) != sceneOf(src_.mood, src_.state(), src_.variant()) ||
+        restart)
+      startSwitch(t);
+    if (wanted.look != src_.look || wanted.lookVariant != src_.lookVariant) lookAt_ = t;
+    // The rig face moves to a new mood while it shows, and is at rest in it
+    // when it comes back.
+    if (wanted.mood != src_.mood)
+      drew_ == Drew::kRig ? rig_.setMood(wanted.mood) : rig_.reset(wanted.mood, context.base, t);
+    src_ = wanted;
   }
 }
 void PixelFace::rewind(uint32_t t, linkkit::Rng& rng) {
@@ -45,8 +85,27 @@ uint32_t PixelFace::blinkGap(linkkit::Rng& rng) const {
 }
 bool PixelFace::turnable() const { return context_.mayVary && variants(context_.mood, context_.look) > 1; }
 uint32_t PixelFace::loopEnd(uint32_t t) const {
-  uint32_t loop = loopMs(src_.mood, src_.look, src_.lookVariant);
+  uint32_t loop = uint32_t(uint64_t(loopMs(src_.mood, src_.look, src_.lookVariant)) * 100 / pace_);
+  if (!loop) loop = 1;
   return t - (t - lookAt_) % loop + loop;
+}
+int PixelFace::fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const {
+  int k = 0;
+  for (int v = 0; v < variants(m, s); ++v)
+    if (v != avoid && lookFits(m, s, v)) out[k++] = uint8_t(v);
+  return k;
+}
+uint8_t PixelFace::firstLook(Mood m, SceneState s) const {
+  uint8_t fit[kMaxVariants];
+  const Split c = split(m, s, fit, fittingLooks(m, s, -1, fit));
+  return c.no ? c.occasions[0] : c.np ? c.plain[0] : 0;
+}
+uint8_t PixelFace::pickLook(Mood m, SceneState s, int avoid, linkkit::Rng& rng) const {
+  uint8_t fit[kMaxVariants];
+  const Split c = split(m, s, fit, fittingLooks(m, s, avoid, fit));
+  if (c.no && (!c.np || rng.range(1, 100) <= kTaggedPct)) return c.occasions[rng.range(0, c.no - 1)];
+  if (c.np) return c.plain[rng.range(0, c.np - 1)];
+  return avoid >= 0 && avoid < variants(m, s) ? uint8_t(avoid) : 0;
 }
 // The next blink, or the look's loop ending while its variations may take
 // turns. What's due then is decided here, before Behaviour syncs the face
@@ -67,31 +126,44 @@ bool PixelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   return true;
 }
 void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
+  rig_.advanceTo(t);
   const uint8_t due = t == dueAt_ ? due_ : 0;
   due_ = 0;
   if (due & kBlink) {
+    if (rigDraws()) rig_.blink();
     blink_ = src_.anim == SceneState::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp &&
              !blinksItself(src_.mood, src_.look, src_.lookVariant);
     blinkAt_ = t;
     nextBlink_ = t + (blink_ ? kBlinkMs : 0) + blinkGap(rng);
   }
-  if ((due & kTurn) && turnable() && int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct) {
-    int v = rng.range(0, variants(context_.mood, context_.look) - 2);
-    if (v >= lookVariant_) ++v;
-    lookVariant_ = uint8_t(v);
-  }
+  // A variation whose occasion is over (or whose mood lost it) turns at
+  // once; any other may, now and then, to one that fits.
+  if ((due & kTurn) && turnable() &&
+      (!lookFits(src_.mood, src_.look, lookVariant_) ||
+       (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
+    lookVariant_ = pickLook(src_.mood, src_.look, lookVariant_, rng);
 }
-void PixelFace::alert(uint32_t t, bool replacing) {
-  lookAt_ = t;
-  if (replacing) switched_ = true, switchAt_ = t;
+// A needs-you replacing another starts its sign over; the sign cuts in.
+void PixelFace::alert(uint32_t t, bool) { lookAt_ = t; }
+void PixelFace::startSwitch(uint32_t t) {
+  if (!fading(t) || drew_ == Drew::kSign) fadeFrom_ = drew_;  // the screen shows what it dissolves from
+  switched_ = true, switchAt_ = t;
 }
+void PixelFace::finger(bool down, int x, int y) { rig_.finger(down && rigDraws(), x, y); }
 void PixelFace::started(SceneState a, Mood, uint8_t variant, Outcome, StartCtx) {
   last_[int(a)] = uint8_t(variant + 1);
   blink_ = false;
 }
 uint8_t PixelFace::pick(SceneState s, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng) const {
-  uint8_t fit[kMaxVariants];
-  int n = fitting(mood, s, o, c, fit);
+  uint8_t all[kMaxVariants], fit[kMaxVariants];
+  int k0 = fitting(mood, s, o, c, all), n = 0;
+  // Only those whose tags are on; an occasion's first, whatever the Mac
+  // asked for (the Mac never asks for one).
+  for (int i = 0; i < k0; ++i)
+    if (fits(mood, s, all[i], context_.when, UINT32_MAX)) fit[n++] = all[i];
+  const Split byTags = split(mood, s, fit, n);
+  if (byTags.no) return byTags.occasions[rng.range(0, byTags.no - 1)];
+  if (!n) n = k0, std::memcpy(fit, all, k0);
   for (int i = 0; i < n; ++i)
     if (fit[i] + 1 == wanted) return fit[i];
   uint8_t others[kMaxVariants];
@@ -116,7 +188,7 @@ SceneShow PixelFace::show(uint32_t t, bool mouthOpen, int dy) const {
   uint32_t loop = loopMs(s.mood, s.state, s.variant);
   if (src_.anim != SceneState::kNone) s.t = s.t >= src_.playMs ? loop - 1 : s.t % loop;
   if (s.state == SceneState::kNeedsYou && s.t >= loop) s.t = 0;
-  s.eyesShut = blinking(t) || (switched_ && within(t, switchAt_, kBlendMs));
+  s.eyesShut = blinking(t);
   s.mouthOpen = mouthOpen;
   s.dy = int16_t(dy);
   return s;
@@ -150,23 +222,74 @@ int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) 
   if (until > arcCovered_) arcCovered_ = until;
   return n;
 }
-bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble, const Strip& strip,
-                     bool dirty) {
+bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble,
+                     const SignShow& sign, const Strip& strip, bool dirty) {
+  rig_.advanceTo(t);
+  Picture& p = picture_;
+  std::memset(static_cast<void*>(&p), 0, sizeof p);  // its padding too: it's hashed as bytes
+  p.lane = int16_t(strip.opacity), p.bubble = bubble != nullptr;
   if (strip.agent && show.state == SceneState::kNeedsYou) {
-    SignPose pose = signPose(designMs(t), show.eyesShut, show.dy);
-    if (!dirty && drawnSign_ && pose == drawnPose_) return false;
-    drawnSign_ = true;
-    drawnPose_ = pose;
-    drawnKey_ = 0;
-    drawSignScreen(c, pose, strip);
+    p.kind = Drew::kSign;
+    p.sign = signPose(designMs(t), show.eyesShut, show.dy);
   } else {
-    drawnSign_ = false;
-    SceneFrame frame = sceneFrame(show);
-    uint64_t key = frameKey(frame, bubble != nullptr);
-    if (!dirty && key == drawnKey_) return false;
-    drawnKey_ = key;
-    drawFaceScreen(c, frame, bubble, strip);
+    p.kind = rigDraws(show.mood, show.state, show.variant) ? Drew::kRig : Drew::kDesign;
+    // A dissolve shows more of what comes in each frame, some of it from
+    // the first, and is over once that's whole.
+    const int mix = fading(t) ? ease1000(int(t - switchAt_), int(rig::kFadeMs)) : 1000;
+    p.in = Dither::fade(mix, true);
+    p.in.hi = uint8_t(std::max<int>(p.in.hi, 1));
+    p.from = p.in.all() ? Drew::kSign : fadeFrom_;
+    const bool rig = p.kind == Drew::kRig, stays = rig && p.from == Drew::kRig;
+    FaceMove move = faceMove(show);
+    if (stays) {
+      const FaceMove was = faceMove(drawnShow_);
+      move = {lerp(was.dx, move.dx, mix, 1000), lerp(was.dy, move.dy, mix, 1000), lerp(was.ex, move.ex, mix, 1000),
+              lerp(was.ey, move.ey, mix, 1000)};
+    }
+    // The design, without its face where the rig face draws it; and what
+    // it wears and holds, which move on their own. On the rig face, the hat
+    // and the sign ride its anchors.
+    p.design = sceneFrame(show, rig);
+    p.held = sign.text != nullptr, p.heldAt = int16_t(sign.text ? heldOffset(sign.ms, show.dy) : 0);
+    if (rig) {
+      rig::Anchors now;
+      p.face = rig_.frame(show.dy, show.mouthOpen, stays ? Dither{} : p.in, move, &now);
+      const RigFace::Pose& rest = *RigFace::pose(show.mood);
+      p.hatX = int16_t(now.brimF.x - rest.brim.x), p.hatY = int16_t(now.brimF.y - rest.brim.y);
+      if (sign.text) p.heldAt = int16_t(p.heldAt + now.handF.y - rest.hand.y);
+    }
+    p.dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
   }
+  drew_ = p.kind;
+  const uint64_t key = frameKey(p);
+  if (!dirty && key == drawnKey_) return false;
+  drawnKey_ = key;
+  if (p.kind == Drew::kSign) {
+    drawSignScreen(c, p.sign, strip);
+    return true;
+  }
+  c.fill(kBlack);
+  if (p.from == Drew::kSign) {
+    drawnShow_ = show;  // what a switch dissolves from
+  } else {
+    // What showed, fading out under what comes in: with the face staying,
+    // only its design.
+    const Dither out = {p.in.hi, 16};
+    const bool rig = p.from == Drew::kRig;
+    const SceneFrame was = sceneFrame(drawnShow_, rig);
+    if (rig && p.kind != Drew::kRig)
+      drawRig(c, rig_.frame(drawnShow_.dy, drawnShow_.mouthOpen, out, faceMove(drawnShow_)), was, out);
+    else
+      drawScene(c, was, out);
+  }
+  if (p.kind == Drew::kRig)
+    drawRig(c, p.face, p.design, p.in);
+  else
+    drawScene(c, p.design, p.in);
+  Overlays over;
+  over.dressed = p.dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
+  over.hatX = p.hatX, over.hatY = p.hatY, over.held = sign.text, over.heldOffset = p.heldAt;
+  drawOverlays(c, bubble, strip, over);
   return true;
 }
 }  // namespace render::pixel

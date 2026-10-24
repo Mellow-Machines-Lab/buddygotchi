@@ -1,0 +1,19 @@
+{
+  "name": "A refactor is tidy time",
+  "case": "A request to rename and reorganise. Boop is calm, pleased or engaged about tidying, and may hold up \"tidy time\".",
+  "why": "signs.md's refactor caption",
+  "steps": [
+    {
+      "event": "turn started",
+      "at": "0s",
+      "prompt": "rename getUser to fetchUser everywhere",
+      "reading": {
+        "kind": "refactor"
+      },
+      "expect": {
+        "react": "calm|pleased|engaged|comfy|happy|none",
+        "sign": "tidy time|none"
+      }
+    }
+  ]
+}

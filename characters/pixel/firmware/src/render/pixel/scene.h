@@ -16,7 +16,7 @@ namespace render {
 // Each mood has its own variations of each state's design, 1 to kMaxVariants
 // of them; a variation is 0..variants(m, s) - 1 here, and 1..variants(m, s)
 // on the wire. One out of range draws the first.
-constexpr int kMaxVariants = 12;  // faces.h checks it
+constexpr int kMaxVariants = 16;  // faces.h checks it
 int variants(Mood m, SceneState s);
 
 // The moods the designs draw, by name (faces.h's), whatever the character
@@ -34,6 +34,11 @@ StartCtx variantCtx(Mood m, SceneState s, int variant);
 // and how many; every variation when none fits, as the Mac's
 // FaceLoops.variants does.
 int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out);
+// Whether a variation may show now: every tag it needs is on in `when`
+// (render/tags.h) and its look has shown its wait (`lookMs`). And whether
+// it needs a tag at all: an occasion's, which the face prefers while it fits.
+bool fits(Mood m, SceneState s, int variant, uint32_t when, uint32_t lookMs);
+bool tagged(Mood m, SceneState s, int variant);
 
 // A flip-book, one of the new moods' designs, blinks in a step of its own on
 // its own clock, so the device's blinks leave it be.
@@ -51,6 +56,9 @@ bool eyesClosed(const SceneShow& s);
 struct SceneFrame {
   static constexpr int kMaxGroups = 288;  // groups in a scene; faces.h checks it
   uint16_t scene = 0xFFFF;
+  // Where the face that shows is among the groups, kMaxGroups for none: a
+  // faceless frame's rig face is drawn there (drawScene's `from` and `to`).
+  uint16_t faceAt = kMaxGroups;
   // The talking "o": where it goes, and its colour, which is never black;
   // -1, -1 and black while the mouth doesn't talk.
   int16_t talkX = -1, talkY = -1;
@@ -62,27 +70,55 @@ struct SceneFrame {
 bool operator==(const SceneFrame& a, const SceneFrame& b);
 inline bool operator!=(const SceneFrame& a, const SceneFrame& b) { return !(a == b); }
 
+// The small "o" the mouth becomes while a take is loud, at x, y (its top
+// left corner), in `ink`.
+constexpr int kTalkW = 14, kTalkH = 12;
+void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d = {});
+
 // The scene a mood, state and variation show: some are shared, such as
 // asleep and no app, which look the same in every mood.
 int sceneOf(Mood m, SceneState s, int variant = 0);
 // How long that design takes to play once through, in ms (faces.h's
 // loopMs): what a moment's loops count.
 uint32_t loopMs(Mood m, SceneState s, int variant = 0);
-SceneFrame sceneFrame(const SceneShow& s);
-// Draws a frame sceneFrame made over what's on the canvas; the screen
-// clears it first. The device draws the frame it compared, so it lays each
-// frame out once. The show's overload, for the tests, lays one out.
-void drawScene(Canvas& c, const SceneFrame& f);
-inline void drawScene(Canvas& c, const SceneShow& s) { drawScene(c, sceneFrame(s)); }
-// The palette entry for a design colour (faces::kColors), for the tests.
+// Whether that design's face is its mood's resting face moved, under
+// decorations of its own (a sparkle, a falling tear), as facegen found at
+// every step: the rig face draws it in the design's place
+// (render/pixel/rig_face.h), as drawn (idle's plain face, near enough).
+// And where the face is, in px from where the mood's first idle has it, at
+// the show's moment: its move, and its eyes' more.
+bool rigFaced(Mood m, SceneState s, int variant = 0);
+struct FaceMove {
+  int dx = 0, dy = 0, ex = 0, ey = 0;
+};
+FaceMove faceMove(const SceneShow& s);
+// `faceless`, the face that shows is left out but for its decorations, for
+// the rig face to draw in its place, and so are its blink and talking.
+SceneFrame sceneFrame(const SceneShow& s, bool faceless = false);
+// Draws a frame sceneFrame made over what's on the canvas, the pixels `d`
+// draws, its groups from `from` up to `to`; the screen clears it first.
+// The device draws the frame it compared, so it lays each frame out once.
+// The show's overload lays one out.
+void drawScene(Canvas& c, const SceneFrame& f, Dither d = {}, int from = 0, int to = SceneFrame::kMaxGroups);
+inline void drawScene(Canvas& c, const SceneShow& s, Dither d = {}) { drawScene(c, sceneFrame(s), d); }
+// The palette entry for a design colour (faces::kColors).
 uint8_t sceneInk(int color);
 
-// The face as its design shows it, and the bubble with the line's text
-// (its take's, in amber) when there's one, else the strip. The face is a
-// frame sceneFrame made, or a show for the tests, as drawScene takes it.
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s);
-inline void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s) {
-  drawFaceScreen(c, sceneFrame(face), bubble, s);
-}
+// What's drawn over the face: what it wears and the air around it, when it
+// dresses (render/pixel/outfit.h: for `when`, in `mood`, at `ms`, `hatX`
+// and `hatY` px from its place, as the rig face moves), and the sign it
+// holds up, when there's one (`held`, `heldOffset` px below its place:
+// render/pixel/held.h).
+struct Overlays {
+  bool dressed = false;
+  Mood mood = kStartupMood;
+  uint32_t when = 0, ms = 0;
+  int hatX = 0, hatY = 0;
+  const char* held = nullptr;
+  int heldOffset = 0;
+};
+// The overlays over a face drawn, then the bubble with the line's text (its
+// take's, in amber) when there's one, else the strip.
+void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over);
 
 }  // namespace render

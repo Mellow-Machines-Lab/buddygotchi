@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include "render/gel/engine.h"
+#include "render/tags.h"
 using namespace render;
 using namespace render::gel;
 static double number(F x) { return double(x.raw) / F::scale; }
@@ -48,7 +49,16 @@ static void inspect(JsonObject o, Engine& e) {
   o["contact"]["x"] = number(e.motion.contactX);
   o["contact"]["y"] = number(e.motion.contactY);
   springs(o["modes"].to<JsonObject>(), e.motion.modes, modeNames, 4);
-  springs(o["actorChannels"].to<JsonObject>(), a.channels, actingNames, 6);
+  auto actor = o["actorChannels"].to<JsonObject>();
+  springs(actor, a.channels, actingNames, 6);
+  // A gag's own channels join once one has played (acting.mjs inspect).
+  if (a.gagged) {
+    actor["slide"]["x"] = number(a.slide.x);
+    actor["slide"]["v"] = number(a.slide.v);
+    actor["lids"]["x"] = number(a.lids.x);
+    actor["lids"]["v"] = number(a.lids.v);
+    o["slide"] = number(a.slide.x);
+  }
   springs(o["activityChannels"].to<JsonObject>(), s.activity, activityNames, 3);
   springs(o["bridgeChannels"].to<JsonObject>(), b.channels, activityNames, 3);
   o["mood"] = slime::kProfile[slime::kProfile[e.emotion].canonical].id;
@@ -63,11 +73,12 @@ static void inspect(JsonObject o, Engine& e) {
   o["performanceCount"] = a.count;
   o["nextPerformance"] = number(a.nextPerformance);
   o["actingSuppressed"] = a.suppressed;
-  if (a.performance < 0)
+  if (a.performance < 0 && a.playing < 0)
     o["performance"] = nullptr;
   else {
+    // A recipe's gag held (a gesture's, an occasion's) is index -1.
     auto p = o["performance"].to<JsonObject>();
-    auto& perf = slime::kProfile[a.expression].performances[a.performance];
+    auto& perf = a.playing >= 0 ? slime::kGags[a.playing].gesture : Acting::gesture(a.expression, a.performance);
     p["type"] = perf.type;
     p["index"] = a.performance;
     p["expression"] = slime::kProfile[a.expression].id;
@@ -80,15 +91,23 @@ static void inspect(JsonObject o, Engine& e) {
     face["transition"]["from"][controls[i]] = number(f.from[i]);
     face["transition"]["to"][controls[i]] = number(f.to[i]);
   }
-  static const char* renders[] = {"eye", "mouthWidth", "mouthHeight", "mouth", "cheek", "tear"};
-  for (int i = 0; i < 6; ++i) face["render"][renders[i]] = number(f.render[i]);
-  face["artId"] = slime::kProfile[f.artId].id;
-  face["sleeping"] = f.sleeping;
-  face["bridgeBlink"] = number(f.bridgeBlink);
-  face["blink"] = number(max(f.bridgeBlink, e.motion.blink()));
+  static const char* ratios[] = {"eye", "mouthWidth", "mouthHeight"};
+  auto layers = face["layers"].to<JsonArray>();
+  for (int i = 0; i < f.count; ++i) {
+    const auto& l = f.layers[i];
+    auto layer = layers.add<JsonObject>();
+    layer["artId"] = slime::kProfile[l.art].id;
+    layer["sleeping"] = l.sleeping;
+    layer["weight"] = number(l.weight);
+    const auto ratio = f.ratios(l);
+    for (int k = 0; k < 3; ++k) layer[ratios[k]] = number(ratio[k]);
+  }
+  face["artId"] = slime::kProfile[f.current().art].id;
+  face["sleeping"] = f.current().sleeping;
+  face["blink"] = number(e.blink());
   face["transition"]["elapsedMs"] = number(f.elapsedMs);
   face["transition"]["durationMs"] = number(f.durationMs);
-  face["transition"]["active"] = f.active;
+  face["transition"]["active"] = f.count > 1;
   auto bridge = o["bridge"].to<JsonObject>();
   bridge["from"] = b.active ? slime::kProfile[b.from].id : nullptr;
   bridge["to"] = b.active ? slime::kProfile[b.to].id : nullptr;
@@ -135,7 +154,10 @@ static void inspect(JsonObject o, Engine& e) {
   scene["loopDurationMs"] = number(s.recipe.duration);
   scene["quietMix"] = number(s.quietMix.x);
   scene["profile"]["expression"] = slime::kProfile[s.profileExpression].id;
-  scene["profile"]["performanceType"] = slime::kProfile[s.profileExpression].performances[s.variant].type;
+  if (s.variant < kGestures)
+    scene["profile"]["performanceType"] = slime::kProfile[s.profileExpression].performances[s.variant].type;
+  else
+    scene["profile"]["performanceType"] = nullptr;  // a fourth take has no gesture of its own
   scene["profile"]["recoveryGesture"] = !r.quiet && !slime::kProfile[s.profileExpression].representative;
   auto props = o["props"].to<JsonObject>();
   auto desk = props["desk"].to<JsonObject>();
@@ -177,7 +199,7 @@ static void inspect(JsonObject o, Engine& e) {
   F resultVisible = s.visible(Scenes::kResultProp, now);
   auto result = props["result"].to<JsonObject>();
   result["visible"] = number(resultVisible);
-  result["reveal"] = number(card.reveal);
+  result["reveal"] = number(s.slots[Scenes::kResultProp].reveal.value(now));
   if (card.known)
     result["state"] = stateName(card.state);
   else
@@ -185,8 +207,9 @@ static void inspect(JsonObject o, Engine& e) {
   result["label"] = card.label;
   result["outcome"] = outcomes[int(card.outcome)];
   result["trophy"] = resultVisible > F(0) && card.outcome == Outcome::kSuccess;
+  if (card.gift) result["gift"] = true;
   props["start"]["visible"] = number(s.visible(Scenes::kStartProp, now));
-  props["start"]["reveal"] = number(s.startProp.reveal);
+  props["start"]["reveal"] = number(s.slots[Scenes::kStartProp].reveal.value(now));
   props["start"]["label"] = s.startProp.label;
   props["start"]["ctx"] = contexts[int(s.startProp.ctx)];
   const auto& helpers = s.helpersProp;
@@ -208,6 +231,7 @@ static void inspect(JsonObject o, Engine& e) {
   props["lane"]["top"] = .8;
   auto contacts = o["contacts"].to<JsonArray>();
   for (const auto& c : s.contacts) contact(contacts.add<JsonObject>(), c);
+  for (const auto& c : a.contacts) contact(contacts.add<JsonObject>(), c);
   o["grab"]["active"] = e.grab;
   for (int i = 0; i < 2; ++i) o["grab"]["point"][i] = number(e.point[i]);
   for (int i = 0; i < 3; ++i) {
@@ -257,11 +281,15 @@ static void event(Engine& e, JsonVariantConst v) {
     r.ctx = r.anim == SceneState::kStarting ? ctxFromName(args["ctx"]) : StartCtx::kNone;
     r.hold = j["hold"] | false;
     int variant = args["variant"] | -1;
-    r.variant = variant >= 0 && variant <= 2 ? variant : -1;
+    r.variant = variant >= 0 && variant < slime::kGestureCount ? variant : -1;  // router.mjs: 0 to 9
     e.oneShot(r);
   } else if (type == "linkTimedOut")
     e.linkTimedOut(v["value"]);
-  else if (type == "clearTransient")
+  else if (type == "occasion") {
+    uint32_t when = 0;
+    for (JsonVariantConst tag : v["when"].as<JsonArrayConst>()) when |= tagBit(tag.as<const char*>());
+    e.setOccasion(when, v["lookMs"] | 0u);
+  } else if (type == "clearTransient")
     e.clearTransient();
   else if (type == "holdExpression")
     e.holdExpression(expressionFromName(v["mood"]));

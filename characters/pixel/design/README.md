@@ -1,6 +1,6 @@
 # Pixel's design: the animation bank and mood graph
 
-Updated 2026-10-15. The code-based animation/SFX bank and approved mood-graph
+Updated 2026-10-24. The code-based animation/SFX bank and approved mood-graph
 handover. The bank is the one source of the device's designs and sounds:
 `facegen` runs its generator for the faces and `sfxgen` imports its
 timelines and synthesiser, so a change here changes the firmware once
@@ -59,13 +59,28 @@ check preservation of the older SVGs and scores.
 `make -C internal faces` runs the bank's generator
 (`characters/pixel/tools/facegen/bank.mjs` calls `makeScene` for every design) into
 `characters/pixel/tools/facegen/build/`, which git ignores, and turns the SVGs into
-`characters/pixel/firmware/include/faces.h`; `node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
+`characters/pixel/firmware/include/faces.h`, with the rig face's parts: each
+mood's eyes (open and shut), mouth and cheeks, cut from its first idle at rest
+([CHARACTER.md](../../CHARACTER.md) §15), so its plain face is the art drawn
+here; and, for every design whose face is that resting face moved, where it
+sits at each step, so the rig face draws it in the design's place. A design
+drawn here with the resting face (`ownFace`, or the first idle's face) and
+its decorations over it stays one the rig face can draw; a face drawn some
+other way stays baked. `node characters/pixel/tools/sfxgen/sfxgen.mjs` then bakes
 the timelines, in the voice-first mix, into `characters/pixel/firmware/include/sfx.h`. Nothing
 is copied out of the bank by hand. The older moods' designs must come out as
 `qa/v3-fingerprints.json` has them; change one only deliberately, with the
 fingerprints in the same commit. The generator tags each flip-book step's
 face and mouth (`data-part`) and its blink (`data-blink`), which facegen and
 the device use; `qa/check.mjs` must pass after any change.
+
+A new design is a new variation after a state's others, never a redrawn
+one: the device turns a look's variations by itself at the end of a loop,
+and picks a finish's for its outcome, never the last again, so the Mac
+needs no change. The comedy (`boop-sound-bank-v4/runtime/comedy-art.mjs`:
+a yawn, nodding off, a sneeze, a snore, hiccups after a cheer, proud's
+gift and excited's zoomies) came that way, with the only sounds a quiet
+look makes.
 
 The mood graph belongs to the Mac's Mood action, never the generic harness.
 Integration is not visual approval: new art and sounds are reviewed by

@@ -1,0 +1,9 @@
+{
+  "name": "A long turn done is a celebration",
+  "case": "The agent works for twenty minutes and finishes well. Pixel celebrates: an excited, proud or happy face played as a success, and its mood lifts.",
+  "why": "characters/pixel/steering/personality/pixel.md: a long turn finishes and its message says the work is done, an excited or proud face",
+  "steps": [
+    {"event": "turn started", "at": "0s"},
+    {"event": "turn finished", "at": "20m", "expect": {"react": "excited|proud|happy", "animation": "success", "mood": "excited|happy|proud|pleased|engaged"}}
+  ]
+}

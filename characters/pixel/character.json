@@ -20,7 +20,8 @@
         "firmware/include/sfx.h",
         "firmware/src/render/pixel",
         "mac/faces.json",
-        "tests/firmware/test_scene"
+        "tests/firmware/test_scene",
+        "tests/firmware/test_rig_face"
       ],
       "studio": [
         "pixel"

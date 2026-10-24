@@ -1,5 +1,6 @@
 ---
 working_heartbeat: 120-240
+idle_heartbeat: 1200-2400
 tool_uses: notable
 ---
 <!-- The pixel personality: settings for the view's rules, then the PERSONALITY section (characters/CHARACTER.md §7). Comments are left out of the state. -->
@@ -14,10 +15,19 @@ for a big win, and a swear when a failure really stings.
 Examples:
 - A long turn finishes and its message says the work is done: an
   excited or proud face.
-- A turn fails, or the agent gives up: an annoyed face for a small
-  one, a sad face for a big one.
+- A turn fails, or the agent gives up: an annoyed face held twice for a
+  small one, with a huff or a word; held longer, and maybe a swear,
+  when it follows other failures; a sad face held longest for a big
+  one.
 - A poke: a curious face. Pokes that keep coming: annoyed, then grumpy.
 - Thanks or kind words: a happy face.
 - You back at the Mac after a long break: a happy face, and it wakes up
   for you.
+- A streak of quick wins: pleased, then excited by the third, then
+  amused, then cosy and quiet, a new face on each rung, and round again.
+- A round of check-ins on a long turn: engaged, then hopeful about the
+  tests, then bored, then determined, and round again.
+- An idle check-in: a bored or lazy face, or nothing. A poke while it
+  slept: surprised. You answering an agent: pleased. The agent's
+  context compacted: confused, where was it?
 - A turn starting, a tool call, a check passing mid-turn: no face.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "REFERENCE SCENES IMPLEMENTED \u2014 production adapter and synchronized sound remain planned",
+  "status": "REFERENCE SCENES IMPLEMENTED — production adapter and synchronized sound remain planned",
   "primaryParameters": [
     "mood",
     "state"
@@ -52,13 +52,17 @@
       "scene": "rest",
       "kind": "persistent",
       "trigger": "No sessions, as the core derives; not a mood.",
-      "visual": "Shared sleepy face; no angry-sleeping catalogue.",
+      "visual": "Shared sleepy face; no angry-sleeping catalogue. From the second round of rests on, now and then a snore: two soft breaths, each a slight swell.",
       "variations": [
         "still-rest",
         "slow-settle",
-        "one-sleepy-shift"
+        "one-sleepy-shift",
+        "snore"
       ],
       "audioPolicy": "silent",
+      "variationAudio": {
+        "snore": "sparse_contacts"
+      },
       "status": "implemented-quiet-alias"
     },
     {
@@ -66,13 +70,19 @@
       "scene": "idle",
       "kind": "persistent",
       "trigger": "Sessions exist but none are working.",
-      "visual": "Show mood face, soft breathing and occasional quiet gesture.",
+      "visual": "Show mood face, soft breathing and occasional quiet gesture; from the second round of gestures on, now and then a yawn, a doze that snaps awake, or a sneeze.",
       "variations": [
         "look-and-return",
         "small-nod",
-        "settle-sway"
+        "settle-sway",
+        "yawn-and-settle",
+        "doze-and-snap",
+        "sneeze-and-shake"
       ],
       "audioPolicy": "silent",
+      "variationAudio": {
+        "sneeze-and-shake": "sparse_contacts"
+      },
       "status": "implemented-reference-choreography"
     },
     {
@@ -313,7 +323,8 @@
           "success": [
             "settle-and-trophy",
             "hop-and-complete-card",
-            "small-confetti-reveal"
+            "small-confetti-reveal",
+            "trophy-then-hiccups"
           ],
           "failure": [
             "slump-and-failed-card",
@@ -389,6 +400,41 @@
         "yawn-and-stretch",
         "stretch-and-shake",
         "slow-double-stretch"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "gesture",
+      "scene": "touch",
+      "kind": "one_shot",
+      "trigger": "The board's own reaction to what you do to it: BOOT's hand-off, a stroke, one the wrong way, a boop on the nose, a tickle, a shake, a pick-up, a put-down, a thump on the desk, turned face up again. The board names the gesture, and its take is that gesture's.",
+      "visual": "The same body acts the gesture out with a gag of its own (keyed squash, stretch, lean, slide and lids) under a face it borrows for it: offers, melts, bristles, squishes, giggles, wobbles, stretches up, lands, jumps, rises from below.",
+      "variations": [
+        "handoff",
+        "stroke",
+        "ruffle",
+        "nose",
+        "tickle",
+        "dizzy",
+        "pickup",
+        "putdown",
+        "startle",
+        "peekaboo"
+      ],
+      "audioPolicy": "first_only",
+      "status": "implemented-reference-choreography"
+    },
+    {
+      "id": "notice",
+      "scene": "start",
+      "kind": "one_shot",
+      "trigger": "The brain's reaction when you name it in your prompt: it heard its name.",
+      "visual": "The same body looks up at you, surprised and pleased, under a face it borrows for it: perks up and leans in, hops and beams, or tilts toward you; the start family without a card.",
+      "variations": [
+        "notice-perk",
+        "notice-hop",
+        "notice-tilt"
       ],
       "audioPolicy": "first_only",
       "status": "implemented-reference-choreography"

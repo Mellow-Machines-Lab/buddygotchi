@@ -31,9 +31,23 @@ or `BOARD=cyd24`/`BOARD=amoled206` picks one.
 A character pack says which of its faces each board draws (its
 `faces`, by the env's `custom_board`; [CHARACTER.md](../characters/CHARACTER.md)
 §9), and `firmware/tools/pack_face.py` builds that face and none of the
-pack's others. Boop's draws the pixel face on the CYD and the gel slime
+pack's others, into the env's own build folder, so switching boards
+rebuilds nothing that hasn't changed. Boop's draws the pixel face on the CYD and the gel slime
 on the AMOLED; Pixel's names only the CYD, so built with Pixel the
 AMOLED's build stops at the start and says so.
+
+Under the faces, `src/render/` is portable C++ with no display library,
+which the boards, the native simulator and the WebAssembly one all
+build. Its `rig/` is the engine both faces are moving onto: the rig's
+channels, the types of a pack's tables, the ramp its fades ease on and
+the anchors a face reports (`rig.h`), and the mixer that plays a mood's
+styles, a look and reactions into the channels each frame (`mixer.h`).
+Staging writes the pack's rig as `rig_tables.h`
+([CHARACTER.md](../characters/CHARACTER.md) §15). The pixel face draws
+its face from it, with its moods' own art as parts, wherever a design's
+face is its mood's resting face, in the design's place
+(`render/pixel/rig_face.h`), so the CYD links the mixer; the gel doesn't
+use it yet.
 
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages in `firmware/.platformio-core`, inside the checkout.
@@ -110,6 +124,7 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 | microSD | SPI3 (SCK 2, MOSI 1, MISO 3, CS 17) | The voice, as on the CYD |
 | USB | The S3's own USB-Serial/JTAG | `/dev/cu.usbmodem*`; flashing needs no BOOT press |
 | Buttons | BOOT (IO0) | The main button. No LED |
+| Motion | QMI8658 on I2C (0x6B, else 0x6A) | Picked up, put down, shaken, a thump on the desk, face down (do not disturb) and up: `app/motion_gesture.h`'s first guesses, read every 20 ms at ±4 g (`amoled206/imu.cpp`). Its z is flipped to point out of the screen (`kFlipZ`: the chip reads about −1 g resting screen up); x and y are still a guess. Check them on the board, where `dbg.state`'s `imu` is the reading now (`internal/tools/boopctl state`) and `dbg.imu` stands in for the sensor. The CYD has no motion sensor |
 
 Waveshare's example repo (`waveshareteam/ESP32-S3-Touch-AMOLED-2.06`) has
 a recovery image in `FirmWare/` if you ever need the factory firmware back.
@@ -137,6 +152,11 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   Check inversion, colour order and the SPI pins first.
 - **Touch does nothing:** wrong pins, no calibration, or touch sharing the
   screen's bus.
+- **A hold doesn't dismiss the needs-you sign:** the finger must stay
+  down a second inside a spot 24 px wide each way
+  (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). On the CYD,
+  press firmly: a touch with no reading for 50 ms has let go, and its
+  release is a tap.
 - **Boop is silent, faces fine:** the popover says "No voice", and
   `ping`'s `card` says why. `no card`: the card is out, or exFAT (cards
   over 32 GB come that way; format it FAT32). `no pack`, no voice file: copy the character

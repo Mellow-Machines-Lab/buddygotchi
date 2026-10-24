@@ -1,6 +1,6 @@
 # VideoG Slime Blob — colleague handover
 
-Updated 2026-10-16. Imported from `VideoG-Slime-Blob` and integrated on
+Updated 2026-10-24. Imported from `VideoG-Slime-Blob` and integrated on
 `main`: this engine is the reference the AMOLED's gel face ports and the
 Mac's popover bundles. This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
@@ -67,16 +67,17 @@ consumes credits.
 | Body/material | Procedural gel dome, blue glow, black stage, WebGL + Canvas fallback | Art review, production renderer/board budget |
 | Baseline motion | Accepted V1 springs and timing, source-hash protected | Ports require equivalence tests, not just matching names |
 | Faces | V3 candidate faces for every canonical mood, plus two face alternates | Owner review of cuteness/readability at target size |
-| Acting | Three authored gesture recipes per expression; recipes share primitives | Tune every recipe in motion, layer activity choreography |
+| Acting | Three authored gesture recipes per expression; recipes share primitives. Idle comedy: a yawn, a doze and a sneeze for every mood, a long yawn for the low moods, zoomies for excited | Tune every recipe in motion, layer activity choreography; owner review of the comedy on the board |
 | Drag | Bounded local surface pull, face follows body, release wobble | Host-boundary termination and real touchscreen QA |
 | Mood topology | Complete design graph and 295 tested directed bridges, three variants each | Host eligibility/pacing, Jev choices, production enum migration |
-| Activity/state | All 23 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes | Physical board measurements/review |
-| Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library | Speaker review and physical audio latency |
+| Activity/state | All 25 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures and the notice's three takes; occasions for idle, typing and sleep (the part of the day, holidays, a party, busy and frantic work, long idle, work and sleep) | Physical board measurements/review |
+| Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library, a sneeze and a snore's breath among them | Speaker review and physical audio latency; the snore's level |
 
 **Coverage is earned by execution.** The preview has all scene families, an
 event-script player and local clip recording. Its direct mood selector
 bypasses graph traversal; pokes preserve mood. Full-matrix tests exercise
-every active cell and all three variations, each start context and completion
+every active cell and all its variations (idle's comedy and a success's
+hiccups included), each start context and completion
 outcome, plus the explicit quiet aliases. The owner approved the initial
 24-clip representative set before expansion. All directed bridges are exercised
 from mid-gesture, with rest, drag and alert interruption checks. Production
@@ -90,7 +91,9 @@ sketch timbres and an opt-in browser player.
 - [MOODS.md](MOODS.md): generated readable inventory, face descriptions,
   body behavior and every outgoing ordinary/dramatic edge.
 - [expressions.json](expressions.json): V3 art profiles, reference mapping,
-  three gesture recipes per expression. Edit this, then rebuild.
+  three gesture recipes per expression, the comedy gags idle plays
+  (`gags`, `idleGags`, an expression's own `gags`), the board's gestures
+  (`gestures`) and the looks' occasions (`occasions`). Edit this, then rebuild.
 - [state-plan.json](state-plan.json) and [STATES.md](STATES.md): activity
   coverage, scene reuse, events and outcome/context distinctions.
 - [coverage.json](coverage.json): generated checklist for every mood×state;
@@ -125,8 +128,10 @@ and [render/face-painter.mjs](render/face-painter.mjs): draw engine controls.
   that set. The generated [preview/review-cases.json](preview/review-cases.json)
   limits the server's capture filenames to these two verified sets.
 - [tools/smooth.mjs](tools/smooth.mjs): the per-frame bounds on what is
-  drawn (no jolt at an event, face ratios in range, props without pops, a
-  face that never fades) that the engine, bridge and scene checks apply.
+  drawn (no jolt at an event, drawn sizes that follow their controls, arts
+  that cross over and props without pops) that the engine, bridge and scene
+  checks apply. That the face never fades is checked on the port's painter,
+  in `test_gel`.
 
 ## 1. Mood, state, personality and variation are different things
 
@@ -231,14 +236,16 @@ nine reusable scene families. Most work states share one persistent
 computer/keyboard, with small overlays and state-specific behavior.
 There is no need for hundreds of unrelated professions or props.
 
-Every mood/state cell has three variants in [coverage.json](coverage.json),
-with implementation status earned by full-matrix tests. All are implemented
+Every mood/state cell has three variants in [coverage.json](coverage.json)
+(idle six, asleep four, a successful finish four: the comedy of
+[CONTINUITY.md](CONTINUITY.md); a gesture ten, one for each), with implementation status earned by full-matrix tests. All are implemented
 in the reference engine or justified quiet aliases; this does not establish
 production integration or port equivalence.
 For normal active states, compose its mood face/acting profile with the
 shared state scene and bounded variations. For asleep/no_app, reuse quiet
 resting choreography and suppress dramatic acting/SFX while retaining the
-stored mood. These are deliberate aliases, not angry sleeping faces.
+stored mood. These are deliberate aliases, not angry sleeping faces; asleep
+only snores now and then, a slight swell and a soft breath.
 
 Special cases deserve authored composition: crying+working can slump and
 occasionally drip liquid tears by the keyboard; grumpy+terminal has compact

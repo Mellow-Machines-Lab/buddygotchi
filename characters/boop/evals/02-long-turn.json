@@ -5,6 +5,6 @@
   "why": "PERSONALITY's Examples: a very long turn done is a success in an excited face, held long; no rule plays a finish. characters/boop/steering/mood/: calm, engaged and determined leave for excited, a jump a very long turn ending earns, or on the way for happy or proud",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "turn finished", "at": "20m", "expect": {"react": "proud|happy|excited", "animation": "success", "mood": "excited|proud|happy"}}
+    {"event": "turn finished", "at": "20m", "expect": {"react": "proud|happy|excited", "animation": "success", "mood": "excited|proud|happy", "said": "some"}}
   ]
 }

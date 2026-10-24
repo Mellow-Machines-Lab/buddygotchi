@@ -4,7 +4,7 @@
   "why": "characters/boop/steering/mood/engaged.md: engaged leaves for proud when a long turn ends with the agent saying the hard work is done and working; react.animation: a turn done whose last message says it works is a success",
   "mood": "engaged",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "migrate the user table to the new schema"},
+    {"event": "turn started", "at": "0s", "prompt": "migrate the user table to the new schema", "reading": {"kind": "refactor"}},
     {"event": "command", "at": "2m", "topic": "tests", "failed": false},
     {"event": "turn finished", "at": "4m", "message": "Done: the migration is written and applied, every user row moved over, and the full test suite passes.", "expect": {"react": "proud|happy|excited", "animation": "success", "mood": "proud"}}
   ]

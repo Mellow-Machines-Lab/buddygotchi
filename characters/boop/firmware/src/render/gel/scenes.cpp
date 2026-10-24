@@ -32,28 +32,27 @@ void prop(Spring& s, F dt, F target, int frequency, int damping) {
 }  // namespace
 void Ramp::at(T time, F& value, F& slope) const {
   T elapsed = time - start;
-  if (!active || elapsed >= T(kPropRampMs)) {
+  if (!active || elapsed >= T(windowMs)) {
     value = to;
     slope = 0;
     return;
   }
-  F s = elapsed / kPropRampMs, s2 = s * s, s3 = s2 * s;
-  value = clamp((s3 * 2 - s2 * 3 + 1) * from + (s3 - s2 * 2 + s) * tangent + (s2 * 3 - s3 * 2) * to, 0, 1);
-  slope = (s2 * 6 - s * 6) * from + (s2 * 3 - s * 4 + 1) * tangent + (s * 6 - s2 * 6) * to;
+  hermite(from, tangent, to, elapsed / windowMs, value, slope);
 }
 F Ramp::value(T time) const {
   F v, slope;
   at(time, v, slope);
   return v;
 }
-void Ramp::retarget(F next, T time) {
+void Ramp::retarget(F next, T time, int overMs) {
   if (next == to) return;
   F value, slope;
   at(time, value, slope);
   from = value;
-  tangent = slope;
+  tangent = slope * (F(overMs) / F(windowMs));
   to = next;
   start = time;
+  windowMs = overMs;
   active = true;
 }
 const char* Scenes::phaseAt(T age) const {
@@ -97,17 +96,16 @@ void Scenes::refresh(Prop prop, bool reduced) {
     case kResultProp:
       resultProp.state = route.state;
       resultProp.known = true;
+      resultProp.gift = recipe.gift;
       resultProp.outcome = route.outcome;
       resultProp.label = recipe.label                         ? recipe.label
                          : route.outcome == Outcome::kSuccess ? "COMPLETE"
                          : route.outcome == Outcome::kFailure ? "FAILED"
                                                               : "FINISHED";
-      resultProp.reveal = cardReveal();
       break;
     case kStartProp:
       startProp.label = recipe.label;
       startProp.ctx = route.ctx;
-      startProp.reveal = cardReveal();
       break;
     case kHelpersProp:
       helpersProp.returning = route.state == SceneState::kHelperReturn;
@@ -125,9 +123,25 @@ void Scenes::refresh(Prop prop, bool reduced) {
       touchKnown = true;
   }
 }
-// A prop whose route ends fades out with its last content. New content (a new
-// request, or the helpers' next cycle) waits until nothing of the old is
-// drawn, then fades in from zero.
+// A card's reveal is its slot's own ramp: up over kCardRevealMs from its
+// reveal contact, down over the recovery, each from its time on the route's
+// clock. Once the route ends, nothing retargets it, so it carries on as it
+// was going while the slot's ramp fades the card out.
+void Scenes::cardReveal(Ramp& reveal) const {
+  if (!resultRevealed) {
+    reveal.reset();
+    return;
+  }
+  const T down = recipe.duration - T(480);
+  if (ageMs >= down)
+    reveal.retarget(0, started + down, 480);
+  else
+    reveal.retarget(1, started + revealAt, kCardRevealMs);
+}
+// A prop whose route ends fades out with its last content (a card's reveal
+// going on as it was), so it never stops dead. New content (a new request,
+// or the helpers' next cycle) waits until nothing of the old is drawn, then
+// fades in from zero.
 void Scenes::updateProps(T time, bool reduced) {
   for (int p = 0; p < kProps; ++p) {
     const Prop prop = Prop(p);
@@ -135,18 +149,21 @@ void Scenes::updateProps(T time, bool reduced) {
     const bool want = wants(prop);
     bool same = slot.on == want && (!want || prop == kAlertProp ||
                                     (slot.id == requestId && (prop != kHelpersProp || slot.iteration == iteration)));
-    if (!same && (slot.ramp.value(time) * drawnFactor(prop)).raw == 0) {
+    if (!same && visible(prop, time).raw == 0) {
       slot.on = want;
       if (want && slot.id != requestId) slot.id = requestId;
       slot.iteration = iteration;
       slot.ramp.reset();
+      slot.reveal.reset();
       same = true;
     }
     if (want && same) {
       refresh(prop, reduced);
       slot.ramp.retarget(1, time);
-    } else
+      if (card(prop)) cardReveal(slot.reveal);
+    } else {
       slot.ramp.retarget(0, time);
+    }
   }
 }
 void Scenes::pickRecipe(T time, Random& random) {
@@ -164,11 +181,28 @@ void Scenes::pickRecipe(T time, Random& random) {
       phase = "enter";
       return;
     }
-  variant = route.moment && route.moment->value.variant >= 0   ? route.moment->value.variant
-            : !route.quiet && route.state != SceneState::kIdle ? bags[mood][recipeState(route)].next(random)
-                                                               : 0;
+  // The host's take if its state has it; the first rest is always the still
+  // one, and asleep deals from its bag after that. A look deals an
+  // occasion's take instead, while one fits, kOccasionShare of the time
+  // (numbered after the row's own); a gesture's take is the board's, or
+  // the first.
+  const int row = recipeState(route), count = takes(row), asked = route.moment ? route.moment->value.variant : -1;
+  const bool ask = asked >= 0 && asked < count;
+  const bool deal =
+      !ask && route.state != SceneState::kGesture &&
+      ((!route.quiet && route.state != SceneState::kIdle) || (route.state == SceneState::kAsleep && iteration));
+  int look = -1;
+  if (deal && !route.moment) {
+    int fit[slime::kLookOccasionCount], k = 0;
+    for (int i = 0; i < slime::kLookOccasionCount; ++i) {
+      const auto& o = slime::kLookOccasions[i];
+      if (o.row == row && fits(o.when, o.after, when, lookMs)) fit[k++] = i;
+    }
+    if (k && random.unit() < slime::kOccasionShare) look = fit[random.index(k)];
+  }
+  variant = ask ? asked : look >= 0 ? count + look : deal ? bags[mood][row].next(random, count) : 0;
   profileExpression = expression;
-  const auto* base = &slime::kRecipes[expression][recipeState(route)][variant];
+  const auto* base = look >= 0 ? &slime::kLookOccasions[look].recipe : &take(expression, row, variant);
   uint32_t seed = random.state;
   recipe = realize(*base, random);
   Saved saved{identityKey(requestId), variant, profileExpression, base, seed};
@@ -222,7 +256,7 @@ void Scenes::setRoute(const Route& next, T time, int nextExpression, Random& ran
       started = route.moment->startedAt + recipe.duration * iteration;
       ageMs = time - started;
       while (cursor < recipe.count && recipe.contacts[cursor].at <= ageMs) {
-        if (recipe.contacts[cursor].kind >= kAlert) {
+        if (reveals(recipe.contacts[cursor].kind)) {
           resultRevealed = true;
           revealAt = recipe.contacts[cursor].at;
         }
@@ -247,7 +281,8 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
         ++iteration;
         pickRecipe(time, random);
       }
-    } else if (isDesk(route.state) || route.state == SceneState::kListening) {
+    } else if (isDesk(route.state) || route.state == SceneState::kListening || route.state == SceneState::kAsleep) {
+      // Asleep picks again after each take, as routine work does, so it can snore.
       ++iteration;
       pickRecipe(time, random);
     }
@@ -255,7 +290,7 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
   ageMs = max(0, time - started);
   if (route.quiet || route.state == SceneState::kIdle) {
     phase = ageMs < 240 ? "enter" : "sustain";
-    if (route.moment && ageMs >= recipe.duration) completed = true;
+    if ((route.moment || route.state == SceneState::kAsleep) && ageMs >= recipe.duration) completed = true;
   } else if (ageMs < 240)
     phase = "enter";
   else if (ageMs < recipe.duration - 480)
@@ -266,10 +301,11 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
     phase = "sustain";
     completed = true;
   }
+  // Quiet rest has no contacts but a snore's breaths.
   while (cursor < recipe.count && ageMs >= recipe.contacts[cursor].at) {
     int index = cursor++;
     const auto& c = recipe.contacts[index];
-    if (route.quiet || (grab && c.kind < kAlert)) continue;
+    if ((route.quiet && c.kind != kBreath) || (grab && !reveals(c.kind))) continue;
     last = {
         requestId,
         generation,
@@ -281,7 +317,7 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
         c.strength};
     contacts.push_back(last);
     hasLast = true;
-    if (c.kind >= kAlert && c.kind != kAlert) {
+    if (reveals(c.kind) && c.kind != kAlert) {
       resultRevealed = true;
       revealAt = c.at;
     }
@@ -297,7 +333,9 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
        failure = route.state == SceneState::kTaskComplete && route.outcome == Outcome::kFailure;
   F recoveryPose[3]{};
   const auto& profile = slime::kProfile[profileExpression];
-  if (active && !std::strcmp(phase, "recover") && !profile.representative) {
+  // A fourth take (the hiccups) has no gesture of its own to recover with,
+  // and a recipe with a gag of its own recovers with that.
+  if (active && !std::strcmp(phase, "recover") && !profile.representative && variant < kGestures && recipe.gag < 0) {
     const auto& perf = profile.performances[variant];
     T pt = F(1 - (recipe.duration - ageMs) / 480) * F(perf.duration);
     for (int i = 0; i < perf.count; ++i) {
@@ -326,9 +364,13 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
                      : F(0)) *
               reveal +
           present * (route.state == SceneState::kError ? q(-.025) : q(.018)) + recoveryPose[2]};
-  const F limits[] = {q(.08), q(.06), q(.05)};
+  // A snore's breath swells the sleeping body a little, rising and falling.
+  F swell = 0;
+  if (route.quiet && hasLast && last.kind == kBreath && time - last.timeMs < T(slime::kSnoreSwellMs))
+    swell = square(sin((time - last.timeMs) / slime::kSnoreSwellMs * pi)) * last.strength * slime::kSnoreSwell;
+  const F limits[] = {q(.08), q(.06), q(.05)}, scale = reduced ? q(.18) : F(1);
   for (int i = 0; i < 3; ++i)
-    integrate(activity[i], dt, active ? target[i] * (reduced ? q(.18) : F(1)) : F(0), 12, 10, limits[i], q(1.2));
+    integrate(activity[i], dt, active ? target[i] * scale : i == 1 ? swell * scale : F(0), 12, 10, limits[i], q(1.2));
   prop(desk, dt, isDesk(route.state) || isDesk(route.baseState) ? 1 : 0, 10, 14);
   prop(quietMix, dt, route.quiet ? 1 : 0, 12, 10);
   updateProps(time, reduced);

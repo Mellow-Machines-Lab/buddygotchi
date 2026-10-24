@@ -6,6 +6,8 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="studio.css">
 <script src="packs.js" defer></script>
+<script src="board.js" defer></script>
+<script src="views.js" defer></script>
 <script src="studio.js" defer></script>
 </head>
 <body>
@@ -19,6 +21,9 @@
     <div class="segmented views" data-view-choice role="group" aria-label="View">
       <button type="button" data-value="scene" aria-pressed="true">Scene</button>
       <button type="button" data-value="matrix" aria-pressed="false">Matrix</button>
+      <button type="button" data-value="transitions" aria-pressed="false">Transitions</button>
+      <button type="button" data-value="references" aria-pressed="false">References</button>
+      <button type="button" data-value="review" aria-pressed="false">Review</button>
     </div>
   </div>
   <div class="characters" role="tablist" aria-label="Character" data-cards></div>
@@ -26,7 +31,7 @@
 
 <p class="missing" data-missing hidden>No pack data yet. From the repository root, run <code>python3 characters/charactergen.py</code>, then reload.</p>
 
-<main class="layout">
+<main class="layout" data-view="scene">
   <section class="stage-column" aria-label="Preview">
     <div class="stage-frame">
       <div class="stage" id="stage"></div>
@@ -86,10 +91,70 @@
   </section>
 </main>
 
-<section class="matrix" data-matrix aria-label="Every mood and state" hidden>
+<section class="matrix" data-matrix data-view="matrix" aria-label="Every mood and state" hidden>
   <p class="matrix-head" data-matrix-about></p>
   <p class="board-now" data-board-now hidden><span class="dot"></span><span data-board-text></span> <button type="button" data-board-show>Show it</button></p>
   <div class="matrix-scroll" data-matrix-scroll><table data-matrix-table></table></div>
+</section>
+
+<section class="board-view" data-view="transitions" aria-label="Transitions" hidden>
+  <p class="view-head">From one mood and state to another on the board's own firmware (WebAssembly), on its frozen clock: a frame every 40 ms across the change, and how many pixels each changed from the one before by more than 24 levels, as <code>internal/tools/fluid/measure.py</code> counts them. A frame several times the median is a jump.</p>
+  <div class="pair">
+    <fieldset data-from><legend>Start</legend><select aria-label="Start mood"></select><select aria-label="Start state"></select></fieldset>
+    <span class="arrow" aria-hidden="true">→</span>
+    <fieldset data-to><legend>End</legend><select aria-label="End mood"></select><select aria-label="End state, or a reaction"></select></fieldset>
+  </div>
+  <p class="status" data-said aria-live="polite"></p>
+  <div class="recording">
+    <div class="frame-view">
+      <div class="screen"><canvas data-frame></canvas></div>
+      <div class="row transport" data-player>
+        <button type="button" data-go>Play</button>
+        <label class="grow scrub"><span class="visually-hidden">Frame</span><input type="range" data-scrub min="0" max="0" value="0"></label>
+        <span class="time" data-at></span>
+      </div>
+    </div>
+    <aside class="jumpiest">
+      <div class="row"><h3>Jumpiest</h3><button type="button" data-rank>Rank</button></div>
+      <p class="hint" data-rank-said aria-live="polite"></p>
+      <progress data-rank-progress max="1" value="0" hidden></progress>
+      <ol data-jumpiest></ol>
+    </aside>
+  </div>
+  <svg class="graph" data-graph preserveAspectRatio="none" role="img" aria-label="Each frame's change"></svg>
+  <div class="strip" data-strip></div>
+</section>
+
+<section class="board-view" data-view="references" aria-label="References" hidden>
+  <p class="view-head">What people gave to make the character from (<code>characters/&lt;pack&gt;/references/</code>, CHARACTER.md §16): each with its status, its note, the agent's reading and what it became, beside the board playing what it shows, frame for frame.</p>
+  <p class="missing" data-none hidden>This pack has no references yet. Take one in with <code>internal/tools/boopctl reference new</code>.</p>
+  <div class="refs">
+    <nav class="ref-list" data-list aria-label="References"></nav>
+    <article class="ref" data-detail hidden>
+      <header><h2 data-heading></h2><span data-kind></span></header>
+      <p class="note" data-ref-note></p>
+      <div class="row" data-files></div>
+      <div class="side-by-side">
+        <figure><div class="ref-media" data-media></div><figcaption data-media-caption></figcaption></figure>
+        <figure><div class="screen"><canvas data-board></canvas></div><figcaption data-board-caption aria-live="polite"></figcaption></figure>
+      </div>
+      <div class="row transport" data-player>
+        <button type="button" data-go>Play</button>
+        <label class="grow scrub"><span class="visually-hidden">Frame</span><input type="range" data-scrub min="0" max="0" value="0"></label>
+        <span class="time" data-at></span>
+      </div>
+      <dl class="meaning"><dt>Became</dt><dd data-became></dd><dt>Shows</dt><dd data-show></dd></dl>
+      <h3>Reading</h3>
+      <pre class="reading" data-reading></pre>
+    </article>
+  </div>
+</section>
+
+<section class="board-view" data-view="review" aria-label="Review" hidden>
+  <p class="view-head">What agents put up for review (<code>characters/&lt;pack&gt;/review/queue.json</code>), before and after. Approve it, or say what to change: each verdict goes to <code>review/notes.jsonl</code>, where the agents read it.</p>
+  <p class="missing" data-file hidden>Opened from a file, the page can't save a verdict. To comment, open it from the studio's server: <code>node characters/studio/serve.cjs --port 4190</code>, then <code>http://127.0.0.1:4190/</code>.</p>
+  <p class="missing" data-none hidden>Nothing is up for review.</p>
+  <div class="review-items" data-items></div>
 </section>
 
 <details class="tools" data-tools hidden>
@@ -99,7 +164,7 @@
 
 <footer class="foot">
   <p><kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke · <kbd>M</kbd> matrix</p>
-  <p>Works offline. Nothing here talks to the app or the network. Served by <code>make simulator</code>, the matrix marks what the simulated board shows. Each character's preview comes from its own pack.</p>
+  <p>Works offline. Nothing here talks to the app or the network. Each character's preview comes from its own pack, and each board's is its firmware, which runs from the studio's server (or <code>make simulator</code>, where the matrix also marks what the simulated board shows), as does saving a verdict.</p>
 </footer>
 
 </div>
