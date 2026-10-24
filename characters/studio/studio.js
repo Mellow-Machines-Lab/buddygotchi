@@ -1,8 +1,10 @@
 // Character Studio: one page for any character pack's moods, states and sounds.
-// The page owns the selection, the pickers and the URL. A pack that declares
-// a `studio` entry in its character.json brings its own preview: scripts that
-// call Studio.register(id, adapter) with the entry's id (README.md, "Writing
-// an adapter").
+// The page owns the selection, the pickers, the views and the URL. A pack that
+// declares a `studio` entry in its character.json brings its own preview:
+// scripts that call Studio.register(id, adapter) with the entry's id
+// (README.md, "Writing an adapter"); each face its boards have gets the
+// board's own (board.js). The views beyond the scene and the matrix are
+// views.js's.
 // charactergen.py writes the pack data this reads, window.StudioData (packs.js).
 (() => {
   const root=document.getElementById('studio');
@@ -170,12 +172,16 @@
     ctx.stage.dataset.kind=sel.card;
     try{await load(sel.pack,sel.card);}catch(error){$('[data-status]').textContent=error.message;}
     if(ticket!==switching)return;
-    adapter=adapters[sel.pack+'/'+sel.card]||null;
+    const key=sel.pack+'/'+sel.card,face=entryOf(sel.pack,sel.card)?.board;
+    adapter=adapters[key]||(face?adapters[key]=StudioBoard.adapter(sel.pack,face):null);
     if(entryOf(sel.pack,sel.card)&&!adapter)$('[data-status]').textContent=`${label(sel.card)}'s scripts didn't register an adapter.`;
     instance=adapter?adapter.create(ctx):null;
     instance?.setSound();
-    if(view==='matrix'){clearMatrix();rested=false;if(adapter?.transport==='live'){instance.setPaused(true);rested=true;}buildMatrix();fillSoon();}
+    rested=false;
+    if(view!=='scene'&&adapter?.transport==='live'){instance.setPaused(true);rested=true;}
+    if(view==='matrix'){clearMatrix();buildMatrix();fillSoon();}
     render({autoplay:view==='scene'});
+    views[view]?.card?.();
   }
   function change(patch,{resetVariant=false}={}){
     if(busyNow())return;
@@ -187,11 +193,12 @@
   // Every mood and state at once, for the card shown. Each cell is the
   // character's own preview, made by its adapter as the stage's is, silent,
   // and looping where the adapter can (`preview()`). Only cells on screen
-  // play, at most LIMIT at once, a hovered cell first: a live character's
-  // each holds a WebGL context, and a page gets about 16. A cell opens its scene.
+  // play, at most LIMIT at once, a hovered cell first, then those wholly on
+  // screen: a live character's each holds a WebGL context, and a page gets
+  // about 16. A cell opens its scene.
   const LIMIT={clip:60,live:12};
   let view='scene';
-  const matrix={table:$('[data-matrix-table]'),key:'',cells:[],playing:new Map(),seen:new Set(),hovered:null,observer:null,timer:0};
+  const matrix={table:$('[data-matrix-table]'),key:'',cells:[],playing:new Map(),seen:new Map(),hovered:null,observer:null,timer:0};
   function buildMatrix(){
     const key=sel.pack+'/'+sel.card+'/'+Boolean(adapter);
     if(matrix.key===key)return;
@@ -216,12 +223,13 @@
       }
     }
     matrix.table.replaceChildren(thead,tbody);
-    // On screen is under the sticky state row and right of the sticky mood column, and half a cell at least.
+    // On screen is under the sticky state row and right of the sticky mood column, and half a cell at least;
+    // `seen` has how much of each is.
     const top=thead.getBoundingClientRect().height,left=tbody.querySelector('th[scope=row]')?.getBoundingClientRect().width||0;
     matrix.observer=new IntersectionObserver(entries=>{
-      for(const e of entries)e.isIntersecting?matrix.seen.add(e.target):matrix.seen.delete(e.target);
+      for(const e of entries)e.intersectionRatio>=.5?matrix.seen.set(e.target,e.intersectionRatio):matrix.seen.delete(e.target);
       fillSoon();
-    },{root:$('[data-matrix-scroll]'),rootMargin:`-${Math.ceil(top)}px 0px 0px -${Math.ceil(left)}px`,threshold:.5});
+    },{root:$('[data-matrix-scroll]'),rootMargin:`-${Math.ceil(top)}px 0px 0px -${Math.ceil(left)}px`,threshold:[.5,1]});
     for(const c of matrix.cells)matrix.observer.observe(c);
     if(board.shows)markBoard(board.shows,'');
     const n=packs[sel.pack].moods.length;
@@ -233,7 +241,8 @@
   function fill(){
     if(view!=='matrix'||!adapter)return;
     const first=matrix.hovered?[matrix.hovered]:[];
-    const want=[...first,...matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered)].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
+    const on=matrix.cells.filter(c=>matrix.seen.has(c)&&c!==matrix.hovered),whole=on.filter(c=>matrix.seen.get(c)===1);
+    const want=[...first,...whole,...on.filter(c=>!whole.includes(c))].slice(0,LIMIT[adapter.transport]||LIMIT.clip);
     for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
     for(const c of want)if(!matrix.playing.has(c))mount(c);
   }
@@ -300,23 +309,31 @@
     $('[data-board-text]').textContent=shows?`The simulator shows ${title(shows.mood)} · ${stateInfo[shows.state]?.label||shows.state}`+(shows.variant?`, variation ${shows.variant}`:'')+(cell?'':' (not a cell here)')+'.':text;
   }
 
-  // The stage's own preview rests while the matrix shows: a live one is one of the page's WebGL contexts.
+  // ── Views ──────────────────────────────────────────────────────────────
+  // The scene, the matrix, and views.js's, each made with what it needs of the page.
+  const api={root,data,packs,sel,title,stateInfo,stateIds,stateGroups,families,writeHash,
+    entry:()=>entryOf(sel.pack,sel.card),
+    boardCards:()=>cardsOf(sel.pack).filter(c=>entryOf(sel.pack,c)?.board),
+    switchCard:card=>switchCard(sel.pack,card),
+    open(patch){setView('scene');change({face:null,...patch});}};
+  const views=Object.fromEntries(Object.entries(window.StudioViews||{}).map(([name,make])=>[name,make(api)]));
+  const VIEWS=['scene','matrix',...Object.keys(views)];
+  // The stage's own preview rests in every other view: a live one is one of the page's WebGL contexts.
   let rested=false;
-  function setView(next){
-    if(next===view||busyNow())return;
-    view=next;
-    $('.layout').hidden=view==='matrix';$('[data-matrix]').hidden=view!=='matrix';
+  // `params` (the address's) re-enter the view shown, as a link to it does.
+  function setView(next,params){
+    if(!VIEWS.includes(next)||busyNow())return;
+    if(next===view){if(params)views[view]?.enter(params);return;}
+    const was=view;view=next;
+    for(const el of $$('[data-view]'))el.hidden=el.dataset.view!==view;
     setSegment($('[data-view-choice]'),view);
-    if(view==='matrix'){
-      if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
-      else if(instance?.playing)instance.stop();
-      buildMatrix();fillSoon();
-      if(!board.timer)askBoard();
-    }else{
-      clearTimeout(board.timer);board.timer=0;
-      for(const c of [...matrix.playing.keys()])unmount(c);
-      if(rested){instance?.setPaused(false);rested=false;}
-    }
+    if(was==='matrix'){clearTimeout(board.timer);board.timer=0;for(const c of [...matrix.playing.keys()])unmount(c);}
+    views[was]?.leave?.();
+    if(view==='scene'){if(rested){instance?.setPaused(false);rested=false;}}
+    else if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
+    else if(instance?.playing)instance.stop();
+    if(view==='matrix'){buildMatrix();fillSoon();if(!board.timer)askBoard();}
+    views[view]?.enter(params);
     writeHash();
   }
 
@@ -325,9 +342,10 @@
     const p=new URLSearchParams({pack:sel.pack,c:sel.card,mood:sel.face||sel.mood,state:sel.state});
     const fact=facts[sel.state];if(fact)p.set(fact.name,sel[fact.name]);
     if(sel.variant)p.set('v',String(sel.variant+1));
-    if(view==='matrix')p.set('view','matrix');
+    if(view!=='scene')p.set('view',view);
+    views[view]?.hash?.(p);
     if(board.url)p.set('board',board.url);
-    const hash='#'+p.toString().replaceAll('%3A',':');
+    const hash='#'+p.toString().replaceAll('%3A',':').replaceAll('%2F','/');
     if(location.hash!==hash)history.replaceState(null,'',hash);
   }
   function readHash(){
@@ -337,7 +355,7 @@
     if(mood.includes(':')){face=mood;mood=mood.split(':')[0];}
     const out={pack,card:cardsOf(pack).includes(p.get('c'))?p.get('c'):cardsOf(pack)[0],mood,face,
       state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1),
-      view:p.get('view')==='matrix'?'matrix':'scene',board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
+      view:VIEWS.includes(p.get('view'))?p.get('view'):'scene',params:p,board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
     for(const fact of Object.values(facts)){const v=p.get(fact.name);out[fact.name]=fact.options.some(o=>o.id===v)?v:fact.options[0].id;}
     return out;
   }
@@ -378,7 +396,7 @@
   document.addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey||busyNow()||e.target.closest?.('input,select,textarea'))return;
     if(e.key==='m'||e.key==='M'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
-    if(view==='matrix')return;
+    if(view!=='scene')return;
     const i=stateIds.indexOf(sel.state);
     if(e.key==='ArrowLeft')step(-1);
     else if(e.key==='ArrowRight')step(1);
@@ -391,14 +409,15 @@
     started=true;e.preventDefault();
   });
   window.addEventListener('hashchange',()=>{
-    const {view:nextView,board:url,...next}=readHash();board.url=url;setView(nextView);
+    const {view:nextView,board:url,params,...next}=readHash();board.url=url;setView(nextView,params);
     if(next.pack!==sel.pack||next.card!==sel.card){Object.assign(sel,next,{pack:sel.pack,card:sel.card});switchCard(next.pack,next.card,next.variant);}
     else{Object.assign(sel,next);render();}
   });
 
   // For browser checks and the console: select by fields, or by a scene id the adapter knows.
-  const ready=(async()=>{const {view:firstView,board:url,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});await switchCard(first.pack,first.card,first.variant);setView(firstView);})();
+  const ready=(async()=>{const {view:firstView,board:url,params,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});await switchCard(first.pack,first.card,first.variant);setView(firstView,params);})();
   root.studio={sel,ready,packs,get adapter(){return instance;},get view(){return view;},setView,
+    views:Object.fromEntries(Object.entries(views).map(([name,v])=>[name,v.state])),
     get matrix(){return {cells:matrix.cells.length,playing:matrix.playing.size,transport:adapter?.transport||null,board:board.shows};},
     boardCell,
     async select({pack,character,...patch}){if(pack||character)await switchCard(pack||sel.pack,character||sel.card);change(patch);},

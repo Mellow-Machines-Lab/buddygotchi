@@ -255,7 +255,8 @@ test('the cable never waits on a client, and drops a line too long for the board
 
 // /board asks the page's board for dbg.state, as a tool on the cable would,
 // and the tools hear the reply too; with no board it says so. The Character
-// Studio is served beside the page, and nothing outside characters/.
+// Studio is served beside the page, and nothing outside characters/; the
+// page's files again at /simulator/, as the studio's own server has them.
 // Needs no build: an empty dist and a page that answers by itself.
 test('the board says what it shows, and the studio is beside it', async t => {
   const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
@@ -271,6 +272,7 @@ test('the board says what it shows, and the studio is beside it', async t => {
   const studio = await fetch(`${url}/characters/studio/`);
   assert.equal(studio.status, 200);
   assert.match(await studio.text(), /Character Studio/);
+  assert.equal((await fetch(`${url}/simulator/boop-sim.wasm`)).status, 200, 'the page again at /simulator/, where the studio finds the board');
   // Sent as it is: fetch would tidy the .. away first.
   const raw = await new Promise(ok => { let got = ''; const c = net.connect(port, '127.0.0.1', () => c.write('GET /characters/../Package.swift HTTP/1.0\r\n\r\n'));
     c.on('data', d => { got += d; }); c.on('close', () => ok(got)); });

@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-22. A board with no board: the firmware's own code in a
+Updated 2026-10-24. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -18,7 +18,12 @@ run it.
 `http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
 state" link opens its matrix with `&board=/board`, so it marks the cell
 the board shows now (`/board`, under USB below; the first board's, with
-several).
+several). The studio's own boards, a preview of each face and its
+Transitions and References, are this `Board` too, each its own: the
+server serves the page's files again at `/simulator/`, where the studio
+looks for them under its own server as well
+([characters/studio/README.md](../characters/studio/README.md), On the
+board).
 
 **With the Mac app.** While the simulator runs, Boop's Settings shows it
 under Device: **Use it** makes it Boop's body, with your real hooks and
@@ -102,7 +107,8 @@ The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
 board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}`,
 whenever one changes) and `power`. The script knows nothing of what the
-board's messages mean: they pass through it.
+board's messages mean: they pass through it. `SHAKE` is a shake as the
+motion sensor reads it, for any page's hand to give `board.motion`.
 
 ## Demos
 
@@ -276,8 +282,9 @@ make -C internal sim-test
   client's message over 512 bytes dropped whole; two cables, each page's
   messages reaching its own socket and no other's; `/board` answering with
   the board's `dbg.state` and not a line before it, a tool hearing it too,
-  and `null` with no page; the studio served beside the page, and a `..`
-  kept inside `characters/`; a recording played into a board in
+  and `null` with no page; the studio served beside the page, a `..`
+  kept inside `characters/`, and the page again at `/simulator/`; a
+  recording played into a board in
   order; and a voice file cut down to a demo's takes that the board plays
   from.
 

@@ -166,6 +166,32 @@ checked it in its commit.
    JavaScript reference (the Studio and the Mac's mirror run the
    WebAssembly engine instead).
 
+### Checkpoint 2, as built (2026-10-24)
+
+The intake and its checks are [CHARACTER.md](../characters/CHARACTER.md)
+§16, the tool `boopctl reference`, and the views the
+[Studio's README](../characters/studio/README.md). Where it differs from
+the sketch above, and why:
+
+- **The Studio runs the board for each face a pack's boards have**,
+  beside the JavaScript previews, with no entry in the pack: it's the
+  firmware, so it's the engine's. The views run on it, on its frozen
+  clock a frame every 40 ms, so a recording is the same every time.
+- **A reference's frames and sheets are committed** with it, no bigger
+  than 512 px a side: the reading cites them and the Studio scrubs them.
+- **`show` is a start and, as `anim`, the state asked for at the
+  reference's 0 ms**: the Transitions view's pair, so one recorder serves
+  both views.
+- **`became` names the rig's data** (a clip by its file, an expression
+  by its mood, art by a style, scene or accessory's art), checked, since
+  checkpoint 3 landed first. None of it stops a pack staging.
+- **The jumpiest list is the Mac's build's**, `measure.py --json` over
+  the everyday transitions into `review/fluid-<face>.json` (not kept), and
+  clicking one records it on the board in the page.
+- **A verdict goes through the Studio's server** (`POST /review`, from its
+  own page only) into `review/notes.jsonl`; from `file://` the page shows
+  the queue and says to use the server.
+
 ### Checkpoint 3, as built (2026-10-24)
 
 The rig core is `firmware/src/render/rig/` and its schema is

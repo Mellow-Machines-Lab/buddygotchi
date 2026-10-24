@@ -64,8 +64,10 @@ internal/app/Tests/GeneratedTestRunner.swift
 .character-build/
 .character
 
-# The studio page's data, which characters/charactergen.py writes for the packs here
+# The studio page's data, which characters/charactergen.py writes for the packs here,
+# and the transitions internal/tools/fluid/measure.py --json measured for it
 characters/studio/packs.js
+characters/*/review/fluid-*.json
 
 # The simulator, built for a browser (simulator/web/build.sh)
 simulator/web/dist/

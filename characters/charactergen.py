@@ -661,7 +661,7 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
             problems += [f"{pack.name}: references/{folder.name}: {p}" for p in reference_problems(folder, moods, ids, rig)]
         problems += [f"{pack.name}: review/{p}" for p in review(pack)[2]]
         entries = previews(character)
-        names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)]]
+        names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)] + boards(character)]
         if None in names or len(names) != len(set(names)):
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
@@ -721,6 +721,26 @@ def shared_previews(pack: Path, character: dict) -> list[tuple[Path, dict]]:
     return out
 
 
+def boards(character: dict) -> list[dict]:
+    """The studio's own preview of each face the pack's boards have (§9):
+    the board's firmware itself, built to WebAssembly (simulator/README.md)."""
+    faces = list(dict.fromkeys(character.get("faces", {}).values()))
+    return [{"id": f"board-{face}", "label": f"{face.title()} on the board", "about": "its firmware, in WebAssembly",
+             "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}} for face in faces]
+
+
+def fluid(pack: Path) -> dict:
+    """Each face's everyday transitions as internal/tools/fluid/measure.py
+    --json last measured them, review/fluid-<face>.json, which isn't kept."""
+    out = {}
+    for path in sorted((pack / "review").glob("fluid-*.json")):
+        try:
+            out[path.stem[len("fluid-"):]] = json.loads(path.read_text())["transitions"]
+        except (ValueError, KeyError, TypeError):
+            continue
+    return out
+
+
 def references_data(pack: Path, here) -> list[dict]:
     """Each reference, as the studio shows it: reference.json, the reading,
     and each file with the frames cut from it."""
@@ -739,10 +759,12 @@ def references_data(pack: Path, here) -> list[dict]:
 
 
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
-    """The studio page's data: the engine's states and, for each pack, its
-    moods, its studio entries (its own and those it uses), its references
-    and its review queue and notes, with paths from the page."""
-    data = {"chosen": chosen_pack.name, "states": states(studio), "packs": {}}
+    """The studio page's data: the engine's states, the staged pack and, for
+    each pack, its moods, its studio entries (its own, those it uses and
+    a board for each face), its references, its review queue and notes,
+    and its faces' measured transitions, with paths from the page."""
+    last = staged()
+    data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None, "states": states(studio), "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -760,10 +782,11 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> 
             "name": character["name"],
             "default_mood": character["default_mood"],
             "moods": [{k: m[k] for k in ("id", "meaning", "family") if k in m} for m in character["moods"]],
-            "studio": [entry for _, entry in entries],
+            "studio": [entry for _, entry in entries] + boards(character),
             "references": references_data(pack, page),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
                                              if isinstance(item.get(k), str)}} for item in queue], "notes": notes},
+            "fluid": fluid(pack),
         }
     return data
 

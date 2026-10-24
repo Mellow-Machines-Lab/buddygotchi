@@ -78,7 +78,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
 | `make -C internal eval-pixel` | `make build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
 
@@ -127,6 +127,13 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   assets, [its README](../characters/boop/tools/slimegen/README.md)).
+- `internal/tools/fluid/measure.py`: how fluid the everyday transitions
+  are (`transitions.jsonl`, recorded with `boopctl sim`), each frame's
+  change against the median; `--json FILE` writes them for the Character
+  Studio's Transitions, its jumpiest list
+  ([characters/studio/README.md](../characters/studio/README.md)).
+- `node characters/studio/check.cjs`: the Character Studio in a headless
+  browser, its matrix and its board's views (its README, Checking it).
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with

@@ -156,8 +156,17 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(data["chosen"], "plain")
         self.assertEqual(data["packs"]["art"]["studio"][0],
                          {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
+        board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
+                 "board": "face", "scripts": [], "styles": [], "wears": {}}
         self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
-                                                  "studio": [], "references": [], "review": {"queue": [], "notes": []}})
+                                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}, "fluid": {}})
+
+    def test_a_board_for_each_face(self):
+        """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
+        pack = self.pack("two", [{"id": "calm"}], faces={"cyd24": "pixel", "amoled206": "gel", "other": "pixel"})
+        self.assertEqual([e["id"] for e in gen.studio_data([pack], pack, self.studio)["packs"]["two"]["studio"]], ["board-pixel", "board-gel"])
+        clash = self.pack("clash", [{"id": "calm"}], [{"id": "board-face"}])
+        self.assertEqual(self.problems(clash), ["clash: each of its studio entries needs an id of its own"])
 
     def test_staging_takes_the_packs_own_files_only(self):
         """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources."""
@@ -491,6 +500,10 @@ class ReferenceRuleTests(unittest.TestCase):
             "show": {"mood": "happy", "state": "idle"}, "id": "2026-10-23-perk", "path": "../pal/references/2026-10-23-perk/",
             "became": [], "reading": "Beats.", "media": [{"file": "perk.gif", "kind": "gif", "frames": 3}]}])
         self.assertEqual(data["review"]["queue"][0]["after"], "../pal/review/shot.png")
+        write(self.pack / "review" / "fluid-gel.json", {"recording": "/tmp/x", "transitions": [{"name": "happy", "ratio": 32.0}]})
+        write(self.pack / "review" / "fluid-pixel.json", "{")
+        self.assertEqual(gen.studio_data([self.pack], self.pack, studio)["packs"]["pal"]["fluid"], {"gel": [{"name": "happy", "ratio": 32.0}]},
+                         "measure.py --json's file for each face, and none that isn't JSON")
 
 
 if __name__ == "__main__":

@@ -15,7 +15,9 @@ with its own cable: a WebSocket at /usb/NAME and its socket, and no /usb.
 The page shows them side by side with ?boards=NAME,NAME.
 
 It also serves characters/ at /characters/, so the Character Studio is at
-/characters/studio/, and /board (or /board/NAME) is what the board says it
+/characters/studio/, and the page's own files again at /simulator/, where
+the studio's board previews look for them under either server; and
+/board (or /board/NAME) is what the board says it
 shows: its reply to a `dbg.state` the server sends it, as a tool on the
 cable would, or null with no board; the studio's matrix marks it.
 
@@ -359,6 +361,10 @@ def main() -> int:
                 finally:
                     self.directory = here
             path = path.split("?")[0]
+            # /simulator/: the page's files again, where the studio finds the
+            # board under either server (characters/studio/serve.cjs too).
+            if path.startswith("/simulator/"):
+                path = path[len("/simulator"):]
             if path == "/voice.bin":
                 return args.voice
             # /voice/PACK.bin: a pack's own voice, for a board built for it.

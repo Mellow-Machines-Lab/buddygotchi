@@ -12,6 +12,9 @@ const CHUNK = 512;       // app::Sound::kChunk
 const OUT_RATE = 22050;  // voice::kOutRate
 const CANVAS = [320, 240];  // a touch is in the canvas's pixels on every board
 const PANEL = { pixel: CANVAS, gel: [502, 410] };  // each face's panel, until its first frame says
+/// A shake, as the motion sensor reads it: each reading in mg, held so many
+/// ms, in the shapes the board knows (firmware/src/app/motion_gesture.h).
+export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
 
 /// One simulated board: the core, switched on and off, with its USB as
 /// lines in and out. A page can have several. It fires `power` (on or
@@ -468,7 +471,7 @@ export class BoopSimulator extends Element {
     };
     // Held in a hand: never quite still, never a jolt.
     const hold = () => { let up = false; held = setInterval(() => board.motion(0, 0, (up = !up) ? 1100 : 900), 100); };
-    this.#button(tools, () => 'Shake', () => play([[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]]));
+    this.#button(tools, () => 'Shake', () => play(SHAKE));
     this.#button(tools, () => held ? 'Put down' : 'Pick up', async () => {
       if (held) { clearInterval(held); held = null; board.motion(...flat); return; }
       await play([[1250, 300]]);
