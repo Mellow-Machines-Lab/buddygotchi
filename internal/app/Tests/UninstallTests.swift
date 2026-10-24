@@ -17,10 +17,9 @@ final class UninstallTests: XCTestCase {
         try? FileManager.default.removeItem(at: home)
     }
 
-    /// Uninstalling takes out Boop's hooks, its socket's listing, its copy
-    /// of agent-hook and its login item, and nothing of anyone else's; and
-    /// keeps Boop's memory, so a Boop installed again is the same one.
-    func testUninstallTakesBoopOutAndKeepsItsMemory() throws {
+    /// Boop's hooks beside one of the person's own, its copy of agent-hook
+    /// and its socket's listing: what an uninstall finds.
+    func installed() throws -> (installer: HookInstaller, client: URL, claude: URL, environment: [String: String]) {
         let fm = FileManager.default
         let client = state.appendingPathComponent("bin/agent-hook")
         fm.createFile(atPath: client.path, contents: Data("#!/bin/sh\n".utf8), attributes: [.posixPermissions: 0o755])
@@ -34,26 +33,58 @@ final class UninstallTests: XCTestCase {
         XCTAssertEqual(installer.health(.claude), .installed)
         let environment = ["AGENT_HOOKS_DIR": home.appendingPathComponent(".agent-hooks").path]
         try HookSocket.register(state.appendingPathComponent("boop.sock").path, as: "boop", environment: environment)
-        // Another app's listing stays.
-        let other = HookSocket.directory(environment: environment) + "/other.sock"
-        try fm.createSymbolicLink(atPath: other, withDestinationPath: "/tmp/other.sock")
+        return (installer, client, claude, environment)
+    }
+
+    /// Uninstalling takes out Boop's socket's listing, its hooks, its copy
+    /// of agent-hook and its login item, and nothing of anyone else's; and
+    /// keeps Boop's memory, so a Boop installed again is the same one. A
+    /// copy of Boop that doesn't own the hooks keeps nothing.
+    func testUninstallTakesBoopOutAndKeepsItsMemory() throws {
+        let fm = FileManager.default
+        let (installer, client, claude, environment) = try installed()
+        let devCopy = HookSocket.directory(environment: environment) + "/\(AppSettings.copyName(URL(fileURLWithPath: "/tmp/mochi"))).sock"
+        try fm.createSymbolicLink(atPath: devCopy, withDestinationPath: "/tmp/mochi/boop.sock")
         try Data("name: Mochi\n".utf8).write(to: state.appendingPathComponent(MemoryStore.longTermFile))
         let login = LoginSwitch(on: true)
 
         let result = Uninstall.run(installer: installer, stateDir: state, loginItem: login.item, environment: environment)
 
         XCTAssertEqual(result.problems, [])
-        XCTAssertEqual(result.removed, ["claude's hooks", "the socket's listing", "agent-hook", "opening at login"])
+        XCTAssertEqual(result.kept, [])
+        XCTAssertEqual(result.removed, ["the socket's listing", "claude's hooks", "agent-hook", "opening at login"])
         let after = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: claude)) as? [String: Any])
         let stop = try XCTUnwrap((after["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]])
         XCTAssertEqual(stop.count, 1, "only the person's own Stop hook is left")
         XCTAssertFalse(fm.fileExists(atPath: home.appendingPathComponent(".codex").path), "nothing written for an agent that isn't here")
         XCTAssertNil(try? fm.destinationOfSymbolicLink(atPath: HookSocket.directory(environment: environment) + "/boop.sock"))
-        XCTAssertNotNil(try? fm.destinationOfSymbolicLink(atPath: other))
         XCTAssertFalse(fm.fileExists(atPath: client.path))
         XCTAssertFalse(fm.fileExists(atPath: state.appendingPathComponent("bin").path))
         XCTAssertFalse(login.on)
         XCTAssertTrue(fm.fileExists(atPath: state.appendingPathComponent(MemoryStore.longTermFile).path), "the memory stays")
+    }
+
+    /// The hooks' entries are every app's that listens: while another app
+    /// is listed, open or closed, they stay, and so does the agent-hook
+    /// they run, which that app's repair points at its own. Boop's listing
+    /// and login item still go, and the other's listing stays.
+    func testUninstallLeavesTheHooksToAnotherApp() throws {
+        let fm = FileManager.default
+        let (installer, client, _, environment) = try installed()
+        let other = HookSocket.directory(environment: environment) + "/other.sock"
+        try fm.createSymbolicLink(atPath: other, withDestinationPath: "/tmp/other.sock")
+        let login = LoginSwitch(on: true)
+
+        let result = Uninstall.run(installer: installer, stateDir: state, loginItem: login.item, environment: environment)
+
+        XCTAssertEqual(result.problems, [])
+        XCTAssertEqual(result.removed, ["the socket's listing", "opening at login"])
+        XCTAssertEqual(result.kept, ["the hooks and agent-hook, for other"])
+        XCTAssertEqual(installer.health(.claude), .installed, "the other app still hears every hook")
+        XCTAssertTrue(fm.fileExists(atPath: client.path))
+        XCTAssertNotNil(try? fm.destinationOfSymbolicLink(atPath: other))
+        XCTAssertNil(try? fm.destinationOfSymbolicLink(atPath: HookSocket.directory(environment: environment) + "/boop.sock"))
+        XCTAssertFalse(login.on)
     }
 
     /// Run again, with everything gone already, it finds nothing to do.

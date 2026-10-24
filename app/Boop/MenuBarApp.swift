@@ -798,6 +798,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         for agent in Agent.allCases { HookBackup.once(model.installer, agent, stateDir: stateDir) }
         let result = Uninstall.run(installer: model.installer, stateDir: stateDir, loginItem: model.loginItem)
         log.write("uninstall: removed " + (result.removed.isEmpty ? "nothing" : result.removed.joined(separator: ", "))
+                  + (result.kept.isEmpty ? "" : "; left " + result.kept.joined(separator: "; "))
                   + (result.problems.isEmpty ? "" : "; couldn't remove " + result.problems.joined(separator: "; ")))
         if !result.problems.isEmpty {
             let told = NSAlert()

@@ -80,8 +80,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// (`dev-boop-onboarding.sock`) and its Jev key's Keychain entry. Made
     /// of its folder's name, letters, digits and dashes only.
     public static func copyName(_ dir: URL) -> String {
-        "dev-" + dir.lastPathComponent.filter { $0.isLetter || $0.isNumber || $0 == "-" }
+        copyPrefix + dir.lastPathComponent.filter { $0.isLetter || $0.isNumber || $0 == "-" }
     }
+
+    /// What every copy's name starts with.
+    public static let copyPrefix = "dev-"
 }
 
 /// One app per state directory: a second copy would fight over the memory

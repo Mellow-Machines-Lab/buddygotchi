@@ -129,7 +129,8 @@ button. Your files, commands and tool output never do.
 ## Uninstall
 
 In Boop's Settings, under App, choose **Uninstall…**. Boop takes its
-hooks out of Claude Code and Codex, stops opening at login, moves
+hooks out of Claude Code and Codex (unless another app that listens to
+them is installed, which keeps them), stops opening at login, moves
 `Boop.app` to the Trash and quits. Its memory stays in
 `~/Library/Application Support/Boop`, so a Boop installed again
 remembers; delete that folder to forget it too.
