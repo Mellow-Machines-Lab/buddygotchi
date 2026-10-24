@@ -52,7 +52,7 @@ creature's brain.
 | `{"agent": "todo"}` | The agent writes its to-do list (Claude's `TodoWrite`, Codex's `update_plan`): the line under the face counts it | `todos`, done of all (`"2/4"`) |
 | `{"agent": "review"}` | The agent sends a subagent: a helper at work, a mini under the face, until a `reply` `"by": "reviewer"` brings the first one still out back | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
-| `{"agent": "reply"}` | The agent's turn ends with this message | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
+| `{"agent": "reply"}` | The agent's turn ends with this message, which Boop reads as it reads any agent's last message: only its reading reaches the brain | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |

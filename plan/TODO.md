@@ -172,7 +172,7 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] The always evals that fail before and after the overnight work
       (03, 08, 13, 38, 39, 47; 04 and 28 flaky): Jev or the steering has
       drifted from them. Look at each with real runs.
-- [ ] The agent's last message through the same reader as your prompt.
+- [x] The agent's last message through the same reader as your prompt.
 - [x] A first `boopctl sim` or `run` straight after a merge sometimes
       reported changed pictures and a second run passed (three times on
       2026-10-24, and a `check-headless --native` once). No dependency

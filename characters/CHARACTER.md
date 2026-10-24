@@ -319,7 +319,12 @@ What the brain reads, in plain Markdown:
   with front matter for the view's rules: `working_heartbeat` (seconds
   between check-ins on a turn), `idle_heartbeat` (seconds between idle
   check-ins while you're around and no agent works; without it, only
-  the hourly heartbeat) and `tool_uses`.
+  the hourly heartbeat) and `tool_uses`. Its Examples quote NOW's lines
+  as the view writes them, where your prompt and the agent's last
+  message are only their readings: `You asked claude on "api" for a
+  fix, in a sentence, frustrated.`, and a finish `…, 8 tool calls,
+  saying it's done, apologetic.`, each with a few of the words under
+  it (`Your words:`, `Its words:`).
 - `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
   person chose at setup, saved in `long-term.md`. The chosen one goes
   into the prompt right after the personality's PERSONALITY section,
@@ -347,7 +352,7 @@ What the brain reads, in plain Markdown:
   week. A pack without the file keeps no diary.
 - `signs.md` (optional): the captions the creature may hold up on a
   sign when it reacts to your prompt (`Signs`, the `react.sign`
-  question, asked only when NOW is a prompt's reading). Each is
+  question, asked only when NOW is a prompt's reading, not a message's). Each is
   `- [tags] words`: the tags (optional) the reading must all have (its
   kind, tone and length, `named` when you said this buddy's own name,
   `words`, and the calendar's), and

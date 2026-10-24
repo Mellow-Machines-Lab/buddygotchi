@@ -219,7 +219,7 @@ check-ins, ears) is a separate track, not repeated here.
 - **"Waited on you" as a daily number.**
 - **Long-turn clock:** "api · 14m" under the face after about 10 minutes.
 - **"You're absolutely right!"**: Boop rolls its eyes at the agent's
-  stock phrases (a steering Example; the last message already goes to Jev).
+  stock phrases (a steering Example; the last message's reading, fawning, goes to Jev).
 - **Quieter at night by itself.**
 
 ## Wild: new ways to interact (2026-10-21, not yet discussed)
