@@ -92,11 +92,12 @@ extension Runtime {
     }
 
     /// What you did to the device, the buddy `buddy`'s, as it reports it
-    /// (`ev gesture`): `dismiss`, a finger held on the needs-you sign.
+    /// (`ev gesture`): `dismiss`, a finger held on the needs-you sign, names
+    /// the request its last state showed, as the board does.
     func gestured(_ kind: String, who: String = "dev", buddy: String? = nil) {
         let rig = rig(buddy)
         options.log("\(who): gesture \(kind)\(Runtime.whose(rig))")
-        run(pipeline.gesture(kind, at: options.clock(), buddy: rig.tag))
+        run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock(), buddy: rig.tag))
         changed()
     }
 

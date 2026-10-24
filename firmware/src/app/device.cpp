@@ -647,12 +647,15 @@ void Device::readInputs(uint32_t t) {
 
   // A touch anywhere is a tap, sent on release however long it was held,
   // but for a finger held still on the needs-you sign (TouchGesture::held):
-  // that's the gesture `dismiss`, sent as the hold completes, and its
-  // release does nothing, as a touch's on a sign that has gone does. The
-  // press shows at once. The panel misses readings under a light press, so
-  // its touch ends only after kTouchReleaseMs without contact, in real time
-  // so that it ends while a tool has the clock frozen; an injected one ends
-  // when it says. The debug pattern ignores touches.
+  // that's the gesture `dismiss`, sent as the hold completes with the
+  // number of the request the sign showed as the finger went down, so the
+  // Mac dismisses that one or none, never one that took the sign during
+  // the hold. Its release does nothing, as a touch's on a sign that has
+  // gone does. The press shows at once. The panel misses readings under a
+  // light press, so its touch ends only after kTouchReleaseMs without
+  // contact, in real time so that it ends while a tool has the clock
+  // frozen; an injected one ends when it says. The debug pattern ignores
+  // touches.
   if (injTouch_ && !after(injTouchUntil_, t)) injTouch_ = false, touchGone = letGo(injTouchUntil_);
   int x = 0, y = 0;
   bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
@@ -669,6 +672,7 @@ void Device::readInputs(uint32_t t) {
     // Only a touch that began on the sign holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
     touchOnSign_ = faced && signShows(t);
+    touchSign_ = touchOnSign_ ? b_.model().attnId : 0;
     touchDismissed_ = false;
     if (faced) {
       b_.pressDown(t);
@@ -683,7 +687,9 @@ void Device::readInputs(uint32_t t) {
     // Nothing plays: the sign goes when the Mac's next state says so.
     touchDismissed_ = true;
     input("gesture", t);
-    kit().emit("gesture", kDismissGesture, nullptr, touchInjected_);
+    char data[24];
+    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)touchSign_);
+    kit().emit("gesture", kDismissGesture, touchSign_ ? data : nullptr, touchInjected_);
   }
   if (!touching && touchDown_) {
     b_.pressUp();

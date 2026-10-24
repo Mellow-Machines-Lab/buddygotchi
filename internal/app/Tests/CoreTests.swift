@@ -1479,7 +1479,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.needsYou, session: "a", tool: "Bash")
         XCTAssertNotNil(rig.state.attn)
         XCTAssertNotNil(rig.core.needsYouBlock)
-        let fx = rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, at: rig.now)))
+        let fx = rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, request: rig.state.attn?.id, at: rig.now)))
         XCTAssertNil(rig.state.attn, "the sign goes")
         XCTAssertNil(rig.core.needsYouBlock, "the brain may wake")
         XCTAssertEqual(rig.state.idle, 1, "it waits on you as an idle session does")
@@ -1521,34 +1521,73 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertTrue(rig.state.when.contains("setpiece"), "docs' turn ended 4 minutes ago; the requests aren't turns that ended")
     }
 
-    /// A session whose agent's process ends is over: the core, the only
-    /// one that asks the OS, records its end in the transcript
-    /// (`Core.agentGone`), its request with it, and the view, which never
-    /// asks, ends it from that record, now and in a fold of the transcript
-    /// later, whatever runs then.
-    func testAnAgentGoneIsRecordedAsItsSessionsEnd() {
+    /// The board's hold names the request its sign showed (`attn.id`): one
+    /// that took the sign as the first was answered during the hold isn't
+    /// dismissed unseen, and a hold that names none dismisses nothing.
+    func testAHoldDismissesOnlyTheRequestItsSignShowed() {
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "a", project: "api")
+        rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
+        rig.wait(1000)
+        rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
+        let held = rig.state.attn?.id
+        XCTAssertEqual(rig.state.attn?.project, "api")
+        rig.send(.activity, session: "a", tool: "Bash", failed: false)
+        XCTAssertEqual(rig.state.attn?.project, "web", "a's answered within the hold, and b's takes the sign")
+        rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, request: held, at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "web", "b's wasn't the one held")
+        rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "web", "a hold naming no request")
+        rig.note(Fx(rig.pipeline.gesture(Core.dismissGesture, request: rig.state.attn?.id, at: rig.now)))
+        XCTAssertNil(rig.state.attn)
+    }
+
+    /// An agent's process that ends while it waits or works stops it: the
+    /// core, the only one that asks the OS, records its turn stopping in
+    /// the transcript (`Core.agentGone`), and the request ends saying why.
+    /// The session stays, idle. The view, which never asks, stops it from
+    /// that record, now and in a fold of the transcript later, whatever
+    /// runs then; it tells the brain nothing, and no rule plays the stop.
+    func testAnAgentGoneIsRecordedAsItsTurnStopping() throws {
         final class Running { var value = true }
         let running = Running()
         let rig = CoreRig(isRunning: { _ in running.value })
+        rig.send(.turnStart)
         var ask = rig.event(.needsYou, tool: "Bash")
         ask.data["process"] = .object(["pid": 4242, "started": 1])
         rig.send(ask)
         rig.wait(60_000)
         XCTAssertNotNil(rig.state.attn, "its process runs: it waits")
-        XCTAssertNotNil(rig.pipeline.threads["claude/s1"])
         running.value = false
         let fx = rig.wait(SessionTracker.liveCheckMs)
         let records = fx.effects.compactMap { effect -> Event? in if case .record(let e) = effect { e } else { nil } }
-        let end = records.first { $0.type == .session }
-        XCTAssertEqual(end?.specificType, Core.agentGone)
-        XCTAssertEqual(end?.phase, .end)
-        XCTAssertEqual(end?.session, "s1")
-        XCTAssertEqual(end?["why"]?.string, "its process ended")
-        XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["the session ended"])
+        let stop = records.first { $0.specificType == Core.agentGone }
+        XCTAssertEqual(stop?.type, .turn)
+        XCTAssertEqual(stop?.phase, .end)
+        XCTAssertEqual(stop?["outcome"]?.string, "stopped")
+        XCTAssertEqual(stop?.session, "s1")
+        XCTAssertEqual(stop?["why"]?.string, "its agent's process ended")
+        XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["its agent's process ended"])
         XCTAssertNil(rig.state.attn)
-        XCTAssertNil(rig.pipeline.threads["claude/s1"], "the view ends it from the record")
-        let refold = TranscriptView()
-        XCTAssertNil(refold.sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"], "and so does a fold later")
+        XCTAssertEqual(rig.state.idle, 1, "the session stays, idle")
+        XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
+        XCTAssertEqual(deviceReactions(fx), [], "nobody stopped it")
+        XCTAssertEqual(woke(fx), [], "nothing for the brain")
+        let thread = rig.pipeline.threads["claude/s1"]
+        XCTAssertNotNil(thread, "the view keeps it")
+        XCTAssertNil(thread?.needsSince)
+        XCTAssertEqual(thread?.working, false)
+        let refold = TranscriptView().sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"]
+        XCTAssertNotNil(refold, "and so does a fold later")
+        XCTAssertNil(refold?.needsSince)
+        XCTAssertEqual(refold?.working, false)
+        // A core that heard the same turn plays no stop for the record.
+        let other = CoreRig(isRunning: { _ in true })
+        other.send(.turnStart)
+        var heard = try XCTUnwrap(stop)
+        heard.seq = 99
+        XCTAssertEqual(deviceReactions(other.core.handle(heard)), [])
+        XCTAssertEqual(other.state.busy, 0)
     }
 
     /// The popover's Dismiss names the session: only that one goes, and
