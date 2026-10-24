@@ -1,4 +1,4 @@
-#include "render/pixel/sign.h"
+#include "render/pixel/needs_you.h"
 
 #include <cstdio>
 
@@ -22,7 +22,7 @@ int easeOut(int u) {
   int64_t v = kOne - u;
   return int(kOne - v * v * v / (int64_t(kOne) * kOne));
 }
-// Eases out past the end and back, for the sign's bounce and the head's pop.
+// Eases out past the end and back, for the placard's bounce and the head's pop.
 int easeBack(int u) {  // 1 + 2.9 v³ + 1.9 v², v = u - 1
   int64_t v = u - kOne;
   return int(kOne + 29 * v * v * v / (int64_t(kOne) * kOne) / 10 + 19 * v * v / kOne / 10);
@@ -37,7 +37,7 @@ int sc(int v, int s) {
 // The face drawn at `s` 64ths of its size, the whole face's layout (the
 // pixel face): two window eyes of four panes, pink
 // cheeks and a small "o" of a mouth.
-void drawHead(Canvas& c, const SignPose& p) {
+void drawHead(Canvas& c, const NeedsYouPose& p) {
   const int s = p.scale, cx = p.headX, cy = p.headY;
   const uint8_t white = sceneInk(1), pink = sceneInk(2);
   const int look = sc(6 * p.glance, s);
@@ -73,7 +73,7 @@ void drawHead(Canvas& c, const SignPose& p) {
   }
 }
 
-// A mitt gripping the sign's top edge: three knuckles.
+// A mitt gripping the placard's top edge: three knuckles.
 void drawMitt(Canvas& c, int x, int y) {
   const uint8_t white = sceneInk(1);
   for (int i = 0; i < 3; ++i) {
@@ -82,8 +82,8 @@ void drawMitt(Canvas& c, int x, int y) {
   }
 }
 
-// A mitt let go of the sign to wave: the gripping mitt's three knuckles,
-// bigger, on a round palm that rises from behind the sign's edge at
+// A mitt let go of the placard to wave: the gripping mitt's three knuckles,
+// bigger, on a round palm that rises from behind the placard's edge at
 // `edge`, its thumb out to `side` (-1 left, 1 right). It tilts `tilt` px
 // at the knuckles, half that at the thumb, as a hand rocks when it waves.
 void drawMitten(Canvas& c, int x, int y, int side, int tilt, int edge) {
@@ -100,11 +100,11 @@ void drawMitten(Canvas& c, int x, int y, int side, int tilt, int edge) {
   c.fillRect(side < 0 ? mid - 11 : mid + 9, y + 7, 2, 1, white);
 }
 
-// The sign: amber with stepped corners, like the bubble's, and who's asking
+// The placard: amber with stepped corners, like the bubble's, and who's asking
 // in black on it, `dx` from its place.
-void drawSign(Canvas& c, int top, const Strip& s, int dx) {
-  constexpr int L = 3, w = Sign::kWidth, h = Sign::kHeight, pad = Sign::kPad;
-  const int x = Sign::kLeft + dx;
+void drawPlacard(Canvas& c, int top, const Strip& s, int dx) {
+  constexpr int L = 3, w = NeedsYou::kWidth, h = NeedsYou::kHeight, pad = NeedsYou::kPad;
+  const int x = NeedsYou::kLeft + dx;
   c.fillRect(x + 2 * L, top, w - 4 * L, h, kAmber);
   c.fillRect(x + L, top + L, w - 2 * L, h - 2 * L, kAmber);
   c.fillRect(x, top + 2 * L, w, h - 4 * L, kAmber);
@@ -121,7 +121,7 @@ void drawSign(Canvas& c, int top, const Strip& s, int dx) {
   std::snprintf(head + n, sizeof(head) - size_t(n), "  NEEDS YOU");
   drawStringFit(c, kSmall, x + pad + 14, hy, head, kInkOnAmber, w - 2 * pad - 14);
   c.fillRect(x + pad, hy + kSmall.h + 4, w - 2 * pad, 2, textAt(kInkOnAmber, 3));
-  // The thread's name, else the project, wrapped in the sign's font.
+  // The thread's name, else the project, wrapped in kSign.
   char more[16] = "";
   if (s.more > 0) std::snprintf(more, sizeof(more), "+%d more", s.more);
   const int ty = hy + kSmall.h + 14;
@@ -155,37 +155,38 @@ int hop(int64_t ms, int64_t period) {
 void peek(int64_t ph, int64_t hopMs, int& spot, int& pop) {
   spot = 0, pop = 0;
   if (ph <= 0) return;
-  const int64_t duck = Sign::kDuckMs < hopMs / 4 ? Sign::kDuckMs : hopMs / 4;
-  const int64_t up = Sign::kPopMs < hopMs / 4 ? Sign::kPopMs : hopMs / 4;
+  const int64_t duck = NeedsYou::kDuckMs < hopMs / 4 ? NeedsYou::kDuckMs : hopMs / 4;
+  const int64_t up = NeedsYou::kPopMs < hopMs / 4 ? NeedsYou::kPopMs : hopMs / 4;
   const int64_t n = ph / hopMs, into = ph % hopMs;
-  spot = int(n % Sign::kSpots);
+  spot = int(n % NeedsYou::kSpots);
   if (into > hopMs - duck) pop = easeOut(progress(into, hopMs - duck, duck));
   else if (into < up && n > 0) pop = kOne - easeBack(progress(into, 0, up));
 }
 
 }  // namespace
 
-SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
-  SignPose p;
+NeedsYouPose needsYouPose(uint32_t ms, bool eyesShut, int dy) {
+  NeedsYouPose p;
   const int64_t t = ms;
-  const int rise = progress(ms, Sign::kHoldMs, Sign::kRiseMs);
+  const int rise = progress(ms, NeedsYou::kHoldMs, NeedsYou::kRiseMs);
   const int in = easeOut(rise);
   const bool gaveUp = t >= Arc::kGiveUpAt, staring = t >= Arc::kStareAt && !gaveUp;
   int nudge = 0, spot = 0, pop = 0, sway = 0, bob = 0;
   int64_t beat = 0, into = 0;
   if (t < Arc::kSwayAt || gaveUp) {
-    // Calm: the nudge, the sign bumping up and back (a parabola standing
+    // Calm: the nudge, the placard bumping up and back (a parabola standing
     // for a sine), and the head peeking from spot to spot. After giving
     // up, the same again from then.
-    const int64_t ph = gaveUp ? t - Arc::kGiveUpAt : t - int64_t(Sign::kSettledMs);
+    const int64_t ph = gaveUp ? t - Arc::kGiveUpAt : t - int64_t(NeedsYou::kSettledMs);
     if (ph > 0) {
-      int64_t n = ph % Sign::kNudgeEveryMs;
-      if (n < Sign::kNudgeMs)
-        nudge = int(4 * Sign::kNudgePx * n * (Sign::kNudgeMs - n) / (int64_t(Sign::kNudgeMs) * Sign::kNudgeMs));
+      int64_t n = ph % NeedsYou::kNudgeEveryMs;
+      if (n < NeedsYou::kNudgeMs)
+        nudge = int(4 * NeedsYou::kNudgePx * n * (NeedsYou::kNudgeMs - n) /
+                    (int64_t(NeedsYou::kNudgeMs) * NeedsYou::kNudgeMs));
     }
-    peek(ph, Sign::kHopMs, spot, pop);
+    peek(ph, NeedsYou::kHopMs, spot, pop);
   } else if (!staring) {
-    // Swaying, then shaking: the sign goes side to side and bobs on the
+    // Swaying, then shaking: the placard goes side to side and bobs on the
     // beat; swaying, the head pops from spot to spot faster, and shaking it
     // bounces in the middle.
     const bool shaking = t >= Arc::kShakeAt;
@@ -198,33 +199,35 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
   } else {
     spot = 2;  // the middle
   }
-  // The stare lowers the sign and brings the head up close; giving up
+  // The stare lowers the placard and brings the head up close; giving up
   // takes it back.
   int lowered = 0;
   if (staring) lowered = easeOut(progress(t, Arc::kStareAt, Arc::kLowerMs));
   else if (gaveUp) lowered = kOne - easeOut(progress(t, Arc::kGiveUpAt, Arc::kLowerMs));
   if (lowered) pop = 0;
-  const int x = Sign::kSpotX[spot] + sway;
-  const int top = lerp(Sign::kTop, Arc::kStareTop, lowered, kOne);
-  p.signX = int16_t(sway);
-  p.signY = int16_t(lerp(kHeight + 4, top, easeBack(rise), kOne) - nudge - bob + dy);
-  p.scale = uint8_t(lerp(lerp(64, Sign::kHeadScale, in, kOne), Arc::kStareScale, lowered, kOne));
+  const int x = NeedsYou::kSpotX[spot] + sway;
+  const int top = lerp(NeedsYou::kTop, Arc::kStareTop, lowered, kOne);
+  p.placardX = int16_t(sway);
+  p.placardY = int16_t(lerp(kHeight + 4, top, easeBack(rise), kOne) - nudge - bob + dy);
+  p.scale = uint8_t(lerp(lerp(64, NeedsYou::kHeadScale, in, kOne), Arc::kStareScale, lowered, kOne));
   p.headX = int16_t(lerp(lerp(kWidth / 2, x, in, kOne), kWidth / 2, lowered, kOne));
-  const int peekY = lerp(96, Sign::kHeadY, in, kOne) + pop * 44 / kOne - nudge * 6 / 10 - bob;
+  const int peekY = lerp(96, NeedsYou::kHeadY, in, kOne) + pop * 44 / kOne - nudge * 6 / 10 - bob;
   p.headY = int16_t(lerp(peekY, Arc::kStareY, lowered, kOne) + dy);
-  // The eyes look toward the sign's middle; in the middle, from side to
+  // The eyes look toward the placard's middle; in the middle, from side to
   // side. Shaking, they dart on the beat; staring, straight at you.
   if (rise >= kOne * 9 / 10 && !lowered) {
     if (beat == Arc::kShakeBeatMs) p.glance = int8_t((into / beat) % 2 ? 1 : -1);
     else if (x < kWidth / 2) p.glance = 1;
     else if (x > kWidth / 2) p.glance = -1;
-    else p.glance = int8_t(((gaveUp ? t - Arc::kGiveUpAt : t - int64_t(Sign::kSettledMs)) / 1500) % 2 ? 1 : -1);
+    else
+      p.glance = int8_t(((gaveUp ? t - Arc::kGiveUpAt : t - int64_t(NeedsYou::kSettledMs)) / 1500) % 2 ? 1 : -1);
   }
   p.eyesShut = eyesShut && !staring;  // a stare doesn't blink
   p.whole = rise <= kOne / 2 || lowered > kOne / 2;
   p.flat = lowered > kOne / 2;
   p.hands = rise > kOne / 5;
-  if (p.hands) p.handX = int16_t(lerp(x, kWidth / 2, lowered, kOne)), p.handY = int16_t(p.signY - 6 + pop * 8 / kOne);
+  if (p.hands)
+    p.handX = int16_t(lerp(x, kWidth / 2, lowered, kOne)), p.handY = int16_t(p.placardY - 6 + pop * 8 / kOne);
   // Swaying, a mitt lets go and waves back and forth over the edge, well
   // clear of the head: the right one, or the left with the head at the
   // right corner. Shaking, both do, faster, either side of the head.
@@ -234,30 +237,30 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
     const int w = swing(into, period);
     const int wave = (shaking ? Arc::kShakeWave : Arc::kSwayWave) * w / kOne;
     p.tilt = int8_t(Arc::kTilt * w / kOne);
-    p.waveY = int16_t(p.signY - Arc::kMittUp);
+    p.waveY = int16_t(p.placardY - Arc::kMittUp);
     if (shaking) {
       p.waving = 2;
       p.waveX = int16_t(p.handX + Arc::kMittOut + wave), p.waveX2 = int16_t(p.handX - Arc::kMittOut + wave);
     } else {
       p.waving = 1;
-      const int side = x > kWidth / 2 + Sign::kSpotX[2] / 4 ? -1 : 1;
+      const int side = x > kWidth / 2 + NeedsYou::kSpotX[2] / 4 ? -1 : 1;
       p.waveX = int16_t(p.handX + side * Arc::kMittOut + wave);
     }
   }
   return p;
 }
 
-void drawSignScreen(Canvas& c, const SignPose& p, const Strip& s) {
+void drawNeedsYouScreen(Canvas& c, const NeedsYouPose& p, const Strip& s) {
   c.fill(kBlack);
-  drawStrip(c, s);  // until the sign comes up over it
-  drawHead(c, p);   // behind the sign
-  drawSign(c, p.signY, s, p.signX);
+  drawStrip(c, s);  // until the placard comes up over it
+  drawHead(c, p);   // behind the placard
+  drawPlacard(c, p.placardY, s, p.placardX);
   if (p.hands) {
     // The thumbs point toward the head.
     if (!p.waving || (p.waving == 1 && p.waveX < p.handX)) drawMitt(c, p.handX + 48, p.handY);
     if (!p.waving || (p.waving == 1 && p.waveX > p.handX)) drawMitt(c, p.handX - 62, p.handY);
-    if (p.waving) drawMitten(c, p.waveX, p.waveY, p.waveX < p.handX ? 1 : -1, p.tilt, p.signY);
-    if (p.waving == 2) drawMitten(c, p.waveX2, p.waveY, 1, p.tilt, p.signY);
+    if (p.waving) drawMitten(c, p.waveX, p.waveY, p.waveX < p.handX ? 1 : -1, p.tilt, p.placardY);
+    if (p.waving == 2) drawMitten(c, p.waveX2, p.waveY, 1, p.tilt, p.placardY);
   }
 }
 

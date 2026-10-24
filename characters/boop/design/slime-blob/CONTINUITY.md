@@ -220,7 +220,7 @@ normalized y=0.8; the lower 20% belongs to host status. Both browser
 renderers use the same prop painter, and the board's props draw from the
 same channels.
 
-Every other prop (the alert sign, the result and start cards, the helpers,
+Every other prop (the alert, result and start cards, the helpers,
 the listening cue and the touch marks) has a **200 ms visibility ramp** for
 entry and exit ([engine/scenes/ramp.mjs](engine/scenes/ramp.mjs)): a cubic
 Hermite from its current value and slope to the target, so from rest it is a
@@ -271,7 +271,7 @@ result recipes shape those times and forces using
 | Other canonical moods | Derived from authored expression recipes below | Derived | Derived | Derived |
 
 The first knock receives the delay, subsequent spacing is multiplied, and
-the alert reveal follows the last knock by 240 ms. The sign ramps in from
+the alert reveal follows the last knock by 240 ms. Its card ramps in from
 the request's arrival, with no opacity floor, and ramps out when attention
 clears; `props.alert.confirmation` uses the contact envelope to brighten it
 once at the reveal, then returns to zero. Its reveal strength is invariant
@@ -765,7 +765,7 @@ while one crosses over.
 Quiet rest and active attention permanently suppress the current bridge's
 body gesture, with existing bridge springs settling toward zero. Clearing
 an alert or waking does not replay it. The face still retargets, and the
-attention request, sign and consumed reveal retain their identity. A grab
+attention request, card and consumed reveal retain their identity. A grab
 defers the current body bridge while the face continues: progress may be
 held for at most 320 ms of accumulated grab time. Releasing sooner lets
 the current bridge continue from its retained springs; reaching the limit
@@ -817,7 +817,7 @@ card's reveal while the card is drawn):
   and blends it once at that opacity: its rows hold nothing else, over
   black, so that is scaling the pixels it wrote, in place, with no buffer,
   and a hole (the working ring's inside, a mini's eyes) stays one. The
-  preview's lane fades who needs you with the alert's sign.
+  preview's lane fades who needs you with the alert's card.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling
   eyes, falling asleep and waking), the port's painter's frames, 40 ms
@@ -868,7 +868,7 @@ random surprises. No per-frame LLM/API call is required.
 Use the repo's existing LinkKit turn/attention semantics, not an invented
 priority scheduler that delays needs_you. A new request starts the upper
 alert once, with broad surface knocks followed by the visible confirmation;
-then its sign holds silently. An alert that listening or a link timeout
+then its card holds silently. An alert that listening or a link timeout
 interrupts before its confirmation resumes where it stopped, so no request
 loses its knocks or ding. Synchronized sound will attach the invariant
 ding to that reveal; it is not played by the current scene engine. Mood may

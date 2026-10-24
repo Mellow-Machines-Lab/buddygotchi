@@ -2413,7 +2413,7 @@ function createProps(stage,{hostLane=true}={}) {
     }
     ctx.restore();
     // This lane belongs to host facts, separate from the decorative scene.
-    // Who needs you fades in over the state's name with the alert's sign.
+    // Who needs you fades in over the state's name with the alert's card.
     if(hostLane) {
     const shown=alert?.visible||0;
     ctx.save();ctx.globalAlpha=1-shown;

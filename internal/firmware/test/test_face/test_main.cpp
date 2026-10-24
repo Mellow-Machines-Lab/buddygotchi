@@ -13,7 +13,7 @@
 #include "render/maths.h"
 #include "render/pixel/scene.h"
 #include "render/screens.h"
-#include "render/pixel/sign.h"
+#include "render/pixel/needs_you.h"
 #include "voice/player.h"
 #include "voice_file.h"  // internal/firmware/
 
@@ -363,84 +363,86 @@ static void test_fonts_are_monospaced_and_utf8_aware() {
 }
 
 // The needs-you screen: the whole face for kHoldMs, then the
-// sign rises over kRiseMs, bouncing past its place, as the head shrinks
+// placard rises over kRiseMs, bouncing past its place, as the head shrinks
 // behind it to peek over its top edge.
-void test_the_sign_rises_then_peeks() {
-  SignPose p = signPose(0);
-  TEST_ASSERT_TRUE(p.signY >= kHeight);
+void test_the_placard_rises_then_peeks() {
+  NeedsYouPose p = needsYouPose(0);
+  TEST_ASSERT_TRUE(p.placardY >= kHeight);
   TEST_ASSERT_TRUE(p.whole);
   TEST_ASSERT_FALSE(p.hands);
   TEST_ASSERT_EQUAL_INT(64, p.scale);
   TEST_ASSERT_EQUAL_INT(kWidth / 2, p.headX);
-  TEST_ASSERT_TRUE(signPose(Sign::kHoldMs).signY >= kHeight);
+  TEST_ASSERT_TRUE(needsYouPose(NeedsYou::kHoldMs).placardY >= kHeight);
   bool past = false;
-  for (uint32_t ms = Sign::kHoldMs; ms < Sign::kHoldMs + Sign::kRiseMs; ms += 10) past |= signPose(ms).signY < Sign::kTop;
+  for (uint32_t ms = NeedsYou::kHoldMs; ms < NeedsYou::kHoldMs + NeedsYou::kRiseMs; ms += 10)
+    past |= needsYouPose(ms).placardY < NeedsYou::kTop;
   TEST_ASSERT_TRUE(past);
-  p = signPose(Sign::kHoldMs + Sign::kRiseMs);
-  TEST_ASSERT_EQUAL_INT(Sign::kTop, p.signY);
-  TEST_ASSERT_EQUAL_INT(Sign::kHeadScale, p.scale);
-  TEST_ASSERT_EQUAL_INT(Sign::kHeadY, p.headY);
-  TEST_ASSERT_EQUAL_INT(Sign::kSpotX[0], p.headX);
+  p = needsYouPose(NeedsYou::kHoldMs + NeedsYou::kRiseMs);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kTop, p.placardY);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kHeadScale, p.scale);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kHeadY, p.headY);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kSpotX[0], p.headX);
   TEST_ASSERT_FALSE(p.whole);
   TEST_ASSERT_TRUE(p.hands);
-  TEST_ASSERT_EQUAL_INT(1, p.glance);  // toward the sign's middle
-  // The press dips the sign and the head together.
-  SignPose dipped = signPose(Sign::kHoldMs + Sign::kRiseMs, false, 2);
-  TEST_ASSERT_EQUAL_INT(p.signY + 2, dipped.signY);
+  TEST_ASSERT_EQUAL_INT(1, p.glance);  // toward the placard's middle
+  // The press dips the placard and the head together.
+  NeedsYouPose dipped = needsYouPose(NeedsYou::kHoldMs + NeedsYou::kRiseMs, false, 2);
+  TEST_ASSERT_EQUAL_INT(p.placardY + 2, dipped.placardY);
   TEST_ASSERT_EQUAL_INT(p.headY + 2, dipped.headY);
 }
 
 // Calm (settled until the sway, and for good once it gives up), the head
 // spends kHopMs at each spot, left, right, the middle and round again,
-// ducking kDuckMs before it moves; the sign bumps up kNudgePx every
+// ducking kDuckMs before it moves; the placard bumps up kNudgePx every
 // kNudgeEveryMs.
 void test_the_head_plays_peekaboo() {
-  const uint32_t at = Arc::kGiveUpAt + Sign::kPopMs + 100;
-  const int spots[] = {Sign::kSpotX[0], Sign::kSpotX[1], Sign::kSpotX[2], Sign::kSpotX[0]};
+  const uint32_t at = Arc::kGiveUpAt + NeedsYou::kPopMs + 100;
+  const int spots[] = {NeedsYou::kSpotX[0], NeedsYou::kSpotX[1], NeedsYou::kSpotX[2], NeedsYou::kSpotX[0]};
   for (int i = 0; i < 4; ++i) {
-    SignPose p = signPose(at + i * Sign::kHopMs);
+    NeedsYouPose p = needsYouPose(at + i * NeedsYou::kHopMs);
     TEST_ASSERT_EQUAL_INT(spots[i], p.headX);
     TEST_ASSERT_EQUAL_INT(spots[i], p.handX);
   }
-  TEST_ASSERT_EQUAL_INT(-1, signPose(at + Sign::kHopMs).glance);  // right, looking left
-  TEST_ASSERT_EQUAL_INT(64, Sign::kSpotX[0]);
-  TEST_ASSERT_EQUAL_INT(256, Sign::kSpotX[1]);
-  TEST_ASSERT_EQUAL_INT(160, Sign::kSpotX[2]);
-  // Ducking: all the way behind the sign at the end of a spot.
-  SignPose duck = signPose(Arc::kGiveUpAt + Sign::kHopMs - 1);
-  TEST_ASSERT_TRUE(duck.headY - 26 * Sign::kHeadScale / 64 > duck.signY);
-  TEST_ASSERT_TRUE(signPose(Arc::kGiveUpAt + Sign::kHopMs - Sign::kDuckMs - 1).headY <= Sign::kHeadY);
+  TEST_ASSERT_EQUAL_INT(-1, needsYouPose(at + NeedsYou::kHopMs).glance);  // right, looking left
+  TEST_ASSERT_EQUAL_INT(64, NeedsYou::kSpotX[0]);
+  TEST_ASSERT_EQUAL_INT(256, NeedsYou::kSpotX[1]);
+  TEST_ASSERT_EQUAL_INT(160, NeedsYou::kSpotX[2]);
+  // Ducking: all the way behind the placard at the end of a spot.
+  NeedsYouPose duck = needsYouPose(Arc::kGiveUpAt + NeedsYou::kHopMs - 1);
+  TEST_ASSERT_TRUE(duck.headY - 26 * NeedsYou::kHeadScale / 64 > duck.placardY);
+  TEST_ASSERT_TRUE(needsYouPose(Arc::kGiveUpAt + NeedsYou::kHopMs - NeedsYou::kDuckMs - 1).headY <= NeedsYou::kHeadY);
   // The nudge, at its top halfway through.
-  TEST_ASSERT_EQUAL_INT(Sign::kTop - Sign::kNudgePx, signPose(Sign::kSettledMs + Sign::kNudgeMs / 2).signY);
-  TEST_ASSERT_EQUAL_INT(Sign::kTop, signPose(Sign::kSettledMs + Sign::kNudgeMs + 1).signY);
-  TEST_ASSERT_EQUAL_INT(Sign::kTop - Sign::kNudgePx,
-                        signPose(Sign::kSettledMs + Sign::kNudgeEveryMs + Sign::kNudgeMs / 2).signY);
-  TEST_ASSERT_EQUAL_UINT32(3600, Sign::kNudgeEveryMs);
-  TEST_ASSERT_EQUAL_UINT32(4200, Sign::kHopMs);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kTop - NeedsYou::kNudgePx,
+                        needsYouPose(NeedsYou::kSettledMs + NeedsYou::kNudgeMs / 2).placardY);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kTop, needsYouPose(NeedsYou::kSettledMs + NeedsYou::kNudgeMs + 1).placardY);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kTop - NeedsYou::kNudgePx,
+                        needsYouPose(NeedsYou::kSettledMs + NeedsYou::kNudgeEveryMs + NeedsYou::kNudgeMs / 2).placardY);
+  TEST_ASSERT_EQUAL_UINT32(3600, NeedsYou::kNudgeEveryMs);
+  TEST_ASSERT_EQUAL_UINT32(4200, NeedsYou::kHopMs);
 }
 
-// How far a pose's sign sways and bobs over a stretch, at most.
+// How far a pose's placard sways and bobs over a stretch, at most.
 static void most(uint32_t from, uint32_t to, int& sway, int& bob) {
   sway = 0, bob = 0;
   for (uint32_t ms = from; ms < to; ms += 10) {
-    SignPose q = signPose(ms);
-    if (q.signX > sway) sway = q.signX;
-    if (Sign::kTop - q.signY > bob) bob = Sign::kTop - q.signY;
+    NeedsYouPose q = needsYouPose(ms);
+    if (q.placardX > sway) sway = q.placardX;
+    if (NeedsYou::kTop - q.placardY > bob) bob = NeedsYou::kTop - q.placardY;
   }
 }
 
 // The longer it waits, the harder it asks: calm until kSwayAt (5 s), then
-// it sways the sign until kShakeAt (12 s), then shakes it and waves a mitt
+// it sways the placard until kShakeAt (12 s), then shakes it and waves a mitt
 // until kStareAt (17 s), then lowers it and stares, its whole face up close,
 // flat-mouthed and unblinking, until kGiveUpAt (22 s), when it goes back up
-// and it's calm for good. The sign, and who's asking, shows throughout.
+// and it's calm for good. The placard, and who's asking, shows throughout.
 void test_it_asks_harder_the_longer_it_waits() {
   TEST_ASSERT_EQUAL_UINT32(5000, Arc::kSwayAt);
   TEST_ASSERT_EQUAL_UINT32(12000, Arc::kShakeAt);
   TEST_ASSERT_EQUAL_UINT32(17000, Arc::kStareAt);
   TEST_ASSERT_EQUAL_UINT32(22000, Arc::kGiveUpAt);
   int calmSway, calmBob, swaySway, swayBob, shakeSway, shakeBob, laterSway, laterBob;
-  most(Sign::kSettledMs, Arc::kSwayAt, calmSway, calmBob);
+  most(NeedsYou::kSettledMs, Arc::kSwayAt, calmSway, calmBob);
   most(Arc::kSwayAt, Arc::kShakeAt, swaySway, swayBob);
   most(Arc::kShakeAt, Arc::kStareAt, shakeSway, shakeBob);
   most(Arc::kGiveUpAt + Arc::kLowerMs, Arc::kGiveUpAt + 30000, laterSway, laterBob);
@@ -451,15 +453,15 @@ void test_it_asks_harder_the_longer_it_waits() {
   TEST_ASSERT_EQUAL_INT(0, laterSway);
   TEST_ASSERT_EQUAL_INT(calmBob, laterBob);
   // Swaying it waves one mitt and shaking both, back and forth over the
-  // sign's edge, the knuckles tilting with the wave, well clear of the
+  // placard's edge, the knuckles tilting with the wave, well clear of the
   // head; calm or staring, none.
-  for (uint32_t ms : {3000u, 19000u, 25000u}) TEST_ASSERT_EQUAL_INT(0, signPose(ms).waving);
+  for (uint32_t ms : {3000u, 19000u, 25000u}) TEST_ASSERT_EQUAL_INT(0, needsYouPose(ms).waving);
   auto waves = [](uint32_t from, uint32_t to, int count, int reach) {
     int lo = 1000, hi = -1000, tilts = 0;
     for (uint32_t ms = from; ms < to; ms += 5) {
-      SignPose q = signPose(ms);
+      NeedsYouPose q = needsYouPose(ms);
       TEST_ASSERT_EQUAL_INT(count, q.waving);
-      TEST_ASSERT_EQUAL_INT(q.signY - Arc::kMittUp, q.waveY);
+      TEST_ASSERT_EQUAL_INT(q.placardY - Arc::kMittUp, q.waveY);
       for (int x : {int(q.waveX), count == 2 ? int(q.waveX2) : int(q.waveX)}) {
         TEST_ASSERT_TRUE(x - q.headX > 70 || x - q.headX < -70);
         TEST_ASSERT_TRUE(x - 13 >= 0 && x + 13 < kWidth);
@@ -476,43 +478,43 @@ void test_it_asks_harder_the_longer_it_waits() {
   waves(Arc::kShakeAt, Arc::kStareAt, 2, Arc::kShakeWave);
   TEST_ASSERT_TRUE(Arc::kShakeWaveMs < Arc::kSwayWaveMs);
   // The stare.
-  SignPose p = signPose(Arc::kStareAt + Arc::kLowerMs, true);
-  TEST_ASSERT_EQUAL_INT(Arc::kStareTop, p.signY);
+  NeedsYouPose p = needsYouPose(Arc::kStareAt + Arc::kLowerMs, true);
+  TEST_ASSERT_EQUAL_INT(Arc::kStareTop, p.placardY);
   TEST_ASSERT_EQUAL_INT(Arc::kStareScale, p.scale);
   TEST_ASSERT_EQUAL_INT(Arc::kStareY, p.headY);
   TEST_ASSERT_EQUAL_INT(kWidth / 2, p.headX);
   TEST_ASSERT_TRUE(p.whole && p.flat);
   TEST_ASSERT_FALSE(p.eyesShut);
   TEST_ASSERT_EQUAL_INT(0, p.glance);
-  TEST_ASSERT_TRUE(signPose(8000, true).eyesShut);  // swaying, it blinks
+  TEST_ASSERT_TRUE(needsYouPose(8000, true).eyesShut);  // swaying, it blinks
   // Back up when it gives up.
-  p = signPose(Arc::kGiveUpAt + Arc::kLowerMs);
-  TEST_ASSERT_EQUAL_INT(Sign::kTop, p.signY);
-  TEST_ASSERT_EQUAL_INT(Sign::kHeadScale, p.scale);
+  p = needsYouPose(Arc::kGiveUpAt + Arc::kLowerMs);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kTop, p.placardY);
+  TEST_ASSERT_EQUAL_INT(NeedsYou::kHeadScale, p.scale);
   TEST_ASSERT_FALSE(p.whole);
-  // Every stage draws the sign over most of the screen, with the head.
+  // Every stage draws the placard over most of the screen, with the head.
   Strip s;
   s.agent = "claude", s.project = "boop", s.name = "Deploy the docs";
   for (uint32_t ms : {2000u, 8000u, 14000u, 19500u, 25000u}) {
     Buf b;
-    drawSignScreen(b.c, signPose(ms), s);
+    drawNeedsYouScreen(b.c, needsYouPose(ms), s);
     TEST_ASSERT_TRUE(b.count(kAmber) > kWidth * kHeight / 3);
     TEST_ASSERT_TRUE(b.count(textAt(kInkOnAmber, kLevels)) > 300);
     TEST_ASSERT_TRUE(b.count(sceneInk(1)) > 100);
   }
 }
 
-// The sign: amber, with who's asking in black, the thread in the sign's
-// font, 16 columns wide.
-void test_the_sign_is_black_on_amber() {
+// The placard: amber, with who's asking in black, the thread in kSign,
+// 16 columns wide.
+void test_the_placard_is_black_on_amber() {
   TEST_ASSERT_EQUAL_UINT8(kAmber, textAt(kInkOnAmber, 0));
   TEST_ASSERT_EQUAL_UINT16(0, paletteAt(textAt(kInkOnAmber, kLevels)));
   TEST_ASSERT_EQUAL_UINT16(rgb565(kAmberRgb), paletteAt(kAmber));
-  TEST_ASSERT_EQUAL_INT(16, (Sign::kWidth - 2 * Sign::kPad) / kSign.w);
+  TEST_ASSERT_EQUAL_INT(16, (NeedsYou::kWidth - 2 * NeedsYou::kPad) / kSign.w);
   Buf b;
   Strip s;
   s.agent = "claude", s.project = "boop", s.name = "Fix the login test";
-  drawSignScreen(b.c, signPose(Sign::kSettledMs + Sign::kPopMs + 100), s);
+  drawNeedsYouScreen(b.c, needsYouPose(NeedsYou::kSettledMs + NeedsYou::kPopMs + 100), s);
   TEST_ASSERT_TRUE(b.count(kAmber) > kWidth * kHeight / 2);
   TEST_ASSERT_TRUE(b.count(textAt(kInkOnAmber, kLevels)) > 500);
   TEST_ASSERT_TRUE(b.count(sceneInk(1)) > 100);  // the head and the mitts
@@ -577,10 +579,10 @@ int main(int, char**) {
   RUN_TEST(test_the_bubble_takes_the_lane);
   RUN_TEST(test_the_strip_marks_the_finish);
   RUN_TEST(test_fonts_are_monospaced_and_utf8_aware);
-  RUN_TEST(test_the_sign_rises_then_peeks);
+  RUN_TEST(test_the_placard_rises_then_peeks);
   RUN_TEST(test_the_head_plays_peekaboo);
   RUN_TEST(test_it_asks_harder_the_longer_it_waits);
-  RUN_TEST(test_the_sign_is_black_on_amber);
+  RUN_TEST(test_the_placard_is_black_on_amber);
   RUN_TEST(test_text_wraps_at_spaces);
   RUN_TEST(test_text_folds_and_cuts_to_its_glyphs);
   return UNITY_END();

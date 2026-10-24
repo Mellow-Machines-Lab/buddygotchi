@@ -636,11 +636,11 @@ void Device::readInputs(uint32_t t) {
   }
 
   // A touch anywhere is a tap, sent on release however long it was held,
-  // but for a finger held still on the needs-you sign (TouchGesture::held):
+  // but for a finger held still on the needs-you screen (TouchGesture::held):
   // that's the gesture `dismiss`, sent as the hold completes with the
-  // number of the request the sign showed as the finger went down, so the
-  // Mac dismisses that one or none, never one that took the sign during
-  // the hold. Its release does nothing, as a touch's on a sign that has
+  // number of the request the screen showed as the finger went down, so the
+  // Mac dismisses that one or none, never one that took the screen during
+  // the hold. Its release does nothing, as a touch's on a screen that has
   // gone does. The press shows at once. The panel misses readings under a
   // light press, so its touch ends only after kTouchReleaseMs without
   // contact, in real time so that it ends while a tool has the clock
@@ -660,10 +660,10 @@ void Device::readInputs(uint32_t t) {
   if (touching && !live_.touchDown) {
     input("touch", t, x, y);
     live_.touchPath.down(x, y, t);
-    // Only a touch that began on the sign holds it: a request that comes
+    // Only a touch that began on the screen holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
-    live_.touchOnSign = faced && signShows(t);
-    live_.touchSign = live_.touchOnSign ? b_.model().attnId : 0;
+    live_.touchOnNeedsYou = faced && needsYouShows(t);
+    live_.touchAttnId = live_.touchOnNeedsYou ? b_.model().attnId : 0;
     live_.touchDismissed = false;
     if (faced) {
       b_.pressDown(t);
@@ -674,13 +674,13 @@ void Device::readInputs(uint32_t t) {
     live_.touchPath.move(x, y);
     if (faced) b_.face().finger(true, x, y);
   }
-  if (touching && live_.touchOnSign && !live_.touchDismissed && signShows(t) && live_.touchPath.held(t)) {
-    // Nothing plays: the sign goes when the Mac's next state says so.
+  if (touching && live_.touchOnNeedsYou && !live_.touchDismissed && needsYouShows(t) && live_.touchPath.held(t)) {
+    // Nothing plays: the screen goes when the Mac's next state says so.
     live_.touchDismissed = true;
     input("gesture", t);
     char data[24];
-    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)live_.touchSign);
-    kit().emit("gesture", kDismissGesture, live_.touchSign ? data : nullptr, live_.touchInjected);
+    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)live_.touchAttnId);
+    kit().emit("gesture", kDismissGesture, live_.touchAttnId ? data : nullptr, live_.touchInjected);
   }
   if (!touching && live_.touchDown) {
     b_.pressUp();
@@ -691,11 +691,11 @@ void Device::readInputs(uint32_t t) {
       // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
       // nose; then the board reacts as one, but not while the face is
       // held, where a touch is a tap.
-      // A touch that began on the sign was for the sign: it gives no tap
-      // once its hold dismissed it, or once the sign has gone (its request
+      // A touch that began on the needs-you screen was for it: it gives no tap
+      // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
       render::Gesture g;
-      if (!(live_.touchOnSign && (live_.touchDismissed || !signShows(t)))) {
+      if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         if (live_.touchPath.up(g) && !b_.held(t))
           gestured(g, t, live_.touchInjected);
@@ -708,7 +708,7 @@ void Device::readInputs(uint32_t t) {
   live_.touchDown = touching;
 }
 
-bool Device::signShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
+bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
 
 void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
   b_.gesture(g, t);

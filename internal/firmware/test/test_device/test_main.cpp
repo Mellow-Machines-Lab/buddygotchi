@@ -799,10 +799,10 @@ static void test_repeated_states_dont_redraw_the_picture() {
   r.usbLine(states[2]);
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
   r.dev.takeFrame();
-  const std::vector<uint8_t> sign = r.px;
+  const std::vector<uint8_t> needsYou = r.px;
   r.usbLine("{\"t\":\"state\",\"attn\":{\"agent\":\"claude\",\"project\":\"boop\",\"name\":\"Fix another test\",\"id\":1}}");
   TEST_ASSERT_TRUE(r.dev.takeFrame());
-  TEST_ASSERT_TRUE(r.px != sign);
+  TEST_ASSERT_TRUE(r.px != needsYou);
 }
 
 // internal/VERIFICATION.md §8: a press draws at once, and the 16 ms
@@ -2143,12 +2143,12 @@ static void test_a_stroke_is_a_gesture() {
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
 }
 
-// A finger held still on the needs-you sign for TouchGesture::kHoldMs
+// A finger held still on the needs-you screen for TouchGesture::kHoldMs
 // dismisses it: `ev gesture` `dismiss` once, as the hold completes, with
 // the request's number (`data.attn`), and nothing on release, where a
-// shorter touch is the tap that opens the thread. Nothing plays: the sign
+// shorter touch is the tap that opens the thread. Nothing plays: the screen
 // stays until the Mac's next state.
-static void test_a_hold_on_the_sign_dismisses_it() {
+static void test_a_hold_on_the_needs_you_screen_dismisses_it() {
   const char* dismiss = "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\",\"data\":{\"attn\":3}}\n";
   const char* tap = "\"kind\":\"tap\"";
   Rig r;
@@ -2162,20 +2162,20 @@ static void test_a_hold_on_the_sign_dismisses_it() {
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
   TEST_ASSERT_EQUAL_INT(0, count(r.usb.text, tap));
   TEST_ASSERT_EQUAL_STRING("needs_you", r.screen().c_str());
-  // A short touch on the sign is still a tap.
+  // A short touch on the screen is still a tap.
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":300}");
   for (int i = 0; i < 5; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
-  // A slow stroke across the sign is no hold.
+  // A slow stroke across the screen is no hold.
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":200,\"to_y\":120,\"ms\":1500}");
   for (int i = 0; i < 20; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
   TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
 }
 
-// The hold names the request the sign showed as the finger went down: one
-// that takes the sign during the hold (the first answered on the Mac) isn't
-// the one dismissed, and a sign with no number sends none.
+// The hold names the request the screen showed as the finger went down: one
+// that takes the screen during the hold (the first answered on the Mac) isn't
+// the one dismissed, and a request with no number sends none.
 static void test_a_hold_names_the_request_it_began_on() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
@@ -2194,9 +2194,9 @@ static void test_a_hold_names_the_request_it_began_on() {
 
 // Outside needs-you a hold is a tap on release, however long; a request
 // that comes up under a finger already down isn't dismissed by it; and a
-// touch on a sign that goes before it lifts (answered on the Mac) is
+// touch on a needs-you screen that goes before it lifts (answered on the Mac) is
 // nothing.
-static void test_a_hold_off_the_sign_is_a_tap() {
+static void test_a_hold_off_the_needs_you_screen_is_a_tap() {
   const char* dismiss = "\"did\":\"dismiss\"";
   const char* tap = "\"kind\":\"tap\"";
   Rig r;
@@ -2285,9 +2285,9 @@ int main() {
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);
   RUN_TEST(test_a_state_carries_its_to_do_count);
-  RUN_TEST(test_a_hold_on_the_sign_dismisses_it);
+  RUN_TEST(test_a_hold_on_the_needs_you_screen_dismisses_it);
   RUN_TEST(test_a_hold_names_the_request_it_began_on);
-  RUN_TEST(test_a_hold_off_the_sign_is_a_tap);
+  RUN_TEST(test_a_hold_off_the_needs_you_screen_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
   RUN_TEST(test_face_down_is_do_not_disturb);

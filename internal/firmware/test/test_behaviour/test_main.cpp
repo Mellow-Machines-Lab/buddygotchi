@@ -347,7 +347,7 @@ static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
 }
 // The needs-you screen shows, which a switch to or from cuts: it rises in,
 // and drops, on its own.
-static bool signShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
+static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
 // A switch of design doesn't cut hard: it dissolves over the rig's fade,
 // its first frame a sixteenth of the new design's pixels, so the frame
 // just after it is the frame before but for at most an eighth of the
@@ -446,7 +446,7 @@ static void test_no_change_ever_cuts_hard() {
           }
           r.at(r.t + when);
           SceneShow before = r.b.show(r.t);
-          const bool signed_ = signShows(r);
+          const bool neededYou = needsYouShows(r);
           drawFace(r, was, true);
           if (event < kStates) {
             r.state(states[event]);
@@ -476,7 +476,7 @@ static void test_no_change_ever_cuts_hard() {
           SceneShow after = r.b.show(r.t);
           bool same = designOf(before) == designOf(after) && before.t == after.t;
           drawFace(r, now, true);
-          if (!same && !signed_ && !signShows(r) && !dissolves(was, now)) {
+          if (!same && !neededYou && !needsYouShows(r) && !dissolves(was, now)) {
             char why[160];
             std::snprintf(why, sizeof(why), "from state %d, playing %d, event %d at +%u ms: design %d at %u, then %d at %u",
                           from, playing, event, unsigned(when), designOf(before), unsigned(before.t), designOf(after),
@@ -630,7 +630,7 @@ static void test_only_a_press_on_the_rig_face_kicks_it() {
     r->at(1000);
   }
   drawFace(held, a, true);
-  TEST_ASSERT_TRUE(signShows(held));
+  TEST_ASSERT_TRUE(needsYouShows(held));
   held.b.face().finger(true, 160, 120);
   for (Rig* r : {&held, &none, &pressed}) {
     r->at(1500);
@@ -737,7 +737,7 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
         default: break;
       }
       SceneShow before = r.b.show(r.t);
-      bool signed_ = signShows(r);
+      bool neededYou = needsYouShows(r);
       drawFace(r, now, true);
       const uint32_t end = playing == kQuiet ? Behaviour::kNoAppMs + 2000 : r.t + 60000;
       bool moved = false;
@@ -759,15 +759,15 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
         const bool goesOn = same && (after.t == next || rests);
         if (!goesOn) was = now;
         drawFace(r, now, false);
-        const bool signs = signShows(r);
-        if (!goesOn && !signed_ && !signs && !dissolves(was, now)) {
+        const bool needsYou = needsYouShows(r);
+        if (!goesOn && !neededYou && !needsYou && !dissolves(was, now)) {
           char why[112];
           std::snprintf(why, sizeof(why), "state %d/%d, playing %d: design %d at %u, then %d at %u, at t=%u",
                         int(m.base), int(m.mood), playing, designOf(before), unsigned(before.t), designOf(after),
                         unsigned(after.t), unsigned(t));
           TEST_FAIL_MESSAGE(why);
         }
-        before = after, signed_ = signs;
+        before = after, neededYou = needsYou;
         ++frames;
       }
     }

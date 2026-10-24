@@ -1,6 +1,6 @@
 # State coverage and event mapping
 
-Updated 2026-10-23. The exact 25 state IDs, trigger descriptions, authored
+Updated 2026-10-24. The exact 25 state IDs, trigger descriptions, authored
 variations (three each; idle's six and asleep's four, with their comedy,
 and a gesture's ten)
 and nine visual scene families are in [state-plan.json](state-plan.json). The router and reference scene modules
@@ -18,7 +18,7 @@ synchronized sound remain separate work.
 | Start | starting, wake_up, notice | ctx new_task/session/continuation/compacted selects truthful card; wake_up (you back after a long break) stretches with no card; notice (you named it) looks up at you, a gag under a borrowed face, with no card |
 | Desk | planning, working, terminal, tool_use, searching, analyzing, testing, waiting | One computer, different activity rhythms/cues |
 | Helpers | delegating, helper_return | Dispatch/live helpers vs an observed returning helper |
-| Alert | needs_you | Permission/input pending, stable recognizable ding and sign |
+| Alert | needs_you | Permission/input pending, stable recognizable ding and card |
 | Result | reply_ready, task_complete, error, stopped | Reply vs whole-task success/failure vs tool error vs interruption |
 | Touch | poked, tap_spam, gesture | Ordinary local response vs repeated-tap response vs the board's own gesture (a stroke, a shake, BOOT's hand-off: a gag each, under a borrowed face) |
 

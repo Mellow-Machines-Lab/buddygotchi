@@ -50,7 +50,7 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
   // moves of its own (and asleep's shut eyes would shut a poke's).
   const SceneState base = next.anim == SceneState::kNone ? context.base : SceneState::kNone;
   rig_.setLook(base);
-  if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kSign;  // the dissolve is over
+  if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kNeedsYou;  // the dissolve is over
   // A new look starts on its first variation, or on an occasion's while
   // one fits; so does the look again when the mood has fewer of them. The
   // turns bring the rest.
@@ -148,11 +148,11 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
        (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
     lookVariant_ = pickLook(src_.mood, src_.look, lookVariant_, rng);
 }
-// A needs-you replacing another starts its sign over; the sign cuts in.
+// A needs-you replacing another starts its screen over; the screen cuts in.
 void PixelFace::alert(uint32_t t, bool) { lookAt_ = t; }
 void PixelFace::startSwitch(uint32_t t) {
-  // What shows: the sign, or the picture of the two that shows more.
-  if (drawn_.kind == Drew::kSign || mix(t) >= 500) from_ = drawn_;
+  // What shows: the needs-you screen, or the picture of the two that shows more.
+  if (drawn_.kind == Drew::kNeedsYou || mix(t) >= 500) from_ = drawn_;
   switchAt_ = t;
 }
 // A press kicks the rig face, and strokes it until it lets go, only if it
@@ -241,8 +241,8 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   std::memset(static_cast<void*>(&p), 0, sizeof p);  // its padding too: it's hashed as bytes
   p.lane = Dither::fade(strip.opacity, true).hi, p.bubble = bubble != nullptr;
   if (strip.agent && show.state == SceneState::kNeedsYou) {
-    p.kind = Drew::kSign;
-    p.sign = signPose(designMs(t), show.eyesShut, show.dy);
+    p.kind = Drew::kNeedsYou;
+    p.needsYou = needsYouPose(designMs(t), show.eyesShut, show.dy);
   } else {
     p.kind = rigDraws(show.mood, show.state, show.variant) ? Drew::kRig : Drew::kDesign;
     // A dissolve shows more of what comes in each frame, some of it from
@@ -250,7 +250,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     const int in = mix(t);
     p.in = Dither::fade(in, true);
     p.in.hi = uint8_t(std::max<int>(p.in.hi, 1));
-    p.from = p.in.all() ? Drew::kSign : from_.kind;
+    p.from = p.in.all() ? Drew::kNeedsYou : from_.kind;
     const bool rig = p.kind == Drew::kRig, stays = rig && p.from == Drew::kRig;
     FaceMove move = faceMove(show);
     if (stays) {
@@ -276,12 +276,12 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   const uint64_t key = frameKey(p);
   if (!dirty && key == drawnKey_) return false;
   drawnKey_ = key;
-  if (p.kind == Drew::kSign) {
-    drawSignScreen(c, p.sign, strip);
+  if (p.kind == Drew::kNeedsYou) {
+    drawNeedsYouScreen(c, p.needsYou, strip);
     return true;
   }
   c.fill(kBlack);
-  if (p.from != Drew::kSign) {
+  if (p.from != Drew::kNeedsYou) {
     // What showed, fading out under what comes in: with the face staying,
     // only its design.
     const Dither out = {p.in.hi, 16};

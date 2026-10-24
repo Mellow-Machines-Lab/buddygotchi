@@ -546,7 +546,7 @@ Besides drawing each mood and state, a face:
   it. On Pixel's needs-you screen it holds up an amber placard with
   who's asking and peeks over it, then sways it and waves a mitt, then
   shakes it and waves both, then lowers it and stares at you, and at
-  last gives up and peeks calmly (`render/pixel/sign.h`). Answer at any
+  last gives up and peeks calmly (`render/pixel/needs_you.h`). Answer at any
   point and the face goes straight back to its look.
 - **Has a name** for the board's `hello` (`name`). It draws every mood,
   so the Mac sends each as it is. The board shows its startup mood only

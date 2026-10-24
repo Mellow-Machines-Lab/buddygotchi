@@ -122,8 +122,8 @@ class Device : public linkkit::App {
  public:
   // A panel touch ends after this long without contact, in real ms.
   static constexpr uint32_t kTouchReleaseMs = 50;
-  // The gesture a finger held on the needs-you sign sends (`ev gesture`),
-  // with the number of the request the sign showed as the touch began
+  // The gesture a finger held on the needs-you screen sends (`ev gesture`),
+  // with the number of the request the screen showed as the touch began
   // (`data.attn`, the state's `attn.id`): the Mac stops showing that
   // request if it still shows, and the board plays nothing.
   static constexpr const char* kDismissGesture = "dismiss";
@@ -230,10 +230,10 @@ class Device : public linkkit::App {
     // The touch in progress, last in contact at real time touchSeenReal.
     bool touchDown = false;
     bool touchInjected = false;  // it's dbg.touch's, not the panel's
-    // It began on the needs-you screen, showing request touchSign (0 when the
+    // It began on the needs-you screen, showing request touchAttnId (0 when the
     // Mac sent no number), and its hold has dismissed it.
-    bool touchOnSign = false, touchDismissed = false;
-    uint32_t touchSign = 0;
+    bool touchOnNeedsYou = false, touchDismissed = false;
+    uint32_t touchAttnId = 0;
     uint32_t touchSeenReal = 0;
     // The reaction (Behaviour::reactionSeq) whose `say` has started or been
     // dropped: a newer one's starts when its bubble shows.
@@ -248,9 +248,9 @@ class Device : public linkkit::App {
   // `did` its name); `facedown` plays nothing.
   void gestured(render::Gesture g, uint32_t t, bool injected);
   void readMotion(uint32_t t);
-  // Whether the needs-you sign is on screen: something needs you, and the
+  // Whether the needs-you screen shows: something needs you, and the
   // app is there to say so.
-  bool signShows(uint32_t t) const;
+  bool needsYouShows(uint32_t t) const;
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();

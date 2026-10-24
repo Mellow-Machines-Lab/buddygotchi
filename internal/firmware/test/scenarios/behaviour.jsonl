@@ -73,7 +73,7 @@
 {"clock":29900}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.go"}}}
 {"expect":{"screen":"needs_you","moment":null,"audio":{"take":null}}}
-// Answered on the Mac: the needs-you sign cuts back to working.
+// Answered on the Mac: the needs-you screen cuts back to working.
 {"clock":30000}
 {"t":"state","base":"working","busy":2}
 {"clock":30075}

@@ -10,7 +10,7 @@
 
 #include "render/pixel/anim.h"
 #include "render/pixel/effect_track.h"
-#include "render/pixel/sign.h"
+#include "render/pixel/needs_you.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/sounds.h"
 #include "voice/effects.h"
@@ -331,10 +331,10 @@ void test_entry_designs_sound_once() {
 
 // The needs-you arc's cues play over the design's, once each, at their
 // times on the needs-you's clock and at their gain and pitch
-// (render/pixel/sign.h, kArcCues): a swipe as the sway starts, knocks that
+// (render/pixel/needs_you.h, kArcCues): a swipe as the sway starts, knocks that
 // grow with the picture (one as it sways, two mid-sway, three as it
 // shakes, four at the height of it), each group louder and higher, the
-// brake at the stare and the slide as the sign goes back up. A new needs-you
+// brake at the stare and the slide as the placard goes back up. A new needs-you
 // plays them again.
 void test_the_needs_you_arc_cues_once_each() {
   render::pixel::PixelFace face;

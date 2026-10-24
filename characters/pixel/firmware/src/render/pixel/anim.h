@@ -6,7 +6,7 @@
 #include "render/pixel/outfit.h"
 #include "render/pixel/rig_face.h"
 #include "render/pixel/scene.h"
-#include "render/pixel/sign.h"
+#include "render/pixel/needs_you.h"
 #include "render/pixel/sounds.h"
 namespace render::pixel {
 class PixelFace final : public Face {
@@ -74,10 +74,10 @@ class PixelFace final : public Face {
   bool rigDraws() const { return rigDraws(src_.mood, src_.state(), src_.variant()); }
   // A frame draws the needs-you screen, a design, or a design with the rig
   // face in it.
-  enum class Drew : uint8_t { kSign, kDesign, kRig };
+  enum class Drew : uint8_t { kNeedsYou, kDesign, kRig };
   // A picture shown: what it drew, and the design's show.
   struct Shown {
-    Drew kind = Drew::kSign;
+    Drew kind = Drew::kNeedsYou;
     SceneShow show;
   };
   // A switch dissolves what shows into what's next over the rig's fade
@@ -91,14 +91,14 @@ class PixelFace final : public Face {
   // How much of what comes in shows, 0 … 1000: all of it but while a
   // switch dissolves.
   int mix(uint32_t t) const {
-    const bool fading = from_.kind != Drew::kSign && within(t, switchAt_, rig::kFadeMs);
+    const bool fading = from_.kind != Drew::kNeedsYou && within(t, switchAt_, rig::kFadeMs);
     return fading ? ease1000(int(t - switchAt_), int(rig::kFadeMs)) : 1000;
   }
   // Everything a frame's pixels depend on but the words it shows: what it
-  // draws, what a switch dissolves it from (kSign for nothing) and the
+  // draws, what a switch dissolves it from (kNeedsYou for nothing) and the
   // pixels of it that come in, the lane's dither level and whether the
   // bubble shows, the held sign's place, the hat's, the outfit's look, and
-  // the sign's pose or the frames laid out. Two equal pictures draw the
+  // the needs-you screen's pose or the frames laid out. Two equal pictures draw the
   // same pixels, so a frame whose picture hashes as the last one's isn't
   // drawn again. Each is laid out once, into picture_: off the stack, which
   // a dissolve's outgoing frame needs.
@@ -108,7 +108,7 @@ class PixelFace final : public Face {
     Dither in;
     int16_t lane, heldAt, hatX, hatY;
     uint32_t dress;
-    SignPose sign;
+    NeedsYouPose needsYou;
     RigFrame face;
     SceneFrame design;
   };
@@ -136,7 +136,7 @@ class PixelFace final : public Face {
   uint32_t arcCovered_ = 0;
   RigFace rig_;
   // What the last frame drew (coming in, while a switch dissolves) and its
-  // picture's key; and what a switch dissolves from, kSign for nothing.
+  // picture's key; and what a switch dissolves from, kNeedsYou for nothing.
   Shown drawn_, from_;
   uint64_t drawnKey_ = 0;
   Picture picture_;
