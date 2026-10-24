@@ -2,7 +2,8 @@
 into a pack's references/<date>-<topic>/ with a reference.json; `read`
 cuts a GIF and a video a frame every 40 ms (ffmpeg) and a still into one,
 with a contact sheet of each, and writes frames and ms. On a GIF Pillow
-draws and an MP4 ffmpeg makes, in a temporary pack. Needs ffmpeg."""
+draws, and an MP4 and a streamed WebM (a browser's recording) ffmpeg
+makes, in a temporary pack. Needs ffmpeg."""
 import contextlib
 import datetime
 import io
@@ -101,6 +102,27 @@ class ReferenceTests(unittest.TestCase):
         ref = json.loads((folder / "reference.json").read_text())
         self.assertEqual(ref["ms"], 800)
         self.assertEqual(ref["frames"], 20, "0.8 s, a frame every 40 ms")
+
+    @unittest.skipUnless(HAS_FFMPEG, "needs ffmpeg")
+    def test_read_cuts_a_browsers_webm_and_a_failed_cut_keeps_the_frames(self):
+        """A browser's MediaRecorder .webm says no length of its own, as one ffmpeg streams out doesn't: its frames
+        give its length. A cut that fails leaves the frames there before, and nothing half cut."""
+        video = self.dir / "clip.webm"
+        with video.open("wb") as out:
+            subprocess.run([reference.tool("ffmpeg"), "-v", "error", "-f", "lavfi", "-i", "testsrc=duration=0.8:size=96x64:rate=25",
+                            "-c:v", "libvpx", "-f", "webm", "pipe:1"], check=True, stdout=out)
+        said = subprocess.run([reference.tool("ffprobe"), "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                               str(video)], check=True, capture_output=True, text=True).stdout.strip()
+        self.assertEqual(said, "N/A")
+        folder = self.new(video, topic="clip")
+        reference.read(folder)
+        ref = json.loads((folder / "reference.json").read_text())
+        self.assertEqual((ref["frames"], ref["ms"]), (20, 800))
+        (folder / "clip.webm").write_bytes(b"not a video")
+        with self.assertRaises(subprocess.CalledProcessError):
+            reference.read(folder)  # ffmpeg says why on stderr
+        self.assertEqual([p.name for p in (folder / "frames").iterdir()], ["clip.webm"])
+        self.assertEqual(len(list((folder / "frames" / "clip.webm").glob("*.png"))), 20)
 
     @unittest.skipUnless(HAS_FFMPEG, "needs ffmpeg")
     def test_the_command_line(self):

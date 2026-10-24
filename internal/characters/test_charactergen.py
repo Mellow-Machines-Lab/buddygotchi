@@ -304,11 +304,28 @@ class RigRuleTests(unittest.TestCase):
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.dir)
+        # A pixel face that draws two moods, whose eyes and mouths are the styles.
+        write(self.dir / gen.PIXEL_FACES, 'constexpr const char* kMoodNames[2] = {"happy", "sad"};\n')
 
     def rig(self, files):
         for rel, value in files.items():
             write(self.dir / "rig" / rel, value)
         return gen.read_rig(self.dir, self.MOODS, self.STATES)
+
+    def test_a_style_is_a_mood_the_pixel_face_draws(self):
+        """Its own pixel face's, or the one it uses (Boop's is Pixel's); a typo fails with its file and key."""
+        self.assertEqual(gen.drawn_styles(self.dir), ["happy", "sad"])
+        pixel = gen.drawn_styles(ROOT / "characters" / "pixel")
+        self.assertEqual(len(pixel), 13)
+        self.assertEqual(gen.drawn_styles(ROOT / "characters" / "boop"), pixel)
+        _, problems = self.rig({"expressions.json": {"calm": {"eyes": "sad", "mouth": "hapy"}}})
+        self.assertEqual(problems, ["rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws (happy, sad)"])
+        (self.dir / gen.PIXEL_FACES).unlink()
+        _, problems = self.rig({})
+        self.assertEqual(problems, ["rig/expressions.json: calm.eyes: 'sad' isn't a mood the pixel face draws "
+                                    "(the pack has no pixel face)",
+                                    "rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws "
+                                    "(the pack has no pixel face)"])
 
     def test_a_pack_without_a_rig_has_an_empty_one(self):
         rig, problems = self.rig({})
@@ -319,17 +336,17 @@ class RigRuleTests(unittest.TestCase):
         """Each file's rows as rig.h's types hold them: an expression's styles by name, eyeOpen both eyes, a key's
         ease inout unless it says, clips in their files' order."""
         rig, problems = self.rig({
-            "expressions.json": {"calm": {"eyes": "shut", "mouth": "line"}},
+            "expressions.json": {"calm": {"eyes": "sad", "mouth": "happy"}},
             "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
-                                "tracks": {"tilt": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
+                                "tracks": {"lean": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
             "looks.json": {"idle": {"clip": "sway"}, "working": {"clip": None}},
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
-        for row in ['{"calm", "shut", "line"},',
+        for row in ['{"calm", "sad", "happy"},',
                     "{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
-                    "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kTilt, {kKeys + 3, 2}},",
+                    "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kLean, {kKeys + 3, 2}},",
                     "{Channel::kEyeOpenL, {kKeys + 5, 2}},", "{Channel::kEyeOpenR, {kKeys + 7, 2}},",
                     '{"hop", 400, false, true, {kTracks + 0, 1}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
@@ -343,15 +360,16 @@ class RigRuleTests(unittest.TestCase):
             "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"]],
                                "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
-            "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"tilt": [[0, 0], [200, 100]]}},
+            "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 100]]}},
             "clips/Bad Name.json": {"ms": 0},
             "looks.json": {"idle": {"clip": "hop", "scene": "desk"}, "working": {"clip": "nope"}, "dancing": {}},
         })
         self.assertEqual(problems, [
             "rig/expressions.json: giddy: isn't a mood",
-            "rig/expressions.json: happy.eyes: 'Dot' isn't a name",
+            "rig/expressions.json: happy.eyes: 'Dot' isn't a mood the pixel face draws (happy, sad)",
             "rig/expressions.json: happy.wiggle: unknown key",
             "rig/expressions.json: happy.mouth: missing",
+            "rig/expressions.json: calm.mouth: 'line' isn't a mood the pixel face draws (happy, sad)",
             "rig/expressions.json: calm.eyes: missing",
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
             "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
@@ -361,7 +379,7 @@ class RigRuleTests(unittest.TestCase):
             "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
             "rig/clips/hop.json: tracks.lift[2]: its time, 100, isn't a whole ms after the key before's and at most 400",
             "rig/clips/hop.json: tracks.lift[3]: its ease, 'bouncy', isn't one of linear, in, out, inout",
-            "rig/clips/sway.json: tracks.tilt: loops, so it starts at 0 and ends at ms on the value it started on",
+            "rig/clips/sway.json: tracks.lean: loops, so it starts at 0 and ends at ms on the value it started on",
             "rig/looks.json: dancing: isn't a state the board has",
             "rig/looks.json: idle.scene: unknown key",
             "rig/looks.json: idle.clip: hop doesn't loop",

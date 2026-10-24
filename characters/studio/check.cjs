@@ -5,8 +5,9 @@
 // and each build's WebAssembly fetched once for all its boards; a click
 // opens the scene, and M comes back; and the cell a board's dbg.state
 // marks. Then the board's views: a transition recorded and measured, the
-// everyday transitions ranked and the jumpiest opened; a reference beside
-// the board on one scrubber; a review item with a verdict (the server's
+// everyday transitions ranked and the jumpiest opened, and the stage's
+// board back in the scene after, playing or paused as it was; a reference
+// beside the board on one scrubber; a review item with a verdict (the server's
 // answer stood in for, so nothing is saved); and the page from file://,
 // where what needs no server works.
 // Run `node characters/studio/serve.cjs --port 4190`, then
@@ -110,6 +111,13 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     await page.evaluate(()=>document.getElementById('studio').studio.setView('scene'));
     await page.waitForTimeout(800);
     assert.deepEqual(await stage(),{paused:false,drawn:true},'back in the scene, the stage\'s board plays again');
+    // Paused in the scene, then recorded on in a view: back in the scene, the stage still takes its board back, paused.
+    await page.evaluate(()=>{const s=document.getElementById('studio').studio;s.adapter.setPaused(true);s.setView('transitions');});
+    await until('transitions',v=>v.status.startsWith('106'),'a recording from a paused stage');
+    await page.evaluate(()=>{const c=document.querySelector('#stage canvas');c.getContext('2d').clearRect(0,0,c.width,c.height);});
+    await page.evaluate(()=>document.getElementById('studio').studio.setView('scene'));
+    await page.waitForTimeout(800);
+    assert.deepEqual(await stage(),{paused:true,drawn:true},'paused, recorded on, and back: the stage shows its board again, paused');
     const ref=(await page.evaluate(()=>document.getElementById('studio').studio.packs.boop.references))[0];
     await page.goto(`${url}#pack=boop&c=board-gel&view=references&ref=${ref.id}`);
     let r=await until('references',v=>v.board.length,'the board recorded beside the reference');

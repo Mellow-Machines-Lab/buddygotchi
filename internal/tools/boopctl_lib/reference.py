@@ -11,6 +11,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -65,21 +66,28 @@ def new(pack: Path, topic: str, kind: str, note: str, files: list[Path], today: 
 
 def cut(source: Path, out: Path) -> int:
     """The file's frames in out/, 0000.png on, a frame every gen.FRAME_MS,
-    no bigger than LONGEST; returns its length in ms (a still's is 0)."""
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
-    if gen.MEDIA[source.suffix.lower()] == "still":
-        with Image.open(source) as image:
-            image.thumbnail((LONGEST, LONGEST))
-            image.save(out / "0000.png")
-        return 0
-    seconds = subprocess.run([tool("ffprobe"), "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(source)],
-                             check=True, capture_output=True, text=True).stdout.strip()
-    fit = f"scale='min({LONGEST},iw)':'min({LONGEST},ih)':force_original_aspect_ratio=decrease"
-    subprocess.run([tool("ffmpeg"), "-v", "error", "-i", str(source), "-vf", f"fps={1000 // gen.FRAME_MS},{fit}",
-                    "-start_number", "0", str(out / "%04d.png")], check=True)
-    return round(float(seconds) * 1000)
+    no bigger than LONGEST; returns its length in ms, its frames' (a
+    still's is 0): a browser's recording often says no length of its own.
+    The frames there before stay until the new ones are all cut."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    new = Path(tempfile.mkdtemp(prefix=f".{out.name}.", dir=out.parent))
+    still = gen.MEDIA[source.suffix.lower()] == "still"
+    try:
+        if still:
+            with Image.open(source) as image:
+                image.thumbnail((LONGEST, LONGEST))
+                image.save(new / "0000.png")
+        else:
+            fit = f"scale='min({LONGEST},iw)':'min({LONGEST},ih)':force_original_aspect_ratio=decrease"
+            subprocess.run([tool("ffmpeg"), "-v", "error", "-i", str(source), "-vf", f"fps={1000 // gen.FRAME_MS},{fit}",
+                            "-start_number", "0", str(new / "%04d.png")], check=True)
+        frames = len(list(new.glob("*.png")))
+        if out.exists():
+            shutil.rmtree(out)
+        new.rename(out)
+    finally:
+        shutil.rmtree(new, ignore_errors=True)
+    return 0 if still else frames * gen.FRAME_MS
 
 
 def read(folder: Path) -> list[str]:

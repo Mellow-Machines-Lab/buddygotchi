@@ -37,8 +37,12 @@ test('the board is asked for each state as the Mac asks for it', async () => {
   assert.deepEqual(finish[1][1].args,{outcome:'failure'});
   assert.deepEqual(wire({mood:'calm',state:'starting',context:'compacted'}).steps[1][1].args,{ctx:'compacted'});
   assert.equal(wire({mood:'calm',state:'wake_up'}).steps[0][1].base,'idle','waking up is over idle');
-  const over={base:'asleep'};
-  assert.equal(wire({mood:'calm',state:'notice'},over).steps[0][1].base,'asleep','a transition\'s reaction plays over its start\'s look');
+  const over={base:'asleep'},asked=(cell,under)=>wire(cell,under).steps.map(([ms,m])=>[ms,m.t,m.name,m.args]);
+  assert.deepEqual(asked({mood:'calm',state:'notice'},over),[[0,'do','notice',{mood:'calm'}]],
+    'a transition\'s reaction plays over its start\'s look, its state left as it was, in its own mood');
+  assert.deepEqual(asked({mood:'excited',state:'task_complete'},{base:'working',busy:1}),[[0,'do','task_complete',{outcome:'success',mood:'excited'}]],
+    'a finish over working in its own mood, as internal/tools/fluid/transitions.jsonl asks for one');
+  assert.equal(wire({mood:'calm',state:'poked'},over).steps[0][1].base,'asleep','an input over its start\'s look');
   assert.deepEqual(wire({mood:'calm',state:'tap_spam'}).steps.slice(1).map(([ms,m])=>[ms,m.t]),[[0,'dbg.touch'],[200,'dbg.touch'],[400,'dbg.touch']],'the third tap within 3 s is tap spam');
   assert.deepEqual([wire({mood:'calm',state:'poked'}).steps[1][1].x,wire({mood:'calm',state:'poked'}).steps[1][1].y],TAP,'a tap where the simulator taps');
   assert.ok(wire({mood:'calm',state:'gesture'}).steps[1][1].to_x,'a stroke');

@@ -22,10 +22,11 @@
   //
   // wire(cell, under, vol) is what the board is sent to show a cell, as
   // [ms, message] pairs from when it's asked: a look's `state`, or the look
-  // a reaction or input plays over (`under`: a transition's start's, else
-  // working, or idle for waking up and a stroke) and then it. `after` is
-  // how long the board takes to show it with nothing more said: no_app's
-  // window.
+  // a reaction or input plays over (working, or idle for waking up and a
+  // stroke) and then it. As a transition's end, over its start's look
+  // (`under`), a reaction is asked in its own mood, as the Mac asks for one,
+  // and the start's `state` stays. `after` is how long the board takes to
+  // show it with nothing more said: no_app's window.
   function wiring({acts, tap}) {
     const WORKING = {base: 'working', busy: 1};
     const LOOKS = {idle: {base: 'idle'}, asleep: {base: 'asleep'}, no_app: WORKING, working: WORKING,
@@ -37,10 +38,10 @@
     return function wire({mood, state, outcome = 'success', context = 'new_task'}, under = null, vol = 0) {
       if (LOOKS[state]) return {look: LOOKS[state], after: state === 'no_app' ? NO_APP_MS : 0, steps: [[0, {t: 'state', ...LOOKS[state], mood, vol}]]};
       const look = under || (state === 'wake_up' || state === 'gesture' ? LOOKS.idle : WORKING);
-      const steps = [[0, {t: 'state', ...look, mood, vol}]];
-      if (DOES.includes(state)) {
+      const does = DOES.includes(state), steps = under && does ? [] : [[0, {t: 'state', ...look, mood, vol}]];
+      if (does) {
         const args = state === 'task_complete' ? {outcome} : state === 'starting' ? {ctx: context} : {};
-        steps.push([0, {t: 'do', id: ++ids, name: state, play: 'now', args}]);
+        steps.push([0, {t: 'do', id: ++ids, name: state, play: 'now', args: under ? {...args, mood} : args}]);
       } else if (INPUTS[state]) steps.push(...INPUTS[state]);
       else throw Error(`The board has no state ${state}`);
       return {look, after: 0, steps};
@@ -207,9 +208,11 @@
           stepping = setInterval(() => kit?.board.send({t: 'dbg.clock', step: 100}), 100);
         },
         get paused() { return paused; },
+        // Lent to a view's recording, the board comes back to the stage
+        // playing the selection from a reset, paused or not.
         setPaused(on) {
           paused = on;
-          if (!on && lent) turn.catch(() => {}).then(() => { lent = false; play(); });
+          if (lent) turn.catch(() => {}).then(() => { lent = false; play(); });
           else kit?.board.send(on ? {t: 'dbg.clock', step: 0} : {t: 'dbg.clock', run: true});
         },
         record(options) {

@@ -251,6 +251,20 @@ def rig_channels(source: Path = RIG_H) -> dict[str, tuple[int, int, int]]:
     return {name: (int(lo), int(hi), int(rest)) for name, lo, hi, rest in rows}
 
 
+PIXEL_FACES = "firmware/include/faces.h"  # the pixel face's art, which facegen writes
+
+
+def drawn_styles(pack: Path) -> list[str]:
+    """The styles an expression may wear: the moods the pixel face the pack
+    has, or uses (§6), draws, whose eyes and mouth are its art (faces.h's
+    kMoodNames); none without one."""
+    faces = pack / PIXEL_FACES
+    if not faces.is_file() and (pack / "character.json").is_file():
+        faces = used(pack)[0].get(PIXEL_FACES, faces)
+    match = faces.is_file() and re.search(r"kMoodNames\[\d+\] = \{([^}]*)\}", faces.read_text())
+    return re.findall(r'"(\w+)"', match.group(1)) if match else []
+
+
 def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | None = None) -> tuple[dict, list[str]]:
     """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
     wrong with it, each problem with its file and key. Every file is
@@ -258,6 +272,9 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     moods = universal_moods() if moods is None else moods
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
+    drawn = drawn_styles(pack)
+    a_style = Rule(f"isn't a mood the pixel face draws ({', '.join(drawn) or 'the pack has no pixel face'})",
+                   lambda v: v in drawn)
     rig = {"expressions": [], "clips": [], "looks": []}
     # Each name a file may set, with its channel's range: eyeOpen sets both eyes.
     ranges = {**{c: (lo, hi) for c, (lo, hi, _) in channels.items()}, "eyeOpen": channels["eyeOpenL"][:2]}
@@ -284,7 +301,7 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
 
     rel = "expressions.json"
     for mood, styles in read(rel, {m: dict for m in moods}, unknown="isn't a mood").items():
-        styles = check(rel, styles, {"eyes": A_NAME, "mouth": A_NAME}, at=mood, required=("eyes", "mouth"))
+        styles = check(rel, styles, {"eyes": a_style, "mouth": a_style}, at=mood, required=("eyes", "mouth"))
         if len(styles) == 2:
             rig["expressions"].append({"mood": mood, **styles})
 
