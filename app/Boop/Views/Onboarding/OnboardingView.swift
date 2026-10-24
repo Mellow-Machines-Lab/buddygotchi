@@ -81,6 +81,17 @@ struct Footprints: View {
 }
 
 extension StateSnapshot {
+    /// Every look onboarding gives the on-screen Boop, by name, for the
+    /// snapshots to draw each through the slime engine.
+    static var onboardingLooks: [(String, StateSnapshot)] {
+        [("hello", .onboarding(mood: "happy")),
+         ("napping", .onboarding(base: "asleep", mood: "comfy")),
+         ("looking", .onboarding(mood: "curious")),
+         ("jumping", .onboarding(mood: "excited")),
+         ("cheeky", .onboarding(mood: "proud"))]
+            + WhatIDoAct.Step.allCases.map { ("demo-\($0)", $0.look) }
+    }
+
     /// The on-screen Boop's look, for the mirror: no sound, one agent at most.
     static func onboarding(base: String = "idle", act: String? = nil, mood: String = "happy",
                            waiting: String? = nil) -> StateSnapshot {
@@ -96,13 +107,15 @@ struct OnboardingBuddy: View {
     @ObservedObject var model: OnboardingModel
     var snapshot: StateSnapshot
     var size: CGFloat
+    /// For a 4:3 tile, its height (the slime only).
+    var height: CGFloat?
     /// The face, for a pack without the slime.
     var face: FaceMood = .happy
 
     var body: some View {
         Group {
             if SlimeFeed.folder != nil {
-                SlimeFace(feed: model.feed, snapshot: snapshot, live: true, listening: false, size: size)
+                SlimeFace(feed: model.feed, snapshot: snapshot, live: true, listening: false, size: size, height: height)
             } else {
                 BoopFace(mood: face, size: size)
             }

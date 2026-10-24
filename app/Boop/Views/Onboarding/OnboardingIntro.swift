@@ -110,9 +110,10 @@ struct WhatIDoAct: View {
             ActTitle(title: "I keep an eye on your agents")
             HStack(spacing: 22) {
                 terminal
-                OnboardingBuddy(model: model, snapshot: step.look, size: 178)
+                // 4:3, the engine's own shape, so the "needs you" sign fits.
+                OnboardingBuddy(model: model, snapshot: step.look, size: 236, height: 177)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 178 * 0.27 + 6)
+                        RoundedRectangle(cornerRadius: 177 * 0.27 + 6)
                             .strokeBorder(Theme.amber, lineWidth: 5)
                             .padding(-6)
                             .opacity(step == .asking ? 1 : 0)

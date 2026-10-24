@@ -119,12 +119,13 @@ struct BodyAct: View {
     private var joined: some View {
         VStack(spacing: 14) {
             ZStack {
-                // The on-screen Boop leaps off toward the desk…
-                OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: 150)
-                    .rotationEffect(.degrees(still || flown ? 28 : 0))
-                    .scaleEffect(still || flown ? 0.3 : 1)
-                    .offset(x: still || flown ? 300 : 0, y: still || flown ? 120 : 0)
-                    .opacity(still || flown ? 0 : 1)
+                // The on-screen Boop leaps off toward the desk, and leaves:
+                // one slime on the page at a time…
+                if !(still || flown) {
+                    OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: 150)
+                        .transition(.asymmetric(insertion: .identity, removal: .scale(scale: 0.3)
+                            .combined(with: .offset(x: 300, y: 120)).combined(with: .opacity)))
+                }
                 // …and the board on the desk wakes up.
                 DeskBoard(model: model)
                     .scaleEffect(still || flown ? 1 : 0.6)

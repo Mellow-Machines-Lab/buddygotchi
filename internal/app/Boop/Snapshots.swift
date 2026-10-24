@@ -37,6 +37,12 @@ enum Snapshots {
             if SlimeFeed.folder != nil {
                 onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"),
                                                          size: NSSize(width: 300, height: 300))
+                // Every look onboarding uses, through the engine: one it
+                // doesn't know fails here.
+                for (name, look) in StateSnapshot.onboardingLooks {
+                    _ = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"),
+                                                 size: NSSize(width: 320, height: 240))
+                }
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
                 gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"), size: NSSize(width: 46, height: 46))
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
