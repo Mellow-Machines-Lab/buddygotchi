@@ -42,8 +42,8 @@ struct Model {
   int busy = 0;     // sessions working
   int idle = 0;     // sessions idle, waiting for your next prompt
   int helpers = 0;  // helpers working, over every session
-  // The to-do list of the longest turn working (`todo`), done of total;
-  // 0 of 0 for none.
+  // The to-do list of the longest turn working that has one (`todo`),
+  // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
   int vol = 6;      // 0–10
   // The tags on now (`when`, render/tags.h): the part of the day, an

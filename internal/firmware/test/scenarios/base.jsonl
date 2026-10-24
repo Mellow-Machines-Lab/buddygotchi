@@ -46,7 +46,7 @@
 {"shot":"reconnect"}
 {"clock":31650}
 {"expect":{"bl":255}}
-// The working agent's to-do list, done of total, after the working count.
+// The working agent's to-do list, done of total, last, after the counts.
 {"t":"state","base":"working","busy":2,"helpers":2,"idle":1,"todo":{"done":3,"total":7}}
 {"clock":31900}
 {"expect":{"todo":{"done":3,"total":7}}}

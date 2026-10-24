@@ -104,12 +104,12 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
   r.round(x + 17, cy + 3, 7, 3, 1, ink);
 }
 
-// The counts after the names: how many sessions work and how far down its
-// to-do list the longest turn is ("3/7"), the helpers at work (a mini
-// each, a little droplet of the gel with two eyes) and the agents idle (a
-// parcel each for BOOT to hand over), from x, each with the gap after it.
-// Drawn when r is given; either way, the x after them, so the names leave
-// them the room they take.
+// The counts after the names: how many sessions work, the helpers at work
+// (a mini each, a little droplet of the gel with two eyes), the agents idle
+// (a parcel each for BOOT to hand over), and last, as Pixel's strip has it,
+// how far down its to-do list the longest turn with one is ("3/7"), from x,
+// each with the gap after it. Drawn when r is given; either way, the x
+// after them, so the names leave them the room they take.
 int counts(Raster* r, const Strip& s, int x, int cy) {
   const Font& f = kSign;
   const int ty = cy - f.h / 2;
@@ -120,10 +120,6 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
     if (r) ring(*r, x, cy, grey);
     std::snprintf(n, sizeof(n), "%d", s.busy);
     x = number(x + kIcon + 8, grey) + kIcon;
-  }
-  if (s.todoTotal > 0) {
-    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
-    x = number(x, eye) + kIcon;
   }
   if (s.helpers > 0) {
     const int minis = std::min(s.helpers, kMinis), miniW = 20;
@@ -149,6 +145,10 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
     }
     std::snprintf(n, sizeof(n), "%d", s.idle);
     x = number(x + kIcon + 10, eye) + kIcon;
+  }
+  if (s.todoTotal > 0) {
+    std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
+    x = number(x, eye) + kIcon;
   }
   return x;
 }

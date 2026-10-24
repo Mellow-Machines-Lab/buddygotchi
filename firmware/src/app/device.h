@@ -194,6 +194,52 @@ class Device : public linkkit::App {
     uint32_t at = 0;
     int x = -1, y = -1;
   };
+  // Everything keyed to the clock or to an input in progress, which
+  // reset() starts again whole (`live_ = {}`), so a scenario starts from the
+  // same place on the board and in the simulator.
+  struct Live {
+    // The reaction refuse() last parsed (ReactionIn::key is its key), for
+    // onDo, which follows at once: parsing again would pick its variation
+    // again.
+    ReactionIn parsed;
+    // The rest of the reaction playing: a `react` rests kReactGapMs after
+    // its `say` and bubble have played, restKey at restAt; 0 when none is
+    // due.
+    uint32_t restKey = 0;
+    uint32_t restAt = 0;
+    bool pattern = false;            // dbg.pattern until the next state
+    int patternFill = -1;            // a solid dbg.pattern screen, or -1
+    int targetX = -1, targetY = -1;  // a calibration target on dbg.pattern, or -1
+    uint32_t drawnT = 0;             // the time of the last frame
+    // Injected input, held until the clock passes `until`.
+    bool injPress = false;
+    uint32_t injPressUntil = 0;
+    bool injTouch = false;
+    uint32_t injTouchUntil = 0, injTouchFrom = 0;
+    int injX = 0, injY = 0, injToX = 0, injToY = 0;  // a dbg.touch moves from x, y to to_x, to_y
+    // The motion sensor's reading dbg.imu holds, in place of the board's.
+    bool injMotion = false;
+    int injAx = 0, injAy = 0, injAz = 1000;
+    // BOOT's press, what the touch in progress traces, and what the motion
+    // sensor feels, read every kMotionMs.
+    ButtonGesture boot;
+    TouchGesture touchPath;
+    MotionGesture motion;
+    uint32_t motionAt = 0;
+    bool bootInjected = false;  // the BOOT press in progress is dbg.press's
+    // The touch in progress, last in contact at real time touchSeenReal.
+    bool touchDown = false;
+    bool touchInjected = false;  // it's dbg.touch's, not the panel's
+    // It began on the needs-you sign, showing request touchSign (0 when the
+    // Mac sent no number), and its hold has dismissed it.
+    bool touchOnSign = false, touchDismissed = false;
+    uint32_t touchSign = 0;
+    uint32_t touchSeenReal = 0;
+    // The reaction (Behaviour::reactionSeq) whose `say` has started or been
+    // dropped: a newer one's starts when its bubble shows.
+    uint32_t saidSeq = 0;
+    LastInput last;
+  };
   ReactionIn parse(const linkkit::Do& c);
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
@@ -219,64 +265,25 @@ class Device : public linkkit::App {
   // without a native face (the CYD) spends no RAM on them.
   std::unique_ptr<render::SurfacePair> native_;
   Behaviour b_;
-  ButtonGesture boot_;
-  // The reaction refuse() last parsed (ReactionIn::key is its key), for onDo,
-  // which follows at once: parsing again would pick its variation again.
-  ReactionIn parsed_;
-  // The rest of the reaction playing: a `react` rests kReactGapMs after
-  // its `say` and bubble have played, restKey_ at restAt_; 0 when none is due.
-  uint32_t restKey_ = 0;
-  uint32_t restAt_ = 0;
+  Live live_;
+  static constexpr uint32_t kMotionMs = 20;
 
-  bool pattern_ = false;  // dbg.pattern until the next state
   // "No app" showing at the last tick, under no pattern: when it starts
   // with no message, so the frame isn't otherwise dirty.
   bool noApp_ = false;
-  int patternFill_ = -1;  // a solid dbg.pattern screen, or -1
-  int targetX_ = -1, targetY_ = -1;  // a calibration target on dbg.pattern, or -1
-  uint32_t drawnT_ = 0;   // the time of the last frame
-  uint32_t drawnReal_ = 0;  // and the real time it was drawn
+  uint32_t drawnReal_ = 0;  // the real time the last frame was drawn
   bool dirty_ = true;
   bool frame_ = false;
   // Frames pushed (noteFrame): counted over each real second into fps_.
   uint32_t frames_ = 0, fpsSinceReal_ = 0, fps_ = 0;
   uint32_t drawUs_ = 0, pushUs_ = 0;
 
-  // Injected input, held until the clock passes `until`.
-  bool injPress_ = false;
-  uint32_t injPressUntil_ = 0;
-  bool injTouch_ = false;
-  uint32_t injTouchUntil_ = 0, injTouchFrom_ = 0;
-  int injX_ = 0, injY_ = 0, injToX_ = 0, injToY_ = 0;  // a dbg.touch moves from x, y to to_x, to_y
-  // The motion sensor's reading dbg.imu holds, in place of the board's.
-  bool injMotion_ = false;
-  int injAx_ = 0, injAy_ = 0, injAz_ = 1000;
-  // What the touch in progress traces, and what the motion sensor feels,
-  // read every kMotionMs.
-  TouchGesture touchPath_;
-  MotionGesture motion_;
-  uint32_t motionAt_ = 0;
-  static constexpr uint32_t kMotionMs = 20;
-  bool bootInjected_ = false;  // the BOOT press in progress is dbg.press's
-  // The touch in progress, last in contact at real time touchSeenReal_.
-  bool touchDown_ = false;
-  bool touchInjected_ = false;  // it's dbg.touch's, not the panel's
-  // It began on the needs-you sign, showing request touchSign_ (0 when the
-  // Mac sent no number), and its hold has dismissed it.
-  bool touchOnSign_ = false, touchDismissed_ = false;
-  uint32_t touchSign_ = 0;
-  uint32_t touchSeenReal_ = 0;
-
-  // A `say` is playing, and the reaction (Behaviour::reactionSeq) whose `say`
-  // has started or been dropped: a newer one's starts when its bubble shows.
-  bool saying_ = false;
-  uint32_t saidSeq_ = 0;
+  bool saying_ = false;  // a `say` is playing
   // The face's sound effects: its timeline, and the effects handed to the
   // Hal since boot, the last by its clip (dbg.state `audio.fx`).
   uint32_t fxSent_ = 0;
   int fxLast_ = -1;
 
-  LastInput last_;
   // From each input or message to the frame that shows it (dbg.latency).
   Latency latency_;
   uint32_t led_ = 0;
