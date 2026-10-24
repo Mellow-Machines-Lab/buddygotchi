@@ -124,7 +124,7 @@ BOOP_JEV_KEY=… make eval                     # the final pass: every scenario,
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
 .build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
-.build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts, scored; fails under its floors or on a leaked secret
+.build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts and last messages, scored; fails under its floors or on a leaked secret
 ```
 
 **The expect brain, and a demo for every scenario.** A demo is an eval
@@ -237,8 +237,8 @@ file-name order:
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
 | `steps[].error` | A failed turn's error class |
 | `steps[].prompt` | What the person asked, on a `turn started`. Jev never sees it: it reaches NOW as its reading, counted (its length, whether it says the buddy's name, a tone its words plainly show) and labelled with the step's `reading` |
-| `steps[].reading` | What Apple Intelligence would make of the prompt, standing in for it: its `kind` (`fix`, `feature`, `cleanup`, `refactor`, `tests`, `deploy`, `docs`, `question`, `carry_on`, `other`), its `tone` (`calm`, `frustrated`, `rushed`, `polite`, `playful`, `shouting`, `careful`) and its `phrases`, kept only if they're in the prompt. `--labeler apple` reads the prompt for real instead |
-| `steps[].message` | The agent's last message, on a `turn finished`: NOW's `Its last message:` note. A failed turn has none, as with Claude's `StopFailure` |
+| `steps[].reading` | What Apple Intelligence would make of the prompt, standing in for it: its `kind` (`fix`, `feature`, `cleanup`, `refactor`, `tests`, `deploy`, `docs`, `question`, `carry_on`, `other`), its `tone` (`calm`, `frustrated`, `rushed`, `polite`, `playful`, `shouting`, `careful`) and its `phrases`, kept only if they're in the prompt. On a `turn finished`, the same for its `message`, from the message's lists: its `kind` (`done`, `stuck`, `question`, `answer`, `other`) and `tone` (`calm`, `upbeat`, `apologetic`, `fawning`). `--labeler apple` reads both for real instead |
+| `steps[].message` | The agent's last message, on a `turn finished`. Jev never sees it: it reaches NOW as its reading, in the finish's line (`…, 1 tool call, fawning.`), counted (a stock line, an apology, a plain claim of done or stuck, a question at its end) and labelled with the step's `reading`, with its phrases under `Its words:`. A failed turn has none, as with Claude's `StopFailure` |
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
@@ -256,7 +256,8 @@ or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
 that isn't a mood (`none` is a `react` too), an `animation` that isn't
 `none`, `success`, `failure`, `reply`, `wake up` or `notice`, a bad `at`, `reaction` or check
 value, a `prompt`, `reading` or `message` on a step that can't carry it, a
-`reading` whose kind or tone isn't one of the lists, or nothing
+finish's `reading` with no `message`, a
+`reading` whose kind or tone isn't one of its lists, or nothing
 to check (no `expect` and no `checks`) doesn't load, and the error names
 the file and step.
 

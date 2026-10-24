@@ -165,20 +165,32 @@ td.where{font-size:13px;white-space:nowrap}
     <span class="label">Boop Mac app (app/)</span>
     <ol class="hops">
       <li class="hop">
-        <div class="box boop"><b>Adapter → transcript</b><p>Turns the hook into an event and appends it to today's transcript file. Every later step reads from that file.</p></div>
-        <div class="pay"><span class="what">The event in <code>transcript/&lt;date&gt;.jsonl</code></span>
+        <div class="box boop"><b>Adapter → transcript</b><p>Takes the agent's last message out of the hook and reads it on the Mac (below, Where the pieces join), turns the hook into an event and appends it to today's transcript file, and the reading after it, never the words. Every later step reads from that file.</p></div>
+        <div class="pay"><span class="what">The events in <code>transcript/&lt;date&gt;.jsonl</code>: the finish, then its message's reading</span>
 <pre>{
-  "seq": 11,
-  "at": 1791177961075,
+  "seq": 16,
+  "at": 1792882891752,
   "source": "claude",
   "kind": "turn_end",
   "data": {
     "cwd": "/Users/me/src/api",
     "outcome": "done",
+    "reading_follows": true,
     "session": "s1",
-    "specific_type": "Stop",
-    "message": "Fixed the flaky login test; …"
+    "specific_type": "Stop"
   }
+}
+{
+  "seq": 17,
+  "source": "claude",
+  "kind": "last_message",
+  "data": {
+    "kind": "done",
+    "length": "sentence",
+    "session": "s1",
+    "specific_type": "reading"
+  },
+  …
 }</pre></div>
       </li>
       <li class="link"><div class="wire"><span>the new event</span></div></li>
@@ -197,16 +209,16 @@ td.where{font-size:13px;white-space:nowrap}
       </li>
       <li class="link"><div class="wire"><span>the event, read from the transcript</span></div></li>
       <li class="hop">
-        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. It counts runs on the line, as it does pokes: a check failing again, quick wins in a row (in streaks of five), the check-ins on a long turn (in rounds of four), a barrage again. It also says what the brain would otherwise miss: you answering a request, a compacted context, a poke while Boop sleeps, and idle check-ins while you're around and no agent works. Jev answers the same line the same way, so each rung of a run gets a line of its own. A finished turn is worth asking Jev about.</p></div>
+        <div class="box boop"><b>View: sentences for Jev</b><p><code>TranscriptView</code> writes the event as a sentence Jev can read, using earlier events for context, such as when the turn started and how many tools it used. It counts runs on the line, as it does pokes: a check failing again, quick wins in a row (in streaks of five), the check-ins on a long turn (in rounds of four), a barrage again. It also says what the brain would otherwise miss: you answering a request, a compacted context, a poke while Boop sleeps, and idle check-ins while you're around and no agent works. Jev answers the same line the same way, so each rung of a run gets a line of its own. A finished turn is worth asking Jev about. A finish whose last message was read has its sentence in the reading's place, saying what the message said.</p></div>
         <div class="pay"><span class="what">The end of the prompt Jev reads</span>
 <pre>HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "api".
-  You asked: "Fix the flaky login test"
+1 min ago: You asked claude on "api" in a few words.
 
-NOW (14:26, Monday)
-claude finished turn 1 on "api": done, a long turn, 3 tool calls.
-  Its last message: "Fixed the flaky login test; all 42 tests pass."
-Boop did nothing on its own.</pre></div>
+NOW (16:01, Saturday)
+claude finished turn 1 on "api": done, a long turn, 3 tool calls, saying it's done.
+Boop did nothing on its own.</pre>
+        <span class="small">From a headless run with no Apple Intelligence, so both readings are counted only. With it, your prompt would read <code>for a fix</code>, and a few of each text's words could follow under <code>Your words:</code> and <code>Its words:</code>.</span></div>
       </li>
       <li class="link"><div class="wire"><span>the sentence, with recent history</span></div></li>
       <li class="hop">
@@ -298,7 +310,7 @@ react.loops once · say.feeling none · say.about start · say.kind word</pre>
     <thead><tr><th>From → to</th><th>Where</th><th>What happens</th></tr></thead>
     <tbody>
       <tr><td>agent-hooks → Boop</td><td><code>Adapter.event(from:)</code>, <code>Runtime.hook</code></td><td>Each hook line becomes an <code>AgentEvent</code>, kept as a MellowHarness <code>Event</code> with its facts in <code>data</code></td></tr>
-      <tr><td>Your prompt → its reading</td><td><code>PromptIntake</code>, <code>PromptReading</code>, <code>Pipeline.promptRead</code> (<code>app/BoopKit/Prompt/</code>)</td><td><code>Runtime.hook</code> takes the prompt out of a turn start before it's logged (<code>PromptIntake.split</code>). Its reading scrubs it (<code>Scrubber</code>), counts its length, which buddies' names it says (the only buddy's is the one you gave it) and a tone its words plainly show, and, in the menu-bar app on macOS 26 while Apple Intelligence is on, has it label its kind and tone and pick up to three of its phrases (<code>AppleIntelligenceLabeler</code>, on the Mac; headless with <code>--labeler apple</code>); otherwise the reading is counted only. Then the text is let go. Tools, tests and evals hand <code>Pipeline.agent</code> the event with its prompt still in, and get the reading at once. The reading is an event of its own, <code>prompt</code>, which wakes the brain in the turn start's place: <code>You asked claude on "api" for a fix, in a sentence, frustrated.</code>, with <code>Your words: "still broken".</code> under it. One that comes once its turn is over (the labeler takes up to 3 s) is dropped: the brain has heard the turn end instead</td></tr>
+      <tr><td>Your prompt and the agent's last message → their readings</td><td><code>PromptIntake</code>, <code>Reading</code> (<code>PromptReading</code>, <code>MessageReading</code>), <code>Pipeline.read</code> (<code>app/BoopKit/Prompt/</code>)</td><td><code>Runtime.hook</code> takes the prompt out of a turn start, and the agent's last message out of a finish, before it's logged (<code>PromptIntake.split</code>). One reader reads both, each by its own closed lists: it scrubs the text (<code>Scrubber</code>), counts its length, which buddies' names a prompt says (the only buddy's is the one you gave it), a tone its words plainly show (a "please"; an agent's stock "absolutely right", a "sorry") and what a message plainly claims ("all done", "couldn't get", a question at its end), and, in the menu-bar app on macOS 26 while Apple Intelligence is on, has it label its kind and tone and pick up to three of its phrases (<code>AppleIntelligenceLabeler</code>, on the Mac; headless with <code>--labeler apple</code>); otherwise the reading is counted only. Then the text is let go. Tools, tests and evals hand <code>Pipeline.agent</code> the event with its text still in, and get the reading at once. Each reading is an event of its own that wakes the brain in its turn event's place. Your prompt's, <code>prompt</code>, says <code>You asked claude on "api" for a fix, in a sentence, frustrated.</code>, with <code>Your words: "still broken".</code> under it. The message's, <code>last_message</code>, has the finish's own line, which the turn end then doesn't, saying what the message said: <code>claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning.</code>, with <code>Its words: "absolutely right".</code> under it. A prompt's reading that comes once its turn is over (the labeler takes up to 3 s) is dropped, and so is a message's once the next turn has started, with the finish's line: the brain has heard that instead</td></tr>
       <tr><td>agent-hooks → the rules</td><td><code>Core</code></td><td>agent-hooks' <code>SessionTracker</code> tracks each session and whether an agent needs you. The core adds what the screen shows, what takes priority, and the rules' reactions. Only the core's asks whether an agent's process still runs, and only for a session that waits or works: when one has ended, the core records the session's turn stopping in the transcript (a <code>turn</code> end, <code>stopped</code>, <code>AgentGone</code>), so the view's tracker clears its request and work too, and the session stays, idle</td></tr>
       <tr><td>Boop → MellowHarness</td><td><code>Pipeline</code></td><td>Each event is written to the transcript and run through the core's rules in one step. <code>TranscriptView</code> defines the sentence for each kind of event, reading each session and its turn from a <code>SessionTracker</code> of its own, fed the same events as the core's and never asking about processes, so the two agree, and a fold of the transcript later does too. <code>Runtime</code> registers the two outputs, <code>mood</code> and <code>react</code></td></tr>
       <tr><td>Boop → LinkKit (what the screen shows)</td><td><code>Runtime</code></td><td><code>link.update(state:)</code> on every change, on connect, in answer to <code>hello</code> and every 10 s</td></tr>

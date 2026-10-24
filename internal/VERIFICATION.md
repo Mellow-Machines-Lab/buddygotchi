@@ -96,9 +96,9 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   through the bridge.
 - `.build/debug/boopdev`: `eval` (L5, [EVALS.md](EVALS.md)), `check`
   (character packs, [CHARACTER.md](../characters/CHARACTER.md)),
-  `read-check` (Apple Intelligence's readings of the sample prompts in
-  `internal/app/Tests/Fixtures/prompt-readings.json`, on a Mac that has
-  it: their kind, tone and phrases scored against floors, planted
+  `read-check` (Apple Intelligence's readings of the sample prompts and agents' last messages in
+  `internal/app/Tests/Fixtures/readings.json`, on a Mac that has
+  it: their kind, tone and phrases scored against floors, prompts and messages apart, planted
   secrets that must never come back, and how long a typical reading
   takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
@@ -523,8 +523,8 @@ does all of it:
    the fixtures' `expect.json` (for the whole run, not named fixtures or
    `--clip`), that no `PRIVATE_` marker from the
    fixtures reached any app file (`debug.jsonl` and the transcript
-   included) but `PRIVATE_CLOSING`, which marks the agent's last message
-   (`PRIVATE_PROMPT`, your prompt, is read on the Mac and never kept), and, from `boop.log`
+   included): `PRIVATE_PROMPT`, your prompt, and `PRIVATE_CLOSING`, the
+   agent's last message, are read on the Mac and never kept, and, from `boop.log`
    (`link brain → …` and `device: do N ended HOW (WHY)`), that every
    brain reaction came after the rules' reaction, that the board said how
    every one it was sent ended (`ended`, [linkkit/SPEC.md](../linkkit/SPEC.md) §4),
@@ -555,9 +555,9 @@ retried once and counted as a link glitch.
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
-   After a change to how prompts are read (the scrubber, the cues or the
+   After a change to how prompts or last messages are read (the scrubber, the cues or the
    labeler's instructions), `boopdev read-check`, which fails under its
-   floors, and the scenarios with prompts again with `--labeler apple`,
+   floors, and the scenarios with prompts or messages again with `--labeler apple`,
    which reads them with Apple Intelligence instead of the steps' own
    `reading`. The scrubber's own corpora, `must-scrub.tsv` and
    `must-keep.txt` in `internal/app/Tests/Fixtures/scrubber/`, run with

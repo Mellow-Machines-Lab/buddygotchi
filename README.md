@@ -119,12 +119,15 @@ sends TypeSafe a short text: what's been happening, in lines like
 Your prompts don't: Boop reads each one on your Mac, after taking out
 anything that looks like a key or a password, and sends only what it
 made of it (a fix, frustrated, in a sentence) and up to three short
-phrases of yours, such as "still broken". On macOS 26 with Apple
-Intelligence on, Apple Intelligence reads it; otherwise Boop only
-counts it (how long it is, whether you said Boop's name, a "please").
-Two things in your own words go, each cut to 300 characters: the
-agent's last message, and what you say to Boop when you hold its
-button. Your files, commands and tool output never do.
+phrases of yours, such as "still broken". The agent's last message is
+read the same way, and only what Boop made of it goes (it's done, it
+couldn't finish, it asks you something, apologetic) with up to three
+of its phrases, such as "absolutely right". On macOS 26 with Apple
+Intelligence on, Apple Intelligence reads them; otherwise Boop only
+counts them (how long, whether you said Boop's name, a "please", a
+"sorry"). One thing in your own words goes, cut to 300 characters:
+what you say to Boop when you hold its button. Your files, commands and
+tool output never do.
 
 ## Uninstall
 
