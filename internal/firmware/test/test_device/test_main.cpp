@@ -2142,6 +2142,84 @@ static void test_a_stroke_is_a_gesture() {
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
 }
 
+// A finger held still on the needs-you sign for TouchGesture::kHoldMs
+// dismisses it: `ev gesture` `dismiss` once, as the hold completes, and
+// nothing on release, where a shorter touch is the tap that opens the
+// thread. Nothing plays: the sign stays until the Mac's next state.
+static void test_a_hold_on_the_sign_dismisses_it() {
+  const char* dismiss = "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"dismiss\"}\n";
+  const char* tap = "\"kind\":\"tap\"";
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":1500}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":990}");
+  TEST_ASSERT_EQUAL_INT(0, count(r.usb.text, dismiss));
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":10}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
+  for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
+  TEST_ASSERT_EQUAL_INT(0, count(r.usb.text, tap));
+  TEST_ASSERT_EQUAL_STRING("needs_you", r.screen().c_str());
+  // A short touch on the sign is still a tap.
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":300}");
+  for (int i = 0; i < 5; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
+  // A slow stroke across the sign is no hold.
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":200,\"to_y\":120,\"ms\":1500}");
+  for (int i = 0; i < 20; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, dismiss));
+}
+
+// Outside needs-you a hold is a tap on release, however long; a request
+// that comes up under a finger already down isn't dismissed by it; and a
+// touch on a sign that goes before it lifts (answered on the Mac) is
+// nothing.
+static void test_a_hold_off_the_sign_is_a_tap() {
+  const char* dismiss = "\"did\":\"dismiss\"";
+  const char* tap = "\"kind\":\"tap\"";
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":3000}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":500}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
+  for (int i = 0; i < 30; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(0, count(r.usb.text, dismiss));
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
+  Rig idle;
+  idle.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  idle.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":2000}");
+  for (int i = 0; i < 25; ++i) idle.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(0, count(idle.usb.text, dismiss));
+  TEST_ASSERT_EQUAL_INT(1, count(idle.usb.text, tap));
+  Rig gone;
+  gone.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"claude\",\"project\":\"landing\",\"id\":3}}");
+  gone.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":800}");
+  gone.usbLine("{\"t\":\"dbg.clock\",\"step\":500}");
+  gone.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1}");
+  for (int i = 0; i < 10; ++i) gone.usbLine("{\"t\":\"dbg.clock\",\"step\":100}");
+  TEST_ASSERT_EQUAL_INT(0, count(gone.usb.text, dismiss));
+  TEST_ASSERT_EQUAL_INT(0, count(gone.usb.text, tap));
+}
+
+// The working agent's to-do list (`todo`, done of total) is the model's,
+// reported in dbg.state; with none it's null, and a broken one reads as
+// none.
+static void test_a_state_carries_its_to_do_count() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"todo\":{\"done\":3,\"total\":7}}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"todo\":{\"done\":3,\"total\":7}"));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"todo\":null"));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"todo\":\"3/7\"}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"todo\":null"));
+}
+
 // The motion sensor (dbg.imu stands in for it): laid face down, the board
 // tells the Mac (`facedown`), dims and refuses every reaction but
 // listening ("facedown"); turned back up, it plays its peekaboo.
@@ -2185,6 +2263,9 @@ int main() {
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);
+  RUN_TEST(test_a_state_carries_its_to_do_count);
+  RUN_TEST(test_a_hold_on_the_sign_dismisses_it);
+  RUN_TEST(test_a_hold_off_the_sign_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
   RUN_TEST(test_face_down_is_do_not_disturb);

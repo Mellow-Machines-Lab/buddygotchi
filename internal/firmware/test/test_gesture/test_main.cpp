@@ -1,5 +1,5 @@
 // Boop's BOOT button: a tap, and a hold for push-to-talk; a touch's path:
-// a tap, a stroke, a ruffle, a tickle, a boop on the nose; and the motion
+// a tap, a stroke, a ruffle, a tickle, a boop on the nose, a hold; and the motion
 // sensor's readings: picked up, put down, shaken, a thump, face down and up.
 #include <unity.h>
 
@@ -77,7 +77,7 @@ constexpr int kTouchTap = -1;
 static int path(std::initializer_list<std::pair<int, int>> points) {
   TouchGesture g;
   auto p = points.begin();
-  g.down(p->first, p->second);
+  g.down(p->first, p->second, 0);
   for (++p; p != points.end(); ++p) g.move(p->first, p->second);
   render::Gesture what;
   return g.up(what) ? int(what) : kTouchTap;
@@ -95,6 +95,35 @@ static void test_a_touchs_path() {
   TEST_ASSERT_EQUAL(int(Gesture::kNose), path({{174, 148}}));
   TEST_ASSERT_EQUAL(kTouchTap, path({{175, 134}}));
   TEST_ASSERT_EQUAL(kTouchTap, path({{160, 100}}));  // the face, but not its nose
+}
+
+// Pins the hold that dismisses a request: a finger kept down 1 s inside a
+// spot 24 px wide each way. Wandering past it (a stroke on its way, a
+// tickle's wiggle) is no hold, however long the finger stays down.
+static void test_a_hold() {
+  TEST_ASSERT_EQUAL_UINT32(1000, TouchGesture::kHoldMs);
+  TEST_ASSERT_EQUAL_INT(24, TouchGesture::kHoldSpotPx);
+  TouchGesture g;
+  g.down(100, 100, 5000);
+  g.move(112, 112);
+  g.move(88, 88);  // 24 px each way: still the spot
+  TEST_ASSERT_FALSE(g.held(5999));
+  TEST_ASSERT_TRUE(g.held(6000));
+  TEST_ASSERT_TRUE(g.held(9000));
+  g.down(100, 100, 5000);
+  g.move(125, 100);  // 25 px across
+  TEST_ASSERT_FALSE(g.held(9000));
+  g.down(100, 100, 5000);
+  g.move(100, 75);  // 25 px down
+  TEST_ASSERT_FALSE(g.held(9000));
+  // A stroke that has come back to where it began was still a stroke.
+  g.down(60, 120, 0);
+  g.move(120, 120);
+  g.move(60, 120);
+  TEST_ASSERT_FALSE(g.held(2000));
+  // The clock wraps.
+  g.down(10, 10, 0xFFFFFF00u);
+  TEST_ASSERT_TRUE(g.held(0xFFFFFF00u + 1000));
 }
 
 // Feeds `MotionGesture` a reading every 20 ms from `from` to `to`, and
@@ -170,6 +199,7 @@ int main() {
   RUN_TEST(test_talk_is_capped_at_30_s);
   RUN_TEST(test_bounces_are_ignored);
   RUN_TEST(test_a_touchs_path);
+  RUN_TEST(test_a_hold);
   RUN_TEST(test_what_the_motion_sensor_feels);
   return UNITY_END();
 }

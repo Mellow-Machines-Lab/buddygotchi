@@ -127,6 +127,18 @@ class GateTests(unittest.TestCase):
         self.assertEqual(step({"tool_name": "Agent", "tool_input": {"prompt": "x"}}, 0), 4)
         self.assertIsNone(step({"tool_name": "Bash", "tool_input": {"command": "ls"}}, 0), "not in the script")
 
+    def test_a_todo_is_the_agents_list_call(self):
+        l = {"n": 6, "agent": "todo", "todos": "2/4"}
+        self.assertEqual([t["status"] for t in scripts.todos(l)], ["completed", "completed", "in_progress", "pending"])
+        self.assertEqual(gate.step_for({"tool_name": "TodoWrite", "tool_input": {}}, self.STEPS + [l], 0), 6)
+        self.assertEqual(gate.step_for({"tool_name": "update_plan", "tool_input": {}}, self.STEPS + [l], 0), 6)
+        name, args = model.claude_call(l, "/ws", ["TodoWrite"])
+        self.assertEqual((name, len(args["todos"])), ("TodoWrite", 4))
+        item = model.codex_item(l, "1")
+        self.assertEqual(item["name"], "update_plan")
+        self.assertEqual([p["status"] for p in json.loads(item["arguments"])["plan"]].count("completed"), 2)
+        self.assertIn("TodoWrite", desktop.call_words(l))
+
     def test_it_holds_a_call_until_its_step_is_due(self):
         with tempfile.TemporaryDirectory() as d:
             path = write(Path(d), [json.dumps({k: v for k, v in l.items() if k != "n"}) for l in self.STEPS])

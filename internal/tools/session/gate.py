@@ -25,16 +25,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import script as scripts  # noqa: E402
 
 SUBAGENT_TOOLS = ("Agent", "Task")
+# The calls that write the to-do list: Claude's whole list or a task of
+# it, and Codex's plan.
+TODO_TOOLS = ("TodoWrite", "TaskCreate", "TaskUpdate", "update_plan")
 
 
 def step_for(call: dict, steps: list, since: int):
     """The number of the script's step this call is, from `since` on: a
-    review's for a subagent call, else the first whose file or command it
-    names."""
+    review's for a subagent call, a todo's for a to-do list's, else the
+    first whose file or command it names."""
     text = json.dumps(call.get("tool_input", call))
     tool = call.get("tool_name", "")
     for l in steps[max(0, since):]:
         if l.get("agent") == "review" and tool in SUBAGENT_TOOLS:
+            return l["n"]
+        if l.get("agent") == "todo" and tool in TODO_TOOLS:
             return l["n"]
         if l.get("agent") in ("read", "edit", "run") and scripts.target(l) in text:
             return l["n"]

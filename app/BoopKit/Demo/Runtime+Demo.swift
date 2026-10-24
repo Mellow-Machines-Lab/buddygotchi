@@ -162,6 +162,18 @@ public final class DemoPlayer: @unchecked Sendable {
             heardStep(step, agent(of: step))
             runtime.pressed(who: Runtime.demoBy, buddy: step.buddy)
             then()
+        case .hold:
+            // The board tells the Mac once the finger has been down a second
+            // (its TouchGesture::kHoldMs).
+            heardStep(step, agent(of: step))
+            later(1) { [self] in
+                runtime.gestured(Core.dismissGesture, who: Runtime.demoBy, buddy: step.buddy)
+                then()
+            }
+        case .wait(let ms):
+            heardStep(step, agent(of: step))
+            runtime.advanceClock(ms, who: Runtime.demoBy)
+            then()
         case .talk(let words, let hold):
             heardStep(step, agent(of: step))
             runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)
@@ -203,10 +215,15 @@ public final class DemoPlayer: @unchecked Sendable {
         // Codex reads with a shell command.
         case .read: return { toolEnd([.read])($0) || ($0.agent == "codex" && toolEnd([.shell])($0)) }
         case .edit: return toolEnd([.edit])
+        // A request that waits ends its step as it's asked.
+        case .run where a.waits: return { Mapping.kind(of: $0).map { $0 == (.tool, .wait) } == true }
         case .run: return toolEnd([.shell])
         case .review: return { $0.hook == "SubagentStart" }
         // Claude's `SessionStart` with the source `compact`, Codex's `PostCompact`.
         case .compact: return { Mapping.event(from: $0)?.source == Mapping.compacted }
+        // A whole list (Claude's TodoWrite, Codex's update_plan), or one
+        // of Claude's tasks.
+        case .todo: return { $0.todosTotal != nil || $0.todoID != nil }
         case .reply: return a.byReviewer ? { $0.hook == "SubagentStop" } : { $0.hook == "Stop" }
         }
     }
@@ -285,7 +302,9 @@ public final class DemoPlayer: @unchecked Sendable {
         let open = key
         let id = "t\(calls)"
         let finish = { [self] in heardStep(step, agent(of: step)); then() }
-        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil) {
+        // A request that `waits` ends the step as it's asked: the steps
+        // after it play while it waits, and you allow it `ask` seconds on.
+        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil, waits: Bool = false) {
             let call = { (l: inout HookLine) in l.tool = name; l.toolUseID = id; l.topic = topic }
             send("PreToolUse", call)
             let ends = { [self] in
@@ -294,12 +313,13 @@ public final class DemoPlayer: @unchecked Sendable {
                         call(&$0)
                         if fails { $0.toolError = "exit_code" }
                     }
-                    finish()
+                    if !waits { finish() }
                 }
             }
             guard let ask else { return ends() }
             later(0.2) { [self] in
                 send("PermissionRequest") { $0.tool = name; $0.toolUseID = id }
+                if waits { finish() }
                 later(ask, ends)
             }
         }
@@ -315,7 +335,20 @@ public final class DemoPlayer: @unchecked Sendable {
             finish()
         case .read: tool(codex ? "Bash" : "Read")
         case .edit: tool(codex ? "apply_patch" : "Edit")
-        case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask)
+        case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask, waits: a.waits)
+        case .todo:
+            // The whole list, as Claude's TodoWrite and Codex's update_plan
+            // give it: the counts, never the items.
+            let list = { (l: inout HookLine) in l.tool = codex ? "update_plan" : "TodoWrite"; l.toolUseID = id }
+            send("PreToolUse") {
+                list(&$0)
+                $0.todosDone = a.todos?.done
+                $0.todosTotal = a.todos?.total
+            }
+            later(step.takes) { [self] in
+                send("PostToolUse", list)
+                finish()
+            }
         case .review:
             send("PreToolUse") { $0.tool = "Agent"; $0.toolUseID = id }
             reviewers[key, default: []].append("reviewer-\(id)")

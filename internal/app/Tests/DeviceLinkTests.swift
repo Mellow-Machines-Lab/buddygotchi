@@ -293,6 +293,21 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
+    /// A long turn's tier and every growth stage are tags too; and the
+    /// to-do count goes only with nothing needing you. The widest line
+    /// either way, with every tag that can be on at once, fits.
+    func testTheTiersStagesAndToDoCountFitTheLine() {
+        let every = mostTags + ["marathon"] + Occasions.stageTags
+        let needs = StateSnapshot(base: "working", mood: "determined",
+                                  attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
+                                  busy: 999, idle: 999, helpers: 999, vol: 10, when: every)
+        XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
+        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, busy: 999, idle: 999, helpers: 999,
+                                 vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
+        XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
+        XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
+    }
+
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {

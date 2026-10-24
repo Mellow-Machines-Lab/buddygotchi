@@ -31,7 +31,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from script import said
+from script import said, todos
 
 # How fast a reply's text streams, in characters a second: about as fast
 # as a fast model, and slow enough to read.
@@ -66,6 +66,8 @@ def claude_call(l: Dict[str, Any], workspace: str, tools: List[str]) -> Tuple[st
         return "Edit", {"file_path": path(l["file"]), "old_string": l["old"], "new_string": l["new"]}
     if does == "run":
         return "Bash", {"command": l["cmd"], "description": l.get("about", l["cmd"])}
+    if does == "todo":
+        return "TodoWrite", {"todos": todos(l)}
     # A review: the subagent tool, as this Claude Code names it.
     name = "Task" if "Task" in tools and "Agent" not in tools else "Agent"
     return name, {"description": l["task"], "prompt": l.get("prompt", l["task"]), "subagent_type": "general-purpose"}
@@ -87,6 +89,10 @@ def codex_item(l: Dict[str, Any], cid: str) -> Optional[Dict[str, Any]]:
     if does == "run":
         extra = {"sandbox_permissions": "require_escalated", "justification": l.get("about", l["cmd"])} if "ask" in l else {}
         return shell(l["cmd"], **extra)
+    if does == "todo":
+        plan = [{"step": t["content"], "status": t["status"]} for t in todos(l)]
+        return {"type": "function_call", "id": "fc_" + cid, "call_id": "call_" + cid, "name": "update_plan",
+                "arguments": json.dumps({"plan": plan})}
     if does == "edit":
         minus = "".join("-" + line + "\n" for line in l["old"].split("\n"))
         plus = "".join("+" + line + "\n" for line in l["new"].split("\n"))

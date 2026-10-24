@@ -48,10 +48,19 @@ public enum DemoFromScenario {
                 if step.failed == true { o["fails"] = true }
                 add(o)
             case "needs you":
-                // Answered at the scenario's `answered`, else never.
-                let answered = scenario.steps.dropFirst(i + 1).first { $0.event == "answered" && $0.session == step.session }
-                add(["agent": "run", "cmd": "npm install", "ask": answered.map { min(20, Double($0.atMs - step.atMs) / 1000) } ?? 20])
+                // The steps after it play while it waits. It's answered
+                // where the scenario's `answered` comes, its gaps cut short
+                // as the demo's are, or else after 20 s.
+                let answered = scenario.steps.indices.dropFirst(i + 1).first {
+                    scenario.steps[$0].event == "answered" && scenario.steps[$0].session == step.session
+                }
+                let ask = answered.map { a in
+                    (i + 1...a).reduce(0.0) { $0 + min(maxGap, Double(scenario.steps[$1].atMs - scenario.steps[$1 - 1].atMs) / 1000) }
+                } ?? 20
+                add(["agent": "run", "cmd": "npm install", "ask": max(0.5, (ask * 10).rounded() / 10), "waits": true])
             case "compact": add(["agent": "compact", "summary": "Where the work stands."])
+            case "to-do list": add(["agent": "todo", "todos": "\(step.todos?.done ?? 0)/\(step.todos?.total ?? 0)"])
+            case "gesture" where step.kind == Core.dismissGesture: add(["you": "hold"])
             case "poke": add(["you": "poke"])
             case "pokes": for _ in 0..<(step.count ?? 4) { add(["you": "poke"]) }
             case "said": add(["you": "talk", "text": step.words ?? ""])

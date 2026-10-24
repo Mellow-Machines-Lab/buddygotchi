@@ -116,6 +116,9 @@ class Device : public linkkit::App {
  public:
   // A panel touch ends after this long without contact, in real ms.
   static constexpr uint32_t kTouchReleaseMs = 50;
+  // The gesture a finger held on the needs-you sign sends (`ev gesture`):
+  // the Mac stops showing that request, and the board plays nothing.
+  static constexpr const char* kDismissGesture = "dismiss";
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -191,6 +194,9 @@ class Device : public linkkit::App {
   // `did` its name); `facedown` plays nothing.
   void gestured(render::Gesture g, uint32_t t, bool injected);
   void readMotion(uint32_t t);
+  // Whether the needs-you sign is on screen: something needs you, and the
+  // app is there to say so.
+  bool signShows(uint32_t t) const;
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();
@@ -247,6 +253,8 @@ class Device : public linkkit::App {
   // The touch in progress, last in contact at real time touchSeenReal_.
   bool touchDown_ = false;
   bool touchInjected_ = false;  // it's dbg.touch's, not the panel's
+  // It began on the needs-you sign, and its hold has dismissed it.
+  bool touchOnSign_ = false, touchDismissed_ = false;
   uint32_t touchSeenReal_ = 0;
 
   // A `say` is playing, and the reaction (Behaviour::reactionSeq) whose `say`
