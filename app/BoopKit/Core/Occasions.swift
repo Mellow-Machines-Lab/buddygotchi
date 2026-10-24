@@ -1,7 +1,8 @@
 import Foundation
 
 /// What's true now, as tags: the part of the day, the weekday, a holiday, a
-/// milestone day since Boop hatched. The core sends them in the `state`
+/// milestone day since Boop hatched, how long the agents have worked or
+/// sat idle, and Boop's growth stage. The core sends them in the `state`
 /// message (`when`), and the board shows only the designs whose tags are
 /// all on (characters/CHARACTER.md §9). The board adds `busy` and
 /// `frantic` itself, from the `state` message's count of sessions working.
@@ -12,7 +13,31 @@ public enum Occasions {
     /// Every tag, in the firmware's order.
     public static let all = ["morning", "day", "evening", "night", "friday", "weekend", "friday13",
                              "newyear", "valentines", "piday", "aprilfools", "may4", "halloween", "winter",
-                             "programmers", "lunar", "party", "busy", "frantic"]
+                             "programmers", "lunar", "party", "busy", "frantic",
+                             "marathon", "camp", "fidget", "setpiece", "doze",
+                             "sprout", "buddy", "pal", "chonk", "legend"]
+
+    /// A long turn's tiers, by how long the longest turn working now has
+    /// run: a marathon from 8 minutes, then a camp from 15, the last. Before
+    /// 8 minutes the working looks need no tag.
+    public static let workTiers: [(tag: String, fromMs: Int64)] = [("marathon", 8 * 60_000), ("camp", 15 * 60_000)]
+    /// Idle's tiers, by how long since the last turn ended: fidgets from
+    /// 30 seconds, set pieces from 3 minutes, dozing from 10. Before 30
+    /// seconds Boop settles with no tag.
+    public static let idleTiers: [(tag: String, fromMs: Int64)] = [("fidget", 30_000), ("setpiece", 180_000), ("doze", 600_000)]
+
+    /// The tier on after `ms` in `tiers`: one at a time, the last reached.
+    public static func tier(_ tiers: [(tag: String, fromMs: Int64)], after ms: Int64) -> String? {
+        tiers.last { ms >= $0.fromMs }?.tag
+    }
+
+    /// The growth stages' tags from the second on, in `Growth.stages`'
+    /// order. Every stage reached is on, so a design that needs `pal` shows
+    /// at Pal and every stage after it.
+    public static let stageTags = ["sprout", "buddy", "pal", "chonk", "legend"]
+
+    /// The tags on at growth stage `stage` (from 1, a Hatchling's: none).
+    public static func stages(_ stage: Int) -> [String] { Array(stageTags.prefix(max(0, stage - 1))) }
 
     /// The parts of the day, by the hour they start: morning from 5, day
     /// from 11, evening from 17, night from 22 until 5.

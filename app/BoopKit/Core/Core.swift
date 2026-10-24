@@ -41,6 +41,9 @@ public final class Core {
         /// The growth stage Boop reached last and the day it did: that day
         /// is a party (`Occasions`).
         public var stageReached: (name: String, day: String)?
+        /// The growth stage Boop is at, from 1: the board's stage tags
+        /// (`Occasions.stages`).
+        public var stage = 1
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), pack: CharacterPack = .active,
                     hatched: String? = nil) {
@@ -258,7 +261,7 @@ public final class Core {
         case .sessionEnded:
             held[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .requestExpired, .other:
+        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .other:
             return nil
         }
     }
@@ -434,6 +437,10 @@ public final class Core {
         return fx
     }
 
+    /// Boop is at growth stage `stage` (from 1): the next `state` carries
+    /// its tags.
+    public func setStage(_ stage: Int) { config.stage = max(1, stage) }
+
     /// The mood output saved a new mood (`mood` reads it): a `state`
     /// carries it at once.
     @discardableResult
@@ -483,10 +490,25 @@ public final class Core {
         let helpers = working.reduce(0) { $0 + $1.helpers.count }
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count, idle: idle.count,
                              helpers: helpers, vol: config.volume,
-                             when: when(at: now))
+                             when: when(at: now, working: working, idle: base == "idle" ? idle : []))
     }
 
-    func when(at now: Int64) -> [String] {
+    /// The tags on at `now`: the calendar's, then the tier of the longest
+    /// turn `working` (else of the time since the last of `idle` finished),
+    /// then the growth stage's, in `Occasions.all`'s order.
+    func when(at now: Int64, working: [Session], idle: [Session]) -> [String] {
+        var on = calendar(at: now)
+        if let started = working.compactMap(\.turn.startedAt).min() {
+            on += Occasions.tier(Occasions.workTiers, after: now - started).map { [$0] } ?? []
+        } else if let ended = idle.map({ $0.turn.lastEndedAt ?? $0.lastEventAt }).max() {
+            on += Occasions.tier(Occasions.idleTiers, after: now - ended).map { [$0] } ?? []
+        }
+        on += Occasions.stages(config.stage)
+        return Occasions.all.filter(on.contains)
+    }
+
+    /// The calendar's tags, worked out once a quarter of an hour.
+    func calendar(at now: Int64) -> [String] {
         let wall = wall(now), slot = wall / 900_000, stage = config.stageReached?.day
         if let c = whenCache, c.slot == slot, c.hatched == config.hatched, c.stage == stage { return c.tags }
         let tags = Occasions.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
@@ -671,12 +693,17 @@ public final class Core {
     public static let needsYou = "needs_you"
 
     /// Runs the session table's timers due by `now`: a
-    /// Codex request past its grace shows, the safety net, and forgetting.
-    /// Each request the safety net expires is kept for its `needs_you` end.
+    /// Codex request past its grace shows, the safety net, a session whose
+    /// agent's process is gone ends, and forgetting. Each request the
+    /// safety net expires is kept for its `needs_you` end.
     /// `sparing`'s Codex request isn't shown: its event comes first.
     func advance(to now: Int64, sparing: String? = nil) {
-        for (key, change) in tracker.advance(to: now, sparing: sparing) where change == .requestExpired {
-            expired.insert(key)
+        for (key, change) in tracker.advance(to: now, sparing: sparing) {
+            switch change {
+            case .requestExpired: expired.insert(key)
+            case .agentGone: held[key] = nil
+            default: break
+            }
         }
     }
 
