@@ -88,6 +88,23 @@ and new actions. One personality (Boop's default nature) for now.
       bend the current motion rather than replace it. Start by filming or
       recording a few transitions on the board to see where it jumps.
 
+## Now: the character engine
+
+The plan is [character-engine.md](character-engine.md): one rig, mixer and
+layer stack for both faces, packs as data agents edit, references turned
+into clips, and the Studio as the dashboard. Each checkpoint lands
+reviewed, simplified and merged. Measure fluidity with
+`internal/tools/fluid/` (baseline 2026-10-23, gel: a mood change's
+largest frame 32x its median, a finish's 33x, going to work 9x).
+
+- [ ] **1. The slime flows**: faces morph or cross-fade, the lane fades.
+- [ ] **2. The dashboard and the reference pipeline.**
+- [ ] **3. The rig core**: channels, expressions, clips, the mixer, layers,
+      anchors, the pack schema and its generator.
+- [ ] **4. Pixel on the rig**: sprite parts, one mood first, then all.
+- [ ] **5. The slime on the rig**: the mixer drives the gel face.
+- [ ] **6. Retire what the engine replaces.**
+
 ## Waiting on the owner
 
 - [ ] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
