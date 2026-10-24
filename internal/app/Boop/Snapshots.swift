@@ -57,10 +57,12 @@ enum Snapshots {
                 }
                 for (name, model) in overviews(installer) { shot("overview-\(name)", model, pane: .overview) }
                 if let gelImage {
-                    var gelStatus = status(mood: "happy")
+                    // The one session its state's `busy` counts.
+                    var gelStatus = status(sessions: [["claude", "jetpack", "work"]], mood: "happy")
                     gelStatus.snapshot = gelState
                     gelStatus.device = DeviceInfo(id: "gel-fixture", fw: "snapshots", face: .gel)
                     let gel = model(installer, status: gelStatus)
+                    gel.hooks[.claude] = .installed
                     gel.slime.stillImage = gelImage
                     shot("overview-gel", gel, pane: .overview)
                 }
@@ -351,10 +353,11 @@ enum Snapshots {
             // Every chip at once (Chatter and Muted), under the longest kind of name.
             ("all-chips", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], vol: 0,
                                                           personality: Personality.other, name: "Wobblebottom McSnugs"))),
-            // Many sessions, a long project, two in one project, and one
-            // needing you from a project with no name.
+            // Many sessions, a long project, two in one project told apart
+            // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [
-                ["codex", "", "wait"], ["claude", "jetpack", "work"], ["claude", "jetpack", "work"],
+                ["codex", "unknown", "wait"], ["claude", "jetpack", "work", "Add offline sync"],
+                ["claude", "jetpack", "work", "Fix the flaky login test"],
                 ["codex", "buddygotchi-landing-page-redesign", "work"], ["claude", "notes", "work"],
                 ["codex", "landing", "idle"], ["claude", "dotfiles", "idle"], ["claude", "blog", "idle"],
                 ["codex", "scratch", "idle"], ["claude", "archive", "idle"],

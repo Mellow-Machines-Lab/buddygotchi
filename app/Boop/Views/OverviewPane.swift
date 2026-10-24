@@ -264,7 +264,7 @@ struct OverviewPane: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Theme.well)
-                        Capsule().fill(Theme.amber).frame(width: max(6, geo.size.width * growth.progress))
+                        Capsule().fill(Theme.ink).frame(width: max(6, geo.size.width * growth.progress))
                     }
                 }
                 .frame(height: 6)
@@ -327,12 +327,13 @@ struct OverviewPane: View {
         .animation(.boopPop, value: project)
     }
 
-    /// The project and its thread on the first line, as a session's row has
-    /// them, so the thread is cut before the project; which agent it is,
-    /// in the hint.
+    /// The project and its workspace on the first line, so the workspace is
+    /// cut before the project, and the thread's name under them; which
+    /// agent it is, in the hint.
     private func needsYouCard(_ attn: StateSnapshot.Attention, project: String, name: String,
                               workspace: String?, hint: String) -> some View {
-        Card(tone: Theme.amber) {
+        let (title, name) = sessionTitle(project: project, name: name)
+        return Card(tone: Theme.amber) {
             HStack(alignment: .top, spacing: Theme.gapSnug + 2) {
                 Image(systemName: "hand.wave.fill")
                     .font(.system(size: 13))
@@ -340,12 +341,12 @@ struct OverviewPane: View {
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text(projectName(project))
+                        Text(title)
                             .font(.system(size: 12, weight: .semibold)).lineLimit(1).truncationMode(.middle)
                             .layoutPriority(1)
-                        if let workspace { ThreadName(workspace) }
+                        if let workspace { WorkspaceName(workspace) }
                     }
-                    if !name.isEmpty {
+                    if let name {
                         Text(name).font(.system(size: 11, weight: .medium)).lineLimit(1).truncationMode(.tail)
                     }
                     Text(hint)
@@ -396,9 +397,7 @@ struct OverviewPane: View {
                         .foregroundStyle(Theme.inkSoft)
                         ForEach(KeyedSession.rows(status.sessions.filter { $0.agent == agent.rawValue })) { row in
                             Opens(row.session.thread, radius: Theme.wellRadius, model: model) {
-                                SessionRow(project: row.session.project,
-                                           thread: row.session.name ?? row.session.workspace,
-                                           status: row.session.status)
+                                SessionRow(session: row.session)
                             }
                         }
                     }
@@ -527,14 +526,18 @@ struct KeyedSession: Identifiable {
     }
 }
 
-/// A session's project as the popover names it.
-func projectName(_ project: String) -> String {
-    project.isEmpty ? "Unknown project" : project
+/// What the popover calls a session: its project, with the thread's name
+/// beside or under it. One with no folder (agent-hooks' `unknown`) goes by
+/// the thread's name alone.
+func sessionTitle(project: String, name: String?) -> (title: String, name: String?) {
+    let name = name?.isEmpty == false ? name : nil
+    if project.isEmpty || project == "unknown" { return (name ?? "Untitled session", nil) }
+    return (project, name)
 }
 
-/// A thread's name after its project, small and faint: which worktree or
-/// branch, when a project has several sessions.
-struct ThreadName: View {
+/// A worktree's or branch's name after its project, small and faint, in
+/// the type it has in a terminal.
+struct WorkspaceName: View {
     let name: String
     init(_ name: String) { self.name = name }
 
@@ -545,13 +548,14 @@ struct ThreadName: View {
     }
 }
 
-/// One session: the project, its thread, and its status in a chip. The tone also runs
-/// down a thin bar on the leading edge, so the amber of a waiting one stands
-/// out in a column of greys.
+/// One session: the project, then the thread's name or else its workspace,
+/// and its status in a chip. The tone also runs down a thin bar on the
+/// leading edge, so the amber of a waiting one stands out in a column of
+/// greys.
 struct SessionRow: View {
-    let project: String
-    var thread: String?
-    let status: SessionSummary.Status
+    let session: SessionSummary
+
+    private var status: SessionSummary.Status { session.status }
 
     private var tone: Color {
         switch status {
@@ -578,13 +582,18 @@ struct SessionRow: View {
     }
 
     var body: some View {
+        let (title, name) = sessionTitle(project: session.project, name: session.name)
         HStack(spacing: Theme.gapSnug) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(projectName(project))
+                Text(title)
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1).truncationMode(.middle)
                     .layoutPriority(1)
-                if let thread { ThreadName(thread) }
+                if let name {
+                    Text(name).font(.system(size: 11)).foregroundStyle(Theme.inkSoft).lineLimit(1).truncationMode(.tail)
+                } else if let workspace = session.workspace {
+                    WorkspaceName(workspace)
+                }
             }
             Spacer(minLength: Theme.gapTight)
             StatusChip(text: label, tone: tone)
