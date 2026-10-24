@@ -8,23 +8,28 @@ import SwiftUI
 struct OnboardingView: View {
     @ObservedObject var model: OnboardingModel
     static let size = CGSize(width: 720, height: 560)
+    /// Above the footprints, and below every act's buttons.
+    static let edge: CGFloat = 30
 
     var body: some View {
         ZStack {
             Theme.paper.ignoresSafeArea()
             VStack(spacing: 0) {
                 Footprints(act: model.act)
-                    .padding(.top, 30)
+                    .padding(.top, Self.edge)
                     .padding(.bottom, 16)
+                // Unclipped, so the on-screen Boop's shadow isn't cut off;
+                // the window's edges clip the slide.
                 ZStack {
                     act
+                        .padding(.horizontal, Theme.windowGutter)
+                        .padding(.bottom, Self.edge)
                         .id(model.act)
                         .transition(.asymmetric(
                             insertion: .offset(x: model.forward ? 60 : -60).combined(with: .opacity),
                             removal: .offset(x: model.forward ? -60 : 60).combined(with: .opacity)))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
             }
             Confetti(bursts: model.confetti)
                 .allowsHitTesting(false)
@@ -130,8 +135,17 @@ struct OnboardingBuddy: View {
 /// What Boop says: a rounded bubble in ink, its tail at the bottom left.
 struct Bubble: View {
     let text: String
+    /// When given, it wraps at this width, growing from its leading edge;
+    /// else it's one line.
+    var width: CGFloat?
 
-    init(_ text: String) { self.text = text }
+    /// The room a bubble beside a tile takes, at most.
+    static let room: CGFloat = 240
+
+    init(_ text: String, width: CGFloat? = nil) {
+        self.text = text
+        self.width = width
+    }
 
     var body: some View {
         Text(text)
@@ -140,7 +154,8 @@ struct Bubble: View {
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background(Theme.ink, in: UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4,
                                                              bottomTrailingRadius: 16, topTrailingRadius: 16))
-            .fixedSize()
+            .fixedSize(horizontal: width == nil, vertical: true)
+            .frame(width: width, alignment: .leading)
     }
 }
 
@@ -164,25 +179,22 @@ struct ActTitle: View {
     }
 }
 
-/// Back on the left when there's somewhere to go back to, the act's one
-/// filled button on the right.
+/// Back on the left, the act's one filled button on the right, and a
+/// quiet second choice beside it.
 struct ActNav: View {
     @ObservedObject var model: OnboardingModel
     var next = "Next"
     var enabled = true
-    /// A quiet second choice, where Back would be.
     var quiet: (label: String, action: () -> Void)?
     var action: (() -> Void)?
 
     var body: some View {
         HStack {
+            ActBack(model: model)
+            Spacer()
             if let quiet {
                 Button(quiet.label, action: quiet.action).buttonStyle(.quiet).font(.system(size: 13))
-            } else if model.act.back != nil {
-                Button("Back") { model.back() }.buttonStyle(.quiet).font(.system(size: 13))
-                    .keyboardShortcut("[", modifiers: .command)
             }
-            Spacer()
             Button(next) { (action ?? model.next)() }
                 .buttonStyle(ProminentButtonStyle())
                 .keyboardShortcut(.defaultAction)
@@ -191,20 +203,39 @@ struct ActNav: View {
     }
 }
 
-/// A raised card on the paper.
+/// Back, when there's somewhere to go back to. Right after the name there
+/// isn't, and it says why.
+struct ActBack: View {
+    @ObservedObject var model: OnboardingModel
+
+    var body: some View {
+        if model.act.back != nil {
+            Button("Back") { model.back() }.buttonStyle(.quiet).font(.system(size: 13))
+                .keyboardShortcut("[", modifiers: .command)
+        } else if model.act.afterNaming {
+            Label("I'm \(model.name) now, for keeps", systemImage: "lock")
+                .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+        }
+    }
+}
+
+/// A card on the paper: the popover's, a little roomier. Nothing in
+/// onboarding but a choice looks chosen, so a card's emphasis is its tone.
 struct OnboardingCard<Content: View>: View {
-    var highlight: Color?
+    var tone: Color?
     @ViewBuilder var content: Content
 
     var body: some View {
-        content
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.raised, in: RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(highlight ?? .clear, lineWidth: 2)
-            }
+        Card(padding: 14, tone: tone) { content }
+    }
+}
+
+extension View {
+    /// On a card that's dark in either appearance: onboarding's terminal,
+    /// and the agent's hello.
+    func terminalCard() -> some View {
+        background(Theme.terminal, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+            .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius).strokeBorder(Theme.terminalEdge, lineWidth: 1))
     }
 }
 

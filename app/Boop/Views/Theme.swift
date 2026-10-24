@@ -61,6 +61,11 @@ enum Theme {
     static let recording = Color(hex: "#FF3B30")
 
     static let glass = Color(hex: Palette.glass)
+    /// A card that's dark in either appearance, for onboarding's terminal
+    /// and the agent's hello: the dark card and its hairline, so the dark
+    /// inks on it read and it stands off the dark paper.
+    static let terminal = Color(hex: Palette.raisedDark)
+    static let terminalEdge = Color(hex: Palette.hairlineDark)
     /// The filled button: black glass with an oat label on light paper. On
     /// dark paper glass would read as a hole, no heavier than an outlined
     /// button, so there it's oat with a glass label.
@@ -78,6 +83,9 @@ enum Theme {
     static let gap: CGFloat = 12
     static let gapLoose: CGFloat = 18
     static let gapSection: CGFloat = 20
+    /// The onboarding window's sides, the same on every act, so Back and
+    /// Next stay put from one to the next.
+    static let windowGutter: CGFloat = 48
 
     static let cardRadius: CGFloat = 12
     static let wellRadius: CGFloat = 8
@@ -302,6 +310,42 @@ struct RowButtonStyle: ButtonStyle {
             .onHover { hovering = $0 }
             .animation(.boopSettle, value: hovering)
     }
+}
+
+/// An on-off switch, drawn here because the system's draws grey in the
+/// popover's inactive window, so on looked off: sage when on, as everything
+/// on is, a hairline groove when off.
+struct SwitchStyle: ToggleStyle {
+    /// The track's height; its length is the system switch's proportion of it.
+    var height: CGFloat
+    @Environment(\.isEnabled) private var enabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let on = configuration.isOn
+        return Button { configuration.isOn.toggle() } label: {
+            Capsule()
+                .fill(on ? Theme.sage : Theme.hairlineStrong)
+                .frame(width: height * 1.75, height: height)
+                .overlay(alignment: on ? .trailing : .leading) {
+                    Circle().fill(.white)
+                        .padding(2)
+                        .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+                }
+                .opacity(enabled ? 1 : 0.4)
+                .animation(.boopSettle, value: on)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        // VoiceOver reads it as the switch it is.
+        .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label } }
+    }
+}
+
+extension ToggleStyle where Self == SwitchStyle {
+    /// The popover's switch, about the system's mini one.
+    static var boop: SwitchStyle { SwitchStyle(height: 16) }
+    /// Onboarding's, about the system's regular one.
+    static var boopLarge: SwitchStyle { SwitchStyle(height: 22) }
 }
 
 extension ButtonStyle where Self == QuietButtonStyle {

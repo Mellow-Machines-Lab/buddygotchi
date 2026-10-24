@@ -167,6 +167,10 @@ enum Snapshots {
             ("4-body-bluetooth-off", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))) {
                 $0.body = .looking
             }),
+            // Refused at macOS's prompt: Privacy & Security, not Bluetooth's own settings.
+            ("4-body-bluetooth-refused", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.unauthorized, appName: "Boop"))) {
+                $0.body = .looking
+            }),
             ("4-body-found", at(.body, status: status()) { $0.body = .looking }),
             ("4-body-cant-start", at(.body) {
                 $0.body = .looking
@@ -195,6 +199,8 @@ enum Snapshots {
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
             ("8-finale", at(.finale, status: status())),
+            // After "I don't have my Boop yet": the Mac's way of each tip.
+            ("8-finale-no-board", at(.finale, status: status(connected: false))),
         ]
     }
 

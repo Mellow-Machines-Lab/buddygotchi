@@ -54,7 +54,7 @@ struct SetupDraft {
     }
 
     var nameIssue: String? {
-        trimmedName.contains("·") || trimmedName.contains(":") ? "Names can't contain · or :." : nil
+        trimmedName.contains("·") || trimmedName.contains(":") ? "Names can't use “·” or “:”." : nil
     }
 
     var canContinueName: Bool { !trimmedName.isEmpty && nameIssue == nil }

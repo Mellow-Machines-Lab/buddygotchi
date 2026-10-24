@@ -1,5 +1,6 @@
 import AppKit
 import BoopKit
+import LinkKit
 import SwiftUI
 
 // Acts 4 and 5: the board, and how to use it.
@@ -29,9 +30,6 @@ struct BodyAct: View {
             case .skipped: EmptyView()
             }
         }
-        .padding(.horizontal, 56)
-        .padding(.top, 6)
-        .padding(.bottom, 30)
     }
 
     // MARK: Plug me in
@@ -64,22 +62,45 @@ struct BodyAct: View {
     private var looking: some View {
         VStack(spacing: 16) {
             ZStack {
-                Ripples().frame(width: 360, height: 220)
+                // Rings while looking; none while something stops it.
+                if !stuck { Ripples().frame(width: 360, height: 220) }
                 OnboardingBuddy(model: model, snapshot: .onboarding(mood: "curious"), size: 140)
             }
             .frame(height: 220)
             if let problem = app.startError {
                 ActTitle(title: "I couldn't start", detail: problem)
+                Button("Try again", action: model.startRuntime).buttonStyle(.row)
             } else {
                 lookingWords
             }
             Spacer(minLength: 0)
             HStack {
-                Button("I don't have my Boop yet", action: model.skipBoard).buttonStyle(.quiet).font(.system(size: 13))
+                ActBack(model: model)
                 Spacer()
+                Button("I don't have my Boop yet", action: model.skipBoard).buttonStyle(.quiet).font(.system(size: 13))
             }
         }
         .animation(.boopPop, value: model.board)
+    }
+
+    /// Boop couldn't start, or can't use Bluetooth: nothing's looking.
+    private var stuck: Bool {
+        if app.startError != nil { return true }
+        if case .trouble = model.board { return true }
+        return false
+    }
+
+    /// Where Bluetooth's trouble is fixed, by its cause: LinkKit's words
+    /// for it, matched here. None for a Mac without Bluetooth.
+    static func fix(_ trouble: String) -> (label: String, url: URL)? {
+        let settings = "x-apple.systempreferences:"
+        if trouble == BLETransport.trouble(.poweredOff, appName: BoopDevice.blePrefix) {
+            return ("Open Bluetooth Settings", URL(string: settings + "com.apple.BluetoothSettings")!)
+        }
+        if trouble == BLETransport.trouble(.unauthorized, appName: BoopDevice.blePrefix) {
+            return ("Open Privacy & Security", URL(string: settings + "com.apple.preference.security?Privacy_Bluetooth")!)
+        }
+        return nil
     }
 
     @ViewBuilder private var lookingWords: some View {
@@ -95,10 +116,9 @@ struct BodyAct: View {
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
             case .trouble(let why):
                 ActTitle(title: "I can't look for my body", detail: why)
-                Button("Open Bluetooth settings") {
-                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth")!)
+                if let fix = Self.fix(why) {
+                    Button(fix.label) { NSWorkspace.shared.open(fix.url) }.buttonStyle(.row)
                 }
-                .buttonStyle(.row)
             case .none:
                 // Looked at again now and then, for the hint.
                 TimelineView(.periodic(from: .now, by: 5)) { _ in
@@ -154,7 +174,7 @@ struct BodyAct: View {
 
     /// Older firmware than the app carries: a snack, over USB.
     private func snack(_ firmware: BoardFirmware) -> some View {
-        OnboardingCard(highlight: Theme.amber) {
+        OnboardingCard {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("I'm a bit hungry. Feed me an update?").font(.boop(14, .bold))
@@ -196,7 +216,7 @@ private struct PlugIn: View {
                 }
             Capsule().fill(Theme.hairlineStrong).frame(width: 90, height: 8)
             RoundedRectangle(cornerRadius: 6).fill(Theme.inkSoft).frame(width: 30, height: 22)
-                .overlay { Image(systemName: "bolt.fill").font(.system(size: 11)).foregroundStyle(Theme.amber) }
+                .overlay { Image(systemName: "bolt.fill").font(.system(size: 11)).foregroundStyle(Theme.paper) }
         }
         .accessibilityElement()
         .accessibilityLabel("The board, plugged into power, napping")
@@ -238,18 +258,15 @@ struct HowToAct: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("WHAT MY FACES MEAN").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSoft)
                 HStack(spacing: 8) {
-                    face("Napping", "no agents open")
-                    face("Focused", "agents at work")
-                    face("Amber", "someone needs you", amber: true)
-                    face("Trophy", "a big finish")
+                    face(.asleep, "Napping", "no agents open")
+                    face(.working, "Focused", "agents at work")
+                    face(.needsYou, "Needs you", "an agent waits")
+                    face(.idle, design: "proud", "Proud", "a big finish")
                 }
             }
             Spacer(minLength: 0)
             ActNav(model: model, next: "Got it")
         }
-        .padding(.horizontal, 48)
-        .padding(.top, 2)
-        .padding(.bottom, 30)
         .task {
             // Without a board, the on-screen Boop shows the poke now and then.
             guard !paired, !still else { return }
@@ -260,41 +277,54 @@ struct HowToAct: View {
         }
     }
 
+    /// A lesson; the one to do now is toned, and amber's, which is what
+    /// it means, has its dot.
     private func lesson(_ number: Int, _ title: String, _ detail: String, done: Bool = false, waiting: Bool = false,
                         amber: Bool = false) -> some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(done ? Theme.sage : waiting ? Theme.ink : amber ? Theme.amber : Theme.hairline)
-                if done {
-                    Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.paper)
-                } else {
-                    Text("\(number)").font(.boop(13, .bold)).foregroundStyle(waiting ? Theme.paper : Theme.ink)
+        let now = waiting && !done
+        return Card(padding: 0, tone: now ? Theme.ink : nil) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(done ? Theme.sage : now ? Theme.ink : Theme.hairline)
+                    if done {
+                        Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.paper)
+                    } else {
+                        Text("\(number)").font(.boop(13, .bold)).foregroundStyle(now ? Theme.paper : Theme.ink)
+                    }
+                }
+                .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(title).font(.boop(15, .bold))
+                        if amber { StateDot(tone: Theme.amber) }
+                    }
+                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                }
+                Spacer()
+                if now {
+                    Text("waiting…").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkSoft)
                 }
             }
-            .frame(width: 28, height: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.boop(15, .bold))
-                Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-            }
-            Spacer()
-            if waiting && !done {
-                Text("waiting…").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkSoft)
-            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(waiting && !done ? Theme.paper : Theme.raised, in: RoundedRectangle(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(waiting && !done ? Theme.ink : .clear, lineWidth: 2) }
         .animation(.boopPop, value: done)
         .accessibilityElement(children: .combine)
         .accessibilityValue(done ? "done" : "")
     }
 
-    private func face(_ title: String, _ detail: String, amber: Bool = false) -> some View {
-        OnboardingCard(highlight: amber ? Theme.amber : nil) {
+    /// The legend's tiles: the popover's still faces.
+    static let faceTile: CGFloat = 44
+
+    /// One face of the legend, on the paper: something to read, not a card to pick.
+    private func face(_ mood: FaceMood, design: String = MoodOutput.initial, _ title: String, _ detail: String) -> some View {
+        HStack(spacing: Theme.gapSnug) {
+            BoopFace(mood: mood, design: design, size: Self.faceTile)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.boop(13, .bold))
                 Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }

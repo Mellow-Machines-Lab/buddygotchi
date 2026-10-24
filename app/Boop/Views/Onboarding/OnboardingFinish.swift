@@ -17,10 +17,6 @@ struct AgentsAct: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Spacer(minLength: 0)
-            if !model.connected {
-                OnboardingBuddy(model: model, snapshot: .onboarding(mood: "curious"), size: 104)
-            }
             ActTitle(title: model.connected ? "Say hi from your agent" : "Which agents should I watch?",
                      detail: model.connected ? nil : "I listen through their hooks. I never approve, deny or block anything.")
             if model.connected {
@@ -34,11 +30,8 @@ struct AgentsAct: View {
                 choose
             }
             Spacer(minLength: 0)
-            Spacer(minLength: 0)
             nav
         }
-        .padding(.horizontal, 48)
-        .padding(.bottom, 30)
     }
 
     // MARK: Choosing
@@ -84,7 +77,7 @@ struct AgentsAct: View {
     private func agentCard(_ agent: Agent) -> some View {
         let found = app.installer.detected(agent)
         let on = found && app.installer.clientInPlace && app.setup.agents.contains(agent)
-        return OnboardingCard(highlight: on ? Theme.ink : nil) {
+        return OnboardingCard {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(agent.displayName).font(.boop(16, .bold))
@@ -96,7 +89,7 @@ struct AgentsAct: View {
                 Toggle("Watch \(agent.displayName)", isOn: Binding(get: { on }, set: { value in
                     if value { app.setup.agents.insert(agent) } else { app.setup.agents.remove(agent) }
                 }))
-                .toggleStyle(.switch).labelsHidden()
+                .toggleStyle(.boopLarge).labelsHidden()
                 .disabled(!found || !app.installer.clientInPlace)
             }
         }
@@ -126,7 +119,7 @@ struct AgentsAct: View {
                 Spacer(minLength: 0)
             }
             .padding(18)
-            .background(Color(hex: Palette.paperDark), in: RoundedRectangle(cornerRadius: 16))
+            .terminalCard()
             .animation(.boopPop, value: model.heard)
             ForEach(Agent.allCases.filter { app.hookErrors[$0] != nil }, id: \.self) { agent in
                 Text("Couldn't connect \(agent.displayName): \(app.hookErrors[agent] ?? "")")
@@ -137,16 +130,10 @@ struct AgentsAct: View {
         }
     }
 
-    /// Until an agent says hi, moving on is "later".
-    private var later: (label: String, action: () -> Void)? {
-        guard model.heard == nil else { return nil }
-        let model = model
-        return (label: "I'll try it later", action: { model.next() })
-    }
-
     @ViewBuilder private var nav: some View {
         if model.connected {
-            ActNav(model: model, next: "Next", quiet: later)
+            // Until an agent says hi, moving on is "later".
+            ActNav(model: model, next: model.heard == nil ? "I'll try it later" : "Next")
         } else if model.detectedAgents.isEmpty || !app.installer.clientInPlace {
             ActNav(model: model)
         } else {
@@ -175,9 +162,6 @@ struct SmallThingsAct: View {
             Spacer(minLength: 0)
             ActNav(model: model)
         }
-        .padding(.horizontal, 56)
-        .padding(.top, 2)
-        .padding(.bottom, 30)
     }
 
     private var login: some View {
@@ -196,7 +180,7 @@ struct SmallThingsAct: View {
                         model.loginTouched = true
                         app.setOpenAtLogin($0)
                     }))
-                    .toggleStyle(.switch).labelsHidden()
+                    .toggleStyle(.boopLarge).labelsHidden()
                     .disabled(app.loginItemState == .unavailable)
                 }
             }
@@ -241,7 +225,8 @@ struct SmallThingsAct: View {
 }
 
 /// Act 8: a celebration, on screen and on the board, the four things worth
-/// remembering, and off to the menu bar.
+/// remembering, and off to the menu bar. Without a board, the Mac's way
+/// of each, and that the board is found once it's plugged in.
 struct FinaleAct: View {
     @ObservedObject var model: OnboardingModel
 
@@ -252,9 +237,15 @@ struct FinaleAct: View {
                 .padding(.top, 6)
             Text("\(model.name) is all set!").font(.boop(30, .heavy))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                tip("hand.tap", "Tap my screen", "to poke me")
-                tip("mic", "Hold my button", "and talk")
-                tip("bell", "Amber? Tap me", "to open who's waiting", amber: true)
+                if model.hasBoard {
+                    tip("hand.tap", "Tap my screen", "to poke me")
+                    tip("mic", "Hold my button", "and talk")
+                    tip("bell", "Amber? Tap me", "to open who's waiting", amber: true)
+                } else {
+                    tip("powerplug", "Got my body?", "plug it in, and I'll find it")
+                    tip("mic", "Click Talk", "in my menu, then speak")
+                    tip("bell", "Amber? Click me", "up top, to see who's waiting", amber: true)
+                }
                 tip("menubar.arrow.up.rectangle", "Find me", "in the menu bar, up top")
             }
             .frame(maxWidth: 520)
@@ -263,18 +254,19 @@ struct FinaleAct: View {
                 .buttonStyle(ProminentButtonStyle())
                 .keyboardShortcut(.defaultAction)
         }
-        .padding(.horizontal, 56)
-        .padding(.top, 10)
-        .padding(.bottom, 30)
         .task { model.feed.reaction(id: 0, DeviceReaction(anim: "task_complete", outcome: "success")) }
     }
 
+    /// A tip; amber's, which is what it means, has its dot.
     private func tip(_ icon: String, _ title: String, _ detail: String, amber: Bool = false) -> some View {
-        OnboardingCard(highlight: amber ? Theme.amber : nil) {
+        OnboardingCard {
             HStack(spacing: 10) {
                 Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.inkSoft).frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.boop(14, .bold))
+                    HStack(spacing: 6) {
+                        Text(title).font(.boop(14, .bold))
+                        if amber { StateDot(tone: Theme.amber) }
+                    }
                     Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                 }
             }

@@ -39,8 +39,6 @@ struct HelloAct: View {
                 .opacity(calm || greeted ? 1 : 0)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 60)
-        .padding(.bottom, 30)
         .task { await arrive(calm: calm) }
     }
 
@@ -131,9 +129,6 @@ struct WhatIDoAct: View {
             Spacer(minLength: 0)
             ActNav(model: model, next: "Neat!")
         }
-        .padding(.horizontal, 48)
-        .padding(.top, 2)
-        .padding(.bottom, 30)
         .task { await play() }
     }
 
@@ -149,12 +144,12 @@ struct WhatIDoAct: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 178)
-        .background(Color(hex: Palette.paperDark), in: RoundedRectangle(cornerRadius: 14))
+        .terminalCard()
         .animation(.boopSettle, value: step)
     }
 
     private func card(_ index: Int, _ title: String, _ detail: String) -> some View {
-        OnboardingCard(highlight: step.card == index ? (index == 1 ? Theme.amber : Theme.ink) : nil) {
+        OnboardingCard(tone: step.card == index ? (index == 1 ? Theme.amber : Theme.ink) : nil) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.boop(14, .bold))
                 Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
@@ -180,8 +175,8 @@ struct WhatIDoAct: View {
     }
 }
 
-/// Act 3: a name for keeps, and sweet or cheeky, each shown in how that
-/// Boop talks.
+/// Act 3: a name and a nature, both for keeps: sweet or cheeky, each shown
+/// in how that Boop talks.
 struct MakeMeYoursAct: View {
     @ObservedObject var model: OnboardingModel
     @ObservedObject var app: AppModel
@@ -197,17 +192,20 @@ struct MakeMeYoursAct: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            ZStack(alignment: .topTrailing) {
-                OnboardingBuddy(model: model, snapshot: .onboarding(mood: draft.nature == .cheeky ? "proud" : "happy"), size: 108,
-                                face: draft.nature == .cheeky ? .cheeky : .happy)
-                    .offset(y: hop ? -10 : 0)
-                if !draft.trimmedName.isEmpty, draft.nameIssue == nil {
-                    Bubble("\(draft.trimmedName)! I love it.")
-                        .offset(x: 140, y: -6)
-                        .transition(.scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity))
+            OnboardingBuddy(model: model, snapshot: .onboarding(mood: draft.nature == .cheeky ? "proud" : "happy"), size: 108,
+                            face: draft.nature == .cheeky ? .cheeky : .happy)
+                .offset(y: hop ? -10 : 0)
+                // Off the tile's top corner and out of the layout, so a
+                // name of any length leaves the tile where it is: the
+                // bubble's room starts just inside the tile's edge.
+                .overlay(alignment: .topTrailing) {
+                    if !draft.trimmedName.isEmpty, draft.nameIssue == nil {
+                        Bubble("\(draft.trimmedName)! I love it.", width: Bubble.room)
+                            .offset(x: Bubble.room - Theme.gapSnug, y: -6)
+                            .transition(.scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity))
+                    }
                 }
-            }
-            .animation(.boopPop, value: draft.trimmedName.isEmpty)
+                .animation(.boopPop, value: draft.trimmedName.isEmpty)
             ActTitle(title: "What should I be called?")
             TextField("A name", text: Binding(get: { app.setup.name }, set: { app.setup.editName($0) }))
                 .font(.boop(20, .bold))
@@ -223,7 +221,7 @@ struct MakeMeYoursAct: View {
                     withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { hop = true }
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.12)) { hop = false }
                 }
-            Text(model.nameError ?? draft.nameIssue ?? "Names are for keeps, so pick one you love.")
+            Text(model.nameError ?? draft.nameIssue ?? "My name and nature are for keeps, so pick ones you love.")
                 .font(.system(size: 12))
                 .foregroundStyle(model.nameError != nil || draft.nameIssue != nil ? Theme.clayInk : Theme.inkSoft)
             Text("Sweet or cheeky?").font(.boop(15, .bold)).padding(.top, 4)
@@ -236,9 +234,6 @@ struct MakeMeYoursAct: View {
             Spacer(minLength: 0)
             ActNav(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }
         }
-        .padding(.horizontal, 48)
-        .padding(.top, 6)
-        .padding(.bottom, 30)
     }
 
     private func nature(_ nature: LongTerm.Nature, _ title: String, _ line: String) -> some View {

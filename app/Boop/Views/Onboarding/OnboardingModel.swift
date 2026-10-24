@@ -161,6 +161,10 @@ final class OnboardingModel: ObservableObject {
     /// Whether the app talks to a board at all (not `--link none`).
     var hasLink: Bool { app.link != .none }
 
+    /// Boop has its body: paired in act 4, or there now after a launch
+    /// past it. The finale's tips are the board's then, else the Mac's.
+    var hasBoard: Bool { body == .joined || app.status?.connected == true }
+
     func lookForBoard() {
         startRuntime()
         lookingSince = Date()

@@ -10,12 +10,27 @@ struct OnboardingBrainKey: View {
     @ViewState private var saved = false
     @FocusState private var focused: Bool
 
+    /// Jev's docs, at TypeSafe. They don't say where a key comes from, so
+    /// the link says only what it is.
+    static let docs = URL(string: "https://docs.typesafe.ai/api")!
+
     var body: some View {
         OnboardingCard {
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Label("Give me a brain", systemImage: "sparkles").font(.boop(15, .bold))
-                    Text("With a Jev key I react and change my mood. Without one I still show what your agents do and when you're needed.")
+                    HStack {
+                        Label("Give me a brain", systemImage: "sparkles").font(.boop(15, .bold))
+                        Spacer()
+                        Link(destination: Self.docs) {
+                            HStack(spacing: 2) {
+                                Text("Jev's docs")
+                                Image(systemName: "arrow.up.right")
+                            }
+                        }
+                        .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                    }
+                    Text("A Jev API key lets TypeSafe's AI pick how I react and what mood I'm in. "
+                         + "Without one I still show what your agents do and when you're needed.")
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
