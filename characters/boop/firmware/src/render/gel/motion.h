@@ -34,17 +34,21 @@ struct SemanticFace {
     // A Hermite from (from, tangent) toward `to` over the window; weight is
     // its share of them all.
     F from = 1, tangent, to = 1, weight = 1;
-    // Its drawn size ratios: the eye's, the mouth's width and height.
-    std::array<F, 3> ratio{1, 1, 1};
+    // Its own size at kScale, the eye's and the mouth's width and height,
+    // which its drawn ratios are over: its art's, or the sleeping face's.
+    std::array<Divisor, 3> size;
   };
   std::array<F, 8> controls{}, scaled{}, velocity{}, target{}, from{}, to{};
-  // One more than kMaxLayers: a retarget adds its art before folding.
-  std::array<Layer, kMaxLayers + 1> layers{};
+  std::array<Layer, kMaxLayers> layers{};
   int count = 1, targetId = slime::kCalm;
   bool targetSleeping = false;
-  T age, duration = T::literal(.18), elapsedMs, durationMs = 180;
+  // The window the arts cross over in, and how far into it they are.
+  T elapsedMs, durationMs = 180;
   SemanticFace();
   const Layer& current() const { return layers[count - 1]; }
+  // A layer's drawn size ratios, the eye's and the mouth's width and
+  // height: the live controls over its own size.
+  std::array<F, 3> ratios(const Layer& layer) const;
   void retarget(T ms = 180);
   void setMood(int id, T ms = 180);
   void setSleeping(bool value);
@@ -52,11 +56,12 @@ struct SemanticFace {
 
  private:
   void weigh(F s);
-  void updateRatios();
+  // Takes layer i out, the ones after it moving down.
+  void drop(int i);
 };
 // How a layer's art is drawn, from its ratios: the sleeping face is the
 // tired art squashed to its own size.
-std::array<F, 3> drawnScale(const SemanticFace::Layer& layer);
+std::array<F, 3> drawnScale(const SemanticFace& face, const SemanticFace::Layer& layer);
 // face.mjs softRatio: slope one at one, saturating inside (0.75, 4/3).
 F softRatio(F value);
 }  // namespace render::gel

@@ -410,7 +410,7 @@ function physical(slime) {
 const smooth = createSmoothness('scene matrix');
 function driver(createSlime, catalog, mood = 'happy') {
   let event = false;
-  const slime = tracked(createSlime({ seed: 53, catalog }), () => { event = true; }), observe = smooth.run();
+  const slime = tracked(createSlime({ seed: 53, catalog }), () => { event = true; }), observe = smooth.run(catalog.expressions);
   slime.setMood(mood);
   let at = 0, channels = slime.step(at).channels;
   observe(channels, event); event = false;

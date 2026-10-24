@@ -105,12 +105,11 @@ function rounded(value) {
 
 export function serializeTrace(script, seed, result) {
   const flat = result.frames.map(frame => {
-    // The script already records host facts; artwork and its prose are fixed
-    // by artId in expressions.json. Internal face weights are not a rendered
-    // control: semantic face dimensions, drawn ratios and composed pose are the
-    // port contract. Control velocities are internal spring state.
+    // The script already records host facts. Internal face weights are not a
+    // rendered control: semantic face dimensions, drawn ratios and composed
+    // pose are the port contract. Control velocities are internal spring state.
     const { facts, weights, frames, ...channels } = frame;
-    const { art, velocity, ...face } = channels.face;
+    const { velocity, ...face } = channels.face;
     const performance = channels.performance && Object.fromEntries(
       Object.entries(channels.performance).filter(([key]) => key !== 'label'));
     return flatten({ ...channels, face, performance });

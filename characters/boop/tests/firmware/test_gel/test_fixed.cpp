@@ -31,6 +31,23 @@ void test_fixed_math_and_motion() {
     TEST_ASSERT_TRUE(std::abs(v - number(motion.modes[0].v)) <= .0005);
   }
 }
+// A Divisor's quotient is exactly `/`'s across its range: divisors from 1/2,
+// dividends under 128 either way (a face layer's ratios, motion.cpp).
+void test_a_divisor_divides_exactly() {
+  Random random{53};
+  const int64_t edges[] = {0, 1, F::scale, (int64_t(1) << 31) - 1};
+  for (int i = 0; i < 4000; ++i) {
+    const F d = F::fromRaw(i < 2 ? (F::scale / 2) << i : F::scale / 2 + int64_t(random.next()) % (F::scale * 64));
+    const Divisor divisor(d);
+    for (int j = 0; j < 64; ++j) {
+      const int64_t raw = j < 4 ? edges[j] : (int64_t(random.next()) << 15 | random.next() >> 17) % (int64_t(1) << 31);
+      // Around a whole multiple of d too, where the quotient steps.
+      const int64_t whole = std::min(d.raw * (j % 7), (int64_t(1) << 31) - 1);
+      for (const F a : {F::fromRaw(raw), F::fromRaw(-raw), F::fromRaw(whole), F::fromRaw(whole - 1)})
+        TEST_ASSERT_TRUE(divisor.divide(a) == a / d);
+    }
+  }
+}
 // Integer software timing retains JS double boundary decisions.
 void test_software_clock_matches_binary64() {
   T time = 0;

@@ -237,7 +237,6 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
 void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, Anchors* anchors) {
   auto pose = e.pose();
   auto life = e.life();
-  auto scalar = [](F v) { return int(v.raw / (F::scale / 4096)); };
   PaintControls c;
   c.lean = scalar(pose[0]);
   c.squash = scalar(pose[1]);

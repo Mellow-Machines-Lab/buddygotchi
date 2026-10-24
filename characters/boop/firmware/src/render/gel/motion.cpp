@@ -33,8 +33,37 @@ std::array<F, 4> Motion::pose(bool reduced) const {
   return {modes[0].x, modes[1].x + (reduced ? F(0) : sin(time * q(1.65)) * q(.011)), modes[2].x, modes[3].x};
 }
 namespace {
-// The shared sleeping face's eye openness, mouth width and curve.
+// The controls a layer's ratios follow (the eye's openness, the mouth's
+// width and its curve), and the shared sleeping face's sizes of them.
+constexpr int kSized[3] = {2, 4, 5};
 constexpr F kSleep[3] = {q(.004), q(.018), q(.008)};
+// a / b as `/` gives it, for positive a and b, at compile time.
+constexpr F quotient(F a, F b) { return F::fromRaw(a.raw * F::scale / b.raw); }
+// The sleeping face's size over the tired art's, which it is drawn from.
+constexpr F kSleepScale[3] = {quotient(kSleep[0], slime::kProfile[slime::kTired].face[2]),
+                              quotient(kSleep[1], slime::kProfile[slime::kTired].face[4]),
+                              quotient(kSleep[2], slime::kProfile[slime::kTired].face[5])};
+// A Divisor is exact for divisors from 1/2 and dividends under 128: every
+// size a ratio is over is at least 1/2 at kScale, and the controls there,
+// under 35, are far inside.
+constexpr bool sizesDivide() {
+  for (const F size : kSleep)
+    if (size * SemanticFace::kScale < q(.5)) return false;
+  for (const auto& profile : slime::kProfile)
+    for (const int c : kSized)
+      if (profile.face[c] * SemanticFace::kScale < q(.5)) return false;
+  return true;
+}
+static_assert(sizesDivide(), "every art's size is at least 1/2 at kScale");
+// A layer of an art, sized: its weight's Hermite is the caller's.
+SemanticFace::Layer layer(int art, bool sleeping) {
+  SemanticFace::Layer l;
+  l.art = art;
+  l.sleeping = sleeping;
+  for (int k = 0; k < 3; ++k)
+    l.size[k] = Divisor((sleeping ? kSleep[k] : slime::kProfile[art].face[kSized[k]]) * SemanticFace::kScale);
+  return l;
+}
 }  // namespace
 F softRatio(F value) {
   F x = value - 1, room = x < F(0) ? q(.25) : q(4.0 / 3 - 1);
@@ -45,6 +74,11 @@ SemanticFace::SemanticFace() {
     controls[i] = target[i] = from[i] = to[i] = slime::kProfile[targetId].face[i];
     scaled[i] = controls[i] * kScale;
   }
+  layers[0] = layer(targetId, false);
+}
+void SemanticFace::drop(int i) {
+  std::copy(layers.begin() + i + 1, layers.begin() + count, layers.begin() + i);
+  --count;
 }
 void SemanticFace::weigh(F s) {
   F sum = 0, slope;
@@ -66,46 +100,35 @@ void SemanticFace::retarget(T ms) {
   }
   // Every layer starts again from its value and slope now, toward zero; the
   // new art, last, toward one (one still fading comes back from its value).
-  const T next = ms / 1000;
-  const F s = age / duration;
+  const F s = elapsedMs / durationMs;
   int found = -1;
   for (int i = 0; i < count; ++i) {
     auto& l = layers[i];
     F slope;
     hermite(l.from, l.tangent, l.to, s, l.from, slope);
-    l.tangent = slope * F(next) / F(duration);
+    l.tangent = slope * F(ms) / F(durationMs);
     l.to = 0;
     if (l.art == art && l.sleeping == targetSleeping) found = i;
   }
   Layer top;
   if (found >= 0) {
     top = layers[found];
-    for (int i = found; i + 1 < count; ++i) layers[i] = layers[i + 1];
-    --count;
+    drop(found);
   } else {
-    top.art = art, top.sleeping = targetSleeping, top.from = 0;
+    top = layer(art, targetSleeping);
+    top.from = 0;
   }
   top.to = 1;
-  // One at zero that can only stay there is gone; past kMaxLayers, the
-  // faintest folds into the new art.
-  int kept = 0;
-  for (int i = 0; i < count; ++i)
-    if (layers[i].from > F(0) || layers[i].tangent > F(0)) layers[kept++] = layers[i];
-  count = kept;
-  if (count == kMaxLayers) {
-    int faintest = 0;
-    for (int i = 1; i < count; ++i)
-      if (layers[i].from < layers[faintest].from) faintest = i;
-    top.from += layers[faintest].from;
-    top.tangent += layers[faintest].tangent;
-    for (int i = faintest; i + 1 < count; ++i) layers[i] = layers[i + 1];
-    --count;
-  }
+  // One at zero that can only stay there is gone; past kMaxLayers, so is
+  // the faintest, the others' shares growing to fill what it leaves.
+  const auto end = std::remove_if(layers.begin(), layers.begin() + count,
+                                  [](const Layer& l) { return l.from <= F(0) && l.tangent <= F(0); });
+  count = int(end - layers.begin());
+  if (count == kMaxLayers)
+    drop(int(std::min_element(layers.begin(), end, [](const Layer& a, const Layer& b) { return a.from < b.from; }) -
+             layers.begin()));
   layers[count++] = top;
-  age = 0;
-  duration = next;
   weigh(0);
-  updateRatios();
   from = controls;
   to = target;
   elapsedMs = 0;
@@ -136,31 +159,25 @@ void SemanticFace::advance(T dt, bool reduced) {
     controls[i] = scaled[i] / kScale;
   }
   if (count > 1) {
-    age = min(duration, age + dt);
-    elapsedMs = min(durationMs, age * 1000);
-    if (age >= duration) {
+    elapsedMs = min(durationMs, elapsedMs + dt * 1000);
+    if (elapsedMs >= durationMs) {
       layers[0] = layers[count - 1];
       count = 1;
     }
-    weigh(age / duration);
+    weigh(elapsedMs / durationMs);
   }
-  updateRatios();
 }
 // Each layer at the live control over its own size: the arts crossing over
 // are drawn near one size while the controls move.
-void SemanticFace::updateRatios() {
-  for (int i = 0; i < count; ++i) {
-    auto& l = layers[i];
-    const auto& art = slime::kProfile[l.art].face;
-    l.ratio = {softRatio(scaled[2] / ((l.sleeping ? kSleep[0] : art[2]) * kScale)),
-               softRatio(scaled[4] / ((l.sleeping ? kSleep[1] : art[4]) * kScale)),
-               softRatio(scaled[5] / ((l.sleeping ? kSleep[2] : art[5]) * kScale))};
-  }
+std::array<F, 3> SemanticFace::ratios(const Layer& l) const {
+  std::array<F, 3> out;
+  for (int k = 0; k < 3; ++k) out[k] = softRatio(l.size[k].divide(scaled[kSized[k]]));
+  return out;
 }
-std::array<F, 3> drawnScale(const SemanticFace::Layer& l) {
-  if (!l.sleeping) return l.ratio;
-  const auto& tired = slime::kProfile[slime::kTired].face;
-  return {l.ratio[0] * (kSleep[0] / tired[2]), l.ratio[1] * (kSleep[1] / tired[4]),
-          l.ratio[2] * (kSleep[2] / tired[5])};
+std::array<F, 3> drawnScale(const SemanticFace& face, const SemanticFace::Layer& l) {
+  auto out = face.ratios(l);
+  if (l.sleeping)
+    for (int k = 0; k < 3; ++k) out[k] = out[k] * kSleepScale[k];
+  return out;
 }
 }  // namespace render::gel

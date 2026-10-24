@@ -129,8 +129,9 @@ and [render/face-painter.mjs](render/face-painter.mjs): draw engine controls.
   limits the server's capture filenames to these two verified sets.
 - [tools/smooth.mjs](tools/smooth.mjs): the per-frame bounds on what is
   drawn (no jolt at an event, drawn sizes that follow their controls, arts
-  that cross over and props without pops, a face that never fades) that the
-  engine, bridge and scene checks apply.
+  that cross over and props without pops) that the engine, bridge and scene
+  checks apply. That the face never fades is checked on the port's painter,
+  in `test_gel`.
 
 ## 1. Mood, state, personality and variation are different things
 

@@ -181,7 +181,20 @@ matched by check-port. Where it differs from the sketch above, and why:
   what's drawn and keeps every weight's velocity. The windows are longer
   than the blink's were, so a state is seen changing rather than switched:
   ordinary edges 320 to 460 ms, dramatic ones 240 to 340, snappier for
-  surprise; going to sleep and waking, 180.
+  surprise; going to sleep and waking, 180. A fifth art within one window
+  drops the faintest; the window is counted in ms in both engines.
+- **The face never fades**, checked on the port's rendered frames: through
+  five cross-fades its eyes and mouth keep at least 85% of the fainter
+  face's visible ink (87% at the least, falling asleep). Where shapes don't
+  overlap, the half-way frames hold each at about half strength.
+- **Known: two rules for "the same shape".** The JS painter records each
+  feature's drawing and compares the calls and colours; slimegen's
+  `slime_art.h` gives each group a shape id from its paths' point counts,
+  fill or stroke and colour, and keeps the cheeks and the strain mark as
+  one group. They disagree on 80 of the 4,730 pairs of arts' groups (calm
+  and embarrassed's eyes morph in the reference and cross-fade on the
+  board; comfy and excited's mouths the other way round). The JS reference
+  retires at checkpoint 6, so they aren't unified.
 - **The lane fades its strip** on the props' 200 ms ramp as it comes and
   goes; what it shows while shown, and the bubble, change at once.
 - **Measured** (internal/tools/fluid): a mood change's largest 40 ms frame

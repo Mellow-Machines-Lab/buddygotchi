@@ -21,11 +21,12 @@ the actor's displacement and velocity. The engine, bridge and scene checks
 also bound what is drawn in every frame they run
 ([CONTINUITY.md](CONTINUITY.md), Continuity of what is drawn): no jolt at an
 event, drawn sizes that follow their controls, arts that cross over and
-props that come and go without pops, a face that never fades and body modes
-that move only by their springs. The engine check also pins the crossing
-itself: a new art fading in on a smoothstep over the window, the weights
-summing to one, a retarget mid-window keeping every weight, at most four
-arts at once. Trace generation is explicit:
+props that come and go without pops, and body modes that move only by their
+springs; that the face never fades is checked on the port's painter
+(`test_gel`, below). The engine check also pins the crossing itself: a new
+art fading in on a smoothstep over the window, the weights summing to one, a
+retarget mid-window keeping every weight, at most four arts at once, a fifth
+dropping the faintest. Trace generation is explicit:
 
 ```sh
 node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53
@@ -73,12 +74,12 @@ and verified review manifest.
 The bridge check walks all 295 directed edges from mid-gesture in each of
 their three variants, verifies that face controls stay between their current
 values and the target (within the span of every target in a rapid chain),
-that a retarget changes nothing drawn at once, and that the arts cross over:
-the new one fading in from nothing and drawn last, each art once, at most
-four (a rapid chain reaches four and settles on its last). It checks that
-every primitive's targets fit inside their bounds and that the face
-painter's eyes and mouth, their arts' opacity summed, never fall below 95%
-through the edge review script. It also covers every edge during rest, drag and pending attention,
+that a retarget changes nothing drawn at once (but that a fifth art drops
+the faintest of four, the others' shares growing to fill what it leaves),
+and that the arts cross over: the new one fading in from nothing and drawn
+last, each art once, at most four (a rapid chain reaches four, drops four
+times and settles on its last). It checks that every primitive's targets
+fit inside their bounds. It also covers every edge during rest, drag and pending attention,
 rapid interrupted retargets, reduced motion, direction, bounded springs and
 the drag expiry boundary. Its 13-case script includes ordinary and dramatic
 edges. Passing earns `transitions.json` status; visual approval is separate.
@@ -144,13 +145,16 @@ internal/tools/boopctl sim --face gel
   on unexpected extra fields too. It reads the staged pack's `moods.h`
   (`.character-build/`, which `fw-test` stages) after the pack's own headers.
 - `test_gel` (in the pack's `tests/firmware/`, run by `fw-test`) checks
-  arithmetic, reference clock rounding, every expression buffer's
-  bounds, deterministic pixels, request identity, bounded caches, alerts
-  interrupted by listening or a link timeout signalling exactly once,
-  the face's two arts crossing over (weights summing to one and stepping
-  no more than a slice of the face window's ramp, drawn sizes following
-  their controls) and the alert's ramp moving without jumps across every
-  directed edge, the lane's strip fading in and out on the props' ramp
+  arithmetic (a `Divisor`'s quotients exactly `/`'s), reference clock
+  rounding, every expression buffer's bounds, deterministic pixels,
+  request identity, bounded caches, alerts interrupted by listening or a
+  link timeout signalling exactly once, the face's two arts crossing over
+  (weights summing to one and stepping no more than a slice of the face
+  window's ramp, drawn sizes following their controls) and the alert's
+  ramp moving without jumps across every directed edge, a fifth art
+  dropping the faintest, a face that never fades (its visible ink
+  through five cross-fades, rendered: CONTINUITY.md, Continuity of what is
+  drawn), the lane's strip fading in and out on the props' ramp
   with what it showed, voice lead, stale cues, return to the latest
   facts, projected face anchors against the reference camera,
   extreme-pose buffer bounds, drawing by coverage (a shape's ink is its

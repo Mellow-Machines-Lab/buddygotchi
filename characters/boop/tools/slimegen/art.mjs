@@ -39,8 +39,7 @@ export function artCatalog(profiles){
  const vertices=[],paths=[],ranges=[],shapes=[1,2,3,4,5].map(()=>[]);const point=p=>p.map(x=>Math.round(x*4096));
  for(const [id,profile] of Object.entries(profiles)){
   const target=faceTarget(profile),ctx=new Capture(profile);
-  const face={...target,artId:id,art:profile.art,blink:0,sleeping:false,
-   layers:[{artId:id,sleeping:false,weight:1,eye:1,mouthWidth:1,mouthHeight:1}]};
+  const face={...target,blink:0,layers:[{artId:id,sleeping:false,weight:1,eye:1,mouthWidth:1,mouthHeight:1}]};
   paintFace(ctx,{time:0,gaze:0,performance:null,face,reducedMotion:true},{expressions:profiles});const first=paths.length;
   for(const p of ctx.paths){const at=vertices.length;vertices.push(...p.points.map(point));const clip=vertices.length;vertices.push(...p.clip.map(point));const [r,g,b,alpha]=p.rgba;paths.push([at,p.points.length,clip,p.clip.length,Math.round(p.width*4096),p.group,Math.round(alpha*255),(r>>3)<<11|(g>>2)<<5|b>>3]);}
   // Each group's shape: its paths' point counts, fill or stroke and colour,

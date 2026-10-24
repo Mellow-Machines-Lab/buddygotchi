@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { root, STEP_MS, loadCatalog, loadEngine, readScript, runScript } from './trace.mjs';
-import { createSmoothness, tracked, facePresence, presenceFloor, SMOOTH_SPEC } from './smooth.mjs';
+import { createSmoothness, tracked, weightStep } from './smooth.mjs';
 
 const SPEC = 'CONTINUITY.md, Directed edge bridges';
 // Every edge run's frames, against the bounds on what is drawn.
@@ -30,6 +30,15 @@ const physical = state => structuredClone({ modes: state.modes, actorChannels: s
   activityChannels: state.activityChannels, bridgeChannels: state.bridgeChannels, pull: state.grab.pull,
   pose: state.pose, life: state.life, face: controls(state.face) });
 const drawn = state => state.face.layers.filter(layer => layer.weight > 0);
+// What is drawn just after a retarget that draws `top` last: every art as it
+// was, but when a fifth arrives the faintest of the four goes, and the
+// others' shares grow to fill what it leaves.
+function drawnAfterRetarget(layers, top) {
+  const kept = layers.filter(layer => layer.weight > 0);
+  if (layers.length < 4 || layers.some(layer => layer.artId === top.artId && layer.sleeping === top.sleeping)) return kept;
+  const faintest = layers.reduce((a, b) => b.weight < a.weight ? b : a);
+  return kept.filter(layer => layer !== faintest).map(layer => ({ ...layer, weight: layer.weight / (1 - faintest.weight) }));
+}
 const round = number => Number(number.toFixed(7));
 function near(actual, expected, message, epsilon = 1e-10) {
   assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= epsilon, `${SPEC}: ${message}: ${actual} != ${expected}`);
@@ -37,7 +46,7 @@ function near(actual, expected, message, epsilon = 1e-10) {
 function makeDriver(createSlime, { seed = 53, reducedMotion = false } = {}) {
   let event = false;
   const slime = tracked(createSlime({ seed, catalog, reducedMotion }), () => { event = true; });
-  const observe = smooth.run();
+  const observe = smooth.run(catalog.expressions);
   let at = 0, frame = slime.step(0).channels, frames = 1;
   observe(frame, event); event = false;
   return { slime, get at() { return at; }, get frame() { return frame; }, get frames() { return frames; },
@@ -56,8 +65,14 @@ function retarget(d, edge, variant) {
   d.slime.setMood(edge.to, { bridgeVariant: variant });
   const after = d.slime.inspect();
   assert.deepEqual(physical(after), physical(before), `${SPEC}: ${edge.id}/${variant} preserves every live spring, face control and composed pose at retarget`);
-  // Nothing drawn changes at once, but when a fifth art folds the faintest.
-  if (before.face.layers.length < 4) assert.deepEqual(drawn(after), drawn(before), `${SPEC}: ${edge.id}/${variant} keeps every art drawn as it was at retarget`);
+  // Nothing drawn changes at once, but that a fifth art drops the faintest
+  // of four and the others' shares grow to fill what it leaves.
+  const kept = drawnAfterRetarget(before.face.layers, after.face.layers.at(-1));
+  assert.equal(drawn(after).length, kept.length, `${SPEC}: ${edge.id}/${variant} keeps every art drawn but a fifth's faintest at retarget`);
+  for (const [index, layer] of drawn(after).entries()) {
+    assert.deepEqual({ ...layer, weight: 0 }, { ...kept[index], weight: 0 }, `${SPEC}: ${edge.id}/${variant} keeps every art drawn as it was at retarget`);
+    near(layer.weight, kept[index].weight, `${edge.id}/${variant} keeps each art's share at retarget`, 1e-12);
+  }
   near(after.time, before.time, `${edge.id} cannot reset the animation clock`);
   return { before, after };
 }
@@ -76,10 +91,10 @@ function validateFrame(frame, previous, endpoints, constants, label) {
   assert.ok(layers.length <= 4 && layers.every(layer => layer.weight >= 0 && layer.weight <= 1), `${SPEC}: ${label} draws at most four arts, each weighed in [0,1]`);
   assert.equal(new Set(layers.map(layer => layer.artId + layer.sleeping)).size, layers.length, `${SPEC}: ${label} draws each art once`);
   const before = previous.face.layers;
+  // A new art fades in from nothing: its first frame moves it no further
+  // than any weight's.
   if (!before.some(layer => layer.artId === top.artId && layer.sleeping === top.sleeping)) {
-    // From nothing, or from the faintest of four, which it folds in.
-    const folded = before.length === 4 ? Math.min(...before.slice(0, -1).map(layer => layer.weight)) : 0;
-    assert.ok(top.weight < folded + 0.2, `${SPEC}: ${label} a new art fades in from nothing or the faintest it folds in`);
+    assert.ok(top.weight <= weightStep, `${SPEC}: ${label} a new art fades in from nothing`);
   }
   for (const [name, spring] of Object.entries(frame.bridgeChannels)) {
     assert.ok(Math.abs(spring.x) <= constants.bounds[name] + 1e-12, `${SPEC}: ${label} ${name} stays inside its displacement bound`);
@@ -305,12 +320,6 @@ async function checkReviewScript(createSlime) {
   assert.equal(bridgeReviewCases.length, 13, `${SPEC}: bounded review set size`);
   assert.equal(script.durationMs, 13 * 6400, `${SPEC}: review windows match the recorder`);
   const result = runScript(createSlime, catalog, script, 53);
-  // Continuity of what is drawn: the painter draws the eyes and the mouth
-  // through every bridge, their arts' opacity summed never under the floor.
-  for (const [index, frame] of result.frames.entries()) {
-    const presence = facePresence(frame, catalog);
-    assert.ok(presence >= presenceFloor, `${SMOOTH_SPEC}: the face never fades during a bridge (frame ${index}: ${presence})`);
-  }
   for (const sample of bridgeReviewCases) {
     const frame = result.frames[(sample.startMs + sample.retargetMs) / STEP_MS];
     assert.equal(frame.mood, sample.to, `${SPEC}: review script actually retargets ${sample.id}`);

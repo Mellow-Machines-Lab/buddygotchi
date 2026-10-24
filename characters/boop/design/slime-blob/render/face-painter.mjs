@@ -2,10 +2,12 @@ import {sleepScale} from '../engine/face.mjs';
 
 // Records a feature's drawing as calls and settings, so two arts' features
 // can be told the same shape (the same calls, colours and styles: only
-// their numbers differ) and drawn as one, their numbers averaged.
+// their numbers differ) and drawn as one, their numbers averaged. One
+// recorder serves every feature: take() hands over what it recorded.
 function recorder() {
-  const ops=[],alphas=[1],record=(name,args)=>ops.push([name,args]);
-  const target={ops,
+  let ops=[];const alphas=[1],record=(name,args)=>ops.push([name,args]);
+  const target={
+    take(){const taken=ops;ops=[];alphas.length=1;alphas[0]=1;return taken;},
     get globalAlpha(){return alphas.at(-1);},
     set globalAlpha(value){alphas[alphas.length-1]=value;record('=globalAlpha',[value]);},
     save(){alphas.push(alphas.at(-1));record('save',[]);},
@@ -15,7 +17,16 @@ function recorder() {
   for(const name of ['setTransform','translate','rotate','scale','beginPath','moveTo','lineTo','quadraticCurveTo','bezierCurveTo','ellipse','closePath','fill','stroke','clip'])target[name]=(...args)=>record(name,args);
   return target;
 }
+const recording=recorder();
 const shape=ops=>JSON.stringify(ops.map(([name,args])=>[name,args.map(v=>typeof v==='number'?0:v?.stops?v.stops.map(stop=>stop[1]):v)]));
+// An art's feature keeps its shape from frame to frame (only its numbers
+// move; reduced motion drops the falling tears), so its key is worked out
+// once, by the art's profile, the feature and reduced motion.
+const shapeKeys=new WeakMap();
+function shapeKey(profile,feature,reduced,ops) {
+  let keys=shapeKeys.get(profile);if(!keys)shapeKeys.set(profile,keys={});
+  return keys[feature+(reduced?'r':'')]??=shape(ops);
+}
 const weight=members=>members.reduce((sum,m)=>sum+m.weight,0);
 // The weighted average of recordings of one shape.
 function blend(members) {
@@ -38,8 +49,7 @@ function replay(ctx,ops,alpha) {
 // of the engine's face layers (CONTINUITY.md, Directed edge bridges): one,
 // as authored, when settled; while arts cross over, each feature of theirs
 // that has the same shape morphs into one, drawn at their summed weight, and
-// different shapes cross-fade, the newer over the older. Returns the eyes'
-// and the mouth's combined opacity, the least of them.
+// different shapes cross-fade, the newer over the older.
 export function paintFace(target, channels, catalog){
     let ctx=target;
     const {time, gaze, performance:actor, face} = channels;
@@ -287,23 +297,19 @@ export function paintFace(target, channels, catalog){
     }
     const layers=face.layers,drawn=layers.map(features);
     ctx.save();ctx.globalAlpha=1;
-    let presence=1;
     if(layers.length===1)for(const feature of drawn[0])feature();
     else for(let f=0;f<drawn[0].length;f++){
       const groups=new Map();
       layers.forEach((layer,i)=>{
-        ctx=recorder();drawn[i][f]();const {ops}=ctx;ctx=target;
+        ctx=recording;drawn[i][f]();ctx=target;const ops=recording.take();
         if(!ops.length)return;
-        const key=shape(ops);if(!groups.has(key))groups.set(key,[]);
+        const key=shapeKey(catalog.expressions[layer.artId],f,reduced.matches,ops);if(!groups.has(key))groups.set(key,[]);
         groups.get(key).push({weight:layer.weight,ops,index:i});
       });
       // Newer over older: by each group's newest member.
       const order=[...groups.values()].sort((x,y)=>x.at(-1).index-y.at(-1).index);
       for(const members of order)if(weight(members)>0)replay(ctx,blend(members),Math.min(1,weight(members)));
-      // The eyes and the mouth: their opacity, summed over what is drawn.
-      if([2,3,5].includes(f))presence=Math.min(presence,order.reduce((sum,members)=>sum+weight(members),0));
     }
     ctx.restore();
     ctx.setTransform(1,0,0,1,0,0);
-    return presence;
   }

@@ -104,11 +104,11 @@ async function checkSemanticFace(catalog) {
   const { createFace, faceTarget, faceTransition, faceRender } = await import('../engine/face.mjs');
   // CONTINUITY.md, "Phase 1 channel bounds": the new semantic layer owns
   // these values; accepted spring/blink source remains byte-for-byte locked.
-  assert.deepEqual(faceTransition, { durationSeconds: 0.18, frequency: 20, reducedFrequency: 30 },
+  assert.deepEqual(faceTransition, { durationMs: 180, frequency: 20, reducedFrequency: 30 },
     `${SPEC}, Phase 1 channel bounds: semantic face timing`);
   const profiles = catalog.expressions, ids = Object.keys(profiles);
   // What is drawn: the controls and every layer with any weight.
-  const presentation = face => { const { transition, artId, art, sleeping, layers, ...rendered } = face;
+  const presentation = face => { const { transition, artId, sleeping, layers, ...rendered } = face;
     return { ...rendered, layers: layers.filter(layer => layer.weight > 0) }; };
   const sum = face => face.layers.reduce((total, layer) => total + layer.weight, 0);
   const smoothstep = s => s * s * (3 - 2 * s);
@@ -135,17 +135,29 @@ async function checkSemanticFace(catalog) {
     }
   }
   // A retarget mid-window starts from what is drawn: every weight keeps its
-  // value, the newest goes last; a fifth art folds the faintest into it.
+  // value, the newest goes last; a fifth art drops the faintest, the others'
+  // shares growing to fill what it leaves.
   const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
   face.setMood('frightened'); for (let frame = 0; frame < 4; frame++) face.advance(STEP_MS / 1000);
   const crossing = face.inspect();
   face.setMood('happy');
   assert.deepEqual(presentation(face.inspect()), presentation(crossing), `${SPEC}, Directed edge bridges: a mid-window retarget keeps every weight`);
   assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['calm', 'frightened', 'happy'], `${SPEC}, Directed edge bridges: the newest art is drawn last`);
-  for (const mood of ['sad', 'angry', 'pleased']) { face.advance(STEP_MS / 1000); face.setMood(mood); }
+  let drops = 0;
+  for (const mood of ['sad', 'angry', 'pleased']) {
+    face.advance(STEP_MS / 1000);
+    const four = face.inspect().layers;
+    face.setMood(mood);
+    if (four.length < faceRender.layers) continue;
+    const faintest = four.reduce((a, b) => b.weight < a.weight ? b : a), rest = four.filter(layer => layer !== faintest), after = face.inspect().layers;
+    assert.deepEqual(after.map(layer => layer.artId), [...rest.map(layer => layer.artId), mood], `${SPEC}, Directed edge bridges: a fifth art drops the faintest`);
+    for (const [index, layer] of rest.entries()) near(after[index].weight, layer.weight / (1 - faintest.weight), `${SPEC}, Directed edge bridges: the others' shares grow to fill what the faintest leaves`);
+    drops++;
+  }
+  assert.equal(drops, 2, `${SPEC}, Directed edge bridges: the chain's fifth and sixth arts each drop one`);
   assert.equal(face.inspect().layers.length, faceRender.layers, `${SPEC}, Directed edge bridges: at most four arts at once`);
-  near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: folding keeps the sum`);
-  for (let frame = 0; frame < 12; frame++) { face.advance(STEP_MS / 1000); range(sum(face.inspect()), 0.95, 1.05, `${SPEC}, Directed edge bridges: weights sum to about one`); }
+  near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: dropping keeps the sum`);
+  for (let frame = 0; frame < 12; frame++) { face.advance(STEP_MS / 1000); near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: the weights sum to one`); }
   assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['pleased'], `${SPEC}, Directed edge bridges: a chain settles on its last art`);
   for (const reducedMotion of [false, true]) {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: reducedMotion } });
@@ -373,7 +385,7 @@ export async function checkEngine() {
     await checkExtensionEquations(createSlime, catalog);
     for (const file of scriptFiles) {
       const script = readScript(path.join(root, 'scripts', file));
-      const smooth = createSmoothness(file), observe = smooth.run();
+      const smooth = createSmoothness(file), observe = smooth.run(catalog.expressions);
       let before, event = false;
       const a = runScript(createSlime, catalog, script, 53, observation => {
         if (observation.kind === 'event') {

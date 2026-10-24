@@ -99,7 +99,8 @@ static void inspect(JsonObject o, Engine& e) {
     layer["artId"] = slime::kProfile[l.art].id;
     layer["sleeping"] = l.sleeping;
     layer["weight"] = number(l.weight);
-    for (int k = 0; k < 3; ++k) layer[ratios[k]] = number(l.ratio[k]);
+    const auto ratio = f.ratios(l);
+    for (int k = 0; k < 3; ++k) layer[ratios[k]] = number(ratio[k]);
   }
   face["artId"] = slime::kProfile[f.current().art].id;
   face["sleeping"] = f.current().sleeping;

@@ -26,6 +26,11 @@ struct Lane {
 
 uint16_t inkRgb565(int ink) { return paletteAt(inkAt(ink, kLevels)); }
 
+// A strip with nothing to show: bare glass.
+bool bare(const Strip& s) {
+  return !s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp;
+}
+
 constexpr int kMargin = 18;  // from the panel's edges, as the canvas's 12 px
 constexpr int kIcon = 18;    // the strip's round icons, and the gap after them
 constexpr int kBubbleMargin = 10;
@@ -162,7 +167,7 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
-  if (!s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp) return;  // bare glass
+  if (bare(s)) return;
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
   r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
@@ -235,8 +240,7 @@ void paintLane(Surface& surface, const char* line, const Strip& s, int alpha) {
 }
 
 const Strip& LaneFade::fade(const Strip& s, T time, int& alpha) {
-  const bool bare = !s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp;
-  if (!bare) {
+  if (!bare(s)) {
     shown_ = s;
     const char* const from[] = {s.agent, s.project, s.name, s.doneAgent, s.doneThread};
     const char** to[] = {&shown_.agent, &shown_.project, &shown_.name, &shown_.doneAgent, &shown_.doneThread};
@@ -246,7 +250,7 @@ const Strip& LaneFade::fade(const Strip& s, T time, int& alpha) {
         *to[i] = names_[i];
       }
   }
-  ramp_.retarget(bare ? 0 : 1, before_ < time ? before_ : time);
+  ramp_.retarget(bare(s) ? 0 : 1, before_ < time ? before_ : time);
   before_ = time;
   alpha = (ramp_.value(time) * 255).integer();
   // Gone, it is the bare strip again.

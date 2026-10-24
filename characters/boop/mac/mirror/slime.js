@@ -652,7 +652,7 @@ const mouthDimensions={
 // CONTINUITY.md, Phase 1 channel bounds: each semantic control is a critically
 // damped spring (frequency 20, or 30 with reduced motion) that keeps its
 // velocity across retargets.
-const faceTransition=Object.freeze({durationSeconds:.18,frequency:20,reducedFrequency:30});
+const faceTransition=Object.freeze({durationMs:180,frequency:20,reducedFrequency:30});
 // CONTINUITY.md, Directed edge bridges: the drawn art's size ratios stay in
 // (0.75, 4/3), and at most four arts are drawn at once.
 const faceRender=Object.freeze({ratioLow:.75,ratioHigh:4/3,layers:4});
@@ -664,6 +664,11 @@ function faceTarget(profile) {
   const art=profile.art,[mouthWidth,curve]=mouthDimensions[art.mouth];
   return {eyeX:art.eyeX,eyeY:art.eyeY,eyeOpen:eyeDimensions[art.eyes],mouthY:art.mouthY,
     mouthWidth,curve,cheekAlpha:art.cheeks==='none'?0:1,tearAmount:profile.tears==='none'?0:1};
+}
+// A layer's own size, which its drawn ratios are over: its art's, or the
+// sleeping face's, the tired art squashed.
+function dimensions(profiles,{artId,sleeping}) {
+  return sleeping?{...faceTarget(profiles.tired),...sleepTarget}:faceTarget(profiles[artId]);
 }
 // The sleeping art's own authored size, relative to the tired art it reuses.
 function sleepScale(profiles) {
@@ -685,32 +690,26 @@ function createFace({profiles,initialEmotion,reduced}) {
   // current art) or zero (the others) over the transition's window, so a
   // retarget keeps every weight's velocity; its weight is its share of them.
   let layers=[{artId:initialEmotion,sleeping:false,from:1,tangent:0,to:1,weight:1}];
-  let age=0,duration=faceTransition.durationSeconds;
   function weigh(s) {
     for(const layer of layers)layer.weight=hermite(layer,s).value;
     const sum=layers.reduce((total,layer)=>total+layer.weight,0);
     for(const layer of layers)layer.weight/=sum;
   }
-  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:duration*1000};
-  // A layer's own size: its art's, or the sleeping face's squashed one.
-  const dimensions=layer=>layer.sleeping?{...faceTarget(profiles.tired),...sleepTarget}:faceTarget(profiles[layer.artId]);
-  function retarget({durationMs=faceTransition.durationSeconds*1000}={}) {
-    const artId=targetSleeping?'tired':targetId,sleeping=targetSleeping,next=durationMs/1000,s=age/duration;
-    target=faceTarget(profiles[artId]);
-    if(sleeping)target={...target,...sleepTarget};
-    for(const layer of layers){const {value,slope}=hermite(layer,s);Object.assign(layer,{from:value,tangent:slope*next/duration,to:0});}
+  // The window the arts cross over in, and how far into it they are.
+  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationMs};
+  function retarget({durationMs=faceTransition.durationMs}={}) {
+    const artId=targetSleeping?'tired':targetId,sleeping=targetSleeping,s=transition.elapsedMs/transition.durationMs;
+    target=dimensions(profiles,{artId,sleeping});
+    for(const layer of layers){const {value,slope}=hermite(layer,s);Object.assign(layer,{from:value,tangent:slope*durationMs/transition.durationMs,to:0});}
     // An art still fading comes back from the weight it has.
     let top=layers.find(layer=>layer.artId===artId&&layer.sleeping===sleeping);
     if(top)layers.splice(layers.indexOf(top),1);else top={artId,sleeping,from:0,tangent:0};
     top.to=1;layers.push(top);
-    // One at zero that can only stay there is gone; past four, the faintest
-    // folds into the new art.
+    // One at zero that can only stay there is gone; past four, so is the
+    // faintest, the others' shares growing to fill what it leaves.
     layers=layers.filter(layer=>layer===top||layer.from>0||layer.tangent>0);
-    if(layers.length>faceRender.layers){
-      const faintest=layers.slice(0,-1).reduce((a,b)=>b.from<a.from?b:a);
-      layers.splice(layers.indexOf(faintest),1);top.from+=faintest.from;top.tangent+=faintest.tangent;
-    }
-    age=0;duration=next;weigh(0);
+    if(layers.length>faceRender.layers)layers.splice(layers.indexOf(layers.slice(0,-1).reduce((a,b)=>b.from<a.from?b:a)),1);
+    weigh(0);
     transition={from:{...controls},to:{...target},elapsedMs:0,durationMs};
   }
   function setMood(id,options) {
@@ -724,7 +723,7 @@ function createFace({profiles,initialEmotion,reduced}) {
   // Each layer is drawn at the live ratio over its own size, so the arts
   // crossing over are drawn near one size while the controls move.
   const drawn=layer=>{
-    const size=dimensions(layer);
+    const size=dimensions(profiles,layer);
     return {artId:layer.artId,sleeping:layer.sleeping,weight:layer.weight,eye:softRatio(controls.eyeOpen/size.eyeOpen),
       mouthWidth:softRatio(controls.mouthWidth/size.mouthWidth),mouthHeight:softRatio(controls.curve/size.curve)};
   };
@@ -739,22 +738,21 @@ function createFace({profiles,initialEmotion,reduced}) {
         controls[key]=x;velocity[key]=v;
       }
       if(layers.length>1){
-        age=Math.min(duration,age+dt);
-        transition.elapsedMs=Math.min(transition.durationMs,age*1000);
-        if(age>=duration)layers=[layers.at(-1)];
-        weigh(age/duration);
+        transition.elapsedMs=Math.min(transition.durationMs,transition.elapsedMs+dt*1000);
+        if(transition.elapsedMs>=transition.durationMs)layers=[layers.at(-1)];
+        weigh(transition.elapsedMs/transition.durationMs);
       }
     },
     inspect(blink=0) {
       const top=layers.at(-1);
-      return {...controls,artId:top.artId,art:{...profiles[top.artId].art},sleeping:top.sleeping,blink,
+      return {...controls,artId:top.artId,sleeping:top.sleeping,blink,
         layers:layers.map(drawn),velocity:{...velocity},
         transition:{from:{...transition.from},to:{...transition.to},elapsedMs:transition.elapsedMs,durationMs:transition.durationMs,active:layers.length>1}};
     }
   };
 }
 
-return {faceTransition,faceRender,sleepTarget,faceTarget,sleepScale,softRatio,createFace};
+return {faceTransition,faceRender,sleepTarget,faceTarget,dimensions,sleepScale,softRatio,createFace};
 },
 12:()=>{
 // CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
@@ -1920,10 +1918,12 @@ return {matrixMultiply,projection,eye,target,viewMatrix};
 const {sleepScale}=__load(11);
 // Records a feature's drawing as calls and settings, so two arts' features
 // can be told the same shape (the same calls, colours and styles: only
-// their numbers differ) and drawn as one, their numbers averaged.
+// their numbers differ) and drawn as one, their numbers averaged. One
+// recorder serves every feature: take() hands over what it recorded.
 function recorder() {
-  const ops=[],alphas=[1],record=(name,args)=>ops.push([name,args]);
-  const target={ops,
+  let ops=[];const alphas=[1],record=(name,args)=>ops.push([name,args]);
+  const target={
+    take(){const taken=ops;ops=[];alphas.length=1;alphas[0]=1;return taken;},
     get globalAlpha(){return alphas.at(-1);},
     set globalAlpha(value){alphas[alphas.length-1]=value;record('=globalAlpha',[value]);},
     save(){alphas.push(alphas.at(-1));record('save',[]);},
@@ -1933,7 +1933,16 @@ function recorder() {
   for(const name of ['setTransform','translate','rotate','scale','beginPath','moveTo','lineTo','quadraticCurveTo','bezierCurveTo','ellipse','closePath','fill','stroke','clip'])target[name]=(...args)=>record(name,args);
   return target;
 }
+const recording=recorder();
 const shape=ops=>JSON.stringify(ops.map(([name,args])=>[name,args.map(v=>typeof v==='number'?0:v?.stops?v.stops.map(stop=>stop[1]):v)]));
+// An art's feature keeps its shape from frame to frame (only its numbers
+// move; reduced motion drops the falling tears), so its key is worked out
+// once, by the art's profile, the feature and reduced motion.
+const shapeKeys=new WeakMap();
+function shapeKey(profile,feature,reduced,ops) {
+  let keys=shapeKeys.get(profile);if(!keys)shapeKeys.set(profile,keys={});
+  return keys[feature+(reduced?'r':'')]??=shape(ops);
+}
 const weight=members=>members.reduce((sum,m)=>sum+m.weight,0);
 // The weighted average of recordings of one shape.
 function blend(members) {
@@ -1956,8 +1965,7 @@ function replay(ctx,ops,alpha) {
 // of the engine's face layers (CONTINUITY.md, Directed edge bridges): one,
 // as authored, when settled; while arts cross over, each feature of theirs
 // that has the same shape morphs into one, drawn at their summed weight, and
-// different shapes cross-fade, the newer over the older. Returns the eyes'
-// and the mouth's combined opacity, the least of them.
+// different shapes cross-fade, the newer over the older.
 function paintFace(target, channels, catalog){
     let ctx=target;
     const {time, gaze, performance:actor, face} = channels;
@@ -2205,25 +2213,21 @@ function paintFace(target, channels, catalog){
     }
     const layers=face.layers,drawn=layers.map(features);
     ctx.save();ctx.globalAlpha=1;
-    let presence=1;
     if(layers.length===1)for(const feature of drawn[0])feature();
     else for(let f=0;f<drawn[0].length;f++){
       const groups=new Map();
       layers.forEach((layer,i)=>{
-        ctx=recorder();drawn[i][f]();const {ops}=ctx;ctx=target;
+        ctx=recording;drawn[i][f]();ctx=target;const ops=recording.take();
         if(!ops.length)return;
-        const key=shape(ops);if(!groups.has(key))groups.set(key,[]);
+        const key=shapeKey(catalog.expressions[layer.artId],f,reduced.matches,ops);if(!groups.has(key))groups.set(key,[]);
         groups.get(key).push({weight:layer.weight,ops,index:i});
       });
       // Newer over older: by each group's newest member.
       const order=[...groups.values()].sort((x,y)=>x.at(-1).index-y.at(-1).index);
       for(const members of order)if(weight(members)>0)replay(ctx,blend(members),Math.min(1,weight(members)));
-      // The eyes and the mouth: their opacity, summed over what is drawn.
-      if([2,3,5].includes(f))presence=Math.min(presence,order.reduce((sum,members)=>sum+weight(members),0));
     }
     ctx.restore();
     ctx.setTransform(1,0,0,1,0,0);
-    return presence;
   }
 
 return {paintFace};

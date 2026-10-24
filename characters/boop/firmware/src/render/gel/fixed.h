@@ -67,6 +67,27 @@ constexpr F operator+(int a, F b) { return F(a) + b; }
 constexpr F operator-(int a, F b) { return F(a) - b; }
 constexpr F operator*(int a, F b) { return b * a; }
 constexpr F q(double n) { return F::decimal(n); }
+// A value in the painters' Q12 (4096 is one), toward zero.
+inline int scalar(F v) { return int(v.raw / (F::scale / 4096)); }
+// Dividing by one divisor many times: its reciprocal, worked out once,
+// makes each quotient a multiply and one correction, exactly the quotient
+// `/` gives (toward zero). For a divisor of at least 1/2 and a dividend
+// under 128: then the multiply fits 64 bits and overshoots by less than one.
+class Divisor {
+ public:
+  constexpr Divisor() = default;  // one
+  explicit Divisor(F d) : d_(d.raw), m_(((uint64_t(1) << (2 * F::bits + 8)) + uint64_t(d.raw) - 1) / uint64_t(d.raw)) {}
+  F divide(F a) const {
+    const uint64_t n = a.raw < 0 ? uint64_t(-a.raw) : uint64_t(a.raw);
+    uint64_t quotient = n * m_ >> (F::bits + 8);
+    if (quotient * uint64_t(d_) > n << F::bits) --quotient;
+    return F::fromRaw(a.raw < 0 ? -int64_t(quotient) : int64_t(quotient));
+  }
+
+ private:
+  int64_t d_ = F::scale;
+  uint64_t m_ = uint64_t(1) << (F::bits + 8);  // 2^56 / d_, rounded up
+};
 inline F clamp(F x, F lo, F hi) { return x < lo ? lo : x > hi ? hi : x; }
 inline F abs(F x) { return x.raw < 0 ? -x : x; }
 inline F min(F a, F b) { return a < b ? a : b; }

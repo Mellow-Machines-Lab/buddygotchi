@@ -67,7 +67,7 @@ static void test_frame_replay_is_byte_identical() {
   paint(sa, *e);
   paint(sb, *e);
   TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
-  e->face.layers[0].ratio[0] = q(.8);
+  e->face.scaled[2] = e->face.scaled[2] * q(.8);  // the eyes drawn less open
   paint(sb, *e);
   TEST_ASSERT_NOT_EQUAL(0, std::memcmp(a.data(), b.data(), sa.bytes()));
 }
@@ -249,7 +249,8 @@ static void test_interrupted_alert_signals_exactly_once() {
 // two arts cross over, their weights summing to one, each stepping no more
 // than a slice of the shortest face window's ramp, the new one last; each
 // drawn ratio stays inside (0.75, 4/3) and moves its drawn size no further
-// than its control; a retarget keeps the controls' velocity; and the alert
+// than its control; a retarget keeps the controls' velocity, and a fifth art
+// drops the faintest (CONTINUITY.md, Directed edge bridges); and the alert
 // sign ramps in and out with no step larger than a slice of its ramp.
 static void test_face_and_props_move_without_jumps() {
   const F weightStep = q(.149), rampStep = q(.134);
@@ -270,14 +271,16 @@ static void test_face_and_props_move_without_jumps() {
       for (int k = 0; k < f.count; ++k) {
         const auto& l = f.layers[k];
         sum += l.weight;
-        for (const F r : l.ratio) TEST_ASSERT_TRUE(r > q(.75) - q(.0001) && r < q(4.0 / 3) + q(.0001));
+        const auto ratio = f.ratios(l);
+        for (const F r : ratio) TEST_ASSERT_TRUE(r > q(.75) - q(.0001) && r < q(4.0 / 3) + q(.0001));
         for (int j = 0; j < before.count; ++j) {
           const auto& was = before.layers[j];
           if (was.art != l.art) continue;
           TEST_ASSERT_TRUE(abs(l.weight - was.weight) <= weightStep);
+          const auto wasRatio = before.ratios(was);
           for (int r = 0; r < 3; ++r) {
             const int c = controls[r];
-            TEST_ASSERT_TRUE(abs(l.ratio[r] - was.ratio[r]) * slime::kProfile[l.art].face[c] <=
+            TEST_ASSERT_TRUE(abs(ratio[r] - wasRatio[r]) * slime::kProfile[l.art].face[c] <=
                              abs(f.controls[c] - before.controls[c]) + q(.00001));
           }
         }
@@ -295,6 +298,25 @@ static void test_face_and_props_move_without_jumps() {
   TEST_ASSERT_TRUE(abs(moving) > q(.01));
   face.setMood(slime::kHappy);
   TEST_ASSERT_TRUE(face.velocity[2] == moving);
+  // A fifth art within one window drops the faintest of the four; the
+  // others keep their order, and their shares grow to fill what it leaves.
+  face.advance(T::ratio(16, 1000), false);
+  face.setMood(slime::kSad);
+  face.advance(T::ratio(16, 1000), false);
+  TEST_ASSERT_EQUAL_INT(SemanticFace::kMaxLayers, face.count);
+  const SemanticFace four = face;
+  int faintest = 0;
+  for (int i = 1; i < four.count; ++i)
+    if (four.layers[i].weight < four.layers[faintest].weight) faintest = i;
+  face.setMood(slime::kAngry);
+  TEST_ASSERT_EQUAL_INT(SemanticFace::kMaxLayers, face.count);
+  TEST_ASSERT_EQUAL_INT(slime::kAngry, face.current().art);
+  for (int i = 0, k = 0; i < four.count; ++i) {
+    if (i == faintest) continue;
+    TEST_ASSERT_EQUAL_INT(four.layers[i].art, face.layers[k].art);
+    TEST_ASSERT_TRUE(abs(face.layers[k++].weight - four.layers[i].weight / (F(1) - four.layers[faintest].weight)) <=
+                     q(.0001));
+  }
   auto e = std::make_unique<Engine>();
   e->step(0);
   Facts f;
@@ -319,6 +341,72 @@ static void test_face_and_props_move_without_jumps() {
     last = now;
   }
   TEST_ASSERT_TRUE(seen);
+}
+// The face's visible ink in a frame: the pixels its art takes at least a
+// quarter of the way from the body's luminance to the ink's, against the
+// same frame with no art drawn. Fainter than that, a fading art's ghost
+// and the antialiased edges don't count; the paler features (a water eye's
+// fill, the cheeks, the tears) are lighter than the body and never do.
+static int faceInk(const Engine& e, Surface& drawn, Surface& bare) {
+  auto lum = [](uint16_t p) {
+    const int r = ((p >> 11) & 31) * 255 / 31, g = ((p >> 5) & 63) * 255 / 63, b = (p & 31) * 255 / 31;
+    return (77 * r + 150 * g + 29 * b) >> 8;
+  };
+  const int ink = lum(rgb565(13, 43, 72));
+  paint(drawn, e);
+  auto none = std::make_unique<Engine>(e);
+  for (int i = 0; i < none->face.count; ++i) none->face.layers[i].weight = 0;
+  paint(bare, *none);
+  int count = 0;
+  for (int i = 0; i < drawn.width * drawn.height; ++i) {
+    const int body = lum(bare.pixels[i]), room = body - ink;
+    if (room > 0 && (body - lum(drawn.pixels[i])) * 4 >= room) ++count;
+  }
+  return count;
+}
+// CONTINUITY.md, Continuity of what is drawn: the face never fades. Through
+// a cross-fade between differently shaped arts, in frames 40 ms apart, the
+// eyes and the mouth keep at least 85% of the visible ink of the fainter of
+// the two faces settled. The least now is 87%, falling asleep.
+static void test_the_face_never_fades_while_arts_cross_over() {
+  std::vector<uint16_t> a(502 * 410), b(a.size());
+  Surface drawn{502, 410, a.data()}, bare{502, 410, b.data()};
+  struct Case {
+    int from, to;
+    SceneState base, then;
+  } cases[] = {{slime::kCalm, slime::kHappy, SceneState::kIdle, SceneState::kIdle},
+               {slime::kHappy, slime::kSad, SceneState::kIdle, SceneState::kIdle},
+               // frightened's welling eyes: a pool over a bean, with a glint
+               {slime::kCalm, slime::kFrightened, SceneState::kIdle, SceneState::kIdle},
+               // falling asleep, and waking
+               {slime::kCalm, slime::kCalm, SceneState::kIdle, SceneState::kAsleep},
+               {slime::kCalm, slime::kCalm, SceneState::kAsleep, SceneState::kIdle}};
+  for (const auto& c : cases) {
+    auto e = std::make_unique<Engine>();
+    Facts f;
+    f.base = c.base;
+    e->setFacts(f);
+    e->setMood(c.from);
+    uint32_t t = 0;
+    for (; t <= 640; t += 40) e->step(t);
+    const int start = faceInk(*e, drawn, bare);
+    f.base = c.then;
+    e->setFacts(f);
+    e->setMood(c.to);
+    TEST_ASSERT_EQUAL_INT(2, e->face.count);
+    int least = 1 << 30;
+    bool crossed = false;
+    for (int frame = 0; frame < 16; ++frame) {
+      e->step(t += 40);
+      TEST_ASSERT_TRUE(e->blink() == F(0));  // the eyes open throughout: no blink comes before 2.8 s
+      if (e->face.count > 1) least = std::min(least, faceInk(*e, drawn, bare)), crossed = true;
+    }
+    TEST_ASSERT_TRUE(crossed);
+    TEST_ASSERT_EQUAL_INT(1, e->face.count);
+    const int fainter = std::min(start, faceInk(*e, drawn, bare));
+    TEST_ASSERT_TRUE(fainter > 400);
+    TEST_ASSERT_TRUE(least * 100 >= fainter * 85);
+  }
 }
 // CONTINUITY.md, No prop pops: the lane's strip eases in as it comes and out
 // as it goes, no step larger than a slice of the props' ramp, and one going
@@ -754,6 +842,7 @@ static void test_occasions_play_only_while_they_fit() {
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
+void test_a_divisor_divides_exactly();
 static void test_gel_draws_natively() {
   // Full-panel RGB565. The gel asks for native surfaces;
   // Device allocates them at the board's size, which the simulator's Hal
@@ -1181,6 +1270,7 @@ int main() {
   UNITY_BEGIN();
   RUN_TEST(test_fixed_math_and_motion);
   RUN_TEST(test_software_clock_matches_binary64);
+  RUN_TEST(test_a_divisor_divides_exactly);
   RUN_TEST(test_all_expressions_draw_inside_native_surface);
   RUN_TEST(test_frame_replay_is_byte_identical);
   RUN_TEST(test_one_face_vocabulary_and_latest_facts);
@@ -1189,6 +1279,7 @@ int main() {
   RUN_TEST(test_external_source_holds_without_repeating_reveal);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
+  RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
   RUN_TEST(test_the_lane_fades_in_and_out);
   RUN_TEST(test_the_lane_fades_from_the_frame_before);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);

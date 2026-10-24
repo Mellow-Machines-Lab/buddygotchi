@@ -708,13 +708,16 @@ layer's weight starts again from its value and slope then, a cubic Hermite
 over the transition's face window toward one for the new art and zero for
 the others (`hermite` in [engine/scenes/ramp.mjs](engine/scenes/ramp.mjs),
 the props' ramp): from rest a smoothstep, and a retarget mid-window keeps
-every weight's velocity. A layer's weight is its share of them all, so the
-weights sum to one. An art still fading comes back from the weight it has;
-a layer at zero that can only stay there is dropped; a fifth art folds the
-faintest into the new one, the one step there is, and only when more than
-four arts change within one window. When the window ends, only the current
-art is left. Natural blinks and a gag's lids close the eyes; nothing else
-does.
+every weight's velocity. The window is counted in milliseconds,
+`face.transition`'s `elapsedMs` of its `durationMs`, the one clock both
+engines keep. A layer's weight is its share of them all, so the weights sum
+to one. An art still fading comes back from the weight it has; a layer at
+zero that can only stay there is dropped; a fifth art drops the faintest of
+the four, the others' shares growing to fill what it leaves: the one step
+there is, and only when more than four arts change within one window (a
+rapid chain, moods 48 ms apart, drops the art that came 48 ms before, at 5
+to 11%). When the window ends, only the current art is left. Natural blinks
+and a gag's lids close the eyes; nothing else does.
 
 **Morph or cross-fade, feature by feature.** The painters draw each layer's
 features: each eye, the mouth, the tears and the cheeks. Where layers draw
@@ -782,8 +785,8 @@ cards' reveals):
 - **Arts cross over without pops.** A layer's weight moves at most a 16 ms
   slice of the Hermite over the shortest face window, the face's own 180 ms
   (going to sleep and waking), reversals
-  included (sampled, with 2% margin: about 0.149 per frame); the weights
-  sum to one, within 5%.
+  included (sampled, with 2% margin: about 0.149 per frame), a new art's
+  first frame included; the weights sum to one.
 - **No prop pops.** A prop's `visible` moves at most a 16 ms slice of its
   ramp: the Hermite's steepest slope over its 200 ms, reversals included
   (sampled, with 2% margin: about 0.134 per frame). The desk moves at most
@@ -791,9 +794,21 @@ cards' reveals):
   fades its strip on the same 200 ms ramp as it comes and goes, one going
   still showing what it showed (`render/gel/lane.h`'s `LaneFade`), and the
   preview's lane fades who needs you with the alert's sign.
-- **The face never fades.** Over the edge review script, the face painter
-  draws the eyes and the mouth, their arts' opacities summed, at no less
-  than 95% in every frame.
+- **The face never fades.** Through a cross-fade between differently
+  shaped arts (calm to happy, happy to sad, calm to frightened's welling
+  eyes, falling asleep and waking), the port's painter's frames, 40 ms
+  apart, keep at least 85% of the visible ink of the fainter of the two
+  faces settled: the pixels the face takes at least a quarter of the way
+  from the body's luminance to the ink's, eyes and mouth (a water eye's
+  fill, the cheeks and the tears are paler than the body and don't count).
+  The least is 87%, falling asleep (waking 88%, happy to sad 97%; calm to
+  happy and to frightened show more than the fainter end, both arts
+  showing). Where two shapes don't overlap, the frames half way are dimmer
+  by a stricter count: of the pixels taken at least half way to the ink,
+  calm to frightened keeps 48% of the fainter face's, scared to frightened
+  50% and falling asleep 73%; of those three quarters of the way, 13%, 12%
+  and 21%. Each shape is at about half its strength there, which is the
+  cross-fade.
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).
@@ -802,8 +817,8 @@ The scene check also replays [scripts/alert-interrupted.jsonl](scripts/alert-int
 and interrupts alerts with listening and with a link timeout at eight points
 from 0 to 2,000 ms: every request knocks and confirms exactly once. The
 native port's `test_gel` repeats the interruption cases, the weights' and
-sizes' bounds and the alert's ramp over every directed edge, and the lane's
-fade.
+sizes' bounds and the alert's ramp over every directed edge, a fifth art's
+drop and the lane's fade, and checks that the face never fades.
 
 ## Variability, without chaos
 
