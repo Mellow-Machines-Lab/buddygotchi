@@ -134,10 +134,20 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       terminal tab and "lines gone"): 03fad1a on AgentHooks' main,
       bumped in db97abb.
 - [ ] Try the exact terminal tab in iTerm2 and Terminal.
-- [ ] Push AgentHooks' `lifecycle-fixes` and merge it (a turn silent an
+- [x] Push AgentHooks' `lifecycle-fixes` and merge it (a turn silent an
       hour stops working, a day forgets any session, wrappers aren't the
-      agent, `HookSocket.listed`), then bump `agent-hooks`: Boop's
-      Uninstall and its lifecycle tests need it.
+      agent, `HookSocket.listed`), then bump `agent-hooks`: a1f6417 on
+      AgentHooks' main, bumped in 9f34a2a.
+- [ ] Try what only a real Mac session and Bluetooth can show (the review
+      of 2026-10-24's fixes): onboarding's window coming forward over the
+      terminal at the agent's hello, and reopening Boop.app; pairing
+      pinning the board you tap, not the first hello, and "I don't have
+      my Boop yet" pinning none; in act 5, BOOT ticking only the button's
+      lesson; an update with both boards plugged in (a refusal for the
+      wrong board, the chip's image, a restart after a cut-off write);
+      opening an agent's tab from the bundled app (the Automation
+      prompt); `make onboarding` keeping its own Keychain entry and
+      leaving no socket behind.
 - [ ] Review the worked reference (Studio, Review: notice from the perk
       reference). It keeps Boop's `notice` clip, which no face plays yet;
       its reading still names beats for the rig's dropped `eyeCurve` and
