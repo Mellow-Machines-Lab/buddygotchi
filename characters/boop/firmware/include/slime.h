@@ -98,7 +98,7 @@ struct IdleOccasion {uint32_t when;uint16_t after;uint8_t gag;};
 inline constexpr IdleOccasion kIdleOccasions[]={
 {1,0,15},
 {8,0,16},
-{0,1200,17},
+{8388608,0,17},
 {65536,0,18},
 {128,0,18},
 {32768,0,18},
@@ -1996,7 +1996,7 @@ inline constexpr LookOccasion kLookOccasions[]={
 {1,262144,0,{T::literal(3200),F::fromRaw(503316),SLIME_INTENT("Frantic typing, with four or more agents at work")nullptr,6,1,0,1,true,false,-1,{{T::literal(180),0,1,F::fromRaw(19293798)},{T::literal(300),0,-1,F::fromRaw(19293798)},{T::literal(420),0,1,F::fromRaw(19293798)},{T::literal(540),0,-1,F::fromRaw(19293798)},{T::literal(660),0,1,F::fromRaw(19293798)},{T::literal(780),0,-1,F::fromRaw(19293798)}}}},
 {9,262144,0,{T::literal(3200),F::fromRaw(503316),SLIME_INTENT("Frantic typing, with four or more agents at work")nullptr,6,1,0,1,true,false,-1,{{T::literal(180),0,1,F::fromRaw(19293798)},{T::literal(300),0,-1,F::fromRaw(19293798)},{T::literal(420),0,1,F::fromRaw(19293798)},{T::literal(540),0,-1,F::fromRaw(19293798)},{T::literal(660),0,1,F::fromRaw(19293798)},{T::literal(780),0,-1,F::fromRaw(19293798)}}}},
 {10,262144,0,{T::literal(3200),F::fromRaw(503316),SLIME_INTENT("Frantic typing, with four or more agents at work")nullptr,6,1,0,1,true,false,-1,{{T::literal(180),0,1,F::fromRaw(19293798)},{T::literal(300),0,-1,F::fromRaw(19293798)},{T::literal(420),0,1,F::fromRaw(19293798)},{T::literal(540),0,-1,F::fromRaw(19293798)},{T::literal(660),0,1,F::fromRaw(19293798)},{T::literal(780),0,-1,F::fromRaw(19293798)}}}},
-{1,0,1200,{T::literal(3700),F::fromRaw(-167772),SLIME_INTENT("A stretch after twenty minutes' work")nullptr,1,1,0,1,false,false,23,{{T::literal(2600),0,1,F::fromRaw(15099494)}}}},
+{1,524288,0,{T::literal(3700),F::fromRaw(-167772),SLIME_INTENT("A stretch on a long turn's marathon")nullptr,1,1,0,1,false,false,23,{{T::literal(2600),0,1,F::fromRaw(15099494)}}}},
 {4,8,0,{T::literal(5600),F::fromRaw(0),SLIME_INTENT("A deeper snore at night")nullptr,3,1,0,1,false,false,-1,{{T::literal(600),13,0,F::fromRaw(7549747)},{T::literal(2400),13,0,F::fromRaw(7549747)},{T::literal(4200),13,0,F::fromRaw(7549747)}}}},
 {4,0,1800,{T::literal(5200),F::fromRaw(0),SLIME_INTENT("A dream after half an hour asleep: a twitch and a wriggle")nullptr,2,1,0,1,false,false,24,{{T::literal(800),13,0,F::fromRaw(5033165)},{T::literal(3400),13,0,F::fromRaw(5033165)}}}}
 };
