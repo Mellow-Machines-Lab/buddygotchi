@@ -23,7 +23,10 @@ plays under its own designs only, and a design that blinks on its own
 gets no other blink. The gel stays on its own engine, the JavaScript
 reference and the C++ port matched frame for frame, falling asleep over
 480 ms and waking over 180; both faces share the anchors and the lane's
-fade, and the gel's move onto the mixer waits for the owner. The
+fade. The Mac now shows the port itself, the board's firmware as
+WebAssembly (The Mac's slime on the board's engine, below), so the
+reference ships nowhere; the gel's move onto the mixer follows phase 2
+there, retiring the reference. The
 checkpoint notes below are history, each as it landed: where a later one
 changed an earlier (checkpoint 1's 180 ms to sleep, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
@@ -526,6 +529,118 @@ face test's "near enough". Where it differs from before, and why:
   frame. One golden changed: grumpy at work (`expression/working-grumpy`),
   its face a pixel off the baked one as the working look's clip moves
   the rig face.
+
+### The Mac's slime on the board's engine (2026-10-24)
+
+The owner's decision on checkpoint 5's wait: the Mac shows the live
+slime (the popover's face, onboarding's tiles and its demo) with the
+board's own C++ engine as WebAssembly, in place of the JavaScript twin
+it bundled (`mac/mirror/slime.js`), so there's one slime engine and no
+frame-for-frame twin to keep. Phase 1, this: the Mac on it. Phase 2,
+retiring the JavaScript engine, below.
+
+- **Built from what ships only.** The mirror is one more board, with no
+  hardware: `firmware/src/board/mirror/`, a HAL with the page's clock and
+  nothing else (no touch, motion sensor, light, sound or card: a silent
+  board, as one with no card is), on the loop the simulator runs, which
+  moves from `simulator/core/board.*` into `firmware/src/board/hosted/`
+  so the simulator and the mirror run the same one. `firmware/tools/mirror.sh`
+  builds it with Emscripten from the firmware's portable code
+  (`render/`, `app/`, `voice/`), LinkKit's device library, ArduinoJson
+  and the face the pack gives the AMOLED (Boop's gel), into the pack's
+  `mac/mirror/board.js`, the WebAssembly inside it, checked in as
+  slime.js was. Beside it, written by hand, the page (`index.html`,
+  `mirror.css`) and its script (`mirror.js`). Nothing of `simulator/` or
+  `internal/` at run time.
+- **Fed what the board gets.** `SlimeFeed` sends the page LinkKit's own
+  lines (`Wire.state`, `Wire.do`): each `state` as the board gets it,
+  and each reaction the board got with its id, play and ttl
+  (`Runtime.onReaction` now says the play), shown or not, so a popover
+  opened mid-reaction shows the board's moment. What the board did on its
+  own is the board's own input on the mirror: a tap's poke is a finger
+  on its screen (`dbg.touch`), so it pokes, or counts a third tap, as the
+  board did; push-to-talk's `listening` is the `do` the board plays. The
+  page says the last `state` again every 8 s, as the Mac does every 10,
+  so the mirror never takes its Mac for gone. A new board shows its
+  first `state` 1.5 s on a frozen clock, then runs from there, so a
+  tile starts settled rather than on its start-up.
+- **Silent, and never answers.** No sound. What the board says on USB
+  stays in the page, kept only until the next call, and read only by a
+  snapshot (its `dbg.state`): no `ended`, tap or gesture of the mirror's
+  can act. Reduced motion is the board's, which has none; listening is
+  the board's `do`s. The page draws only while shown: hidden, it doesn't
+  tick, and the board catches up on its clock at the next frame. One
+  mirror runs at a time: a feed drives its newest page and stops the one
+  before, and onboarding's feed and the popover's never show together.
+- **Drawn whole.** The page draws the board's 502 × 410 screen as big as
+  fits in the tile, centred, on the tile's black glass, which is as
+  black as the panel: the needs-you screen and the lane are whole in
+  every tile.
+- **Snapshots** (`Boop --snapshots`) load the page and ask it for a
+  board on a frozen clock in the state, drawn at 1.5 s as a scenario's
+  shot is; the board's `dbg.state` must be the state asked for (its
+  base, act and mood, needs you exactly when asked), so every look
+  onboarding uses is checked through the board's engine.
+- **The mirror is the board.** `boopctl mirror` plays every gel scenario
+  on the mirror (under Node, `mirror_board.mjs`, which behaves as the
+  simulator's frozen build) and on the native simulator, both with no
+  card, and checks every shot is the same pixel for pixel;
+  `firmware/tools/mirror.sh --check` builds it again and checks it's
+  the one checked in, byte for byte (Emscripten's output is the same
+  from the same sources and the same Emscripten).
+
+As built: all 117 shots of the ten gel scenarios are the simulator's,
+pixel for pixel, the first time (the gel engine is integer throughout,
+so wasm32 and arm64 agree).
+
+- **Size.** `board.js` is 1.68 MB: the WebAssembly, 1.26 MB (367 KB
+  gzipped; 274 KB of code, 981 KB of data, the gel's tables, mesh, art
+  and fonts), inside an 11 KB loader, carried as a string so the page
+  needs no fetch, which a `file://` page in WKWebView can't do (its CSP
+  allows `'wasm-unsafe-eval'` and nothing else new). The JavaScript twin
+  was 254 KB.
+- **Cost.** In a real WKWebView, the popover's 46-point tile shown: the
+  page's process 4.9% of a core and WebKit's GPU process 3.8%, against
+  the twin's 9.3% and 11.9% (WebGL); onboarding's 236 × 177 demo, 4.8%
+  and 3.9%, against 10.9% and 15.3%. Hidden: 0.2%, the 8 s heartbeat and nothing else, against the
+  twin's 1.8%. A frame and its RGBA take 0.42 ms under Node; the board
+  draws at most every 16 ms, so the page draws at most 60 a second on
+  any display.
+
+**Phase 2, retiring the JavaScript engine** (`design/slime-blob/engine/`,
+`render/`, `preview/`): nothing ships it now. What still reads it:
+
+1. **slimegen's sources.** `catalog.mjs` and `recipes.mjs` build
+   `slime.h` from the engine's own scene recipes, face targets, profiles,
+   gestures and occasions (`engine/scenes/*.mjs`, `engine/face.mjs`);
+   `art.mjs` paints each art through `render/face-painter.mjs` into
+   `slime_art.h`; `mesh.mjs` samples `render/camera.mjs`'s dome into
+   `slime_mesh.h`. Either make the generated headers' inputs data
+   (`expressions.json` and new recipe and art JSON, or the C++ itself as
+   the source, with slimegen kept only for what's truly derived), or
+   keep those modules as the generator's own and delete the rest.
+2. **The continuity checks** that run on the reference: `tools/check.cjs`,
+   `check-engine.mjs`, `check-bridges.mjs`, `check-scenes.mjs`,
+   `check-cues.mjs`, `check-motion.cjs` (the V1 motion contract's source
+   hashes, `contracts/motion-v1.json`) and `smooth.mjs`'s per-frame
+   bounds. Move what they pin onto the port, in `test_gel`
+   (characters/boop/tests/firmware/), which already checks the face never
+   fades and the arts cross over, or onto the board's frames
+   (`boopctl sim`, the fluidity measure), then delete them.
+3. **The traces** (`traces/*.json`, recorded from the reference by
+   `tools/trace.mjs` from `scripts/*.jsonl`) and **check-port.py**,
+   which holds the port to them: record the traces from the port
+   (`characters/boop/tools/gel-trace/`) as its own goldens and keep
+   check-port as their regression check, or retire both for
+   `test_gel` and the gel goldens.
+4. **The Studio's "Gel slime" card** (`characters/boop/studio/adapter.js`
+   and `character.json`'s `studio` entry, on `preview/slime.bundle.js`,
+   which `tools/build.cjs` bundles with `bundle.cjs`): move its review
+   sets and sound sketches onto the board's card the Studio already has
+   (the WebAssembly simulator), then drop the bundle and the build.
+5. Then the twin's docs: this package's README, CONTINUITY.md and
+   VALIDATION.md as the port's, and checkpoint 1's two rules for "the
+   same shape" become one.
 
 ## Risks
 

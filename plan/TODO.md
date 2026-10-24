@@ -47,8 +47,8 @@ and new actions. One personality (Boop's default nature) for now.
       design may move a layer, pin it to the screen ("brb" while it
       hides), or keep none. Prove one nightcap over the slime first.
       Done on the board (`render/gel/layers.h`); peekaboo hides the hat.
-      Still to do: pinning a layer to the screen ("brb"), and the Mac's
-      mirror drawing the layers.
+      Still to do: pinning a layer to the screen ("brb"). The Mac's
+      mirror draws them: it's the board's own firmware.
 - [ ] **Outfits by the time of day and the calendar.** A nightcap and
       gown at night (and a sleepier face), a party hat, reading glasses;
       then the holidays. The gel has the hats, shades, the air and lower
@@ -119,16 +119,19 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] **5. The slime on the rig**: the mixer drives the gel face. Done
       so far (character-engine.md, Checkpoint 5 as built): the lane's
       fade decided once for both faces, the gel's remaining cuts, one
-      anchors type. The rest waits for the owner's decision on the Mac's
-      mirror: whether it runs the WebAssembly engine, retiring the
-      slime's JavaScript twin.
+      anchors type. The Mac's mirror now runs the board's engine
+      (character-engine.md, The Mac's slime on the board's engine); the
+      rest waits for phase 2 there, retiring the slime's JavaScript twin.
 - [ ] **6. Retire what the engine replaces.**
 
 ## Waiting on the owner
 
-- [ ] Whether the Mac's mirror runs the WebAssembly engine, retiring the
+- [x] Whether the Mac's mirror runs the WebAssembly engine, retiring the
       slime's JavaScript twin, so the gel's expressions can move onto
-      the mixer (character-engine.md, checkpoints 5 and 6).
+      the mixer (character-engine.md, checkpoints 5 and 6): yes. Phase 1,
+      the Mac on the board's engine, is built (character-engine.md, The
+      Mac's slime on the board's engine); phase 2 retires the JavaScript
+      twin.
 - [x] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
       terminal tab and "lines gone"): 03fad1a on AgentHooks' main,
