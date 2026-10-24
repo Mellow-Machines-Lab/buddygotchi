@@ -1,7 +1,7 @@
 {
   "name": "The to-do count under the face climbs with the list",
   "case": "Claude writes a to-do list of four for its turn and ticks them off one by one while it works. The line under the face counts them: 1/4, 2/4, 3/4, then 4/4; once the turn is over there's no count, and the agent sits idle.",
-  "why": "The state's `todo` (Core.snapshot: the to-do list of the longest turn working, from the hooks' counts, while nothing needs you), drawn as done/total after the working count (render/screens.cpp drawStrip, gel lane.cpp strip)",
+  "why": "The state's `todo` (Core.snapshot: the to-do list of the longest turn working, from the hooks' counts, while nothing needs you), drawn as done/total in the strip under the face (render/screens.cpp drawStrip, gel lane.cpp strip)",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "add a dark mode toggle"},
     {"event": "to-do list", "at": "20s", "todos": "1/4", "expect": {"todo": "1/4"}},
