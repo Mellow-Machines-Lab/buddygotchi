@@ -162,7 +162,8 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned soft) {
   }
 }
 }  // namespace
-void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane, Anchors* anchors) {
+void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane,
+           rig::Anchors* anchors) {
   if (!s.pixels) return;
   {
     Measure measure(profile.clear);
@@ -188,7 +189,7 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       py[ring][col] = int16_t(std::clamp(p.y, -32000, 32000));
     }
   if (anchors) {  // the sides are the columns at the ends of x, the front's the quarter turn toward the camera
-    auto at = [&](int ring, int col) { return Spot{px[ring][col], py[ring][col]}; };
+    auto at = [&](int ring, int col) { return rig::Point{px[ring][col], py[ring][col]}; };
     anchors->crown = at(0, 0);
     anchors->brimL = at(kBrimRing, kSectors / 2), anchors->brimF = at(kBrimRing, kSectors / 4);
     anchors->brimR = at(kBrimRing, 0);
@@ -234,7 +235,7 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       triangle(s, u[0], u[1], u[2], secondSoft);
     }
 }
-void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, Anchors* anchors) {
+void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -252,7 +253,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.grabY = scalar(e.pull[1].x);
   c.dy = dy;
   c.blink = std::max(c.blink, sleepyLids(e));
-  Anchors local;
+  rig::Anchors local;
   if (!anchors) anchors = &local;
   {
     Measure measure(profile.body);

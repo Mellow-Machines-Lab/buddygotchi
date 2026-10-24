@@ -958,14 +958,14 @@ static void test_layers_follow_the_bodys_anchors() {
   Surface s{502, 410, px.data()};
   auto e = std::make_unique<Engine>();
   for (int t = 0; t <= 960; t += 16) e->step(t);
-  Anchors at;
+  rig::Anchors at;
   paint(s, *e, false, 0, 0, &at);
   TEST_ASSERT_TRUE(at.crown.y < at.brimF.y && at.brimF.y < at.handF.y);
   TEST_ASSERT_TRUE(at.brimL.x < at.crown.x && at.crown.x < at.brimR.x);
   TEST_ASSERT_TRUE(at.handL.x < at.handF.x && at.handF.x < at.handR.x);
   TEST_ASSERT_TRUE(at.eyeL.x < at.eyeR.x && at.brimF.y < at.eyeL.y && at.eyeL.y < at.handF.y + 16 * 40);
   TEST_ASSERT_TRUE(at.crown.y > 0 && at.handF.y / 16 < 410 * 4 / 5);
-  Anchors pressed;
+  rig::Anchors pressed;
   paint(s, *e, false, 2, 0, &pressed);  // the press dips the body, and the layers with it
   TEST_ASSERT_EQUAL_INT(at.crown.y + 32, pressed.crown.y);
   TEST_ASSERT_EQUAL_INT(at.handF.y + 32, pressed.handF.y);

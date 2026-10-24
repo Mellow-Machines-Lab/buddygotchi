@@ -109,11 +109,19 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       desk and in the reactions (which clip a reaction plays), parts that
       move as some drawn idles do (curious's eyes, falling tears), and its
       frame cost on the CYD (`boopctl ping`'s `draw_us`).
-- [ ] **5. The slime on the rig**: the mixer drives the gel face.
+- [ ] **5. The slime on the rig**: the mixer drives the gel face. Done
+      so far (character-engine.md, Checkpoint 5 as built): the lane's
+      fade decided once for both faces, the gel's remaining cuts, one
+      anchors type. The rest waits for the owner's decision on the Mac's
+      mirror: whether it runs the WebAssembly engine, retiring the
+      slime's JavaScript twin.
 - [ ] **6. Retire what the engine replaces.**
 
 ## Waiting on the owner
 
+- [ ] Whether the Mac's mirror runs the WebAssembly engine, retiring the
+      slime's JavaScript twin, so the gel's expressions can move onto
+      the mixer (character-engine.md, checkpoints 5 and 6).
 - [ ] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
       terminal tab and "lines gone"). Try it in iTerm2 and Terminal.

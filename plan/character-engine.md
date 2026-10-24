@@ -342,6 +342,13 @@ JavaScript twin, checkpoint 6). What landed instead:
   | stroke | 15043 (15.0x) | 8706 (11.7x) |
   | to asleep | 824 (10.4x) | 640 (4.1x) |
   | to working, idle, poke, mood, to idle | 10.3x, 9.0x, 8.9x, 11.1x, 5.8x | unchanged |
+- **One anchors type.** The gel's painter reports `rig::Anchors` (its own
+  copy, with its `Spot`, is gone), so both faces' layers sit on one
+  type; no picture or trace changed.
+- **Waits for the owner:** the gel's expressions and reactions on the
+  mixer, and its layers through the shared layer stack, which need the
+  JavaScript twin retired (the Mac's mirror running the WebAssembly
+  engine) first.
 
 ## Risks
 

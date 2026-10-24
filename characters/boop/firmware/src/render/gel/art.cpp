@@ -64,7 +64,7 @@ const Pairing& pairing(const SemanticFace& f) {
 // the tears, the cheeks) that has one shape in several layers is drawn once,
 // their points, widths and opacities averaged by weight, at their summed
 // weight; groups of different shapes cross-fade, the newer over the older.
-void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bool mouthOpen, Anchors* anchors) {
+void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bool mouthOpen, rig::Anchors* anchors) {
   if (!surface.pixels) return;
   Raster raster{surface};
   const auto& f = engine.face;

@@ -1,7 +1,7 @@
 // What the gel wears and holds over its body, drawn natively by coverage
 // like the rest of the gel, at the anchors of the pose that drew the body
-// (render/gel/painter.h's Anchors), so each follows the body as it moves,
-// squashes and leaves the screen, and is cut off there with it:
+// (the rig's Anchors, render/gel/painter.h), so each follows the body as it
+// moves, squashes and leaves the screen, and is cut off there with it:
 //
 // - the outfit, by the tags on now (state.when): a nightcap at night, a
 //   party hat on a party day, New Year's Day, Lunar New Year and
@@ -37,12 +37,12 @@ class Engine;
 int sleepyLids(const Engine& e);
 
 // The outfit and the air, over the body and its face, under the props.
-void paintLayers(Surface& surface, const Engine& e, const Anchors& at);
+void paintLayers(Surface& surface, const Engine& e, const rig::Anchors& at);
 // How far the card sits below its place `ms` after it went up: sliding up,
 // then bobbing.
 int signOffset(uint32_t ms);
 // The sign, at the body's front (its hands' ring), over everything but
 // the lane.
-void paintSign(Surface& surface, const SignShow& sign, const Anchors& at);
+void paintSign(Surface& surface, const SignShow& sign, const rig::Anchors& at);
 
 }  // namespace render::gel

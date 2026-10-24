@@ -21,7 +21,7 @@ constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
 
 // The ring through its left side, its front and its right side, as a
 // curve (sixteenths), its `n` + 1 points from left to right, raised `up`.
-int ring(const Spot& l, const Spot& f, const Spot& r, int up, Point* out, int n = 8) {
+int ring(const rig::Point& l, const rig::Point& f, const rig::Point& r, int up, Point* out, int n = 8) {
   const int cx = 2 * f.x - (l.x + r.x) / 2, cy = 2 * f.y - (l.y + r.y) / 2;  // through f at the middle
   for (int i = 0; i <= n; ++i) {
     const int64_t u = i, v = n - i, d = int64_t(n) * n;
@@ -36,7 +36,7 @@ struct Head {
   Point band[9];
   int width, cx, top;
 };
-Head head(const Anchors& at, int up) {
+Head head(const rig::Anchors& at, int up) {
   Head h;
   ring(at.brimL, at.brimF, at.brimR, up, h.band);
   h.width = std::max(16, at.brimR.x - at.brimL.x);
@@ -123,9 +123,9 @@ void bobble(Raster& r, const Head& h) {
   r.disk16(h.cx, h.top - w * 8 / 25, w / 11, kCream);
 }
 
-void shades(Raster& r, const Anchors& at) {
+void shades(Raster& r, const rig::Anchors& at) {
   const int d = std::max(16, at.eyeR.x - at.eyeL.x), lw = d * 27 / 100, lh = d / 6;
-  for (const Spot& e : {at.eyeL, at.eyeR}) {
+  for (const rig::Point& e : {at.eyeL, at.eyeR}) {
     const Point lens[] = {
         {e.x - lw, e.y - lh}, {e.x + lw, e.y - lh}, {e.x + lw * 4 / 5, e.y + lh}, {e.x - lw * 4 / 5, e.y + lh}};
     r.polygon16(lens, 4, kInk);
@@ -183,7 +183,7 @@ void hearts(Raster& r, int w, int bottom, int ms) {
 
 // Zs drifting up and right from beside its head, each for 2.4 s, a new
 // one every 0.8 s, growing and fading as they go.
-void zs(Raster& r, const Anchors& at, int ms) {
+void zs(Raster& r, const rig::Anchors& at, int ms) {
   const Font* fonts[] = {&kSmall, &kLarge, &kSign};
   for (int i = 0; i < 3; ++i) {
     const int age = (ms + i * 800) % 2400, f = age * 3 / 2400;
@@ -200,7 +200,7 @@ int sleepyLids(const Engine& e) {
   return hasTag(e.scenes.when, "night") && e.scenes.route.state != SceneState::kAsleep ? kNightLids : 0;
 }
 
-void paintLayers(Surface& s, const Engine& e, const Anchors& at) {
+void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {
   if (!s.pixels) return;
   Raster r{s};
   const uint32_t when = e.scenes.when;
@@ -235,7 +235,7 @@ void paintLayers(Surface& s, const Engine& e, const Anchors& at) {
   if (hasTag(when, "night") && state == SceneState::kAsleep) zs(r, at, ms);
 }
 
-void paintSign(Surface& s, const SignShow& sign, const Anchors& at) {
+void paintSign(Surface& s, const SignShow& sign, const rig::Anchors& at) {
   if (!s.pixels || !sign.text) return;
   Raster r{s};
   const int bottom = s.height * 4 / 5;  // the lane's top: shapes stop there
