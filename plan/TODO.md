@@ -159,7 +159,6 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       - Pixel: facegen finds each design's resting face by search (585 of
         1214 designs); the bank could tag its parts instead, so a design
         says whether the rig draws it. Curious and sad at work stay baked.
-      - Pixel: switches into and out of the needs-you sign still cut.
       - The gel: falling asleep cross-fades two arts in 480 ms (the
         longest that keeps the ink check's 85%); a morph that squashes the
         face shut would let the length be a choice.

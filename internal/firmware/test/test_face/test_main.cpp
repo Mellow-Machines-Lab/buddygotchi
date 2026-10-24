@@ -538,6 +538,33 @@ void test_the_placard_is_black_on_amber() {
   TEST_ASSERT_TRUE(b.count(sceneInk(1)) > 100);  // the head and the mitts
 }
 
+// The needs-you screen drawn under the canvas's mask, as a dissolve draws
+// it, is the screen drawn whole wherever the mask draws and what was there
+// everywhere else: its black, the placard and its words, and the strip
+// under it at the strip's own fade, which draws under the mask what it
+// draws whole and leaves the mask as it found it.
+void test_the_needs_you_screen_draws_under_the_mask() {
+  Strip s;
+  s.agent = "claude", s.project = "boop", s.name = "Fix the login test", s.busy = 2, s.opacity = 600;
+  for (uint32_t ms : {0u, NeedsYou::kSettledMs + 500}) {  // the strip, then the placard over it
+    const NeedsYouPose pose = needsYouPose(ms);
+    Buf whole, masked;
+    drawNeedsYouScreen(whole.c, pose, s);
+    TEST_ASSERT_TRUE(ms ? whole.count(kAmber) > 1000 : whole.count(inkAt(kInkGrey, kLevels)) > 0);
+    for (const Dither m : {Dither{0, 9}, Dither{5, 12}, Dither{9, 16}}) {
+      masked.c.fill(kRed);
+      masked.c.setMask(m);
+      drawNeedsYouScreen(masked.c, pose, s);
+      TEST_ASSERT_TRUE(masked.c.mask().lo == m.lo && masked.c.mask().hi == m.hi);
+      masked.c.setMask({});
+      for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x)
+          TEST_ASSERT_EQUAL_UINT8(m.draws(x, y) ? whole.at(x, y) : kRed, masked.at(x, y));
+      }
+    }
+  }
+}
+
 // Text that doesn't fit is cut by one rule on every face (cutAt): at the
 // end of its last word within the room, after the last "·", when that
 // keeps at least half the room, else mid-word; never ending on a space or
@@ -632,6 +659,7 @@ int main(int, char**) {
   RUN_TEST(test_the_head_plays_peekaboo);
   RUN_TEST(test_it_asks_harder_the_longer_it_waits);
   RUN_TEST(test_the_placard_is_black_on_amber);
+  RUN_TEST(test_the_needs_you_screen_draws_under_the_mask);
   RUN_TEST(test_text_is_cut_at_a_word_where_one_fits);
   RUN_TEST(test_text_wraps_at_spaces_and_hyphens);
   RUN_TEST(test_text_folds_and_cuts_to_its_glyphs);

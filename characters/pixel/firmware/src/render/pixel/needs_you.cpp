@@ -251,7 +251,7 @@ NeedsYouPose needsYouPose(uint32_t ms, bool eyesShut, int dy) {
 }
 
 void drawNeedsYouScreen(Canvas& c, const NeedsYouPose& p, const Strip& s) {
-  c.fill(kBlack);
+  c.fillRect(0, 0, kWidth, kHeight, kBlack);  // its black too, under the mask
   drawStrip(c, s);  // until the placard comes up over it
   drawHead(c, p);   // behind the placard
   drawPlacard(c, p.placardY, s, p.placardX);

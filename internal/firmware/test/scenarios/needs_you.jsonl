@@ -6,6 +6,7 @@
 {"t":"state","base":"working","attn":{"agent":"codex","project":"landing","more":0},"busy":1}
 {"clock":1100}
 {"expect":{"screen":"needs_you","attn":{"agent":"codex","project":"landing"},"led":"#805800","bl":255,"alert":1000}}
+// Half way through the dissolve from working's look into the screen.
 {"shot":"blend"}
 {"clock":1500}
 {"shot":"needs-you"}

@@ -1,5 +1,6 @@
 #include "render/pixel/anim.h"
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 
 #include "render/maths.h"
@@ -50,7 +51,7 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
   // moves of its own (and asleep's shut eyes would shut a poke's).
   const SceneState base = next.anim == SceneState::kNone ? context.base : SceneState::kNone;
   rig_.setLook(base);
-  if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kNeedsYou;  // the dissolve is over
+  if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kNone;  // the dissolve is over
   // A new look starts on its first variation, or on an occasion's while
   // one fits; so does the look again when the mood has fewer of them. The
   // turns bring the rest.
@@ -148,11 +149,15 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
        (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
     lookVariant_ = pickLook(src_.mood, src_.look, lookVariant_, rng);
 }
-// A needs-you replacing another starts its screen over; the screen cuts in.
-void PixelFace::alert(uint32_t t, bool) { lookAt_ = t; }
+// A needs-you replacing another starts its screen over, dissolving from
+// the one that showed.
+void PixelFace::alert(uint32_t t, bool replacing) {
+  lookAt_ = t;
+  if (replacing && drawn_.kind == Drew::kNeedsYou) startSwitch(t);
+}
 void PixelFace::startSwitch(uint32_t t) {
-  // What shows: the needs-you screen, or the picture of the two that shows more.
-  if (drawn_.kind == Drew::kNeedsYou || mix(t) >= 500) from_ = drawn_;
+  // What shows: the picture of the two that shows more.
+  if (mix(t) >= 500) from_ = drawn_;
   switchAt_ = t;
 }
 // A press kicks the rig face, and strokes it until it lets go, only if it
@@ -240,17 +245,17 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   Picture& p = picture_;
   std::memset(static_cast<void*>(&p), 0, sizeof p);  // its padding too: it's hashed as bytes
   p.lane = Dither::fade(strip.opacity, true).hi, p.bubble = bubble != nullptr;
+  // A dissolve shows more of what comes in each frame, some of it from the
+  // first, and is over once that's whole.
+  const int in = mix(t);
+  p.in = Dither::fade(in, true);
+  p.in.hi = uint8_t(std::max<int>(p.in.hi, 1));
+  p.from = p.in.all() ? Drew::kNone : from_.kind;
   if (strip.agent && show.state == SceneState::kNeedsYou) {
     p.kind = Drew::kNeedsYou;
     p.needsYou = needsYouPose(designMs(t), show.eyesShut, show.dy);
   } else {
     p.kind = rigDraws(show.mood, show.state, show.variant) ? Drew::kRig : Drew::kDesign;
-    // A dissolve shows more of what comes in each frame, some of it from
-    // the first, and is over once that's whole.
-    const int in = mix(t);
-    p.in = Dither::fade(in, true);
-    p.in.hi = uint8_t(std::max<int>(p.in.hi, 1));
-    p.from = p.in.all() ? Drew::kNeedsYou : from_.kind;
     const bool rig = p.kind == Drew::kRig, stays = rig && p.from == Drew::kRig;
     FaceMove move = faceMove(show);
     if (stays) {
@@ -272,25 +277,56 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     }
     p.dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
   }
-  drawn_ = {p.kind, show};
+  drawn_.kind = p.kind, drawn_.show = show;
+  if (p.kind == Drew::kNeedsYou) {
+    drawn_.needsYou = p.needsYou, drawn_.more = strip.more;
+    std::snprintf(drawn_.agent, sizeof drawn_.agent, "%s", strip.agent);
+    const char* what = strip.name && *strip.name ? strip.name : strip.project;
+    std::snprintf(drawn_.what, sizeof drawn_.what, "%s", what ? what : "");
+  }
   const uint64_t key = frameKey(p);
   if (!dirty && key == drawnKey_) return false;
   drawnKey_ = key;
-  if (p.kind == Drew::kNeedsYou) {
-    drawNeedsYouScreen(c, p.needsYou, strip);
-    return true;
-  }
   c.fill(kBlack);
-  if (p.from != Drew::kNeedsYou) {
-    // What showed, fading out under what comes in: with the face staying,
-    // only its design.
-    const Dither out = {p.in.hi, 16};
+  // What showed, fading out under what comes in.
+  const Dither out = {p.in.hi, 16};
+  if (p.from == Drew::kNeedsYou) {
+    // The needs-you screen as it last showed, asking what it asked.
+    Strip asked = strip;
+    asked.agent = from_.agent, asked.name = asked.project = from_.what, asked.more = from_.more;
+    asked.doneAgent = nullptr;  // a finish doesn't play while something needs you
+    c.setMask(out);
+    drawNeedsYouScreen(c, from_.needsYou, asked);
+    c.setMask({});
+  } else if (p.from != Drew::kNone) {
+    // A face: with the face staying, only its design.
     const SceneShow& was = from_.show;
     const bool rig = p.from == Drew::kRig;
+    rig::Anchors now;
     if (rig && p.kind != Drew::kRig)
-      drawRig(c, rig_.frame(was.dy, was.mouthOpen, out, faceMove(was)), sceneFrame(was, true), out);
+      drawRig(c, rig_.frame(was.dy, was.mouthOpen, out, faceMove(was), &now), sceneFrame(was, true), out);
     else
       drawScene(c, sceneFrame(was, rig), out);
+    if (p.kind == Drew::kNeedsYou) {
+      // Under the needs-you screen, what it wears and its lane go with it
+      // (no sign or bubble is up while something needs you).
+      Overlays over;
+      over.dressed = dresses(was.mood, was.state, was.variant), over.mood = was.mood, over.when = context_.when;
+      over.ms = t;
+      if (rig) {
+        const RigFace::Pose& rest = *RigFace::pose(was.mood);
+        over.hatX = now.brimF.x - rest.brim.x, over.hatY = now.brimF.y - rest.brim.y;
+      }
+      c.setMask(out);
+      drawOverlays(c, bubble, strip, over);
+      c.setMask({});
+    }
+  }
+  if (p.kind == Drew::kNeedsYou) {
+    c.setMask(p.in);
+    drawNeedsYouScreen(c, p.needsYou, strip);
+    c.setMask({});
+    return true;
   }
   if (p.kind == Drew::kRig)
     drawRig(c, p.face, p.design, p.in);
@@ -299,7 +335,11 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   Overlays over;
   over.dressed = p.dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
   over.hatX = p.hatX, over.hatY = p.hatY, over.held = sign.text, over.heldOffset = p.heldAt;
+  // Over both faces of a dissolve, whole; out of the needs-you screen,
+  // coming in with the face.
+  c.setMask(p.from == Drew::kNeedsYou ? p.in : Dither{});
   drawOverlays(c, bubble, strip, over);
+  c.setMask({});
   return true;
 }
 }  // namespace render::pixel

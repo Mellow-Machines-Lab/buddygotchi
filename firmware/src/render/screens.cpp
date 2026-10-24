@@ -202,12 +202,14 @@ void stripWhole(Canvas& c, const Strip& s) {
 }  // namespace
 
 // While it fades, the pixels of it the canvas's mask draws: what's under it
-// shows through the rest.
+// shows through the rest. Under a mask already (a picture dissolving), the
+// pixels of those the mask draws.
 void drawStrip(Canvas& c, const Strip& s) {
   if (s.opacity <= 0) return;
-  c.setMask(Dither::fade(s.opacity, true));
+  const Dither under = c.mask();
+  c.setMask(Dither::fade(s.opacity, true).both(under));
   stripWhole(c, s);
-  c.setMask({});
+  c.setMask(under);
 }
 
 void drawLane(Canvas& c, const char* bubble, const Strip& s) {

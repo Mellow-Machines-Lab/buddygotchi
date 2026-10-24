@@ -67,13 +67,15 @@
 {"clock":29600}
 {"expect":{"screen":"needs_you","moment":{"anim":"listening"},"last_input":{"k":"talk_on","at":29600}}}
 {"clock":29760}
+// Listening dissolves in over the screen: 160 ms in, most of it.
 {"shot":"needs-you-listening"}
 // A `say` can't play while something needs you, but as the reply it
 // ends listening.
 {"clock":29900}
 {"t":"do","name":"react","play":"now","args":{"say":{"take":"previous.go"}}}
 {"expect":{"screen":"needs_you","moment":null,"audio":{"take":null}}}
-// Answered on the Mac: the needs-you screen cuts back to working.
+// Answered on the Mac: the needs-you screen dissolves back to working,
+// here 75 ms into the rig's 200.
 {"clock":30000}
 {"t":"state","base":"working","busy":2}
 {"clock":30075}
