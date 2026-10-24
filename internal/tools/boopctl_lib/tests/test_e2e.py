@@ -7,6 +7,8 @@ next reaction, or a name the device doesn't play, isn't. And e2e and soak
 import contextlib
 import io
 import json
+import os
+import socket
 import sys
 import tempfile
 import unittest
@@ -158,6 +160,55 @@ class SetupFailureTests(unittest.TestCase):
         failures = json.loads((self.out / "e2e-scripted.json").read_text())["failures"]
         self.assertTrue(any(f.startswith("PRIVATE_ markers") for f in failures), failures)
         self.assertFalse(any("the harness saw an event" in f for f in failures), "the whole run's events aren't expected")
+
+
+class HookEnvironmentTests(unittest.TestCase):
+    """A fixture's hook carries nothing of whoever runs the check: run from
+    an agent, the hook took the agent's app, its Claude session and its
+    process for the fixture's."""
+
+    AGENT = {"__CFBundleIdentifier": "com.anthropic.claudefordesktop", "CLAUDE_CODE_ENVIRONMENT_KIND": "bridge",
+             "CLAUDE_CODE_HOST_SESSION_ID": "local_agent", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE": "x",
+             "TERM_PROGRAM": "iTerm.app", "ITERM_SESSION_ID": "w0t0p0:ABCDEF12-3456-7890-ABCD-EF1234567890",
+             "TMUX": "/tmp/tmux-501/default,1,0", "TMUX_PANE": "%3"}
+
+    def setUp(self):
+        d = tempfile.TemporaryDirectory(dir="/tmp")  # a socket's path has room for 103 bytes
+        self.addCleanup(d.cleanup)
+        self.run_ = e2e.Run(Path(d.name), Path(d.name) / "out", "scripted", None)
+        self.enterContext(contextlib.redirect_stdout(io.StringIO()))
+        # The agent's own process is above the check's.
+        self.enterContext(mock.patch.dict("os.environ", self.AGENT, CLAUDE_PID=str(os.getppid())))
+
+    def test_only_the_runs_own_variables(self):
+        env = self.run_.hook_env()
+        self.assertEqual(sorted(env), ["AGENT_HOOKS_DIR", "AGENT_HOOKS_SOCKET", "CODEX_HOME", "HOME"])
+        self.assertTrue(all(value.startswith(str(self.run_.root)) for value in env.values()), env)
+
+    @unittest.skipUnless((e2e.BIN / "agent-hook").exists(), "agent-hook isn't built: make build")
+    def test_the_real_hook_sends_no_app_session_or_terminal_of_its_own(self):
+
+        server = socket.socket(socket.AF_UNIX)
+        self.addCleanup(server.close)
+        server.bind(self.run_.hook_sock)
+        server.listen(4)
+        server.settimeout(5)
+        dev = SimpleNamespace(request=lambda message: {"rx": {"state": 0}})
+        for agent in ("claude", "codex"):
+            with mock.patch.object(e2e, "STATE_WAIT", 0):
+                self.run_.hook(dev, agent, json.dumps({"hook_event_name": "UserPromptSubmit", "session_id": "e2e-env",
+                                                       "cwd": "/tmp/e2e-env", "prompt": "hi"}))
+            conn, _ = server.accept()
+            with conn:
+                line = json.loads(conn.makefile().readline())
+            self.assertEqual(self.run_.failures, [])
+            self.assertEqual((line["agent"], line["session"]), (agent, "e2e-env"))
+            for key in ("app", "app_session"):
+                self.assertNotIn(key, line, agent)
+            # The terminal's tty comes from the processes above the hook,
+            # which no environment changes; the rest of it from variables.
+            self.assertEqual(set(line.get("terminal", {})) - {"tty"}, set(), agent)
+            self.assertEqual(line["pid"], os.getpid(), "the agent is the process running the fixture, not CLAUDE_PID's")
 
 
 if __name__ == "__main__":

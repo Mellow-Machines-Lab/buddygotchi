@@ -93,7 +93,7 @@ class Run:
         # macOS checks the new binary; agents run it hundreds of times a day.
         # Warm it once, against a socket nobody listens on.
         subprocess.run([str(BIN / "agent-hook"), "claude"], input=b"{}",
-                       env=dict(os.environ, AGENT_HOOKS_SOCKET=str(self.root / "none.sock")))
+                       env=dict(self.hook_env(), AGENT_HOOKS_SOCKET=str(self.root / "none.sock")))
         self.say(f"bridge and headless app up (brain {self.brain}, state {self.state})")
 
     def stop(self) -> None:
@@ -105,11 +105,19 @@ class Run:
 
     # Steps
 
+    def hook_env(self) -> dict[str, str]:
+        """What a fixture's `agent-hook` runs with: the run's socket, and
+        its own empty folders for what the hook reads from home, and nothing
+        of whoever runs the check. An agent's own variables (its app's
+        bundle id, its Claude session, its terminal) would reach the app as
+        the fixture's."""
+        return {"AGENT_HOOKS_SOCKET": self.hook_sock, "HOME": str(self.root / "home"),
+                "AGENT_HOOKS_DIR": str(self.root / "home" / ".agent-hooks"), "CODEX_HOME": str(self.root / "home" / ".codex")}
+
     def hook(self, dev: Device, agent: str, payload: str) -> None:
         before = dev.request({"t": "dbg.state"})["rx"]["state"]
-        env = dict(os.environ, AGENT_HOOKS_SOCKET=self.hook_sock)
         t0 = self.last_hook = time.monotonic()
-        proc = subprocess.run([str(BIN / "agent-hook"), agent, "--keep-text"], input=payload.encode(), env=env,
+        proc = subprocess.run([str(BIN / "agent-hook"), agent, "--keep-text"], input=payload.encode(), env=self.hook_env(),
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         hook_ms = (time.monotonic() - t0) * 1000
         name = json.loads(payload).get("hook_event_name", "?")
