@@ -302,10 +302,4 @@ void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays&
   drawLane(c, bubble, s);
 }
 
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over) {
-  c.fill(kBlack);
-  drawScene(c, face);
-  drawOverlays(c, bubble, s, over);
-}
-
 }  // namespace render

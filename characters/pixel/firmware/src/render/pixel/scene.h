@@ -120,12 +120,5 @@ struct Overlays {
 // The overlays over a face drawn, then the bubble with the line's text (its
 // take's, in amber) when there's one, else the strip.
 void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over);
-// The face as its design shows it, on black, and drawOverlays. The face is
-// a frame sceneFrame made, or a show for the tests, as drawScene takes it.
-void drawFaceScreen(Canvas& c, const SceneFrame& face, const char* bubble, const Strip& s, const Overlays& over = {});
-inline void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s,
-                           const Overlays& over = {}) {
-  drawFaceScreen(c, sceneFrame(face), bubble, s, over);
-}
 
 }  // namespace render

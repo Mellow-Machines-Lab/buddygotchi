@@ -484,8 +484,9 @@ Besides drawing each mood and state, a face:
   sleep snores deeper at night and dreams after half an hour. Its idle
   picks one in place of a gesture. Over every state the board also draws
   layers on the gel by the tags (`render/gel/layers.h`), at anchors the
-  pose that drew its body gives (`render/gel/painter.h`'s `Anchors`: the
-  dome's top, a ring for a hat's brim, a ring for its hands, its eyes),
+  pose that drew its body gives (`rig::Anchors`, from
+  `render/gel/painter.h`: the dome's top, a ring for a hat's brim, its
+  front lower down for its hands, its eyes),
   so they move, squash and leave the screen with it: a nightcap at night
   (and its lids a little lower), a party hat on a party day, New Year's
   Day, Lunar New Year and Programmers' Day, a witch hat at Halloween, a
@@ -797,8 +798,9 @@ a shorter clip, so a 180 ms blink still shuts): an additive clip adds
 its offsets, an absolute one blends toward its values. A poke or a
 stroke kicks a spring. A new style cross-fades over the rig's fade
 (`kFadeMs`, 200 ms). The face reports where the body is each frame from
-the pose it draws (`rig::Anchors`: the crown, a ring for a brim and one
-for the hands, the eyes), so what's worn or held rides the body.
+the pose it draws (`rig::Anchors`: the crown, a ring for a brim, the
+front lower down for the hands, the eyes), so what's worn or held rides
+the body.
 
 **Pixel's face on the rig.** Most of Pixel's designs draw its mood's
 resting face, moved about, over a desk, props or decorations of their
@@ -834,11 +836,12 @@ has no alpha), each part morphing from its box to the next one's. The clip of th
 in (idle, working or asleep: the state's `base`) plays over the
 design's moves (Pixel's breathe lifts it a pixel and glances to either
 side; working's looks down at the desk), the `blink` clip at each blink;
-a press kicks the squash and a stroke the lean. A switch between the rig
-face and a baked design dissolves the whole picture over 150 ms as the
-design blinks open; between two designs the rig face draws, their desks
-dissolve over the same 150 ms while the face stays whole, moving from
-where the one had it to where the other has it. The hat
+a press kicks the squash and a stroke the lean. Every switch of design
+dissolves over the rig's 200 ms fade, through the same dither, with no
+blink: the whole picture, or between two designs the rig face draws,
+their desks while the face stays whole, moving from where the one had
+it to where the other has it. Into and out of the needs-you sign it
+cuts: the sign rises in and drops away on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
 

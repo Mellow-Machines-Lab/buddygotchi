@@ -213,7 +213,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
-    // blinks into what the state says.
+    // shows what the state says.
   });
 }
 

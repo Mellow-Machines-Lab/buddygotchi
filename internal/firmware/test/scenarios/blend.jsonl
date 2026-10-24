@@ -1,7 +1,7 @@
-// Switching designs: the eyes shut for 150 ms to hide each cut, and a
-// switch mid-switch shuts them again from there. Idle's plain face is the
-// rig face, so going to work it cross-fades into the design as that blinks
-// open.
+// Switching designs: each switch dissolves over 200 ms, and a switch
+// mid-switch goes on dissolving from what that one dissolved from. Idle's
+// plain face is the rig face, and so is working's, so going to work the face
+// stays whole as the desk dissolves in around it.
 {"clock":0}
 {"t":"state","base":"idle"}
 {"clock":1000}
@@ -20,7 +20,7 @@
 {"shot":"interrupted-75ms"}
 {"expect":{"moment":{"anim":"stopped","left_ms":4125}}}
 // A rule's reaction, happy's 4.2 s stopped: it ends at 5425, and working
-// comes back behind a blink.
+// dissolves back.
 {"clock":5424}
 {"expect":{"moment":{"anim":"stopped","left_ms":1}}}
 {"clock":5425}

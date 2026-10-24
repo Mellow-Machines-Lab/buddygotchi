@@ -402,6 +402,21 @@ JavaScript twin, checkpoint 6). What landed instead:
   JavaScript twin retired (the Mac's mirror running the WebAssembly
   engine) first.
 
+### The rig cut to what a face uses (2026-10-24)
+
+Pixel's face is the rig's only user and the gel isn't on the mixer yet, so
+11ca4f0 cut the rig to what Pixel's face draws: the layer stack (`Layers`,
+`layers.h`) and the accessories (`Accessory`, `Anchor`, both packs'
+`accessories.json`), a look's scene and `dresses`, clips' cues and
+`Mixer::cut`, the cheer and poke clips and Pixel's notice (Boop's stays,
+its reference in review), the channels no face read (`eyeCurve`,
+`mouthCurve`, `cheek`, `tear`, `sweat`), and the expressions' poses: an
+expression is a mood's styles, and the face draws the channels' offsets
+from rest. The anchors lost the hands' sides, which nothing read. The
+gel's move onto the rig grows back what it needs of them, from git. Since,
+every switch of Pixel's designs dissolves over the rig's one 200 ms fade,
+and the blink that hid a switch is retired.
+
 ## Risks
 
 - **Pixel's look** may lose craft in parts. Checkpoint 4 compares one mood

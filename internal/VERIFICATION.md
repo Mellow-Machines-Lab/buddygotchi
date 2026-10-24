@@ -328,8 +328,11 @@ gets at least one scenario. Their pictures are the golden images in
   every reaction running out (a brain reaction's borrowed face, a finish's loops
   and its `say`, a rule's reaction and a poke included), in the first pack's
   moods and the new moods' flip-books, to the face never cutting hard:
-  the same design at the same moment, or the design's own shut eyes
-  showing; and what the agents are doing, the rules' reactions and the finish
+  the same design at the same moment, or the frame drawn just after the
+  change the one before but for an eighth of the face (a switch
+  dissolving over 200 ms, which `test_a_switch_dissolves_over_200_ms`
+  follows frame by frame), but into or out of the needs-you sign; and
+  what the agents are doing, the rules' reactions and the finish
   with their facts and voice window, taps in a row, what shows first,
   and the lane's strip fading in and out over 200 ms from when it came
   or went, the same pixels at a frame every 16 ms as every 200 ms

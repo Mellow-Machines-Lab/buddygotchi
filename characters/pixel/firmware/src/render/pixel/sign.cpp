@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include "render/font.h"
+#include "render/maths.h"
 #include "render/palette.h"
 #include "render/pixel/scene.h"
 
@@ -26,7 +27,6 @@ int easeBack(int u) {  // 1 + 2.9 v³ + 1.9 v², v = u - 1
   int64_t v = u - kOne;
   return int(kOne + 29 * v * v * v / (int64_t(kOne) * kOne) / 10 + 19 * v * v / kOne / 10);
 }
-int lerp(int a, int b, int q) { return a + int(int64_t(b - a) * q / kOne); }
 
 // `v` full-face pixels at `s` 64ths, rounded half away from zero.
 int sc(int v, int s) {
@@ -205,13 +205,13 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
   else if (gaveUp) lowered = kOne - easeOut(progress(t, Arc::kGiveUpAt, Arc::kLowerMs));
   if (lowered) pop = 0;
   const int x = Sign::kSpotX[spot] + sway;
-  const int top = lerp(Sign::kTop, Arc::kStareTop, lowered);
+  const int top = lerp(Sign::kTop, Arc::kStareTop, lowered, kOne);
   p.signX = int16_t(sway);
-  p.signY = int16_t(lerp(kHeight + 4, top, easeBack(rise)) - nudge - bob + dy);
-  p.scale = uint8_t(lerp(lerp(64, Sign::kHeadScale, in), Arc::kStareScale, lowered));
-  p.headX = int16_t(lerp(lerp(kWidth / 2, x, in), kWidth / 2, lowered));
-  const int peekY = lerp(96, Sign::kHeadY, in) + pop * 44 / kOne - nudge * 6 / 10 - bob;
-  p.headY = int16_t(lerp(peekY, Arc::kStareY, lowered) + dy);
+  p.signY = int16_t(lerp(kHeight + 4, top, easeBack(rise), kOne) - nudge - bob + dy);
+  p.scale = uint8_t(lerp(lerp(64, Sign::kHeadScale, in, kOne), Arc::kStareScale, lowered, kOne));
+  p.headX = int16_t(lerp(lerp(kWidth / 2, x, in, kOne), kWidth / 2, lowered, kOne));
+  const int peekY = lerp(96, Sign::kHeadY, in, kOne) + pop * 44 / kOne - nudge * 6 / 10 - bob;
+  p.headY = int16_t(lerp(peekY, Arc::kStareY, lowered, kOne) + dy);
   // The eyes look toward the sign's middle; in the middle, from side to
   // side. Shaking, they dart on the beat; staring, straight at you.
   if (rise >= kOne * 9 / 10 && !lowered) {
@@ -224,7 +224,7 @@ SignPose signPose(uint32_t ms, bool eyesShut, int dy) {
   p.whole = rise <= kOne / 2 || lowered > kOne / 2;
   p.flat = lowered > kOne / 2;
   p.hands = rise > kOne / 5;
-  if (p.hands) p.handX = int16_t(lerp(x, kWidth / 2, lowered)), p.handY = int16_t(p.signY - 6 + pop * 8 / kOne);
+  if (p.hands) p.handX = int16_t(lerp(x, kWidth / 2, lowered, kOne)), p.handY = int16_t(p.signY - 6 + pop * 8 / kOne);
   // Swaying, a mitt lets go and waves back and forth over the edge, well
   // clear of the head: the right one, or the left with the head at the
   // right corner. Shaking, both do, faster, either side of the head.

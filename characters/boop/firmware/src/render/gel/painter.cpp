@@ -193,8 +193,7 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     anchors->crown = at(0, 0);
     anchors->brimL = at(kBrimRing, kSectors / 2), anchors->brimF = at(kBrimRing, kSectors / 4);
     anchors->brimR = at(kBrimRing, 0);
-    anchors->handL = at(kHandRing, kSectors / 2), anchors->handF = at(kHandRing, kSectors / 4);
-    anchors->handR = at(kHandRing, 0);
+    anchors->handF = at(kHandRing, kSectors / 4);
   }
   auto vertex = [&](int ring, int col) {
     return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings};

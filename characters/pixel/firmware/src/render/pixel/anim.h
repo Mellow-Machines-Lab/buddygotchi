@@ -11,16 +11,8 @@
 namespace render::pixel {
 class PixelFace final : public Face {
  public:
-  static constexpr uint32_t kBlendMs = 150, kBlinkMs = 180, kTurnMinMs = 5000;
+  static constexpr uint32_t kBlinkMs = 180, kTurnMinMs = 5000;
   static constexpr int kTurnPct = 67;
-  // A design whose face is its mood's resting face moved (rigFaced: idle's
-  // plain face, and every design facegen finds draws it exactly) the rig
-  // face draws in its design's place, in every mood with a pose
-  // (RigFace::pose); the baked designs draw the rest. A switch cross-fades
-  // over kBlendMs: to or from the rig face, the whole picture; between two
-  // it draws, the designs around it, the face staying whole. False draws
-  // every look baked, to compare.
-  static constexpr bool kRig = true;
   // While an occasion's variation fits (one with tags, all on), a look
   // turns to one of those this often, so a costume or a coffee shows more
   // than its share; reactions always take one.
@@ -73,13 +65,42 @@ class PixelFace final : public Face {
   // how many.
   int fittingLooks(Mood m, SceneState s, int avoid, uint8_t* out) const;
   bool lookFits(Mood m, SceneState s, int v) const { return fits(m, s, v, context_.when, context_.lookMs); }
-  // Whether the rig face draws mood m's state s, variation v.
-  bool rigDraws(Mood m, SceneState s, int v) const { return kRig && RigFace::pose(m) && rigFaced(m, s, v); }
+  // Whether the rig face draws mood m's state s, variation v: a design
+  // whose face is its mood's resting face moved (rigFaced: idle's plain
+  // face, and every design facegen finds draws it exactly), in a mood with
+  // a pose (RigFace::pose), in the design's place. The baked designs draw
+  // the rest.
+  bool rigDraws(Mood m, SceneState s, int v) const { return RigFace::pose(m) && rigFaced(m, s, v); }
   bool rigDraws() const { return rigDraws(src_.mood, src_.state(), src_.variant()); }
+  // A frame draws the needs-you sign, a design, or a design with the rig
+  // face in it.
   enum class Drew : uint8_t { kSign, kDesign, kRig };
-  // The show's design, of the pixels `d` draws; or the rig face, of those
-  // `face` draws, so moved, in its design's place.
-  void drawFaceOf(Canvas& c, Drew kind, const SceneShow& show, Dither d, Dither face, FaceMove move) const;
+  // A switch dissolves what showed into what's next over the rig's fade
+  // (rig::kFadeMs), the whole picture; from the rig face to the rig face,
+  // the designs around it, the face staying whole as it moves from where
+  // the one had it to where the other has it. Into and out of the
+  // needs-you sign, which rises in on its own, it cuts. One mid-way through
+  // a dissolve goes on dissolving from what that one did.
+  void startSwitch(uint32_t t);
+  bool fading(uint32_t t) const { return switched_ && within(t, switchAt_, rig::kFadeMs) && fadeFrom_ != Drew::kSign; }
+  // Everything a frame's pixels depend on but the words it shows: what it
+  // draws, what a switch dissolves it from (kSign for nothing) and the
+  // pixels of it that come in, the lane's opacity and whether the bubble
+  // shows, the held sign's place, the hat's, the outfit's look, and the
+  // sign's pose or the frames laid out. Two equal pictures draw the same
+  // pixels, so a frame whose picture hashes as the last one's isn't drawn
+  // again. Each is laid out once, into picture_: off the stack, which a
+  // dissolve's outgoing frame needs.
+  struct Picture {
+    Drew kind, from;
+    bool bubble, held;
+    Dither in;
+    int16_t lane, heldAt, hatX, hatY;
+    uint32_t dress;
+    SignPose sign;
+    RigFrame face;
+    SceneFrame design;
+  };
   FaceSource src_;
   FaceContext context_;
   uint32_t lookAt_ = 0;
@@ -100,16 +121,12 @@ class PixelFace final : public Face {
   // are handled; off while the face isn't needs you.
   bool arcOn_ = false;
   uint32_t arcCovered_ = 0;
-  uint64_t drawnKey_ = 0;
-  int drawnLane_ = -1;  // the strip's opacity as the last frame drew it
-  bool drawnSign_ = false;
-  SignPose drawnPose_{};
   RigFace rig_;
-  // What the last frame drew: the rig face, a design, or the needs-you
-  // sign; and the show it drew last before a switch. A switch cross-fades
-  // from what showed as of the switch, at fadeAt_.
+  // What the last frame drew, its picture's key, and the show it drew last
+  // but while a switch dissolves; and what the switch dissolves from.
   Drew drew_ = Drew::kSign, fadeFrom_ = Drew::kSign;
+  uint64_t drawnKey_ = 0;
   SceneShow drawnShow_;
-  uint32_t fadeAt_ = 0;
+  Picture picture_;
 };
 }  // namespace render::pixel

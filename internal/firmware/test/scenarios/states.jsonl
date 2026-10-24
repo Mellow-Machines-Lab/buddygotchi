@@ -1,7 +1,7 @@
 // What the agents are doing (`act`): while working, the
 // device draws that state's design in working's place, in the mood, from
-// the Mac's variation. A new one starts from its beginning behind a blink:
-// a new mood's flip-book shows its own blink step to hide the switch.
+// the Mac's variation. A new one starts from its beginning, dissolving in
+// over 200 ms.
 {"clock":0}
 {"t":"state","base":"working","act":"terminal","busy":1}
 {"t":"dbg.look","variant":1}
@@ -20,7 +20,7 @@
 {"expect":{"act":null}}
 // The rules' reactions play once in Boop's mood, the
 // variation the Mac names when it's one for the reaction's context, then
-// the look comes back behind a blink. Starting a new task, happy, over
+// the look comes back. Starting a new task, happy, over
 // testing: its 3.8 s design.
 {"clock":10000}
 {"t":"state","base":"working","act":"testing","mood":"happy","busy":1}

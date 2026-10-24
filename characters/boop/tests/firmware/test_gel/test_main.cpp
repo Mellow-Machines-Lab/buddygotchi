@@ -985,7 +985,6 @@ static void test_layers_follow_the_bodys_anchors() {
   paint(s, *e, false, 0, 0, &at);
   TEST_ASSERT_TRUE(at.crown.y < at.brimF.y && at.brimF.y < at.handF.y);
   TEST_ASSERT_TRUE(at.brimL.x < at.crown.x && at.crown.x < at.brimR.x);
-  TEST_ASSERT_TRUE(at.handL.x < at.handF.x && at.handF.x < at.handR.x);
   TEST_ASSERT_TRUE(at.eyeL.x < at.eyeR.x && at.brimF.y < at.eyeL.y && at.eyeL.y < at.handF.y + 16 * 40);
   TEST_ASSERT_TRUE(at.crown.y > 0 && at.handF.y / 16 < 410 * 4 / 5);
   rig::Anchors pressed;

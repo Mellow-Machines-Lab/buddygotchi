@@ -163,10 +163,11 @@ struct Point {
   int x, y;
 };
 // Where the body is this frame: the top of its head; a ring a little lower,
-// at its sides and the middle of its front, where a hat's brim sits; a ring
-// lower down, likewise, where it holds things; and its eyes' middles.
+// at its sides and the middle of its front, where a hat's brim sits; the
+// middle of its front lower down, where it holds things; and its eyes'
+// middles.
 struct Anchors {
-  Point crown{}, brimL{}, brimF{}, brimR{}, handL{}, handF{}, handR{}, eyeL{}, eyeR{};
+  Point crown{}, brimL{}, brimF{}, brimR{}, handF{}, eyeL{}, eyeR{};
 };
 
 }  // namespace render::rig

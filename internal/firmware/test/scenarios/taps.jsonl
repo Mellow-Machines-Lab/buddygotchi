@@ -1,5 +1,5 @@
-// A tap plays the mood's poked design once, from its start and behind the
-// blink that hides the switch; the third tap in a row, each within 3 s of
+// A tap plays the mood's poked design once, from its start, dissolving
+// in; the third tap in a row, each within 3 s of
 // the last, and each after it play tap_spam. Happy has
 // one of each, 2.8 s and 3.8 s.
 {"clock":0}
@@ -24,7 +24,7 @@
 {"input":{"press":"tap"}}
 {"clock":3000}
 {"expect":{"moment":{"anim":"tap_spam","left_ms":3800}}}
-// Played once, the look comes back, behind a blink.
+// Played once, the look comes back.
 {"clock":6799}
 {"expect":{"moment":{"anim":"tap_spam","left_ms":1}}}
 {"clock":6800}

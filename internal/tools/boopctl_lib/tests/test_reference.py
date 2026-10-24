@@ -20,7 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from boopctl_lib import cli, reference  # noqa: E402
 
-HAS_FFMPEG = bool(shutil.which("ffmpeg") or Path("/opt/homebrew/bin/ffmpeg").exists())
+try:
+    HAS_FFMPEG = bool(reference.tool("ffmpeg"))
+except FileNotFoundError:
+    HAS_FFMPEG = False
 
 
 class ReferenceTests(unittest.TestCase):

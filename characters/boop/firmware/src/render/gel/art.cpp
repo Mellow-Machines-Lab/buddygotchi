@@ -97,7 +97,7 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
   };
   if (anchors) {  // each eye's middle, where its art is centred
     const Point l = projection.face(-eyeX + c.gaze, eyeY), r = projection.face(eyeX + c.gaze, eyeY);
-    anchors->eyeL = {l.x, l.y}, anchors->eyeR = {r.x, r.y};
+    anchors->eyeL = l, anchors->eyeR = r;
   }
   Point vertices[kMaxPoints], clip[kMaxPoints];
   for (int i = 0; i < f.count; ++i) {

@@ -615,7 +615,7 @@ shades on a Friday's day, and the air (snow, confetti, hearts, Zs asleep
 at night), and last the sign a reaction holds up. Each sits on anchors
 the painter takes from the very vertices it projects for the body
 (the rig's `Anchors`, both faces' one type: the dome's apex, ring 6's
-sides and front for a brim, ring 15's for the hands) and the face art's
+sides and front for a brim, ring 15's front for the hands) and the face art's
 eye centres, so a layer leans,
 squashes, dips under a finger and slides off the screen with the body
 and is cut off there with it. Peekaboo's gesture hides the hat. At night,

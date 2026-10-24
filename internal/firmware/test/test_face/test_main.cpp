@@ -34,6 +34,14 @@ struct Buf {
   }
 };
 
+// A design's screen, as the pixel face draws one: on black, with the
+// bubble, else the strip.
+void drawFaceScreen(Canvas& c, const SceneShow& face, const char* bubble, const Strip& s) {
+  c.fill(kBlack);
+  drawScene(c, face);
+  drawLane(c, bubble, s);
+}
+
 }  // namespace
 
 static void test_ease_is_monotonic_from_0_to_1024() {
