@@ -61,7 +61,8 @@ mood posture reads its own critically damped weights.
 ## Headless reference traces
 
 `createSlime({seed, catalog, reducedMotion})` returns `setFacts`, `setMood`,
-`poke`, `shake`, `perform`, `dragStart`, `dragMove`, `dragEnd`, `step` and
+`poke`, `shake`, `perform`, `dragStart`, `dragMove`, `dragEnd` (with the
+finger's velocity as it let go, if it was moving), `step` and
 `inspect`. Only `step(ms)` advances the monotonic presentation clock;
 retarget calls preserve displacement and velocity. The engine uses no
 DOM, wall clock or global random source. The browser adapter freezes its
@@ -90,11 +91,13 @@ values remain in the motion contract. The imported additive gesture
 springs retain frequencies 11 (lift), 10 (roll), 9 (other channels), damping
 6.4 and the same 1/240 s substeps. Displacement limits are 0.24 for lift,
 0.12 for roll, 0.18 for forward and 0.42 otherwise, velocity limit 5.
-Grab spring stiffness is 256 and damping 8 while held (100 and 10 once let
-go, so the dome settles back with a wobble rather than snapping),
-displacement limit 0.72 and velocity limit 6; target magnitude is at most
-0.64, reduced to 35% with
-reduced motion. Reduced gesture impulses are 18%. Gesture cadence retains
+Grab spring stiffness is 256 and damping 20 while held (100 and 13 once
+let go, so the dome settles back with a small wobble rather than snapping
+or bouncing past where it stood), displacement limit 0.72 and velocity
+limit 6; the target is the finger's displacement up to 0.32 and gives less
+and less past it, never reaching 0.64, reduced to 35% with reduced motion
+(`grabConstants`, `grabReach`; A finger on the body, below). Reduced
+gesture impulses are 18%. Gesture cadence retains
 the authored duration plus 7–15 seconds, starting after one second, or
 0.4 seconds after retarget; release defers the next gesture three seconds.
 These are the imported audition constants, not approved production pacing.
@@ -541,8 +544,8 @@ expression is borrowed, and the mood stays.
 | Gesture | What the body does | Face it borrows | Gag |
 | --- | --- | --- | --- |
 | handoff (BOOT hands you an agent) | Lifts and leans in, offering | pleased | 2.4 s |
-| stroke | Melts under the hand, eyes shut | affectionate | 3 s |
-| ruffle (stroked the wrong way) | Bristles in ripples, then huffs | annoyed | 2.2 s |
+| stroke (a slow one; a quick swipe is none: A finger on the body) | Melts under the hand, eyes shut | affectionate | 3 s |
+| ruffle (stroked slowly the wrong way, upward) | Bristles in ripples, then huffs | annoyed | 2.2 s |
 | nose | Squished in at the nose, pops back | surprised | 1.8 s |
 | tickle | Giggles, jiggling side to side, eyes squeezed | excited | 2.4 s |
 | dizzy (shaken) | Wobbles round, sliding and rolling side to side | baffled | 3.2 s |
@@ -560,6 +563,39 @@ recipe has no gag. A recipe with a gag recovers with the gag, not with the
 expression's recovery gesture. `scripts/gestures.jsonl` plays all ten as
 the board does (held, with their faces), one from work and one with no
 take named, and the port replays it frame for frame.
+
+## A finger on the body
+
+A finger grabs the body and the body goes its way, on its springs: no
+take plays while it's down. `dragMove` is the finger's displacement since
+it went down, in body units with y up; the pull follows it (Phase 1 channel
+bounds), and the whole body draws the pull as its own lean and squash
+(`grabConstants.lean` 2 and `squash` 1 per unit, added to the pose before
+its bounds): down squashes it and spreads it on the floor, up stretches
+it, sideways leans its top that way, and its base stays where it stands.
+The renderers carry only the top a little further after it (0.13 h²,
+front and back alike); the WebGL dome also leads with the patch under the
+finger (0.3 of it), which the board's port leaves out, so its outline
+never shears. Let go, the pull settles back on the softer spring, and
+`dragEnd(velocity)` flings it on first: 0.3 of the finger's velocity (in
+body units a second) joins the pull's, less as it nears its limit going
+that way and never past its velocity bound, so a swipe pushes the body
+its way and then lets it settle, and quick swipes in a row carry on from
+wherever the last left it instead of piling up.
+
+The board feeds it (`render/gel/face.cpp`): the canvas's pixels are 85
+to a body unit at the dome (128 of the panel's, which draws the canvas
+half as large again), its middle at (160, 129), y flipped. It tells a
+touch that travels 40 px or more by its speed (`app/touch_gesture.h`):
+faster than 600 px a second on average, from going down to its last
+reading, it's a swipe, the face's alone, with no tap or gesture and
+nothing to the Mac; slower, a stroke (upward, a ruffle), and the gesture
+above plays as it lets go. The finger's velocity as it lets go is over
+its last 80 ms. `scripts/swipes.jsonl` swipes down, across and up, twice
+down in a row, holds still before letting go, and flings at and past the
+limit and back, and the port replays it frame for frame; the board's
+`tests/scenarios-gel/swipes.jsonl` and
+`internal/tools/fluid/idle-swipes.jsonl` swipe on the board itself.
 
 ## Notice
 

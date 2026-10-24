@@ -304,7 +304,7 @@ static void event(Engine& e, JsonVariantConst v) {
   else if (type == "dragMove")
     e.dragMove(readF(v["delta"][0]), readF(v["delta"][1]), readF(v["delta"][2]));
   else if (type == "dragEnd")
-    e.dragEnd();
+    e.dragEnd(readF(v["velocity"][0]), readF(v["velocity"][1]), readF(v["velocity"][2]));
 }
 int main(int argc, char** argv) {
   if (argc != 2) return 2;

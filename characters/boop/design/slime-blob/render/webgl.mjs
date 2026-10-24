@@ -43,7 +43,9 @@ ${deformationGLSL}
         vec2 distanceToGrab=(rest-uGrabPoint)*vec2(1.8,1.65);
         float local=exp(-dot(distanceToGrab,distanceToGrab))*front;
         float h=clamp(pos.y/1.49,0.0,1.0);
-        pos+=uGrab*(.78*local+.13*h*h);
+        // The pull's lean and squash are the pose's; the patch under the
+        // finger leads a little, and the top follows on.
+        pos+=uGrab*(.3*local+.13*h*h);
         float y=pos.y-.62,x=pos.x,c=cos(uLife.y),s=sin(uLife.y);
         pos.x=x*c-y*s;pos.y=max(.018,x*s+y*c+.62+uLife.x);
         pos.z+=uLife.z*h*h;

@@ -33,7 +33,10 @@ struct Projector {
     p.z = product(p.z, sx) + product(product(c.lean, 369), h) - product(product(c.dent, 492), dent);
     p.x += product(product(product(c.dent, 102), p.x), front);
     p.y = product(p.y, sy);
-    int grabWeight = product(3195, front) + product(532, h2);
+    // A finger's pull leans and squashes the body (Engine::pose); here it
+    // carries the top a little further after the finger, front and back
+    // alike, so the base stays put and the outline stays whole.
+    int grabWeight = product(532, h2);
     p.x += product(c.grabX, grabWeight);
     p.y += product(c.grabY, grabWeight);
     int x = p.x, y = p.y - 2540;

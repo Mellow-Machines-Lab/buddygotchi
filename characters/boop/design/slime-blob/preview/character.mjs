@@ -52,14 +52,23 @@ function create({root,stage,onChange=()=>{}}) {
     const distance=(-b-Math.sqrt(disc))/a;if(distance<=0)return null;const p=eye.map((v,i)=>v+distance*d0[i]);return p[1]>.07&&p[2]>.03?p:null;
   }
   let grab=null;
+  // How fast the drag moved over its last 80 ms, as the board measures a
+  // finger letting go; none once it has stopped.
+  function flingOf(old){
+    const s=old.samples,last=s.at(-1),now=performance.now();
+    if(!last||now-last[0]>80)return [0,0,0];
+    let first=s[0];for(const sample of s)if(last[0]-sample[0]>=80)first=sample;
+    const seconds=(last[0]-first[0])/1000;
+    return seconds>0?last[1].map((v,i)=>(v-first[1][i])/seconds):[0,0,0];
+  }
   function release(event,cancel=false){
     if(!grab||(event&&event.pointerId!==grab.id))return;
-    const old=grab;grab=null;engine.dragEnd();if(stage.hasPointerCapture(old.id))stage.releasePointerCapture(old.id);
+    const old=grab;grab=null;engine.dragEnd(cancel?[0,0,0]:flingOf(old));if(stage.hasPointerCapture(old.id))stage.releasePointerCapture(old.id);
     if(!cancel&&!old.dragged&&performance.now()-old.stamp<350)poke(old.point[0],old.point[1]);changed();
   }
   function onDown(event){
     if(review.active||grab||event.button>0)return;const anchor=hit(event);if(!anchor)return;resume();
-    grab={id:event.pointerId,anchor,point:[anchor[0]/1.1,(anchor[1]-.56)/.91],start:[event.clientX,event.clientY],stamp:performance.now(),dragged:false,pointerType:event.pointerType};
+    grab={id:event.pointerId,anchor,point:[anchor[0]/1.1,(anchor[1]-.56)/.91],start:[event.clientX,event.clientY],stamp:performance.now(),dragged:false,pointerType:event.pointerType,samples:[]};
     engine.dragStart(grab.point);stage.setPointerCapture(event.pointerId);event.preventDefault();changed();
   }
   function onMove(event){
@@ -68,7 +77,7 @@ function create({root,stage,onChange=()=>{}}) {
     let delta;
     if(renderer.kind==='procedural-canvas-fallback'){const r=stage.getBoundingClientRect();delta=[(event.clientX-grab.start[0])/r.width*4.5,-(event.clientY-grab.start[1])/r.height*3.35,0];}
     else{const direction=ray(event),distance=dot(grab.anchor.map((v,i)=>v-eye[i]),forward)/dot(direction,forward);delta=eye.map((v,i)=>v+distance*direction[i]-grab.anchor[i]);}
-    engine.dragMove(delta);event.preventDefault();
+    engine.dragMove(delta);grab.samples=[...grab.samples.slice(-7),[performance.now(),delta]];event.preventDefault();
   }
   const stageEnd=event=>release(event,event.type!=='pointerup');
   stage.addEventListener('pointerdown',onDown);stage.addEventListener('pointermove',onMove);
@@ -104,7 +113,7 @@ function create({root,stage,onChange=()=>{}}) {
       case 'perform':engine.perform(event.index);break;
       case 'dragStart':engine.dragStart(event.point);break;
       case 'dragMove':engine.dragMove(event.delta);break;
-      case 'dragEnd':engine.dragEnd();break;
+      case 'dragEnd':engine.dragEnd(event.velocity);break;
       case 'oneShot':engine.oneShot(event.moment||event.do);break;
       case 'linkTimedOut':engine.setLinkTimedOut(event.value);break;
     }

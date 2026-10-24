@@ -46,7 +46,8 @@ void Engine::step(uint32_t ms) {
   acting.advance(dt, motion.time, grab, reduced, random);
   // Held, the pull follows the finger quickly; let go, it settles back on a
   // softer spring, a wobble rather than a snap.
-  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], grab ? 16 : 10, grab ? 8 : 10, q(.72), 6);
+  const int* spring = grab ? kGrabHeld : kGrabReleased;
+  for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], spring[0], spring[1], kGrabLimit, kGrabVelocity);
   face.advance(dt, reduced);
   const F w = reduced ? 25 : 10;
   for (int i = 0; i < slime::kProfiles; ++i) {
@@ -68,6 +69,9 @@ std::array<F, 4> Engine::pose() const {
   out[0] += acting.channels[0].x + mood[0] + scenes.activity[0].x + bridge.channels[0].x;
   out[1] += acting.channels[1].x + mood[1] + scenes.activity[1].x + bridge.channels[1].x;
   out[2] += acting.channels[2].x;
+  // The pull leans and squashes the whole body, inside its bounds.
+  out[0] += kGrabLean * pull[0].x;
+  out[1] += kGrabSquash * pull[1].x;
   const F limits[] = {q(1.25), q(1.32), q(1.14), q(.72)};
   for (int i = 0; i < 4; ++i) out[i] = clamp(out[i], -limits[i], limits[i]);
   return out;

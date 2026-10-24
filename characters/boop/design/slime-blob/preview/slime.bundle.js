@@ -55,14 +55,23 @@ function create({root,stage,onChange=()=>{}}) {
     const distance=(-b-Math.sqrt(disc))/a;if(distance<=0)return null;const p=eye.map((v,i)=>v+distance*d0[i]);return p[1]>.07&&p[2]>.03?p:null;
   }
   let grab=null;
+  // How fast the drag moved over its last 80 ms, as the board measures a
+  // finger letting go; none once it has stopped.
+  function flingOf(old){
+    const s=old.samples,last=s.at(-1),now=performance.now();
+    if(!last||now-last[0]>80)return [0,0,0];
+    let first=s[0];for(const sample of s)if(last[0]-sample[0]>=80)first=sample;
+    const seconds=(last[0]-first[0])/1000;
+    return seconds>0?last[1].map((v,i)=>(v-first[1][i])/seconds):[0,0,0];
+  }
   function release(event,cancel=false){
     if(!grab||(event&&event.pointerId!==grab.id))return;
-    const old=grab;grab=null;engine.dragEnd();if(stage.hasPointerCapture(old.id))stage.releasePointerCapture(old.id);
+    const old=grab;grab=null;engine.dragEnd(cancel?[0,0,0]:flingOf(old));if(stage.hasPointerCapture(old.id))stage.releasePointerCapture(old.id);
     if(!cancel&&!old.dragged&&performance.now()-old.stamp<350)poke(old.point[0],old.point[1]);changed();
   }
   function onDown(event){
     if(review.active||grab||event.button>0)return;const anchor=hit(event);if(!anchor)return;resume();
-    grab={id:event.pointerId,anchor,point:[anchor[0]/1.1,(anchor[1]-.56)/.91],start:[event.clientX,event.clientY],stamp:performance.now(),dragged:false,pointerType:event.pointerType};
+    grab={id:event.pointerId,anchor,point:[anchor[0]/1.1,(anchor[1]-.56)/.91],start:[event.clientX,event.clientY],stamp:performance.now(),dragged:false,pointerType:event.pointerType,samples:[]};
     engine.dragStart(grab.point);stage.setPointerCapture(event.pointerId);event.preventDefault();changed();
   }
   function onMove(event){
@@ -71,7 +80,7 @@ function create({root,stage,onChange=()=>{}}) {
     let delta;
     if(renderer.kind==='procedural-canvas-fallback'){const r=stage.getBoundingClientRect();delta=[(event.clientX-grab.start[0])/r.width*4.5,-(event.clientY-grab.start[1])/r.height*3.35,0];}
     else{const direction=ray(event),distance=dot(grab.anchor.map((v,i)=>v-eye[i]),forward)/dot(direction,forward);delta=eye.map((v,i)=>v+distance*direction[i]-grab.anchor[i]);}
-    engine.dragMove(delta);event.preventDefault();
+    engine.dragMove(delta);grab.samples=[...grab.samples.slice(-7),[performance.now(),delta]];event.preventDefault();
   }
   const stageEnd=event=>release(event,event.type!=='pointerup');
   stage.addEventListener('pointerdown',onDown);stage.addEventListener('pointermove',onMove);
@@ -107,7 +116,7 @@ function create({root,stage,onChange=()=>{}}) {
       case 'perform':engine.perform(event.index);break;
       case 'dragStart':engine.dragStart(event.point);break;
       case 'dragMove':engine.dragMove(event.delta);break;
-      case 'dragEnd':engine.dragEnd();break;
+      case 'dragEnd':engine.dragEnd(event.velocity);break;
       case 'oneShot':engine.oneShot(event.moment||event.do);break;
       case 'linkTimedOut':engine.setLinkTimedOut(event.value);break;
     }
@@ -307,6 +316,21 @@ const {idleOccasions,occasionGags}=__load(9);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
+// A finger's pull (CONTINUITY.md, Phase 1 channel bounds). Held, it follows
+// the finger on a stiff, damped spring; let go, a softer one settles it back
+// with a wobble. Its target gives less and less past the knee and never
+// reaches `reach`. The body draws it as its own lean and squash (`lean`,
+// `squash` per unit of pull), so its top goes with the finger and its base
+// stays put. A finger let go while moving flings it on: `fling` of its
+// velocity, less as the pull nears its limit going that way.
+const grabConstants=Object.freeze({held:Object.freeze([256,20]),released:Object.freeze([100,13]),knee:.32,reach:.64,
+  limit:.72,velocity:6,reduced:.35,lean:2,squash:1,fling:.3});
+// The finger's displacement, past the knee given less and less.
+function grabReach(length) {
+  const {knee,reach}=grabConstants;
+  return length<=knee?length:knee+(length-knee)*(reach-knee)/(length-knee+reach-knee);
+}
+
 function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
@@ -345,11 +369,11 @@ function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[]
     acting.advance(dt,motion.time,grab.active);
     // Held, the pull follows the finger quickly; let go, it settles back on
     // a softer spring, a wobble rather than a snap.
-    const [stiffness,damping]=grab.active?[256,8]:[100,10];
+    const [stiffness,damping]=grab.active?grabConstants.held:grabConstants.released;
     for(let i=0;i<3;i++){
       const m=grab.pull[i];let left=dt;
       while(left>0){const h=Math.min(left,1/240);m.v+=(stiffness*(grab.target[i]-m.x)-damping*m.v)*h;m.x+=m.v*h;left-=h;}
-      m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-6,6);
+      m.x=clamp(m.x,-grabConstants.limit,grabConstants.limit);m.v=clamp(m.v,-grabConstants.velocity,grabConstants.velocity);
     }
     face.advance(dt);
     posture.advance(dt,expression);
@@ -359,7 +383,9 @@ function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[]
     const base=motion.inspect(),performance=acting.inspect(motion.time);
     const scene=scenes.inspect(motion.time*1000);
     const mood=moodPosture({weights:posture.weights,emotions,profiles,time:motion.time,reduced}).map(value=>value*(1-scene.scene.quietMix));
-    const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
+    // The pull leans and squashes the whole body, inside its bounds.
+    const pull=[grabConstants.lean*grab.pull[0].x,grabConstants.squash*grab.pull[1].x,0,0];
+    const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value+pull[index],-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
     const life=lifePose(acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.lifeBounds[index],sceneConstants.lifeBounds[index]));
     // A gag's lids close the eyes as a blink does; its slide is drawn once
     // one has played. Its contacts follow the scene's.
@@ -406,14 +432,22 @@ function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[]
       grab.active=true;grab.point=normalized;grab.target=[0,0,0];
       sync(motion.time*1000);
     },
+    // The finger's displacement since it went down, in body units (y up).
     dragMove(delta) {
       if(!grab.active)return;
       if(!Array.isArray(delta)||delta.length!==3)throw new TypeError('drag delta requires three body coordinates');
-      const vector=delta.map(finite),length=Math.hypot(...vector),scale=length>.64?.64/length:1;
-      grab.target=vector.map(v=>v*scale*(reduced.matches?.35:1));
+      const vector=delta.map(finite),length=Math.hypot(...vector),scale=length>grabConstants.knee?grabReach(length)/length:1;
+      grab.target=vector.map(v=>v*scale*(reduced.matches?grabConstants.reduced:1));
     },
-    dragEnd() {
+    // Let go, moving at `velocity` (body units a second, y up; none, at rest).
+    dragEnd(velocity=[0,0,0]) {
       if(!grab.active)return;
+      if(!Array.isArray(velocity)||velocity.length!==3)throw new TypeError('drag velocity requires three body coordinates');
+      const {fling,limit,velocity:most}=grabConstants,gain=fling*(reduced.matches?grabConstants.reduced:1);
+      velocity.map(finite).forEach((v,i)=>{
+        const m=grab.pull[i],add=clamp(v*gain,-most,most),room=Math.sign(add)===Math.sign(m.x)?Math.max(0,1-Math.abs(m.x)/limit):1;
+        m.v=clamp(m.v+add*room,-most,most);
+      });
       grab.active=false;grab.target=[0,0,0];acting.deferUntil(motion.time+3);sync(motion.time*1000);
     },
     inspect,
@@ -424,7 +458,7 @@ function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[]
   };
 }
 
-return {createActor};
+return {grabConstants,grabReach,createActor};
 },
 6:()=>{
 // Accepted V1 source is kept byte-for-byte between the markers. Dependencies
@@ -1796,7 +1830,9 @@ ${deformationGLSL}
         vec2 distanceToGrab=(rest-uGrabPoint)*vec2(1.8,1.65);
         float local=exp(-dot(distanceToGrab,distanceToGrab))*front;
         float h=clamp(pos.y/1.49,0.0,1.0);
-        pos+=uGrab*(.78*local+.13*h*h);
+        // The pull's lean and squash are the pose's; the patch under the
+        // finger leads a little, and the top follows on.
+        pos+=uGrab*(.3*local+.13*h*h);
         float y=pos.y-.62,x=pos.x,c=cos(uLife.y),s=sin(uLife.y);
         pos.x=x*c-y*s;pos.y=max(.018,x*s+y*c+.62+uLife.x);
         pos.z+=uLife.z*h*h;
@@ -2396,15 +2432,17 @@ function createCanvas2D(canvas,catalog){
     const replacement=document.createElement('canvas');replacement.setAttribute('role','img');replacement.setAttribute('aria-label',canvas.getAttribute('aria-label'));canvas.replaceWith(replacement);
     const ctx=replacement.getContext('2d');
     const draw=(channels)=>{
-      const {pose,grab,life}=channels;
+      const {pose,life}=channels;
       const w=replacement.width,h=replacement.height;
       ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
       const [lean,squash,ripple]=pose,sx=1/Math.sqrt(1+squash*.52),sy=1+squash*.52;
       // A gag's slide carries the dome and its shadow sideways.
       ctx.save();ctx.translate(w*.5,h*.74);ctx.scale(w/4.5,h/3.35);ctx.translate(channels.slide||0,0);
       const shadow=ctx.createRadialGradient(0,0,.1,0,0,1.35);shadow.addColorStop(0,'rgba(0,0,0,.6)');shadow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=shadow;ctx.save();ctx.scale(1,.21);ctx.beginPath();ctx.arc(0,0,1.4,0,Math.PI*2);ctx.fill();ctx.restore();
-      const pull=grab.pull;ctx.translate(pull[0]*.35,-pull[1]*.35-life[0]);ctx.rotate(-life[1]);
-      ctx.transform(sx+Math.abs(pull[0])*.12,0,lean*.25-pull[0]*.18,sy+Math.abs(pull[1])*.12,0,0);ctx.beginPath();
+      // A finger's pull is in the pose's lean and squash. A positive lean
+      // carries the top right, as the WebGL dome's does.
+      ctx.translate(0,-life[0]);ctx.rotate(-life[1]);
+      ctx.transform(sx,0,-lean*.25,sy,0,0);ctx.beginPath();
       ctx.moveTo(-.95,-.025);ctx.bezierCurveTo(-1.20-ripple*.08,-.18,-1.05,-1.20,-.18,-1.48);ctx.bezierCurveTo(.80,-1.70,1.32,-.65,1.03,-.15);ctx.bezierCurveTo(.99,.15,-.70,.12,-.95,-.025);ctx.closePath();
       const gel=ctx.createRadialGradient(-.25,-.94,.10,.10,-.61,1.15);gel.addColorStop(0,'rgba(109,190,255,.64)');gel.addColorStop(.45,'rgba(48,136,238,.53)');gel.addColorStop(.84,'rgba(61,156,244,.42)');gel.addColorStop(1,'rgba(146,213,255,.66)');ctx.shadowColor='rgba(77,171,255,.50)';ctx.shadowBlur=w*.023;ctx.fillStyle=gel;ctx.fill();ctx.strokeStyle='rgba(146,213,255,.64)';ctx.lineWidth=.015;ctx.stroke();ctx.shadowBlur=0;
       ctx.save();ctx.clip();const shine=ctx.createRadialGradient(-.44,-1.11,0,-.44,-1.11,.37);shine.addColorStop(0,'rgba(248,255,255,.94)');shine.addColorStop(1,'rgba(231,252,255,0)');ctx.fillStyle=shine;ctx.fillRect(-1.4,-1.8,2.8,1.9);ctx.restore();

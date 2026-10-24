@@ -28,7 +28,11 @@ art fading in on a smoothstep over the window, the weights summing to one, a
 retarget mid-window keeping every weight, at most four arts at once, a fifth
 dropping the faintest, a faded art held at zero never coming back, and
 falling asleep's own longer window and slower spring, kept through a mood
-change until it wakes to the face's own again.
+change until it wakes to the face's own again. It pins a finger's grab
+(CONTINUITY.md, A finger on the body): its springs held and let go, a
+reach that follows the finger to the knee and rises after it without
+reaching 0.64, the pose leaning and squashing by the pull, and a release's
+fling from rest, at its bound, outward with the room left and back.
 Trace generation is explicit:
 
 ```sh
@@ -144,8 +148,8 @@ internal/tools/boopctl sim --face gel
 - `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
   the one build that keeps the recipes' `intent`) and replays every
   `scripts/*.jsonl` against the saved traces, `comedy.jsonl`'s gags,
-  hiccups, gift and snore, `gestures.jsonl`'s ten and
-  `occasions.jsonl`'s picks included. It checks every scalar,
+  hiccups, gift and snore, `gestures.jsonl`'s ten,
+  `occasions.jsonl`'s picks and `swipes.jsonl`'s flings included. It checks every scalar,
   categorical field, cue and frame count within its tolerance, and fails
   on unexpected extra fields too. It reads the staged pack's `moods.h`
   (`.character-build/`, which `fw-test` stages) after the pack's own headers.
@@ -161,7 +165,11 @@ internal/tools/boopctl sim --face gel
   card revealed late still rising whole, every result card marked over
   its label, the lane's text cut as the canvas cuts it and its marks, the
   night's lids easing out as
-  it falls asleep, a reset letting go of the finger, a face that never
+  it falls asleep, a reset letting go of the finger, a finger moving
+  the dome its own way (a swipe down bringing its crown down and up
+  raising it, across leaning it, the base on the floor, and let go
+  carrying on its way, then settling back without bouncing far past),
+  a face that never
   fades (its visible ink through five cross-fades, rendered:
   CONTINUITY.md, Continuity of what is drawn), the lane's strip fading
   in and out at the opacity the app gives it, the same at a frame every
@@ -201,7 +209,9 @@ internal/tools/boopctl sim --face gel
   hat), the layers (`layers.jsonl`: each outfit and air by its tags, Zs
   asleep at night, a sign under the nightcap) and a reaction's sign
   (`sign.jsonl`: the card held up over idle and over a finish, with how
-  long it stays).
+  long it stays), and a finger in idle (`swipes.jsonl`: a swipe down
+  part way and just after it let go, up, across each way, the second
+  of two swipes down, a slow stroke down part way and its reaction).
   `--accept` updates only the gel goldens, after looking at them.
   `boopctl run` reads the board's `hello` to pick the matching face.
 

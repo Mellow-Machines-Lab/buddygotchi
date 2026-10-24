@@ -50,7 +50,7 @@ export function applyEvent(slime, event) {
     case 'perform': slime.perform(event.index); break;
     case 'dragStart': slime.dragStart(event.point); break;
     case 'dragMove': slime.dragMove(event.delta); break;
-    case 'dragEnd': slime.dragEnd(); break;
+    case 'dragEnd': slime.dragEnd(event.velocity); break;
     case 'oneShot': slime.oneShot(event.moment); break;
     case 'linkTimedOut': slime.setLinkTimedOut(event.value); break;
     case 'clearTransient': slime.clearTransient(); break;
@@ -131,7 +131,7 @@ export function usage() {
   return 'node tools/trace.mjs --script scripts/idle-60s.jsonl [--seed 53]\n'
     + 'Writes a deterministic channel trace to stdout at a fixed 16 ms step.\n'
     + 'JSONL rows: {"at":milliseconds,"type":"facts|mood|poke|shake|perform|dragStart|dragMove|dragEnd|oneShot|linkTimedOut|clearTransient|holdExpression|occasion|end",...}.\n'
-    + 'Use facts, mood, x/y, index, point, delta, moment, or value for the corresponding operation.\n'
+    + 'Use facts, mood, x/y, index, point, delta, velocity (dragEnd\'s, optional), moment, or value for the corresponding operation.\n'
     + 'A mood event may include bridgeVariant:0|1|2 for a repeatable directed-edge review.\n'
     + 'A oneShot moment may carry hold:true and args.variant (0 to 3, a gesture\'s 0 to 9), as a host that times its own moments sends;\n'
     + 'holdExpression takes a mood (or null) that the host holds until the next holdExpression.\n'

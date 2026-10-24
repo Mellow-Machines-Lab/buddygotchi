@@ -73,6 +73,15 @@ class Engine {
     router.clearTransient();
     sync();
   }
+  // A finger's pull (actor.mjs grabConstants): held, it follows the finger;
+  // let go, a softer spring settles it. Its target gives less and less past
+  // kGrabKnee and never reaches kGrabReach; the body draws it as its lean
+  // and squash (pose), and a finger let go while moving flings it on.
+  // Each spring's frequency (its stiffness's root) and damping.
+  static constexpr int kGrabHeld[2] = {16, 20}, kGrabReleased[2] = {10, 13};
+  static constexpr F kGrabKnee = q(.32), kGrabReach = q(.64), kGrabLimit = q(.72), kGrabReduced = q(.35);
+  static constexpr F kGrabLean = 2, kGrabSquash = 1, kGrabFling = q(.3);
+  static constexpr int kGrabVelocity = 6;
   void dragStart(F x, F y) {
     if (grab) return;
     grab = true;
@@ -81,16 +90,28 @@ class Engine {
     for (auto& v : target) v = 0;
     sync();
   }
+  // The finger's displacement since it went down, in body units (y up).
   void dragMove(F x, F y, F z) {
     if (!grab) return;
-    F len = sqrt(square(x) + square(y) + square(z)),
-      gain = (len > q(.64) ? q(.64) / len : F(1)) * (reduced ? q(.35) : F(1));
+    F len = sqrt(square(x) + square(y) + square(z)), gain = reduced ? kGrabReduced : F(1);
+    if (len > kGrabKnee) {
+      const F past = len - kGrabKnee, room = kGrabReach - kGrabKnee;
+      gain = gain * (kGrabKnee + past * room / (past + room)) / len;
+    }
     target[0] = x * gain;
     target[1] = y * gain;
     target[2] = z * gain;
   }
-  void dragEnd() {
+  // Let go, moving at (vx, vy, vz) body units a second; at rest, none.
+  void dragEnd(F vx = 0, F vy = 0, F vz = 0) {
     if (!grab) return;
+    const F velocity[3] = {vx, vy, vz}, gain = kGrabFling * (reduced ? kGrabReduced : F(1));
+    for (int i = 0; i < 3; ++i) {
+      const F add = clamp(velocity[i] * gain, -kGrabVelocity, kGrabVelocity);
+      const bool outward = (add > F(0) && pull[i].x > F(0)) || (add < F(0) && pull[i].x < F(0));
+      const F room = outward ? max(0, 1 - abs(pull[i].x) / kGrabLimit) : F(1);
+      pull[i].v = clamp(pull[i].v + add * room, -kGrabVelocity, kGrabVelocity);
+    }
     grab = false;
     for (auto& v : target) v = 0;
     acting.nextPerformance = max(acting.nextPerformance, motion.time + 3);

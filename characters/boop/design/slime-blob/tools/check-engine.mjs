@@ -226,15 +226,26 @@ async function checkSemanticFace(catalog) {
   }
 }
 
-function checkDragAndPause(createSlime, catalog) {
+async function checkDragAndPause(createSlime, catalog) {
   // CONTINUITY.md, "Phase 1 channel bounds" and "Alerts, taps and
   // interruption": inputs retarget bounded pull; release retains momentum.
+  const { grabConstants, grabReach } = await import('../engine/actor.mjs');
+  assert.deepEqual(grabConstants, { held: [256, 20], released: [100, 13], knee: 0.32, reach: 0.64, limit: 0.72, velocity: 6,
+    reduced: 0.35, lean: 2, squash: 1, fling: 0.3 }, `${SPEC}, Phase 1 channel bounds: the grab's springs, reach, drawing and fling`);
+  // The reach: the finger's own displacement up to the knee, then less and
+  // less, rising all the way and never reaching 0.64.
+  for (let length = 0; length <= 8; length += 0.01) {
+    if (length <= 0.32) near(grabReach(length), length, `${SPEC}, Phase 1 channel bounds: the pull follows the finger to the knee`);
+    assert.ok(grabReach(length) >= 0 && grabReach(length) < 0.64, `${SPEC}, Phase 1 channel bounds: the pull's target stays short of its reach`);
+    assert.ok(grabReach(length + 0.01) > grabReach(length), `${SPEC}, Phase 1 channel bounds: the reach rises with the finger`);
+  }
+  range((grabReach(0.32 + 1e-7) - grabReach(0.32)) / 1e-7, 1 - 1e-5, 1 + 1e-5, `${SPEC}, Phase 1 channel bounds: no kink at the knee`);
   for (const reducedMotion of [false, true]) {
     const slime = createSlime({ catalog, seed: 53, reducedMotion });
     slime.step(0); slime.dragStart([2, -2]);
     assert.deepEqual(slime.inspect().grab.point, [1, -1], `${SPEC}, Phase 1 channel bounds: normalized drag point clamp`);
     slime.dragMove([4, -3, 2]);
-    near(Math.hypot(...slime.inspect().grab.target), 0.64 * (reducedMotion ? 0.35 : 1),
+    near(Math.hypot(...slime.inspect().grab.target), grabReach(Math.hypot(4, -3, 2)) * (reducedMotion ? 0.35 : 1),
       `${SPEC}, Phase 1 channel bounds: drag target and reduced motion scaling`);
     for (let at = STEP_MS; at <= 320; at += STEP_MS) slime.step(at);
     const held = physical(slime.inspect());
@@ -325,9 +336,41 @@ async function checkExtensionEquations(createSlime, catalog) {
   }
   const slime = createSlime({ catalog, seed: 53 });
   slime.step(0); slime.dragStart(); slime.dragMove([0.2, 0, 0]); slime.step(STEP_MS);
-  const expected = springStep({ x: 0, v: 0 }, STEP_MS / 1000, (x, v) => 256 * (0.2 - x) - 8 * v);
+  const expected = springStep({ x: 0, v: 0 }, STEP_MS / 1000, (x, v) => 256 * (0.2 - x) - 20 * v);
   near(slime.inspect().grab.pull[0].x, expected.x, `${SPEC}, Phase 1 channel bounds: grab stiffness/damping/substep displacement`);
   near(slime.inspect().grab.pull[0].v, expected.v, `${SPEC}, Phase 1 channel bounds: grab stiffness/damping/substep velocity`);
+  const held = slime.inspect().grab.pull[0];
+  slime.dragEnd(); slime.step(2 * STEP_MS);
+  const settling = springStep(held, STEP_MS / 1000, (x, v) => 100 * -x - 13 * v);
+  near(slime.inspect().grab.pull[0].x, settling.x, `${SPEC}, Phase 1 channel bounds: let go, the pull settles on the softer spring`);
+  // The pull leans and squashes the whole body: the pose carries lean × its
+  // x and squash × its y (the body otherwise near rest here, breathing).
+  const leaning = createSlime({ catalog, seed: 53 });
+  leaning.step(0); leaning.dragStart(); leaning.dragMove([0.2, -0.3, 0]);
+  for (let at = STEP_MS; at <= 480; at += STEP_MS) leaning.step(at);
+  const { pose, grab } = leaning.inspect();
+  range(pose[0] - 2 * grab.pull[0].x, -0.02, 0.02, `${SPEC}, Phase 1 channel bounds: a pull sideways leans the body its way`);
+  range(pose[1] - grab.pull[1].x, -0.02, 0.02, `${SPEC}, Phase 1 channel bounds: a pull down squashes the body`);
+  assert.ok(grab.pull[0].x > 0.15 && grab.pull[1].x < -0.2, `${SPEC}, Phase 1 channel bounds: held, the pull reaches the finger`);
+  // Let go moving, the pull is flung on by 0.3 of the finger's velocity,
+  // less as it nears its limit that way, and never past the velocity bound.
+  const fling = (move, velocity) => {
+    const flung = createSlime({ catalog, seed: 53 });
+    flung.step(0); flung.dragStart();
+    if (move) { flung.dragMove(move); for (let at = STEP_MS; at <= 800; at += STEP_MS) flung.step(at); }
+    const before = flung.inspect().grab.pull[1];
+    flung.dragEnd(velocity);
+    return { before, after: flung.inspect().grab.pull[1] };
+  };
+  near(fling(null, [0, -10, 0]).after.v, -3, `${SPEC}, Phase 1 channel bounds: a fling from rest`);
+  near(fling(null, [0, -100, 0]).after.v, -6, `${SPEC}, Phase 1 channel bounds: a fling's velocity bound`);
+  const outward = fling([0, -3, 0], [0, -10, 0]);
+  near(outward.after.v, outward.before.v - 3 * (1 - Math.abs(outward.before.x) / 0.72), `${SPEC}, Phase 1 channel bounds: a fling outward has the room left`);
+  const inward = fling([0, -3, 0], [0, 10, 0]);
+  near(inward.after.v, inward.before.v + 3, `${SPEC}, Phase 1 channel bounds: a fling back has it all`);
+  const grabbed = createSlime({ catalog, seed: 53 });
+  grabbed.step(0); grabbed.dragStart();
+  assert.throws(() => grabbed.dragEnd([1, 2]), TypeError, `${SPEC}, Phase 1 channel bounds: a release velocity has three body coordinates`);
 }
 
 function checkLockedMagnitudes(createSlime, catalog, motion) {
@@ -420,7 +463,7 @@ export async function checkEngine() {
   try {
     checkLockedMagnitudes(createSlime, catalog, motion);
     checkClock(createSlime, catalog, motion);
-    checkDragAndPause(createSlime, catalog);
+    await checkDragAndPause(createSlime, catalog);
     await checkSemanticFace(catalog);
     await checkExtensionEquations(createSlime, catalog);
     for (const file of scriptFiles) {

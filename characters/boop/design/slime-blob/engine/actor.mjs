@@ -12,6 +12,21 @@ import {idleOccasions,occasionGags} from './scenes/occasion.mjs';
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
 
+// A finger's pull (CONTINUITY.md, Phase 1 channel bounds). Held, it follows
+// the finger on a stiff, damped spring; let go, a softer one settles it back
+// with a wobble. Its target gives less and less past the knee and never
+// reaches `reach`. The body draws it as its own lean and squash (`lean`,
+// `squash` per unit of pull), so its top goes with the finger and its base
+// stays put. A finger let go while moving flings it on: `fling` of its
+// velocity, less as the pull nears its limit going that way.
+export const grabConstants=Object.freeze({held:Object.freeze([256,20]),released:Object.freeze([100,13]),knee:.32,reach:.64,
+  limit:.72,velocity:6,reduced:.35,lean:2,squash:1,fling:.3});
+// The finger's displacement, past the knee given less and less.
+export function grabReach(length) {
+  const {knee,reach}=grabConstants;
+  return length<=knee?length:knee+(length-knee)*(reach-knee)/(length-knee+reach-knee);
+}
+
 export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occasions=[],graph,rand,reduced,initialEmotion='calm'}) {
   const emotions=Object.keys(profiles);
   let emotion=initialEmotion,expression=initialEmotion;
@@ -50,11 +65,11 @@ export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occas
     acting.advance(dt,motion.time,grab.active);
     // Held, the pull follows the finger quickly; let go, it settles back on
     // a softer spring, a wobble rather than a snap.
-    const [stiffness,damping]=grab.active?[256,8]:[100,10];
+    const [stiffness,damping]=grab.active?grabConstants.held:grabConstants.released;
     for(let i=0;i<3;i++){
       const m=grab.pull[i];let left=dt;
       while(left>0){const h=Math.min(left,1/240);m.v+=(stiffness*(grab.target[i]-m.x)-damping*m.v)*h;m.x+=m.v*h;left-=h;}
-      m.x=clamp(m.x,-.72,.72);m.v=clamp(m.v,-6,6);
+      m.x=clamp(m.x,-grabConstants.limit,grabConstants.limit);m.v=clamp(m.v,-grabConstants.velocity,grabConstants.velocity);
     }
     face.advance(dt);
     posture.advance(dt,expression);
@@ -64,7 +79,9 @@ export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occas
     const base=motion.inspect(),performance=acting.inspect(motion.time);
     const scene=scenes.inspect(motion.time*1000);
     const mood=moodPosture({weights:posture.weights,emotions,profiles,time:motion.time,reduced}).map(value=>value*(1-scene.scene.quietMix));
-    const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
+    // The pull leans and squashes the whole body, inside its bounds.
+    const pull=[grabConstants.lean*grab.pull[0].x,grabConstants.squash*grab.pull[1].x,0,0];
+    const pose=composePose(motion.pose(),mood,acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value+pull[index],-sceneConstants.poseBounds[index],sceneConstants.poseBounds[index]));
     const life=lifePose(acting.channels,scenes.activity,bridges.channels).map((value,index)=>clamp(value,-sceneConstants.lifeBounds[index],sceneConstants.lifeBounds[index]));
     // A gag's lids close the eyes as a blink does; its slide is drawn once
     // one has played. Its contacts follow the scene's.
@@ -111,14 +128,22 @@ export function createActor({profiles,gags,idleGags,gestures=[],notices=[],occas
       grab.active=true;grab.point=normalized;grab.target=[0,0,0];
       sync(motion.time*1000);
     },
+    // The finger's displacement since it went down, in body units (y up).
     dragMove(delta) {
       if(!grab.active)return;
       if(!Array.isArray(delta)||delta.length!==3)throw new TypeError('drag delta requires three body coordinates');
-      const vector=delta.map(finite),length=Math.hypot(...vector),scale=length>.64?.64/length:1;
-      grab.target=vector.map(v=>v*scale*(reduced.matches?.35:1));
+      const vector=delta.map(finite),length=Math.hypot(...vector),scale=length>grabConstants.knee?grabReach(length)/length:1;
+      grab.target=vector.map(v=>v*scale*(reduced.matches?grabConstants.reduced:1));
     },
-    dragEnd() {
+    // Let go, moving at `velocity` (body units a second, y up; none, at rest).
+    dragEnd(velocity=[0,0,0]) {
       if(!grab.active)return;
+      if(!Array.isArray(velocity)||velocity.length!==3)throw new TypeError('drag velocity requires three body coordinates');
+      const {fling,limit,velocity:most}=grabConstants,gain=fling*(reduced.matches?grabConstants.reduced:1);
+      velocity.map(finite).forEach((v,i)=>{
+        const m=grab.pull[i],add=clamp(v*gain,-most,most),room=Math.sign(add)===Math.sign(m.x)?Math.max(0,1-Math.abs(m.x)/limit):1;
+        m.v=clamp(m.v+add*room,-most,most);
+      });
       grab.active=false;grab.target=[0,0,0];acting.deferUntil(motion.time+3);sync(motion.time*1000);
     },
     inspect,
