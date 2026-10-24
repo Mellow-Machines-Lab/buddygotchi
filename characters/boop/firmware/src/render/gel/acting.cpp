@@ -129,7 +129,7 @@ T Bridge::retarget(int source, int target, T time, Random& random, int forced) {
                     : primitive == Primitive::kBlink  ? (category == 1 ? 3 : 2)
                                                       : (variant == 0 ? 4 : 5);
   amplitude = min(amplitude, limits[shape]);
-  constexpr int durations[2][3] = {{420, 680, 360}, {760, 920, 560}}, faces[2][3] = {{180, 180, 260}, {220, 240, 280}};
+  constexpr int durations[2][3] = {{420, 680, 360}, {760, 920, 560}}, faces[2][3] = {{320, 360, 460}, {240, 280, 340}};
   active = true;
   elapsedMs = 0;
   durationMs = durations[category == 1 ? 1 : 0][variant];

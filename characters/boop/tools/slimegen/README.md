@@ -1,6 +1,6 @@
 # Slime asset generator
 
-Updated 2026-10-23.
+Updated 2026-10-24.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
@@ -35,7 +35,8 @@ with a gag of its own and the face it borrows, the notice state's three
 takes' faces, the looks' occasions with
 their tags as `firmware/src/render/tags.h` numbers them, bridges and baked
 cue clips) and `slime_art.h` (authored vector
-face paths). `slime_mesh.h` samples the reference dome geometry and analytic
+face paths, and each art's groups' shapes: two arts of one shape there
+morph, path by path and point by point). `slime_mesh.h` samples the reference dome geometry and analytic
 studio lighting into a mesh and a dense material lookup. These are not animation
 frames: the board deforms and projects geometry on every draw.
 `check-port.py --output /tmp/boop-gel-port` builds the native

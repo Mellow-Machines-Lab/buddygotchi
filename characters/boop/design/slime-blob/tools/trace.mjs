@@ -110,7 +110,7 @@ export function serializeTrace(script, seed, result) {
     // control: semantic face dimensions, drawn ratios and composed pose are the
     // port contract. Control velocities are internal spring state.
     const { facts, weights, frames, ...channels } = frame;
-    const { art, artBaseline, velocity, ...face } = channels.face;
+    const { art, velocity, ...face } = channels.face;
     const performance = channels.performance && Object.fromEntries(
       Object.entries(channels.performance).filter(([key]) => key !== 'label'));
     return flatten({ ...channels, face, performance });

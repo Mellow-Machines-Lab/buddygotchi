@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { root, STEP_MS, loadCatalog, loadEngine, readScript, runScript } from './trace.mjs';
-import { createSmoothness, tracked, faceAlpha, SMOOTH_SPEC } from './smooth.mjs';
+import { createSmoothness, tracked, facePresence, presenceFloor, SMOOTH_SPEC } from './smooth.mjs';
 
 const SPEC = 'CONTINUITY.md, Directed edge bridges';
 // Every edge run's frames, against the bounds on what is drawn.
@@ -28,7 +28,8 @@ const semanticKeys = ['eyeX', 'eyeY', 'eyeOpen', 'mouthY', 'mouthWidth', 'curve'
 const controls = face => Object.fromEntries(semanticKeys.map(key => [key, face[key]]));
 const physical = state => structuredClone({ modes: state.modes, actorChannels: state.actorChannels,
   activityChannels: state.activityChannels, bridgeChannels: state.bridgeChannels, pull: state.grab.pull,
-  pose: state.pose, life: state.life, face: controls(state.face), artId: state.face.artId, closure: state.face.bridgeBlink });
+  pose: state.pose, life: state.life, face: controls(state.face) });
+const drawn = state => state.face.layers.filter(layer => layer.weight > 0);
 const round = number => Number(number.toFixed(7));
 function near(actual, expected, message, epsilon = 1e-10) {
   assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= epsilon, `${SPEC}: ${message}: ${actual} != ${expected}`);
@@ -55,6 +56,8 @@ function retarget(d, edge, variant) {
   d.slime.setMood(edge.to, { bridgeVariant: variant });
   const after = d.slime.inspect();
   assert.deepEqual(physical(after), physical(before), `${SPEC}: ${edge.id}/${variant} preserves every live spring, face control and composed pose at retarget`);
+  // Nothing drawn changes at once, but when a fifth art folds the faintest.
+  if (before.face.layers.length < 4) assert.deepEqual(drawn(after), drawn(before), `${SPEC}: ${edge.id}/${variant} keeps every art drawn as it was at retarget`);
   near(after.time, before.time, `${edge.id} cannot reset the animation clock`);
   return { before, after };
 }
@@ -64,14 +67,20 @@ function validateFrame(frame, previous, endpoints, constants, label) {
     assert.ok(frame.face[key] >= lower - 1e-10 && frame.face[key] <= upper + 1e-10,
       `${SPEC}: ${label} ${key} remains between actual source controls and destination`);
   }
-  for (const key of ['blink', 'bridgeBlink', 'cheekAlpha', 'tearAmount']) {
+  for (const key of ['blink', 'cheekAlpha', 'tearAmount']) {
     assert.ok(frame.face[key] >= 0 && frame.face[key] <= 1, `${SPEC}: ${label} ${key} stays in [0,1]`);
   }
-  assert.equal(typeof frame.face.artId, 'string', `${SPEC}: ${label} has exactly one art identity`);
-  assert.equal(typeof frame.face.art.eyes, 'string', `${SPEC}: ${label} has one eye primitive`);
-  assert.equal(typeof frame.face.art.mouth, 'string', `${SPEC}: ${label} has one mouth primitive`);
-  assert.ok(!('weights' in frame.face), `${SPEC}: ${label} cannot crossfade facial silhouettes`);
-  if (frame.face.artId !== previous.face.artId) near(frame.face.bridgeBlink, 1, `${label} changes art only behind closed lids`);
+  // The current art is drawn last, over the ones still crossing over.
+  const layers = frame.face.layers, top = layers.at(-1);
+  assert.ok(top.artId === frame.face.artId && top.sleeping === frame.face.sleeping, `${SPEC}: ${label} draws its current art last`);
+  assert.ok(layers.length <= 4 && layers.every(layer => layer.weight >= 0 && layer.weight <= 1), `${SPEC}: ${label} draws at most four arts, each weighed in [0,1]`);
+  assert.equal(new Set(layers.map(layer => layer.artId + layer.sleeping)).size, layers.length, `${SPEC}: ${label} draws each art once`);
+  const before = previous.face.layers;
+  if (!before.some(layer => layer.artId === top.artId && layer.sleeping === top.sleeping)) {
+    // From nothing, or from the faintest of four, which it folds in.
+    const folded = before.length === 4 ? Math.min(...before.slice(0, -1).map(layer => layer.weight)) : 0;
+    assert.ok(top.weight < folded + 0.2, `${SPEC}: ${label} a new art fades in from nothing or the faintest it folds in`);
+  }
   for (const [name, spring] of Object.entries(frame.bridgeChannels)) {
     assert.ok(Math.abs(spring.x) <= constants.bounds[name] + 1e-12, `${SPEC}: ${label} ${name} stays inside its displacement bound`);
     assert.ok(Math.abs(spring.v) <= constants.velocityBound + 1e-12, `${SPEC}: ${label} ${name} stays inside its velocity bound`);
@@ -115,7 +124,7 @@ async function checkConstants(createSlime, bridgeModule) {
     durationsMs: { ordinary: [420, 680, 360], dramatic: [760, 920, 560] },
     frequency: 14, damping: 12, velocityBound: 1, reducedGain: 0.18, dragDeferMs: 320,
     bounds: { lean: 0.06, squash: 0.05, forward: 0.04 },
-    faceDurationMs: { ordinary: [180, 180, 260], dramatic: [220, 240, 280] },
+    faceDurationMs: { ordinary: [320, 360, 460], dramatic: [240, 280, 340] },
   }, `${SPEC}: bridge timing, spring limits, face durations and drag deferral are pinned`);
   const targets = [
     ['soft-retarget', 0, 'ordinary', 0.5, [0.009, 0.004, 0.003]],
@@ -224,10 +233,10 @@ function checkRapidRetarget(createSlime, constants) {
   let frames = 0;
   for (const reducedMotion of [false, true]) {
     const d = makeDriver(createSlime, { reducedMotion });
-    let switches = 0, endpoints, previous;
+    let crowded = 0, endpoints, previous;
     const observe = frame => {
       validateFrame(frame, previous, endpoints, constants, 'rapid retarget');
-      if (frame.face.artId !== previous.face.artId) switches++;
+      crowded = Math.max(crowded, frame.face.layers.length);
       previous = frame;
     };
     for (const [index, to] of ['curious', 'surprised', 'frightened', 'sad', 'happy', 'wounded', 'angry'].entries()) {
@@ -242,7 +251,8 @@ function checkRapidRetarget(createSlime, constants) {
       d.advance(48, observe);
     }
     d.advance(1024, observe);
-    assert.ok(switches > 0, `${SPEC}: rapid retarget test really observes a fully closed primitive switch`);
+    assert.equal(crowded, 4, `${SPEC}: a rapid chain really crosses four arts over at once`);
+    assert.equal(d.frame.face.layers.length, 1, `${SPEC}: a rapid chain settles on one art`);
     assert.equal(d.frame.face.artId, 'angry', `${SPEC}: the last rapid request wins`);
     frames += d.frames;
   }
@@ -295,10 +305,11 @@ async function checkReviewScript(createSlime) {
   assert.equal(bridgeReviewCases.length, 13, `${SPEC}: bounded review set size`);
   assert.equal(script.durationMs, 13 * 6400, `${SPEC}: review windows match the recorder`);
   const result = runScript(createSlime, catalog, script, 53);
-  // Continuity of what is drawn: the painter draws the eyes and mouth at full
-  // opacity through every bridge; only their scale closes and reopens.
+  // Continuity of what is drawn: the painter draws the eyes and the mouth
+  // through every bridge, their arts' opacity summed never under the floor.
   for (const [index, frame] of result.frames.entries()) {
-    assert.equal(faceAlpha(frame, catalog), 1, `${SMOOTH_SPEC}: the face never fades during a bridge (frame ${index})`);
+    const presence = facePresence(frame, catalog);
+    assert.ok(presence >= presenceFloor, `${SMOOTH_SPEC}: the face never fades during a bridge (frame ${index}: ${presence})`);
   }
   for (const sample of bridgeReviewCases) {
     const frame = result.frames[(sample.startMs + sample.retargetMs) / STEP_MS];
@@ -336,7 +347,7 @@ export async function checkBridges({ coverageOnly = false } = {}) {
       assert.equal(bridge.variant, variant, `${SPEC}: selected variant is honored for ${edge.id}`);
       assert.equal(bridge.primitive, edge.primitives[variant], `${SPEC}: ${edge.id} uses its advertised runtime primitive`);
       assert.equal(bridge.category, edge.category, `${SPEC}: edge direction retains its category`);
-      assert.equal(after.face.transition.durationMs, bridgeConstants.faceDurationMs[edge.category][variant], `${SPEC}: each primitive uses its authored closure duration`);
+      assert.equal(after.face.transition.durationMs, bridgeConstants.faceDurationMs[edge.category][variant], `${SPEC}: each primitive uses its authored face window`);
       assert.ok(bridge.amplitude <= amplitudeLimit(bridge.primitive, bridge.variant, bridge.category) + 1e-12,
         `${SPEC}: ${edge.id}/${variant} amplitude keeps every target inside its bound`);
       const endpoints = { from: controls(before.face), to: after.face.transition.to };

@@ -220,7 +220,7 @@ function validateMatrixFrame(frame, sample, context) {
   for (const [name, value] of Object.entries(frame.face)) {
     if (typeof value === 'number') assert.ok(Number.isFinite(value), `${FULL_SPEC}: ${context} semantic face ${name} is finite`);
   }
-  for (const key of ['cheekAlpha', 'tearAmount', 'bridgeBlink']) {
+  for (const key of ['cheekAlpha', 'tearAmount', 'blink']) {
     assert.ok(frame.face[key] >= 0 && frame.face[key] <= 1, `${FULL_SPEC}: ${context} ${key} stays in [0,1]`);
   }
   assert.equal(typeof frame.face.artId, 'string', `${FULL_SPEC}: ${context} emits one semantic face identity`);
@@ -696,12 +696,15 @@ async function checkSceneConstants(createSlime, catalog) {
   }
   const sleepy = driver(createSlime, catalog, 'frightened');
   sleepy.slime.setFacts({ base: 'asleep' });
-  let wasSleeping = sleepy.channels.face.sleeping;
+  let crossed = false;
   sleepy.advance(1600, frame => {
-    if (!wasSleeping && frame.face.sleeping) near(frame.face.bridgeBlink, 1, 'shared sleepy primitive changes only at bridge closure');
-    wasSleeping = frame.face.sleeping;
+    const layers = frame.face.layers;
+    if (layers.length > 1) {
+      crossed = true;
+      assert.ok(layers.at(-1).sleeping && layers.slice(0, -1).every(layer => !layer.sleeping), 'the shared sleepy art fades in over the awake one');
+    }
   });
-  assert.ok(wasSleeping, `${SPEC}: explicit quiet face is exercised`);
+  assert.ok(crossed && sleepy.channels.face.sleeping && sleepy.channels.face.layers.length === 1, `${SPEC}: explicit quiet face is exercised`);
   for (const [key, value] of Object.entries({ eyeOpen: 0.004, mouthWidth: 0.018, curve: 0.008, cheekAlpha: 0, tearAmount: 0 })) {
     near(sleepy.channels.face[key], value, `shared quiet target ${key}`, 1e-8);
   }

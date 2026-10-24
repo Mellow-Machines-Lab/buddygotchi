@@ -116,6 +116,18 @@ inline F smooth(F x) {
   x = clamp(x, 0, 1);
   return x * x * (F(3) - x * 2);
 }
+// scenes/ramp.mjs hermite: the cubic from (from, tangent) to `to` at s, its
+// value clamped to [0, 1] and its slope per unit of s; at its end, exactly to.
+inline void hermite(F from, F tangent, F to, F s, F& value, F& slope) {
+  if (s >= F(1)) {
+    value = to;
+    slope = 0;
+    return;
+  }
+  F s2 = s * s, s3 = s2 * s;
+  value = clamp((s3 * 2 - s2 * 3 + 1) * from + (s3 - s2 * 2 + s) * tangent + (s2 * 3 - s3 * 2) * to, 0, 1);
+  slope = (s2 * 6 - s * 6) * from + (s2 * 3 - s * 4 + 1) * tangent + (s * 6 - s2 * 6) * to;
+}
 struct Spring {
   F x, v;
 };

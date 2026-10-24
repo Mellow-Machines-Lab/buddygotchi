@@ -101,9 +101,9 @@ class Engine {
   // The mood posture's lean and squash, after the quiet blend.
   std::array<F, 2> posture() const;
   T timeMs() const { return motion.time * 1000; }
-  // How closed the eyes are drawn: a bridge's blink, the idle blink, or a
-  // gag's lids, whichever is most.
-  F blink() const { return max(max(face.bridgeBlink, motion.blink()), acting.closure()); }
+  // How closed the eyes are drawn: the idle blink or a gag's lids, whichever
+  // is more.
+  F blink() const { return max(motion.blink(), acting.closure()); }
 
  private:
   bool stamped_ = false;

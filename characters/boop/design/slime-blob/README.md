@@ -1,6 +1,6 @@
 # VideoG Slime Blob — colleague handover
 
-Updated 2026-10-23. Imported from `VideoG-Slime-Blob` and integrated on
+Updated 2026-10-24. Imported from `VideoG-Slime-Blob` and integrated on
 `main`: this engine is the reference the AMOLED's gel face ports and the
 Mac's popover bundles. This is a separate, code-rendered character series, not
 a replacement of the shipping pixel animation bank (the CYD keeps that).
@@ -128,8 +128,9 @@ and [render/face-painter.mjs](render/face-painter.mjs): draw engine controls.
   that set. The generated [preview/review-cases.json](preview/review-cases.json)
   limits the server's capture filenames to these two verified sets.
 - [tools/smooth.mjs](tools/smooth.mjs): the per-frame bounds on what is
-  drawn (no jolt at an event, face ratios in range, props without pops, a
-  face that never fades) that the engine, bridge and scene checks apply.
+  drawn (no jolt at an event, drawn sizes that follow their controls, arts
+  that cross over and props without pops, a face that never fades) that the
+  engine, bridge and scene checks apply.
 
 ## 1. Mood, state, personality and variation are different things
 

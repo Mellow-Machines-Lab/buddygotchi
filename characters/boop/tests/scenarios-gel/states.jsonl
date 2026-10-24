@@ -1,8 +1,10 @@
 // All 23 gel states, plus explicit failure and neutral finish.
-// The error and failure shots wait 200 ms longer, for their card to finish rising.
+// The error and failure shots wait 200 ms longer, for their card to finish rising;
+// no app draws a frame 200 ms before its shot, for its lane to fade in.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":31304}
 {"clock":31504}
 {"shot":"no_app"}
 {"t":"dbg.reset"}

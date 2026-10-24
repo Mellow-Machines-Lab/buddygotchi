@@ -25,7 +25,7 @@ async function settleExpression(frame,id){
  await frame.getByRole('button',{name:'Resume',exact:true}).click();
  await frame.waitForFunction(expression=>{
   const state=document.getElementById('studio').studio.adapter.slime.getState();
-  return state.face.artId===expression&&state.face.bridgeBlink===0&&state.weights[state.expressions.indexOf(expression)]>.99;
+  return state.face.artId===expression&&state.face.layers.length===1&&state.weights[state.expressions.indexOf(expression)]>.99;
  },id,{timeout:5000});
  await frame.getByRole('button',{name:'Pause',exact:true}).click();
  return get(frame);

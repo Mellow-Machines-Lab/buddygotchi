@@ -82,9 +82,18 @@ void bubble(Lane& l, const char* line) {
 
 // The strip's marks, each in a kIcon box with its middle at (x + 9, cy).
 void dot(Raster& r, int x, int cy, uint16_t ink) { r.disk(x + 9, cy, 8, ink); }
+// Black, the lane's own ground, at full strength: a hole stays one while
+// the strip fades.
+template <typename Draw>
+void black(Raster& r, Draw draw) {
+  const int alpha = r.alpha;
+  r.alpha = 255;
+  draw();
+  r.alpha = alpha;
+}
 void ring(Raster& r, int x, int cy, uint16_t ink) {
   r.disk(x + 9, cy, 8, ink);
-  r.disk(x + 9, cy, 5, 0);
+  black(r, [&] { r.disk(x + 9, cy, 5, 0); });
 }
 void tick(Raster& r, int x, int cy, uint16_t ink) {
   r.line({x + 2, cy}, {x + 7, cy + 5}, 3, ink);
@@ -126,8 +135,10 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
     for (int i = 0; r && i < minis; ++i) {
       const int mx = x + i * miniW;
       r->round(mx, cy - 7, 16, 15, 7, gel);
-      r->round(mx + 4, cy - 2, 3, 3, 1, ink);
-      r->round(mx + 9, cy - 2, 3, 3, 1, ink);
+      black(*r, [&] {
+        r->round(mx + 4, cy - 2, 3, 3, 1, ink);
+        r->round(mx + 9, cy - 2, 3, 3, 1, ink);
+      });
     }
     x += minis * miniW;
     if (s.helpers > minis) {
@@ -192,7 +203,7 @@ void strip(Lane& l, const Strip& s) {
 // are (FNV-1a over the line or the strip's fields; never 0).
 }  // namespace
 
-uint32_t laneKey(const char* line, const Strip& s) {
+uint32_t laneKey(const char* line, const Strip& s, int alpha) {
   uint32_t h = 2166136261u;
   auto add = [&](const void* data, size_t n) {
     for (size_t i = 0; i < n; ++i) h = (h ^ static_cast<const uint8_t*>(data)[i]) * 16777619u;
@@ -201,7 +212,7 @@ uint32_t laneKey(const char* line, const Strip& s) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp};
+    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.noApp, alpha};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -209,28 +220,48 @@ uint32_t laneKey(const char* line, const Strip& s) {
 
 int bubbleRoom(int width) { return width - 2 * (kBubbleMargin + kBubblePad + kBubbleLine); }
 
-void paintLane(Surface& surface, const char* line, const Strip& s) {
+void paintLane(Surface& surface, const char* line, const Strip& s, int alpha) {
   if (!surface.pixels) return;
   Lane l{Raster{surface}, surface.width, surface.height};
   l.r.limit = surface.height;
-  if (line)
+  if (line) {
     bubble(l, line);
-  else
+  } else {
+    l.r.alpha = alpha;
     strip(l, s);
-  surface.laneKey = laneKey(line, s);
+  }
+  surface.laneKey = laneKey(line, s, alpha);
   surface.laneKeyFrom = l.y(kLaneTop);
 }
 
+const Strip& LaneFade::fade(const Strip& s, T time, int& alpha) {
+  const bool bare = !s.agent && !s.doneAgent && s.busy <= 0 && s.idle <= 0 && s.helpers <= 0 && !s.noApp;
+  if (!bare) {
+    shown_ = s;
+    const char* const from[] = {s.agent, s.project, s.name, s.doneAgent, s.doneThread};
+    const char** to[] = {&shown_.agent, &shown_.project, &shown_.name, &shown_.doneAgent, &shown_.doneThread};
+    for (int i = 0; i < 5; ++i)
+      if (from[i]) {
+        std::snprintf(names_[i], sizeof names_[i], "%s", from[i]);
+        *to[i] = names_[i];
+      }
+  }
+  ramp_.retarget(bare ? 0 : 1, time);
+  alpha = (ramp_.value(time) * 255).integer();
+  // Gone, it is the bare strip again.
+  return alpha ? shown_ : s;
+}
+
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
-                const Strip& s) {
+                const Strip& s, int laneAlpha) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
-  const uint32_t key = laneKey(line, s);
+  const uint32_t key = laneKey(line, s, laneAlpha);
   Anchors at;
   paint(surface, e, mouthOpen, dy, key, &at);
   if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
-  if (surface.laneKey != key) paintLane(surface, line, s);
+  if (surface.laneKey != key) paintLane(surface, line, s, laneAlpha);
 }
 
 }  // namespace render::gel

@@ -166,6 +166,30 @@ checked it in its commit.
    JavaScript reference (the Studio and the Mac's mirror run the
    WebAssembly engine instead).
 
+### Checkpoint 1, as built (2026-10-24)
+
+The slime's face is layers of arts with weights (the slime package's
+CONTINUITY.md, Directed edge bridges), in the reference and the port,
+matched by check-port. Where it differs from the sketch above, and why:
+
+- **Morph or cross-fade is a feature's, not the face's.** Each eye, the
+  mouth, the tears and the cheeks morph where the arts draw them in one
+  shape (the same calls and colours, only the numbers differing) and
+  cross-fade otherwise, so the eyes can morph while the mouth cross-fades.
+- **Up to four arts at once**, each weight a Hermite from its value and
+  slope over the edge's face window, so a retarget mid-window starts from
+  what's drawn and keeps every weight's velocity. The windows are longer
+  than the blink's were, so a state is seen changing rather than switched:
+  ordinary edges 320 to 460 ms, dramatic ones 240 to 340, snappier for
+  surprise; going to sleep and waking, 180.
+- **The lane fades its strip** on the props' 200 ms ramp as it comes and
+  goes; what it shows while shown, and the bubble, change at once.
+- **Measured** (internal/tools/fluid): a mood change's largest 40 ms frame
+  fell from 1394 changed pixels to 476 (11.1x its median, from 32.4x),
+  and the lane's from 1212 in one frame to about 220 over three. The
+  finish's largest frame is still its card's 200 ms reveal; a longer prop
+  ramp would spread it.
+
 ### Checkpoint 2, as built (2026-10-24)
 
 The intake and its checks are [CHARACTER.md](../characters/CHARACTER.md)

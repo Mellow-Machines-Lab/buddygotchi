@@ -67,7 +67,7 @@ static void test_frame_replay_is_byte_identical() {
   paint(sa, *e);
   paint(sb, *e);
   TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
-  e->face.bridgeBlink = 1;
+  e->face.layers[0].ratio[0] = q(.8);
   paint(sb, *e);
   TEST_ASSERT_NOT_EQUAL(0, std::memcmp(a.data(), b.data(), sa.bytes()));
 }
@@ -246,27 +246,47 @@ static void test_interrupted_alert_signals_exactly_once() {
   }
 }
 // CONTINUITY.md, Continuity of what is drawn: across every directed edge the
-// drawn ratios stay inside (0.75, 4/3) and never jump, the mouth dots only
-// at the swap, a retarget keeps the controls' velocity, and the alert sign
-// ramps in and out with no step larger than a slice of its ramp.
+// two arts cross over, their weights summing to one, each stepping no more
+// than a slice of the shortest face window's ramp, the new one last; each
+// drawn ratio stays inside (0.75, 4/3) and moves its drawn size no further
+// than its control; a retarget keeps the controls' velocity; and the alert
+// sign ramps in and out with no step larger than a slice of its ramp.
 static void test_face_and_props_move_without_jumps() {
-  const F ratioStep = q(.163), rampStep = q(.134);
+  const F weightStep = q(.149), rampStep = q(.134);
+  const int controls[] = {2, 4, 5};
   for (int i = 0; i < slime::kEdgeCount; ++i) {
     auto e = std::make_unique<Engine>();
     e->setMood(slime::kEdges[i].from);
     for (uint32_t t = 0; t <= 640; t += 16) e->step(t);
     e->setMood(slime::kEdges[i].to, i % 3);
-    auto previous = e->face.render;
+    SemanticFace before = e->face;
+    bool crossed = false;
     for (uint32_t t = 656; t <= 1280; t += 16) {
       e->step(t);
-      const auto& r = e->face.render;
-      for (int k = 0; k < 3; ++k) {
-        TEST_ASSERT_TRUE(r[k] > q(.75) - q(.0001) && r[k] < q(4.0 / 3) + q(.0001));
-        TEST_ASSERT_TRUE(abs(r[k] - previous[k]) <= ratioStep);
+      const auto& f = e->face;
+      TEST_ASSERT_EQUAL_INT(slime::kEdges[i].to, f.current().art);
+      crossed |= f.count == 2;
+      F sum = 0;
+      for (int k = 0; k < f.count; ++k) {
+        const auto& l = f.layers[k];
+        sum += l.weight;
+        for (const F r : l.ratio) TEST_ASSERT_TRUE(r > q(.75) - q(.0001) && r < q(4.0 / 3) + q(.0001));
+        for (int j = 0; j < before.count; ++j) {
+          const auto& was = before.layers[j];
+          if (was.art != l.art) continue;
+          TEST_ASSERT_TRUE(abs(l.weight - was.weight) <= weightStep);
+          for (int r = 0; r < 3; ++r) {
+            const int c = controls[r];
+            TEST_ASSERT_TRUE(abs(l.ratio[r] - was.ratio[r]) * slime::kProfile[l.art].face[c] <=
+                             abs(f.controls[c] - before.controls[c]) + q(.00001));
+          }
+        }
       }
-      TEST_ASSERT_TRUE(abs(r[SemanticFace::kMouthDot] - (1 - q(.8) * e->face.bridgeBlink)) <= q(.0001));
-      previous = r;
+      TEST_ASSERT_TRUE(abs(sum - 1) <= q(.0001));
+      before = f;
     }
+    TEST_ASSERT_TRUE(crossed);
+    TEST_ASSERT_EQUAL_INT(1, e->face.count);
   }
   SemanticFace face;
   face.setMood(slime::kFrightened);
@@ -299,6 +319,34 @@ static void test_face_and_props_move_without_jumps() {
     last = now;
   }
   TEST_ASSERT_TRUE(seen);
+}
+// CONTINUITY.md, No prop pops: the lane's strip eases in as it comes and out
+// as it goes, no step larger than a slice of the props' ramp, and one going
+// still shows what it showed, though its names are gone.
+static void test_the_lane_fades_in_and_out() {
+  LaneFade lane;
+  char agent[16] = "claude";
+  Strip asking, none;
+  asking.agent = agent, asking.busy = 2;
+  int alpha = 0, last = 0;
+  const int step = 255 * 134 / 1000 + 1;
+  bool full = false;
+  for (int ms = 0; ms <= 1200; ms += 16) {
+    const bool on = ms < 600;
+    if (!on) agent[0] = 0;
+    const Strip& shown = lane.fade(on ? asking : none, T(ms), alpha);
+    TEST_ASSERT_TRUE(std::abs(alpha - last) <= step);
+    if (alpha) {
+      TEST_ASSERT_EQUAL_STRING("claude", shown.agent);
+      TEST_ASSERT_EQUAL_INT(2, shown.busy);
+    } else if (!on) {
+      TEST_ASSERT_NULL(shown.agent);
+    }
+    full |= alpha == 255;
+    last = alpha;
+  }
+  TEST_ASSERT_TRUE(full);
+  TEST_ASSERT_EQUAL_INT(0, alpha);
 }
 // The face brings its own clips; the shared mixer plays
 // whatever samples it's handed, whichever face is built.
@@ -1126,6 +1174,7 @@ int main() {
   RUN_TEST(test_external_source_holds_without_repeating_reveal);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
+  RUN_TEST(test_the_lane_fades_in_and_out);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);
   RUN_TEST(test_pick_is_pure_and_started_commits_it);

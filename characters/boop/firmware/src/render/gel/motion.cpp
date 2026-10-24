@@ -1,5 +1,4 @@
 #include "render/gel/motion.h"
-#include <cstring>
 namespace render::gel {
 void Motion::advance(T dt, T now, Random& random, bool reduced) {
   time = now;
@@ -46,30 +45,67 @@ SemanticFace::SemanticFace() {
     controls[i] = target[i] = from[i] = to[i] = slime::kProfile[targetId].face[i];
     scaled[i] = controls[i] * kScale;
   }
-  render = {1, 1, 1, 1, controls[6], controls[7]};
+}
+void SemanticFace::weigh(F s) {
+  F sum = 0, slope;
+  for (int i = 0; i < count; ++i) {
+    auto& l = layers[i];
+    hermite(l.from, l.tangent, l.to, s, l.weight, slope);
+    sum += l.weight;
+  }
+  for (int i = 0; i < count; ++i) layers[i].weight = layers[i].weight / sum;
 }
 void SemanticFace::retarget(T ms) {
-  const int next = targetSleeping ? slime::kTired : targetId;
-  for (int i = 0; i < 8; ++i) target[i] = slime::kProfile[next].face[i];
+  const int art = targetSleeping ? slime::kTired : targetId;
+  for (int i = 0; i < 8; ++i) target[i] = slime::kProfile[art].face[i];
   if (targetSleeping) {
     target[2] = kSleep[0];
     target[4] = kSleep[1];
     target[5] = kSleep[2];
     target[6] = target[7] = 0;
   }
-  // A mid-bridge retarget starts from what is drawn now; a cheek or tear
-  // style that changes dips to zero at the swap.
-  for (int i = 0; i < 3; ++i) start[i] = render[i];
-  start[3] = mix[0];
-  start[4] = mix[1];
-  const auto &a = slime::kProfile[artId], &b = slime::kProfile[next];
-  swap[0] = std::strcmp(a.cheeks, b.cheeks) ? 0 : 1;
-  swap[1] = std::strcmp(a.tears, b.tears) ? 0 : 1;
-  active = true;
+  // Every layer starts again from its value and slope now, toward zero; the
+  // new art, last, toward one (one still fading comes back from its value).
+  const T next = ms / 1000;
+  const F s = age / duration;
+  int found = -1;
+  for (int i = 0; i < count; ++i) {
+    auto& l = layers[i];
+    F slope;
+    hermite(l.from, l.tangent, l.to, s, l.from, slope);
+    l.tangent = slope * F(next) / F(duration);
+    l.to = 0;
+    if (l.art == art && l.sleeping == targetSleeping) found = i;
+  }
+  Layer top;
+  if (found >= 0) {
+    top = layers[found];
+    for (int i = found; i + 1 < count; ++i) layers[i] = layers[i + 1];
+    --count;
+  } else {
+    top.art = art, top.sleeping = targetSleeping, top.from = 0;
+  }
+  top.to = 1;
+  // One at zero that can only stay there is gone; past kMaxLayers, the
+  // faintest folds into the new art.
+  int kept = 0;
+  for (int i = 0; i < count; ++i)
+    if (layers[i].from > F(0) || layers[i].tangent > F(0)) layers[kept++] = layers[i];
+  count = kept;
+  if (count == kMaxLayers) {
+    int faintest = 0;
+    for (int i = 1; i < count; ++i)
+      if (layers[i].from < layers[faintest].from) faintest = i;
+    top.from += layers[faintest].from;
+    top.tangent += layers[faintest].tangent;
+    for (int i = faintest; i + 1 < count; ++i) layers[i] = layers[i + 1];
+    --count;
+  }
+  layers[count++] = top;
   age = 0;
-  duration = ms / 1000;
-  startClosure = bridgeBlink;
-  switched = false;
+  duration = next;
+  weigh(0);
+  updateRatios();
   from = controls;
   to = target;
   elapsedMs = 0;
@@ -99,61 +135,32 @@ void SemanticFace::advance(T dt, bool reduced) {
     velocity[i] = v;
     controls[i] = scaled[i] / kScale;
   }
-  if (active) bridge(dt);
-  updateRender();
+  if (count > 1) {
+    age = min(duration, age + dt);
+    elapsedMs = min(durationMs, age * 1000);
+    if (age >= duration) {
+      layers[0] = layers[count - 1];
+      count = 1;
+    }
+    weigh(age / duration);
+  }
+  updateRatios();
 }
-void SemanticFace::bridge(T dt) {
-  age += dt;
-  elapsedMs = min(durationMs, age * 1000);
-  T half = duration / 2;
-  if (age < half)
-    bridgeBlink = startClosure + (F(1) - startClosure) * square(sin(age / half * pi / 2));
-  else if (!switched) {
-    artId = targetSleeping ? slime::kTired : targetId;
-    sleeping = targetSleeping;
-    switched = true;
-    bridgeBlink = 1;
-  } else if (age < duration)
-    bridgeBlink = square(cos((age - half) / half * pi / 2));
-  else {
-    active = false;
-    bridgeBlink = 0;
-    artId = targetSleeping ? slime::kTired : targetId;
-    sleeping = targetSleeping;
+// Each layer at the live control over its own size: the arts crossing over
+// are drawn near one size while the controls move.
+void SemanticFace::updateRatios() {
+  for (int i = 0; i < count; ++i) {
+    auto& l = layers[i];
+    const auto& art = slime::kProfile[l.art].face;
+    l.ratio = {softRatio(scaled[2] / ((l.sleeping ? kSleep[0] : art[2]) * kScale)),
+               softRatio(scaled[4] / ((l.sleeping ? kSleep[1] : art[4]) * kScale)),
+               softRatio(scaled[5] / ((l.sleeping ? kSleep[2] : art[5]) * kScale))};
   }
 }
-// Before the swap the old art eases from the ratio it was drawn at to its own
-// size; after it the new art eases from its own size to the live ratio.
-void SemanticFace::updateRender() {
-  const auto& art = slime::kProfile[artId].face;
-  const F live[3] = {softRatio(scaled[2] / ((sleeping ? kSleep[0] : art[2]) * kScale)),
-                     softRatio(scaled[4] / ((sleeping ? kSleep[1] : art[4]) * kScale)),
-                     softRatio(scaled[5] / ((sleeping ? kSleep[2] : art[5]) * kScale))};
-  if (!active) {
-    for (int i = 0; i < 3; ++i) render[i] = live[i];
-    mix[0] = mix[1] = 1;
-  } else if (!switched) {
-    F e = square(sin(age / (duration / 2) * pi / 2));
-    for (int i = 0; i < 3; ++i) render[i] = start[i] + (1 - start[i]) * e;
-    for (int i = 0; i < 2; ++i) mix[i] = start[3 + i] + (swap[i] - start[3 + i]) * e;
-  } else {
-    F e = 1 - bridgeBlink;
-    for (int i = 0; i < 3; ++i) render[i] = 1 + (live[i] - 1) * e;
-    for (int i = 0; i < 2; ++i) mix[i] = swap[i] + (1 - swap[i]) * e;
-  }
-  render[kMouthDot] = 1 - q(.8) * bridgeBlink;
-  render[kCheek] = clamp(controls[6] * mix[0], 0, 1);
-  render[kTear] = clamp(controls[7] * mix[1], 0, 1);
-}
-F SemanticFace::eyeScale() const {
-  return sleeping ? render[kEye] * (kSleep[0] / slime::kProfile[slime::kTired].face[2]) : render[kEye];
-}
-F SemanticFace::mouthScaleX() const {
-  F s = render[kMouthWidth] * render[kMouthDot];
-  return sleeping ? s * (kSleep[1] / slime::kProfile[slime::kTired].face[4]) : s;
-}
-F SemanticFace::mouthScaleY() const {
-  F s = render[kMouthHeight] * render[kMouthDot];
-  return sleeping ? s * (kSleep[2] / slime::kProfile[slime::kTired].face[5]) : s;
+std::array<F, 3> drawnScale(const SemanticFace::Layer& l) {
+  if (!l.sleeping) return l.ratio;
+  const auto& tired = slime::kProfile[slime::kTired].face;
+  return {l.ratio[0] * (kSleep[0] / tired[2]), l.ratio[1] * (kSleep[1] / tired[4]),
+          l.ratio[2] * (kSleep[2] / tired[5])};
 }
 }  // namespace render::gel

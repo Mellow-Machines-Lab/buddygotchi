@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include "render/gel/lane.h"
 #include "render/gel/profile.h"
 #include "render/maths.h"
 #include "render/palette.h"
@@ -35,6 +34,7 @@ const slime::Recipe& GelFace::recipe(Mood mood, SceneState state, int variant, O
 void GelFace::reset(uint32_t t, linkkit::Rng&) {
   engine_ = std::make_unique<Engine>(kSeed);
   engine_->step(0);
+  lane_ = {};
   origin_ = lastTick_ = lookAt_ = t;
   engineMs_ = engineFrac_ = 0;
   pace_ = 100;
@@ -231,7 +231,9 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip);
+  int alpha;
+  const Strip& shown = lane_.fade(strip, engine_->timeMs(), alpha);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, shown, alpha);
   return true;
 }
 

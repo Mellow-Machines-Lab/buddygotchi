@@ -6,6 +6,7 @@
 #pragma once
 #include "render/face.h"
 #include "render/gel/engine.h"
+#include "render/gel/lane.h"
 #include "render/gel/painter.h"
 namespace render::gel {
 class GelFace final : public Face {
@@ -35,7 +36,7 @@ class GelFace final : public Face {
   uint32_t designMs(uint32_t t) const override {
     return t - (source_.anim != SceneState::kNone ? source_.at : lookAt_);
   }
-  bool blinking(uint32_t) const override { return max(engine_->face.bridgeBlink, engine_->motion.blink()) > 0; }
+  bool blinking(uint32_t) const override { return engine_->motion.blink() > F(0); }
   SceneShow show(uint32_t t, bool mouth, int dy) const override {
     return {source_.mood, source_.state(), uint8_t(engine_->scenes.variant), designMs(t), false, mouth, int16_t(dy)};
   }
@@ -53,6 +54,7 @@ class GelFace final : public Face {
   // The engine's seed after a reset: the reference traces' (check-port.py).
   static constexpr uint32_t kSeed = 53;
   std::unique_ptr<Engine> engine_;
+  LaneFade lane_;
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;
   // The engine's own clock, which runs quicker in the working looks while

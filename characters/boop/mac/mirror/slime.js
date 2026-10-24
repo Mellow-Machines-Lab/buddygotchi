@@ -166,12 +166,12 @@ return {comedyKinds,createCues};
 const {createMotionV1}=__load(6);
 const {createActing}=__load(7);
 const {createFace}=__load(11);
-const {moodPosture,composePose,lifePose,createPostureWeights}=__load(12);
-const {createRouter}=__load(13);
-const {createScenes}=__load(14);
+const {moodPosture,composePose,lifePose,createPostureWeights}=__load(13);
+const {createRouter}=__load(14);
+const {createScenes}=__load(15);
 const {sceneConstants}=__load(10);
 const {createBridges}=__load(28);
-const {gestureGagName,gestureGag}=__load(26);
+const {gestureGagName,gestureGag}=__load(27);
 const {idleOccasions,occasionGags}=__load(9);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const finite=value=>{if(!Number.isFinite(value))throw new TypeError('interaction coordinates must be finite');return value;};
@@ -616,9 +616,10 @@ const implementedStates=Object.freeze(['no_app','asleep','idle','listening','sta
 return {sceneConstants,implementedStates};
 },
 11:()=>{
+const {hermite}=__load(12);
 // Semantic dimensions derived from the existing painter's art primitives. A
-// renderer draws the ONE selected primitive at face.render's ratios: at rest
-// each ratio is one, preserving the authored face without silhouette blends.
+// renderer draws each layer's art at its ratios: at rest each ratio is one,
+// preserving the authored face.
 const eyeDimensions={
   'soft-dot':.049,'comfy-dash':.014,'lazy-equals':.025,'bored-bean':.026,
   'sleepy-lid':.041,'spent-lid':.090,'pleased-bean':.022,'happy-dot':.046,
@@ -653,8 +654,8 @@ const mouthDimensions={
 // velocity across retargets.
 const faceTransition=Object.freeze({durationSeconds:.18,frequency:20,reducedFrequency:30});
 // CONTINUITY.md, Directed edge bridges: the drawn art's size ratios stay in
-// (0.75, 4/3), and the mouth passes through a dot at the swap.
-const faceRender=Object.freeze({ratioLow:.75,ratioHigh:4/3,mouthDot:.8});
+// (0.75, 4/3), and at most four arts are drawn at once.
+const faceRender=Object.freeze({ratioLow:.75,ratioHigh:4/3,layers:4});
 // The shared sleeping face: the tired art, squashed to these dimensions.
 const sleepTarget=Object.freeze({eyeOpen:.004,mouthWidth:.018,curve:.008,cheekAlpha:0,tearAmount:0});
 const controlKeys=['eyeX','eyeY','eyeOpen','mouthY','mouthWidth','curve','cheekAlpha','tearAmount'];
@@ -674,29 +675,42 @@ function softRatio(value) {
   const x=value-1,room=x<0?1-faceRender.ratioLow:faceRender.ratioHigh-1;
   return 1+x*room/(room+Math.abs(x));
 }
-const ease=u=>Math.sin(Math.min(1,Math.max(0,u))*Math.PI/2)**2;
 
 function createFace({profiles,initialEmotion,reduced}) {
-  let targetId=initialEmotion,artId=initialEmotion,targetSleeping=false,sleeping=false;
+  let targetId=initialEmotion,targetSleeping=false;
   let target=faceTarget(profiles[targetId]);
   const controls={...target},velocity=Object.fromEntries(controlKeys.map(key=>[key,0]));
-  let bridge=null,bridgeBlink=0;
-  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:faceTransition.durationSeconds*1000};
-  let render={eye:1,mouthWidth:1,mouthHeight:1,mouth:1,cheek:controls.cheekAlpha,tear:controls.tearAmount};
-  let mix={cheek:1,tear:1};
-  const styles=id=>({cheek:profiles[id].art.cheeks,tear:profiles[id].tears});
-  function baseline() {return sleeping?{...faceTarget(profiles.tired),...sleepTarget}:faceTarget(profiles[artId]);}
+  // The arts drawn, oldest first and the current one last. Each layer has a
+  // Hermite from its value and slope at the last retarget toward one (the
+  // current art) or zero (the others) over the transition's window, so a
+  // retarget keeps every weight's velocity; its weight is its share of them.
+  let layers=[{artId:initialEmotion,sleeping:false,from:1,tangent:0,to:1,weight:1}];
+  let age=0,duration=faceTransition.durationSeconds;
+  function weigh(s) {
+    for(const layer of layers)layer.weight=hermite(layer,s).value;
+    const sum=layers.reduce((total,layer)=>total+layer.weight,0);
+    for(const layer of layers)layer.weight/=sum;
+  }
+  let transition={from:{...controls},to:{...target},elapsedMs:0,durationMs:duration*1000};
+  // A layer's own size: its art's, or the sleeping face's squashed one.
+  const dimensions=layer=>layer.sleeping?{...faceTarget(profiles.tired),...sleepTarget}:faceTarget(profiles[layer.artId]);
   function retarget({durationMs=faceTransition.durationSeconds*1000}={}) {
-    const nextArt=targetSleeping?'tired':targetId;
-    target=faceTarget(profiles[nextArt]);
-    if(targetSleeping)target={...target,...sleepTarget};
-    // Every discrete art retarget uses this small face-only bridge. Extreme
-    // pairs cannot show two silhouettes, and a mid-bridge retarget starts from
-    // the current closure, drawn ratios and dips rather than resetting them.
-    const from=styles(artId),to=styles(nextArt);
-    bridge={age:0,duration:durationMs/1000,startClosure:bridgeBlink,switched:false,
-      start:{eye:render.eye,mouthWidth:render.mouthWidth,mouthHeight:render.mouthHeight,cheek:mix.cheek,tear:mix.tear},
-      swap:{cheek:from.cheek===to.cheek?1:0,tear:from.tear===to.tear?1:0}};
+    const artId=targetSleeping?'tired':targetId,sleeping=targetSleeping,next=durationMs/1000,s=age/duration;
+    target=faceTarget(profiles[artId]);
+    if(sleeping)target={...target,...sleepTarget};
+    for(const layer of layers){const {value,slope}=hermite(layer,s);Object.assign(layer,{from:value,tangent:slope*next/duration,to:0});}
+    // An art still fading comes back from the weight it has.
+    let top=layers.find(layer=>layer.artId===artId&&layer.sleeping===sleeping);
+    if(top)layers.splice(layers.indexOf(top),1);else top={artId,sleeping,from:0,tangent:0};
+    top.to=1;layers.push(top);
+    // One at zero that can only stay there is gone; past four, the faintest
+    // folds into the new art.
+    layers=layers.filter(layer=>layer===top||layer.from>0||layer.tangent>0);
+    if(layers.length>faceRender.layers){
+      const faintest=layers.slice(0,-1).reduce((a,b)=>b.from<a.from?b:a);
+      layers.splice(layers.indexOf(faintest),1);top.from+=faintest.from;top.tangent+=faintest.tangent;
+    }
+    age=0;duration=next;weigh(0);
     transition={from:{...controls},to:{...target},elapsedMs:0,durationMs};
   }
   function setMood(id,options) {
@@ -707,29 +721,13 @@ function createFace({profiles,initialEmotion,reduced}) {
     value=Boolean(value);if(value===targetSleeping)return;
     targetSleeping=value;retarget();
   }
-  // What the painters draw. Before the swap the old art eases from the ratio
-  // it was drawn at to its own size; after it the new art eases from its own
-  // size to the live ratio. A cheek or tear style that changes dips to zero
-  // at the swap; one that stays keeps its opacity.
-  function updateRender() {
-    const base=baseline();
-    const live={eye:softRatio(controls.eyeOpen/base.eyeOpen),mouthWidth:softRatio(controls.mouthWidth/base.mouthWidth),
-      mouthHeight:softRatio(controls.curve/base.curve)};
-    const ratios={},next={};
-    if(!bridge){Object.assign(ratios,live);next.cheek=next.tear=1;}
-    else if(!bridge.switched){
-      const e=ease(bridge.age/(bridge.duration/2));
-      for(const key of ['eye','mouthWidth','mouthHeight'])ratios[key]=bridge.start[key]+(1-bridge.start[key])*e;
-      for(const key of ['cheek','tear'])next[key]=bridge.start[key]+(bridge.swap[key]-bridge.start[key])*e;
-    }else{
-      const e=1-bridgeBlink;
-      for(const key of ['eye','mouthWidth','mouthHeight'])ratios[key]=1+(live[key]-1)*e;
-      for(const key of ['cheek','tear'])next[key]=bridge.swap[key]+(1-bridge.swap[key])*e;
-    }
-    mix=next;
-    render={...ratios,mouth:1-faceRender.mouthDot*bridgeBlink,
-      cheek:Math.min(1,Math.max(0,controls.cheekAlpha*mix.cheek)),tear:Math.min(1,Math.max(0,controls.tearAmount*mix.tear))};
-  }
+  // Each layer is drawn at the live ratio over its own size, so the arts
+  // crossing over are drawn near one size while the controls move.
+  const drawn=layer=>{
+    const size=dimensions(layer);
+    return {artId:layer.artId,sleeping:layer.sleeping,weight:layer.weight,eye:softRatio(controls.eyeOpen/size.eyeOpen),
+      mouthWidth:softRatio(controls.mouthWidth/size.mouthWidth),mouthHeight:softRatio(controls.curve/size.curve)};
+  };
   return {
     setMood,setSleeping,
     advance(dt) {
@@ -740,24 +738,18 @@ function createFace({profiles,initialEmotion,reduced}) {
         if(key==='cheekAlpha'||key==='tearAmount')x=Math.min(1,Math.max(0,x));
         controls[key]=x;velocity[key]=v;
       }
-      if(bridge){
-        bridge.age+=dt;
-        transition.elapsedMs=Math.min(transition.durationMs,bridge.age*1000);
-        const half=bridge.duration/2;
-        if(bridge.age<half){
-          bridgeBlink=bridge.startClosure+(1-bridge.startClosure)*ease(bridge.age/half);
-        }else if(!bridge.switched){
-          artId=targetSleeping?'tired':targetId;sleeping=targetSleeping;bridge.switched=true;bridgeBlink=1;
-        }else if(bridge.age<bridge.duration){
-          bridgeBlink=Math.cos((bridge.age-half)/half*Math.PI/2)**2;
-        }else {bridge=null;bridgeBlink=0;artId=targetSleeping?'tired':targetId;sleeping=targetSleeping;}
+      if(layers.length>1){
+        age=Math.min(duration,age+dt);
+        transition.elapsedMs=Math.min(transition.durationMs,age*1000);
+        if(age>=duration)layers=[layers.at(-1)];
+        weigh(age/duration);
       }
-      updateRender();
     },
-    inspect(naturalBlink=0) {
-      return {...controls,artId,art:{...profiles[artId].art},artBaseline:baseline(),
-        sleeping,bridgeBlink,blink:Math.max(naturalBlink,bridgeBlink),render:{...render},velocity:{...velocity},
-        transition:{from:{...transition.from},to:{...transition.to},elapsedMs:transition.elapsedMs,durationMs:transition.durationMs,active:Boolean(bridge)}};
+    inspect(blink=0) {
+      const top=layers.at(-1);
+      return {...controls,artId:top.artId,art:{...profiles[top.artId].art},sleeping:top.sleeping,blink,
+        layers:layers.map(drawn),velocity:{...velocity},
+        transition:{from:{...transition.from},to:{...transition.to},elapsedMs:transition.elapsedMs,durationMs:transition.durationMs,active:layers.length>1}};
     }
   };
 }
@@ -765,6 +757,35 @@ function createFace({profiles,initialEmotion,reduced}) {
 return {faceTransition,faceRender,sleepTarget,faceTarget,sleepScale,softRatio,createFace};
 },
 12:()=>{
+// CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
+// A cubic Hermite from the current value and slope to the target over a fixed
+// window: from rest it is a smoothstep; a reversal keeps the current slope,
+// so it is continuous in value and velocity. The end is exact.
+function hermite({from,tangent,to},s) {
+  if(s>=1)return {value:to,slope:0};
+  const s2=s*s,s3=s2*s;
+  const value=(2*s3-3*s2+1)*from+(s3-2*s2+s)*tangent+(3*s2-2*s3)*to;
+  const slope=(6*s2-6*s)*from+(3*s2-4*s+1)*tangent+(6*s-6*s2)*to;
+  return {value:Math.min(1,Math.max(0,value)),slope};
+}
+function createRamp(durationMs) {
+  let from=0,to=0,tangent=0,start=0,active=false;
+  const state=time=>active?hermite({from,tangent,to},(time-start)/durationMs):{value:to,slope:0};
+  return {
+    value:time=>state(time).value,
+    // Only when nothing it scales is drawn: starts the next fade-in from zero.
+    reset() {from=to=tangent=0;active=false;},
+    retarget(next,time) {
+      if(next===to)return;
+      const current=state(time);
+      from=current.value;tangent=current.slope;to=next;start=time;active=true;
+    }
+  };
+}
+
+return {hermite,createRamp};
+},
+13:()=>{
 // CONTINUITY.md, Phase 1 channel bounds: the mood posture's weights are
 // critically damped (frequency 10, or 25 with reduced motion), outside the
 // locked blocks, so a mood change starts the body moving without a jolt.
@@ -814,7 +835,7 @@ function lifePose(channels,activity={forward:{x:0}},bridge={forward:{x:0}}) {
 
 return {postureFilter,createPostureWeights,moodPosture,composePose,lifePose};
 },
-13:()=>{
+14:()=>{
 // Boop vocabulary only. These are visual targets, never a new wire field.
 const stateFamilies=Object.freeze({
   no_app:'rest',asleep:'rest',idle:'idle',listening:'listen',starting:'start',
@@ -924,23 +945,23 @@ function createRouter({hasMood=()=>false}={}) {
 
 return {stateFamilies,createRouter};
 },
-14:()=>{
+15:()=>{
 const {createVariations}=__load(8);
 const {sceneConstants,implementedStates}=__load(10);
-const {deskRecipe}=__load(15);
-const {alertRecipe}=__load(18);
-const {resultRecipe,statusResultRecipe}=__load(19);
-const {restRecipe,snore}=__load(20);
-const {idleRecipe}=__load(21);
-const {listenRecipe}=__load(22);
-const {startRecipe,wakeRecipe}=__load(23);
-const {helpersRecipe}=__load(24);
-const {touchRecipe}=__load(25);
-const {gestureRecipe}=__load(26);
+const {deskRecipe}=__load(16);
+const {alertRecipe}=__load(19);
+const {resultRecipe,statusResultRecipe}=__load(20);
+const {restRecipe,snore}=__load(21);
+const {idleRecipe}=__load(22);
+const {listenRecipe}=__load(23);
+const {startRecipe,wakeRecipe}=__load(24);
+const {helpersRecipe}=__load(25);
+const {touchRecipe}=__load(26);
+const {gestureRecipe}=__load(27);
 const {occasionShare,fits,lookOccasions,realizeOccasion}=__load(9);
-const {recoveryGesture}=__load(16);
-const {sceneMoodTraits}=__load(17);
-const {createRamp}=__load(27);
+const {recoveryGesture}=__load(17);
+const {sceneMoodTraits}=__load(18);
+const {createRamp}=__load(12);
 const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const smooth=x=>{const t=clamp(x,0,1);return t*t*(3-2*t);};
 const isDesk=state=>['working','planning','terminal','tool_use','searching','analyzing','testing','delegating','waiting'].includes(state);
@@ -1199,9 +1220,9 @@ function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[]
 
 return {takesOf,createScenes};
 },
-15:()=>{
+16:()=>{
 const {sceneConstants}=__load(10);
-const {profileTraits}=__load(16);
+const {profileTraits}=__load(17);
 // Rhythm, rather than tint, distinguishes each representative variation.
 const rhythms={
   working:[[580,780,1040],[560,760,1680,1880],[1100,2220]],
@@ -1245,8 +1266,8 @@ function deskRecipe(state,mood,variant,rand,profile=null) {
 
 return {deskRecipe};
 },
-16:()=>{
-const {sceneMoodTraits}=__load(17);
+17:()=>{
+const {sceneMoodTraits}=__load(18);
 const clamp=(value,lo,hi)=>Math.min(hi,Math.max(lo,value));
 const profileLimits=Object.freeze({
   delayMs:160,spacingMin:.88,spacingMax:1.18,gainMin:.68,gainMax:1.12,lean:.022,
@@ -1286,7 +1307,7 @@ function recoveryGesture(profile,variant,progress) {
 
 return {profileLimits,profileTraits,recoveryGesture};
 },
-17:()=>{
+18:()=>{
 // Representative expressive intent, independent of factual outcome. The same
 // request is signalled once; mood shapes the movement, never its meaning.
 const sceneMoodTraits=Object.freeze({
@@ -1300,10 +1321,10 @@ function sceneMood(mood) {return sceneMoodTraits[mood]||neutral;}
 
 return {sceneMoodTraits,sceneMood};
 },
-18:()=>{
+19:()=>{
 const {sceneConstants}=__load(10);
-const {sceneMood}=__load(17);
-const {profileTraits}=__load(16);
+const {sceneMood}=__load(18);
+const {profileTraits}=__load(17);
 function alertRecipe(variant,mood='calm',profile=null) {
   const source=[[420],[420,740],[420,690,960]][variant],traits=profile?profileTraits(profile):sceneMood(mood);
   const times=source.map(at=>source[0]+traits.delayMs+(at-source[0])*traits.spacing);
@@ -1314,10 +1335,10 @@ function alertRecipe(variant,mood='calm',profile=null) {
 
 return {alertRecipe};
 },
-19:()=>{
+20:()=>{
 const {sceneConstants}=__load(10);
-const {sceneMood}=__load(17);
-const {profileTraits}=__load(16);
+const {sceneMood}=__load(18);
+const {profileTraits}=__load(17);
 // A successful finish's fourth take: the card as the first take shows it,
 // then three small hiccups, each a little body contact.
 const hiccups=Object.freeze({revealMs:680,atMs:Object.freeze([1640,2060,2480]),strength:.45});
@@ -1344,7 +1365,7 @@ function statusResultRecipe(state,variant,mood='calm',profile=null) {
 
 return {hiccups,resultRecipe,statusResultRecipe};
 },
-20:()=>{
+21:()=>{
 const {sceneConstants}=__load(10);
 // Both host asleep and explicit link timeout are the deliberate quiet alias:
 // they retain mood, close the shared sleeping face, and let live springs settle.
@@ -1359,7 +1380,7 @@ function restRecipe(variant=0) {
 
 return {snore,restRecipe};
 },
-21:()=>{
+22:()=>{
 const {sceneConstants}=__load(10);
 // Idle variations are the expression catalogue's three authored performances.
 // Acting owns their quiet intervals and persistent springs, as in the audition.
@@ -1369,7 +1390,7 @@ function idleRecipe() {
 
 return {idleRecipe};
 },
-22:()=>{
+23:()=>{
 const {sceneConstants}=__load(10);
 function listenRecipe(variant) {
   return {duration:sceneConstants.cycleMs[variant],contacts:[],
@@ -1379,10 +1400,10 @@ function listenRecipe(variant) {
 
 return {listenRecipe};
 },
-23:()=>{
+24:()=>{
 const {sceneConstants}=__load(10);
-const {sceneMood}=__load(17);
-const {profileTraits}=__load(16);
+const {sceneMood}=__load(18);
+const {profileTraits}=__load(17);
 function startRecipe(ctx,variant,mood='calm',profile=null) {
   const traits=profile?profileTraits(profile):sceneMood(mood),at=[520,820,1080][variant]+traits.delayMs;
   return {duration:sceneConstants.cycleMs[variant],intent:['perk and present start','nod into the new work','stretch and resume'][variant],
@@ -1404,10 +1425,10 @@ function wakeRecipe(variant,mood='calm',profile=null) {
 
 return {startRecipe,wakeRecipe};
 },
-24:()=>{
+25:()=>{
 const {sceneConstants}=__load(10);
-const {sceneMood}=__load(17);
-const {profileTraits}=__load(16);
+const {sceneMood}=__load(18);
+const {profileTraits}=__load(17);
 function helpersRecipe(state,variant,mood='calm',profile=null) {
   const traits=profile?profileTraits(profile):sceneMood(mood),returning=state==='helper_return';
   const times=returning?[[680],[960],[1240]][variant]:[[660,1040],[540,880,1220],[820,1640]][variant];
@@ -1420,7 +1441,7 @@ function helpersRecipe(state,variant,mood='calm',profile=null) {
 
 return {helpersRecipe};
 },
-25:()=>{
+26:()=>{
 const {sceneConstants}=__load(10);
 function touchRecipe(state,variant) {
   const spam=state==='tap_spam',times=(spam?[[160,400],[160,340,520],[220,620]]:[[160],[200,480],[160,520]])[variant];
@@ -1431,7 +1452,7 @@ function touchRecipe(state,variant) {
 
 return {touchRecipe};
 },
-26:()=>{
+27:()=>{
 // The board's own reaction to what you do to it (CONTINUITY.md, Gestures):
 // one take for each gesture, in the board's order (render::Gesture). Each is
 // a short scene whose contacts dent the body and sound, and a gag the acting
@@ -1456,45 +1477,16 @@ function gestureGag(gesture) {
 
 return {gestureNames,gestureTailMs,gestureGagName,gestureRecipe,noticeNames,gestureGag};
 },
-27:()=>{
-// CONTINUITY.md, Representative activity scenes: a prop's visibility ramp.
-// A cubic Hermite from the current value and slope to the target over a fixed
-// window: from rest it is a smoothstep; a reversal keeps the current slope,
-// so it is continuous in value and velocity. The end is exact.
-function createRamp(durationMs) {
-  let from=0,to=0,tangent=0,start=0,active=false;
-  function state(time) {
-    const elapsed=time-start;
-    if(!active||elapsed>=durationMs)return {value:to,tangent:0};
-    const s=elapsed/durationMs,s2=s*s,s3=s2*s;
-    const value=(2*s3-3*s2+1)*from+(s3-2*s2+s)*tangent+(3*s2-2*s3)*to;
-    const slope=(6*s2-6*s)*from+(3*s2-4*s+1)*tangent+(6*s-6*s2)*to;
-    return {value:Math.min(1,Math.max(0,value)),tangent:slope};
-  }
-  return {
-    value:time=>state(time).value,
-    // Only when nothing it scales is drawn: starts the next fade-in from zero.
-    reset() {from=to=tangent=0;active=false;},
-    retarget(next,time) {
-      if(next===to)return;
-      const current=state(time);
-      from=current.value;tangent=current.tangent;to=next;start=time;active=true;
-    }
-  };
-}
-
-return {createRamp};
-},
 28:()=>{
 const {createVariations}=__load(8);
-const {profileTraits}=__load(16);
+const {profileTraits}=__load(17);
 const {faceTarget}=__load(11);
 const clamp=(value,lo,hi)=>Math.min(hi,Math.max(lo,value));
 const bridgeConstants=Object.freeze({
   durationsMs:Object.freeze({ordinary:Object.freeze([420,680,360]),dramatic:Object.freeze([760,920,560])}),
   frequency:14,damping:12,velocityBound:1,reducedGain:.18,dragDeferMs:320,
   bounds:Object.freeze({lean:.06,squash:.05,forward:.04}),
-  faceDurationMs:Object.freeze({ordinary:Object.freeze([180,180,260]),dramatic:Object.freeze([220,240,280])})
+  faceDurationMs:Object.freeze({ordinary:Object.freeze([320,360,460]),dramatic:Object.freeze([240,280,340])})
 });
 const primitives=Object.freeze({ordinary:Object.freeze(['soft-retarget','gather-settle','blink-retarget']),
   dramatic:Object.freeze(['recoil-compress','recoil-compress','blink-retarget'])});
@@ -1926,14 +1918,50 @@ return {matrixMultiply,projection,eye,target,viewMatrix};
 },
 31:()=>{
 const {sleepScale}=__load(11);
-// Catalogue primitives retained from the imported face audition.
-function paintFace(ctx, channels, catalog){
+// Records a feature's drawing as calls and settings, so two arts' features
+// can be told the same shape (the same calls, colours and styles: only
+// their numbers differ) and drawn as one, their numbers averaged.
+function recorder() {
+  const ops=[],alphas=[1],record=(name,args)=>ops.push([name,args]);
+  const target={ops,
+    get globalAlpha(){return alphas.at(-1);},
+    set globalAlpha(value){alphas[alphas.length-1]=value;record('=globalAlpha',[value]);},
+    save(){alphas.push(alphas.at(-1));record('save',[]);},
+    restore(){alphas.pop();record('restore',[]);},
+    createLinearGradient(...args){const stops=[];return {args,stops,addColorStop:(at,color)=>stops.push([at,color])};}};
+  for(const name of ['fillStyle','strokeStyle','lineWidth','lineCap','lineJoin'])Object.defineProperty(target,name,{set(value){record('='+name,[value]);}});
+  for(const name of ['setTransform','translate','rotate','scale','beginPath','moveTo','lineTo','quadraticCurveTo','bezierCurveTo','ellipse','closePath','fill','stroke','clip'])target[name]=(...args)=>record(name,args);
+  return target;
+}
+const shape=ops=>JSON.stringify(ops.map(([name,args])=>[name,args.map(v=>typeof v==='number'?0:v?.stops?v.stops.map(stop=>stop[1]):v)]));
+const weight=members=>members.reduce((sum,m)=>sum+m.weight,0);
+// The weighted average of recordings of one shape.
+function blend(members) {
+  const total=weight(members),mean=pick=>members.reduce((sum,m)=>sum+m.weight*pick(m),0)/total;
+  return members[0].ops.map(([name,args],i)=>[name,args.map((v,k)=>typeof v==='number'?mean(m=>m.ops[i][1][k])
+    :v?.stops?{args:v.args.map((_,j)=>mean(m=>m.ops[i][1][k].args[j])),stops:v.stops.map(([,color],j)=>[mean(m=>m.ops[i][1][k].stops[j][0]),color])}:v)]);
+}
+function replay(ctx,ops,alpha) {
+  ctx.save();ctx.globalAlpha=alpha;
+  for(const [name,args] of ops){
+    if(name==='=globalAlpha')ctx.globalAlpha=args[0]*alpha;
+    else if(name[0]!=='=')ctx[name](...args);
+    else if(args[0]?.stops){const g=ctx.createLinearGradient(...args[0].args);for(const [at,color] of args[0].stops)g.addColorStop(at,color);ctx[name.slice(1)]=g;}
+    else ctx[name.slice(1)]=args[0];
+  }
+  ctx.restore();
+}
+
+// Catalogue primitives retained from the imported face audition. Draws each
+// of the engine's face layers (CONTINUITY.md, Directed edge bridges): one,
+// as authored, when settled; while arts cross over, each feature of theirs
+// that has the same shape morphs into one, drawn at their summed weight, and
+// different shapes cross-fade, the newer over the older. Returns the eyes'
+// and the mouth's combined opacity, the least of them.
+function paintFace(target, channels, catalog){
+    let ctx=target;
     const {time, gaze, performance:actor, face} = channels;
     const reduced={matches:channels.reducedMotion};
-    const id=face.artId, profile=catalog.expressions[id];
-    // The engine's drawn ratios (CONTINUITY.md, Directed edge bridges); the
-    // shared sleeping face is the tired art at its own squashed size.
-    const render=face.render,sleep=face.sleeping?sleepScale(catalog.expressions):{eye:1,mouthWidth:1,mouthHeight:1};
     const unit=256*1.24;
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,512,512);
     ctx.setTransform(256,0,0,-256,256,256);ctx.scale(1.24,1.24);
@@ -2058,37 +2086,39 @@ function paintFace(ctx, channels, catalog){
       }
       else if(kind==='blank-line')q([-.041,0],[0,-.002],[.041,0],.022);
     }
-    {
-      // One set of features, with semantic controls; never blend two faces.
-      const p=profile,a={...face.art,eyeX:face.eyeX,eyeY:face.eyeY,mouthY:face.mouthY},mood=p.mood;
-      ctx.save();ctx.globalAlpha=1;
+    // One layer's features, each drawn by its own function: the cheeks, the
+    // tears, each eye, the strain mark and the mouth. The shared sleeping
+    // face is the tired art at its own squashed size.
+    function features(layer){
+      const id=layer.artId,p=catalog.expressions[id],a={...p.art,eyeX:face.eyeX,eyeY:face.eyeY,mouthY:face.mouthY},mood=p.mood;
+      const sleep=layer.sleeping?sleepScale(catalog.expressions):{eye:1,mouthWidth:1,mouthHeight:1};
       const act=actor?.expression===id?activity:0;
       const pulse=motion*act*Math.sin(age*(mood==='excited'?8.5:4.2));
       let glance=gaze;
       if(actor?.expression===id&&['slow-look','side-eye','scan','peek','hide-peek'].includes(actor.type))glance+=motion*act*.017*Math.sin(age*2.3);
       if(mood==='embarrassed')glance-=.019;
       // Graphic oval cheeks, not barely visible glossy shader freckles.
-      if(a.cheeks!=='none'){
+      const cheeks=()=>{if(a.cheeks!=='none'){
         const alpha=ctx.globalAlpha;
         const rosy=a.cheeks==='blush',hatch=a.cheeks==='hatch',soft=a.cheeks==='soft';
-        const opacity=(rosy?.42:hatch?.31:soft?.18:a.cheeks==='freckles'?.22:.12)*render.cheek;
+        const opacity=(rosy?.42:hatch?.31:soft?.18:a.cheeks==='freckles'?.22:.12)*face.cheekAlpha;
         for(const side of [-1,1]){
           ctx.globalAlpha=alpha*opacity*(1+act*.12);
           egg(side*.435,-.053,rosy?.101:.080,rosy?.041:.032,'#f0a5bb',-.08*side);
-          if(rosy||hatch){ctx.globalAlpha=alpha*render.cheek*(rosy?.45:.28);for(let j=-1;j<=1;j++)q([side*.435+j*.026-.007,-.039],[side*.435+j*.026,-.054],[side*.435+j*.026+.007,-.073],.012,'#bc7895');}
-          if(a.cheeks==='freckles'){ctx.globalAlpha=alpha*render.cheek*.40;for(const [x,y,r] of [[.46,-.087,.010],[.49,-.063,.011],[.43,-.100,.007]])egg(side*x,y,r,r,'#508caf');}
-          if(a.cheeks==='strain'||a.cheeks==='effort'){ctx.globalAlpha=alpha*render.cheek*.30;q([side*.437-.02,-.047],[side*.437-.01,-.061],[side*.437,-.075],.011);}
+          if(rosy||hatch){ctx.globalAlpha=alpha*face.cheekAlpha*(rosy?.45:.28);for(let j=-1;j<=1;j++)q([side*.435+j*.026-.007,-.039],[side*.435+j*.026,-.054],[side*.435+j*.026+.007,-.073],.012,'#bc7895');}
+          if(a.cheeks==='freckles'){ctx.globalAlpha=alpha*face.cheekAlpha*.40;for(const [x,y,r] of [[.46,-.087,.010],[.49,-.063,.011],[.43,-.100,.007]])egg(side*x,y,r,r,'#508caf');}
+          if(a.cheeks==='strain'||a.cheeks==='effort'){ctx.globalAlpha=alpha*face.cheekAlpha*.30;q([side*.437-.02,-.047],[side*.437-.01,-.061],[side*.437,-.075],.011);}
         }
         ctx.globalAlpha=alpha;
-      }
+      }};
       // Tears are individually shaped to the eyes and are drawn behind lids.
-      if(p.tears!=='none'&&render.tear>0){
+      const tears=()=>{if(p.tears!=='none'&&face.tearAmount>0){
         for(const side of [-1,1]){
           const x=side*a.eyeX,start=a.eyeY-(mood==='frightened'?.027:mood==='crying'?.005:.040);
           const broad=p.tears==='sheets',thin=p.tears==='thin';
           const width=broad?(mood==='frightened'?.090:.078):thin?.021:.019;
           const strength=p.tears==='occasional'?.30+.26*Math.pow(Math.max(0,Math.sin(time*.8)),4):1;
-          ctx.save();ctx.globalAlpha*=strength*render.tear;
+          ctx.save();ctx.globalAlpha*=strength*face.tearAmount;
           if(broad||thin||p.tears==='occasional'){
             const end=broad?-.49:-.42,wave=motion*.009*Math.sin(time*2.7+side);
             const fill=ctx.createLinearGradient(x,start,x,end);
@@ -2107,11 +2137,11 @@ function paintFace(ctx, channels, catalog){
             if(!reduced.matches){const fall=(time*.24+(side<0?0:.43))%1;egg(x+side*.025,-.08-fall*.28,.015,.025,'rgba(168,225,244,.7)');}
           }ctx.restore();
         }
-      }
-      for(const side of [-1,1]){
+      }};
+      const eye=side=>{
         ctx.save();ctx.translate(side*a.eyeX+glance,a.eyeY);
         const wink=actor?.expression===id&&actor.type==='wink'&&age>.45&&age<1.2&&side===-1;
-        ctx.scale(side===1?-1:1,Math.max(.01,render.eye*sleep.eye)*(1-.99*(wink?1:blinkValue)));
+        ctx.scale(side===1?-1:1,Math.max(.01,layer.eye*sleep.eye)*(1-.99*(wink?1:blinkValue)));
         const type=a.eyes;
         if(type==='soft-dot')bean(.035,.049);
         else if(type==='comfy-dash')bean(.042,.014,-.035);
@@ -2161,16 +2191,39 @@ function paintFace(ctx, channels, catalog){
         else if(type==='rosy-beans')bean(.041,.016,-.18);
         else if(type==='blank-water')softWaterEye(.039,.019);
         ctx.restore();
-      }
-      if(a.cheeks==='strain'){
-        const alpha=ctx.globalAlpha;ctx.globalAlpha=alpha*render.cheek*.35;
+      };
+      const strain=()=>{if(a.cheeks==='strain'){
+        const alpha=ctx.globalAlpha;ctx.globalAlpha=alpha*face.cheekAlpha*.35;
         q([-.015,.200],[-.002,.208],[.013,.200],.012);ctx.globalAlpha=alpha;
-      }
-      ctx.save();ctx.translate(0,a.mouthY);ctx.scale(render.mouthWidth*render.mouth*sleep.mouthWidth,render.mouthHeight*render.mouth*sleep.mouthHeight);
-      if(['happy','excited','amused'].includes(mood))ctx.scale(1+pulse*.035,1+pulse*.05);
-      littleMouth(a.mouth,pulse,glance);ctx.restore();ctx.restore();
+      }};
+      const mouth=()=>{
+        ctx.save();ctx.translate(0,a.mouthY);ctx.scale(layer.mouthWidth*sleep.mouthWidth,layer.mouthHeight*sleep.mouthHeight);
+        if(['happy','excited','amused'].includes(mood))ctx.scale(1+pulse*.035,1+pulse*.05);
+        littleMouth(a.mouth,pulse,glance);ctx.restore();
+      };
+      return [cheeks,tears,()=>eye(-1),()=>eye(1),strain,mouth];
     }
+    const layers=face.layers,drawn=layers.map(features);
+    ctx.save();ctx.globalAlpha=1;
+    let presence=1;
+    if(layers.length===1)for(const feature of drawn[0])feature();
+    else for(let f=0;f<drawn[0].length;f++){
+      const groups=new Map();
+      layers.forEach((layer,i)=>{
+        ctx=recorder();drawn[i][f]();const {ops}=ctx;ctx=target;
+        if(!ops.length)return;
+        const key=shape(ops);if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push({weight:layer.weight,ops,index:i});
+      });
+      // Newer over older: by each group's newest member.
+      const order=[...groups.values()].sort((x,y)=>x.at(-1).index-y.at(-1).index);
+      for(const members of order)if(weight(members)>0)replay(ctx,blend(members),Math.min(1,weight(members)));
+      // The eyes and the mouth: their opacity, summed over what is drawn.
+      if([2,3,5].includes(f))presence=Math.min(presence,order.reduce((sum,members)=>sum+weight(members),0));
+    }
+    ctx.restore();
     ctx.setTransform(1,0,0,1,0,0);
+    return presence;
   }
 
 return {paintFace};
@@ -2331,10 +2384,15 @@ function createProps(stage,{hostLane=true}={}) {
     }
     ctx.restore();
     // This lane belongs to host facts, separate from the decorative scene.
+    // Who needs you fades in over the state's name with the alert's sign.
     if(hostLane) {
-    if(alert?.visible){round(.08,.831,.84,.10,.025,'#161b22');const who=[alert.agent,alert.name||alert.project].filter(Boolean).join(' · ');text(who.slice(0,38)||'Waiting for your response',.5,.878,.025,'#f3d7ab');}
-    else if(channels.scene?.quiet){text(channels.scene.state==='no_app'?'Waiting for the app':'Resting',.5,.880,.023,'#59768a');}
+    const shown=alert?.visible||0;
+    ctx.save();ctx.globalAlpha=1-shown;
+    if(channels.scene?.quiet){text(channels.scene.state==='no_app'?'Waiting for the app':'Resting',.5,.880,.023,'#59768a');}
     else if(channels.scene?.state){text(channels.scene.state.replaceAll('_',' '),.5,.880,.024,'#7897a9');}
+    ctx.globalAlpha=shown;
+    if(shown){round(.08,.831,.84,.10,.025,'#161b22');const who=[alert.agent,alert.name||alert.project].filter(Boolean).join(' · ');text(who.slice(0,38)||'Waiting for your response',.5,.878,.025,'#f3d7ab');}
+    ctx.restore();
     }
     ctx.setTransform(1,0,0,1,0,0);
   }

@@ -37,9 +37,7 @@ void Ramp::at(T time, F& value, F& slope) const {
     slope = 0;
     return;
   }
-  F s = elapsed / kPropRampMs, s2 = s * s, s3 = s2 * s;
-  value = clamp((s3 * 2 - s2 * 3 + 1) * from + (s3 - s2 * 2 + s) * tangent + (s2 * 3 - s3 * 2) * to, 0, 1);
-  slope = (s2 * 6 - s * 6) * from + (s2 * 3 - s * 4 + 1) * tangent + (s * 6 - s2 * 6) * to;
+  hermite(from, tangent, to, elapsed / kPropRampMs, value, slope);
 }
 F Ramp::value(T time) const {
   F v, slope;

@@ -430,9 +430,10 @@ static void test_steady_scenes_reach_the_panel() {
 
 // A lane the gel draws itself goes out only when it
 // changes. In a steady needs-you scene, whose strip names who's asking,
-// the bands wholly in the lane send nothing after the first frame: the
-// other surface draws the same lane, which the panel already shows. A new
-// name sends them again, once.
+// the strip fades in over the props' 200 ms, going out as it does; then
+// the bands wholly in the lane send nothing: the other surface draws the
+// same lane, which the panel already shows. A new name sends them again,
+// once.
 static void test_an_unchanged_lane_isnt_sent_again() {
   auto r = gelRig();
   ModelPanel panel(kW, kH, true);
@@ -452,12 +453,16 @@ static void test_an_unchanged_lane_isnt_sent_again() {
       "\"Fix another test\",\"id\":1}}"};
   for (const std::string& state : asking) {
     r->line(state);
-    for (int i = 0; i < 8; ++i) {
+    const bool fades = &state == asking;
+    int fading = 0;
+    for (int i = 0; i < 16; ++i) {
       if (i) r->line("{\"t\":\"dbg.clock\",\"step\":33}");
       const int bands = laneSent(state);
       if (i == 0) TEST_ASSERT_TRUE_MESSAGE(bands > 0, "a new lane goes out");
+      else if (fades && i < 10) fading += bands > 0;
       else TEST_ASSERT_EQUAL_INT_MESSAGE(0, bands, "an unchanged lane stays");
     }
+    if (fades) TEST_ASSERT_TRUE_MESSAGE(fading >= 3, "a lane fading in goes out");
   }
 }
 #endif

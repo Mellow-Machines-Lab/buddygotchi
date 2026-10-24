@@ -1,13 +1,49 @@
 import {sleepScale} from '../engine/face.mjs';
 
-// Catalogue primitives retained from the imported face audition.
-export function paintFace(ctx, channels, catalog){
+// Records a feature's drawing as calls and settings, so two arts' features
+// can be told the same shape (the same calls, colours and styles: only
+// their numbers differ) and drawn as one, their numbers averaged.
+function recorder() {
+  const ops=[],alphas=[1],record=(name,args)=>ops.push([name,args]);
+  const target={ops,
+    get globalAlpha(){return alphas.at(-1);},
+    set globalAlpha(value){alphas[alphas.length-1]=value;record('=globalAlpha',[value]);},
+    save(){alphas.push(alphas.at(-1));record('save',[]);},
+    restore(){alphas.pop();record('restore',[]);},
+    createLinearGradient(...args){const stops=[];return {args,stops,addColorStop:(at,color)=>stops.push([at,color])};}};
+  for(const name of ['fillStyle','strokeStyle','lineWidth','lineCap','lineJoin'])Object.defineProperty(target,name,{set(value){record('='+name,[value]);}});
+  for(const name of ['setTransform','translate','rotate','scale','beginPath','moveTo','lineTo','quadraticCurveTo','bezierCurveTo','ellipse','closePath','fill','stroke','clip'])target[name]=(...args)=>record(name,args);
+  return target;
+}
+const shape=ops=>JSON.stringify(ops.map(([name,args])=>[name,args.map(v=>typeof v==='number'?0:v?.stops?v.stops.map(stop=>stop[1]):v)]));
+const weight=members=>members.reduce((sum,m)=>sum+m.weight,0);
+// The weighted average of recordings of one shape.
+function blend(members) {
+  const total=weight(members),mean=pick=>members.reduce((sum,m)=>sum+m.weight*pick(m),0)/total;
+  return members[0].ops.map(([name,args],i)=>[name,args.map((v,k)=>typeof v==='number'?mean(m=>m.ops[i][1][k])
+    :v?.stops?{args:v.args.map((_,j)=>mean(m=>m.ops[i][1][k].args[j])),stops:v.stops.map(([,color],j)=>[mean(m=>m.ops[i][1][k].stops[j][0]),color])}:v)]);
+}
+function replay(ctx,ops,alpha) {
+  ctx.save();ctx.globalAlpha=alpha;
+  for(const [name,args] of ops){
+    if(name==='=globalAlpha')ctx.globalAlpha=args[0]*alpha;
+    else if(name[0]!=='=')ctx[name](...args);
+    else if(args[0]?.stops){const g=ctx.createLinearGradient(...args[0].args);for(const [at,color] of args[0].stops)g.addColorStop(at,color);ctx[name.slice(1)]=g;}
+    else ctx[name.slice(1)]=args[0];
+  }
+  ctx.restore();
+}
+
+// Catalogue primitives retained from the imported face audition. Draws each
+// of the engine's face layers (CONTINUITY.md, Directed edge bridges): one,
+// as authored, when settled; while arts cross over, each feature of theirs
+// that has the same shape morphs into one, drawn at their summed weight, and
+// different shapes cross-fade, the newer over the older. Returns the eyes'
+// and the mouth's combined opacity, the least of them.
+export function paintFace(target, channels, catalog){
+    let ctx=target;
     const {time, gaze, performance:actor, face} = channels;
     const reduced={matches:channels.reducedMotion};
-    const id=face.artId, profile=catalog.expressions[id];
-    // The engine's drawn ratios (CONTINUITY.md, Directed edge bridges); the
-    // shared sleeping face is the tired art at its own squashed size.
-    const render=face.render,sleep=face.sleeping?sleepScale(catalog.expressions):{eye:1,mouthWidth:1,mouthHeight:1};
     const unit=256*1.24;
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,512,512);
     ctx.setTransform(256,0,0,-256,256,256);ctx.scale(1.24,1.24);
@@ -132,37 +168,39 @@ export function paintFace(ctx, channels, catalog){
       }
       else if(kind==='blank-line')q([-.041,0],[0,-.002],[.041,0],.022);
     }
-    {
-      // One set of features, with semantic controls; never blend two faces.
-      const p=profile,a={...face.art,eyeX:face.eyeX,eyeY:face.eyeY,mouthY:face.mouthY},mood=p.mood;
-      ctx.save();ctx.globalAlpha=1;
+    // One layer's features, each drawn by its own function: the cheeks, the
+    // tears, each eye, the strain mark and the mouth. The shared sleeping
+    // face is the tired art at its own squashed size.
+    function features(layer){
+      const id=layer.artId,p=catalog.expressions[id],a={...p.art,eyeX:face.eyeX,eyeY:face.eyeY,mouthY:face.mouthY},mood=p.mood;
+      const sleep=layer.sleeping?sleepScale(catalog.expressions):{eye:1,mouthWidth:1,mouthHeight:1};
       const act=actor?.expression===id?activity:0;
       const pulse=motion*act*Math.sin(age*(mood==='excited'?8.5:4.2));
       let glance=gaze;
       if(actor?.expression===id&&['slow-look','side-eye','scan','peek','hide-peek'].includes(actor.type))glance+=motion*act*.017*Math.sin(age*2.3);
       if(mood==='embarrassed')glance-=.019;
       // Graphic oval cheeks, not barely visible glossy shader freckles.
-      if(a.cheeks!=='none'){
+      const cheeks=()=>{if(a.cheeks!=='none'){
         const alpha=ctx.globalAlpha;
         const rosy=a.cheeks==='blush',hatch=a.cheeks==='hatch',soft=a.cheeks==='soft';
-        const opacity=(rosy?.42:hatch?.31:soft?.18:a.cheeks==='freckles'?.22:.12)*render.cheek;
+        const opacity=(rosy?.42:hatch?.31:soft?.18:a.cheeks==='freckles'?.22:.12)*face.cheekAlpha;
         for(const side of [-1,1]){
           ctx.globalAlpha=alpha*opacity*(1+act*.12);
           egg(side*.435,-.053,rosy?.101:.080,rosy?.041:.032,'#f0a5bb',-.08*side);
-          if(rosy||hatch){ctx.globalAlpha=alpha*render.cheek*(rosy?.45:.28);for(let j=-1;j<=1;j++)q([side*.435+j*.026-.007,-.039],[side*.435+j*.026,-.054],[side*.435+j*.026+.007,-.073],.012,'#bc7895');}
-          if(a.cheeks==='freckles'){ctx.globalAlpha=alpha*render.cheek*.40;for(const [x,y,r] of [[.46,-.087,.010],[.49,-.063,.011],[.43,-.100,.007]])egg(side*x,y,r,r,'#508caf');}
-          if(a.cheeks==='strain'||a.cheeks==='effort'){ctx.globalAlpha=alpha*render.cheek*.30;q([side*.437-.02,-.047],[side*.437-.01,-.061],[side*.437,-.075],.011);}
+          if(rosy||hatch){ctx.globalAlpha=alpha*face.cheekAlpha*(rosy?.45:.28);for(let j=-1;j<=1;j++)q([side*.435+j*.026-.007,-.039],[side*.435+j*.026,-.054],[side*.435+j*.026+.007,-.073],.012,'#bc7895');}
+          if(a.cheeks==='freckles'){ctx.globalAlpha=alpha*face.cheekAlpha*.40;for(const [x,y,r] of [[.46,-.087,.010],[.49,-.063,.011],[.43,-.100,.007]])egg(side*x,y,r,r,'#508caf');}
+          if(a.cheeks==='strain'||a.cheeks==='effort'){ctx.globalAlpha=alpha*face.cheekAlpha*.30;q([side*.437-.02,-.047],[side*.437-.01,-.061],[side*.437,-.075],.011);}
         }
         ctx.globalAlpha=alpha;
-      }
+      }};
       // Tears are individually shaped to the eyes and are drawn behind lids.
-      if(p.tears!=='none'&&render.tear>0){
+      const tears=()=>{if(p.tears!=='none'&&face.tearAmount>0){
         for(const side of [-1,1]){
           const x=side*a.eyeX,start=a.eyeY-(mood==='frightened'?.027:mood==='crying'?.005:.040);
           const broad=p.tears==='sheets',thin=p.tears==='thin';
           const width=broad?(mood==='frightened'?.090:.078):thin?.021:.019;
           const strength=p.tears==='occasional'?.30+.26*Math.pow(Math.max(0,Math.sin(time*.8)),4):1;
-          ctx.save();ctx.globalAlpha*=strength*render.tear;
+          ctx.save();ctx.globalAlpha*=strength*face.tearAmount;
           if(broad||thin||p.tears==='occasional'){
             const end=broad?-.49:-.42,wave=motion*.009*Math.sin(time*2.7+side);
             const fill=ctx.createLinearGradient(x,start,x,end);
@@ -181,11 +219,11 @@ export function paintFace(ctx, channels, catalog){
             if(!reduced.matches){const fall=(time*.24+(side<0?0:.43))%1;egg(x+side*.025,-.08-fall*.28,.015,.025,'rgba(168,225,244,.7)');}
           }ctx.restore();
         }
-      }
-      for(const side of [-1,1]){
+      }};
+      const eye=side=>{
         ctx.save();ctx.translate(side*a.eyeX+glance,a.eyeY);
         const wink=actor?.expression===id&&actor.type==='wink'&&age>.45&&age<1.2&&side===-1;
-        ctx.scale(side===1?-1:1,Math.max(.01,render.eye*sleep.eye)*(1-.99*(wink?1:blinkValue)));
+        ctx.scale(side===1?-1:1,Math.max(.01,layer.eye*sleep.eye)*(1-.99*(wink?1:blinkValue)));
         const type=a.eyes;
         if(type==='soft-dot')bean(.035,.049);
         else if(type==='comfy-dash')bean(.042,.014,-.035);
@@ -235,14 +273,37 @@ export function paintFace(ctx, channels, catalog){
         else if(type==='rosy-beans')bean(.041,.016,-.18);
         else if(type==='blank-water')softWaterEye(.039,.019);
         ctx.restore();
-      }
-      if(a.cheeks==='strain'){
-        const alpha=ctx.globalAlpha;ctx.globalAlpha=alpha*render.cheek*.35;
+      };
+      const strain=()=>{if(a.cheeks==='strain'){
+        const alpha=ctx.globalAlpha;ctx.globalAlpha=alpha*face.cheekAlpha*.35;
         q([-.015,.200],[-.002,.208],[.013,.200],.012);ctx.globalAlpha=alpha;
-      }
-      ctx.save();ctx.translate(0,a.mouthY);ctx.scale(render.mouthWidth*render.mouth*sleep.mouthWidth,render.mouthHeight*render.mouth*sleep.mouthHeight);
-      if(['happy','excited','amused'].includes(mood))ctx.scale(1+pulse*.035,1+pulse*.05);
-      littleMouth(a.mouth,pulse,glance);ctx.restore();ctx.restore();
+      }};
+      const mouth=()=>{
+        ctx.save();ctx.translate(0,a.mouthY);ctx.scale(layer.mouthWidth*sleep.mouthWidth,layer.mouthHeight*sleep.mouthHeight);
+        if(['happy','excited','amused'].includes(mood))ctx.scale(1+pulse*.035,1+pulse*.05);
+        littleMouth(a.mouth,pulse,glance);ctx.restore();
+      };
+      return [cheeks,tears,()=>eye(-1),()=>eye(1),strain,mouth];
     }
+    const layers=face.layers,drawn=layers.map(features);
+    ctx.save();ctx.globalAlpha=1;
+    let presence=1;
+    if(layers.length===1)for(const feature of drawn[0])feature();
+    else for(let f=0;f<drawn[0].length;f++){
+      const groups=new Map();
+      layers.forEach((layer,i)=>{
+        ctx=recorder();drawn[i][f]();const {ops}=ctx;ctx=target;
+        if(!ops.length)return;
+        const key=shape(ops);if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push({weight:layer.weight,ops,index:i});
+      });
+      // Newer over older: by each group's newest member.
+      const order=[...groups.values()].sort((x,y)=>x.at(-1).index-y.at(-1).index);
+      for(const members of order)if(weight(members)>0)replay(ctx,blend(members),Math.min(1,weight(members)));
+      // The eyes and the mouth: their opacity, summed over what is drawn.
+      if([2,3,5].includes(f))presence=Math.min(presence,order.reduce((sum,members)=>sum+weight(members),0));
+    }
+    ctx.restore();
     ctx.setTransform(1,0,0,1,0,0);
+    return presence;
   }

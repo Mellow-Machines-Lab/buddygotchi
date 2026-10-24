@@ -125,10 +125,15 @@ export function createProps(stage,{hostLane=true}={}) {
     }
     ctx.restore();
     // This lane belongs to host facts, separate from the decorative scene.
+    // Who needs you fades in over the state's name with the alert's sign.
     if(hostLane) {
-    if(alert?.visible){round(.08,.831,.84,.10,.025,'#161b22');const who=[alert.agent,alert.name||alert.project].filter(Boolean).join(' · ');text(who.slice(0,38)||'Waiting for your response',.5,.878,.025,'#f3d7ab');}
-    else if(channels.scene?.quiet){text(channels.scene.state==='no_app'?'Waiting for the app':'Resting',.5,.880,.023,'#59768a');}
+    const shown=alert?.visible||0;
+    ctx.save();ctx.globalAlpha=1-shown;
+    if(channels.scene?.quiet){text(channels.scene.state==='no_app'?'Waiting for the app':'Resting',.5,.880,.023,'#59768a');}
     else if(channels.scene?.state){text(channels.scene.state.replaceAll('_',' '),.5,.880,.024,'#7897a9');}
+    ctx.globalAlpha=shown;
+    if(shown){round(.08,.831,.84,.10,.025,'#161b22');const who=[alert.agent,alert.name||alert.project].filter(Boolean).join(' · ');text(who.slice(0,38)||'Waiting for your response',.5,.878,.025,'#f3d7ab');}
+    ctx.restore();
     }
     ctx.setTransform(1,0,0,1,0,0);
   }

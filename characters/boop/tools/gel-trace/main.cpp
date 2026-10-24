@@ -91,15 +91,22 @@ static void inspect(JsonObject o, Engine& e) {
     face["transition"]["from"][controls[i]] = number(f.from[i]);
     face["transition"]["to"][controls[i]] = number(f.to[i]);
   }
-  static const char* renders[] = {"eye", "mouthWidth", "mouthHeight", "mouth", "cheek", "tear"};
-  for (int i = 0; i < 6; ++i) face["render"][renders[i]] = number(f.render[i]);
-  face["artId"] = slime::kProfile[f.artId].id;
-  face["sleeping"] = f.sleeping;
-  face["bridgeBlink"] = number(f.bridgeBlink);
+  static const char* ratios[] = {"eye", "mouthWidth", "mouthHeight"};
+  auto layers = face["layers"].to<JsonArray>();
+  for (int i = 0; i < f.count; ++i) {
+    const auto& l = f.layers[i];
+    auto layer = layers.add<JsonObject>();
+    layer["artId"] = slime::kProfile[l.art].id;
+    layer["sleeping"] = l.sleeping;
+    layer["weight"] = number(l.weight);
+    for (int k = 0; k < 3; ++k) layer[ratios[k]] = number(l.ratio[k]);
+  }
+  face["artId"] = slime::kProfile[f.current().art].id;
+  face["sleeping"] = f.current().sleeping;
   face["blink"] = number(e.blink());
   face["transition"]["elapsedMs"] = number(f.elapsedMs);
   face["transition"]["durationMs"] = number(f.durationMs);
-  face["transition"]["active"] = f.active;
+  face["transition"]["active"] = f.count > 1;
   auto bridge = o["bridge"].to<JsonObject>();
   bridge["from"] = b.active ? slime::kProfile[b.from].id : nullptr;
   bridge["to"] = b.active ? slime::kProfile[b.to].id : nullptr;

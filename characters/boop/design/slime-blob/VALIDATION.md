@@ -1,6 +1,6 @@
 # Slime export validation
 
-Updated 2026-10-22. Package-only checks; no production/hook/firmware/device
+Updated 2026-10-24. Package-only checks; no production/hook/firmware/device
 integration is claimed. Historical face audition QA is recorded separately
 in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
 
@@ -20,8 +20,12 @@ that fixed-step traces reproduce, and that fact/mood retargets preserve
 the actor's displacement and velocity. The engine, bridge and scene checks
 also bound what is drawn in every frame they run
 ([CONTINUITY.md](CONTINUITY.md), Continuity of what is drawn): no jolt at an
-event, drawn face ratios in range, props without pops, a face that never
-fades and body modes that move only by their springs. Trace generation is explicit:
+event, drawn sizes that follow their controls, arts that cross over and
+props that come and go without pops, a face that never fades and body modes
+that move only by their springs. The engine check also pins the crossing
+itself: a new art fading in on a smoothstep over the window, the weights
+summing to one, a retarget mid-window keeping every weight, at most four
+arts at once. Trace generation is explicit:
 
 ```sh
 node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53
@@ -69,9 +73,12 @@ and verified review manifest.
 The bridge check walks all 295 directed edges from mid-gesture in each of
 their three variants, verifies that face controls stay between their current
 values and the target (within the span of every target in a rapid chain),
-and permits primitive changes only while the single face is fully closed.
-It checks that every primitive's targets fit inside their bounds and that
-the face painter never fades the face through the edge review script. It also covers every edge during rest, drag and pending attention,
+that a retarget changes nothing drawn at once, and that the arts cross over:
+the new one fading in from nothing and drawn last, each art once, at most
+four (a rapid chain reaches four and settles on its last). It checks that
+every primitive's targets fit inside their bounds and that the face
+painter's eyes and mouth, their arts' opacity summed, never fall below 95%
+through the edge review script. It also covers every edge during rest, drag and pending attention,
 rapid interrupted retargets, reduced motion, direction, bounded springs and
 the drag expiry boundary. Its 13-case script includes ordinary and dramatic
 edges. Passing earns `transitions.json` status; visual approval is separate.
@@ -140,8 +147,11 @@ internal/tools/boopctl sim --face gel
   arithmetic, reference clock rounding, every expression buffer's
   bounds, deterministic pixels, request identity, bounded caches, alerts
   interrupted by listening or a link timeout signalling exactly once,
-  drawn face ratios and the alert's ramp moving without jumps across
-  every directed edge, voice lead, stale cues, return to the latest
+  the face's two arts crossing over (weights summing to one and stepping
+  no more than a slice of the face window's ramp, drawn sizes following
+  their controls) and the alert's ramp moving without jumps across every
+  directed edge, the lane's strip fading in and out on the props' ramp
+  with what it showed, voice lead, stale cues, return to the latest
   facts, projected face anchors against the reference camera,
   extreme-pose buffer bounds, drawing by coverage (a shape's ink is its
   area wherever it sits between pixels, a stroke keeps its width and

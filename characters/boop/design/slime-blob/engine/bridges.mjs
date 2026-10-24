@@ -7,7 +7,7 @@ export const bridgeConstants=Object.freeze({
   durationsMs:Object.freeze({ordinary:Object.freeze([420,680,360]),dramatic:Object.freeze([760,920,560])}),
   frequency:14,damping:12,velocityBound:1,reducedGain:.18,dragDeferMs:320,
   bounds:Object.freeze({lean:.06,squash:.05,forward:.04}),
-  faceDurationMs:Object.freeze({ordinary:Object.freeze([180,180,260]),dramatic:Object.freeze([220,240,280])})
+  faceDurationMs:Object.freeze({ordinary:Object.freeze([320,360,460]),dramatic:Object.freeze([240,280,340])})
 });
 const primitives=Object.freeze({ordinary:Object.freeze(['soft-retarget','gather-settle','blink-retarget']),
   dramatic:Object.freeze(['recoil-compress','recoil-compress','blink-retarget'])});
