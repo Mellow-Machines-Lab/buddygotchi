@@ -55,11 +55,14 @@ debug: app
 
 # The first launch's onboarding again, on a throwaway folder
 # (/tmp/boop-onboarding, started afresh each time): with Bluetooth, so the
-# board pairs, but it never changes the real hooks or login item, and the
-# everyday Boop's memory stays. Quit the everyday Boop first, or the two
-# fight over the board. The owner runs this, not agents.
+# board pairs, but it never changes the real hooks, login item or Jev key
+# (it keeps its own Keychain entry, dev-boop-onboarding, emptied here each
+# time), the everyday Boop's memory stays, and its socket's listing goes
+# when it quits. Quit the everyday Boop first, or the two fight over the
+# board. The owner runs this, not agents.
 onboarding: app
 	rm -rf /tmp/boop-onboarding
+	-security delete-generic-password -s com.boopcomputer.boop -a dev-boop-onboarding >/dev/null 2>&1
 	.build/debug/Boop --state-dir /tmp/boop-onboarding
 
 # The live dashboard for the app `make debug` started.

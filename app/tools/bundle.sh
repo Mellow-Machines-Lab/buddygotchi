@@ -4,7 +4,7 @@
 # from), the character packs, the icon and each board's firmware (which
 # the app updates a board with, firmware/tools/package.py) in Resources,
 # the Info.plist with the version from VERSION and a build number, signed
-# with the hardened runtime.
+# with the hardened runtime, once the binary is checked to open on macOS 15.
 #   app/tools/bundle.sh            (or `make bundle` from the repo root)
 # SIGN_IDENTITY is who signs it: "-", ad hoc, by default, which runs on
 # this Mac only; a Developer ID's name, once there is one, for others.
@@ -40,6 +40,15 @@ number=$(git rev-list --count HEAD)
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin/Boop" "$bin/agent-hook" "$app/Contents/MacOS/"
+# Boop opens on macOS 15, and Apple Intelligence's prompt labels need 26:
+# FoundationModels must be linked weak, or macOS 15 won't start the app.
+for arch in arm64 x86_64; do
+  loads=$(otool -arch "$arch" -l "$app/Contents/MacOS/Boop")
+  printf '%s\n' "$loads" | grep -B2 'name .*/FoundationModels\.framework/' | grep -q 'cmd LC_LOAD_WEAK_DYLIB' \
+    || { echo "bundle: $arch: FoundationModels isn't linked weak" >&2; exit 1; }
+  printf '%s\n' "$loads" | grep -A3 'cmd LC_BUILD_VERSION' | grep -q 'minos 15\.0$' \
+    || { echo "bundle: $arch: the minimum macOS isn't 15.0" >&2; exit 1; }
+done
 cp -R "$packs" "$app/Contents/Resources/packs"
 cp app/Boop/AppIcon.icns "$app/Contents/Resources/"
 for board in $boards; do python3 firmware/tools/package.py "$board" "$app/Contents/Resources/firmware"; done

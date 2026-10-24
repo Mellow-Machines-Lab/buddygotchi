@@ -297,14 +297,9 @@ final class AppModel: ObservableObject {
         #endif
     }()
 
-    /// Running as Boop.app, as people install it, rather than `make run`'s
-    /// bare binary: what's missing is fixed by installing again, not by
-    /// building.
-    static let bundled = Bundle.main.bundleURL.pathExtension == "app"
-
     /// What Settings says when the hook client is missing.
     static var clientMissing: String {
-        bundled ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make build, then restart Boop."
+        AboutThisMac.isApp() ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make build, then restart Boop."
     }
 
     /// Looks for a running simulator, off the main thread: it's a look at
@@ -423,6 +418,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // On another folder the installer still reads the real hooks, as the
         // everyday Boop keeps them, so settings shows how they stand.
         let everyday = AppSettings.isEveryday(stateDir)
+        // A copy on another folder keeps a Jev key of its own.
+        if !everyday { Keychain.account = AppSettings.copyName(stateDir) }
         let hookDir = everyday ? stateDir : AppSettings.defaultStateDir()
         model = AppModel(installer: .boop(home: URL(fileURLWithPath: NSHomeDirectory()),
                                           hookPath: hookDir.appendingPathComponent("bin/\(HookInstaller.client)").path),
@@ -476,9 +473,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // They report to the everyday Boop's socket, so pointing them here
             // would only break them once this folder is gone. This copy lists
             // its own socket beside it instead, so the hooks already there
-            // reach it too (make onboarding's live hello); a link left behind
-            // costs a hook nothing.
-            let name = "dev-" + stateDir.lastPathComponent.filter { $0.isLetter || $0.isNumber || $0 == "-" }
+            // reach it too (make onboarding's live hello), until it quits.
+            let name = AppSettings.copyName(stateDir)
             try? HookSocket.register(stateDir.appendingPathComponent("boop.sock").path, as: name)
             log.write("hooks: left alone, since only the everyday Boop (\(AppSettings.defaultStateDir().path)) installs "
                       + "or repairs them; this copy hears them as \(name).sock")
@@ -617,6 +613,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         model.runtime?.stop()
+        // A copy on another folder takes its socket's listing with it.
+        guard !model.ownsHooks else { return }
+        let listing = HookSocket.directory() + "/" + AppSettings.copyName(stateDir) + ".sock"
+        if (try? FileManager.default.destinationOfSymbolicLink(atPath: listing)) == stateDir.appendingPathComponent("boop.sock").path {
+            try? FileManager.default.removeItem(atPath: listing)
+        }
     }
 
     /// The hooks call a stable copy of agent-hooks' `agent-hook` in the
@@ -749,7 +751,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// the memory, moves Boop.app to the Trash and quits.
     func uninstall() {
         let name = model.name
-        let bundled = Bundle.main.bundleURL.pathExtension == "app"
+        let bundled = AboutThisMac.isApp()
         let folder = (stateDir.path as NSString).abbreviatingWithTildeInPath
         popover.performClose(nil)
         NSApp.activate()

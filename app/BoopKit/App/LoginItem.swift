@@ -25,7 +25,7 @@ public struct LoginItem: Sendable {
 
     /// The app's own login item, when it's an app bundle at `bundleURL`.
     public static func system(bundleURL: URL = Bundle.main.bundleURL) -> LoginItem {
-        guard bundleURL.pathExtension == "app" else { return unavailable }
+        guard AboutThisMac.isApp(bundleURL) else { return unavailable }
         return LoginItem(state: {
             switch SMAppService.mainApp.status {
             case .enabled: .on

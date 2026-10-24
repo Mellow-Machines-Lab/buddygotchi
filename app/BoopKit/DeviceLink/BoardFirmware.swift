@@ -50,7 +50,7 @@ public struct BoardFirmware: Decodable, Equatable, Sendable {
 
     /// What Boop.app carries; nothing for a bare binary (`make run`).
     public static func bundled() -> [BoardFirmware] {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return [] }
+        guard AboutThisMac.isApp() else { return [] }
         return all(in: Bundle.main.url(forResource: "firmware", withExtension: nil))
     }
 

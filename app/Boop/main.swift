@@ -77,7 +77,7 @@ func bundledCharacter() -> CharacterPack {
 /// app, where code signing allows nothing, and when that fails falls back
 /// to the build folder, which on the Mac that built it would quietly
 /// work. A bare binary uses SwiftPM's resource bundle beside it.
-let bundledPacks = Bundle.main.bundleURL.pathExtension == "app"
+let bundledPacks = AboutThisMac.isApp()
     ? Bundle.main.url(forResource: "packs", withExtension: nil)
     : Bundle.module.url(forResource: "packs", withExtension: nil)
 

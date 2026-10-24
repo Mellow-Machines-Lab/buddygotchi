@@ -4,10 +4,15 @@ import Foundation
 /// The app and the Mac it runs on, for the top of `boop.log` and a bug
 /// report's `about.json`.
 public enum AboutThisMac {
+    /// Whether `bundle` is an app's, `Boop.app` as people install it, and
+    /// not the folder of a bare binary (`make run`): what's missing from
+    /// one is fixed by installing again, not by building.
+    public static func isApp(_ bundle: URL = Bundle.main.bundleURL) -> Bool { bundle.pathExtension == "app" }
+
     /// The app bundle's build number (`make bundle` stamps it), or `dev`
     /// for a bare binary.
     public static var build: String {
-        guard Bundle.main.bundleURL.pathExtension == "app" else { return "dev" }
+        guard isApp() else { return "dev" }
         return Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev"
     }
 

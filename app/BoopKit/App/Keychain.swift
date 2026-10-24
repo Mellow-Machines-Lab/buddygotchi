@@ -12,7 +12,10 @@ import Foundation
 /// so they never run on the main thread or on the runtime's `home` queue.
 public enum Keychain {
     static let service = "com.boopcomputer.boop"
-    static let account = "jev"
+    /// The entry's account: `jev`, the everyday Boop's. A copy on another
+    /// folder (`make onboarding`) sets its own at launch, before anything
+    /// reads it, so it never reads or replaces the everyday key.
+    public nonisolated(unsafe) static var account = "jev"
 
     public static func jevKey(security: SecurityTool = .system) -> String? {
         let found = security.run(["find-generic-password", "-s", service, "-a", account, "-w"], nil)

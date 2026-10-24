@@ -6,8 +6,11 @@ same file), but every rule in it applies to people too.
 
 ## Build and test
 
-You need macOS 15 or later and Command Line Tools. Xcode works but isn't
-needed; the three packages alone need macOS 13. Flashing the board
+You need macOS 15 or later and Command Line Tools 26 or later
+(`xcode-select --install`; `swift --version` says 6.2 or later):
+`Package.swift` asks for Swift 6.2, and the prompt's labels import
+FoundationModels, which only the macOS 26 SDK has. Xcode 26 works but
+isn't needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
 (`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
 snapshots) also need a newer Python than the Mac's own

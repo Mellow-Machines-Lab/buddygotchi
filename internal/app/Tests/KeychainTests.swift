@@ -40,6 +40,22 @@ final class KeychainTests: XCTestCase {
         security.refusesToAdd = true
         XCTAssertFalse(Keychain.setJevKey("sk-new", security: security.tool))
     }
+
+    /// A copy on another folder (`make onboarding`) reads and writes an
+    /// entry of its own, named for its folder, never the everyday `jev`.
+    func testACopyOnAnotherFolderKeepsAKeyOfItsOwn() {
+        XCTAssertEqual(AppSettings.copyName(URL(fileURLWithPath: "/tmp/boop-onboarding")), "dev-boop-onboarding")
+        XCTAssertEqual(AppSettings.copyName(URL(fileURLWithPath: "/tmp/my boop: 2-b")), "dev-myboop2-b")
+        let everyday = Keychain.account
+        defer { Keychain.account = everyday }
+        Keychain.account = AppSettings.copyName(URL(fileURLWithPath: "/tmp/boop-onboarding"))
+        let security = FakeSecurity(entry: nil)
+        XCTAssertTrue(Keychain.setJevKey("sk-new", security: security.tool))
+        for call in security.calls {
+            let words = call.arguments == ["-i"] ? (call.input ?? "").split(separator: " ").map(String.init) : call.arguments
+            XCTAssertEqual(words.firstIndex(of: "-a").map { words[$0 + 1] }, "dev-boop-onboarding", "\(words)")
+        }
+    }
 }
 
 /// A `security` that keeps one entry in memory and records every call.

@@ -74,6 +74,14 @@ public struct AppSettings: Codable, Equatable, Sendable {
         func canonical(_ url: URL) -> String { url.standardizedFileURL.resolvingSymlinksInPath().path }
         return canonical(dir) == canonical(defaultStateDir(home: home))
     }
+
+    /// What a copy on another folder than the everyday one is called where
+    /// the everyday Boop's names are shared: its hook socket's listing
+    /// (`dev-boop-onboarding.sock`) and its Jev key's Keychain entry. Made
+    /// of its folder's name, letters, digits and dashes only.
+    public static func copyName(_ dir: URL) -> String {
+        "dev-" + dir.lastPathComponent.filter { $0.isLetter || $0.isNumber || $0 == "-" }
+    }
 }
 
 /// One app per state directory: a second copy would fight over the memory

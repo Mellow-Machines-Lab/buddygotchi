@@ -52,7 +52,7 @@ struct AgentsAct: View {
                 Text("This copy of Boop leaves the hooks to your everyday Boop. Connect only listens for the hello.")
                     .font(.system(size: 12)).foregroundStyle(Theme.inkSoft).multilineTextAlignment(.center)
             } else if !app.installer.clientInPlace {
-                Text(AppModel.bundled ? "My hook helper is missing, so I can't add hooks yet. Install Boop again, then connect them in Settings."
+                Text(AboutThisMac.isApp() ? "My hook helper is missing, so I can't add hooks yet. Install Boop again, then connect them in Settings."
                                       : "agent-hook isn't built, so I can't add hooks yet. Run make build, then connect them in Settings.")
                     .font(.system(size: 12)).foregroundStyle(Theme.clayInk).multilineTextAlignment(.center)
             }
