@@ -5967,12 +5967,14 @@
     },
     {
       "id": "nod-off",
-      "label": "Nods off after twenty idle minutes, and jerks awake",
+      "label": "Nods off when it has been idle a while, and jerks awake",
       "looks": [
         "idle"
       ],
-      "when": [],
-      "after": 1200,
+      "when": [
+        "doze"
+      ],
+      "after": 0,
       "gag": {
         "duration": 5.2,
         "keys": [
@@ -6739,12 +6741,14 @@
     },
     {
       "id": "work-stretch",
-      "label": "A stretch after twenty minutes' work",
+      "label": "A stretch on a long turn's marathon",
       "looks": [
         "working"
       ],
-      "when": [],
-      "after": 1200,
+      "when": [
+        "marathon"
+      ],
+      "after": 0,
       "recipe": {
         "duration": 3.7,
         "lean": -0.01,
