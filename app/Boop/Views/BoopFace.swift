@@ -34,7 +34,7 @@ enum FaceMood: Hashable {
 /// Boop's face on a small black-glass tile: the face of the device's design
 /// for Boop's mood and look (FaceDesigns, which facegen writes from the same
 /// designs as the device's), at rest, without the props. It blinks now and
-/// then, and blinks into a new face when the mood or the look changes.
+/// then, and cross-fades into a new face when the mood or the look changes.
 struct BoopFace: View {
     var mood: FaceMood
     /// Boop's mood, which picks the set of designs.
@@ -44,6 +44,10 @@ struct BoopFace: View {
     @ViewState private var blink = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.stillMotion) private var still
+
+    /// The board's dissolve between pictures: rig::kFadeMs, on its
+    /// smoothstep ease, which this curve is exactly.
+    private static let fade = Animation.timingCurve(1.0 / 3, 0, 2.0 / 3, 1, duration: 0.2)
 
     /// The design the tile shows. Asleep and setup's previews are the
     /// pack's startup mood's: the engine names no mood of its own.
@@ -76,22 +80,32 @@ struct BoopFace: View {
             RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
                 .strokeBorder(mood == .needsYou ? Theme.amber : Theme.hairlineStrong.opacity(0.6),
                               lineWidth: mood == .needsYou ? max(1.5, size * 0.04) : 1)
-            Canvas { context, canvas in
-                let box = FaceDesigns.box
-                let s = 0.8 * canvas.width / box.width
-                let x0 = (canvas.width - box.width * s) / 2, y0 = (canvas.height - box.height * s) / 2
-                for r in rects {
-                    let rgb = FaceDesigns.colors[Int(r.colour) < FaceDesigns.colors.count ? Int(r.colour) : 0]
-                    let colour = Color(red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255,
-                                       blue: Double(rgb & 0xFF) / 255)
-                    context.fill(Path(CGRect(x: x0 + r.x * s, y: y0 + r.y * s, width: r.w * s, height: r.h * s)),
-                                 with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
+            // The old face and the new one add, as the board's dither mixes
+            // them: a pixel both light stays lit through the fade.
+            ZStack {
+                Canvas { context, canvas in
+                    let box = FaceDesigns.box
+                    let s = 0.8 * canvas.width / box.width
+                    let x0 = (canvas.width - box.width * s) / 2, y0 = (canvas.height - box.height * s) / 2
+                    for r in rects {
+                        let rgb = FaceDesigns.colors[Int(r.colour) < FaceDesigns.colors.count ? Int(r.colour) : 0]
+                        let colour = Color(red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255,
+                                           blue: Double(rgb & 0xFF) / 255)
+                        context.fill(Path(CGRect(x: x0 + r.x * s, y: y0 + r.y * s, width: r.w * s, height: r.h * s)),
+                                     with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
+                    }
                 }
+                .id(key)
+                .transition(.opacity)
+                .blendMode(.plusLighter)
             }
+            .compositingGroup()
         }
         .frame(width: size, height: size)
+        .animation(reduceMotion ? nil : Self.fade, value: key)
         // Either motion setting changes the id, so an existing blink
-        // loop stops as soon as motion is turned off.
+        // loop stops as soon as motion is turned off. A new face restarts
+        // it, its first blink seconds away, so none lands mid-fade.
         .task(id: still || reduceMotion ? nil : key) { await live() }
         .accessibilityHidden(true)
     }
@@ -123,22 +137,18 @@ struct BoopFace: View {
         return out
     }
 
-    /// Blinks into the new face, then every few seconds.
+    /// Blinks every few seconds.
     private func live() async {
         guard !reduceMotion, !still, mood != .asleep else {
             blink = false
             return
         }
-        var first = true
         while !Task.isCancelled {
-            if !first {
-                try? await Task.sleep(for: .milliseconds(Int.random(in: 2400...5200)))
-                if Task.isCancelled { return }
-            }
+            try? await Task.sleep(for: .milliseconds(Int.random(in: 2400...5200)))
+            if Task.isCancelled { return }
             blink = true
-            try? await Task.sleep(for: .milliseconds(first ? 150 : 180))
+            try? await Task.sleep(for: .milliseconds(180))
             blink = false
-            first = false
         }
     }
 }

@@ -31,6 +31,20 @@ final class CharacterPackTests: XCTestCase {
         }
     }
 
+    /// The popover's still face (the pack's mac/faces.json) cross-fades
+    /// into a new one over the board's dissolve between pictures
+    /// (rig::kFadeMs in firmware/src/render/rig/rig.h), so the two change
+    /// faces in step: changing either fails here.
+    func testThePopoversFaceFadesAsLongAsTheBoards() throws {
+        let rig = try String(contentsOf: Self.repo.appendingPathComponent("firmware/src/render/rig/rig.h"), encoding: .utf8)
+        let face = try String(contentsOf: Self.repo.appendingPathComponent("app/Boop/Views/BoopFace.swift"), encoding: .utf8)
+        let board = try XCTUnwrap(rig.firstMatch(of: /kFadeMs = ([0-9]+);/).flatMap { Int($0.1) })
+        let mac = try XCTUnwrap(face.firstMatch(of: /let fade = Animation\.timingCurve\(.*duration: ([0-9.]+)\)/)
+            .flatMap { Double($0.1) })
+        XCTAssertEqual(board, 200)
+        XCTAssertEqual(Int((mac * 1000).rounded()), board)
+    }
+
     /// CHARACTER.md §5: Boop's moods are the slime design's host graph, in
     /// its order, with its meanings (slimegen writes them), and every edge
     /// the design draws is one of the pack's moves.

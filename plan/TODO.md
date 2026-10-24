@@ -163,7 +163,6 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       - The gel: falling asleep cross-fades two arts in 480 ms (the
         longest that keeps the ink check's 85%); a morph that squashes the
         face shut would let the length be a choice.
-      - The Mac popover's still tile still blinks into a new face.
 - [ ] On the AMOLED board: turn it over once to confirm the motion
       sensor's z (flipped on 2026-10-22: resting on the desk it read
       -1 g and thought it was face down; now +1 g), and try a stroke, a
