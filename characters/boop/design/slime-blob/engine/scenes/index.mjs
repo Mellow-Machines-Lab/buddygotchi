@@ -193,11 +193,12 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
   }
   // A card's reveal is its slot's own ramp: up over cardRevealMs from its
   // reveal contact, down over the recovery, each from its time on the route's
-  // clock. Once the route ends, nothing retargets it, so it carries on as it
-  // was going while the slot's ramp fades the card out.
+  // clock, but not down before it's up: revealed late in the recipe, it
+  // rises whole, then falls. Once the route ends, nothing retargets it, so
+  // it carries on as it was going while the slot's ramp fades the card out.
   function cardReveal(ramp) {
     if(!resultRevealed)return ramp.reset();
-    const down=recipe.duration-sceneConstants.recoveryMs;
+    const down=Math.max(recipe.duration-sceneConstants.recoveryMs,revealAt+sceneConstants.cardRevealMs);
     if(ageMs>=down)ramp.retarget(0,started+down,sceneConstants.recoveryMs);
     else ramp.retarget(1,started+revealAt);
   }

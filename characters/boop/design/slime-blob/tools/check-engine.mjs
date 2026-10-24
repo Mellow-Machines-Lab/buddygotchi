@@ -183,6 +183,22 @@ async function checkSemanticFace(catalog) {
     for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); ev += (w * w * (goal - ex) - 2 * w * ev) * h; ex += ev * h; left -= h; }
     near(face.inspect().eyeOpen, ex, `${SPEC}, Representative activity scenes: waking is the face's own spring, toward the mood it has now`);
   }
+  // A weight held at zero is flat there: an art going out fast, into falling
+  // asleep's longer window, dips below zero and comes back up toward it, and
+  // a retarget then (waking) doesn't bring it back.
+  {
+    const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
+    face.setMood('happy');
+    for (let ms = 0; ms < 96; ms += STEP_MS) face.advance(STEP_MS / 1000);
+    face.setSleeping(true);
+    for (let ms = 0; ms < 384; ms += STEP_MS) face.advance(STEP_MS / 1000);
+    assert.equal(face.inspect().layers.find(layer => layer.artId === 'calm').weight, 0, `${SPEC}, Directed edge bridges: a weight held at zero`);
+    face.setSleeping(false);
+    for (let frame = 0; frame < 12; frame++) {
+      face.advance(STEP_MS / 1000);
+      assert.ok(!face.inspect().layers.some(layer => layer.artId === 'calm'), `${SPEC}, Directed edge bridges: a faded art never comes back`);
+    }
+  }
   for (const reducedMotion of [false, true]) {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: reducedMotion } });
     const before = face.inspect(), target = faceTarget(profiles.frightened);

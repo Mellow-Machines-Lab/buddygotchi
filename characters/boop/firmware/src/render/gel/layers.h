@@ -31,7 +31,8 @@ struct SignLayer {
 };
 
 // How far its lids hang at night (Q12, as PaintControls::blink): 0 by day,
-// and asleep, when they're shut anyway.
+// and on the sleeping face, whose eyes are shut anyway, easing out as it
+// crosses in (falling asleep's 480 ms) and back as it wakes.
 constexpr int kNightLids = 1100;
 class Engine;
 int sleepyLids(const Engine& e);

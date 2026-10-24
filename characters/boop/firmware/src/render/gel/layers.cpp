@@ -197,7 +197,11 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
 }  // namespace
 
 int sleepyLids(const Engine& e) {
-  return hasTag(e.scenes.when, "night") && e.scenes.route.state != SceneState::kAsleep ? kNightLids : 0;
+  if (!hasTag(e.scenes.when, "night")) return 0;
+  F awake = 1;  // the awake faces' share: the lids go as the sleeping face crosses in, and come back as it wakes
+  for (int i = 0; i < e.face.count; ++i)
+    if (e.face.layers[i].sleeping) awake -= e.face.layers[i].weight;
+  return kNightLids * scalar(awake) / 4096;
 }
 
 void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {

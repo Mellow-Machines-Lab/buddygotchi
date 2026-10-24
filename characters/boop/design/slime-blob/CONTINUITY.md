@@ -224,7 +224,9 @@ Every other prop (the alert sign, the result and start cards, the helpers,
 the listening cue and the touch marks) has a **200 ms visibility ramp** for
 entry and exit ([engine/scenes/ramp.mjs](engine/scenes/ramp.mjs)): a cubic
 Hermite from its current value and slope to the target, so from rest it is a
-smoothstep and a reversal keeps its velocity; it ends exactly. Each prop's
+smoothstep and a reversal keeps its velocity; it ends exactly. Held within
+zero and one, it's flat where it's held, so a retarget never brings back
+what it held at zero. Each prop's
 `visible` is its drawn opacity: the ramp, times a card's reveal or the
 helpers' recovery. When its route ends, a prop fades out still carrying the
 content it last showed (the alert's request, agent, project, name and count;
@@ -277,7 +279,8 @@ at 1. A result receives the mood's delay and strength while its success or
 failure remains factual. A card's reveal is its own, a second ramp of its
 prop's: up over 400 ms from its reveal contact (`cardRevealMs`, twice the
 prop ramp, so it rises in rather than appears) and down over the recovery's
-480 ms, each from its time on the route's clock; it is cleared before an
+480 ms, each from its time on the route's clock, but not down before it's
+up: one revealed in the recovery rises whole, then falls; it is cleared before an
 explicitly repeated loop. A route that ends while its card rises or falls
 leaves the reveal going as it was while the card's ramp fades it out, so it
 never stops dead. Contacts carry unique request,
@@ -618,8 +621,9 @@ the painter takes from the very vertices it projects for the body
 sides and front for a brim, ring 15's front for the hands) and the face art's
 eye centres, so a layer leans,
 squashes, dips under a finger and slides off the screen with the body
-and is cut off there with it. Peekaboo's gesture hides the hat. At night,
-but asleep, the lids hang a little lower (`kNightLids`). The layers read
+and is cut off there with it. Peekaboo's gesture hides the hat. At night
+the lids hang a little lower (`kNightLids`) on the awake face, easing out
+as the sleeping face crosses in and back as it wakes. The layers read
 the engine and never change it, so the traces don't see them; the Mac's
 mirror doesn't draw them yet.
 
@@ -725,7 +729,9 @@ every weight's velocity. The window is counted in milliseconds,
 `face.transition`'s `elapsedMs` of its `durationMs`, the one clock both
 engines keep. A layer's weight is its share of them all, so the weights sum
 to one. An art still fading comes back from the weight it has; a layer at
-zero that can only stay there is dropped; a fifth art drops the faintest of
+zero that can only stay there is dropped (one the Hermite held at zero
+among them: going out fast into falling asleep's longer window, a weight
+dips below zero, and is flat there); a fifth art drops the faintest of
 the four, the others' shares growing to fill what it leaves: the one step
 there is, and only when more than four arts change within one window (a
 rapid chain, moods 48 ms apart, drops the art that came 48 ms before, at 5

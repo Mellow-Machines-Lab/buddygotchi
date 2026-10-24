@@ -196,6 +196,32 @@ static void test_external_source_holds_without_repeating_reveal() {
   e->clearTransient();
   TEST_ASSERT_TRUE(e->scenes.route.state == SceneState::kTesting);
 }
+// A card revealed late, in its recipe's last 480 ms (no recipe's is yet),
+// still shows: it rises whole over kCardRevealMs, then falls over the
+// recovery, where it never rose at all.
+static void test_a_card_revealed_late_rises_then_falls() {
+  auto e = std::make_unique<Engine>();
+  e->step(0);
+  Request req;
+  req.anim = SceneState::kTaskComplete;
+  req.outcome = Outcome::kSuccess;
+  req.hold = true;
+  e->oneShot(req);
+  e->step(16);
+  slime::Recipe& r = e->scenes.recipe;
+  int moved = 0;
+  for (int i = 0; i < r.count; ++i)
+    if (r.contacts[i].kind == kSuccess) r.contacts[i].at = r.duration - T(200), ++moved;
+  TEST_ASSERT_EQUAL_INT(1, moved);
+  const int end = F(r.duration + T(1000)).integer();
+  F most = 0;
+  for (int t = 32; t <= end; t += 16) {
+    e->step(uint32_t(t));
+    most = max(most, e->scenes.visible(Scenes::kResultProp, e->timeMs()));
+  }
+  TEST_ASSERT_TRUE(most > q(.99));
+  TEST_ASSERT_TRUE(e->scenes.visible(Scenes::kResultProp, e->timeMs()) == F(0));
+}
 // CONTINUITY.md, Alerts, taps and interruption: an alert interrupted before
 // its knocks and ding resumes where it stopped, so each plays exactly once;
 // one interrupted after them returns to its silent hold.
@@ -364,6 +390,30 @@ static void test_the_face_keeps_sleeps_spring_until_it_wakes() {
   moved.setSleeping(false);
   TEST_ASSERT_TRUE(moved.durationMs == T(SemanticFace::kFaceMs));
   TEST_ASSERT_EQUAL_INT(slime::kHappy, moved.current().art);
+}
+// A weight held at zero is flat there (scenes/ramp.mjs hermite): an art
+// going out fast, into falling asleep's longer window, dips below zero and
+// comes back up toward it, and a retarget then (waking) doesn't bring it
+// back, as check-engine.mjs checks the reference.
+static void test_a_faded_art_never_comes_back() {
+  const T frame = T::ratio(16, 1000);
+  SemanticFace f;
+  f.setMood(slime::kHappy);
+  for (int i = 0; i < 6; ++i) f.advance(frame, false);
+  f.setSleeping(true);
+  for (int i = 0; i < 24; ++i) f.advance(frame, false);
+  auto calm = [&] {
+    for (int i = 0; i < f.count; ++i)
+      if (f.layers[i].art == slime::kCalm && !f.layers[i].sleeping) return &f.layers[i];
+    return static_cast<SemanticFace::Layer*>(nullptr);
+  };
+  TEST_ASSERT_NOT_NULL(calm());
+  TEST_ASSERT_TRUE(calm()->weight == F(0));
+  f.setSleeping(false);
+  for (int i = 0; i < 12; ++i) {
+    f.advance(frame, false);
+    TEST_ASSERT_NULL(calm());
+  }
 }
 // The face's visible ink in a frame: the pixels its art takes at least a
 // quarter of the way from the body's luminance to the ink's, against the
@@ -578,6 +628,47 @@ static void test_a_power_on_seeds_the_engine_and_a_reset_restores_53() {
   TEST_ASSERT_TRUE(seeded.random.state != fresh.random.state);
   f.reset(0, rng);
   TEST_ASSERT_EQUAL_UINT32(fresh.random.state, f.engine().random.state);
+}
+// At night the lids hang lower, and they go with the face falling asleep:
+// as the sleeping face crosses in over its 480 ms they ease out, an eighth
+// of their hang in a 16 ms frame at the most, where they went in one; and
+// waking, they come back over the face's 180 ms.
+static void test_the_night_lids_ease_out_as_it_falls_asleep() {
+  auto e = std::make_unique<Engine>();
+  e->setOccasion(tagBit("night"), 0);
+  Facts f;
+  f.base = SceneState::kIdle;
+  e->setFacts(f);
+  uint32_t t = 0;
+  for (; t <= 640; t += 16) e->step(t);
+  TEST_ASSERT_EQUAL_INT(kNightLids, sleepyLids(*e));
+  for (const SceneState then : {SceneState::kAsleep, SceneState::kIdle}) {
+    int last = sleepyLids(*e), steepest = 0;
+    f.base = then;
+    e->setFacts(f);
+    for (int frame = 0; frame < 40; ++frame) {
+      e->step(t += 16);
+      const int now = sleepyLids(*e);
+      TEST_ASSERT_TRUE(then == SceneState::kAsleep ? now <= last : now >= last);
+      steepest = std::max(steepest, std::abs(now - last));
+      last = now;
+    }
+    TEST_ASSERT_EQUAL_INT(then == SceneState::kAsleep ? 0 : kNightLids, last);
+    TEST_ASSERT_TRUE(steepest * (then == SceneState::kAsleep ? 8 : 4) <= kNightLids);
+  }
+}
+// A reset lets go of the finger with the engine: a finger still down
+// through it grabs the new engine at its next touch.
+static void test_a_reset_lets_go_of_the_finger() {
+  linkkit::Rng rng;
+  GelFace f;
+  f.reset(0, rng);
+  f.finger(true, 100, 100);
+  TEST_ASSERT_TRUE(f.engine().grab);
+  f.reset(0, rng);
+  TEST_ASSERT_FALSE(f.engine().grab);
+  f.finger(true, 120, 100);
+  TEST_ASSERT_TRUE(f.engine().grab);
 }
 // The timing Behaviour plays by is the recipe table's. The
 // outcome and context rows time like their state's own row, which is what
@@ -1334,6 +1425,7 @@ int main() {
   RUN_TEST(test_request_identity_and_cache_bounds);
   RUN_TEST(test_grid_voice_lead_and_late_cues);
   RUN_TEST(test_external_source_holds_without_repeating_reveal);
+  RUN_TEST(test_a_card_revealed_late_rises_then_falls);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_the_face_keeps_sleeps_spring_until_it_wakes);
@@ -1343,6 +1435,9 @@ int main() {
   RUN_TEST(test_each_cue_carries_its_own_duck);
   RUN_TEST(test_pick_is_pure_and_started_commits_it);
   RUN_TEST(test_a_power_on_seeds_the_engine_and_a_reset_restores_53);
+  RUN_TEST(test_a_reset_lets_go_of_the_finger);
+  RUN_TEST(test_a_faded_art_never_comes_back);
+  RUN_TEST(test_the_night_lids_ease_out_as_it_falls_asleep);
   RUN_TEST(test_timing_comes_from_the_recipe_table);
   RUN_TEST(test_comedy_plays_in_idle_and_asleep);
   RUN_TEST(test_each_gesture_plays_its_own_gag);
