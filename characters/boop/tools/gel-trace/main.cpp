@@ -199,7 +199,7 @@ static void inspect(JsonObject o, Engine& e) {
   F resultVisible = s.visible(Scenes::kResultProp, now);
   auto result = props["result"].to<JsonObject>();
   result["visible"] = number(resultVisible);
-  result["reveal"] = number(card.reveal);
+  result["reveal"] = number(s.slots[Scenes::kResultProp].reveal.value(now));
   if (card.known)
     result["state"] = stateName(card.state);
   else
@@ -209,7 +209,7 @@ static void inspect(JsonObject o, Engine& e) {
   result["trophy"] = resultVisible > F(0) && card.outcome == Outcome::kSuccess;
   if (card.gift) result["gift"] = true;
   props["start"]["visible"] = number(s.visible(Scenes::kStartProp, now));
-  props["start"]["reveal"] = number(s.startProp.reveal);
+  props["start"]["reveal"] = number(s.slots[Scenes::kStartProp].reveal.value(now));
   props["start"]["label"] = s.startProp.label;
   props["start"]["ctx"] = contexts[int(s.startProp.ctx)];
   const auto& helpers = s.helpersProp;

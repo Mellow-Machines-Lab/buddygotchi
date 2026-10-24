@@ -67,9 +67,12 @@ constexpr int kCardRevealMs = 400;
 struct Ramp {
   F from, to, tangent;
   T start;
+  int windowMs = kPropRampMs;
   bool active = false;
   F value(T time) const;
-  void retarget(F next, T time);
+  // Toward next from time, over `overMs`; the slope it has carries over into
+  // the new window.
+  void retarget(F next, T time, int overMs = kPropRampMs);
   void reset() { *this = Ramp{}; }
 
  private:
@@ -108,11 +111,7 @@ struct Scenes {
     std::string id;
     int iteration = 0;
     Ramp ramp;
-    // A card's reveal, from its contact at riseAt, at its recovery then,
-    // which it keeps rising on as it fades out.
-    bool rising = false;
-    T riseAt;
-    F riseRecovery;
+    Ramp reveal;  // a card's (cardReveal)
   } slots[kProps];
   struct {
     std::string requestId, agent, project, name;
@@ -124,12 +123,10 @@ struct Scenes {
     bool known = false, gift = false;  // a gift: proud's bug beside its card
     const char* label = "FINISHED";
     Outcome outcome = Outcome::kNone;
-    F reveal;
   } resultProp;
   struct {
     const char* label = "START";
     StartCtx ctx = StartCtx::kNone;
-    F reveal;
   } startProp;
   struct {
     bool returning = false, report = false;
@@ -156,22 +153,21 @@ struct Scenes {
                                              : F(1);
   }
   F entry() const { return smooth(ageMs / 240); }
-  // A card rises in over its own reveal from its reveal contact and fades in recovery.
-  F cardReveal() const { return resultRevealed ? smooth((ageMs - revealAt) / kCardRevealMs) * recovery() : F(0); }
   F focus(bool reduced) const {
     return reduced ? q(.5) : q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus);
   }
   // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
-  F visible(Prop prop, T time) const { return slots[prop].ramp.value(time) * drawnFactor(prop); }
+  F visible(Prop prop, T time) const {
+    const auto& slot = slots[prop];
+    return slot.ramp.value(time) * (card(prop)             ? slot.reveal.value(time)
+                                    : prop == kHelpersProp ? helpersProp.presence
+                                                           : F(1));
+  }
+  static bool card(Prop prop) { return prop == kResultProp || prop == kStartProp; }
 
  private:
-  F drawnFactor(Prop prop) const {
-    return prop == kResultProp    ? resultProp.reveal
-           : prop == kStartProp   ? startProp.reveal
-           : prop == kHelpersProp ? helpersProp.presence
-                                  : F(1);
-  }
   const char* phaseAt(T age) const;
+  void cardReveal(Ramp& reveal) const;
   bool wants(Prop prop) const;
   void refresh(Prop prop, bool reduced);
   void updateProps(T time, bool reduced);

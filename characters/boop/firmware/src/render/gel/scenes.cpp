@@ -32,26 +32,27 @@ void prop(Spring& s, F dt, F target, int frequency, int damping) {
 }  // namespace
 void Ramp::at(T time, F& value, F& slope) const {
   T elapsed = time - start;
-  if (!active || elapsed >= T(kPropRampMs)) {
+  if (!active || elapsed >= T(windowMs)) {
     value = to;
     slope = 0;
     return;
   }
-  hermite(from, tangent, to, elapsed / kPropRampMs, value, slope);
+  hermite(from, tangent, to, elapsed / windowMs, value, slope);
 }
 F Ramp::value(T time) const {
   F v, slope;
   at(time, v, slope);
   return v;
 }
-void Ramp::retarget(F next, T time) {
+void Ramp::retarget(F next, T time, int overMs) {
   if (next == to) return;
   F value, slope;
   at(time, value, slope);
   from = value;
-  tangent = slope;
+  tangent = slope * (F(overMs) / F(windowMs));
   to = next;
   start = time;
+  windowMs = overMs;
   active = true;
 }
 const char* Scenes::phaseAt(T age) const {
@@ -101,12 +102,10 @@ void Scenes::refresh(Prop prop, bool reduced) {
                          : route.outcome == Outcome::kSuccess ? "COMPLETE"
                          : route.outcome == Outcome::kFailure ? "FAILED"
                                                               : "FINISHED";
-      resultProp.reveal = cardReveal();
       break;
     case kStartProp:
       startProp.label = recipe.label;
       startProp.ctx = route.ctx;
-      startProp.reveal = cardReveal();
       break;
     case kHelpersProp:
       helpersProp.returning = route.state == SceneState::kHelperReturn;
@@ -124,10 +123,25 @@ void Scenes::refresh(Prop prop, bool reduced) {
       touchKnown = true;
   }
 }
-// A prop whose route ends fades out with its last content, a card still
-// rising keeping on rising (at its recovery then), so it never stops dead.
-// New content (a new request, or the helpers' next cycle) waits until nothing
-// of the old is drawn, then fades in from zero.
+// A card's reveal is its slot's own ramp: up over kCardRevealMs from its
+// reveal contact, down over the recovery, each from its time on the route's
+// clock. Once the route ends, nothing retargets it, so it carries on as it
+// was going while the slot's ramp fades the card out.
+void Scenes::cardReveal(Ramp& reveal) const {
+  if (!resultRevealed) {
+    reveal.reset();
+    return;
+  }
+  const T down = recipe.duration - T(480);
+  if (ageMs >= down)
+    reveal.retarget(0, started + down, 480);
+  else
+    reveal.retarget(1, started + revealAt, kCardRevealMs);
+}
+// A prop whose route ends fades out with its last content (a card's reveal
+// going on as it was), so it never stops dead. New content (a new request,
+// or the helpers' next cycle) waits until nothing of the old is drawn, then
+// fades in from zero.
 void Scenes::updateProps(T time, bool reduced) {
   for (int p = 0; p < kProps; ++p) {
     const Prop prop = Prop(p);
@@ -135,26 +149,20 @@ void Scenes::updateProps(T time, bool reduced) {
     const bool want = wants(prop);
     bool same = slot.on == want && (!want || prop == kAlertProp ||
                                     (slot.id == requestId && (prop != kHelpersProp || slot.iteration == iteration)));
-    if (!same && (slot.ramp.value(time) * drawnFactor(prop)).raw == 0) {
+    if (!same && visible(prop, time).raw == 0) {
       slot.on = want;
       if (want && slot.id != requestId) slot.id = requestId;
       slot.iteration = iteration;
       slot.ramp.reset();
-      slot.rising = false;
+      slot.reveal.reset();
       same = true;
     }
-    const bool card = prop == kResultProp || prop == kStartProp;
     if (want && same) {
       refresh(prop, reduced);
       slot.ramp.retarget(1, time);
-      slot.rising = card && resultRevealed;
-      slot.riseAt = started + revealAt;
-      slot.riseRecovery = recovery();
+      if (card(prop)) cardReveal(slot.reveal);
     } else {
       slot.ramp.retarget(0, time);
-      if (slot.rising)
-        (prop == kResultProp ? resultProp.reveal : startProp.reveal) =
-            smooth((time - slot.riseAt) / kCardRevealMs) * slot.riseRecovery;
     }
   }
 }

@@ -27,7 +27,8 @@ springs; that the face never fades is checked on the port's painter
 art fading in on a smoothstep over the window, the weights summing to one, a
 retarget mid-window keeping every weight, at most four arts at once, a fifth
 dropping the faintest, and falling asleep's own longer window and slower
-spring. Trace generation is explicit:
+spring, kept through a mood change until it wakes to the face's own again.
+Trace generation is explicit:
 
 ```sh
 node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53
@@ -49,7 +50,9 @@ start card, plus a
 ten-minute work run, attention identity, alerts interrupted at every stage
 (each request knocks and confirms exactly once), drag interruption, quiet rest
 (a minute asleep snores, two breaths at a time, and a lost link never does),
-latest-facts recovery and truthful success/failure. Its comedy checks pin the
+latest-facts recovery and truthful success/failure, and a card's reveal on
+its own ramp (rising from its contact, falling over the recovery, going on
+as it was when its route ends mid-way). Its comedy checks pin the
 gags' catalogue and durations, their springs and keys, the bag that deals them
 from its second round, the hiccups' timings, the gift on proud's lifted success
 alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
@@ -156,7 +159,9 @@ internal/tools/boopctl sim --face gel
   dropping the faintest, a face that never fades (its visible ink
   through five cross-fades, rendered: CONTINUITY.md, Continuity of what is
   drawn), the lane's strip fading in and out at the opacity the app
-  gives it, the same at a frame every 16 ms as every 200 ms, voice
+  gives it, the same at a frame every 16 ms as every 200 ms, and
+  blended once (each pixel the whole strip's at that opacity), sleep's
+  spring kept through a mood change until the face wakes, voice
   lead, stale cues, return to the latest
   facts, projected face anchors against the reference camera,
   extreme-pose buffer bounds, drawing by coverage (a shape's ink is its

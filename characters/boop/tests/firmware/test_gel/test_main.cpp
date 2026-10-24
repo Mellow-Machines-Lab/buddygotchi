@@ -342,6 +342,29 @@ static void test_face_and_props_move_without_jumps() {
   }
   TEST_ASSERT_TRUE(seen);
 }
+// CONTINUITY.md, Phase 1 channel bounds: falling asleep crosses over in its
+// own window, and the controls keep sleep's spring until the face wakes, a
+// mood changing meanwhile changing nothing drawn; waking takes the face's
+// own window again, to the mood it has then.
+static void test_the_face_keeps_sleeps_spring_until_it_wakes() {
+  static_assert(SemanticFace::kFaceMs == 180 && SemanticFace::kFaceFrequency == 20, "the face's window and spring");
+  static_assert(SemanticFace::kSleepMs == 480 && SemanticFace::kSleepFrequency == 8, "falling asleep's");
+  const T frame = T::ratio(16, 1000);
+  SemanticFace still, moved;
+  for (SemanticFace* f : {&still, &moved}) {
+    f->setSleeping(true);
+    TEST_ASSERT_TRUE(f->durationMs == T(SemanticFace::kSleepMs));
+    for (int i = 0; i < 5; ++i) f->advance(frame, false);
+  }
+  moved.setMood(slime::kHappy);
+  for (int i = 0; i < 30; ++i) {
+    for (SemanticFace* f : {&still, &moved}) f->advance(frame, false);
+    TEST_ASSERT_TRUE(moved.controls == still.controls && moved.velocity == still.velocity);
+  }
+  moved.setSleeping(false);
+  TEST_ASSERT_TRUE(moved.durationMs == T(SemanticFace::kFaceMs));
+  TEST_ASSERT_EQUAL_INT(slime::kHappy, moved.current().art);
+}
 // The face's visible ink in a frame: the pixels its art takes at least a
 // quarter of the way from the body's luminance to the ink's, against the
 // same frame with no art drawn. Fainter than that, a fading art's ghost
@@ -1075,6 +1098,26 @@ static void test_the_lane_is_native_and_tracked() {
   for (int y = kLane; y < kH; ++y)
     for (int x = 0; x < kW; ++x) TEST_ASSERT_EQUAL_HEX16(0, a[size_t(y) * kW + x]);
 }
+// The strip fades as one: at any opacity each pixel is the whole strip's,
+// blended once over the lane's black, so its holes (the working ring's
+// inside, the minis' eyes) stay holes, and where its marks meet blends once.
+static void test_the_strip_fades_as_one() {
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> a(kW * kH), b(a.size());
+  Surface whole{kW, kH, a.data()}, faded{kW, kH, b.data()};
+  Strip s;
+  s.doneAgent = "claude", s.doneThread = "Ship it", s.doneOutcome = Outcome::kSuccess;
+  s.busy = 2, s.helpers = 3, s.idle = 1;
+  for (int opacity : {0, 1, 250, 500, 999}) {
+    Strip partial = s;
+    partial.opacity = opacity;
+    for (Surface* x : {&whole, &faded}) x->invalidate(), x->clear();
+    paintLane(whole, nullptr, s);
+    paintLane(faded, nullptr, partial);
+    const int alpha = (opacity * 255 + 500) / 1000;
+    for (size_t i = 0; i < a.size(); ++i) TEST_ASSERT_EQUAL_HEX16(mix565(0, a[i], alpha), b[i]);
+  }
+}
 // What a frame keeps from its surface's last (a card's
 // opaque inside, an unchanged lane) is exactly what clearing it whole and
 // drawing afresh leaves. Two surfaces taking turns, as the board's do,
@@ -1290,6 +1333,7 @@ int main() {
   RUN_TEST(test_external_source_holds_without_repeating_reveal);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
+  RUN_TEST(test_the_face_keeps_sleeps_spring_until_it_wakes);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
   RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
@@ -1309,6 +1353,7 @@ int main() {
   RUN_TEST(test_a_still_card_is_drawn_once_into_each_surface);
   RUN_TEST(test_steady_frames_allocate_nothing);
   RUN_TEST(test_the_lane_is_native_and_tracked);
+  RUN_TEST(test_the_strip_fades_as_one);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);

@@ -30,8 +30,9 @@ const implemented=new Set(implementedStates);
 // CONTINUITY.md, Representative activity scenes: each prop keeps the content
 // it last showed while its ramp fades it out.
 const propNames=['alert','result','start','helpers','listening','touch'];
+const isCard=name=>name==='result'||name==='start';
 const hiddenContent=Object.freeze({alert:{requestId:null,agent:'',project:'',name:'',more:0},
-  result:{state:null,label:'FINISHED',outcome:null,reveal:0},start:{label:'START',ctx:null,reveal:0},
+  result:{state:null,label:'FINISHED',outcome:null},start:{label:'START',ctx:null},
   helpers:{mode:'dispatch',count:0,progress:0,report:false,direction:1,presence:0},listening:{pulse:.5},touch:{kind:null}});
 
 export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occasions=[],occasion={when:new Set(),lookMs:0}}) {
@@ -42,7 +43,9 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
   let route=null,mood='calm',expression='calm',generation=0,iteration=0,variant=0;
   let started=0,recipe=null,cursor=0,contacts=[],lastContact=null,resultRevealed=false,revealAt=0;
   let phase='sustain',ageMs=0,completed=false,quietRestored=false;
-  const slots=Object.fromEntries(propNames.map(name=>[name,{key:null,ramp:createRamp(sceneConstants.propRampMs),content:{...hiddenContent[name]}}]));
+  // Each prop's slot: its ramp, a card's reveal (cardReveal) and what it last showed.
+  const slots=Object.fromEntries(propNames.map(name=>[name,{key:null,ramp:createRamp(sceneConstants.propRampMs),
+    reveal:createRamp(sceneConstants.cardRevealMs),content:{...hiddenContent[name]}}]));
   function phaseAt(age) {
     return age<sceneConstants.entryMs?'enter':age<recipe.duration-sceneConstants.recoveryMs?'act':age<recipe.duration?'recover':'sustain';
   }
@@ -188,9 +191,15 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
   function recoveryFactor() {
     return phase==='recover'?smooth((recipe.duration-ageMs)/sceneConstants.recoveryMs):phase==='sustain'?0:1;
   }
-  // A card rises in over its own reveal from its reveal contact and fades in recovery.
-  function cardReveal() {
-    return resultRevealed?smooth((ageMs-revealAt)/sceneConstants.cardRevealMs)*recoveryFactor():0;
+  // A card's reveal is its slot's own ramp: up over cardRevealMs from its
+  // reveal contact, down over the recovery, each from its time on the route's
+  // clock. Once the route ends, nothing retargets it, so it carries on as it
+  // was going while the slot's ramp fades the card out.
+  function cardReveal(ramp) {
+    if(!resultRevealed)return ramp.reset();
+    const down=recipe.duration-sceneConstants.recoveryMs;
+    if(ageMs>=down)ramp.retarget(0,started+down,sceneConstants.recoveryMs);
+    else ramp.retarget(1,started+revealAt);
   }
   function focus() {
     const progress=clamp(ageMs/recipe.duration,0,1);
@@ -210,41 +219,39 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
     if(name==='alert')return {requestId:route.requestId,agent:attn.agent||'',project:attn.project||'',name:attn.name||'',more:attn.more||0};
     // A gift (proud's bug) shows beside its card; the key appears only with one.
     if(name==='result')return {state:route.state,label:recipe.label||(route.outcome==='success'?'COMPLETE':route.outcome==='failure'?'FAILED':'FINISHED'),
-      outcome:route.outcome,reveal:cardReveal(),...(recipe.gift?{gift:true}:{})};
-    if(name==='start')return {label:recipe.label,ctx:route.ctx,reveal:cardReveal()};
+      outcome:route.outcome,...(recipe.gift?{gift:true}:{})};
+    if(name==='start')return {label:recipe.label,ctx:route.ctx};
     if(name==='helpers')return {mode:route.state==='helper_return'?'return':'dispatch',count:recipe.helperCount,
       progress:smooth(ageMs/(recipe.contacts.at(-1)?.at||recipe.duration)),report:route.state==='helper_return'&&resultRevealed,
       direction:recipe.helperDirection||1,presence:recoveryFactor()};
     if(name==='listening')return {pulse:focus()};
     return {kind:route.state};
   }
-  // What of a prop's ramp is drawn: a card's reveal, the helpers' recovery.
-  function drawnFactor(name,content) {
-    return name==='result'||name==='start'?content.reveal:name==='helpers'?content.presence:1;
+  // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
+  function drawn(name,time) {
+    const slot=slots[name];
+    return slot.ramp.value(time)*(isCard(name)?slot.reveal.value(time):name==='helpers'?slot.content.presence:1);
   }
-  // A prop whose route ends fades out with its last content, a card still
-  // rising keeping on rising (at its recovery then), so it never stops dead.
-  // New content (a new request, or the helpers' next cycle) waits until
-  // nothing of the old is drawn, then fades in from zero.
+  // A prop whose route ends fades out with its last content (a card's reveal
+  // going on as it was), so it never stops dead. New content (a new request,
+  // or the helpers' next cycle) waits until nothing of the old is drawn, then
+  // fades in from zero.
   function updateProps(time) {
     for(const name of propNames){
-      const slot=slots[name],key=propKey(name),card=name==='result'||name==='start';
-      if(slot.key!==key&&slot.ramp.value(time)*drawnFactor(name,slot.content)===0){slot.key=key;slot.ramp.reset();slot.rise=null;}
+      const slot=slots[name],key=propKey(name);
+      if(slot.key!==key&&drawn(name,time)===0){slot.key=key;slot.ramp.reset();slot.reveal.reset();}
       if(key!==null&&slot.key===key){
         slot.content=liveContent(name);slot.ramp.retarget(1,time);
-        slot.rise=card&&resultRevealed?{at:started+revealAt,recovery:recoveryFactor()}:null;
-      }else {
-        slot.ramp.retarget(0,time);
-        if(slot.rise)slot.content.reveal=smooth((time-slot.rise.at)/sceneConstants.cardRevealMs)*slot.rise.recovery;
-      }
+        if(isCard(name))cardReveal(slot.reveal);
+      }else slot.ramp.retarget(0,time);
     }
   }
   function inspect(time) {
     const state=route.state,alert=state==='needs_you';
-    const ramp=name=>slots[name].ramp.value(time),content=name=>slots[name].content;
+    const content=name=>slots[name].content,reveal=name=>slots[name].reveal.value(time);
     const progress=clamp(ageMs/recipe.duration,0,1);
-    const alertVisible=ramp('alert'),result=content('result'),start=content('start'),helpers=content('helpers');
-    const resultVisible=ramp('result')*result.reveal;
+    const alertVisible=drawn('alert',time),result=content('result'),start=content('start'),helpers=content('helpers');
+    const resultVisible=drawn('result',time);
     return {
       scene:{state,family:route.family,implemented:implemented.has(state),quiet:route.quiet,
         phase,variant,iteration,generation,ageMs,requestId:route.requestId,outcome:route.outcome,ctx:route.ctx,
@@ -259,12 +266,12 @@ export function createScenes({rand,reduced,profiles,gestures=[],notices=[],occas
         // confirmation, key and touch pulses) are deliberate impacts.
         alert:{...content('alert'),visible:alertVisible,reveal:alertVisible,label:'NEEDS YOU',
           knock:alert?envelope(time,'screen_knock'):0,confirmation:alert?envelope(time,'alert_reveal'):0},
-        result:{...result,visible:resultVisible,trophy:resultVisible>0&&result.outcome==='success'},
-        start:{...start,visible:ramp('start')*start.reveal},
+        result:{...result,reveal:reveal('result'),visible:resultVisible,trophy:resultVisible>0&&result.outcome==='success'},
+        start:{...start,reveal:reveal('start'),visible:drawn('start',time)},
         helpers:{mode:helpers.mode,count:helpers.count,progress:helpers.progress,report:helpers.report,direction:helpers.direction,
-          visible:ramp('helpers')*helpers.presence},
-        listening:{visible:ramp('listening'),pulse:content('listening').pulse,lean:activity.lean.x},
-        touch:{visible:ramp('touch'),kind:content('touch').kind,pulse:envelope(time,'body_contact')},
+          visible:drawn('helpers',time)},
+        listening:{visible:drawn('listening',time),pulse:content('listening').pulse,lean:activity.lean.x},
+        touch:{visible:drawn('touch',time),kind:content('touch').kind,pulse:envelope(time,'body_contact')},
         lane:{top:sceneConstants.hostLaneTop}
       },
       contacts:contacts.map(contact=>({...contact})),

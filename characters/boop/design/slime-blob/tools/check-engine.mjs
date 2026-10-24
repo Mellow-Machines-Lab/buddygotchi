@@ -160,7 +160,8 @@ async function checkSemanticFace(catalog) {
   for (let frame = 0; frame < 12; frame++) { face.advance(STEP_MS / 1000); near(sum(face.inspect()), 1, `${SPEC}, Directed edge bridges: the weights sum to one`); }
   assert.deepEqual(face.inspect().layers.map(layer => layer.artId), ['pleased'], `${SPEC}, Directed edge bridges: a chain settles on its last art`);
   // Falling asleep crosses over in its own longer window, its controls on a
-  // slower spring; waking is the face's own window and spring again.
+  // slower spring until it wakes, a mood changing meanwhile; waking is the
+  // face's own window and spring again.
   assert.deepEqual(sleepTransition, { durationMs: 480, frequency: 8 }, `${SPEC}, Representative activity scenes: falling asleep's timing`);
   {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: false } });
@@ -168,6 +169,7 @@ async function checkSemanticFace(catalog) {
     face.setSleeping(true);
     let x = open, v = 0;
     for (let ms = STEP_MS; ms <= 640; ms += STEP_MS) {
+      if (ms === 160) face.setMood('happy');
       face.advance(STEP_MS / 1000);
       for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); v += (64 * (0.004 - x) - 16 * v) * h; x += v * h; left -= h; }
       near(face.inspect().eyeOpen, x, `${SPEC}, Representative activity scenes: falling asleep's spring`);
@@ -175,6 +177,11 @@ async function checkSemanticFace(catalog) {
     }
     face.setSleeping(false);
     assert.equal(face.inspect().transition.durationMs, faceTransition.durationMs, `${SPEC}, Representative activity scenes: waking takes the face's own window`);
+    const awake = face.inspect(), goal = faceTarget(profiles.happy).eyeOpen, w = faceTransition.frequency;
+    let ex = awake.eyeOpen, ev = awake.velocity.eyeOpen;
+    face.advance(STEP_MS / 1000);
+    for (let left = STEP_MS / 1000; left > 0;) { const h = Math.min(left, 1 / 240); ev += (w * w * (goal - ex) - 2 * w * ev) * h; ex += ev * h; left -= h; }
+    near(face.inspect().eyeOpen, ex, `${SPEC}, Representative activity scenes: waking is the face's own spring, toward the mood it has now`);
   }
   for (const reducedMotion of [false, true]) {
     const face = createFace({ profiles, initialEmotion: 'calm', reduced: { matches: reducedMotion } });

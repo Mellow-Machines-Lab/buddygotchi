@@ -900,6 +900,49 @@ function checkContactInterruption(createSlime, catalog) {
   }
 }
 
+// A card's reveal is its slot's own: a smoothstep up over cardRevealMs from
+// its reveal contact, and down over the recovery. A route that ends while it
+// rises or falls leaves it going as it was while the card's ramp fades it out.
+async function checkCardReveal(createSlime, catalog) {
+  const { sceneConstants: c } = await import('../engine/scenes/constants.mjs');
+  const smoothstep = x => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+  const revealAt = 680; // happy's first success take: the mood adds no delay
+  const finish = () => {
+    const d = driver(createSlime, catalog);
+    d.slime.setFacts({ base: 'idle' }); d.step();
+    d.slime.oneShot({ id: 940, name: 'task_complete', args: { outcome: 'success', variant: 0, hold: true } });
+    const frame = d.step();
+    return { d, start: d.at - frame.scene.ageMs, duration: frame.scene.loopDurationMs };
+  };
+  const reveal = (start, duration, time) => {
+    const age = time - start;
+    return age < revealAt ? 0 : age < duration - c.recoveryMs ? smoothstep((age - revealAt) / c.cardRevealMs)
+      : smoothstep((duration - age) / c.recoveryMs);
+  };
+  {
+    const { d, start, duration } = finish();
+    d.advance(duration + 320, frame => near(frame.props.result.reveal, reveal(start, duration, d.at),
+      'a card rises in over cardRevealMs from its reveal contact and goes over the recovery', 1e-9));
+  }
+  // Ended while it rises, 160 ms after its contact, and while it falls.
+  for (const end of [revealAt + 160, null]) {
+    const { d, start, duration } = finish(), endAge = end ?? duration - c.recoveryMs + 160;
+    d.advance(Math.ceil((endAge - d.channels.scene.ageMs) / STEP_MS) * STEP_MS);
+    const endedAt = d.at;
+    d.slime.clearTransient();
+    let shown = 0;
+    d.advance(Math.ceil(c.propRampMs / STEP_MS) * STEP_MS + 2 * STEP_MS, frame => {
+      // Its ramp turns at the first frame after the end, and is at zero a ramp later.
+      if (d.at - endedAt < STEP_MS + c.propRampMs) {
+        near(frame.props.result.reveal, reveal(start, duration, d.at), `a card ended as it ${end ? 'rises' : 'falls'} goes on as it was`, 1e-9);
+        assert.ok(frame.props.result.visible > 0, `${SPEC}: a card ended mid-reveal fades out over its ramp`);
+        shown++;
+      } else assert.equal(frame.props.result.visible, 0, `${SPEC}: a card ended mid-reveal is gone once its ramp is`);
+    });
+    assert.ok(shown >= 10, `${SPEC}: a card ended mid-reveal is drawn while it fades`);
+  }
+}
+
 function checkLongWork(createSlime, catalog) {
   const d = driver(createSlime, catalog, 'happy');
   d.slime.setFacts({ base: 'working' });
@@ -1230,6 +1273,7 @@ export async function checkScenes({ coverageOnly = false } = {}) {
   checkAlertInterruption(createSlime, catalog);
   checkQuietAndTimeout(createSlime, catalog);
   checkContactInterruption(createSlime, catalog);
+  await checkCardReveal(createSlime, catalog);
   const comedy = await checkComedy(createSlime, catalog);
   await checkGestures(createSlime, catalog);
   await checkNotices(createSlime, catalog);

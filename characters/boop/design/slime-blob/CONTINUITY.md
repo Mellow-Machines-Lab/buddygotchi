@@ -102,8 +102,9 @@ The face's own window defaults to 180 ms (falling asleep takes 480,
 below); directed edge variants select
 the face windows below, over which one art crosses over another. Each
 semantic control is a critically damped spring,
-`a = ω²(target − x) − 2ωv`, with ω = 20 (8 from falling asleep until it
-wakes; 30 with reduced motion), in the
+`a = ω²(target − x) − 2ωv`, with ω = 20 (8 while it sleeps, from falling
+asleep until it wakes, a mood changing meanwhile; 30 with reduced motion),
+in the
 same 1/240 s substeps: it starts from rest without a jump in velocity, and a
 retarget keeps both its position and its velocity. Cheek and tear opacity
 stay in [0, 1]. Dimensional endpoints come from the original face
@@ -273,12 +274,13 @@ the request's arrival, with no opacity floor, and ramps out when attention
 clears; `props.alert.confirmation` uses the contact envelope to brighten it
 once at the reveal, then returns to zero. Its reveal strength is invariant
 at 1. A result receives the mood's delay and strength while its success or
-failure remains factual. A card's reveal is a smoothstep over 400 ms from
-its reveal contact (`cardRevealMs`, twice the prop ramp, so it rises in
-rather than appears); it fades during recovery and is cleared before an
-explicitly repeated loop. A card whose route ends while it still rises
-keeps rising, at its recovery then, as its ramp fades it out, so it never
-stops dead. Contacts carry unique request,
+failure remains factual. A card's reveal is its own, a second ramp of its
+prop's: up over 400 ms from its reveal contact (`cardRevealMs`, twice the
+prop ramp, so it rises in rather than appears) and down over the recovery's
+480 ms, each from its time on the route's clock; it is cleared before an
+explicitly repeated loop. A route that ends while its card rises or falls
+leaves the reveal going as it was while the card's ramp fades it out, so it
+never stops dead. Contacts carry unique request,
 generation, iteration and index identity; the `cues` audio output is consumed once per contact by the synchronized
 scheduler (sound/README.md).
 
@@ -779,8 +781,8 @@ timbres remain sketches pending speaker review.
 rest, drag and attention runs (check-bridges), and the full scene matrix
 with its routing and interruption runs (check-scenes). For each channel the
 painters draw (the eight face controls, each layer's weight and drawn
-sizes, the mood posture's lean and squash, every prop's `visible` and the
-cards' reveals):
+sizes, the mood posture's lean and squash, every prop's `visible` and a
+card's reveal while the card is drawn):
 
 - **No jolt at an event.** Let `Δ²` be a frame's change in per-frame
   velocity, `x[n+1] − 2x[n] + x[n−1]`. Where an event (a mood, fact,
@@ -805,8 +807,11 @@ cards' reveals):
   fades its strip over the same 200 ms as it comes and goes, one going
   still showing what it showed: the board's app decides it for every face
   from when the strip came or went (`app/behaviour.h`'s `strip`), so how
-  often frames are drawn doesn't change one, and the gel draws it at that
-  opacity. The preview's lane fades who needs you with the alert's sign.
+  often frames are drawn doesn't change one. The gel draws the strip whole
+  and blends it once at that opacity: its rows hold nothing else, over
+  black, so that is scaling the pixels it wrote, in place, with no buffer,
+  and a hole (the working ring's inside, a mini's eyes) stays one. The
+  preview's lane fades who needs you with the alert's sign.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling
   eyes, falling asleep and waking), the port's painter's frames, 40 ms
@@ -831,8 +836,9 @@ and interrupts alerts with listening and with a link timeout at eight points
 from 0 to 2,000 ms: every request knocks and confirms exactly once. The
 native port's `test_gel` repeats the interruption cases, the weights' and
 sizes' bounds and the alert's ramp over every directed edge, a fifth art's
-drop and the lane's fade (the same whatever the draw cadence), and checks
-that the face never fades.
+drop, sleep's spring kept through a mood change, and the lane's fade (the
+same whatever the draw cadence, the strip blended once), and checks that
+the face never fades.
 
 ## Variability, without chaos
 

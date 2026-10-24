@@ -10,16 +10,18 @@ export function hermite({from,tangent,to},s) {
   return {value:Math.min(1,Math.max(0,value)),slope};
 }
 export function createRamp(durationMs) {
-  let from=0,to=0,tangent=0,start=0,active=false;
-  const state=time=>active?hermite({from,tangent,to},(time-start)/durationMs):{value:to,slope:0};
+  let from=0,to=0,tangent=0,start=0,windowMs=durationMs,active=false;
+  const state=time=>active?hermite({from,tangent,to},(time-start)/windowMs):{value:to,slope:0};
   return {
     value:time=>state(time).value,
     // Only when nothing it scales is drawn: starts the next fade-in from zero.
     reset() {from=to=tangent=0;active=false;},
-    retarget(next,time) {
+    // Toward next from `time`, over its own window or `overMs`; the slope it
+    // has carries over into the new window.
+    retarget(next,time,overMs=durationMs) {
       if(next===to)return;
       const current=state(time);
-      from=current.value;tangent=current.slope;to=next;start=time;active=true;
+      from=current.value;tangent=current.slope*(overMs/windowMs);to=next;start=time;windowMs=overMs;active=true;
     }
   };
 }

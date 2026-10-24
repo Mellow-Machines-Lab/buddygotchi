@@ -65,7 +65,9 @@ export function drawnChannels(frame, profiles) {
   out['posture.lean'] = frame.posture[0]; out['posture.squash'] = frame.posture[1];
   out['props.desk.visible'] = frame.props.desk.visible;
   for (const key of props) out[`props.${key}.visible`] = frame.props[key].visible;
-  out['props.result.reveal'] = frame.props.result.reveal; out['props.start.reveal'] = frame.props.start.reveal;
+  // A card's reveal (the reference painter slides the result card up by it)
+  // counts while the card is drawn: once it is gone its slot starts again.
+  for (const key of ['result', 'start']) if (frame.props[key].visible > 0) out[`props.${key}.reveal`] = frame.props[key].reveal;
   return out;
 }
 

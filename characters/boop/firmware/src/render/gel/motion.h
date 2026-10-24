@@ -28,9 +28,10 @@ struct SemanticFace {
   static constexpr int kScale = 256;
   // At most this many arts at once (face.mjs faceRender.layers).
   static constexpr int kMaxLayers = 4;
-  // Falling asleep's window and its controls' spring (face.mjs
-  // sleepTransition): the lids droop shut.
-  static constexpr int kSleepMs = 480, kSleepFrequency = 8;
+  // The face's own window and its controls' spring (face.mjs
+  // faceTransition), and falling asleep's (sleepTransition): the lids droop
+  // shut, and the controls keep sleep's spring until the face wakes.
+  static constexpr int kFaceMs = 180, kFaceFrequency = 20, kSleepMs = 480, kSleepFrequency = 8;
   struct Layer {
     int art = slime::kCalm;
     bool sleeping = false;
@@ -45,17 +46,15 @@ struct SemanticFace {
   std::array<Layer, kMaxLayers> layers{};
   int count = 1, targetId = slime::kCalm;
   bool targetSleeping = false;
-  // The window the arts cross over in, how far into it they are, and the
-  // controls' spring until the next.
-  T elapsedMs, durationMs = 180;
-  F frequency = 20;
+  // The window the arts cross over in, and how far into it they are.
+  T elapsedMs, durationMs = kFaceMs;
   SemanticFace();
   const Layer& current() const { return layers[count - 1]; }
   // A layer's drawn size ratios, the eye's and the mouth's width and
   // height: the live controls over its own size.
   std::array<F, 3> ratios(const Layer& layer) const;
-  void retarget(T ms = 180, F spring = 20);
-  void setMood(int id, T ms = 180);
+  void retarget(T ms = kFaceMs);
+  void setMood(int id, T ms = kFaceMs);
   void setSleeping(bool value);
   void advance(T dt, bool reduced);
 

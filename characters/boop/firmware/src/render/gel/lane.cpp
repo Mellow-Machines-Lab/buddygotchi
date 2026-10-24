@@ -82,18 +82,9 @@ void bubble(Lane& l, const char* line) {
 
 // The strip's marks, each in a kIcon box with its middle at (x + 9, cy).
 void dot(Raster& r, int x, int cy, uint16_t ink) { r.disk(x + 9, cy, 8, ink); }
-// Black, the lane's own ground, at full strength: a hole stays one while
-// the strip fades.
-template <typename Draw>
-void black(Raster& r, Draw draw) {
-  const int alpha = r.alpha;
-  r.alpha = 255;
-  draw();
-  r.alpha = alpha;
-}
 void ring(Raster& r, int x, int cy, uint16_t ink) {
   r.disk(x + 9, cy, 8, ink);
-  black(r, [&] { r.disk(x + 9, cy, 5, 0); });
+  r.disk(x + 9, cy, 5, 0);
 }
 void tick(Raster& r, int x, int cy, uint16_t ink) {
   r.line({x + 2, cy}, {x + 7, cy + 5}, 3, ink);
@@ -135,10 +126,8 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
     for (int i = 0; r && i < minis; ++i) {
       const int mx = x + i * miniW;
       r->round(mx, cy - 7, 16, 15, 7, gel);
-      black(*r, [&] {
-        r->round(mx + 4, cy - 2, 3, 3, 1, ink);
-        r->round(mx + 9, cy - 2, 3, 3, 1, ink);
-      });
+      r->round(mx + 4, cy - 2, 3, 3, 1, ink);
+      r->round(mx + 9, cy - 2, 3, 3, 1, ink);
     }
     x += minis * miniW;
     if (s.helpers > minis) {
@@ -199,6 +188,21 @@ void strip(Lane& l, const Strip& s) {
   if (s.noApp) plug(r, l.w - kMargin - 24, cy, grey);
 }
 
+// The strip, drawn at full strength, blended once at its opacity (0–255):
+// its rows hold nothing else, over black, so that is scaling each pixel it
+// wrote, in place, with no buffer of its own; a hole (a ring's inside, a
+// mini's eyes) stays one, and where its shapes meet it blends once.
+void fade(Surface& s, int from, int alpha) {
+  if (alpha >= 253) return;
+  const bool tracked = s.height <= Surface::kTrackedRows;
+  for (int y = from; y < s.height; ++y) {
+    uint16_t* row = s.pixels + y * s.width;
+    const int x1 = tracked ? s.written[y].last : s.width;
+    for (int x = tracked ? s.written[y].first : 0; x < x1; ++x)
+      if (row[x]) row[x] = mix565(0, row[x], alpha);
+  }
+}
+
 // What the lane shows, as a key that's the same exactly when its pixels
 // are (FNV-1a over the line or the strip's fields; never 0).
 }  // namespace
@@ -227,8 +231,8 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
   if (line) {
     bubble(l, line);
   } else {
-    l.r.alpha = (s.opacity * 255 + 500) / 1000;
     strip(l, s);
+    fade(surface, l.y(kLaneTop), (s.opacity * 255 + 500) / 1000);
   }
   surface.laneKey = laneKey(line, s);
   surface.laneKeyFrom = l.y(kLaneTop);
