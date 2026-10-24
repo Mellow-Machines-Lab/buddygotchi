@@ -13,15 +13,15 @@ import time
 from pathlib import Path
 
 from boopctl_lib import reference, scenario, workday
-from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, do,
-                                ended, restarted, take, takes)
+from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, checkout_tmp,
+                                do, ended, restarted, take, takes)
 from boopctl_lib.device import Device, DeviceError, Sim
 from boopctl_lib.image import diff, save_shot
 
 PIO = REPO / "firmware" / "tools" / "pio.sh"
 SIM_PROGRAM = REPO / "firmware" / ".pio" / "build" / "native" / "program"
-SIM_OUT = Path("/tmp/boop-sim")
-RUN_OUT = Path("/tmp/boop-run")
+SIM_OUT = checkout_tmp("boop-sim")
+RUN_OUT = checkout_tmp("boop-run")
 # The everyday app's state directory (AppSettings.defaultStateDir).
 EVERYDAY_STATE = Path.home() / "Library" / "Application Support" / "Boop"
 

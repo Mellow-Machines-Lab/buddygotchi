@@ -44,6 +44,7 @@ yet).
 """
 from __future__ import annotations
 
+import filecmp
 import json
 import os
 import re
@@ -819,10 +820,10 @@ def check(pack: Path, reads: Reads | None = None) -> int:
     return 1 if problems else 0
 
 
-def bundle(view: Path, name: str) -> None:
+def bundle(view: Path, dest: Path) -> None:
     """A staged pack as the Mac app bundles it, with what the app reads and
-    no more: .character-build/packs/<name>/."""
-    shutil.copytree(view, STAGE / "packs" / name,
+    no more, in dest (.character-build/packs/<name>/)."""
+    shutil.copytree(view, dest,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
                                                   "studio", "rig", "references", "review"))
 
@@ -846,43 +847,81 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
     rig_tables.h, and the pack
     as the Mac app bundles it, with what the app reads and no more
     (.character-build/packs/<name>/), beside every other pack beside it
-    for buddies that run one, with packs/chosen naming this one."""
+    for buddies that run one, with packs/chosen naming this one.
+
+    It's all laid out afresh in a folder of its own, and then only what
+    differs changes in .character-build (sync()): a build reading the
+    staged files meanwhile, as one make target's does while another's
+    stages, finds each file whole, and an unchanged one as it was."""
     reads = reads or Reads()
     checked = checked_pack(pack, reads)
     if checked is None:
         return 1
     character, paths = checked
     STAGE.mkdir(exist_ok=True)
-    for old in ("staged", "firmware", "packs"):
-        if (STAGE / old).exists():
-            shutil.rmtree(STAGE / old)
     view = STAGE / "staged" / pack.name
-    overlay(view, pack, paths)
-    firmware_from(view, pack, character, STAGE / "firmware")
-    bundle(view, pack.name)
-    # Every other pack beside it goes in the app too, for buddies that run
-    # another pack (CHARACTER.md §2). The chosen one is named in
-    # packs/chosen.
-    for other in sorted(p.parent for p in own_folder(pack).parent.glob("*/character.json")):
-        if other.resolve() == own_folder(pack) or pack_problems(other, load(other), reads):
-            continue
-        with tempfile.TemporaryDirectory() as temp:
-            overlay(Path(temp) / other.name, other, used(other)[0])
-            bundle(Path(temp) / other.name, other.name)
-    (STAGE / "packs" / "chosen").write_text(f"{pack.name}\n")
-    # The firmware's test suites: the engine's, then the staged pack's
-    # (tests/firmware/test_*), linked so an edit lands in the real file.
-    tests = STAGE / "firmware-test"
-    if tests.exists():
-        shutil.rmtree(tests)
-    tests.mkdir(parents=True)
-    for folder in [ROOT / "internal" / "firmware" / "test", view / "tests" / "firmware"]:
-        for suite in sorted(folder.glob("test_*")) if folder.is_dir() else []:
-            if (tests / suite.name).is_symlink():
-                (tests / suite.name).unlink()
-            (tests / suite.name).symlink_to(suite.resolve())
-    (STAGE / "pack").write_text(f"{view}\n")
+    with tempfile.TemporaryDirectory(dir=STAGE, prefix=".staging-") as temp:
+        new = Path(temp)
+        overlay(new / "staged" / pack.name, pack, paths)
+        firmware_from(new / "staged" / pack.name, pack, character, new / "firmware")
+        bundle(new / "staged" / pack.name, new / "packs" / pack.name)
+        # Every other pack beside it goes in the app too, for buddies that
+        # run another pack (CHARACTER.md §2). The chosen one is named in
+        # packs/chosen.
+        for other in sorted(p.parent for p in own_folder(pack).parent.glob("*/character.json")):
+            if other.resolve() == own_folder(pack) or pack_problems(other, load(other), reads):
+                continue
+            with tempfile.TemporaryDirectory() as each:
+                overlay(Path(each) / other.name, other, used(other)[0])
+                bundle(Path(each) / other.name, new / "packs" / other.name)
+        (new / "packs" / "chosen").write_text(f"{pack.name}\n")
+        # The firmware's test suites: the engine's, then the staged pack's
+        # (tests/firmware/test_*), linked so an edit lands in the real file.
+        tests = new / "firmware-test"
+        tests.mkdir()
+        engine = ROOT / "internal" / "firmware" / "test"
+        for folder, there in [(engine, engine), (new / "staged" / pack.name / "tests" / "firmware", view / "tests" / "firmware")]:
+            for suite in sorted(folder.glob("test_*")) if folder.is_dir() else []:
+                if (tests / suite.name).is_symlink():
+                    (tests / suite.name).unlink()
+                (tests / suite.name).symlink_to(there / suite.name)
+        (new / "pack").write_text(f"{view}\n")
+        for part in ("staged", "firmware", "packs", "firmware-test", "pack"):
+            sync(new / part, STAGE / part)
     return 0
+
+
+def sync(new: Path, old: Path) -> None:
+    """Makes old what new is, changing only what differs: a file or link
+    that's new or changed moves in from new in one step, the file dated now,
+    later than anything built from the one before, and what new hasn't goes.
+    An unchanged file keeps its date."""
+    folder = old.is_dir() and not old.is_symlink()
+    if new.is_dir() and not new.is_symlink():
+        if not folder:
+            old.unlink(missing_ok=True)
+            old.mkdir(parents=True, exist_ok=True)
+        keep = {entry.name for entry in new.iterdir()}
+        for entry in old.iterdir():
+            if entry.name in keep:
+                continue
+            if entry.is_dir() and not entry.is_symlink():
+                shutil.rmtree(entry, ignore_errors=True)
+            else:
+                entry.unlink(missing_ok=True)
+        for entry in new.iterdir():
+            sync(entry, old / entry.name)
+        return
+    if new.is_symlink():
+        same = old.is_symlink() and os.readlink(new) == os.readlink(old)
+    else:
+        same = old.is_file() and not old.is_symlink() and filecmp.cmp(new, old, shallow=False)
+    if not same:
+        if folder:
+            shutil.rmtree(old)
+        if not new.is_symlink():
+            os.utime(new)
+        os.replace(new, old)
 
 
 def firmware_from(view: Path, pack: Path, character: dict, dest: Path) -> None:

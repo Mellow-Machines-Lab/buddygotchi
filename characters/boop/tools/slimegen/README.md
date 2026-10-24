@@ -41,8 +41,8 @@ studio lighting into a mesh and a dense material lookup. These are not animation
 frames: the board deforms and projects geometry on every draw.
 `check-port.py --output /tmp/boop-gel-port` builds the native
 trace adapter and compares every saved script/trace against the C++ engine;
-it needs `make -C internal fw-test` first, for ArduinoJson and the staged
-pack's `moods.h`.
+it needs `firmware/tools/pio.sh run -e native` first, for ArduinoJson and
+the staged pack's `moods.h`.
 After `firmware/tools/pio.sh run -e native`, `internal/tools/boopctl sim --face
 gel` checks native RGB565 screenshots against the gel goldens. These checks
 do not measure physical display throughput or speaker quality.

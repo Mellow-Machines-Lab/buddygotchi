@@ -73,7 +73,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
 | `make -C internal test` | `make build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
 | `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
-| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/`, then LinkKit's device library's own (`pio test -d linkkit/device -e native`) |
+| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/`, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make build`, then the pipeline check (L4) |
@@ -170,6 +170,19 @@ Boop's gel slime's in its
 Boop's recorded voice bank's in
 [its README](../characters/boop/design/assets/boop-voice-v1/README.md).
 None of them contacts Jev, a paid API or a device.
+
+**Side by side.** Make targets can run at once, in one checkout or in
+worktrees beside it. A stage changes only the staged files that differ,
+each replaced whole ([CHARACTER.md](../characters/CHARACTER.md) §2), so
+a build reading them meanwhile never finds one missing; the unit tests
+build apart from the simulator (`fw-test`, above); and `boopctl sim` and
+`run` keep their pictures in `/tmp/boop-sim/<checkout>/` and
+`/tmp/boop-run/<checkout>/`, `<checkout>` the checkout's folder name and
+a hash of its path, so no other checkout's run writes over them. An
+incremental native build is the clean one, after a checkout or a merge
+too: PlatformIO follows every header through the staged pack and decides
+by contents, not dates. The board is one process's at a time (below), and
+so is `boopctl e2e`'s `/tmp/boop-e2e`.
 
 **Sharing the port.** Only one process can open the serial port, so
 LinkKit's bridge owns it and shares it on a Unix socket, by the rules in
@@ -397,7 +410,8 @@ gets at least one scenario. Their pictures are the golden images in
 ### L1: simulator
 
 1. `make -C internal sim` (or `internal/tools/boopctl sim <scenario>`)
-   writes PNGs to `/tmp/boop-sim/<face>/<scenario>/` and compares them with the
+   writes PNGs to `/tmp/boop-sim/<checkout>/<face>/<scenario>/` (§2, Side by
+   side) and compares them with the
    goldens. Unchanged pictures pass.
 2. Open every new or changed picture and check it against the spec: the
    right screen and state, eyes centred and readable, text inside its

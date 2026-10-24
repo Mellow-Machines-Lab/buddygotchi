@@ -74,7 +74,7 @@ fw-test:
 
 # Every device scenario in the simulator, against the goldens (L1): the
 # pixel face's, then the gel face's (characters/boop/tests/golden-gel/). The
-# PNGs land in /tmp/boop-sim/<face>/<scenario>/; internal/tools/boopctl sim NAME
+# PNGs land in /tmp/boop-sim/<checkout>/<face>/<scenario>/; internal/tools/boopctl sim NAME
 # [--face gel] runs one.
 sim:
 	cd $(ROOT) && internal/tools/boopctl sim

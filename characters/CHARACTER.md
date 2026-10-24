@@ -104,7 +104,10 @@ each a link to the file in its pack; `pack`, the one pointer to it; and
 from it, the pack's `firmware/`, with the two headers staging makes
 (`moods.h`, §9, and `rig_tables.h`, §15), and the folder the app bundles
 (`packs/`). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
-and `make build` before every app build. The app bundles only what it
+and `make build` before every app build. A stage changes only what
+differs from the last: an unchanged file stays as it was, and a changed
+one is replaced whole, dated then, so a build reading `.character-build/`
+while another stages finds every file there. The app bundles only what it
 reads of a pack (not its firmware, rig, voice file, tools or tests): the
 chosen pack's, which `packs/chosen` names, and beside it every other
 pack in the chosen one's folder, each with what it uses, for buddies

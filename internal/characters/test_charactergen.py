@@ -224,6 +224,30 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in (gen.STAGE / "packs").iterdir() if p.is_dir()), ["chosen-one", "lender", "other"])
         self.assertEqual((gen.STAGE / "packs" / "other" / "mac" / "takes.tsv").read_text(), "t", "with what it uses")
 
+    def test_staging_again_changes_only_what_differs(self):
+        """A build may be reading the staged files while another stages them: an unchanged file stays the same file
+        with its date, a changed one is replaced whole and dated later than the one before, and one the pack no
+        longer has goes. Nothing of the staging folder is left behind."""
+        pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
+                         files=[("firmware/include/art.h", "a"), ("firmware/include/old.h", "o"), ("tests/firmware/test_x/t.cpp", "")])
+        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
+        self.addCleanup(setattr, gen, "STAGE", stage)
+        self.assertEqual(gen.stage(pack), 0)
+        include = gen.STAGE / "firmware" / "include"
+        before = {p.name: p.stat() for p in include.iterdir()}
+        write(pack / "firmware/include/art.h", "changed")
+        (pack / "firmware/include/old.h").unlink()
+        self.assertEqual(gen.stage(pack), 0)
+        after = {p.name: p.stat() for p in include.iterdir()}
+        self.assertEqual(sorted(after), ["art.h", "moods.h", "rig_tables.h"])
+        for name in ("moods.h", "rig_tables.h"):
+            self.assertEqual((after[name].st_ino, after[name].st_mtime_ns), (before[name].st_ino, before[name].st_mtime_ns), name)
+        self.assertEqual((include / "art.h").read_text(), "changed")
+        self.assertNotEqual(after["art.h"].st_ino, before["art.h"].st_ino)
+        self.assertGreaterEqual(after["art.h"].st_mtime_ns, (pack / "firmware/include/art.h").stat().st_mtime_ns)
+        self.assertEqual((gen.STAGE / "firmware-test" / "test_x" / "t.cpp").resolve(), (pack / "tests/firmware/test_x/t.cpp").resolve())
+        self.assertEqual(sorted(p.name for p in gen.STAGE.iterdir()), ["firmware", "firmware-test", "pack", "packs", "staged"])
+
     def test_firmware_to_lays_out_one_packs_firmware_and_stages_nothing(self):
         """--firmware-to=DIR, for a second build beside the staged pack's (simulator/web/build.sh PACK): the firmware's files as staging lays them out, what the pack uses included, and nothing staged changes."""
         self.pack("lender", [{"id": "calm"}], files=[("firmware/include/art.h", "a")], shares={"art": {"files": ["firmware/include/art.h"]}})

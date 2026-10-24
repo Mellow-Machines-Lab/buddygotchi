@@ -5,7 +5,10 @@ transition. Record first (the face is `gel` or `pixel`):
 
 then, with the tools' venv (Pillow):
 
-    internal/tools/.venv/bin/python internal/tools/fluid/measure.py [/tmp/boop-sim/gel/transitions]
+    internal/tools/.venv/bin/python internal/tools/fluid/measure.py [DIR]
+
+DIR is where `boopctl sim` saved them, by default this checkout's
+/tmp/boop-sim/<checkout>/gel/transitions (its line for each shot names it).
 
 Shots are named `<ms>-<transition>`, 40 ms apart; a frame is measured
 against the one 40 ms before it, so a recording may leave gaps between its
@@ -26,6 +29,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from boopctl_lib.common import checkout_tmp  # noqa: E402
 from boopctl_lib.image import sheet  # noqa: E402
 
 LEVELS = 24  # a pixel changed: its difference's luma is over this (the studio's board.js counts the same)
@@ -48,7 +52,7 @@ def summary(changes: list) -> dict:
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("dir", nargs="?", default="/tmp/boop-sim/gel/transitions")
+    p.add_argument("dir", nargs="?", default=str(checkout_tmp("boop-sim") / "gel" / "transitions"))
     p.add_argument("--sheets", help="write a contact sheet of each transition here")
     args = p.parse_args()
     files = sorted(glob.glob(os.path.join(args.dir, "*.png")))
