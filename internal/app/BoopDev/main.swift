@@ -21,7 +21,7 @@ let usages: [(command: String, text: String)] = [
         (default the scenario's own runs, else 3 for an always scenario and 1 for the rest); it passes only
         if every run does. Before asking Jev anything it counts the requests the runs will send (each run's
         passes with the scripted brain) and stops if that's over --budget (default 100); --no-budget is for
-        the final pass (make eval). --labeler apple reads each turn start's prompt with Apple Intelligence on
+        the final pass (make eval). --labeler apple reads each prompt and last message with Apple Intelligence on
         this Mac, in place of the step's own reading, so a run checks the reading too. --always runs only
         the always scenarios, Boop's character. --timeline
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
@@ -44,11 +44,12 @@ let usages: [(command: String, text: String)] = [
     """),
     ("read-check", """
     boopdev read-check [--fixture FILE] [--min-kind SHARE] [--min-tone SHARE] [--min-phrases SHARE] [--max-ms MS] [--verbose]
-        Reads sample prompts with Apple Intelligence on this Mac, as the app does, and scores each against what
-        it expects: its kind, its tone, one of its phrases picked, and a secret planted in it never coming
-        back. Exits 1 if a secret comes back, a score is under its floor (--min-kind and --min-tone 0.85,
+        Reads sample prompts and agents' last messages with Apple Intelligence on this Mac, as the app does,
+        and scores each against what it expects: its kind, its tone, one of its phrases picked, and a secret
+        planted in it never coming back, prompts and messages apart. Exits 1 if a secret comes back, a score
+        of either is under its floor (--min-kind and --min-tone 0.85,
         --min-phrases 0.75 by default) or a typical reading takes longer than --max-ms (1500). FILE defaults
-        to the repo's internal/app/Tests/Fixtures/prompt-readings.json. It prints each miss, or with
+        to the repo's internal/app/Tests/Fixtures/readings.json. It prints each miss, or with
         --verbose every reading. Needs Apple Intelligence; exits 1 without it.
     """),
     ("hooks", """
@@ -302,7 +303,7 @@ func readCheck(_ raw: [String]) async {
     let args = arguments("read-check", raw, options: ["--fixture", "--min-kind", "--min-tone", "--min-phrases", "--max-ms"],
                          flags: ["--verbose"])
     let file = args["--fixture"].map { URL(fileURLWithPath: $0) }
-        ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/prompt-readings.json")
+        ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/readings.json")
     let samples: [ReadCheck.Sample]
     do {
         guard let file else { fail("boopdev read-check: can't find the fixture; pass --fixture FILE") }
@@ -326,17 +327,21 @@ func readCheck(_ raw: [String]) async {
         func field(_ got: String?, _ want: String?, _ ok: Bool?) -> String {
             (got ?? "none") + (ok == false ? " (not \(want ?? "none"))" : "")
         }
-        let line = [field(r.reading.kind?.rawValue, r.sample.kind?.rawValue, r.kindOK), field(r.reading.tone?.rawValue, r.sample.tone?.rawValue, r.toneOK),
+        let line = [field(r.reading.kind, r.sample.kind, r.kindOK), field(r.reading.tone, r.sample.tone, r.toneOK),
                     "\(r.reading.phrases)" + (r.phrasesOK == false ? " (not one of \(r.sample.phrases ?? []))" : ""), r.leaked ? "LEAKED" : nil]
-        let flat = r.sample.prompt.split(whereSeparator: \.isNewline).joined(separator: " ")
+        let flat = r.sample.text.split(whereSeparator: \.isNewline).joined(separator: " ")
         let ok = r.kindOK != false && r.toneOK != false && r.phrasesOK != false && !r.leaked
-        print("\(ok ? "ok  " : "MISS")  \(r.ms) ms  \(line.compactMap { $0 }.joined(separator: ", "))  \"\(flat.prefix(50))\"")
+        print("\(ok ? "ok  " : "MISS")  \(r.ms) ms  \(r.sample.isMessage ? "message" : "prompt ")  \(line.compactMap { $0 }.joined(separator: ", "))  \"\(flat.prefix(50))\"")
     }
-    let score = ReadCheck.score(results)
-    print("kind \(score.kind.hits)/\(score.kind.of), tone \(score.tone.hits)/\(score.tone.of), phrases \(score.phrases.hits)/\(score.phrases.of), "
-          + "secrets kept out \(results.filter { $0.sample.secret != nil }.count - score.leaks.count)/\(results.filter { $0.sample.secret != nil }.count), "
-          + "median \(score.medianMs) ms")
-    let short = score.shortfalls(floors)
+    // Prompts and messages are scored apart: each has its own lists.
+    var short: [String] = []
+    for (name, group) in [("prompts", results.filter { !$0.sample.isMessage }), ("messages", results.filter(\.sample.isMessage))] where !group.isEmpty {
+        let score = ReadCheck.score(group)
+        let secrets = group.filter { $0.sample.secret != nil }.count
+        print("\(name): kind \(score.kind.hits)/\(score.kind.of), tone \(score.tone.hits)/\(score.tone.of), phrases \(score.phrases.hits)/\(score.phrases.of), "
+              + "secrets kept out \(secrets - score.leaks.count)/\(secrets), median \(score.medianMs) ms")
+        short += score.shortfalls(floors).map { "\(name)' \($0)" }
+    }
     guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 

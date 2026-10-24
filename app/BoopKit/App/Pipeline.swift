@@ -157,11 +157,12 @@ public final class Pipeline {
     /// tagged with it. It's logged without what its session already has
     /// (`Core.unrepeated`).
     @discardableResult
-    /// One that still carries your prompt (the tools', tests' and evals';
-    /// the app takes it out first, `Runtime.hook`) has its reading at
-    /// once, labelled with `labels` if given.
-    public func agent(_ event: Event, labels: PromptReading.Labels? = nil) -> Step {
-        let (event, prompt) = PromptIntake.split(event)
+    /// One that still carries your prompt or the agent's last message (the
+    /// tools', tests' and evals'; the app takes it out first,
+    /// `Runtime.hook`) has its reading at once, labelled with `labels` or
+    /// `messageLabels` if given.
+    public func agent(_ event: Event, labels: PromptReading.Labels? = nil, messageLabels: MessageReading.Labels? = nil) -> Step {
+        let (event, text) = PromptIntake.split(event)
         return input(at: event.at) {
             var event = event
             let id = buddy(watching: event)
@@ -169,7 +170,9 @@ public final class Pipeline {
             let core = core(id)
             let e = harness.emit(core.unrepeated(event))
             run(core.handle(e), buddy: id)
-            if let prompt { emit(PromptReading(prompt: prompt, names: buddies.map(\.name), labels: labels), about: event, at: event.at) }
+            if let text {
+                emit(PromptIntake.heard(text, names: buddies.map(\.name), labels: labels, messageLabels: messageLabels), about: event, at: event.at)
+            }
         }
     }
 
@@ -178,22 +181,24 @@ public final class Pipeline {
         several ? binding.buddy(for: event, among: buddies, watching: { self.cores[$0]!.sessions.count }) : nil
     }
 
-    /// Your prompt's reading, for the turn start `turn` that brought it, as
-    /// logged: logged, with the session and the buddy of that turn, and it
-    /// wakes the brain (the turn start no longer does). The core isn't
-    /// told. Nil, logging nothing, once the turn is over (a slow labeler):
-    /// it ended, or another began, and the brain has heard that instead.
+    /// A reading, for the turn start or end `turn` that brought its text,
+    /// as logged: logged, with the session and the buddy of that turn, and
+    /// it wakes the brain in the turn event's place. The core isn't told.
+    /// Nil, logging nothing, once the session moved on (a slow labeler):
+    /// your prompt's once its turn ended or another began, the agent's
+    /// last message's once the next turn began. The brain has heard that
+    /// instead.
     @discardableResult
-    public func promptRead(_ reading: PromptReading, about turn: Event, at now: Int64) -> Step? {
+    func read(_ heard: PromptIntake.Heard, about turn: Event, at now: Int64) -> Step? {
         let over = transcript.view(now: now).events(after: turn.seq).contains {
-            $0.type == .turn && $0.agent == turn.agent && $0.session == turn.session
+            $0.type == .turn && (heard.kind == .prompt || $0.phase == .start) && $0.agent == turn.agent && $0.session == turn.session
         }
-        return over ? nil : input(at: now) { emit(reading, about: turn, at: now) }
+        return over ? nil : input(at: now) { emit(heard, about: turn, at: now) }
     }
 
-    func emit(_ reading: PromptReading, about turn: Event, at now: Int64) {
-        harness.emit(Event(at: now, source: turn.from ?? .mac, type: .prompt, specificType: "reading", session: turn.session,
-                           buddy: buddy(watching: turn), data: reading.facts))
+    func emit(_ heard: PromptIntake.Heard, about turn: Event, at now: Int64) {
+        harness.emit(Event(at: now, source: turn.from ?? .mac, type: heard.kind, specificType: "reading", session: turn.session,
+                           buddy: buddy(watching: turn), data: heard.facts))
     }
 
     /// The device's poke, on the buddy `buddy` (nil for the only one): the

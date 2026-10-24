@@ -194,7 +194,7 @@ final class ReplayTests: XCTestCase {
         let effects = lines.filter { $0.hasPrefix("+") }.map { $0.split(separator: " ", maxSplits: 1)[1] }
         XCTAssertEqual(effects.filter { $0.hasPrefix("do ") }.map { $0.contains(#""name":"starting""#) }, [true, true],
                        "the rules play the starts; the finish is the brain's")
-        XCTAssertTrue(effects.contains(#"view turn end · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls. · Its last message: "PRIVATE_CLOSING_7182 fixed the failing tests""#), "\(effects)")
+        XCTAssertTrue(effects.contains(#"view last_message · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls."#), "\(effects)")
         let states = effects.filter { $0.hasPrefix("state") }
         XCTAssertEqual(states.filter { $0.contains(#""act":"testing""#) }.count, 10, "each of the ten test runs")
         let bases = states.compactMap { line -> String? in
@@ -203,6 +203,7 @@ final class ReplayTests: XCTestCase {
         XCTAssertEqual(bases.reduce(into: [String]()) { if $0.last != $1 { $0.append($1) } },
                        [#""base":"idle""#, #""base":"working""#, #""base":"idle""#])
         XCTAssertFalse(lines.joined().contains("PRIVATE_OUTPUT"), "no tool output")
+        XCTAssertFalse(lines.joined().contains("PRIVATE_CLOSING"), "nor the agent's last message: only its reading")
     }
 
     /// The J1 fixtures carry boopctl e2e checkpoints; replay skips them and
@@ -213,7 +214,7 @@ final class ReplayTests: XCTestCase {
         XCTAssertTrue(steps.contains(.advance(400_000)))
         let lines = Replay(agent: "claude").run(steps)
         XCTAssertFalse(lines.contains { $0.hasPrefix("# skipped") })
-        XCTAssertTrue(lines.contains { $0.contains("view turn end") && $0.contains(": done, a ") })
+        XCTAssertTrue(lines.contains { $0.contains("view last_message") && $0.contains(": done, a ") }, "a finish with a message, in its reading")
         XCTAssertTrue(lines.contains { $0.contains(": failed, a ") })
         XCTAssertFalse(lines.contains { $0.contains(#"do {"name":"stopped""#) }, "a failed turn has no rule reaction")
     }

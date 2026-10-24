@@ -1,23 +1,40 @@
 import BoopKit
 import Foundation
 
-/// How well prompts are read (`boopdev read-check`): sample prompts read as
-/// the app reads them, scored against what each expects. A sample expects
-/// any of a kind, a tone, phrases (one of them picked is a hit) and a
-/// secret planted in it, which must never come back in the reading.
+/// How well prompts and agents' last messages are read (`boopdev
+/// read-check`): samples read as the app reads them, scored against what
+/// each expects. A sample expects any of a kind, a tone, phrases (one of
+/// them picked is a hit) and a secret planted in it, which must never come
+/// back in the reading.
 public enum ReadCheck {
     public struct Sample: Sendable {
-        public var prompt: String
-        public var kind: PromptReading.Kind?
-        public var tone: PromptReading.Tone?
+        /// The prompt, or with `isMessage` the agent's last message.
+        public var text: String
+        public var isMessage = false
+        /// From its own lists: `PromptReading`'s or `MessageReading`'s.
+        public var kind: String?
+        public var tone: String?
         public var phrases: [String]?
         public var secret: String?
+    }
+
+    /// What a sample was read as: its kind, tone and phrases.
+    public struct Read: Sendable {
+        public var kind: String?
+        public var tone: String?
+        public var phrases: [String]
+
+        init<Of>(_ r: Reading<Of>) {
+            kind = r.kind?.rawValue
+            tone = r.tone?.rawValue
+            phrases = r.phrases
+        }
     }
 
     /// A sample's reading, and how long it took.
     public struct Result: Sendable {
         public var sample: Sample
-        public var reading: PromptReading
+        public var reading: Read
         public var ms: Int
 
         public var kindOK: Bool? { sample.kind.map { $0 == reading.kind } }
@@ -28,7 +45,7 @@ public enum ReadCheck {
         /// Whether the planted secret, or any 8 characters of it, came back.
         public var leaked: Bool {
             guard let secret = sample.secret else { return false }
-            let said = ([reading.kind?.rawValue, reading.tone?.rawValue].compactMap { $0 } + reading.phrases).joined(separator: " ")
+            let said = ([reading.kind, reading.tone].compactMap { $0 } + reading.phrases).joined(separator: " ")
             let chars = Array(secret)
             return chars.count < 8 ? said.contains(secret)
                 : (0...(chars.count - 8)).contains { said.contains(String(chars[$0..<$0 + 8])) }
@@ -60,16 +77,19 @@ public enum ReadCheck {
         }
     }
 
-    /// The fixture's samples: a JSON array of `prompt`, and any of `kind`,
-    /// `tone`, `phrases` and `secret`.
+    /// The fixture's samples: a JSON array of `prompt` or `message`, and
+    /// any of `kind`, `tone`, `phrases` and `secret`.
     public static func samples(_ data: Data) throws -> [Sample] {
         guard let list = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { throw Problem("not a list") }
         return try list.enumerated().map { i, o in
-            guard let prompt = o["prompt"] as? String else { throw Problem("sample \(i + 1) has no prompt") }
-            let kind = (o["kind"] as? String).map { PromptReading.Kind(rawValue: $0) }
-            let tone = (o["tone"] as? String).map { PromptReading.Tone(rawValue: $0) }
-            if kind == .some(nil) || tone == .some(nil) { throw Problem("sample \(i + 1): kind or tone isn't one of the lists") }
-            return Sample(prompt: prompt, kind: kind ?? nil, tone: tone ?? nil, phrases: o["phrases"] as? [String],
+            let message = o["message"] as? String
+            guard let text = (o["prompt"] as? String) ?? message else { throw Problem("sample \(i + 1) has no prompt or message") }
+            let kind = o["kind"] as? String, tone = o["tone"] as? String
+            let (kinds, tones) = message == nil ? (PromptReading.Kind.allCases.map(\.rawValue), PromptReading.Tone.allCases.map(\.rawValue))
+                : (MessageReading.Kind.allCases.map(\.rawValue), MessageReading.Tone.allCases.map(\.rawValue))
+            if let kind, !kinds.contains(kind) { throw Problem("sample \(i + 1): kind \(kind) isn't one of \(kinds.joined(separator: ", "))") }
+            if let tone, !tones.contains(tone) { throw Problem("sample \(i + 1): tone \(tone) isn't one of \(tones.joined(separator: ", "))") }
+            return Sample(text: text, isMessage: message != nil, kind: kind, tone: tone, phrases: o["phrases"] as? [String],
                           secret: o["secret"] as? String)
         }
     }
@@ -79,7 +99,8 @@ public enum ReadCheck {
         var out: [Result] = []
         for sample in samples {
             let started = ContinuousClock.now
-            let reading = await PromptReading.read(sample.prompt, names: [], labeler: labeler)
+            let reading = sample.isMessage ? Read(await MessageReading.read(sample.text, names: [], labeler: labeler))
+                : Read(await PromptReading.read(sample.text, names: [], labeler: labeler))
             out.append(Result(sample: sample, reading: reading, ms: Int(started.duration(to: .now) / .milliseconds(1))))
         }
         return out
@@ -92,7 +113,7 @@ public enum ReadCheck {
         }
         let times = results.map(\.ms).sorted()
         return Score(kind: tally(\.kindOK), tone: tally(\.toneOK), phrases: tally(\.phrasesOK),
-                     leaks: results.filter(\.leaked).map(\.sample.prompt), medianMs: times.isEmpty ? 0 : times[times.count / 2])
+                     leaks: results.filter(\.leaked).map(\.sample.text), medianMs: times.isEmpty ? 0 : times[times.count / 2])
     }
 
     public struct Problem: Error, CustomStringConvertible {

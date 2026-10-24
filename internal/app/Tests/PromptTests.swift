@@ -60,12 +60,12 @@ final class PromptTests: XCTestCase {
         let labels = await AppleIntelligenceLabeler.within(.milliseconds(100)) {
             for _ in 0..<50 { try? await Task.sleep(for: .milliseconds(100)) }  // carries on through cancelling
             if Task.isCancelled { cancelled.add("cancelled") }
-            return .init(kind: .fix)
+            return PromptReading.Labels(kind: .fix)
         }
         XCTAssertNil(labels)
         XCTAssertLessThan(started.duration(to: .now), .seconds(1))
         XCTAssertEqual(AppleIntelligenceLabeler.timeout, .seconds(3))
-        let quick = await AppleIntelligenceLabeler.within(.seconds(2)) { .init(kind: .docs) }
+        let quick = await AppleIntelligenceLabeler.within(.seconds(2)) { PromptReading.Labels(kind: .docs) }
         XCTAssertEqual(quick?.kind, .docs, "an answer in time is kept")
         eventually("the slow work was cancelled") { cancelled.all == ["cancelled"] }
     }
@@ -183,8 +183,125 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(reading.facts["named"], .array(["Pip"]), "which names, as the buddies are called")
         XCTAssertNil(PromptReading(facts: ["kind": "fix"]), "not a reading without its length")
         XCTAssertEqual(AppleIntelligenceLabeler.parse("kind: fix\ntone:  Frustrated \nphrases: still broken | keep happening"),
-                       .init(kind: .fix, tone: .frustrated, phrases: ["still broken", "keep happening"]))
-        XCTAssertEqual(AppleIntelligenceLabeler.parse("Kind: refactoring\ntone: grumpy\nphrases: none"), .init())
+                       PromptReading.Labels(kind: .fix, tone: .frustrated, phrases: ["still broken", "keep happening"]))
+        XCTAssertEqual(AppleIntelligenceLabeler.parse("Kind: refactoring\ntone: grumpy\nphrases: none"), PromptReading.Labels())
+        XCTAssertEqual(AppleIntelligenceLabeler.parse("kind: stuck\ntone: Apologetic\nphrases: still broken"),
+                       MessageReading.Labels(kind: .stuck, tone: .apologetic, phrases: ["still broken"]), "a message's, from its own lists")
+        XCTAssertEqual(AppleIntelligenceLabeler.parse("kind: fix\ntone: frustrated\nphrases: none"), MessageReading.Labels(),
+                       "the prompt's lists aren't a message's")
+    }
+
+    /// Counted with no model, a message's stock lines and apologies are
+    /// its tone, with the cue as a phrase, and what it plainly claims its
+    /// kind: that it couldn't finish before that it's done, and a question
+    /// only when it ends with one. The rest needs a labeler.
+    func testCountingAMessageCatchesItsStockLinesAndClaims() {
+        func read(_ text: String) -> MessageReading { MessageReading(counting: text, names: []) }
+        let stock = read("You're absolutely right! I'll fix that.")
+        XCTAssertEqual(stock.tone, .fawning)
+        XCTAssertEqual(stock.phrases, ["absolutely right"])
+        XCTAssertNil(stock.kind, "a promise claims nothing")
+        XCTAssertEqual(read("Good catch, the check was missing.").tone, .fawning)
+        let sorry = read("I apologize for the confusion. It works now.")
+        XCTAssertEqual(sorry.kind, .done)
+        XCTAssertEqual(sorry.tone, .apologetic)
+        XCTAssertEqual(sorry.phrases, ["apologize"])
+        XCTAssertEqual(read("All done! Everything is working great now.").kind, .done)
+        XCTAssertEqual(read("Done: the fix is in and all the tests pass.").kind, .done)
+        XCTAssertEqual(read("I couldn't get the build to work, though the unit tests pass.").kind, .stuck, "couldn't, before done")
+        XCTAssertEqual(read("Before I start: should the export return JSON or CSV? ").kind, .question)
+        XCTAssertNil(read("Why? The cache was stale, so I cleared it.").kind, "a question inside isn't one")
+        XCTAssertNil(read("Renamed getUser to fetchUser in 4 files.").kind)
+        XCTAssertNil(read("Renamed getUser to fetchUser in 4 files.").tone)
+        XCTAssertNil(read("ALL DONE, EVERYTHING WORKS NOW").tone, "a message has no shouting")
+    }
+
+    /// A message's label is checked against it as a prompt's is: its kind
+    /// over the counted one, which stays when it has none; the counted
+    /// stock line over its calm; only the phrases really in it.
+    func testAMessagesLabelIsCheckedAgainstIt() {
+        let text = "You're absolutely right! I'll fix that."
+        var reading = MessageReading(counting: text, names: [])
+        reading.label(.init(kind: .answer, tone: .calm, phrases: ["absolutely right", "made up", "fix that"]), in: text)
+        XCTAssertEqual(reading.kind, .answer)
+        XCTAssertEqual(reading.tone, .fawning, "the counted stock line stands over the labeler's calm")
+        XCTAssertEqual(reading.phrases, ["absolutely right", "fix that"])
+        var done = MessageReading(counting: "All done: the tests pass.", names: [])
+        done.label(.init(tone: .upbeat), in: "All done: the tests pass.")
+        XCTAssertEqual(done.kind, .done, "a labeler with no kind keeps the counted one")
+        XCTAssertEqual(done.tone, .upbeat)
+    }
+
+    /// Pins the finish's line: what the message's reading says goes after
+    /// what the turn did, in the message's place, and its words go under
+    /// it; a reading that says nothing leaves the line as it was.
+    func testAFinishSaysWhatItsMessageSaid() {
+        let finish = #"claude finished turn 4 on "api": done, a short turn, 1 tool call."#
+        XCTAssertEqual(EventLine.finished(finish, saying: MessageReading(length: .sentence, kind: .done, tone: .apologetic)),
+                       #"claude finished turn 4 on "api": done, a short turn, 1 tool call, saying it's done, apologetic."#)
+        XCTAssertEqual(EventLine.finished(finish, saying: MessageReading(length: .words, kind: .other, tone: .fawning)),
+                       #"claude finished turn 4 on "api": done, a short turn, 1 tool call, fawning."#)
+        XCTAssertEqual(EventLine.finished(finish, saying: MessageReading(length: .words, kind: .question)),
+                       #"claude finished turn 4 on "api": done, a short turn, 1 tool call, asking you something."#)
+        XCTAssertEqual(EventLine.finished(finish, saying: MessageReading(length: .words, tone: .calm)), finish)
+        XCTAssertEqual(EventLine.itsWords(["absolutely right"]), #"Its words: "absolutely right"."#)
+        XCTAssertNil(EventLine.itsWords([]))
+    }
+
+    /// The agent's last message leaves the turn end, which then has no line
+    /// of its own: its reading's line is the finish, saying what the
+    /// message said, and wakes the brain. Neither the transcript, the line
+    /// nor the brain's prompt holds a word of it but "Its words". A finish
+    /// with no message wakes it as ever.
+    func testOnlyTheMessagesReadingReachesTheBrain() throws {
+        let rig = CoreRig()
+        rig.send(.turnStart)
+        rig.wait(20_000)
+        let message = "PRIVATE_CLOSING_5001 You're absolutely right! I'll fix that with sk-proj-8f2aQz91kLmN0pQrStUv."
+        let fx = rig.send(.turnEnd, message: message)
+        let lines = rig.pipeline.transcript.events.map(\.jsonLine).joined()
+        for word in ["PRIVATE_CLOSING", "fix that", "sk-proj"] { XCTAssertFalse(lines.contains(word), "no \(word) in the transcript") }
+        XCTAssertEqual(woke(fx), [#"claude finished turn 1 on "landing": done, a short turn, no tool calls, fawning."#])
+        XCTAssertEqual(events(fx).map(\.name), ["last_message"], "the turn end has no line of its own")
+        XCTAssertEqual(events(fx).first?.notes, [#"Its words: "absolutely right"."#])
+        XCTAssertEqual(finished(fx), ["done"])
+        let end = try XCTUnwrap(rig.pipeline.transcript.events.first { $0.kind == "turn_end" })
+        XCTAssertEqual(end[PromptIntake.readingFollows], .bool(true))
+        let read = try XCTUnwrap(rig.pipeline.transcript.events.last)
+        let state = rig.pipeline.harness.prompt(for: read)
+        XCTAssertTrue(state.contains("NOW (") && state.contains("fawning.\n  Its words: \"absolutely right\"."), state)
+        for word in ["PRIVATE_CLOSING", "fix that", "sk-proj"] { XCTAssertFalse(state.contains(word), "no \(word) in the brain's prompt") }
+        rig.wait(5000)
+        rig.send(.turnStart)
+        rig.wait(5000)
+        XCTAssertEqual(woke(rig.send(.turnEnd)), [#"claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak."#])
+    }
+
+    /// Pins the drop: a message's reading that comes once the next turn
+    /// has started logs nothing and wakes nothing, as a prompt's that
+    /// comes once its turn is over; one that comes before is the finish's
+    /// line.
+    func testAMessagesReadingAfterTheNextTurnStartedIsDropped() throws {
+        let rig = CoreRig()
+        rig.send(.turnStart)
+        rig.wait(20_000)
+        func finish() throws -> (end: Event, text: PromptIntake.Text) {
+            let (event, text) = PromptIntake.split(rig.event(.turnEnd, message: "All done: the tests pass."))
+            let step = rig.pipeline.agent(event)
+            XCTAssertTrue(step.views.isEmpty, "the finish waits for its reading")
+            return (try XCTUnwrap(step.recorded.first), try XCTUnwrap(text))
+        }
+        let late = try finish()
+        rig.wait(1000)
+        rig.send(.turnStart)
+        XCTAssertNil(rig.pipeline.read(PromptIntake.heard(late.text, names: []), about: late.end, at: rig.now), "dropped")
+        XCTAssertFalse(rig.pipeline.transcript.events.contains { $0.type == .lastMessage })
+        rig.wait(20_000)
+        let inTime = try finish()
+        rig.wait(1000)
+        let step = try XCTUnwrap(rig.pipeline.read(PromptIntake.heard(inTime.text, names: []), about: inTime.end, at: rig.now))
+        XCTAssertEqual(step.views.map(\.line), [#"claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, saying it's done."#])
+        XCTAssertEqual(step.views.map(\.wakesBrain), [true])
     }
 
     /// The prompt leaves the turn start, which says its reading follows
@@ -211,19 +328,43 @@ final class PromptTests: XCTestCase {
     }
 
     /// The intake hands on the reading at once with no labeler, and on
-    /// `home` once one answers, the prompt scrubbed before it reads it.
+    /// `home` once one answers, the text scrubbed before it reads it: a
+    /// prompt as a prompt, and a message by its own lists.
     func testTheIntakeReadsOnceAndHandsOn() {
         let home = DispatchQueue(label: "test.home")
         let got = Lines()
-        PromptIntake.read("hey pip", names: ["Pip"], labeler: nil, home: home) { r in got.add("\(r.length) \(r.named)") }
-        XCTAssertEqual(got.all, [#"words ["Pip"]"#], "at once, with no labeler")
-        let seen = Seen()
-        PromptIntake.read("still broken, key sk-proj-8f2aQz91kLmN0pQrStUv", names: [], labeler: seen, home: home) { r in
-            got.add("\(r.kind!) \(r.phrases)")
+        @Sendable func heard(_ h: PromptIntake.Heard) -> String {
+            let list = { (key: String) in h.facts[key]?.array?.compactMap(\.string) ?? [] }
+            return "\(h.kind.rawValue) \(h.facts["length"]?.string ?? "") \(h.facts["kind"]?.string ?? "-") \(list("named")) \(list("phrases"))"
         }
+        PromptIntake.read(.prompt("hey pip"), names: ["Pip"], labeler: nil, home: home) { got.add(heard($0)) }
+        XCTAssertEqual(got.all, [#"prompt words - ["Pip"] []"#], "at once, with no labeler")
+        let seen = Seen()
+        PromptIntake.read(.prompt("still broken, key sk-proj-8f2aQz91kLmN0pQrStUv"), names: [], labeler: seen, home: home) { got.add(heard($0)) }
         eventually("the labeler's reading") { got.all.count == 2 }
-        XCTAssertEqual(got.all.last, #"fix ["still broken"]"#)
+        XCTAssertEqual(got.all.last, #"prompt sentence fix [] ["still broken"]"#)
         XCTAssertEqual(seen.text, "still broken, key [secret]", "it reads the scrubbed prompt")
+        PromptIntake.read(.message("Pip, I'm stuck: sk-proj-8f2aQz91kLmN0pQrStUv is still broken"), names: ["Pip"], labeler: seen, home: home) {
+            got.add(heard($0))
+        }
+        eventually("the message's reading") { got.all.count == 3 }
+        XCTAssertEqual(got.all.last, #"last_message sentence stuck [] ["still broken"]"#, "no names: the agent's words aren't yours")
+        XCTAssertEqual(seen.message, "Pip, I'm stuck: [secret] is still broken")
+    }
+
+    /// The intake takes a turn end's last message, and only one with words
+    /// in it, and leaves a turn end without one as it is.
+    func testTheIntakeSplitsAFinishsMessage() {
+        let rig = CoreRig()
+        let (end, text) = PromptIntake.split(rig.event(.turnEnd, message: "All green now."))
+        XCTAssertEqual(text, .message("All green now."))
+        XCTAssertNil(end["message"])
+        XCTAssertEqual(end[PromptIntake.readingFollows], .bool(true))
+        let (blank, none) = PromptIntake.split(rig.event(.turnEnd, message: " \n"))
+        XCTAssertNil(none)
+        XCTAssertNil(blank["message"], "a blank message isn't kept either")
+        XCTAssertNil(blank[PromptIntake.readingFollows])
+        XCTAssertNil(PromptIntake.split(rig.event(.turnEnd)).1)
     }
 
     /// `boopdev read-check`'s fixture loads, and its scoring: a hit is any
@@ -231,13 +372,18 @@ final class PromptTests: XCTestCase {
     /// do, and the floors name what falls short. A labeler that tries to
     /// quote a planted secret can't: it was scrubbed before it read it.
     func testReadCheckScoresAndCatchesLeaks() async throws {
-        let fixture = CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/prompt-readings.json")
+        let fixture = CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/readings.json")
         let samples = try ReadCheck.samples(Data(contentsOf: fixture))
-        XCTAssertGreaterThanOrEqual(samples.count, 40)
-        XCTAssertGreaterThanOrEqual(samples.filter { $0.secret != nil }.count, 5)
+        XCTAssertGreaterThanOrEqual(samples.count, 55)
+        XCTAssertGreaterThanOrEqual(samples.filter(\.isMessage).count, 15, "the agents' messages too")
+        XCTAssertGreaterThanOrEqual(samples.filter { $0.secret != nil }.count, 7)
+        try XCTAssertThrowsError(try ReadCheck.samples(Data(#"[{"message": "Done.", "kind": "fix"}]"#.utf8)), "a message's kind is from its own list")
         struct Quoter: PromptLabeler {
             func label(_ text: String) async -> PromptReading.Labels? {
                 .init(kind: .fix, tone: .frustrated, phrases: text.split(separator: " ").map(String.init))
+            }
+            func label(message text: String) async -> MessageReading.Labels? {
+                .init(kind: .done, tone: .calm, phrases: text.split(separator: " ").map(String.init))
             }
         }
         let planted = samples.filter { $0.secret != nil }
@@ -255,11 +401,16 @@ final class PromptTests: XCTestCase {
 }
 
 /// A labeler that keeps the text it was given, and reads every prompt as
-/// a frustrated fix, "still broken".
+/// a frustrated fix and every message as stuck, "still broken".
 private final class Seen: PromptLabeler, @unchecked Sendable {
     var text: String?
+    var message: String?
     func label(_ text: String) async -> PromptReading.Labels? {
         self.text = text
         return .init(kind: .fix, tone: .frustrated, phrases: ["still broken"])
+    }
+    func label(message text: String) async -> MessageReading.Labels? {
+        message = text
+        return .init(kind: .stuck, phrases: ["still broken"])
     }
 }

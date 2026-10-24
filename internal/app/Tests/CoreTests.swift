@@ -234,10 +234,11 @@ final class CoreRig {
 /// The view events made, in order.
 func events(_ fx: Fx) -> [ViewEvent] { fx.views }
 
-/// The outcomes of the turn ends that woke the brain: no rule celebrates
-/// a finish, so this is how a finish reaches Boop.
+/// The outcomes of the turn ends that woke the brain, in their own line or
+/// their last message's reading's: no rule celebrates a finish, so this
+/// is how a finish reaches Boop.
 func finished(_ fx: Fx) -> [String] {
-    events(fx).filter { $0.name == "turn end" && $0.wakesBrain }.compactMap(\.facts["outcome"]?.string)
+    events(fx).filter { ($0.name == "turn end" || $0.type == .lastMessage) && $0.wakesBrain }.compactMap(\.facts["outcome"]?.string)
 }
 
 /// The view events that wake the brain, by their lines.

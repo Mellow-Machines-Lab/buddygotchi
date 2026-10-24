@@ -408,7 +408,8 @@ private extension String {
 }
 
 /// A demo's readings: each prompt step's own, by its scrubbed text, and
-/// the labeler it stands in front of for any other prompt.
+/// the labeler it stands in front of for any other prompt and every
+/// message.
 struct ScriptLabeler: PromptLabeler {
     let readings: [String: PromptReading.Labels]
     let otherwise: (any PromptLabeler)?
@@ -417,4 +418,6 @@ struct ScriptLabeler: PromptLabeler {
         if let reading = readings[text] { return reading }
         return await otherwise?.label(text)
     }
+
+    func label(message text: String) async -> MessageReading.Labels? { await otherwise?.label(message: text) }
 }
