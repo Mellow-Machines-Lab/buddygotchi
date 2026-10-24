@@ -94,4 +94,59 @@ final class OccasionsTests: XCTestCase {
         XCTAssertFalse(core.snapshot(at: now + 24 * 3_600_000).when.contains("party"), "the next day isn't")
         XCTAssertEqual(Occasions.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
     }
+
+    /// Pins `Occasions.workTiers` and `idleTiers`: a turn is a marathon
+    /// from 8 minutes and a camp from 15, the last; idle fidgets from 30
+    /// seconds, has set pieces from 3 minutes and dozes from 10. One tier
+    /// at a time.
+    func testTheTiersOfALongTurnAndOfIdle() {
+        let tier = { (tiers: [(tag: String, fromMs: Int64)], s: Int64) in Occasions.tier(tiers, after: s * 1000) }
+        for (s, tag) in [(0, nil), (479, nil), (480, "marathon"), (899, "marathon"), (900, "camp"), (7200, "camp")] as [(Int64, String?)] {
+            XCTAssertEqual(tier(Occasions.workTiers, s), tag, "working \(s) s")
+        }
+        for (s, tag) in [(0, nil), (29, nil), (30, "fidget"), (179, "fidget"), (180, "setpiece"), (599, "setpiece"),
+                         (600, "doze"), (7200, "doze")] as [(Int64, String?)] {
+            XCTAssertEqual(tier(Occasions.idleTiers, s), tag, "idle \(s) s")
+        }
+    }
+
+    /// The board hears the tiers in `state.when`: the longest turn working
+    /// now sets the working tier, and the last turn to finish sets idle's.
+    func testTheStateCarriesTheTiers() {
+        let rig = CoreRig()
+        let tiers = { Set(rig.state.when).intersection(["marathon", "camp", "fidget", "setpiece", "doze"]) }
+        rig.send(.turnStart, session: "a")
+        XCTAssertEqual(tiers(), [])
+        rig.wait(4 * 60_000)
+        rig.send(.turnStart, session: "b")
+        rig.wait(4 * 60_000)
+        XCTAssertEqual(tiers(), ["marathon"], "a's turn has run 8 minutes, b's 4")
+        rig.wait(7 * 60_000)
+        XCTAssertEqual(tiers(), ["camp"])
+        rig.send(.turnEnd, session: "a")
+        XCTAssertEqual(tiers(), ["marathon"], "b's turn has run 11 minutes")
+        rig.send(.turnEnd, session: "b")
+        XCTAssertEqual(tiers(), [], "just finished: it settles")
+        rig.wait(30_000)
+        XCTAssertEqual(tiers(), ["fidget"])
+        rig.wait(150_000)
+        XCTAssertEqual(tiers(), ["setpiece"])
+        rig.wait(420_000)
+        XCTAssertEqual(tiers(), ["doze"])
+        rig.send(.turnStart, session: "a")
+        XCTAssertEqual(tiers(), [], "back to work")
+    }
+
+    /// Every growth stage reached is a tag, so a design for Pal shows at
+    /// Pal and after; a Hatchling has none.
+    func testEveryStageReachedIsOn() {
+        XCTAssertEqual(Occasions.stages(1), [])
+        XCTAssertEqual(Occasions.stages(2), ["sprout"])
+        XCTAssertEqual(Occasions.stages(4), ["sprout", "buddy", "pal"])
+        XCTAssertEqual(Occasions.stages(Growth.stages.count), Occasions.stageTags)
+        XCTAssertEqual(Occasions.stageTags, Growth.stages.dropFirst().map { $0.name.lowercased() })
+        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        core.setStage(3)
+        XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(2), ["sprout", "buddy"])
+    }
 }
