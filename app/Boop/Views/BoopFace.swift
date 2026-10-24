@@ -161,10 +161,22 @@ enum MenuBarIcon {
             default: .black
             }
             colour.setFill()
+            // At 1× the dot and the crosses go pixel by pixel: smoothed, a
+            // 3 pt circle reads as a "+" and a diagonal stroke as a smudge.
+            let scale = NSGraphicsContext.current.map { abs($0.cgContext.userSpaceToDeviceSpaceTransform.a) } ?? 2
+            let pixels = scale < 1.5
             if mood == .stopped {
                 // Two crosses where the eyes go.
                 colour.setStroke()
                 for x: CGFloat in [4, 12] {
+                    if pixels {
+                        for i in 0..<5 {
+                            let d = CGFloat(i)
+                            NSRect(x: x + d, y: 7 + d, width: 1, height: 1).fill(using: .sourceOver)
+                            NSRect(x: x + 4 - d, y: 7 + d, width: 1, height: 1).fill(using: .sourceOver)
+                        }
+                        continue
+                    }
                     let cross = NSBezierPath()
                     cross.move(to: NSPoint(x: x, y: 7))
                     cross.line(to: NSPoint(x: x + 4, y: 11))
@@ -185,7 +197,8 @@ enum MenuBarIcon {
             }
             // The dot sits up and to the right, clear of the eyes.
             if mood == .working || mood == .needsYou {
-                NSBezierPath(ovalIn: NSRect(x: 17, y: 1, width: 3, height: 3)).fill()
+                let dot = NSRect(x: 17, y: 1, width: 3, height: 3)
+                if pixels { dot.fill(using: .sourceOver) } else { NSBezierPath(ovalIn: dot).fill() }
             }
             return true
         }
