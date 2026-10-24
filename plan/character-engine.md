@@ -15,9 +15,10 @@ looks' clips, mixed by springs; its schema is
 [CHARACTER.md](../characters/CHARACTER.md) §15. Pixel's face draws from it
 in every design whose face is its mood's resting face, open or shut, at
 every step as the design draws it, which facegen and the board's rig
-face test both check; the rest stay baked. Every switch of
-Pixel's designs dissolves over the rig's 200 ms with no blink, one
-mid-way through another from the picture that shows more; a look's clip
+face test both check; the rest stay baked. Every switch of Pixel's
+designs, into and out of the needs-you screen too, dissolves over the
+rig's 200 ms with no blink, one mid-way through another from the
+picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
 gets no other blink. The gel stays on its own engine, the JavaScript
 reference and the C++ port matched frame for frame, falling asleep over
@@ -82,7 +83,7 @@ numbers on a rig, the same set for every pack:
 **The layers**, back to front: scene (desk, computer) · body · face ·
 accessories (hats, glasses: on the head anchor) · held (sign, trophy, mug:
 on the hands anchor) · air (snow, confetti, Zs: screen space) · lane (the
-strip, the needs-you sign). The renderer reports anchors each frame (crown,
+strip, the needs-you screen). The renderer reports anchors each frame (crown,
 brim ring, hands ring, eyes) from the pose it draws, so layers ride the
 body; every layer fades in and out (the lane included).
 
