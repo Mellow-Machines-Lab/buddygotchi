@@ -2141,6 +2141,35 @@ static void test_a_stroke_is_a_gesture() {
   for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"from\":[60,120]"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"was\":\"stroke\"}"));
+}
+
+// A quick touch that travels is a swipe: the face feels it go by, and
+// nothing plays or goes to the Mac, neither a tap nor a gesture. dbg.state's
+// touch.last says where the last touch went down and was last, how long
+// that took and what it was, to check a panel's axes and speeds by; there
+// is none before the first.
+static void test_a_swipe_is_the_faces_alone() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":null"));
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":60,\"to_x\":160,\"to_y\":200,\"ms\":160}");
+  for (uint32_t t = 1040; t <= 1400; t += 40) {
+    char step[64];
+    std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(t));
+    r.usbLine(step);
+  }
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  // Let go at 1160: its last reading was at 1120, three quarters of the way.
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":{\"from\":[160,60],\"to\":[160,165],\"ms\":120,\"was\":\"swipe\"}"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"k\":\"swipe\""));
 }
 
 // A finger held still on the needs-you screen for TouchGesture::kHoldMs
@@ -2290,6 +2319,7 @@ int main() {
   RUN_TEST(test_a_hold_off_the_needs_you_screen_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
+  RUN_TEST(test_a_swipe_is_the_faces_alone);
   RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_reset_reads_motion_from_0);
   RUN_TEST(test_reactions_read_their_facts);

@@ -431,7 +431,7 @@ the brain's, a rule's, or the board's own.
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
-| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
+| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke` (a slow one: a quick swipe is no gesture, the face's alone), `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
@@ -510,7 +510,9 @@ Besides drawing each mood and state, a face:
   start.
 - **Moves with the engine.** It blinks, opens its mouth while the voice
   speaks (`mouthOpen`), presses down under a finger (`dy`), and may follow
-  one (`finger`): the gel's dome leans after a stroke, and Pixel's plain
+  one (`finger`, and `letGo` with how fast it was moving): the gel's dome
+  goes the finger's way, squashing, stretching and leaning on its springs,
+  and carries a swipe on a little before it settles back; Pixel's plain
   face, drawn from the rig (§15), squashes under a press and leans after
   a stroke.
 - **Leaves room for the lane.** On the CYD's 320 × 240 screen, the

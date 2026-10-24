@@ -1,5 +1,6 @@
 // Boop's BOOT button: a tap, and a hold for push-to-talk; a touch's path:
-// a tap, a stroke, a ruffle, a tickle, a boop on the nose, a hold; and the motion
+// a tap, a swipe, a stroke, a ruffle, a tickle, a boop on the nose, a hold,
+// and the finger's speed as it lets go; and the motion
 // sensor's readings: picked up, put down, shaken, a thump, face down and up.
 #include <unity.h>
 
@@ -72,15 +73,21 @@ static void test_bounces_are_ignored() {
 // Pins TouchGesture's distances: 40 px of travel is a stroke, upward
 // more than sideways a ruffle; 90 px of wiggling inside a 36 px spot a
 // tickle; a tap within 14 px of the nose, under the eyes, a boop on it.
-// What a touch along `points` was: its gesture, or kTouchTap for a tap.
-constexpr int kTouchTap = -1;
-static int path(std::initializer_list<std::pair<int, int>> points) {
+// What a touch along `points` was, a reading every `stepMs`: its gesture,
+// kTouchSwipe for a swipe, or kTouchTap for a tap.
+constexpr int kTouchTap = -1, kTouchSwipe = -2;
+static int path(std::initializer_list<std::pair<int, int>> points, uint32_t stepMs = 200) {
   TouchGesture g;
   auto p = points.begin();
-  g.down(p->first, p->second, 0);
-  for (++p; p != points.end(); ++p) g.move(p->first, p->second);
+  uint32_t t = 1000;
+  g.down(p->first, p->second, t);
+  for (++p; p != points.end(); ++p) g.move(p->first, p->second, t += stepMs);
   render::Gesture what;
-  return g.up(what) ? int(what) : kTouchTap;
+  switch (g.up(what)) {
+    case TouchGesture::kGesture: return int(what);
+    case TouchGesture::kSwipe: return kTouchSwipe;
+    default: return kTouchTap;
+  }
 }
 static void test_a_touchs_path() {
   using render::Gesture;
@@ -91,10 +98,63 @@ static void test_a_touchs_path() {
   TEST_ASSERT_EQUAL(int(Gesture::kRuffle), path({{160, 150}, {150, 90}}));  // up
   TEST_ASSERT_EQUAL(int(Gesture::kTickle),
                     path({{100, 100}, {120, 100}, {100, 100}, {120, 100}, {100, 100}, {120, 100}}));
+  TEST_ASSERT_EQUAL(int(Gesture::kTickle),  // however quick the wiggle
+                    path({{100, 100}, {120, 100}, {100, 100}, {120, 100}, {100, 100}, {120, 100}}, 20));
   TEST_ASSERT_EQUAL(int(Gesture::kNose), path({{160, 134}}));
   TEST_ASSERT_EQUAL(int(Gesture::kNose), path({{174, 148}}));
   TEST_ASSERT_EQUAL(kTouchTap, path({{175, 134}}));
   TEST_ASSERT_EQUAL(kTouchTap, path({{160, 100}}));  // the face, but not its nose
+}
+
+// Pins the swipe: a touch that travels a stroke's 40 px faster than 600 px
+// a second on average, from going down to its last reading, is a swipe,
+// whichever way it goes; as slow or slower it's the stroke (or the ruffle),
+// the board's deliberate one.
+static void test_a_quick_stroke_is_a_swipe() {
+  using render::Gesture;
+  TEST_ASSERT_EQUAL_INT(600, TouchGesture::kSwipePxPerS);
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{160, 60}, {160, 110}, {160, 160}, {160, 200}}, 40));  // down, 140 px in 120 ms
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{160, 200}, {160, 60}}, 160));                         // up
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{60, 120}, {250, 120}}, 160));                         // across
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{60, 120}, {100, 120}}, 66));                          // 40 px in 66 ms
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {100, 120}}, 67));                // and in 67
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {120, 120}}, 100));               // 600 px a second
+  TEST_ASSERT_EQUAL(int(Gesture::kRuffle), path({{160, 200}, {160, 60}}, 900));
+  TEST_ASSERT_EQUAL(kTouchTap, path({{60, 120}, {90, 120}}, 10));  // quick, but short of a stroke
+  // A finger that waits before it moves strokes, however quick the move.
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {60, 120}, {60, 120}, {200, 120}}, 100));
+}
+
+// Pins the finger's speed as it lets go: over its last 80 ms of readings
+// (at least the last two), so a finger that stopped before it let go has
+// none, and a reading again on a frozen clock takes the last one's place.
+static void test_how_fast_a_finger_lets_go() {
+  TEST_ASSERT_EQUAL_UINT32(80, TouchGesture::kFlingMs);
+  TouchGesture g;
+  int vx, vy;
+  g.down(100, 100, 0);
+  g.velocity(vx, vy);
+  TEST_ASSERT_EQUAL_INT(0, vx);
+  TEST_ASSERT_EQUAL_INT(0, vy);
+  for (int t = 20; t <= 200; t += 20) g.move(100 + t, 100 - t / 2, uint32_t(t));  // 1000 px/s right, 500 up
+  g.velocity(vx, vy);
+  TEST_ASSERT_EQUAL_INT(1000, vx);
+  TEST_ASSERT_EQUAL_INT(-500, vy);
+  for (uint32_t t = 220; t <= 300; t += 20) g.move(300, 0, t);  // still, its last 80 ms
+  g.velocity(vx, vy);
+  TEST_ASSERT_EQUAL_INT(0, vx);
+  TEST_ASSERT_EQUAL_INT(0, vy);
+  // Readings 40 ms apart, as on the board's slower frames.
+  g.down(100, 100, 1000);
+  g.move(140, 100, 1040);
+  g.move(180, 100, 1080);
+  g.move(180, 100, 1080);  // the loop again on the same clock
+  g.velocity(vx, vy);
+  TEST_ASSERT_EQUAL_INT(1000, vx);
+  const TouchGesture::Path p = g.path();
+  TEST_ASSERT_EQUAL_INT(100, p.x0);
+  TEST_ASSERT_EQUAL_INT(180, p.x);
+  TEST_ASSERT_EQUAL_UINT32(80, p.ms);
 }
 
 // Pins the hold that dismisses a request: a finger kept down 1 s inside a
@@ -105,21 +165,21 @@ static void test_a_hold() {
   TEST_ASSERT_EQUAL_INT(24, TouchGesture::kHoldSpotPx);
   TouchGesture g;
   g.down(100, 100, 5000);
-  g.move(112, 112);
-  g.move(88, 88);  // 24 px each way: still the spot
+  g.move(112, 112, 5100);
+  g.move(88, 88, 5200);  // 24 px each way: still the spot
   TEST_ASSERT_FALSE(g.held(5999));
   TEST_ASSERT_TRUE(g.held(6000));
   TEST_ASSERT_TRUE(g.held(9000));
   g.down(100, 100, 5000);
-  g.move(125, 100);  // 25 px across
+  g.move(125, 100, 5100);  // 25 px across
   TEST_ASSERT_FALSE(g.held(9000));
   g.down(100, 100, 5000);
-  g.move(100, 75);  // 25 px down
+  g.move(100, 75, 5100);  // 25 px down
   TEST_ASSERT_FALSE(g.held(9000));
   // A stroke that has come back to where it began was still a stroke.
   g.down(60, 120, 0);
-  g.move(120, 120);
-  g.move(60, 120);
+  g.move(120, 120, 500);
+  g.move(60, 120, 1000);
   TEST_ASSERT_FALSE(g.held(2000));
   // The clock wraps.
   g.down(10, 10, 0xFFFFFF00u);
@@ -199,6 +259,8 @@ int main() {
   RUN_TEST(test_talk_is_capped_at_30_s);
   RUN_TEST(test_bounces_are_ignored);
   RUN_TEST(test_a_touchs_path);
+  RUN_TEST(test_a_quick_stroke_is_a_swipe);
+  RUN_TEST(test_how_fast_a_finger_lets_go);
   RUN_TEST(test_a_hold);
   RUN_TEST(test_what_the_motion_sensor_feels);
   return UNITY_END();

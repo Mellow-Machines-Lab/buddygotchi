@@ -23,9 +23,11 @@ class GelFace final : public Face {
   // The engine picks the look's variations itself; the Mac's is ignored.
   uint8_t lookVariant() const override { return uint8_t(engine_->scenes.variant); }
   uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&) const override;
-  // A finger: the dome leans after it (the engine's drag), from where it
-  // first touched, and springs back when it lets go.
+  // A finger: the dome follows it (the engine's drag), from where it first
+  // touched, leaning, squashing and stretching its way, and springs back
+  // when it lets go, carried on a little by the finger's own speed.
   void finger(bool down, int x, int y) override;
+  void letGo(int vx, int vy) override;
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;
@@ -53,6 +55,8 @@ class GelFace final : public Face {
   static constexpr uint32_t kCueWaitMs = 150;
   // The engine's seed after a reset: the reference traces' (check-port.py).
   static constexpr uint32_t kSeed = 53;
+  // The dome on the canvas (finger): canvas pixels a body unit, its middle.
+  static constexpr int kPxPerUnit = 85, kMidX = 160, kMidY = 129;
   std::unique_ptr<Engine> engine_;
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;

@@ -116,6 +116,9 @@ class Face {
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }
+  // The finger let go moving at vx, vy (canvas px a second, y down): a face
+  // may carry the motion on, as the gel's dome does after a swipe.
+  virtual void letGo(int vx, int vy) { (void)vx, (void)vy, finger(false, 0, 0); }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.

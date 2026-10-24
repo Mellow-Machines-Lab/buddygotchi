@@ -235,6 +235,10 @@ class Device : public linkkit::App {
     bool touchOnNeedsYou = false, touchDismissed = false;
     uint32_t touchAttnId = 0;
     uint32_t touchSeenReal = 0;
+    // The last touch to let go: its path on the canvas and what it was
+    // (`dbg.state`'s touch.last, to check the panel's axes and speeds by).
+    TouchGesture::Path lastTouch;
+    const char* lastTouchWas = nullptr;
     // The reaction (Behaviour::reactionSeq) whose `say` has started or been
     // dropped: a newer one's starts when its bubble shows.
     uint32_t saidSeq = 0;

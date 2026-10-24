@@ -48,8 +48,10 @@ commit, then merge it here. Neither has met a real terminal.
 - **The QMI8658's axis signs.** `kFlipZ` in
   `firmware/src/board/amoled206/imu.cpp` is a guess until the board is
   turned over on the desk; check `dbg.imu`.
-- **Touch thresholds.** `kStrokePx`, the tickle path and the nose box
-  are tuned on the simulator, not under a finger on the board.
+- **Touch thresholds.** `kStrokePx`, the swipe's speed (`kSwipePxPerS`),
+  the tickle path and the nose box are tuned on the simulator, not under
+  a finger on the board; `dbg.state`'s `touch.last` shows each touch's
+  path, time and what it was.
 - **Gestures by position.** A gesture's design is its place in
   `render::Gesture`'s order. Both faces now draw all ten (the gel's
   test pins its count), so naming them was left alone.

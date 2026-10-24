@@ -142,7 +142,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
 - `internal/tools/fluid/measure.py`: how fluid the everyday transitions
   are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
-  idle's mood changes, the rig face's hand-overs and a working day, recorded with
+  idle's mood changes, the rig face's hand-overs and a working day, and
+  the gel's swipes and strokes in idle, `idle-swipes.jsonl`, recorded with
   `boopctl sim`), each frame's
   change against the median, and with `--sheets DIR` a contact sheet of
   each. The Character Studio's Transitions measures and ranks the
@@ -328,8 +329,9 @@ gets at least one scenario. Their pictures are the golden images in
   across Bluetooth packets (a dropped link's part line included),
   screenshot encoding and the clock (`test_helpers`), each test naming
   its [linkkit/SPEC.md](../linkkit/SPEC.md) section.
-- **Firmware (`make -C internal fw-test`):** BOOT's gestures
-  (`test_gesture`); Boop's vocabulary message in and message out, its
+- **Firmware (`make -C internal fw-test`):** BOOT's, the touch's and
+  the motion sensor's gestures, a quick swipe told from a slow stroke and
+  the finger's speed as it lets go (`test_gesture`); Boop's vocabulary message in and message out, its
   rules for the queue, the debug channel and inputs (`test_device`),
   including unchanged heartbeats causing no redraw while changed state,
   reconnection and leaving the test pattern still draw at once, and each

@@ -550,6 +550,16 @@ void Device::state(JsonObject d, uint32_t t) {
   touch["irq"] = irq;
   JsonArray raw = touch["raw"].to<JsonArray>();
   raw.add(rx), raw.add(ry), raw.add(rz);
+  if (live_.lastTouchWas) {
+    const TouchGesture::Path& p = live_.lastTouch;
+    JsonObject last = touch["last"].to<JsonObject>();
+    JsonArray from = last["from"].to<JsonArray>(), to = last["to"].to<JsonArray>();
+    from.add(p.x0), from.add(p.y0), to.add(p.x), to.add(p.y);
+    last["ms"] = p.ms;
+    last["was"] = live_.lastTouchWas;
+  } else {
+    touch["last"] = nullptr;
+  }
   d["amp"] = hal_.ampOn();
   d["bl"] = b_.backlight(t);
 }
@@ -671,7 +681,7 @@ void Device::readInputs(uint32_t t) {
       latency_.mark(Latency::kPress, real);
     }
   } else if (touching && contact) {
-    live_.touchPath.move(x, y);
+    live_.touchPath.move(x, y, t);
     if (faced) b_.face().finger(true, x, y);
   }
   if (touching && live_.touchOnNeedsYou && !live_.touchDismissed && needsYouShows(t) && live_.touchPath.held(t)) {
@@ -684,21 +694,34 @@ void Device::readInputs(uint32_t t) {
   }
   if (!touching && live_.touchDown) {
     b_.pressUp();
-    b_.face().finger(false, 0, 0);
+    // The face may carry on the finger's motion as it lets go.
+    int vx, vy;
+    live_.touchPath.velocity(vx, vy);
+    b_.face().letGo(vx, vy);
+    render::Gesture g = render::Gesture::kHandoff;
+    const TouchGesture::Kind kind = live_.touchPath.up(g);
+    live_.lastTouch = live_.touchPath.path();
+    live_.lastTouchWas = kind == TouchGesture::kGesture ? render::gestureName(g)
+                         : kind == TouchGesture::kSwipe ? "swipe"
+                                                        : "tap";
     if (faced) {
       // The panel's touch let go when it was last in contact, so its tap
       // counts the kTouchReleaseMs the device waits to be sure. Its path
       // may make it a gesture: a stroke, a ruffle, a tickle, a boop on the
       // nose; then the board reacts as one, but not while the face is
-      // held, where a touch is a tap.
+      // held, where a touch is a tap. A swipe is the face's alone: it
+      // felt the finger go by, and nothing else plays or goes to the Mac.
       // A touch that began on the needs-you screen was for it: it gives no tap
       // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
-      render::Gesture g;
       if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
-        if (live_.touchPath.up(g) && !b_.held(t))
+        if (kind != TouchGesture::kTap && b_.held(t))
+          tapped(t, live_.touchInjected, false);
+        else if (kind == TouchGesture::kGesture)
           gestured(g, t, live_.touchInjected);
+        else if (kind == TouchGesture::kSwipe)
+          input("swipe", t);
         else
           tapped(t, live_.touchInjected, false);
       }

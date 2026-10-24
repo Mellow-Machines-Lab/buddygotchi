@@ -711,6 +711,75 @@ static void test_a_reset_lets_go_of_the_finger() {
   f.finger(true, 120, 100);
   TEST_ASSERT_TRUE(f.engine().grab);
 }
+// A finger moves the dome its own way (GelFace::finger), the canvas's y
+// down as the screen's is: a swipe down brings the crown down and squashes
+// the body while its base stays on the floor, up stretches it, across leans it that
+// way. Let go moving, the dome carries on its way a little, then settles
+// back where it stood without bouncing past it by much.
+static void test_a_finger_moves_the_dome_its_way() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  linkkit::Rng rng;
+  auto anchors = [&](const GelFace& f) {
+    rig::Anchors a;
+    paint(s, f.engine(), false, 0, 0, &a);
+    return a;
+  };
+  auto base = [&] {  // the lowest row the body last drew, above the lane
+    for (int y = 410 * 4 / 5 - 1; y > 0; --y)
+      for (int x = 0; x < 502; ++x)
+        if (px[size_t(y) * 502 + size_t(x)]) return y;
+    return 0;
+  };
+  struct Swipe {
+    int x0, y0, x1, y1;
+  };
+  for (const Swipe w : {Swipe{160, 60, 160, 200}, Swipe{160, 200, 160, 60}, Swipe{70, 130, 250, 130}}) {
+    GelFace f;
+    f.reset(0, rng);
+    for (uint32_t t = 16; t <= 960; t += 16) f.step(t, rng);
+    const rig::Anchors rest = anchors(f);
+    const int restBase = base();
+    // 160 ms there, a reading every 16 ms, then let go at its speed.
+    for (uint32_t t = 976; t <= 1120; t += 16) {
+      const int along = int(t - 960);
+      f.finger(true, w.x0 + (w.x1 - w.x0) * along / 160, w.y0 + (w.y1 - w.y0) * along / 160);
+      f.step(t, rng);
+    }
+    const rig::Anchors held = anchors(f);
+    const auto pose = f.engine().pose();
+    if (w.y1 > w.y0) {
+      TEST_ASSERT_TRUE(held.crown.y > rest.crown.y + 16 * 30);  // down: the crown comes down 30 px and more
+      TEST_ASSERT_TRUE(pose[1] < q(-.2));
+    } else if (w.y1 < w.y0) {
+      TEST_ASSERT_TRUE(held.crown.y < rest.crown.y - 16 * 30);  // up: it rises
+      TEST_ASSERT_TRUE(pose[1] > q(.2));
+    } else {
+      TEST_ASSERT_TRUE(held.crown.x > rest.crown.x + 16 * 30);  // across: it leans that way
+      TEST_ASSERT_TRUE(pose[0] > q(.4));
+    }
+    // The base stays on the floor: its edge moves only as its footprint
+    // spreads or narrows toward the camera.
+    TEST_ASSERT_INT_WITHIN(12, restBase, base());
+    const int vx = (w.x1 - w.x0) * 1000 / 160, vy = (w.y1 - w.y0) * 1000 / 160;
+    const rig::Point before = held.crown;
+    f.letGo(vx, vy);
+    TEST_ASSERT_FALSE(f.engine().grab);
+    f.step(1136, rng);
+    const rig::Point after = anchors(f).crown;
+    // Carried on its way for a frame after letting go.
+    TEST_ASSERT_TRUE(vy ? (after.y - before.y) * vy > 0 : (after.x - before.x) * vx > 0);
+    int past = 0;  // the furthest the crown goes back past where it stood, in px
+    for (uint32_t t = 1152; t <= 3000; t += 16) {
+      f.step(t, rng);
+      const rig::Point c = anchors(f).crown;
+      past = std::max(past, vy ? (rest.crown.y - c.y) * (vy > 0 ? 1 : -1) / 16 : (rest.crown.x - c.x) / 16);
+    }
+    const rig::Point settled = anchors(f).crown;
+    TEST_ASSERT_TRUE(std::abs(settled.x - rest.crown.x) < 16 * 2 && std::abs(settled.y - rest.crown.y) < 16 * 3);
+    TEST_ASSERT_TRUE(past <= 10);
+  }
+}
 // The timing Behaviour plays by is the recipe table's. The
 // outcome and context rows time like their state's own row, which is what
 // loopMs and voiceMs read.
@@ -1511,6 +1580,7 @@ int main() {
   RUN_TEST(test_pick_is_pure_and_started_commits_it);
   RUN_TEST(test_a_power_on_seeds_the_engine_and_a_reset_restores_53);
   RUN_TEST(test_a_reset_lets_go_of_the_finger);
+  RUN_TEST(test_a_finger_moves_the_dome_its_way);
   RUN_TEST(test_a_faded_art_never_comes_back);
   RUN_TEST(test_the_night_lids_ease_out_as_it_falls_asleep);
   RUN_TEST(test_timing_comes_from_the_recipe_table);

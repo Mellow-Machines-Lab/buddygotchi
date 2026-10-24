@@ -124,7 +124,7 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 | --- | --- | --- |
 | Chip | ESP32-S3, 8 MB PSRAM, 32 MB flash | Built as 16 MB flash (`default_16MB.csv`) |
 | Screen | 2.06" AMOLED, 410×502, CO5300 on quad SPI | Held sideways, USB-C on the left |
-| Touch | FT3168 on I2C (SDA 15, SCL 14, INT 38) | Read only around a touch, since it naps when idle |
+| Touch | FT3168 on I2C (SDA 15, SCL 14, INT 38) | Read only around a touch, since it naps when idle. It reads in the panel's own pixels, x along its 410 side and y along its 502, as Waveshare's own example hands them to LVGL unturned; `amoled206/hal.cpp` turns them onto the canvas as the picture is turned. Not yet checked under a finger: held sideways, USB-C on the left, swipe down once, then run `internal/tools/boopctl state`: `touch.last` should go `from` a smaller y `to` a larger one with x about the same, and a swipe right should raise x. If not, the map in `hal.cpp` is the one to fix |
 | Sound | ES8311 codec over I2S, NS4150B amp (enable on 46) | 16-bit mono at 22.05 kHz |
 | microSD | SPI3 (SCK 2, MOSI 1, MISO 3, CS 17) | The voice, as on the CYD |
 | USB | The S3's own USB-Serial/JTAG | `/dev/cu.usbmodem*`; flashing needs no BOOT press |
@@ -144,7 +144,9 @@ a recovery image in `FirmWare/` if you ever need the factory firmware back.
    and colour order.
 3. **Screenshot:** `internal/tools/boopctl shot` matches the simulator
    pixel for pixel.
-4. **The rest:** `internal/tools/boopctl state` reports BOOT, raw touch,
+4. **The rest:** `internal/tools/boopctl state` reports BOOT, raw touch
+   (and the last touch on the canvas: where it went down and was last,
+   how long it took and what the board made of it, `touch.last`),
    the LED and the amp, and `ping` shows Bluetooth advertising and
    whether the voice is on the card. Presses, the speaker and the LED's
    glow need a person.
@@ -157,6 +159,10 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   Check inversion, colour order and the SPI pins first.
 - **Touch does nothing:** wrong pins, no calibration, or touch sharing the
   screen's bus.
+- **A stroke plays nothing:** it was too quick, a swipe, which the face
+  only feels go by (`app/touch_gesture.h`'s `kSwipePxPerS`); stroke
+  slower. `touch.last` in `internal/tools/boopctl state` says what the
+  last touch was and how long it took.
 - **A hold doesn't dismiss the needs-you screen:** the finger must stay
   down a second inside a spot 24 px wide each way
   (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). On the CYD,

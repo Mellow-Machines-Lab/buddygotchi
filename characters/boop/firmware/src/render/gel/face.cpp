@@ -90,19 +90,28 @@ void GelFace::advanceTo(uint32_t t) {
   }
 }
 
+// The finger in the engine's body units, where the dome stands: kPxPerUnit
+// canvas pixels a unit, its middle at (kMidX, kMidY), and y up, as the
+// engine's is and the canvas's isn't. The panel draws the canvas half as
+// large again, so the dome, 128 panel pixels a unit at its middle, goes
+// with the finger.
 void GelFace::finger(bool down, int x, int y) {
   if (!down) {
-    if (finger_) engine_->dragEnd();
-    finger_ = false;
+    letGo(0, 0);
     return;
   }
-  // The canvas's 320 × 240, as the engine's -1 … 1 each way.
   if (!finger_) {
     finger_ = true, fingerX_ = x, fingerY_ = y;
-    engine_->dragStart(F(x - 160) / 160, F(y - 120) / 120);
+    // Where on the dome, -1 … 1 across its half-width and half-height.
+    engine_->dragStart(F(x - kMidX) / kPxPerUnit / q(1.1), F(kMidY - y) / kPxPerUnit / q(.91));
     return;
   }
-  engine_->dragMove(F(x - fingerX_) / 160, F(y - fingerY_) / 120, F(0));
+  engine_->dragMove(F(x - fingerX_) / kPxPerUnit, F(fingerY_ - y) / kPxPerUnit, F(0));
+}
+
+void GelFace::letGo(int vx, int vy) {
+  if (finger_) engine_->dragEnd(F(vx) / kPxPerUnit, F(-vy) / kPxPerUnit, F(0));
+  finger_ = false;
 }
 
 // At every stop of Behaviour's, on the grid or not.
