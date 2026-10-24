@@ -113,11 +113,11 @@ void iconMini(Canvas& c, int x, int y, uint8_t ink) {
 
 namespace {
 // The counts after the names: how many sessions work, the helpers at work,
-// the agents idle and how far down its to-do list the longest turn is, from
-// x, each with the gap after it. The list comes last, clear of the working
-// looks' props that reach down to the strip's left. Drawn when c
-// is given; either way, the x after them, so the names leave them the
-// room they take.
+// the agents idle and how far down its to-do list the longest turn with
+// one is, from x, each with the gap after it. The list comes last, clear
+// of the working looks' props that reach down to the strip's left. Drawn
+// when c is given; either way, the x after them, so the names leave them
+// the room they take.
 int drawCounts(Canvas* c, const Strip& s, int x) {
   const int cy = kStripCy, ty = cy - 10;
   char n[24];

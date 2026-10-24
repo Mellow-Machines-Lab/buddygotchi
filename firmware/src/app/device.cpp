@@ -167,23 +167,9 @@ void Device::begin() {
 void Device::reset() {
   b_.reset(0, kit().rng());
   drain();
-  parsed_ = ReactionIn{};
-  restKey_ = 0;
   hush();
-  saidSeq_ = 0;
   hal_.stopEffects();
-  pattern_ = false;
-  patternFill_ = -1;
-  targetX_ = targetY_ = -1;
-  injPress_ = injTouch_ = injMotion_ = bootInjected_ = touchDown_ = touchInjected_ = touchOnSign_ = touchDismissed_ =
-      false;
-  boot_ = ButtonGesture{};
-  // The motion sensor's readings start again with the clock, so one taken
-  // before (its time far past the new clock's) can't hold the next back.
-  motion_ = MotionGesture{};
-  motionAt_ = 0;
-  last_ = LastInput{};
-  drawnT_ = 0;
+  live_ = {};
   dirty_ = true;
 }
 
@@ -193,7 +179,7 @@ void Device::drain() {
 }
 
 void Device::input(const char* k, uint32_t t, int x, int y) {
-  last_ = {k, t, x, y};
+  live_.last = {k, t, x, y};
   dirty_ = true;
 }
 
@@ -223,11 +209,12 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
   m.when |= render::busyTags(m.busy);
-  if (!sameModel(m, b_.model()) || pattern_ || b_.noApp(at)) dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
+  if (!sameModel(m, b_.model()) || live_.pattern || b_.noApp(at))
+    dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
   b_.onState(m, at);
   if (m.attn || m.vol == 0) hush();
   if (m.vol == 0) hal_.stopEffects();
-  pattern_ = false;
+  live_.pattern = false;
   drain();  // "needs you" cuts what plays
 }
 
@@ -276,10 +263,10 @@ ReactionIn Device::parse(const Do& c) {
 // so is stop_listening with nothing to stop. A reply ends listening either
 // way.
 const char* Device::refuse(const Do& c, uint32_t t) {
-  parsed_ = parse(c);
-  const char* why = b_.admit(parsed_, t);
+  live_.parsed = parse(c);
+  const char* why = b_.admit(live_.parsed, t);
   drain();  // a listening reaction the reply ended
-  if (why) parsed_ = ReactionIn{};
+  if (why) live_.parsed = ReactionIn{};
   return why;
 }
 
@@ -293,21 +280,21 @@ const char* Device::refuse(const Do& c, uint32_t t) {
 // `listening` drops the reactions its own host has waiting in the queue.
 void Device::onDo(const Do& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
-  const ReactionIn mo = parsed_.key == c.key ? parsed_ : parse(c);
-  parsed_ = ReactionIn{};
+  const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
+  live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();
   // A `say`'s sound goes with its bubble: now, or at its animation's voice
   // window. Any other reaction drops one still waiting.
   const bool say = b_.play(mo, t);
-  if (!say) saidSeq_ = b_.reactionSeq();
+  if (!say) live_.saidSeq = b_.reactionSeq();
   if (!startSay(t) && b_.reactionSeq() != seq) hush();  // a new reaction replaces the `say`
   dirty_ = true;
-  restKey_ = 0;
+  live_.restKey = 0;
   switch (c.what) {
     case kReact:
-      restKey_ = c.key;
-      restAt_ = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
-      if (mo.sign[0] && b_.sign(t).text && after(b_.signEnd(), restAt_)) restAt_ = b_.signEnd();
+      live_.restKey = c.key;
+      live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
+      if (mo.sign[0] && b_.sign(t).text && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -336,13 +323,13 @@ void Device::onDo(const Do& c, uint32_t t) {
 void Device::advance(uint32_t t) {
   b_.advance(t, kit().rng());
   drain();
-  if (restKey_ && !after(restAt_, t)) kit().rest(restKey_), restKey_ = 0;
+  if (live_.restKey && !after(live_.restAt, t)) kit().rest(live_.restKey), live_.restKey = 0;
 }
 
 bool Device::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   bool found = b_.nextEnd(from, to, at);
-  if (restKey_ && after(restAt_, from) && !after(restAt_, to) && (!found || after(at, restAt_))) {
-    at = restAt_, found = true;
+  if (live_.restKey && after(live_.restAt, from) && !after(live_.restAt, to) && (!found || after(at, live_.restAt))) {
+    at = live_.restAt, found = true;
   }
   return found;
 }
@@ -354,11 +341,11 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
   if (!std::strcmp(type, "dbg.pattern")) {
     // With "fill", a solid screen of that palette index (webcam framing).
     // With "target": [x, y], a cross to tap on black (boopctl calibrate).
-    patternFill_ = doc["fill"] | -1;
+    live_.patternFill = doc["fill"] | -1;
     JsonArrayConst target = doc["target"];
-    targetX_ = target.size() == 2 ? render::clamp(target[0].as<int>(), 0, render::kWidth - 1) : -1;
-    targetY_ = target.size() == 2 ? render::clamp(target[1].as<int>(), 0, render::kHeight - 1) : -1;
-    pattern_ = true;
+    live_.targetX = target.size() == 2 ? render::clamp(target[0].as<int>(), 0, render::kWidth - 1) : -1;
+    live_.targetY = target.size() == 2 ? render::clamp(target[1].as<int>(), 0, render::kHeight - 1) : -1;
+    live_.pattern = true;
     dirty_ = true;
     kit().reply(from, "{\"t\":\"dbg.pattern\"}", 19);
   } else if (!std::strcmp(type, "dbg.look")) {
@@ -368,22 +355,22 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     dirty_ = true;
     kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
   } else if (!std::strcmp(type, "dbg.press")) {
-    injPress_ = true;
-    injPressUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
+    live_.injPress = true;
+    live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.press\"}", 17);
   } else if (!std::strcmp(type, "dbg.imu")) {
     // The motion sensor's reading, held until the next ("off" lets go).
-    injMotion_ = !(doc["off"] | false);
-    injAx_ = doc["ax"] | 0, injAy_ = doc["ay"] | 0, injAz_ = doc["az"] | 1000;
+    live_.injMotion = !(doc["off"] | false);
+    live_.injAx = doc["ax"] | 0, live_.injAy = doc["ay"] | 0, live_.injAz = doc["az"] | 1000;
     kit().reply(from, "{\"t\":\"dbg.imu\"}", 15);
   } else if (!std::strcmp(type, "dbg.touch")) {
-    injTouch_ = true;
-    injX_ = doc["x"] | 0;
-    injY_ = doc["y"] | 0;
-    injToX_ = doc["to_x"] | injX_;  // a stroke: from x, y to these, over its ms
-    injToY_ = doc["to_y"] | injY_;
-    injTouchFrom_ = kit().now();
-    injTouchUntil_ = kit().now() + (doc["ms"] | kDefaultPressMs);
+    live_.injTouch = true;
+    live_.injX = doc["x"] | 0;
+    live_.injY = doc["y"] | 0;
+    live_.injToX = doc["to_x"] | live_.injX;  // a stroke: from x, y to these, over its ms
+    live_.injToY = doc["to_y"] | live_.injY;
+    live_.injTouchFrom = kit().now();
+    live_.injTouchUntil = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.touch\"}", 17);
   } else if (!std::strcmp(type, "dbg.touchcal")) {
     // "set": [ax, bx, cx, ay, by, cy] in 1/65536 (TouchCal), or "clear".
@@ -404,7 +391,7 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     if (n > 0 && size_t(n) < sizeof(buf)) kit().reply(from, buf, size_t(n));
   } else if (!std::strcmp(type, "dbg.card")) {
     // Nothing reads the old voice file while `end` swaps it, and a waiting `say` is dropped.
-    if (!std::strcmp(doc["op"] | "", "end")) hush(), saidSeq_ = b_.reactionSeq();
+    if (!std::strcmp(doc["op"] | "", "end")) hush(), live_.saidSeq = b_.reactionSeq();
     bool swapped;
     size_t n = cardCopy(hal_, doc, buf, sizeof(buf), swapped);
     if (n) kit().reply(from, buf, n);
@@ -452,7 +439,7 @@ void Device::ping(JsonObject d) {
 }
 
 const char* Device::screenName(uint32_t t) const {
-  if (pattern_) return "pattern";
+  if (live_.pattern) return "pattern";
   switch (b_.look(t)) {
     case render::SceneState::kNoApp: return "no_app";
     case render::SceneState::kNeedsYou: return "needs_you";
@@ -470,8 +457,8 @@ void Device::state(JsonObject d, uint32_t t) {
   d["look_variant"] = b_.lookVariant() + 1;
   // The motion sensor's reading now, in milli-g, for tuning its gestures;
   // null on a board with none.
-  int ax = injAx_, ay = injAy_, az = injAz_;
-  if (injMotion_ || hal_.motion(ax, ay, az)) {
+  int ax = live_.injAx, ay = live_.injAy, az = live_.injAz;
+  if (live_.injMotion || hal_.motion(ax, ay, az)) {
     JsonArray imu = d["imu"].to<JsonArray>();
     imu.add(ax), imu.add(ay), imu.add(az);
   } else {
@@ -542,24 +529,24 @@ void Device::state(JsonObject d, uint32_t t) {
   uint32_t alertAt;
   if (b_.alerted(alertAt)) d["alert"] = alertAt;
   else d["alert"] = nullptr;
-  if (last_.k) {
+  if (live_.last.k) {
     JsonObject li = d["last_input"].to<JsonObject>();
-    li["k"] = last_.k;
-    li["at"] = last_.at;
-    if (last_.x >= 0) {
-      li["x"] = last_.x;
-      li["y"] = last_.y;
+    li["k"] = live_.last.k;
+    li["at"] = live_.last.at;
+    if (live_.last.x >= 0) {
+      li["x"] = live_.last.x;
+      li["y"] = live_.last.y;
     }
   } else {
     d["last_input"] = nullptr;
   }
   // Bring-up extras (F1): raw hardware readings.
-  d["boot"] = boot_.down();
+  d["boot"] = live_.boot.down();
   int rx, ry, rz;
   bool irq;
   hal_.touchRaw(rx, ry, rz, irq);
   JsonObject touch = d["touch"].to<JsonObject>();
-  touch["down"] = touchDown_;
+  touch["down"] = live_.touchDown;
   touch["irq"] = irq;
   JsonArray raw = touch["raw"].to<JsonArray>();
   raw.add(rx), raw.add(ry), raw.add(rz);
@@ -571,7 +558,7 @@ void Device::state(JsonObject d, uint32_t t) {
 // pixel, row by row, drawn afresh; a native face's frame as its RGB565
 // pixels. Either is the frame the board sends next.
 bool Device::shot(linkkit::Shot& s, uint32_t t) {
-  noApp_ = !pattern_ && b_.noApp(t);
+  noApp_ = !live_.pattern && b_.noApp(t);
   dirty_ = true;
   render(t);
   if (auto* native = surface()) {
@@ -616,33 +603,33 @@ void Device::readInputs(uint32_t t) {
   // A tool's input then times its release exactly (dbg.latency).
   auto letGo = [&](uint32_t until) { return kit().frozen() ? real : real - (t - until); };
   uint32_t pressGone = real, touchGone = real;
-  if (injPress_ && !after(injPressUntil_, t)) injPress_ = false, pressGone = letGo(injPressUntil_);
-  switch (boot_.update(hal_.bootDown() || injPress_, t)) {
+  if (live_.injPress && !after(live_.injPressUntil, t)) live_.injPress = false, pressGone = letGo(live_.injPressUntil);
+  switch (live_.boot.update(hal_.bootDown() || live_.injPress, t)) {
     case ButtonGesture::kDown:
-      bootInjected_ = !hal_.bootDown();
+      live_.bootInjected = !hal_.bootDown();
       b_.pressDown(t);
       dirty_ = true;
       latency_.mark(Latency::kPress, real);
       break;
     case ButtonGesture::kTap:
       b_.pressUp();
-      latency_.mark(Latency::kTap, bootInjected_ ? pressGone : real);
-      tapped(t, bootInjected_, true);
+      latency_.mark(Latency::kTap, live_.bootInjected ? pressGone : real);
+      tapped(t, live_.bootInjected, true);
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
       // The reactions waiting would end it: dropped for every Mac that
       // hears talk_on, which for a tool's dbg.press is only USB's.
-      kit().dropWaiting("mic_on", bootInjected_ ? Link::kUsb : Link::kNone);
+      kit().dropWaiting("mic_on", live_.bootInjected ? Link::kUsb : Link::kNone);
       b_.talkOn(t, kit().rng());
       input("talk_on", t);
-      kit().emit("talk_on", "listening", nullptr, bootInjected_);
+      kit().emit("talk_on", "listening", nullptr, live_.bootInjected);
       drain();  // listening cuts what played
       break;
     case ButtonGesture::kHoldEnd:  // let go, or the 30 s cap
       b_.talkOff(t);
       input("talk_off", t);
-      kit().emit("talk_off", nullptr, nullptr, bootInjected_);
+      kit().emit("talk_off", nullptr, nullptr, live_.bootInjected);
       break;
     default:
       break;
@@ -659,42 +646,43 @@ void Device::readInputs(uint32_t t) {
   // contact, in real time so that it ends while a tool has the clock
   // frozen; an injected one ends when it says. The debug pattern ignores
   // touches.
-  if (injTouch_ && !after(injTouchUntil_, t)) injTouch_ = false, touchGone = letGo(injTouchUntil_);
+  if (live_.injTouch && !after(live_.injTouchUntil, t)) live_.injTouch = false, touchGone = letGo(live_.injTouchUntil);
   int x = 0, y = 0;
-  bool contact = injTouch_ ? (x = injX_, y = injY_, true) : hal_.touch(x, y);
-  if (injTouch_ && injTouchUntil_ != injTouchFrom_) {  // a stroke's way along
-    const int64_t along = int64_t(t - injTouchFrom_), ms = int64_t(injTouchUntil_ - injTouchFrom_);
-    x = injX_ + int((injToX_ - injX_) * along / ms), y = injY_ + int((injToY_ - injY_) * along / ms);
+  bool contact = live_.injTouch ? (x = live_.injX, y = live_.injY, true) : hal_.touch(x, y);
+  if (live_.injTouch && live_.injTouchUntil != live_.injTouchFrom) {  // a stroke's way along
+    const int64_t along = int64_t(t - live_.injTouchFrom), ms = int64_t(live_.injTouchUntil - live_.injTouchFrom);
+    x = live_.injX + int((live_.injToX - live_.injX) * along / ms),
+    y = live_.injY + int((live_.injToY - live_.injY) * along / ms);
   }
-  if (contact) touchSeenReal_ = real, touchInjected_ = injTouch_;
-  bool touching = contact || (touchDown_ && !touchInjected_ && real - touchSeenReal_ < kTouchReleaseMs);
-  bool faced = !pattern_;
-  if (touching && !touchDown_) {
+  if (contact) live_.touchSeenReal = real, live_.touchInjected = live_.injTouch;
+  bool touching = contact || (live_.touchDown && !live_.touchInjected && real - live_.touchSeenReal < kTouchReleaseMs);
+  bool faced = !live_.pattern;
+  if (touching && !live_.touchDown) {
     input("touch", t, x, y);
-    touchPath_.down(x, y, t);
+    live_.touchPath.down(x, y, t);
     // Only a touch that began on the sign holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
-    touchOnSign_ = faced && signShows(t);
-    touchSign_ = touchOnSign_ ? b_.model().attnId : 0;
-    touchDismissed_ = false;
+    live_.touchOnSign = faced && signShows(t);
+    live_.touchSign = live_.touchOnSign ? b_.model().attnId : 0;
+    live_.touchDismissed = false;
     if (faced) {
       b_.pressDown(t);
       b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
   } else if (touching && contact) {
-    touchPath_.move(x, y);
+    live_.touchPath.move(x, y);
     if (faced) b_.face().finger(true, x, y);
   }
-  if (touching && touchOnSign_ && !touchDismissed_ && signShows(t) && touchPath_.held(t)) {
+  if (touching && live_.touchOnSign && !live_.touchDismissed && signShows(t) && live_.touchPath.held(t)) {
     // Nothing plays: the sign goes when the Mac's next state says so.
-    touchDismissed_ = true;
+    live_.touchDismissed = true;
     input("gesture", t);
     char data[24];
-    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)touchSign_);
-    kit().emit("gesture", kDismissGesture, touchSign_ ? data : nullptr, touchInjected_);
+    std::snprintf(data, sizeof(data), "{\"attn\":%lu}", (unsigned long)live_.touchSign);
+    kit().emit("gesture", kDismissGesture, live_.touchSign ? data : nullptr, live_.touchInjected);
   }
-  if (!touching && touchDown_) {
+  if (!touching && live_.touchDown) {
     b_.pressUp();
     b_.face().finger(false, 0, 0);
     if (faced) {
@@ -707,17 +695,17 @@ void Device::readInputs(uint32_t t) {
       // once its hold dismissed it, or once the sign has gone (its request
       // answered or dismissed on the Mac).
       render::Gesture g;
-      if (!(touchOnSign_ && (touchDismissed_ || !signShows(t)))) {
-        latency_.mark(Latency::kTap, touchInjected_ ? touchGone : touchSeenReal_);
-        if (touchPath_.up(g) && !b_.held(t))
-          gestured(g, t, touchInjected_);
+      if (!(live_.touchOnSign && (live_.touchDismissed || !signShows(t)))) {
+        latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
+        if (live_.touchPath.up(g) && !b_.held(t))
+          gestured(g, t, live_.touchInjected);
         else
-          tapped(t, touchInjected_, false);
+          tapped(t, live_.touchInjected, false);
       }
     }
   }
-  if (touching != touchDown_) dirty_ = true;
-  touchDown_ = touching;
+  if (touching != live_.touchDown) dirty_ = true;
+  live_.touchDown = touching;
 }
 
 bool Device::signShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
@@ -732,24 +720,24 @@ void Device::gestured(render::Gesture g, uint32_t t, bool injected) {
 // The motion sensor, every kMotionMs: picked up, put down, shaken, a thump
 // on the desk, laid face down (do not disturb) and turned back up.
 void Device::readMotion(uint32_t t) {
-  if (int32_t(t - motionAt_) < int32_t(kMotionMs)) return;
-  motionAt_ = t;
-  int ax = injAx_, ay = injAy_, az = injAz_;
-  if (!injMotion_ && !hal_.motion(ax, ay, az)) return;
-  switch (motion_.update(ax, ay, az, t)) {
-    case MotionGesture::kPickup: gestured(render::Gesture::kPickup, t, injMotion_); break;
-    case MotionGesture::kPutdown: gestured(render::Gesture::kPutdown, t, injMotion_); break;
-    case MotionGesture::kShake: gestured(render::Gesture::kDizzy, t, injMotion_); break;
-    case MotionGesture::kThump: gestured(render::Gesture::kStartle, t, injMotion_); break;
+  if (int32_t(t - live_.motionAt) < int32_t(kMotionMs)) return;
+  live_.motionAt = t;
+  int ax = live_.injAx, ay = live_.injAy, az = live_.injAz;
+  if (!live_.injMotion && !hal_.motion(ax, ay, az)) return;
+  switch (live_.motion.update(ax, ay, az, t)) {
+    case MotionGesture::kPickup: gestured(render::Gesture::kPickup, t, live_.injMotion); break;
+    case MotionGesture::kPutdown: gestured(render::Gesture::kPutdown, t, live_.injMotion); break;
+    case MotionGesture::kShake: gestured(render::Gesture::kDizzy, t, live_.injMotion); break;
+    case MotionGesture::kThump: gestured(render::Gesture::kStartle, t, live_.injMotion); break;
     case MotionGesture::kFaceDown:
       b_.setFaceDown(true, t);
       hush();
-      kit().emit("gesture", "facedown", nullptr, injMotion_);
+      kit().emit("gesture", "facedown", nullptr, live_.injMotion);
       dirty_ = true;
       break;
     case MotionGesture::kFaceUp:
       b_.setFaceDown(false, t);
-      gestured(render::Gesture::kPeekaboo, t, injMotion_);
+      gestured(render::Gesture::kPeekaboo, t, live_.injMotion);
       break;
     default: break;
   }
@@ -768,7 +756,7 @@ void Device::tick(uint32_t t) {
   uint8_t bl = b_.backlight(t);
   if (bl != backlight_) backlight_ = bl, hal_.setBacklight(bl);
 
-  const bool noApp = !pattern_ && b_.noApp(t);
+  const bool noApp = !live_.pattern && b_.noApp(t);
   if (noApp != noApp_) noApp_ = noApp, dirty_ = true;
   // The face may change without a message: its design moves on its own
   // clock (a breath, keys lighting, a blink), so on the face screens every
@@ -776,7 +764,7 @@ void Device::tick(uint32_t t) {
   // looks on every step, so scenario frames stay exact, and the press
   // squish on every pass, so the cap doesn't delay a press.
   bool due = kit().frozen() || b_.pressEasing(t) || hal_.realMs() - drawnReal_ >= kFrameMs;
-  if (dirty_ || (!pattern_ && t != drawnT_ && due)) render(t);
+  if (dirty_ || (!live_.pattern && t != live_.drawnT && due)) render(t);
 }
 
 // ---- Sound -----------------------------------------------------------------
@@ -790,12 +778,12 @@ void Device::hush() {
 // volume then; one replaced, or over, before it started is dropped. True
 // when it starts now.
 bool Device::startSay(uint32_t t) {
-  if (b_.reactionSeq() == saidSeq_) return false;
+  if (b_.reactionSeq() == live_.saidSeq) return false;
   if (!b_.bubble(t)) {  // it waits for its animation's voice window, or it's gone
-    if (!b_.sayAhead(t)) saidSeq_ = b_.reactionSeq();
+    if (!b_.sayAhead(t)) live_.saidSeq = b_.reactionSeq();
     return false;
   }
-  saidSeq_ = b_.reactionSeq();
+  live_.saidSeq = b_.reactionSeq();
   const Model& m = b_.model();
   if (m.vol <= 0) return false;
   hal_.say(voice::makeSay(b_.take(), b_.then(), uint8_t(m.vol)));
@@ -809,12 +797,12 @@ bool Device::startSay(uint32_t t) {
 // and silence for the last design's when it changes or starts over (needs
 // you's, for a new needs-you).
 void Device::followSound(uint32_t t) {
-  if (saying_ && (b_.reactionSeq() != saidSeq_ || !b_.bubble(t))) hush();
+  if (saying_ && (b_.reactionSeq() != live_.saidSeq || !b_.bubble(t))) hush();
   startSay(t);
   const Model& m = b_.model();
   voice::FxEvent due[render::Face::kMaxCues];
   bool changed;
-  int n = b_.face().cues(t, !pattern_, due, changed);
+  int n = b_.face().cues(t, !live_.pattern, due, changed);
   if (changed) hal_.stopEffects();
   if (m.vol == 0) return;
   const voice::EffectClips& clips = b_.face().clips();
@@ -834,17 +822,17 @@ void Device::followSound(uint32_t t) {
 // up or still down. The designs step a few times a second, so most passes
 // find the picture unchanged.
 void Device::render(uint32_t t) {
-  drawnT_ = t;
+  live_.drawnT = t;
   drawnReal_ = hal_.realMs();
   // A native face draws into the surface not being sent.
   render::SurfacePair* native = frames();
-  if (pattern_) {  // drawn only when dirty: it doesn't move
-    if (targetX_ >= 0) {
+  if (live_.pattern) {  // drawn only when dirty: it doesn't move
+    if (live_.targetX >= 0) {
       canvas_.fill(render::kBlack);
-      canvas_.fillRect(targetX_ - 10, targetY_ - 1, 21, 3, render::kAmber);
-      canvas_.fillRect(targetX_ - 1, targetY_ - 10, 3, 21, render::kAmber);
-    } else if (patternFill_ >= 0) {
-      canvas_.fill(uint8_t(patternFill_));
+      canvas_.fillRect(live_.targetX - 10, live_.targetY - 1, 21, 3, render::kAmber);
+      canvas_.fillRect(live_.targetX - 1, live_.targetY - 10, 3, 21, render::kAmber);
+    } else if (live_.patternFill >= 0) {
+      canvas_.fill(uint8_t(live_.patternFill));
     } else {
       render::drawPattern(canvas_);
     }
