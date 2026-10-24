@@ -40,15 +40,26 @@ extension Runtime {
         /// newest first.
         public var daysOld: Int?
         public var diary: [DiaryLine] = []
+        /// Sweet or cheeky, chosen at setup for keeps.
+        public var nature: LongTerm.Nature?
 
+        /// A day's line, as the popover shows it.
         public struct DiaryLine: Sendable, Equatable, Identifiable {
+            /// `2026-10-21`.
             public var day: String
+            /// The day as a person says it: Yesterday, Tuesday, Oct 14.
+            public var when: String
+            /// What Boop wrote, without the weekday its lines start with,
+            /// which `when` says.
             public var line: String
             public var id: String { day }
 
-            public init(day: String, line: String) {
+            /// `line`, about `day`, read on `today` (both `yyyy-MM-dd`).
+            public init(day: String, line: String, today: String) {
                 self.day = day
-                self.line = line
+                when = LocalTime.spoken(day, today: today)
+                let lead = LocalTime.weekday(of: day).map { $0 + ". " }
+                self.line = lead.map { line.hasPrefix($0) ? String(line.dropFirst($0.count)) : line } ?? line
             }
         }
         /// The last run crashed or was killed, until the notice is closed.
@@ -99,8 +110,10 @@ extension Runtime {
                             deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth, faceListening: core.showsListening(at: now))
-        status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: options.wallClock()) }
-        status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line) }
+        let wall = options.wallClock()
+        status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
+        status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line, today: options.time.day(wall)) }
+        status.nature = memory.longTerm?.nature
         status.uncleanExit = uncleanExit
         status.board = settings.board
         if pipeline.several {

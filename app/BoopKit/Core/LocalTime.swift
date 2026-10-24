@@ -56,9 +56,34 @@ public struct LocalTime: Sendable {
     /// Whole days from the day `from` (`yyyy-MM-dd`) to the day at `ms`.
     public func days(from day: String, to ms: Int64) -> Int {
         let c = calendar.dateComponents([.year, .month, .day], from: date(ms))
+        guard let y = c.year, let m = c.month, let d = c.day, let from = Self.dayNumber(day) else { return 0 }
+        return Self.dayNumber(y, m, d) - from
+    }
+
+    /// Days since 1970-01-01 of a `yyyy-MM-dd`.
+    static func dayNumber(_ day: String) -> Int? {
         let p = day.split(separator: "-").compactMap { Int($0) }
-        guard p.count == 3, let y = c.year, let m = c.month, let d = c.day else { return 0 }
-        return Self.dayNumber(y, m, d) - Self.dayNumber(p[0], p[1], p[2])
+        return p.count == 3 ? dayNumber(p[0], p[1], p[2]) : nil
+    }
+
+    /// `day` as a person says it on `today` (both `yyyy-MM-dd`): Today,
+    /// Yesterday, its weekday up to six days back, where a weekday can only
+    /// mean one day, and `Oct 14` before that.
+    public static func spoken(_ day: String, today: String) -> String {
+        let p = day.split(separator: "-").compactMap { Int($0) }
+        guard isDay(day), let now = dayNumber(today) else { return day }
+        return switch now - dayNumber(p[0], p[1], p[2]) {
+        case 0: "Today"
+        case 1: "Yesterday"
+        case 2...6: weekday(of: day) ?? day
+        default: "\(months[p[1] - 1]) \(p[2])"
+        }
+    }
+
+    /// `day`'s weekday (`yyyy-MM-dd`), as `weekday(_:)` names it:
+    /// 1970-01-01 was a Thursday.
+    static func weekday(of day: String) -> String? {
+        dayNumber(day).map { weekdays[($0 % 7 + 11) % 7] }
     }
 
     /// Days since 1970-01-01 of a day on the proleptic Gregorian calendar.
@@ -85,10 +110,12 @@ public struct LocalTime: Sendable {
 
     /// `Tuesday`.
     public func weekday(_ ms: Int64) -> String {
-        let names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         let index = calendar.component(.weekday, from: date(ms)) - 1
-        return names[max(0, min(6, index))]
+        return Self.weekdays[max(0, min(6, index))]
     }
+
+    static let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 }
 
 /// A small seeded generator, so rule timings are repeatable in tests.

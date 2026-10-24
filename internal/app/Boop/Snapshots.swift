@@ -71,7 +71,10 @@ enum Snapshots {
                 settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
                 try? installer.remove(.claude)
-                shot("settings-chatter", model(installer, status: status(personality: Personality.other)), pane: .settings)
+                // The other personality, over the other nature.
+                var chatter = status(personality: Personality.other)
+                chatter.nature = .cheeky
+                shot("settings-chatter", model(installer, status: chatter), pane: .settings)
                 shot("settings-no-hook", model(unbuilt, status: status()), pane: .settings)
                 // A copy on another folder tried to connect Claude, and the
                 // Overview's notice was closed: the row still says why.
@@ -268,10 +271,12 @@ enum Snapshots {
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
-        // Its age and the diary's last days.
+        // Its nature, its age and the diary's last days, read the day after.
+        status.nature = .sweet
         status.daysOld = 47
-        status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave."),
-                        .init(day: "2026-10-20", line: "Tuesday. 9 turns, not one broken. Smug all day, and fairly.")]
+        status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave.",
+                              today: "2026-10-22"),
+                        .init(day: "2026-10-20", line: "Tuesday. 9 turns, not one broken. Smug all day, and fairly.", today: "2026-10-22")]
         return status
     }
 

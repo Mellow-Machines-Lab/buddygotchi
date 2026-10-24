@@ -3,7 +3,7 @@ import BoopKit
 import SwiftUI
 
 /// Settings, inside the popover: sound, agents and hooks, the
-/// device, the personality with Jev's key, and the app itself.
+/// device, the personality with the nature and Jev's key, and the app itself.
 struct SettingsPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -255,6 +255,12 @@ struct SettingsPane: View {
                 }
                 .padding(12)
                 .disabled(model.status == nil)
+                // Laid over the personality, and chosen at setup for keeps:
+                // shown, never changed here.
+                if let nature = model.status?.nature {
+                    Hairline().padding(.horizontal, 12)
+                    SettingRow(icon: "lock", title: "Nature", detail: "\(nature.rawValue.capitalized), for keeps") {}
+                }
                 key
             }
         }

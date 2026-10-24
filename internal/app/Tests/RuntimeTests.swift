@@ -263,6 +263,24 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
     }
 
+    /// The popover's status carries the nature chosen at setup, which
+    /// Settings shows, and the diary's days named on the wall clock's day.
+    func testTheStatusCarriesTheNatureAndTheDiarysDays() throws {
+        var options = try options(FakeTransport())
+        options.time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
+        options.wallClock = { 1_792_670_400_000 }  // 2026-10-22, noon UTC
+        try MemoryStore(directory: dir).appendDiary(day: "2026-10-21", line: "Wednesday. Fine.")
+        let runtime = try Runtime(options)
+        var statuses: [Runtime.Status] = []  // on `home`
+        runtime.onChange = { statuses.append($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        eventually("a status") { runtime.home.sync { !statuses.isEmpty } }
+        let status = runtime.home.sync { statuses.last }
+        XCTAssertEqual(status?.nature, .sweet)
+        XCTAssertEqual(status?.diary.map { "\($0.when): \($0.line)" }, ["Yesterday: Fine."])
+    }
+
     /// Why the link can't look for the device
     /// (Bluetooth off) reaches the popover's status by the next tick, and
     /// leaves it the same way.

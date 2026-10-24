@@ -50,6 +50,22 @@ final class DiaryTests: XCTestCase {
         XCTAssertLessThanOrEqual(DiaryOutput.maxOffered, 8)
     }
 
+    /// The popover names a diary's day as a person says it: Yesterday, its
+    /// weekday up to six days back, so no weekday stands for two days, and
+    /// its date before that. Its line drops the weekday the pack's lines
+    /// start with, which the name already says.
+    func testThePopoverNamesTheDiarysDays() {
+        let today = "2026-10-22"
+        XCTAssertEqual(["2026-10-22", "2026-10-21", "2026-10-20", "2026-10-16", "2026-10-15", "2025-12-30"]
+            .map { LocalTime.spoken($0, today: today) }, ["Today", "Yesterday", "Tuesday", "Friday", "Oct 15", "Dec 30"])
+        XCTAssertEqual(LocalTime.weekday(of: "1970-01-01"), "Thursday")
+        XCTAssertEqual(LocalTime.weekday(of: "1969-12-25"), "Thursday")
+        let line = Runtime.Status.DiaryLine(day: "2026-10-21", line: "Wednesday. \"api\" fell over.", today: today)
+        XCTAssertEqual([line.when, line.line], ["Yesterday", "\"api\" fell over."])
+        // Only its own weekday goes: another day's stays, as words.
+        XCTAssertEqual(Runtime.Status.DiaryLine(day: "2026-10-21", line: "Friday. Odd.", today: today).line, "Friday. Odd.")
+    }
+
     /// The memory store keeps a line a day, the first one written, and
     /// reads the last days back newest first.
     func testTheDiaryIsALineADay() throws {
