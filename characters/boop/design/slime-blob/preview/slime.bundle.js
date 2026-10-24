@@ -2425,7 +2425,17 @@ function createProps(stage,{hostLane=true}={}) {
   const canvas=document.createElement('canvas');canvas.className='slime-props';canvas.setAttribute('aria-hidden','true');stage.append(canvas);
   const ctx=canvas.getContext('2d');
   function round(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.002;ctx.stroke();}}
-  function text(value,x,y,size,color='#cfeeff',align='center'){ctx.font=`600 ${size}px ui-monospace, SFMono-Regular, monospace`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(value,x,y);}
+  // Text unstretched, `size` in widths of the stage as the props' x is, so
+  // it keeps its proportion to the cards on any stage. At most `room` wide.
+  function text(value,x,y,size,color='#cfeeff',align='center',room){
+    ctx.save();ctx.translate(x,y);ctx.scale(1,canvas.width/canvas.height);
+    ctx.font=`600 ${size}px ui-monospace, SFMono-Regular, monospace`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;
+    if(room)ctx.fillText(value,0,0,room);else ctx.fillText(value,0,0);ctx.restore();
+  }
+  // The board's fonts at their size on its 502 px wide panel, a glyph's
+  // advance being 0.6 of a monospace font's size: the cards' text is the
+  // board's, so it fits them as it does there.
+  const boardFont=px=>px/502/.6,fontLarge=boardFont(13),fontSign=boardFont(17);
   function draw(channels,width,height) {
     if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
     ctx.setTransform(width,0,0,height,0,0);ctx.clearRect(0,0,1,1);
@@ -2499,7 +2509,7 @@ function createProps(stage,{hostLane=true}={}) {
       text('LISTENING',.5,.223,.026,'#9fcbdc');ctx.restore();
     }
     const start=props.start;
-    if(start?.visible){ctx.save();ctx.globalAlpha=start.visible;round(.28,.085,.44,.132,.030,'#1b374e','#78a4c8');text(start.label,.5,.151,.054,'#c5e7fd');ctx.restore();}
+    if(start?.visible){ctx.save();ctx.globalAlpha=start.visible;round(.28,.085,.44,.132,.030,'#1b374e','#78a4c8');text(start.label,.5,.151,fontLarge,'#c5e7fd','center',.40);ctx.restore();}
     const touch=props.touch;
     if(touch?.visible&&touch.pulse>0){
       ctx.save();ctx.globalAlpha=touch.visible*touch.pulse;ctx.strokeStyle='#b5e9fa';ctx.lineWidth=.004;
@@ -2512,8 +2522,8 @@ function createProps(stage,{hostLane=true}={}) {
       round(.18,y,.64,.215,.032,'#efbd67','#f8d294');
       if(alert.confirmation>0){ctx.save();ctx.globalAlpha*=alert.confirmation;round(.174,y-.006,.652,.227,.038,null,'#fff4d6');ctx.restore();}
       // Sized to read at arm's length on the device's 2.06" panel.
-      text('NEEDS YOU',.5,y+.058,.068,'#2c251d');
-      text('Continue on your Mac',.5,y+.152,.054,'#3d2f1f');
+      text('NEEDS YOU',.5,y+.058,fontSign,'#2c251d','center',.60);
+      text('Continue on your Mac',.5,y+.152,fontLarge,'#3d2f1f','center',.60);
       // Knocks are large contact spots, never a new timer.
       if(alert.knock>0){ctx.globalAlpha*=alert.knock;ctx.strokeStyle='#fff1c6';ctx.lineWidth=.007;ctx.beginPath();ctx.arc(.28,y+.171,.013+.010*alert.knock,0,Math.PI*2);ctx.stroke();}
       ctx.restore();
@@ -2528,7 +2538,14 @@ function createProps(stage,{hostLane=true}={}) {
         round(.496,y+.079,.008,.025,.002,'#efc879');round(.476,y+.102,.048,.007,.003,'#efc879');
         ctx.strokeStyle='#efc879';ctx.lineWidth=.006;for(const side of [-1,1]){ctx.beginPath();ctx.arc(.500+side*.037,y+.050,.021,side<0?Math.PI/2:-Math.PI/2,side<0?3*Math.PI/2:Math.PI/2);ctx.stroke();}
       }else if(bad){ctx.strokeStyle='#e8a9b4';ctx.lineWidth=.010;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(.478,y+.036);ctx.lineTo(.522,y+.082);ctx.moveTo(.522,y+.036);ctx.lineTo(.478,y+.082);ctx.stroke();}
-      text(result.label,.5,y+.160,.054,good?'#b4e5d4':bad?'#efb9c7':'#d5e8f2');ctx.restore();
+      else{
+        // A neutral result's mark, square on any stage: a soft stop square
+        // when stopped, else three calm dots (ready, finished).
+        const tall=width/height;ctx.fillStyle='#acc8d9';
+        if(result.state==='stopped')round(.478,y+.059-.022*tall,.044,.044*tall,.010,'#acc8d9');
+        else for(const dx of [-.030,0,.030]){ctx.beginPath();ctx.ellipse(.5+dx,y+.059,.009,.009*tall,0,0,Math.PI*2);ctx.fill();}
+      }
+      text(result.label,.5,y+.160,fontLarge,good?'#b4e5d4':bad?'#efb9c7':'#d5e8f2','center',.42);ctx.restore();
       // A gift beside the card: the small bug Boop caught, held up proudly.
       if(result.gift){
         ctx.save();ctx.globalAlpha=result.visible;const x=.795,by=y+.105;

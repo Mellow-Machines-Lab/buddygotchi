@@ -427,8 +427,14 @@ The start/helper/status reveal envelope adds squash 0.018 and forward
 use contact strength, the existing reduced-motion multiplier and bounds.
 All factual cards reveal while dragging; body contacts are consumed
 silently during the grab. Return and stop remain neutral, error means a
-tool warning, and only explicit task success permits the trophy. A state
-change cancels pending contacts at once and resolves the latest facts.
+tool warning, and only explicit task success permits the trophy. Every
+result card has a mark over its label: the trophy, a cross for a failure
+or a tool error, a soft stop square when stopped, and three calm dots for
+the other neutral results (READY, FINISHED). Both painters draw the cards
+and their text at the board's proportions, the text its fonts' size
+against the panel's width and never stretched, so a card holds its text
+on any stage as it does on the board. A state change cancels pending
+contacts at once and resolves the latest facts.
 
 The browser state/context/outcome controls exercise these same calls.
 Playing a script or recording the review set explicitly starts a fresh

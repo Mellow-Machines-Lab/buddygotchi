@@ -222,6 +222,47 @@ static void test_a_card_revealed_late_rises_then_falls() {
   TEST_ASSERT_TRUE(most > q(.99));
   TEST_ASSERT_TRUE(e->scenes.visible(Scenes::kResultProp, e->timeMs()) == F(0));
 }
+// Every result card has a mark over its label, none an empty top half: the
+// trophy for a success, a cross for a failure or a tool error, a soft stop
+// square when stopped, three dots for the other neutral ones (a finish
+// with no outcome, a reply ready).
+static void test_every_result_card_has_a_mark() {
+  struct Card {
+    SceneState anim;
+    Outcome outcome;
+    uint16_t fill;
+  };
+  const uint16_t good = rgb565(23, 63, 59), bad = rgb565(62, 43, 56), neutral = rgb565(36, 56, 71);
+  const Card cards[] = {{SceneState::kTaskComplete, Outcome::kSuccess, good},
+                        {SceneState::kTaskComplete, Outcome::kFailure, bad},
+                        {SceneState::kError, Outcome::kNone, bad},
+                        {SceneState::kTaskComplete, Outcome::kNone, neutral},
+                        {SceneState::kReplyReady, Outcome::kNone, neutral},
+                        {SceneState::kStopped, Outcome::kNone, neutral}};
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> px(kW * kH);
+  Surface s{kW, kH, px.data()};
+  for (const Card& card : cards) {
+    auto e = std::make_unique<Engine>();
+    e->step(0);
+    Request req;
+    req.anim = card.anim;
+    req.outcome = card.outcome;
+    req.hold = true;
+    e->oneShot(req);
+    for (int t = 16; t <= 2400; t += 16) e->step(uint32_t(t));
+    s.invalidate(), s.clear();
+    paint(s, *e);
+    int marked = 0, filled = 0;  // between the card's sides, over its label
+    for (int y = kH * 95 / 1000; y < kH * 180 / 1000; ++y)
+      for (int x = kW * 440 / 1000; x < kW * 560 / 1000; ++x) {
+        const uint16_t v = px[size_t(y) * kW + x];
+        filled += v == card.fill, marked += v != card.fill;
+      }
+    TEST_ASSERT_TRUE_MESSAGE(filled > 1000, "the card shows");
+    TEST_ASSERT_TRUE_MESSAGE(marked > 40, "with a mark over its label");
+  }
+}
 // CONTINUITY.md, Alerts, taps and interruption: an alert interrupted before
 // its knocks and ding resumes where it stopped, so each plays exactly once;
 // one interrupted after them returns to its silent hold.
@@ -1459,6 +1500,7 @@ int main() {
   RUN_TEST(test_grid_voice_lead_and_late_cues);
   RUN_TEST(test_external_source_holds_without_repeating_reveal);
   RUN_TEST(test_a_card_revealed_late_rises_then_falls);
+  RUN_TEST(test_every_result_card_has_a_mark);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_the_face_keeps_sleeps_spring_until_it_wakes);

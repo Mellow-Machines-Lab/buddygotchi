@@ -261,6 +261,15 @@ void paintProps(Surface& surface, const Engine& e) {
       } else if (bad) {
         r.line({x(478), y(111)}, {x(522), y(157)}, 4, rgb565(232, 169, 180));
         r.line({x(522), y(111)}, {x(478), y(157)}, 4, rgb565(232, 169, 180));
+      } else {
+        // A neutral result's mark, square on the panel: a soft stop square
+        // when stopped, else three calm dots (ready, finished), as
+        // render/props.mjs draws them.
+        const uint16_t soft = rgb565(0xac, 0xc8, 0xd9);
+        if (card.state == SceneState::kStopped)
+          r.round(x(478), y(134) - x(22), x(44), x(44), x(10), soft);
+        else
+          for (int dx : {-30, 0, 30}) r.disk(x(500 + dx), y(134), x(9), soft);
       }
       text(card.label, 500, 235,
            success ? rgb565(0xb4, 0xe5, 0xd4)

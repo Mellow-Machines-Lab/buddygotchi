@@ -158,7 +158,9 @@ internal/tools/boopctl sim --face gel
   window's ramp, drawn sizes following their controls) and the alert's
   ramp moving without jumps across every directed edge, a fifth art
   dropping the faintest, a faded art held at zero never coming back, a
-  card revealed late still rising whole, the night's lids easing out as
+  card revealed late still rising whole, every result card marked over
+  its label, the lane's text cut as the canvas cuts it and its marks, the
+  night's lids easing out as
   it falls asleep, a reset letting go of the finger, a face that never
   fades (its visible ink through five cross-fades, rendered:
   CONTINUITY.md, Continuity of what is drawn), the lane's strip fading
