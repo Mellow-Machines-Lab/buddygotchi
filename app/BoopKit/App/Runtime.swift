@@ -444,6 +444,10 @@ public final class Runtime: @unchecked Sendable {
 
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
+        // The agent's to-do titles are its words, which only its last
+        // message may bring: Boop keeps the counts.
+        var line = line
+        line.todoTitle = nil
         // Your prompt goes no further than the intake: the turn start is
         // logged without it, and its reading follows.
         let (event, prompt) = Adapter.event(from: line, receivedAt: received).map(PromptIntake.split) ?? (nil, nil)
@@ -539,6 +543,16 @@ public final class Runtime: @unchecked Sendable {
     /// Opens `thread` where it runs: a session clicked in the popover.
     public func openThread(_ thread: ThreadRef) {
         home.async { [self] in open(thread, by: "click") }
+    }
+
+    /// Stops `thread`'s request showing: the popover's Dismiss
+    /// (`Core.dismiss`), on whichever buddy shows it.
+    public func dismiss(_ thread: ThreadRef) {
+        home.async { [self] in
+            guard let agent = Agent(rawValue: thread.agent) else { return }
+            let key = SessionFold.key(agent, thread.session), now = options.clock()
+            for rig in rigs { run(pipeline.dismiss(key, at: now, buddy: rig.tag)) }
+        }
     }
 
     /// Opens a thread on the Mac, after a tap or a click.

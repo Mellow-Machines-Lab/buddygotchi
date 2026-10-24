@@ -628,6 +628,26 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(exists(kept))
     }
 
+    /// The agent's to-do titles are its words: they never reach the
+    /// transcript, only the list's counts do.
+    func testToDoTitlesStayOutOfTheTranscript() throws {
+        var options = try options(nil)
+        let clock = VirtualClock(harnessT0)
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        let runtime = try Runtime(options)
+        var line = HookLine(agent: "claude", hook: "PreToolUse", session: "s1", cwd: "/tmp/jetpack", tool: "TodoWrite", ts: clock.now)
+        line.todosDone = 2
+        line.todosTotal = 5
+        line.todoTitle = "Rotating the staging password"
+        runtime.home.sync { runtime.hook(line, received: clock.now) }
+        let folder = dir.appendingPathComponent(Transcript.folderName)
+        let kept = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .map { try String(contentsOf: $0, encoding: .utf8) }.joined()
+        XCTAssertTrue(kept.contains(#""todos_total":5"#), kept)
+        XCTAssertFalse(kept.contains("staging password"))
+    }
+
     /// The 10 s keepalive's `state`, the same as the
     /// last one sent, is in debug.jsonl (the dashboard's sign that the app
     /// is running) but not in boop.log, which names each change once.
