@@ -175,13 +175,19 @@ final class HarnessTests: XCTestCase {
         starts(["react.mood": a("excited"), "react.loops": a("three times")], "\(creature) made an excited face, held three times.")
         XCTAssertEqual(queued.last?.reaction.loops, 3)
         queued.removeLast()
-        // `react.animation` judges a turn's finish, or you back after a
-        // long break, and plays it in the face: a success or a failure is
-        // the face's task_complete for that outcome, a reply its
-        // reply_ready, a wake up its wake_up, naming the thread NOW is
-        // about; the device picks the variation. `none`, a missing answer or anything else is just the face.
+        // `react.animation` judges a turn's finish, you back after a long
+        // break, or your prompt saying its name, and plays it in the face:
+        // a success or a failure is the face's task_complete for that
+        // outcome, a reply its reply_ready, a wake up its wake_up, a notice
+        // its notice, naming the thread NOW is about; the device picks the
+        // variation. `none`, a missing answer or anything else is just the
+        // face. The question and its `none` name every case, so neither
+        // argues against one.
         XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
+        let animation = try! XCTUnwrap(ReactOutput.questions().first { $0.key == "react.animation" })
+        XCTAssertTrue(animation.text.contains("or your prompt saying \(creature)'s name?"), animation.text)
+        XCTAssertTrue(animation.options[0].what.contains("or a prompt that says \(creature)'s name."), animation.options[0].what)
         starts(["react.mood": a("proud"), "react.animation": a("success"), "react.loops": a("twice"), "say.feeling": a("glad"),
                 "say.kind": a("phrase")],
                #"\#(creature) played a success in a proud face, held twice, and said "SAID"."#)
