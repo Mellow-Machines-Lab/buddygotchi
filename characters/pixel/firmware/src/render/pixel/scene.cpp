@@ -151,7 +151,7 @@ bool talk(const Scene& sc, const Placed& p, int16_t& ox, int16_t& oy, uint8_t& i
 void clipRect(Canvas& c, int x, int y, int w, int h, int color, const Scene& sc, Dither d) {
   int x0 = std::max({x, int(sc.clipX), 0}), y0 = std::max({y, int(sc.clipY), 0});
   int x1 = std::min({x + w, sc.clipX + sc.clipW, kWidth}), y1 = std::min({y + h, sc.clipY + sc.clipH, kHeight});
-  if (color < kBlend) return fillDithered(c, x0, y0, x1 - x0, y1 - y0, toCanvas(color), d);
+  if (color < kBlend) return c.fillRect(x0, y0, x1 - x0, y1 - y0, toCanvas(color), d);
   uint8_t* px = c.pixels();
   for (int yy = y0; yy < y1; ++yy) {
     for (int xx = x0; xx < x1; ++xx) {
@@ -279,17 +279,8 @@ SceneFrame sceneFrame(const SceneShow& show, bool faceless) {
   return f;
 }
 
-void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d) {
-  if (d.all()) return c.fillRect(x, y, w, h, color);
-  if (d.lo >= d.hi) return;
-  const int x0 = std::max(x, 0), y0 = std::max(y, 0), x1 = std::min(x + w, kWidth), y1 = std::min(y + h, kHeight);
-  for (int yy = y0; yy < y1; ++yy)
-    for (int xx = x0; xx < x1; ++xx)
-      if (d.draws(xx, yy)) c.pixels()[yy * kWidth + xx] = color;
-}
-
 void drawTalk(Canvas& c, int x, int y, uint8_t ink, Dither d) {
-  for (const Box& b : kTalk) fillDithered(c, x + b.x, y + b.y, b.w, b.h, ink, d);
+  for (const Box& b : kTalk) c.fillRect(x + b.x, y + b.y, b.w, b.h, ink, d);
 }
 
 void drawScene(Canvas& c, const SceneFrame& f, Dither d, int from, int to) {

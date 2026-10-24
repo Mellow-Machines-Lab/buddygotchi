@@ -12,6 +12,23 @@ namespace render {
 constexpr int kWidth = 320;
 constexpr int kHeight = 240;
 
+// Which pixels a picture draws while it fades (the canvas has no alpha): a
+// 4 × 4 ordered dither gives each pixel a threshold, 0 … 15, and a picture
+// draws those whose threshold is in [lo, hi). Every pixel is [0, 16).
+struct Dither {
+  // The thresholds, a 4 × 4 Bayer matrix: a picture with a share of them
+  // draws its pixels spread evenly.
+  static constexpr uint8_t kBayer[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
+  uint8_t lo = 0, hi = 16;
+  // The new picture's share `mix` (0 … 1000) of the way into a fade, or
+  // the old one's.
+  static Dither fade(int mix, bool incoming);
+  // This one, of what `outer` draws.
+  Dither within(Dither outer) const;
+  bool all() const { return lo == 0 && hi >= 16; }
+  bool draws(int x, int y) const { return kBayer[y & 3][x & 3] >= lo && kBayer[y & 3][x & 3] < hi; }
+};
+
 class Canvas {
  public:
   // Takes a buffer of kWidth * kHeight bytes that outlives the canvas.
@@ -20,8 +37,18 @@ class Canvas {
   uint8_t* pixels() { return px_; }
   const uint8_t* pixels() const { return px_; }
 
+  // Which pixels fillRect and plot draw, every one unless it's set: a
+  // picture faded by the dither, drawn whole.
+  void setMask(Dither d) { mask_ = d; }
+
   void fill(uint8_t color);
-  void fillRect(int x, int y, int w, int h, uint8_t color);
+  // A rectangle's pixels that the mask draws, or that `d` draws.
+  void fillRect(int x, int y, int w, int h, uint8_t color) { fillRect(x, y, w, h, color, mask_); }
+  void fillRect(int x, int y, int w, int h, uint8_t color, Dither d);
+  // A pixel on the canvas, if the mask draws it.
+  void plot(int x, int y, uint8_t color) {
+    if (mask_.draws(x, y)) px_[y * kWidth + x] = color;
+  }
   // Filled triangle; pixel centres inside or on an edge are drawn.
   void fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint8_t color);
 
@@ -31,21 +58,7 @@ class Canvas {
 
  private:
   uint8_t* px_;
-};
-
-// Which pixels a picture draws while it fades (the canvas has no alpha): a
-// 4 × 4 ordered dither gives each pixel a threshold, 0 … 15, and a picture
-// draws those whose threshold is in [lo, hi). Every pixel is [0, 16).
-struct Dither {
-  uint8_t lo = 0, hi = 16;
-  // The new picture's share `mix` (0 … 1000) of the way into a fade, or
-  // the old one's.
-  static Dither fade(int mix, bool incoming);
-  // This one, of what `outer` draws.
-  Dither within(Dither outer) const;
-  bool all() const { return lo == 0 && hi >= 16; }
-  bool draws(int x, int y) const;
-  bool operator==(const Dither& o) const { return lo == o.lo && hi == o.hi; }
+  Dither mask_;
 };
 
 // What the pusher sends (each board's display.cpp): the screen in

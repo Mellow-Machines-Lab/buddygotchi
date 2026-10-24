@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <cstring>
 
 #include "render/font.h"
 #include "render/palette.h"
@@ -25,7 +24,7 @@ constexpr int kBubbleCy = (kBubbleTop + kBubbleBottom) / 2;
 constexpr int kBubblePad = 10;  // from the outline to what's inside, left and right
 constexpr int kBubbleLine = 2;
 
-void plotInk(Canvas& c, int x, int y, int level, int ink) { c.pixels()[y * kWidth + x] = inkAt(ink, level); }
+void plotInk(Canvas& c, int x, int y, int level, int ink) { c.plot(x, y, inkAt(ink, level)); }
 
 // The strip's two round icons, 10 × 10 px, as anti-aliased levels (0 is
 // bare glass): the dot by who needs you and the ring by the working count.
@@ -155,9 +154,9 @@ void stripWhole(Canvas& c, const Strip& s) {
   if (s.doneAgent) c.fillRect(0, kStripTop, kWidth, kHeight - kStripTop, kBlack);
   // The divider, only over bare glass: an older mood's working look draws
   // its props down into the lane, and the divider mustn't cut through them.
-  uint8_t* divider = c.pixels() + kStripTop * kWidth;
+  const uint8_t* divider = c.pixels() + kStripTop * kWidth;
   for (int x = kMargin; x < kWidth - kMargin; ++x) {
-    if (divider[x] == kBlack) divider[x] = inkAt(kInkDim, kLevels);
+    if (divider[x] == kBlack) c.plot(x, kStripTop, inkAt(kInkDim, kLevels));
   }
   const int cy = kStripCy, ty = cy - 10;
   int x = kMargin;
@@ -192,18 +191,13 @@ void stripWhole(Canvas& c, const Strip& s) {
 }
 }  // namespace
 
-// While it fades, what was under it where the dither doesn't draw it. It
-// draws in its own rows only.
+// While it fades, the pixels of it the canvas's mask draws: what's under it
+// shows through the rest.
 void drawStrip(Canvas& c, const Strip& s) {
-  if (s.opacity >= 1000) return stripWhole(c, s);
   if (s.opacity <= 0) return;
-  static uint8_t under[(kHeight - kStripTop) * kWidth];
-  uint8_t* rows = c.pixels() + kStripTop * kWidth;
-  std::memcpy(under, rows, sizeof under);
+  c.setMask(Dither::fade(s.opacity, true));
   stripWhole(c, s);
-  const Dither d = Dither::fade(s.opacity, true);
-  for (int i = 0; i < int(sizeof under); ++i)
-    if (!d.draws(i % kWidth, kStripTop + i / kWidth)) rows[i] = under[i];
+  c.setMask({});
 }
 
 void drawLane(Canvas& c, const char* bubble, const Strip& s) {

@@ -334,8 +334,8 @@ gets at least one scenario. Their pictures are the golden images in
   and the lane's strip fading in and out over 200 ms from when it came
   or went, the same pixels at a frame every 16 ms as every 200 ms
   (`test_behaviour`); the canvas and
-  renderer, the bubble in the bottom lane included (`test_canvas`,
-  `test_face`); what reaches the AMOLED's panel (`test_push`): every
+  renderer, its dither mask drawing exactly the pixels it draws and the
+  bubble in the bottom lane included (`test_canvas`, `test_face`); what reaches the AMOLED's panel (`test_push`): every
   window a frame's push plan sends, applied through the board's own code
   to a model panel, which must show the frame drawn after every frame of
   random drawing, lane changes, test patterns and frames without the lane,

@@ -223,8 +223,8 @@ static void test_a_dither_shares_the_pixels() {
   for (int mix = 0; mix <= 1000; mix += 125) {
     const Dither in = Dither::fade(mix, true), out = Dither::fade(mix, false);
     Buf a, b;
-    fillDithered(a.c, 0, 0, kWidth, kHeight, 1, in);
-    fillDithered(b.c, 0, 0, kWidth, kHeight, 1, out);
+    a.c.fillRect(0, 0, kWidth, kHeight, 1, in);
+    b.c.fillRect(0, 0, kWidth, kHeight, 1, out);
     TEST_ASSERT_EQUAL_INT(kWidth * kHeight, a.count(1) + b.count(1));
     TEST_ASSERT_EQUAL_INT(kWidth * kHeight * in.hi / 16, a.count(1));
   }

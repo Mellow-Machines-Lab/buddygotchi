@@ -6,10 +6,6 @@
 
 namespace render {
 
-// The dither's thresholds, a 4 × 4 Bayer matrix: a picture with a share of
-// them draws its pixels spread evenly.
-constexpr uint8_t kBayer[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
-
 Dither Dither::fade(int mix, bool incoming) {
   const uint8_t at = uint8_t(clamp((mix * 16 + 500) / 1000, 0, 16));
   return incoming ? Dither{0, at} : Dither{at, 16};
@@ -20,18 +16,36 @@ Dither Dither::within(Dither outer) const {
   return {uint8_t(outer.lo + span * lo / 16), uint8_t(outer.lo + span * hi / 16)};
 }
 
-bool Dither::draws(int x, int y) const {
-  const uint8_t k = kBayer[y & 3][x & 3];
-  return k >= lo && k < hi;
-}
-
 void Canvas::fill(uint8_t color) { std::memset(px_, color, size_t(kWidth) * kHeight); }
 
-void Canvas::fillRect(int x, int y, int w, int h, uint8_t color) {
-  int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
-  int x1 = x + w > kWidth ? kWidth : x + w, y1 = y + h > kHeight ? kHeight : y + h;
+static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "a row's four pixels are a word's bytes, the first lowest");
+
+void Canvas::fillRect(int x, int y, int w, int h, uint8_t color, Dither d) {
+  const int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
+  const int x1 = x + w > kWidth ? kWidth : x + w, y1 = y + h > kHeight ? kHeight : y + h;
+  if (x1 <= x0 || d.lo >= d.hi) return;
+  const uint32_t ink = color * 0x01010101u;
   for (int row = y0; row < y1; ++row) {
-    if (x1 > x0) std::memset(px_ + row * kWidth + x0, color, size_t(x1 - x0));
+    uint8_t* p = px_ + row * kWidth;
+    if (d.all()) {
+      std::memset(p + x0, color, size_t(x1 - x0));
+      continue;
+    }
+    // The row's four columns the dither draws, a byte of the word each, so
+    // a word of four pixels takes the ink where they're set.
+    uint32_t drawn = 0;
+    for (int k = 0; k < 4; ++k) drawn |= d.draws(k, row) ? 0xFFu << (8 * k) : 0;
+    int i = x0;
+    for (; i < x1 && (i & 3); ++i)
+      if (d.draws(i, row)) p[i] = color;
+    for (; i + 4 <= x1; i += 4) {
+      uint32_t word;
+      std::memcpy(&word, p + i, 4);
+      word = (word & ~drawn) | (ink & drawn);
+      std::memcpy(p + i, &word, 4);
+    }
+    for (; i < x1; ++i)
+      if (d.draws(i, row)) p[i] = color;
   }
 }
 
@@ -54,8 +68,7 @@ void Canvas::fillTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint8_
   if (maxY >= kHeight) maxY = kHeight - 1;
   for (int y = minY; y <= maxY; ++y) {
     for (int x = minX; x <= maxX; ++x) {
-      if (edge(x0, y0, x1, y1, x, y) >= 0 && edge(x1, y1, x2, y2, x, y) >= 0 &&
-          edge(x2, y2, x0, y0, x, y) >= 0) {
+      if (edge(x0, y0, x1, y1, x, y) >= 0 && edge(x1, y1, x2, y2, x, y) >= 0 && edge(x2, y2, x0, y0, x, y) >= 0) {
         px_[y * kWidth + x] = color;
       }
     }

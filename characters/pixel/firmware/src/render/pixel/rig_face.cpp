@@ -241,7 +241,7 @@ void drawRig(Canvas& c, const RigFrame& f) {
       const faces::Rect& r = faces::kPartRects[part.rect0 + k];
       const int x0 = p.x + scaled(r.x, p.sx), x1 = p.x + scaled(r.x + r.w, p.sx);
       const int y0 = p.y + scaled(r.y, p.sy), y1 = p.y + scaled(r.y + r.h, p.sy);
-      if (x1 > x0 && y1 > y0) fillDithered(c, x0, y0, x1 - x0, y1 - y0, sceneInk(r.color), p.dither);
+      if (x1 > x0 && y1 > y0) c.fillRect(x0, y0, x1 - x0, y1 - y0, sceneInk(r.color), p.dither);
     }
   }
   if (f.talkInk) drawTalk(c, f.talkX, f.talkY, f.talkInk, f.talk);

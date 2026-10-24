@@ -70,8 +70,6 @@ struct SceneFrame {
 bool operator==(const SceneFrame& a, const SceneFrame& b);
 inline bool operator!=(const SceneFrame& a, const SceneFrame& b) { return !(a == b); }
 
-// A rectangle's pixels that `d` (render/canvas.h) draws, in `color`.
-void fillDithered(Canvas& c, int x, int y, int w, int h, uint8_t color, Dither d);
 // The small "o" the mouth becomes while a take is loud, at x, y (its top
 // left corner), in `ink`.
 constexpr int kTalkW = 14, kTalkH = 12;

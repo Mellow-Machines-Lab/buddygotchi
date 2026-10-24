@@ -43,7 +43,6 @@ namespace {
 void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, int ink) {
   int rowBytes = (f.w + 1) / 2;
   const uint8_t* src = f.data + size_t(g) * rowBytes * f.h;
-  uint8_t* px = c.pixels();
   for (int row = 0; row < f.h; ++row) {
     int yy = y + row;
     if (yy < 0 || yy >= kHeight) continue;
@@ -53,7 +52,7 @@ void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, int ink) {
       uint8_t b = src[row * rowBytes + col / 2];
       int v = (col & 1) ? (b & 15) : (b >> 4);
       int level = (v * kLevels + 7) / 15;
-      if (level > 0) px[yy * kWidth + xx] = textAt(ink, level);
+      if (level > 0) c.plot(xx, yy, textAt(ink, level));
     }
   }
 }
