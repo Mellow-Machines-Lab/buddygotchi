@@ -9,7 +9,8 @@ today. Only the owner tags and pushes.
 (`BoopVersion`), the firmware's build reads it, and `make bundle` stamps
 it into `Boop.app`'s Info.plist, with the commit count as the build
 number. App and firmware share it: an app offers its own firmware to a
-board running any other version (Settings, Device).
+board running an older version, or the same one built with another
+character pack (Settings, Device).
 
 ## 2. Checks
 

@@ -618,6 +618,9 @@ When that isn't the Mac's pack, another id or another version, the Mac:
   have, and plays a reaction whose face it doesn't have in the look's
   mood
 - speaks only when the card's voice is the app's (§8), a check of its own
+- offers, in Boop.app's Settings, the app's own firmware for the board,
+  built with the app's pack, even at the same version
+  ([firmware/README.md](../firmware/README.md#updating-from-the-app))
 
 Firmware too old to name its pack counts as the Mac's.
 

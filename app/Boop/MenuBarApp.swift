@@ -133,17 +133,26 @@ final class AppModel: ObservableObject {
 
     var name: String { status?.name ?? "Boop" }
 
-    /// The firmware the board should take: its board's, when it runs
-    /// another version than the app carries; or, when its firmware doesn't
-    /// fit the app at all, the app's, for whichever board is on USB when
-    /// it's written.
+    /// The firmware the board should take: its board's, when it runs an
+    /// older version than the app carries, or another character pack; or,
+    /// when its firmware doesn't fit the app at all, the app's, for
+    /// whichever board is on USB when it's written.
     var firmwareOffer: BoardFirmware? {
         if let device = status?.device { return BoardFirmware.update(for: device, among: boardFirmware) }
         return status?.deviceTrouble == nil ? nil : boardFirmware.first
     }
 
+    /// A write that began and didn't finish, for Try again: where, and the
+    /// firmware it chose from.
+    private var unfinished: (port: String, firmware: [BoardFirmware])?
+
     /// Writes the app's firmware onto the board on USB, off the main
-    /// thread, and says how it goes in `firmwareWrite`.
+    /// thread, and says how it goes in `firmwareWrite`. The offer is for
+    /// the board on Bluetooth, so the one on USB must say it's that one
+    /// when the app knows which (one whose firmware doesn't fit gives the
+    /// link no `hello` to keep); it gets the image for the chip its
+    /// bootloader reports. Try again after a write that began goes to the
+    /// same port without asking, since a half-written board says nothing.
     func updateFirmware() {
         if case .usb = link {
             firmwareWrite = .failed("this Boop is using the board's USB port itself. Update it from Boop.app, over Bluetooth.")
@@ -158,25 +167,37 @@ final class AppModel: ObservableObject {
             firmwareWrite = .failed("more than one board is plugged in. Leave only \(name)'s, then try again.")
             return
         }
-        guard let firmware = BoardFirmware.forPort(port, among: boardFirmware) else {
-            firmwareWrite = .failed("this app has no firmware for the board on \(port).")
+        let retry = unfinished?.port == port ? unfinished : nil
+        // A board the app knows takes its board's firmware; one it doesn't, whichever fits its chip.
+        guard let firmware = retry?.firmware ?? firmwareOffer.map({ status?.device == nil ? boardFirmware : [$0] }) else {
+            firmwareWrite = .idle  // nothing to offer any more
             return
         }
+        let board = retry == nil ? status?.device?.id : nil
+        unfinished = (port, firmware)
         firmwareWrite = .writing(0)
         let log = self.log
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var shown = -1
             do {
-                try firmware.install(port: port, log: log) { done in
+                if let board { try BoardFirmware.confirm(port: port, is: board) }
+                let written = try BoardFirmware.install(firmware, port: port, log: log) { done in
                     let percent = Int(done * 100)
                     guard percent != shown else { return }
                     shown = percent
                     Task { @MainActor in self?.firmwareWrite = .writing(done) }
                 }
-                Task { @MainActor in self?.firmwareWrite = .done(firmware.version) }
+                Task { @MainActor in
+                    self?.unfinished = nil
+                    self?.firmwareWrite = .done(written.version)
+                }
             } catch {
                 log("firmware: couldn't update: \(error)")
-                Task { @MainActor in self?.firmwareWrite = .failed("\(error)") }
+                Task { @MainActor in
+                    // Refused before anything was written: the next try asks again.
+                    if error is BoardFirmware.Refusal { self?.unfinished = nil }
+                    self?.firmwareWrite = .failed("\(error)")
+                }
             }
         }
     }

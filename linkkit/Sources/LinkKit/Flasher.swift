@@ -36,6 +36,8 @@ public final class Flasher {
         case port(String, Int32)
         case noBootloader
         case wrongChip(expected: Chip, found: String)
+        /// The bootloader's chip register reads none of `Chip`'s.
+        case unknownChip(UInt32)
         case command(UInt8, status: UInt8, error: UInt8)
         case timeout(String)
         case verify(offset: UInt32)
@@ -45,6 +47,7 @@ public final class Flasher {
             case .port(let path, let e): "can't open \(path): \(String(cString: strerror(e)))"
             case .noBootloader: "the board didn't answer in its bootloader: unplug it and plug it in again, then try again"
             case .wrongChip(let expected, let found): "this firmware is for an \(expected.rawValue), and the board is \(found)"
+            case .unknownChip(let magic): String(format: "the board's chip isn't an esp32 or esp32s3 (its magic is %08x)", magic)
             case .command(let op, let status, let error): "the bootloader refused command \(op) (status \(status), error \(error))"
             case .timeout(let what): "no answer from the bootloader to \(what)"
             case .verify(let offset): "what's in flash at \(String(offset, radix: 16)) isn't what was written"
@@ -85,20 +88,28 @@ public final class Flasher {
     /// Writes `images` to a `chip` with `flashSize` bytes of flash, then
     /// restarts it into them. `progress` goes from 0 to 1 as the bytes go.
     public func flash(_ images: [Image], chip: Chip, flashSize: Int, progress: (Double) -> Void = { _ in }) throws {
-        // An image with Espressif's header names its chip: one built for
-        // the other board is refused before anything is touched.
-        for image in images where image.data.count >= 16 && image.data.first == 0xE9 {
-            let id = UInt16(image.data[image.data.startIndex + 12]) | UInt16(image.data[image.data.startIndex + 13]) << 8
-            guard id == chip.imageId else {
-                throw Failure.wrongChip(expected: chip, found: Chip.allCases.first { $0.imageId == id }.map { "an image for an \($0.rawValue)" } ?? "an image for chip \(id)")
-            }
+        // One built for the other board is refused before anything is touched.
+        try Self.check(images, for: chip)
+        try flash(progress: progress) { found in
+            guard found == chip else { throw Failure.wrongChip(expected: chip, found: found.rawValue) }
+            return (images, flashSize)
         }
+    }
+
+    /// Writes the images `pick` gives for the chip the bootloader says the
+    /// board has, with the size of its flash, then restarts it into them.
+    public func flash(progress: (Double) -> Void = { _ in },
+                      pick: (Chip) throws -> (images: [Image], flashSize: Int)) throws {
+        // Out of the bootloader whatever happens: a `pick` that throws or
+        // a write that fails partway restarts the board too, rather than
+        // leave it in its bootloader, its screen dark.
+        defer { restart() }
         try enterBootloader()
-        let found = try readRegister(Self.chipMagicRegister)
-        guard found == chip.magic else {
-            throw Failure.wrongChip(expected: chip, found: Chip.allCases.first { $0.magic == found }?.rawValue ?? String(format: "a chip with magic %08x", found))
-        }
+        let magic = try readRegister(Self.chipMagicRegister)
+        guard let chip = Chip.allCases.first(where: { $0.magic == magic }) else { throw Failure.unknownChip(magic) }
         log("flash: \(chip.rawValue) in its bootloader")
+        let (images, flashSize) = try pick(chip)
+        try Self.check(images, for: chip)
         // The ROM wants four more bytes after the SPI pins here.
         try command(.spiAttach, Data(count: 8))
         try command(.spiSetParams, le(0) + le(UInt32(flashSize)) + le(0x10000) + le(0x1000) + le(0x100) + le(0xFFFF))
@@ -118,7 +129,17 @@ public final class Flasher {
             log("flash: wrote and checked \(image.data.count) bytes at \(String(image.offset, radix: 16))")
         }
         progress(1)
-        restart()
+    }
+
+    /// An image with Espressif's header names its chip: one for another
+    /// chip than `chip` is refused.
+    static func check(_ images: [Image], for chip: Chip) throws {
+        for image in images where image.data.count >= 16 && image.data.first == 0xE9 {
+            let id = UInt16(image.data[image.data.startIndex + 12]) | UInt16(image.data[image.data.startIndex + 13]) << 8
+            guard id == chip.imageId else {
+                throw Failure.wrongChip(expected: chip, found: Chip.allCases.first { $0.imageId == id }.map { "an image for an \($0.rawValue)" } ?? "an image for chip \(id)")
+            }
+        }
     }
 
     // MARK: The bootloader

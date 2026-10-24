@@ -11,6 +11,8 @@ final class FakeBootloader: SerialLine {
     let usbJTAG: Bool
     var flash = [UInt8](repeating: 0xFF, count: 0x40000)
     var answers = true
+    /// What its chip register reads, when it isn't `chip`'s.
+    var magic: UInt32?
     /// Spoils one byte of what's written, as a bad flash chip would.
     var spoil = false
     var signals: [(dtr: Bool?, rts: Bool?)] = []
@@ -28,6 +30,8 @@ final class FakeBootloader: SerialLine {
     func setSignals(dtr: Bool?, rts: Bool?) { signals.append((dtr, rts)) }
     func setBaud(_ baud: Int) {}
     func close() {}
+    /// Last, out of the bootloader: EN pulsed, IO0 left high.
+    var restarted: Bool { signals.suffix(2).map(\.rts) == [true, false] }
 
     func read(timeout: TimeInterval) -> Data {
         defer { out = Data() }
@@ -52,7 +56,7 @@ final class FakeBootloader: SerialLine {
             case .sync:
                 reply(op)
                 reply(op)  // the ROM answers a sync more than once
-            case .readReg: reply(op, value: chip.magic)
+            case .readReg: reply(op, value: magic ?? chip.magic)
             case .deflBegin:
                 begins.append(body)
                 offset = word(12)
@@ -118,17 +122,57 @@ final class FakeBootloader: SerialLine {
             #expect(seen.last == 1 && seen == seen.sorted())
             // The S3's ROM takes a fifth word, for encryption, the ESP32's doesn't.
             #expect(rom.begins.allSatisfy { $0.count == (chip == .esp32s3 ? 20 : 16) })
-            // Last, out of the bootloader: EN pulsed, IO0 left high.
-            #expect(rom.signals.suffix(2).map(\.rts) == [true, false])
+            #expect(rom.restarted)
         }
     }
 
-    @Test func testFirmwareForTheOtherChipIsRefused() {
-        let rom = FakeBootloader(chip: .esp32, usbJTAG: false)
-        #expect(throws: Flasher.Failure.wrongChip(expected: .esp32s3, found: "esp32")) {
-            try Flasher(line: rom).flash([.init(offset: 0x10000, data: Data([1, 2, 3]))], chip: .esp32s3, flashSize: 16 << 20)
+    /// Which images go is up to the chip the bootloader reports: each
+    /// chip gets its own, at its flash's size.
+    @Test func testTheImagesFollowTheChipTheBootloaderReports() throws {
+        for chip in Flasher.Chip.allCases {
+            let rom = FakeBootloader(chip: chip, usbJTAG: chip == .esp32s3)
+            var asked: [Flasher.Chip] = []
+            try Flasher(line: rom).flash { found in
+                asked.append(found)
+                return ([.init(offset: 0x10000, data: Data(repeating: found == .esp32 ? 1 : 2, count: 100))], 4 << 20)
+            }
+            #expect(asked == [chip])
+            #expect(rom.flash[0x10000] == (chip == .esp32 ? 1 : 2))
+            #expect(rom.restarted)
         }
-        #expect(rom.begins.isEmpty, "nothing written")
+    }
+
+    /// The rule: once in its bootloader, the board restarts however the
+    /// write ends, so none is left there with its screen dark: a chip
+    /// that isn't wanted, one that isn't known, one the app has no images
+    /// for, and a write that doesn't read back.
+    @Test func testTheBoardRestartsWhenAWriteFails() {
+        struct NoImages: Error {}
+        let wrong = FakeBootloader(chip: .esp32, usbJTAG: false)
+        #expect(throws: Flasher.Failure.wrongChip(expected: .esp32s3, found: "esp32")) {
+            try Flasher(line: wrong).flash([.init(offset: 0x10000, data: Data([1, 2, 3]))], chip: .esp32s3, flashSize: 16 << 20)
+        }
+        #expect(wrong.begins.isEmpty, "nothing written")
+        #expect(wrong.restarted)
+
+        let unknown = FakeBootloader(chip: .esp32, usbJTAG: false)
+        unknown.magic = 0x1234
+        #expect(throws: Flasher.Failure.unknownChip(0x1234)) {
+            try Flasher(line: unknown).flash { _ in ([], 4 << 20) }
+        }
+        #expect(unknown.restarted)
+
+        let spoiled = FakeBootloader(chip: .esp32s3, usbJTAG: true)
+        spoiled.spoil = true
+        #expect(throws: Flasher.Failure.verify(offset: 0x10000)) {
+            try Flasher(line: spoiled).flash([.init(offset: 0x10000, data: Self.image(5000, seed: 1))], chip: .esp32s3, flashSize: 16 << 20)
+        }
+        #expect(spoiled.restarted)
+
+        let refused = FakeBootloader(chip: .esp32s3, usbJTAG: true)
+        #expect(throws: NoImages.self) { try Flasher(line: refused).flash { _ in throw NoImages() } }
+        #expect(refused.begins.isEmpty, "nothing written")
+        #expect(refused.restarted)
     }
 
     /// An app image whose header names the other chip is refused before
@@ -141,14 +185,6 @@ final class FakeBootloader: SerialLine {
             try Flasher(line: rom).flash([.init(offset: 0x10000, data: esp32App)], chip: .esp32s3, flashSize: 16 << 20)
         }
         #expect(rom.signals.isEmpty, "the board wasn't even reset")
-    }
-
-    @Test func testAWriteThatDoesntReadBackFails() {
-        let rom = FakeBootloader(chip: .esp32s3, usbJTAG: true)
-        rom.spoil = true
-        #expect(throws: Flasher.Failure.verify(offset: 0x10000)) {
-            try Flasher(line: rom).flash([.init(offset: 0x10000, data: Self.image(5000, seed: 1))], chip: .esp32s3, flashSize: 16 << 20)
-        }
     }
 
     @Test func testABoardThatNeverAnswersSaysSo() {

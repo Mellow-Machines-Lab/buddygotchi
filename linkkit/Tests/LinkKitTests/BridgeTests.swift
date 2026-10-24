@@ -145,4 +145,22 @@ func connectTo(_ path: String) throws -> Int32 {
         #expect(!FileManager.default.fileExists(atPath: bridge.socketPath))
         #expect(throws: Bridge.Failure.self) { try Bridge(port: "/dev/no-such-port", socket: socketPath()).run() }
     }
+
+    /// SPEC.md §3 (USB): asking a port who's on it sends the bare `hello`
+    /// and reads the board's, past whatever else it says first; a board
+    /// that says nothing, or a port that won't open, is none.
+    @Test func testAPortIsAskedWhoIsOnIt() throws {
+        let board = try FakeBoard()
+        defer { board.unplug() }
+        let asked = Box<Hello?>(), port = board.port
+        Thread { asked.add(Bridge.hello(on: port, timeout: 2)) }.start()
+        #expect(board.received(14) == #"{"t":"hello"}"# + "\n")
+        board.send("ets Jun  8 2016 00:22:57\r\n" + #"{"t":"ev","kind":"tap"}"# + "\n")
+        board.send(#"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.4.0","does":[]}"# + "\n")
+        eventually("its hello", timeout: 3) { !asked.all.isEmpty }
+        #expect(asked.all.first??.id == "b00p-54fe")
+
+        #expect(Bridge.hello(on: board.port, timeout: 0.3) == nil, "it said nothing")
+        #expect(Bridge.hello(on: "/dev/no-such-port") == nil)
+    }
 }

@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-22. The tour of LinkKit: the four messages, the queue, and
+Updated 2026-10-24. The tour of LinkKit: the four messages, the queue, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -158,19 +158,25 @@ final class LampHost: @unchecked Sendable {
   the board at once: `--port` names the port when there's more than one
   USB serial port, `--socket` where to share it (`$TMPDIR/linkkit-bridge.sock` by
   default), `--baud` the board's
-  rate (460800 by default). An app can run one itself (`Bridge`), and ask
-  whether one answers on a socket (`SocketTransport.answers`).
+  rate (460800 by default). An app can run one itself (`Bridge`), ask
+  whether one answers on a socket (`SocketTransport.answers`), and ask
+  the board on a free port who it is (`Bridge.hello(on:)`, the bare
+  `hello` and the board's answer, or nil).
 - **Firmware:** `Flasher` writes images onto an ESP32 or ESP32-S3 over
   its USB serial port through the chip's ROM bootloader, as esptool does:
   DTR and RTS reset it into the bootloader (the S3's own USB and a
   USB-serial chip's auto-reset circuit each take their own sequence),
   each image goes in compressed a kilobyte at a time and is checked
   against the chip's MD5 of it, and EN restarts it into the new firmware.
+  Once it's been reset, the board is restarted however the write ends,
+  so one that fails partway isn't left in its bootloader.
   Only the images given are written, so the bootloader, partition table
-  and settings stay; an app image whose header names the other chip is
-  refused before the board is touched. The port must be free: stop the
-  bridge first. `linkkit-flash --chip esp32s3 --flash-size 16MB
-  0xe000:boot_app0.bin 0x10000:firmware.bin` does it from a terminal.
+  and settings stay. Given a chip, an app image whose header names the
+  other is refused before the board is touched; or `flash(pick:)` asks
+  which images to write for the chip the bootloader reports. The port
+  must be free: stop the bridge first. `linkkit-flash --chip esp32s3
+  --flash-size 16MB 0xe000:boot_app0.bin 0x10000:firmware.bin` does it
+  from a terminal.
 
 `Wire` builds and reads the messages themselves, and `JSON` and `JSONObject`
 (keys in order) are the app's parts of them.
@@ -199,9 +205,10 @@ swift test --scratch-path .build/tests
 
 The tests use Swift Testing: `LinkKitTests` (framing and chunking, the
 Bluetooth outbox and reconnect timing, the socket transport, the bridge
-on a pseudo-terminal, the wire, the keepalive, `hello` and trouble, ids,
-exactly one end, the give-up and a link that drops), each naming the
-SPEC.md section it checks. The device half has
+and asking a port's `hello` on a pseudo-terminal, the wire, the
+keepalive, `hello` and trouble, ids, exactly one end, the give-up, a
+link that drops, and the flasher against a fake bootloader), each naming
+the SPEC.md section or the rule it checks. The device half has
 its own PlatformIO project for its tests
 ([device/README.md](device/README.md)). The package depends on nothing
 but Foundation and CoreBluetooth, and on nothing outside this folder.

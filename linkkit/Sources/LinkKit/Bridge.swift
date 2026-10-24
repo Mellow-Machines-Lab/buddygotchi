@@ -62,6 +62,35 @@ public final class Bridge: @unchecked Sendable {
             .sorted().map { "/dev/" + $0 }
     }
 
+    /// Asks the board on `port` who it is, as a host does on a link
+    /// (SPEC.md §3): the bare `hello`, again each second, since a board the
+    /// port's opening restarted answers only once it's up, until its
+    /// `hello` comes or `timeout` passes. Nil when none comes, or the port
+    /// won't open. The port must be free: stop the bridge first.
+    public static func hello(on port: String, baud: Int = defaultBaud, timeout: TimeInterval = 3) -> Hello? {
+        guard let fd = try? openPort(port, baud: baud, log: { _ in }) else { return nil }
+        defer { close(fd) }
+        let ask = Data((Wire.hello + "\n").utf8)
+        var framer = LineFramer(), asked = Date.distantPast
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if Date().timeIntervalSince(asked) >= 1 {
+                _ = ask.withUnsafeBytes { write(fd, $0.baseAddress!, $0.count) }
+                asked = Date()
+            }
+            var waiting = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+            guard poll(&waiting, 1, 100) > 0 else { continue }
+            let n = read(fd, &buffer, buffer.count)
+            if n == 0 || (n < 0 && errno != EAGAIN && errno != EINTR) { return nil }  // the board went away
+            guard n > 0 else { continue }
+            for line in framer.push(buffer[0..<n]) {
+                if case .hello(let hello) = Wire.decode(line) { return hello }
+            }
+        }
+        return nil
+    }
+
     /// Stops `run` from any thread.
     public func stop() {
         lock.withLock {

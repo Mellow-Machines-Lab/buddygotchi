@@ -71,11 +71,16 @@ reboots the board; `boopctl` leaves them alone.
 flash, the version and SHA, and where each image goes, read from the
 board's own partition table. A board's `hello` names it (`board`, its
 env); from firmware before that, its face does, since only the AMOLED
-draws the gel. When the board runs another version than the app
-carries, Settings offers the update: plugged in over USB, the app writes
-the app image and the boot-slot record through the chip's ROM
-bootloader (LinkKit's `Flasher`) and restarts it, leaving the
-bootloader, partition table and NVS as they were. From a terminal,
+draws the gel. When the board runs an older version than the app
+carries, or the same one built with another character pack, Settings
+offers the update. Plugged in over USB, the board must say in its
+`hello` that it's the one on Bluetooth; then the app writes the image
+for the chip its bootloader reports, the app image and the boot-slot
+record, through the chip's ROM bootloader (LinkKit's `Flasher`) and
+restarts it, even when the write fails, leaving the bootloader,
+partition table and NVS as they were. A write that stopped partway is
+tried again on the same port without asking, since a half-written board
+says nothing. From a terminal,
 `linkkit-flash` writes the same images:
 
 ```sh
