@@ -8,6 +8,26 @@ Simplicity first: where one engine for both would cost more than it saves,
 the shared part shrinks to the contract (the rig, layers, anchors, clips)
 and each face keeps its own insides.
 
+**Current state.** The rig (`firmware/src/render/rig/`) is the channels a
+clip or a finger moves (`squash`, `lean`, `lift`, the eyes' `eyeOpen`,
+`eyeSize` and gaze, `mouthOpen`), a mood's two styles, clips and the
+looks' clips, mixed by springs; its schema is
+[CHARACTER.md](../characters/CHARACTER.md) §15. Pixel's face draws from it
+in every design whose face is its mood's resting face, open or shut, at
+every step as the design draws it, which facegen and the board's rig
+face test both check; the rest stay baked. Every switch of
+Pixel's designs dissolves over the rig's 200 ms with no blink, one
+mid-way through another from the picture that shows more; a look's clip
+plays under its own designs only, and a design that blinks on its own
+gets no other blink. The gel stays on its own engine, the JavaScript
+reference and the C++ port matched frame for frame, falling asleep over
+480 ms and waking over 180; both faces share the anchors and the lane's
+fade, and the gel's move onto the mixer waits for the owner. The
+checkpoint notes below are history, each as it landed: where a later one
+changed an earlier (checkpoint 1's 180 ms to sleep, checkpoint 4's
+150 ms switch behind a blink and Boop's poses), this paragraph and the
+later note say what holds.
+
 ## Why
 
 Today each character is its own framework. Pixel is 1,175 baked flip-book
@@ -220,7 +240,7 @@ the sketch above, and why:
   reference's 0 ms**: the Transitions view's pair, so one recorder serves
   both views.
 - **`became` names the rig's data** (a clip by its file, an expression
-  by its mood, art by a style, scene or accessory's art), checked, since
+  by its mood, art by a style an expression wears), checked, since
   checkpoint 3 landed first. None of it stops a pack staging.
 - **The jumpiest list is ranked in the page** (Rank): the everyday
   transitions recorded on the stage's board, by the rule `measure.py`
@@ -307,12 +327,14 @@ from what this step set out to do, and why:
   own. Pixel's working looks, occasions and most reactions draw the
   mood's resting face, moved about, with a desk or props round it and
   decorations on it, so facegen finds, for each design, where that face
-  sits at each step (moved whole, its eyes moved within it) and splits
-  the decorations (a sparkle, a falling tear, an anger mark) into groups
-  of their own. The board draws the design without its face, the rig
-  face in the face's place, then the decorations: at rest, the design as
-  drawn, pixel for pixel, which facegen checks at every step and the rig
-  face test checks on the board. 585 of the 1214 designs, 195 of the 312
+  sits at each step (moved whole, its eyes moved within it, open or shut)
+  and splits the decorations (a sparkle, a falling tear, an anger mark)
+  into groups of their own. The board draws the design without its face,
+  the rig face in the face's place, then the decorations: at rest, the
+  design as drawn, pixel for pixel, which facegen checks at every step and
+  the rig face test on the board at every step too (since the review
+  below; until then it checked the start, and a shut step drew open).
+  585 of the 1214 designs, 195 of the 312
   working looks'. Idle's first two variations are taken near enough, as
   checkpoint 4 took them (sad's trembling lip and irritated's twitch are
   lost, the morphs kept); the rest only exactly.
@@ -416,6 +438,46 @@ from rest. The anchors lost the hands' sides, which nothing read. The
 gel's move onto the rig grows back what it needs of them, from git. Since,
 every switch of Pixel's designs dissolves over the rig's one 200 ms fade,
 and the blink that hid a switch is retired.
+
+### The review's fixes (2026-10-24)
+
+A review of the engine found these, each fixed and pinned in a test:
+
+- **A switch mid-dissolve** kept what the first dissolved from while its
+  mix restarted, so a double tap flashed idle back, and in a dissolve's
+  last frames a rig face could be drawn on a baked design's show. What
+  showed is one `Shown` (its kind and show), and a switch dissolves from
+  the picture that shows more.
+- **A design's shut steps drew open.** facegen keeps which resting face
+  matched, a shut bit in the face track, and the mood's shut face's mouth
+  (a flip-book's blink step has its own); the rig face draws them shut,
+  still morphing, and a design that blinks on its own gets no random
+  blink. The rig face test checks every step of every design.
+- **The look's clip played under reactions**, so a poke while asleep had
+  doze's shut eyes; it plays under a look's designs only.
+- **A press begun on the needs-you screen** kicked the rig face when it cut
+  in; only one that begins on the rig face does. The gel's reset lets go
+  of the finger.
+- **The gel's night lids** dropped in one frame as it fell asleep; they
+  ease out with the sleeping face crossing in.
+- **The gel's Hermite** kept the cubic's slope where it held a weight at
+  zero, so a retarget brought a faded art back at about 3%; it's flat
+  there, in both engines (no trace changed). A card revealed in its
+  recipe's last 480 ms rises whole, then falls (none is yet).
+- **Smaller:** the channels nothing set (`x`, `y`, `tilt`,
+  `mouthWidth`) are gone; the mixer's full rule is the oldest but the
+  look's own; the frame key hashes the lane's dither level; charactergen
+  checks styles against the moods the pixel face draws; the Studio's
+  stage takes its board back after a recording when paused, Rank records
+  `transitions.jsonl`'s transitions, and `reference read` takes a length
+  from the frames (a browser's WebM has none) and keeps the old frames
+  until the new ones are cut.
+
+Measured (internal/tools/fluid, `transitions-pixel.jsonl`, largest
+frame's changed pixels): every transition within a few percent of
+before, the reactions now playing without the look's clip (back to idle
+2107 to 2028, the notice at work 4186 to 4238, the finish at work 16524
+to 16296).
 
 ## Risks
 
