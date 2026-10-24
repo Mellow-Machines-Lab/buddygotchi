@@ -1446,8 +1446,11 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.ruleActions, before, "and no poke")
     }
 
-    /// The `state` message carries the to-do list of the turn that has
-    /// run longest, as counts, while nothing needs you.
+    /// The `state` message carries a to-do list, as counts, while nothing
+    /// needs you: the longest turn's, else the next working session's
+    /// that has one, one whose turn's start isn't known (a helper working
+    /// on after its turn) last. The working tier counts from the longest
+    /// turn whose start is known.
     func testTheStateCarriesTheLongestTurnsToDos() {
         let rig = CoreRig()
         func list(_ done: Int, _ total: Int, session: String) {
@@ -1461,12 +1464,55 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.wait(1000)
         rig.send(.turnStart, session: "b")
         list(1, 4, session: "b")
-        XCTAssertNil(rig.state.todo, "a's turn is the longest, and has no list")
+        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 1, total: 4), "a's turn is the longest, but has no list")
         list(3, 7, session: "a")
-        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 3, total: 7))
+        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 3, total: 7), "the longest turn's")
         XCTAssertTrue(rig.state.jsonLine.contains(#""todo":{"done":3,"total":7}"#), rig.state.jsonLine)
         rig.send(.needsYou, session: "b", tool: "Bash")
         XCTAssertNil(rig.state.todo, "not while something needs you")
+        rig.send(.turnEnd, session: "b")
+        rig.send(.turnEnd, session: "a")
+        // c's list, then its turn ends and a helper works on.
+        rig.send(.turnStart, session: "c")
+        list(2, 5, session: "c")
+        rig.send(.turnEnd, session: "c")
+        rig.send(.activity, session: "c", subagent: "h1", tool: "Bash")
+        XCTAssertEqual(rig.state.busy, 1, "its helper works on")
+        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 2, total: 5), "though its turn's start isn't known")
+        rig.wait(9 * 60_000, every: 60_000)
+        rig.send(.turnStart, session: "d")
+        XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 2, total: 5), "d's turn has no list")
+        XCTAssertFalse(rig.state.when.contains("marathon"), "the tier counts from d's start, the only one known")
+        rig.wait(8 * 60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("marathon"))
+    }
+
+    /// A turn whose end never came (the hook lost, or an interrupt that
+    /// sent none) stops working after a silent hour, though its agent's
+    /// process runs: its camp, the busy count and the to-do list go, and
+    /// so do the view's working check-ins.
+    func testATurnWhoseEndWasLostStopsWorkingAfterAnHour() {
+        let rig = CoreRig(isRunning: { _ in true })
+        var start = rig.event(.turnStart)
+        start.data["process"] = .object(["pid": 4242, "started": 1])
+        rig.send(start)
+        var list = rig.event(.activity, tool: "TodoWrite")
+        list.data["todos_done"] = 1
+        list.data["todos_total"] = 3
+        rig.send(list)
+        rig.wait(30 * 60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("camp"))
+        XCTAssertEqual(rig.state.busy, 1)
+        XCTAssertNotNil(rig.state.todo)
+        XCTAssertNotNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
+        rig.wait(SessionFold.staleWorkMs - 30 * 60_000, every: 60_000)
+        XCTAssertEqual(rig.state.base, "idle", "an hour silent")
+        XCTAssertEqual(rig.state.busy, 0)
+        XCTAssertNil(rig.state.todo)
+        XCTAssertFalse(rig.state.when.contains("camp"))
+        XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)), "no more check-ins")
+        let beats = rig.wait(2 * 3600 * 1000, every: 60_000).views.filter { $0.name == "heartbeat" && $0.facts["working_ms"] != nil }
+        XCTAssertEqual(beats.count, 0, "none all night")
     }
 
     /// A finger held on the sign dismisses the request that shows: the
@@ -1487,7 +1533,7 @@ final class CoreYouAndBoopTests: XCTestCase {
             guard case .record(let e) = effect, e.specificType == Core.needsYou, e.phase == .end else { return nil }
             return e
         }
-        XCTAssertEqual(ended.map { $0["why"]?.string }, [Core.dismissedWhy])
+        XCTAssertEqual(ended.map { $0["why"]?.string }, [Core.Why.dismissed.rawValue])
         XCTAssertEqual(rig.sessions.first?.last, "waiting", "the popover still lists it as waiting")
         rig.wait(1000)
         XCTAssertEqual(opened(rig.poke()), [], "a tap is a poke again")
@@ -1498,10 +1544,18 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertNotNil(rig.state.attn, "its next request shows")
     }
 
+    /// The popover's Dismiss on the request its card shows, the first
+    /// waiting session's.
+    func dismissCard(_ rig: CoreRig) {
+        guard let attn = rig.state.attn, let s = rig.core.groups(at: rig.now).shown.first else { return }
+        rig.note(Fx(rig.pipeline.dismiss(s.key, request: attn.id, at: rig.now)))
+    }
+
     /// The popover lists the request that shows before one you dismissed,
     /// so its needs-you card (the first waiting) names the sign's; BOOT's
-    /// line puts it first too. A dismissed request doesn't move idle's
-    /// tier: it isn't a turn that ended.
+    /// line puts it first too. A dismissed request rests as an idle
+    /// session does, from when you dismissed it, so idle's tier counts
+    /// from the latest dismissal.
     func testADismissedRequestComesAfterTheOneThatShows() {
         let rig = CoreRig()
         rig.send(.turnStart, session: "c", project: "docs")
@@ -1511,14 +1565,38 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
         rig.wait(1000)
         rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
-        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "a"), at: rig.now)))
+        dismissCard(rig)
         XCTAssertEqual(rig.state.attn?.project, "web")
         XCTAssertEqual(rig.sessions, [["claude", "web", "waiting"], ["claude", "api", "waiting"], ["claude", "docs", "idle"]])
         XCTAssertEqual(rig.core.line(at: rig.now).map(\.id), ["b", "a", "c"])
-        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "b"), at: rig.now)))
+        rig.wait(1000)
+        dismissCard(rig)
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.state.idle, 3)
-        XCTAssertTrue(rig.state.when.contains("setpiece"), "docs' turn ended 4 minutes ago; the requests aren't turns that ended")
+        XCTAssertFalse(rig.state.when.contains { Occasions.idleTiers.map(\.tag).contains($0) }, "b was dismissed just now")
+        rig.wait(30_000)
+        XCTAssertTrue(rig.state.when.contains("fidget"), "30 s after the last dismissal")
+    }
+
+    /// A desk whose only session waits on a request you dismissed rests
+    /// from the dismissal: its tiers come, and it dozes, as an idle desk
+    /// does.
+    func testADeskWithOnlyADismissedRequestRestsFromTheDismissal() {
+        let rig = CoreRig(isRunning: { _ in true })
+        rig.send(.turnStart)
+        var ask = rig.event(.needsYou, tool: "Bash")
+        ask.data["process"] = .object(["pid": 4242, "started": 1])
+        rig.send(ask)
+        rig.wait(20 * 60_000, every: 60_000)
+        XCTAssertNotNil(rig.state.attn, "its agent waits")
+        XCTAssertEqual(rig.state.when.filter { Occasions.idleTiers.map(\.tag).contains($0) }, [], "no tier while it shows")
+        dismissCard(rig)
+        XCTAssertEqual(rig.state.base, "idle")
+        XCTAssertEqual(rig.state.idle, 1)
+        rig.wait(30_000)
+        XCTAssertTrue(rig.state.when.contains("fidget"))
+        rig.wait(10 * 60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("doze"), "ten minutes after the dismissal")
     }
 
     /// The board's hold names the request its sign showed (`attn.id`): one
@@ -1590,21 +1668,35 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(other.state.busy, 0)
     }
 
-    /// The popover's Dismiss names the session: only that one goes, and
-    /// the next that needs you shows.
-    func testDismissingOneSessionShowsTheNext() {
+    /// The popover's Dismiss names the request its card showed and its
+    /// session, and dismisses it only while both match: a request that
+    /// took the card's place between drawing and the click isn't
+    /// dismissed unseen, nor another session's with that number. The next
+    /// that needs you shows.
+    func testThePopoversDismissNamesTheRequestItsCardShowed() throws {
         let rig = CoreRig()
+        rig.send(.turnStart, session: "a", project: "api")
         rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
         rig.wait(1000)
         rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
         XCTAssertEqual(rig.state.attn?.project, "api")
         XCTAssertEqual(rig.state.attn?.more, 1)
-        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "b"), at: rig.now)))
+        let card = try XCTUnwrap(rig.state.attn?.id)
+        let a = SessionFold.key(.claude, "a"), b = SessionFold.key(.claude, "b")
+        rig.note(Fx(rig.pipeline.dismiss(b, request: card, at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.more, 1, "b's isn't the card's request")
+        // A subagent asks too, then the main agent's request is answered:
+        // a new request of a's takes the card before the click.
+        rig.send(.needsYou, session: "a", subagent: "h1", project: "api", tool: "Edit")
+        rig.send(.activity, session: "a", project: "api", tool: "Bash", done: true)
         XCTAssertEqual(rig.state.attn?.project, "api")
+        XCTAssertNotEqual(rig.state.attn?.id, card, "another request")
+        rig.note(Fx(rig.pipeline.dismiss(a, request: card, at: rig.now)))
+        XCTAssertEqual(rig.state.attn?.project, "api", "the click was for the request before it")
+        dismissCard(rig)
+        XCTAssertEqual(rig.state.attn?.project, "web")
         XCTAssertEqual(rig.state.attn?.more, 0)
-        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "nobody"), at: rig.now)))
-        XCTAssertEqual(rig.state.attn?.project, "api", "an unknown session dismisses nothing")
-        rig.note(Fx(rig.pipeline.dismiss(SessionFold.key(.claude, "a"), at: rig.now)))
+        dismissCard(rig)
         XCTAssertNil(rig.state.attn)
     }
 
@@ -1666,26 +1758,33 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.ruleActions.suffix(3), ["open_thread", "needs_you end", "wiggle"])
     }
 
-    /// An agent event is recorded without the name,
-    /// app, app session and mode its session already has, which the core
+    /// An agent event is recorded without the name, app, app session,
+    /// mode, process and terminal its session already has, which the core
     /// carries on, so the transcript doesn't repeat them on every line. The
     /// first event of a session the core doesn't hold (after a launch, its
     /// end, or a day's silence it forgets, even with no tick between, as
     /// when the Mac slept) carries them all, so a tap still opens the
-    /// thread in its app, and so does a session's first event each day.
+    /// thread in its app, and so do a session's first event each day and
+    /// every request, so a launch that reads back only the day since knows
+    /// a waiting agent's process and where it opens.
     func testTheTranscriptLeavesOutWhatTheSessionAlreadyHas() {
-        let rig = CoreRig()
-        let constants = ["name", "app", "app_session", "mode"]
+        let rig = CoreRig(isRunning: { _ in true })
+        let constants = ["name", "app", "app_session", "mode", "process", "terminal"]
         func recorded(_ kind: Hook, tool: String? = nil, done: Bool? = nil, mode: String = "plan") -> [String] {
             var event = rig.event(kind, tool: tool, done: done, mode: mode, app: "com.anthropic.claudefordesktop",
                                   appSession: "local_s1")
             event.data["name"] = "Fix the nav"
+            event.data["process"] = .object(["pid": 4242, "started": 1])
+            event.data["terminal"] = .object(["program": "ghostty", "tty": "/dev/ttys003"])
             rig.send(event)
             let data = rig.pipeline.transcript.events.last { $0.from == .claude }!.data
             return constants.filter { data[$0] != nil }
         }
         XCTAssertEqual(recorded(.turnStart), constants, "a session the core doesn't hold yet")
         XCTAssertEqual(recorded(.activity, tool: "Bash"), [], "nothing changed")
+        XCTAssertEqual(recorded(.needsYou, tool: "Bash"), constants, "a request")
+        XCTAssertEqual(rig.core.sessions["claude/s1"]?.terminal?.tty, "/dev/ttys003")
+        XCTAssertEqual(rig.core.sessions["claude/s1"]?.process, AgentProcess(pid: 4242, started: 1))
         XCTAssertEqual(recorded(.activity, tool: "Bash", done: true, mode: "default"), ["mode"], "out of plan mode")
         XCTAssertEqual(recorded(.activity, tool: "Edit", mode: "acceptEdits"), [], "still not plan mode")
         XCTAssertEqual(rig.core.sessions["claude/s1"]?.name, "Fix the nav")
@@ -1693,9 +1792,11 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(recorded(.activity, tool: "Edit", done: true, mode: "default"), constants, "the day's first")
         XCTAssertEqual(recorded(.activity, tool: "Edit", mode: "default"), [])
         rig.now += SessionFold.forgetMs
-        XCTAssertEqual(recorded(.needsYou, tool: "Bash"), constants, "the core forgets it before this event")
+        XCTAssertEqual(recorded(.activity, tool: "Bash"), constants, "the core forgets it before this event")
+        XCTAssertEqual(recorded(.needsYou, tool: "Bash"), constants)
         XCTAssertEqual(opened(rig.poke()), [ThreadRef(agent: "claude", session: "s1", app: "com.anthropic.claudefordesktop",
-                                                      appSession: "local_s1")])
+                                                      appSession: "local_s1",
+                                                      terminal: TerminalTab(program: "ghostty", tty: "/dev/ttys003"))])
         XCTAssertEqual(recorded(.sessionEnd), [])
         XCTAssertEqual(recorded(.sessionStart), constants, "a new session")
     }

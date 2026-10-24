@@ -230,15 +230,16 @@ public final class Pipeline {
     public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
-            if kind == Core.dismissGesture { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
+            if kind == Core.dismissGesture, let request { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
         }
     }
 
-    /// The popover's Dismiss on the session `key`'s request
+    /// The popover's Dismiss on the request numbered `request`, the one
+    /// its card showed, if it's still the session `key`'s
     /// (`Core.dismiss`), on its buddy's board.
     @discardableResult
-    public func dismiss(_ key: String, at now: Int64, buddy: String? = nil) -> Step {
-        input(at: now) { run(core(buddy).dismiss(key, at: now), buddy: buddy) }
+    public func dismiss(_ key: String, request: Int, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) { run(core(buddy).dismiss(request: request, session: key, at: now), buddy: buddy) }
     }
 
     /// What you said to Boop on push-to-talk, heard by the Mac's mic

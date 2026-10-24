@@ -464,8 +464,9 @@ Besides drawing each mood and state, a face:
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
   hatching, New Year's Day, a growth stage reached), a long turn's tier
   (`marathon` from 8 minutes into the longest turn working, `camp` from
-  15) or idle's (`fidget` from 30 seconds after the last turn ended,
-  `setpiece` from 3 minutes, `doze` from 10), one at a time
+  15) or idle's (`fidget` from 30 seconds after the latest session came
+  to rest, its turn ended or its request dismissed, `setpiece` from 3
+  minutes, `doze` from 10), one at a time
   (`Occasions.workTiers` and `idleTiers`), and every growth stage
   reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
   `pal` shows from Pal on) from the Mac's `state.when`, and `busy` (2–3

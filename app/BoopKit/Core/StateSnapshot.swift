@@ -94,8 +94,8 @@ public struct StateSnapshot: Equatable, Sendable {
         }
     }
 
-    /// The to-do list of the longest turn working, while nothing needs
-    /// you; nil sends none.
+    /// The to-do list of the longest turn working that has one, while
+    /// nothing needs you; nil sends none.
     public var todo: Todo?
 
     public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,

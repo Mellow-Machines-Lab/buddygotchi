@@ -312,9 +312,11 @@ struct OverviewPane: View {
         }
         .overlay(alignment: .bottomTrailing) {
             // Hides the request on Boop, as a finger held on the needs-you
-            // screen does; the agent still waits.
+            // screen does; the agent still waits. It names the request the
+            // card shows, so one that took its place since isn't dismissed
+            // unseen.
             if let thread = waiting?.thread {
-                Button("Dismiss") { model.runtime?.dismiss(thread) }
+                Button("Dismiss") { model.runtime?.dismiss(thread, request: attn.id) }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
                     .padding(Theme.gapSnug + 2)

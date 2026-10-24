@@ -58,7 +58,7 @@ creature's brain.
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
-| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a marathon at 8 minutes, a camp at 15) and the quiet after it its own. The agent's process runs all through the demo, as its hooks say, so a request still waits however long passes | `minutes` |
+| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a marathon at 8 minutes, a camp at 15) and the quiet after it its own. The agent's process runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
