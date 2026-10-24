@@ -230,7 +230,7 @@ class Device : public linkkit::App {
     // The touch in progress, last in contact at real time touchSeenReal.
     bool touchDown = false;
     bool touchInjected = false;  // it's dbg.touch's, not the panel's
-    // It began on the needs-you sign, showing request touchSign (0 when the
+    // It began on the needs-you screen, showing request touchSign (0 when the
     // Mac sent no number), and its hold has dismissed it.
     bool touchOnSign = false, touchDismissed = false;
     uint32_t touchSign = 0;

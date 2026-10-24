@@ -30,13 +30,14 @@ face-down) are the ones that vanish.
   hour stops working, whatever its process: its `Stop` was lost, or an
   interrupt sent no hook. The 10-minute net stays only for hooks that
   don't say.
-- **The escape hatch on the body.** Hold a finger on the screen for 1 s
-  while the sign is up: Boop drops it. It hides the request on Boop
+- **The escape hatch on the body.** Hold a finger on the needs-you
+  screen for 1 s: Boop drops it. It hides the request on Boop
   only and never answers the agent; the session rests from then, as an
   idle one does, and stays in BOOT's line, after the requests that show,
   and a new request from it shows again. The board names the request
-  its sign showed, so one that takes the sign during the hold isn't
-  dismissed unseen, and a relaunch keeps it dismissed while it waits.
+  its needs-you screen showed, so one that takes the screen during the
+  hold isn't dismissed unseen, and a relaunch keeps it dismissed while
+  it waits.
   The popover's card has the same Dismiss, which names its request too.
 
 ## 2. Opening the thread where you work
