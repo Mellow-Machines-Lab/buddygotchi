@@ -78,7 +78,8 @@ and new actions. One personality (Boop's default nature) for now.
       frames reuse it; step the nightcap's swing every 400 ms as Pixel's
       does) and blit it, about 4 ms back; give paintLayers its own field
       in the gel's profile first, so `boopctl ping` shows it.
-- [ ] **Fluid animations and interactions.** Today the face visibly cuts
+- [x] **Fluid animations and interactions** (taken up as the character
+      engine, below). Today the face visibly cuts
       from one state to the next (a look to a reaction and back, one mood
       to another, a gesture in and out). It should flow: blend between
       states (the slime's springs carry motion over; Pixel's flip-books
@@ -97,10 +98,13 @@ reviewed, simplified and merged. Measure fluidity with
 `internal/tools/fluid/` (baseline 2026-10-23, gel: a mood change's
 largest frame 32x its median, a finish's 33x, going to work 9x).
 
-- [ ] **1. The slime flows**: faces morph or cross-fade, the lane fades.
-- [ ] **2. The dashboard and the reference pipeline.**
-- [ ] **3. The rig core**: channels, expressions, clips, the mixer, layers,
-      anchors, the pack schema and its generator.
+- [x] **1. The slime flows**: faces morph or cross-fade, the lane fades.
+      Checked on the AMOLED board: `boopctl run` matches the simulator,
+      and a cross-fade frame costs 0.5 to 2.6 ms.
+- [x] **2. The dashboard and the reference pipeline.**
+- [x] **3. The rig core**: channels, styles, clips, the mixer, its Ramp
+      and anchors, the pack schema and its generator, cut on 2026-10-24
+      to what Pixel's face uses (character-engine.md, the final pass).
 - [x] **4. Pixel on the rig**: sprite parts, one mood first, then all.
       Idle's plain face in every drawn mood: mood changes dissolve and
       morph, and the hand-overs to and from the baked designs cross-fade
@@ -128,6 +132,22 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] Push AgentHooks' `terminal-tab-and-edit-sizes`, merge it, then
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
       terminal tab and "lines gone"). Try it in iTerm2 and Terminal.
+- [ ] Review the worked reference (Studio, Review: notice from the perk
+      reference). It keeps Boop's `notice` clip, which no face plays yet;
+      its reading still names beats for the rig's dropped `eyeCurve` and
+      `cheek`.
+- [ ] Reference frames are committed, capped at 512 px a side: fine for
+      sketches and GIFs, heavy for long videos. Keep, or commit only the
+      contact sheets?
+- [ ] Design calls the final review left, each a change to how it looks:
+      - Pixel: facegen finds each design's resting face by search (585 of
+        1214 designs); the bank could tag its parts instead, so a design
+        says whether the rig draws it. Curious and sad at work stay baked.
+      - Pixel: switches into and out of the needs-you sign still cut.
+      - The gel: falling asleep cross-fades two arts in 480 ms (the
+        longest that keeps the ink check's 85%); a morph that squashes the
+        face shut would let the length be a choice.
+      - The Mac popover's still tile still blinks into a new face.
 - [ ] On the AMOLED board: turn it over once to confirm the motion
       sensor's z (flipped on 2026-10-22: resting on the desk it read
       -1 g and thought it was face down; now +1 g), and try a stroke, a
@@ -139,3 +159,13 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       (03, 08, 13, 38, 39, 47; 04 and 28 flaky): Jev or the steering has
       drifted from them. Look at each with real runs.
 - [ ] The agent's last message through the same reader as your prompt.
+- [ ] A first `boopctl sim` or `run` straight after a merge sometimes
+      reports changed pictures and a second run passes (three times on
+      2026-10-24, and a `check-headless --native` once): the native
+      program's incremental build seems to miss a header through the
+      staged pack. Find the missing dependency.
+- [ ] Device::reset clears a hand-kept list of the members keyed to the
+      clock (the motion sensor's were missed once): gather them in one
+      struct reset as `{}`, once the touch work in device.cpp has landed.
+- [ ] The rig channels `x`, `y`, `tilt` and `mouthWidth` are read by
+      Pixel's face but set by no clip or input yet: use them or drop them.
