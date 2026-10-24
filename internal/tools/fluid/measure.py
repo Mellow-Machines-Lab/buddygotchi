@@ -7,7 +7,9 @@ then, with the tools' venv (Pillow):
 
     internal/tools/.venv/bin/python internal/tools/fluid/measure.py [/tmp/boop-sim/gel/transitions]
 
-Shots are named `<ms>-<transition>`, 40 ms apart. For each transition it
+Shots are named `<ms>-<transition>`, 40 ms apart; a frame is measured
+against the one 40 ms before it, so a recording may leave gaps between its
+transitions (`idle-swipes.jsonl` does). For each transition it
 prints the median and the largest changes (pixels that moved by more than
 24 levels) and the ratio of the largest to the median: a cut shows as a
 frame several times the median. With `--sheets DIR` it also writes a
@@ -27,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from boopctl_lib.image import sheet  # noqa: E402
 
 LEVELS = 24  # a pixel changed: its difference's luma is over this (the studio's board.js counts the same)
+STEP_MS = 40  # the shots' spacing: a frame further from the one before starts afresh
 
 
 def changed(a: Image.Image, b: Image.Image) -> int:
@@ -51,13 +54,13 @@ def main() -> None:
     files = sorted(glob.glob(os.path.join(args.dir, "*.png")))
     if not files:
         raise SystemExit(f"no shots in {args.dir}; record them first (boopctl sim)")
-    rows, prev = defaultdict(list), None
+    rows, prev, prev_ms = defaultdict(list), None, None
     for f in files:
         ms, _, name = os.path.basename(f)[:-4].partition("-")
         im = Image.open(f).convert("RGB")
-        if prev is not None:
+        if prev is not None and int(ms) - prev_ms == STEP_MS:
             rows[name].append((int(ms), changed(im, prev), f))
-        prev = im
+        prev, prev_ms = im, int(ms)
     print(f"{'transition':12s} {'frames':>6s} {'median':>7s} {'largest':>8s} {'ratio':>6s}  at")
     for name, r in rows.items():
         m = summary([c for _, c, _ in r])

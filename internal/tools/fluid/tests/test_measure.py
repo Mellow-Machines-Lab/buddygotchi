@@ -43,14 +43,17 @@ class MeasureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             shots, sheets = Path(tmp) / "shots", Path(tmp) / "sheets"
             shots.mkdir()
-            # Two frames of rest that barely change, then a nap whose second frame jumps.
-            frames = [("000040-rest", 0), ("000080-rest", 1), ("000120-rest", 2), ("000160-nap", 3), ("000200-nap", 60), ("000240-nap", 61)]
+            # Two frames of rest that barely change, then a nap whose second frame
+            # jumps, then after a gap a swipe, its first frame against nothing.
+            frames = [("000040-rest", 0), ("000080-rest", 1), ("000120-rest", 2), ("000160-nap", 3), ("000200-nap", 60),
+                      ("000240-nap", 61), ("000400-swipe", 0), ("000440-swipe", 2), ("000480-swipe", 3)]
             for name, lit in frames:
                 strip([[255, 255, 255]] * lit + [[0, 0, 0]] * (100 - lit)).save(shots / f"{name}.png")
             out = subprocess.run([sys.executable, str(HERE.parent / "measure.py"), str(shots), "--sheets", str(sheets)],
                                  check=True, capture_output=True, text=True).stdout.splitlines()
             self.assertEqual([line.split() for line in out[1:]], [["rest", "2", "1", "1", "1.0", "80", "ms"],
-                                                                  ["nap", "3", "1", "57", "57.0", "200", "ms"]])
+                                                                  ["nap", "3", "1", "57", "57.0", "200", "ms"],
+                                                                  ["swipe", "2", "2", "2", "1.0", "440", "ms"]])
             with Image.open(sheets / "nap.png") as sheet:
                 self.assertEqual(sheet.size, (8 * 200, 24 + 2), "8 frames a row, each 200 px wide under its 24 px label of its ms")
 
