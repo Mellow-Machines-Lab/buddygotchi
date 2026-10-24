@@ -24,13 +24,10 @@ $build --product agent-hook
 bin=$($build --show-bin-path)
 packs=$(find "$bin/Boop_Boop.bundle" -maxdepth 3 -type d -name packs | head -1)
 [ -n "$packs" ] || { echo "bundle: no packs in $bin/Boop_Boop.bundle" >&2; exit 1; }
-# Each board's firmware, with the same character pack.
+# Each board's firmware, with the same character pack, whose objects each
+# env builds in a folder of its own.
 boards="cyd24 amoled206"
-# PlatformIO keeps the staged pack's objects in one folder for every env,
-# and its timestamps can keep one board's face for the next: each board
-# starts that folder afresh.
 for board in $boards; do
-  rm -rf firmware/.pio/build/.character-build
   firmware/tools/pio.sh run -e "$board"
 done
 

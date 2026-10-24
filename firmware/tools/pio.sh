@@ -9,6 +9,15 @@
 set -eu
 firmware_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 export PLATFORMIO_CORE_DIR="${PLATFORMIO_CORE_DIR:-$firmware_dir/.platformio-core}"
+# The unit tests keep their objects and libraries apart, in each project's
+# .pio/test: `pio test` links every suite as its env's `program`, and
+# installs Unity, which `pio run` then removes as unused. Sharing .pio, the
+# tests left a test runner where the native simulator was, and with a
+# `pio run -e native` alongside, each linked or lost the other's files.
+if [ "${1:-}" = test ] && [ -z "${PLATFORMIO_WORKSPACE_DIR:-}" ]; then
+  # shellcheck disable=SC2016 # PlatformIO expands it, for each project
+  export PLATFORMIO_WORKSPACE_DIR='${PROJECT_DIR}/.pio/test'
+fi
 cd "$firmware_dir"
 # The chosen character pack's firmware, staged into ../.character-build/
 # (characters/CHARACTER.md §2), which platformio.ini builds from.

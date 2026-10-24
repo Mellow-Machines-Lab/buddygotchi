@@ -69,6 +69,21 @@ class CLITests(unittest.TestCase):
             cli.cmd_play(parse(["play", "cheer", "--take", "banana"]))
 
 
+class CheckoutTmpTests(unittest.TestCase):
+    def test_each_checkout_keeps_its_own_pictures(self):
+        """Two checkouts' `boopctl sim` at once wrote over each other's pictures in one /tmp/boop-sim: each has its own folder,
+        named for it, even two of the same name in different places, and the same one every run."""
+        self.assertEqual(cli.SIM_OUT.parent, Path("/tmp/boop-sim"))
+        self.assertEqual(cli.RUN_OUT.parent, Path("/tmp/boop-run"))
+        self.assertTrue(cli.SIM_OUT.name.startswith(cli.REPO.name + "-"))
+        folders = []
+        for repo in ["/src/a/buddygotchi", "/src/b/buddygotchi", "/src/a/buddygotchi"]:
+            with mock.patch.object(common, "REPO", Path(repo)):
+                folders.append(common.checkout_tmp("boop-sim"))
+        self.assertNotEqual(folders[0], folders[1])
+        self.assertEqual(folders[0], folders[2])
+
+
 class PlayTests(unittest.TestCase):
     def play(self, what: str, *more: str, playing: str | None = None) -> tuple[int, list]:
         """Plays `what` on a board whose dbg.state says `playing` (by

@@ -3,6 +3,7 @@ animations and moods, the messages to and from the board, the board's voice
 takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import socket
@@ -16,6 +17,14 @@ from typing import Any
 from boopctl_lib.device import DeviceError
 
 REPO = Path(__file__).resolve().parents[3]
+
+
+def checkout_tmp(name: str) -> Path:
+    """/tmp/NAME/ for this checkout alone, by its folder's name and a hash
+    of its path: worktrees run their scenarios side by side, and in one
+    folder for all of them one checkout's pictures stood in for another's."""
+    return Path("/tmp") / name / f"{REPO.name}-{hashlib.sha1(str(REPO).encode()).hexdigest()[:6]}"
+
 
 # The moods the pixel face draws, as `state` carries them, in the device's
 # order: the Pixel pack's, as facegen writes them into its mac/faces.json
