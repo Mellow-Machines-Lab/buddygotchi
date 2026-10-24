@@ -518,6 +518,161 @@ static void test_a_switch_dissolves_over_200_ms() {
   TEST_ASSERT_TRUE(px == whole);
 }
 
+// A design drawn whole into px, as a board that showed nothing else draws
+// it, but for what's under the lane.
+static void drawWhole(const SceneShow& s, std::vector<uint8_t>& px) {
+  render::Canvas c{px.data()};
+  c.fill(render::kBlack);
+  render::drawScene(c, s);
+}
+// How many pixels above the lane two frames share.
+static int alike(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b) {
+  int n = 0;
+  for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) n += a[i] == b[i];
+  return n;
+}
+
+// A second switch mid-way through a dissolve dissolves from the picture
+// that shows more, as it last showed, whole: 100 ms (half way) and 190 ms
+// (all but a frame) into idle's rig face dissolving into a finish, a
+// wake-up comes in over the finish. Every pixel of every frame after is
+// the finish's as it showed or the wake-up's: nothing of idle comes back,
+// and the finish, a baked design, draws as one, with no rig face on it.
+static void test_a_switch_mid_dissolve_dissolves_from_what_shows_more() {
+  using render::rigFaced;
+  for (uint32_t gap : {100u, 190u}) {
+    Rig r;
+    r.state(base("idle"));
+    r.at(1000);
+    std::vector<uint8_t> px(size_t(render::kWidth) * render::kHeight), finish(px.size()), wake(px.size());
+    drawFace(r, px, true);
+    SceneShow s = r.b.show(r.t);
+    TEST_ASSERT_TRUE(rigFaced(s.mood, s.state, s.variant));
+    r.react(SceneState::kTaskComplete);
+    for (uint32_t ms = 10; ms <= gap; ms += 10) {
+      r.at(1000 + ms);
+      drawFace(r, px, true);
+    }
+    const SceneShow was = r.b.show(r.t);
+    TEST_ASSERT_EQUAL(int(SceneState::kTaskComplete), int(was.state));
+    TEST_ASSERT_EQUAL_STRING("happy", render::moodName(was.mood));
+    TEST_ASSERT_FALSE(rigFaced(was.mood, was.state, was.variant));
+    drawWhole(was, finish);
+    r.react(SceneState::kWakeUp);
+    TEST_ASSERT_EQUAL(SceneState::kWakeUp, r.anim());
+    for (uint32_t ms = 0; ms <= render::rig::kFadeMs; ms += 20) {
+      r.at(1000 + gap + ms);
+      drawFace(r, px, true);
+      s = r.b.show(r.t);
+      TEST_ASSERT_FALSE(rigFaced(s.mood, s.state, s.variant));
+      drawWhole(s, wake);
+      for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) {
+        if (px[i] != finish[i] && px[i] != wake[i]) {
+          char why[96];
+          std::snprintf(why, sizeof why, "+%u ms, then +%u ms: pixel %d is neither's", unsigned(gap), unsigned(ms), i);
+          TEST_FAIL_MESSAGE(why);
+        }
+      }
+    }
+  }
+}
+
+// Two taps 150 ms apart: the second poke dissolves from the first as it
+// showed, which shows more by then, so idle doesn't flash back between
+// them. The frame just after the second shares no more of idle's pixels
+// than the frame just before it.
+static void test_a_double_tap_doesnt_flash_back() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  std::vector<uint8_t> idle(size_t(render::kWidth) * render::kHeight), before(idle.size()), after(idle.size());
+  drawFace(r, idle, true);
+  r.b.tap(r.t, r.rng);
+  for (uint32_t ms = 20; ms <= 150; ms += 10) {
+    r.at(1000 + ms);
+    drawFace(r, before, true);
+  }
+  TEST_ASSERT_TRUE(alike(before, idle) < render::kWidth * render::kLaneTop);
+  r.b.tap(r.t, r.rng);
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
+  drawFace(r, after, true);
+  TEST_ASSERT_TRUE(alike(after, idle) <= alike(before, idle));
+}
+
+// A reaction's design plays its own moves, under no look's clip: poked
+// while asleep, the rig face is the poke's design as drawn, its eyes open,
+// not shut by asleep's doze.
+static void test_a_poke_while_asleep_has_its_own_eyes() {
+  Rig r;
+  r.state(base("asleep"));
+  r.at(1000);
+  r.b.tap(r.t, r.rng);
+  TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
+  r.at(1400);  // the dissolve over, and asleep's clip faded out
+  const SceneShow s = r.b.show(r.t);
+  TEST_ASSERT_TRUE(render::rigFaced(s.mood, s.state, s.variant));
+  TEST_ASSERT_FALSE(render::faceMove(s).shut);
+  std::vector<uint8_t> px(size_t(render::kWidth) * render::kHeight), poke(px.size());
+  drawFace(r, px, true);
+  drawWhole(s, poke);
+  TEST_ASSERT_EQUAL_INT(render::kWidth * render::kLaneTop, alike(px, poke));
+}
+
+// A press kicks the rig face only if it began while the rig face showed:
+// held on the needs-you screen through its dismissal, the face that cuts in
+// isn't poked (it draws as one with no finger); a press that begins on it
+// squashes it.
+static void test_only_a_press_on_the_rig_face_kicks_it() {
+  Rig held, none, pressed;
+  std::vector<uint8_t> a(size_t(render::kWidth) * render::kHeight), b(a.size()), c(a.size());
+  for (Rig* r : {&held, &none, &pressed}) {
+    r->state(attn());
+    r->at(1000);
+  }
+  drawFace(held, a, true);
+  TEST_ASSERT_TRUE(signShows(held));
+  held.b.face().finger(true, 160, 120);
+  for (Rig* r : {&held, &none, &pressed}) {
+    r->at(1500);
+    r->state(base("idle"));
+  }
+  const SceneShow s = held.b.show(held.t);
+  TEST_ASSERT_TRUE(render::rigFaced(s.mood, s.state, s.variant));
+  bool squashed = false;
+  for (uint32_t ms = 0; ms <= 600; ms += 20) {
+    held.at(1500 + ms), none.at(1500 + ms), pressed.at(1500 + ms);
+    held.b.face().finger(true, 160, 120);  // as the board says it each frame
+    drawFace(held, a, true);
+    drawFace(none, b, true);
+    drawFace(pressed, c, true);
+    if (ms == 200) pressed.b.face().finger(true, 160, 120);
+    TEST_ASSERT_TRUE(a == b);
+    squashed = squashed || c != b;
+  }
+  TEST_ASSERT_TRUE(squashed);
+}
+
+// The lane draws its opacity as a dither level, and so a frame is keyed by
+// it: one whose strip's opacity differs from the last frame's only within a
+// level isn't drawn again; another level is.
+static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  std::vector<uint8_t> px(size_t(render::kWidth) * render::kHeight);
+  render::Canvas c{px.data()};
+  render::Strip strip = r.b.strip(r.t);
+  auto draw = [&](int opacity, bool dirty) {
+    strip.opacity = opacity;
+    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, r.b.sign(r.t), strip, dirty);
+  };
+  TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(500, true).hi);
+  TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(530, true).hi);
+  TEST_ASSERT_TRUE(draw(500, true));
+  TEST_ASSERT_FALSE(draw(530, false));
+  TEST_ASSERT_TRUE(draw(600, false));
+}
+
 // Over time: as whatever plays runs out on its own (a finish's loops, a
 // reaction's borrowed face at its loop boundary, over a look, over the
 // finish or across a look change, a poke, a rule's reaction, a `say`, a finish
@@ -2822,6 +2977,11 @@ int main() {
   RUN_TEST(test_no_app_holds_for_weeks);
   RUN_TEST(test_no_change_ever_cuts_hard);
   RUN_TEST(test_a_switch_dissolves_over_200_ms);
+  RUN_TEST(test_a_switch_mid_dissolve_dissolves_from_what_shows_more);
+  RUN_TEST(test_a_double_tap_doesnt_flash_back);
+  RUN_TEST(test_a_poke_while_asleep_has_its_own_eyes);
+  RUN_TEST(test_only_a_press_on_the_rig_face_kicks_it);
+  RUN_TEST(test_a_lane_at_the_same_dither_level_isnt_drawn_again);
   RUN_TEST(test_nothing_cuts_hard_as_it_plays_out);
   RUN_TEST(test_push_to_talk_listens_then_waits);
   RUN_TEST(test_listening_holds_until_the_reply);

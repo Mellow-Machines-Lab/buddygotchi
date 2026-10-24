@@ -41,7 +41,7 @@ class Mixer {
   // the same clip plays on.
   void setLook(const Clip* clip);
   // A reaction's clip, over everything playing. With kPlays playing, the
-  // oldest reaction gives way, one fading out first.
+  // oldest gives way, but the look's own clip.
   void play(const Clip& clip);
   // Velocity added to a channel's spring, in its units a second.
   void impulse(Channel channel, int velocity);

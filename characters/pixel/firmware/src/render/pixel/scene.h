@@ -40,8 +40,9 @@ int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out);
 bool fits(Mood m, SceneState s, int variant, uint32_t when, uint32_t lookMs);
 bool tagged(Mood m, SceneState s, int variant);
 
-// A flip-book, one of the new moods' designs, blinks in a step of its own on
-// its own clock, so the device's blinks leave it be.
+// A design that blinks on its own clock, so the device's blinks leave it
+// be: a flip-book, one of the new moods' designs, in a step of its own, or
+// one whose face the rig face draws, shut at a step (faceMove's shut).
 bool blinksItself(Mood m, SceneState s, int variant);
 // The show draws the design's closed eyes: the first pack's, or a
 // flip-book's blink step; or the design has no eyes to open, as the first
@@ -86,10 +87,12 @@ uint32_t loopMs(Mood m, SceneState s, int variant = 0);
 // every step: the rig face draws it in the design's place
 // (render/pixel/rig_face.h), as drawn (idle's plain face, near enough).
 // And where the face is, in px from where the mood's first idle has it, at
-// the show's moment: its move, and its eyes' more.
+// the show's moment: its move, and its eyes' more; and whether it's shut,
+// its eyes and its mouth those of the mood's first idle's shut face.
 bool rigFaced(Mood m, SceneState s, int variant = 0);
 struct FaceMove {
   int dx = 0, dy = 0, ex = 0, ey = 0;
+  bool shut = false;
 };
 FaceMove faceMove(const SceneShow& s);
 // `faceless`, the face that shows is left out but for its decorations, for

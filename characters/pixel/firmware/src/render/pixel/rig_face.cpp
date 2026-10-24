@@ -21,8 +21,8 @@ constexpr int kOne = 1024;  // a scale of 1, and a morph's whole way
 constexpr int kGround = 150, kMiddle = kWidth / 2;
 constexpr int kSquashTall = 512, kSquashWide = 256;
 // A lean of 1000 moves the top of the eyes (about 94 px up) 12 px; a gaze of
-// 1000, the eyes 8 px; a tilt of 1000, each eye 10 px up or down.
-constexpr int kLeanPer = 8000, kGazePx = 8, kTiltPx = 10;
+// 1000, the eyes 8 px.
+constexpr int kLeanPer = 8000, kGazePx = 8;
 // An eye this little open, of its art, shows its shut art.
 constexpr int kShutBelow = kOne / 3;
 
@@ -31,15 +31,15 @@ int scaled(int v, int s) { return (v * s + kOne / 2) >> 10; }
 int scale(int offset) { return kOne + offset * kOne / 1000; }
 
 // The body: the whole face scaled about the ground's middle (1024ths),
-// moved and leaned, from the channels' offsets from rest, and moved as its
-// design moves it.
+// lifted and leaned, from the channels' offsets from rest, and moved as
+// its design moves it.
 struct Body {
   int sx = kOne, sy = kOne, dx = 0, dy = 0, lean = 0;
   Body(const Channels& d, int press, FaceMove m)
       : sx(kOne + d[Channel::kSquash] * kSquashWide / 1000),
         sy(kOne - d[Channel::kSquash] * kSquashTall / 1000),
-        dx(d[Channel::kX] + m.dx),
-        dy(d[Channel::kY] - d[Channel::kLift] + press + m.dy),
+        dx(m.dx),
+        dy(press + m.dy - d[Channel::kLift]),
         lean(d[Channel::kLean]) {}
   rig::Point at(int x, int y) const {
     return {kMiddle + scaled(x - kMiddle, sx) + dx + lean * (kGround - y) / kLeanPer,
@@ -188,20 +188,19 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move, rig::Anch
     if (f.count < RigFrame::kMaxParts) f.parts[f.count++] = body.place(p);
   };
   // Each eye: closed onto its pivot and sized by how open and how big it
-  // is; moved by the gaze and the tilt.
+  // is, and shut while its design's face is; moved by the gaze.
   const Faded eyes = faded(mixer_.eyes(), d);
   const int size = scale(off[Channel::kEyeSize]);
   for (int i = 0; i < eyes.n; ++i) {
     for (int side = 0; side < 2; ++side) {
-      const int open = scale(off[side ? Channel::kEyeOpenR : Channel::kEyeOpenL]);
+      const int open = move.shut ? 0 : scale(off[side ? Channel::kEyeOpenR : Channel::kEyeOpenL]);
       const bool shut = open < kShutBelow;
       const int kind = (shut ? faces::kPartShutL : faces::kPartEyeL) + side;
       Placed p = morph(eyes.part[i], eyes.other[i], kind, eyes.q[i]);
       p.sx = int16_t(scaled(p.sx, size));
       p.sy = int16_t(scaled(scaled(p.sy, size), shut ? kOne : open));
       p.x = int16_t(p.x + move.ex + off[Channel::kGazeX] * kGazePx / 1000);
-      p.y = int16_t(p.y + move.ey + off[Channel::kGazeY] * kGazePx / 1000 +
-                    (side ? 1 : -1) * off[Channel::kTilt] * kTiltPx / 1000);
+      p.y = int16_t(p.y + move.ey + off[Channel::kGazeY] * kGazePx / 1000);
       p.dither = eyes.dither[i];
       add(p);
     }
@@ -209,14 +208,13 @@ RigFrame RigFace::frame(int dy, bool talking, Dither d, FaceMove move, rig::Anch
     cheeks.dither = eyes.dither[i];
     add(cheeks);
   }
-  // The mouth, widened and opened from the art's, or while talking the "o"
-  // at its middle, in its ink.
+  // The mouth (its shut face's while its design's face is shut), opened
+  // from the art's, or while talking the "o" at its middle, in its ink.
   const Faded mouth = faded(mixer_.mouth(), d);
-  const int wide = std::max(scale(off[Channel::kMouthWidth]), kOne / 2);
   const int open = kOne + off[Channel::kMouthOpen] * kOne / 2000;
   for (int i = 0; i < mouth.n; ++i) {
-    Placed p = morph(mouth.part[i], mouth.other[i], faces::kPartMouth, mouth.q[i]);
-    p.sx = int16_t(scaled(p.sx, wide)), p.sy = int16_t(scaled(p.sy, open));
+    Placed p = morph(mouth.part[i], mouth.other[i], move.shut ? faces::kPartShutMouth : faces::kPartMouth, mouth.q[i]);
+    p.sy = int16_t(scaled(p.sy, open));
     p.dither = mouth.dither[i];
     if (!talking) {
       add(p);

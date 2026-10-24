@@ -5,14 +5,15 @@
 // or mouth it draws.
 //
 // At rest each part is drawn as its art has it, and the channels' offsets
-// from rest move it. The body's move, squash and lean the whole face; the
+// from rest move it. The body's lift, squash and lean the whole face; the
 // eyes' close each eye onto the line it shuts on (its shut art below a
-// third open), scale them and shift them; the mouth's widen and open it.
-// The cheeks stay as the style's art has them. A style changing cross-fades
-// over the mixer's style mix: each part dithers out as the next one's
-// dithers in, both morphing from the one's box to the other's. In a design
-// whose face is its mood's resting face (render::rigFaced), it's drawn in
-// the face's place, moved as the design moves it. Pure: a function of the
+// third open), scale them and shift them; the mouth's opens it. The cheeks
+// stay as the style's art has them. A style changing cross-fades over the
+// mixer's style mix: each part dithers out as the next one's dithers in,
+// both morphing from the one's box to the other's. In a design whose face
+// is its mood's resting face (render::rigFaced), it's drawn in the face's
+// place, moved as the design moves it, and shut where the design's face is
+// (its shut eyes and its shut face's mouth). Pure: a function of the
 // mixer's state.
 #pragma once
 #include <cstdint>
@@ -70,9 +71,9 @@ class RigFace {
   // A finger on the screen: a press squashes the face, a stroke leans it.
   void finger(bool down, int x, int y);
   // The face now, `dy` px lower (the press's dip), with the "o" in its
-  // mouth's place while `talking`, of the pixels `d` draws, moved as a
-  // design moves its face when the rig face draws it there (`move`); and
-  // where the body is, in canvas px, into `anchors` when given.
+  // mouth's place while `talking`, of the pixels `d` draws, moved and shut
+  // as a design has its face when the rig face draws it there (`move`);
+  // and where the body is, in canvas px, into `anchors` when given.
   RigFrame frame(int dy, bool talking, Dither d = {}, FaceMove move = {}, rig::Anchors* anchors = nullptr) const;
 
  private:

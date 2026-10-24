@@ -9,8 +9,9 @@ reads each SVG as rectangles and step-wise timings and writes
 the Pixel pack's characters/pixel/firmware/include/faces.h, with the rig face's
 parts (cut_parts: each drawn mood's eyes, mouth and cheeks from its first idle at
 rest) and, for each design whose face is that resting face moved, where it is
-at each step (rig_faces), plus the frames the firmware test checks the device's
-player against (the pack's tests/firmware/test_scene/frames.h), and the Pixel
+at each step and whether it's shut (rig_faces), plus the frames the firmware
+test checks the device's player against (the pack's
+tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
 faces the Mac's popover shows, and each design's loop length and host fact
 for the Mac, which faces.h has too, so both sides time a moment's loops
@@ -948,8 +949,9 @@ def emit(scenes: list[Scene], table: dict[tuple[int, int, int], int], meta: dict
         "};",
         "// A step-wise animation: key k holds from kKeys[key0 + k] ms into each",
         "// run of `dur` ms. Its values, from kValues[val0], are two a key (dx and",
-        "// dy) to move, one a key to show (1 or 0) or to fill (a colour), and four",
-        "// a key to place a face the rig face draws (dx and dy, and its eyes' ex and ey more).",
+        "// dy) to move, one a key to show (1 or 0) or to fill (a colour), and five",
+        "// a key to place a face the rig face draws (dx and dy, its eyes' ex and ey",
+        "// more, and 1 while its eyes are shut).",
         "// Tracks with the same key times, or the same values, share them.",
         "struct Track {",
         "  uint16_t dur, n;",
@@ -1145,8 +1147,9 @@ def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
 # ---- The rig face's parts ------------------------------------------------------
 
 # What the rig face draws a drawn mood with (render/pixel/rig_face.h), in
-# faces::PartKind's order.
-PARTS = ["eye_l", "eye_r", "shut_l", "shut_r", "mouth", "cheeks"]
+# faces::PartKind's order: its eyes open and shut, its mouth, its cheeks,
+# and the mouth of its shut face (a flip-book's blink step has its own).
+PARTS = ["eye_l", "eye_r", "shut_l", "shut_r", "mouth", "cheeks", "shut_mouth"]
 CHEEK = (241, 120, 125)  # the bank's cheek pink (visual/base.mjs)
 
 
@@ -1160,15 +1163,15 @@ def picture(pixels: list) -> bytes:
 
 def cut_parts(rests: dict[int, list[tuple[list, list, list]]]) -> list[list[tuple[int, int, list]]]:
     """Each drawn mood's parts (PARTS), cut from its first idle's face at
-    rest, open and shut, as resting() splits it: the mouth, the cheeks, and
-    each eye, what's on its side of the face, with what's drawn about it.
-    Each part as its pivot and its rectangles from there: an eye's pivot is
-    the middle of the line its shut eye is, so it closes onto it; the
-    mouth's and the cheeks', the middle of their box."""
+    rest, open and shut, as resting() splits it: the mouth, open and shut,
+    the cheeks, and each eye, what's on its side of the face, with what's
+    drawn about it. Each part as its pivot and its rectangles from there:
+    an eye's pivot is the middle of the line its shut eye is, so it closes
+    onto it; the mouths' and the cheeks', the middle of their box."""
     out = []
     for m in range(len(MOODS)):
-        (eyes, lips, cheeks), (shut, _, _) = rests[m]
-        cut = {"mouth": lips, "cheeks": cheeks}
+        (eyes, lips, cheeks), (shut, shut_lips, _) = rests[m]
+        cut = {"mouth": lips, "cheeks": cheeks, "shut_mouth": shut_lips}
         for i, side in enumerate("lr"):
             cut[f"eye_{side}"] = [p for p in eyes if (p[0] < W // 2) == (i == 0)]
             cut[f"shut_{side}"] = [p for p in shut if (p[0] < W // 2) == (i == 0)]
@@ -1254,17 +1257,18 @@ def landed(memo: dict, pixels: list, px: bytes, seen: bytes, moves: list[tuple[i
     return memo[key]
 
 
-def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool, memo: dict) -> list[tuple[int, tuple[int, int, int, int]]] | None:
+def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool, memo: dict) -> list[tuple[int, tuple[int, int, int, int, int]]] | None:
     """Whether the rig face can draw this design's face, the face's moves if
-    so: at each of its steps, the face is its mood's resting face (open, or
-    shut), moved whole by (dx, dy) and its eyes by (ex, ey) more, under
+    so: at each of its steps, the face is its mood's resting face, open or
+    shut (`shut` 1, the rig face drawing its shut eyes and its shut face's
+    mouth), moved whole by (dx, dy) and its eyes by (ex, ey) more, under
     decorations of its own (a sparkle, a falling tear), which the device
     keeps drawing over it: `exact`, the scene drawn with the resting face,
     so moved, in its face's place, then the decorations, is the scene as
     drawn, pixel for pixel; else near enough, missing what the resting face
     can't draw (a trembling lip). The rectangles drawing the decorations
     move into groups of role "decor" of their own, in place. The moves, by
-    step: (ms, (dx, dy, ex, ey)). Its landings are remembered in memo."""
+    step: (ms, (dx, dy, ex, ey, shut)). Its landings are remembered in memo."""
     loop = scene.loop_ms()
     timed = [tr for g in scene.groups if g.role not in ("eyes_open", "eyes_closed")
              for tr in (g.move, g.show, g.fill) if tr]
@@ -1278,7 +1282,7 @@ def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool, memo: di
     for t in times:
         px = render(scene, t, within="face")
         seen = hashlib.blake2b(px, digest_size=16).digest()
-        for eyes, other in rests:
+        for shut, (eyes, other) in enumerate(rests):
             d = landed(memo, other, px, seen, NEAR_FACE)
             e = d and landed(memo, eyes, px, seen, NEAR_EYES, d)
             if e:
@@ -1289,7 +1293,7 @@ def rig_face(scene: Scene, rests: list[tuple[list, list]], exact: bool, memo: di
         rest = bytearray(W * H)
         for p, c in placed:
             rest[p] = c
-        moves.append((t, (d[0], d[1], e[0] - d[0], e[1] - d[1])))
+        moves.append((t, (d[0], d[1], e[0] - d[0], e[1] - d[1], shut)))
         drawn.append(placed)
         # The face's rectangles that show a decoration (where the face is
         # their colour, the resting face isn't), unless one shows some of
@@ -1381,9 +1385,10 @@ def emit_parts(parts: list[list[tuple[int, int, list]]]) -> list[str]:
         "",
         "// The rig face's parts (render/pixel/rig_face.h): a style for each drawn",
         "// mood, by its name (kMoodNames), cut by facegen from its first idle's face",
-        "// at rest: its eyes open and shut, its mouth and its cheeks. A part sits",
-        "// at its pivot at rest: an eye's is the middle of the line its shut eye",
-        "// is, the mouth's and the cheeks' the middle of their box; its box and",
+        "// at rest: its eyes open and shut, its mouth, its cheeks, and the mouth of",
+        "// its shut face (a flip-book's blink step has its own). A part sits at",
+        "// its pivot at rest: an eye's is the middle of the line its shut eye is,",
+        "// the mouths' and the cheeks' the middle of their box; its box and",
         f"// its rectangles (kPartRects) are from there. {len(rects)} rectangles, about "
         f"{(len(rects) * 8 + len(rows) * len(PARTS) * 16) // 1024 + 1} KB.",
         "enum PartKind : uint8_t { " + ", ".join("kPart" + "".join(w.title() for w in p.split("_")) for p in PARTS) +

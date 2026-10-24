@@ -46,8 +46,11 @@ void PixelFace::reset(uint32_t t, linkkit::Rng& rng) {
 void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_t t) {
   rig_.advanceTo(t);
   context_ = context;
-  rig_.setLook(context.base);
-  if (switched_ && !within(t, switchAt_, rig::kFadeMs)) switched_ = false;
+  // The look's clip plays under its own designs; a reaction's design has
+  // moves of its own (and asleep's shut eyes would shut a poke's).
+  const SceneState base = next.anim == SceneState::kNone ? context.base : SceneState::kNone;
+  rig_.setLook(base);
+  if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kSign;  // the dissolve is over
   // A new look starts on its first variation, or on an occasion's while
   // one fits; so does the look again when the mood has fewer of them. The
   // turns bring the rest.
@@ -72,7 +75,7 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
     // The rig face moves to a new mood while it shows, and is at rest in it
     // when it comes back.
     if (wanted.mood != src_.mood)
-      drew_ == Drew::kRig ? rig_.setMood(wanted.mood) : rig_.reset(wanted.mood, context.base, t);
+      drawn_.kind == Drew::kRig ? rig_.setMood(wanted.mood) : rig_.reset(wanted.mood, base, t);
     src_ = wanted;
   }
 }
@@ -130,9 +133,11 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
   const uint8_t due = t == dueAt_ ? due_ : 0;
   due_ = 0;
   if (due & kBlink) {
-    if (rigDraws()) rig_.blink();
-    blink_ = src_.anim == SceneState::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp &&
-             !blinksItself(src_.mood, src_.look, src_.lookVariant);
+    // The face blinks now and then, but in a design that blinks on its own.
+    const bool own = blinksItself(src_.mood, src_.state(), src_.variant());
+    if (rigDraws() && !own) rig_.blink();
+    blink_ =
+        src_.anim == SceneState::kNone && src_.look != SceneState::kAsleep && src_.look != SceneState::kNoApp && !own;
     blinkAt_ = t;
     nextBlink_ = t + (blink_ ? kBlinkMs : 0) + blinkGap(rng);
   }
@@ -146,10 +151,17 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
 // A needs-you replacing another starts its sign over; the sign cuts in.
 void PixelFace::alert(uint32_t t, bool) { lookAt_ = t; }
 void PixelFace::startSwitch(uint32_t t) {
-  if (!fading(t) || drew_ == Drew::kSign) fadeFrom_ = drew_;  // the screen shows what it dissolves from
-  switched_ = true, switchAt_ = t;
+  // What shows: the sign, or the picture of the two that shows more.
+  if (drawn_.kind == Drew::kSign || mix(t) >= 500) from_ = drawn_;
+  switchAt_ = t;
 }
-void PixelFace::finger(bool down, int x, int y) { rig_.finger(down && rigDraws(), x, y); }
+// A press kicks the rig face, and strokes it until it lets go, only if it
+// began while the rig face showed.
+void PixelFace::finger(bool down, int x, int y) {
+  if (down && !pressing_) rigPress_ = drawn_.kind == Drew::kRig;
+  pressing_ = down;
+  rig_.finger(down && rigPress_, x, y);
+}
 void PixelFace::started(SceneState a, Mood, uint8_t variant, Outcome, StartCtx) {
   last_[int(a)] = uint8_t(variant + 1);
   blink_ = false;
@@ -227,7 +239,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   rig_.advanceTo(t);
   Picture& p = picture_;
   std::memset(static_cast<void*>(&p), 0, sizeof p);  // its padding too: it's hashed as bytes
-  p.lane = int16_t(strip.opacity), p.bubble = bubble != nullptr;
+  p.lane = Dither::fade(strip.opacity, true).hi, p.bubble = bubble != nullptr;
   if (strip.agent && show.state == SceneState::kNeedsYou) {
     p.kind = Drew::kSign;
     p.sign = signPose(designMs(t), show.eyesShut, show.dy);
@@ -235,16 +247,16 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     p.kind = rigDraws(show.mood, show.state, show.variant) ? Drew::kRig : Drew::kDesign;
     // A dissolve shows more of what comes in each frame, some of it from
     // the first, and is over once that's whole.
-    const int mix = fading(t) ? ease1000(int(t - switchAt_), int(rig::kFadeMs)) : 1000;
-    p.in = Dither::fade(mix, true);
+    const int in = mix(t);
+    p.in = Dither::fade(in, true);
     p.in.hi = uint8_t(std::max<int>(p.in.hi, 1));
-    p.from = p.in.all() ? Drew::kSign : fadeFrom_;
+    p.from = p.in.all() ? Drew::kSign : from_.kind;
     const bool rig = p.kind == Drew::kRig, stays = rig && p.from == Drew::kRig;
     FaceMove move = faceMove(show);
     if (stays) {
-      const FaceMove was = faceMove(drawnShow_);
-      move = {lerp(was.dx, move.dx, mix, 1000), lerp(was.dy, move.dy, mix, 1000), lerp(was.ex, move.ex, mix, 1000),
-              lerp(was.ey, move.ey, mix, 1000)};
+      const FaceMove was = faceMove(from_.show);
+      move = {lerp(was.dx, move.dx, in, 1000), lerp(was.dy, move.dy, in, 1000), lerp(was.ex, move.ex, in, 1000),
+              lerp(was.ey, move.ey, in, 1000), move.shut};
     }
     // The design, without its face where the rig face draws it; and what
     // it wears and holds, which move on their own. On the rig face, the hat
@@ -260,7 +272,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     }
     p.dress = dresses(show.mood, show.state, show.variant) ? outfitKey(context_.when, show.mood, t) : 0;
   }
-  drew_ = p.kind;
+  drawn_ = {p.kind, show};
   const uint64_t key = frameKey(p);
   if (!dirty && key == drawnKey_) return false;
   drawnKey_ = key;
@@ -269,18 +281,16 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     return true;
   }
   c.fill(kBlack);
-  if (p.from == Drew::kSign) {
-    drawnShow_ = show;  // what a switch dissolves from
-  } else {
+  if (p.from != Drew::kSign) {
     // What showed, fading out under what comes in: with the face staying,
     // only its design.
     const Dither out = {p.in.hi, 16};
+    const SceneShow& was = from_.show;
     const bool rig = p.from == Drew::kRig;
-    const SceneFrame was = sceneFrame(drawnShow_, rig);
     if (rig && p.kind != Drew::kRig)
-      drawRig(c, rig_.frame(drawnShow_.dy, drawnShow_.mouthOpen, out, faceMove(drawnShow_)), was, out);
+      drawRig(c, rig_.frame(was.dy, was.mouthOpen, out, faceMove(was)), sceneFrame(was, true), out);
     else
-      drawScene(c, was, out);
+      drawScene(c, sceneFrame(was, rig), out);
   }
   if (p.kind == Drew::kRig)
     drawRig(c, p.face, p.design, p.in);

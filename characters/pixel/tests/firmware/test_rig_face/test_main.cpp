@@ -6,6 +6,8 @@
 // they're drawn.
 #include <unity.h>
 
+#include <algorithm>
+#include <cstdio>
 #include <vector>
 
 #include "faces.h"
@@ -172,12 +174,37 @@ static void test_the_anchors_ride_the_face() {
   TEST_ASSERT_TRUE(anchors(f).brimF.y > rest.brim.y);
 }
 
-// A design whose face is its mood's resting face (facegen's rig_face): its
-// own start, drawn with the rig face at rest in its place, is the design as
-// drawn, pixel for pixel, its desk and its decorations included; and the
-// design without its face draws none of the face's eyes.
+// Every step of a design's loop: each time one of its tracks, the face's
+// included, takes its next key.
+static std::vector<uint32_t> steps(const SceneShow& show) {
+  const faces::Scene& sc = faces::kScenes[sceneOf(show.mood, show.state, show.variant)];
+  std::vector<uint32_t> out = {0};
+  auto keys = [&](uint16_t track) {
+    if (track == 0xFFFF) return;
+    const faces::Track& tr = faces::kTracks[track];
+    for (uint32_t r = 0; r < sc.loopMs / tr.dur; ++r)
+      for (int k = 0; k < tr.n; ++k) out.push_back(r * tr.dur + faces::kKeys[tr.key0 + k]);
+  };
+  keys(sc.face);
+  for (int i = 0; i < sc.groups; ++i) {
+    const faces::Group& g = faces::kGroups[faces::kSceneGroups[sc.group0 + i]];
+    for (uint16_t track : {g.move, g.show, g.fill}) keys(track);
+  }
+  std::sort(out.begin(), out.end());
+  out.erase(std::unique(out.begin(), out.end()), out.end());
+  return out;
+}
+
+// A design whose face is its mood's resting face (facegen's rig_face), at
+// every step of its loop: drawn with the rig face at rest in its place,
+// moved and shut as the design has it, it's the design as drawn, pixel for
+// pixel, its desk and its decorations included, shut eyes and all; idle's
+// first two variations, the plain face, near enough, as facegen takes them
+// (of the rig face's pixels, all but an eighth land on the design's). The
+// design without its face draws none of the face's eyes. And a design that
+// shuts its face blinks on its own, so the device's blinks leave it be.
 static void test_a_design_with_the_resting_face_draws_as_drawn() {
-  int designs = 0;
+  int designs = 0, shut = 0, frames = 0;
   for (int d = 0; d < faces::kMoodCount; ++d) {
     const Mood m = pixelMood(d);
     for (int s = 0; s < int(SceneState::kCount); ++s) {
@@ -185,22 +212,51 @@ static void test_a_design_with_the_resting_face_draws_as_drawn() {
         if (!rigFaced(m, SceneState(s), v)) continue;
         SceneShow show;
         show.mood = m, show.state = SceneState(s), show.variant = uint8_t(v);
-        Buf rig, baked, around;
+        const bool exact = !(show.state == SceneState::kIdle && v < 2);
+        bool shuts = false;
+        for (const uint32_t t : steps(show)) {
+          show.t = t;
+          Buf rig, baked, face;
+          const FaceMove move = faceMove(show);
+          const RigFrame f = at(m).frame(0, false, {}, move);
+          drawRig(rig.c, f, sceneFrame(show, true));
+          drawScene(baked.c, show);
+          char why[96];
+          std::snprintf(why, sizeof why, "%s %s %d at %u ms", faces::kMoodNames[d], faces::kStateNames[s], v + 1,
+                        unsigned(t));
+          if (exact) {
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(baked.px.data(), rig.px.data(), baked.px.size(), why);
+          } else {
+            drawRig(face.c, f);
+            int ink = 0, missed = 0;
+            for (size_t i = 0; i < face.px.size(); ++i) {
+              if (face.px[i] == kBlack) continue;
+              ++ink;
+              missed += rig.px[i] != baked.px[i];
+            }
+            TEST_ASSERT_TRUE_MESSAGE(ink > 0 && missed <= ink / 8, why);
+          }
+          shuts = shuts || move.shut;
+          ++frames;
+        }
+        if (shuts) TEST_ASSERT_TRUE(blinksItself(m, show.state, v));
+        shut += shuts;
+        show.t = 0;
+        Buf baked, around;
         const FaceMove move = faceMove(show);
-        const SceneFrame design = sceneFrame(show, true);
-        drawRig(rig.c, at(m).frame(0, false, {}, move), design);
         drawScene(baked.c, show);
-        TEST_ASSERT_EQUAL_MEMORY(baked.px.data(), rig.px.data(), baked.px.size());
-        drawScene(around.c, design);
+        drawScene(around.c, sceneFrame(show, true));
         const faces::Part& eye = faces::kParts[d][faces::kPartEyeL];
         const faces::Rect& ink = faces::kPartRects[eye.rect0];  // a pixel of its art, unless a prop covers it
         const size_t px = size_t(eye.y + ink.y + move.dy + move.ey) * kWidth + eye.x + ink.x + move.dx + move.ex;
-        if (baked.px[px] == sceneInk(ink.color)) TEST_ASSERT_EQUAL(kBlack, around.px[px]);
+        if (!move.shut && baked.px[px] == sceneInk(ink.color)) TEST_ASSERT_EQUAL(kBlack, around.px[px]);
         ++designs;
       }
     }
   }
-  TEST_ASSERT_TRUE(designs > 200);
+  TEST_ASSERT_TRUE(designs > 500);
+  TEST_ASSERT_TRUE(shut > 400);  // most of them blink, or squeeze their eyes shut, on their own
+  TEST_ASSERT_TRUE(frames > designs * 4);
 }
 
 // The rig face sits where its design moves the face: calm's perk lifts it

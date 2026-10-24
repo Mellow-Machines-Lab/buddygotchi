@@ -67,12 +67,10 @@ void Mixer::impulse(Channel channel, int velocity) {
 
 void Mixer::start(const Clip& clip, bool base) {
   if (playing_ == kPlays) {
-    // Room: the oldest reaction fading out goes, else the oldest reaction,
-    // else (only looks playing) the oldest look's.
-    const auto rank = [](const Play& p) { return p.base ? 2 : p.cut ? 0 : 1; };
+    // Room: the oldest goes, but the look's own clip, the one look not
+    // fading out (setLook fades out the others).
     int gone = 0;
-    for (int i = 1; i < playing_; ++i)
-      if (rank(plays_[i]) < rank(plays_[gone])) gone = i;
+    while (plays_[gone].base && !plays_[gone].cut) ++gone;
     for (int i = gone; i + 1 < playing_; ++i) plays_[i] = plays_[i + 1];
     --playing_;
   }
