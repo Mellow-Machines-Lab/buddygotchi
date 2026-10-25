@@ -56,6 +56,12 @@ pacing and touch, the Mac app, the architecture) found what's below.
 - [ ] The face art's edges take 4 sub-rows a pixel (`raster.cpp`
       `polygon16`): near-horizontal edges step and a lid under 1/4 px
       flickers. Exact area coverage, about today's cost.
+- [x] The material jumped at the body's triangles' edges: each
+      triangle's UVs were weighed over 24 bits of whole UVs, a texel off
+      where they met, a dozen on a finish's body three times the size
+      (its highlight broke into facets). Weighed from the first corner's
+      to 30 bits, within 1/32 of a texel (`painter.cpp`'s `uvPlane`,
+      `test_the_material_meets_across_the_mesh`); native a little faster.
 - [ ] The body's material is 513 texels around the whole dome, about
       1.75 px a texel at its middle: bake it at 1025 wide (flash has
       room) and measure `body_us`.

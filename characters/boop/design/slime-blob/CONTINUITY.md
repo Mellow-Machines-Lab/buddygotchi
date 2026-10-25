@@ -30,7 +30,10 @@ edges between them and the ones turned away cross, take the exact share
 of their area the body covers, found from all of the outline at once
 (`Outline`), so the edge moves as smoothly as the mesh: a triangle turning
 away has no area left, and no share of the outline either
-(`test_the_outline_moves_smoothly`). `gel/art.cpp` draws the face's art (slimegen's
+(`test_the_outline_moves_smoothly`). Each triangle's material UVs are
+weighed to 30 bits, so the material runs on across the triangles' edges
+however big the body is drawn (`test_the_material_meets_across_the_mesh`).
+`gel/art.cpp` draws the face's art (slimegen's
 `painter.mjs`, baked as vector paths into `slime_art.h`) on the body, moved
 and sized by the face's controls. There is no inner jellyfish cap or model
 asset. The face rides the body: it never slides on its own during a grab

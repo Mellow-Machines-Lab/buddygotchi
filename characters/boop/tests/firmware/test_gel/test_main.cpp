@@ -192,6 +192,21 @@ static void test_the_outline_moves_smoothly() {
     TEST_MESSAGE(msg);
   }
 }
+// The material runs on across the mesh: where two triangles meet, their
+// UVs are within 1/32 of a texel, at rest, leaning, squashed and three
+// times the size (a finish). Over 24 bits they were 0.9 to 1.2 texels
+// apart, and 12 three times the size.
+static void test_the_material_meets_across_the_mesh() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  PaintControls rest, lean, squash, big;
+  lean.lean = 3000, squash.squash = -3000;
+  big.scale = 3 * 4096, big.anchorX = 251 * 16, big.anchorY = 300 * 16;
+  for (const auto& c : {rest, lean, squash, big}) {
+    const int seam = materialSeam(s, c);
+    TEST_ASSERT_TRUE_MESSAGE(seam <= 256 / 32, std::to_string(seam).c_str());
+  }
+}
 static void test_one_face_vocabulary_and_latest_facts() {
   linkkit::Rng rng;
   app::Behaviour b(std::make_unique<GelFace>());
@@ -2463,6 +2478,7 @@ int main() {
   RUN_TEST(test_frame_replay_is_byte_identical);
   RUN_TEST(test_a_helper_draws_the_same_body);
   RUN_TEST(test_the_outline_moves_smoothly);
+  RUN_TEST(test_the_material_meets_across_the_mesh);
   RUN_TEST(test_one_face_vocabulary_and_latest_facts);
   RUN_TEST(test_request_identity_and_cache_bounds);
   RUN_TEST(test_grid_voice_lead_and_late_cues);
