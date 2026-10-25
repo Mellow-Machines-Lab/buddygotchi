@@ -68,8 +68,8 @@ That isn't enough for the words. In the owner's session on 2026-10-24
 `Bash`: agents read and search through the shell (`grep`, `sed`,
 `git log`) far more than through Read or Grep. With only the topic,
 nine words in ten would say `bash`. So the stream needs the program's
-name from AgentHooks (To decide, 1); the rest of the vocabulary is
-there today.
+name from AgentHooks (below, The words for commands); the rest of the
+vocabulary is there today.
 
 ## The words
 
@@ -77,9 +77,10 @@ there today.
 | --- | --- |
 | Read, Grep, Glob (and Codex's) | `read`, `grep`, `glob` |
 | An edit | `edit +18 −2` (an edit to a doc: `docs`) |
-| A command | its program: `grep`, `git`, `sed`, `pytest`, `swift` (AgentHooks, To decide 1); its topic when it has one (`tests`, `build`, `deploy`) |
+| A command | its program: `grep`, `sed`, `git log`, `pytest` (below, The words for commands); its topic when it has one (`tests`, `build`, `deploy`) |
 | A web fetch or search | `web` |
-| An MCP tool | `mcp` |
+| An MCP tool | its server's name: `linear`, `slack` (below, Custom tools) |
+| Any other tool | its name, split: `send message`, `skill` |
 | A helper | `helper` |
 | The to-do list | `✓ 3/7` |
 | A failure | `exit 1` for a command (the class, not the code: `exit` alone until AgentHooks gives the code), `timeout`, `NO` for a request you denied |
@@ -192,9 +193,8 @@ The architecture's split, applied:
   whose short `ttl` drops it if it can't play while it's news. The
   `state` key and the `do` name are the app's, so LinkKit doesn't
   change.
-- **The brain hears nothing new.** No call wakes it that didn't
-  before. It can still say something about a streak with a sign on its
-  heartbeat ("again??"), from the lines it already gets.
+- **The brain hears no more than it does today**, plus one clause
+  (below, What the brain hears).
 
 How the core picks, and how the board flies a word, is the next
 section.
@@ -265,14 +265,88 @@ agent and the reaction (`do`'s `args`); the board flies it:
   for a bonk, 500 for a landing); the impact, at the flight's end,
   starts the gag (the squash, the ripple, the stars).
 
+## The words for commands
+
+Over the six hours before 21:00 on 2026-10-24, the owner's Claude
+sessions made 2,284 `Bash` calls (counted from Claude's own session
+files), against 105 `Read`s and 53 `Edit`s. Their first programs: `sed`
+483, `python3` 422, `grep` 361, `cat` 97, `ls` 84, `make` 68, `git grep`
+62, a `for` loop 51, `boopctl` 47, `git log` 41. So:
+
+- **AgentHooks adds a `program` to a shell call's event**: its first
+  command's program, after `cd` and the wrappers its topic matching
+  already skips, with the subcommand of the programs that have them
+  (`git log`, `git push`, `npm i`, `gh pr`, `docker run`). Only from a
+  closed list of about 80 developer programs, and the person's own
+  (`~/.agent-hooks/words.json` beside `topics.json`:
+  `{"words": ["boopctl", "boopdev"]}`); anything else is `run`. A script's
+  name never leaves unless you listed it, and nothing after the program
+  does.
+- **The family picks the gag, the word labels it:**
+
+  | Family | Programs | Gag |
+  | --- | --- | --- |
+  | Look | `cat`, `head`, `tail`, `less`, `ls`, `tree`, `wc`, `sed -n` | Reading glasses, the page on the monitor |
+  | Search | `grep`, `rg`, `find`, `fd`, `git grep` | Eyes following, the magnifier |
+  | Edit in place | `sed -i`, `perl -pi` | A landing, like an edit |
+  | Script | `python3`, `node`, `ruby`, a `for` loop | Stirring a pot |
+  | Git, reading | `git log`, `git diff`, `git status`, `git show` | Leafing back through pages |
+  | Git, writing | `git add`, `git commit` (a stamp), `git push` (a small rocket), `git merge` | Its own each |
+  | Files | `mkdir`, `mv`, `cp`; `rm` (a poof) | A box moved |
+  | Network | `curl`, `wget`, `gh` | A paper plane |
+  | Checks | the topic: `tests`, `build`, `deploy` | Above |
+
+- **A run is a combo, not a flood.** The same word from one agent, each
+  within 3 s of the last, counts up over the falling words (`sed ×12`)
+  and comes forward at 5, 10 and 20, so 483 `sed`s read as a few combos.
+
+## Custom tools
+
+- **MCP tools** (`mcp__linear__create_issue`) say their server's name,
+  `linear`: the name you gave the server, not your data. AgentHooks
+  already kinds them as MCP; their gag is a phone call.
+- **Tools Boop doesn't know** (`Skill`, `SendMessage`, a new agent's own)
+  say their name, lowercased and split (`send message`): a tool's name
+  is the agent's vocabulary. They land plainly.
+- **Your own commands** are `words.json`'s (above); **your own checks**,
+  `topics.json`'s, as today (`{"tests": [["just", "check"]]}`).
+
+## What the brain hears
+
+Today, of every call, the brain hears a line only for a notable one: a
+check failing, or passing after it failed
+(`TranscriptView.toolDone`); a call with no line never wakes it. The
+rest are counted into the turn (its calls, failures and lines), which
+its finish and heartbeat lines say. In the session above, none of
+the 229 calls was a line: no check failed.
+
+The stream keeps that, and adds no wake and no line per call:
+
+- What comes forward is a `did` by the core's rule in the transcript,
+  as the error reaction is today; the background words are derived
+  from the calls already there and add nothing.
+- The view counts the P0 moments into the turn's counts, and the next
+  line that wakes the brain anyway, its heartbeat or the finish,
+  carries one clause about them, at most three moments: "codex's
+  commands failed 3 times and hit Boop each time; a helmet by the
+  third". So the brain can answer the run ("ow, three") at a pass it
+  was having anyway.
+
+## Checking it reaches the board
+
+A fixture from the owner's session (the 229 calls' kinds, topics,
+results and timing, no commands) replayed through
+`Boop --headless --brain scripted` to the simulator over its cable,
+checking: every call's word reaches `state`'s `calls`, at most four
+`state`s a second for them; every P0 is a `call` `do`, and none is
+dropped but by its `ttl`; the brain's passes are the same with the
+stream on and off. `dbg.state`'s `rx` counts what the board read.
+
 ## To decide
 
-1. **Which words leave the agent.** Today, only the vocabulary above,
-   which says `bash` nine times in ten. Recommended: add the program's
-   name (`git`, `pytest`, `swift`: the first word of a command after its
-   wrappers, which AgentHooks' topic matching already finds) and an
-   edit's file extension (`.swift`), in AgentHooks, as fields of the
-   event. Real file names and search
+1. **Which words leave the agent.** Recommended: the program from a
+   closed list and your own (The words for commands), and an edit's
+   file extension (`.swift`). Real file names and search
    patterns would read best but are what someone walking past the desk
    could read; if ever, they're a setting that's off by default, and
    they go through the Mac's scrubber.
@@ -289,12 +363,12 @@ agent and the reaction (`do`'s `args`); the board flies it:
    longer plays the error face (`Core.fold`'s `.callEnded` plays
    `Core.error` for any `exit_code` today; in the owner's session four
    lookups that matched nothing played it).
-2. **AgentHooks** (its own repository, first): the program's name and
-   the file extension, if the owner takes decision 1.
+2. **AgentHooks** (its own repository, first): `program` from the
+   closed list and `words.json`, and the file extension.
 3. **The Mac:** the core's call rule (the word, the priorities and the
    slot, the ladder, the combo), the `calls` key and the `call` `do`,
-   tests that pin each number above, and evals; a headless run prints
-   each word and what came forward.
+   the one clause the brain hears, tests that pin each number above, and
+   the replay of the owner's session (Checking it reaches the board).
 4. **The board:** the background layer behind the body (pre-drawn
    words, one sprite per word, never typeset per frame), measured with
    `boopctl ping`'s `draw_us` (the gel with a hat already draws at 27
