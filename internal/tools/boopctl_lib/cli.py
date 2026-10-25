@@ -271,6 +271,8 @@ PERF_SCENES = [
     ("pokes", WORKING, {"t": "dbg.press", "ms": 100}, None),
     ("frightened", {**WORKING, "mood": "frightened"}, None, 28),
     ("asleep", {"t": "state", "base": "asleep", "mood": "happy"}, None, None),
+    # At night: the sky, the nightcap and pyjamas on the breathing body, the Zs.
+    ("night", {"t": "state", "base": "asleep", "mood": "happy", "when": ["night"]}, None, None),
 ]
 # Its other budgets: no frame over this long in working, and this much
 # internal heap left at the least.
