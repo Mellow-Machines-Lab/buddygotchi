@@ -1638,18 +1638,26 @@ final class RuntimeTests: XCTestCase {
     /// voice window and its bubble, ends on the device before the link
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
-    /// end it. The loops are the designs' (`FaceLoops`), so a new design
-    /// with a long loop fails here rather than in HISTORY: wounded's 14.3 s
-    /// of nodding off, held four times, is 57.2 s.
+    /// end it. The loops and voice windows are the ones the Pixel pack's
+    /// faces.h (`kScenes`' `loopMs`) and sfx.h (`kScore`'s `voiceMs`) give
+    /// the device, so a new design with a long loop fails here rather than
+    /// in HISTORY: wounded's 14.3 s of nodding off, held four times, is
+    /// 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(ReactOutput.holds.count)
-        func longest(_ ms: (String, String, Int) -> Int64) -> Int64 {
-            MoodOutput.moods.map(\.name).flatMap { mood in
-                FaceLoops.states.flatMap { state in (1...FaceLoops.row(mood: mood, state: state).count).map { ms(mood, state, $0) } }
-            }.max() ?? 0
+        let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
+        func longest(_ file: String, _ start: String, _ pattern: String) throws -> Int64 {
+            let text = try String(contentsOf: assets.appendingPathComponent(file), encoding: .utf8)
+            let from = try XCTUnwrap(text.range(of: start)).upperBound
+            let table = String(text[from..<(try XCTUnwrap(text.range(of: "};", range: from..<text.endIndex))).lowerBound])
+            let re = try NSRegularExpression(pattern: pattern)
+            return re.matches(in: table, range: NSRange(table.startIndex..., in: table))
+                .compactMap { Int64(table[Range($0.range(at: 1), in: table)!]) }.max() ?? 0
         }
-        let longestLoop = longest { FaceLoops.ms(mood: $0, state: $1, variant: $2) }
-        let latestVoice = longest { FaceLoops.voiceMs(mood: $0, state: $1, variant: $2) }
+        let longestLoop = try longest("faces.h", "static const Scene kScenes[", #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
+        let latestVoice = try longest("sfx.h", "static const Score kScore[] = {", #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},"#)
+        XCTAssertEqual(longestLoop, 14_300)
         // A line joins two takes only within `Voice.maxSayMs`; one take
         // plays alone whatever its length.
         let longestLine = max(Int64(Voice.maxSayMs), Int64(Take.all.map(\.ms).max() ?? 0))
@@ -1662,57 +1670,6 @@ final class RuntimeTests: XCTestCase {
         XCTAssertGreaterThan(longestPlay, 30_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
         XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, ReactOutput.openForMs)
-    }
-
-    /// The Mac bounds a reaction's length
-    /// by the designs as the device times them (the ceiling, above). Every
-    /// design's loop and voice window in `FaceLoops` is the one
-    /// the Pixel pack's faces.h (`kScenes`' `loopMs`, through `kDesigns`)
-    /// and sfx.h (`kScore`'s `voiceMs`) give the device, in the same order:
-    /// facegen and sfxgen write them from one manifest. A mood the designs
-    /// don't draw yet has the designs of the one it wears (faces.h's
-    /// `kWears`).
-    func testTheMacTimesTheDesignsAsTheDeviceDoes() throws {
-        let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
-        func block(_ text: String, _ start: String) -> String {
-            let from = text.range(of: start)!.upperBound
-            return String(text[from..<text.range(of: "};", range: from..<text.endIndex)!.lowerBound])
-        }
-        func rows(_ text: String, _ pattern: String) -> [[String]] {
-            let re = try! NSRegularExpression(pattern: pattern)
-            return re.matches(in: text, range: NSRange(text.startIndex..., in: text)).map { m in
-                (1..<m.numberOfRanges).map { String(text[Range(m.range(at: $0), in: text)!]) }
-            }
-        }
-        let faces = try String(contentsOf: assets.appendingPathComponent("faces.h"), encoding: .utf8)
-        let loops = rows(block(faces, "static const Scene kScenes["), #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
-            .map { Int64($0[0])! }
-        let scenes = rows(block(faces, "static const Design kDesigns["), #"\{(\d+), \d+, \d+, \d+, \d+\}"#).map { Int($0[0])! }
-        let sfx = try String(contentsOf: assets.appendingPathComponent("sfx.h"), encoding: .utf8)
-        let windows = rows(block(sfx, "static const Score kScore[] = {"), #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},\s*// (\S+)"#)
-        func names(_ array: String) -> [String] {
-            rows(block(faces, "constexpr const char* \(array)["), #""(\w+)""#).map { $0[0] }
-        }
-        let drawn = names("kMoodNames"), every = names("kNames")
-        let wears = rows(block(faces, "constexpr uint8_t kWears["), #"(\d+)"#).dropFirst().map { drawn[Int($0[0])!] }  // after its count
-        XCTAssertEqual(Set(every), Set(FaceLoops.moods))
-        for (mood, worn) in zip(every, wears) { XCTAssertEqual(FaceLoops.designs[mood], FaceLoops.designs[worn], mood) }
-        var n = 0
-        for mood in drawn {
-            for state in FaceLoops.states {
-                for v in 1...FaceLoops.row(mood: mood, state: state).count {
-                    XCTAssertEqual(FaceLoops.ms(mood: mood, state: state, variant: v), loops[scenes[n]], "\(mood) \(state) \(v)")
-                    XCTAssertEqual(windows[n][1], "\(mood).\(state).\(String(format: "%02d", v))")
-                    XCTAssertEqual(FaceLoops.voiceMs(mood: mood, state: state, variant: v), Int64(windows[n][0])!,
-                                   "\(mood) \(state) \(v)")
-                    n += 1
-                }
-            }
-        }
-        XCTAssertEqual(n, 1214)
-        XCTAssertEqual(scenes.count, n)
-        XCTAssertEqual(windows.count, n)
     }
 
     /// The rules' reaction goes to the device right

@@ -74,6 +74,9 @@ bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   return true;
 }
 
+const void* GelFace::assets(size_t& bytes) const { return materialTexels(bytes); }
+void GelFace::readAssetsFrom(const void* copy) { readMaterialFrom(copy); }
+
 void GelFace::restartCues() {
   ++revision_;
   pendingCount_ = 0;

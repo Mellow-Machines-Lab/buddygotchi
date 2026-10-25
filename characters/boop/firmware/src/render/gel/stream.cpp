@@ -8,6 +8,7 @@
 #include "render/gel/engine.h"
 #include "render/gel/lane.h"
 #include "render/gel/raster.h"
+#include "render/gel/subpixel.h"
 #include "render/palette.h"
 #include "render/tags.h"
 
@@ -21,6 +22,10 @@ struct Layout {
   int w, h;
   int x(int p) const { return w * p / 502; }
   int y(int p) const { return h * p / 410; }
+  // Sixteenths of a pixel of the 502 × 410 surface, as sixteenths of this
+  // one's: what moves is placed in them (render/gel/subpixel.h).
+  int x16(int p16) const { return w * p16 / 502; }
+  int y16(int p16) const { return h * p16 / 410; }
   // A lane's name's middle, by its place among the lanes showing
   // (render::laneX): clear of the head and its hat.
   int column(const Stream& s, uint8_t slot) const { return x(laneX(s.column(slot), s.laneCount)); }
@@ -57,50 +62,29 @@ uint16_t callInk(const Stream::Call& c) {
 }
 
 // Where a falling word is at t, on a 502 × 410 surface's coordinates scaled
-// to `l`'s: its middle.
+// to `l`'s: its middle, in sixteenths of a pixel.
 Point wordAt(const Layout& l, const Stream::Word& w, uint32_t t) {
   const int age = std::max(0, int(int32_t(t - w.born)));
-  return {l.x(w.x), l.y(kTop) + l.y(int(int64_t(age) * w.speed / 1000))};
+  return {l.x(w.x) * 16, l.y(kTop) * 16 + l.y16(int(int64_t(age) * w.speed * 16 / 1000))};
 }
 
-// Text centred on (cx, cy) in `f`, at r's alpha: plain ASCII by the
-// raster's row-at-a-time path, anything else glyph by glyph.
-void centred(Raster& r, const Font& f, int cx, int cy, const char* s, uint16_t ink) {
+// Text centred on (cx16, cy16), sixteenths of a pixel, in `f`, at r's
+// alpha (`behind`: only onto the background's black, so a word behind the
+// body costs nothing to draw, clear or push). Its cells' corner is a whole
+// pixel when the middle is, so text at rest is crisp; on a surface of
+// another size, scaled to it.
+void centred16(Raster& r, const Font& f, int cx16, int cy16, const char* s, uint16_t ink, bool behind = false) {
+  const int left16 = cx16 - glyphCount(s) * f.w / 2 * 16, top16 = cy16 - f.h / 2 * 16;
+  if (r.s.width == 502 && r.s.height == 410) return text16(r, f, left16, top16, s, ink, behind);
   bool ascii = true;
   for (const char* p = s; *p && ascii; ++p) ascii = *p >= 32 && *p <= 126;
-  if (ascii && r.s.width == 502 && r.s.height == 410) {
-    r.text(s, cx, cy, ink, f);
-    return;
-  }
-  text(r, f, cx - glyphCount(s) * f.w / 2, cy - f.h / 2, s, ink);
+  if (ascii)
+    r.text(s, cx16 >> 4, cy16 >> 4, ink, f);
+  else
+    text(r, f, left16 >> 4, top16 >> 4, s, ink);
 }
-
-// Text centred on (cx, cy) behind what's drawn: only onto the background's
-// black, each pixel the ink at its coverage times `alpha` over black, so a
-// word behind the body costs nothing to draw, clear or push.
-void behind(Surface& s, const Font& f, int cx, int cy, const char* str, uint16_t ink, int alpha, int bottom) {
-  uint16_t shade[16];
-  for (int c = 0; c < 16; ++c) shade[c] = mix565(0, ink, alpha * c / 15);
-  const int rowBytes = (f.w + 1) / 2;
-  int x = cx - glyphCount(str) * f.w / 2;
-  const int y0 = cy - f.h / 2, from = std::max(0, -y0), to = std::min(int(f.h), bottom - y0);
-  int bx0 = 1 << 30, by0 = 1 << 30, bx1 = -1, by1 = -1;
-  for (int g; (g = nextGlyph(str)) >= 0; x += f.w) {
-    const uint8_t* src = f.data + size_t(g) * rowBytes * f.h;
-    const int c0 = std::max(0, -x), c1 = std::min(int(f.w), s.width - x);
-    for (int yy = from; yy < to; ++yy) {
-      uint16_t* row = s.pixels + (y0 + yy) * s.width + x;
-      const uint8_t* cells = src + yy * rowBytes;
-      for (int xx = c0; xx < c1; ++xx) {
-        const int b = cells[xx >> 1], c = xx & 1 ? b & 15 : b >> 4;
-        if (!c || row[xx]) continue;
-        row[xx] = shade[c];
-        bx0 = std::min(bx0, x + xx), bx1 = std::max(bx1, x + xx);
-        by0 = std::min(by0, y0 + yy), by1 = std::max(by1, y0 + yy);
-      }
-    }
-  }
-  if (bx1 >= 0) s.touch(bx0, by0, bx1 + 1, by1 + 1);
+void centred(Raster& r, const Font& f, int cx, int cy, const char* s, uint16_t ink) {
+  centred16(r, f, cx * 16, cy * 16, s, ink);
 }
 
 // The cosine of s fortieths of a turn, in thousandths; its sine.
@@ -137,23 +121,26 @@ void twinkle(Raster& r, const Layout& l, int cx, int cy, int ms, int alpha) {
   }
 }
 
-// A little one: a small dome of the gel's blue with two eyes, hopping.
-void mini(Raster& r, const Layout& l, int cx, int bottom, int ms) {
-  const int hop = l.y(std::abs(sin40(ms / 12)) * 8 / 1000), w = l.x(38), h = l.y(28);
-  r.round(cx - w / 2, bottom - h - hop, w, h, h / 2, rgb565(70, 150, 230));
-  r.round(cx - w / 2, bottom - h / 2 - hop, w, h / 2, l.y(6), rgb565(70, 150, 230));
-  r.disk(cx - l.x(7), bottom - h * 3 / 5 - hop, l.x(3), kNavy);
-  r.disk(cx + l.x(7), bottom - h * 3 / 5 - hop, l.x(3), kNavy);
+// A little one: a small dome of the gel's blue with two eyes, hopping; its
+// middle and foot in sixteenths of a pixel.
+void mini(Raster& r, const Layout& l, int cx16, int bottom16, int ms) {
+  const int hop = l.y16(std::abs(sin40(ms / 12)) * 8 * 16 / 1000), w = l.x(38) * 16, h = l.y(28) * 16;
+  const int x = cx16 - w / 2, foot = bottom16 - hop, eyes = foot - h * 3 / 5 + 8;
+  round16(r, x, foot - h, w, h, h / 2, rgb565(70, 150, 230));
+  round16(r, x, foot - h / 2, w, h / 2, l.y16(6 * 16), rgb565(70, 150, 230));
+  r.disk16(cx16 - l.x16(7 * 16) + 8, eyes, l.x16(3 * 16) + 8, kNavy);
+  r.disk16(cx16 + l.x16(7 * 16) + 8, eyes, l.x16(3 * 16) + 8, kNavy);
 }
 
-// A puff: grey balls swelling and thinning, `ms` in of `over`.
+// A puff: grey balls swelling, rising and thinning, `ms` in of `over`, in
+// sixteenths of a pixel.
 void puff(Raster& r, const Layout& l, int cx, int cy, int ms, int over) {
   const int grow = std::min(ms, over);
   r.alpha = fadeBy(ms, over, over);
   for (int i = 0; i < 6; ++i)
-    r.disk(cx + l.x(22) * cos40(i * 7) / 1000 * grow / over,
-           cy + l.y(14) * sin40(i * 7) / 1000 * grow / over - l.y(grow / 40), l.x(8 + grow * 10 / over + (i % 3) * 2),
-           kSmoke);
+    r.disk16(cx * 16 + 8 + l.x16(22 * 16) * cos40(i * 7) / 1000 * grow / over,
+             cy * 16 + 8 + l.y16(14 * 16) * sin40(i * 7) / 1000 * grow / over - l.y16(grow * 16 / 40),
+             l.x16((8 + (i % 3) * 2) * 16 + grow * 160 / over) + 8, kSmoke);
 }
 
 // The desk's monitor's screen, as the props draw it, and how much the desk
@@ -230,10 +217,11 @@ void monitor(Raster& r, const Surface& s, const Engine& e, const Stream::Call& c
                on == 0 ? 0xFFFF : rgb565(70, 110, 130));
       }
       break;
-    case CallGag::kStack: {  // a bar that crawls and never says how far
-      const int span = m.w - 16, at = age / 8 % (span + 30) - 30;
-      r.round(m.x + 8, cy - 4, span, 8, 4, rgb565(30, 60, 75));
-      r.round(m.x + 8 + std::max(0, at), cy - 4, std::min(30, span - std::max(0, at)), 8, 4, laneInk(c.slot));
+    case CallGag::kStack: {  // a bar that crawls and never says how far, in sixteenths of a pixel
+      const int span = (m.w - 16) * 16, at = age * 2 % (span + 30 * 16) - 30 * 16;
+      const int from = std::max(0, at), to = std::min(span, at + 30 * 16);
+      r.round(m.x + 8, cy - 4, span / 16, 8, 4, rgb565(30, 60, 75));
+      round16(r, (m.x + 8) * 16 + from, (cy - 4) * 16, to - from, 8 * 16, 4 * 16, laneInk(c.slot));
       break;
     }
     case CallGag::kLaunch: {  // the count to lift off
@@ -255,10 +243,11 @@ void monitor(Raster& r, const Surface& s, const Engine& e, const Stream::Call& c
       r.line({cx - 11, cy - 11}, {cx + 11, cy + 11}, 4, kFailInk);
       r.line({cx + 11, cy - 11}, {cx - 11, cy + 11}, 4, kFailInk);
       break;
-    case CallGag::kLook:  // a page scrolling past, a line lit as it's read
+    case CallGag::kLook:  // a page scrolling past, in sixteenths of a pixel, a line lit as it's read
       for (int i = 0; i < 6; ++i) {
-        const int y = m.y + 4 + ((i * 8 - age / 25) % 48 + 48) % 48, w = 20 + (i * 37) % 44;
-        r.round(m.x + 8, y, w, 3, 1, i == 2 ? laneInk(c.slot) : rgb565(110, 160, 180));
+        const int y16 = (m.y + 4) * 16 + ((i * 8 * 16 - age * 16 / 25) % (48 * 16) + 48 * 16) % (48 * 16);
+        round16(r, (m.x + 8) * 16, y16, (20 + (i * 37) % 44) * 16, 3 * 16, 16,
+                i == 2 ? laneInk(c.slot) : rgb565(110, 160, 180));
       }
       break;
     case CallGag::kLand: {  // an edit's lines: green added, red removed, to scale
@@ -266,9 +255,9 @@ void monitor(Raster& r, const Surface& s, const Engine& e, const Stream::Call& c
       editSize(c.text, added, removed);
       if (!added && !removed) break;
       auto bar = [&](int n) { return std::min(m.w - 30, 6 + n * (m.w - 36) / std::max(40, std::max(added, removed))); };
-      const int grow = std::min(400, age) * 1000 / 400;
-      r.round(m.x + 8, cy - 9, bar(added) * grow / 1000, 7, 3, kPassInk);
-      r.round(m.x + 8, cy + 3, bar(removed) * grow / 1000, 7, 3, kFailInk);
+      const int grow = easeOut(std::min(400, age), 400);  // in sixteenths of a pixel
+      round16(r, (m.x + 8) * 16, (cy - 9) * 16, bar(added) * 16 * grow / 400, 7 * 16, 3 * 16, kPassInk);
+      round16(r, (m.x + 8) * 16, (cy + 3) * 16, bar(removed) * 16 * grow / 400, 7 * 16, 3 * 16, kFailInk);
       break;
     }
     case CallGag::kPlane: {  // a globe turning
@@ -316,20 +305,20 @@ void dizzy(Raster& r, Surface& s, const Layout& l, const rig::Anchors& at, int m
 void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t) {
   if (!surface.pixels || !stream.drawn(t)) return;
   const Layout l{surface.width, surface.height};
-  const int bottom = surface.height * 4 / 5;  // the lane's top, as Raster's
+  Raster r{surface};  // which stops at the lane's top
   // The words, dim, easing in as they come from the top and out before the
-  // lane; held where they are, icy, while a freeze lasts. A word the word
-  // forward takes is its to draw.
+  // lane, falling in sixteenths of a pixel; held where they are, icy, while
+  // a freeze lasts. A word the word forward takes is its to draw.
   for (const auto& w : stream.words) {
     if (!w.live || stream.taken(w)) continue;
     const bool held = stream.frozen() && int32_t(w.born - stream.call.at) <= 0;
     const int age = int(int32_t((held ? stream.call.at : t) - w.born));
     if (age < 0 || age >= int(Stream::kFallMs)) continue;
-    const int y = l.y(kTop) + l.y(int(int64_t(age) * w.speed / 1000));
+    const Point at = wordAt(l, w, held ? stream.call.at : t);
     const int in = std::min(255, age * 255 / 200), out = std::min(255, (int(Stream::kFallMs) - age) * 255 / 600);
-    const int alpha = held ? 170 : std::min(in, out) * 110 / 255;
-    if (alpha < 3) continue;
-    behind(surface, kLarge, l.x(w.x), y, w.text, held ? kIce : laneInk(w.slot), alpha, bottom);
+    r.alpha = held ? 170 : std::min(in, out) * 110 / 255;
+    if (r.alpha < 3) continue;
+    centred16(r, kLarge, at.x, at.y, w.text, held ? kIce : laneInk(w.slot), true);
   }
 }
 
@@ -387,21 +376,22 @@ void moment(Raster& r, const Layout& l, const Stream& stream, const rig::Anchors
   const int eyesX = (at.eyeL.x + at.eyeR.x) / 32, eyesY = (at.eyeL.y + at.eyeR.y) / 32;
   const int crownX = at.crown.x / 16, crownY = at.crown.y / 16, deskY = l.y(305);
   const int mouthX = eyesX, mouthY = eyesY + l.y(36);
-  // The words it takes, from where they were as it came; with none on
-  // screen, and `own`, its own word from its lane's name.
+  // The words it takes, from where they were as it came, in sixteenths of
+  // a pixel; with none on screen, and `own`, its own word from its lane's
+  // name.
   int taken = 0;
   for (const auto& w : stream.words) taken += stream.taken(w);
   auto each = [&](bool own, auto&& draw) {
     for (const auto& w : stream.words)
       if (stream.taken(w)) draw(wordAt(l, w, c.at), w.text, laneInk(w.slot));
-    if (!taken && own) draw(Point{l.column(stream, c.slot), l.y(kTop)}, word, ink);
+    if (!taken && own) draw(Point{l.column(stream, c.slot) * 16, l.y(kTop) * 16}, word, ink);
   };
   switch (callMove(c.gag)) {
     case CallMove::kGather: {  // into its mouth, and a happy "mm!"
       const int k = easeIn(std::min(age, flight), flight);
       each(age < flight, [&](Point p, const char* s, uint16_t in) {
         r.alpha = 255 - k * 155 / flight;
-        centred(r, kLarge, lerp(p.x, mouthX, k, flight), lerp(p.y, mouthY, k, flight), s, in);
+        centred16(r, kLarge, lerp(p.x, mouthX * 16, k, flight), lerp(p.y, mouthY * 16, k, flight), s, in);
       });
       if (age >= flight && age < flight + 900) {
         r.alpha = fadeBy(age, flight + 900, 300);
@@ -416,31 +406,32 @@ void moment(Raster& r, const Layout& l, const Stream& stream, const rig::Anchors
         const int k = easeIn(age, squash);
         each(true, [&](Point p, const char* s, uint16_t in) {
           r.alpha = 255 - k * 200 / squash;
-          centred(r, kLarge, lerp(p.x, cubeX, k, squash), lerp(p.y, cubeY, k, squash), s, in);
+          centred16(r, kLarge, lerp(p.x, cubeX * 16, k, squash), lerp(p.y, cubeY * 16, k, squash), s, in);
         });
       }
       if (age >= squash - 120) {
         const int fall = easeIn(std::clamp(age - squash, 0, flight - squash), flight - squash);
-        const int x = lerp(cubeX, l.x(456), fall, flight - squash),
-                  y = lerp(cubeY, deskY - side / 2, fall, flight - squash);
-        const int bounce = age > flight && age < flight + 200 ? l.y(6) * sin40((age - flight) / 10) / 1000 : 0;
+        // In sixteenths of a pixel, the cube's corner a whole pixel once it's landed.
+        const int bounce = age > flight && age < flight + 200 ? l.y16(6 * 16) * sin40((age - flight) / 10) / 1000 : 0;
+        const int x = lerp(cubeX * 16, l.x(456) * 16, fall, flight - squash) - side * 8,
+                  y = lerp(cubeY * 16, (deskY - side / 2) * 16, fall, flight - squash) - side * 8 - std::abs(bounce);
         r.alpha = std::min(fadeBy(age, end, 400), std::min(255, (age - squash + 120) * 255 / 120));
-        r.round(x - side / 2, y - side / 2 - std::abs(bounce), side, side, l.x(8), rgb565(55, 65, 85));
+        round16(r, x, y, side * 16, side * 16, l.x16(8 * 16), rgb565(55, 65, 85));
         for (int i = 0; i < 3; ++i)
-          r.round(x - side / 2 + l.x(7), y - side / 2 + l.y(10 + i * 14) - std::abs(bounce), side - l.x(14), l.y(7),
-                  l.y(3), kLaneInk[(c.slot + i) % Stream::kLanes]);
-        centred(r, kSmall, x, y - side / 2 - l.y(12) - std::abs(bounce), "context", rgb565(200, 210, 230));
+          round16(r, x + l.x16(7 * 16), y + l.y16((10 + i * 14) * 16), (side - l.x(14)) * 16, l.y16(7 * 16),
+                  l.y16(3 * 16), kLaneInk[(c.slot + i) % Stream::kLanes]);
+        centred16(r, kSmall, x + side * 8, y - l.y16(12 * 16), "context", rgb565(200, 210, 230));
       }
       break;
     }
     case CallMove::kDrop: {  // switched off: the words fall away, grey
       each(false, [&](Point p, const char* s, uint16_t) {
         r.alpha = std::max(0, 200 - age * 200 / 700);
-        const int y = p.y + l.y(int(int64_t(age) * age * 900 / 1000000));
-        if (r.alpha > 2) centred(r, kLarge, p.x, y, s, kGrey);
+        const int y = p.y + l.y16(int(int64_t(age) * age * 900 * 16 / 1000000));
+        if (r.alpha > 2) centred16(r, kLarge, p.x, y, s, kGrey);
       });
       r.alpha = fadeBy(age, end, 500);
-      centred(r, kSign, crownX, crownY - l.y(40) + l.y(std::min(age, 400) / 20), word, ink);
+      centred16(r, kSign, crownX * 16, (crownY - l.y(40)) * 16 + l.y16(std::min(age, 400) * 16 / 20), word, ink);
       break;
     }
     case CallMove::kFreeze: {  // the words held icy (paintStreamBehind), a snowflake, and a poke
@@ -467,11 +458,15 @@ void moment(Raster& r, const Layout& l, const Stream& stream, const rig::Anchors
         const int due = i * flight / count, k = std::min(150, age - due);
         if (k < 0) break;
         const int row = i / perRow, col = i % perRow, shift = row % 2 ? bw / 2 : 0;
-        const int x = x0 + col * bw + shift - bw / 4, y = deskY - (row + 1) * bh - l.y(150 - k);
+        // Each brick drops its last 150 px gathering speed, in sixteenths of
+        // a pixel.
+        const int x = x0 + col * bw + shift - bw / 4,
+                  y16 = (deskY - (row + 1) * bh) * 16 - l.y16((150 - easeIn(k, 150)) * 16);
         r.alpha = a;
-        r.round(x + 1, y + 1, bw - 2, bh - 2, l.y(4), mix565(0, kLaneInk[(row + col) % Stream::kLanes], 150));
+        round16(r, (x + 1) * 16, y16 + 16, (bw - 2) * 16, (bh - 2) * 16, l.y16(4 * 16),
+                mix565(0, kLaneInk[(row + col) % Stream::kLanes], 150));
         r.alpha = a * 3 / 4;
-        centred(r, kSmall, x + bw / 2, y + bh / 2, texts[i % n], 0xFFFF);
+        centred16(r, kSmall, (x + bw / 2) * 16, y16 + bh / 2 * 16, texts[i % n], 0xFFFF);
       }
       r.alpha = a;
       centred(r, kSign, crownX, crownY - l.y(46), word, ink);
@@ -562,27 +557,30 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
     }
     const bool rises = move == CallMove::kCheer || move == CallMove::kCombo;
     const int k = rises ? easeOut(age, flight) : easeIn(age, flight);
-    int x = lerp(sx, toX, k, flight), y = lerp(sy, toY, k, flight);
+    // In sixteenths of a pixel.
+    int x = lerp(sx * 16, toX * 16, k, flight), y = lerp(sy * 16, toY * 16, k, flight);
     if (move == CallMove::kPlane) {  // a paper plane, swooping in
-      y -= l.y(60) * sin40(20 * age / flight) / 1000;
+      y -= l.y16(60 * 16) * sin40(20 * age / flight) / 1000;
       const int dir = right ? -1 : 1;
-      const Point plane[3] = {
-          {x + dir * l.x(26), y}, {x - dir * l.x(20), y - l.y(14)}, {x - dir * l.x(12), y + l.y(10)}};
+      const Point plane[3] = {{x + dir * l.x16(26 * 16), y},
+                              {x - dir * l.x16(20 * 16), y - l.y16(14 * 16)},
+                              {x - dir * l.x16(12 * 16), y + l.y16(10 * 16)}};
       r.alpha = 255;
-      r.polygon(plane, 3, kPaper);
-      r.line({x + dir * l.x(26), y}, {x - dir * l.x(14), y + l.y(2)}, 1, kPaperLine);
-      centred(r, kLarge, x, y - l.y(26), word, ink);
+      r.polygon16(plane, 3, kPaper);
+      const Point crease[2] = {{x + dir * l.x16(26 * 16), y}, {x - dir * l.x16(14 * 16), y + l.y16(2 * 16)}};
+      r.stroke16(crease, 2, 16, kPaperLine);
+      centred16(r, kLarge, x, y - l.y16(26 * 16), word, ink);
       return;
     }
     if (move == CallMove::kBack) {  // a little one running in with it
       r.alpha = 255;
       mini(r, l, x, y, age);
-      centred(r, kLarge, x, y - l.y(46), word, ink);
+      centred16(r, kLarge, x, y - l.y16(46 * 16), word, ink);
       return;
     }
     r.alpha = 255;
-    centred(r, big, x, y, word, ink);
-    if (move == CallMove::kArrive) twinkle(r, l, x, y, age, 255);
+    centred16(r, big, x, y, word, ink);
+    if (move == CallMove::kArrive) twinkle(r, l, x >> 4, y >> 4, age, 255);
     return;
   }
 
@@ -593,11 +591,14 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       if (c.gag == CallGag::kThrow && after >= 250) {
         const int k = std::min(400, after - 250);
         r.alpha = 255 - k * 255 / 400;
-        centred(r, big, lerp(toX, fromX, easeOut(k, 400), 400), lerp(toY, -l.y(40), easeOut(k, 400), 400), word, ink);
+        centred16(r, big, lerp(toX * 16, fromX * 16, easeOut(k, 400), 400),
+                  lerp(toY * 16, -l.y(40) * 16, easeOut(k, 400), 400), word, ink);
       } else {
         const int slide = std::max(0, after - 250), k = std::min(450, slide);
         r.alpha = 255 - k * 255 / 450;
-        if (r.alpha > 2) centred(r, big, toX + l.x(k / 30), toY + l.y(easeIn(k, 450) * 160 / 450), word, ink);
+        if (r.alpha > 2)
+          centred16(r, big, toX * 16 + l.x16(k * 16 / 30), toY * 16 + l.y16(easeIn(k, 450) * 160 * 16 / 450), word,
+                    ink);
       }
       const int daze = c.gag == CallGag::kBonk2                              ? 1300
                        : c.gag == CallGag::kThrow                            ? 700
@@ -617,10 +618,11 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       if (c.gag == CallGag::kHelmet && after < 1500) {
         // A dome on the crown, its brim down over the brow.
         r.alpha = fadeBy(after, 1500, 200);
-        const int hw = l.x(70), drop = l.y(std::max(0, 160 - after) / 4);
-        r.round(crownX - hw, crownY - l.y(10) - drop, 2 * hw, l.y(44), l.y(30), rgb565(150, 160, 170));
-        r.round(crownX - hw - l.x(8), crownY + l.y(26) - drop, 2 * hw + l.x(16), l.y(9), l.y(4), rgb565(95, 105, 115));
-        r.disk(crownX - l.x(26), crownY + l.y(4) - drop, l.x(6), rgb565(230, 235, 240));
+        const int hw = l.x(70) * 16, drop = l.y16(std::max(0, 160 - after) * 4), cx = crownX * 16, cy = crownY * 16;
+        round16(r, cx - hw, cy - l.y16(10 * 16) - drop, 2 * hw, l.y16(44 * 16), l.y16(30 * 16), rgb565(150, 160, 170));
+        round16(r, cx - hw - l.x16(8 * 16), cy + l.y16(26 * 16) - drop, 2 * hw + l.x16(16 * 16), l.y16(9 * 16),
+                l.y16(4 * 16), rgb565(95, 105, 115));
+        r.disk16(cx - l.x16(26 * 16) + 8, cy + l.y16(4 * 16) - drop + 8, l.x16(6 * 16) + 8, rgb565(230, 235, 240));
       }
       break;
     }
@@ -628,7 +630,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
     case CallMove::kArrive: {  // it sinks into the crown, a ring spreading out
       const int k = std::min(320, after);
       r.alpha = 255 - k * 255 / 320;
-      if (r.alpha > 2) centred(r, big, toX, toY + l.y(k * 34 / 320), word, ink);
+      if (r.alpha > 2) centred16(r, big, toX * 16, toY * 16 + l.y16(k * 34 * 16 / 320), word, ink);
       if (after < 500) {
         const int radius = l.x(20 + after * 90 / 500);
         r.alpha = 160 - after * 160 / 500;
@@ -657,11 +659,13 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       r.round(potX - pw / 2 - l.x(5), potY - ph / 2 - l.y(4), pw + l.x(10), l.y(8), l.y(4), kSteel);
       for (int i = 0; i < 5; ++i) {
         const int life = (after + i * 170) % 700, bx = potX - l.x(16) + i * l.x(8);
-        r.disk(bx, potY - ph / 2 - l.y(life / 18), l.x(3 + life / 200), rgb565(140, 223, 120));
+        r.disk16(bx * 16 + 8, (potY - ph / 2) * 16 + 8 - l.y16(life * 16 / 18), l.x16(3 * 16 + life * 16 / 200) + 8,
+                 rgb565(140, 223, 120));
       }
       const int sink = std::min(300, after);
       r.alpha = std::max(0, r.alpha - sink * 255 / 300);
-      if (r.alpha > 2) centred(r, kSign, potX, potY - ph / 2 - l.y(14) + l.y(sink / 10), word, ink);
+      if (r.alpha > 2)
+        centred16(r, kSign, potX * 16, (potY - ph / 2 - l.y(14)) * 16 + l.y16(sink * 16 / 10), word, ink);
       if (after > 250 && after < 1400) puff(r, l, potX, potY - ph, after - 250, 1150);
       break;
     }
@@ -677,31 +681,37 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
         centred(r, kSmall, toX, toY + l.y(1), "OK", kFailInk);
         r.alpha = a;
       } else if (after >= 120) {  // the stamp, coming down
-        const int k = after - 120, y = toY - l.y(70) + l.y(70) * easeIn(k, 180) / 180;
-        r.round(toX - l.x(22), y - l.y(26), l.x(44), l.y(16), l.y(4), rgb565(140, 80, 50));
-        r.round(toX - l.x(8), y - l.y(46), l.x(16), l.y(22), l.y(6), rgb565(140, 80, 50));
+        const int k = after - 120, y = (toY - l.y(70)) * 16 + l.y16(70 * 16) * easeIn(k, 180) / 180, x = toX * 16;
+        round16(r, x - l.x16(22 * 16), y - l.y16(26 * 16), l.x16(44 * 16), l.y16(16 * 16), l.y16(4 * 16),
+                rgb565(140, 80, 50));
+        round16(r, x - l.x16(8 * 16), y - l.y16(46 * 16), l.x16(16 * 16), l.y16(22 * 16), l.y16(6 * 16),
+                rgb565(140, 80, 50));
       }
       break;
     }
     case CallMove::kRocket: {  // it sits on the crown, then lifts off on a rocket
-      const int lift = std::max(0, after - 500), y = toY - l.y(easeIn(std::min(lift, 900), 900) * 420 / 900);
+      // In sixteenths of a pixel, the shapes' points on pixels' middles at rest.
+      const int lift = std::max(0, after - 500),
+                y = toY * 16 - l.y16(easeIn(std::min(lift, 900), 900) * 420 * 16 / 900);
+      auto X = [&](int p) { return l.x16(p * 16); };
+      auto Y = [&](int p) { return l.y16(p * 16); };
       r.alpha = 255;
-      const int rx = toX, ry = y + l.y(38);
+      const int rx = toX * 16 + 8, ry = y + Y(38) + 8;
       if (lift > 0) {
         for (int i = 0; i < 4; ++i) {
           r.alpha = std::max(0, 200 - i * 50 - lift / 6);
-          r.disk(rx + l.x((i % 2 ? 6 : -6)), ry + l.y(30 + i * 16) + l.y(lift / 30), l.x(7 + i * 3), kSmoke);
+          r.disk16(rx + X(i % 2 ? 6 : -6), ry + Y(30 + i * 16) + l.y16(lift * 16 / 30), X(7 + i * 3) + 8, kSmoke);
         }
         r.alpha = 255;
-        const int flick = (age / 40) % 2 ? l.y(6) : 0;
-        const Point flame[3] = {{rx - l.x(8), ry + l.y(16)}, {rx + l.x(8), ry + l.y(16)}, {rx, ry + l.y(36) + flick}};
-        r.polygon(flame, 3, kFlame);
+        const int flick = (age / 40) % 2 ? Y(6) : 0;
+        const Point flame[3] = {{rx - X(8), ry + Y(16)}, {rx + X(8), ry + Y(16)}, {rx, ry + Y(36) + flick}};
+        r.polygon16(flame, 3, kFlame);
       }
-      r.round(rx - l.x(10), ry - l.y(18), l.x(20), l.y(36), l.x(10), 0xFFFF);
-      const Point fins[3] = {{rx - l.x(16), ry + l.y(18)}, {rx + l.x(16), ry + l.y(18)}, {rx, ry + l.y(2)}};
-      r.polygon(fins, 3, kRocketRed);
-      r.disk(rx, ry - l.y(4), l.x(4), rgb565(80, 160, 230));
-      centred(r, big, toX, y, word, ink);
+      round16(r, rx - 8 - X(10), ry - 8 - Y(18), X(20), Y(36), X(10), 0xFFFF);
+      const Point fins[3] = {{rx - X(16), ry + Y(18)}, {rx + X(16), ry + Y(18)}, {rx, ry + Y(2)}};
+      r.polygon16(fins, 3, kRocketRed);
+      r.disk16(rx, ry - Y(4), X(4) + 8, rgb565(80, 160, 230));
+      centred16(r, big, toX * 16, y, word, ink);
       break;
     }
     case CallMove::kPoof: {  // gone in a puff
@@ -712,7 +722,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
     }
     case CallMove::kPlane: {  // caught: it unfolds into the word, then goes
       r.alpha = fadeBy(after, end - flight, 400);
-      centred(r, big, toX, toY - l.y(after < 200 ? 20 - after / 10 : 0), word, ink);
+      centred16(r, big, toX * 16, toY * 16 - l.y16(after < 200 ? (20 * 16 - after * 16 / 10) : 0), word, ink);
       break;
     }
     case CallMove::kPhone: {  // a phone ringing beside it, the word its call
@@ -752,18 +762,20 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       break;
     }
     case CallMove::kHelper: {  // a little one takes it and runs off
-      const int run = std::max(0, after - 200), x = toX + l.x(easeIn(std::min(run, 1200), 1200) * 260 / 1200);
+      const int run = std::max(0, after - 200),
+                x = toX * 16 + l.x16(easeIn(std::min(run, 1200), 1200) * 260 * 16 / 1200);
       r.alpha = 255;
-      mini(r, l, x, deskY, age);
-      centred(r, kLarge, x, deskY - l.y(46) - (run ? l.y(std::abs(sin40(age / 12)) * 6 / 1000) : 0), word, ink);
+      mini(r, l, x, deskY * 16, age);
+      centred16(r, kLarge, x, (deskY - l.y(46)) * 16 - (run ? l.y16(std::abs(sin40(age / 12)) * 6 * 16 / 1000) : 0),
+                word, ink);
       break;
     }
     case CallMove::kBack: {  // the little one brings it home, and is gone into it
       const int k = std::min(400, after);
       r.alpha = 255 - k * 255 / 400;
       if (r.alpha > 2) {
-        mini(r, l, toX, toY, age);
-        centred(r, kLarge, toX, toY - l.y(46) - l.y(k / 8), word, ink);
+        mini(r, l, toX * 16, toY * 16, age);
+        centred16(r, kLarge, toX * 16, (toY - l.y(46)) * 16 - l.y16(k * 2), word, ink);
       }
       if (after < 700) twinkle(r, l, toX, toY - l.y(30), age, fadeBy(after, 700, 300));
       break;
@@ -782,11 +794,13 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       const int n = std::max(1, glyphCount(word)), mouthX = eyesX, mouthY = eyesY + l.y(36);
       for (int i = 0, g; (g = nextGlyph(p)) >= 0; ++i) {
         const int out = easeOut(std::min(220, after), 220), in = easeIn(std::clamp(after - 320, 0, 480), 480);
-        const int bx = toX + (i - n / 2) * kLarge.w + l.x(70) * cos40(i * 5) / 1000 * out / 220;
-        const int by = toY + l.y(46) * sin40(i * 5) / 1000 * out / 220;
+        // In sixteenths of a pixel.
+        const int bx = (toX + (i - n / 2) * kLarge.w) * 16 + l.x16(70 * 16) * cos40(i * 5) / 1000 * out / 220;
+        const int by = toY * 16 + l.y16(46 * 16) * sin40(i * 5) / 1000 * out / 220;
         r.alpha = 255 - in * 200 / 480;
         char one[2] = {char(g + 0x20), 0};
-        if (g + 0x20 < 0x7f) centred(r, kLarge, lerp(bx, mouthX, in, 480), lerp(by, mouthY, in, 480), one, ink);
+        if (g + 0x20 < 0x7f)
+          centred16(r, kLarge, lerp(bx, mouthX * 16, in, 480), lerp(by, mouthY * 16, in, 480), one, ink);
       }
       if (after >= 780 && after < 1100) {  // a burp
         r.alpha = fadeBy(after, 1100, 200);
@@ -805,12 +819,12 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
         if (a < 0) {
           const int k = easeIn(a + flight, flight);
           r.alpha = 255;
-          centred(r, kSign, crownX + dx, lerp(fromY, roof, k, flight), "FAIL", ink);
+          centred16(r, kSign, (crownX + dx) * 16, lerp(fromY * 16, roof * 16, k, flight), "FAIL", ink);
         } else {
           r.alpha = 255 - a * 255 / 400;
           const int side = dx < 0 ? -1 : 1;
-          centred(r, kSign, crownX + dx + side * l.x(a * 90 / 400), roof - l.y(a * 60 / 400) + l.y(a * a / 1600),
-                  "FAIL", ink);
+          centred16(r, kSign, (crownX + dx) * 16 + side * l.x16(a * 90 * 16 / 400),
+                    roof * 16 - l.y16(a * 60 * 16 / 400) + l.y16(a * a / 100), "FAIL", ink);
         }
       }
       if (umbrella) {
@@ -829,7 +843,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
     case CallMove::kCheer:
     case CallMove::kCombo: {  // over its head; confetti, or its count popping
       r.alpha = fadeBy(after, 1900, 400);
-      if (r.alpha > 2) centred(r, big, toX, toY - l.y(std::min(after, 300) / 15), word, ink);
+      if (r.alpha > 2) centred16(r, big, toX * 16, toY * 16 - l.y16(std::min(after, 300) * 16 / 15), word, ink);
       if (move == CallMove::kCombo) {
         twinkle(r, l, toX, toY, age, fadeBy(after, 1500, 400));
         break;
@@ -846,9 +860,10 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       if (after < 1300)
         for (int i = 0; i < 28; ++i) {
           const int vx = ((i * 97) % 200) - 100, vy = -60 - (i * 61) % 120, s = after;
-          const int px = toX + l.x(vx * s / 1000), py = toY + l.y(vy * s / 1000 + 260 * s / 1000 * s / 1000);
+          const int px = toX * 16 + l.x16(vx * s * 16 / 1000),
+                    py = toY * 16 + l.y16(vy * s * 16 / 1000 + int(int64_t(260) * s * s * 16 / 1000000));
           r.alpha = 255 - after * 255 / 1300;
-          r.round(px, py, l.x(7), l.y(4), 1, i % 2 ? kLaneInk[i % Stream::kLanes] : kStarInk);
+          round16(r, px, py, l.x16(7 * 16), l.y16(4 * 16), 16, i % 2 ? kLaneInk[i % Stream::kLanes] : kStarInk);
         }
       break;
     }
@@ -860,7 +875,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
         break;
       }
       r.alpha = std::max(0, 255 - after * 255 / 400);  // it settles on the monitor
-      if (r.alpha > 2) centred(r, kSign, toX, toY + l.y(after * 10 / 400), word, ink);
+      if (r.alpha > 2) centred16(r, kSign, toX * 16, toY * 16 + l.y16(after * 10 * 16 / 400), word, ink);
       break;
     }
     case CallMove::kTopple: {  // the tower comes down on its head, then lies about

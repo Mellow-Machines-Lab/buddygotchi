@@ -1,31 +1,24 @@
 import AppKit
 import BoopKit
 import SwiftUI
-import WebKit
 
-/// No network, navigation, message handlers, storage persistence or audio.
+/// A place for the feed's page, which it takes from the view before.
 struct SlimeView: NSViewRepresentable {
     let feed: SlimeFeed
     let snapshot: StateSnapshot
     let visible: Bool
+    let zoomed: Bool
 
-    static func webView() -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
-        config.mediaTypesRequiringUserActionForPlayback = .all
-        let view = WKWebView(frame: .zero, configuration: config)
-        view.setValue(false, forKey: "drawsBackground")
-        view.allowsBackForwardNavigationGestures = false
-        return view
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        feed.place(in: container)
+        return container
     }
-    func makeNSView(context: Context) -> WKWebView {
-        let view = Self.webView()
-        feed.attach(view)
-        return view
+    func updateNSView(_ container: NSView, context: Context) {
+        feed.update(snapshot, visible: visible, zoomed: zoomed, from: container)
     }
-    func updateNSView(_ view: WKWebView, context: Context) { feed.update(snapshot, visible: visible) }
     func makeCoordinator() -> SlimeFeed { feed }
-    static func dismantleNSView(_ view: WKWebView, coordinator: SlimeFeed) { coordinator.detach(view) }
+    static func dismantleNSView(_ container: NSView, coordinator: SlimeFeed) { coordinator.release(container) }
 }
 
 struct SlimeFace: View {
@@ -38,6 +31,12 @@ struct SlimeFace: View {
     var height: CGFloat?
     @Environment(\.stillMotion) private var still
 
+    /// Below this many points the board's whole screen leaves the slime a
+    /// smudge, so the tile shows the slime alone (the popover's 46 pt one);
+    /// onboarding's, all larger, show the whole screen.
+    static let zoomBelow: CGFloat = 80
+    var zoomed: Bool { min(size, height ?? size) < Self.zoomBelow }
+
     var body: some View {
         Group {
             if still, let image = feed.stillImage {
@@ -45,7 +44,7 @@ struct SlimeFace: View {
                 let tall = height ?? size
                 Image(nsImage: image).resizable().frame(width: tall * image.size.width / max(image.size.height, 1), height: tall)
             } else {
-                SlimeView(feed: feed, snapshot: snapshot, visible: live && !still)
+                SlimeView(feed: feed, snapshot: snapshot, visible: live && !still, zoomed: zoomed)
             }
         }
         .frame(width: size, height: height ?? size)

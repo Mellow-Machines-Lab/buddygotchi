@@ -34,6 +34,7 @@ class BoardHal : public app::Hal {
   void setBacklight(uint8_t level) override;
   render::Size nativeSize() override;
   void* allocateSurface(size_t bytes) override;
+  const void* quickerCopy(const void* data, size_t bytes) override;
   uint32_t heapFree() override;
   uint32_t heapMin() override;
   bool ampOn() override;

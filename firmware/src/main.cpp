@@ -123,14 +123,15 @@ void loop() {
   }
   uint32_t t0 = micros();
   kit->tick();
-  if (device->takeFrame()) {
+  const bool drew = device->takeFrame();
+  if (drew) {
     const uint32_t t1 = micros();
     uint32_t pushed, waited = 0;
     if (auto* frames = device->frames()) {
       // A native frame is sent by the board's push task while the loop
       // draws the next: this waits only for the frame
       // before, if it's still going, and the push is the last one sent.
-      board::displayPush(*frames, device->canvas());
+      board::displayPush(*frames);
       waited = micros() - t1;
       pushed = board::displayPushUs();
     } else {
@@ -155,5 +156,6 @@ void loop() {
   }
   // A native frame reaches the panel when the push task has sent it.
   for (uint32_t at; board::displayShown(at);) device->shown(at);
-  if (!busy) delay(1);
+  // A quiet pass rests a moment, but not after a frame: the next is due.
+  if (!busy && !drew) delay(1);
 }

@@ -85,7 +85,12 @@ ramps and springs can, and no jolt at an event. By file:
   nothing drawn.
 - `test_main.cpp`: the rest: arithmetic (a `Divisor`'s quotients exactly
   `/`'s), the binary64 clock's rounding, every expression's bounds,
-  deterministic pixels, request identity and bounded caches, alerts
+  deterministic pixels, the body's outline soft with no seam inside, over
+  the crown too, and holding still as the mesh turns
+  (`test_the_outline_holds_still_as_the_mesh_turns`: leaned or squashed
+  end to end, no row's edge jumps a pixel and a quarter), the material
+  (1025 × 513 texels) drawing the same body from the AMOLED's copy
+  (`test_the_materials_copy_draws_the_same_body`), request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
   fading (its visible ink through five cross-fades), falling asleep as a
@@ -108,7 +113,15 @@ ramps and springs can, and no jolt at an event. By file:
   once, cut and marked as the canvas does), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
   anchors, coming and going through the rig's layer stack, each at its
-  opacity, the sign fading out at its own, drawing by coverage, tracked
+  opacity, the sign fading out at its own, drawing by coverage (a
+  polygon's exact area in each pixel, so a lid 3/16 of a pixel thin never
+  flickers, `test_polygon_edges_move_a_sixteenth_at_a_time`; arts of
+  different shapes cross-fading with nothing showing through,
+  `test_a_cross_fade_never_shows_through`, every two arts' in their room,
+  `test_every_cross_fade_fits_its_room`), what moves gliding between
+  pixels (`test_a_recording_replays_between_pixels`,
+  `test_text_glides_between_pixels`, the outfit half a pixel down while
+  the body moves), tracked
   clearing and kept cards matching a fresh frame, steady frames
   allocating nothing, and the work stream
   (`test_the_work_stream_falls_behind_and_hits_in_front`: words in their
@@ -157,6 +170,14 @@ ramps and springs can, and no jolt at an event. By file:
   and on the native simulator, both with no card, and checks every shot is
   the same, pixel for pixel; `firmware/tools/mirror.sh --check` builds the
   mirror again and checks it's the one checked in.
+- `test_gel`'s `test_a_helper_draws_the_same_body` draws the body with a
+  stand-in for the AMOLED's second core, its rows shared out differently
+  every frame, and checks the frame is the same pixels as one core's.
+- On the AMOLED, `internal/tools/boopctl perf --scenes` with the
+  `amoled206_profile` build: each scene's frames a second against its
+  budget, and the body's time (`body_us`, the erase included); its
+  `stream` scene keeps two lanes' words falling and a word coming forward
+  every 2 s (`stream_us`).
 - `internal/tools/fluid/measure.py` measures how fluid the everyday
   transitions are on the board (`transitions.jsonl`, `idle-swipes.jsonl`),
   and the Character Studio's Transitions view ranks them in the page.

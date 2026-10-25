@@ -55,10 +55,7 @@ struct SettingsPane: View {
                 SettingRow(icon: s?.vol == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", title: "Volume",
                            detail: "How loud \(model.name) talks.") {
                     HStack(spacing: 6) {
-                        Slider(value: Binding(get: { Double(s?.vol ?? 6) },
-                                              set: { model.setVolume(Int($0.rounded())) }),
-                               in: 0...10, step: 1)
-                            .controlSize(.small)
+                        StepSlider(value: Binding(get: { s?.vol ?? 6 }, set: { model.setVolume($0) }), most: 10)
                             .frame(width: 84)
                             .accessibilityLabel("Volume")
                         Text(s.map { $0.vol == 0 ? "Off" : "\($0.vol)" } ?? "–")

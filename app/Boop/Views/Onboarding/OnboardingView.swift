@@ -254,28 +254,109 @@ struct Confetti: View {
         }
         .onChange(of: bursts) {
             guard !reduced, !still else { return }
-            started = Date()
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.duration) { started = nil }
+            // A burst while one plays starts again; the first's end
+            // mustn't cut the second short.
+            let burst = Date()
+            started = burst
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.duration) { if started == burst { started = nil } }
         }
     }
 }
 
-/// Rings spreading out from the middle while Boop looks for its body.
+/// Rings spreading out from the middle while Boop looks for its body: each
+/// grows from 45% of the frame to all of it in 2.4 s as it fades, a third
+/// of the way behind the one before. Held still, they rest a third apart.
 struct Ripples: View {
+    static let rings = 3, seconds = 2.4, from = 0.45
     @Environment(\.accessibilityReduceMotion) private var reduced
     @Environment(\.stillMotion) private var still
 
     var body: some View {
-        TimelineView(.animation(paused: reduced || still)) { timeline in
+        if still || reduced {
             Canvas { context, size in
-                let t = timeline.date.timeIntervalSinceReferenceDate
-                for ring in 0..<3 {
-                    let phase = (still || reduced) ? Double(ring) / 3 : (t / 2.4 + Double(ring) / 3).truncatingRemainder(dividingBy: 1)
-                    let w = size.width * (0.45 + 0.55 * phase), h = size.height * (0.45 + 0.55 * phase)
-                    let rect = CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h)
-                    context.stroke(Path(ellipseIn: rect), with: .color(Theme.hairlineStrong.opacity(1 - phase)), lineWidth: 2)
+                for ring in 0..<Self.rings {
+                    let phase = Double(ring) / Double(Self.rings)
+                    context.stroke(Path(ellipseIn: Self.ellipse(phase, in: size)), with: .color(Theme.hairlineStrong.opacity(1 - phase)),
+                                   lineWidth: 2)
                 }
             }
+        } else {
+            // Core Animation runs them in the window server, where a
+            // timeline would draw the window again on every frame.
+            RippleRings(tone: Theme.hairlineStrong)
         }
     }
+
+    /// A ring `phase` of the way out, in a frame of `size`.
+    static func ellipse(_ phase: Double, in size: CGSize) -> CGRect {
+        let grown = from + (1 - from) * phase
+        let w = size.width * grown, h = size.height * grown
+        return CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h)
+    }
+}
+
+private struct RippleRings: NSViewRepresentable {
+    var tone: Color
+
+    func makeNSView(context: Context) -> RippleRingsView { RippleRingsView() }
+    func updateNSView(_ view: RippleRingsView, context: Context) { view.tone = NSColor(tone) }
+}
+
+final class RippleRingsView: NSView {
+    private let rings = (0..<Ripples.rings).map { _ in CAShapeLayer() }
+    private var laidOut = CGSize.zero
+    var tone = NSColor.clear {
+        didSet { paint() }
+    }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        for ring in rings {
+            ring.fillColor = nil
+            ring.lineWidth = 2
+            layer?.addSublayer(ring)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("not from a nib") }
+
+    /// Each ring's path from 45% to the whole frame, and its fade, again
+    /// and again, started a third of a lap apart.
+    override func layout() {
+        super.layout()
+        guard bounds.size != laidOut, bounds.width > 0 else { return }
+        laidOut = bounds.size
+        let now = CACurrentMediaTime()
+        for (i, ring) in rings.enumerated() {
+            ring.frame = bounds
+            let grow = CABasicAnimation(keyPath: "path")
+            grow.fromValue = CGPath(ellipseIn: Ripples.ellipse(0, in: bounds.size), transform: nil)
+            grow.toValue = CGPath(ellipseIn: Ripples.ellipse(1, in: bounds.size), transform: nil)
+            let fade = CABasicAnimation(keyPath: "opacity")
+            fade.fromValue = 1
+            fade.toValue = 0
+            let lap = CAAnimationGroup()
+            lap.animations = [grow, fade]
+            lap.duration = Ripples.seconds
+            lap.repeatCount = .infinity
+            lap.timingFunction = CAMediaTimingFunction(name: .linear)
+            lap.beginTime = now - Ripples.seconds * Double(i) / Double(rings.count)
+            lap.isRemovedOnCompletion = false
+            ring.add(lap, forKey: "ripple")
+        }
+    }
+
+    private func paint() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            for ring in rings { ring.strokeColor = tone.cgColor }
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        paint()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }

@@ -20,7 +20,7 @@ What a pack holds, and what it must have:
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
-| `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
+| `mac/faces.json` | yes, or used (§6) | The pixel face's moods and the popover's still faces (§9) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
@@ -679,24 +679,19 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 25
-  states above, in the designs' order.
-- `designs`: for each mood, a row for each state (a borrowing mood has
-  the designs it wears), with each variation's
-  loop length (`ms`), voice window (`voice_ms`), fact (`outcome` or
-  `ctx`), tags (`when`) and wait (`after`, in seconds). The board has the
-  same numbers (`faces.h`, `sfx.h`). The Mac times reactions and picks
-  their variations by them, never one with tags or a wait (the board
-  swaps one in itself). A fact no design is for plays any of the state's
-  designs.
+- `moods`: every mood, in the pack's order. The Mac never times a
+  reaction or picks its variation: the board does, by `faces.h` and
+  `sfx.h`.
 - `box`, `colors` and `faces`: the popover's still faces, each as
   `<mood>/<look>` for `idle`, `working` and `needs_you`, and
   `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.
 
 `mac/mirror/`, if present, is the board's own firmware in a web page,
-which the popover shows as the face in place of the still one while a
-board drawing a native face (the gel) is connected, and onboarding shows
-in its tiles and its demo. Boop's has one:
+which the popover shows as the face in place of the still one, whether
+or not a board is connected (unless the one connected draws the pixel
+face), and onboarding shows in its tiles and its demo. Each feed keeps
+one page, its board running, which each view showing it takes from the
+one before, so the slime carries on from act to act. Boop's has one:
 
 - `board.js`, the firmware for a board with no hardware
   (`firmware/src/board/mirror/`) with the face the pack gives the AMOLED,
@@ -710,8 +705,17 @@ in its tiles and its demo. Boop's has one:
   keepalive included, and a tap on the board as a tap on the mirror's
   screen or BOOT, which it takes as its own (`SlimeFeed`); onboarding's,
   with no board behind it, is handed what its views show. The page
-  draws the board's whole screen as big as its tile fits, centred, at most
-  30 frames a second, and only while it's shown. It makes no sound, and
+  draws the board's whole screen as big as its tile fits, centred, or,
+  in a tile too small for that (the popover's), the slime alone, zoomed;
+  a shrink of more than 2× goes in halves, so it doesn't shimmer. It
+  draws only while it's shown, at once when it's shown again, and asks
+  the board for a frame on every display refresh: the board draws when
+  it has one, up to its 60 a second. Its clock reads the refresh's
+  time, so a pass that runs late skips no frame, and on a display
+  that refreshes faster than the board draws (WebKit's 72 Hz on a
+  144 Hz one) the nearest 60th of a second, so it draws 60, not every
+  other refresh. The app's page fades in over its glass once the board
+  has drawn. It makes no sound, and
   nothing the board says leaves the page, so it can't answer the Mac.
 - `tests/mirror/` holds the page's own tests (`node --test`), and
   `internal/tools/boopctl mirror` plays the gel's scenarios on the mirror

@@ -212,6 +212,28 @@ void test_a_card_failing_mid_say_ends_it() {
   TEST_ASSERT_TRUE(voicefile::open());
 }
 
+// A take is looked up on the main loop, as its `do` arrives: the index's
+// ids are read as the file opens, so a lookup reads the card once, for the
+// take's record and mouth, not a dozen times over a binary search.
+void test_a_lookup_reads_the_card_once() {
+  NEEDS_VOICE_PACK();
+  struct Counting : voice::Source {
+    int reads = 0;
+    bool read(uint32_t at, void* buf, uint32_t n) override {
+      ++reads;
+      return voicefile::source().read(at, buf, n);
+    }
+  } card;
+  TEST_ASSERT_TRUE(voice::openFile(&card));
+  card.reads = 0;
+  TEST_ASSERT_TRUE(voice::takeIndex("new.d15") >= 0);
+  TEST_ASSERT_EQUAL(2, card.reads);  // its record, then its mouth
+  card.reads = 0;
+  TEST_ASSERT_EQUAL(-1, voice::takeIndex("banana"));
+  TEST_ASSERT_EQUAL(0, card.reads);
+  TEST_ASSERT_TRUE(voicefile::open());
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -223,5 +245,6 @@ int main() {
   RUN_TEST(test_volume_scales_and_zero_mutes);
   RUN_TEST(test_the_mouth_follows_the_take);
   RUN_TEST(test_a_card_failing_mid_say_ends_it);
+  RUN_TEST(test_a_lookup_reads_the_card_once);
   return UNITY_END();
 }

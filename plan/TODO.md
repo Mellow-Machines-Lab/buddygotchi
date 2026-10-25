@@ -4,6 +4,143 @@ Updated 2026-10-25. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: the polish pass (2026-10-25)
+
+The owner asked for smoother animation, crisper pictures, quicker touch
+and a simpler build. Four audits (the gel's picture, the board's frame
+pacing and touch, the Mac app, the architecture) found what's below.
+
+- [x] **The gel's frame cost.** A busy frame took 34-48 ms (23-28 fps),
+      the body 21.5 ms of it. The body is drawn on both cores, each row
+      whole on one, erased a band at a time just before (render/helper.h);
+      `perf --scenes` now: working 39 fps, attention 35, frightened 32,
+      asleep 46, idle 46 (20.7 ms).
+- [x] A take's lookup reads the card once, not ~12 times on the loop.
+- [x] Snow and hearts move in sixteenths of a pixel.
+- [x] The Mac: the popover's status publishes only when shown and
+      changed and opens before the hooks are read; the mirror draws every
+      frame the board draws, zooms the 46 pt tile onto the slime, and is
+      one page handed between views (onboarding no longer reloads it per
+      act); the popover keeps the slime with no board; the still face has
+      no seams; snapshots are 2x.
+- [x] The Mac, again (the popover in a real NSPopover from fixtures,
+      on a 144 Hz display): open, the app took 8.7% of a core, now 2.3%,
+      since the live dot's ring is Core Animation's, not a SwiftUI
+      animation redrawing the popover every frame; the slime's page loads
+      and the views lay out 1.5 s after launch, so the first open takes
+      71 ms, not 130 ms and a black tile for 280 ms; the page fades in on
+      its first frame; panes that fit don't scroll (with scroll bars
+      always shown they were cut off); the volume is a slider of our own.
+      With agents at work (a call every 300 ms), open, 13.7% became 4.2%:
+      the sessions spring only when rows come, go or change status, not
+      at every call's word. Onboarding's looking rings are Core
+      Animation's too (7.9% to 2.7% on that act).
+- [x] The mirror's board read the moment its pass ran, so at 60 Hz a
+      pass run a little earlier than the last read under 16 ms and showed
+      the same frame again (30 fps with passes 0.2 and 2.5 ms late in
+      turn): it reads the refresh's time on those passes now.
+- [x] The mirror drew 36 fps on a 144 Hz display: WebKit runs its
+      `requestAnimationFrame` at 72 Hz there, and the board draws only
+      when 16 ms have passed (`kFrameMs`, `device.cpp`), so every other
+      pass. On a display faster than that the board's clock reads each
+      refresh's time to the nearest 60th: 59.9 fps in WebKit, at 6.2% of
+      a core in WebContent (4.8% at 36).
+- [x] Simpler: no canvas lane under the gel or 8-bit AMOLED push;
+      FaceLoops and faces.json's designs gone; EventLine, Core+Talk and
+      device_debug.cpp in files of their own.
+- [ ] On a real Mac: the popover opens quickly and never shows a stale
+      pose; the 46 pt slime is crisp at 60 fps; with Bluetooth off it
+      stays the slime; onboarding's acts show no black glass; two quick
+      confetti bursts both play; the menu-bar glyph looks centred.
+- [ ] Touch's tap waits 50 ms after a finger lifts (`kTouchReleaseMs`,
+      for the panel's dropped readings under a light press). The FT3168
+      reports a lift-up event (register 0x03, bits 7:6, masked off in
+      `amoled206/touch.cpp`): log it under a real finger, then end the
+      touch on it, keeping the 50 ms as the fallback.
+- [x] Eyes and mouth no longer go see-through mid mood change: each
+      look is kept and laid over the body alone, then blended by weight
+      (`raster.h`'s `CrossFade`, in PSRAM). test_gel's never-fades now
+      keeps at least 92% (was 90%; calm→frightened 109%), and every two
+      arts' cross-fade fits half its room.
+- [x] The body's outline popped when a triangle's facing flipped, and
+      the crown's was hard (the pole's triangles never found the
+      outline). The triangles fill by pixel centre and each outline edge
+      has a fringe a pixel wide beyond it, meeting the next where the
+      outline bends; lone slivers are left out. Swept end to end, the
+      worst row-to-row jump fell from 1.0-2.05 px to 0.54-0.94; the crown
+      is soft. +0.9 ms of body on the AMOLED. Checked by test_gel's
+      `test_the_outline_holds_still_as_the_mesh_turns`.
+- [x] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
+      replay (`OutfitLayer::kSlack`), the listening ring and the helper
+      minis (`props.cpp`). Now in sixteenths: text by `text16` (bilinear
+      between pixels, text()'s own on a whole pixel), the word forward's
+      flights and landings, the little ones, the rocket, the monitor's
+      page and bars (`subpixel.h`'s `round16`), the outfit replayed with
+      `Raster::replay16`; the Zs fade in and out fully rather than pop.
+      Checked by test_gel's `test_a_recording_replays_between_pixels`,
+      `test_text_glides_between_pixels` and the outfit gliding half a
+      pixel, and the stream, states and layers goldens looked at. On the
+      board (`perf --scenes`, its new `stream` and `night` scenes): stream
+      32.5 fps (33.3 before), night 26.0 (28.4 with the hat on whole
+      pixels: replay16 fills what's whole and samples only edges, 10.3 ms
+      of layers against 7.2), the rest unchanged, the internal heap's
+      least 52.0 KB.
+- [x] A lane's words fell on top of each other ("sed" over "sed"): two a
+      `state`, 140 ms apart at random speeds. Each now drops a line
+      (`kWordGapPx`) behind its lane's newest and never faster
+      (test_behaviour's `test_the_work_streams_words`).
+- [ ] On the real board: whether the hat and the falling words now look
+      smooth asleep and at work, and whether words entering behind the
+      panel's top corners (110 px radius) look like they come from above
+      or look cut off.
+- [x] The sleeper's Zs are drawn, not a font's: one rounded pen
+      (`Raster::zee`) growing from 7 to 16 px and drifting by sixteenths,
+      where the font's z jumped 40-47 px of ink between sizes (test_gel).
+- [x] The face art's polygons take their exact area in each pixel
+      (`raster.cpp` `polygon16`, a row's signed area summed along it),
+      so a 3/16 px lid keeps its ink wherever it sits and a level edge
+      moves a sixteenth at a time (test_gel). Cheaper than the 4
+      sub-rows: `perf --scenes` art_us frightened 7.99 → 6.40 ms, working
+      3.56 → 3.21, attention 3.93 → 3.58, pokes 3.57 → 3.22, asleep
+      1.87 → 1.93; the rows every pixel reads stay in internal memory,
+      the rest is in PSRAM (internal heap's least 51.5 → 51.2 KB).
+- [x] The body's material is 1025 × 513 texels (was 513 × 257, about
+      1.75 px a texel): the highlight and rim keep their edges. Where a
+      triangle's texels crowd more than 1.5 under a pixel at rest (40% of
+      the body, the sides and crown) it reads a 513 × 257 copy, blended
+      from the large one; and the AMOLED reads both from a copy in PSRAM
+      (`Hal::quickerCopy`). `body_us` in working: 21.7 ms from flash,
+      17.2 from PSRAM, 16.2 with the half size; 15.7 with projection and
+      the outline's classification shared between the cores. Checked by
+      test_gel's `test_the_materials_copy_draws_the_same_body`.
+- [ ] No tearing sync. The CO5300's TE line is wired to GPIO 13 (a
+      probe counted 12 rising edges in 200 ms: 60 Hz; LovyanGFX's init
+      already sends TE on). Syncing isn't simple: a push writes bands of
+      16 panel columns each across the whole scan, so it crosses the
+      scan line ~26 times a frame, and at 40 MHz the writer (~15-20 panel
+      rows a ms, preempted by the body's helper) is about half the scan's
+      speed (30 rows a ms). Tear-free needs pushes in scan order (bands of
+      panel rows) started just behind the scan line, the scan's direction
+      checked on the panel; or 80 MHz QSPI (needs eyes on the panel).
+- [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
+      the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
+      4 KB there) and its code runs from flash past a 16 KB cache. Moving
+      the next frame's step onto the other core while this core draws the
+      art, layers and props would hide it, but they read the engine: it
+      needs a snapshot of what they read.
+- [ ] The board's frame rate, all of the above merged (01ee9a01,
+      `perf --scenes`, 12 s a scene, muted; before is the pass's start,
+      008e5e7d): asleep 45.3 → 42.4 fps, working 38.4 → 37.0, pokes
+      38.2 → 36.8, attention 34.0 → 32.7, frightened 31.3 → 31.9; the
+      new stream scene 31.2 and night 24.4. The sharper material and the
+      outline cost ~1 ms of body, the hat's sub-pixel replay ~3.5 ms at
+      night. Every scene passes; the internal heap's least is 50,968
+      against 50,000, so ~1 KB is left. Owner's call: whether night's
+      24 fps is enough for a smooth hat (whole-pixel replay gives ~28),
+      and whether an even 30 fps reads better than ~37 on the 60 Hz
+      panel. `perf --motion`'s 60 KB heap budget fails, as it already did
+      at 008e5e7d (51.5 KB): the budget or the heap wants a look.
+
 ## Now: the first launch, from the owner's setup
 
 What the owner's own first-time setup on 2026-10-24 ran into, `make run`

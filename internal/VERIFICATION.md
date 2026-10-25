@@ -250,7 +250,7 @@ turn's holder and waiting calls included), screenshots, a frozen clock,
 injected presses and touches, the test pattern, the lights, touch
 calibration and a reset. LinkKit answers the generic ones
 ([linkkit/SPEC.md](../linkkit/SPEC.md) §7) and Boop's app the rest
-(`firmware/src/app/device.cpp`). The board ignores them over Bluetooth.
+(`firmware/src/app/device_debug.cpp`). The board ignores them over Bluetooth.
 
 The board handles waiting lines in order before it draws the next frame,
 and a debug message ends the batch. So a
@@ -442,8 +442,16 @@ gets at least one scenario. Their pictures are the golden images in
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
-  look. The run fails by itself on low contrast.
-  It also checks the name's character limits and validation, and includes
+  look, and nothing blurred or seamed: the panes and acts are drawn at
+  2 pixels a point, as a Retina Mac shows them. The run fails by itself on low contrast.
+  It also checks the name's character limits and validation, and that
+  the views' status changes only while the popover or onboarding shows
+  it, only when it changed, and never for the work stream's lanes,
+  that the mirror's one page goes from view to view and fades in only
+  once the board has drawn, that the live dot's ring and onboarding's
+  looking rings run in Core Animation (the dot's only while live), and
+  that no pane drawn whole is cut off in
+  a scroll view (as scroll bars that always show would cut it). It includes
   Unicode names, invalid names, every onboarding act (`onboarding-*`) and
   a crowded Overview at a bounded height.
   There are no goldens.
@@ -494,7 +502,10 @@ accepted; the mirror's shots are the simulator's.
    prints the board's own figures beside its own and the frame-to-frame
    time, and the error of its clock match, a few ms at most. On the
    AMOLED, with the `amoled206_profile` build flashed,
-   `internal/tools/boopctl perf --scenes` (and again with `--sound`): each
+   `internal/tools/boopctl perf --scenes` (and again with `--sound`; its
+   `stream` scene keeps the work stream's words falling and a word coming
+   forward every 2 s, and its `night` scene sleeps under the sky in the
+   nightcap and pyjamas): each
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
    DAC has no write errors. Flash the everyday build (`make flash`)

@@ -87,10 +87,14 @@ struct Stream {
   static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and room for a combo's count
   static constexpr int kWords = 8;        // falling at once, at most: the frame rate's budget
   // A word falls for this long, and at most this many drop for one `state`
-  // however many calls it counts, this far apart.
+  // however many calls it counts. A word drops only once the newest of its
+  // lane has fallen kWordGapPx (a line of the large font and a little), and
+  // never falls faster, so a lane's words never overlap; one that would
+  // wait over kMostWaitMs for that isn't dropped: the lane is busy enough.
   static constexpr uint32_t kFallMs = 3200;
   static constexpr int kDropsPerState = 2;
-  static constexpr uint32_t kDropGapMs = 140;
+  static constexpr int kWordGapPx = 36;
+  static constexpr uint32_t kMostWaitMs = 800;
   // A word forward: its flight, then what it does once it lands, all
   // gone by kCallMs.
   static constexpr uint32_t kCallMs = 2500;

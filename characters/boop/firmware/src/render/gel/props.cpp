@@ -1,6 +1,7 @@
 #include "render/gel/painter.h"
 #include "render/gel/engine.h"
 #include "render/gel/raster.h"
+#include "render/gel/subpixel.h"
 namespace render::gel {
 namespace {
 // The cards, in thousandths of the surface: x, y, width, height, radius.
@@ -187,12 +188,15 @@ void paintProps(Surface& surface, const Engine& e) {
     int direction = s.helpersProp.direction;
     F hp = s.helpersProp.progress;
     bool returning = s.helpersProp.returning;
+    // They run in sixteenths of a pixel.
     for (int i = 0; i < s.helpersProp.count; ++i) {
-      int inner = 500 + direction * 170, outer = 500 + direction * (300 + i * 67),
-          xx = returning ? outer + ((inner - outer) * hp).integer() : inner + ((outer - inner) * hp).integer(),
-          yy = (direction < 0 ? 510 : 645) - (i % 2) * 32;
-      round(xx - 32, yy - 45, 68, 68, 25, rgb565(89, 169, 224));
-      for (int side : {-1, 1}) r.disk(x(xx + side * 11), y(yy - 5), 2, dark);
+      const int inner = 500 + direction * 170, outer = 500 + direction * (300 + i * 67),
+                xx = returning ? outer * 16 + ((inner - outer) * 16 * hp).integer()
+                               : inner * 16 + ((outer - inner) * 16 * hp).integer(),
+                yy = (direction < 0 ? 510 : 645) - (i % 2) * 32;
+      auto x16 = [&](int p16) { return w * p16 / 1000; };
+      round16(r, x16(xx - 32 * 16), y(yy - 45) * 16, x(68) * 16, y(68) * 16, x(25) * 16, rgb565(89, 169, 224));
+      for (int side : {-1, 1}) r.disk16(x16(xx + side * 11 * 16) + 8, y(yy - 5) * 16 + 8, 2 * 16 + 8, dark);
     }
     if (returning && s.helpersProp.report) {
       int xx = direction < 0 ? 130 : 775, yy = direction < 0 ? 545 : 699;
@@ -203,9 +207,9 @@ void paintProps(Surface& surface, const Engine& e) {
   r.alpha = 255;
   if (F listening = s.visible(Scenes::kListeningProp, now); listening > F(0)) {
     r.alpha = (listening * 255).integer();
-    int radius = 15 + (s.listeningPulse * 6).integer();
-    r.disk(x(500), y(144), radius, blue);
-    r.disk(x(500), y(144), radius - 2, 0);
+    // Its ring breathes in sixteenths of a pixel, two pixels wide, its
+    // outer edge 15.5 to 21.5 px out.
+    circle16(r, x(500) * 16 + 8, y(144) * 16 + 8, 15 * 16 - 8 + (s.listeningPulse * 96).integer(), 2 * 16, blue);
     round(492, 119, 16, 31, 8, light);
     r.line({x(500), y(153)}, {x(500), y(164)}, 2, blue);
     text("LISTENING", 500, 223, light);

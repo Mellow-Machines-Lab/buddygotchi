@@ -9,6 +9,8 @@
 //   tap(button)     a tap on the board, which it reacts to itself: a finger
 //                   on its screen, or BOOT pressed
 //   shown(on)       whether it's on screen: it draws only then, and runs either way
+//   zoom(on)        whether it frames the slime alone, for a tile too small
+//                   for the board's whole screen, or the whole screen
 //   snapshot(line)  a new board on a frozen clock in that `state`, drawn
 //                   once as a scenario's shot draws it; what it says it
 //                   shows (its dbg.state), for the app's snapshots to check
@@ -18,17 +20,50 @@
   // A new board shows its first `state` this long on a frozen clock, as a
   // scenario's shot waits, so it starts settled in it; then it runs.
   const SETTLE_MS = 1504;
-  // At most this many frames a second: the board draws up to 60, more
-  // than a tile shows. A refresh a little early still draws, so a 60 or
-  // 120 Hz display draws every second or fourth.
-  const FPS = 30, EARLY_MS = 4;
   // A finger in the canvas's 320×240, beside the nose (a boop on it is a
   // gesture), and BOOT, each held as long as a tap.
   const TAP = '{"t":"dbg.touch","x":80,"y":120,"ms":100}', PRESS = '{"t":"dbg.press","ms":100}';
+  // The slime on the board's 502×410 screen, in its pixels: a square
+  // around it as it rests (x 105–398, y 95–320), with most of the props
+  // beside it and the sign above it, and the lane under it (y 348) left
+  // out. What a small tile shows.
+  const SLIME = {x: 101, y: 44, w: 300, h: 300};
+  // A drawing scaled down more than this many times skips pixels and
+  // shimmers as the slime moves, so it's halved in steps until it isn't.
+  const MOST_SHRINK = 2;
 
   const canvas = document.getElementById('screen'), context = canvas.getContext('2d');
   const panel = document.createElement('canvas'), panelContext = panel.getContext('2d');  // the board's own pixels
-  let core, usb, image = null, state = null, powered = false, shown = false, still = false, loop = 0, drewAt = -Infinity;
+  const steps = [];  // the halved drawings, as many as a shrink needs
+  let core, usb, image = null, state = null, powered = false, shown = false, still = false, zoomed = false, loop = 0;
+
+  // The board's clock (its realMs reads performance.now). While the
+  // display's refreshes run its passes, it reads the latest refresh's
+  // time, not the moment something happens to run: the board draws once
+  // 16 ms have gone since its last frame (kFrameMs), and at 60 Hz a pass
+  // run a little earlier after one run a little late would read 15.9 and
+  // show the last frame again. A display refreshing more often than that
+  // (WebKit asks 72 times a second on a 144 Hz one) would have the board
+  // draw every other refresh, 36 a second, so there the refresh's time
+  // goes to the nearest 60th of a second, and the board draws 60, each
+  // within half a 60th of its refresh. With no pass in the last 50 ms
+  // (hidden, or the display stopped) it reads the time, and it never reads
+  // earlier than it has before.
+  const BOARD_FRAME_MS = 16, SIXTIETH = 1000 / 60, PASS_HOLDS_MS = 50;
+  const realNow = performance.now.bind(performance);
+  let pass = null, passAt = 0, read = 0, lastRefresh = null, between = SIXTIETH;
+  performance.now = () => {
+    const now = realNow();
+    return (read = Math.max(read, pass !== null && now - passAt < PASS_HOLDS_MS ? pass : now));
+  };
+
+  // The board's time for the refresh at `at`, by how often the display
+  // has been refreshing (a gap over 100 ms is a pause, not a refresh).
+  function boardTime(at) {
+    if (lastRefresh !== null && at - lastRefresh < 100) between = 0.8 * between + 0.2 * (at - lastRefresh);
+    lastRefresh = at;
+    return between >= BOARD_FRAME_MS ? at : Math.round(at / SIXTIETH) * SIXTIETH;
+  }
 
   const ready = BoopMirrorBoard().then(made => {
     core = made;
@@ -62,7 +97,8 @@
 
   // One pass of the board's loop, and the frame if it drew one: its
   // pixels where the board keeps them, with no copy, until its memory
-  // grows or the frame changes size.
+  // grows or the frame changes size. The board decides when it has a
+  // new frame, as it does on its own screen.
   function tick() {
     if (!core._mirror_tick()) return;
     const w = core._mirror_width(), h = core._mirror_height(), at = core._mirror_frame();
@@ -74,26 +110,50 @@
     paint();
   }
 
-  // The board's whole screen, as big as fits and centred: a tile of
-  // another shape has glass beside it, as black as the panel, and never
-  // loses any of the panel, its lane included.
+  // What the tile shows of the panel: the slime, zoomed, else the whole
+  // screen.
+  function source() {
+    if (!zoomed) return {x: 0, y: 0, w: panel.width, h: panel.height};
+    const x = Math.min(SLIME.x, panel.width - 1), y = Math.min(SLIME.y, panel.height - 1);
+    return {x, y, w: Math.min(SLIME.w, panel.width - x), h: Math.min(SLIME.h, panel.height - y)};
+  }
+
+  // The source as big as fits and centred: a tile of another shape has
+  // glass beside it, as black as the panel, and never loses any of it,
+  // the lane included when it's the whole screen. A large shrink goes in
+  // halves first.
   function paint() {
     const ratio = devicePixelRatio || 1;
     const w = Math.max(1, Math.round(canvas.clientWidth * ratio)), h = Math.max(1, Math.round(canvas.clientHeight * ratio));
     if (canvas.width !== w || canvas.height !== h) canvas.width = w, canvas.height = h;
     if (!image) return;
-    const fit = Math.min(w / panel.width, h / panel.height), dw = panel.width * fit, dh = panel.height * fit;
+    let from = panel, {x, y, w: sw, h: sh} = source();
+    const fit = Math.min(w / sw, h / sh), dw = sw * fit, dh = sh * fit;
+    for (let i = 0; sw / dw > MOST_SHRINK; i++) {
+      const half = steps[i] ??= document.createElement('canvas');
+      const hw = Math.max(1, Math.round(sw / 2)), hh = Math.max(1, Math.round(sh / 2));
+      if (half.width !== hw || half.height !== hh) half.width = hw, half.height = hh;
+      const halfContext = half.getContext('2d');
+      halfContext.imageSmoothingQuality = 'high';
+      halfContext.drawImage(from, x, y, sw, sh, 0, 0, hw, hh);
+      from = half, x = 0, y = 0, sw = hw, sh = hh;
+    }
     context.clearRect(0, 0, w, h);
     context.imageSmoothingQuality = 'high';
-    context.drawImage(panel, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    context.drawImage(from, x, y, sw, sh, (w - dw) / 2, (h - dh) / 2, dw, dh);
   }
   new ResizeObserver(paint).observe(canvas);
 
-  // Each display refresh while shown, a pass of the board's loop at FPS.
-  function frame(now) {
+  // Each display refresh while shown, a pass of the board's loop, which
+  // draws when it has a new frame.
+  function frame(at) {
     loop = 0;
-    if (!shown || still) return;
-    if (powered && now - drewAt >= 1000 / FPS - EARLY_MS) drewAt = now, tick();
+    if (!shown || still) {
+      pass = null;
+      return;
+    }
+    pass = boardTime(at), passAt = realNow();
+    if (powered) tick();
     loop = requestAnimationFrame(frame);
   }
 
@@ -117,9 +177,18 @@
       if (!powered) power(state);
       debug(button ? PRESS : TAP);
     },
+    // Shown again, it draws where the board is now at once, not the
+    // frame it last drew before it was hidden.
     shown(on) {
+      const was = shown;
       shown = Boolean(on);
+      if (shown && !was && powered && !still) tick();
       if (shown && !loop) loop = requestAnimationFrame(frame);
+    },
+    zoom(on) {
+      if (zoomed === Boolean(on)) return;
+      zoomed = Boolean(on);
+      paint();
     },
     async snapshot(line) {
       await ready;

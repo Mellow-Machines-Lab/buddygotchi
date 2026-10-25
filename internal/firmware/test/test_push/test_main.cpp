@@ -1,6 +1,6 @@
 // A native face's frames reach the panel. Two surfaces are
-// drawn alternately, each frame's push is planned from what either frame wrote
-// and from the lane's canvas changes, and each band is turned a quarter
+// drawn alternately, each frame's push is planned from what either frame
+// wrote, and each band is turned a quarter
 // into a panel window. A model panel takes every window the AMOLED would
 // send, through the same code (render/push.h), and must equal the frame
 // drawn after every frame.
@@ -90,13 +90,12 @@ struct Frames {
 };
 
 // A face's drawing, by its rules (render/surface.h): clear, then write only
-// inside spans it touches, then the lane, blitted whole.
+// inside spans it touches.
 void drawRect(Surface& s, int x0, int y0, int x1, int y1, uint16_t ink) {
   s.touch(x0, y0, x1, y1);
   for (int y = std::max(0, y0); y < std::min(s.height, y1); ++y)
     for (int x = std::max(0, x0); x < std::min(s.width, x1); ++x) s.pixels[size_t(y) * s.width + x] = ink;
 }
-const int kLane = render::kLaneTop * kH / render::kHeight;  // where the gel blits the lane
 
 }  // namespace
 
@@ -108,10 +107,10 @@ static void test_bands_turn_the_surface_a_quarter() {
   for (bool top : {true, false}) {
     Frames f;
     for (int i = 0; i < kW * kH; ++i) f.a[size_t(i)] = uint16_t(i * 2654435761u >> 16);
-    TEST_ASSERT_EQUAL_INT(0, f.pair.present(f.canvas).bands);  // nothing drawn yet: nothing to send
+    TEST_ASSERT_EQUAL_INT(0, f.pair.present().bands);  // nothing drawn yet: nothing to send
     f.pair.back().invalidate();
     f.pair.drew();
-    const PushPlan& plan = f.pair.present(f.canvas);
+    const PushPlan& plan = f.pair.present();
     TEST_ASSERT_TRUE(plan.full);
     TEST_ASSERT_EQUAL_INT(26, plan.bands);
     TEST_ASSERT_EQUAL_INT(10, plan.rows(25));
@@ -126,19 +125,17 @@ static void test_bands_turn_the_surface_a_quarter() {
 }
 
 // After the first frame, a frame sends only what it or the
-// frame on the panel wrote, rounded out to even columns, and the lane's
-// columns whose canvas changed; a test pattern or another whole-surface
-// write (on the panel or about to be), a frame without the lane, or the
-// lane moving sends the whole surface.
+// frame on the panel wrote, rounded out to even columns; a test pattern or
+// another whole-surface write, on the panel or about to be, sends the
+// whole surface.
 static void test_a_frame_sends_what_either_frame_wrote() {
   Frames f;
-  auto frame = [&](int x0, int y0, int x1, int y1, bool lane = true) {
+  auto frame = [&](int x0, int y0, int x1, int y1) {
     Surface& s = f.pair.back();
     s.clear();
     drawRect(s, x0, y0, x1, y1, 0xf800);
-    if (lane) render::blit(f.canvas, s, kLane);
     f.pair.drew();
-    return f.pair.present(f.canvas);
+    return f.pair.present();
   };
   TEST_ASSERT_TRUE(frame(200, 0, 240, 20).full);  // the first frame
   PushPlan p = frame(101, 50, 121, 60);           // into the other surface
@@ -151,93 +148,58 @@ static void test_a_frame_sends_what_either_frame_wrote() {
       TEST_ASSERT_EQUAL_INT(200, p.spans[b].x0);
       TEST_ASSERT_EQUAL_INT(240, p.spans[b].x1);
     } else {
-      TEST_ASSERT_TRUE(p.spans[b].empty());  // the lane didn't change
+      TEST_ASSERT_TRUE(p.spans[b].empty());
     }
   }
   p = frame(101, 50, 121, 60);  // the first surface again, its rectangle erased
   TEST_ASSERT_TRUE(p.spans[0].empty() && p.spans[1].empty());
   TEST_ASSERT_EQUAL_INT(100, p.spans[3].x0);
   TEST_ASSERT_EQUAL_UINT32(16 * 22, p.pixels());
-  // The lane: canvas columns 32–63 of rows 200–205 change, in canvas bands
-  // 33 and 34 (rows 198–209), which blit draws on surface rows 339–358
-  // (bands 21 and 22) and columns 51–100.
-  f.canvas.fillRect(40, 200, 8, 6, 7);
-  p = frame(101, 50, 121, 60);
-  TEST_ASSERT_FALSE(p.full);
-  for (int b : {21, 22}) {
-    TEST_ASSERT_EQUAL_INT(50, p.spans[b].x0);
-    TEST_ASSERT_EQUAL_INT(102, p.spans[b].x1);
-  }
-  TEST_ASSERT_TRUE(p.spans[20].empty() && p.spans[23].empty());
-  TEST_ASSERT_TRUE(frame(101, 50, 121, 60).spans[21].empty());  // and only once
   // A test pattern: the canvas, whole, past what drawing tracks.
-  f.pair.back().invalidate();
-  render::blit(f.canvas, f.pair.back(), 0);
+  render::blit(f.canvas, f.pair.back());
   f.pair.drew();
-  TEST_ASSERT_TRUE(f.pair.present(f.canvas).full);
-  TEST_ASSERT_TRUE(frame(101, 50, 121, 60).full);         // the panel shows the pattern
-  TEST_ASSERT_FALSE(frame(101, 50, 121, 60).full);        // the pattern's surface, cleared whole
-  TEST_ASSERT_TRUE(frame(101, 50, 121, 60, false).full);  // no lane
-  TEST_ASSERT_TRUE(frame(101, 50, 121, 60).full);         // the lane back
-  TEST_ASSERT_FALSE(frame(101, 50, 121, 60).full);
-  // A whole-surface write that keeps the lane where it was.
+  TEST_ASSERT_TRUE(f.pair.present().full);
+  TEST_ASSERT_TRUE(frame(101, 50, 121, 60).full);   // the panel shows the pattern
+  TEST_ASSERT_FALSE(frame(101, 50, 121, 60).full);  // the pattern's surface, cleared whole
+  // Another whole-surface write.
   f.pair.back().invalidate();
-  std::fill(f.pair.back().pixels, f.pair.back().pixels + kW * kLane, uint16_t(0x07e0));
-  render::blit(f.canvas, f.pair.back(), kLane);
+  std::fill(f.pair.back().pixels, f.pair.back().pixels + kW * kH, uint16_t(0x07e0));
   f.pair.drew();
-  TEST_ASSERT_TRUE(f.pair.present(f.canvas).full);
+  TEST_ASSERT_TRUE(f.pair.present().full);
   TEST_ASSERT_TRUE(frame(101, 50, 121, 60).full);  // the panel shows it
   TEST_ASSERT_FALSE(frame(101, 50, 121, 60).full);
-  // A face with no lane at all: its first frame goes whole too.
-  Frames bare;
-  for (bool first : {true, false}) {
-    Surface& s = bare.pair.back();
-    s.clear();
-    drawRect(s, 10, 10, 20, 20, 0x001f);
-    bare.pair.drew();
-    TEST_ASSERT_EQUAL(first, bare.pair.present(bare.canvas).full);
-  }
 }
 
 // Whatever is drawn, in whatever order, the panel ends up
-// showing every frame exactly: random rectangles in random inks, the
-// lane's canvas changing, test patterns and other whole-surface writes,
-// frames without the lane, two frames drawn before one is sent, and
-// presents with nothing new.
+// showing every frame exactly: random rectangles in random inks, test
+// patterns and other whole-surface writes, two frames drawn before one is
+// sent, and presents with nothing new.
 static void test_random_frames_always_reach_the_panel() {
   std::mt19937 rng(20261005);
   auto pick = [&](int lo, int hi) { return int(rng() % uint32_t(hi - lo + 1)) + lo; };
   for (bool top : {true, false}) {
     Frames f;
     ModelPanel panel(kW, kH, top);
-    bool laneless = false;  // a stretch of frames that skip the lane
     for (int n = 0; n < 1000; ++n) {
-      if (pick(0, 24) == 0) laneless = !laneless;
       const int draws = pick(0, 9) == 0 ? 2 : pick(0, 19) == 0 ? 0 : 1;
       for (int d = 0; d < draws; ++d) {
         Surface& s = f.pair.back();
         if (pick(0, 29) == 0) {  // the test pattern
           f.canvas.fill(uint8_t(pick(0, 255)));
+          render::blit(f.canvas, s);
+        } else if (pick(0, 29) == 0) {  // another whole-surface write
           s.invalidate();
-          render::blit(f.canvas, s, 0);
-        } else if (pick(0, 29) == 0) {  // another whole-surface write, the lane kept
-          s.invalidate();
-          std::fill(s.pixels, s.pixels + kW * kLane, uint16_t(rng()));
-          render::blit(f.canvas, s, kLane);
+          std::fill(s.pixels, s.pixels + kW * kH, uint16_t(rng()));
         } else {
           s.clear();
           for (int r = pick(0, 6); r > 0; --r) {
-            const int x = pick(-20, kW), y = pick(-20, kLane), w = pick(1, 160), h = pick(1, 120);
-            drawRect(s, x, y, x + w, std::min(y + h, kLane), uint16_t(rng()));
+            const int x = pick(-20, kW), y = pick(-20, kH), w = pick(1, 160), h = pick(1, 120);
+            drawRect(s, x, y, x + w, y + h, uint16_t(rng()));
           }
-          if (pick(0, 3) == 0)
-            f.canvas.fillRect(pick(0, 300), pick(150, 235), pick(1, 40), pick(1, 20), uint8_t(rng()));
-          if (pick(0, 7) == 0) f.canvas.fill(uint8_t(rng()));
-          if (!laneless) render::blit(f.canvas, s, kLane);
         }
         f.pair.drew();
       }
-      const PushPlan plan = f.pair.present(f.canvas);
+      const PushPlan plan = f.pair.present();
       panel.send(f.pair.front(), plan);
       const std::string miss = panel.differs(f.pair.front());
       if (!miss.empty()) TEST_FAIL_MESSAGE(("frame " + std::to_string(n) + ": the panel misses " + miss).c_str());
@@ -294,7 +256,7 @@ struct Tally {
 // the panel and checks the panel shows it. False if it drew none.
 bool presentAndCheck(Rig& r, ModelPanel& panel, Tally& tally, const std::string& after) {
   if (!r.dev.takeFrame()) return false;
-  const PushPlan plan = r.dev.frames()->present(r.dev.canvas());
+  const PushPlan plan = r.dev.frames()->present();
   const Surface& shown = r.dev.frames()->front();
   TEST_ASSERT_EQUAL_PTR(r.dev.surface(), &shown);
   if (!plan.full) {

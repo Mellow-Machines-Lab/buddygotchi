@@ -72,6 +72,8 @@ int wave(int ms, int period, int amp) {
   const int p = ms % period;
   return (p < period / 2 ? p : period - p) * 2 * amp / period;
 }
+// The same, in sixteenths of a pixel.
+int wave16(int ms, int period, int amp) { return wave(ms, period, amp * 16); }
 
 // A long sleeping cap in striped flannel: up from a soft cuff, over the
 // crown and flopping down its left side, its tassel hanging by its cheek
@@ -258,12 +260,18 @@ int spread(int i, int salt, int range) {
   return int(((uint32_t(i) + 1) * 2654435761u ^ uint32_t(salt) * 40503u) % uint32_t(range));
 }
 
+// How far something falling at `speed` px/s has gone by `ms`, from
+// `start`, wrapped at `range`: in sixteenths of a pixel, so a slow flake
+// drifts smoothly rather than stepping a whole pixel every other frame.
+int fallen16(int start, int speed, int ms, int range) {
+  return int((int64_t(start) * 16 + int64_t(ms) * speed * 16 / 1000) % (int64_t(range) * 16));
+}
+
 void snow(Raster& r, int w, int bottom, int ms) {
   r.alpha = 220;
   for (int i = 0; i < 22; ++i) {
-    const int speed = 20 + spread(i, 1, 18),
-              y = (spread(i, 2, bottom) + ms / 1000 * speed + ms % 1000 * speed / 1000) % bottom;
-    r.disk(spread(i, 3, w) + wave(ms + i * 370, 3000, 8), y, 3 + i % 2, kCream);
+    const int speed = 20 + spread(i, 1, 18), y16 = fallen16(spread(i, 2, bottom), speed, ms, bottom);
+    r.disk16(spread(i, 3, w) * 16 + wave16(ms + i * 370, 3000, 8) + 8, y16 + 8, (3 + i % 2) * 16 + 8, kCream);
   }
   r.alpha = 255;
 }
@@ -278,34 +286,39 @@ void confetti(Raster& r, int w, int bottom, int ms) {
   }
 }
 
-void heart(Raster& r, int x, int y, int s, uint16_t ink) {  // whole pixels, `s` its half-width
-  r.disk(x - s / 2, y, s / 2, ink);
-  r.disk(x + s / 2, y, s / 2, ink);
-  const Point v[] = {{x - s, y + 1}, {x + s, y + 1}, {x, y + s + s / 2}};
-  r.polygon(v, 3, ink);
+// A heart about (x16, y16), sixteenths of a pixel, `s` whole pixels its
+// half-width.
+void heart(Raster& r, int x16, int y16, int s, uint16_t ink) {
+  const int half = s / 2 * 16, lobe = std::max(1, s / 2) * 16 + 8;
+  r.disk16(x16 - half + 8, y16 + 8, lobe, ink);
+  r.disk16(x16 + half + 8, y16 + 8, lobe, ink);
+  const Point v[] = {{x16 - s * 16 + 8, y16 + 24}, {x16 + s * 16 + 8, y16 + 24}, {x16 + 8, y16 + (s + s / 2) * 16 + 8}};
+  r.polygon16(v, 3, ink);
 }
 
 // Hearts floating up either side of it.
 void hearts(Raster& r, int w, int bottom, int ms) {
   for (int i = 0; i < 6; ++i) {
     const int speed = 25 + spread(i, 7, 15);
-    const int y = bottom - 12 - (spread(i, 8, bottom) + ms / 1000 * speed + ms % 1000 * speed / 1000) % (bottom - 12);
+    const int y16 = (bottom - 12) * 16 - fallen16(spread(i, 8, bottom), speed, ms, bottom - 12);
     const int x = i % 2 ? w - 30 - spread(i, 9, w / 5) : 30 + spread(i, 9, w / 5);
-    r.alpha = std::min(255, y * 3);
-    heart(r, x + wave(ms + i * 500, 2400, 8), y, 7 + i % 3 * 2, i % 2 ? rgb565(240, 110, 150) : rgb565(220, 50, 80));
+    r.alpha = std::min(255, y16 * 3 / 16);
+    heart(r, x * 16 + wave16(ms + i * 500, 2400, 8), y16, 7 + i % 3 * 2,
+          i % 2 ? rgb565(240, 110, 150) : rgb565(220, 50, 80));
   }
   r.alpha = 255;
 }
 
 // Zs drifting up and right from beside its head, each for 2.4 s, a new
-// one every 0.8 s, growing and fading as they go.
+// one every 0.8 s, growing from 7 to 16 px tall by sixteenths of a pixel,
+// fading in over its first 200 ms and out to nothing by its last, so none
+// pops in or off.
 void zs(Raster& r, const rig::Anchors& at, int ms) {
-  const Font* fonts[] = {&kSmall, &kLarge, &kSign};
   for (int i = 0; i < 3; ++i) {
-    const int age = (ms + i * 800) % 2400, f = age * 3 / 2400;
-    const int x = at.brimR.x / 16 + 24 + age / 40, y = at.brimR.y / 16 - age / 20;
-    r.alpha = 255 - age * 200 / 2400;
-    text(r, *fonts[f], x, y - fonts[f]->h, "z", kCream);
+    const int age = (ms + i * 800) % 2400;
+    r.alpha = std::min(age * 255 / 200, 255 - age * 255 / 2400);
+    r.zee(at.brimR.x + 25 * 16 + age * 16 / 40, at.brimR.y - 5 * 16 - age * 16 / 20 - age * 5 * 16 / 2400,
+          7 * 16 + age * 9 * 16 / 2400, kCream);
   }
   r.alpha = 255;
 }
@@ -546,16 +559,19 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
                       t - kept.movedAt < OutfitLayer::kStillMs;
   kept.engine = &e, kept.ms = t;
   std::copy(now, now + n, kept.last);
-  // How far the body has moved it since it was kept, to the nearest pixel,
-  // by the anchor it rides, and the most any is off once it's moved that far.
+  // How far the body has moved it since it was kept, in sixteenths, by the
+  // anchor it rides, and the most any other is off once it's moved that
+  // far: how far its shape has changed. Still, it's drawn afresh unless it
+  // moved whole pixels and kept its shape.
   int ox = 0, oy = 0, off = INT_MAX;
   if (kept.valid && kept.look == look) {
-    ox = floor16(now[0].x - kept.at[0].x + 8), oy = floor16(now[0].y - kept.at[0].y + 8);
+    ox = now[0].x - kept.at[0].x, oy = now[0].y - kept.at[0].y;
     off = 0;
     for (int i = 0; i < n; ++i)
-      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy * 16)});
+      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox), std::abs(now[i].y - kept.at[i].y - oy)});
   }
-  if (off != 0 && !(moving && off <= OutfitLayer::kSlack)) {
+  const bool whole = off == 0 && ox % 16 == 0 && oy % 16 == 0;
+  if (!whole && !(moving && off <= OutfitLayer::kSlack)) {
     // Kept in a frame as wide as the surface and taller, the anchor it rides
     // a whole number of pixels from its middle, as far into its pixel as it
     // is.
@@ -571,7 +587,7 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
     kept.look = look, kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
     std::copy(now, now + n, kept.at);
   }
-  r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
+  r.replay16(kept.shapes, kept.dx * 16 + ox, kept.dy * 16 + oy);
 }
 
 // The worn and hat layers' contents for a look, and the look a pair of

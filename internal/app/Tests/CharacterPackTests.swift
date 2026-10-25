@@ -21,14 +21,15 @@ final class CharacterPackTests: XCTestCase {
 
     /// CHARACTER.md §5, §9: every mood has a face's wording (its meaning
     /// when it has none), an option for the mood question, and designs on
-    /// the pixel face, which draws all of them.
+    /// the pixel face, which draws all of them (the Pixel pack's
+    /// mac/faces.json names the moods its faces.h does).
     func testEveryMoodHasAFaceAndDesigns() throws {
         XCTAssertEqual(ReactOutput.expressions.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
-        XCTAssertEqual(Set(FaceLoops.moods), Set(CharacterPack.universalMoods))
-        for mood in MoodGraph.moods {
-            XCTAssertEqual(FaceLoops.designs[mood]?.count, FaceLoops.states.count, mood)
-        }
+        let data = try Data(contentsOf: Self.repo.appendingPathComponent("characters/pixel/mac/faces.json"))
+        let faces = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let moods = try XCTUnwrap(faces["moods"] as? [String])
+        XCTAssertEqual(Set(moods), Set(CharacterPack.universalMoods))
     }
 
     /// The popover's still face (the pack's mac/faces.json) cross-fades

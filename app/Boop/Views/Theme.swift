@@ -227,21 +227,95 @@ extension View {
 struct StateDot: View {
     var tone: Color
     var pulsing = false
-    @ViewState private var up = false
     @Environment(\.stillMotion) private var still
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let live = pulsing && !still && !reduceMotion
         Circle()
             .fill(tone)
             .frame(width: 7, height: 7)
-            .overlay(Circle().fill(tone).scaleEffect(up ? 2.2 : 1).opacity(up ? 0 : 0.35))
-            .animation(live ? .easeOut(duration: 1.6).repeatForever(autoreverses: false) : .default, value: up)
-            .onAppear { up = live }
-            .onChange(of: live) { _, live in up = live }
+            .overlay(PulseRing(tone: tone, live: pulsing && !still && !reduceMotion).frame(width: 16, height: 16))
             .accessibilityHidden(true)
     }
+}
+
+/// The ring a breathing dot sends out: 2.2 times the dot and gone in 1.6 s,
+/// easing out, again and again. Core Animation runs it in the window
+/// server, since a SwiftUI animation that repeats forever lays out and
+/// draws the whole popover again on every frame of the display.
+private struct PulseRing: NSViewRepresentable {
+    var tone: Color
+    var live: Bool
+
+    func makeNSView(context: Context) -> PulseRingView { PulseRingView() }
+    func updateNSView(_ view: PulseRingView, context: Context) { view.set(NSColor(tone), live: live) }
+}
+
+final class PulseRingView: NSView {
+    static let spread: CGFloat = 2.2, seconds = 1.6, opacity: Float = 0.35
+    let ring = CALayer()
+    private var colour = NSColor.clear
+    private(set) var live = false
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.masksToBounds = false
+        ring.opacity = 0
+        layer?.addSublayer(ring)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not from a nib") }
+
+    /// The dot's 7 pt, in the middle.
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        ring.bounds = CGRect(x: 0, y: 0, width: 7, height: 7)
+        ring.cornerRadius = 3.5
+        ring.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        CATransaction.commit()
+    }
+
+    func set(_ colour: NSColor, live: Bool) {
+        self.colour = colour
+        paint()
+        guard live != self.live else { return }
+        self.live = live
+        guard live else {
+            ring.removeAnimation(forKey: "breath")
+            return
+        }
+        let grow = CABasicAnimation(keyPath: "transform.scale")
+        grow.fromValue = 1
+        grow.toValue = Self.spread
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = Self.opacity
+        fade.toValue = 0
+        let breath = CAAnimationGroup()
+        breath.animations = [grow, fade]
+        breath.duration = Self.seconds
+        breath.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        breath.repeatCount = .infinity
+        breath.isRemovedOnCompletion = false
+        ring.add(breath, forKey: "breath")
+    }
+
+    /// The tone as this appearance has it: the inks change with it.
+    private func paint() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance { ring.backgroundColor = colour.cgColor }
+        CATransaction.commit()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        paint()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 /// The status word in its tone, on a wash of the same hue.
@@ -370,6 +444,56 @@ struct SwitchStyle: ToggleStyle {
     }
 }
 
+/// A slider in whole steps from 0 to `most`, drawn here for the reason the
+/// switch is: the system's draws grey in the popover's inactive window,
+/// and its tick under every step crowds a short track. A groove filled in
+/// ink up to a white knob, which glides from step to step.
+struct StepSlider: View {
+    @Binding var value: Int
+    let most: Int
+    @ViewState private var hovering = false
+    @ViewState private var dragging = false
+    @Environment(\.isEnabled) private var enabled
+    static let knob: CGFloat = 14, groove: CGFloat = 4
+
+    var body: some View {
+        GeometryReader { geo in
+            let run = max(1, geo.size.width - Self.knob)
+            let x = run * CGFloat(min(max(value, 0), most)) / CGFloat(max(most, 1))
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.hairlineStrong).frame(height: Self.groove)
+                Capsule().fill(Theme.ink).frame(width: x + Self.knob / 2, height: Self.groove)
+                Circle().fill(.white)
+                    .overlay(Circle().strokeBorder(.black.opacity(0.08), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.22), radius: 1.5, y: 0.5)
+                    .frame(width: Self.knob, height: Self.knob)
+                    .scaleEffect(dragging ? 1.12 : hovering ? 1.06 : 1)
+                    .offset(x: x)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { drag in
+                    dragging = true
+                    let step = Int(((drag.location.x - Self.knob / 2) / run * CGFloat(most)).rounded())
+                    let next = min(max(step, 0), most)
+                    if next != value { value = next }
+                }
+                .onEnded { _ in dragging = false })
+            .animation(.boopSettle, value: value)
+            .animation(.boopSettle, value: dragging)
+            .animation(.boopSettle, value: hovering)
+        }
+        .frame(height: Self.knob + 4)
+        .opacity(enabled ? 1 : 0.4)
+        .onHover { hovering = $0 }
+        // VoiceOver and the keyboard's arrows take it as the slider it is.
+        .accessibilityRepresentation {
+            Slider(value: Binding(get: { Double(value) }, set: { value = Int($0.rounded()) }), in: 0...Double(most), step: 1)
+        }
+    }
+}
+
 extension ToggleStyle where Self == SwitchStyle {
     /// The popover's switch, about the system's mini one.
     static var boop: SwitchStyle { SwitchStyle(height: 16) }
@@ -379,10 +503,6 @@ extension ToggleStyle where Self == SwitchStyle {
 
 extension ButtonStyle where Self == QuietButtonStyle {
     static var quiet: QuietButtonStyle { QuietButtonStyle() }
-}
-
-extension ButtonStyle where Self == ProminentButtonStyle {
-    static var prominent: ProminentButtonStyle { ProminentButtonStyle() }
 }
 
 extension ButtonStyle where Self == RowButtonStyle {

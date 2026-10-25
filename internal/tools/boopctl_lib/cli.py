@@ -254,17 +254,25 @@ def frame_us(sample: dict, overlapped: bool) -> int:
 
 
 # perf --scenes (internal/VERIFICATION.md §8): each scene's state, the
-# request it repeats every 2 s (None for none: a `do`, or a BOOT tap for
-# a poke), and the frames a second its slowest second must reach (None:
-# reported only). A detailed expression and needs you
-# may draw a little slower than working.
+# message it repeats every 2 s (None for none: a `do`, or a BOOT tap for
+# a poke; a list, each in turn), and the frames a second its slowest
+# second must reach (None: reported only). A detailed expression and needs
+# you may draw a little slower than working. A state's `calls` count two
+# more each time it's sent, so the work stream's words keep falling.
 WORKING = {"t": "state", "base": "working", "act": "terminal", "mood": "happy", "busy": 1}
+STREAM = {**WORKING, "busy": 2, "todo": {"done": 3, "total": 7}, "calls": [[0, 0, "grep"], [1, 0, "edit +18"]]}
+STREAM_CALLS = [do("call", a=i % 2, w=word, **{"as": gag})
+                for i, (word, gag) in enumerate([("make", "bonk"), ("deploy", "launch"), ("task", "helper"),
+                                                 ("test", "pass"), ("read", "look"), ("done", "gather")])]
 PERF_SCENES = [
     ("working", WORKING, None, 30),
+    ("stream", STREAM, STREAM_CALLS, None),
     ("attention", {**WORKING, "attn": {"id": 5000, "agent": "codex", "project": "perf"}}, None, 28),
     ("pokes", WORKING, {"t": "dbg.press", "ms": 100}, None),
     ("frightened", {**WORKING, "mood": "frightened"}, None, 28),
     ("asleep", {"t": "state", "base": "asleep", "mood": "happy"}, None, None),
+    # At night: the sky, the nightcap and pyjamas on the breathing body, the Zs.
+    ("night", {"t": "state", "base": "asleep", "mood": "happy", "when": ["night"]}, None, None),
 ]
 # Its other budgets: no frame over this long in working, and this much
 # internal heap left at the least.
@@ -307,12 +315,22 @@ def perf_scenes(args: argparse.Namespace) -> int:
             samples: list[dict[str, float]] = []
             start = time.monotonic()
             next_state = next_do = next_line = 0.0
+            sends = repeats = 0
             while (elapsed := time.monotonic() - start) < args.seconds:
                 if elapsed >= next_state:
-                    dev.send({**state, "vol": vol})
+                    sent = {**state, "vol": vol}
+                    if "calls" in state:
+                        sent["calls"] = [[slot, count + 2 * sends, word] for slot, count, word in state["calls"]]
+                    dev.send(sent)
+                    sends += 1
                     next_state += 2  # as the Mac repeats it
                 if repeat and elapsed >= next_do:
-                    dev.request(repeat)
+                    message = repeat[repeats % len(repeat)] if isinstance(repeat, list) else repeat
+                    if message["t"] == "do":
+                        dev.send(message)
+                    else:
+                        dev.request(message)
+                    repeats += 1
                     next_do += 2
                 if say and "attn" not in state and elapsed >= next_line:
                     dev.send(do("react", say={"take": say}))

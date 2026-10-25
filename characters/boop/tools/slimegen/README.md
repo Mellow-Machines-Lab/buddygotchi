@@ -1,6 +1,6 @@
 # Slime asset generator
 
-Updated 2026-10-24.
+Updated 2026-10-25.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
@@ -17,7 +17,7 @@ is as code, the one source of each:
 | `scenes.mjs` | Every state's scene recipes, by mood and take (their contacts, timed in ms, leans and labels), the gestures' and occasions' recipes and gags, the notice's recipe, timed by the pack's rig clip for it (`rig/clips/notice.json`), and each expression's traits | `slime.h`'s recipes, gags and occasions (`recipes.mjs`, `catalog.mjs`) |
 | `face.mjs` | Each expression's face as the board's controls: where its eyes and mouth sit, and the sizes its art draws them at | `slime.h`'s profiles |
 | `painter.mjs` | Each expression's art at rest, as Canvas calls | `slime_art.h`: vector paths, and each art's groups' shapes (`art.mjs`) |
-| `mesh.mjs` | The dome and its studio material, from equations | `slime_mesh.h`: a mesh and a dense material lookup |
+| `mesh.mjs` | The dome and its studio material, from equations | `slime_mesh.h`: a mesh and a dense material lookup, 1025 × 513 texels (under a pixel each across the dome; the AMOLED reads a copy in PSRAM) |
 | `moods.mjs` | The moods to read | the design's `MOODS.md` |
 
 The design's `emotion-graph.json` is the source for Boop's moods

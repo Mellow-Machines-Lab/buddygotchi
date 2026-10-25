@@ -86,6 +86,11 @@ class Face {
   // Draws into the board's native RGB565 surface (Device allocates it, at
   // the panel's size) rather than the 8-bit canvas alone.
   virtual bool drawsNative() const { return false; }
+  // Read-only data it draws from often, which the board may copy where
+  // it's quicker to read (Hal::quickerCopy) and hand back: the face then
+  // reads the copy, the same bytes.
+  virtual const void* assets(size_t& bytes) const { return bytes = 0, nullptr; }
+  virtual void readAssetsFrom(const void* copy) { (void)copy; }
   // The clips its cues name (voice/clips.h).
   virtual const voice::EffectClips& clips() const = 0;
 

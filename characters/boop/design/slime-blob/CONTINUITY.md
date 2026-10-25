@@ -20,7 +20,16 @@ The board draws the dome from a mesh slimegen samples once (`mesh.mjs`,
 into `slime_mesh.h`): its vertices and a dense lookup of the blue
 translucent gel's studio lighting, rim and bloom. Every frame
 `gel/painter.cpp` deforms and projects the mesh by the body's pose and
-rasterizes it, and `gel/art.cpp` draws the face's art (slimegen's
+rasterizes it, erasing the last frame's pixels a band of rows at a time
+just before drawing the body there. It fills the triangles facing the
+camera by pixel centre, and its outline, the edges between those and the
+ones turned away, has a soft fringe a pixel wide beyond it, each fringe
+meeting the next where the outline bends: so as the mesh turns and a
+sliver of a triangle on the outline turns toward the camera or away, the
+outline doesn't jump; on the AMOLED the board's other core
+does the lower rows meanwhile (`render/helper.h`), each row whole on one
+core in the same order, so the frame is pixel for pixel one core's
+(test_gel's `test_a_helper_draws_the_same_body`). `gel/art.cpp` draws the face's art (slimegen's
 `painter.mjs`, baked as vector paths into `slime_art.h`) on the body, moved
 and sized by the face's controls. There is no inner jellyfish cap or model
 asset. The face rides the body: it never slides on its own during a grab
@@ -726,7 +735,12 @@ nightcap in, while the sky and the pyjamas fade in at once), each on its own, so
 asleep on a winter night brings the Zs while the nightcap, the pyjamas
 and the snow stay. The
 sign fades out over 200 ms once it's down, at the opacity Behaviour
-gives it. The layers read the engine and never change it.
+gives it. The layers read the engine and never change it. What's worn
+is kept drawn and blended again each frame, moved to the sixteenth of a
+pixel with the anchor it rides (`OutfitLayer::kSlack`), so a hat glides
+with the body rather than stepping a pixel at a time; the Zs, drawn with
+one rounded pen (`Raster::zee`), grow from 7 to 16 px as they drift, fading
+in over their first 200 ms and out to nothing by their last.
 
 ### The work stream (the board's)
 
@@ -738,8 +752,12 @@ tell the agents apart, and the screen has no room to say whose is whose.
 Lanes sit clear of the head and its hat (`render::laneX`: one lane on the
 left, two either side, three or four along both sides). A word falls, in
 the large font at most 43% opaque, for each new call a `state` counts
-(at most two a `state`, eight at once), easing in over 200 ms and out
-over its last 600 ms of 3.2 s. They're drawn after the body, onto the
+(at most two a `state`, eight at once; each a line behind its lane's
+last, `kWordGapPx`, and never faster, so they never overlap, and none
+that would wait over `kMostWaitMs` for that), easing in over 200 ms and out
+over its last 600 ms of 3.2 s, in sixteenths of a pixel, so it glides
+rather than steps (`render::gel::text16`; what moves in front, the word
+forward, the little ones, the listening ring and the helpers, does too). They're drawn after the body, onto the
 background's black only, so the body, its props and what it wears cover
 them, and a word hidden behind it costs nothing to draw, clear or push.
 On the desk, while the Mac sends lanes: the to-do list's progress along
@@ -902,10 +920,12 @@ features a shape (`slime_art.h`'s `ArtRange::shape`, from their paths'
 point counts, fill or stroke and colour); where layers draw a feature in
 the same shape, it is drawn once, its points, pen widths and opacities
 averaged by weight, at their summed weight: two bean eyes ease into each
-other, a closed arc eases into a droop. Different shapes cross-fade, each
-at its weight, the newer over the older, so the eyes' and the mouth's
-opacity, summed over the arts, stays one: a ring of a mouth gives way to an
-open U. The cheeks and tears are drawn at their opacity controls. (While
+other, a closed arc eases into a droop. Different shapes cross-fade: each
+look is laid over the body alone and the looks blended by their weights
+(`raster.h`'s `CrossFade`), so the eyes' and the mouth's opacity, summed
+over the arts, stays one, and where two looks both ink a pixel none of the
+body shows through (drawn one over the other at half each, a quarter
+would): a ring of a mouth gives way to an open U. The cheeks and tears are drawn at their opacity controls. (While
 the JavaScript reference drew the face, it compared each feature's
 recorded drawing instead, and the two rules disagreed on 80 of the 4,730
 pairs of arts' features; the board's is the one rule now.)

@@ -14,9 +14,7 @@ read off the tags (characters/pixel/design/README.md), plus the frames the firmw
 test checks the device's player against (the pack's
 tests/firmware/test_scene/frames.h), and the Pixel
 pack's characters/pixel/mac/faces.json (characters/CHARACTER.md §9): the
-faces the Mac's popover shows, and each design's loop length and host fact
-for the Mac, which faces.h has too, so both sides time a moment's loops
-alike.
+moods it draws and the faces the Mac's popover shows.
 
 The bank draws 13 moods; a pack has every universal mood (its
 character.json's). Until the rest have art, each wears one of the 13's
@@ -1163,37 +1161,17 @@ def tile_faces(scenes: list[Scene], table: dict[tuple[int, int, int], int]):
     return (x0, y0, x1 - x0, y1 - y0), colors, faces
 
 
-def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int],
-                    meta: dict[tuple[int, int, int], tuple[int, int, int, int, int]], counts: dict[tuple[int, int], int]) -> str:
+def emit_faces_json(scenes: list[Scene], table: dict[tuple[int, int, int], int]) -> str:
     """The Pixel pack's mac/faces.json (characters/CHARACTER.md §9): what
-    the Mac needs of the pixel face. The popover's still faces (`box`,
-    `colors`, `faces`), and each mood, state and variation's loop length,
-    voice window and host fact (`designs`): the numbers faces.h and sfx.h
-    give the device."""
+    the Mac needs of the pixel face. The moods it draws (`moods`, faces.h's
+    names) and the popover's still faces (`box`, `colors`, `faces`)."""
     box, colors, drawn = tile_faces(scenes, table)
     # Each mood's tiles are its drawn mood's; asleep is happy's alone.
     faces = {f"{name}/{key.split('/')[1]}": drawn[key] for name in NAMES for key in drawn
              if key.split("/")[0] == WEARS[name] and not key.endswith("/asleep")}
     faces["happy/asleep"] = drawn["happy/asleep"]
-
-    def design(m: int, st: int, v: int) -> dict:
-        o, c, w, when, after = meta[(m, st, v)]
-        d = {"ms": scenes[table[(m, st, v)]].loop_ms(), "voice_ms": w}
-        if o:
-            d["outcome"] = OUTCOMES[o]
-        if c:
-            d["ctx"] = CTXS[c]
-        if when:
-            d["when"] = [t for i, t in enumerate(TAGS) if when >> i & 1]
-        if after:
-            d["after"] = after
-        return d
-
     data = {
         "moods": NAMES,
-        "states": STATES,
-        "designs": {name: [[design(m, st, v) for v in range(counts[(m, st)])] for st in range(len(STATES))]
-                    for name in NAMES for m in [MOODS.index(WEARS[name])]},
         "box": list(box),
         "colors": colors,
         "faces": {k: {"open": o, "shut": s} for k, (o, s) in faces.items()},
@@ -1598,7 +1576,7 @@ def main() -> None:
     assert len(seen) == len(scenes), "every scene, at its own design"
     OUT.write_text(emit(scenes, table, meta, sources, counts, cut_parts(rests), faces))
     FACES_JSON.parent.mkdir(parents=True, exist_ok=True)
-    FACES_JSON.write_text(emit_faces_json(scenes, table, meta, counts))
+    FACES_JSON.write_text(emit_faces_json(scenes, table))
     FRAMES.parent.mkdir(parents=True, exist_ok=True)
     FRAMES.write_text(emit_frames(frames))
     print(f"wrote {OUT.relative_to(REPO)} ({len(table)} designs, {len(scenes)} scenes), "

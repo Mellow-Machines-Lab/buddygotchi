@@ -130,7 +130,7 @@ static void test_variations_and_shared_designs() {
 
 // A finish's variations are each for a result, and a start's
 // for a context; the filters pick among those that fit, and every variation
-// when none does, as the Mac's FaceLoops.variants does.
+// when none does.
 static void test_variations_for_a_result_or_a_context() {
   uint8_t out[kMaxVariants];
   for (int m = 0; m < pixelMoods(); ++m) {

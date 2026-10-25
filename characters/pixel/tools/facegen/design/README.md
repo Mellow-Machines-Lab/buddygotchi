@@ -7,7 +7,7 @@ its generator makes every design's SVG, and `facegen` turns them into
 mood's first idle at rest, and where that face sits in each design that draws it,
 both read off the tags the bank puts on the resting face's parts:
 [the package guide](../../../design/README.md), The resting face's tags),
-the popover's tiles and the Mac's loop lengths.
+and the popover's tiles.
 Nothing here is drawn
 by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
 `../build/` (ignored) each time.
@@ -18,11 +18,11 @@ by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
   for (`outcome`, success or failure, for task_complete; `ctx`, new_task,
   session or continuation, for starting), its voice window (`voiceMs`,
   when a line that comes with its animation starts, which `sfxgen` puts in
-  `sfx.h` and `facegen` in the Mac's `FaceLoops`), and its SVG dialect
+  `sfx.h`), and its SVG dialect
   (`v2`, the first pack's; `v3`, the older moods' newer states; `v4`, the
   new moods' flip-books, and every mood's wake_up and comedy).
 
-13 moods × 23 states, 876 designs. The older seven moods keep the first
+13 moods × 25 states, 1214 designs. The older seven moods keep the first
 pack's designs byte for byte (the bank's `qa/v3-fingerprints.json`, which
 `facegen` checks) and have one or two of most newer states, with one start for each of the
 four contexts, the last (compacted) added after the capture; the six new

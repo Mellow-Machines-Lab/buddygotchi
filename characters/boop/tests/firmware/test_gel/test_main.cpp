@@ -5,9 +5,11 @@
 #include <memory>
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 #include <set>
 #include <string>
 #include "render/gel/painter.h"
+#include "render/helper.h"
 #include "render/gel/geometry.h"
 #include "render/gel/face.h"
 #include "render/pixel/anim.h"
@@ -76,6 +78,64 @@ static void test_frame_replay_is_byte_identical() {
   e->face.scaled[2] = e->face.scaled[2] * q(.8);  // the eyes drawn less open
   paint(sb, *e);
   TEST_ASSERT_NOT_EQUAL(0, std::memcmp(a.data(), b.data(), sa.bytes()));
+}
+// The AMOLED's other core draws the body's lower rows (render/helper.h):
+// however the rows are shared out, the frame is the same pixels as one
+// core's. The stand-in runs each job at once, on a clock that makes the
+// share move every frame.
+static uint32_t helperClock = 0;
+static void test_a_helper_draws_the_same_body() {
+  std::vector<uint16_t> a(502 * 410), b(a.size());
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  auto e = std::make_unique<Engine>();
+  e->setMood(slime::kFrightened);
+  e->motion.impulse(false);
+  {
+    PaintControls c;
+    c.lean = 900;
+    render::helper = {};
+    paint(sa, c);
+    render::helper = {[](void (*job)(void*), void* arg) { job(arg); }, [] {},
+                      [] { return helperClock += helperClock % 3 ? 7 : 1; }};
+    paint(sb, c);
+    render::helper = {};
+    int diffs = 0, first = -1;
+    for (size_t i = 0; i < a.size(); ++i)
+      if (a[i] != b[i]) first = first < 0 ? int(i) : first, ++diffs;
+    char msg[96];
+    snprintf(msg, sizeof msg, "body-only diffs=%d first=(%d,%d)", diffs, first % 502, first / 502);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, diffs, msg);
+  }
+  for (int t = 0; t <= 640; t += 16) {
+    e->step(t);
+    render::helper = {};
+    paint(sa, *e);
+    render::helper = {[](void (*job)(void*), void* arg) { job(arg); }, [] {},
+                      [] { return helperClock += helperClock % 3 ? 7 : 1; }};
+    paint(sb, *e);
+    TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
+  }
+  render::helper = {};
+}
+// The AMOLED reads the body's material from a copy in PSRAM
+// (GelFace::readAssetsFrom): the same texels, the same frame. The material
+// is 1025 × 513 texels, under a pixel each across the dome's middle, then
+// half that for where they crowd under a pixel.
+static void test_the_materials_copy_draws_the_same_body() {
+  size_t bytes = 0;
+  GelFace face;
+  const void* texels = face.assets(bytes);
+  TEST_ASSERT_EQUAL_UINT32((1025u * 513u + 513u * 257u) * 2u, bytes);
+  std::vector<uint16_t> copy(bytes / 2), a(502 * 410), b(a.size());
+  std::memcpy(copy.data(), texels, bytes);
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  PaintControls c;
+  c.lean = 700;
+  paint(sa, c);
+  face.readAssetsFrom(copy.data());
+  paint(sb, c);
+  face.readAssetsFrom(nullptr);
+  TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
 }
 static void test_one_face_vocabulary_and_latest_facts() {
   linkkit::Rng rng;
@@ -540,11 +600,13 @@ static int faceInk(const Engine& e, Surface& drawn, Surface& bare) {
   return count;
 }
 // The face never fades. Through a cross-fade between differently shaped
-// arts, in frames 40 ms apart, the eyes and the mouth keep at least 85% of
+// arts, in frames 40 ms apart, the eyes and the mouth keep at least 90% of
 // the visible ink of the fainter of the two faces settled; falling asleep,
 // that's its swap from the lines the awake face squashed to into the
-// sleeping face's lids. The least now is 90%, waking (falling asleep's
-// swap keeps 96% of its line, happy to sad 99%).
+// sleeping face's lids. Each look is laid over the body alone and the two
+// blended (CrossFade), so where both ink a pixel none of the body shows
+// through: the least now is 92%, waking (falling asleep 97%; calm to happy,
+// happy to sad and calm to frightened never less than the fainter face).
 static void test_the_face_never_fades_while_arts_cross_over() {
   std::vector<uint16_t> a(502 * 410), b(a.size());
   Surface drawn{502, 410, a.data()}, bare{502, 410, b.data()};
@@ -586,7 +648,7 @@ static void test_the_face_never_fades_while_arts_cross_over() {
     TEST_ASSERT_EQUAL_INT(1, e->face.count);
     const int fainter = std::min(start, faceInk(*e, drawn, bare));
     TEST_ASSERT_TRUE(fainter > 200);  // the line, falling asleep; else over 400
-    TEST_ASSERT_TRUE(least * 100 >= fainter * 85);
+    TEST_ASSERT_TRUE(least * 100 >= fainter * 90);
   }
 }
 // No prop pops: the lane's strip eases in as it comes and out
@@ -1764,6 +1826,76 @@ static void test_a_recording_replays_as_drawn() {
   TEST_ASSERT_TRUE(small.used <= small.room);
 }
 
+// A recording replayed between pixels (Raster::replay16) is, for one shape
+// over black, the mean of it replayed on the four whole pixels around, to
+// within rounding; on a whole pixel it's replay() exactly.
+static void test_a_recording_replays_between_pixels() {
+  constexpr int kW = 120, kH = 100;
+  const uint16_t ink = rgb565(246, 240, 226);
+  static uint8_t bytes[4 * 1024];
+  Recording kept{bytes, int(sizeof bytes)};
+  kept.clear();
+  Surface frame{kW, kH, nullptr};
+  Raster record{frame};
+  record.limit = kH;
+  record.recording = &kept;
+  const Point cap[] = {{600, 900}, {1500, 260}, {1700, 1300}, {400, 1500}};
+  record.polygon16(cap, 4, ink);
+  std::vector<uint16_t> whole[4], between(kW * kH, 0);
+  for (int i = 0; i < 4; ++i) {
+    whole[i].assign(kW * kH, 0);
+    Surface s{kW, kH, whole[i].data()};
+    Raster r{s};
+    r.replay(kept, 10 + i % 2, 6 + i / 2);
+  }
+  Surface s{kW, kH, between.data()};
+  Raster r{s};
+  r.replay16(kept, 10 * 16 + 8, 6 * 16 + 8);
+  for (int p = 0; p < kW * kH; ++p) {
+    int mean = 0;
+    for (const auto& w : whole) mean += w[p] >> 5 & 63;
+    TEST_ASSERT_INT_WITHIN(2, mean / 4, between[p] >> 5 & 63);
+  }
+  std::vector<uint16_t> again(kW * kH, 0);
+  Surface sa{kW, kH, again.data()};
+  Raster ra{sa};
+  ra.replay16(kept, 10 * 16, 6 * 16);
+  TEST_ASSERT_EQUAL_MEMORY(whole[0].data(), again.data(), again.size() * 2);
+}
+
+// Text placed in sixteenths (text16) is Raster::text's on a whole pixel,
+// and between pixels glides: a falling word's ink moves down in every
+// frame, however little the frame, rather than a pixel at a time.
+static void test_text_glides_between_pixels() {
+  std::vector<uint16_t> a(502 * 410, 0), b(502 * 410, 0);
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  Raster ra{sa}, rb{sb};
+  ra.text("grep x", 200, 100, rgb565(140, 223, 203), kLarge);
+  text16(rb, kLarge, (200 - 6 * kLarge.w / 2) * 16, (100 - kLarge.h / 2) * 16, "grep x", rgb565(140, 223, 203));
+  TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), a.size() * 2);
+  // One lane's word, falling at 95 to 145 px a second: its ink's middle,
+  // every 3 ms (under half a pixel), is lower each time.
+  Stream stream;
+  Stream::Lane lane;
+  lane.slot = 0, lane.count = 1, std::strcpy(lane.word, "grep");
+  stream.setLanes(&lane, 1, true, false, 0);
+  double last = -1;
+  for (uint32_t t = 600; t <= 660; t += 3) {
+    std::fill(a.begin(), a.end(), 0);
+    sa.invalidate();
+    paintStreamBehind(sa, stream, t);
+    double mass = 0, moment = 0;
+    for (int y = 0; y < 300; ++y)
+      for (int x = 0; x < 502; ++x)
+        if (const int g = a[size_t(y) * 502 + x] >> 5 & 63) mass += g, moment += double(g) * y;
+    TEST_ASSERT_TRUE(mass > 0);
+    const double middle = moment / mass;
+    TEST_ASSERT_TRUE(middle > last);
+    if (last >= 0) TEST_ASSERT_TRUE(middle - last < 0.6);
+    last = middle;
+  }
+}
+
 // The outfit is drawn into a recording and blended from it
 // (OutfitLayer): while the body moves, a frame shows it as kept within
 // kSlack (12 sixteenths) of where it is; once it's still (the same time,
@@ -1819,6 +1951,21 @@ static void test_the_outfit_is_kept_while_the_body_moves() {
   const auto lower = frame(down, 1230);
   for (int y = 3; y < 410 * 4 / 5; ++y)
     TEST_ASSERT_EQUAL_MEMORY(kept.data() + (y - 3) * 502, lower.data() + y * 502, 502 * 2);
+  // Moving half a pixel down, it's the kept one half a pixel down (Raster::
+  // replay16): its ink's middle half a pixel lower, not where it was or a
+  // pixel on.
+  auto middle = [](const std::vector<uint16_t>& p) {
+    double mass = 0, moment = 0;
+    for (int y = 0; y < 410 * 4 / 5; ++y)
+      for (int x = 0; x < 502; ++x)
+        if (const int g = p[size_t(y) * 502 + x] >> 5 & 63) mass += g, moment += double(g) * y;
+    return moment / mass;
+  };
+  frame(home, 1200);
+  rig::Anchors half = home;
+  for (rig::Point* p : {&half.crown, &half.brimL, &half.brimF, &half.brimR}) p->y += 8;
+  const double glide = middle(frame(half, 1230)) - middle(kept);
+  TEST_ASSERT_TRUE(glide > 0.4 && glide < 0.6);
 }
 
 // The sky (the stack's scene) is the night's at night and the sunrise in
@@ -1934,7 +2081,7 @@ static void test_steady_frames_allocate_nothing() {
   auto line = [&](const char* text) {
     kit.handleLine(text, std::strlen(text), linkkit::Link::kUsb);
     kit.tick();
-    if (dev.takeFrame()) dev.frames()->present(dev.canvas());
+    if (dev.takeFrame()) dev.frames()->present();
   };
   const char* step = "{\"t\":\"dbg.clock\",\"step\":33}";
   for (const char* scene : scenes) {
@@ -2201,8 +2348,131 @@ static void test_polygons_cover_their_area_wherever_they_sit() {
     const double area = ink(px);
     least = std::min(least, area), most = std::max(most, area);
   }
-  TEST_ASSERT_TRUE(std::fabs((least) - (600)) <= 6);
-  TEST_ASSERT_TRUE(std::fabs((most) - (600)) <= 6);
+  TEST_ASSERT_TRUE(std::fabs((least) - (600)) <= 1);
+  TEST_ASSERT_TRUE(std::fabs((most) - (600)) <= 1);
+}
+// A polygon's coverage is its exact area in each pixel, not four sub-rows'
+// worth: a lid 3/16 of a pixel thin keeps its ink wherever it sits, and a
+// near-level edge moved down a sixteenth adds a sixteenth of a pixel's ink
+// to each pixel it crosses, every time, never four sixteenths at once.
+static void test_polygon_edges_move_a_sixteenth_at_a_time() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  double least = 1e9, most = 0, stepLeast = 1e9, stepMost = 0, last = -1;
+  for (int offset = 0; offset < 32; ++offset) {
+    std::fill(px.begin(), px.end(), 0);
+    Raster r{s};
+    // 40 pixels wide, 3/16 tall, a little aslant: 7.5 pixels of ink.
+    const int y = 150 * 16 + offset;
+    Point lid[] = {{100 * 16, y}, {140 * 16, y + 2}, {140 * 16, y + 5}, {100 * 16, y + 3}};
+    r.polygon16(lid, 4, 0xffff);
+    const double area = ink(px);
+    least = std::min(least, area), most = std::max(most, area);
+    // A 40 × 10 box whose bottom edge, at a slope of 1 in 40, comes down a
+    // sixteenth a step: 2.5 pixels more ink each time.
+    std::fill(px.begin(), px.end(), 0);
+    Point box[] = {{200 * 16, 100 * 16}, {240 * 16, 100 * 16}, {240 * 16, 110 * 16 + offset + 16}, {200 * 16, 110 * 16 + offset}};
+    r.polygon16(box, 4, 0xffff);
+    const double grown = ink(px);
+    if (last >= 0) stepLeast = std::min(stepLeast, grown - last), stepMost = std::max(stepMost, grown - last);
+    last = grown;
+  }
+  TEST_ASSERT_TRUE(least >= 7.5 - 0.5 && most <= 7.5 + 0.5);
+  TEST_ASSERT_TRUE(stepLeast >= 2.5 - 0.5 && stepMost <= 2.5 + 0.5);
+}
+// A sleeper's z (Raster::zee) grows and drifts by sixteenths of a pixel:
+// from 7 to 16 px tall, a sixteenth taller never takes ink away and adds
+// at most 5 px of it (its pen a sixteenth wider along its 50 px), where
+// the font's z it replaces jumped from one size to the next, 40-47 px more
+// at once; and a sixteenth over leaves its ink as it was.
+static void test_a_z_grows_and_drifts_by_sixteenths() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  Raster r{s};
+  double last = -1, grew = 0, shrank = 0, least = 1e9, most = 0;
+  for (int h16 = 7 * 16; h16 <= 16 * 16; ++h16) {
+    std::fill(px.begin(), px.end(), 0);
+    r.zee(200 * 16, 200 * 16, h16, 0xffff);
+    const double now = ink(px);
+    if (last >= 0) grew = std::max(grew, now - last), shrank = std::max(shrank, last - now);
+    last = now;
+  }
+  TEST_ASSERT_TRUE(grew <= 5 && shrank <= 0.25);
+  for (int dx = 0; dx < 16; ++dx) {
+    std::fill(px.begin(), px.end(), 0);
+    r.zee(200 * 16 + dx, 200 * 16 + dx / 2, 12 * 16, 0xffff);
+    least = std::min(least, ink(px)), most = std::max(most, ink(px));
+  }
+  TEST_ASSERT_TRUE(most - least <= 0.5);
+}
+// Cut to a clip, a polygon covers what lies inside both: inside a bigger
+// clip, all of itself; under a clip over its left half, half of itself.
+static void test_a_clipped_polygon_covers_what_lies_in_both() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  Raster r{s};
+  Point square[] = {{100 * 16 + 5, 100 * 16 + 3}, {120 * 16 + 5, 100 * 16 + 3}, {120 * 16 + 5, 120 * 16 + 3},
+                    {100 * 16 + 5, 120 * 16 + 3}};
+  Point big[] = {{90 * 16, 90 * 16}, {130 * 16, 90 * 16}, {130 * 16, 130 * 16}, {90 * 16, 130 * 16}};
+  r.polygon16(square, 4, 0xffff, big, 4);
+  TEST_ASSERT_TRUE(std::fabs(ink(px) - 400) <= 1);
+  std::fill(px.begin(), px.end(), 0);
+  Point left[] = {{90 * 16, 90 * 16}, {110 * 16 + 5, 90 * 16}, {110 * 16 + 5, 130 * 16}, {90 * 16, 130 * 16}};
+  r.polygon16(square, 4, 0xffff, left, 4);
+  TEST_ASSERT_TRUE(std::fabs(ink(px) - 200) <= 1);
+}
+// Two looks cross-fading (CrossFade) each laid over what's under them
+// alone, then blended by weight: half and half of the same ink is that
+// ink, with nothing of the black under it showing through, where drawn
+// one over the other at half each it'd be three quarters of it.
+static void test_a_cross_fade_never_shows_through() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  static uint8_t bytes[4096];
+  CrossFade fade{bytes, sizeof bytes};
+  Raster r{s};
+  auto square = [&](int x) {
+    Point v[] = {{x * 16, 100 * 16}, {(x + 20) * 16, 100 * 16}, {(x + 20) * 16, 120 * 16}, {x * 16, 120 * 16}};
+    r.polygon16(v, 4, 0xffff);
+  };
+  fade.look(2048);
+  r.recording = fade.next();
+  square(100);
+  fade.look(2048);
+  r.recording = fade.next();
+  square(110);  // half of it over the first
+  r.recording = nullptr;
+  TEST_ASSERT_TRUE(fade.kept());
+  r.blend(fade);
+  auto green = [&](int x, int y) { return (px[y * 502 + x] >> 5) & 63; };
+  TEST_ASSERT_EQUAL_INT(63, green(115, 110));  // both: all ink
+  TEST_ASSERT_EQUAL_INT(32, green(105, 110));  // one: half
+  TEST_ASSERT_EQUAL_INT(32, green(125, 110));
+  TEST_ASSERT_EQUAL_INT(0, green(135, 110));  // neither
+}
+// Every two arts' cross-fade keeps its groups' looks in half the room it
+// has (kCrossingBytes), so they're blended, not drawn one over the other.
+static void test_every_cross_fade_fits_its_room() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  crossingPeak = 0;
+  const int arts = int(sizeof(slime::kProfile) / sizeof(slime::kProfile[0]));
+  for (int from = 0; from < arts; ++from)
+    for (int to = 0; to < arts; ++to) {
+      if (from == to) continue;
+      SemanticFace f;
+      f.setMood(from);
+      const T frame = T::ratio(16, 1000);
+      for (int i = 0; i < 40; ++i) f.advance(frame);
+      f.setMood(to);
+      for (int i = 0; i < 60 && !(f.count == 2 && f.layers[1].weight >= q(.5)); ++i) f.advance(frame);
+      auto e = std::make_unique<Engine>();
+      e->face = f;
+      PaintControls c;
+      paintArt(s, *e, c, false);
+    }
+  TEST_ASSERT_TRUE(crossingPeak > 0);
+  TEST_ASSERT_TRUE(crossingPeak * 2 <= kCrossingBytes);
 }
 static void test_strokes_keep_their_width_and_blend_once() {
   std::vector<uint16_t> px(502 * 410);
@@ -2258,6 +2528,63 @@ static void test_the_body_outline_is_soft_without_seams() {
       // outline's dim edge), a pixel is never under half its neighbours'.
       if (inside && around > 8 * 12) TEST_ASSERT_TRUE_MESSAGE(lum(x, y) * 8 * 2 >= around, "a seam inside the body");
     }
+}
+// The outline's soft fringe goes over the crown too, where the pole's
+// triangles meet (painter.cpp's `across`), and the outline doesn't jump as
+// the mesh turns: leaned or squashed from one end to the other in steps of
+// 16 (Q12), each row's edge, from its pixels' coverage, moves evenly, its
+// second difference never a pixel and a quarter (it was 1.6 when a
+// triangle's edges went soft or hard as it turned).
+static void test_the_outline_holds_still_as_the_mesh_turns() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto green = [&](int x, int y) { return int((px[y * 502 + x] >> 5) & 63); };
+  {
+    PaintControls c;
+    paint(s, c);
+    int soft = 0, columns = 0;
+    for (int x = 221; x <= 281; ++x, ++columns) {
+      int top = 0;
+      while (!px[top * 502 + x]) ++top;
+      if (green(x, top) * 10 < green(x, top + 3) * 9) ++soft;
+    }
+    TEST_ASSERT_TRUE(soft * 10 >= columns * 6);
+  }
+  for (bool squash : {false, true}) {
+    std::vector<double> edges[3];
+    double worst = 0;
+    for (int v = -4096; v <= 4096; v += 16) {
+      PaintControls c;
+      (squash ? c.squash : c.lean) = v;
+      paint(s, c);
+      // Each row's edge from either side, as the share of four pixels the
+      // body covers, the fifth taken as whole.
+      std::vector<double> now(2 * 410, NAN);
+      for (int y = 0; y < 410; ++y)
+        for (int side = 0; side < 2; ++side) {
+          auto at = [&](int i) { return green(side ? 501 - i : i, y); };
+          int first = 0;
+          while (first + 4 < 502 && !px[y * 502 + (side ? 501 - first : first)]) ++first;
+          if (first + 4 >= 502 || at(first + 4) < 8) continue;
+          double covered = 0;
+          for (int i = first; i < first + 4; ++i) covered += std::min(1.0, double(at(i)) / at(first + 4));
+          now[side * 410 + y] = first + 4 - covered;
+        }
+      edges[0] = edges[1], edges[1] = edges[2], edges[2] = now;
+      if (edges[0].empty()) continue;
+      // Rows where the outline is steep, in all three frames.
+      for (int i = 1; i + 1 < 2 * 410; ++i) {
+        bool steep = i % 410 != 0 && i % 410 != 409;
+        for (const auto& e : edges)
+          steep = steep && !std::isnan(e[i - 1]) && !std::isnan(e[i]) && !std::isnan(e[i + 1]) &&
+                  std::fabs(e[i + 1] - e[i - 1]) < 3;
+        if (steep) worst = std::max(worst, std::fabs(edges[2][i] - 2 * edges[1][i] + edges[0][i]));
+      }
+    }
+    char msg[64];
+    snprintf(msg, sizeof msg, "%s: the outline jumped %.2f px", squash ? "squash" : "lean", worst);
+    TEST_ASSERT_TRUE_MESSAGE(worst < 1.25, msg);
+  }
 }
 static void test_rgb565_opacity_rounds_to_nearest() {
   // Exact nearest rounding in RGB565 makes alpha 0..2 and
@@ -2346,6 +2673,7 @@ int main() {
   RUN_TEST(test_a_divisor_divides_exactly);
   RUN_TEST(test_all_expressions_draw_inside_native_surface);
   RUN_TEST(test_frame_replay_is_byte_identical);
+  RUN_TEST(test_a_helper_draws_the_same_body);
   RUN_TEST(test_one_face_vocabulary_and_latest_facts);
   RUN_TEST(test_request_identity_and_cache_bounds);
   RUN_TEST(test_grid_voice_lead_and_late_cues);
@@ -2389,13 +2717,22 @@ int main() {
   RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
+  RUN_TEST(test_polygon_edges_move_a_sixteenth_at_a_time);
+  RUN_TEST(test_a_z_grows_and_drifts_by_sixteenths);
+  RUN_TEST(test_a_clipped_polygon_covers_what_lies_in_both);
+  RUN_TEST(test_a_cross_fade_never_shows_through);
+  RUN_TEST(test_every_cross_fade_fits_its_room);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
+  RUN_TEST(test_the_outline_holds_still_as_the_mesh_turns);
+  RUN_TEST(test_the_materials_copy_draws_the_same_body);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
   RUN_TEST(test_it_wears_pyjamas_at_night_and_reads_in_glasses);
   RUN_TEST(test_the_sky_is_behind_the_body);
   RUN_TEST(test_it_has_its_coffee_in_the_morning);
   RUN_TEST(test_a_recording_replays_as_drawn);
+  RUN_TEST(test_a_recording_replays_between_pixels);
+  RUN_TEST(test_text_glides_between_pixels);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
   // test_cells.cpp
   RUN_TEST(test_every_cell_plays_truthfully);

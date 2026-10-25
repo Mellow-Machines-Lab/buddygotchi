@@ -27,6 +27,34 @@ inline uint16_t mix565(uint16_t old, uint16_t ink, int alpha) {
   green = (green + (green >> 8)) >> 8;
   return uint16_t((pair & 31) | ((pair >> 5) & 0xf800) | (green << 5));
 }
+// One ink at one opacity over many pixels, as mix565 blends each, with the
+// ink's share worked out once.
+struct Blender {
+  uint16_t ink;
+  int alpha;
+  uint32_t keep, inkPair, inkGreen;
+  Blender(uint16_t i, int a)
+      : ink(i),
+        alpha(a),
+        keep(uint32_t(255 - a)),
+        inkPair(((uint32_t(i & 31) | (uint32_t(i & 0xf800) << 5)) * uint32_t(a)) + 0x00800080),
+        inkGreen(((i >> 5) & 63) * uint32_t(a) + 128) {}
+  void run(uint16_t* out, int n) const {
+    if (alpha >= 253) {
+      std::fill(out, out + n, ink);
+      return;
+    }
+    if (alpha <= 2) return;
+    for (int x = 0; x < n; ++x) {
+      const uint16_t old = out[x];
+      uint32_t pair = (uint32_t(old & 31) | (uint32_t(old & 0xf800) << 5)) * keep + inkPair;
+      pair = ((pair + ((pair >> 8) & 0x00ff00ff)) >> 8) & 0x001f001f;
+      uint32_t green = ((old >> 5) & 63) * keep + inkGreen;
+      green = (green + (green >> 8)) >> 8;
+      out[x] = uint16_t((pair & 31) | ((pair >> 5) & 0xf800) | (green << 5));
+    }
+  }
+};
 // Shapes kept instead of drawn (Raster::recording), to blend again where
 // they were or a whole number of pixels away (Raster::replay), as they'd
 // have blended there: each row's span, its ink, and each pixel's opacity
@@ -43,6 +71,53 @@ struct Recording {
   // A row's span [x0, x1], each pixel's opacity `alpha[x]` (0–255).
   void add(int y, int x0, int x1, const uint8_t* alpha, uint16_t ink);
 };
+
+// Looks of one thing cross-fading (render/gel/art.cpp's eyes and mouth
+// between arts of different shapes): each look's shapes kept in the order
+// they'd be drawn (Raster::recording), then blended once (Raster::blend),
+// each pixel taking every look laid over it alone, by the look's weight.
+// Drawn one over the other instead, two looks covering a pixel at half
+// weight each would let a quarter of what's under them show through.
+struct CrossFade {
+  static constexpr int kMaxLooks = 4, kMaxShapes = 32;
+  uint8_t* data;
+  int room;
+  int looks = 0, shapes = 0;
+  int weight[kMaxLooks]{};  // each look's share, 0–4096; they sum to at most 4096
+  int lookOf[kMaxShapes]{};
+  Recording shape[kMaxShapes]{};
+  // Out of room or shapes: some shape wasn't kept, so it can't be blended.
+  bool full = false;
+  void clear() { looks = shapes = 0, full = false; }
+  // The next look, at its weight.
+  void look(int w) {
+    if (looks == kMaxLooks) {
+      full = true;
+      return;
+    }
+    weight[looks++] = w;
+  }
+  // Where the look's next shape is kept, or nullptr when there's no room.
+  Recording* next() {
+    if (!looks || shapes == kMaxShapes) return full = true, nullptr;
+    const int taken = used();
+    Recording& r = shape[shapes];
+    r.data = data + taken, r.room = room - taken, r.clear();
+    lookOf[shapes++] = looks - 1;
+    return &r;
+  }
+  bool kept() const {
+    for (int i = 0; i < shapes; ++i)
+      if (shape[i].full) return false;
+    return !full;
+  }
+  int used() const { return shapes ? int(shape[shapes - 1].data - data) + shape[shapes - 1].used : 0; }
+};
+// The face art's room for its cross-fading groups' looks: twice what any
+// two arts' eyes, mouth, tears or cheeks take at the face's own size (pinned
+// in test_gel). Past it, as at a finish's zoom, they're drawn one over the
+// other.
+constexpr int kCrossingBytes = 12 * 1024;
 
 struct Raster {
   // The widest surface a row of coverage holds.
@@ -68,6 +143,16 @@ struct Raster {
   // it was kept, inside the bounds: pixel for pixel what its shapes would
   // have drawn there, had they been drawn that far over.
   void replay(const Recording& r, int dx, int dy);
+  // What `f` kept, blended into the surface once, at the fade: each pixel
+  // becomes the sum of each look's shapes laid over it, by the look's
+  // weight, and of itself by what's left of the weight.
+  void blend(const CrossFade& f);
+  // The same, `dx16`, `dy16` sixteenths of a pixel away, so what's kept
+  // glides with what it rides: on a whole pixel it's replay(); between,
+  // each shape's opacities (its spans of one ink, a row apiece down it)
+  // are sampled between its four nearest kept pixels, weighted by how near
+  // (bilinear), and blended once a pixel.
+  void replay16(const Recording& r, int dx16, int dy16);
 
   void touch(int x0, int y0, int x1, int y1) {
     if (!recording) s.touch(x0, y0, x1, std::min(y1, bottom()));
@@ -84,14 +169,27 @@ struct Raster {
     }
   }
 
-  // A filled polygon (even-odd), cut to a clip polygon when there is one.
-  // Four sub-rows a pixel row, with exact coverage across each span's ends.
+  // A filled polygon that doesn't cross itself, cut to a clip polygon when
+  // there is one: each pixel takes the area of it the polygon covers,
+  // exactly, so an edge moving a sixteenth of a pixel moves its ink by a
+  // sixteenth, at any slope.
   void polygon16(const Point* v, int n, uint16_t ink, const Point* clip = nullptr, int clipCount = 0);
   // A polyline `width16` wide, with round joins and caps.
   void stroke16(const Point* v, int n, int width16, uint16_t ink);
   void disk16(int x16, int y16, int radius16, uint16_t ink) {
     Point centre{x16, y16};
     stroke16(&centre, 1, 2 * radius16, ink);
+  }
+
+  // A sleeper's z, `h16` tall and 7/8 as wide, its bottom left corner at
+  // (x16, y16): a top bar, a diagonal and a bottom bar in one rounded pen a
+  // fifth of its height, so it grows and drifts by sixteenths, where a
+  // font's z steps a whole pixel and jumps between sizes.
+  void zee(int x16, int y16, int h16, uint16_t ink) {
+    const int pen = std::max(16, h16 / 5), in = pen / 2, w16 = h16 * 7 / 8;
+    const Point v[] = {
+        {x16 + in, y16 - h16 + in}, {x16 + w16 - in, y16 - h16 + in}, {x16 + in, y16 - in}, {x16 + w16 - in, y16 - in}};
+    stroke16(v, 4, pen, ink);
   }
 
   // Whole-pixel shapes for the props. A disk of radius r covers the pixels

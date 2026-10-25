@@ -4,7 +4,7 @@ import LinkKit
 // What the menu bar shows, built after every change.
 extension Runtime {
     /// What the menu bar shows.
-    public struct Status: Sendable {
+    public struct Status: Sendable, Equatable {
         /// Boop's name, from `long-term.md`.
         public var name: String
         /// What the device shows, and Boop's mood.

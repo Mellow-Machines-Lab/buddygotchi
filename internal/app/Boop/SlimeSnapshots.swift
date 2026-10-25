@@ -13,19 +13,21 @@ enum SlimeSnapshots {
     /// The board's own screen, so a still fits any tile as the live page does.
     static let panel = NSSize(width: 502, height: 410)
 
-    static func image(_ snapshot: StateSnapshot, to output: URL, size: NSSize = panel) throws -> NSImage {
-        let feed = SlimeFeed(), view = SlimeView.webView()
+    /// `zoomed`, the slime alone, as a small tile shows it.
+    static func image(_ snapshot: StateSnapshot, to output: URL, size: NSSize = panel, zoomed: Bool = false) throws -> NSImage {
+        let feed = SlimeFeed(), container = NSView(frame: NSRect(origin: .zero, size: size))
         let window = NSWindow(contentRect: NSRect(x: -2000, y: 0, width: size.width, height: size.height),
                               styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.contentView = view
+        window.contentView = container
         window.orderFront(nil)
-        defer { feed.detach(view); window.close() }
+        defer { feed.close(); window.close() }
         var image: NSImage?, failure: String?
         feed.didFail = { failure = $0 }
         feed.didLoad = {
-            view.callAsyncJavaScript("return await window.BoopMirror.snapshot(line)",
-                                     arguments: ["line": snapshot.jsonLine], in: nil, in: .page) { result in
+            guard let view = feed.webView else { return }
+            view.callAsyncJavaScript("window.BoopMirror.zoom(zoomed); return await window.BoopMirror.snapshot(line)",
+                                     arguments: ["line": snapshot.jsonLine, "zoomed": zoomed], in: nil, in: .page) { result in
                 switch result {
                 case .failure(let error): failure = error.localizedDescription
                 case .success(let raw):
@@ -39,7 +41,7 @@ enum SlimeSnapshots {
                 }
             }
         }
-        feed.attach(view)
+        feed.place(in: container)
         let deadline = Date().addingTimeInterval(timeout)
         while image == nil, failure == nil, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.01)) }
         guard let image, let data = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: data),

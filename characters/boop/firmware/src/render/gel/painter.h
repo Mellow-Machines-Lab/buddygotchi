@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include "render/rig/layers.h"
 #include "render/rig/rig.h"
 #include "render/surface.h"
@@ -42,6 +43,11 @@ void paint(Surface& surface, const PaintControls& controls, const Box* keep = nu
            uint32_t keepLane = 0, rig::Anchors* anchors = nullptr, const PastimeShow* scenery = nullptr);
 // The body alone, over what the surface holds.
 void paintBody(Surface& surface, const PaintControls& controls, rig::Anchors* anchors = nullptr);
+// The body's material, the texels it's drawn from, as linked: and a copy
+// of them to read instead, made where they're quicker to read (on the
+// AMOLED, PSRAM over flash: GelFace::readAssetsFrom), or none for these.
+const void* materialTexels(size_t& bytes);
+void readMaterialFrom(const void* copy);
 // The dome on the canvas: canvas pixels a body unit at its middle.
 constexpr int kPxPerUnit = 85;
 // The rig's gazeX and gazeY at their whole (1000) move the eyes this far,
@@ -70,6 +76,8 @@ void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t
            rig::Anchors* anchors = nullptr, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
            uint32_t t = 0, const PastimeShow* pastimes = nullptr, const DrawerPose* squeeze = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
+// The most room a cross-fading group of the art has taken (kCrossingBytes).
+extern int crossingPeak;
 void paintProps(Surface&, const Engine&);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels
 // it covers whole (at most Surface::kMaxKeep), for the clear to leave.

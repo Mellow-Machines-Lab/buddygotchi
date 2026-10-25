@@ -289,7 +289,8 @@ class PerfScenesTests(unittest.TestCase):
         return result
 
     def test_each_scene_against_its_budget(self):
-        result = self.scenes({"working": 31, "attention": 28, "pokes": 20, "frightened": 29, "asleep": 10})
+        result = self.scenes({"working": 31, "stream": 25, "attention": 28, "pokes": 20, "frightened": 29,
+                              "asleep": 10, "night": 10})
         self.assertTrue(result["ok"], result)
         self.assertEqual(sorted(result["scenes"]), sorted(name for name, *_ in cli.PERF_SCENES))
         working = result["scenes"]["working"]

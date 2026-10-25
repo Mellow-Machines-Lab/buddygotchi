@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iterator>
+#include "render/gel/lane.h"
 #include "render/gel/raster.h"
 #include "render/gel/scenes.h"
 namespace render::gel {
@@ -625,11 +626,13 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
         // TA-DA!, popping up over it.
         const int fade = 255 * (4096 - ease(age, 4100, 4400)) / 4096;
         r.alpha = fade;
-        const int cy = h * 150 / 1000 - 12 * (4096 - ease(age, kPopMs + 50, kPopMs + 250)) / 4096;
+        // Rising in sixteenths of a pixel, its corner on a whole one once it's up.
+        const int cy16 = h * 150 / 1000 * 16 - 12 * 16 * (4096 - ease(age, kPopMs + 50, kPopMs + 250)) / 4096;
+        const int left16 = (w / 2 - 6 * kSign.w / 2) * 16, top16 = cy16 - kSign.h / 2 * 16;
         for (int dx = -2; dx <= 2; dx += 2)
           for (int dy = -2; dy <= 2; dy += 2)
-            if (dx || dy) r.text("TA-DA!", w / 2 + dx, cy + dy, rgb565(90, 51, 0), kSign);
-        r.text("TA-DA!", w / 2, cy, kGold, kSign);
+            if (dx || dy) text16(r, kSign, left16 + dx * 16, top16 + dy * 16, "TA-DA!", rgb565(90, 51, 0));
+        text16(r, kSign, left16, top16, "TA-DA!", kGold);
         r.alpha = 255;
       }
       break;

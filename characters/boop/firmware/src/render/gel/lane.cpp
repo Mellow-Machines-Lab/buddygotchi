@@ -81,6 +81,89 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
   return x;
 }
 
+void text16(Raster& r, const Font& f, int x16, int y16, const char* s, uint16_t ink, bool behind) {
+  // On the stack, not the board's scarce internal heap: a word forward and
+  // a combo's count, in the widest font (the bubble's, 20 px).
+  constexpr int kMostGlyphs = 20, kMostCells = kMostGlyphs * 20 + 1;
+  if (!r.s.pixels || r.alpha <= 2 || f.w * kMostGlyphs >= kMostCells) return;
+  int glyphs[kMostGlyphs], n = 0;
+  for (int g; n < kMostGlyphs && (g = nextGlyph(s)) >= 0;) glyphs[n++] = g;
+  const int x0 = x16 >> 4, y0 = y16 >> 4, fx = x16 & 15, fy = y16 & 15;
+  const int cells = n * f.w, rows = f.h + (fy ? 1 : 0), rowBytes = (f.w + 1) / 2;
+  // What it may draw on: the surface, the raster's bounds, and above its
+  // bottom (as Raster::pixel: the lane's top unless a limit is set).
+  const int bottom = r.limit ? r.limit : r.s.height * 4 / 5;
+  const int top = std::max(0, r.bounds.y0), under = std::min(bottom, r.bounds.y1);
+  const int left = std::max(0, r.bounds.x0), right = std::min(r.s.width, r.bounds.x1);
+  // Columns u of the string's cells drawn, and the cell before each.
+  const int uFrom = std::max(0, left - x0), uTo = std::min(cells + (fx ? 1 : 0), right - x0);
+  if (uFrom >= uTo) return;
+  // A row of the string's cells (0–15) at index u + 1, a zero before them;
+  // whether it has any.
+  uint8_t rowA[kMostCells + 2] = {}, rowB[kMostCells + 2] = {};
+  uint8_t *here = rowA, *above = rowB;
+  bool hereInk = false, aboveInk = false;
+  auto decode = [&](int v, uint8_t* out) {
+    if (v < 0 || v >= f.h) return false;
+    bool any = false;
+    for (int i = 0; i < n; ++i) {
+      const uint8_t* src = f.data + size_t(glyphs[i]) * rowBytes * f.h + v * rowBytes;
+      uint8_t* o = out + 1 + i * f.w;
+      for (int xx = 0; xx < f.w; xx += 2) {
+        const uint8_t b = src[xx >> 1];
+        any |= b != 0;
+        o[xx] = b >> 4;
+        if (xx + 1 < f.w) o[xx + 1] = b & 15;
+      }
+    }
+    return any;
+  };
+  // An opacity from a sample's sum (at most 15 × 256), as Raster::text's
+  // and Raster::pixel's: the shape's opacity, then the layer's fade.
+  const int opacity = r.fade >= 255 ? r.alpha : r.alpha * r.fade / 255;
+  // Behind, over black: the ink at each sixtieth of the most a sum can be.
+  uint16_t shade[61];
+  if (behind)
+    for (int k = 0; k <= 60; ++k) shade[k] = mix565(0, ink, opacity * k / 60);
+  const int wx = 16 - fx, wy = 16 - fy;
+  int bx0 = 1 << 30, by0 = 1 << 30, bx1 = -1, by1 = -1;
+  for (int v = 0; v < rows; ++v) {
+    const bool stale = aboveInk;  // the row about to be written over had ink
+    std::swap(here, above);
+    aboveInk = hereInk;
+    if (stale) std::fill(here, here + cells + 2, 0);
+    hereInk = decode(v, here);
+    const int y = y0 + v;
+    if (y < top || y >= under || !(hereInk || (fy && aboveInk))) continue;
+    uint16_t* row = r.s.pixels + y * r.s.width + x0;
+    int lo = 1 << 30, hi = -1;
+    for (int u = uFrom; u < uTo; ++u) {
+      // The cells at u and u − 1 (index u + 1 and u), this row and the one
+      // above, weighted by how near.
+      const int sum = fx ? (wx * here[u + 1] + fx * here[u]) * wy + (wx * above[u + 1] + fx * above[u]) * fy
+                         : (wy * here[u + 1] + fy * above[u + 1]) * 16;
+      if (!sum) continue;
+      uint16_t& out = row[u];
+      if (behind) {
+        if (out) continue;
+        out = shade[sum / 64];
+      } else {
+        const int a = opacity * sum / (15 * 256);
+        if (a >= 253)
+          out = ink;
+        else if (a > 2)
+          out = mix565(out, ink, a);
+        else
+          continue;
+      }
+      lo = std::min(lo, u), hi = u;
+    }
+    if (hi < 0) continue;
+    bx0 = std::min(bx0, x0 + lo), bx1 = std::max(bx1, x0 + hi), by0 = std::min(by0, y), by1 = y;
+  }
+  if (bx1 >= 0) r.touch(bx0, by0, bx1 + 1, by1 + 1);
+}
+
 namespace {
 
 // The line in its bubble, which takes the whole lane: a box with round
