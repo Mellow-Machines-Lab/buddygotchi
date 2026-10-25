@@ -170,6 +170,9 @@ public final class Runtime: @unchecked Sendable {
     var grew = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
+    /// The diary's last week as the popover shows it, kept while neither
+    /// the diary nor the day changes.
+    var shownDiary: (week: [(day: String, line: String)], today: String, lines: [Status.DiaryLine])?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
     /// debug mode the file has them.
     let recent: DebugLog.Recent
@@ -545,10 +548,13 @@ public final class Runtime: @unchecked Sendable {
         run(step)
         onAgentHook?(line.agent)
         guard let text, let turn = step.recorded.first else { return }
+        // The hook's words don't wait with the reading: only its agent and
+        // session do, for the log.
+        let agent = line.agent, session = line.session
         PromptIntake.read(text, names: pipeline.buddies.map(\.name), labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }
             guard let step = pipeline.read(reading, about: turn, at: options.clock()) else {
-                return options.log("\(reading.kind.rawValue): \(line.agent)'s session \(line.session) moved on before its reading; dropped it")
+                return options.log("\(reading.kind.rawValue): \(agent)'s session \(session) moved on before its reading; dropped it")
             }
             run(step)
         }

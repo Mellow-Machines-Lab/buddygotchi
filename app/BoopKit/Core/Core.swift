@@ -864,7 +864,7 @@ public final class Core {
     /// launch reading the transcript back, stop it from the transcript, not
     /// from the processes running then. The session stays, idle.
     func recordGone(_ now: Int64, _ fx: inout [CoreEffect]) {
-        for (_, n) in notes.sorted(by: { $0.key < $1.key }) where n.why == .agentGone {
+        for (_, n) in notes.filter({ $0.value.why == .agentGone }).sorted(by: { $0.key < $1.key }) {
             var e = Event(AgentEvent(agent: n.agent, kind: .turn, phase: .end, hook: Core.agentGone, session: n.id, at: now,
                                      outcome: .stopped))
             e.data["by"] = "rule"
@@ -888,7 +888,7 @@ public final class Core {
                                            "message": .string("\(config.pack.name) showed that \(s.agent.rawValue) needs you.")])))
         }
         let shows = Set(showing.map(\.key))
-        for (key, n) in notes.sorted(by: { $0.key < $1.key }) where n.shown && !shows.contains(key) {
+        for (key, n) in notes.filter({ $0.value.shown && !shows.contains($0.key) }).sorted(by: { $0.key < $1.key }) {
             notes[key]?.shown = false
             let why = whyCleared(key, n)
             var data: [String: JSONValue] = ["by": "rule", "agent": .string(n.agent.rawValue),
@@ -910,10 +910,11 @@ public final class Core {
     /// Lets go of what the notes no longer need: the timers' whys, once
     /// recorded, and a dismissal once its request no longer waits.
     func tidyNotes() {
-        for (key, var n) in notes {
+        notes = notes.compactMapValues { n in
+            var n = n
             n.why = nil
-            if n.dismissed != nil, sessions[key].map(isDismissed) != true { n.dismissed = nil }
-            notes[key] = n.isEmpty ? nil : n
+            if n.dismissed != nil, sessions[SessionFold.key(n.agent, n.id)].map(isDismissed) != true { n.dismissed = nil }
+            return n.isEmpty ? nil : n
         }
     }
 

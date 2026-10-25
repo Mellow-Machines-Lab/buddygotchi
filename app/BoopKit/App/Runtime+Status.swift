@@ -109,7 +109,7 @@ extension Runtime {
                             micTrouble: core.talk.trouble, growth: growth.growth)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
-        status.diary = memory.diary(last: 7).map { Status.DiaryLine(day: $0.day, line: $0.line, today: options.time.day(wall)) }
+        status.diary = diary(today: options.time.day(wall))
         status.nature = memory.longTerm?.nature
         status.uncleanExit = uncleanExit
         status.board = settings.board
@@ -122,5 +122,17 @@ extension Runtime {
         grew = false
         if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)
+    }
+
+    /// The diary's last week, newest first, as it reads on `today`: built
+    /// again only once the diary or the day changes.
+    func diary(today: String) -> [Status.DiaryLine] {
+        let week = memory.diary(last: 7)
+        if let shown = shownDiary, shown.today == today, shown.week.elementsEqual(week, by: { $0.day == $1.day && $0.line == $1.line }) {
+            return shown.lines
+        }
+        let lines = week.map { Status.DiaryLine(day: $0.day, line: $0.line, today: today) }
+        shownDiary = (week, today, lines)
+        return lines
     }
 }
