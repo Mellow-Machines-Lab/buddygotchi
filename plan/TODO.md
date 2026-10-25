@@ -62,9 +62,14 @@ pacing and touch, the Mac app, the architecture) found what's below.
       (`raster.h`'s `CrossFade`, in PSRAM). test_gel's never-fades now
       keeps at least 92% (was 90%; calm→frightened 109%), and every two
       arts' cross-fade fits half its room.
-- [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
-      flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
-      silhouette, or 64 sectors (+1-1.5 ms).
+- [x] The body's outline popped when a triangle's facing flipped, and
+      the crown's was hard (the pole's triangles never found the
+      outline). The triangles fill by pixel centre and each outline edge
+      has a fringe a pixel wide beyond it, meeting the next where the
+      outline bends; lone slivers are left out. Swept end to end, the
+      worst row-to-row jump fell from 1.0-2.05 px to 0.54-0.94; the crown
+      is soft. +0.9 ms of body on the AMOLED. Checked by test_gel's
+      `test_the_outline_holds_still_as_the_mesh_turns`.
 - [x] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
       replay (`OutfitLayer::kSlack`), the listening ring and the helper
       minis (`props.cpp`). Now in sixteenths: text by `text16` (bilinear

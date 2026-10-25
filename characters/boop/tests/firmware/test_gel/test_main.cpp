@@ -2509,6 +2509,63 @@ static void test_the_body_outline_is_soft_without_seams() {
       if (inside && around > 8 * 12) TEST_ASSERT_TRUE_MESSAGE(lum(x, y) * 8 * 2 >= around, "a seam inside the body");
     }
 }
+// The outline's soft fringe goes over the crown too, where the pole's
+// triangles meet (painter.cpp's `across`), and the outline doesn't jump as
+// the mesh turns: leaned or squashed from one end to the other in steps of
+// 16 (Q12), each row's edge, from its pixels' coverage, moves evenly, its
+// second difference never a pixel and a quarter (it was 1.6 when a
+// triangle's edges went soft or hard as it turned).
+static void test_the_outline_holds_still_as_the_mesh_turns() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto green = [&](int x, int y) { return int((px[y * 502 + x] >> 5) & 63); };
+  {
+    PaintControls c;
+    paint(s, c);
+    int soft = 0, columns = 0;
+    for (int x = 221; x <= 281; ++x, ++columns) {
+      int top = 0;
+      while (!px[top * 502 + x]) ++top;
+      if (green(x, top) * 10 < green(x, top + 3) * 9) ++soft;
+    }
+    TEST_ASSERT_TRUE(soft * 10 >= columns * 6);
+  }
+  for (bool squash : {false, true}) {
+    std::vector<double> edges[3];
+    double worst = 0;
+    for (int v = -4096; v <= 4096; v += 16) {
+      PaintControls c;
+      (squash ? c.squash : c.lean) = v;
+      paint(s, c);
+      // Each row's edge from either side, as the share of four pixels the
+      // body covers, the fifth taken as whole.
+      std::vector<double> now(2 * 410, NAN);
+      for (int y = 0; y < 410; ++y)
+        for (int side = 0; side < 2; ++side) {
+          auto at = [&](int i) { return green(side ? 501 - i : i, y); };
+          int first = 0;
+          while (first + 4 < 502 && !px[y * 502 + (side ? 501 - first : first)]) ++first;
+          if (first + 4 >= 502 || at(first + 4) < 8) continue;
+          double covered = 0;
+          for (int i = first; i < first + 4; ++i) covered += std::min(1.0, double(at(i)) / at(first + 4));
+          now[side * 410 + y] = first + 4 - covered;
+        }
+      edges[0] = edges[1], edges[1] = edges[2], edges[2] = now;
+      if (edges[0].empty()) continue;
+      // Rows where the outline is steep, in all three frames.
+      for (int i = 1; i + 1 < 2 * 410; ++i) {
+        bool steep = i % 410 != 0 && i % 410 != 409;
+        for (const auto& e : edges)
+          steep = steep && !std::isnan(e[i - 1]) && !std::isnan(e[i]) && !std::isnan(e[i + 1]) &&
+                  std::fabs(e[i + 1] - e[i - 1]) < 3;
+        if (steep) worst = std::max(worst, std::fabs(edges[2][i] - 2 * edges[1][i] + edges[0][i]));
+      }
+    }
+    char msg[64];
+    snprintf(msg, sizeof msg, "%s: the outline jumped %.2f px", squash ? "squash" : "lean", worst);
+    TEST_ASSERT_TRUE_MESSAGE(worst < 1.25, msg);
+  }
+}
 static void test_rgb565_opacity_rounds_to_nearest() {
   // Exact nearest rounding in RGB565 makes alpha 0..2 and
   // 253..255 identical to the endpoints even for the maximum channel delta.
@@ -2647,6 +2704,7 @@ int main() {
   RUN_TEST(test_every_cross_fade_fits_its_room);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
+  RUN_TEST(test_the_outline_holds_still_as_the_mesh_turns);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
   RUN_TEST(test_it_wears_pyjamas_at_night_and_reads_in_glasses);
   RUN_TEST(test_the_sky_is_behind_the_body);

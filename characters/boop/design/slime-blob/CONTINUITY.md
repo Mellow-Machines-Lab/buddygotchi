@@ -21,7 +21,12 @@ into `slime_mesh.h`): its vertices and a dense lookup of the blue
 translucent gel's studio lighting, rim and bloom. Every frame
 `gel/painter.cpp` deforms and projects the mesh by the body's pose and
 rasterizes it, erasing the last frame's pixels a band of rows at a time
-just before drawing the body there; on the AMOLED the board's other core
+just before drawing the body there. It fills the triangles facing the
+camera by pixel centre, and its outline, the edges between those and the
+ones turned away, has a soft fringe a pixel wide beyond it, each fringe
+meeting the next where the outline bends: so as the mesh turns and a
+sliver of a triangle on the outline turns toward the camera or away, the
+outline doesn't jump; on the AMOLED the board's other core
 does the lower rows meanwhile (`render/helper.h`), each row whole on one
 core in the same order, so the frame is pixel for pixel one core's
 (test_gel's `test_a_helper_draws_the_same_body`). `gel/art.cpp` draws the face's art (slimegen's

@@ -85,7 +85,10 @@ ramps and springs can, and no jolt at an event. By file:
   nothing drawn.
 - `test_main.cpp`: the rest: arithmetic (a `Divisor`'s quotients exactly
   `/`'s), the binary64 clock's rounding, every expression's bounds,
-  deterministic pixels, request identity and bounded caches, alerts
+  deterministic pixels, the body's outline soft with no seam inside, over
+  the crown too, and holding still as the mesh turns
+  (`test_the_outline_holds_still_as_the_mesh_turns`: leaned or squashed
+  end to end, no row's edge jumps a pixel and a quarter), request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
   fading (its visible ink through five cross-fades), falling asleep as a
