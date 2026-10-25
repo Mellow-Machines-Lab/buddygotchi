@@ -684,7 +684,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.runtime?.stop()
         // A copy on another folder takes its socket's listing with it.
         guard !model.ownsHooks else { return }
-        _ = try? Uninstall.removeListing(AppSettings.copyName(stateDir), stateDir: stateDir)
+        _ = try? HookSocket.unregister(stateDir.appendingPathComponent("boop.sock").path, as: AppSettings.copyName(stateDir))
     }
 
     /// The hooks call a stable copy of agent-hooks' `agent-hook` in the
