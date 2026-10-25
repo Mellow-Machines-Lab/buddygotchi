@@ -67,9 +67,21 @@ final class AppModel: ObservableObject {
     @Published var pane = Pane.overview
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
-    @Published var shown = false
+    @Published var shown = false {
+        didSet { if shown { catchUp() } }
+    }
+    /// Onboarding's window is open: its acts show the status too.
+    var onboardingShown = false {
+        didSet { if onboardingShown { catchUp() } }
+    }
     @Published var setup = SetupDraft()
+    /// What the views show. It changes only when what they show does, and
+    /// only while something shows it: the popover, or onboarding.
     @Published var status: Runtime.Status?
+    /// The runtime's latest status, kept whether or not anything shows it:
+    /// the menu-bar icon reads it, and `status` catches up with it when the
+    /// popover opens.
+    private(set) var latest: Runtime.Status?
     let slime = SlimeFeed(mirrorsBoard: true)
     @Published var hooks: [Agent: HookInstaller.Health] = [:]
     @Published var restartAgents = false
@@ -149,6 +161,27 @@ final class AppModel: ObservableObject {
 
     var name: String { status?.name ?? "Boop" }
 
+    /// A status from the runtime. The work stream's lanes are left out:
+    /// they change every few hundred milliseconds while an agent works,
+    /// and only the board's mirror shows them, which the board's own lines
+    /// feed. The views get it only when it changed and something shows it.
+    func take(_ status: Runtime.Status) {
+        var status = status
+        status.snapshot.calls = []
+        status.buddies = status.buddies.map { buddy in
+            var buddy = buddy
+            buddy.snapshot.calls = []
+            return buddy
+        }
+        latest = status
+        if shown || onboardingShown { catchUp() }
+    }
+
+    /// The views' `status`, brought up to the runtime's latest, when it differs.
+    private func catchUp() {
+        if let latest, status != latest { status = latest }
+    }
+
     /// The firmware the board should take: its board's, when it runs an
     /// older version than the app carries, or another character pack; or,
     /// when its firmware doesn't fit the app at all, the app's, whichever
@@ -217,7 +250,8 @@ final class AppModel: ObservableObject {
     }
 
     func refreshLoginItem() {
-        loginItemState = loginItem.state()
+        let now = loginItem.state()
+        if loginItemState != now { loginItemState = now }
     }
 
     /// Turns opening at login on or off. Only the everyday Boop does: a copy
@@ -241,9 +275,35 @@ final class AppModel: ObservableObject {
     /// Hooks that changed since the last look, however they changed, make
     /// a failed change's reason stale, so it goes.
     func refreshHooks() {
+        show(hooks: Self.health(installer))
+    }
+
+    private nonisolated static func health(_ installer: HookInstaller) -> [Agent: HookInstaller.Health] {
+        Dictionary(uniqueKeysWithValues: Agent.allCases.map { ($0, installer.health($0)) })
+    }
+
+    private func show(hooks now: [Agent: HookInstaller.Health]) {
+        guard now != hooks else { return }
         let before = hooks
-        hooks = Dictionary(uniqueKeysWithValues: Agent.allCases.map { ($0, installer.health($0)) })
+        hooks = now
         for agent in Agent.allCases where before[agent] != nil && before[agent] != hooks[agent] { hookErrors[agent] = nil }
+    }
+
+    /// The hooks and the login item, read off the main thread, as the
+    /// popover opens: the agents' settings files are parsed, and the login
+    /// item's state asks macOS. Each is assigned only when it changed.
+    func refreshInBackground() {
+        // A struct of constants, only read.
+        nonisolated(unsafe) let installer = installer
+        let loginItem = loginItem
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let hooks = Self.health(installer), login = loginItem.state()
+            Task { @MainActor in
+                guard let self else { return }
+                self.show(hooks: hooks)
+                if self.loginItemState != login { self.loginItemState = login }
+            }
+        }
     }
 
     func install(_ agent: Agent) {
@@ -291,11 +351,14 @@ final class AppModel: ObservableObject {
 
     /// How things are, in a few words: the Overview's status line, and the
     /// menu-bar icon's tooltip and what VoiceOver reads for it.
-    var headline: String {
+    var headline: String { headline(of: status) }
+
+    /// `status`'s headline: the menu-bar icon's reads the runtime's latest.
+    func headline(of status: Runtime.Status?) -> String {
         guard let s = status?.snapshot else {
             return startError == nil ? "Waking up…" : "Not running"
         }
-        if listening { return "Listening…" }
+        if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.base {
         case "working": return s.busy == 1 ? "Working on 1 session" : "Working on \(s.busy) sessions"
@@ -555,6 +618,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                       + "or repairs them; this copy hears them as \(name).sock")
         }
         model.refreshHooks()
+        // The login item's state, for Settings, before it's first opened.
+        model.refreshInBackground()
         model.start = { [weak self] in self?.startRuntime() }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
@@ -604,6 +669,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         onboarding.bringForward = { [weak self] in self?.bringOnboardingForward() }
         onboarding.log = { [log] in log.write($0) }
         self.onboarding = onboarding
+        model.onboardingShown = true
         let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(model: onboarding)))
         // No close button: it ends at the finale; ⌘Q quits, and the next
         // launch picks up where it left off.
@@ -664,6 +730,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 Task { @MainActor in
                     window.orderOut(nil)
                     self?.onboardingWindow = nil
+                    self?.model.onboardingShown = false
                     // The menu-bar app from now on: no Dock icon.
                     NSApp.setActivationPolicy(.accessory)
                     if !still { self?.blinkIcon(times: 2) }
@@ -739,7 +806,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.devices = options.link as? DeviceChooser
         do {
             let runtime = try Runtime(options)
-            runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }
+            runtime.onChange = { [weak self] status in
+                Task { @MainActor in
+                    self?.model.take(status)
+                    self?.updateIcon()
+                }
+            }
             // The popover's mirror of the board: what the board is sent and
             // does by itself, in order.
             let slime = model.slime
@@ -788,12 +860,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// the words.
     func updateIcon() {
         guard let button = statusItem?.button else { return }
-        let mood = model.startError == nil ? FaceMood(model.status) : .stopped
+        let latest = model.latest
+        let mood = model.startError == nil ? FaceMood(latest) : .stopped
         if mood != iconMood {
             iconMood = mood
             button.image = MenuBarIcon.image(mood)
         }
-        let words = "\(model.name): \(model.headline)"
+        let words = "\(latest?.name ?? model.name): \(model.headline(of: latest))"
         if button.toolTip != words {
             button.toolTip = words
             button.setAccessibilityLabel(words)
@@ -810,13 +883,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func showPopover() {
         guard let button = statusItem?.button else { return }
-        model.refreshHooks()
-        model.refreshLoginItem()
-        model.runtime?.refresh()
         NSApp.activate()
-        model.shown = true
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
+        // Shown first: reading the agents' settings and the login item's
+        // state waits on disk and on macOS, so it's done off the main
+        // thread, and only what changed is shown when it's back.
+        model.refreshInBackground()
+        model.runtime?.refresh()
+    }
+
+    /// Before it's on screen, the views catch up with the runtime's latest
+    /// status.
+    func popoverWillShow(_ notification: Notification) {
+        model.shown = true
     }
 
     /// Settings closes back to the overview; setup stays where it was.
