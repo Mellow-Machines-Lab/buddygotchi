@@ -52,7 +52,13 @@ struct Projector {
         depth = std::max(1024, -product(y, 862) - product(z, 4005));
     int height = surface.height * 95 / 100, focal = height * 4586;
     int perspective = focal * 16 / depth;
-    return {surface.width * 8 + product(p.x, perspective), height * 8 - product(vy, perspective) + c.dy * 16};
+    int px = surface.width * 8 + product(p.x, perspective), py = height * 8 - product(vy, perspective) + c.dy * 16;
+    if (c.squeezeBottom) {  // pressed flat under the drawer, on the screen
+      const int top = restBodyTop(surface.height) * 16, bottom = restBodyBottom(surface.height) * 16;
+      py = c.squeezeTop * 16 + int(int64_t(py - top) * (c.squeezeBottom - c.squeezeTop) * 16 / (bottom - top));
+      px = surface.width * 8 + product(px - surface.width * 8, c.widen);
+    }
+    return {px, py};
   }
   Point face(int x, int y) const {
     // Undo the face texture's 1.24 scale and .92 UV mapping.

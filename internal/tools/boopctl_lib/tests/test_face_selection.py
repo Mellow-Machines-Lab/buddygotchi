@@ -15,6 +15,6 @@ class FaceSelectionTests(unittest.TestCase):
     def test_gel_has_separate_scenarios_and_goldens(self):
         with patch.dict(os.environ, {'BOOP_SIM_FACE': 'gel'}):
             self.assertEqual(scenario.golden_dir().name, 'golden-gel')
-            self.assertEqual({path.stem for path in scenario.all_scenarios()}, {'comedy','gestures','lane','layers','moods','notice','occasions','pastimes','sign','states','stream','swipes'})
+            self.assertEqual({path.stem for path in scenario.all_scenarios()}, {'comedy','drawer','gestures','lane','layers','moods','notice','occasions','pastimes','sign','states','stream','swipes'})
             self.assertEqual(scenario.resolve('states').parent, scenario.GEL_SCENARIOS)
         self.assertEqual(cli.build_parser().parse_args(['sim','--face','gel']).face,'gel')

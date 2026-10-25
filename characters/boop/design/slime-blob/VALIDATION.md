@@ -104,7 +104,13 @@ ramps and springs can, and no jolt at an event. By file:
   allocating nothing, and the work stream
   (`test_the_work_stream_falls_behind_and_hits_in_front`: words in their
   lanes' columns behind the body, a hit's knock and daze and its lids
-  opening after, every gag drawn off the heap).
+  opening after, every gag drawn off the heap), and the agents' drawer
+  (`test_drawer.cpp`: a pull up the strip opening it and what the Mac
+  hears, a swipe up the face staying the face's, a short pull springing
+  back, a tap on a row picking it, shutting itself after 15 s and saying
+  it's open till then, BOOT shutting it, its rows inside the panel's
+  rounded corners, the body pressed flat under it, and its frames
+  allocating nothing).
 
 ## The board's frames
 
@@ -132,7 +138,10 @@ ramps and springs can, and no jolt at an event. By file:
   tower's stack, flag and topple, an edit's bars, and the whole turn's
   moments: a compaction's cube, a freeze, a drop, buried, and a turn's
   end gathering its words after the stream goes), and
-  a finger in idle (`swipes.jsonl`). `--accept` updates only the gel
+  a finger in idle (`swipes.jsonl`), and the agents' drawer
+  (`drawer.jsonl`: shut with the strip's chevron, pulled part way, open
+  with the body squeezed flat and its paw over the edge, a row picked,
+  handed over, and the rows it leaves out). `--accept` updates only the gel
   goldens, after looking at them.
 - `boopctl mirror` (in `make -C internal mirror`) plays the same scenarios
   on the Mac's mirror of the board (`characters/boop/mac/mirror/board.js`)

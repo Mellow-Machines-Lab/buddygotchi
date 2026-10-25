@@ -523,6 +523,18 @@ finger's velocity as it lets go is over its last 80 ms. The board's
 `tests/scenarios-gel/swipes.jsonl` and
 `internal/tools/fluid/idle-swipes.jsonl` swipe on the board itself.
 
+A finger that starts on the strip is no finger on the body: going up, it
+pulls out the agents' drawer (`render/gel/drawer.h`), and the body is
+pressed under its edge. Shut, it stands at rest; as the sheet rises its
+edge pushes the body up until it meets the glass, then flattens it, its
+rest rows mapped onto those left above the edge, spread a little wider
+(`Projector::project`, the painter's `squeezeTop` and `squeezeBottom`),
+its pose and springs carrying on inside them. Past six tenths flat it
+squeezes its eyes shut: the art, layers and props wait and the drawer
+draws its own face (`> <`, pink cheeks, a wobbly mouth), and once it has
+sprung open a paw drops over the sheet's edge. Shut again, it stands
+back up as it was. `tests/scenarios-gel/drawer.jsonl` pulls it.
+
 ## Notice
 
 The brain's reaction when you name it in your prompt: it heard its name and

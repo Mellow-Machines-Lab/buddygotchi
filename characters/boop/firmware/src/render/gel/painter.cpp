@@ -1,5 +1,6 @@
 // Projected, deforming gel dome. All frame work is integer and allocation-free.
 #include "render/gel/painter.h"
+#include "render/gel/drawer.h"
 #include "render/gel/engine.h"
 #include "render/gel/profile.h"
 #include "render/gel/geometry.h"
@@ -257,7 +258,8 @@ void applyRig(PaintControls& c, const rig::Channels& rig) {
   c.gazeUp = -off(Channel::kGazeY) * kRigGaze / 1000;
 }
 void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
-           const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const PastimeShow* pastimes) {
+           const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const PastimeShow* pastimes,
+           const DrawerPose* squeeze) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -276,13 +278,17 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.dy = dy;
   c.blink = std::max(c.blink, sleepyLids(e));
   applyRig(c, rig);
+  if (squeeze) c.squeezeTop = squeeze->top, c.squeezeBottom = squeeze->bottom, c.widen = squeeze->widen;
+  const bool bodyAlone = squeeze && squeeze->squint;
   rig::Anchors local;
   if (!anchors) anchors = &local;
   {
     Measure measure(profile.body);
     Box cards[Surface::kMaxKeep];
-    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors, pastimes);
+    paint(surface, c, cards, bodyAlone ? 0 : opaqueCards(surface, e, cards), keepLane, anchors,
+          bodyAlone ? nullptr : pastimes);
   }
+  if (bodyAlone) return;
   {
     Measure measure(profile.art);
     paintArt(surface, e, c, mouthOpen || rig[rig::Channel::kMouthOpen] >= kRigMouthOpen, anchors);

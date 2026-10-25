@@ -249,6 +249,7 @@ keep their names.
 | speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack |
 | needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
+| the agents' drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to tap open on the Mac (`render::Drawer`, `state`'s `list`, `ev drawer`) | roll call, list view |
 | the needs-you screen | What the board shows while an agent needs you: who's asking, in amber, until you answer or hold a finger on it | sign (that's a reaction's caption) |
 | buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
 | diary | Boop's line a day about the day before (`DiaryOutput`, the memory store's `diary.md`) | journal, log |

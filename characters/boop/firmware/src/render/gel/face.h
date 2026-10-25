@@ -13,6 +13,7 @@
 // pastimes' kit.
 #pragma once
 #include "render/face.h"
+#include "render/gel/drawer.h"
 #include "render/gel/engine.h"
 #include "render/gel/lane.h"
 #include "render/gel/painter.h"
@@ -44,6 +45,13 @@ class GelFace final : public Face {
   void watch(const Stream* stream) override { stream_ = stream; }
   // A swipe flings the dome on, and plays nothing else.
   bool playsSwipe() const override { return false; }
+  // The agents' drawer, up from the strip (render/gel/drawer.h).
+  bool hasDrawer() const override { return true; }
+  void drawer(const Drawer* drawer) override { drawer_ = drawer; }
+  int drawerTravel() const override { return DrawerLayout(size_.width, size_.height, size_.corner).travel(); }
+  int drawerRow(const Drawer& drawer, int x, int y) const override {
+    return DrawerLayout(size_.width, size_.height, size_.corner).rowAt(drawer, x, y);
+  }
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;
@@ -118,6 +126,10 @@ class GelFace final : public Face {
   uint32_t pendingAt_[kMaxCues]{};
   int pendingCount_ = 0;
   const Stream* stream_ = nullptr;
+  const Drawer* drawer_ = nullptr;
+  // The surface it last drew on: the AMOLED's until it has (the drawer's
+  // rows are laid out on it).
+  Size size_{502, 410, 110};
   // The word forward the body last answered, by when it came.
   uint32_t landedAt_ = 0;
   bool landed_ = true;

@@ -74,6 +74,15 @@ extension Runtime {
         case "gesture":
             options.log("device\(Runtime.whose(rig)): gesture \(ev.did ?? "?")")
             if let kind = ev.did { run(pipeline.gesture(kind, request: BoopDevice.request(held: ev), at: now, buddy: rig.tag)) }
+        case "drawer":
+            // The agents' drawer, the board's own: open, shut, or a row
+            // picked in it, by its number.
+            options.log("device\(Runtime.whose(rig)): drawer \(ev.did ?? "?")" + (BoopDevice.row(picked: ev).map { " \($0)" } ?? ""))
+            switch ev.did {
+            case "open", "closed": run(pipeline.drawer(open: ev.did == "open", at: now, buddy: rig.tag))
+            case "pick": if let row = BoopDevice.row(picked: ev) { run(pipeline.pick(row: row, at: now, buddy: rig.tag)) }
+            default: break
+            }
         case "talk_on", "talk_off":
             options.log("device\(Runtime.whose(rig)): \(ev.kind)")
             listener = rig

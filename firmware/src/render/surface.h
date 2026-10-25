@@ -26,7 +26,9 @@ struct Surface {
   // How far in from either side something must stand to show whole on
   // every row of [y0, y1), past the panel's rounded corners; with corners
   // of its own, of `radius`, it may stand nearer, as they're cut away too.
-  int inset(int y0, int y1, int radius = 0) const {
+  int inset(int y0, int y1, int radius = 0) const { return insetOf(width, height, corner, y0, y1, radius); }
+  // The same for a surface of that size, corner and all, before it has pixels.
+  static int insetOf(int width, int height, int corner, int y0, int y1, int radius = 0) {
     const int r = std::min(corner, std::min(width, height) / 2) - std::max(0, radius);
     const int edge = std::max(0, std::min(y0, height - y1));  // whole rows to the nearer edge
     if (r <= 0 || 2 * edge + 1 >= 2 * r) return 0;

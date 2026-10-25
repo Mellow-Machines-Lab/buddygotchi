@@ -242,6 +242,24 @@ public final class Pipeline {
         }
     }
 
+    /// The board's agents' drawer opened or shut (`ev drawer`): logged
+    /// only, and while it's open the board's state lists the sessions.
+    @discardableResult
+    public func drawer(open: Bool, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) { run(core(buddy).drawer(open: open, at: now), buddy: buddy) }
+    }
+
+    /// A row picked in the board's drawer (`pick`, the session's number
+    /// there): the core opens that session's thread on the Mac, as BOOT's
+    /// hand-off does, the board having handed it over.
+    @discardableResult
+    public func pick(row id: Int, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) {
+            let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: Core.drawerPick, buddy: buddy))
+            run(core(buddy).pick(row: id, at: now, seq: e.seq), buddy: buddy)
+        }
+    }
+
     /// The popover's Dismiss on the request numbered `request`, the one
     /// its card showed, if it's still the session `key`'s
     /// (`Core.dismiss`), on its buddy's board.

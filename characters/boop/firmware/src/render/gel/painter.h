@@ -11,7 +11,15 @@ struct PaintControls {
   // A rig clip's eyes (applyRig): their size about their middles, Q12, and
   // how far up they look, in face units (how far across is in gaze).
   int eyeSize = 4096, gazeUp = 0;
+  // Pressed under the agents' drawer (render/gel/drawer.h): the rows the
+  // body fills at rest (restBodyTop, restBodyBottom) mapped onto
+  // [squeezeTop, squeezeBottom), in px, and spread wider by `widen` (Q12);
+  // a squeezeBottom of 0 is none.
+  int squeezeTop = 0, squeezeBottom = 0, widen = 4096;
 };
+// The rows the body fills at rest, laid out on the AMOLED's 410.
+inline int restBodyTop(int height) { return height * 92 / 410; }
+inline int restBodyBottom(int height) { return height * 322 / 410; }
 // Where the body is this frame, from the same pose that draws it: the rig's
 // anchors (render/rig/rig.h), in sixteenths of a pixel, which a layer
 // (render/gel/layers.h) sits on, so it moves, squashes and leaves the screen
@@ -47,9 +55,12 @@ class Engine;
 // props, with the rig's channels on the engine's controls, and the
 // pastimes' scenery behind it all; a lane that shows `keepLane` is kept
 // from this surface's last frame. Its anchors into `anchors`.
+// Pressed under the agents' drawer (`squeeze`, render/gel/drawer.h), it
+// draws flattened, and with its eyes squeezed shut it draws the body alone.
+struct DrawerPose;
 void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t keepLane = 0,
            rig::Anchors* anchors = nullptr, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
-           uint32_t t = 0, const PastimeShow* pastimes = nullptr);
+           uint32_t t = 0, const PastimeShow* pastimes = nullptr, const DrawerPose* squeeze = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
 void paintProps(Surface&, const Engine&);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels

@@ -142,8 +142,43 @@ public struct StateSnapshot: Equatable, Sendable {
     /// none.
     public var calls: [Call]
 
+    /// One session in the board's agents' drawer: its number there, the one
+    /// a tap on its row sends back (`ev drawer` `pick`), whether it needs
+    /// you, works or rests (`n`, `w`, `i`), its work stream lane's slot,
+    /// whose colour it wears (-1 for none), its agent, its thread's name
+    /// (else its project) and its project (`""` when that's the title).
+    public struct Row: Equatable, Sendable {
+        public var id: Int
+        public var status: String
+        public var slot: Int
+        public var agent: String
+        public var title: String
+        public var project: String
+
+        public init(id: Int, status: String, slot: Int = -1, agent: String, title: String, project: String = "") {
+            self.id = id
+            self.status = status
+            self.slot = slot
+            self.agent = agent
+            self.title = title
+            self.project = project
+        }
+    }
+
+    /// The drawer's rows, only while the board says it's open: then an
+    /// empty list is sent too, so the board knows the Mac heard. The board
+    /// shows at most `maxRows`.
+    public var list: [Row]?
+    /// The sessions the rows leave out: the board says how many more.
+    public var unlisted: Int
+    public static let maxRows = 5
+    /// The longest title and project a row carries, in bytes, as the
+    /// board's fields hold them.
+    public static let maxTitleBytes = 30, maxProjectBytes = 22
+
     public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
-                vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = []) {
+                vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
+                unlisted: Int = 0) {
         self.base = base
         self.act = act
         self.mood = mood
@@ -155,6 +190,8 @@ public struct StateSnapshot: Equatable, Sendable {
         self.when = when
         self.todo = todo
         self.calls = calls
+        self.list = list
+        self.unlisted = unlisted
     }
 
     /// The look the device shows when nothing needs you: what the agents
@@ -191,9 +228,19 @@ public struct StateSnapshot: Equatable, Sendable {
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }
+        if let list {
+            fields["list"] = .array(list.map {
+                .array([.int($0.id), .string($0.status), .int($0.slot), .string($0.agent), .string($0.title),
+                        .string($0.project)])
+            })
+        }
+        if unlisted > 0 { fields["unlisted"] = .int(unlisted) }
         return fields
     }
 
     /// The message as one JSON line, keys in the protocol's order.
     public var jsonLine: String { Wire.state(fields) }
+
+    /// Whether the line fits the board's: one that doesn't is never sent.
+    public var fits: Bool { jsonLine.utf8.count < Wire.maxLine }
 }

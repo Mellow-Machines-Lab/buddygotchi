@@ -5,6 +5,7 @@
 // pixel face keeps.
 #pragma once
 #include "render/face.h"
+#include "render/drawer.h"
 #include "render/font.h"
 #include "render/rig/layers.h"
 #include "render/screens.h"
@@ -22,6 +23,13 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
 // holds).
 const Font& bubbleFont();
 
+// The strip's counts (how many work, the helpers, the idle and the to-do
+// list), from x, their middle on row cy: the agents' drawer carries them
+// up as its lid (render/gel/drawer.h). Returns the x after them.
+int paintCounts(Raster& r, const Strip& strip, int x, int cy);
+// The strip's rule from x0 to x1 on row y, broken in its middle by a
+// chevron, pointing up (the drawer under it) or down (it shuts).
+void paintRule(Raster& r, int x0, int x1, int y, bool down, uint16_t ink);
 // The bubble, or else the strip at its opacity.
 void paintLane(Surface& surface, const char* bubble, const Strip& strip);
 // What a lane shows, as a key that's the same exactly when its pixels are
@@ -37,11 +45,13 @@ struct PastimeShow;
 // (render/gel/stream.h: its words behind the body, the desk's to-do bar,
 // clock and thought cloud, and the word forward), the sign it holds up
 // (render/gel/layers.h), then the lane, unless this surface already shows
-// it.
+// it. While the agents' drawer shows (render/gel/drawer.h) it takes the
+// lane's place, the body pressed flat above it, and the pastimes, the
+// stream, the sign and the sky wait for it to shut.
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* bubble, const SignShow& sign,
                 const Strip& strip, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
                 uint32_t t = 0, const Stream* stream = nullptr, uint32_t now = 0,
-                const PastimeShow* pastimes = nullptr);
+                const PastimeShow* pastimes = nullptr, const Drawer* drawer = nullptr);
 // The widest line the bubble holds on a surface, in px, clear of its
 // rounded corners: on the AMOLED's, the longest take (22 glyphs) in the
 // sign's font, a line of 34 in the small one (pinned by test_gel).

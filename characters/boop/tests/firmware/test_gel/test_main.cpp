@@ -28,8 +28,9 @@ using namespace render::gel;
 // Heap allocations while `allocCounting` is on (test_steady_frames_allocate_nothing),
 // and the bytes held at any moment (test_histories_stay_off_the_heap): each
 // block carries its size in a 16-byte header.
-static bool allocCounting = false;
-static long allocCount = 0, allocLive = 0;
+bool allocCounting = false;  // test_drawer.cpp counts too
+long allocCount = 0;
+static long allocLive = 0;
 void* operator new(size_t n) {
   if (allocCounting) ++allocCount;
   auto* p = static_cast<unsigned char*>(std::malloc(n + 16));
@@ -1391,6 +1392,16 @@ void test_every_pastime_has_its_clip_and_its_turn();
 void test_each_pastime_draws_and_ends();
 void test_pastimes_are_dealt_by_tier_after_a_rest();
 void test_the_kit_follows_the_tiers();
+// test_drawer.cpp
+void test_a_pull_up_the_strip_opens_the_drawer();
+void test_a_swipe_up_the_face_isnt_the_drawers();
+void test_a_short_pull_springs_back_shut();
+void test_a_tap_on_a_row_picks_it();
+void test_it_shuts_itself_and_says_its_open_till_then();
+void test_boot_shuts_it();
+void test_the_drawers_rows_on_the_panel();
+void test_the_body_under_the_drawer();
+void test_drawer_frames_allocate_nothing();
 // test_requests.cpp
 void test_requests_route_by_priority();
 void test_a_request_keeps_its_identity();
@@ -2404,5 +2415,15 @@ int main() {
   RUN_TEST(test_cues_stay_sparse_and_quiet);
   RUN_TEST(test_a_request_sounds_once_whatever_changes);
   RUN_TEST(test_sound_draws_change_nothing_drawn);
+  // test_drawer.cpp
+  RUN_TEST(test_a_pull_up_the_strip_opens_the_drawer);
+  RUN_TEST(test_a_swipe_up_the_face_isnt_the_drawers);
+  RUN_TEST(test_a_short_pull_springs_back_shut);
+  RUN_TEST(test_a_tap_on_a_row_picks_it);
+  RUN_TEST(test_it_shuts_itself_and_says_its_open_till_then);
+  RUN_TEST(test_boot_shuts_it);
+  RUN_TEST(test_the_drawers_rows_on_the_panel);
+  RUN_TEST(test_the_body_under_the_drawer);
+  RUN_TEST(test_drawer_frames_allocate_nothing);
   return UNITY_END();
 }

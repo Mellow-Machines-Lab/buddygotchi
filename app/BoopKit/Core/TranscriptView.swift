@@ -374,7 +374,7 @@ public final class TranscriptView {
         case .poke?: return poke(e)
         case .press?:
             noteActivity(e.at)
-            return Line(EventLine.pressed(name: name(e)))
+            return Line(e.specificType == Core.drawerPick ? EventLine.picked(name: name(e)) : EventLine.pressed(name: name(e)))
         case .prompt?:
             return promptRead(e)
         case .lastMessage?:
@@ -1100,6 +1100,9 @@ public enum EventLine {
     /// A BOOT press that handed you an agent; what it opened is the core's
     /// record under it.
     public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }
+    public static func picked(name: String = CharacterPack.active.name) -> String {
+        "You picked an agent from \(name)'s list."
+    }
 
     public static func heartbeat(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."

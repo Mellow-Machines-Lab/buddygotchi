@@ -570,10 +570,20 @@ struct WorkspaceName: View {
     }
 }
 
-/// One session: the project, then the thread's name or else its workspace,
-/// and its status in a chip. The tone also runs down a thin bar on the
-/// leading edge, so the amber of a waiting one stands out in a column of
-/// greys.
+/// What a session's row calls it: the thread's name, its project beside
+/// it; with no name yet, its project, and its workspace beside that. One
+/// with neither a name nor a folder is an untitled session.
+func rowTitle(project: String, name: String?) -> (title: String, project: String?) {
+    let project = project.isEmpty || project == "unknown" ? nil : project
+    if let name, !name.isEmpty { return (name, project) }
+    return (project ?? "Untitled session", nil)
+}
+
+/// One session: the thread's name and its project, and under them what it's
+/// doing (its latest call's word, its to-dos and for how long), its status
+/// in a chip. The tone also runs down a thin bar on the leading edge, so
+/// the amber of a waiting one stands out in a column of greys, and a working
+/// one wears its lane's colour, as on the board.
 struct SessionRow: View {
     let session: SessionSummary
 
@@ -590,9 +600,30 @@ struct SessionRow: View {
     private var bar: Color {
         switch status {
         case .waiting: Theme.amber
-        case .working: Theme.inkSoft
+        case .working: session.slot.flatMap(Theme.lane) ?? Theme.inkSoft
         case .idle: Theme.hairlineStrong
         }
+    }
+
+    /// Its latest call's word, its to-dos and how long it's waited, worked
+    /// or rested, at `now`.
+    private func doing(at now: Date) -> String {
+        var parts: [String] = []
+        if let word = session.word { parts.append(word) }
+        if let todo = session.todo { parts.append("\u{2713} \(todo.text)") }
+        if let since = session.since {
+            let span = SessionRow.span(now.timeIntervalSince(since))
+            parts.append(status == .waiting ? "waiting \(span)" : status == .working ? span : "idle \(span)")
+        }
+        return parts.joined(separator: " \u{00B7} ")
+    }
+
+    /// A while, as the row says it: `<1m`, `12m`, `3h`, `2d`.
+    static func span(_ seconds: TimeInterval) -> String {
+        let minutes = Int(max(0, seconds) / 60)
+        if minutes < 1 { return "<1m" }
+        if minutes < 60 { return "\(minutes)m" }
+        return minutes < 24 * 60 ? "\(minutes / 60)h" : "\(minutes / (24 * 60))d"
     }
 
     private var label: String {
@@ -604,17 +635,27 @@ struct SessionRow: View {
     }
 
     var body: some View {
-        let (title, name) = sessionTitle(project: session.project, name: session.name)
+        let (title, project) = rowTitle(project: session.project, name: session.name)
         HStack(spacing: Theme.gapSnug) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1).truncationMode(.middle)
-                    .layoutPriority(1)
-                if let name {
-                    Text(name).font(.system(size: 11)).foregroundStyle(Theme.inkSoft).lineLimit(1).truncationMode(.tail)
-                } else if let workspace = session.workspace {
-                    WorkspaceName(workspace)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1).truncationMode(.tail)
+                        .layoutPriority(1)
+                    if let project {
+                        Text(project).font(.system(size: 11)).foregroundStyle(Theme.inkSoft).lineLimit(1).truncationMode(.middle)
+                    } else if let workspace = session.workspace {
+                        WorkspaceName(workspace)
+                    }
+                }
+                if session.word != nil || session.todo != nil || session.since != nil {
+                    // The time moves on as the row shows, a tick a half-minute.
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        Text(doing(at: context.date))
+                            .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.inkSoft)
+                            .lineLimit(1).truncationMode(.tail)
+                    }
                 }
             }
             Spacer(minLength: Theme.gapTight)

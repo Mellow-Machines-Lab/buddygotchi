@@ -36,7 +36,15 @@ static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out a
 
 // A repeated state keeps the link alive but doesn't invalidate the picture.
 // Compare fields, not bytes: Model has padding and its strings are terminated.
+bool sameRow(const render::Drawer::Row& a, const render::Drawer::Row& b) {
+  return a.id == b.id && a.status == b.status && a.slot == b.slot && !std::strcmp(a.agent, b.agent) &&
+         !std::strcmp(a.title, b.title) && !std::strcmp(a.project, b.project);
+}
+
 bool sameModel(const Model& a, const Model& b) {
+  if (a.listed != b.listed || a.listCount != b.listCount || a.unlisted != b.unlisted) return false;
+  for (int i = 0; i < a.listCount; ++i)
+    if (!sameRow(a.list[i], b.list[i])) return false;
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
@@ -219,6 +227,24 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
     render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
   }
+  // The agents' drawer's rows, `[id, status, slot, agent, title,
+  // project]`: status "n" needs you, "w" working, else idle; slot -1 for
+  // no lane; project "" when the title is it.
+  m.listed = doc["list"].is<JsonArrayConst>();
+  for (JsonArrayConst row : doc["list"].as<JsonArrayConst>()) {
+    if (m.listCount >= render::Drawer::kRows) break;
+    auto& r = m.list[m.listCount++];
+    r.id = uint32_t(row[0] | 0u);
+    const char* status = row[1] | "";
+    r.status = status[0] == 'n'   ? render::Drawer::Status::kNeedsYou
+               : status[0] == 'w' ? render::Drawer::Status::kWorking
+                                  : render::Drawer::Status::kIdle;
+    r.slot = int8_t(heldTo(row[2], -1, render::Stream::kLanes - 1, -1));
+    copyStr(r.agent, sizeof(r.agent), row[3] | "");
+    render::foldText(row[4] | "", int(sizeof(r.title)) - 2, r.title, sizeof(r.title));
+    render::foldText(row[5] | "", int(sizeof(r.project)) - 2, r.project, sizeof(r.project));
+  }
+  m.unlisted = heldTo(doc["unlisted"], 0, 999, 0);
   if (!sameModel(m, b_.model()) || live_.pattern || b_.noApp(at))
     dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
   b_.onState(m, at);
@@ -489,6 +515,9 @@ void Device::state(JsonObject d, uint32_t t) {
     d["imu"] = nullptr;
   }
   d["face_down"] = b_.faceDown();
+  // The agents' drawer: how far open, and the rows the Mac sent.
+  d["drawer"]["open"] = drawerOpen(t);
+  d["drawer"]["rows"] = m.listCount;
   d["idle"] = m.idle;
   d["helpers"] = m.helpers;
   JsonArray when = d["when"].to<JsonArray>();
@@ -651,6 +680,7 @@ void Device::readInputs(uint32_t t) {
       break;
     case ButtonGesture::kTap:
       b_.pressUp();
+      if (drawerOpen(t) > 0) moveDrawer(0, t, live_.bootInjected);
       latency_.mark(Latency::kTap, live_.bootInjected ? pressGone : real);
       tapped(t, live_.bootInjected, true);
       break;
@@ -698,21 +728,46 @@ void Device::readInputs(uint32_t t) {
   if (touching && !live_.touchDown) {
     input("touch", t, x, y);
     live_.touchPath.down(x, y, t);
+    // A touch on the open drawer is the drawer's, and so is one that
+    // starts on the strip, should it go up; neither moves the face.
+    const int open = drawerOpen(t);
+    live_.drawerTouch = faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || y >= kDrawerFromY);
+    live_.drawerPulling = false;
+    if (live_.drawerTouch)
+      live_.drawerGrabbed = open, live_.drawerTouchedAt = t, live_.drawerInjected = live_.injTouch;
     // Only a touch that began on the screen holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
-    live_.touchOnNeedsYou = faced && needsYouShows(t);
+    live_.touchOnNeedsYou = faced && needsYouShows(t) && open <= 0;
     live_.touchAttnId = live_.touchOnNeedsYou ? b_.model().attnId : 0;
     live_.touchDismissed = false;
     if (faced) {
       b_.pressDown(t);
-      b_.face().finger(true, x, y);
+      if (!live_.drawerTouch) b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
   } else if (touching && contact) {
     live_.touchPath.move(x, y, t);
-    if (faced) b_.face().finger(true, x, y);
+    if (live_.drawerTouch) {
+      // Up opens it: once the finger has gone kDrawerPullPx (either way,
+      // when it's open already), the drawer follows it, with a little give
+      // past either end.
+      const int pulled = live_.touchPath.path().y0 - y;
+      if (!live_.drawerPulling && (live_.drawerGrabbed > 0 ? std::abs(pulled) : pulled) >= kDrawerPullPx) {
+        live_.drawerPulling = true;
+        if (!live_.drawerToldOpen) sayDrawer("open", nullptr, t);
+      }
+      if (live_.drawerPulling) {
+        int open = live_.drawerGrabbed + pulled * 1000 / std::max(1, b_.face().drawerTravel());
+        if (open > 1000) open = 1000 + (open - 1000) / 4;
+        if (open < 0) open /= 4;
+        live_.drawerPulled = open;
+      }
+    } else if (faced) {
+      b_.face().finger(true, x, y);
+    }
   }
-  if (touching && live_.touchOnNeedsYou && !live_.touchDismissed && needsYouShows(t) && live_.touchPath.held(t)) {
+  if (touching && live_.touchOnNeedsYou && !live_.touchDismissed && !live_.drawerPulling && needsYouShows(t) &&
+      live_.touchPath.held(t)) {
     // Nothing plays: the screen goes when the Mac's next state says so.
     live_.touchDismissed = true;
     input("gesture", t);
@@ -725,7 +780,7 @@ void Device::readInputs(uint32_t t) {
     // The face may carry on the finger's motion as it lets go.
     int vx, vy;
     live_.touchPath.velocity(vx, vy);
-    b_.face().letGo(vx, vy);
+    if (!live_.drawerTouch) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
     const TouchGesture::Kind kind = live_.touchPath.up(g);
     live_.lastTouch = live_.touchPath.path();
@@ -741,7 +796,15 @@ void Device::readInputs(uint32_t t) {
       // A touch that began on the needs-you screen was for it: it gives no tap
       // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
-      if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
+      // A touch the drawer took (a pull, or any on it open) is the
+      // drawer's alone: the Mac hears what it did, not a tap.
+      if (live_.drawerTouch && (live_.drawerPulling || live_.drawerGrabbed > 0)) {
+        live_.lastTouchWas = "drawer";
+        if (live_.drawerPulling)
+          letGoDrawer(t, vy);
+        else
+          tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
+      } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         if (kind == TouchGesture::kTap || b_.held(t))
           tapped(t, live_.touchInjected, false);
@@ -750,8 +813,79 @@ void Device::readInputs(uint32_t t) {
       }
     }
   }
+  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = false;
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
+}
+
+// ---- The agents' drawer ------------------------------------------------------
+
+int Device::drawerOpen(uint32_t t) const {
+  if (live_.drawerPulling) return live_.drawerPulled;
+  const uint32_t age = t - live_.drawerAt;
+  if (live_.drawerFrom == live_.drawerTo || age >= kDrawerMs) return live_.drawerTo;
+  // Backing out: past the end a little, and back.
+  const int64_t u = int64_t(age) * 1000 / kDrawerMs - 1000;  // -1000 … 0
+  const int64_t k = 1000 + 23 * u * u * u / 10000000 + 13 * u * u / 10000;
+  return int(live_.drawerFrom + (live_.drawerTo - live_.drawerFrom) * k / 1000);
+}
+
+void Device::moveDrawer(int to, uint32_t t, bool injected) {
+  live_.drawerFrom = drawerOpen(t);
+  live_.drawerPulling = false;
+  live_.drawerTo = to;
+  live_.drawerAt = t;
+  live_.drawerInjected = injected;
+  if (to > 0 && !live_.drawerToldOpen) sayDrawer("open", nullptr, t);
+  if (to <= 0 && live_.drawerToldOpen) sayDrawer("closed", nullptr, t);
+  dirty_ = true;
+}
+
+void Device::sayDrawer(const char* did, const char* data, uint32_t t) {
+  if (!std::strcmp(did, "open")) live_.drawerToldOpen = true, live_.drawerSaidAt = t;
+  if (!std::strcmp(did, "closed")) live_.drawerToldOpen = false;
+  kit().emit(kDrawerEvent, did, data, live_.drawerInjected);
+}
+
+// A pull let go: it springs open when it went up quickly, or is more than
+// four tenths open and not going down quickly; else shut.
+void Device::letGoDrawer(uint32_t t, int vy) {
+  live_.drawerTouchedAt = t;
+  const int speed = -vy * 1000 / std::max(1, b_.face().drawerTravel());  // its open a second, up
+  const int open = drawerOpen(t);
+  moveDrawer(speed > 1500 || (speed > -1500 && open > 400) ? 1000 : 0, t, live_.drawerInjected);
+}
+
+// A tap on the open drawer: on a row, the Mac opens that session's thread
+// and Boop hands it over as the drawer shuts; anywhere else, it shuts.
+void Device::tapDrawer(int x, int y, uint32_t t) {
+  live_.drawerTouchedAt = t;
+  const int row = live_.drawerGrabbed >= 900 ? b_.face().drawerRow(drawer_, x, y) : -1;
+  if (row >= 0) {
+    char data[32];
+    std::snprintf(data, sizeof(data), "{\"id\":%lu}", (unsigned long)drawer_.rows[row].id);
+    input("drawer", t, x, y);
+    sayDrawer("pick", data, t);
+    live_.drawerPicked = row;
+    b_.gesture(render::Gesture::kHandoff, t);
+  }
+  moveDrawer(0, t, live_.drawerInjected);
+  drain();
+}
+
+// Each tick: shut kDrawerShutMs after the last touch, and while open, say
+// so again now and then, or soon when the Mac has sent no rows.
+void Device::tendDrawer(uint32_t t) {
+  const int open = drawerOpen(t);
+  if (live_.drawerTo > 0 && !live_.drawerPulling && !live_.touchDown &&
+      int32_t(t - live_.drawerTouchedAt) >= int32_t(kDrawerShutMs))
+    moveDrawer(0, t, live_.drawerInjected);
+  if (live_.drawerToldOpen && live_.drawerTo > 0) {
+    const uint32_t since = t - live_.drawerSaidAt;
+    if (since >= kDrawerSayMs || (!b_.model().listed && since >= kDrawerAskMs)) sayDrawer("open", nullptr, t);
+  }
+  if (open <= 0 && live_.drawerTo <= 0) live_.drawerPicked = -1;
+  if (open > 0 || (live_.drawerFrom != live_.drawerTo && t - live_.drawerAt < kDrawerMs)) dirty_ = true;
 }
 
 bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
@@ -793,6 +927,7 @@ void Device::tick(uint32_t t) {
   uint32_t real = hal_.realMs();
   if (real - fpsSinceReal_ >= 1000) fps_ = frames_ * 1000 / (real - fpsSinceReal_), frames_ = 0, fpsSinceReal_ = real;
   readInputs(t);
+  tendDrawer(t);
   readMotion(t);
   followSound(t);
   drain();
@@ -888,6 +1023,20 @@ void Device::render(uint32_t t) {
     }
   } else {
     b_.face().watch(&b_.stream());
+    // The drawer as it is now: how far open, the Mac's rows, and the paw
+    // dropping over its edge once it has sprung open.
+    const Model& m = b_.model();
+    drawer_.open = drawerOpen(t);
+    drawer_.count = m.listCount;
+    for (int i = 0; i < m.listCount; ++i) drawer_.rows[i] = m.list[i];
+    drawer_.unlisted = m.unlisted;
+    drawer_.listed = m.listed;
+    drawer_.picked = live_.drawerPicked;
+    const int32_t settled = int32_t(t - live_.drawerAt - kDrawerMs);
+    drawer_.paw = live_.drawerTo > 0 && !live_.drawerPulling && settled > 0
+                      ? std::min(1000, int(settled * 1000 / int32_t(kDrawerPawMs)))
+                      : 0;
+    b_.face().drawer(&drawer_);
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
                         b_.strip(t), dirty_))
       return;

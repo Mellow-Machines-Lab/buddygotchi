@@ -485,8 +485,9 @@ bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, 
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
   const PastimeShow kit = pastimes(lastTick_);
+  size_ = {native->width, native->height, native->corner};
   paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_,
-             stream_, t, &kit);
+             stream_, t, &kit, drawer_);
   return true;
 }
 

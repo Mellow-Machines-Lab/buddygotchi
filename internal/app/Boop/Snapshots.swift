@@ -289,12 +289,25 @@ enum Snapshots {
                        growth: Growth? = Growth(xp: 1_340)) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
+        // Each waited, worked or rested a few minutes more than the one
+        // before; those working are each at a call of their own, in their
+        // lanes, and the first has a to-do list.
+        let words = ["swift test", "edit +18 \u{2212}2", "grep", "pytest", "build", "read"]
+        var working = 0
         let sessions = rows.enumerated().map { i, row in
-            SessionSummary(agent: row[0], project: row[1], name: row.count > 3 && !row[3].isEmpty ? row[3] : nil,
-                           workspace: row.count > 4 ? row[4] : nil, status: statuses[row[2]]!,
-                           thread: ThreadRef(agent: row[0], session: "s\(i)",
-                                             app: row[0] == "claude" ? "com.anthropic.claudefordesktop" : "com.openai.codex",
-                                             appSession: "local_\(i)"))
+            var s = SessionSummary(agent: row[0], project: row[1], name: row.count > 3 && !row[3].isEmpty ? row[3] : nil,
+                                   workspace: row.count > 4 ? row[4] : nil, status: statuses[row[2]]!,
+                                   thread: ThreadRef(agent: row[0], session: "s\(i)",
+                                                     app: row[0] == "claude" ? "com.anthropic.claudefordesktop" : "com.openai.codex",
+                                                     appSession: "local_\(i)"),
+                                   since: Date().addingTimeInterval(-Double(60 * (2 + 5 * i))))
+            if s.status == .working {
+                s.word = words[working % words.count]
+                s.slot = working < 4 ? working : nil
+                if working == 0 { s.todo = StateSnapshot.Todo(done: 3, total: 7) }
+                working += 1
+            }
+            return s
         }
         let wait = sessions.filter { $0.status == .waiting }
         let snapshot = StateSnapshot(

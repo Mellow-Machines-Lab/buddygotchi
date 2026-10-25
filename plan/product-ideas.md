@@ -1,4 +1,4 @@
-# Product ideas: the running list (updated 2026-10-22)
+# Product ideas: the running list (updated 2026-10-25)
 
 The implementation plan for the Yes list is [updated-behavior.md](updated-behavior.md).
 As of 2026-10-22, all ten Yes items are on `feature/updated-behavior`.
@@ -190,6 +190,26 @@ check-ins, ears) is a separate track, not repeated here.
   (shake vs. typing on the desk) are pinned in tests.
 - **The Cheap Yellow Display** has neither a capacitive screen nor a
   motion sensor, so it keeps tap and BOOT.
+
+### 11. The agents' drawer (2026-10-25)
+Every agent at a glance, and any of them one tap from the board. Built on
+the AMOLED (the gel) only.
+- **How you get there.** Swipe up on the counts strip: it rides up as the
+  drawer's lid, a chevron in its rule hinting it's there. Boop is pressed
+  flat against the top, eyes squeezed shut (`> <`), cheeks pink, one paw
+  hung over the edge. The owner picked this "squished" pose over peeking
+  over the edge and flopping onto it.
+- **The rows.** One a session: the thread's name (else its project), its
+  agent and project under it, and needs you, working or idle. Nothing about
+  what it's doing: the owner judged that too much for the board. Needs you
+  first, then working, then resting; five at most, the last saying how
+  many more.
+- **A tap on a row** opens that thread on the Mac, as BOOT's hand-off does.
+  Swipe down, or leave it 15 s, and Boop pops back up.
+- **The popover** got the same rows, thread name first, with what the board
+  leaves out under each: its latest call, its to-dos and how long.
+- **Maybe later:** a finish leads into the drawer, the one that finished
+  on top. Not yet.
 
 ## Maybe: liked, or still open
 - **What it needs, at a glance:** "needs you" shows whether it's a

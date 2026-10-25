@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "fonts_gel.h"
+#include "render/gel/drawer.h"
 #include "render/font.h"
 #include "render/gel/layers.h"
 #include "render/gel/painter.h"
@@ -181,6 +182,20 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
   return x;
 }
 
+}  // namespace
+
+int paintCounts(Raster& r, const Strip& s, int x, int cy) { return counts(&r, s, x, cy); }
+
+void paintRule(Raster& r, int x0, int x1, int y, bool down, uint16_t ink) {
+  const int cx = (x0 + x1) / 2, tip = down ? y + 6 : y - 5, foot = down ? y - 3 : y + 4;
+  r.round(x0, y, cx - 18 - x0, 2, 1, ink);
+  r.round(cx + 18, y, x1 - cx - 18, 2, 1, ink);
+  r.line({cx - 10, foot}, {cx, tip}, 3, ink);
+  r.line({cx, tip}, {cx + 10, foot}, 3, ink);
+}
+
+namespace {
+
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
 void strip(Lane& l, const Strip& s) {
@@ -192,7 +207,12 @@ void strip(Lane& l, const Strip& s) {
   // In from the sides, and clear of the panel's rounded corners on the
   // rows of the marks and the digits.
   const int margin = std::max(kMargin, l.r.s.inset(cy - 12, cy + 12) + kCornerGap);
-  r.round(margin, l.y(kStripTop), l.w - 2 * margin, 2, 1, dim);
+  // Its rule, with a chevron for the agents' drawer under it while there
+  // are any (render/gel/drawer.h).
+  if (s.agent || s.busy > 0 || s.idle > 0)
+    paintRule(r, margin, l.w - margin, l.y(kStripTop), false, dim);
+  else
+    r.round(margin, l.y(kStripTop), l.w - 2 * margin, 2, 1, dim);
   const int countsWidth = counts(nullptr, s, 0, cy);
   int x = margin;
   if (s.agent) {
@@ -277,11 +297,20 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
 
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
                 const Strip& s, const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const Stream* stream,
-                uint32_t now, const PastimeShow* pastimes) {
+                uint32_t now, const PastimeShow* pastimes, const Drawer* drawer) {
+  rig::Anchors at;
+  if (drawer && drawer->shows()) {
+    // The lane's rows are the sheet's: erased, and drawn again after.
+    const DrawerPose pose = drawerPose(surface, *drawer);
+    paint(surface, e, mouthOpen, dy, 0, &at, rig, layers, t, nullptr, &pose);
+    if (pose.squint) paintSquint(surface, at, pose, DrawerLayout(surface.width, surface.height, surface.corner).top(drawer->open));
+    Measure measure(profile.lane);
+    paintDrawer(surface, *drawer, s, at);
+    return;
+  }
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
-  rig::Anchors at;
   paint(surface, e, mouthOpen, dy, key, &at, rig, layers, t, pastimes);
   if (pastimes) {
     Measure measure(profile.props);

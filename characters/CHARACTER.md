@@ -459,7 +459,7 @@ the brain's, a rule's, or the board's own.
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
-| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke` (a slow one; a quick one, a swipe, plays the stroke or the ruffle it would be, unless the face only feels it go by, as the gel's dome flings on, and goes to the Mac as `swipe`), `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
+| `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke` (a slow one; a quick one, a swipe, plays the stroke or the ruffle it would be, unless the face only feels it go by, as the gel's dome flings on, and goes to the Mac as `swipe`), `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger that starts on the gel's strip and goes up pulls out the agents' drawer instead (What else a face does). A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
@@ -590,6 +590,22 @@ Besides drawing each mood and state, a face:
   fade, from the moment it came or went, and hands the face its opacity
   with it (`Strip::opacity`): `drawLane` dithers it on the canvas, and a
   face that draws its own lane, as the gel does, draws it at that opacity.
+- **Has an agents' drawer, if it can** (`Face::hasDrawer`,
+  `render/drawer.h`). A finger that starts on the strip and goes up pulls
+  it out: the strip's counts ride up as its lid, a chevron in its rule
+  pointing the way, and a sheet of rows comes out under it, one a session
+  the Mac lists (`state`'s `list`, sent while the board says the drawer
+  is open): its thread's name, its agent and project, and whether it needs
+  you, works or rests, its bar in its lane's colour. A tap on a row has
+  the Mac open that thread and the board hand it over as the drawer
+  shuts; a finger pulls it shut, and it shuts itself 15 s after the last
+  touch. The device keeps the finger, the spring and the clock, and hands
+  the face the drawer before each frame (`Face::drawer`); the face lays
+  it out and says where its rows are (`drawerTravel`, `drawerRow`). The
+  gel draws it over its lane, its body pressed flat against the top of
+  the glass, eyes squeezed shut, cheeks pink and a paw hung over the
+  sheet's edge (`render/gel/drawer.h`). Pixel has none: a swipe up its
+  strip is the swipe it was.
 - **Holds up a sign.** Any reaction may carry words in `sign` (the `do`'s
   args), at most 18 glyphs of the fonts (accents folded, and past that
   cut at a word with `..` as all the lane's text is, `render::foldText`).

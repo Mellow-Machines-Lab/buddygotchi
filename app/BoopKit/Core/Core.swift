@@ -91,6 +91,15 @@ public final class Core {
     var lastSessions: [SessionSummary] = []
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
+    /// When the board last said its agents' drawer is open (`ev drawer`),
+    /// until it says it shut: the snapshot lists the sessions while it is.
+    var drawerHeardAt: Int64?
+    /// Each session's number on the drawer, by session key: what a tap on
+    /// its row sends back. They count up from where this launch's requests
+    /// start (`Config.firstAsk`), so a row a board still shows from the
+    /// last launch can't open some other session.
+    var rows: [String: Int] = [:]
+    var lastRow: Int?
     /// The activity the working look shows (`updateActs`), and each
     /// working session's, held.
     var shownAct: Timed?
@@ -663,11 +672,51 @@ public final class Core {
         let rests = resting(idle: idle, dismissed: dismissed)
         // The work stream's lanes, while the agents work and nothing
         // needs you.
-        let calls = config.workStream && base == "working" && attn == nil ? stream.calls(Set(working.map(\.key))) : []
-        return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
-                             idle: rests.count, helpers: helpers, vol: config.volume,
-                             when: when(at: now, workingSince: stretchStart(working, at: now),
-                                        idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
+        // They wait while the drawer's open, which covers them.
+        let drawer = drawerOpen(at: now)
+        let calls = config.workStream && base == "working" && attn == nil && !drawer
+            ? stream.calls(Set(working.map(\.key))) : []
+        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
+                                     idle: rests.count, helpers: helpers, vol: config.volume,
+                                     when: when(at: now, workingSince: stretchStart(working, at: now),
+                                                idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
+        if drawer { list(into: &snapshot, at: now) }
+        return snapshot
+    }
+
+    /// Whether the board's agents' drawer is open: it said so within
+    /// `drawerQuietMs` (it says so again every 10 s), and hasn't said it
+    /// shut.
+    func drawerOpen(at now: Int64) -> Bool { drawerHeardAt.map { now - $0 < Self.drawerQuietMs } ?? false }
+    public static let drawerQuietMs: Int64 = 25_000
+
+    /// The drawer's rows, in what needs you first: the requests that show
+    /// (oldest first), then the sessions working, then those resting (a
+    /// request you dismissed, or idle), the latest to come to rest first;
+    /// as many as fit the board's line, and `maxRows`, or one fewer when
+    /// there are more, so its last row can say how many more.
+    func list(into snapshot: inout StateSnapshot, at now: Int64) {
+        let (shown, dismissed, working, idle) = groups(at: now)
+        let rested = (dismissed + idle).sorted {
+            (notes[$0.key]?.dismissed?.at ?? $0.turn.lastEndedAt ?? $0.lastEventAt, $0.order)
+                > (notes[$1.key]?.dismissed?.at ?? $1.turn.lastEndedAt ?? $1.lastEventAt, $1.order)
+        }
+        let all = shown.map { ($0, "n") } + working.map { ($0, "w") } + rested.map { ($0, "i") }
+        let room = all.count <= StateSnapshot.maxRows ? all.count : StateSnapshot.maxRows - 1
+        snapshot.list = []
+        for (s, status) in all.prefix(room) {
+            let named = s.name.map { !$0.isEmpty } ?? false
+            let row = StateSnapshot.Row(
+                id: rows[s.key] ?? 0, status: status,
+                slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
+                title: StateSnapshot.clip(named ? s.name! : s.project, marked: true, max: StateSnapshot.maxTitleBytes),
+                project: named ? StateSnapshot.clip(s.project, marked: true, max: StateSnapshot.maxProjectBytes) : "")
+            var next = snapshot
+            next.list?.append(row)
+            guard next.fits else { break }
+            snapshot = next
+        }
+        snapshot.unlisted = all.count - (snapshot.list?.count ?? 0)
     }
 
     /// When the working stretch that `working`, the sessions working at
@@ -746,8 +795,22 @@ public final class Core {
     /// sign names. The device doesn't get these.
     public func sessionList(at now: Int64) -> [SessionSummary] {
         let (shown, dismissed, working, idle) = groups(at: now)
-        return (shown + dismissed).map { SessionSummary($0, .waiting) } + working.map { SessionSummary($0, .working) }
-            + idle.map { SessionSummary($0, .idle) }
+        func summary(_ s: Session, _ status: SessionSummary.Status) -> SessionSummary {
+            var summary = SessionSummary(s, status)
+            // Since when it's been doing what it does: waiting since its
+            // request, working since its turn started, resting since its
+            // last turn ended (else since it was last heard from).
+            let since = status == .waiting ? s.needsSince
+                : status == .working ? s.turn.startedAt : s.turn.lastEndedAt ?? s.lastEventAt
+            summary.since = since.map { Date(timeIntervalSince1970: Double(wall($0)) / 1000) }
+            if status == .working, config.workStream, let lane = stream.lanes[s.key] {
+                summary.word = lane.word
+                summary.slot = lane.slot
+            }
+            return summary
+        }
+        return (shown + dismissed).map { summary($0, .waiting) } + working.map { summary($0, .working) }
+            + idle.map { summary($0, .idle) }
     }
 
     /// Why nothing but what you said wakes the brain (a tap then opens the
@@ -803,6 +866,54 @@ public final class Core {
         }
         publish(now, &fx)
         return fx
+    }
+
+    /// The board's agents' drawer opened, or shut (`ev drawer`): while it's
+    /// open the snapshot lists the sessions (`list`).
+    @discardableResult
+    public func drawer(open: Bool, at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        drawerHeardAt = open ? now : nil
+        publish(now, &fx)
+        return fx
+    }
+
+    /// A row picked in the board's drawer, by its number (`pick`), recorded
+    /// as `seq`: its session's thread opens on the Mac, as BOOT's hand-off
+    /// does, recorded as the `open_thread` action by the drawer. A number
+    /// no session has any more opens nothing.
+    @discardableResult
+    public func pick(row id: Int, at now: Int64, seq: Int? = nil) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        startDayIfNew(now, &fx)
+        if let key = rows.first(where: { $0.value == id })?.key, let s = sessions[key] {
+            let thread = TranscriptView.Thread(s).name
+            let message = "\(config.pack.name) handed you \(s.agent.rawValue) on "
+                + "\(EventLine.thread(name: thread, project: s.project)) from its list."
+            fx.append(.record(Event.did(message, for: seq, action: Core.openThread, by: Core.drawerPick,
+                                        facts: ["agent": .string(s.agent.rawValue), "thread": .string(thread),
+                                                "waiting": .bool(s.needsSince != nil)], at: now)))
+            fx.append(.open(s.thread))
+        }
+        publish(now, &fx)
+        return fx
+    }
+
+    /// What picks a row in the drawer: the `press` event's specific type,
+    /// and who opened the thread.
+    public static let drawerPick = "drawer"
+
+    /// A number for every session that has none yet, in the order they came
+    /// (the drawer's rows), and none kept for a session that's gone.
+    func numberRows() {
+        rows = rows.filter { sessions[$0.key] != nil }
+        for s in sessions.values.sorted(by: { $0.order < $1.order }) where rows[s.key] == nil {
+            let next = SessionTracker.nextRequest(after: lastRow ?? config.firstAsk)
+            rows[s.key] = next
+            lastRow = next
+        }
     }
 
     /// The first activity of a new day, for the transcript's pruning.
@@ -1023,6 +1134,7 @@ public final class Core {
         updateActs(now)
         stream.keep(Set(groups(at: now).working.map(\.key)))
         keepStretch(at: now)
+        numberRows()
         let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
         defer { lastSessions = sessions }
@@ -1059,19 +1171,32 @@ public struct SessionSummary: Equatable, Sendable {
     public var status: Status
     /// Which thread it is, for clicking the row open.
     public var thread: ThreadRef?
+    /// Since when it's waited, worked or rested; nil when that's unknown.
+    public var since: Date?
+    /// While it works: its latest call's word in the work stream, and its
+    /// lane's slot there, whose colour it wears on the board.
+    public var word: String?
+    public var slot: Int?
+    /// Its to-do list, as counts.
+    public var todo: StateSnapshot.Todo?
 
     public init(agent: String, project: String, name: String? = nil, workspace: String? = nil, status: Status,
-                thread: ThreadRef? = nil) {
+                thread: ThreadRef? = nil, since: Date? = nil, word: String? = nil, slot: Int? = nil,
+                todo: StateSnapshot.Todo? = nil) {
         self.agent = agent
         self.project = project
         self.name = name
         self.workspace = workspace
         self.status = status
         self.thread = thread
+        self.since = since
+        self.word = word
+        self.slot = slot
+        self.todo = todo
     }
 
     init(_ s: Core.Session, _ status: Status) {
         self.init(agent: s.agent.rawValue, project: s.project, name: s.name, workspace: s.workspace, status: status,
-                  thread: s.thread)
+                  thread: s.thread, todo: s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) })
     }
 }

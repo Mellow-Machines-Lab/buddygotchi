@@ -33,6 +33,9 @@ enum Palette {
     /// paper; on dark paper it's the other way round.
     static let glass = "#000000", glassPressed = "#2A2620", oat = "#E8DCC4", oatPressed = "#CFC2A8"
     static let blush = "#F1787D"
+    /// The work stream's lanes, by slot (firmware `stream.h`'s kLaneInk,
+    /// RGB565 widened): teal, amber, lilac, lime. Only bars wear them.
+    static let lanes = ["#3AD2CE", "#FFB242", "#B58EFF", "#9CE763"]
 }
 
 enum Theme {
@@ -57,6 +60,8 @@ enum Theme {
     static let sage = Color(hex: Palette.sage)
     static let sageInk = adaptive(Palette.sageInkLight, Palette.sageInkDark)
     static let clayInk = adaptive(Palette.clayInkLight, Palette.clayInkDark)
+    /// A work stream lane's colour, by its slot on the board; nil for none.
+    static func lane(_ slot: Int) -> Color? { Palette.lanes.indices.contains(slot) ? Color(hex: Palette.lanes[slot]) : nil }
     /// The mic is on: macOS's own recording red, for the status dot.
     static let recording = Color(hex: "#FF3B30")
 

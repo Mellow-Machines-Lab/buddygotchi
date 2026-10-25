@@ -130,6 +130,23 @@ class Device : public linkkit::App {
   // A quick stroke (TouchGesture::kSwipe), sent as the gesture it is
   // whatever the face plays for it (Face::playsSwipe).
   static constexpr const char* kSwipeGesture = "swipe";
+  // The agents' drawer (render/drawer.h), on a face that has one: a finger
+  // that starts on the strip and goes up pulls it open, and the board
+  // tells the Mac (`ev drawer`, `did` "open"), which sends the rows in its
+  // states (`list`) until it hears "closed"; it says "open" again every
+  // kDrawerSayMs while open, sooner (kDrawerAskMs) while no list has come,
+  // so a Mac that started since hears of it. A tap on a row sends "pick"
+  // with the row's `id`, the Mac's number for the session, which the Mac
+  // opens; the drawer shuts then, as Boop hands it over. A finger pulls it
+  // shut, and it shuts itself kDrawerShutMs after the last touch.
+  static constexpr const char* kDrawerEvent = "drawer";
+  static constexpr uint32_t kDrawerShutMs = 15000, kDrawerSayMs = 10000, kDrawerAskMs = 2000;
+  // How long it springs open or shut, past the end and back; and how far a
+  // finger goes (canvas px) before it pulls the drawer rather than taps.
+  static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
+  static constexpr int kDrawerPullPx = 10;
+  // Where on the canvas a finger starts that can pull it: on the strip.
+  static constexpr int kDrawerFromY = 205;
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -242,6 +259,20 @@ class Device : public linkkit::App {
     // (`dbg.state`'s touch.last, to check the panel's axes and speeds by).
     TouchGesture::Path lastTouch;
     const char* lastTouchWas = nullptr;
+    // The agents' drawer: springing from drawerFrom to drawerTo (0 or
+    // 1000) since drawerAt, or else under a finger (drawerPulling) at
+    // drawerPulled, pulled from drawerGrabbed where it was as the touch
+    // began; a touch that may pull it (drawerTouch). Last touched at
+    // drawerTouchedAt; it said "open" last at drawerSaidAt, the injected
+    // input's to USB alone (drawerInjected); the row it picked lights as
+    // it shuts.
+    int drawerFrom = 0, drawerTo = 0;
+    uint32_t drawerAt = 0;
+    bool drawerTouch = false, drawerPulling = false;
+    int drawerGrabbed = 0, drawerPulled = 0;
+    uint32_t drawerTouchedAt = 0, drawerSaidAt = 0;
+    bool drawerInjected = false, drawerToldOpen = false;
+    int drawerPicked = -1;
     // The reaction (Behaviour::reactionSeq) whose `say` has started or been
     // dropped: a newer one's starts when its bubble shows.
     uint32_t saidSeq = 0;
@@ -266,6 +297,17 @@ class Device : public linkkit::App {
   void followSound(uint32_t t);
   // dbg.state's `screen`: the test pattern, no app, needs you or the face.
   const char* screenName(uint32_t t) const;
+  // How far open the agents' drawer is at t (render::Drawer::open); it
+  // springs toward `to` (0 or 1000) from where it is, telling the Mac as it
+  // opens or shuts; and what the Mac and the clock want of it each tick.
+  int drawerOpen(uint32_t t) const;
+  void moveDrawer(int to, uint32_t t, bool injected);
+  void tendDrawer(uint32_t t);
+  void sayDrawer(const char* did, const char* data, uint32_t t);
+  // A touch on it that let go: a pull's end, or a tap on a row or beside
+  // them.
+  void letGoDrawer(uint32_t t, int vy);
+  void tapDrawer(int x, int y, uint32_t t);
 
   Hal& hal_;
   render::Canvas canvas_;
@@ -274,6 +316,8 @@ class Device : public linkkit::App {
   std::unique_ptr<render::SurfacePair> native_;
   Behaviour b_;
   Live live_;
+  // The drawer the face draws, made up each frame (render).
+  render::Drawer drawer_;
   static constexpr uint32_t kMotionMs = 20;
 
   // "No app" showing at the last tick, under no pattern: when it starts

@@ -8,6 +8,7 @@
 #include <memory>
 #include "linkkit/clock.h"
 #include "render/types.h"
+#include "render/drawer.h"
 #include "render/surface.h"
 #include "render/screens.h"
 #include "render/stream.h"
@@ -129,6 +130,15 @@ class Face {
   // slower, as it does on a face that doesn't follow the finger; one that
   // carries it on as it lets go may only feel it go by.
   virtual bool playsSwipe() const { return true; }
+  // The agents' drawer (render/drawer.h): whether this face has one, the
+  // device's, set before each frame as the stream is, how far a finger
+  // pulls it from shut to open (canvas px), and the row of it open under a
+  // finger at x, y on the canvas (-1 for none). A face with none never
+  // opens one: a swipe up its strip is the swipe it was.
+  virtual bool hasDrawer() const { return false; }
+  virtual void drawer(const Drawer* drawer) { (void)drawer; }
+  virtual int drawerTravel() const { return 0; }
+  virtual int drawerRow(const Drawer& drawer, int x, int y) const { return (void)drawer, (void)x, (void)y, -1; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.

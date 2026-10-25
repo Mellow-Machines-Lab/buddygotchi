@@ -53,6 +53,14 @@ public enum BoopDevice {
         return on
     }
 
+    /// The number of the row a tap picked in the agents' drawer (`data.id`,
+    /// a session's number there, as `list` sent it), or nil when it names
+    /// none. A row's number fits 32 bits, as a request's does.
+    public static func row(picked ev: DeviceEvent) -> Int? {
+        guard let id = ev.data["id"]?.int, (1...Int(Int32.max)).contains(id) else { return nil }
+        return id
+    }
+
     /// The number of the request a finger held on the needs-you screen
     /// dismisses (`data.attn`, the `attn.id` it showed as the touch began),
     /// or nil when the gesture names none. A request's number fits 32 bits.

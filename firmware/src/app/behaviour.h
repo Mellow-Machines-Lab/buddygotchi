@@ -14,6 +14,7 @@
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
+#include "render/drawer.h"
 #include "render/stream.h"
 #include "render/rig/rig.h"
 #include "render/screens.h"
@@ -55,6 +56,12 @@ struct Model {
   // work and nothing needs you.
   render::Stream::Lane lanes[render::Stream::kLanes];
   int laneCount = 0;
+  // The agents' drawer's rows (`list`, render/drawer.h), which the Mac
+  // sends while the board says it's open, and the sessions they leave out
+  // (`unlisted`); `listed` when the state had a list at all.
+  render::Drawer::Row list[render::Drawer::kRows];
+  int listCount = 0, unlisted = 0;
+  bool listed = false;
   // The look while nothing needs you: what the agents are doing while
   // they work, else the base.
   render::SceneState look() const { return base == render::SceneState::kWorking ? act : base; }

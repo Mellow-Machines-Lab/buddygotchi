@@ -981,6 +981,36 @@ final class RuntimeTests: XCTestCase {
         eventually("a click opens its own") { opened.all.last == "codex://threads/01a0e6fd-587d" }
     }
 
+    /// The board's agents' drawer over the wire: opened (`ev drawer`
+    /// `open`), the board's next state lists the sessions; a row picked
+    /// (`pick`, its number) opens that session's thread, as the popover's
+    /// row does.
+    func testTheDrawerListsAndOpensOverTheWire() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        var start = HookLine(agent: "codex", hook: "UserPromptSubmit", session: "01a0e6fd-587d", cwd: "/tmp/jetpack", ts: 1)
+        XCTAssertTrue(HookSocket.send(start.encoded(), to: socketPath))
+        start.agent = "claude"
+        start.session = "s1"
+        start.app = HostApp.claude
+        start.appSession = "local_7db5"
+        XCTAssertTrue(HookSocket.send(start.encoded(), to: socketPath))
+        eventually("two working") { runtime.home.sync { runtime.core.sessionList(at: runtime.options.clock()).count == 2 } }
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"open"}"#)
+        eventually("the rows go to the board") {
+            transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""list":[["#) }
+        }
+        let row = try XCTUnwrap(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).list }?
+            .first { $0.agent == "codex" })
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"pick","data":{"id":\#(row.id)}}"#)
+        eventually("its thread opens") { opened.all == ["codex://threads/01a0e6fd-587d"] }
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"closed"}"#)
+        eventually("the rows stop") { runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).list == nil } }
+    }
+
     /// Debug mode also writes the
     /// dashboard's lines, with no `seq`: every output's questions first at
     /// launch, and again only when they change (not here: the scripted

@@ -38,7 +38,8 @@ extension Event {
         case reacted
         /// BOOT pressed while something needs you or an agent sits idle:
         /// the board handed you the next one (its `handoff`), and the core
-        /// opens it on the Mac.
+        /// opens it on the Mac; or, as `specific_type` `drawer`, a row
+        /// picked in the board's agents' drawer, which it opens.
         case press
         /// What you did to the board, which it already reacted to: a
         /// stroke, a boop on the nose, a shake, a pick-up, face down…, as the
