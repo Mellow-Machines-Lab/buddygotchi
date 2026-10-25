@@ -281,7 +281,7 @@ final class RuntimeTests: XCTestCase {
     /// no `kit`). The popover says to flash it, boop.log says whose firmware it is and
     /// a bug report why it gets no `do`; the device still gets its `state`,
     /// and a reaction fails at once instead of going to it; its taps are
-    /// left out.
+    /// left out. The status names it, for its firmware update to match.
     func testFirmwareThatDoesntFitIsThePopoversTrouble() throws {
         let transport = FakeTransport()
         let old = #"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#
@@ -298,6 +298,7 @@ final class RuntimeTests: XCTestCase {
         eventually("the trouble") { runtime.home.sync { statuses.last?.deviceTrouble != nil } }
         XCTAssertEqual(runtime.home.sync { statuses.last?.deviceTrouble }, "the device's firmware is too old for this app: flash it")
         XCTAssertNil(runtime.home.sync { statuses.last?.device })
+        XCTAssertEqual(runtime.home.sync { statuses.last?.misfit }, "b00p-7f3a")
         XCTAssertEqual(runtime.home.sync { statuses.last?.connected }, true)
         runtime.home.sync { _ = runtime.harness.force(["react.mood": "happy"], by: Runtime.forcedBy) }
         XCTAssertEqual(transport.dos, [], "no do")

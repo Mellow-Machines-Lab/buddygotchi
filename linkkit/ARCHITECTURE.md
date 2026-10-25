@@ -141,7 +141,9 @@ final class LampHost: @unchecked Sendable {
   kept) doesn't say it unasked. A device whose `kit` or `app` doesn't
   fit still gets `state` but no `do`, its `ev`s are dropped, and
   `link.trouble` says why (`.tooOld`, `.tooNew`, `.otherApp`), with what
-  to do about it in its `description`, for your settings screen.
+  to do about it in its `description`, for your settings screen, and
+  `link.misfit` keeps the `hello` that didn't fit: which device to
+  update.
 - **Bluetooth:** `BLETransport(prefix: "Lamp")` finds `Lamp-XXXX` on the
   Nordic UART service; `BLETransport(prefix: "Lamp", only: "Lamp-54FE")`
   takes that device alone, so an app with two devices runs two transports,
@@ -162,10 +164,8 @@ final class LampHost: @unchecked Sendable {
   the board at once: `--port` names the port when there's more than one
   USB serial port, `--socket` where to share it (`$TMPDIR/linkkit-bridge.sock` by
   default), `--baud` the board's
-  rate (460800 by default). An app can run one itself (`Bridge`), ask
-  whether one answers on a socket (`SocketTransport.answers`), and ask
-  the board on a free port who it is (`Bridge.hello(on:)`, the bare
-  `hello` and the board's answer, or nil).
+  rate (460800 by default). An app can run one itself (`Bridge`), and
+  ask whether one answers on a socket (`SocketTransport.answers`).
 - **Firmware:** `Flasher` writes images onto an ESP32 or ESP32-S3 over
   its USB serial port through the chip's ROM bootloader, as esptool does:
   DTR and RTS reset it into the bootloader (the S3's own USB and a
@@ -176,8 +176,14 @@ final class LampHost: @unchecked Sendable {
   so one that fails partway isn't left in its bootloader.
   Only the images given are written, so the bootloader, partition table
   and settings stay. Given a chip, an app image whose header names the
-  other is refused before the board is touched; or `flash(pick:)` asks
-  which images to write for the chip the bootloader reports. The port
+  other is refused before the board is touched; or `flash(pick:)` hands
+  `pick` the board as its bootloader reports it, its chip and the MAC in
+  its eFuses (`Flasher.Board`), asks which images to write, and returns
+  what `pick` picked them from. The MAC says which device it is before
+  anything is written: `isDevice` is true for its `hello.id`, which ends
+  in its Bluetooth MAC's last two bytes (SPEC.md §8), so `pick` can
+  refuse another board on the port by throwing, and a board a failed
+  write left half written, which says no `hello`, is still known. The port
   must be free: stop the bridge first. `linkkit-flash --chip esp32s3
   --flash-size 16MB 0xe000:boot_app0.bin 0x10000:firmware.bin` does it
   from a terminal.

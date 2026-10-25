@@ -142,6 +142,9 @@ public final class DeviceLink {
     /// fits or hasn't said. It still gets `state`. Cleared when the link
     /// drops or a `hello` that fits comes.
     public private(set) var trouble: Trouble?
+    /// The `hello` that didn't fit, while `trouble` says why: who the
+    /// device is, for an app that updates its firmware.
+    public private(set) var misfit: Hello?
     /// The app's latest `state` fields that fit in a message.
     public private(set) var state: JSONObject?
 
@@ -308,7 +311,7 @@ public final class DeviceLink {
             } else {
                 let changed = hello != h
                 hello = h
-                trouble = nil
+                (trouble, misfit) = (nil, nil)
                 // A device that restarted has forgotten what it was asked
                 // (SPEC.md §5): what waits on it fails at once.
                 var forgotten: [Waiting] = []
@@ -348,7 +351,7 @@ public final class DeviceLink {
             sendState(now: now)
         } else {
             hello = nil
-            trouble = nil
+            (trouble, misfit) = (nil, nil)
             dropped = takeWaiting()
         }
         for w in dropped { w.completion(.failed(.disconnected)) }
@@ -370,6 +373,7 @@ public final class DeviceLink {
     /// that didn't fit.
     func meetTrouble(_ why: Trouble, from misfit: Hello) {
         hello = nil
+        self.misfit = misfit
         if trouble != why {
             trouble = why
             log("device link: " + (misfit.id.isEmpty ? "" : "\(misfit.id) firmware \(misfit.fw): ") + why.description)

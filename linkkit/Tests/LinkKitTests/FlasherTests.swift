@@ -13,6 +13,8 @@ final class FakeBootloader: SerialLine {
     var answers = true
     /// What its chip register reads, when it isn't `chip`'s.
     var magic: UInt32?
+    /// Its base MAC, in its eFuses: its Bluetooth MAC ends in `54fe`.
+    var mac: [UInt8] = [0x24, 0x6F, 0x28, 0x01, 0x54, 0xFC]
     /// Spoils one byte of what's written, as a bad flash chip would.
     var spoil = false
     var signals: [(dtr: Bool?, rts: Bool?)] = []
@@ -56,7 +58,15 @@ final class FakeBootloader: SerialLine {
             case .sync:
                 reply(op)
                 reply(op)  // the ROM answers a sync more than once
-            case .readReg: reply(op, value: magic ?? chip.magic)
+            case .readReg:
+                // Each eFuse word as the chip keeps it: the first two bytes in
+                // the second word, the last four in the first.
+                let value: UInt32 = switch UInt32(word(0)) {
+                case chip.macRegister: mac[2...5].reduce(0) { $0 << 8 | UInt32($1) }
+                case chip.macRegister + 4: 0x00AB_0000 | UInt32(mac[0]) << 8 | UInt32(mac[1])  // and a CRC above them
+                default: magic ?? chip.magic
+                }
+                reply(op, value: value)
             case .deflBegin:
                 begins.append(body)
                 offset = word(12)
@@ -127,19 +137,53 @@ final class FakeBootloader: SerialLine {
     }
 
     /// Which images go is up to the chip the bootloader reports: each
-    /// chip gets its own, at its flash's size.
+    /// chip gets its own, at its flash's size, and the flasher returns
+    /// what they were picked from.
     @Test func testTheImagesFollowTheChipTheBootloaderReports() throws {
         for chip in Flasher.Chip.allCases {
             let rom = FakeBootloader(chip: chip, usbJTAG: chip == .esp32s3)
             var asked: [Flasher.Chip] = []
-            try Flasher(line: rom).flash { found in
-                asked.append(found)
-                return ([.init(offset: 0x10000, data: Data(repeating: found == .esp32 ? 1 : 2, count: 100))], 4 << 20)
+            let picked = try Flasher(line: rom).flash { found in
+                asked.append(found.chip)
+                return ("\(found.chip)'s", [.init(offset: 0x10000, data: Data(repeating: found.chip == .esp32 ? 1 : 2, count: 100))], 4 << 20)
             }
             #expect(asked == [chip])
+            #expect(picked == "\(chip)'s")
             #expect(rom.flash[0x10000] == (chip == .esp32 ? 1 : 2))
             #expect(rom.restarted)
         }
+    }
+
+    /// SPEC.md §8: a device's `hello.id` ends in the last two bytes of its
+    /// Bluetooth MAC, which ESP-IDF makes of the base MAC by adding 2 to
+    /// its last byte. The bootloader reads the base MAC from the chip's
+    /// eFuses, each chip's in its own place, so `pick` can tell the board
+    /// meant from another before anything is written; and a board a write
+    /// left half written still has its MAC, so trying again finds it.
+    @Test func testTheBoardsMACSaysWhichDeviceItIs() throws {
+        struct OtherBoard: Error {}
+        for chip in Flasher.Chip.allCases {
+            let rom = FakeBootloader(chip: chip, usbJTAG: chip == .esp32s3)
+            func write(to id: String) throws -> Flasher.Board {
+                try Flasher(line: rom).flash { board in
+                    guard board.isDevice(id) else { throw OtherBoard() }
+                    return (board, [.init(offset: 0x10000, data: Self.image(5000, seed: 4))], 4 << 20)
+                }
+            }
+            #expect(throws: OtherBoard.self) { try write(to: "lamp-0001") }
+            #expect(rom.begins.isEmpty, "nothing written to another board")
+            #expect(rom.restarted)
+
+            rom.spoil = true
+            #expect(throws: Flasher.Failure.verify(offset: 0x10000)) { try write(to: "lamp-54fe") }
+            rom.spoil = false
+            let board = try write(to: "lamp-54fe")
+            #expect(board == Flasher.Board(chip: chip, mac: rom.mac), "half written, it's still the same board")
+            #expect(board.advertised("Lamp") == "Lamp-54FE")
+            #expect(Data(rom.flash[0x10000..<(0x10000 + 5000)]) == Self.image(5000, seed: 4))
+        }
+        let wraps = Flasher.Board(chip: .esp32, mac: [0, 0, 0, 0, 0x54, 0xFF])
+        #expect(wraps.isDevice("lamp-5401"), "the last byte wraps, and the one before it stays")
     }
 
     /// The rule: once in its bootloader, the board restarts however the
@@ -158,7 +202,7 @@ final class FakeBootloader: SerialLine {
         let unknown = FakeBootloader(chip: .esp32, usbJTAG: false)
         unknown.magic = 0x1234
         #expect(throws: Flasher.Failure.unknownChip(0x1234)) {
-            try Flasher(line: unknown).flash { _ in ([], 4 << 20) }
+            try Flasher(line: unknown).flash { _ in ((), [], 4 << 20) }
         }
         #expect(unknown.restarted)
 
@@ -170,7 +214,7 @@ final class FakeBootloader: SerialLine {
         #expect(spoiled.restarted)
 
         let refused = FakeBootloader(chip: .esp32s3, usbJTAG: true)
-        #expect(throws: NoImages.self) { try Flasher(line: refused).flash { _ in throw NoImages() } }
+        #expect(throws: NoImages.self) { try Flasher(line: refused).flash { _ -> ((), [Flasher.Image], Int) in throw NoImages() } }
         #expect(refused.begins.isEmpty, "nothing written")
         #expect(refused.restarted)
     }

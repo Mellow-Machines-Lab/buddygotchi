@@ -181,7 +181,8 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
 
     /// SPEC.md §6: a device that doesn't fit still gets `state` (at once,
     /// on change and as the keepalive) but no `do`, and no `hello` ask;
-    /// its `ev`s are dropped, and `trouble` says why, logged once.
+    /// its `ev`s are dropped, `trouble` says why, logged once, and
+    /// `misfit` who it is, for its firmware update.
     @Test func testTroubleGetsStateButNoDo() {
         let (link, transport, logs) = makeLink(hello: false)
         let events = Box<DeviceEvent>()
@@ -192,6 +193,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         for t in [100, 200] as [Int64] { link.receive(old, now: t) }
         #expect(link.trouble == .tooOld)
         #expect(link.trouble?.description == "the device's firmware is too old for this app: flash it")
+        #expect(link.misfit?.id == "pip-7f3a")
         #expect(logs.all.filter { $0.contains("too old") }.count == 1)
         #expect(transport.sent == [Wire.state(fields), Wire.state(fields)], "each gets the latest state")
         var busier = fields
@@ -215,6 +217,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         transport.clear()
         link.receive(helloLine, now: 61_000)
         #expect(link.trouble == nil)
+        #expect(link.misfit == nil)
         #expect(transport.sent == [Wire.state(busier)])
         #expect(link.do("react", now: 61_000) { _ in } != nil)
     }
@@ -293,6 +296,7 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         #expect(link.trouble != nil)
         link.connection(false, now: 65_000)
         #expect(link.trouble == nil)
+        #expect(link.misfit == nil)
     }
 }
 
