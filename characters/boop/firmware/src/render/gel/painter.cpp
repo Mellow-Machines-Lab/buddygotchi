@@ -141,9 +141,12 @@ struct Rim {
   int dxdy, dydx;          // its slopes, 16.16
   Plane uv;
 };
-// 9 KB; the most a pose has drawn is 138.
+// The most a pose has drawn is 138.
 constexpr int kMaxRims = 192;
-Rim rims[kMaxRims];
+// The rims and each core's Outline: about 30 KB, taken from the heap on
+// the first frame (paintBody), where the board's allocator puts blocks
+// this size in PSRAM and leaves internal RAM to Bluetooth and the voice.
+Rim* rims = nullptr;
 int rimCount = 0;
 // Coverage as exact areas, in a 256th of a pixel high by half a 256th
 // wide: a whole pixel is 256 × 512.
@@ -254,7 +257,7 @@ struct Outline {
     acc[s.width] = acc[s.width + 1] = 0, owner[s.width] = owner[s.width + 1] = 0;
   }
 };
-Outline outlines[2];
+Outline* outlines = nullptr;
 // Each rim's UVs: its triangle's, from the pixel holding its first corner.
 void plane(Rim& rim, Vertex a, Vertex b, Vertex c) {
   rim.ox = int16_t(floor16(a.x)), rim.oy = int16_t(floor16(a.y));
@@ -366,6 +369,7 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
 }
 void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const Surface::Erasing* erase) {
   if (!s.pixels) return;
+  if (!rims) rims = new Rim[kMaxRims], outlines = new Outline[2];
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the
