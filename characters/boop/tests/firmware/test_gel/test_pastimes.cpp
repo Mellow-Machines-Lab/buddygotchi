@@ -188,6 +188,41 @@ void test_pastimes_are_dealt_by_tier_after_a_rest() {
   });
 }
 
+// Pins kTuneEveryMs, kTuneGapMs and kTuneNoteMs: with the headphones on, a
+// note floats up from the left cup, then kTuneGapMs later from the right,
+// each up for kTuneNoteMs, a pair every kTuneEveryMs, and a rest between
+// pairs when none is; and none while bopping, whose notes are its own.
+void test_the_headphones_play_a_tune() {
+  TEST_ASSERT_EQUAL_INT(0, tuneNoteAge(0, 0));
+  TEST_ASSERT_EQUAL_INT(-1, tuneNoteAge(0, 1));
+  TEST_ASSERT_EQUAL_INT(0, tuneNoteAge(kTuneGapMs, 1));
+  TEST_ASSERT_EQUAL_INT(int(kTuneNoteMs - 1), tuneNoteAge(kTuneNoteMs - 1, 0));
+  TEST_ASSERT_EQUAL_INT(-1, tuneNoteAge(kTuneNoteMs, 0));
+  TEST_ASSERT_EQUAL_INT(-1, tuneNoteAge(kTuneGapMs + kTuneNoteMs, 1));
+  TEST_ASSERT_EQUAL_INT(100, tuneNoteAge(5 * kTuneEveryMs + 100, 0));
+  TEST_ASSERT_TRUE(kTuneGapMs + kTuneNoteMs < kTuneEveryMs);  // a rest between pairs
+
+  rig::Anchors at;
+  at.crown = {251 * 16, 100 * 16}, at.brimL = {160 * 16, 140 * 16}, at.brimR = {342 * 16, 140 * 16};
+  at.eyeL = {178 * 16, 237 * 16}, at.eyeR = {324 * 16, 237 * 16};
+  auto above = [&](uint32_t t, Pastime playing) {
+    std::vector<uint16_t> px(502 * 410, 0);
+    Surface s{502, 410, px.data()};
+    PastimeShow show;
+    show.t = t, show.headphones = 255, show.playing = playing;
+    paintWorn(s, show, at);
+    // Only the notes go out past the band's ends, above the cups.
+    int lit = 0;
+    for (int y = 60; y < 150; ++y)
+      for (int x = 0; x < 502; ++x) lit += (x < 90 || x > 412) && px[size_t(y) * 502 + size_t(x)];
+    return lit;
+  };
+  const uint32_t rest = kTuneGapMs + kTuneNoteMs + 100, both = kTuneGapMs + 500;
+  TEST_ASSERT_EQUAL_INT(0, above(rest, Pastime::kNone));
+  TEST_ASSERT_TRUE(above(both, Pastime::kNone) > 20);
+  TEST_ASSERT_EQUAL_INT(0, above(both, Pastime::kBop));
+}
+
 // Pins the kit: at work a mug from tier1, headphones from tier3 and a
 // sweatband from tier4 (none while it wears a hat), and from tier5 the
 // camp, with a mug more on the stack every kMugEveryMs up to kMostMugs;

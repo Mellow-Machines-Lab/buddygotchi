@@ -109,7 +109,9 @@ ramps and springs can, and no jolt at an event. By file:
   hour at `tier2` dealing only working ones of `tier1` and `tier2`, after
   a rest of 4 to 10 s, never the same twice running, the newest tier's
   about 60% of the time, and none with no tier; the kit by the tiers, the
-  hat winning the head, none while something needs you),
+  hat winning the head, none while something needs you; the headphones'
+  tune, a note from each cup in turn every 3 s, out past the band's ends,
+  and none while bopping),
   the lane at the panel's size (fading whatever the draw cadence, blended
   once, cut and marked as the canvas does), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's

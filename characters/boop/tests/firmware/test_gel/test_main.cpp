@@ -1463,6 +1463,7 @@ void test_every_pastime_has_its_clip_and_its_turn();
 void test_each_pastime_draws_and_ends();
 void test_pastimes_are_dealt_by_tier_after_a_rest();
 void test_the_kit_follows_the_tiers();
+void test_the_headphones_play_a_tune();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
 void test_a_swipe_up_the_face_isnt_the_drawers();
@@ -2704,6 +2705,7 @@ int main() {
   RUN_TEST(test_each_pastime_draws_and_ends);
   RUN_TEST(test_pastimes_are_dealt_by_tier_after_a_rest);
   RUN_TEST(test_the_kit_follows_the_tiers);
+  RUN_TEST(test_the_headphones_play_a_tune);
   RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);

@@ -77,22 +77,23 @@ constexpr uint16_t kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245), 
                    kInk = rgb565(28, 24, 36), kCardInk = rgb565(27, 55, 78), kCardRim = rgb565(0x78, 0xa4, 0xc8),
                    kWords = rgb565(184, 233, 245), kAmber = rgb565(239, 189, 103);
 constexpr uint16_t kMug = rgb565(214, 92, 84), kMugDark = rgb565(150, 56, 52), kCoffee = rgb565(110, 66, 40),
-                   kSteam = rgb565(200, 210, 220), kPhones = rgb565(58, 60, 74), kCushion = rgb565(236, 104, 140),
-                   kBand = rgb565(226, 64, 72), kSweat = rgb565(150, 220, 255), kTent = rgb565(232, 128, 72),
-                   kTentDark = rgb565(120, 52, 36), kLog = rgb565(120, 74, 40), kFlame = rgb565(250, 150, 40),
-                   kFlameCore = rgb565(255, 222, 100), kLeaf = rgb565(96, 196, 112), kLeafDark = rgb565(60, 140, 80),
-                   kPot = rgb565(204, 112, 72), kSoil = rgb565(70, 46, 32), kPetal = rgb565(250, 130, 180),
-                   kNote = rgb565(255, 214, 120), kHeart = rgb565(240, 96, 140), kBulb = rgb565(255, 228, 110),
-                   kTick = rgb565(110, 220, 140), kTongue = rgb565(240, 110, 130), kCookie = rgb565(206, 150, 88),
-                   kChip = rgb565(90, 54, 30), kGlass = rgb565(170, 196, 206), kPizzaBox = rgb565(222, 190, 140),
-                   kCrust = rgb565(232, 172, 90), kCheese = rgb565(255, 214, 96), kPepperoni = rgb565(200, 60, 50),
-                   kStar = rgb565(255, 240, 170), kBlanket = rgb565(150, 104, 200), kPlaid = rgb565(214, 186, 240),
-                   kFly = rgb565(30, 30, 36), kWing = rgb565(200, 230, 250), kBubbleRim = rgb565(190, 236, 255),
-                   kBook = rgb565(206, 72, 88), kPage = rgb565(250, 246, 232), kLine = rgb565(170, 170, 190),
-                   kConsole = rgb565(124, 104, 210), kScreen = rgb565(150, 230, 170), kCan = rgb565(90, 180, 120),
-                   kWater = rgb565(110, 190, 255), kPaper = rgb565(250, 250, 255), kGold = rgb565(232, 190, 80),
-                   kSheep = rgb565(250, 250, 246), kFence = rgb565(170, 120, 70), kGrass = rgb565(80, 170, 90),
-                   kGrey = rgb565(150, 150, 160), kMoon = rgb565(255, 236, 170);
+                   kSteam = rgb565(200, 210, 220), kPhones = rgb565(46, 48, 60), kPhonesCap = rgb565(86, 90, 110),
+                   kCushion = rgb565(236, 104, 140), kCushionShade = rgb565(196, 82, 116), kBand = rgb565(226, 64, 72),
+                   kSweat = rgb565(150, 220, 255), kTent = rgb565(232, 128, 72), kTentDark = rgb565(120, 52, 36),
+                   kLog = rgb565(120, 74, 40), kFlame = rgb565(250, 150, 40), kFlameCore = rgb565(255, 222, 100),
+                   kLeaf = rgb565(96, 196, 112), kLeafDark = rgb565(60, 140, 80), kPot = rgb565(204, 112, 72),
+                   kSoil = rgb565(70, 46, 32), kPetal = rgb565(250, 130, 180), kNote = rgb565(255, 214, 120),
+                   kHeart = rgb565(240, 96, 140), kBulb = rgb565(255, 228, 110), kTick = rgb565(110, 220, 140),
+                   kTongue = rgb565(240, 110, 130), kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
+                   kGlass = rgb565(170, 196, 206), kPizzaBox = rgb565(222, 190, 140), kCrust = rgb565(232, 172, 90),
+                   kCheese = rgb565(255, 214, 96), kPepperoni = rgb565(200, 60, 50), kStar = rgb565(255, 240, 170),
+                   kBlanket = rgb565(150, 104, 200), kPlaid = rgb565(214, 186, 240), kFly = rgb565(30, 30, 36),
+                   kWing = rgb565(200, 230, 250), kBubbleRim = rgb565(190, 236, 255), kBook = rgb565(206, 72, 88),
+                   kPage = rgb565(250, 246, 232), kLine = rgb565(170, 170, 190), kConsole = rgb565(124, 104, 210),
+                   kScreen = rgb565(150, 230, 170), kCan = rgb565(90, 180, 120), kWater = rgb565(110, 190, 255),
+                   kPaper = rgb565(250, 250, 255), kGold = rgb565(232, 190, 80), kSheep = rgb565(250, 250, 246),
+                   kFence = rgb565(170, 120, 70), kGrass = rgb565(80, 170, 90), kGrey = rgb565(150, 150, 160),
+                   kMoon = rgb565(255, 236, 170);
 constexpr uint16_t kBlocks[] = {rgb565(240, 96, 96),  rgb565(250, 200, 70),  rgb565(100, 200, 120),
                                 rgb565(90, 160, 240), rgb565(170, 110, 230), rgb565(250, 150, 60)};
 constexpr uint16_t kLights[] = {rgb565(255, 90, 160), rgb565(90, 220, 255), rgb565(255, 220, 80),
@@ -278,26 +279,96 @@ void mugs(Raster& r, const Stage& s, int n, uint32_t t) {
   for (int i = 0; i < n; ++i) mug(r, s.X(400), s.deskY() - i * 18, 1024, t, i == n - 1);
 }
 
-// The band over its crown and a cushion over each side.
-void headphones(Raster& r, const rig::Anchors& at) {
-  const int lx = at.brimL.x, ly = at.brimL.y, rx = at.brimR.x, ry = at.brimR.y;
-  const int width = std::max(16, rx - lx), top = at.crown.y - width / 14;
-  Point band[9];
-  for (int i = 0; i <= 8; ++i) {
-    const int64_t u = i, v = 8 - i;
-    const int cx = at.crown.x, cy = 2 * top - (ly + ry) / 2;
-    band[i] = {int((v * v * lx + 2 * u * v * cx + u * u * rx) / 64),
-               int((v * v * ly + 2 * u * v * cy + u * u * ry) / 64)};
-  }
-  r.stroke16(band, 9, width / 22, kPhones);
+// An oval, filled, `rx` and `ry` its radii, all in sixteenths of a px.
+constexpr Point kUnitCircle[24] = {{1000, 0},  {966, 259},   {866, 500},   {707, 707},   {500, 866},   {259, 966},
+                                   {0, 1000},  {-259, 966},  {-500, 866},  {-707, 707},  {-866, 500},  {-966, 259},
+                                   {-1000, 0}, {-966, -259}, {-866, -500}, {-707, -707}, {-500, -866}, {-259, -966},
+                                   {0, -1000}, {259, -966},  {500, -866},  {707, -707},  {866, -500},  {966, -259}};
+void oval16(Raster& r, int cx, int cy, int rx, int ry, uint16_t ink) {
+  Point v[24];
+  for (int i = 0; i < 24; ++i) v[i] = {cx + kUnitCircle[i].x * rx / 1000, cy + kUnitCircle[i].y * ry / 1000};
+  r.polygon16(v, 24, ink);
+}
+
+// Where the headphones' cups sit, in sixteenths of a px: over its ears, on
+// its sides between its eyes' height and the brim's, each from its
+// cushion against the body (`inner`) out to its cap (`outer`), `ry` its
+// half-height; `scale` is the brim's width, which sizes the rest.
+struct Cups {
+  int inner[2], outer[2], y[2], ry, scale;
+};
+Cups cupsOf(const rig::Anchors& at) {
+  Cups c;
+  const int midX = (at.eyeL.x + at.eyeR.x) / 2, half = (at.eyeR.x - at.eyeL.x) / 2;
+  c.scale = std::max(16, at.brimR.x - at.brimL.x);
+  c.ry = c.scale * 18 / 100;
+  const int pad = c.scale * 9 / 100, cup = c.scale * 8 / 100;
   for (int side : {0, 1}) {
-    const int x = side ? rx - width / 40 : lx + width / 40, y = (side ? ry : ly) + width / 30;
-    r.disk16(x, y, width / 11, kPhones);
-    r.disk16(x + (side ? -width / 60 : width / 60), y, width / 15, kCushion);
-    r.alpha = r.alpha * 3 / 5;
-    r.disk16(x + (side ? -width / 40 : width / 80), y - width / 40, width / 50, kCream);
-    r.alpha = r.alpha * 5 / 3;
+    const int out = side ? 1 : -1, edge = midX + out * half * 185 / 100;
+    c.inner[side] = edge - out * pad / 2;
+    c.outer[side] = c.inner[side] + out * (pad + cup);
+    c.y[side] = side ? (at.eyeR.y * 2 + at.brimR.y) / 3 : (at.eyeL.y * 2 + at.brimL.y) / 3;
   }
+  return c;
+}
+
+// Over its ears, each cup seen side-on: a cylinder, its pink cushion
+// pressed to the body and its cap facing out, with a shine down it; the
+// band from one cup's top to the other's over the crown. A card over its
+// head hides the band's top, and the cups still say headphones.
+void headphones(Raster& r, const rig::Anchors& at) {
+  const Cups c = cupsOf(at);
+  const int w = c.scale, end = w * 5 / 100, padRy = c.ry * 92 / 100;
+  int bandX[2], bandY[2];
+  for (int side : {0, 1}) {
+    const int out = side ? 1 : -1, x0 = c.inner[side], x2 = c.outer[side], y = c.y[side];
+    const int x1 = x0 + out * w * 9 / 100;  // where the cushion meets the cup
+    bandX[side] = (x1 + x2) / 2, bandY[side] = y - c.ry * 9 / 10;
+    oval16(r, x0, y, end, padRy, kCushionShade);
+    const Point pad[4] = {{x0, y - padRy}, {x1, y - padRy}, {x1, y + padRy}, {x0, y + padRy}};
+    r.polygon16(pad, 4, kCushion);
+    oval16(r, x1, y, end, padRy, kCushion);
+    const Point cup[4] = {{x1, y - c.ry}, {x2, y - c.ry}, {x2, y + c.ry}, {x1, y + c.ry}};
+    r.polygon16(cup, 4, kPhones);
+    oval16(r, x1, y, end, c.ry, kPhones);
+    oval16(r, x2, y, end + w / 100, c.ry, kPhonesCap);
+    const int a = r.alpha;
+    r.alpha = a * 2 / 5;
+    const int s0 = x1 + (x2 - x1) / 4, s1 = x1 + (x2 - x1) / 2;
+    const Point shine[4] = {{s0, y - c.ry * 7 / 10}, {s1, y - c.ry * 7 / 10}, {s1, y + c.ry / 4}, {s0, y + c.ry / 4}};
+    r.polygon16(shine, 4, kCream);
+    r.alpha = a;
+  }
+  const int top = at.crown.y - w / 12, cx = at.crown.x, cy = 2 * top - (bandY[0] + bandY[1]) / 2;
+  Point band[17];
+  for (int i = 0; i <= 16; ++i) {
+    const int64_t u = i, v = 16 - i;
+    band[i] = {int((v * v * bandX[0] + 2 * u * v * cx + u * u * bandX[1]) / 256),
+               int((v * v * bandY[0] + 2 * u * v * cy + u * u * bandY[1]) / 256)};
+  }
+  r.stroke16(band, 17, w / 16, kPhones);
+}
+
+// Where a note leaving cup `side` starts, in px: off its cap's top.
+Point capTop(const Cups& c, int side) {
+  return {(c.outer[side] + (side ? 1 : -1) * c.scale / 40) / 16, (c.y[side] - c.ry * 3 / 4) / 16};
+}
+
+// The tune the headphones play: each note up and out from its cup,
+// swaying, fading in and out.
+void tune(Raster& r, const rig::Anchors& at, uint32_t t) {
+  const Cups c = cupsOf(at);
+  const int a = r.alpha;
+  for (int side : {0, 1}) {
+    const int age = tuneNoteAge(t, side);
+    if (age < 0) continue;
+    const int out = side ? 1 : -1;
+    const Point from = capTop(c, side);
+    r.alpha = a * window(age, 0, int(kTuneNoteMs), 200, 500) / 255;
+    note(r, from.x + out * age / 60 + wobble(age, 900, 3), from.y - age / 32, 6,
+         kLights[(t / kTuneEveryMs + side) % 4]);
+  }
+  r.alpha = a;
 }
 
 // A sweatband round its brow, its tails flapping, and now and then a drop
@@ -559,8 +630,9 @@ void bop(const Stage& s, const PastimeShow& p, bool phones) {
     if (age < 0 || age > 1300) continue;
     s.r.alpha = window(age, 0, 1300, 120, 500);
     const int side = i % 2 ? 1 : -1;
-    const int x0 = phones ? (side > 0 ? s.rightX() + s.X(12) : s.leftX() - s.X(12)) : s.mouthX() + side * s.X(40);
-    const int y0 = phones ? s.sideY() : s.mouthY() - s.Y(12);
+    const Point cap = capTop(cupsOf(s.at), side > 0);  // with headphones on, off a cup
+    const int x0 = phones ? cap.x : s.mouthX() + side * s.X(40);
+    const int y0 = phones ? cap.y : s.mouthY() - s.Y(12);
     note(s.r, x0 + side * age / 30, y0 - age / 20, 4, kLights[i % 4]);
   }
   s.r.alpha = 255;
@@ -1132,6 +1204,11 @@ void rollOver(const Stage& s, const PastimeShow& p) {
 
 }  // namespace
 
+int tuneNoteAge(uint32_t t, int side) {
+  const uint32_t age = t % kTuneEveryMs, from = side ? kTuneGapMs : 0;
+  return age >= from && age < from + kTuneNoteMs ? int(age - from) : -1;
+}
+
 bool showsScenery(const PastimeShow& show) {
   return show.camp || show.plant || (show.fade && show.playing == Pastime::kStargaze);
 }
@@ -1159,6 +1236,7 @@ void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at
   if (show.headphones) {
     r.fade = show.headphones;
     headphones(r, at);
+    if (show.playing != Pastime::kBop) tune(r, at, show.t);  // bopping's notes are its own
   }
   if (show.sweatband) {
     r.fade = show.sweatband;

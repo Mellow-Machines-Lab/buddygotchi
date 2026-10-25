@@ -105,6 +105,15 @@ constexpr int kNewestPct = 60;
 constexpr uint32_t kMugEveryMs = 10 * 60 * 1000;
 constexpr int kMostMugs = 4;
 
+// While the headphones are on, a note floats up from each cup in turn: a
+// pair every kTuneEveryMs, the right's kTuneGapMs after the left's, each
+// up for kTuneNoteMs, then a rest; none while bopping, whose notes are its
+// own.
+constexpr uint32_t kTuneEveryMs = 3000, kTuneGapMs = 600, kTuneNoteMs = 1600;
+// How far, in ms, the note from cup `side` (0 left, 1 right) is into its
+// flight at the device's time `t`, or -1 while it's not out.
+int tuneNoteAge(uint32_t t, int side);
+
 // The tier `when` has reached (render/tags.h's tier1 to tier5), 0 for none.
 int tierOf(uint32_t when);
 // The tag bit of tier `n` (1 to 5).
@@ -130,7 +139,7 @@ void paintScenery(Surface& surface, const PastimeShow& show);
 // erased before the body (render/gel/painter.cpp), rather than a band at
 // a time as the body draws.
 bool showsScenery(const PastimeShow& show);
-// The kit it wears, the headphones and the sweatband, after what it wears
+// The kit it wears, the headphones and their tune and the sweatband, after what it wears
 // for the tags (render/gel/layers.h) and before the cards.
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at);
 // In front: the desk's mugs, then what the pastime playing holds, throws,

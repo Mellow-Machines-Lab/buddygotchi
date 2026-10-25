@@ -693,7 +693,7 @@ fades out when the look gives way.
 | --- | --- | --- | --- |
 | working | tier1 | A mug on the desk, steaming (not in the morning, when its coffee is in its hand, nor a sip or a refill) | A sip, eyes shut, "ahh"; a peek up at you and a heart; humming, notes floating up |
 | working | tier2 | | Wondering, a "?" cloud, then a lightbulb and a hop; the tip of its tongue out, concentrating; nodding along as ticks pop from the monitor |
-| working | tier3 | Headphones | Bopping to the music, eyes shut; drumming on the desk; a sticky note slapped on the monitor |
+| working | tier3 | Headphones over its ears, cups side-on, a note floating up from each in turn every 3 s | Bopping to the music, eyes shut, the notes off the cups; drumming on the desk; a sticky note slapped on the monitor |
 | working | tier4 | A sweatband, a drop of sweat now and then | The rig's stretch; a coffee pot pouring a refill; a cookie in three bites; a second wind, sparkling |
 | working | tier5 | A camp beside the desk, a tent and its fire; a mug more on the stack every 10 minutes, up to 4 | A marshmallow toasted on the fire; a pizza; the stars and a shooting star; a plaid blanket over its head |
 | idle | tier1 | | Looking round; looking up at you, "...?"; three hops |
@@ -706,6 +706,9 @@ fades out when the look gives way.
 
 The hat wins the head: the headphones and the sweatband stay off while
 it wears one, and peekaboo's gesture takes them off as it does the hat.
+The headphones sit low, their cups on its sides between its eyes and its
+brim, so a card over its head hides only the top of the band and they
+still read as headphones.
 The camp, the plant and the stars go behind the body; what it holds,
 throws, blows and dreams goes in front, at the body's anchors, and the
 headphones and sweatband over what it wears, before the cards. No sounds
