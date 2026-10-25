@@ -43,11 +43,7 @@ struct OnboardingBrainKey: View {
                     } else {
                         Button("Save") {
                             let key = key
-                            // Off the main thread: the Keychain may stop to ask.
-                            Task {
-                                saved = await Task.detached { Keychain.setJevKey(key) }.value
-                                if saved { app.runtime?.reloadBrain(jevKey: key.isEmpty ? nil : key) }
-                            }
+                            Task { saved = await app.saveKey(key) }
                         }
                         .buttonStyle(.row)
                         .disabled(key.isEmpty)

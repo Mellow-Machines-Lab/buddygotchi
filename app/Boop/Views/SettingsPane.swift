@@ -288,13 +288,8 @@ struct SettingsPane: View {
                             .transition(.opacity)
                     } else {
                         Button("Save") {
-                            // Off the main thread: the Keychain may stop to ask.
                             let key = apiKey
-                            Task {
-                                keySaved = await Task.detached { Keychain.setJevKey(key) }.value
-                                // The brain uses it from the next event.
-                                if keySaved { model.runtime?.reloadBrain(jevKey: key.isEmpty ? nil : key) }
-                            }
+                            Task { keySaved = await model.saveKey(key) }
                         }
                         .buttonStyle(.row)
                     }
