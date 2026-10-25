@@ -47,7 +47,7 @@ PanelWindow packBand(const Surface& s, int band, Span span, bool topOnLeft, uint
 // to the caller (Hal::allocateSurface).
 class SurfacePair {
  public:
-  SurfacePair(int width, int height, uint16_t* a, uint16_t* b);
+  SurfacePair(int width, int height, uint16_t* a, uint16_t* b, int corner = 0);
   // Both surfaces were had, and the plan can cover them.
   bool ready() const;
   // Where the next frame is drawn: never the surface being sent.

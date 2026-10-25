@@ -129,7 +129,7 @@ Device::Device(Hal& hal, uint8_t* pixels) : hal_(hal), canvas_(pixels) {
     const size_t bytes = size_t(size.width) * size_t(size.height) * sizeof(uint16_t);
     auto* a = static_cast<uint16_t*>(hal_.allocateSurface(bytes));
     auto* b = static_cast<uint16_t*>(hal_.allocateSurface(bytes));
-    native_ = std::make_unique<render::SurfacePair>(size.width, size.height, a, b);
+    native_ = std::make_unique<render::SurfacePair>(size.width, size.height, a, b, size.corner);
   }
 }
 Device::~Device() {

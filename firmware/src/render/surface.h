@@ -4,11 +4,14 @@
 #include <cstdint>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstring>
 namespace render {
 class Canvas;
 struct Size {
   int width = 0, height = 0;
+  // A panel's rounded corners' radius, in its pixels: they show nothing.
+  int corner = 0;
   bool empty() const { return width <= 0 || height <= 0; }
 };
 // A rectangle of whole pixels, [x0, x1) × [y0, y1).
@@ -18,6 +21,18 @@ struct Box {
 struct Surface {
   int width = 0, height = 0;
   uint16_t* pixels = nullptr;
+  // The panel's rounded corners' radius (Size::corner): 0 for square.
+  int corner = 0;
+  // How far in from either side something must stand to show whole on
+  // every row of [y0, y1), past the panel's rounded corners; with corners
+  // of its own, of `radius`, it may stand nearer, as they're cut away too.
+  int inset(int y0, int y1, int radius = 0) const {
+    const int r = std::min(corner, std::min(width, height) / 2) - std::max(0, radius);
+    const int edge = std::max(0, std::min(y0, height - y1));  // whole rows to the nearer edge
+    if (r <= 0 || 2 * edge + 1 >= 2 * r) return 0;
+    const float dy = r - edge - 0.5f;  // from the corner's centre to its row's middle
+    return int(std::ceil(r - std::sqrt(float(r) * r - dy * dy)));
+  }
   size_t bytes() const { return size_t(width) * size_t(height) * sizeof(uint16_t); }
   // Drawing records each row's written span. The next frame only erases those
   // pixels; direct whole-surface writers must invalidate this history. A

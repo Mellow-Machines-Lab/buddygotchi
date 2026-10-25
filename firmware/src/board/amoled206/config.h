@@ -62,5 +62,10 @@ constexpr int kPicX = (kPanelWidth - kPicW) / 2 & ~1, kPicY = (kPanelHeight - kP
 // A face that draws natively (the gel) gets the whole panel, landscape:
 // 502 × 410, turned a quarter as it's pushed.
 constexpr int kNativeWidth = kPanelHeight, kNativeHeight = kPanelWidth;
+// The panel's corners are rounded, about 110 of its pixels in radius, and
+// show nothing there, so a native face keeps what matters clear of them
+// (render::Surface::inset). Measured from a photo of the board: the
+// lanes' names at the top and the strip's first mark lost to them.
+constexpr int kNativeCorner = 110;
 
 }  // namespace board

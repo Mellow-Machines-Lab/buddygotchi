@@ -1867,12 +1867,15 @@ static void test_steady_frames_allocate_nothing() {
 // bottom fifth only, where the face and its props never draw, and the
 // double buffer's tracking clears it as it clears the rest: frame after
 // frame of the strip, the bubble and neither, a tracked clear leaves the
-// surface as a full one does. The bubble holds the longest take in its own
-// font and a line of 34 in the large one.
+// surface as a full one does. On a square panel the bubble holds the
+// longest take in its own font and a line of 34 in the large one.
 static void test_the_lane_is_native_and_tracked() {
   constexpr int kW = 502, kH = 410, kLane = kH * 4 / 5;
-  TEST_ASSERT_TRUE(22 * kFontBubble.w <= bubbleRoom(kW));
-  TEST_ASSERT_TRUE(34 * kLarge.w <= bubbleRoom(kW));
+  {
+    Surface square{kW, kH, nullptr};
+    TEST_ASSERT_TRUE(22 * kFontBubble.w <= bubbleRoom(square));
+    TEST_ASSERT_TRUE(34 * kLarge.w <= bubbleRoom(square));
+  }
   std::vector<uint16_t> a(kW * kH, 0xffff), b(a.size(), 0xffff), lane(a.size(), 0);
   Surface tracked{kW, kH, a.data()}, full{kW, kH, b.data()}, alone{kW, kH, lane.data()};
   Strip needsYou, working, none;
@@ -1902,6 +1905,44 @@ static void test_the_lane_is_native_and_tracked() {
   paint(tracked, *e);
   for (int y = kLane; y < kH; ++y)
     for (int x = 0; x < kW; ++x) TEST_ASSERT_EQUAL_HEX16(0, a[size_t(y) * kW + x]);
+}
+// The AMOLED's panel has corners 110 px in radius that show nothing
+// (board/amoled206/config.h's kNativeCorner), so the strip and the bubble
+// stand clear of them, whatever they hold: there the bubble holds the
+// longest take in the sign's font, and a line of 34 in the small one.
+static void test_the_lane_clears_the_rounded_corners() {
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> px(kW * kH);
+  Surface s{kW, kH, px.data()};
+  s.corner = 110;
+  TEST_ASSERT_EQUAL_INT(100, s.inset(0, 1));  // the top row loses 100 px a side
+  TEST_ASSERT_EQUAL_INT(s.inset(0, 1), s.inset(kH - 1, kH));
+  TEST_ASSERT_EQUAL_INT(0, s.inset(110, kH - 110));
+  TEST_ASSERT_TRUE(s.inset(0, 20, 14) < s.inset(0, 20));  // a box with round corners stands nearer
+  TEST_ASSERT_TRUE(22 * kSign.w <= bubbleRoom(s));
+  TEST_ASSERT_TRUE(34 * kSmall.w <= bubbleRoom(s));
+  auto clearOfCorners = [&](const char* what) {
+    for (int y = 0; y < kH; ++y)
+      for (int cut = s.inset(y, y + 1), x = 0; x < cut; ++x) {
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, px[size_t(y) * kW + x], what);
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, px[size_t(y) * kW + kW - 1 - x], what);
+      }
+  };
+  Strip needsYou, done;
+  needsYou.agent = "claude", needsYou.name = "Make the device answer every touch at once", needsYou.more = 2;
+  needsYou.busy = 2, needsYou.helpers = 3, needsYou.idle = 2, needsYou.todoDone = 3, needsYou.todoTotal = 7;
+  needsYou.noApp = true;
+  done.doneAgent = "codex", done.doneThread = "Ship it", done.doneOutcome = Outcome::kFailure, done.busy = 12;
+  for (const Strip* strip : {&needsYou, &done}) {
+    s.invalidate(), s.clear();
+    paintLane(s, nullptr, *strip);
+    clearOfCorners("the strip");
+  }
+  for (const char* line : {"Go", "Technical difficulties", "Tsk... Validate it all, then ship it"}) {
+    s.invalidate(), s.clear();
+    paintLane(s, line, needsYou);
+    clearOfCorners(line);
+  }
 }
 // The strip fades as one: at any opacity each pixel is the whole strip's,
 // blended once over the lane's black, so its holes (the working mark's open
@@ -2254,6 +2295,7 @@ int main() {
   RUN_TEST(test_a_still_card_is_drawn_once_into_each_surface);
   RUN_TEST(test_steady_frames_allocate_nothing);
   RUN_TEST(test_the_lane_is_native_and_tracked);
+  RUN_TEST(test_the_lane_clears_the_rounded_corners);
   RUN_TEST(test_the_strip_fades_as_one);
   RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);

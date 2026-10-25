@@ -1,6 +1,6 @@
 # Slime validation
 
-Updated 2026-10-24. What checks the gel slime, and which rule each check
+Updated 2026-10-25. What checks the gel slime, and which rule each check
 holds it to. The slime has one engine, the C++ one
 (`characters/boop/firmware/src/render/gel/`), so every rule
 [CONTINUITY.md](CONTINUITY.md) states is checked on it, from the
@@ -90,7 +90,8 @@ ramps and springs can, and no jolt at an event. By file:
   occasions, a clip of the rig's on both faces (the marathon's stretch,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
   the lane at the panel's size (fading whatever the draw cadence, blended
-  once, cut and marked as the canvas does), the layers on the body's
+  once, cut and marked as the canvas does), the lane clear of the AMOLED's
+  rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
   anchors, coming and going through the rig's layer stack, each at its
   opacity, the sign fading out at its own, drawing by coverage, tracked
   clearing and kept cards matching a fresh frame, steady frames

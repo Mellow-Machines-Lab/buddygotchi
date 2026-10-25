@@ -101,7 +101,7 @@ void BoardHal::setTouchCal(const app::TouchCal& c) {
 
 void BoardHal::setBacklight(uint8_t level) { displayBacklight(level); }
 
-render::Size BoardHal::nativeSize() { return {kNativeWidth, kNativeHeight}; }
+render::Size BoardHal::nativeSize() { return {kNativeWidth, kNativeHeight, kNativeCorner}; }
 // In PSRAM: the AMOLED's two native surfaces are 411 KB each. The CYD asks for none.
 void* BoardHal::allocateSurface(size_t bytes) { return heap_caps_calloc(1, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
 

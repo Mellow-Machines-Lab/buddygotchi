@@ -202,7 +202,12 @@ same integration substep. The quiet posture blend uses the activity spring
 coefficients and stays in [0, 1]. Final pose bounds are [1.25, 1.32, 1.14,
 0.72], life bounds [0.24, 0.12, 0.23], with no edit to V1's own springs.
 These values are art candidates, not host mood pacing. Props stay above
-y = 0.8 of the screen; the lower 20% belongs to the host's lane.
+y = 0.8 of the screen; the lower 20% belongs to the host's lane. The
+AMOLED's corners are rounded, about 110 px in radius, and show nothing
+there, so the lane keeps clear of them: the strip stands in from the
+sides as far as the corners reach on its marks' rows, and the bubble
+stands off the panel's foot and in from the curve, its own corners cut
+away like the panel's, which holds the longest take in the sign's font.
 
 Every other prop (the alert, result and start cards, the helpers, the
 listening cue and the touch marks) has a **200 ms visibility ramp** for

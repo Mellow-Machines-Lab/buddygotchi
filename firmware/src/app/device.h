@@ -72,10 +72,10 @@ struct Hal : linkkit::Platform {
     return false;
   }
   // The panel's own pixels, landscape, for a face that draws natively
-  // (render::Face::drawsNative): empty where the board pushes only the
-  // 8-bit canvas. The simulator's is the AMOLED's. Such a
-  // face gets two surfaces of it (render::SurfacePair).
-  virtual render::Size nativeSize() { return {502, 410}; }
+  // (render::Face::drawsNative), and its rounded corners: empty where the
+  // board pushes only the 8-bit canvas. The simulator's is the AMOLED's.
+  // Such a face gets two surfaces of it (render::SurfacePair).
+  virtual render::Size nativeSize() { return {502, 410, 110}; }
   virtual void* allocateSurface(size_t bytes) { return std::calloc(1, bytes); }
   virtual void releaseSurface(void* p) { std::free(p); }
   virtual uint32_t heapFree() { return 0; }

@@ -75,6 +75,12 @@ bool Board::tickRgba() {
   };
   if (native) {
     for (size_t i = 0; i < n; ++i) put(i, native->pixels[i]);
+    // The panel's rounded corners show nothing, so the page sees through them.
+    for (int y = 0; y < h; ++y)
+      for (int cut = native->inset(y, y + 1), x = 0; x < cut; ++x) {
+        out[4 * (size_t(y) * w + x) + 3] = 0;
+        out[4 * (size_t(y) * w + w - 1 - x) + 3] = 0;
+      }
   } else {
     const uint8_t* index = device_->canvas().pixels();
     for (size_t i = 0; i < n; ++i) put(i, render::kPalette.c[index[i]]);

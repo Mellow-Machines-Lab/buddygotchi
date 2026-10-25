@@ -132,7 +132,7 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 | Part | What it is | How Boop uses it |
 | --- | --- | --- |
 | Chip | ESP32-S3, 8 MB PSRAM, 32 MB flash | Built as 16 MB flash (`default_16MB.csv`) |
-| Screen | 2.06" AMOLED, 410×502, CO5300 on quad SPI | Held sideways, USB-C on the left |
+| Screen | 2.06" AMOLED, 410×502, CO5300 on quad SPI | Held sideways, USB-C on the left. Its corners are rounded, about 110 px in radius, and show nothing there (`kNativeCorner`, measured from a photo of the board): a native face keeps its lane clear of them (`render::Surface::inset`) |
 | Touch | FT3168 on I2C (SDA 15, SCL 14, INT 38) | Read only around a touch, since it naps when idle. It reads in the panel's own pixels, x along its 410 side and y along its 502, as Waveshare's own example hands them to LVGL unturned; `amoled206/hal.cpp` turns them onto the canvas as the picture is turned. Not yet checked under a finger: held sideways, USB-C on the left, swipe down once, then run `internal/tools/boopctl state`: `touch.last` should go `from` a smaller y `to` a larger one with x about the same, and a swipe right should raise x. If not, the map in `hal.cpp` is the one to fix |
 | Sound | ES8311 codec over I2S, NS4150B amp (enable on 46) | 16-bit mono at 22.05 kHz |
 | microSD | SPI3 (SCK 2, MOSI 1, MISO 3, CS 17) | The voice, as on the CYD |

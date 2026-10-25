@@ -37,9 +37,10 @@ PanelWindow packBand(const Surface& s, int band, Span span, bool topOnLeft, uint
   return {topOnLeft ? y : s.height - y - count, topOnLeft ? s.width - i1 : i0, count, i1 - i0};
 }
 
-SurfacePair::SurfacePair(int width, int height, uint16_t* a, uint16_t* b) {
+SurfacePair::SurfacePair(int width, int height, uint16_t* a, uint16_t* b, int corner) {
   s_[0].width = s_[1].width = width;
   s_[0].height = s_[1].height = height;
+  s_[0].corner = s_[1].corner = corner;
   s_[0].pixels = a;
   s_[1].pixels = b;
 }

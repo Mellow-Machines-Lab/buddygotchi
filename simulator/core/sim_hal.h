@@ -60,10 +60,13 @@ struct SimHal : app::Hal {
   uint32_t boot = 0;
   uint32_t bootId() override { return boot; }
 
-  // The panel a native face draws: the AMOLED's, or BOOP_SIM_NATIVE=WxH.
+  // The panel a native face draws: the AMOLED's, or BOOP_SIM_NATIVE=WxH,
+  // its corners rounded in proportion.
   render::Size nativeSize() override {
     render::Size size = app::Hal::nativeSize();
+    const int height = size.height;
     if (const char* s = std::getenv("BOOP_SIM_NATIVE")) std::sscanf(s, "%dx%d", &size.width, &size.height);
+    size.corner = size.corner * size.height / height;
     return size;
   }
 

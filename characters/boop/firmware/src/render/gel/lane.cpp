@@ -29,10 +29,26 @@ uint16_t inkRgb565(int ink) { return paletteAt(inkAt(ink, kLevels)); }
 
 constexpr int kMargin = 18;  // from the panel's edges, as the canvas's 12 px
 constexpr int kIcon = 18;    // the strip's round icons, and the gap after them
+// How far what's laid out by the panel's rounded corners keeps from them
+// (Surface::inset), as their very edge may show dim.
+constexpr int kCornerGap = 4;
 constexpr int kBubbleMargin = 10;
 constexpr int kBubblePad = 12;  // from the outline to the text, left and right
 constexpr int kBubbleLine = 2;
 constexpr int kBubbleRadius = 14;
+
+// The bubble's rows, and how far in from either side it stands:
+// kBubbleMargin, or clear of the panel's rounded corners, its own corners
+// cut away like theirs. Its foot stands off the panel's, where the
+// corners take the most.
+struct BubbleBox {
+  int top, bottom, margin;
+  explicit BubbleBox(const Surface& s)
+      : top(s.height * (kLaneTop + 4) / kHeight),
+        bottom(s.height * (kHeight - 9) / kHeight),
+        margin(std::max(kBubbleMargin, s.inset(top, bottom, kBubbleRadius) + kCornerGap)) {}
+  int room(int width) const { return width - 2 * (margin + kBubblePad + kBubbleLine); }
+};
 
 // One glyph's 4-bit coverage, its cell's top left at (x, y).
 void glyph(Raster& r, const Font& f, int x, int y, int g, uint16_t ink) {
@@ -67,17 +83,19 @@ namespace {
 
 // The line in its bubble, which takes the whole lane: a box with round
 // corners and a short tail up to the face, the text centred in the
-// bubble's font, or the sign's or the large one when it doesn't fit (the
-// longest take, 22, fits the first; a line of 34, the last), cut to fit.
+// bubble's font, or the sign's, the large or the small one when it doesn't
+// fit (on the AMOLED, the longest take, 22, fits the sign's; a line of 34,
+// the small), cut to fit.
 void bubble(Lane& l, const char* line) {
   const uint16_t dim = inkRgb565(kInkDim);
-  const int room = bubbleRoom(l.w);
+  const BubbleBox box(l.r.s);
+  const int room = box.room(l.w);
   const Font* f = &kFontBubble;
-  for (const Font* smaller : {&kSign, &kLarge})
+  for (const Font* smaller : {&kSign, &kLarge, &kSmall})
     if (glyphCount(line) * f->w > room) f = smaller;
   const int tw = std::min(glyphCount(line) * f->w, room);
   const int bw = tw + 2 * (kBubblePad + kBubbleLine), left = (l.w - bw) / 2;
-  const int top = l.y(kLaneTop + 4), bottom = l.y(kHeight - 2), cx = l.w / 2;
+  const int top = box.top, bottom = box.bottom, cx = l.w / 2;
   l.r.ring(left, top, bw, bottom - top, kBubbleRadius, kBubbleLine, dim);
   const Point tail[] = {{cx - 9, top + kBubbleLine}, {cx + 9, top + kBubbleLine}, {cx, l.y(kLaneTop)}};
   l.r.polygon(tail, 3, dim);
@@ -168,11 +186,14 @@ void strip(Lane& l, const Strip& s) {
   if (!s.shows()) return;
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
-  r.round(kMargin, l.y(kStripTop), l.w - 2 * kMargin, 2, 1, dim);
   const Font& f = kSign;
   const int cy = l.y((kStripTop + kHeight) / 2), ty = cy - f.h / 2;
+  // In from the sides, and clear of the panel's rounded corners on the
+  // rows of the marks and the digits.
+  const int margin = std::max(kMargin, l.r.s.inset(cy - 12, cy + 12) + kCornerGap);
+  r.round(margin, l.y(kStripTop), l.w - 2 * margin, 2, 1, dim);
   const int countsWidth = counts(nullptr, s, 0, cy);
-  int x = kMargin;
+  int x = margin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
     dot(r, x, cy, amber);
@@ -181,7 +202,7 @@ void strip(Lane& l, const Strip& s) {
     const int moreRoom = more[0] ? glyphCount(more) * f.w + 12 : 0;
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.agent, s.name && *s.name ? s.name : s.project);
-    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - kMargin - (x + 2 * kIcon) - moreRoom - countsWidth);
+    x = text(r, f, x + 2 * kIcon, ty, who, amber, l.w - margin - (x + 2 * kIcon) - moreRoom - countsWidth);
     if (more[0]) x = text(r, f, x + 12, ty, more, grey);
     x += kIcon;
   } else if (s.doneAgent) {
@@ -194,12 +215,12 @@ void strip(Lane& l, const Strip& s) {
       dots(r, x, cy, eye);
     char who[48];
     std::snprintf(who, sizeof(who), "%s \xC2\xB7 %s", s.doneAgent, s.doneThread ? s.doneThread : "");
-    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - kMargin - (x + 2 * kIcon) - countsWidth) + kIcon;
+    x = text(r, f, x + 2 * kIcon, ty, who, eye, l.w - margin - (x + 2 * kIcon) - countsWidth) + kIcon;
   }
   // Then how many work, the helpers at work, and the agents idle, waiting
   // for you.
   counts(&r, s, x, cy);
-  if (s.noApp) plug(r, l.w - kMargin - 24, cy, grey);
+  if (s.noApp) plug(r, l.w - margin - 24, cy, grey);
 }
 
 // The strip, drawn at full strength, blended once at its opacity (0–255):
@@ -237,7 +258,7 @@ uint32_t laneKey(const char* line, const Strip& s) {
   return h ? h : 1;
 }
 
-int bubbleRoom(int width) { return width - 2 * (kBubbleMargin + kBubblePad + kBubbleLine); }
+int bubbleRoom(const Surface& surface) { return BubbleBox(surface).room(surface.width); }
 
 void paintLane(Surface& surface, const char* line, const Strip& s) {
   if (!surface.pixels) return;

@@ -74,6 +74,6 @@ static_assert((kRotation & 1 ? kPanelHeight : kPanelWidth) == render::kWidth &&
               "kRotation must turn the panel to the canvas's shape");
 // No native surface: the CYD pushes only the 8-bit canvas, so it builds
 // only a face that draws it (the pixel face).
-constexpr int kNativeWidth = 0, kNativeHeight = 0;
+constexpr int kNativeWidth = 0, kNativeHeight = 0, kNativeCorner = 0;
 
 }  // namespace board

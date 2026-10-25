@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-24. A board with no board: the firmware's own code in a
+Updated 2026-10-25. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -70,7 +70,7 @@ A generic one, not the CYD or the AMOLED board:
 
 | Part | In the simulator |
 | --- | --- |
-| Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`). Every pixel is the firmware's; the page draws nothing on it |
+| Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
 | Touch | The pointer on the screen: a touch is a tap, as on the boards, and a drag or a wiggle a gesture (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | With `motion`, buttons that move the board as the AMOLED's motion sensor feels it: Shake, Pick up and Put down, Thump, Face down and Face up. Without them the board has no sensor, as the CYD hasn't |
