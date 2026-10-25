@@ -158,10 +158,14 @@ public final class TranscriptView {
         /// out, for what Boop says when you ask (`StatusReply`).
         var results: [String: StatusReply.Result] = [:]
 
-        /// Its tracker never asks whether an agent's process runs: the core
-        /// records a session whose agent is gone as its turn stopping
-        /// (`Core.agentGone`), so the fold depends on the log alone.
-        init(place: @escaping (String) -> Place) { sessions = SessionTracker(place: place, isRunning: { _ in true }) }
+        /// Its tracker never asks whether an agent's process runs or its
+        /// thread was archived: the core records a session that's gone as
+        /// its end (`Core.sessionGone`), and one whose agent is gone as its
+        /// turn stopping (`Core.agentGone`), so the fold depends on the log
+        /// alone.
+        init(place: @escaping (String) -> Place) {
+            sessions = SessionTracker(place: place, isRunning: { _ in true }, archive: { _ in .open })
+        }
     }
 
     /// The personality's settings: how often the working heartbeat comes

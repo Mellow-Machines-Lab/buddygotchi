@@ -11,8 +11,10 @@ import MellowHarness
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
 /// reaction it plays (`starting`, `stopped`, `helper_return`),
-/// as a `did` named after it. A session whose agent's process ended while
-/// it waited or worked it records as its turn stopping (`agentGone`). It also
+/// as a `did` named after it. A session that's gone with no `SessionEnd`
+/// it records as its end (`sessionGone`), and a Claude app thread whose
+/// agent's process ended while it waited or worked as its turn stopping
+/// (`agentGone`). It also
 /// keeps push-to-talk (`Talk`): when the mic
 /// goes on and off and when `listening` ends, recorded as `listen` events
 /// that make no line. What the brain hears is the view's; everything
@@ -134,6 +136,9 @@ public final class Core {
         /// Why its request stops showing, or its turn stopped, as a timer
         /// said: recorded by the next publish, then let go.
         var why: Why?
+        /// Why the session ended with no `SessionEnd`, as a timer said:
+        /// recorded by the next publish as its end, then let go.
+        var gone: SessionTracker.Gone?
         /// The request you dismissed on the board or in the popover, by its
         /// number, and when. It stops showing, though its agent still
         /// waits: its session rests from then (`resting`), and stays in
@@ -142,7 +147,7 @@ public final class Core {
         /// launch reads it back from its `needs_you` end (`replay`).
         var dismissed: (request: Int, at: Int64)?
 
-        var isEmpty: Bool { !shown && why == nil && dismissed == nil }
+        var isEmpty: Bool { !shown && why == nil && gone == nil && dismissed == nil }
     }
 
     /// Why a request stopped showing, as its `needs_you` end says; for an
@@ -158,8 +163,11 @@ public final class Core {
     }
     /// The hook name of an agent gone's stopped turn.
     public static let agentGone = "AgentGone"
+    /// The hook name of the end of a session that's gone with no
+    /// `SessionEnd` (`SessionTracker.Gone`).
+    public static let sessionGone = "SessionGone"
     /// Set while a launch reads the transcript back: the sessions in it end
-    /// as it says, never as today's processes do.
+    /// as it says, never as today's processes or apps do.
     let readingBack: Flag
     final class Flag { var on = false }
     /// The board's gesture for dismissing: a finger held on the needs-you
@@ -173,17 +181,20 @@ public final class Core {
     /// started already, or nil to make the first activity a new day.
     /// `place` names a working directory's project. `isRunning` says
     /// whether an agent's process still runs (evals and demos, whose agents
-    /// are made up, say yes).
+    /// are made up, say yes), and `archive` whether a thread was archived in
+    /// its app (evals say none was).
     public init(config: Config, lastActiveDay: String? = nil,
                 place: @escaping (String) -> Place = { Place.at(cwd: $0) },
-                isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
+                isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning,
+                archive: @escaping (ThreadRef) -> ThreadArchive.State = { ThreadArchive.state($0) }) {
         self.config = config
         mood = { config.pack.defaultMood }
         self.lastActiveDay = lastActiveDay
         let readingBack = Flag()
         self.readingBack = readingBack
         tracker = SessionTracker(firstRequest: config.firstAsk, place: place,
-                                 isRunning: { readingBack.on || isRunning($0) })
+                                 isRunning: { readingBack.on || isRunning($0) },
+                                 archive: { readingBack.on ? .open : archive($0) })
     }
 
     /// The rules' reactions.
@@ -346,7 +357,7 @@ public final class Core {
         case .sessionEnded:
             held[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .other:
+        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .sessionGone, .other:
             return nil
         }
     }
@@ -915,10 +926,12 @@ public final class Core {
     public static let needsYou = "needs_you"
 
     /// Runs the session table's timers due by `now`: a
-    /// Codex request past its grace shows, the safety net, a session whose
-    /// agent's process is gone stops waiting and working, and forgetting.
-    /// Why each stopped is noted for the next publish to record: a
-    /// request's `needs_you` end, and an agent gone's stopped turn.
+    /// Codex request past its grace shows, the safety net, a session that's
+    /// gone ends, a Claude app thread whose agent's process is gone stops
+    /// waiting and working, and forgetting. Why each stopped is noted for
+    /// the next publish to record: a request's `needs_you` end, an agent
+    /// gone's stopped turn, and a gone session's end, except one the
+    /// read-back's own rules end, which the transcript says already.
     /// `sparing`'s Codex request isn't shown: its event comes first.
     func advance(to now: Int64, sparing: String? = nil) {
         let before = sessions
@@ -927,6 +940,10 @@ public final class Core {
             let why: Why
             switch changes[key] {
             case .requestExpired?: why = .expired
+            case .sessionGone(let gone)?:
+                why = gone == .process ? .agentGone : .ended
+                held[key] = nil
+                if !readingBack.on { notes[key, default: Note(agent: s.agent, id: s.id)].gone = gone }
             case .agentGone?:
                 why = .agentGone
                 held[key] = nil
@@ -938,12 +955,21 @@ public final class Core {
         }
     }
 
-    /// A session whose agent's process ended while it waited or worked,
-    /// recorded by rule as its turn stopping, so the view, and a later
-    /// launch reading the transcript back, stop it from the transcript, not
-    /// from the processes running then. The session stays, idle.
+    /// A session that's gone with no `SessionEnd`, recorded by rule as its
+    /// end, with why; and a Claude app thread whose agent's process ended
+    /// while it waited or worked, as its turn stopping, the thread staying,
+    /// idle. So the view, and a later launch reading the transcript back,
+    /// end or stop it from the transcript, not from the processes running
+    /// or the threads archived then.
     func recordGone(_ now: Int64, _ fx: inout [CoreEffect]) {
-        for (_, n) in notes.filter({ $0.value.why == .agentGone }).sorted(by: { $0.key < $1.key }) {
+        for (_, n) in notes.sorted(by: { $0.key < $1.key }) {
+            guard let gone = n.gone else { continue }
+            var e = Event(AgentEvent(agent: n.agent, kind: .session, phase: .end, hook: Core.sessionGone, session: n.id, at: now))
+            e.data["by"] = "rule"
+            e.data["why"] = .string(gone.rawValue)
+            fx.append(.record(e))
+        }
+        for (_, n) in notes.filter({ $0.value.why == .agentGone && $0.value.gone == nil }).sorted(by: { $0.key < $1.key }) {
             var e = Event(AgentEvent(agent: n.agent, kind: .turn, phase: .end, hook: Core.agentGone, session: n.id, at: now,
                                      outcome: .stopped))
             e.data["by"] = "rule"
@@ -992,6 +1018,7 @@ public final class Core {
         notes = notes.compactMapValues { n in
             var n = n
             n.why = nil
+            n.gone = nil
             if n.dismissed != nil, sessions[SessionFold.key(n.agent, n.id)].map(isDismissed) != true { n.dismissed = nil }
             return n.isEmpty ? nil : n
         }

@@ -61,15 +61,18 @@ final class CoreRig {
 
     /// `isRunning` says whether an agent's process runs, for hooks that
     /// name one; the rig's hooks name none unless a test adds it.
+    /// `archive` says whether a thread was archived in its app: none was
+    /// unless a test says.
     /// The work stream is off unless a test turns it on (`workStream`):
     /// the other rules' tests read whole `state`s.
     init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules(),
-         workStream: Bool = false, isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
+         workStream: Bool = false, isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning,
+         archive: @escaping (ThreadRef) -> ThreadArchive.State = { _ in .open }) {
         now = start
         let today = time.day(start)
         var config = Core.Config(time: time)
         config.workStream = workStream
-        let core = Core(config: config, lastActiveDay: newDay ? nil : today, isRunning: isRunning)
+        let core = Core(config: config, lastActiveDay: newDay ? nil : today, isRunning: isRunning, archive: archive)
         pipeline = Pipeline(core: core, view: TranscriptView(rules: rules, seed: seed))
         if !newDay { core.tick(at: start) }  // the first snapshot has gone out
     }
@@ -1624,18 +1627,20 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertNil(rig.state.attn)
     }
 
-    /// An agent's process that ends while it waits or works stops it: the
-    /// core, the only one that asks the OS, records its turn stopping in
-    /// the transcript (`Core.agentGone`), and the request ends saying why.
-    /// The session stays, idle. The view, which never asks, stops it from
-    /// that record, now and in a fold of the transcript later, whatever
-    /// runs then; it tells the brain nothing, and no rule plays the stop.
+    /// A Claude app thread whose agent's process ends while it waits or
+    /// works stops: the core, the only one that asks the OS, records its
+    /// turn stopping in the transcript (`Core.agentGone`), and the request
+    /// ends saying why. The thread stays, idle, as the app keeps it. The
+    /// view, which never asks, stops it from that record, now and in a fold
+    /// of the transcript later, whatever runs then; it tells the brain
+    /// nothing, and no rule plays the stop.
     func testAnAgentGoneIsRecordedAsItsTurnStopping() throws {
         final class Running { var value = true }
         let running = Running()
         let rig = CoreRig(isRunning: { _ in running.value })
-        rig.send(.turnStart)
-        var ask = rig.event(.needsYou, tool: "Bash")
+        let app = "local_3d70f836-1432-467b-b6b6-06fb9829a5b6"
+        rig.send(.turnStart, appSession: app)
+        var ask = rig.event(.needsYou, tool: "Bash", appSession: app)
         ask.data["process"] = .object(["pid": 4242, "started": 1])
         rig.send(ask)
         rig.wait(60_000)
@@ -1670,6 +1675,59 @@ final class CoreYouAndBoopTests: XCTestCase {
         heard.seq = 99
         XCTAssertEqual(deviceReactions(other.core.handle(heard)), [])
         XCTAssertEqual(other.state.busy, 0)
+    }
+
+    /// A session that's gone with no `SessionEnd` ends: its process ended
+    /// while it waited (a terminal closed, a Remote Control session
+    /// archived on claude.ai), or, once idle, it was archived in its app.
+    /// The core, the only one that asks, records its end, with why
+    /// (`Core.sessionGone`), and a request ends saying why; the view ends
+    /// it from that record, now and in a fold later. Its next prompt brings
+    /// it back.
+    func testASessionGoneIsRecordedAsItsEnd() throws {
+        final class World {
+            var running = true
+            var archived = false
+        }
+        let world = World()
+        let rig = CoreRig(isRunning: { _ in world.running }, archive: { _ in world.archived ? .archived : .open })
+        func send(_ kind: Hook, tool: String? = nil) {
+            var e = rig.event(kind, tool: tool)
+            e.data["process"] = .object(["pid": 4242, "started": 1])
+            rig.send(e)
+        }
+        send(.turnStart)
+        send(.needsYou, tool: "Bash")
+        rig.wait(60_000)
+        XCTAssertNotNil(rig.state.attn)
+        world.running = false
+        let fx = rig.wait(SessionTracker.liveCheckMs)
+        let records = fx.effects.compactMap { effect -> Event? in if case .record(let e) = effect { e } else { nil } }
+        let end = records.first { $0.specificType == Core.sessionGone }
+        XCTAssertEqual(end?.type, .session)
+        XCTAssertEqual(end?.phase, .end)
+        XCTAssertEqual(end?.session, "s1")
+        XCTAssertEqual(end?["why"]?.string, "process")
+        XCTAssertNil(records.first { $0.specificType == Core.agentGone }, "an end, not a stopped turn")
+        XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["its agent's process ended"])
+        XCTAssertNil(rig.state.attn)
+        XCTAssertEqual(rig.sessions, [], "the session is gone")
+        XCTAssertEqual(deviceReactions(fx), [])
+        XCTAssertEqual(woke(fx), [], "nothing for the brain")
+        XCTAssertNil(rig.pipeline.threads["claude/s1"], "the view ends it")
+        XCTAssertNil(TranscriptView().sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"], "and so does a fold later")
+
+        world.running = true
+        send(.turnStart)
+        XCTAssertEqual(rig.sessions, [["claude", "landing", "working"]], "its next prompt brings it back")
+        send(.turnEnd)
+        world.archived = true
+        let archived = rig.wait(SessionTracker.liveCheckMs).effects.compactMap { effect -> Event? in
+            if case .record(let e) = effect { e } else { nil }
+        }
+        XCTAssertEqual(archived.filter { $0.specificType == Core.sessionGone }.map { $0["why"]?.string }, ["archived"])
+        XCTAssertEqual(rig.sessions, [])
+        XCTAssertNil(rig.pipeline.threads["claude/s1"])
     }
 
     /// The popover's Dismiss names the request its card showed and its

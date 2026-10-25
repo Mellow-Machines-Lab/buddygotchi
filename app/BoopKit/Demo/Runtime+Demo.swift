@@ -12,7 +12,7 @@ extension Runtime {
     /// Whether an agent's process still runs: a demo's made-up agent's
     /// always does (`DemoPlayer.agentProcess`).
     static func agentRuns(_ process: AgentProcess) -> Bool {
-        process == DemoPlayer.agentProcess || AgentProcess.isRunning(process)
+        process.started == DemoPlayer.madeUpStart || AgentProcess.isRunning(process)
     }
 
     /// Readies a demo script (`DemoScript`) to play: its steps in order,
@@ -278,11 +278,18 @@ public final class DemoPlayer: @unchecked Sendable {
     /// How many agent steps ahead a hook may end, for the script to skip to it.
     static let lookahead = 3
 
-    /// The process the player's agent is, on every hook it sends, as a real
-    /// agent's hooks say theirs: it runs as long as the demo does
-    /// (`Runtime.agentRuns`), so a request waits however long the demo's
-    /// clock jumps. No real process started 1 ms into 1970.
-    public static let agentProcess = AgentProcess(pid: 4242, started: 1)
+    /// The process the player's agent is in the session `session`, on every
+    /// hook it sends, as a real agent's hooks say theirs: one to each
+    /// session, as a Remote Control thread has its own, so a newer session
+    /// doesn't take an older one's process (`Lifetime`). It runs as long as
+    /// the demo does (`Runtime.agentRuns`), so a request waits however long
+    /// the demo's clock jumps.
+    public static func agentProcess(for session: String) -> AgentProcess {
+        AgentProcess(pid: 4242 + Int32(session.utf8.reduce(0) { ($0 &* 31 &+ Int($1)) % 50_000 }), started: madeUpStart)
+    }
+    /// When a made-up agent's process started: no real one started 1 ms
+    /// into 1970.
+    public static let madeUpStart: Int64 = 1
 
     // MARK: No agent: the player is it
 
@@ -294,7 +301,7 @@ public final class DemoPlayer: @unchecked Sendable {
         let session = "demo" + tail
         let cwd = "/demo/\(slug)" + tail
         var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd,
-                            process: Self.agentProcess, ts: runtime.options.wallClock())
+                            process: Self.agentProcess(for: session), ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
     }

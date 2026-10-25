@@ -650,9 +650,10 @@ public struct Eval {
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
         let rules = steering.rules(scenario.personality, talk: scenario.talk)
-        // Its agents are made up, and run all through it.
+        // Its agents are made up, and run all through it, their threads
+        // never archived.
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
-                        isRunning: { _ in true })
+                        isRunning: { _ in true }, archive: { _ in .open })
         core.setWallClock(start, at: start)
         let view = TranscriptView(rules: rules, seed: 1)
         let home = DispatchQueue(label: "boop.eval")
@@ -933,7 +934,8 @@ public struct Eval {
     /// A step as it reaches the pipeline: the hook events or pokes it
     /// stands for, in Claude's session (`s1` unless it says) in `landing`,
     /// each one input. Every hook says which process the agent is, as a
-    /// real agent's do: a demo's, which runs all through the scenario.
+    /// real agent's do: a demo's, one to each session, which runs all
+    /// through the scenario.
     public static func inputs(_ step: Scenario.Step, at now: Int64) -> [(Pipeline) -> Pipeline.Step] {
         let cwd = step.workspace.map { "/eval/landing/.worktrees/\($0)" } ?? "/eval/landing"
         let session = step.session ?? "s1"
@@ -941,7 +943,7 @@ public struct Eval {
         func hook(_ type: Event.Kind, _ phase: Event.Phase, _ specific: String,
                   _ data: [String: JSONValue] = [:], subagent: String? = nil) -> (Pipeline) -> Pipeline.Step {
             var data = data
-            data["process"] = Eval.agentProcess
+            data["process"] = Eval.agentProcess(session)
             return { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
                                     subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
         }
@@ -999,9 +1001,12 @@ public struct Eval {
         }
     }
 
-    /// The agent's process on every hook, as a demo's agent has it.
-    static let agentProcess: JSONValue = .object(["pid": .int(Int64(DemoPlayer.agentProcess.pid)),
-                                                  "started": .int(DemoPlayer.agentProcess.started)])
+    /// The agent's process on every hook of the session `session`, as a
+    /// demo's agent has it: one to each session.
+    static func agentProcess(_ session: String) -> JSONValue {
+        let process = DemoPlayer.agentProcess(for: session)
+        return .object(["pid": .int(Int64(process.pid)), "started": .int(process.started)])
+    }
 
     /// One scenario's runs, readably: its verdict, and each failing step
     /// once.
