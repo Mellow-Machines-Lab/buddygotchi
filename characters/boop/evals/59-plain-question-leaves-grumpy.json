@@ -1,11 +1,11 @@
 {
   "name": "A plain question doesn't soften a fed-up Boop; only words that should do",
   "case": "Boop is fed up from a barrage of pokes. A few seconds later the person asks what the build is doing, with no apology and nothing kind. Boop answers with a face, but its mood stays grumpy: being talked to isn't by itself a reason to calm down, only what's said is.",
-  "why": "The counterweight to 56–58: the mood moves fast on words that mean something (an apology, sad news, taking it back), not on any words at all. characters/boop/steering/mood/grumpy.md: it cools on its own only after 2 min. PERSONALITY: talked to, Boop always answers with a face",
+  "why": "The counterweight to 56–58: the mood moves fast on words that mean something (an apology, sad news, taking it back), not on any words at all. characters/boop/steering/mood/grumpy.md: it cools on its own only after 2 min. PERSONALITY: talked to, Boop always answers with a face, and a question about the work gets an engaged one (its \"has codex finished yet?\" Example)",
   "mood": "grumpy",
   "steps": [
     {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy"}},
-    {"event": "said", "at": "20s", "words": "what's the build doing?", "expect": {"react": "grumpy|irritated|annoyed|curious|calm", "reply": "status", "mood": "grumpy"}}
+    {"event": "said", "at": "20s", "words": "what's the build doing?", "expect": {"react": "grumpy|irritated|annoyed|curious|calm|engaged", "reply": "status", "mood": "grumpy"}}
   ]
 }
