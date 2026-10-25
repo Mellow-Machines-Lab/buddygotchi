@@ -876,7 +876,7 @@ open or shut, the mouth and the cheeks, with where each is drawn, and
 the decorations on it (a sparkle, a falling tear), which the design keeps
 drawing over the rig face
 ([Pixel's design guide](pixel/design/README.md), The resting face's
-tags). Facegen reads the tags (`rig_faces`): a design whose face is
+tags). Facegen reads the tags (`rig_moves`): a design whose face is
 tagged at every step is the rig face's, and its tags say where the face
 sits at each step, open or shut (a blink, a squeeze), moved whole, its
 eyes moved within it (a glance) and its mouth (sad's trembling lip).
