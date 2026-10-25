@@ -102,7 +102,7 @@ def cmd_day(args: argparse.Namespace) -> int:
         state = Path(args.state_dir).expanduser() if args.state_dir else EVERYDAY_STATE
         paths = day.launch_files(state)
         if not paths:
-            print(f"boopctl day: no debug.jsonl in {state}. Boop writes it with --debug (make debug).", file=sys.stderr)
+            print(f"boopctl day: no debug.jsonl in {state}. Boop writes it with --debug (make dev).", file=sys.stderr)
             return 1
     status, text = day.run(paths, args.date)
     print(text)

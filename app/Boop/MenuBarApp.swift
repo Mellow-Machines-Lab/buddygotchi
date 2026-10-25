@@ -17,7 +17,7 @@ enum MenuBarApp {
             let delegate = AppDelegate(stateDir: stateDir, link: link, debug: debug)
             app.delegate = delegate
             app.setActivationPolicy(.accessory)
-            // Ctrl-C on `make run`, or a kill: quit as the menu's Quit does,
+            // Ctrl-C on `make dev`, or a kill: quit as the menu's Quit does,
             // so the runtime stops and the next launch doesn't count it as
             // a crash.
             let signals = [SIGINT, SIGTERM].map { sig in
@@ -89,7 +89,7 @@ final class AppModel: ObservableObject {
     }
     /// The "can't react yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
-    /// The firmware Boop.app carries for each board (none for `make run`).
+    /// The firmware Boop.app carries for each board (none for `make dev`'s bare binary).
     var boardFirmware = BoardFirmware.bundled()
     /// Writing firmware onto the board over USB, from Settings.
     enum FirmwareWrite: Equatable {
@@ -350,7 +350,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// The simulator is for developing Boop: `make run`'s debug build
+    /// The simulator is for developing Boop: `make dev`'s debug build
     /// offers it, and the release build `make bundle` makes never looks.
     static let offersSimulator: Bool = {
         #if DEBUG
@@ -362,7 +362,7 @@ final class AppModel: ObservableObject {
 
     /// What Settings says when the hook client is missing.
     static var clientMissing: String {
-        AboutThisMac.isApp() ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make build, then restart Boop."
+        AboutThisMac.isApp() ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make dev again."
     }
 
     /// Looks for a running simulator, off the main thread: it's a look at
@@ -548,7 +548,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // They report to the everyday Boop's socket, so pointing them here
             // would only break them once this folder is gone. This copy lists
             // its own socket beside it instead, so the hooks already there
-            // reach it too (make onboarding's live hello), until it quits.
+            // reach it too (onboarding's live hello on `make dev`'s folder), until it quits.
             let name = AppSettings.copyName(stateDir)
             try? HookSocket.register(stateDir.appendingPathComponent("boop.sock").path, as: name)
             log.write("hooks: left alone, since only the everyday Boop (\(AppSettings.defaultStateDir().path)) installs "
@@ -725,8 +725,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Starts the runtime, once.
     func startRuntime() {
         guard model.runtime == nil else { return }
-        // In debug mode the dashboard can drive `make debug`; plain `make
-        // run` stays deaf to it.
+        // In debug mode (`make dev`) the dashboard can drive it; without
+        // --debug, as Boop.app runs, it stays deaf to it.
         var options = runtimeOptions(stateDir: stateDir, socketPath: stateDir.appendingPathComponent("boop.sock").path,
                                      link: model.link, debug: debug, devLines: debug, log: log,
                                      buddies: AppSettings.load(from: stateDir).buddies)

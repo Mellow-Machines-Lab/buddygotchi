@@ -12,7 +12,7 @@
 #                           page plays back
 #   <face>-DEMO-voice.bin   a voice file with only the takes it says, when
 #                           the pack has a voice
-# It takes as long as the demo runs. Needs `make build` and the core
+# It takes as long as the demo runs. Needs `make -C internal build` and the core
 # (firmware/tools/pio.sh run -e native).
 set -eu
 cd "$(dirname "$0")/../.."
@@ -22,7 +22,7 @@ DEMO="${3:-demo}"
 NAME="$FACE-$DEMO"
 CORE=firmware/.pio/build/native/program
 for built in "$CORE" .build/debug/Boop .build/debug/linkkit-bridge; do
-    [ -x "$built" ] || { echo "record-demo: $built isn't built (make build; firmware/tools/pio.sh run -e native)" >&2; exit 1; }
+    [ -x "$built" ] || { echo "record-demo: $built isn't built (make -C internal build; firmware/tools/pio.sh run -e native)" >&2; exit 1; }
 done
 # Short, for the sockets' sake: a Unix socket's path has room for 103 bytes.
 DIR="$(mktemp -d /tmp/boop-demo.XXXXXX)"

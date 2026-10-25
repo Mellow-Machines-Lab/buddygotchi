@@ -275,7 +275,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     env["BOOP_CHARACTER"] = str(pack)
     if not args.no_build:
         print(f"session: building Boop with the {pack.name} pack…", file=sys.stderr)
-        run_quiet(["make", "build"], env=env, what="make build")
+        run_quiet(["make", "-C", "internal", "build"], env=env, what="make -C internal build")
     root = Path(os.path.realpath(tempfile.mkdtemp(prefix="boop-session-", dir="/tmp")))
     log = Log(root / "session.log")
     children: List[subprocess.Popen] = []
@@ -398,7 +398,7 @@ def main() -> int:
     run.add_argument("--ui", choices=("terminal", "desktop"), default="terminal",
                      help="where the agent runs: this terminal (the default), or Claude Code in the Claude desktop app")
     run.add_argument("--board", default="sim", help="sim (the simulator's page, the default), usb:SOCKET (a bridge) or none")
-    run.add_argument("--no-build", action="store_true", help="skip make build")
+    run.add_argument("--no-build", action="store_true", help="skip make -C internal build")
     sub.add_parser("list", help="the demos that have a project for an agent")
     args = parser.parse_args()
     try:

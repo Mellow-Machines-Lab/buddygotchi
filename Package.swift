@@ -70,7 +70,7 @@ var packageTargets: [Target] = [
     // has no version: that's VERSION's (BoopVersion). AppIcon.icns and
     // Boop.entitlements are for the app bundle (app/tools/bundle.sh), which
     // a bare binary has no use for.
-    // The character pack is bundled as `make build` stages it
+    // The character pack is bundled as `make -C internal build` stages it
     // (characters/charactergen.py --stage, characters/CHARACTER.md §2):
     // the chosen pack, from .character-build/packs.
     .executableTarget(

@@ -185,7 +185,7 @@ class HookEnvironmentTests(unittest.TestCase):
         self.assertEqual(sorted(env), ["AGENT_HOOKS_DIR", "AGENT_HOOKS_SOCKET", "CODEX_HOME", "HOME"])
         self.assertTrue(all(value.startswith(str(self.run_.root)) for value in env.values()), env)
 
-    @unittest.skipUnless((e2e.BIN / "agent-hook").exists(), "agent-hook isn't built: make build")
+    @unittest.skipUnless((e2e.BIN / "agent-hook").exists(), "agent-hook isn't built: make -C internal build")
     def test_the_real_hook_sends_no_app_session_or_terminal_of_its_own(self):
 
         server = socket.socket(socket.AF_UNIX)

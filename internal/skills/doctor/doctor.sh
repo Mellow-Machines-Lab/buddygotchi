@@ -2,7 +2,7 @@
 # Boop doctor: will Boop see this agent's hooks?
 #
 #   1. Hooks are registered for each agent and point at an existing agent-hook
-#      (the installer's own check, through boopdev: run make build first).
+#      (the installer's own check, through boopdev: run make -C internal build first).
 #   2. The app is running and its socket accepts.
 #   3. A synthetic event goes from agent-hook to the app (seen in its log).
 #   4. A harmless command run in the agent shows up in Boop as a hook from
@@ -51,7 +51,7 @@ fi
 if [ $HEADLESS -eq 1 ]; then
   STATE="$(mktemp -d /tmp/boop-doctor.XXXX)"
   BOOP="$REPO/.build/debug/Boop"
-  [ -x "$BOOP" ] || { echo "no $BOOP; run make build" >&2; exit 1; }
+  [ -x "$BOOP" ] || { echo "no $BOOP; run make -C internal build" >&2; exit 1; }
   "$BOOP" --headless --state-dir "$STATE" --brain scripted --name Doctor >/dev/null 2>&1 &
   APP_PID=$!
   trap 'kill -TERM $APP_PID 2>/dev/null; wait $APP_PID 2>/dev/null; rm -rf "$STATE"' EXIT
@@ -105,7 +105,7 @@ hdr "Boop doctor (agent: $AGENT, state: $STATE)"
 # `boopdev hooks install`, the one built next to boopdev.
 hdr "Hooks"
 BOOPDEV="$REPO/.build/debug/boopdev"
-[ -x "$BOOPDEV" ] || { bad "no $BOOPDEV to check the hooks with; run make build"; exit 1; }
+[ -x "$BOOPDEV" ] || { bad "no $BOOPDEV to check the hooks with; run make -C internal build"; exit 1; }
 HOOK_BIN=""; hooked=0; before=$fail
 for agent in claude codex; do
   case $agent in claude) name="Claude Code"; file="$HOME/.claude/settings.json" ;;
@@ -125,7 +125,7 @@ for agent in claude codex; do
   if [ "$first" = clientMissing ] && [ "$health" = outdated ]; then health=clientMissing; fi
   # The everyday app repairs outdated hooks at launch, so
   # after a new build they're outdated until Boop restarts.
-  repair=""; [ $HEADLESS -eq 0 ] && repair="; Boop repairs them when it next starts, so ask the owner to restart it (make run)"
+  repair=""; [ $HEADLESS -eq 0 ] && repair="; Boop repairs them when it next starts, so ask the owner to restart Boop.app"
   case "$health" in
     installed) ok "$name: every hook registered, calling $HOOK_BIN"; hooked=1 ;;
     notInstalled) bad "$name: no Boop hooks in $file" ;;

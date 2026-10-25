@@ -3,7 +3,7 @@ import XCTest
 @testable import BoopKit
 
 final class LoginItemTests: XCTestCase {
-    /// Only an app bundle can be a login item: `make run`'s bare binary,
+    /// Only an app bundle can be a login item: `make dev`'s bare binary,
     /// in a folder, gets a switch that says why it's off.
     func testOnlyAnAppBundleCanOpenAtLogin() throws {
         let bare = LoginItem.system(bundleURL: URL(fileURLWithPath: "/tmp/boop/.build/debug"))

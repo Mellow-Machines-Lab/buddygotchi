@@ -15,7 +15,7 @@ Claude in the desktop app. The script is the same in each.
    start, such as `characters/pixel/demo/hello.jsonl`.
 2. Write one step, a line of the file, for each thing that happens
    (below).
-3. Check it: `.build/debug/boopdev check` (after `make build`). It
+3. Check it: `.build/debug/boopdev check` (after `make -C internal build`). It
    names each step the pack can't play, and the choices it can.
 4. Watch it: `make demo NAME=<name>`.
 

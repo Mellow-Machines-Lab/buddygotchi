@@ -666,7 +666,7 @@ class AppTests(unittest.TestCase):
                 self.assertRegex(plain(app.query_one("#facts")), r"mood +happy")
                 # The fixture is days old: no live log, so the board's link isn't a fact.
                 self.assertTrue(app.query_one("#stale").has_class("shown"))
-                self.assertRegex(plain(app.query_one("#stale")), r"No live log: the newest line is from .*make debug")
+                self.assertRegex(plain(app.query_one("#stale")), r"No live log: the newest line is from .*make dev")
                 self.assertRegex(plain(app.query_one("#facts")), r"board +unknown: no live log")
                 app.now = lambda: app.board.newest_ms / 1000 + 5
                 app.poll()

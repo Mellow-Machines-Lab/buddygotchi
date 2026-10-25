@@ -9,7 +9,7 @@
 # is the board's face, pixel by default or gel. The first time, and
 # whenever the script is newer than its recording or FRESH=1, it records
 # the demo (record-demo.sh, as long as the demo runs); then it serves the
-# page (make simulator) and opens the demo in a browser. Ctrl-C stops it.
+# page (simulator/web/serve.py) and opens the demo in a browser. Ctrl-C stops it.
 # 'NAME=?' (quoted, for zsh) lists the demos there are. BOARD=usb:SOCKET plays it live on a
 # board on a USB bridge instead (.build/debug/linkkit-bridge), and stops
 # when it's over.
@@ -34,7 +34,7 @@ export BOOP_CHARACTER
 if [ -n "${BOARD:-}" ] && [ "$BOARD" != sim ]; then
     case "$BOARD" in usb:*) ;; *) echo "demo: BOARD is sim or usb:SOCKET" >&2; exit 1 ;; esac
     DIR="$(mktemp -d /tmp/boop-demo.XXXXXX)"
-    make build >"$DIR/build.log" 2>&1 || { tail -20 "$DIR/build.log" >&2; exit 1; }
+    make -C internal build >"$DIR/build.log" 2>&1 || { tail -20 "$DIR/build.log" >&2; exit 1; }
     CREATURE="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["name"])' "$BOOP_CHARACTER/character.json")"
     echo "demo: playing $NAME on the board at $BOARD; its log is $DIR/boop.log"
     # Only the demo's lines, and anything Boop stops on; Boop's own exit status.
@@ -53,7 +53,7 @@ stale() {
 }
 if stale; then
     echo "demo: recording $ID's $NAME on the $FACE face, as long as it runs (once, until the script changes)"
-    make build >/dev/null
+    make -C internal build >/dev/null
     firmware/tools/pio.sh run -e native >/dev/null
     simulator/tools/record-demo.sh "$FACE" "$OUT" "$NAME"
 fi

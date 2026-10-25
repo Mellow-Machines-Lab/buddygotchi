@@ -36,7 +36,7 @@ cheap ESP32 board with a screen is the body. Start with
 Code that doesn't ship goes in `internal/`: tests, evals, dev tools,
 skills and the simulator. What ships (`BoopKit`, `Boop`, the three
 packages agent-hooks, mellowharness and linkkit, LinkKit's device library and
-the firmware) never depends on internal code, and `make build` fails if a
+the firmware) never depends on internal code, and `make -C internal build` fails if a
 Swift target imports one it doesn't declare. The packages depend on
 nothing of Boop's and nothing outside their folders; the device library's build fails if it
 includes a header that isn't its own (`linkkit/device/tools/check_includes.py`).
@@ -49,17 +49,21 @@ Delete code that nothing uses; git keeps it.
 ## Commands
 
 The everyday entry points are in [README.md](README.md), which stays a
-short overview. The root `Makefile` has only what the owner uses: `build`,
-`app`, `bundle`, `run`, `debug`, `onboarding`, `dash`, `day`, `simulator`, `demo`, `flash`, `eval` and `clean`. The development targets
-(`test`, `tools-test`, `fw`, `fw-test`, `sim`, `sim-test`, `mirror`, `e2e`, `faces`, `tools`, `eval-pixel`)
-are in `internal/Makefile`; run them from the repo root as
-`make -C internal <target>`. Every make target and tool is in
+short overview. The root `Makefile` has only what the owner runs: `dev`,
+`bundle`, `demo`, `flash`, `eval` and `clean`. Keep it that short: a new
+target for agents, tests or tools goes in `internal/Makefile`, which has
+`build`, `app`, `simulator`, `check`, `test`, `tools-test`, `fw`,
+`fw-test`, `sim`, `sim-test`, `mirror`, `e2e`, `faces`, `tools` and
+`eval-pixel`; run them from the repo root as `make -C internal <target>`.
+`boopctl` and the rest of `internal/tools/` are agent tooling the owner
+needn't learn. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its
-flags with `--help`. `make run` and `make debug` use Bluetooth, so they're
-the owner's. For agents:
+flags with `--help`. `make dev` uses Bluetooth, so it's the owner's. For
+agents:
 
 ```sh
-make build                                            # Mac app, boopdev, the tests' runner, agent-hook, mellowharness-emit, beacon, linkkit-bridge and linkkit-flash (make -C internal test builds it too)
+make -C internal build                                # Mac app, boopdev, the tests' runner, agent-hook, mellowharness-emit, beacon, linkkit-bridge and linkkit-flash (make -C internal test builds it too)
+make -C internal check                                # every check that needs no board, camera or Jev key
 make -C internal test                                 # Swift unit tests: Boop's, then swift test in agent-hooks/, mellowharness/ and linkkit/
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth, printing everything
 .build/debug/Boop --snapshots DIR                     # the popover's panes, onboarding's acts and the menu-bar icons as PNGs, then exits
@@ -68,7 +72,7 @@ make -C internal test                                 # Swift unit tests: Boop's
 ## Environment notes
 
 - There's no Xcode, so XCTest is missing and `swift test` runs nothing of
-  Boop's. `make -C internal test` runs `make build`, which generates the
+  Boop's. `make -C internal test` runs `make -C internal build`, which generates the
   XCTest shim's runner and builds the package in one `swift build`, then
   runs `.build/debug/BoopTests`. Then it runs the three packages' own
   tests, which use Swift Testing, as
@@ -208,7 +212,7 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
   checks, use USB: `.build/debug/linkkit-bridge` plus
   `Boop --headless --state-dir DIR --link usb:$TMPDIR/linkkit-bridge.sock`
   ([internal/VERIFICATION.md](internal/VERIFICATION.md) L4). Ask the owner to run
-  `make run` for Bluetooth.
+  `make dev` for Bluetooth.
 - **Don't modify `~/.claude`, `~/.codex`, or the everyday app's state from
   tests.** Use a temporary `HOME` and isolated state directories, and give
   the installers `--home` too: `NSHomeDirectory()` ignores `HOME`.

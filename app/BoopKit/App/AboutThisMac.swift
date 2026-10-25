@@ -5,7 +5,7 @@ import Foundation
 /// report's `about.json`.
 public enum AboutThisMac {
     /// Whether `bundle` is an app's, `Boop.app` as people install it, and
-    /// not the folder of a bare binary (`make run`): what's missing from
+    /// not the folder of a bare binary (`make dev`): what's missing from
     /// one is fixed by installing again, not by building.
     public static func isApp(_ bundle: URL = Bundle.main.bundleURL) -> Bool { bundle.pathExtension == "app" }
 

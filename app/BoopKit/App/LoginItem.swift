@@ -9,7 +9,7 @@ public struct LoginItem: Sendable {
         /// Turned on, but macOS waits for the person to allow it in System
         /// Settings, under General, Login Items.
         case needsApproval
-        /// Not an app bundle (`make run`'s bare binary), so macOS can't
+        /// Not an app bundle (`make dev`'s bare binary), so macOS can't
         /// open it at login.
         case unavailable
     }

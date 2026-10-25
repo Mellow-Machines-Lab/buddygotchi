@@ -5,8 +5,8 @@ web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
 ```sh
-brew install emscripten   # once: it builds the firmware for a browser
-make simulator            # builds it, then serves http://127.0.0.1:8206/
+brew install emscripten      # once: it builds the firmware for a browser
+make -C internal simulator   # builds it, then serves http://127.0.0.1:8206/
 ```
 
 Add `?face=gel` for Boop's own face and
@@ -25,7 +25,8 @@ looks for them under its own server as well
 ([characters/studio/README.md](../characters/studio/README.md), On the
 board).
 
-**With the Mac app.** While the simulator runs, Boop's Settings shows it
+**With the Mac app.** `make dev` starts the simulator beside the debug
+app and opens its page. While the simulator runs, Boop's Settings shows it
 under Device: **Use it** makes it Boop's body, with your real hooks and
 brain, and **Use the board** goes back. The choice lasts while the
 simulator runs: when it stops, Boop is back on its board by itself, and
@@ -181,7 +182,7 @@ The board's USB carries LinkKit's messages
 ([linkkit/SPEC.md](../linkkit/SPEC.md)) and `dbg.*`, and nothing about
 them differs from a board's.
 
-**The page's**, served by `make simulator` (`web/serve.py`), is a Unix
+**The page's**, served by `web/serve.py` (`make dev` starts it beside the app, `make -C internal simulator` alone), is a Unix
 socket, `/tmp/boop-sim-usb.sock`, that keeps a bridge's rules
 ([linkkit/SPEC.md](../linkkit/SPEC.md) §8). A client's message longer
 than a message may be is dropped whole, as a board drops it. So the

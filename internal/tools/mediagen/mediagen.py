@@ -342,7 +342,7 @@ def stretch(pane: Image.Image, height: int) -> Image.Image:
 
 def popover_png() -> None:
     """Two of the popover's panes side by side, working and needs you, in
-    each appearance, from `Boop --snapshots` (after `make build`)."""
+    each appearance, from `Boop --snapshots` (after `make -C internal build`)."""
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([str(REPO / ".build/debug/Boop"), "--snapshots", tmp], check=True, capture_output=True)
         for look in ("light", "dark"):

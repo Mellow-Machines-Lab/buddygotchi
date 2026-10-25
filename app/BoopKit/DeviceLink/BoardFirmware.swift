@@ -47,7 +47,7 @@ public struct BoardFirmware: Decodable, Equatable, Sendable {
         }
     }
 
-    /// What Boop.app carries; nothing for a bare binary (`make run`).
+    /// What Boop.app carries; nothing for a bare binary (`make dev`).
     public static func bundled() -> [BoardFirmware] {
         guard AboutThisMac.isApp() else { return [] }
         return all(in: Bundle.main.url(forResource: "firmware", withExtension: nil))

@@ -9,7 +9,7 @@ the liveliness limits. The same seed always gives the same day, so a run
 before a steering change and one after it can be compared; Jev itself
 isn't deterministic, so run each at least twice.
 
-`run` needs `make build` first. It starts the headless app with its own
+`run` needs `make -C internal build` first. It starts the headless app with its own
 state directory (keep it short and under /tmp: a Unix socket's path has
 room for 103 bytes), a fake device on a Unix socket that says hello as
 Boop's device does and says each `do` played to the end, and the brain (`--brain jev`, the

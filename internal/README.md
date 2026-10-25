@@ -1,5 +1,11 @@
 # Internal code
 
+Agent tooling: the owner doesn't need to read this folder or learn its
+commands. What the owner runs is the root `Makefile` (`make dev`,
+`make bundle`, `make flash`, `make demo`, `make eval`, `make clean`);
+everything here is for agents, tests and CI, starting from
+`make -C internal <target>` ([VERIFICATION.md](VERIFICATION.md) §2).
+
 Everything in the repo that doesn't ship. What ships is in `app/` (the Mac
 app and its library, BoopKit), `firmware/` (the board's firmware, its
 generated assets and the scripts that build it, the Mac's mirror of the
@@ -18,10 +24,10 @@ tests, evals, dev tools and skills.
 | `app/BoopDev/` | `boopdev`, the developer CLI ([VERIFICATION.md](VERIFICATION.md) §2) |
 | `app/Tests/` | Boop's Swift unit tests (`BoopTests`) and their fixtures. The packages' tests are in each package, under `swift test` (`agent-hooks/Tests/`, `mellowharness/Tests/`, `linkkit/Tests/`); the hook fixtures are agent-hooks' (`agent-hooks/Tests/AgentHooksTests/Fixtures/`), and only the pipeline check's are here (`Fixtures/hooks/e2e/`) |
 | `app/TestSupport/XCTestShim/` | A stand-in XCTest for Command Line Tools, which has none |
-| `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make build` runs it) |
+| `app/tools/` | `gen-test-runner.py`, which writes the tests' `main` for the shim (`make -C internal build` runs it) |
 | `firmware/test/` | The firmware's unit tests, the simulator scenarios and their golden pictures. LinkKit's device library tests in its own project (`linkkit/device/test/`) |
 | `firmware/voice_file.h` | The voice file read from the chosen character pack's `voice/voice.bin`, for the firmware's tests, which have no SD card |
-| `tools/` | `appicon` (draws the app's placeholder icon, `app/Boop/AppIcon.icns`, until a designed one replaces it), `boopctl` (the board over USB, the simulator and the Mac's mirror of the board checked against it, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), `fluid/` (each frame's change across the everyday transitions, recorded in the simulator, by the rule the Character Studio's Transitions measures with too), and the `webcam/` recorder. `boopctl reference` takes in a reference a person gave and cuts it into frames ([characters/CHARACTER.md](../characters/CHARACTER.md) §16). The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
+| `tools/` | `dev.sh` (the root `make dev`: the debug app on its own folder, with the simulator, its page, the studio's matrix and the dashboard beside it), `appicon` (draws the app's placeholder icon, `app/Boop/AppIcon.icns`, until a designed one replaces it), `boopctl` (the board over USB, the simulator and the Mac's mirror of the board checked against it, the live dashboard, a day's summary from the debug logs, and `boopctl workday`, a scripted working day through the headless app and its brain, [EVALS.md](EVALS.md) §5), `fontgen` (the device's fonts), `mediagen` (the READMEs' GIFs and the popover's picture, each from a real run, into `documentation/media/` and the packages' `media/`), `session/` (plays a pack's demo script through the real Claude Code or Codex, with the project from `sessions/`: the replay server, the agent's terminal, the gate and the desktop app's `/demo`, `make demo IN=…`), `fluid/` (each frame's change across the everyday transitions, recorded in the simulator, by the rule the Character Studio's Transitions measures with too), and the `webcam/` recorder. `boopctl reference` takes in a reference a person gave and cuts it into frames ([characters/CHARACTER.md](../characters/CHARACTER.md) §16). The faces', sounds' and voice's generators are their character packs' (`characters/pixel/tools/`: `facegen`, `sfxgen`; `characters/boop/tools/`: `voicegen`, `slimegen`), and so are the designs they build from ([characters/CHARACTER.md](../characters/CHARACTER.md)) |
 | `sessions/` | The projects a pack's demo scripts run in when a real agent plays them, for videos (`make demo IN=…`, [sessions/README.md](sessions/README.md)) |
 | `characters/` | The tests of `characters/charactergen.py` (`make -C internal tools-test`, and CI): the studio lists the board's states, each once; every pack here passes the studio's rules; those rules on small made-up packs (a studio entry is optional, states match the board's, declared files exist, a preview wears only the pack's moods, and the data's paths are from the page), and every pack's moods are exactly the universal ones; a pack's rig/ (every pack here clean, a bad edit failing with its file and key, the tables written as its files say); a pack's references and review queue (every key, value and file, what each status says is there, what it became on the rig) and the studio's data from them, a board for each face among it, which a pack's own entry for it adds to; and `--stage` takes the chosen pack's own files only, with the two headers it makes |
 | `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/` and `.codex/skills/` |
@@ -34,7 +40,7 @@ tests, evals, dev tools and skills.
   they take from the three local packages the root one depends on,
   `agent-hooks`, `mellowharness` and `linkkit`) never depend on the internal
   ones (`BoopDevKit`, `BoopDev`, `BoopTests`, `XCTest`). SwiftPM alone only warns about an import of a
-  target that isn't a dependency, so `make build`, `make app` and
+  target that isn't a dependency, so `make -C internal build`, `make -C internal app` and
   `make -C internal test` build with
   `--explicit-target-dependency-import-check error`, and code in
   `app/` that imports anything from here fails the build. The one

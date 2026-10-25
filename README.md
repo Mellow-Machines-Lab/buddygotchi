@@ -80,8 +80,9 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
    works out which board it is. The first time, it installs PlatformIO
    and the ESP32 toolchain inside the checkout, which takes a few
    minutes; a `pio` already on your `PATH` is used instead.
-2. **Run it.** From your own terminal, run `make run`. The first build
-   takes a minute or two, then Boop says hello in a window of its own.
+2. **Run it.** From your own terminal, run `make bundle`, then
+   `open .build/Boop.app`. The first build takes a few minutes, then
+   Boop says hello in a window of its own.
 3. **Meet Boop.** It walks you through what it does, gets a name and a
    nature (sweet or cheeky), finds its body on your desk (tap its screen
    when it asks), shows you how to use it, and connects your agents.
@@ -103,11 +104,10 @@ run ([characters/CHARACTER.md](characters/CHARACTER.md) §2).
 | To | Run |
 | --- | --- |
 | Flash the firmware (over USB) | `make flash` |
-| Run Boop in the menu bar | `make run` |
 | Build `Boop.app`, to open from Finder or put in Applications | `make bundle` (then `open .build/Boop.app`) |
-| Try Boop with no board, in a browser (needs `brew install emscripten`) | `make simulator` ([simulator/README.md](simulator/README.md)) |
+| Work on Boop: the debug app, with the simulator, the studio and the live dashboard beside it | `make dev` ([CONTRIBUTING.md](CONTRIBUTING.md)) |
 
-Start `make run` from your own terminal: macOS stops anything that uses
+Start `make dev` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's
 evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -144,7 +144,7 @@ Without the app, from this folder, this takes the hooks out:
 .build/debug/boopdev hooks remove --home ~
 ```
 
-Run `make app` first if `.build/` is gone.
+Run `swift build --product boopdev` first if `.build/` is gone.
 
 ## Built from open packages
 

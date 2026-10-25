@@ -295,8 +295,8 @@ class Dash(App[None]):
             newest = self.board.newest_ms
             self.banner.update(
                 f"No live log: the newest line is from {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(newest / 1000))}. "
-                "Start Boop with make debug." if newest else
-                f"No live log: {self.follower.path} has no lines yet. Start Boop with make debug.")
+                "Start Boop with make dev." if newest else
+                f"No live log: {self.follower.path} has no lines yet. Start Boop with make dev.")
         facts = Table.grid(padding=(0, 1))
         facts.add_column(style="bold", no_wrap=True)
         facts.add_column()

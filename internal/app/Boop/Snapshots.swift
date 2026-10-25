@@ -223,7 +223,7 @@ enum Snapshots {
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
             // Act 5's push-to-talk had the mic allowed: no card for it.
             ("7-small-things-mic-allowed-before", at(.smallThings, status: status()) { $0.askMic = false }),
-            // `make run`'s bare binary, which can't open at login.
+            // `make dev`'s bare binary, which can't open at login.
             ("7-small-things-from-terminal", at(.smallThings, status: status()) {
                 $0.app.loginItem = .unavailable
                 $0.app.refreshLoginItem()

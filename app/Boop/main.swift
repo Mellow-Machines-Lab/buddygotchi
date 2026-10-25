@@ -14,7 +14,7 @@ let usage = """
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
-               onboarding (make onboarding).
+               onboarding (make dev FRESH=1).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
                 [--brain jev|scripted|none] [--labeler apple|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
                 [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
@@ -55,7 +55,7 @@ let usage = """
     (boop \(BoopVersion.current))
     """
 
-/// The character pack bundled with the app: the one `make build` staged
+/// The character pack bundled with the app: the one the build staged
 /// (characters/CHARACTER.md §2), which the bundle's `packs/chosen` names
 /// among every pack it holds. `BOOP_CHARACTER`, a pack's folder, comes
 /// first, as for the tests and boopdev, so one build plays any pack's demo.
@@ -66,7 +66,7 @@ func bundledCharacter() -> CharacterPack {
     guard let packs = bundledPacks,
           let chosen = (try? String(contentsOf: packs.appendingPathComponent("chosen"), encoding: .utf8))?
               .trimmingCharacters(in: .whitespacesAndNewlines) else {
-        fail("the character pack is missing from the app: build it with make build, or make bundle, which stage it")
+        fail("the character pack is missing from the app: build it with make dev, or make bundle, which stage it")
     }
     do { return try CharacterPack(directory: packs.appendingPathComponent(chosen)) } catch { fail("the app's character pack is broken: \(error)") }
 }

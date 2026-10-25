@@ -12,8 +12,8 @@ You need macOS 15 or later and Command Line Tools 26 or later
 FoundationModels, which only the macOS 26 SDK has. Xcode 26 works but
 isn't needed; the three packages alone need macOS 13. Flashing the board
 (unless you already have PlatformIO's `pio`) and the dev tools
-(`internal/tools/boopctl`: the dashboard, `make day`, the simulator's
-snapshots) also need a newer Python than the Mac's own
+(`internal/tools/boopctl`: the dashboard, the day's report, the
+simulator's snapshots) also need a newer Python than the Mac's own
 (`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page and the Mac's mirror of
 the board also need Emscripten, to build the firmware for a browser (the
 mirror is checked in, so it's rebuilt only when what the board draws
@@ -29,13 +29,17 @@ empty. A change to one of them is a pull request in its own repository
 (CLAUDE.md, Repositories).
 
 ```sh
-make build                 # the Mac app, the dev tools and the hook client
+make dev                   # the debug app, with the simulator, the studio and the live dashboard
 make bundle                # Boop.app as it ships, in .build/Boop.app
+make -C internal build     # the Mac app, the dev tools and the hook client
+make -C internal check     # every check that needs no board: the Swift, firmware and tools' tests, the goldens, the mirror
 make -C internal test      # Boop's Swift tests, then each package's
-make -C internal fw-test   # the firmware's and LinkKit's device tests, on the Mac
-make -C internal sim       # the firmware's drawing, as PNGs, against the goldens
 make -C internal sim-test  # the simulator: its core on the Mac, and in a browser's WebAssembly
 ```
+
+The root `Makefile` has only what you run day to day; everything else,
+the tests and the tools agents use to check their work, is in
+`internal/` ([internal/README.md](internal/README.md)).
 
 One thing that will surprise you:
 
@@ -51,11 +55,21 @@ One thing that will surprise you:
 
 | To | Run |
 | --- | --- |
-| Run Boop and print everything it sees and decides | `make debug` |
-| Go through the first launch's onboarding again, without touching your Boop (quit it first) | `make onboarding` |
-| Watch and poke it live, in a second terminal beside `make debug` | `make dash` |
-| See what it did on the latest day `make debug` logged, and why (`DATE=YYYY-MM-DD` for another) | `make day` |
+| Run Boop and print everything it sees and decides, with the simulator, the studio and the live dashboard open | `make dev` |
+| Go through the first launch's onboarding again, without touching your Boop | `make dev FRESH=1` |
+| See what it did on a day, and why (`--date YYYY-MM-DD`) | `internal/tools/boopctl day --state-dir ~/Library/Application\ Support/Boop-dev` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
+
+`make dev` runs the debug app on a folder of its own,
+`~/Library/Application Support/Boop-dev`, beside your everyday Boop: it
+hears your agents' hooks too (the everyday Boop installs them; this one
+never changes them, nor the login item), and keeps a Jev key of its own,
+which you give it once in its Settings. It starts on your board over
+Bluetooth; while the simulator runs, its Settings shows a **Simulator**
+row, where **Use it** switches to the board in your browser and **Use
+the board** switches back. Only one Boop can have the board, so use the
+simulator or quit the everyday Boop. Ctrl-C stops the app, the simulator
+and the dashboard.
 
 The dashboard shows the face, Boop's mood, its automatic reactions and the
 ones Jev decided, and can force any mood or reaction. `b` saves a bug

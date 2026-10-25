@@ -10,7 +10,7 @@ This script parses internal/app/Tests/*.swift for `XCTestCase` subclasses
 and their `test…` methods, then emits
 internal/app/Tests/GeneratedTestRunner.swift: an `@main` entry point
 (guarded by `#if BOOP_SHIM_RUNNER`) that instantiates each case, runs
-its setUp lifecycle, and invokes every test. `make build` regenerates it
+its setUp lifecycle, and invokes every test. `make -C internal build` regenerates it
 and `make -C internal test` runs it, so the tests actually execute.
 
 Idempotent: run it any time. It rewrites the generated file only when the

@@ -31,7 +31,7 @@ What a pack holds, and what it must have:
 To make one, copy Pixel's (§14). To check one:
 
 ```sh
-make build && .build/debug/boopdev check            # every pack in characters/
+make -C internal build && .build/debug/boopdev check # every pack in characters/
 .build/debug/boopdev check path/to/pack             # one pack, anywhere
 ```
 
@@ -106,7 +106,7 @@ pointer to it; and
 from it, the pack's `firmware/`, with the two headers staging makes
 (`moods.h`, §9, and `rig_tables.h`, §15), and the folder the app bundles
 (`packs/`). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
-and `make build` before every app build. A stage changes only what
+and `make -C internal build` before every app build. A stage changes only what
 differs from the last: an unchanged file stays as it was, and a changed
 one is replaced whole, dated then, so a build reading `.character-build/`
 while another stages finds every file there. The app bundles only what it
@@ -783,7 +783,7 @@ words. The app bundles the folder. How to write and play one:
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.
-5. Run `make build` and `.build/debug/boopdev check`.
+5. Run `make -C internal build` and `.build/debug/boopdev check`.
 6. Try it: `CHARACTER=<yours> make demo NAME=hello` plays Pixel's short
    demo, which the copy carries, in the simulator's page.
 7. Flash it: `make flash CHARACTER=<yours>`.

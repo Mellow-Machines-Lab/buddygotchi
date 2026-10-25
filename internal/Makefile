@@ -1,14 +1,58 @@
-# Boop's development targets: tests, the simulator and the device tools.
-# Run them as `make -C internal <target>` from the repo root. Every recipe
-# runs from the repo root, so the paths below are the same as in the root
+# Boop's agent tooling: the builds agents and tests use, the tests, the
+# simulator's checks and the device tools. The owner needn't read it. Run
+# them as `make -C internal <target>` from the repo root. Every recipe runs
+# from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: test tools faces fw fw-test sim sim-test mirror e2e tools-test eval-pixel
+.PHONY: build app simulator check test tools faces fw fw-test sim sim-test mirror e2e tools-test eval-pixel
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
 
-# Swift unit tests through the XCTest shim (there's no Xcode here): the
-# root `build` (one `swift build` of the whole package, the tests' runner
+# The whole package in one `swift build`: the Mac app, boopdev and the
+# BoopTests runner, whose main is generated first; then agent-hooks' hook
+# client, agent-hook, which the app copies from next to it, MellowHarness'
+# tools, mellowharness-emit and beacon (mellowharness/README.md), and LinkKit's USB
+# bridge, linkkit-bridge, and its flasher, linkkit-flash (linkkit/README.md).
+# SWIFT_CHECK makes importing a target that isn't a declared dependency an
+# error, not a warning, so app/ can't reach internal/ code (internal/README.md).
+# `test` runs this target, then the tests. Both targets first stage the
+# chosen character pack for the app to bundle (characters/charactergen.py
+# --stage, characters/CHARACTER.md §2).
+SWIFT_CHECK := --explicit-target-dependency-import-check error
+build:
+	cd $(ROOT) && python3 characters/charactergen.py --stage
+	cd $(ROOT) && python3 internal/app/tools/gen-test-runner.py
+	cd $(ROOT) && swift build $(SWIFT_CHECK)
+	cd $(ROOT) && for product in agent-hook mellowharness-emit beacon linkkit-bridge linkkit-flash; do \
+	  swift build $(SWIFT_CHECK) --product $$product || exit 1; \
+	done
+
+# The Mac app, the agent-hook it copies from next to it and boopdev, without
+# the tests' generated runner, which is most of `build`'s time after a
+# change to what BoopKit declares. The root `make dev` builds with it.
+app:
+	cd $(ROOT) && python3 characters/charactergen.py --stage
+	cd $(ROOT) && swift build $(SWIFT_CHECK) --product Boop
+	cd $(ROOT) && swift build $(SWIFT_CHECK) --product agent-hook
+	cd $(ROOT) && swift build $(SWIFT_CHECK) --product boopdev  # the doctor skill checks the hooks with it
+
+# The board in a browser on this Mac, alone (simulator/README.md): the
+# firmware's own code built to WebAssembly, the page that is its screen,
+# finger, speaker and card, and its USB as a bridge's socket for the Mac app
+# and the tools. Needs Emscripten (brew install emscripten). No Bluetooth,
+# so agents may run it; the owner's `make dev` starts one beside the app.
+simulator:
+	cd $(ROOT) && python3 characters/charactergen.py --stage
+	cd $(ROOT) && simulator/web/build.sh
+	cd $(ROOT) && python3 simulator/web/serve.py
+
+# Every check that needs no board, camera or Jev key, one after another:
+# the Swift tests, the firmware's, the tools', the simulator's scenarios
+# against the goldens and the Mac's mirror of the board.
+check: test fw-test tools-test sim mirror
+
+# Swift unit tests through the XCTest shim (there's no Xcode here):
+# `build` (one `swift build` of the whole package, the tests' runner
 # included), then the runner. Then the own tests of agent-hooks, mellowharness
 # and linkkit, which use Swift Testing and so run under `swift test`, each
 # in a build folder of its own. That build now and then fails with "plugin
@@ -19,7 +63,7 @@ PIO := firmware/tools/pio.sh
 SWIFT_PACKAGES := agent-hooks mellowharness linkkit
 
 test:
-	$(MAKE) -C $(ROOT) build
+	$(MAKE) build
 	cd $(ROOT) && .build/debug/BoopTests
 	for pkg in $(SWIFT_PACKAGES); do \
 	  cd $(ROOT)/$$pkg && mkdir -p .build && for try in 1 2 3 4 5 6 7 8; do \
@@ -34,7 +78,7 @@ test:
 # Pixel's own eval scenarios against Jev (L5, internal/EVALS.md §4), with
 # its pack and steering, one run each. It needs BOOP_JEV_KEY.
 eval-pixel:
-	$(MAKE) -C $(ROOT) build
+	$(MAKE) build
 	cd $(ROOT) && CHARACTER=pixel .build/debug/boopdev eval --runs 1 \
 	  --scenarios characters/pixel/evals --steering characters/pixel/steering
 
@@ -104,7 +148,7 @@ mirror:
 
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:
-	$(MAKE) -C $(ROOT) build
+	$(MAKE) build
 	cd $(ROOT) && internal/tools/boopctl e2e
 
 # The tools' own tests, with no board or camera: boopctl's commands (the

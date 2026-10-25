@@ -14,7 +14,7 @@ public enum Keychain {
     static let service = "com.boopcomputer.boop"
 
     /// The entry's account for the Boop on `stateDir`: `jev`, the everyday
-    /// Boop's, or a copy's own on another folder (`make onboarding`), named
+    /// Boop's, or a copy's own on another folder (`make dev`), named
     /// as its hook socket's listing is (`AppSettings.copyName`), so a copy
     /// never reads or replaces the everyday key.
     public static func account(for stateDir: URL, home: String = NSHomeDirectory()) -> String {

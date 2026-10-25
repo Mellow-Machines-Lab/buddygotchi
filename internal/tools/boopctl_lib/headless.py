@@ -36,7 +36,7 @@ class Headless:
         if len(self.socket) > 100:
             raise DeviceError(f"{self.socket} is too long for a Unix socket; use a shorter state directory")
         if not (BIN / "Boop").exists():
-            raise DeviceError(f"no {BIN / 'Boop'}; run make build")
+            raise DeviceError(f"no {BIN / 'Boop'}; run make -C internal build")
         cmd = [str(BIN / "Boop"), "--headless", "--state-dir", str(self.state), "--link", self.link,
                "--socket", self.socket, "--brain", self.brain, "--name", "Pip", "--no-open", "--debug"] + self.extra
         self.proc = subprocess.Popen(cmd, stdout=stdout, stderr=subprocess.STDOUT)

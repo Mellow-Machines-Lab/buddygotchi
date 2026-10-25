@@ -56,34 +56,32 @@ Every tool prints its flags with `--help`: `internal/tools/boopctl
 stop with their usage on a flag they don't take, `Boop` before anything
 starts, so a typo can't launch the menu-bar app or run the whole eval.
 
-**Make targets.** The root `Makefile` has the owner's everyday targets;
-`internal/Makefile` has the development ones, run from the repo root as
-`make -C internal <target>`. Each target's comment says what it runs.
+**Make targets.** The root `Makefile` has the owner's everyday targets
+and nothing else; `internal/Makefile` has the builds, tests and tools
+agents use, run from the repo root as `make -C internal <target>`. Each target's comment says what it runs.
 
 | Target | What it does |
 | --- | --- |
-| `make build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
-| `make app` | What `make run` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
+| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 15.0 at least, so it still opens on macOS 15. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
-| `make run`, `make debug` | The menu-bar app with Bluetooth; `debug` adds `--debug`. The owner's; never from an agent's shell |
-| `make onboarding` | The first launch's onboarding again, on a throwaway folder (`/tmp/boop-onboarding`, started afresh): with Bluetooth, so it's the owner's, but it never changes the real hooks, login item or Jev key. It keeps a key of its own in the Keychain (`dev-boop-onboarding`, emptied each time), and takes its socket's listing (`dev-boop-onboarding.sock`) out of `~/.agent-hooks/sockets` when it quits. Quit the everyday Boop first |
-| `make dash` | `boopctl dash`, for the app `make debug` started. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would |
-| `make day` | `boopctl day`: what the everyday app did in a day, from the logs `make debug` leaves; `DATE=YYYY-MM-DD` picks the day |
-| `make simulator` | The board in a browser at `http://127.0.0.1:8206/`, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
-| `make -C internal test` | `make build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
+| `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
+| `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
+| `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
+| `make -C internal check` | Every check that needs no board, camera or Jev key, one after another: `test`, `fw-test`, `tools-test`, `sim` and `mirror` |
+| `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
 | `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/` (Boop's `test_gel` holds the gel slime's engine to every rule of its design, [its VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md)), then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario played on it and on the native simulator, each shot the same on both pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and checked to be the one checked in, byte for byte (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
-| `make -C internal e2e` | `make build`, then the pipeline check (L4) |
+| `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal eval-pixel` | `make build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
+| `make -C internal eval-pixel` | `make -C internal build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
@@ -202,7 +200,7 @@ crop and clips, and `mediagen`'s Beacon socket.
 
 **Sharing the port.** Only one process can open the serial port, so
 LinkKit's bridge owns it and shares it on a Unix socket, by the rules in
-[linkkit/SPEC.md](../linkkit/SPEC.md) §8. `make build` builds it; run it
+[linkkit/SPEC.md](../linkkit/SPEC.md) §8. `make -C internal build` builds it; run it
 in a terminal of its own:
 
 ```sh
@@ -602,12 +600,13 @@ slowest pass is under the 1.5 s deadline; and the sample reads well.
 
 ### L6: the owner
 
-Only a person can check Bluetooth (`make run`), real touches and
+Only a person can check Bluetooth (`make dev`), real touches and
 calibration (`boopctl calibrate`), sound by ear (`boopctl takes`,
 `takes --board-volume`, `takes --levels`, `play needs`), real Claude
 Code and Codex sessions, the Mac app in the real menu bar, and how Boop
 feels. A day of real
-use under `make debug` reads back with `make day`:
+use under `make dev` reads back with
+`internal/tools/boopctl day --state-dir ~/Library/Application\ Support/Boop-dev`:
 what Boop did each hour and why, relaunches included.
 
 ## 6. Webcam

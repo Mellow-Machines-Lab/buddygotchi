@@ -1229,7 +1229,7 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// Without `--debug` or `--headless` the socket takes no dev lines, so
-    /// plain `make run` can't be driven.
+    /// Boop.app can't be driven.
     func testDevLinesAreIgnoredWithoutThem() throws {
         let transport = FakeTransport()
         var options = try options(transport)

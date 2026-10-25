@@ -373,7 +373,7 @@ through the whole headless app and Jev on a compressed clock, in about
 five minutes:
 
 ```sh
-make build
+make -C internal build
 BOOP_JEV_KEY=… internal/tools/boopctl workday run --state /tmp/tn-1 --out /tmp/tn-out/1
 internal/tools/boopctl workday report /tmp/tn-out/1/debug.jsonl /tmp/tn-out/2/debug.jsonl
 internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl

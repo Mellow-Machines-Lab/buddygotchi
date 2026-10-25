@@ -41,7 +41,7 @@ final class KeychainTests: XCTestCase {
         XCTAssertFalse(Keychain.setJevKey("sk-new", account: "jev", security: security.tool))
     }
 
-    /// A copy on another folder (`make onboarding`) reads and writes an
+    /// A copy on another folder (`make dev`) reads and writes an
     /// entry of its own, named for its folder, never the everyday `jev`.
     func testACopyOnAnotherFolderKeepsAKeyOfItsOwn() {
         XCTAssertEqual(AppSettings.copyName(URL(fileURLWithPath: "/tmp/boop-onboarding")), "dev-boop-onboarding")

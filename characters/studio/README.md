@@ -13,7 +13,7 @@ references people gave (§16), and what's up for review.
 ## Open it
 
 The page reads `packs.js`, which `characters/charactergen.py` writes on
-every run but `--which` (`make build` stages, which writes it) for the packs in this checkout. Git
+every run but `--which` (`make -C internal build` stages, which writes it) for the packs in this checkout. Git
 ignores it. From the repository root:
 
 ```sh
@@ -65,7 +65,7 @@ saves no verdicts.
   screen play, at most 60 at once for a `clip` character and 12 for a
   `live` one, whose each holds one of the page's few WebGL contexts, a
   hovered cell first, then those wholly on screen. A cell shows its first variation; clicking
-  it opens that scene. Served by `make simulator`
+  it opens that scene. Served by the simulator's server (`make dev`, or `make -C internal simulator`)
   ([simulator/README.md](../../simulator/README.md)), the matrix also
   marks the cell the simulated board shows now, from the board's own
   `dbg.state` once a second: no app or needs you, else a reaction

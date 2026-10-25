@@ -84,7 +84,7 @@ class Run:
         (self.state / "settings.json").write_text(json.dumps({"volume": 0}))
         for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
-                raise DeviceError(f"no {BIN / name}; run make build")
+                raise DeviceError(f"no {BIN / name}; run make -C internal build")
         bridge = [str(BIN / "linkkit-bridge"), "--socket", self.bridge_sock] + (["--port", self.port] if self.port else [])
         self.bridge = subprocess.Popen(bridge, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.app.wait_for(lambda: os.path.exists(self.bridge_sock), 10, "the bridge's socket")

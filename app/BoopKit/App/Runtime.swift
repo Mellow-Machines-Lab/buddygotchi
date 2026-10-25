@@ -29,7 +29,7 @@ public final class Runtime: @unchecked Sendable {
         /// Milliseconds since 1970, for days and times of day.
         public var wallClock: @Sendable () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }
         /// Accept `{"dev":…}` lines on the hook socket: headless, or debug
-        /// mode. Plain `make run` stays deaf to them.
+        /// mode. Boop.app, with neither, stays deaf to them.
         public var devLines = false
         /// Moves `clock` forward, for `{"dev":"advance"}`; nil ignores it.
         public var advance: (@Sendable (Int64) -> Void)?

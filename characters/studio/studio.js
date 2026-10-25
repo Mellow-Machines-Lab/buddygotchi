@@ -272,7 +272,7 @@
     matrix.observer?.disconnect();matrix.cells=[];matrix.seen.clear();matrix.hovered=null;matrix.key='';matrix.table.replaceChildren();
     board.cell=null;
   }
-  // What the simulated board shows, marked: `make simulator` serves this page
+  // What the simulated board shows, marked: the simulator's server (simulator/web/serve.py) serves this page
   // beside the board, and its link names the board to ask (&board=/board, or
   // /board/NAME for one of several), which answers with the board's dbg.state.
   const BOARD_MS=1000,BOARD_URL=/^\/board(\/[a-z0-9][a-z0-9_-]{0,15})?$/;

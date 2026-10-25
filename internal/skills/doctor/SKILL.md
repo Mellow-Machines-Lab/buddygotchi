@@ -7,7 +7,7 @@ description: Self-diagnose whether the current agent harness (Claude Code or Cod
 
 `internal/skills/doctor/doctor.sh` does the checking; this file says how
 to drive it. It checks the four things listed at the top of `doctor.sh`, needs
-`make build` first, and only reads `~/.claude` and `~/.codex`.
+`make -C internal build` first, and only reads `~/.claude` and `~/.codex`.
 
 ## Procedure
 
@@ -62,20 +62,20 @@ HOME="$H" internal/skills/doctor/doctor.sh --headless
 ## Fixes, by finding
 
 - **No socket, or the socket doesn't accept.** The app isn't running. Ask
-  the owner to start Boop (`make run`). Don't launch it yourself: an
+  the owner to start Boop (open Boop.app). Don't launch it yourself: an
   agent-launched Boop is killed on its first Bluetooth use.
 - **Not listed for agent-hook.** `agent-hook` sends to every socket in
   `~/.agent-hooks/sockets/`, and the everyday Boop lists its own there
   as `boop.sock`, a link, when it starts. Ask the owner to restart Boop.
 - **Hooks old, or calling another `agent-hook`.** Common after a new
   build: Boop repairs them when it next starts, so ask the owner to
-  restart it (`make run`), then restart the agent's sessions so they
+  restart it (Boop.app: a copy on another folder, as `make dev` runs, never repairs them), then restart the agent's sessions so they
   reload their hook config.
 - **Hooks missing.** Boop → Settings → Agents → Connect for this agent,
   then restart the agent's sessions.
 - **The app's `agent-hook` is missing.** The app copies it into
   `~/Library/Application Support/Boop/bin/` at launch, from the one built
-  next to it. Run `make build` if it isn't built, then ask the owner to
+  next to it. Run `make -C internal build` if it isn't built, then ask the owner to
   restart Boop.
 - **Round trip fails but the socket accepts.** Another Boop owns the socket,
   or `boop.log` belongs to a different state directory.

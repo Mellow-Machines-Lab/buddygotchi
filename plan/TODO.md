@@ -245,7 +245,7 @@ session, Bluetooth and the boards can show.
       a board on older firmware than the app carries.
 - [ ] Opening an agent's tab from the bundled app (the Automation
       prompt).
-- [ ] `make onboarding` keeping its own Keychain entry and leaving no
+- [ ] `make dev FRESH=1` keeping its own Keychain entry and leaving no
       socket behind.
 - [ ] An SD card for the CYD's voice (`boop/voice.bin`); the CYD isn't
       a priority.

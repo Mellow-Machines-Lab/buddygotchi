@@ -12,7 +12,7 @@ again when the face, the popover or a command's output changes:
 | `beacon` | `mellowharness/media/beacon.gif` | `beacon listen`, with three builds sent by `mellowharness-emit` |
 
 ```sh
-make build                                                        # for the popover's snapshots
+make -C internal build                                            # for the popover's snapshots
 internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py              # all of them, about a minute
 internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py boop watch   # just these
 ```
