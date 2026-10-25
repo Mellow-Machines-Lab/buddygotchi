@@ -151,6 +151,9 @@ public final class TranscriptView {
         /// The finishes whose last message's reading comes next, by
         /// session: its line, which the reading's adds to.
         var unread: [String: Line] = [:]
+        /// When each session's calls that climb the work stream's failure
+        /// ladder failed, within `WorkStream.ladderMs`.
+        var ladder: [String: [Int64]] = [:]
 
         /// Its tracker never asks whether an agent's process runs: the core
         /// records a session whose agent is gone as its turn stopping
@@ -194,6 +197,12 @@ public final class TranscriptView {
 
     /// The topics whose failing command fails a turn.
     static let checks: Set<String> = ["tests", "build", "deploy"]
+
+    /// A failed call that takes the work stream's failure ladder to this
+    /// rung or the next (the helmet, then the throw) is a line that wakes
+    /// the brain: a stray failure is only a bonk, and past the top rung
+    /// the bonks go quiet again.
+    public static let wakingRungs = 3...4
 
     /// A finish done in under this is a quick win, and quick wins within
     /// `winRunGapMs` of each other are a run the line counts, as it counts
@@ -403,6 +412,7 @@ public final class TranscriptView {
         if fold.counts.keys.contains(where: { fold.sessions.sessions[$0] == nil }) {
             fold.counts = fold.counts.filter { fold.sessions.sessions[$0.key] != nil }
             fold.unread = fold.unread.filter { fold.sessions.sessions[$0.key] != nil }
+            fold.ladder = fold.ladder.filter { fold.sessions.sessions[$0.key] != nil }
         }
     }
 
@@ -518,6 +528,13 @@ public final class TranscriptView {
 
         var failedBefore = 0
         var notable = false
+        var rung = 0
+        if WorkStream.climbs(a) {
+            let recent = (fold.ladder[a.key] ?? []).filter { a.at - $0 < WorkStream.ladderMs } + [a.at]
+            fold.ladder[a.key] = recent
+            rung = recent.count
+            notable = Self.wakingRungs.contains(rung)
+        }
         if let topic {
             if TranscriptView.checks.contains(topic), let failed {
                 failedBefore = c.failRuns[topic] ?? 0
@@ -540,7 +557,9 @@ public final class TranscriptView {
         guard TranscriptView.keeps(.tool, .end, notable: notable, allToolEnds: rules.toolUses == .all) else { return nil }
         let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
-        let text = notable
+        let text = notable && rung > 0
+            ? EventLine.failing(agent: t.agent.rawValue, thread: threadLine(t), count: rung, name: onlyName)
+            : notable
             ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
                               inARow: failedBefore + 1)
             : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
@@ -549,6 +568,7 @@ public final class TranscriptView {
             "tool_use_id": .of(a.toolUseID), "topic": .of(topic), "result": .string(result),
             "error": .of(a.error), "failed_before": .int(Int64(failedBefore)),
         ]
+        if rung > 0 { facts["failing"] = .int(Int64(rung)) }
         if let tookMs {
             facts["took"] = .string(Band.length(ms: tookMs))
             facts["took_ms"] = .int(tookMs)

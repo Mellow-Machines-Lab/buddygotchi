@@ -24,7 +24,7 @@ in more than one place:
 
 | One moment | Who answers it today |
 | --- | --- |
-| A tool fails | The `error` rule (which never plays now: both boards take the work stream), the stream's bonk ladder, and the brain if it was a check |
+| A tool fails | The stream's bonk ladder, and the brain if it was a check or the ladder's third or fourth rung (the `error` rule is gone, 2026-10-25) |
 | A turn is stopped | The `stopped` rule, the stream's drop, and the brain's finish line |
 | A helper comes back | The `helper_return` rule, the stream's "done", and the brain's "helper back" topic |
 | A compaction | `starting/compacted`, the stream's compact, and the brain's line |
@@ -49,14 +49,13 @@ reaction, and a debug key).
 Each of these takes away a duplicate without changing what plays.
 
 1. **On a board that takes the work stream, the stream owns the agent's
-   moments.** `playRule` already drops `error` there. Drop `stopped` and
+   moments.** The `error` rule is gone (2026-10-25). Drop `stopped` and
    `helper_return` the same way: the stream shows each at the same
    moment, and as `if_free` reactions they're often skipped anyway. Keep
    `starting`, which has art of its own, and `listening`. Record a rule's
    reaction only once the board says it played (its `ended`), as a
-   brain's is. Today the core records "reacted to the error on its own"
-   even though nothing played, so the brain is told something false.
-   *Removes:* two rule reactions on the gel, and a false line in HISTORY.
+   brain's is.
+   *Removes:* two rule reactions on the gel.
 2. **The board owns the tap run and push-to-talk's timing.** It already
    reports `poked` or `tap_spam`. Add the run's count to the `tap` event
    (`n`), and let `TranscriptView` read it in place of `inARowMs` and

@@ -639,7 +639,6 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(rig.state.act, "testing")
         XCTAssertEqual(workBeats(rig.wait(5 * 60_000)), [], "no working heartbeat")
         let failed = rig.send(.activity, subagent: "a1", tool: "Bash", topic: "tests", failed: true, id: "b")
-        XCTAssertEqual(deviceReactions(failed).map(\.anim), ["error"], "its result isn't a late one")
         XCTAssertEqual(woke(failed), [#"claude's tests failed on "landing"."#])
         XCTAssertEqual(rig.state.base, "working")
         rig.send(.subagentEnd, subagent: "a1")
@@ -2341,7 +2340,6 @@ final class CoreFuzzTests: XCTestCase {
         let tools = ["Bash", "Read", "Agent", "mcp__x__ask"]
         var lastAttn: StateSnapshot.Attention?
         var calls = 0, shown = 0, finishes = 0, acts = 0, shots = 0
-        var lastError: Int64?
         var trail: [String] = []  // the last calls, for a failure's message
         for step in 0..<20_000 {
             var fx = Fx()
@@ -2426,12 +2424,8 @@ final class CoreFuzzTests: XCTestCase {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)
-                XCTAssertTrue(["starting", "stopped", "error", "helper_return"].contains(reaction.anim ?? ""), why)
+                XCTAssertTrue(["starting", "stopped", "helper_return"].contains(reaction.anim ?? ""), why)
                 XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
-                if reaction.anim == "error" {
-                    if let last = lastError { XCTAssertGreaterThanOrEqual(rig.now - last, Core.errorEveryMs, why) }
-                    lastError = rig.now
-                }
             }
             for sent in states(fx) {
                 XCTAssertTrue(sent.act == nil || (sent.base == "working" && sent.attn == nil), "\(sent.jsonLine)\n\(why)")

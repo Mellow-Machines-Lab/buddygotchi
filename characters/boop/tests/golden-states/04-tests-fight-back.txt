@@ -282,7 +282,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:01, Wednesday)
 claude's tests failed on "fix-nav" (landing).
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 3
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -552,14 +552,13 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "fix-nav" (landing).
 2 min ago: claude's tests failed on "fix-nav" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 Boop has been comfy for 2 min.
 
 NOW (14:03, Wednesday)
 claude's tests failed again on "fix-nav" (landing), 2 times in a row.
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 4
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -836,17 +835,15 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "fix-nav" (landing).
 4 min ago: claude's tests failed on "fix-nav" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 2 min ago: claude's tests failed again on "fix-nav" (landing), 2 times in a row.
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Probe".
 
 NOW (14:05, Wednesday)
 claude's tests failed again on "fix-nav" (landing), 3 times in a row.
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 5
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -1116,15 +1113,12 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "fix-nav" (landing).
 6 min ago: claude's tests failed on "fix-nav" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 4 min ago: claude's tests failed again on "fix-nav" (landing), 2 times in a row.
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Probe".
 2 min ago: claude's tests failed again on "fix-nav" (landing), 3 times in a row.
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Trouble Checking".
 Boop has been comfy for 2 min.

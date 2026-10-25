@@ -128,6 +128,15 @@ public enum EventLine {
         return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
     }
 
+    /// Commands failing one after another (the work stream's failure
+    /// ladder, `TranscriptView.wakingRungs`), while the turn goes on:
+    /// `claude's commands keep failing on "api": 3 in 2 minutes, each one
+    /// hitting Boop in the face. The turn goes on.`
+    public static func failing(agent: String, thread: String, count: Int, name: String = CharacterPack.active.name) -> String {
+        let minutes = WorkStream.ladderMs / 60_000
+        return "\(agent)'s commands keep failing on \(thread): \(count) in \(minutes) minutes, each one hitting \(name) in the face. The turn goes on."
+    }
+
     /// Any other tool use, with the personality's `tool_uses: all`.
     public static func routine(agent: String, category: String, thread: String, failed: Bool?) -> String {
         let what = switch category {

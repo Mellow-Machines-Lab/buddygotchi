@@ -461,7 +461,7 @@ the brain's, a rule's, or the board's own.
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
 | `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke` (a slow one; a quick one, a swipe, plays the stroke or the ruffle it would be, unless the face only feels it go by, as the gel's dome flings on, and goes to the Mac as `swipe`), `ruffle` (stroked the wrong way), `nose`, `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger that starts on the gel's strip and goes up pulls out the agents' drawer instead (What else a face does). A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
 | `stopped` | A turn is interrupted | the Mac |
-| `error` | A tool fails (the task may still succeed) | the Mac |
+| `error` | Nothing sends it now: a failed call hits Boop in the work stream (`call`), and a card is only ever a turn's. The faces still draw it | nobody |
 | `helper_return` | A helper agent comes back | the Mac |
 | `poked` | A tap on the screen | the board |
 | `tap_spam` | The third tap in a row, and each after | the board |
@@ -479,8 +479,8 @@ speak.
 (`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
 plays at once over the agents' work and holds nothing up; with no lane
 working, or while something needs you, it's skipped `hidden`. A face
-draws it if it draws the stream (`Face::watch`), and a board that plays
-it gets it in place of `error`.
+draws it if it draws the stream (`Face::watch`). A failed call is one
+of its gags, never a reaction of its own.
 
 ### What else a face does
 

@@ -249,12 +249,35 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(finish.notes.last, "A command timed out and landed on Boop's head.", "only what's new since")
     }
 
-    /// A board that plays the work stream says `call` in its `hello`: the
-    /// failed call's word hits Boop instead of the error reaction.
-    func testABoardThatPlaysCallsSaysSo() {
-        XCTAssertTrue(BoopDevice.playsCalls(Hello(app: "boop", id: "b00p-1", fw: "1", does: ["react", "call"])))
-        XCTAssertFalse(BoopDevice.playsCalls(Hello(app: "boop", id: "b00p-1", fw: "1", does: ["react", "error"])))
-        XCTAssertFalse(BoopDevice.playsCalls(nil))
+    /// The third and fourth failures within the ladder's two minutes
+    /// (`TranscriptView.wakingRungs`, 3...4), the helmet and the throw,
+    /// are a line that wakes the brain while the turn goes on. The first
+    /// two and any past the fourth are only bonks, and a denial or a
+    /// timeout doesn't climb.
+    func testTheLaddersTopRungsWakeTheBrain() {
+        XCTAssertEqual(TranscriptView.wakingRungs, 3...4)
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        func fail(_ id: String, error: String = "exit_code") -> [String] {
+            rig.now += 3000
+            let before = rig.views.count
+            run(rig, id, program: "make", failed: true, error: error)
+            return rig.views[before...].filter(\.wakesBrain).map(\.line)
+        }
+        XCTAssertEqual(fail("1"), [])
+        XCTAssertEqual(fail("2", error: "denied"), [], "you said no")
+        XCTAssertEqual(fail("3", error: "timeout"), [])
+        XCTAssertEqual(fail("4"), [])
+        XCTAssertEqual(fail("5"), [#"claude's commands keep failing on "landing": 3 in 2 minutes, each one hitting Boop in the face. The turn goes on."#])
+        XCTAssertEqual(fail("6").count, 1, "the throw")
+        XCTAssertEqual(fail("7"), [], "past the top rung")
+        rig.now += WorkStream.ladderMs
+        XCTAssertEqual(fail("8"), [], "a new climb")
+    }
+
+    /// A word that comes forward waits on the board at most 1.5 s
+    /// (`BoopDevice.callTTL`): it was news only just now.
+    func testAWordForwardWaitsOnlyBriefly() {
         XCTAssertEqual(BoopDevice.callTTL, 1500)
     }
 

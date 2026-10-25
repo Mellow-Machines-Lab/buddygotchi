@@ -34,9 +34,6 @@ public enum BoopDevice {
     /// was news only just now.
     public static let callTTL = 1500
 
-    /// Whether the board behind `hello` plays the work stream's `call`.
-    public static func playsCalls(_ hello: Hello?) -> Bool { hello?.does.contains("call") == true }
-
     /// The link to Boop's device over `transport`, or to none.
     public static func link(_ transport: Transport?, log: @escaping (String) -> Void = { _ in }) -> DeviceLink {
         DeviceLink(app: app, transport: transport, log: log)

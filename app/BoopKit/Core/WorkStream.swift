@@ -79,6 +79,18 @@ struct WorkStream {
     static let combos: Set<Int> = [5, 10, 20]
     /// One session's failures within this climb the ladder.
     static let ladderMs: Int64 = 120_000
+
+    /// Whether a call's end climbs the failure ladder: a failure, but not
+    /// a lookup that found nothing, a timeout, a request you denied, or a
+    /// check's, which have gags of their own.
+    static func climbs(_ e: AgentEvent) -> Bool {
+        guard e.failed == true else { return false }
+        switch e.error {
+        case ToolError.exitCode where e.topic == Topic.inspect: return false
+        case ToolError.timeout, ToolError.denied: return false
+        default: return e.topic.map(TranscriptView.checks.contains) != true
+        }
+    }
     /// An edit of this many lines or more is notable.
     static let bigEdit = 100
     /// The most lanes the board shows, and the longest word it gets, in
@@ -206,6 +218,13 @@ struct WorkStream {
         let key = e.key, word = Self.word(e, program: program)
         let slot = lanes[key]?.slot ?? freeSlot()
         let check = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil }
+        if Self.climbs(e) {
+            combo[key] = nil
+            let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
+            failures[key] = recent
+            let gag = Self.ladder[min(recent.count, Self.ladder.count) - 1]
+            return offer(Forward(slot: slot, word: word, gag: gag, priority: .always), at: now)
+        }
         if e.failed == true {
             combo[key] = nil
             switch e.error {
@@ -217,16 +236,10 @@ struct WorkStream {
             case ToolError.denied:
                 return offer(Forward(slot: slot, word: "NO", gag: "no", priority: .always), at: now)
             default:
-                if let check {
-                    // A failing build's tower falls on it; failing tests or a
-                    // deploy rain on it.
-                    return offer(Forward(slot: slot, word: "FAIL", gag: check == "build" ? "topple" : "hail",
-                                         priority: .always), at: now)
-                }
-                let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
-                failures[key] = recent
-                let gag = Self.ladder[min(recent.count, Self.ladder.count) - 1]
-                return offer(Forward(slot: slot, word: word, gag: gag, priority: .always), at: now)
+                // A failing build's tower falls on it; failing tests or a
+                // deploy rain on it.
+                return offer(Forward(slot: slot, word: "FAIL", gag: check == "build" ? "topple" : "hail",
+                                     priority: .always), at: now)
             }
         }
         if let check, e.failed == false {

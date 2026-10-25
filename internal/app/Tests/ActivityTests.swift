@@ -357,37 +357,19 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(reactionNames(codex.send(.turnStopped, .codex)), [], "no turn open")
     }
 
-    /// A command that fails with an exit
-    /// code or times out plays error, at most once every 30 s
-    /// (`Core.errorEveryMs`). A denied call or another failure never does,
-    /// nor a lookup (topic `inspect`) that exits 1, which found nothing,
-    /// nor a result that landed after its turn stopped, nor Codex, which
-    /// reports no failures.
-    func testAFailedCommandPlaysErrorAtMostEveryThirtySeconds() {
-        XCTAssertEqual(Core.errorEveryMs, 30_000)
+    /// A failed call plays no rule reaction of its own, however it
+    /// failed: its word hits Boop in the work stream instead, and a
+    /// reaction card is only ever a turn's. Nor does a call that worked,
+    /// nor Codex, which reports no failures.
+    func testAFailedCallPlaysNoRuleReaction() {
         let rig = CoreRig()
         rig.send(.turnStart)
-        func fail(_ error: String, _ id: String) -> [String] {
+        for (id, error) in [("1", "exit_code"), ("2", "timeout"), ("3", "denied"), ("4", "other")] {
             rig.send(.activity, tool: "Bash", id: id)
-            return reactionNames(rig.send(.activity, tool: "Bash", failed: true, id: id, error: error))
+            XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: true, id: id, error: error)), [], error)
         }
-        XCTAssertEqual(fail("exit_code", "1"), ["error"])
-        rig.wait(29_999)
-        XCTAssertEqual(fail("timeout", "2"), [], "within 30 s of the last")
-        rig.wait(1)
-        XCTAssertEqual(fail("timeout", "3"), ["error"])
-        rig.wait(31_000)
-        XCTAssertEqual(fail("denied", "4"), [], "you said no")
-        XCTAssertEqual(fail("other", "5"), [])
-        rig.send(.activity, tool: "Bash", topic: "inspect", id: "8")
-        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", topic: "inspect", failed: true, id: "8", error: "exit_code")),
-                       [], "a lookup that exits 1 found nothing")
         rig.send(.activity, tool: "Bash", id: "6")
         XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: false, id: "6")), [])
-        rig.send(.activity, tool: "Bash", id: "7")
-        rig.send(.turnStopped, tool: "Bash")
-        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: true, id: "7", error: "exit_code")), [],
-                       "landed after the stop")
 
         let codex = CoreRig()
         codex.send(.turnStart, .codex)
@@ -438,13 +420,6 @@ final class CoreRuleReactionTests: XCTestCase {
         let start = rig.send(.turnStart)
         XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
         XCTAssertNil(events(start).first?.reaction, "not shown under its line")
-        rig.send(.activity, tool: "Bash", topic: "tests", id: "1")
-        let failed = rig.send(.activity, tool: "Bash", topic: "tests", failed: true, id: "1", error: "exit_code")
-        XCTAssertEqual(did(failed), ["error rule \(name) reacted to the error on its own."])
-        XCTAssertEqual(events(failed).first?.reaction, "\(name) reacted to the error on its own.")
-        rig.send(.activity, tool: "Bash", id: "2")
-        XCTAssertEqual(did(rig.send(.activity, tool: "Bash", failed: true, id: "2", error: "exit_code")), [],
-                       "within 30 s of the last error: not played, not recorded")
         rig.send(.subagentStart, subagent: "h1")
         XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")),
                        ["helper_return rule \(name) reacted to the helper coming back on its own."])
@@ -465,8 +440,8 @@ final class CoreRuleReactionTests: XCTestCase {
         rig.send(.needsYou, session: "a", tool: "Bash")
         XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "b")), [], "needs you shows")
         XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "c")), [])
-        XCTAssertEqual(reactionNames(rig.send(.activity, session: "a", tool: "Bash", failed: true, id: "b", error: "exit_code")),
-                       ["error"], "it ran, and answered the request")
+        rig.send(.activity, session: "a", tool: "Bash", failed: false, id: "b")
+        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "c2")), ["starting session"], "it ran, and answered the request")
         rig.talk(true)
         XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "c")), [], "the mic is on")
         rig.talk(false)

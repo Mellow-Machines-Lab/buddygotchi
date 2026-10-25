@@ -573,7 +573,7 @@ Boop has been curious for 10 min.
 
 NOW (15:12, Tuesday)
 claude's tests failed on "api" (landing).
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 5
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -850,7 +850,6 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 2 on "api" (landing).
 2 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 
@@ -861,7 +860,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 2 on "api" (landing).
 4 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 2 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -875,7 +873,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 2 on "api" (landing).
 6 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 4 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -892,7 +889,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 11 min ago: claude started turn 2 on "api" (landing).
 9 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 7 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -912,7 +908,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 13 min ago: claude started turn 2 on "api" (landing).
 11 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 9 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -934,7 +929,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 15 min ago: claude started turn 2 on "api" (landing).
 13 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 11 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -959,7 +953,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 17 min ago: claude started turn 2 on "api" (landing).
 15 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 13 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -987,7 +980,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 20 min ago: claude started turn 2 on "api" (landing).
 18 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 15 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -1018,7 +1010,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 22 min ago: claude started turn 2 on "api" (landing).
 20 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 17 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -1051,7 +1042,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 24 min ago: claude started turn 2 on "api" (landing).
 22 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 20 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -1087,7 +1077,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 27 min ago: claude started turn 2 on "api" (landing).
 25 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 23 min ago: claude is still working on "api" (landing), a long turn, running tests.
@@ -1126,7 +1115,6 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 29 min ago: claude started turn 2 on "api" (landing).
 27 min ago: claude's tests failed on "api" (landing).
-  Boop reacted to the error on its own.
   Boop's mood changed: curious → calm.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 24 min ago: claude is still working on "api" (landing), a long turn, running tests.

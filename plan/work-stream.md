@@ -197,9 +197,8 @@ The architecture's split, applied:
   `{"t":"do","name":"call","play":"next","ttl":1500,"args":{"a":0,"w":"make","as":"bonk"}}`
   (`n` with a combo's count), whose short `ttl` drops it if it can't
   play while it's news. The `state` key and the `do` name are the
-  app's, so LinkKit doesn't change. The error reaction stays the
-  core's, for the brain's history; a board whose `hello` says `call`
-  gets the bonk in its place.
+  app's, so LinkKit doesn't change. A failed call plays no reaction
+  of its own (the error reaction is gone): the bonk is all of it.
 - **The brain hears no more than it does today**, plus one clause
   (below, What the brain hears).
 
@@ -330,7 +329,7 @@ the 229 calls was a line: no check failed.
 The stream keeps that, and adds no wake and no line per call:
 
 - What comes forward is a `did` by the core's rule in the transcript,
-  as the error reaction is today; the background words are derived
+  as a rule's reaction is; the background words are derived
   from the calls already there and add nothing.
 - The view counts the moments that hit (bonks, a timeout, your NO; not
   a check's failure, a line already) into the turn's counts, and the
@@ -339,6 +338,13 @@ The stream keeps that, and adds no wake and no line per call:
   "Failed commands hit Boop in the face twice." So the brain can
   answer the run ("ow, two") at a pass it was having anyway. Played
   over every eval scenario, no prompt changed.
+- **Later (2026-10-25): the ladder's third and fourth rungs wake it.**
+  A failed call that takes one session's failures within two minutes
+  to three or four (the helmet, the throw) is a line of its own, while
+  the turn goes on (`TranscriptView.wakingRungs`): "claude's commands
+  keep failing on …: 3 in 2 minutes, each one hitting Boop in the
+  face. The turn goes on." So Boop can grunt or swear at a run of
+  failures in its face, with no card; a stray failure stays a bonk.
 - **A setting turns it off**: Settings, Sound, Work stream
   (`settings.json`'s `workStream`, on unless false).
 

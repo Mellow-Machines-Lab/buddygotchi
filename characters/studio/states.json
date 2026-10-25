@@ -27,7 +27,7 @@
     {"label": "Finished", "states": [
       {"id": "reply_ready", "label": "Reply ready", "about": "The agent has replied."},
       {"id": "task_complete", "label": "Task complete", "about": "A task is done. Pick whether it went well or badly."},
-      {"id": "error", "label": "Tool error", "about": "A tool failed. That doesn't mean the task failed."},
+      {"id": "error", "label": "Tool error", "about": "A tool failed. The Mac no longer sends it: a failure hits Boop in the work stream, and a card is only ever a turn's."},
       {"id": "stopped", "about": "The turn was interrupted."}
     ]},
     {"label": "Touch", "states": [

@@ -282,7 +282,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:01, Wednesday)
 claude's tests failed on "landing".
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 3
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -552,14 +552,13 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 Boop has been comfy for 1 min.
 
 NOW (14:02, Wednesday)
 claude's build failed on "landing".
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 4
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -836,11 +835,9 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 2 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 1 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Slowly".
 
@@ -1120,11 +1117,9 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 2 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 1 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Slowly".
 just now: claude's tests passed on "landing" after failing.
@@ -1411,11 +1406,9 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 4 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 3 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Slowly".
 2 min ago: claude's tests passed on "landing" after failing.
@@ -1433,11 +1426,9 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
 5 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Uh-oh Verify".
 4 min ago: claude's build failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: comfy → calm.
   Boop made an annoyed face, held twice, and said "Doh Slowly".
 3 min ago: claude's tests passed on "landing" after failing.

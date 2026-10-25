@@ -296,7 +296,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:04, Wednesday)
 claude's tests failed on "landing".
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 4
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -570,7 +570,6 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Hup".
 2 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 Boop has been comfy for 2 min.
@@ -852,7 +851,6 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Hup".
 3 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 1 min ago: claude's tests passed on "landing" after failing.
@@ -872,7 +870,6 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Hup".
 4 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Oops Probe".
 2 min ago: claude's tests passed on "landing" after failing.

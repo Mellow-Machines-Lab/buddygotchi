@@ -10,7 +10,7 @@ import MellowHarness
 /// events: "needs you" showing and ending, and a poke (the `wiggle`
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
-/// reaction it plays (`starting`, `stopped`, `error`, `helper_return`),
+/// reaction it plays (`starting`, `stopped`, `helper_return`),
 /// as a `did` named after it. A session whose agent's process ended while
 /// it waited or worked it records as its turn stopping (`agentGone`). It also
 /// keeps push-to-talk (`Talk`): when the mic
@@ -112,9 +112,6 @@ public final class Core {
     /// when its first turn started, and once they all rest, when they came
     /// to rest (`keepStretch`).
     var stretch: (start: Int64, rested: Int64?)?
-    /// When the rules last played the error reaction: at most one every
-    /// `errorEveryMs`.
-    var lastErrorAt: Int64?
     /// The turn the latest prompt's reading came for, by its session's key
     /// and the turn's number, when that reading puts `reading` on
     /// (`Occasions.reads`): it's on while that turn lasts.
@@ -186,12 +183,7 @@ public final class Core {
     }
 
     /// The rules' reactions.
-    public static let starting = "starting", stopped = "stopped", error = "error", helperReturn = "helper_return"
-    /// The failed calls that play the error reaction: a command that
-    /// exited with an error or timed out, never a request you denied.
-    static let errorClasses: Set<String> = [ToolError.exitCode, ToolError.timeout]
-    /// The error reaction plays at most once in this long.
-    public static let errorEveryMs: Int64 = 30_000
+    public static let starting = "starting", stopped = "stopped", helperReturn = "helper_return"
 
     // MARK: - Inputs
 
@@ -329,14 +321,9 @@ public final class Core {
         case .callEnded(let call, let late):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
-            let failed = event.failed == true
-            if !late, failed, event.error.map(Core.errorClasses.contains) == true,
-               !(event.topic == Topic.inspect && event.error == ToolError.exitCode) {
-                // A command that failed or timed out, not a request you
-                // denied, nor a lookup that exited 1: it found nothing.
-                return DeviceReaction(anim: Core.error)
-            }
-            if !late, !failed, let call, Core.act(call) == .delegating, !call.sawSubagent {
+            // A call that failed plays nothing here: its word hits Boop in
+            // the work stream (`streamCall`).
+            if !late, event.failed != true, let call, Core.act(call) == .delegating, !call.sawSubagent {
                 // A helper's call returned, from hooks that don't say when
                 // helpers start: its `SubagentStop` can't.
                 return DeviceReaction(anim: Core.helperReturn)
@@ -361,17 +348,12 @@ public final class Core {
 
     /// A rule's reaction, in Boop's mood with a
     /// variation at random, never the one it played last: not while
-    /// something needs you or `listening` holds the screen, and the error
-    /// reaction at most once every `errorEveryMs`. The device also skips
+    /// something needs you or `listening` holds the screen. The device also skips
     /// it while a brain reaction plays (`if_free`). Recorded as a
     /// `did` named after it, for the event `seq` that played it, as the
     /// poke's `wiggle` is, so the brain hears that Boop already reacted.
     func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
         guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
-        if anim == Core.error {
-            if let last = lastErrorAt, now - last < Core.errorEveryMs { return }
-            lastErrorAt = now
-        }
         fx.append(.reaction(rule))
         let played = Core.played(rule, by: config.pack.name)
         var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
@@ -390,14 +372,13 @@ public final class Core {
     }
 
     /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
-    /// reacted to the error on its own.` None for `starting`: every turn
+    /// reacted to the stop on its own.` None for `starting`: every turn
     /// starts with it, so the brain hears the start itself and nothing
     /// more, and the log alone keeps that it played.
     static func played(_ reaction: DeviceReaction, by name: String = CharacterPack.active.name) -> String? {
         let what: String
         switch reaction.anim {
         case Core.stopped?: what = "the stop"
-        case Core.error?: what = "the error"
         case Core.helperReturn?: what = "the helper coming back"
         default: return nil
         }

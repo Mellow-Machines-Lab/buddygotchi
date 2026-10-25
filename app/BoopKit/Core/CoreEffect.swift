@@ -26,7 +26,7 @@ public enum CoreEffect: Equatable, Sendable {
     /// Push-to-talk: turn the Mac's mic on or off, after `by`'s button.
     case listen(Bool, by: Core.Talker)
     /// A rule's reaction for the device, after the
-    /// snapshot of the same input: `starting`, `stopped`, `error` or
+    /// snapshot of the same input: `starting`, `stopped` or
     /// `helper_return`, or push-to-talk's `stop_listening`, which play only
     /// if nothing is playing on the device (`if_free`) and which no brain
     /// waits on; or push-to-talk's `listening` after the app's mic button, which

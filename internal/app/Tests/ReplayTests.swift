@@ -154,7 +154,6 @@ final class ReplayTests: XCTestCase {
             "+14.0s working - 0",
             "+15.0s working/tool_use - 0",
             "+17.0s working/testing - 0",
-            "+18.0s error",
             "+20.0s working/delegating - 0",
             "+20.0s working/delegating - 0 +1 helper",
             "+23.0s working/delegating - 0",

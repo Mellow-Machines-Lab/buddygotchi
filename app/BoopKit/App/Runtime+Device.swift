@@ -109,9 +109,6 @@ extension Runtime {
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: DeviceReaction, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
-        // A board that plays the work stream hits Boop with the failed
-        // call's word instead (`call`).
-        if reaction.anim == Core.error, BoopDevice.playsCalls(rig.link.hello) { return }
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule, now: options.clock()) { _ in }
     }
 

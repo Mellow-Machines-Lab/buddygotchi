@@ -288,7 +288,7 @@ Boop has been grumpy for 2 min.
 
 NOW (14:02, Wednesday)
 claude's tests failed on "landing".
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 3
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -565,7 +565,6 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: You asked claude on "landing" for a fix, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
 2 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: grumpy → irritated.
   Boop made an annoyed face, held twice, and said "Failed Testing".
 Boop has been irritated for 2 min.

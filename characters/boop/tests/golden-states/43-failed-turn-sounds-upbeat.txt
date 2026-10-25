@@ -285,7 +285,7 @@ HISTORY (oldest first; indented lines add to the line above)
 
 NOW (14:02, Wednesday)
 claude's tests failed on "landing".
-Boop reacted to the error on its own.
+Boop did nothing on its own.
 === pass 3
 --- head
 You are the mind of Boop, a small creature on a person's desk that
@@ -557,7 +557,6 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You asked claude on "landing" about tests, in a sentence.
   Boop made an engaged face, held once, and said "Measure".
 just now: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Failed Probe".
 just now: claude finished turn 1 on "landing": failed, a long turn, 1 tool call, after a failed check.
@@ -845,7 +844,6 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: You asked claude on "landing" about tests, in a sentence.
   Boop made an engaged face, held once, and said "Measure".
 3 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Failed Probe".
 2 min ago: claude finished turn 1 on "landing": failed, a long turn, 1 tool call, after a failed check.
@@ -863,7 +861,6 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: You asked claude on "landing" about tests, in a sentence.
   Boop made an engaged face, held once, and said "Measure".
 5 min ago: claude's tests failed on "landing".
-  Boop reacted to the error on its own.
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face, held twice, and said "Failed Probe".
 4 min ago: claude finished turn 1 on "landing": failed, a long turn, 1 tool call, after a failed check.
