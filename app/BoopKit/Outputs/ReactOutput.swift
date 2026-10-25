@@ -216,9 +216,9 @@ public final class ReactOutput: Output {
         let captions = offered(now, log)
         guard !captions.isEmpty else { return asked }
         return asked + [Question(key: Signs.questionKey,
-                                 text: "If \(pack.name) reacts, does it hold up a sign about your prompt? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
+                                 text: "If \(pack.name) reacts, does it hold up a sign about your prompt, as PERSONALITY says? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
                                  about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, and how the person sounds",
-                                 options: [Option("none", "No sign: the prompt is plain and nothing in it is worth holding up.")]
+                                 options: [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")]
                                      + captions.map { Option($0, "A sign that says this.") })]
     }
 

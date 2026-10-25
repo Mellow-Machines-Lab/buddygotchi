@@ -351,7 +351,10 @@ kinds, all with the `boop` personality unless the file says otherwise:
   says nothing (`118`), though a frustrated one gets a face and its words
   however recently it reacted (`119`), and a turn done in seconds is
   back-and-forth, its finish played in silence, though one failed as
-  quickly still gets its failure (`120`).
+  quickly still gets its failure (`120`); in a busy stretch of several
+  agents, plain prompts each a paragraph with a few of your words under
+  it get at most a small face, with nothing said and no sign, while the
+  polite and playful ones around them still get theirs (`121`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

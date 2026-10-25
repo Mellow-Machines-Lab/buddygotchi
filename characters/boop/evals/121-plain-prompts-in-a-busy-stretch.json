@@ -1,0 +1,26 @@
+{
+  "name": "Plain prompts in a busy stretch get small, silent faces",
+  "case": "Boop is in a good mood and the person is busy with several agents, a prompt every half minute or so. The first two sound like something, one polite and one playful, and each gets a face, the playful one a sign too, though they come seconds apart. Then an agent gets stuck and Boop is put out by it. Over the next couple of minutes the person sends three plain requests, each a paragraph, calm, with nothing in how they're written that stands out: a fix, a push and a look at the tests. Boop has only just reacted each time, so each gets a small face held once at most, saying nothing and holding up no sign, though a few of the person's words came with each. After five quiet minutes, another plain request gets a face of Boop's own again.",
+  "why": "PERSONALITY: a plain prompt, one that says nothing of how you sound and doesn't say Boop's name, gets a small face held once, in silence, with no sign, if HISTORY shows Boop reacting in the last 3 minutes; the few words of yours under it don't make it stand out. Only a plain one waits for a quiet stretch. Taken from a real stretch where every such prompt held up a sign and most spoke",
+  "mood": "happy",
+  "steps": [
+    {"event": "turn started", "at": "0s", "session": "s2", "workspace": "exporter", "prompt": "Can you clean up the unused exporter code, please? It's been dead since the last release.", "reading": {"kind": "cleanup", "phrases": ["unused", "please"]},
+     "expect": {"react": "affectionate|happy|excited|pleased|proud"}},
+    {"event": "turn started", "at": "15s", "session": "s1", "workspace": "buddy-touch", "prompt": "this is really cute lol. Can we make it more interactive, so the buddy reacts when you touch it?", "reading": {"kind": "feature", "phrases": ["really cute", "interactive"]},
+     "expect": {"react": "amused|happy|excited|curious|mischievous|pleased|affectionate", "sign": "some"}},
+    {"event": "turn finished", "at": "1m", "session": "s2", "workspace": "exporter", "message": "I couldn't finish the cleanup: the old exporter is still open in another process, so I stopped. You may need to quit it and run me again.", "reading": {"kind": "stuck", "phrases": ["still open"]},
+     "expect": {"animation": "failure"}},
+    {"event": "turn started", "at": "1m20s", "session": "s3", "workspace": "onboarding", "prompt": "In the onboarding screen, remove the names from the buddy cards. They take up a lot of room and nobody reads them. Keep the faces as they are, and keep the cards the same size as now.", "reading": {"kind": "fix", "phrases": ["remove the names"]},
+     "expect": {"react": "none|annoyed|calm|curious|determined|engaged|pleased|happy|comfy|sad", "animation": "none", "kind": "none", "said": "none", "sign": "none", "loops": "once|none"}},
+    {"event": "turn started", "at": "1m50s", "session": "s2", "workspace": "exporter", "prompt": "Rebase this branch onto main and push it to GitHub. Then delete the branch, both here and on the remote, and then tell me which commit it landed as on main.", "reading": {"kind": "deploy", "phrases": ["push it"]},
+     "expect": {"react": "none|annoyed|calm|curious|determined|engaged|pleased|happy|comfy|uneasy|sad", "animation": "none", "kind": "none", "said": "none", "sign": "none", "loops": "once|none"}},
+    {"event": "turn finished", "at": "2m10s", "session": "s3", "workspace": "onboarding", "message": "Removed the names from the buddy cards; the cards keep their size.", "reading": {"kind": "done"}},
+    {"event": "turn finished", "at": "2m30s", "session": "s2", "workspace": "exporter", "message": "Rebased onto main and pushed. The branch is deleted.", "reading": {"kind": "done"},
+     "expect": {"animation": "success"}},
+    {"event": "turn started", "at": "3m20s", "session": "s1", "workspace": "buddy-touch", "prompt": "Go through the test history and see how often they fail. It feels quite frequent to me, and we might need to tweak it, but just tell me what you find first.", "reading": {"kind": "tests", "phrases": ["test history", "quite frequent", "tweak it"]},
+     "expect": {"react": "none|annoyed|calm|curious|determined|engaged|pleased|happy|comfy|hopeful", "animation": "none", "kind": "none", "said": "none", "sign": "none", "loops": "once|none"}},
+    {"event": "turn finished", "at": "3m50s", "session": "s1", "workspace": "buddy-touch", "message": "Three tests fail most often, all in the sync suite. About one run in ten.", "reading": {"kind": "answer"}},
+    {"event": "turn started", "at": "9m", "session": "s3", "workspace": "onboarding", "prompt": "Add a settings page where you can rename the buddy. Put it under the menu bar icon, next to the about item, and save the name with the other settings.", "reading": {"kind": "feature", "phrases": ["settings page"]},
+     "expect": {"react": "curious|excited|happy|pleased|engaged|calm|comfy|amused|determined"}}
+  ]
+}

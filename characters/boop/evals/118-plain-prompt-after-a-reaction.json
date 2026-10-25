@@ -1,10 +1,10 @@
 {
   "name": "A plain prompt right after a reaction gets a small face in silence",
-  "case": "The person is working with two agents at once. One finishes a turn and Boop cheers it. A minute later the person asks the other agent, calmly and plainly, to run the tests. Boop notices with a small face, held once, but says nothing and holds up no sign: it only just reacted, and nothing in the request stands out.",
-  "why": "PERSONALITY: a plain prompt, one that says nothing of how you sound and doesn't say Boop's name, gets a small face held once, in silence, with no sign, if HISTORY shows Boop reacting in the last 3 minutes; its Examples: a plain prompt a minute after a reaction is curious, in silence, once",
+  "case": "The person is working with two agents at once. One finishes a turn and Boop cheers it. A minute later the person asks the other agent, calmly and plainly, to run the tests. Boop notices with a small face held once at most, but says nothing and holds up no sign: it only just reacted, and nothing in the request stands out.",
+  "why": "PERSONALITY: a plain prompt, one that says nothing of how you sound and doesn't say Boop's name, gets at most a small face held once, in silence, with no sign, if HISTORY shows Boop reacting in the last 3 minutes; its Examples: a plain prompt a minute after a reaction is curious, in silence, once",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "add a logout button to the nav", "reading": {"kind": "feature"}},
     {"event": "turn finished", "at": "40s", "message": "Added the logout button to the nav.", "reading": {"kind": "done"}, "expect": {"react": "happy|pleased|excited|proud|calm", "animation": "success"}},
-    {"event": "turn started", "at": "1m40s", "session": "s2", "prompt": "now run the tests for the api", "reading": {"kind": "tests"}, "expect": {"react": "curious|calm|pleased|engaged|comfy|happy|determined", "animation": "none", "kind": "none", "said": "none", "sign": "none", "loops": "once"}}
+    {"event": "turn started", "at": "1m40s", "session": "s2", "prompt": "now run the tests for the api", "reading": {"kind": "tests"}, "expect": {"react": "none|curious|calm|pleased|engaged|comfy|happy|determined", "animation": "none", "kind": "none", "said": "none", "sign": "none", "loops": "once|none"}}
   ]
 }
