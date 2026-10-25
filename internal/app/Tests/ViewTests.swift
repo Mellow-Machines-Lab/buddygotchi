@@ -787,7 +787,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
         XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
         XCTAssertEqual(second.core.snapshot(at: rig.now).idle, 1)
-        XCTAssertTrue(second.core.snapshot(at: rig.now).when.contains("fidget"), "resting since the dismissal, a minute ago")
+        XCTAssertTrue(second.core.snapshot(at: rig.now).when.contains("tier2"), "resting since the dismissal, a minute ago")
         XCTAssertEqual(second.core.line(at: rig.now).map(\.id), ["s1"], "and in BOOT's line")
         second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         second.agent(rig.event(.activity, tool: "Bash", id: "t2"))

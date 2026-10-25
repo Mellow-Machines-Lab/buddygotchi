@@ -1,7 +1,9 @@
 #include "render/gel/face.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 
 #include "render/gel/profile.h"
 #include "render/maths.h"
@@ -45,8 +47,14 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
   layers_ = {};
-  occasion_ = cueing_ = nullptr;
-  passGeneration_ = passIteration_ = -1;
+  occasion_ = cueing_ = lastClip_ = nullptr;
+  pastime_ = Pastime::kNone;
+  occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = campSince_ = 0;
+  occasionLook_ = dealtLook_ = SceneState::kNone;
+  stopped_ = false;
+  dice_ = kSeed;
+  mug_ = headphones_ = sweatband_ = camp_ = plant_ = rig::Ramp{};
+  grown_ = 1;
 }
 
 // Power-on only, right after reset: the same engine with the board's seed.
@@ -87,6 +95,7 @@ void GelFace::advanceTo(uint32_t t) {
   lastTick_ = t;
   occasions(t);
   showLayers(t);
+  showKit(t);
   int kept = 0;
   for (int i = 0; i < pendingCount_; ++i)
     if (t - pendingAt_[i] <= kCueWaitMs) {
@@ -116,24 +125,150 @@ void GelFace::showLayers(uint32_t t) {
   layers_.show(rig::Layer::kBeside, now.beside, t);
 }
 
+uint32_t GelFace::roll(uint32_t n) {
+  dice_ ^= dice_ << 13, dice_ ^= dice_ >> 17, dice_ ^= dice_ << 5;  // xorshift32
+  return n ? dice_ % n : 0;
+}
+
+void GelFace::endOccasion(uint32_t t, bool early) {
+  if (early && occasion_) mixer_.stop(*occasion_);
+  stopped_ = early && pastime_ != Pastime::kNone;
+  stoppedAt_ = t;
+  if (!stopped_) pastime_ = Pastime::kNone;
+  occasion_ = nullptr;
+  restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
+}
+
 void GelFace::occasions(uint32_t t) {
   const Engine& e = *engine_;
   const Route& route = e.scenes.route;
-  if (occasion_ && !after(occasionEnds_, t)) occasion_ = nullptr;
-  if (source_.anim != SceneState::kNone || route.moment || route.state != e.router.facts.look()) {
-    if (occasion_) mixer_.stop(*occasion_);
-    occasion_ = nullptr;
-    return;
-  }
-  if (e.scenes.generation == passGeneration_ && e.scenes.iteration == passIteration_) return;
-  passGeneration_ = e.scenes.generation, passIteration_ = e.scenes.iteration;
-  const rig::Look* look = rig::kRig.look(e.router.facts.base);
-  const int fit = look && !occasion_ ? look->fitting(e.scenes.when, e.scenes.lookMs) : 0;
-  // The engine's randomness is drawn on only while one fits.
-  if (!fit || engine_->random.unit() >= F::ratio(rig::kOccasionPct, 100)) return;
-  occasion_ = look->fitting(e.scenes.when, e.scenes.lookMs, engine_->random.index(fit));
+  if (stopped_ && !within(t, stoppedAt_, rig::kFadeMs)) stopped_ = false, pastime_ = Pastime::kNone;
+  if (occasion_ && !after(occasionEnds_, t)) endOccasion(t, false);
+  // The look itself shows: needs you's screen, or the base's look, with no
+  // moment over it.
+  const bool needsYou = e.router.facts.attention.on;
+  const SceneState look = needsYou ? SceneState::kNeedsYou : e.router.facts.base;
+  const bool shows = source_.anim == SceneState::kNone && !route.moment &&
+                     route.state == (needsYou ? SceneState::kNeedsYou : e.router.facts.look());
+  if (occasion_ && (!shows || look != occasionLook_)) endOccasion(t, true);
+  // A new look rests before its first.
+  if (look != dealtLook_) dealtLook_ = look, restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
+  const bool busy = finger_ || (stream_ && stream_->drawn(t) && stream_->call.live);
+  if (!shows || occasion_ || stopped_ || busy || after(restUntil_, t)) return;
+  deal(look, t);
+}
+
+void GelFace::deal(SceneState look, uint32_t t) {
+  const Engine& e = *engine_;
+  const uint32_t when = e.scenes.when, lookMs = e.scenes.lookMs;
+  struct Option {
+    const rig::Clip* clip;
+    Pastime pastime;
+    int rank;  // its tier, then its wait: the newest is the highest
+  } options[kPastimeCount + 8];
+  int n = 0;
+  auto add = [&](const rig::Clip* clip, Pastime p, int tier, int afterS) {
+    if (clip && n < int(std::size(options))) options[n++] = {clip, p, tier * 100000 + afterS};
+  };
+  if (const rig::Look* l = rig::kRig.look(look))
+    for (const auto& o : l->occasions)
+      if (fits(o.when, o.afterS, when, lookMs)) add(o.clip, Pastime::kNone, tierOf(o.when), o.afterS);
+  // In the morning its coffee is in its hand (render/gel/layers.h): no mug
+  // on the desk, so no sip or refill from one.
+  const bool morning = hasTag(when, "morning");
+  for (const auto& p : kPastimes)
+    if (p.look == look && fits(tierBit(p.tier), p.afterS, when, lookMs) &&
+        !(morning && (p.id == Pastime::kSip || p.id == Pastime::kRefill)))
+      add(rig::kRig.clip(p.clip), p.id, p.tier, p.afterS);
+  // Never the one dealt last, while there's another.
+  if (n > 1)
+    for (int i = 0; i < n; ++i)
+      if (options[i].clip == lastClip_) {
+        options[i] = options[--n];
+        break;
+      }
+  if (!n) return;
+  int top = 0, newest = 0;
+  for (int i = 0; i < n; ++i) top = std::max(top, options[i].rank);
+  for (int i = 0; i < n; ++i) newest += options[i].rank == top;
+  // The newest tier's kNewestPct of the time, an older one's the rest.
+  const bool fresh = newest == n || int(roll(100)) < kNewestPct;
+  int pick = int(roll(uint32_t(fresh ? newest : n - newest)));
+  const Option* chosen = nullptr;
+  for (int i = 0; i < n && !chosen; ++i)
+    if ((options[i].rank == top) == fresh && pick-- == 0) chosen = &options[i];
+  occasion_ = lastClip_ = chosen->clip;
+  pastime_ = chosen->pastime;
+  stopped_ = false;
+  occasionLook_ = look;
+  occasionAt_ = t;
   occasionEnds_ = t + occasion_->ms;
   play(*occasion_);
+  // The engine's own idle gestures wait for it.
+  auto& acting = engine_->acting;
+  acting.nextPerformance = max(acting.nextPerformance, engine_->motion.time + int(occasion_->ms / 1000) + 2);
+}
+
+void GelFace::playPastime(Pastime p, uint32_t t) {
+  if (occasion_) endOccasion(t, true);
+  const PastimeInfo& i = info(p);
+  const rig::Clip* clip = rig::kRig.clip(i.clip);
+  if (!clip) return;
+  occasion_ = lastClip_ = clip;
+  pastime_ = p;
+  stopped_ = false;
+  occasionLook_ = dealtLook_ = i.look;
+  occasionAt_ = t;
+  occasionEnds_ = t + clip->ms;
+  play(*clip);
+}
+
+void GelFace::showKit(uint32_t t) {
+  const Engine& e = *engine_;
+  const auto& facts = e.router.facts;
+  const SceneState base = facts.attention.on ? SceneState::kNeedsYou : facts.base;
+  const uint32_t when = e.scenes.when;
+  const int tier = tierOf(when);
+  const bool working = base == SceneState::kWorking, idle = base == SceneState::kIdle;
+  // The hat wins the head; and peekaboo's gesture takes it all off, as it
+  // does the hat.
+  const bool head = outfitFor(when) == Outfit::kNone &&
+                    !(e.scenes.route.state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo));
+  auto show = [t](rig::Ramp& ramp, bool on) {
+    if (ramp.target() != (on ? 1000 : 0)) ramp.retarget(on ? 1000 : 0, t);
+  };
+  if (working && tier >= 5 && camp_.target() == 0) campSince_ = t;
+  show(mug_, working && tier >= 1 && !hasTag(when, "morning"));  // the morning's is in its hand
+  show(headphones_, working && tier >= 3 && head);
+  show(sweatband_, working && tier >= 4 && head);
+  show(camp_, working && tier >= 5);
+  show(plant_, idle && tier >= 3);
+  if (idle && tier >= 3) grown_ = std::min(3, tier - 2);
+}
+
+PastimeShow GelFace::pastimes(uint32_t t) const {
+  PastimeShow s;
+  s.t = t, s.when = engine_->scenes.when;
+  if (pastime_ != Pastime::kNone) {
+    const rig::Clip* clip = rig::kRig.clip(info(pastime_).clip);
+    s.playing = pastime_;
+    s.age = t - occasionAt_;
+    s.ms = clip ? clip->ms : 1;
+    // In over 150 ms, out over its last 250; one stopped early, out over
+    // the rig's fade from then.
+    int fade = int(std::min<uint32_t>({255, s.age * 255 / 150, s.age < s.ms ? (s.ms - s.age) * 255 / 250 : 0}));
+    if (stopped_) fade = fade * int(rig::kFadeMs - std::min(rig::kFadeMs, t - stoppedAt_)) / int(rig::kFadeMs);
+    s.fade = std::max(0, fade);
+  }
+  auto opacity = [t](const rig::Ramp& ramp) { return (ramp.value(t) * 255 + 500) / 1000; };
+  s.mug = opacity(mug_);
+  s.headphones = opacity(headphones_);
+  s.sweatband = opacity(sweatband_);
+  s.camp = opacity(camp_);
+  s.plant = opacity(plant_);
+  s.grown = grown_;
+  if (s.camp) s.mugs = 1 + int(std::min<uint32_t>(kMostMugs - 1, (t - campSince_) / kMugEveryMs));
+  return s;
 }
 
 void GelFace::play(const rig::Clip& clip) {
@@ -349,8 +484,9 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
+  const PastimeShow kit = pastimes(lastTick_);
   paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_,
-             stream_, t);
+             stream_, t, &kit);
   return true;
 }
 

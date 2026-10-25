@@ -5972,7 +5972,7 @@
         "idle"
       ],
       "when": [
-        "doze"
+        "tier5"
       ],
       "after": 0,
       "gag": {

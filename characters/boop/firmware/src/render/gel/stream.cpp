@@ -9,6 +9,7 @@
 #include "render/gel/lane.h"
 #include "render/gel/raster.h"
 #include "render/palette.h"
+#include "render/tags.h"
 
 namespace render::gel {
 
@@ -355,7 +356,8 @@ void paintStreamDesk(Surface& surface, const Stream& stream, const Engine& e, co
   if (m.alpha < 8) return;
   r.alpha = m.alpha;
   // The to-do list's progress along the screen's foot, and the turn's clock
-  // in its corner, amber from the marathon's 8 minutes.
+  // in its corner, amber from the fourth tier (5 minutes of the agents'
+  // working stretch).
   if (strip.todoTotal > 0) {
     const int span = m.w - 12, done = span * std::clamp(strip.todoDone, 0, strip.todoTotal) / strip.todoTotal;
     r.round(m.x + 6, m.y + m.h - 6, span, 3, 1, rgb565(30, 60, 75));
@@ -365,7 +367,7 @@ void paintStreamDesk(Surface& surface, const Stream& stream, const Engine& e, co
   if (secs >= 60) {
     char clock[8];
     std::snprintf(clock, sizeof(clock), "%u:%02u", unsigned(secs / 60 % 100), unsigned(secs % 60));
-    const uint16_t ink = secs >= 480 ? rgb565(239, 189, 103) : rgb565(110, 160, 180);
+    const uint16_t ink = hasTag(e.scenes.when, "tier4") ? rgb565(239, 189, 103) : rgb565(110, 160, 180);
     r.bounds = {m.x, m.y, m.x + m.w, m.y + m.h};
     r.text(clock, m.x + m.w - glyphCount(clock) * kSmall.w / 2 - 4, m.y + 10, ink, kSmall);
     r.bounds = Raster::kEverywhere;

@@ -508,7 +508,7 @@ class RigRuleTests(unittest.TestCase):
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
                                 "tracks": {"lean": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
             "looks.json": {"idle": {"clip": "sway"},
-                           "working": {"clip": None, "occasions": [{"clip": "hop", "when": ["night", "marathon"]},
+                           "working": {"clip": None, "occasions": [{"clip": "hop", "when": ["night", "tier4"]},
                                                                    {"clip": "hop", "after": 90}]}},
         })
         self.assertEqual(problems, [])
@@ -520,8 +520,8 @@ class RigRuleTests(unittest.TestCase):
                     '{50, "pop"},', '{300, "squish"},',
                     '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
-                    # An occasion's tags as tags.h's bits (night 3, marathon 19), its wait in seconds.
-                    f"{{kClips + 0, {(1 << 3) | (1 << 19)}u, 0}},", "{kClips + 0, 0u, 90},",
+                    # An occasion's tags as tags.h's bits (night 3, tier4 22), its wait in seconds.
+                    f"{{kClips + 0, {(1 << 3) | (1 << 22)}u, 0}},", "{kClips + 0, 0u, 90},",
                     "{SceneState::kIdle, kClips + 1, {}},", "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}},",
                     "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)

@@ -3005,17 +3005,17 @@ static void test_a_variation_waits_for_its_look() {
 }
 
 // Nodding off (happy's idle 6th, index 4) and the long stretch (working's
-// last) wait for the Mac's tiers, not for a time: idle's `doze` and a long
-// turn's `marathon`. An hour of either look without its tag never shows
-// it; with the tag on it shows.
+// last) wait for the Mac's tiers, not for a time: idle's last, `tier5`,
+// and the working stretch's `tier4`. An hour of either look without its
+// tag never shows it; with the tag on it shows.
 static void test_nodding_off_and_the_stretch_wait_for_the_tiers() {
   const int nodding = 4;
   const int stretch = render::variants(render::Mood::kHappy, SceneState::kWorking) - 1;
   const auto happy = render::Mood::kHappy;
   TEST_ASSERT_FALSE(render::fits(happy, SceneState::kIdle, nodding, 0, 7200000));
-  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kIdle, nodding, render::tagBit("doze"), 0));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kIdle, nodding, render::tagBit("tier5"), 0));
   TEST_ASSERT_FALSE(render::fits(happy, SceneState::kWorking, stretch, 0, 7200000));
-  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kWorking, stretch, render::tagBit("marathon"), 0));
+  TEST_ASSERT_TRUE(render::fits(happy, SceneState::kWorking, stretch, render::tagBit("tier4"), 0));
   auto shows = [](const char* look, int variant, uint32_t when) {
     Rig r;
     Model m = base(look);
@@ -3030,9 +3030,9 @@ static void test_nodding_off_and_the_stretch_wait_for_the_tiers() {
     return shown;
   };
   TEST_ASSERT_FALSE(shows("idle", nodding, 0));
-  TEST_ASSERT_TRUE(shows("idle", nodding, render::tagBit("doze")));
+  TEST_ASSERT_TRUE(shows("idle", nodding, render::tagBit("tier5")));
   TEST_ASSERT_FALSE(shows("working", stretch, 0));
-  TEST_ASSERT_TRUE(shows("working", stretch, render::tagBit("marathon")));
+  TEST_ASSERT_TRUE(shows("working", stretch, render::tagBit("tier4")));
 }
 
 // The working looks quicken with the agents working (render::workPace, which Behaviour hands the face as

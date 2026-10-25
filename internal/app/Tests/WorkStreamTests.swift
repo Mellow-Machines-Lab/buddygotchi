@@ -218,7 +218,7 @@ final class WorkStreamTests: XCTestCase {
             StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes))
         }
         let s = StateSnapshot(base: "working", act: "delegating", mood: "overwhelmed", attn: nil, busy: 12, idle: 9,
-                              helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "camp", "pal", "chonk", "legend", "reading"],
+                              helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier5", "pal", "chonk", "legend", "reading"],
                               todo: .init(done: 99, total: 99), calls: lanes)
         XCTAssertLessThan(s.jsonLine.utf8.count, 440, s.jsonLine)
     }

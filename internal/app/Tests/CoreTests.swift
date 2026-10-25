@@ -1454,8 +1454,8 @@ final class CoreYouAndBoopTests: XCTestCase {
     /// The `state` message carries a to-do list, as counts, while nothing
     /// needs you: the longest turn's, else the next working session's
     /// that has one, one whose turn's start isn't known (a helper working
-    /// on after its turn) last. The working tier counts from the longest
-    /// turn whose start is known.
+    /// on after its turn) last. The working tier counts from the start of
+    /// the agents' working stretch, which a helper working on carries.
     func testTheStateCarriesTheLongestTurnsToDos() {
         let rig = CoreRig()
         func list(_ done: Int, _ total: Int, session: String) {
@@ -1487,15 +1487,15 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.wait(9 * 60_000, every: 60_000)
         rig.send(.turnStart, session: "d")
         XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 2, total: 5), "d's turn has no list")
-        XCTAssertFalse(rig.state.when.contains("marathon"), "the tier counts from d's start, the only one known")
-        rig.wait(8 * 60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("marathon"))
+        XCTAssertTrue(rig.state.when.contains("tier4"), "the stretch, c's turn and its helper's, has run 9 minutes")
+        rig.wait(60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("tier5"))
     }
 
     /// A turn whose end never came (the hook lost, or an interrupt that
     /// sent none) stops working after a silent hour, though its agent's
-    /// process runs: its camp, the busy count and the to-do list go, and
-    /// so do the view's working check-ins.
+    /// process runs: the busy count and the to-do list go, its tier is
+    /// idle's from its last word, and the view's working check-ins stop.
     func testATurnWhoseEndWasLostStopsWorkingAfterAnHour() {
         let rig = CoreRig(isRunning: { _ in true })
         var start = rig.event(.turnStart)
@@ -1506,7 +1506,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         list.data["todos_total"] = 3
         rig.send(list)
         rig.wait(30 * 60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("camp"))
+        XCTAssertTrue(rig.state.when.contains("tier5"))
         XCTAssertEqual(rig.state.busy, 1)
         XCTAssertNotNil(rig.state.todo)
         XCTAssertNotNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
@@ -1514,7 +1514,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.state.base, "idle", "an hour silent")
         XCTAssertEqual(rig.state.busy, 0)
         XCTAssertNil(rig.state.todo)
-        XCTAssertFalse(rig.state.when.contains("camp"))
+        XCTAssertTrue(rig.state.when.contains("tier5"), "idle's now: its turn's last word was an hour ago")
         XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)), "no more check-ins")
         let beats = rig.wait(2 * 3600 * 1000, every: 60_000).views.filter { $0.name == "heartbeat" && $0.facts["working_ms"] != nil }
         XCTAssertEqual(beats.count, 0, "none all night")
@@ -1566,7 +1566,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.turnStart, session: "c", project: "docs")
         rig.send(.turnEnd, session: "c", project: "docs")
         rig.wait(4 * 60_000)
-        XCTAssertTrue(rig.state.when.contains("setpiece"))
+        XCTAssertTrue(rig.state.when.contains("tier3"))
         rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
         rig.wait(1000)
         rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
@@ -1578,13 +1578,13 @@ final class CoreYouAndBoopTests: XCTestCase {
         dismissCard(rig)
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.state.idle, 3)
-        XCTAssertFalse(rig.state.when.contains { Occasions.idleTiers.map(\.tag).contains($0) }, "b was dismissed just now")
+        XCTAssertFalse(rig.state.when.contains { $0.hasPrefix("tier") }, "b was dismissed just now")
         rig.wait(30_000)
-        XCTAssertTrue(rig.state.when.contains("fidget"), "30 s after the last dismissal")
+        XCTAssertTrue(rig.state.when.contains("tier1"), "30 s after the last dismissal")
     }
 
     /// A desk whose only session waits on a request you dismissed rests
-    /// from the dismissal: its tiers come, and it dozes, as an idle desk
+    /// from the dismissal: its tiers come, the last one too, as an idle desk
     /// does.
     func testADeskWithOnlyADismissedRequestRestsFromTheDismissal() {
         let rig = CoreRig(isRunning: { _ in true })
@@ -1594,14 +1594,14 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(ask)
         rig.wait(20 * 60_000, every: 60_000)
         XCTAssertNotNil(rig.state.attn, "its agent waits")
-        XCTAssertEqual(rig.state.when.filter { Occasions.idleTiers.map(\.tag).contains($0) }, [], "no tier while it shows")
+        XCTAssertEqual(rig.state.when.filter { $0.hasPrefix("tier") }, [], "no tier while it shows")
         dismissCard(rig)
         XCTAssertEqual(rig.state.base, "idle")
         XCTAssertEqual(rig.state.idle, 1)
         rig.wait(30_000)
-        XCTAssertTrue(rig.state.when.contains("fidget"))
+        XCTAssertTrue(rig.state.when.contains("tier1"))
         rig.wait(10 * 60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("doze"), "ten minutes after the dismissal")
+        XCTAssertTrue(rig.state.when.contains("tier5"), "ten minutes after the dismissal")
     }
 
     /// The board's hold names the request its sign showed (`attn.id`): one

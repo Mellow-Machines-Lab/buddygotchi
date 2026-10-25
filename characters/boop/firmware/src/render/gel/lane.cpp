@@ -8,6 +8,7 @@
 #include "render/font.h"
 #include "render/gel/layers.h"
 #include "render/gel/painter.h"
+#include "render/gel/pastimes.h"
 #include "render/gel/profile.h"
 #include "render/gel/raster.h"
 #include "render/gel/stream.h"
@@ -276,12 +277,16 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
 
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
                 const Strip& s, const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const Stream* stream,
-                uint32_t now) {
+                uint32_t now, const PastimeShow* pastimes) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
   rig::Anchors at;
-  paint(surface, e, mouthOpen, dy, key, &at, rig, layers, t);
+  paint(surface, e, mouthOpen, dy, key, &at, rig, layers, t, pastimes);
+  if (pastimes) {
+    Measure measure(profile.props);
+    paintPastimes(surface, *pastimes, at, e);
+  }
   if (stream) {
     Measure measure(profile.stream);
     paintStreamBehind(surface, *stream, now);

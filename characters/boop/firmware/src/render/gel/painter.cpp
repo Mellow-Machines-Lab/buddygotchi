@@ -4,6 +4,7 @@
 #include "render/gel/profile.h"
 #include "render/gel/geometry.h"
 #include "render/gel/layers.h"
+#include "render/gel/pastimes.h"
 #include "slime_mesh.h"
 #include <algorithm>
 #include <array>
@@ -162,12 +163,17 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned soft) {
   }
 }
 }  // namespace
-void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane,
-           rig::Anchors* anchors) {
+void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane, rig::Anchors* anchors,
+           const PastimeShow* scenery) {
   if (!s.pixels) return;
   {
     Measure measure(profile.clear);
     s.clear(keep, keepCount, keepLane);
+  }
+  // The pastimes' scenery, behind the body.
+  if (scenery) {
+    Measure measure(profile.props);
+    paintScenery(s, *scenery);
   }
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
@@ -247,10 +253,11 @@ void applyRig(PaintControls& c, const rig::Channels& rig) {
   const int open = std::min(rig[Channel::kEyeOpenL], rig[Channel::kEyeOpenR]);
   c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
   c.eyeSize = rig[Channel::kEyeSize] * 4096 / 1000;
+  c.gaze += off(Channel::kGazeX) * kRigGaze / 1000;
   c.gazeUp = -off(Channel::kGazeY) * kRigGaze / 1000;
 }
 void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
-           const rig::Channels& rig, const rig::Layers* layers, uint32_t t) {
+           const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const PastimeShow* pastimes) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -274,7 +281,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   {
     Measure measure(profile.body);
     Box cards[Surface::kMaxKeep];
-    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors);
+    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors, pastimes);
   }
   {
     Measure measure(profile.art);
@@ -283,6 +290,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   {
     Measure measure(profile.layers);
     paintLayers(surface, e, *anchors, layers, t);
+    if (pastimes) paintWorn(surface, *pastimes, *anchors);
   }
   {
     Measure measure(profile.props);

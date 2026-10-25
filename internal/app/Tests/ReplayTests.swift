@@ -32,8 +32,9 @@ final class ReplayTests: XCTestCase {
             let waiting = attn.map { ($0["more"] as! Int) + 1 } ?? 0
             let look = (object["base"] as! String) + ((object["act"] as? String).map { "/" + $0 } ?? "")
             let helpers = (object["helpers"] as? Int).map { " +\($0) helper" + ($0 == 1 ? "" : "s") } ?? ""
-            // A long turn's or idle's tier, which a state is sent for.
-            let tiers = Set((Occasions.workTiers + Occasions.idleTiers).map(\.tag))
+            // The tier reached, working's or idle's, which a state is sent
+            // for.
+            let tiers = Set(Occasions.tiers.map(\.tag))
             let tier = (object["when"] as? [String] ?? []).first(where: tiers.contains).map { " " + $0 } ?? ""
             return "\(parts[0]) \(look) \(who) \(waiting)\(helpers)\(tier)"
         }
@@ -52,8 +53,8 @@ final class ReplayTests: XCTestCase {
             "+1.0s starting new_task",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/jetpack 1",
-            "+125.0s working - 0",
-            "+481.0s working - 0 marathon",
+            "+125.0s working - 0 tier3",
+            "+301.0s working - 0 tier4",
             "+526.0s idle - 0",
         ])
     }
@@ -73,7 +74,7 @@ final class ReplayTests: XCTestCase {
             "+1.0s starting new_task",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/landing 1",
-            "+71.0s working/tool_use - 0",
+            "+71.0s working/tool_use - 0 tier2",
             "+72.0s idle - 0",
         ])
     }
@@ -94,11 +95,12 @@ final class ReplayTests: XCTestCase {
             "+1.0s starting new_task",
             "+2.0s working/delegating - 0",
             "+5.0s idle claude/landing 1",
-            "+31.0s working/delegating - 0",
+            "+31.0s working/delegating - 0 tier1",
             "+32.0s helper_return",
-            "+34.0s working/tool_use - 0",
+            "+34.0s working/tool_use - 0 tier1",
             "+35.0s idle - 0",
-            "+65.0s idle - 0 fidget",
+            "+65.0s idle - 0 tier1",
+            "+95.0s idle - 0 tier2",
         ])
     }
 
@@ -128,6 +130,7 @@ final class ReplayTests: XCTestCase {
             "+2.0s working/terminal - 0",
             "+5.0s idle codex/landing 1",
             "+14.0s working - 0",
+            "+31.0s working - 0 tier1",
             "+55.0s idle - 0",
         ])
     }
@@ -157,11 +160,12 @@ final class ReplayTests: XCTestCase {
             "+23.0s working/delegating - 0",
             "+23.0s helper_return",
             "+26.0s working/terminal - 0",
-            "+46.0s working/waiting - 0",
+            "+31.0s working/terminal - 0 tier1",
+            "+46.0s working/waiting - 0 tier1",
             "+51.0s idle - 0",
             "+51.0s stopped",
             "+52.0s starting continuation",
-            "+53.0s working - 0",
+            "+53.0s working - 0 tier1",
             "+53.0s starting new_task",
             "+54.0s idle - 0",
         ])
@@ -183,7 +187,8 @@ final class ReplayTests: XCTestCase {
             "+7.0s working/testing - 0",
             "+10.0s working/tool_use - 0",
             "+11.0s working/terminal - 0",
-            "+32.0s working/waiting - 0",
+            "+31.0s working/terminal - 0 tier1",
+            "+32.0s working/waiting - 0 tier1",
             "+37.0s idle - 0",
             "+37.0s stopped",
         ])
@@ -203,7 +208,9 @@ final class ReplayTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(calls.filter { $0.contains(#""as":"cross""#) }.count, 1, "\(calls)")
         XCTAssertTrue(effects.contains(#"view last_message · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls."#), "\(effects)")
         let states = effects.filter { $0.hasPrefix("state") }
-        XCTAssertEqual(states.filter { $0.contains(#""act":"testing""#) }.count, 10, "each of the ten test runs")
+        // A tier reached mid-run sends a state too: count the runs.
+        let testing = states.map { $0.contains(#""act":"testing""#) }
+        XCTAssertEqual(zip([false] + testing, testing).filter { !$0 && $1 }.count, 10, "each of the ten test runs")
         let bases = states.compactMap { line -> String? in
             line.range(of: #""base":"[a-z]+""#, options: .regularExpression).map { String(line[$0]) }
         }

@@ -9,7 +9,7 @@ struct PaintControls {
   int ripple = 0, lift = 0, roll = 0, forward = 0, grabX = 0, grabY = 0, dy = 0;
   int slide = 0;  // a gag's slide: the whole dome, sideways
   // A rig clip's eyes (applyRig): their size about their middles, Q12, and
-  // how far up they look, in face units.
+  // how far up they look, in face units (how far across is in gaze).
   int eyeSize = 4096, gazeUp = 0;
 };
 // Where the body is this frame, from the same pose that draws it: the rig's
@@ -19,33 +19,37 @@ struct PaintControls {
 // hands', the lap's and the hem's are on these rings of the mesh, from the
 // top (0) down: the hem's is the lowest the camera sees at the front.
 constexpr int kBrimRing = 6, kHandRing = 15, kLapRing = 14, kHemRing = 17;
+struct PastimeShow;
 // The body; the surface's clear first keeps what this frame covers again
-// (Surface::clear). Its anchors into `anchors`, when given.
+// (Surface::clear), and the pastimes' scenery goes behind it
+// (render/gel/pastimes.h), when given. Its anchors into `anchors`, when
+// given.
 void paint(Surface& surface, const PaintControls& controls, const Box* keep = nullptr, int keepCount = 0,
-           uint32_t keepLane = 0, rig::Anchors* anchors = nullptr);
+           uint32_t keepLane = 0, rig::Anchors* anchors = nullptr, const PastimeShow* scenery = nullptr);
 // The dome on the canvas: canvas pixels a body unit at its middle.
 constexpr int kPxPerUnit = 85;
-// The rig's gazeY at its whole (1000) moves the eyes this far, in face
-// units (Q12 of a body unit); its mouthOpen from kRigMouthOpen opens the
-// gel's one open mouth.
+// The rig's gazeX and gazeY at their whole (1000) move the eyes this far,
+// in face units (Q12 of a body unit); its mouthOpen from kRigMouthOpen
+// opens the gel's one open mouth.
 constexpr int kRigGaze = 205, kRigMouthOpen = 300;
 // The rig's channels (render/rig/), what its clips play on the gel, as
 // offsets from rest on the controls the engine gives: the body's squash
 // (the rig's tall is the gel's up), lean and lift (canvas px, kPxPerUnit a
 // body unit, never into the floor: the whole dome rises), the lids, shut
-// as far as the more shut eye, and the eyes' size and how far up they
-// look. The gel draws no other channel yet but the mouth (paint). At rest,
-// none moves.
+// as far as the more shut eye, and the eyes' size and where they look.
+// The gel draws no other channel yet but the mouth (paint). At rest, none
+// moves.
 void applyRig(PaintControls& c, const rig::Channels& rig);
 class Engine;
 // The body, the face art, what it wears and the air around it
 // (render/gel/layers.h) as the layer stack shows them at t (whole in the
-// engine's tags and state with none), then the props, with the rig's
-// channels on the engine's controls; a lane that shows `keepLane` is kept
+// engine's tags and state with none), the pastimes' kit it wears, then the
+// props, with the rig's channels on the engine's controls, and the
+// pastimes' scenery behind it all; a lane that shows `keepLane` is kept
 // from this surface's last frame. Its anchors into `anchors`.
 void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t keepLane = 0,
            rig::Anchors* anchors = nullptr, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
-           uint32_t t = 0);
+           uint32_t t = 0, const PastimeShow* pastimes = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
 void paintProps(Surface&, const Engine&);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels

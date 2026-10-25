@@ -489,12 +489,15 @@ Besides drawing each mood and state, a face:
   `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
   (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
-  hatching, New Year's Day, a growth stage reached), a long turn's tier
-  (`marathon` from 8 minutes into the longest turn working, `camp` from
-  15) or idle's (`fidget` from 30 seconds after the latest session came
-  to rest, its turn ended or its request dismissed, `setpiece` from 3
-  minutes, `doze` from 10), one at a time
-  (`Occasions.workTiers` and `idleTiers`), every growth stage
+  hatching, New Year's Day, a growth stage reached), the tiers
+  (`tier1` from 30 seconds, `tier2` from a minute, `tier3` from 2,
+  `tier4` from 5 and `tier5` from 10, `Occasions.tiers`: how long the
+  agents' working stretch has run, from the first turn of it, a rest of
+  under 30 seconds carrying it on, or once nothing works, how long since
+  the latest session came to rest, its turn ended or its request
+  dismissed; the Mac sends the last reached and the board takes every one
+  below it as on, `render::reached`, so a design for `tier2` shows from
+  then on, at work or idle as its look says), every growth stage
   reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
   `pal` shows from Pal on), and `reading` while the turn the latest
   prompt's reading came for lasts, when you wrote it an essay or asked for
@@ -505,8 +508,8 @@ Besides drawing each mood and state, a face:
   it fits, turns to one two times in three, and a reaction always takes
   one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
   morning, a nightcap at night, a party hat, Halloween, winter,
-  Valentine's, Friday's shades, a frantic sweat, a stretch on a long
-  turn's marathon, a dream after half an hour's sleep. Over idle's and
+  Valentine's, Friday's shades, a frantic sweat, a stretch from `tier4`
+  at work, a dream after half an hour's sleep. Over idle's and
   asleep's other variations Pixel draws the same hats and air itself, by
   the tags (`render/pixel/outfit.h`, `render::outfitFor` in
   `render/tags.h` the one rule for which hat), so it's dressed whichever
@@ -519,11 +522,14 @@ Besides drawing each mood and state, a face:
   `expressions.json`, which slimegen bakes into `slime.h`): idle drowses
   at night, stretches in the morning, bounces on a party day or a New
   Year, sways on a Friday, shivers in winter, wobbles at Halloween,
-  swoons on Valentine's and nods off once it dozes; busy and
+  swoons on Valentine's and nods off at idle's `tier5`; busy and
   frantic work type faster, and sleep snores deeper at night and dreams
   after half an hour. Its idle picks one in place of a gesture. A pack's
-  rig may have occasions too, clips both faces play (§15): a long turn's
-  marathon brings Boop's and Pixel's stretch. Over every state the board also draws
+  rig may have occasions too, clips both faces play (§15): `tier4` at
+  work brings Boop's and Pixel's stretch. And the gel has pastimes, a
+  scene each over its body, by the tiers at work and idle, and by the
+  wait while something needs you or it sleeps (§15, The gel on the
+  rig). Over every state the board also draws
   layers on the gel by the tags (`render/gel/layers.h`), at anchors the
   pose that drew its body gives (`rig::Anchors`, from
   `render/gel/painter.h`: the dome's top, a ring for a hat's brim, its
@@ -820,9 +826,10 @@ stack (`layers.h`, below, The layer stack) fades what comes and goes
 around the body.
 Pixel's rig has expressions for its 13 drawn moods, each wearing its own
 mood's eyes and mouth, the looks idle, working and asleep, a blink, and
-working's stretch on a long turn's marathon. Boop's is the same, since
-Boop wears Pixel's face on the CYD, with its notice besides, which the
-gel plays (§16's reference became it).
+working's stretch from `tier4`. Boop's is the same, since Boop wears
+Pixel's face on the CYD, with its notice besides, which the gel plays
+(§16's reference became it), and the gel's pastimes' clips (below, The
+gel on the rig).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
@@ -887,16 +894,17 @@ fits (§9). Each needs a tag or a wait. Boop's:
 ```json
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["marathon"]}]},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}]},
   "asleep": {"clip": "doze"}
 }
 ```
 
-A face gives the look a chance at the end of each pass of its loop,
-while none of its occasions plays: then, while some fit, one of them
-plays 67% of the time (`rig::kOccasionPct`), any one alike, over what
-the look plays, and fades out when the look gives way (a reaction, needs
-you). A face draws no randomness for it while none fits.
+Pixel's face gives the look a chance at the end of each pass of its
+loop, while none of its occasions plays: then, while some fit, one of
+them plays 67% of the time (`rig::kOccasionPct`), any one alike, over
+what the look plays, and fades out when the look gives way (a reaction,
+needs you). It draws no randomness for it while none fits. The gel deals
+them with its pastimes (below, The gel on the rig).
 
 Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
@@ -984,7 +992,7 @@ the rig face draws the look's design, the pixel face gives the rig
 look's occasions their chance (above), on the rig face, over the look's
 own clip; while one plays, the look turns only from a variation whose
 own occasion is over. Its drawn occasions still turn in
-as they did (§9), so on a marathon it shows its drawn stretch now and
+as they did (§9), so from `tier4` it shows its drawn stretch now and
 then, and the rig's stretch over its rig-drawn desks.
 
 **The layer stack.** What comes and goes around the body, each in its
@@ -1013,14 +1021,31 @@ channels over the pose the engine gives (`applyRig`): `squash` (the
 rig's tall is the dome's up), `lean`, `lift` (canvas px, 85 a body unit,
 never into the floor: the whole dome rises), `eyeOpen` (its lids, shut
 as far as the more shut eye), `eyeSize` (the eyes about their middles),
-`gazeY` (the eyes up and down) and `mouthOpen` (its one open mouth, once
-it's open enough). It draws no other channel yet, and its expressions
-aren't the rig's: a mood is the gel's own art. At rest the mixer adds
-nothing, so a frame with no clip playing is the engine's alone. The
-gel's look gives the rig look's occasions their chance at each pass of
-its scene's recipe (a desk's loop, asleep's breath, and the look's
-start), while the engine shows the look itself, with the engine's own
-randomness. A reaction whose state names a clip of the rig (Boop's
+`gazeX` and `gazeY` (where the eyes look) and `mouthOpen` (its one open
+mouth, once it's open enough). It draws no other channel yet, and its
+expressions aren't the rig's: a mood is the gel's own art. At rest the
+mixer adds nothing, so a frame with no clip playing is the engine's
+alone. Its pastimes (`render/gel/pastimes.h`) are clips of the pack's
+rig with drawing of the gel's own in time with them: at work a sip from
+its mug, a hum, an idea, a sticky note, a coffee refill, a cookie, a
+marshmallow at the camp, stargazing; idle, a bubble, a fly, a book, a
+game, a tower of blocks, a dance, a paper plane, counting sheep; a wave
+and a tap on the glass while something needs you; rolling over and a
+snore bubble asleep. Each is for one look, at work and idle from a tier
+(three or more for each), while something needs you or asleep from a
+wait. The gel deals them and the rig look's occasions together, one at a
+time while the engine shows the look itself, after a rest of 4 to 10 s
+(`kRestMinMs`, `kRestMaxMs`), the newest tier's 60% of the time
+(`kNewestPct`) and an older one's the rest, never the same twice running,
+with dice of their own, so the engine's randomness goes as it always
+has; none starts while a finger holds it or a word of the work stream
+flies, and the one playing fades out when the look gives way. Its kit
+stays out while its tier lasts: at work a mug on the desk (`tier1`, but
+not in the morning, when its coffee is in its hand), headphones
+(`tier3`) and a sweatband (`tier4`), the hat winning the head, and from
+`tier5` a camp beside the desk, a tent and its fire, a mug more on the
+stack every 10 minutes; idle, a plant from `tier3` that grows to
+`tier5`. A reaction whose state names a clip of the rig (Boop's
 `notice`) plays it once, as its moment starts, and the clip's cues sound
 the contacts they name (the slime's contact kinds). The gel's recipe for
 that state times it, the clip's length and a little more for the body to

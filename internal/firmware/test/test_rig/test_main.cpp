@@ -461,11 +461,12 @@ static void test_the_staged_rig_is_the_packs_files() {
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenL), int(blink->tracks[0].channel));  // eyeOpen sets both eyes
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenR), int(blink->tracks[1].channel));
   TEST_ASSERT_FALSE(kRig.clip("doze")->additive);
-  // Working's stretch on a long turn's marathon, which both faces play.
+  // Working's stretch from the working stretch's tier4, which both faces
+  // play.
   const Look* working = kRig.look(SceneState::kWorking);
   TEST_ASSERT_EQUAL_INT(1, working->occasions.count);
   TEST_ASSERT_EQUAL_STRING("stretch", working->occasions[0].clip->id);
-  TEST_ASSERT_EQUAL_UINT32(tagBit("marathon"), working->occasions[0].when);
+  TEST_ASSERT_EQUAL_UINT32(tagBit("tier4"), working->occasions[0].when);
   TEST_ASSERT_EQUAL_INT(0, idle->occasions.count);
   TEST_ASSERT_NULL(kRig.clip("cheer"));
 }

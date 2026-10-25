@@ -254,6 +254,8 @@ keep their names.
 | diary | Boop's line a day about the day before (`DiaryOutput`, the memory store's `diary.md`) | journal, log |
 | gesture | What you do to the board that it reacts to itself (BOOT's hand-off, a stroke, a shake, face down…), the `gesture` state's variations and the `gesture` event | touch, motion (for one) |
 | tag | One thing true now that a design may need (`state.when`: the part of the day, a holiday, a milestone day; and the board's own `busy`, `frantic`); a design that needs tags is an occasion | flag, label |
+| tier | How long the agents have worked (their working stretch) or rested: `tier1` from 30 s to `tier5` from 10 minutes, a tag (`Occasions.tiers`) | stage (that's growth's) |
+| pastime | What the gel does to pass the time in a look: a rig clip and its drawing in time with it, dealt by tier or wait (`render/gel/pastimes.h`); the kit is what the tiers put out round it | gag (the engine's), bit |
 | personality, nature | The pack's personality file, and the person's sweet or cheeky choice laid over it (characters/CHARACTER.md §7) | |
 
 ## Architecture rules

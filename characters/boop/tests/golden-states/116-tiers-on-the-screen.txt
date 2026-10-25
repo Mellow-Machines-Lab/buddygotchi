@@ -257,18 +257,18 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Tch".
 
 NOW (14:02, Wednesday)
-claude is still working on "landing", a long turn.
+claude is still working on "landing", a long turn, running a build.
 Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 5 min ago: You asked claude on "landing" in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-2 min ago: claude is still working on "landing", a long turn.
+2 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Hup".
 
 NOW (14:05, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
+claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 4
@@ -276,14 +276,14 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
 7 min ago: You asked claude on "landing" in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-4 min ago: claude is still working on "landing", a long turn.
+4 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Hup".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
+1 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Testing".
 
 NOW (14:07, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
+claude is still working on "landing", a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 5
@@ -291,17 +291,17 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
 8 min ago: You asked claude on "landing" in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-6 min ago: claude is still working on "landing", a long turn.
+6 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Hup".
-3 min ago: claude is still working on "landing", a very long turn, running a build.
+3 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Testing".
+1 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hup".
+  Boop made an engaged face, held once, and said "Probe".
 
 NOW (14:08, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
+claude is still working on "landing", a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
 === pass 6
@@ -309,114 +309,38 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
 10 min ago: You asked claude on "landing" in a sentence.
   Boop made an engaged face, held once, and said "Tch".
-8 min ago: claude is still working on "landing", a long turn.
+8 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Hup".
-5 min ago: claude is still working on "landing", a very long turn, running a build.
+5 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Testing".
+3 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hup".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Probe".
+1 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Checking".
 
 NOW (14:10, Wednesday)
-claude is still working on "landing", a very long turn, running a build.
+claude is still working on "landing", a very long turn, running tests.
 Boop did nothing on its own.
 === pass 7
 HISTORY (oldest first; indented lines add to the line above)
-12 min ago: claude started turn 1 on "landing".
-12 min ago: You asked claude on "landing" in a sentence.
-  Boop made an engaged face, held once, and said "Tch".
-10 min ago: claude is still working on "landing", a long turn.
+9 min ago: claude is still working on "landing", a long turn, running a build.
   Boop made an engaged face, held once, and said "Hup".
-7 min ago: claude is still working on "landing", a very long turn, running a build.
+6 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-5 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hup".
-3 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-2 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop made an engaged face, held once, and said "Rrr...".
-
-NOW (14:12, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 8
-HISTORY (oldest first; indented lines add to the line above)
-15 min ago: claude started turn 1 on "landing".
-15 min ago: You asked claude on "landing" in a sentence.
-  Boop made an engaged face, held once, and said "Tch".
-12 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Hup".
-9 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-8 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hup".
-6 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-4 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop made an engaged face, held once, and said "Rrr...".
-2 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Probe".
-
-NOW (14:15, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 9
-HISTORY (oldest first; indented lines add to the line above)
-18 min ago: claude started turn 1 on "landing".
-18 min ago: You asked claude on "landing" in a sentence.
-  Boop made an engaged face, held once, and said "Tch".
-15 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Hup".
-12 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-10 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hup".
-9 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
-7 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop made an engaged face, held once, and said "Rrr...".
-5 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Probe".
-2 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Test".
-
-NOW (14:18, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 10
-HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude is still working on "landing", a very long turn, running a build.
-  Boop made an engaged face, held once, and said "Rrr...".
-7 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Probe".
+  Boop made an engaged face, held once, and said "Testing".
 4 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Test".
-1 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Probe".
+3 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Validate".
+  Boop made an engaged face, held once, and said "Checking".
+1 min ago: claude is still working on "landing", a very long turn, running tests.
+  Boop made an engaged face, held once, and said "Trial".
 just now: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls.
 
-NOW (14:20, Wednesday)
+NOW (14:12, Wednesday)
 claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, saying it's done.
 Boop did nothing on its own.

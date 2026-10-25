@@ -557,7 +557,7 @@ randomness of its own. `expressions.json` `occasions` holds them:
 | --- | --- | --- | --- |
 | idle | morning-stretch | morning | A big stretch up, eyes squeezed, a lean each way |
 | idle | night-drowse | night | Heavy lids, sunk a little, a slow sway |
-| idle | nod-off | doze | Nods three times deeper, lids closing, then jerks awake |
+| idle | nod-off | tier5 | Nods three times deeper, lids closing, then jerks awake |
 | idle | party-bounce (and New Year's, Lunar New Year's, Programmers' Day's) | party (newyear, lunar, programmers) | Three hops side to side, eyes squinting; each landing a bounce at comedy's chance |
 | idle | friday-sway | friday | A little dance, leaning and sliding |
 | idle | winter-shiver | winter | Huddled down, shivering |
@@ -574,12 +574,53 @@ a pick (numbered after the row's takes), the same in every mood, and a
 jittered one takes the desk's jitter. A gesture or a host's moment never
 takes one. The pack's rig has occasions of its own, clips both of its
 faces play ([CHARACTER.md](../../../CHARACTER.md) §15, The gel on the
-rig): working's stretch on a long turn's marathon (eyes squeezed, up
-tall, a lean each way) is the rig's `stretch`, over whatever desk take
-plays, at a chance at each pass of the desk's loop. An occasion whose tags go off simply isn't picked again. The
+rig): working's stretch from `tier4` (eyes squeezed, up tall, a lean
+each way) is the rig's `stretch`, over whatever desk take plays, dealt
+with the pastimes (below). An occasion whose tags go off simply isn't
+picked again. The
 engine has no colour channel, so no occasion tints the gel. The working
 looks' quicker pace while the agents are busy is the board's
 (`render::workPace`), not an occasion.
+
+### Pastimes (the board's)
+
+Something new at every glance, however long the agents work or you're
+away (`render/gel/pastimes.h`): a pastime is a clip of the pack's rig
+(`rig/clips/`, the body: a sip, a hop, a lean to look, the eyes
+following something round) and what the board draws with it, in time
+with it, and the kit the tiers put out stays while they last. The tiers
+are the Mac's (`tier1` from 30 seconds, `tier2` from a minute, `tier3`
+from 2, `tier4` from 5, `tier5` from 10): of the agents' working stretch
+at work, of their rest idle. The face (`GelFace`) deals one at a time,
+while the engine shows the look itself and nothing holds the body (a
+finger, a word of the work stream in flight), after a rest of 4 to 10 s,
+the newest tier's 60% of the time and an older one's the rest, never the
+same twice running, with the rig look's occasions among them; and holds
+the engine's own idle gestures off while one plays. The one playing
+fades out when the look gives way.
+
+| Look | From | Kit | Pastimes |
+| --- | --- | --- | --- |
+| working | tier1 | A mug on the desk, steaming (not in the morning, when its coffee is in its hand, nor a sip or a refill) | A sip, eyes shut, "ahh"; a peek up at you and a heart; humming, notes floating up |
+| working | tier2 | | Wondering, a "?" cloud, then a lightbulb and a hop; the tip of its tongue out, concentrating; nodding along as ticks pop from the monitor |
+| working | tier3 | Headphones | Bopping to the music, eyes shut; drumming on the desk; a sticky note slapped on the monitor |
+| working | tier4 | A sweatband, a drop of sweat now and then | The rig's stretch; a coffee pot pouring a refill; a cookie in three bites; a second wind, sparkling |
+| working | tier5 | A camp beside the desk, a tent and its fire; a mug more on the stack every 10 minutes, up to 4 | A marshmallow toasted on the fire; a pizza; the stars and a shooting star; a plaid blanket over its head |
+| idle | tier1 | | Looking round; looking up at you, "...?"; three hops |
+| idle | tier2 | | A bubble blown and popped; a fly it follows round and snaps at; a heart drawn on the glass |
+| idle | tier3 | A plant that grows, a sprout | A book, its page turning; a handheld game, WIN; watering the plant |
+| idle | tier4 | The plant in leaf | A "brb" sign, peeking over it; a tower of blocks that topples; a dance under a disco ball; a paper plane that bonks its head |
+| idle | tier5 | The plant in flower | Snoozing, a snore bubble; counting sheep; a nap under the blanket; and the engine's nod-off |
+| needs you | 30 s, 2, 5, 10 minutes | | A wave; tapping on the glass; checking its watch and sighing; nodding off and jerking awake |
+| asleep | 1, 2, 4 minutes | | Rolling over, mumbling; counting sheep; a snore bubble |
+
+The hat wins the head: the headphones and the sweatband stay off while
+it wears one, and peekaboo's gesture takes them off as it does the hat.
+The camp, the plant and the stars go behind the body; what it holds,
+throws, blows and dreams goes in front, at the body's anchors, and the
+headphones and sweatband over what it wears, before the cards. No sounds
+of their own but a few landings (`body_contact`), and none while
+something needs you or asleep.
 
 ### Layers over the body (the board's)
 
@@ -633,7 +674,7 @@ background's black only, so the body, its props and what it wears cover
 them, and a word hidden behind it costs nothing to draw, clear or push.
 On the desk, while the Mac sends lanes: the to-do list's progress along
 the monitor's foot, the turn's clock in its corner from the first
-minute (amber from the marathon's 8), and, in the working look with no
+minute (amber from `tier4`), and, in the working look with no
 call for 20 s, a thought cloud. When the agents stop, the words on
 screen linger 1.5 s (`Stream::kEndMs`), falling where they dropped, and a
 word may still come forward in that time, as a turn's end does to gather

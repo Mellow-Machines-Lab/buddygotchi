@@ -1,0 +1,7 @@
+{
+  "about": "Asleep, longer: it dreams of counting sheep, breathing slowly.",
+  "ms": 6000,
+  "tracks": {
+    "squash": [[0, 0], [400, 70], [1150, 10], [1900, 70], [2650, 10], [3400, 70], [4150, 10], [4900, 70], [6000, 0]]
+  }
+}

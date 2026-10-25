@@ -1,4 +1,4 @@
-# The work stream: the plan (updated 2026-10-24)
+# The work stream: the plan (updated 2026-10-25)
 
 While agents work, the board shows what they're doing as it happens:
 each agent's tool calls as words falling from its name, and now and
@@ -7,7 +7,8 @@ failed command flies at its face and leaves it dazed; a failing test
 run rains FAIL on it; a big deletion shatters and it eats the bits.
 Drafted with the owner on 2026-10-24, after testing main: a long
 working turn looked the same for minutes, because the desk's typing is
-all the gel has before the marathon tier (glance-and-wait.md §3), and
+all the gel had before the marathon tier (glance-and-wait.md §3; since
+2026-10-25 the tiers start at 30 seconds, with pastimes), and
 mid-turn the brain wakes only on its heartbeat (90 to 180 s for Boop's
 personality) and on notable tools.
 
@@ -18,8 +19,8 @@ engine (`render/gel/`), drawn over the body checkpoint 5 of
 [character-engine.md](character-engine.md) put on the rig; the body's
 answer to a word is a push on the engine's springs (`Engine::jolt`),
 which the rig's pose still adds to, not a rig clip. It takes the place of the working tier's "at it" gags in
-[glance-and-wait.md](glance-and-wait.md) §3; the marathon and the camp
-stay, and play over the stream.
+[glance-and-wait.md](glance-and-wait.md) §3; the tiers' pastimes play
+over the stream, between its words.
 
 ## Why words, and why the body
 
@@ -165,9 +166,9 @@ picture and one short word, not lines of text, so it shows pictures:
 | Out of context, rate limited | A sad screen: a frown and `zzz` |
 
 Along its bottom edge, the to-do list's progress (`3/7` as a bar), and
-in a corner the longest turn's clock, amber from the marathon tier.
-When the agents go idle, the monitor runs a screensaver through the
-fidget and set-piece tiers and switches off at `doze`. Like the words,
+in a corner the longest turn's clock, amber from `tier4`. When the
+agents go idle, the monitor runs a screensaver through the idle tiers
+and switches off at `tier5`. Like the words,
 it shows only what the Mac already knows: no counts from a command's
 output, no file names.
 

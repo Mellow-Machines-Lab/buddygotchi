@@ -1,4 +1,4 @@
-# Glance and wait: the plan (updated 2026-10-24)
+# Glance and wait: the plan (updated 2026-10-25)
 
 What a long day with agents needs from Boop that it doesn't have yet:
 a request that never gets lost and never gets stuck, the right window
@@ -56,22 +56,30 @@ face-down) are the ones that vanish.
 ## 3. Something new at every glance
 
 The tiers are tags in `state.when` (characters/CHARACTER.md §9), so a
-pack's designs pick them up like the time of day's.
+pack's designs pick them up like the time of day's. Redone with the
+owner on 2026-10-25: five, closer together, the same for work and idle,
+and on the gel every one has pastimes, a little scene each over the
+body, and kit that stays while the tier lasts (the slime's
+CONTINUITY.md, Pastimes, has the whole table).
 
-| Look | From | Tag | What plays |
+| Tag | From | At work | Idle |
 | --- | --- | --- | --- |
-| Working | 0 s | | The start: rolls up its sleeves |
-| Working | 30 s | | At it: a gag for what the agent is doing, a new one every 45–90 s |
-| Working | 8 min | `marathon` | A headband and sweat, a snack, a coffee refill, a second wind |
-| Working | 15 min | `camp` | A tent and a campfire beside the work, toasting a marshmallow. The last |
-| Idle | 0 s | | Settles: sits back, pleased or sulky |
-| Idle | 30 s | `fidget` | Looks around, reads, juggles, doodles on the glass, chases a fly |
-| Idle | 3 min | `setpiece` | Hides with its eyes peeking out and a "brb" sign; waters its plant; builds something; practises a dance |
-| Idle | 10 min | `doze` | Nods off |
+| | 0 s | Rolls up its sleeves | Settles: sits back, pleased or sulky |
+| `tier1` | 30 s | A mug; sips, peeks at you, hums | Looks round, looks up at you, hops |
+| `tier2` | 1 min | An idea, the tongue out, nodding along | A bubble, a fly, a heart on the glass |
+| `tier3` | 2 min | Headphones; bopping, drumming, a sticky note | A plant; a book, a game, watering it |
+| `tier4` | 5 min | A sweatband; the stretch, a refill, a cookie, a second wind | A "brb" sign, a tower of blocks, a dance, a paper plane |
+| `tier5` | 10 min, the last | The camp, mugs stacking up; a marshmallow, a pizza, the stars, a blanket | Snoozing, counting sheep, a nap under a blanket, nodding off |
 
-The working tier counts from the start of the longest turn working now;
-idle's from the latest a session came to rest (its turn ended, or you
-dismissed its request). One tier is on at a time.
+The working tiers count from the start of the agents' working stretch:
+a rest of under 30 seconds (a quick reply) carries it on. Idle's count
+from the latest a session came to rest (its turn ended, or you dismissed
+its request). The Mac sends the last tier reached, and the board takes
+every one below it as on, so a design for `tier2` shows from then on and
+the steady state at `tier5` mixes in the older ones. While something
+needs you the gel waves (30 s), taps on the glass (2 minutes), checks
+its watch (5) and nods off (10); asleep it rolls over, dreams of sheep
+and blows a snore bubble.
 
 **What the agent is doing** picks the gag: reading glasses and a
 magnifier for reads and searches, hammering for edits, crossed fingers
@@ -98,10 +106,10 @@ come with age.
    agent is gone, opening Remote Control sessions.
 3. **Boop:** the tier and stage tags, the to-do count under the face, and
    the designs that already exist moved onto the tiers (the stretch to
-   `marathon`, nodding off to `doze`).
-4. **The art** for every tier, the gags by activity, the ladder, the
-   thought bubble and growth's props: after the engine's checkpoints 4
-   and 5, authored once as clips for both faces.
+   `tier4`, nodding off to `tier5`).
+4. **The art** for every tier (built 2026-10-25, the gel only): its
+   pastimes, the rig's clips with the gel's drawing in time with them, and
+   the kit. Still to come: the ladder, and growth's props.
 
 ## Open
 

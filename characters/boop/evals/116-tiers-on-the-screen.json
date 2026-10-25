@@ -1,16 +1,19 @@
 {
   "name": "A long turn and the quiet after it go through their tiers",
-  "case": "Claude works on one turn for twenty minutes, then sits idle for ten. The board hears how long in its tags: a marathon from 8 minutes into the turn and a camp from 15; then, once the turn is over, fidgets from 30 seconds, a set piece from 3 minutes, and a doze from 10.",
-  "why": "Core.when: the longest turn working's tier (Occasions.workTiers) and, with none working, the time since the last turn ended (Occasions.idleTiers), one tier at a time, in state.when (characters/CHARACTER.md §9)",
+  "case": "Claude works on one turn for twelve minutes, then sits idle for ten. The board hears how long in its tags, the last tier reached: tier1 from 30 seconds of work, tier2 from a minute, tier3 from 2, tier4 from 5 and tier5 from 10; then, once the turn is over, the same ladder again from when it came to rest.",
+  "why": "Core.when: the working stretch's tier (Occasions.tiers, from Core.stretch's start) and, with none working, the time since the last turn ended, the last tier reached in state.when (characters/CHARACTER.md §9)",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "migrate the payments service to the new queue"},
-    {"event": "command", "at": "5m", "topic": "build"},
-    {"event": "wait", "at": "8m", "expect": {"when": "marathon"}},
-    {"event": "command", "at": "12m", "topic": "tests"},
-    {"event": "wait", "at": "15m", "expect": {"when": "camp"}},
-    {"event": "turn finished", "at": "20m", "message": "The payments service runs on the new queue.", "reading": {"kind": "done"}},
-    {"event": "wait", "at": "20m30s", "expect": {"when": "fidget", "idle": "1"}},
-    {"event": "wait", "at": "23m", "expect": {"when": "setpiece"}},
-    {"event": "wait", "at": "30m", "expect": {"when": "doze"}}
+    {"event": "wait", "at": "30s", "expect": {"when": "tier1"}},
+    {"event": "wait", "at": "1m", "expect": {"when": "tier2"}},
+    {"event": "command", "at": "1m30s", "topic": "build"},
+    {"event": "wait", "at": "2m", "expect": {"when": "tier3"}},
+    {"event": "command", "at": "4m", "topic": "tests"},
+    {"event": "wait", "at": "5m", "expect": {"when": "tier4"}},
+    {"event": "wait", "at": "10m", "expect": {"when": "tier5"}},
+    {"event": "turn finished", "at": "12m", "message": "The payments service runs on the new queue.", "reading": {"kind": "done"}},
+    {"event": "wait", "at": "12m30s", "expect": {"when": "tier1", "idle": "1"}},
+    {"event": "wait", "at": "14m", "expect": {"when": "tier3"}},
+    {"event": "wait", "at": "22m", "expect": {"when": "tier5"}}
   ]
 }

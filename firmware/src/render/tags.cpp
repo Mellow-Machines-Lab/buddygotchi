@@ -11,6 +11,14 @@ uint32_t tagBit(const char* name) {
   return 0;
 }
 
+uint32_t reached(uint32_t when) {
+  // tier1 to tier5 are five bits in a row: every one below the highest on.
+  const uint32_t first = tagBit("tier1");
+  for (uint32_t bit = tagBit("tier5"); bit > first; bit >>= 1)
+    if (when & bit) return when | (bit - first);
+  return when;
+}
+
 namespace {
 // The rung of the ladder: 0 below busy, 1 busy, 2 frantic.
 int rung(int working) { return working >= kFranticFrom ? 2 : working >= kBusyFrom ? 1 : 0; }

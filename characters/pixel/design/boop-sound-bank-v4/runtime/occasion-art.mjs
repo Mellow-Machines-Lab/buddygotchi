@@ -14,7 +14,7 @@ const make=design('occasion-v1');
 //     and pumpkin, winter's hat and snow, Valentine's hearts, Friday's
 //     shades;
 //   working: coffee (morning), sweat (frantic: four agents or more), a
-//     stretch on a long turn's marathon (marathon: eight minutes in);
+//     stretch five minutes into the agents' work (tier4);
 //   asleep: a nightcap (night), and a dream after half an hour, the same in
 //     every mood, as asleep is;
 //   wake_up: the wake-up in a party hat, with confetti (party).
@@ -37,7 +37,7 @@ export const occasionAdditions=[
  ...moods.flatMap(mood=>idles.map(([action,name,caption,when],i)=>make(mood,'idle',idleN(mood)+1+i,action,name,caption,8*profile(mood).pace,{when}))),
  ...moods.map(mood=>make(mood,'working',workN(mood)+1,'coffee','Morning coffee','Sips from a steaming mug between keystrokes.',6*profile(mood).pace,{when:['morning']})),
  ...moods.map(mood=>make(mood,'working',workN(mood)+2,'sweat','Frantic','Sweat flies and its eyes dart: a lot is going on.',3,{when:['frantic'],sound:'routine'})),
- ...moods.map(mood=>make(mood,'working',workN(mood)+3,'stretch','A long stretch','It has been working a while: a yawn, a big stretch, back to it.',7*profile(mood).pace,{when:['marathon']})),
+ ...moods.map(mood=>make(mood,'working',workN(mood)+3,'stretch','A long stretch','It has been working a while: a yawn, a big stretch, back to it.',7*profile(mood).pace,{when:['tier4']})),
  // Asleep is the same in every mood.
  ...moods.map(mood=>make(mood,'asleep',5,'nightcap-sleep','Nightcap','Asleep in a nightcap, the pompom bobbing with each breath.',12,{when:['night']})),
  ...moods.map(mood=>make(mood,'asleep',6,'dream','Dreaming','A long sleep: a dream bubble of stars drifts up.',12,{after:1800})),

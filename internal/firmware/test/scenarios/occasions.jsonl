@@ -1,9 +1,9 @@
 // The rig's look occasions on Pixel's face (characters/CHARACTER.md §15):
-// a long turn's marathon at work plays the rig's stretch on the rig face at
-// the end of the look's loop (eyes shut, lifted), the same clip the gel
-// plays. After a reset, its clock frozen.
+// five minutes into the agents' work (tier4) it plays the rig's stretch on
+// the rig face at the end of the look's loop (eyes shut, lifted), the same
+// clip the gel plays. After a reset, its clock frozen.
 {"t":"dbg.reset"}
 {"clock":0}
-{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","marathon"]}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","tier4"]}
 {"clock":8800}
-{"shot":"marathon"}
+{"shot":"stretch"}

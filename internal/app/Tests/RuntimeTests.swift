@@ -2169,7 +2169,7 @@ final class RuntimeTests: XCTestCase {
         let hooks = runtime.home.sync { runtime.harness.log.events.filter { $0.agent != nil && $0.type == .tool }.map(\.specificType) }
         XCTAssertEqual(hooks.suffix(2), ["PreToolUse", "PermissionRequest"], "still waiting: nobody allowed it")
         let states = transport.sent.filter { $0.hasPrefix(#"{"t":"state""#) }
-        XCTAssertTrue(states.contains { $0.contains(#""marathon""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
+        XCTAssertTrue(states.contains { $0.contains(#""tier4""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
         XCTAssertTrue(states.contains { $0.contains(#""attn""#) })
         runtime.home.sync {
             let now = runtime.core.snapshot(at: runtime.options.clock())

@@ -1,5 +1,5 @@
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["marathon"]}]},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}]},
   "asleep": {"clip": "doze"}
 }

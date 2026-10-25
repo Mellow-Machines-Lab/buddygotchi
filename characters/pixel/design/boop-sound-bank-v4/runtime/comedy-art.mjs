@@ -27,10 +27,10 @@ const make=design('comedy-v1');
 const finishes=mood=>oldMoods.includes(mood)?5:6;
 export const comedyAdditions=[
  ...moods.map(mood=>make(mood,'idle',4,'yawn-stretch','Yawn and stretch','Eyes droop, a slow wide yawn with both mitts up, a long stretch, then a blink and rest.',9*profile(mood).pace,{sound:'scored'})),
- // Nodding off waits for idle's last tier (doze: ten minutes since the
+ // Nodding off waits for idle's last tier (tier5: ten minutes since the
  // last turn ended), the snore for ten minutes asleep (`after`, in seconds;
  // occasion-art.mjs).
- ...moods.map(mood=>make(mood,'idle',5,'nod-off','Nodding off','Eyes droop shut and the head nods for two seconds, then it snaps awake, blinks and looks around.',11*profile(mood).pace,{sound:'scored',when:['doze']})),
+ ...moods.map(mood=>make(mood,'idle',5,'nod-off','Nodding off','Eyes droop shut and the head nods for two seconds, then it snaps awake, blinks and looks around.',11*profile(mood).pace,{sound:'scored',when:['tier5']})),
  ...moods.map(mood=>make(mood,'idle',6,'sneeze','Sneeze','Ah… ah… a wind-up with the head thrown back, a sneeze and its spray, a little shake.',10*profile(mood).pace,{sound:'scored'})),
  // Asleep looks the same in every mood, so its snore does too.
  ...moods.map(mood=>make(mood,'asleep',4,'snore','Snore','Two soft snoring breaths: the mouth opens on each, and a Z drifts up.',12,{sound:'scored',after:600})),

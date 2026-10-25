@@ -18,7 +18,7 @@ class Engine;
 // what it wears cover them.
 void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t);
 // What the desk shows while they work: the to-do list's progress along the
-// monitor's foot, the turn's clock in its corner (amber from 8 minutes),
+// monitor's foot, the turn's clock in its corner (amber from tier4),
 // and a thought cloud while no call has come for Stream::kThinkMs.
 void paintStreamDesk(Surface& surface, const Stream& stream, const Engine& e, const Strip& strip, uint32_t t);
 // The word forward and what it does, over the body and its props, aimed at

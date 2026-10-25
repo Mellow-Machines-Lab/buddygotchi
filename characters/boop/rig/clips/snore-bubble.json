@@ -1,0 +1,7 @@
+{
+  "about": "Asleep, a long while: a snore bubble swells and shrinks with each breath, then pops; it twitches and sleeps on.",
+  "ms": 5200,
+  "tracks": {
+    "squash": [[0, 0], [400, 90], [1150, 20], [1900, 90], [2650, 20], [3400, 90], [4150, 20], [4600, 30], [4700, -90], [4900, 40], [5200, 0]]
+  }
+}

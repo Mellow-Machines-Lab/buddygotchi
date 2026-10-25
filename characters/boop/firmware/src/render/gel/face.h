@@ -4,16 +4,19 @@
 // one until told), and the engine's contact cues become sounds. The staged
 // pack's rig (render/rig/) plays its clips on the gel through a mixer of
 // the face's own, whose channels the painter lays over the engine's pose
-// (applyRig): the look's occasions, a chance at each pass of the look's
-// scene, and a reaction's clip, a clip named as its state, as it starts.
-// A clip's cues sound through the engine's contacts. The engine keeps its expressions, recipes, gags and springs. What
-// it wears and the air around it come and go through the rig's layer
-// stack, the face's own too.
+// (applyRig): the look's occasions and the gel's pastimes
+// (render/gel/pastimes.h), one at a time after a rest, and a reaction's
+// clip, a clip named as its state, as it starts. A clip's cues sound
+// through the engine's contacts. The engine keeps its expressions,
+// recipes, gags and springs. What it wears and the air around it come and
+// go through the rig's layer stack, the face's own too, and so does the
+// pastimes' kit.
 #pragma once
 #include "render/face.h"
 #include "render/gel/engine.h"
 #include "render/gel/lane.h"
 #include "render/gel/painter.h"
+#include "render/gel/pastimes.h"
 #include "render/rig/mixer.h"
 #include "render/stream.h"
 namespace render::gel {
@@ -64,6 +67,11 @@ class GelFace final : public Face {
   const Engine& engine() const { return *engine_; }
   const rig::Mixer& mixer() const { return mixer_; }
   const rig::Layers& layers() const { return layers_; }
+  // A pastime, from t, whoever's turn it would be (the face deals the rest
+  // itself): for tests and pictures of each.
+  void playPastime(Pastime p, uint32_t t);
+  // What it shows of the pastimes at t: the one playing, and the kit.
+  PastimeShow pastimes(uint32_t t) const;
 
  private:
   // A cue waits at most this long for Device to take it (one tick is 16 ms).
@@ -77,15 +85,27 @@ class GelFace final : public Face {
   // What it wears, the air and the Zs, as the engine's tags and state call
   // for them (layerContents), each fading in and out.
   rig::Layers layers_;
-  // The look's occasion playing, until it ends; and the scene's pass that
-  // last had its chance.
+  // The look's occasion or the pastime playing (kNone for an occasion's,
+  // which draws nothing of its own), from when until when, and the look
+  // it's for; the one stopped early, fading out from stoppedAt_; the clip
+  // dealt last, and when the next may be. They're dealt with dice of their
+  // own (dice_), so the engine's randomness goes as it always has.
   const rig::Clip* occasion_ = nullptr;
-  uint32_t occasionEnds_ = 0;
+  Pastime pastime_ = Pastime::kNone;
+  uint32_t occasionAt_ = 0, occasionEnds_ = 0, stoppedAt_ = 0, restUntil_ = 0, dice_ = kSeed;
+  SceneState occasionLook_ = SceneState::kNone, dealtLook_ = SceneState::kNone;
+  bool stopped_ = false;
+  const rig::Clip* lastClip_ = nullptr;
+  // The kit, each easing in and out, as the tiers and the look call for
+  // it (showKit): when the camp came out, for its stack of mugs, and how
+  // far the plant has grown.
+  rig::Ramp mug_, headphones_, sweatband_, camp_, plant_;
+  uint32_t campSince_ = 0;
+  int grown_ = 1;
   // The clip it last played, whose cues sound as it crosses them, and how
   // far into it it is.
   const rig::Clip* cueing_ = nullptr;
   uint32_t cueAge_ = 0;
-  int passGeneration_ = -1, passIteration_ = -1;
   FaceSource source_;
   uint32_t origin_ = 0, lastTick_ = 0, lookAt_ = 0, revision_ = 0, cueRevision_ = 0;
   // The engine's own clock, which runs quicker in the working looks while
@@ -102,10 +122,20 @@ class GelFace final : public Face {
   uint32_t landedAt_ = 0;
   bool landed_ = true;
   void advanceTo(uint32_t);
-  // A look's occasion, at a new pass of its scene while none plays, while
-  // the engine shows the look itself; the one playing fades out when the
-  // look gives way.
+  // While the engine shows the look itself, and nothing else holds the
+  // body: once the rest is over, a look's occasion or a pastime that fits;
+  // the one playing fades out when the look gives way.
   void occasions(uint32_t t);
+  // One of those that fit the look now, the newest tier's kNewestPct of the
+  // time; none dealt while none fits.
+  void deal(SceneState look, uint32_t t);
+  // The playing one stops, fading out unless it ran its length; the rest
+  // before the next starts now.
+  void endOccasion(uint32_t t, bool early);
+  // The kit the tiers and the look call for now, from t.
+  void showKit(uint32_t t);
+  // A die from dice_: below `n`.
+  uint32_t roll(uint32_t n);
   // The layers what the engine's tags and state call for now, from t.
   void showLayers(uint32_t t);
   // A clip played on the mixer, its cues to sound from now.

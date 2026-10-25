@@ -1194,12 +1194,12 @@ static void test_a_notice_plays_its_rig_clip() {
 // A look's takes for tags and waits, dealt only
 // while they fit, and only the one that fits. Idle drowses at night,
 // stretches in the morning, bounces at a party and at New Year's (the
-// party's own bounce), and nods off once it dozes, by that tag alone however
-// long it has shown; with no tag on, or tags none needs, it plays none.
-// Work types busier while busy and frantically while frantic, and plays
-// nothing of its own on a long turn's marathon (the rig's stretch plays
-// there: test_a_rig_clip_plays_on_both_faces); asleep snores deeper at
-// night and dreams after half an hour.
+// party's own bounce), and nods off at idle's last tier, tier5, by that tag
+// alone however long it has shown; with no tag on, or tags none needs, it
+// plays none. Work types busier while busy and frantically while frantic,
+// and plays nothing of its own at tier4 (the rig's stretch and the
+// pastimes play there: test_a_rig_clip_plays_on_both_faces); asleep snores
+// deeper at night and dreams after half an hour.
 static void test_occasions_play_only_while_they_fit() {
   // The occasions idle played, by their gags.
   auto idle = [](uint32_t when, uint32_t lookMs) {
@@ -1226,7 +1226,7 @@ static void test_occasions_play_only_while_they_fit() {
   TEST_ASSERT_TRUE((idle(tagBit("party"), 0) == Played{"occasion:party-bounce"}));
   TEST_ASSERT_TRUE((idle(tagBit("newyear"), 0) == Played{"occasion:party-bounce"}));
   TEST_ASSERT_TRUE(idle(0, 7200000).empty());
-  TEST_ASSERT_TRUE((idle(tagBit("doze"), 0) == Played{"occasion:nod-off"}));
+  TEST_ASSERT_TRUE((idle(tagBit("tier5"), 0) == Played{"occasion:nod-off"}));
   // Work: an occasion's take is numbered after the row's own; the ones
   // played, as kLookOccasions numbers them.
   auto work = [](SceneState base, uint32_t when, uint32_t lookMs) {
@@ -1264,27 +1264,29 @@ static void test_occasions_play_only_while_they_fit() {
   only(work(SceneState::kWorking, busyTags(2), 0), tagBit("busy"), 0, nullptr);
   only(work(SceneState::kWorking, busyTags(5), 0), tagBit("frantic"), 0, nullptr);
   TEST_ASSERT_TRUE(work(SceneState::kWorking, 0, 7200000).empty());
-  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("marathon"), 0).empty());
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("tier4"), 0).empty());
   only(work(SceneState::kAsleep, tagBit("night"), 0), tagBit("night"), 0, nullptr);
   only(work(SceneState::kAsleep, 0, 1800000), 0, 1800, "occasion:dream");
   TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1799000).empty());
 }
 // A clip authored once in the pack's rig/clips/ plays on both of its faces:
-// the look's occasion (rig/looks.json, working's stretch on a long turn's
-// marathon) through each face's mixer, the gel's laid over the engine's
-// pose (applyRig) and Pixel's on its rig face, at the end of a pass of the
-// look's loop, render::rig::kOccasionPct of the chances. Without the tag
-// neither face plays it; the gel's mixer stays at rest, so nothing it draws
-// changes; and a reaction fades it out.
+// the look's occasion (rig/looks.json, working's stretch from tier4)
+// through each face's mixer, the gel's laid over the engine's pose
+// (applyRig) and Pixel's on its rig face: Pixel's at the end of a pass of
+// the look's loop, render::rig::kOccasionPct of the chances, and the gel's
+// dealt with its pastimes (test_pastimes_are_dealt_by_tier_after_a_rest).
+// Without the tag neither face plays it; the gel's mixer stays at rest, so
+// nothing it draws changes; and a reaction fades it out.
 static void test_a_rig_clip_plays_on_both_faces() {
   const rig::Clip* stretch = rig::kRig.clip("stretch");
   TEST_ASSERT_NOT_NULL(stretch);
   const rig::Look* working = rig::kRig.look(SceneState::kWorking);
-  TEST_ASSERT_EQUAL_INT(1, working->fitting(tagBit("marathon"), 0));
-  TEST_ASSERT_EQUAL_PTR(stretch, working->fitting(tagBit("marathon") | tagBit("day"), 0, 0));
-  TEST_ASSERT_EQUAL_INT(0, working->fitting(tagBit("camp"), 0));
-  // The tallest squash and the most shut eyes each face's mixer reaches
-  // over a minute at work, and when the gel's first left rest.
+  TEST_ASSERT_EQUAL_INT(1, working->fitting(tagBit("tier4"), 0));
+  TEST_ASSERT_EQUAL_PTR(stretch, working->fitting(tagBit("tier4") | tagBit("day"), 0, 0));
+  TEST_ASSERT_EQUAL_INT(0, working->fitting(tagBit("tier3"), 0));
+  // The tallest squash and the most shut eyes each face's mixer reaches at
+  // work, over a minute, the gel's over two while no pastime of its own
+  // plays (a look's occasion, then), and when the gel's first left rest.
   struct Seen {
     int squash = 0, open = 1000;
     uint32_t moved = 0;
@@ -1302,7 +1304,7 @@ static void test_a_rig_clip_plays_on_both_faces() {
     m.base = SceneState::kWorking, m.act = SceneState::kTerminal, m.mood = Mood::kHappy, m.when = when;
     b.onState(m, 0);
     Seen seen;
-    for (uint32_t t = 16; t <= 60000; t += 16) {
+    for (uint32_t t = 16; t <= (gel ? 120000u : 60000u); t += 16) {
       if (pokeAt && t == pokeAt) {
         app::ReactionIn in;
         in.anim = SceneState::kPoked;
@@ -1314,11 +1316,13 @@ static void test_a_rig_clip_plays_on_both_faces() {
       const rig::Mixer& mixer = gel ? static_cast<GelFace&>(b.face()).mixer()
                                     : static_cast<pixel::PixelFace&>(b.face()).rigFace().mixer();
       const rig::Channels& c = mixer.channels();
-      seen.squash = std::min<int>(seen.squash, c[rig::Channel::kSquash]);
-      seen.open = std::min<int>(seen.open, std::min(c[rig::Channel::kEyeOpenL], c[rig::Channel::kEyeOpenR]));
+      if (!gel || static_cast<GelFace&>(b.face()).pastimes(t).playing == Pastime::kNone) {
+        seen.squash = std::min<int>(seen.squash, c[rig::Channel::kSquash]);
+        seen.open = std::min<int>(seen.open, std::min(c[rig::Channel::kEyeOpenL], c[rig::Channel::kEyeOpenR]));
+      }
       if (gel && !seen.moved && std::memcmp(&c, &rig::kRest, sizeof c)) seen.moved = t;
       if (pokeAt && t >= pokeAt + 400) {
-        // The poke's reaction faded the stretch out.
+        // The poke's reaction faded the stretch, or the pastime, out.
         TEST_ASSERT_TRUE(c[rig::Channel::kSquash] >= -30);
         TEST_ASSERT_TRUE(c[rig::Channel::kEyeOpenL] > 900);
       }
@@ -1327,14 +1331,14 @@ static void test_a_rig_clip_plays_on_both_faces() {
     return seen;
   };
   for (bool gel : {true, false}) {
-    const Seen marathon = play(gel, tagBit("marathon")), plain = play(gel, tagBit("day"));
-    TEST_ASSERT_TRUE(marathon.squash <= -115);  // up tall: the stretch's -130 at its height
-    TEST_ASSERT_TRUE(marathon.open <= 320);     // eyes squeezed: its -700 on 1000 (and Pixel blinks)
-    TEST_ASSERT_TRUE(plain.squash >= -30);      // the look's own breathing at most (Pixel's)
+    const Seen tier4 = play(gel, tagBit("tier4")), plain = play(gel, tagBit("day"));
+    TEST_ASSERT_TRUE(tier4.squash <= -115);  // up tall: the stretch's -130 at its height
+    TEST_ASSERT_TRUE(tier4.open <= 320);     // eyes squeezed: its -700 on 1000 (and Pixel blinks)
+    TEST_ASSERT_TRUE(plain.squash >= -30);   // the look's own breathing at most (Pixel's)
     if (gel) {
       TEST_ASSERT_EQUAL_UINT32(0, plain.moved);  // the gel's mixer at rest throughout
-      TEST_ASSERT_TRUE(marathon.moved > 0);
-      play(gel, tagBit("marathon"), marathon.moved + 608);
+      TEST_ASSERT_TRUE(tier4.moved > 0);
+      play(gel, tagBit("tier4"), tier4.moved + 608);
     }
   }
   // On the gel the rig's channels move what the painter draws: taller, its
@@ -1382,6 +1386,11 @@ void test_the_finger_numbers();
 void test_acting_timing_and_springs();
 void test_setters_keep_springs_and_replay();
 void test_the_scenes_formulas();
+// test_pastimes.cpp
+void test_every_pastime_has_its_clip_and_its_turn();
+void test_each_pastime_draws_and_ends();
+void test_pastimes_are_dealt_by_tier_after_a_rest();
+void test_the_kit_follows_the_tiers();
 // test_requests.cpp
 void test_requests_route_by_priority();
 void test_a_request_keeps_its_identity();
@@ -1893,6 +1902,9 @@ static void test_steady_frames_allocate_nothing() {
       "\"boop\",\"name\":\"Fix a very long test name\",\"id\":7}}",
       "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"frightened\",\"busy\":2,\"vol\":0}",
       "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"vol\":0}",
+      // The pastimes and their kit.
+      "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"happy\",\"vol\":0,\"when\":[\"tier5\"]}",
+      "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"vol\":0,\"when\":[\"tier5\"]}",
   };
   setenv("BOOP_SIM_FACE", "gel", 1);
   Hal hal;
@@ -2340,6 +2352,10 @@ int main() {
   RUN_TEST(test_a_notice_plays_its_rig_clip);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
+  RUN_TEST(test_every_pastime_has_its_clip_and_its_turn);
+  RUN_TEST(test_each_pastime_draws_and_ends);
+  RUN_TEST(test_pastimes_are_dealt_by_tier_after_a_rest);
+  RUN_TEST(test_the_kit_follows_the_tiers);
   RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);

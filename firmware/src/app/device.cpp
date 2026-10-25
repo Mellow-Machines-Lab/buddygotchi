@@ -209,7 +209,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
-  m.when |= render::busyTags(m.busy);
+  m.when = render::reached(m.when) | render::busyTags(m.busy);
   // The work stream's lanes, `[slot, calls, word]`, their words
   // as the fonts draw them.
   for (JsonArrayConst lane : doc["calls"].as<JsonArrayConst>()) {

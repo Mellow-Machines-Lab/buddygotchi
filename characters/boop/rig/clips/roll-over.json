@@ -1,0 +1,9 @@
+{
+  "about": "Asleep, a while: it rolls over in its sleep, one way and then the other, and mumbles.",
+  "ms": 4200,
+  "tracks": {
+    "lean": [[0, 0], [1600, -260], [2000, -260], [3400, 230], [4200, 0]],
+    "squash": [[0, 0], [1600, 80], [2600, -30], [3400, 80], [4200, 0]],
+    "mouthOpen": [[0, 0], [1700, 0], [1800, 350], [2100, 0], [2300, 350], [2500, 0], [4200, 0]]
+  }
+}

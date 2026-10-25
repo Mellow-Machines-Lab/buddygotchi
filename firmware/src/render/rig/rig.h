@@ -132,9 +132,10 @@ struct Occasion {
   uint32_t when;  // render/tags.h's bits
   uint16_t afterS;
 };
-// How often a look plays an occasion while some fit: at each chance a face
-// gives it (a pass of the look's loop, while no occasion of its plays), one
-// of those that fit this many percent of the time, any one alike.
+// How often a look plays an occasion while some fit, on Pixel's face: at
+// each chance it gives it (a pass of the look's loop, while no occasion of
+// its plays), one of those that fit this many percent of the time, any one
+// alike. The gel deals them its own way, with its pastimes.
 constexpr int kOccasionPct = 67;
 // A look: the base clip it loops, nullptr for none, and its occasions.
 struct Look {

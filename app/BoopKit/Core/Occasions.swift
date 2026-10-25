@@ -14,8 +14,7 @@ public enum Occasions {
     /// Every tag, in the firmware's order: the calendar's, the board's own
     /// two for how busy the agents are, the tiers, the stages, then the
     /// latest turn's `reading`.
-    public static let all = calendarTags + ["busy", "frantic"] + workTiers.map(\.tag) + idleTiers.map(\.tag) + stageTags
-        + [reading]
+    public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [reading]
 
     /// On while the latest turn you prompted lasts, when its prompt's
     /// reading `reads`: the board's reading glasses.
@@ -29,20 +28,27 @@ public enum Occasions {
     public static let calendarTags = dayParts.map(\.tag) + ["friday", "weekend", "friday13"] + holidays.map(\.tag)
         + ["programmers", "lunar", "party"]
 
-    /// A long turn's tiers, by how long the longest turn working now has
-    /// run: a marathon from 8 minutes, then a camp from 15, the last. Before
-    /// 8 minutes the working looks need no tag.
-    public static let workTiers: [(tag: String, fromMs: Int64)] = [("marathon", 8 * 60_000), ("camp", 15 * 60_000)]
-    /// Idle's tiers, by how long since the latest session came to rest (a
-    /// turn ended, or you dismissed a request): fidgets from 30 seconds,
-    /// set pieces from 3 minutes, dozing from 10. Before 30 seconds Boop
-    /// settles with no tag.
-    public static let idleTiers: [(tag: String, fromMs: Int64)] = [("fidget", 30_000), ("setpiece", 180_000), ("doze", 600_000)]
+    /// The tiers, by how long the agents have worked (their working
+    /// stretch, `Core.stretch`) or sat idle (since the latest session came
+    /// to rest: a turn ended, or you dismissed a request): `tier1` from 30
+    /// seconds, `tier2` from a minute, `tier3` from 2, `tier4` from 5 and
+    /// `tier5` from 10, the last, where it stays. Working and idle share
+    /// them, as a design's look says which it's for. Before 30 seconds the
+    /// looks need no tag.
+    public static let tiers: [(tag: String, fromMs: Int64)] = [
+        ("tier1", 30_000), ("tier2", 60_000), ("tier3", 120_000), ("tier4", 300_000), ("tier5", 600_000),
+    ]
 
-    /// The tier on after `ms` in `tiers`: one at a time, the last reached.
-    public static func tier(_ tiers: [(tag: String, fromMs: Int64)], after ms: Int64) -> String? {
+    /// The tier reached after `ms`, the last. Only it is sent, to keep the
+    /// `state` line short: the board takes every tier below it as on too
+    /// (`render::reached`), so a design for `tier2` shows from then on.
+    public static func tier(after ms: Int64) -> String? {
         tiers.last { ms >= $0.fromMs }?.tag
     }
+
+    /// A rest shorter than the first tier doesn't end a working stretch:
+    /// a quick reply between turns keeps the working tiers climbing.
+    public static let stretchRestMs = tiers[0].fromMs
 
     /// The growth stages' tags from the second on, in `Growth.stages`'
     /// order. Every stage reached is on, so a design that needs `pal` shows

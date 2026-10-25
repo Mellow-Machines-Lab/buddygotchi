@@ -99,6 +99,10 @@ public final class Core {
     /// time zone's hours start on one, so the part of the day and the date
     /// can't change within it.
     var whenCache: (slot: Int64, hatched: String?, stage: String?, tags: [String])?
+    /// The agents' working stretch, which the working tiers count from:
+    /// when its first turn started, and once they all rest, when they came
+    /// to rest (`keepStretch`).
+    var stretch: (start: Int64, rested: Int64?)?
     /// When the rules last played the error reaction: at most one every
     /// `errorEveryMs`.
     var lastErrorAt: Int64?
@@ -649,9 +653,8 @@ public final class Core {
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil
         let helpers = working.reduce(0) { $0 + $1.helpers.count }
         // The turn that has run longest first, then those whose start
-        // isn't known (a helper working on after its turn): the working
-        // tier counts from the first's start, and the board shows the
-        // first list among them.
+        // isn't known (a helper working on after its turn): the board shows
+        // the first list among them.
         let longest = working.sorted { ($0.turn.startedAt ?? .max, $0.order) < ($1.turn.startedAt ?? .max, $1.order) }
         let todos = attn == nil ? longest.lazy.compactMap(\.todos).first : nil
         let todo = todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) }
@@ -663,8 +666,31 @@ public final class Core {
         let calls = config.workStream && base == "working" && attn == nil ? stream.calls(Set(working.map(\.key))) : []
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
                              idle: rests.count, helpers: helpers, vol: config.volume,
-                             when: when(at: now, workingSince: longest.first?.turn.startedAt,
+                             when: when(at: now, workingSince: stretchStart(working, at: now),
                                         idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
+    }
+
+    /// When the working stretch that `working`, the sessions working at
+    /// `now`, are in began: the earliest start among their turns, or the
+    /// stretch's own start when they took up again within
+    /// `Occasions.stretchRestMs` of resting. None while nothing works.
+    func stretchStart(_ working: [Session], at now: Int64) -> Int64? {
+        guard !working.isEmpty else { return nil }
+        let begun = working.compactMap(\.turn.startedAt).min() ?? now
+        guard let s = stretch else { return begun }
+        if let rested = s.rested, begun - rested >= Occasions.stretchRestMs { return begun }
+        return min(s.start, begun)
+    }
+
+    /// Keeps the working stretch: on while the agents work, and once they
+    /// all rest, when they came to rest, until their next stretch.
+    func keepStretch(at now: Int64) {
+        let (_, dismissed, working, idle) = groups(at: now)
+        if let start = stretchStart(working, at: now) {
+            stretch = (start, nil)
+        } else if let s = stretch, s.rested == nil {
+            stretch = (s.start, resting(idle: idle, dismissed: dismissed).max() ?? now)
+        }
     }
 
     /// When each session that rests came to rest, as the board counts
@@ -675,18 +701,14 @@ public final class Core {
         idle.map { $0.turn.lastEndedAt ?? $0.lastEventAt } + dismissed.compactMap { notes[$0.key]?.dismissed?.at }
     }
 
-    /// The tags on at `now`: the calendar's, then the working tier, from
-    /// the start of the longest turn working (`workingSince`), else idle's,
-    /// from when the latest session came to rest (`idleSince`), then the
-    /// growth stage's, then `reading` while its turn lasts
-    /// (`readingTurn`), in `Occasions.all`'s order.
+    /// The tags on at `now`: the calendar's, then the tier reached, from the start
+    /// of the working stretch (`workingSince`), else from when the latest
+    /// session came to rest (`idleSince`), then the growth stage's, then
+    /// `reading` while its turn lasts (`readingTurn`), in `Occasions.all`'s
+    /// order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
-        if let workingSince {
-            on += Occasions.tier(Occasions.workTiers, after: now - workingSince).map { [$0] } ?? []
-        } else if let idleSince {
-            on += Occasions.tier(Occasions.idleTiers, after: now - idleSince).map { [$0] } ?? []
-        }
+        if let since = workingSince ?? idleSince, let tier = Occasions.tier(after: now - since) { on.append(tier) }
         on += Occasions.stages(stage())
         if let r = readingTurn, let s = sessions[r.key], s.turn.startedAt != nil, s.turn.number == r.number {
             on.append(Occasions.reading)
@@ -1000,6 +1022,7 @@ public final class Core {
         tidyNotes()
         updateActs(now)
         stream.keep(Set(groups(at: now).working.map(\.key)))
+        keepStretch(at: now)
         let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
         defer { lastSessions = sessions }

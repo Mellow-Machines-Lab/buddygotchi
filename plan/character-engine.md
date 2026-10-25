@@ -1,4 +1,4 @@
-# The character engine: the plan (2026-10-23, updated 2026-10-24)
+# The character engine: the plan (2026-10-23, updated 2026-10-25)
 
 One small engine that both characters, the low-res Pixel face and the
 high-res gel slime, are drawn by, so any expression or animation flows into
@@ -28,7 +28,7 @@ lines, then the sleeping face, alone by about 1.3 s, and waking over
 180 ms; it plays the rig's clips through a mixer of its own, laid over
 its pose, and what it wears, the air and its Zs come and go through the
 rig's layer stack (checkpoint 5). A look's occasions are the rig's,
-clips both faces play: working's stretch on a long turn's marathon; and
+clips both faces play: working's stretch from `tier4`; and
 a reaction plays its own, Boop's notice (The slime's notice on the rig,
 below). The
 Mac shows the gel as the board's firmware in WebAssembly, and both faces
@@ -464,15 +464,17 @@ insides on the mixer. Where it differs from the sketch above, and why:
   itself (idle's start only, since idle has no loop of its own yet: the
   tier work picks its chances); Pixel's the end of a loop, while the rig
   face draws the look's design.
-- **The proof: working's stretch on a marathon**
+- **The proof: working's stretch on a marathon** (from `tier4` since
+  2026-10-25)
   (`rig/clips/stretch.json`, in both packs). It's the gel's `work-stretch`
   gag in channels, which leaves the slime's design. Its desk recipe, a
   pause with one key at 2.6 s, went with it: the stretch now plays over
   whichever desk take plays, its keys included; the ripple at its end has
   no channel. `test_gel` plays it on both faces (the gel taller, its lids
   down; Pixel's rig face lifted, its eyes shut) and fades it out at a
-  poke; two new goldens show it, `occasions/marathon` on each face. On a
-  marathon Pixel still turns in its drawn stretch (its yawn) now and
+  poke; two new goldens showed it, `occasions/marathon` on each face
+  (now Pixel's `occasions/stretch`, and the gel's `occasions/tier4` with
+  its kit, the stretch dealt among its pastimes). On a marathon Pixel still turns in its drawn stretch (its yawn) now and
   then, an occasion of its own; checkpoint 6 can retire it.
 - **The gel's layers go through the rig's layer stack**
   (`render/rig/layers.h`: 11ca4f0's `Layers` grown back on the timestamped

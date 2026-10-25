@@ -95,46 +95,66 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(Occasions.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
     }
 
-    /// Pins `Occasions.workTiers` and `idleTiers`: a turn is a marathon
-    /// from 8 minutes and a camp from 15, the last; idle fidgets from 30
-    /// seconds, has set pieces from 3 minutes and dozes from 10. One tier
-    /// at a time.
-    func testTheTiersOfALongTurnAndOfIdle() {
-        let tier = { (tiers: [(tag: String, fromMs: Int64)], s: Int64) in Occasions.tier(tiers, after: s * 1000) }
-        for (s, tag) in [(0, nil), (479, nil), (480, "marathon"), (899, "marathon"), (900, "camp"), (7200, "camp")] as [(Int64, String?)] {
-            XCTAssertEqual(tier(Occasions.workTiers, s), tag, "working \(s) s")
+    /// Pins `Occasions.tiers`: `tier1` from 30 seconds, `tier2` from a
+    /// minute, `tier3` from 2, `tier4` from 5 and `tier5` from 10, the last.
+    /// The last reached is sent; the board takes the ones below it as on.
+    func testTheTiers() {
+        XCTAssertEqual(Occasions.tiers.map(\.fromMs), [30_000, 60_000, 120_000, 300_000, 600_000])
+        for (s, tag) in [(0, nil), (29, nil), (30, "tier1"), (59, "tier1"), (60, "tier2"), (119, "tier2"), (120, "tier3"),
+                         (299, "tier3"), (300, "tier4"), (599, "tier4"), (600, "tier5"), (7200, "tier5")] as [(Int64, String?)] {
+            XCTAssertEqual(Occasions.tier(after: s * 1000), tag, "\(s) s")
         }
-        for (s, tag) in [(0, nil), (29, nil), (30, "fidget"), (179, "fidget"), (180, "setpiece"), (599, "setpiece"),
-                         (600, "doze"), (7200, "doze")] as [(Int64, String?)] {
-            XCTAssertEqual(tier(Occasions.idleTiers, s), tag, "idle \(s) s")
-        }
+        XCTAssertEqual(Occasions.stretchRestMs, 30_000, "a rest shorter than the first tier keeps a working stretch")
     }
 
-    /// The board hears the tiers in `state.when`: the longest turn working
-    /// now sets the working tier, and the last turn to finish sets idle's.
+    /// The board hears the tier in `state.when`: the working stretch's,
+    /// from the first turn of it, while the agents work, and once they all
+    /// rest, the time since the last turn ended.
     func testTheStateCarriesTheTiers() {
         let rig = CoreRig()
-        let tiers = { Set(rig.state.when).intersection(["marathon", "camp", "fidget", "setpiece", "doze"]) }
+        let tiers = { rig.state.when.filter { $0.hasPrefix("tier") } }
         rig.send(.turnStart, session: "a")
         XCTAssertEqual(tiers(), [])
         rig.wait(4 * 60_000)
         rig.send(.turnStart, session: "b")
+        XCTAssertEqual(tiers(), ["tier3"], "the stretch began with a's turn, 4 minutes ago")
         rig.wait(4 * 60_000)
-        XCTAssertEqual(tiers(), ["marathon"], "a's turn has run 8 minutes, b's 4")
-        rig.wait(7 * 60_000)
-        XCTAssertEqual(tiers(), ["camp"])
+        XCTAssertEqual(tiers(), ["tier4"])
         rig.send(.turnEnd, session: "a")
-        XCTAssertEqual(tiers(), ["marathon"], "b's turn has run 11 minutes")
+        XCTAssertEqual(tiers(), ["tier4"], "b works on in the same stretch")
+        rig.wait(3 * 60_000)
+        XCTAssertEqual(tiers(), ["tier5"], "11 minutes in")
         rig.send(.turnEnd, session: "b")
         XCTAssertEqual(tiers(), [], "just finished: it settles")
         rig.wait(30_000)
-        XCTAssertEqual(tiers(), ["fidget"])
-        rig.wait(150_000)
-        XCTAssertEqual(tiers(), ["setpiece"])
-        rig.wait(420_000)
-        XCTAssertEqual(tiers(), ["doze"])
+        XCTAssertEqual(tiers(), ["tier1"])
+        rig.wait(90_000)
+        XCTAssertEqual(tiers(), ["tier3"])
+        rig.wait(480_000)
+        XCTAssertEqual(tiers(), ["tier5"])
         rig.send(.turnStart, session: "a")
-        XCTAssertEqual(tiers(), [], "back to work")
+        XCTAssertEqual(tiers(), [], "back to work, a new stretch")
+    }
+
+    /// Pins `Occasions.stretchRestMs`: a reply within 30 seconds of the
+    /// agents coming to rest carries their working stretch on, so its tiers
+    /// keep climbing; a longer rest starts a new one.
+    func testAQuickReplyKeepsTheWorkingStretch() {
+        let rig = CoreRig()
+        let tiers = { rig.state.when.filter { $0.hasPrefix("tier") } }
+        rig.send(.turnStart, session: "a")
+        rig.wait(3 * 60_000)
+        rig.send(.turnEnd, session: "a")
+        rig.wait(29_000)
+        rig.send(.turnStart, session: "a")
+        XCTAssertEqual(tiers(), ["tier3"], "the stretch began 3.5 minutes ago")
+        rig.wait(2 * 60_000)
+        XCTAssertEqual(tiers(), ["tier4"])
+        rig.send(.turnEnd, session: "a")
+        rig.wait(30_000)
+        XCTAssertEqual(tiers(), ["tier1"], "idle's")
+        rig.send(.turnStart, session: "a")
+        XCTAssertEqual(tiers(), [], "a new stretch")
     }
 
     /// Pins `Occasions.reads`: a prompt's reading puts `reading` on when

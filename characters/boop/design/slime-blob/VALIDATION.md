@@ -87,8 +87,14 @@ ramps and springs can, and no jolt at an event. By file:
   playing the rig's clip (`test_a_notice_plays_its_rig_clip`: perking up
   tall, off the ground and landing flat, its eyes and mouth, a sound at
   each cue, no gag), the
-  occasions, a clip of the rig's on both faces (the marathon's stretch,
+  occasions, a clip of the rig's on both faces (the stretch from `tier4`,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
+  the pastimes (`test_pastimes.cpp`: each one's clip in the rig and its
+  turn, each drawing above the lane and over at its clip's end, half an
+  hour at `tier2` dealing only working ones of `tier1` and `tier2`, after
+  a rest of 4 to 10 s, never the same twice running, the newest tier's
+  about 60% of the time, and none with no tier; the kit by the tiers, the
+  hat winning the head, none while something needs you),
   the lane at the panel's size (fading whatever the draw cadence, blended
   once, cut and marked as the canvas does), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
@@ -112,8 +118,10 @@ ramps and springs can, and no jolt at an event. By file:
   gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
   on the nose, a shake and peekaboo, each by the board's own input, its
   variation expected), the occasions (`occasions.jsonl`: a party's bounce,
-  a night's drowse, frantic typing, in a nightcap and a party hat, and a
-  marathon's stretch, the rig's clip that Pixel's face plays too), the
+  a night's drowse, frantic typing, in a nightcap and a party hat, and
+  `tier4`'s kit), the pastimes (`pastimes.jsonl`: the working kit at
+  `tier5` and a pastime over it, the idle plant and a pastime beside it,
+  and needs you's wave), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, the morning's coffee at its side, at a sip and on the desk, a
   sign under the nightcap), a reaction's sign (`sign.jsonl`), the

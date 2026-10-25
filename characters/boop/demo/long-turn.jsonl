@@ -1,21 +1,24 @@
 // A minute and a half: the long haul. The agent ticks off a to-do list of
-// four, its count under the face, while the demo's clock jumps on: 8
-// minutes in, a marathon; 15, a camp. Then the turn ends, and the quiet
-// after it goes through its tiers: fidgets, a set piece, a doze.
+// four, its count under the face, while the demo's clock jumps on through
+// the tiers: 2 minutes in, headphones; 5, a sweatband and a stretch; 10,
+// the camp, and the pastimes of each. Then the turn ends, and the quiet
+// after it goes through its own: looking round, a bubble, a book, a
+// tower of blocks, then sleep.
 {"demo": 1, "title": "The long haul"}
 {"agent": "prompt", "text": "Migrate the payments service to the new queue"}
 {"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
 {"agent": "todo", "todos": "1/4", "after": 1}
 {"agent": "read", "file": "src/payments/queue.js", "say": "I'll start with the old queue."}
-{"you": "wait", "minutes": 4, "after": 2}
+{"you": "wait", "minutes": 2, "after": 2, "note": "Two minutes in: headphones on"}
 {"agent": "todo", "todos": "2/4", "after": 1}
 {"agent": "run", "cmd": "npm test", "about": "Run the payments tests", "takes": 3}
-{"you": "wait", "minutes": 4, "after": 1, "note": "Eight minutes in: a marathon"}
+{"you": "wait", "minutes": 3, "after": 1, "note": "Five minutes in: a sweatband"}
 {"agent": "todo", "todos": "3/4", "after": 6}
-{"you": "wait", "minutes": 7, "after": 2, "note": "Fifteen minutes in: a camp"}
+{"you": "wait", "minutes": 5, "after": 2, "note": "Ten minutes in: the camp"}
 {"agent": "todo", "todos": "4/4", "after": 6}
 {"agent": "reply", "text": "The payments service runs on the new queue, and its tests pass.", "after": 2}
 {"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud"}
-{"you": "wait", "minutes": 0.5, "after": 5, "note": "Half a minute idle: fidgets"}
-{"you": "wait", "minutes": 3, "after": 6, "note": "Three minutes idle: a set piece"}
-{"you": "wait", "minutes": 7, "after": 6, "note": "Ten minutes idle: it nods off"}
+{"you": "wait", "minutes": 0.5, "after": 5, "note": "Half a minute idle: it looks round"}
+{"you": "wait", "minutes": 1.5, "after": 6, "note": "Two minutes idle: a book, a plant"}
+{"you": "wait", "minutes": 3, "after": 6, "note": "Five minutes idle: a tower, a dance"}
+{"you": "wait", "minutes": 5, "after": 6, "note": "Ten minutes idle: it nods off"}

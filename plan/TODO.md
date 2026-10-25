@@ -1,6 +1,6 @@
 # TODO
 
-Updated 2026-10-24. What's next, one at a time, top first. Tick an item
+Updated 2026-10-25. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
@@ -183,7 +183,7 @@ with it.
       (`boopctl ping`'s `draw_us`), and a look at the working day on it.
 - [x] **5. The slime on the rig**: the gel plays the rig's clips over
       its engine's pose, a look's occasions are the rig's (working's
-      stretch on a marathon, on both faces), and its outfit, air and Zs
+      stretch from `tier4`, on both faces), and its outfit, air and Zs
       come and go through the rig's layer stack, the sign fading out on
       both faces; its expressions stay its own (character-engine.md,
       Checkpoint 5 as built). Checked by test_gel, test_rig,
@@ -192,10 +192,32 @@ with it.
       plays its clip too: Boop's notice, from the approved reference
       (character-engine.md, The slime's notice on the rig).
 - [ ] **The gel on the rig on the board**: its frame cost on the AMOLED
-      with a hat, asleep at night and on a marathon (`boopctl perf
-      --scenes`), and a look at the stretch, the layers' fades and the
-      notice.
+      with a hat, asleep at night and at `tier5`, its pastimes and kit
+      out (`boopctl perf --scenes`), and a look at the stretch, the
+      layers' fades, the notice and the pastimes.
 - [ ] **6. Retire what the engine replaces.**
+
+## Now: something new at every glance
+
+The tiers' art, from [glance-and-wait.md](glance-and-wait.md) §3, redone
+with the owner on 2026-10-25: five tiers, closer together, and something
+to see at each.
+
+- [x] **The tiers and the pastimes**: `tier1` to `tier5` at 30 s, 1, 2, 5
+      and 10 minutes, at work from the agents' working stretch (a quick
+      reply carries it on) and idle from their rest, the last reached on
+      the wire and the ones below it taken as on by the board; on the gel,
+      39 pastimes (a rig clip each and its drawing) for work, idle, needs
+      you and asleep, dealt after a rest of 4 to 10 s, and the kit (a mug,
+      headphones, a sweatband, the camp, the plant). Checked by
+      OccasionsTests, CoreTests, test_gel's test_pastimes.cpp, test_rig,
+      test_behaviour, eval 116, the gel's goldens (pastimes.jsonl) and
+      Pixel's, unchanged but for the stretch's name, the mirror, and both
+      boards building; each pastime looked at frame by frame in the
+      simulator, not yet on the board.
+- [ ] **The pastimes on the board**: a look on the AMOLED, and their
+      frame cost there with the kit and a pastime out (`boopctl perf
+      --scenes`); tune their timing and art.
 
 ## Waiting on the owner
 

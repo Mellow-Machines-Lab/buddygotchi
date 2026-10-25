@@ -1,0 +1,31 @@
+// The gel's pastimes and their kit (render/gel/pastimes.h), each on a
+// frozen clock after a reset, ten minutes into the tiers (tier5). At work:
+// the mug, the headphones, the sweatband and the camp, then a pizza over
+// them, dealt after its rests; idle: the plant in flower, then a tower of
+// blocks; while something needs you, the wave from 30 seconds. A state
+// every 20 s keeps the link alive.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","tier5"]}
+{"clock":3000}
+{"shot":"work-kit"}
+{"clock":20000}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","tier5"]}
+{"clock":32000}
+{"shot":"work-pizza"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","tier5"]}
+{"clock":3000}
+{"shot":"idle-plant"}
+{"clock":20000}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","tier5"]}
+{"clock":24000}
+{"shot":"idle-tower"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":20000}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day"],"attn":{"agent":"claude","project":"api","id":3}}
+{"clock":31500}
+{"shot":"needs-you-wave"}
