@@ -37,6 +37,16 @@
   const steps = [];  // the halved drawings, as many as a shrink needs
   let core, usb, image = null, state = null, powered = false, shown = false, still = false, zoomed = false, loop = 0;
 
+  // The board's clock (its realMs reads performance.now). On a pass a
+  // display refresh asked for, it reads that refresh's time, not the
+  // moment the pass happens to run: the board draws once 16 ms have gone
+  // since its last frame, and at 60 Hz a pass run a little earlier after
+  // one run a little late would read 15.9 and show the last frame again.
+  // It never reads earlier than it has before.
+  const realNow = performance.now.bind(performance);
+  let refresh = null, read = 0;
+  performance.now = () => (read = Math.max(read, refresh ?? realNow()));
+
   const ready = BoopMirrorBoard().then(made => {
     core = made;
     usb = core.cwrap('mirror_send', 'number', ['string']);
@@ -118,10 +128,13 @@
 
   // Each display refresh while shown, a pass of the board's loop, which
   // draws when it has a new frame.
-  function frame() {
+  function frame(at) {
     loop = 0;
     if (!shown || still) return;
-    if (powered) tick();
+    if (powered) {
+      refresh = at;
+      try { tick(); } finally { refresh = null; }
+    }
     loop = requestAnimationFrame(frame);
   }
 

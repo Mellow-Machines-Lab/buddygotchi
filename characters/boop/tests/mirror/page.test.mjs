@@ -41,14 +41,17 @@ async function page() {
   await mirror.send(WORKING);  // once the board is ready
   return {
     mirror, drawn, timers, screen,
-    // `seconds` of time, with the display refreshing `hz` times a second.
-    run(seconds, hz = 60) {
+    // `seconds` of time, with the display refreshing `hz` times a second,
+    // each refresh's passes run `late(i)` ms after it.
+    run(seconds, hz = 60, late = () => 0) {
       for (let i = 0; i < seconds * hz; i++) {
         clock += 1000 / hz;
         for (const t of timers) while (t.at <= clock) t.fn(), t.at += t.ms;
-        const due = frames;
+        const due = frames, at = clock;
         frames = [];
-        for (const fn of due) fn(clock);
+        clock = at + late(i);
+        for (const fn of due) fn(at);
+        clock = at;
       }
     },
     // What the board says it shows (dbg.state).
@@ -76,6 +79,17 @@ test('draws only while shown, every frame the board draws, on any display', asyn
   const closed = p.drawn.count;
   p.run(2);
   assert.equal(p.drawn.count, closed, 'hiding stops the drawing');
+});
+
+// A pass runs a little after its refresh, by more or less each time. The
+// board, timing its frames by the refresh, still draws one a refresh.
+test('draws every refresh at 60 Hz however late each pass runs', async () => {
+  const p = await page();
+  p.mirror.shown(true);
+  const from = p.drawn.count;
+  p.run(1, 60, i => (i % 2 ? 0.2 : 2.5));
+  const drawn = p.drawn.count - from;
+  assert.ok(drawn >= 58 && drawn <= 61, `passes late by 0.2 and 2.5 ms in turn drew ${drawn} frames in a second, not 60`);
 });
 
 test("draws the board's whole screen from where the board keeps it", async () => {

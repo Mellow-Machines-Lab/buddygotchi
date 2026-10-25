@@ -31,6 +31,10 @@ pacing and touch, the Mac app, the architecture) found what's below.
       71 ms, not 130 ms and a black tile for 280 ms; the page fades in on
       its first frame; panes that fit don't scroll (with scroll bars
       always shown they were cut off); the volume is a slider of our own.
+- [x] The mirror's board read the moment its pass ran, so at 60 Hz a
+      pass run a little earlier than the last read under 16 ms and showed
+      the same frame again (30 fps with passes 0.2 and 2.5 ms late in
+      turn): it reads the refresh's time on those passes now.
 - [ ] The mirror draws 36 fps on a 144 Hz display: WebKit runs its
       `requestAnimationFrame` at 72 Hz there, and the board draws only
       when 16 ms have passed (`kFrameMs`, `device.cpp`), so every other
