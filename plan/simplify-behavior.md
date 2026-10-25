@@ -89,19 +89,12 @@ Each of these takes away a duplicate without changing what plays.
    - BOOT "plays its hand-off" while needs you shows, but nothing plays;
    - SPEC §4 doesn't list Boop's skip reasons.
 
-7. **Fix what's broken on the way:**
-   - only the first buddy's core gets its wall clock each tick;
-   - a two-word buddy name ("Pixel Left") is never heard as named;
-   - one session's short prompt clears another's `reading` tag;
-   - `TranscriptView`'s comment says nights and weekends stay hourly, but
-     no code does that.
-
 ## Second pass: the brain, gated by the evals
 
 These change what Jev is asked. Run `make eval` before and after each
 one. Keep a change only if the scenarios hold.
 
-8. **A mood's fade is data, and code does it.** Today a mood says where
+7. **A mood's fade is data, and code does it.** Today a mood says where
    it leaves for in two places: `character.json`'s `moves`, and the
    prose's "Leaves for…". Its fade is only prose. Instead:
    - Give each mood `fades: {to, after_min}` in `character.json`.
@@ -114,18 +107,18 @@ one. Keep a change only if the scenarios hold.
    read the data instead. *Removes:* the prose that duplicates the graph,
    and fades that happen only when Jev notices. You'd see fades come on
    time.
-9. **One "how big" in place of `react.loops` and `say.kind`.** Both
+8. **One "how big" in place of `react.loops` and `say.kind`.** Both
    answer the same question: how much the moment matters. Ask it once:
    small, stands out, big, biggest. Derive the loops (1–4) and the size
    of what it says (sound, word, phrase; a swear only for biggest and
    bad) from the answer. The pass keeps `say.feeling` and `say.about`.
    *Removes:* a question from every pass, and combinations like held
    four times but only a grunt.
-10. **Drop the hourly idle heartbeat.** The idle check-in, at the
+9. **Drop the hourly idle heartbeat.** The idle check-in, at the
     personality's pace within 2 h of activity, already covers a quiet
     stretch. After that, the board's idle tiers keep it alive without a
     request. *Removes:* the third heartbeat.
-11. **Say "don't repeat what's playing" once, in code.** The guide, the
+10. **Say "don't repeat what's playing" once, in code.** The guide, the
     `none` option's text and the personality all say it. The poke run is
     the only place code holds it. Make it general: while a reaction about
     an event is in progress, a newer event of the same kind doesn't wake

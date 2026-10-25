@@ -32,11 +32,25 @@ public struct CountedText: Sendable {
     public let text: String
     let lower: String
     let words: Set<String>
+    /// Its words in order, for a name of more than one.
+    let sequence: [String]
 
     init(_ text: String) {
         self.text = text
         lower = text.lowercased()
-        words = Set(lower.split { !$0.isLetter && !$0.isNumber }.map(String.init))
+        sequence = CountedText.words(lower)
+        words = Set(sequence)
+    }
+
+    static func words(_ text: String) -> [String] { text.split { !$0.isLetter && !$0.isNumber }.map(String.init) }
+
+    /// Whether it says `name` as words, in any case: each of a name's
+    /// words, one after another ("Pixel Left").
+    func says(_ name: String) -> Bool {
+        let parts = CountedText.words(name.lowercased())
+        guard parts.count > 1 else { return parts.first.map(words.contains) ?? false }
+        guard sequence.count >= parts.count else { return false }
+        return (0...sequence.count - parts.count).contains { Array(sequence[$0..<$0 + parts.count]) == parts }
     }
 
     /// The first of `cues` it says, with the cue: one with a space or a
@@ -179,7 +193,7 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
         }
         let cue = shouting == nil ? counted.first(of: Of.toneCues) : nil
         let said = cue.flatMap { text.range(of: $0.1, options: .caseInsensitive) }.flatMap { Signs.drawn(String(text[$0])) }
-        self.init(length: Length(text), named: names.filter { counted.words.contains($0.lowercased()) },
+        self.init(length: Length(text), named: names.filter(counted.says),
                   kind: Of.kind(counting: counted), tone: shouting ?? cue?.0, phrases: said.map { [$0] } ?? [])
     }
 
