@@ -8,7 +8,11 @@ namespace render::gel {
 struct PaintControls {
   int lean = 0, squash = 0, dent = 0, blink = 0, gaze = 0;
   int ripple = 0, lift = 0, roll = 0, forward = 0, grabX = 0, grabY = 0, dy = 0;
-  int slide = 0;  // a gag's slide: the whole dome, sideways
+  int slide = 0;  // a gag's slide, and the rig's x: the whole dome, sideways
+  // The rig's reach and melt (applyRig), Q12: one side stretched out, its
+  // right for more than 0, and the other pinched in; and how far it has
+  // melted down into a puddle, flatter and wider on the desk.
+  int reach = 0, melt = 0;
   // A rig clip's eyes (applyRig): their size about their middles, Q12, and
   // how far up they look, in face units (how far across is in gaze).
   int eyeSize = 4096, gazeUp = 0;
@@ -56,11 +60,12 @@ constexpr int kPxPerUnit = 85;
 constexpr int kRigGaze = 205, kRigMouthOpen = 300;
 // The rig's channels (render/rig/), what its clips play on the gel, as
 // offsets from rest on the controls the engine gives: the body's squash
-// (the rig's tall is the gel's up), lean and lift (canvas px, kPxPerUnit a
-// body unit, never into the floor: the whole dome rises), the lids, shut
-// as far as the more shut eye, and the eyes' size and where they look.
-// The gel draws no other channel yet but the mouth (paint). At rest, none
-// moves.
+// (the rig's tall is the gel's up), lean, lift (canvas px, kPxPerUnit a
+// body unit, never into the floor: the whole dome rises), x (canvas px,
+// the whole dome sideways, off the screen if far enough), reach and melt,
+// the lids, shut as far as the more shut eye, and the eyes' size and
+// where they look. The gel draws no other channel yet but the mouth
+// (paint). At rest, none moves.
 void applyRig(PaintControls& c, const rig::Channels& rig);
 class Engine;
 // The body, the face art, what it wears and the air around it

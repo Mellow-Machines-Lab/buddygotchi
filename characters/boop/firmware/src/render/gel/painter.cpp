@@ -557,6 +557,9 @@ void applyRig(PaintControls& c, const rig::Channels& rig) {
   c.lean = std::clamp(c.lean + off(Channel::kLean) * 4096 / 1000, -5120, 5120);
   c.squash = std::clamp(c.squash - off(Channel::kSquash) * 4096 / 1000, -5407, 5407);
   c.lift = std::clamp(c.lift + off(Channel::kLift) * 4096 / kPxPerUnit, 0, 983);
+  c.slide += off(Channel::kX) * 4096 / kPxPerUnit;
+  c.reach = std::clamp(c.reach + off(Channel::kReach) * 4096 / 1000, -4096, 4096);
+  c.melt = std::clamp(c.melt + off(Channel::kMelt) * 4096 / 1000, 0, 4096);
   const int open = std::min(rig[Channel::kEyeOpenL], rig[Channel::kEyeOpenR]);
   c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
   c.eyeSize = rig[Channel::kEyeSize] * 4096 / 1000;

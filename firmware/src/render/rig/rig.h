@@ -19,6 +19,9 @@ enum class Channel : uint8_t {
   kSquash,
   kLean,
   kLift,
+  kX,
+  kReach,
+  kMelt,
   kEyeOpenL,
   kEyeOpenR,
   kEyeSize,
@@ -30,21 +33,26 @@ enum class Channel : uint8_t {
 constexpr int kChannelCount = int(Channel::kCount);
 
 // Each channel's name in a pack's rig/ files, its range and its value at
-// rest, where a face draws its art as drawn. In thousandths, but for lift:
-// px of the 320 × 240 canvas, up. squash runs from tall (-1000) to flat;
-// lean, the body's, from left to right; eyeOpen from shut (0); gaze from
-// left or up (-1000) to right or down; eyeSize around the art's own
-// (1000). charactergen.py reads this table to check a pack's files.
+// rest, where a face draws its art as drawn. In thousandths, but for lift
+// and x: px of the 320 × 240 canvas, lift up and x to the right, far
+// enough to leave the screen. squash runs from tall (-1000) to flat;
+// lean, the body's, from left to right; reach stretches the body's right
+// side out (1000) or its left (-1000), pinching the other in; melt lets
+// it down into a puddle (1000); eyeOpen from shut (0); gaze from left or
+// up (-1000) to right or down; eyeSize around the art's own (1000). A
+// face may draw only some: Pixel's draws neither x, reach nor melt.
+// charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;
   int16_t lo, hi, rest;
 };
 constexpr ChannelInfo kChannelInfo[kChannelCount] = {
     {"squash", -1000, 1000, 0},  {"lean", -1000, 1000, 0},    {"lift", -240, 240, 0},
+    {"x", -400, 400, 0},         {"reach", -1000, 1000, 0},   {"melt", 0, 1000, 0},
     {"eyeOpenL", 0, 1000, 1000}, {"eyeOpenR", 0, 1000, 1000}, {"eyeSize", 500, 1500, 1000},
     {"gazeX", -1000, 1000, 0},   {"gazeY", -1000, 1000, 0},   {"mouthOpen", 0, 1000, 0}};
 // The body's channels, whose springs are slower than the face's.
-constexpr bool body(Channel c) { return c <= Channel::kLift; }
+constexpr bool body(Channel c) { return c <= Channel::kMelt; }
 
 // A value for every channel.
 struct Channels {
