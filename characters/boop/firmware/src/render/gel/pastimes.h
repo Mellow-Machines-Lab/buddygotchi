@@ -14,8 +14,11 @@
 // occasions (the rig's looks.json, which both faces play), one at a time,
 // a rest of kRestMinMs to kRestMaxMs between them, the newest tier's
 // kNewestPct of the time and an older one's the rest, never the same twice
-// in a row. While a pastime moves the desk's paws (Enter pressed, the
-// hands up at its head), they're where it puts them (pawsFor).
+// in a row. A few are moves, the whole body going somewhere (reaching
+// for its coffee, melting, a stretch break off the screen), rarer than the
+// rest: never within kMoveGapMs of the last. While a pastime moves the
+// desk's paws (Enter pressed, the hands up at its head, spread as it
+// melts, away with it), they're where it puts them (pawsFor).
 //
 // The kit stays out while its tier lasts, fading in and out on the rig's
 // fade: at work a mug on the desk (tier1; in the morning its coffee is in
@@ -52,8 +55,11 @@ enum class Pastime : uint8_t {
   kDrum,
   kSticky,
   kPhonesOn,
+  kReach,
   kRefill,
   kSnack,
+  kMelt,
+  kStretch,
   // Idle.
   kLookAround,
   kHopeful,
@@ -84,13 +90,15 @@ enum class Pastime : uint8_t {
 };
 
 // A pastime: the rig clip its body plays, the look it's for, the tier it
-// needs (1 to 5, 0 for none) and the wait, in seconds of its look.
+// needs (1 to 5, 0 for none), the wait, in seconds of its look, and
+// whether it's a move.
 struct PastimeInfo {
   Pastime id;
   const char* clip;
   SceneState look;
   uint8_t tier;
   uint16_t afterS;
+  bool move = false;
 };
 constexpr int kPastimeCount = int(Pastime::kCount) - 1;
 extern const PastimeInfo kPastimes[kPastimeCount];
@@ -113,6 +121,8 @@ Pastime pastimeFor(const char* reply);
 // newest tier's are dealt while an older one's fit too, in percent.
 constexpr uint32_t kRestMinMs = 4000, kRestMaxMs = 10000;
 constexpr int kNewestPct = 60;
+// A move starts at least this long after the last one did.
+constexpr uint32_t kMoveGapMs = 90000;
 // From tier5, a mug more on the desk's stack every this long, up to kMostMugs.
 constexpr uint32_t kMugEveryMs = 10 * 60 * 1000;
 constexpr int kMostMugs = 4;
@@ -120,9 +130,12 @@ constexpr int kMostMugs = 4;
 constexpr int kMotes = 5;
 constexpr uint32_t kMoteMs = 4500;
 // Putting the headphones on: they come down from kPhonesDropPx above its
-// ears, held by a hand at each, and are on kPhonesOnMs in.
+// ears, held by a hand at each, and are on kPhonesOnMs in. While it melts
+// they're off its head (it has none to hold them): gone over kMeltOffMs
+// from kMeltOffAt, back over kMeltOnMs by kMeltOnBy.
 constexpr int kPhonesDropPx = 120;
 constexpr uint32_t kPhonesOnMs = 1300;
+constexpr int kMeltOffAt = 600, kMeltOffMs = 600, kMeltOnBy = 5400, kMeltOnMs = 500;
 
 // While the headphones are on, a note floats up from each cup in turn: a
 // pair every kTuneEveryMs, the right's kTuneGapMs after the left's, each

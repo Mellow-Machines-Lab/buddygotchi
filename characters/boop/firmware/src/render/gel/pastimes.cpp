@@ -28,8 +28,11 @@ const PastimeInfo kPastimes[kPastimeCount] = {
     {Pastime::kDrum, "drum", SceneState::kWorking, 3, 0},
     {Pastime::kSticky, "sticky", SceneState::kWorking, 3, 0},
     {Pastime::kPhonesOn, "phones-on", SceneState::kWorking, 3, 0},
+    {Pastime::kReach, "coffee-reach", SceneState::kWorking, 3, 0, true},
     {Pastime::kRefill, "refill", SceneState::kWorking, 4, 0},
     {Pastime::kSnack, "snack", SceneState::kWorking, 4, 0},
+    {Pastime::kMelt, "melt", SceneState::kWorking, 4, 0, true},
+    {Pastime::kStretch, "stretch-break", SceneState::kWorking, 5, 0, true},
     {Pastime::kLookAround, "look-around", SceneState::kIdle, 1, 0},
     {Pastime::kHopeful, "hopeful", SceneState::kIdle, 1, 0},
     {Pastime::kHop, "hop", SceneState::kIdle, 1, 0},
@@ -295,10 +298,11 @@ void motes(const Stage& s, uint32_t t) {
   r.alpha = a;
 }
 
-// The mugs on the desk's right end: one, or a stack.
+// The mugs on the desk's right end: one, or a stack; the top one's base.
 void mugs(Raster& r, const Stage& s, int n, uint32_t t) {
   for (int i = 0; i < n; ++i) mug(r, s.X(400), s.deskY() - i * 18, 1024, t, i == n - 1);
 }
+int topMug(const Stage& s, int n) { return s.deskY() - (n - 1) * 18; }
 
 // An oval, filled, `rx` and `ry` its radii, all in sixteenths of a px.
 constexpr Point kUnitCircle[24] = {{1000, 0},  {966, 259},   {866, 500},   {707, 707},   {500, 866},   {259, 966},
@@ -475,7 +479,7 @@ void sip(const Stage& s, const PastimeShow& p) {
   Raster& r = s.r;
   const int age = int(p.age);
   const int up = eased(age, 0, 600) - eased(age, 2200, 2800);
-  const int x = mix(s.X(400), s.mouthX() + s.X(50), up), base = mix(s.deskY(), s.mouthY() + s.Y(10), up);
+  const int x = mix(s.X(400), s.mouthX() + s.X(50), up), base = mix(topMug(s, p.mugs), s.mouthY() + s.Y(10), up);
   mug(r, x, base, 1024 - span(age, 700, 2000) / 4, p.t, up < 200);
   if (up > 100) hand(r, x - 11, base - 8);
   if (const int a = window(age, 2200, 2900); a) {
@@ -648,11 +652,70 @@ void refill(const Stage& s, const PastimeShow& p) {
   Point spout;
   coffeePot(r, x, y, tilt % 1000, spout);
   if (age > 950 && age < 2500) {
-    const int top = s.deskY() - 18;
+    const int top = topMug(s, p.mugs) - 18;
     const Point pour[] = {
         {spout.x * 16, spout.y * 16}, {(spout.x - 4) * 16, (spout.y + 8) * 16}, {s.X(398) * 16, top * 16}};
     r.stroke16(pour, 3, 40, kCoffee);
   }
+}
+
+// The coffee reach: the top mug in its hand from when it reaches it till
+// it lets go (kReachHolds), brought in to its mouth for the sip between,
+// "ahh" after; on the stack, before and after, the kit's.
+constexpr int kReachHolds = 1000, kReachLets = 4100;
+void reach(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  const int in = eased(age, 1300, 1900) - eased(age, 3300, 3800);
+  const int x = mix(s.X(400), s.mouthX() + s.X(44), in), base = mix(topMug(s, p.mugs), s.mouthY() + s.Y(12), in);
+  if (age >= kReachHolds && age < kReachLets) {
+    mug(r, x, base, 1024 - span(age, 1900, 3300) / 4, p.t, false);
+    hand(r, x - 11, base - 8);
+  }
+  if (const int a = window(age, 3100, 3800)) {
+    r.alpha = a;
+    say(r, "ahh", s.mouthX() - s.X(48), s.mouthY() - s.Y(10), kCream);
+    r.alpha = 255;
+  }
+}
+
+// The melt: drips running down its sides to the desk as it goes, then,
+// while it's a puddle, bubbles rising in it.
+void melt(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  for (int i = 0; i < 6; ++i) {
+    const int from = 800 + i * 230, k = span(age, from, from + 900);
+    if (k <= 0 || k >= 1024) continue;
+    const int side = i % 2 ? 1 : -1;
+    const int x = (side > 0 ? s.rightX() : s.leftX()) - side * s.X(10 + i * 3) + side * k * 14 / 1024;
+    const int y = mix(s.sideY() + s.Y(10), s.deskY() - 5, k * k / 1024);
+    r.alpha = 255 - std::max(0, k - 800) * 255 / 224;
+    r.disk(x, y, 4, kGel);
+    const Point tip[] = {{x - 3, y - 1}, {x + 3, y - 1}, {x, y - 9}};
+    r.polygon(tip, 3, kGel);
+    r.disk(x - 1, y - 1, 1, kShine);
+  }
+  for (int i = 0; i < 4; ++i) {
+    const int from = 2500 + i * 380, k = span(age, from, from + 900);
+    if (k <= 0 || k >= 1024) continue;
+    r.alpha = window(age, from, from + 900, 150, 300);
+    bubble(r, s.crownX() + (i - 2) * s.X(34) + s.X(17), s.crownY() + s.Y(14) - k * s.Y(22) / 1024, 3 + i % 2);
+  }
+  r.alpha = 255;
+}
+
+// The stretch break: back at the desk, its hands up high either side of
+// its head as it stretches tall, and down as it lets go.
+void stretch(const Stage& s, const PastimeShow& p) {
+  const int age = int(p.age), up = eased(age, 7250, 8000) - eased(age, 9000, 9400);
+  if (!up) return;
+  s.r.alpha = window(age, 7250, 9400, 150, 250);
+  for (int side : {-1, 1}) {
+    const int x = (side > 0 ? s.rightX() : s.leftX()) + side * (s.X(6) + s.X(8) * up / 1024);
+    hand(s.r, x, s.sideY() - s.Y(10) - s.Y(46) * up / 1024, 10);
+  }
+  s.r.alpha = 255;
 }
 
 void snack(const Stage& s, const PastimeShow& p) {
@@ -1183,6 +1246,18 @@ Paws pawsFor(const PastimeShow& show) {
     case Pastime::kPhonesOn:  // both up at its head, holding them
       paws.alpha[0] = paws.alpha[1] = 255 - window(age, 0, int(kPhonesOnMs) + 200, 150, 300);
       break;
+    case Pastime::kReach:  // the right one has the mug
+      paws.alpha[1] = 255 - window(age, 700, 4400, 200, 200);
+      break;
+    case Pastime::kMelt: {  // spread out and down with the puddle
+      const int spread = eased(age, 600, 2300) - eased(age, 4200, 4900);
+      paws.dx[0] = -70 * spread / 1024, paws.dx[1] = 70 * spread / 1024;
+      paws.lift[0] = paws.lift[1] = -10 * spread / 1024;
+      break;
+    }
+    case Pastime::kStretch:  // away with it, then up high
+      paws.alpha[0] = paws.alpha[1] = 255 - window(age, 250, 9400, 200, 300);
+      break;
     default: return paws;
   }
   // A pastime stopped early gives them back as it fades.
@@ -1199,9 +1274,11 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
   const Stage s{r, surface.width, surface.height, at};
   // The desk's kit fades with the desk.
   const int desk = std::clamp((e.scenes.desk.x * 255).integer(), 0, 255);
-  if (show.mug && show.playing != Pastime::kSip) {
+  if (show.mug) {  // the top one's in its hand while it sips or reaches for it
     r.fade = show.mug * desk / 255;
-    mugs(r, s, show.mugs, show.t);
+    const bool held = show.playing == Pastime::kSip ||
+                      (show.playing == Pastime::kReach && show.age >= kReachHolds && show.age < kReachLets);
+    mugs(r, s, show.mugs - held, show.t);
   }
   if (show.zone) {
     r.fade = show.zone;
@@ -1223,6 +1300,9 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
     case Pastime::kSticky: sticky(s, show); break;
     case Pastime::kRefill: refill(s, show); break;
     case Pastime::kSnack: snack(s, show); break;
+    case Pastime::kReach: reach(s, show); break;
+    case Pastime::kMelt: melt(s, show); break;
+    case Pastime::kStretch: stretch(s, show); break;
     case Pastime::kLookAround: lookAround(s, show); break;
     case Pastime::kHopeful: hopeful(s, show); break;
     case Pastime::kHop: hop(s, show); break;

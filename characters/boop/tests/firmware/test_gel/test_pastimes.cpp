@@ -62,9 +62,10 @@ uint32_t tiers(int n) { return n ? reached(tierBit(n)) : 0; }
 }  // namespace
 
 // Pins the catalog: each pastime's clip is in the pack's rig and plays
-// once, a few seconds; working's and idle's each need a tier, idle's
-// at least three for every one of the five and working's at least two for
-// each of the first four, and needs you's and asleep's
+// once, a few seconds (a move up to 11); working's and idle's each need a
+// tier, idle's at least three for every one of the five and working's at
+// least two for each of the first four and the stretch break at the
+// fifth, the three moves only at work, and needs you's and asleep's
 // wait: a wave from 30 s, a tap on the glass from 2 minutes, the watch
 // from 5 and nodding off from 10; asleep rolls over from a minute, dreams
 // of sheep from 2 and blows a snore bubble from 4.
@@ -78,7 +79,8 @@ void test_every_pastime_has_its_clip_and_its_turn() {
     TEST_ASSERT_NOT_NULL_MESSAGE(clip, p.clip);
     TEST_ASSERT_FALSE(clip->loop);
     TEST_ASSERT_TRUE(clip->additive);
-    TEST_ASSERT_TRUE_MESSAGE(clip->ms >= 2000 && clip->ms <= 6500, p.clip);
+    TEST_ASSERT_TRUE_MESSAGE(clip->ms >= 2000 && clip->ms <= (p.move ? 11000 : 6500), p.clip);
+    TEST_ASSERT_TRUE(!p.move || p.look == SceneState::kWorking);
     if (p.look == SceneState::kWorking || p.look == SceneState::kIdle) {
       TEST_ASSERT_TRUE(p.tier >= 1 && p.tier <= 5);
       TEST_ASSERT_EQUAL_INT(0, p.afterS);
@@ -89,6 +91,8 @@ void test_every_pastime_has_its_clip_and_its_turn() {
     }
   }
   for (int n = 1; n <= 5; ++n) TEST_ASSERT_TRUE((n == 5 || count[0][n] >= 2) && count[1][n] >= 3);
+  TEST_ASSERT_TRUE(info(Pastime::kReach).move && info(Pastime::kMelt).move && info(Pastime::kStretch).move);
+  TEST_ASSERT_EQUAL_INT(5, info(Pastime::kStretch).tier);
   TEST_ASSERT_EQUAL_INT(30, info(Pastime::kWave).afterS);
   TEST_ASSERT_EQUAL_INT(120, info(Pastime::kTap).afterS);
   TEST_ASSERT_EQUAL_INT(300, info(Pastime::kWatch).afterS);
@@ -373,4 +377,38 @@ void test_the_headphones_go_on_where_you_see_them() {
     if (face.pastimes(board.t).playing == Pastime::kPhonesOn && !start) start = board.t;
   });
   TEST_ASSERT_TRUE(start > 0);
+}
+
+// Pins kMoveGapMs: at work for half an hour at tier5, the moves (the
+// coffee reach, the melt, the stretch break) each start at least
+// kMoveGapMs after the last, the stretch break among them, and calm
+// pastimes play between. While one plays, the desk's paws are its: the
+// right one has the mug, they spread with the melt, and they're away with
+// it on its stretch break.
+void test_moves_are_rare() {
+  Board board(SceneState::kWorking, tagBit("day") | tiers(5));
+  GelFace& face = board.face();
+  Pastime playing = Pastime::kNone;
+  uint32_t lastMove = 0;
+  int moves = 0, calm = 0, stretches = 0;
+  board.to(30 * 60 * 1000, [&] {
+    const PastimeShow s = face.pastimes(board.t);
+    if (s.playing != playing && s.playing != Pastime::kNone) {
+      if (info(s.playing).move) {
+        if (moves) TEST_ASSERT_TRUE(board.t - lastMove >= kMoveGapMs);
+        lastMove = board.t, ++moves, stretches += s.playing == Pastime::kStretch;
+      } else {
+        ++calm;
+      }
+    }
+    playing = s.playing;
+    if (s.fade < 255) return;
+    const Paws paws = pawsFor(s);
+    if (s.playing == Pastime::kReach && s.age >= 1000 && s.age < 4100) TEST_ASSERT_EQUAL_INT(0, paws.alpha[1]);
+    if (s.playing == Pastime::kMelt && s.age >= 2300 && s.age < 4200) TEST_ASSERT_EQUAL_INT(70, paws.dx[1]);
+    if (s.playing == Pastime::kStretch && s.age >= 3000 && s.age < 7000) TEST_ASSERT_EQUAL_INT(0, paws.alpha[0]);
+  });
+  TEST_ASSERT_TRUE(moves >= 8 && moves <= 30 * 60 / 90 + 1);
+  TEST_ASSERT_TRUE(stretches > 0);
+  TEST_ASSERT_TRUE(calm > moves * 5);
 }

@@ -54,7 +54,8 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   occasion_ = cueing_ = lastClip_ = base_ = nullptr;
   pastime_ = Pastime::kNone;
   occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = zoneSince_ = 0;
-  inZone_ = phonesWanted_ = phonesOn_ = false;
+  inZone_ = phonesWanted_ = phonesOn_ = moved_ = false;
+  movedAt_ = 0;
   occasionLook_ = dealtLook_ = SceneState::kNone;
   stopped_ = false;
   dice_ = kSeed;
@@ -194,13 +195,15 @@ void GelFace::deal(SceneState look, uint32_t t) {
     for (const auto& o : l->occasions)
       if (fits(o.when, o.afterS, when, lookMs)) add(o.clip, Pastime::kNone, tierOf(o.when), o.afterS);
   // In the morning its coffee is in its hand (render/gel/layers.h): no mug
-  // on the desk, so no sip or refill from one.
-  const bool morning = hasTag(when, "morning");
+  // on the desk, so no sip, reach or refill from one. A move waits its gap.
+  const bool morning = hasTag(when, "morning"), moveWaits = moved_ && within(t, movedAt_, kMoveGapMs);
+  // Nor a melt in a hat, which has no head to sit on then.
+  const bool hatted = outfitFor(when) != Outfit::kNone;
   for (const auto& p : kPastimes)
-    if (p.look == look && fits(tierBit(p.tier), p.afterS, when, lookMs) &&
-        !(morning && (p.id == Pastime::kSip || p.id == Pastime::kRefill)))
+    if (p.look == look && fits(tierBit(p.tier), p.afterS, when, lookMs) && !(p.move && moveWaits) &&
+        !(morning && (p.id == Pastime::kSip || p.id == Pastime::kReach || p.id == Pastime::kRefill)) &&
+        !(hatted && p.id == Pastime::kMelt))
       add(rig::kRig.clip(p.clip), p.id, p.tier, p.afterS);
-  // Never the one dealt last, while there's another.
   // The headphones wanted and not yet on: they go on first, and only then.
   if (look == SceneState::kWorking && phonesWanted_ && !phonesOn_) {
     playPastime(Pastime::kPhonesOn, t);
@@ -208,6 +211,7 @@ void GelFace::deal(SceneState look, uint32_t t) {
   }
   for (int i = 0; i < n; ++i)
     if (options[i].pastime == Pastime::kPhonesOn) options[i--] = options[--n];
+  // Never the one dealt last, while there's another.
   if (n > 1)
     for (int i = 0; i < n; ++i)
       if (options[i].clip == lastClip_) {
@@ -232,6 +236,7 @@ void GelFace::start(const rig::Clip& clip, Pastime p, SceneState look, uint32_t 
   if (occasion_) endOccasion(t, true);
   occasion_ = lastClip_ = &clip;
   pastime_ = p;
+  if (p != Pastime::kNone && info(p).move) movedAt_ = t, moved_ = true;
   stopped_ = false;
   occasionLook_ = dealtLook_ = look;
   occasionAt_ = t;
@@ -316,6 +321,14 @@ PastimeShow GelFace::pastimes(uint32_t t) const {
   auto opacity = [t](const rig::Ramp& ramp) { return (ramp.value(t) * 255 + 500) / 1000; };
   s.mug = opacity(mug_);
   s.headphones = opacity(headphones_);
+  if (pastime_ == Pastime::kMelt) {  // off its head while it's a puddle
+    const int age = int(s.age), off = age < kMeltOffAt              ? 0
+                                      : age < kMeltOffAt + kMeltOffMs ? (age - kMeltOffAt) * 255 / kMeltOffMs
+                                      : age < kMeltOnBy - kMeltOnMs   ? 255
+                                      : age < kMeltOnBy               ? (kMeltOnBy - age) * 255 / kMeltOnMs
+                                                                      : 0;
+    s.headphones = s.headphones * (255 - off) / 255;
+  }
   if (pastime_ == Pastime::kPhonesOn) {  // coming down over its ears
     s.headphones = std::max(s.headphones, s.fade);
     s.drop = kPhonesDropPx - kPhonesDropPx * int(ease(std::min<uint32_t>(s.age, kPhonesOnMs), kPhonesOnMs)) / 1024;

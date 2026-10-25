@@ -130,6 +130,9 @@ class GelFace final : public Face {
   // Whether it wants the headphones on (working from tier3, its head free),
   // and has put them on since it last took them off (kPhonesOn).
   bool phonesWanted_ = false, phonesOn_ = false;
+  // When the last move started (kMoveGapMs), if one has.
+  uint32_t movedAt_ = 0;
+  bool moved_ = false;
   int grown_ = 1;
   // The reply it played last (FaceContext::reply), its clip or its
   // pastime, by when it started, so each plays once.
