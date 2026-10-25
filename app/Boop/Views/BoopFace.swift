@@ -44,6 +44,7 @@ struct BoopFace: View {
     @ViewState private var blink = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.stillMotion) private var still
+    @Environment(\.displayScale) private var displayScale
 
     /// The board's dissolve between pictures: rig::kFadeMs, on its
     /// smoothstep ease, which this curve is exactly.
@@ -84,15 +85,8 @@ struct BoopFace: View {
             // them: a pixel both light stays lit through the fade.
             ZStack {
                 Canvas { context, canvas in
-                    let box = FaceDesigns.box
-                    let s = 0.8 * canvas.width / box.width
-                    let x0 = (canvas.width - box.width * s) / 2, y0 = (canvas.height - box.height * s) / 2
-                    for r in rects {
-                        let rgb = FaceDesigns.colors[Int(r.colour) < FaceDesigns.colors.count ? Int(r.colour) : 0]
-                        let colour = Color(red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255,
-                                           blue: Double(rgb & 0xFF) / 255)
-                        context.fill(Path(CGRect(x: x0 + r.x * s, y: y0 + r.y * s, width: r.w * s, height: r.h * s)),
-                                     with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
+                    for (colour, path) in Self.paths(rects, in: canvas, scale: displayScale) {
+                        context.fill(path, with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
                     }
                 }
                 .id(key)
@@ -113,6 +107,34 @@ struct BoopFace: View {
     private struct FaceRect: Sendable {
         let x, y, w, h: CGFloat
         let colour: UInt8
+    }
+
+    /// The faces' colours, by a rectangle's colour byte, made once.
+    private static let palette: [Color] = FaceDesigns.colors.map { rgb in
+        Color(red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255, blue: Double(rgb & 0xFF) / 255)
+    }
+
+    /// `rects` fitted into `canvas`, one path for each run of a colour, in
+    /// order. A design pixel is a fraction of a point here, so each
+    /// rectangle filled on its own would smooth its edges, and two that
+    /// meet would leave a dark seam between them; filled as one path they
+    /// meet seamlessly, and every edge sits on the display's pixel grid
+    /// (`scale` pixels a point), so the outline is crisp.
+    private static func paths(_ rects: [FaceRect], in canvas: CGSize, scale: CGFloat) -> [(Color, Path)] {
+        guard !palette.isEmpty else { return [] }
+        let box = FaceDesigns.box
+        let s = 0.8 * canvas.width / box.width
+        let x0 = (canvas.width - box.width * s) / 2, y0 = (canvas.height - box.height * s) / 2
+        let scale = max(scale, 1)
+        func snap(_ v: CGFloat) -> CGFloat { (v * scale).rounded() / scale }
+        var runs: [(UInt8, Path)] = []
+        for r in rects {
+            let colour = Int(r.colour) < palette.count ? r.colour : 0
+            let left = snap(x0 + r.x * s), top = snap(y0 + r.y * s)
+            let rect = CGRect(x: left, y: top, width: snap(x0 + (r.x + r.w) * s) - left, height: snap(y0 + (r.y + r.h) * s) - top)
+            if runs.last?.0 == colour { runs[runs.count - 1].1.addRect(rect) } else { runs.append((colour, Path(rect))) }
+        }
+        return runs.map { (palette[Int($0.0)], $0.1) }
     }
 
     /// The generated artwork never changes during a launch. Decode it
@@ -158,6 +180,13 @@ struct BoopFace: View {
 /// work, amber when something needs you, and crosses when Boop isn't
 /// running.
 enum MenuBarIcon {
+    /// Where the eyes go across the 20 pt canvas: the left one's left
+    /// edge, and the right one's, 8 pt on. The dot goes beside the right
+    /// eye, so the eyes alone (4 pt, 4 pt apart, 4 pt) and the eyes with
+    /// the dot are each within a point of the middle, and the eyes don't
+    /// move when the dot comes.
+    static let eyes: [CGFloat] = [3, 11]
+
     /// The coloured one redraws every time it's shown, so it follows the
     /// menu bar between light and dark.
     static func image(_ mood: FaceMood) -> NSImage {
@@ -178,7 +207,7 @@ enum MenuBarIcon {
             if mood == .stopped {
                 // Two crosses where the eyes go.
                 colour.setStroke()
-                for x: CGFloat in [4, 12] {
+                for x in eyes {
                     if pixels {
                         for i in 0..<5 {
                             let d = CGFloat(i)
@@ -200,14 +229,14 @@ enum MenuBarIcon {
             }
             // Two tall eyes, or two short bars while asleep.
             // Whole points, so they stay crisp at 1×.
-            for x: CGFloat in [4, 12] {
+            for x in eyes {
                 let eye = mood == .asleep ? NSRect(x: x - 1, y: 10, width: 6, height: 2)
                                           : NSRect(x: x, y: 6, width: 4, height: 6)
                 NSBezierPath(roundedRect: eye, xRadius: eye.height == 2 ? 1 : 2, yRadius: eye.height == 2 ? 1 : 2).fill()
             }
             // The dot sits up and to the right, clear of the eyes.
             if mood == .working || mood == .needsYou {
-                let dot = NSRect(x: 17, y: 1, width: 3, height: 3)
+                let dot = NSRect(x: eyes[1] + 5, y: 1, width: 3, height: 3)
                 if pixels { dot.fill(using: .sourceOver) } else { NSBezierPath(ovalIn: dot).fill() }
             }
             return true
