@@ -347,6 +347,17 @@ enum Snapshots {
             fail("snapshots: a still dot's ring still moves or shows")
         }
         print("dot: its ring breathes in Core Animation only while live")
+        // Onboarding's rings while Boop looks for its body: three, each
+        // 2.4 s out, a third of a lap apart, run the same way.
+        let rings = RippleRingsView(frame: NSRect(x: 0, y: 0, width: 360, height: 220))
+        rings.layout()
+        let laps = (rings.layer?.sublayers ?? []).compactMap { $0.animation(forKey: "ripple") }
+        let starts = laps.map(\.beginTime)
+        guard laps.count == 3, laps.allSatisfy({ $0.duration == 2.4 && $0.repeatCount == .infinity }),
+              zip(starts, starts.dropFirst()).allSatisfy({ abs($0 - $1 - 0.8) < 0.001 }) else {
+            fail("snapshots: the looking rings aren't three, 2.4 s out and a third of a lap apart")
+        }
+        print("ripples: three rings in Core Animation, a third of a lap apart")
     }
 
     /// A pane drawn whole has no scroll view cut short: with scroll bars

@@ -416,7 +416,11 @@ struct OverviewPane: View {
                     }
                 }
             }
-            .animation(.boopPop, value: status.sessions)
+            // Rows coming, going and changing status spring into place. A
+            // row's latest call changes with every one an agent makes, and
+            // springing the list each time would lay the popover out on
+            // every frame while agents work, so that text just changes.
+            .animation(.boopPop, value: status.sessions.map { [$0.agent, $0.project, $0.workspace ?? "", $0.name ?? "", "\($0.status)"] })
         }
     }
 

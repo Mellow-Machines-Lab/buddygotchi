@@ -31,6 +31,10 @@ pacing and touch, the Mac app, the architecture) found what's below.
       71 ms, not 130 ms and a black tile for 280 ms; the page fades in on
       its first frame; panes that fit don't scroll (with scroll bars
       always shown they were cut off); the volume is a slider of our own.
+      With agents at work (a call every 300 ms), open, 13.7% became 4.2%:
+      the sessions spring only when rows come, go or change status, not
+      at every call's word. Onboarding's looking rings are Core
+      Animation's too (7.9% to 2.7% on that act).
 - [x] The mirror's board read the moment its pass ran, so at 60 Hz a
       pass run a little earlier than the last read under 16 ms and showed
       the same frame again (30 fps with passes 0.2 and 2.5 ms late in
