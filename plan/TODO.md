@@ -39,10 +39,12 @@ pacing and touch, the Mac app, the architecture) found what's below.
       pass run a little earlier than the last read under 16 ms and showed
       the same frame again (30 fps with passes 0.2 and 2.5 ms late in
       turn): it reads the refresh's time on those passes now.
-- [ ] The mirror draws 36 fps on a 144 Hz display: WebKit runs its
+- [x] The mirror drew 36 fps on a 144 Hz display: WebKit runs its
       `requestAnimationFrame` at 72 Hz there, and the board draws only
       when 16 ms have passed (`kFrameMs`, `device.cpp`), so every other
-      pass. A few ms' slack, or the mirror's own frame gate, gives 72.
+      pass. On a display faster than that the board's clock reads each
+      refresh's time to the nearest 60th: 59.9 fps in WebKit, at 6.2% of
+      a core in WebContent (4.8% at 36).
 - [x] Simpler: no canvas lane under the gel or 8-bit AMOLED push;
       FaceLoops and faces.json's designs gone; EventLine, Core+Talk and
       device_debug.cpp in files of their own.

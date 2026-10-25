@@ -710,9 +710,12 @@ one before, so the slime carries on from act to act. Boop's has one:
   a shrink of more than 2× goes in halves, so it doesn't shimmer. It
   draws only while it's shown, at once when it's shown again, and asks
   the board for a frame on every display refresh: the board draws when
-  it has one, up to its 60 a second, its clock reading the refresh's
-  time on those passes, so a pass that runs late skips no frame. The
-  app's page fades in over its glass once the board has drawn. It makes no sound, and
+  it has one, up to its 60 a second. Its clock reads the refresh's
+  time, so a pass that runs late skips no frame, and on a display
+  that refreshes faster than the board draws (WebKit's 72 Hz on a
+  144 Hz one) the nearest 60th of a second, so it draws 60, not every
+  other refresh. The app's page fades in over its glass once the board
+  has drawn. It makes no sound, and
   nothing the board says leaves the page, so it can't answer the Mac.
 - `tests/mirror/` holds the page's own tests (`node --test`), and
   `internal/tools/boopctl mirror` plays the gel's scenarios on the mirror

@@ -37,15 +37,33 @@
   const steps = [];  // the halved drawings, as many as a shrink needs
   let core, usb, image = null, state = null, powered = false, shown = false, still = false, zoomed = false, loop = 0;
 
-  // The board's clock (its realMs reads performance.now). On a pass a
-  // display refresh asked for, it reads that refresh's time, not the
-  // moment the pass happens to run: the board draws once 16 ms have gone
-  // since its last frame, and at 60 Hz a pass run a little earlier after
-  // one run a little late would read 15.9 and show the last frame again.
-  // It never reads earlier than it has before.
+  // The board's clock (its realMs reads performance.now). While the
+  // display's refreshes run its passes, it reads the latest refresh's
+  // time, not the moment something happens to run: the board draws once
+  // 16 ms have gone since its last frame (kFrameMs), and at 60 Hz a pass
+  // run a little earlier after one run a little late would read 15.9 and
+  // show the last frame again. A display refreshing more often than that
+  // (WebKit asks 72 times a second on a 144 Hz one) would have the board
+  // draw every other refresh, 36 a second, so there the refresh's time
+  // goes to the nearest 60th of a second, and the board draws 60, each
+  // within half a 60th of its refresh. With no pass in the last 50 ms
+  // (hidden, or the display stopped) it reads the time, and it never reads
+  // earlier than it has before.
+  const BOARD_FRAME_MS = 16, SIXTIETH = 1000 / 60, PASS_HOLDS_MS = 50;
   const realNow = performance.now.bind(performance);
-  let refresh = null, read = 0;
-  performance.now = () => (read = Math.max(read, refresh ?? realNow()));
+  let pass = null, passAt = 0, read = 0, lastRefresh = null, between = SIXTIETH;
+  performance.now = () => {
+    const now = realNow();
+    return (read = Math.max(read, pass !== null && now - passAt < PASS_HOLDS_MS ? pass : now));
+  };
+
+  // The board's time for the refresh at `at`, by how often the display
+  // has been refreshing (a gap over 100 ms is a pause, not a refresh).
+  function boardTime(at) {
+    if (lastRefresh !== null && at - lastRefresh < 100) between = 0.8 * between + 0.2 * (at - lastRefresh);
+    lastRefresh = at;
+    return between >= BOARD_FRAME_MS ? at : Math.round(at / SIXTIETH) * SIXTIETH;
+  }
 
   const ready = BoopMirrorBoard().then(made => {
     core = made;
@@ -130,11 +148,12 @@
   // draws when it has a new frame.
   function frame(at) {
     loop = 0;
-    if (!shown || still) return;
-    if (powered) {
-      refresh = at;
-      try { tick(); } finally { refresh = null; }
+    if (!shown || still) {
+      pass = null;
+      return;
     }
+    pass = boardTime(at), passAt = realNow();
+    if (powered) tick();
     loop = requestAnimationFrame(frame);
   }
 
