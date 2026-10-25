@@ -104,11 +104,30 @@ pacing and touch, the Mac app, the architecture) found what's below.
       3.56 → 3.21, attention 3.93 → 3.58, pokes 3.57 → 3.22, asleep
       1.87 → 1.93; the rows every pixel reads stay in internal memory,
       the rest is in PSRAM (internal heap's least 51.5 → 51.2 KB).
-- [ ] The body's material is 513 texels around the whole dome, about
-      1.75 px a texel at its middle: bake it at 1025 wide (flash has
-      room) and measure `body_us`.
-- [ ] No tearing sync: the CO5300's TE line, if the board wires it, and
-      the QSPI clock (40 MHz; 80 is untried and needs eyes on the panel).
+- [x] The body's material is 1025 × 513 texels (was 513 × 257, about
+      1.75 px a texel): the highlight and rim keep their edges. Where a
+      triangle's texels crowd more than 1.5 under a pixel at rest (40% of
+      the body, the sides and crown) it reads a 513 × 257 copy, blended
+      from the large one; and the AMOLED reads both from a copy in PSRAM
+      (`Hal::quickerCopy`). `body_us` in working: 21.7 ms from flash,
+      17.2 from PSRAM, 16.2 with the half size; 15.7 with projection and
+      the outline's classification shared between the cores. Checked by
+      test_gel's `test_the_materials_copy_draws_the_same_body`.
+- [ ] No tearing sync. The CO5300's TE line is wired to GPIO 13 (a
+      probe counted 12 rising edges in 200 ms: 60 Hz; LovyanGFX's init
+      already sends TE on). Syncing isn't simple: a push writes bands of
+      16 panel columns each across the whole scan, so it crosses the
+      scan line ~26 times a frame, and at 40 MHz the writer (~15-20 panel
+      rows a ms, preempted by the body's helper) is about half the scan's
+      speed (30 rows a ms). Tear-free needs pushes in scan order (bands of
+      panel rows) started just behind the scan line, the scan's direction
+      checked on the panel; or 80 MHz QSPI (needs eyes on the panel).
+- [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
+      the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
+      4 KB there) and its code runs from flash past a 16 KB cache. Moving
+      the next frame's step onto the other core while this core draws the
+      art, layers and props would hide it, but they read the engine: it
+      needs a snapshot of what they read.
 
 ## Now: the first launch, from the owner's setup
 

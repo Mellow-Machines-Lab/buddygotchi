@@ -15,8 +15,6 @@
 namespace render::gel {
 namespace {
 using render::helper;
-static_assert(slime::kMaterialWidth == 513 && slime::kMaterialHeight == 257,
-              "UV rounding matches the generated material grid");
 struct Vertex {
   int x, y, u, v;
   // On the outline, where the fringes of its two edges there part: the
@@ -30,31 +28,46 @@ constexpr int kSquare = 1, kOverlap = -128;
 bool turns(const Vertex& v) { return std::max(std::abs(v.bx), std::abs(v.by)) == 127; }
 int edge(const Vertex& a, const Vertex& b, int x, int y) { return (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x); }
 int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
-// UVs span [0, 2^20] × [0, 2^19]; each rounds to the dense material grid.
-int texelAt(int t) { return (t + 1024) >> 11; }
-uint16_t texel(int ut, int vt) {
-  int tx = std::clamp(texelAt(ut), 0, slime::kMaterialWidth - 1),
-      ty = std::clamp(texelAt(vt), 0, slime::kMaterialHeight - 1);
-  return slime::kMaterial[ty * slime::kMaterialWidth + tx];
+// The material at its two sizes (slime_mesh.h), one after the other: each
+// a grid of texels from `offset`, a texel every 2^shift of the UVs, which
+// span [0, 2^20] × [0, 2^19]. A triangle whose texels crowd under its
+// pixels reads the smaller.
+struct Level {
+  int offset, width, height, shift;
+};
+constexpr Level kLevels[2] = {{0, slime::kMaterialWidth, slime::kMaterialHeight, 10},
+                              {slime::kMaterialHalf, slime::kMaterialHalfWidth, slime::kMaterialHalfHeight, 11}};
+static_assert((slime::kMaterialWidth - 1) << 10 == 1 << 20 && (slime::kMaterialHeight - 1) << 10 == 1 << 19 &&
+                  (slime::kMaterialHalfWidth - 1) << 11 == 1 << 20 && (slime::kMaterialHalfHeight - 1) << 11 == 1 << 19,
+              "UV rounding matches the generated material grids");
+int texelAt(int t, int shift) { return (t + (1 << shift >> 1)) >> shift; }
+// Where the body reads the material: as linked, or a copy the board made
+// somewhere quicker to read (readMaterialFrom).
+const uint16_t* material = slime::kMaterial;
+uint16_t texel(int ut, int vt, const Level& l) {
+  int tx = std::clamp(texelAt(ut, l.shift), 0, l.width - 1), ty = std::clamp(texelAt(vt, l.shift), 0, l.height - 1);
+  return material[l.offset + ty * l.width + tx];
 }
 // `n` pixels of the material from (ut, vt), a step of (ux, vx) a pixel.
 // The UVs step evenly, so when both ends round onto the grid every pixel
 // between does: the loop that takes most of the body's time needs no clamp.
-void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n) {
+void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n, const Level& l) {
   if (n <= 0) return;
-  const auto on = [](int t, int size) { return unsigned(texelAt(t)) < unsigned(size); };
-  if (!on(ut, slime::kMaterialWidth) || !on(ut + ux * (n - 1), slime::kMaterialWidth) ||
-      !on(vt, slime::kMaterialHeight) || !on(vt + vx * (n - 1), slime::kMaterialHeight)) {
-    for (int x = 0; x < n; ++x, ut += ux, vt += vx) row[x] = texel(ut, vt);
+  const auto on = [&](int t, int size) { return unsigned(texelAt(t, l.shift)) < unsigned(size); };
+  if (!on(ut, l.width) || !on(ut + ux * (n - 1), l.width) || !on(vt, l.height) || !on(vt + vx * (n - 1), l.height)) {
+    for (int x = 0; x < n; ++x, ut += ux, vt += vx) row[x] = texel(ut, vt, l);
     return;
   }
-  ut += 1024, vt += 1024;
-  for (int x = 0; x < n; ++x, ut += ux, vt += vx)
-    row[x] = slime::kMaterial[(vt >> 11) * slime::kMaterialWidth + (ut >> 11)];
+  const uint16_t* texels = material + l.offset;
+  const int width = l.width, shift = l.shift;
+  ut += 1 << shift >> 1, vt += 1 << shift >> 1;
+  for (int x = 0; x < n; ++x, ut += ux, vt += vx) row[x] = texels[(vt >> shift) * width + (ut >> shift)];
 }
+// The rows drawn at a time (draw).
+constexpr int kEraseBand = 16;
 // An inner triangle, by pixel centre: most of the body, kept to the
 // tightest loop.
-void fill(Surface& s, Vertex a, Vertex b, Vertex c, int from, int to) {
+void fill(Surface& s, Vertex a, Vertex b, Vertex c, const Level& level, int from, int to) {
   int area = edge(a, b, c.x, c.y);
   if (area <= 0) return;
   int x0 = std::max(0, (std::min({a.x, b.x, c.x}) + 7) / 16),
@@ -96,7 +109,7 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, int from, int to) {
     clip(e1, dx1);
     clip(e2, dx2);
     if (lo <= hi) {
-      texture(s.pixels + y * s.width + x0 + lo, tu + ux * lo, tv + vx * lo, ux, vx, hi - lo + 1);
+      texture(s.pixels + y * s.width + x0 + lo, tu + ux * lo, tv + vx * lo, ux, vx, hi - lo + 1, level);
     }
     e0 += dy0;
     e1 += dy1;
@@ -116,8 +129,8 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, int from, int to) {
 // other edges would end it: a sliver of a triangle on the outline, about to
 // turn away or just turned toward the camera, still draws the fringe beyond
 // it, and the outline doesn't jump as the mesh turns.
-void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, int from, int to) {
-  if (!outline) return fill(s, a, b, c, from, to);
+void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, const Level& level, int from, int to) {
+  if (!outline) return fill(s, a, b, c, level, from, to);
   int area = edge(a, b, c.x, c.y);
   if (area <= 0) return;
   constexpr int pad = 16;  // the fringe
@@ -183,7 +196,7 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, int fr
     // Inside, by pixel centre.
     int lo = 0, hi = x1 - x0;
     for (int k = 0; k < 3; ++k) clip(e[k], dx[k], lo, hi);
-    if (lo <= hi) texture(row + lo, tu + ux * lo, tv + vx * lo, ux, vx, hi - lo + 1);
+    if (lo <= hi) texture(row + lo, tu + ux * lo, tv + vx * lo, ux, vx, hi - lo + 1, level);
     // Each outline edge's fringe: centres beyond it by under a pixel, and
     // beside it.
     for (int k = 0; k < 3; ++k) {
@@ -197,7 +210,7 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned outline, int fr
         // Within a pixel of the edge, so 32-bit, and the board divides in
         // hardware.
         const int cover = (e[k] + dx[k] * x + pixel[k]) * 255 / pixel[k];
-        if (cover > 2) row[x] = mix565(row[x], texel(tu + ux * x, tv + vx * x), cover);
+        if (cover > 2) row[x] = mix565(row[x], texel(tu + ux * x, tv + vx * x, level), cover);
       }
     }
     for (int k = 0; k < 3; ++k) e[k] += dy[k], after[k] += afterY[k], before[k] += beforeY[k];
@@ -257,15 +270,30 @@ bool toward(Tri t) { return t.ring >= 1 && t.ring <= kRings && tris[t.ring][t.co
 int16_t ringTop[kRings + 1], ringLow[kRings + 1];
 // The body's rows [from, to): every front-facing triangle there, in the same
 // order whichever core draws them, so a row comes out the same.
+// Which triangles read the smaller material, a bit each (col * 2 + which):
+// those whose texels crowd more than one and a half under a pixel, at
+// rest, as the AMOLED draws the dome. Fixed, so a triangle's grain never
+// changes as it moves.
+uint64_t smaller[kRings + 1];
 void body(Surface& s, int from, int to) {
+  // Whether a quad's rows, its fringe's included, reach [from, to): asked
+  // first, of its corners' rows alone, as most of a ring's don't.
+  const auto reaches = [&](int ring, int col) {
+    const int lo = std::min({py[ring - 1][col], py[ring - 1][col + 1], py[ring][col], py[ring][col + 1]}),
+              hi = std::max({py[ring - 1][col], py[ring - 1][col + 1], py[ring][col], py[ring][col + 1]});
+    return floor16(lo - 9) < to && floor16(hi + 8) >= from;
+  };
   for (int ring = 1; ring <= kRings; ++ring)
     for (int col = 0; col < kSectors && ringTop[ring] < to && ringLow[ring] >= from; ++col) {
-      if (tris[ring][col][0] & kToward)
-        triangle(s, vertex(ring - 1, col), vertex(ring, col), vertex(ring - 1, col + 1), tris[ring][col][0] & 7, from,
-                 to);
-      if (tris[ring][col][1] & kToward)
-        triangle(s, vertex(ring - 1, col + 1), vertex(ring, col), vertex(ring, col + 1), tris[ring][col][1] & 7, from,
-                 to);
+      if (!reaches(ring, col)) continue;
+      for (int which = 0; which < 2; ++which) {
+        const uint8_t t = tris[ring][col][which];
+        if (!(t & kToward)) continue;
+        const Vertex a = vertex(ring - 1, col + which), b = vertex(ring, col),
+                     c = which ? vertex(ring, col + 1) : vertex(ring - 1, col + 1);
+        const Level& level = kLevels[smaller[ring] >> (col * 2 + which) & 1];
+        triangle(s, a, b, c, t & 7, level, from, to);
+      }
     }
 }
 // Rows [from, to) of the frame, a band at a time: each band erased
@@ -278,7 +306,6 @@ struct Rows {
   int from, to, body;
   uint32_t us;  // how long they took
 };
-constexpr int kEraseBand = 16;
 void draw(Rows& rows) {
   for (int y = rows.from; y < rows.to; y += kEraseBand) {
     const int end = std::min(rows.to, y + kEraseBand);
@@ -297,6 +324,8 @@ void helped(void* job) {
 // rest, in 1/1024: moved each frame toward both finishing together.
 int share = 512;
 void drawBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const Surface::Erasing* erase);
+void project(const Surface& s, const PaintControls& c);
+void chooseSizes(const Surface& s);
 }  // namespace
 void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane, rig::Anchors* anchors,
            const PastimeShow* scenery) {
@@ -319,17 +348,21 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
   drawBody(s, c, anchors, behind ? nullptr : &erasing);
 }
 void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors) { drawBody(s, c, anchors, nullptr); }
+const void* materialTexels(size_t& bytes) {
+  bytes = sizeof slime::kMaterial;
+  return slime::kMaterial;
+}
+void readMaterialFrom(const void* copy) { material = copy ? static_cast<const uint16_t*>(copy) : slime::kMaterial; }
 namespace {
-// The body over the surface; with `erase`, the last frame's pixels are
-// erased band by band just ahead of it (draw).
-void drawBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const Surface::Erasing* erase) {
-  if (!s.pixels) return;
-  // Every vertex first, then which way each triangle faces, so a triangle
-  // knows how to draw its edges: soft where they're the outline.
-  // Positions are in sixteenths of a pixel; the UVs follow from the grid.
-  Projector camera(s, c);
-  int top = 1 << 30, low = -(1 << 30);
-  for (int ring = 0; ring <= kRings; ++ring)
+// Every vertex, deformed and projected, into px and py.
+// The surface and controls the mesh is projected for (projectRings).
+const Surface* projecting = nullptr;
+const PaintControls* projectingControls = nullptr;
+// Rings [from, to)'s vertices, deformed and projected, into px and py.
+void projectRings(int from, int to) {
+  const PaintControls& c = *projectingControls;
+  Projector camera(*projecting, c);
+  for (int ring = from; ring < to; ++ring)
     for (int col = 0; col <= kSectors; ++col) {
       const auto& src = slime::kMesh[ring * (kSectors + 1) + col];
       World world{src.x + product(c.ripple, src.wx), src.y, src.z + product(c.ripple, src.wz)};
@@ -339,8 +372,95 @@ void drawBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const S
       auto p = camera.project(camera.deform(world, src.h, src.h2, src.front, dent));
       px[ring][col] = int16_t(std::clamp(p.x, -32000, 32000));
       py[ring][col] = int16_t(std::clamp(p.y, -32000, 32000));
-      top = std::min<int>(top, py[ring][col]), low = std::max<int>(low, py[ring][col]);
     }
+}
+// Rings [from, to)'s triangles: which face the camera.
+void faceRings(int from, int to) {
+  for (int ring = from; ring < to; ++ring)
+    for (int col = 0; col < kSectors; ++col)
+      for (int which = 0; which < 2; ++which) {
+        const Tri t{ring, col, which};
+        const Vertex a = corner(t, 0), b = corner(t, 1), c = corner(t, 2);
+        tris[ring][col][which] = edge(a, b, c.x, c.y) > 0 ? kToward : 0;
+      }
+}
+// Rings [from, to)'s triangles toward the camera: which of their edges are
+// the outline, a neighbour turned away or edge on. One toward the camera
+// alone, all its neighbours turned away, is a sliver of a fold at the
+// outline, there a frame or two: its fringe would flash a streak a pixel
+// wide, so it's left out (none of its neighbours asks after it).
+void outlineRings(int from, int to) {
+  for (int ring = from; ring < to; ++ring)
+    for (int col = 0; col < kSectors; ++col)
+      for (int which = 0; which < 2; ++which) {
+        const Tri t{ring, col, which};
+        if (!toward(t)) continue;
+        for (int k = 0; k < 3; ++k) tris[ring][col][which] |= uint8_t(toward(across(t, k)) ? 0 : 1 << k);
+        if (tris[ring][col][which] == (kToward | 7)) tris[ring][col][which] = 0;
+      }
+}
+// fn over [from, to), half on the helper's core when there's one: each
+// element worked out alone, so the same whichever core does it.
+struct Half {
+  void (*fn)(int, int);
+  int from, to;
+};
+void runHalf(void* half) {
+  const auto& h = *static_cast<Half*>(half);
+  h.fn(h.from, h.to);
+}
+void shared(void (*fn)(int, int), int from, int to) {
+  if (!helper) return fn(from, to);
+  static Half half;
+  const int middle = (from + to) / 2;
+  half = {fn, middle, to};
+  helper.start(runHalf, &half);
+  fn(from, middle);
+  helper.join();
+}
+void project(const Surface& s, const PaintControls& c) {
+  projecting = &s, projectingControls = &c;
+  shared(projectRings, 0, kRings + 1);
+}
+// `smaller`, from the dome at rest on the first surface drawn on (the
+// panel's, 502 × 410, on the board as in the simulator and the mirror): a
+// triangle's texels a pixel at the larger size, the most of its UVs' steps
+// a pixel.
+void chooseSizes(const Surface& s) {
+  project(s, PaintControls{});
+  for (int ring = 1; ring <= kRings; ++ring)
+    for (int col = 0; col < kSectors; ++col)
+      for (int which = 0; which < 2; ++which) {
+        const Tri t{ring, col, which};
+        const Vertex a = corner(t, 0), b = corner(t, 1), c = corner(t, 2);
+        const int area = edge(a, b, c.x, c.y);
+        if (!area) continue;
+        const int dx[3] = {(b.y - c.y) * 16, (c.y - a.y) * 16, (a.y - b.y) * 16},
+                  dy[3] = {(c.x - b.x) * 16, (a.x - c.x) * 16, (b.x - a.x) * 16};
+        int most = 0;
+        for (const int* d : {dx, dy})
+          for (int uv = 0; uv < 2; ++uv) {
+            const int64_t sum =
+                int64_t(uv ? a.v : a.u) * d[0] + int64_t(uv ? b.v : b.u) * d[1] + int64_t(uv ? c.v : c.u) * d[2];
+            most = std::max<int64_t>(most, std::abs(sum * ((1 << 24) / std::abs(area)) / 65536));
+          }
+        if (most > (1 << kLevels[0].shift) * 3 / 2) smaller[ring] |= uint64_t(1) << (col * 2 + which);
+      }
+}
+// The body over the surface; with `erase`, the last frame's pixels are
+// erased band by band just ahead of it (draw).
+void drawBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const Surface::Erasing* erase) {
+  if (!s.pixels) return;
+  // Every vertex first, then which way each triangle faces, so a triangle
+  // knows how to draw its edges: soft where they're the outline.
+  // Positions are in sixteenths of a pixel; the UVs follow from the grid.
+  static const bool sized = (chooseSizes(s), true);
+  (void)sized;
+  project(s, c);
+  int top = 1 << 30, low = -(1 << 30);
+  for (int ring = 0; ring <= kRings; ++ring)
+    for (int col = 0; col <= kSectors; ++col)
+      top = std::min<int>(top, py[ring][col]), low = std::max<int>(low, py[ring][col]);
   if (anchors) {  // the sides are the columns at the ends of x, the front's the
                   // quarter turn toward the camera
     auto at = [&](int ring, int col) { return rig::Point{px[ring][col], py[ring][col]}; };
@@ -352,26 +472,8 @@ void drawBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const S
     for (int i = 0; i < rig::Anchors::kRingPoints; ++i)
       anchors->lap[i] = at(kLapRing, kSectors / 2 - i), anchors->hem[i] = at(kHemRing, kSectors / 2 - i);
   }
-  for (int ring = 1; ring <= kRings; ++ring)
-    for (int col = 0; col < kSectors; ++col)
-      for (int which = 0; which < 2; ++which) {
-        const Tri t{ring, col, which};
-        const Vertex a = corner(t, 0), b = corner(t, 1), c1 = corner(t, 2);
-        const int area = edge(a, b, c1.x, c1.y);
-        tris[ring][col][which] = area > 0 ? kToward : 0;
-      }
-  for (int ring = 1; ring <= kRings; ++ring)
-    for (int col = 0; col < kSectors; ++col)
-      for (int which = 0; which < 2; ++which) {
-        const Tri t{ring, col, which};
-        // A neighbour turned away, or edge on, makes the shared edge outline.
-        if (toward(t))
-          for (int k = 0; k < 3; ++k) tris[ring][col][which] |= uint8_t(toward(across(t, k)) ? 0 : 1 << k);
-        // One toward the camera alone, all its neighbours turned away, is a
-        // sliver of a fold at the outline, there a frame or two: its fringe
-        // would flash a streak a pixel wide. It's left out.
-        if (tris[ring][col][which] == (kToward | 7)) tris[ring][col][which] = 0;
-      }
+  shared(faceRings, 1, kRings + 1);
+  shared(outlineRings, 1, kRings + 1);
   // Each outline edge's end, where it meets the next: found turning about
   // that corner through the triangles toward the camera, from the edge's
   // own, until an edge from it is the outline.

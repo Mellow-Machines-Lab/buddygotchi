@@ -78,6 +78,10 @@ struct Hal : linkkit::Platform {
   virtual render::Size nativeSize() { return {502, 410, 110}; }
   virtual void* allocateSurface(size_t bytes) { return std::calloc(1, bytes); }
   virtual void releaseSurface(void* p) { std::free(p); }
+  // A copy of read-only data, kept for good, where it's quicker to read
+  // than where it's linked; none where there isn't such a place (the
+  // simulator's and the CYD's).
+  virtual const void* quickerCopy(const void* data, size_t bytes) { return (void)data, (void)bytes, nullptr; }
   virtual uint32_t heapFree() { return 0; }
   virtual uint32_t heapMin() { return 0; }
   virtual bool ampOn() { return false; }

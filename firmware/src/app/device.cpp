@@ -92,6 +92,9 @@ Device::Device(Hal& hal, uint8_t* pixels) : hal_(hal), canvas_(pixels) {
     auto* a = static_cast<uint16_t*>(hal_.allocateSurface(bytes));
     auto* b = static_cast<uint16_t*>(hal_.allocateSurface(bytes));
     native_ = std::make_unique<render::SurfacePair>(size.width, size.height, a, b, size.corner);
+    size_t assetBytes = 0;
+    const void* assets = b_.face().assets(assetBytes);
+    if (assets && assetBytes) b_.face().readAssetsFrom(hal_.quickerCopy(assets, assetBytes));
   }
 }
 Device::~Device() {

@@ -117,6 +117,26 @@ static void test_a_helper_draws_the_same_body() {
   }
   render::helper = {};
 }
+// The AMOLED reads the body's material from a copy in PSRAM
+// (GelFace::readAssetsFrom): the same texels, the same frame. The material
+// is 1025 × 513 texels, under a pixel each across the dome's middle, then
+// half that for where they crowd under a pixel.
+static void test_the_materials_copy_draws_the_same_body() {
+  size_t bytes = 0;
+  GelFace face;
+  const void* texels = face.assets(bytes);
+  TEST_ASSERT_EQUAL_UINT32((1025u * 513u + 513u * 257u) * 2u, bytes);
+  std::vector<uint16_t> copy(bytes / 2), a(502 * 410), b(a.size());
+  std::memcpy(copy.data(), texels, bytes);
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  PaintControls c;
+  c.lean = 700;
+  paint(sa, c);
+  face.readAssetsFrom(copy.data());
+  paint(sb, c);
+  face.readAssetsFrom(nullptr);
+  TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
+}
 static void test_one_face_vocabulary_and_latest_facts() {
   linkkit::Rng rng;
   app::Behaviour b(std::make_unique<GelFace>());
@@ -2705,6 +2725,7 @@ int main() {
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_the_outline_holds_still_as_the_mesh_turns);
+  RUN_TEST(test_the_materials_copy_draws_the_same_body);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
   RUN_TEST(test_it_wears_pyjamas_at_night_and_reads_in_glasses);
   RUN_TEST(test_the_sky_is_behind_the_body);

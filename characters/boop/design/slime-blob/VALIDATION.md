@@ -88,7 +88,9 @@ ramps and springs can, and no jolt at an event. By file:
   deterministic pixels, the body's outline soft with no seam inside, over
   the crown too, and holding still as the mesh turns
   (`test_the_outline_holds_still_as_the_mesh_turns`: leaned or squashed
-  end to end, no row's edge jumps a pixel and a quarter), request identity and bounded caches, alerts
+  end to end, no row's edge jumps a pixel and a quarter), the material
+  (1025 × 513 texels) drawing the same body from the AMOLED's copy
+  (`test_the_materials_copy_draws_the_same_body`), request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
   fading (its visible ink through five cross-fades), falling asleep as a

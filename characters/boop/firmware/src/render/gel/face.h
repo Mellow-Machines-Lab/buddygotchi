@@ -26,6 +26,9 @@ class GelFace final : public Face {
   GelFace() : engine_(std::make_unique<Engine>()) {}
   const char* name() const override { return "gel"; }
   bool drawsNative() const override { return true; }
+  // The body's material (render/gel/painter.h).
+  const void* assets(size_t& bytes) const override;
+  void readAssetsFrom(const void* copy) override;
   const voice::EffectClips& clips() const override;
   void reset(uint32_t t, linkkit::Rng&) override;
   void seed(uint32_t s) override;
