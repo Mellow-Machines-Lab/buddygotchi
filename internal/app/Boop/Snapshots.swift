@@ -37,6 +37,7 @@ enum Snapshots {
             var gelImage: NSImage?, onboardingGel: NSImage?
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
+                checkSlimeHandOver()
                 onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"))
                 // Every look onboarding uses, through the board's engine:
                 // one it doesn't show as asked fails here.
@@ -44,7 +45,10 @@ enum Snapshots {
                     _ = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"))
                 }
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
-                gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"), size: NSSize(width: 46, height: 46))
+                // The popover's 46 pt tile, zoomed on the slime, at 2×.
+                gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"),
+                                                    size: NSSize(width: 92, height: 92), zoomed: true)
+                tileStill = gelImage
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
                     attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), busy: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
@@ -56,14 +60,13 @@ enum Snapshots {
                     render(PopoverView(model: model, maxHeight: 2000), "\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
                 }
                 for (name, model) in overviews(installer) { shot("overview-\(name)", model, pane: .overview) }
-                if let gelImage {
+                if gelImage != nil {
                     // The one session its state's `busy` counts.
                     var gelStatus = status(sessions: [["claude", "jetpack", "work"]], mood: "happy")
                     gelStatus.snapshot = gelState
                     gelStatus.device = DeviceInfo(id: "gel-fixture", fw: "snapshots", face: .gel)
                     let gel = model(installer, status: gelStatus)
                     gel.hooks[.claude] = .installed
-                    gel.slime.stillImage = gelImage
                     shot("overview-gel", gel, pane: .overview)
                 }
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
@@ -273,6 +276,27 @@ enum Snapshots {
         print("status: published only when shown and changed, without the lanes")
     }
 
+    /// One page for each feed, which each view showing the mirror takes
+    /// from the one before, as onboarding's acts change: the slime carries
+    /// on, and the view it left, going after the new one came, can't hide it.
+    static func checkSlimeHandOver() {
+        let feed = SlimeFeed(), old = NSView(), new = NSView()
+        defer { feed.close() }
+        feed.preload()
+        let page = feed.webView
+        feed.place(in: old)
+        feed.place(in: new)
+        feed.release(old)
+        guard let page, feed.webView === page, page.superview === new, feed.holder === new else {
+            fail("snapshots: the mirror's page didn't carry on into the next view")
+        }
+        feed.release(new)
+        guard feed.webView === page, page.superview == nil, feed.holder == nil else {
+            fail("snapshots: the mirror's page stayed in a view that went")
+        }
+        print("slime: one page, handed from view to view")
+    }
+
     /// The setup field uses the memory name's
     /// character limit and catches its forbidden separators before save.
     static func checkSetupNames() {
@@ -293,11 +317,16 @@ enum Snapshots {
         print("setup names: Unicode limits, cleanup and validation pass")
     }
 
+    /// The popover's slime, still, for every Overview: it shows whether
+    /// or not a board is connected.
+    static var tileStill: NSImage?
+
     static func model(_ installer: HookInstaller, status: Runtime.Status?, link: LinkSetting = .bluetooth,
                       ownsHooks: Bool = true) -> AppModel {
         // Fixtures only: never the real Keychain, and a copy's entry if saved.
         let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link,
                              keyAccount: Keychain.account(for: URL(fileURLWithPath: "/tmp/boop-snapshots")))
+        model.slime.stillImage = tileStill
         model.status = status
         model.readKey = { nil }
         model.boardFirmware = []  // fixtures only: never the bundle's
