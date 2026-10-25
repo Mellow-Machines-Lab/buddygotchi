@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iterator>
+#include <utility>
 #include "render/gel/lane.h"
 #include "render/gel/raster.h"
 #include "render/gel/scenes.h"
@@ -42,7 +43,26 @@ F seconds(int ms) { return F::ratio(ms, 1000); }
 // e^-x for x >= 0: the series converges only for small x, so the
 // reciprocal of e^x, and nothing past 12.
 F decay(F x) { return x <= F(0) ? F(1) : x > F(12) ? F(0) : F(1) / exp(x); }
-int sin12(F x) { return scalar(sin(x)); }
+// The sine of a turn's 4096ths, Q12, from a quarter wave's 64 steps and a
+// line between each two: the series (fixed.h) divides 64-bit numbers nine
+// times a call, which the board does in software.
+constexpr int16_t kQuarter[65] = {0,     402,   804,   1205,  1606,  2006,  2404,  2801,  3196,  3590,  3981,
+                                  4370,  4756,  5139,  5520,  5897,  6270,  6639,  7005,  7366,  7723,  8076,
+                                  8423,  8765,  9102,  9434,  9760,  10080, 10394, 10702, 11003, 11297, 11585,
+                                  11866, 12140, 12406, 12665, 12916, 13160, 13395, 13623, 13842, 14053, 14256,
+                                  14449, 14635, 14811, 14978, 15137, 15286, 15426, 15557, 15679, 15791, 15893,
+                                  15986, 16069, 16143, 16207, 16261, 16305, 16340, 16364, 16379, 16384};
+int sinTurn(int t) {
+  t &= 4095;
+  const int half = t >> 10, within = t & 1023, i = half & 1 ? 1024 - within : within, at = i >> 4;
+  const int v = at >= 64 ? kQuarter[64] : kQuarter[at] + (kQuarter[at + 1] - kQuarter[at]) * (i & 15) / 16;
+  return half & 2 ? -(v >> 2) : v >> 2;
+}
+// An angle in radians as a turn's 4096ths (4096 / 2π, Q16).
+int turnOf(F rad) { return int((rad.raw * 42722830) >> 40); }
+int sin12(F x) { return sinTurn(turnOf(x)); }
+F lsin(F x) { return F::fromRaw(int64_t(sin12(x)) << 12); }
+F lcos(F x) { return F::fromRaw(int64_t(sinTurn(turnOf(x) + 1024)) << 12); }
 // A length in px as sixteenths of a pixel.
 int px16(F v) { return int(v.raw >> (F::bits - 4)); }
 // A body's height scale (Q12) as PaintControls' squash.
@@ -67,7 +87,7 @@ Hop hop(int t, int at, int height, int airMs) {
   const int p = std::min(d - kSquatMs - airMs, kLandMs);
   if (p >= kLandMs) return {};
   const F s = seconds(p);
-  return {0, 4096 - 901 * scalar(decay(s * 12) * cos(s * 36)) / 4096};
+  return {0, 4096 - 901 * scalar(decay(s * 12) * lcos(s * 36)) / 4096};
 }
 // The latest hop under way wins.
 template <size_t N>
@@ -93,18 +113,130 @@ struct Frame {
 Frame turned(int x16, int y16, int scale, F angle) { return {x16, y16, scale, sin12(angle + pi / 2), sin12(angle)}; }
 
 // A sparkle: a four-pointed star, `r` px from its middle.
+// Small shapes straight onto the surface, a pixel's coverage from four
+// samples of it: a polygon's exact area (Raster::polygon16) costs more to
+// set up than a confetti piece or a spark takes to fill, and they're
+// dozens a frame. Each blends at the raster's opacity, above the lane.
+void plot(Raster& r, int x, int y, int cover, uint16_t ink) {
+  auto& out = r.s.pixels[y * r.s.width + x];
+  const int a = r.alpha * cover / 256;
+  if (a >= 253)
+    out = ink;
+  else if (a > 2)
+    out = mix565(out, ink, a);
+}
+// A convex polygon (at most 64 corners, either way round), in sixteenths of
+// a pixel: two sample rows a pixel row, each the span between where its
+// edges cross it; the pixels inside both spans filled as a run, those at
+// their ends by how many of their four samples are in.
+void convex16(Raster& r, const Point* v, int n, uint16_t ink) {
+  if (r.alpha <= 2 || !r.s.pixels || n < 3) return;
+  int minY = v[0].y, maxY = v[0].y;
+  for (int i = 1; i < n; ++i) minY = std::min(minY, v[i].y), maxY = std::max(maxY, v[i].y);
+  const int y0 = std::max(0, minY >> 4), y1 = std::min(r.s.height * 4 / 5 - 1, maxY >> 4), w = r.s.width;
+  const int whole = r.alpha;
+  for (int y = y0; y <= y1; ++y) {
+    int from[2], to[2];
+    for (int half = 0; half < 2; ++half) {
+      const int sy = y * 16 + 4 + half * 8;
+      int lo = 1 << 30, hi = -(1 << 30);
+      for (int k = 0; k < n; ++k) {
+        const Point a = v[k], b = v[k + 1 < n ? k + 1 : 0];
+        if ((a.y <= sy) == (b.y <= sy)) continue;  // doesn't cross this sample row
+        // In 32 bits while it fits, so the board divides in hardware.
+        const int dy = sy - a.y, dx = b.x - a.x;
+        const int x = a.x + (std::abs(dy) < 32768 && std::abs(dx) < 32768 ? dy * dx / (b.y - a.y)
+                                                                          : int(int64_t(dy) * dx / (b.y - a.y)));
+        lo = std::min(lo, x), hi = std::max(hi, x);
+      }
+      from[half] = lo, to[half] = hi;
+    }
+    const int left = std::max(0, std::min(from[0], from[1]) >> 4), right = std::min(w - 1, std::max(to[0], to[1]) >> 4);
+    if (left > right) continue;
+    // Pixels whose four samples are all in: from the first whose left
+    // samples clear both spans' starts to the last whose right ones do.
+    const int inL = std::max(left, (std::max(from[0], from[1]) - 4 + 15) >> 4),
+              inR = std::min(right, (std::min(to[0], to[1]) - 12) >> 4);
+    uint16_t* out = r.s.pixels + y * w;
+    auto edge = [&](int x) {
+      int in = 0;
+      for (int half = 0; half < 2; ++half)
+        for (const int sx : {x * 16 + 4, x * 16 + 12}) in += sx >= from[half] && sx <= to[half];
+      if (in) plot(r, x, y, in * 64, ink);
+    };
+    if (inL > inR) {
+      for (int x = left; x <= right; ++x) edge(x);
+    } else {
+      for (int x = left; x < inL; ++x) edge(x);
+      if (whole >= 253)
+        std::fill(out + inL, out + inR + 1, ink);
+      else
+        for (int x = inL; x <= inR; ++x) out[x] = mix565(out[x], ink, whole);
+      for (int x = inR + 1; x <= right; ++x) edge(x);
+    }
+    r.touch(left, y, right + 1, y + 1);
+  }
+}
+void quad16(Raster& r, const Point (&v)[4], uint16_t ink) { convex16(r, v, 4, ink); }
+// A dot `radius16` round: full inside half a pixel of its edge, nothing
+// half a pixel out, and between by the square of its distance.
+void dot16(Raster& r, int x16, int y16, int radius16, uint16_t ink) {
+  if (r.alpha <= 2 || !r.s.pixels || radius16 <= 0) return;
+  const int x0 = std::max(0, (x16 - radius16 - 8) >> 4), x1 = std::min(r.s.width - 1, (x16 + radius16 + 8) >> 4);
+  const int y0 = std::max(0, (y16 - radius16 - 8) >> 4),
+            y1 = std::min(r.s.height * 4 / 5 - 1, (y16 + radius16 + 8) >> 4);
+  const int inner = std::max(0, radius16 - 8), outer = radius16 + 8;
+  const int in2 = inner * inner, out2 = outer * outer;
+  for (int y = y0; y <= y1; ++y) {
+    int lo = 1 << 30, hi = -1;
+    const int dy = y * 16 + 8 - y16;
+    for (int x = x0; x <= x1; ++x) {
+      const int dx = x * 16 + 8 - x16, d2 = dx * dx + dy * dy;
+      if (d2 >= out2) continue;
+      plot(r, x, y, d2 <= in2 ? 256 : (out2 - d2) * 256 / (out2 - in2), ink);
+      lo = std::min(lo, x), hi = x;
+    }
+    if (hi >= lo) r.touch(lo, y, hi + 1, y + 1);
+  }
+}
+// A sparkle: a four-pointed star `radius16` from its middle, two thin
+// diamonds across each other.
 void sparkle(Raster& r, int x16, int y16, int radius16, int alpha, uint16_t ink) {
   if (alpha <= 2 || radius16 <= 0) return;
-  Point v[8];
-  for (int i = 0; i < 8; ++i) {
-    const int len = i % 2 ? radius16 * 22 / 100 : radius16;
-    static constexpr int kDir[8][2] = {{0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}};
-    const int diag = i % 2 ? 2896 : 4096;  // 1/√2 on the diagonals
-    v[i] = {x16 + kDir[i][0] * len * diag / 4096, y16 + kDir[i][1] * len * diag / 4096};
-  }
+  const int waist = radius16 * 22 / 100 * 2896 / 4096;  // the old star's waist
   r.alpha = std::min(255, alpha);
-  r.polygon16(v, 8, ink);
+  quad16(r, {{x16, y16 - radius16}, {x16 + waist, y16}, {x16, y16 + radius16}, {x16 - waist, y16}}, ink);
+  quad16(r, {{x16 - radius16, y16}, {x16, y16 - waist}, {x16 + radius16, y16}, {x16, y16 + waist}}, ink);
   r.alpha = 255;
+}
+// A polygon with an outline round it, `width16` wide: the outline's
+// colour filled first a little larger, each corner moved out along its two
+// edges' normals, then the shape over it; two fills, where a stroke would
+// measure every pixel's distance to every edge.
+void outlined(Raster& r, const Point* v, int n, uint16_t ink, uint16_t line, int width16, bool convex = false) {
+  n = std::min(n, 16);
+  int64_t area = 0;
+  for (int i = 0; i < n; ++i) area += int64_t(v[i].x) * v[(i + 1) % n].y - int64_t(v[(i + 1) % n].x) * v[i].y;
+  const int sign = area < 0 ? -1 : 1;
+  auto normal = [&](Point a, Point b, int& nx, int& ny) {
+    const int dx = b.x - a.x, dy = b.y - a.y, len = std::max(1, root(uint32_t(dx * dx + dy * dy)));
+    nx = sign * dy * 1024 / len, ny = -sign * dx * 1024 / len;
+  };
+  Point grown[16];
+  for (int i = 0; i < n; ++i) {
+    int ax, ay, bx, by;
+    normal(v[(i + n - 1) % n], v[i], ax, ay);
+    normal(v[i], v[(i + 1) % n], bx, by);
+    const int sx = ax + bx, sy = ay + by, len = std::max(1, root(uint32_t(sx * sx + sy * sy)));
+    grown[i] = {v[i].x + sx * width16 / len, v[i].y + sy * width16 / len};
+  }
+  if (convex) {
+    convex16(r, grown, n, line);
+    convex16(r, v, n, ink);
+  } else {
+    r.polygon16(grown, n, line);
+    r.polygon16(v, n, ink);
+  }
 }
 // A five-pointed star in a frame, `R` and `rIn` units out, with an
 // outline when given one.
@@ -115,11 +247,10 @@ void star(Raster& r, const Frame& f, int R, int rIn, uint16_t ink, int outline =
     const int len = i % 2 ? rIn : R;
     v[i] = f.at(len * sin12(a + pi / 2) / 4096, len * sin12(a) / 4096);
   }
-  if (outline >= 0) {
-    v[10] = v[0];
-    r.stroke16(v, 11, f.size16(3), uint16_t(outline));
-  }
-  r.polygon16(v, 10, ink);
+  if (outline >= 0)
+    outlined(r, v, 10, ink, uint16_t(outline), f.size16(3) / 2);
+  else
+    r.polygon16(v, 10, ink);
 }
 // The trophy: a gold cup with its handles, stem and foot, a star on it,
 // standing on its foot's middle.
@@ -127,27 +258,23 @@ void trophy(Raster& r, const Frame& f) {
   static constexpr int kCup[][2] = {{-30, -62}, {30, -62}, {29, -48},  {25, -36},  {18, -26}, {9, -19},
                                     {0, -16},   {-9, -19}, {-18, -26}, {-25, -36}, {-29, -48}};
   constexpr int n = int(std::size(kCup));
-  Point cup[n + 1];
+  Point cup[n];
   for (int i = 0; i < n; ++i) cup[i] = f.at(kCup[i][0], kCup[i][1]);
-  cup[n] = cup[0];
-  for (int side : {-1, 1}) {
-    Point handle[7];
-    for (int k = 0; k < 7; ++k) {
-      const F a = -pi / 2 + pi * k / 6;
-      handle[k] = f.at(side * (27 + 13 * sin12(a + pi / 2) / 4096), -42 + 15 * sin12(a) / 4096);
+  // Each handle a band round its arc: outlined, then gold.
+  for (int side : {-1, 1})
+    for (const auto [half, ink] : {std::pair{4, kOutline}, std::pair{2, kGoldDeep}}) {
+      Point band[14];
+      for (int k = 0; k < 7; ++k) {
+        const int a = -1024 + 2048 * k / 6, c = sinTurn(a + 1024), sn = sinTurn(a);
+        band[k] = f.at(side * (27 + (13 + half) * c / 4096), -42 + (15 + half) * sn / 4096);
+        band[13 - k] = f.at(side * (27 + (13 - half) * c / 4096), -42 + (15 - half) * sn / 4096);
+      }
+      r.polygon16(band, 14, ink);
     }
-    r.stroke16(handle, 7, f.size16(8), kOutline);
-    r.stroke16(handle, 7, f.size16(4), kGoldDeep);
-  }
-  r.stroke16(cup, n + 1, f.size16(3), kOutline);
-  r.polygon16(cup, n, kGold);
+  outlined(r, cup, n, kGold, kOutline, f.size16(3) / 2, true);
   const Point stem[] = {f.at(-6, -17), f.at(6, -17), f.at(6, -8), f.at(-6, -8)};
   const Point foot[] = {f.at(-20, -9), f.at(20, -9), f.at(20, 1), f.at(-20, 1)};
-  for (const auto* part : {stem, foot}) {
-    Point ring[5] = {part[0], part[1], part[2], part[3], part[0]};
-    r.stroke16(ring, 5, f.size16(3), kOutline);
-    r.polygon16(part, 4, kGoldDeep);
-  }
+  for (const auto* part : {stem, foot}) outlined(r, part, 4, kGoldDeep, kOutline, f.size16(3) / 2, true);
   Point shine[6];
   for (int k = 0; k < 6; ++k) {
     const F a = pi * k / 3;
@@ -156,23 +283,23 @@ void trophy(Raster& r, const Frame& f) {
   r.alpha = 200;
   r.polygon16(shine, 6, kCream);
   r.alpha = 255;
-  star(r, f, 9, 4, kCream);
+  // The star on the cup, not its foot.
+  const Point mid = f.at(0, -42);
+  star(r, {mid.x, mid.y, f.scale, f.c12, f.s12}, 9, 4, kCream);
 }
 // The crown: five points, three gems, a pearl on each point.
 void crown(Raster& r, const Frame& f) {
   static constexpr int kCrown[][2] = {{-34, 0}, {-38, -34}, {-18, -16}, {0, -42}, {18, -16}, {38, -34}, {34, 0}};
   constexpr int n = int(std::size(kCrown));
-  Point v[n + 1];
+  Point v[n];
   for (int i = 0; i < n; ++i) v[i] = f.at(kCrown[i][0], kCrown[i][1]);
-  v[n] = v[0];
-  r.stroke16(v, n + 1, f.size16(3), kOutline);
-  r.polygon16(v, n, kGold);
+  outlined(r, v, n, kGold, kOutline, f.size16(3) / 2);
   const uint16_t gems[] = {rgb565(255, 92, 138), rgb565(92, 225, 230), rgb565(140, 242, 122)};
   for (int i = 0; i < 3; ++i) {
     const Point g = f.at(-20 + 20 * i, -8);
-    r.disk16(g.x, g.y, f.size16(5), gems[i]);
+    dot16(r, g.x, g.y, f.size16(5), gems[i]);
   }
-  for (int i : {1, 3, 5}) r.disk16(v[i].x, v[i].y, f.size16(4), kCream);
+  for (int i : {1, 3, 5}) dot16(r, v[i].x, v[i].y, f.size16(4), kCream);
 }
 // Proud's bug, held up beside its trophy: the small one Boop caught.
 void gift(Raster& r, const Surface& s) {
@@ -205,13 +332,12 @@ void confetti(Raster& r, int age, int at, int x0, int y0, int count, uint32_t se
     const F a = dir + (rnd.unit() - q(.5)) * spread, v = F(speed) * (q(.55) + rnd.unit() * q(.6));
     const uint16_t ink = kConfettiInk[rnd.index(kInks)];
     const F wob = rnd.unit(), flap = rnd.unit(), spin = rnd.unit(), w = 12 + rnd.unit() * 5, h = 7 + rnd.unit() * 3;
-    const F x = x0 + cos(a) * v * drag + sin(t * (5 + wob * 4) + i) * 10 * t;
-    const F y = y0 + sin(a) * v * drag + t * t * 90;
-    const F flip = max(q(.12), abs(cos(t * (8 + flap * 8) + i)));
+    const F x = x0 + lcos(a) * v * drag + lsin(t * (5 + wob * 4) + i) * 10 * t;
+    const F y = y0 + lsin(a) * v * drag + t * t * 90;
+    const F flip = max(q(.12), abs(lcos(t * (8 + flap * 8) + i)));
     const Frame f = turned(px16(x), px16(y), 4096, t * (3 + spin * 5) + i);
     const int hw = scalar(w) / 2 / 4096, hh = std::max(1, scalar(h * flip) / 2 / 4096);
-    const Point piece[] = {f.at(-hw, -hh), f.at(hw, -hh), f.at(hw, hh), f.at(-hw, hh)};
-    r.polygon16(piece, 4, ink);
+    quad16(r, {f.at(-hw, -hh), f.at(hw, -hh), f.at(hw, hh), f.at(-hw, hh)}, ink);
   }
   r.alpha = 255;
 }
@@ -228,7 +354,7 @@ void firework(Raster& r, const Surface& s, int age, int at, int x, int y, uint16
     const int p = ease(d, 0, kRocketMs), ry = lerp(floor - 40, y, p);
     for (int k = 0; k < 5; ++k) {
       r.alpha = 204 - k * 38;
-      r.disk16(x * 16 + 8, (ry + k * 9) * 16 + 8, (32 - k * 4) * 16 / 10, ink);
+      dot16(r, x * 16 + 8, (ry + k * 9) * 16 + 8, (32 - k * 4) * 16 / 10, ink);
     }
     r.alpha = 255;
     return;
@@ -246,9 +372,10 @@ void firework(Raster& r, const Surface& s, int age, int at, int x, int y, uint16
     const Point tip{(x * 4096 + len * c) * 16 / 4096, (y * 4096 + len * sn) * 16 / 4096 + droop * 16};
     const Point tail{(x * 4096 + len * 72 / 100 * c) * 16 / 4096,
                      (y * 4096 + len * 72 / 100 * sn) * 16 / 4096 + droop * 16 * 7 / 10};
-    const Point trail[] = {tail, tip};
-    r.stroke16(trail, 2, 48, ink);
-    r.disk16(tip.x, tip.y, 52, i % 3 ? ink : kWhite);
+    // Its head, and two smaller dots behind it for its trail.
+    dot16(r, tail.x, tail.y, 20, ink);
+    dot16(r, (tail.x + tip.x) / 2, (tail.y + tip.y) / 2, 30, ink);
+    dot16(r, tip.x, tip.y, 48, i % 3 ? ink : kWhite);
   }
   r.alpha = 255;
 }
@@ -265,9 +392,9 @@ struct Burst {
   int sparks, reach;
 };
 constexpr Burst kBursts[] = {
-    {200, 239, 268, rgb565(255, 213, 74), 22, 95},   {750, 777, 220, rgb565(255, 122, 182), 22, 95},
-    {1300, 498, 171, rgb565(92, 225, 230), 22, 95},  {1850, 179, 366, rgb565(140, 242, 122), 22, 95},
-    {2300, 817, 390, rgb565(181, 140, 255), 22, 95}, {2750, 500, 207, rgb565(255, 213, 74), 34, 150}};
+    {200, 239, 268, rgb565(255, 213, 74), 16, 95},   {750, 777, 220, rgb565(255, 122, 182), 16, 95},
+    {1300, 498, 171, rgb565(92, 225, 230), 16, 95},  {1850, 179, 366, rgb565(140, 242, 122), 16, 95},
+    {2300, 817, 390, rgb565(181, 140, 255), 16, 95}, {2750, 500, 207, rgb565(255, 213, 74), 24, 150}};
 
 // Mega Boop pops back to its size, its splash and its cheer.
 constexpr int kPopMs = 2650;
@@ -429,7 +556,7 @@ FinishPose finishPose(const Surface& s, Finish f, int age, int reveal) {
         p.scale = 4096 + 4915 * grow / 4096;  // to 2.2 times its size, and down past it
       } else {
         const F t = seconds(age - kPopMs);
-        p.scale = 4096 - scalar(decay(t * 6) * cos(t * 14) * q(.12));
+        p.scale = 4096 - scalar(decay(t * 6) * lcos(t * 14) * q(.12));
       }
       const int g = std::clamp(grow, 0, 4096), base = floorY(s), face = faceY(s), target = s.height * 470 / 1000;
       p.dy16 = int(int64_t(g) * (target - base + int64_t(base - face) * p.scale / 4096) * 16 / 4096);
@@ -448,7 +575,7 @@ FinishPose finishPose(const Surface& s, Finish f, int age, int reveal) {
       } else {
         // Whole again, with a boing.
         const F t = seconds(age - kMergeMs);
-        p.scale = 4096 - scalar(decay(t * 8) * cos(t * 14) / 2);
+        p.scale = 4096 - scalar(decay(t * 8) * lcos(t * 14) / 2);
       }
       break;
     case Finish::kSpotlight: {
@@ -477,7 +604,7 @@ int finishMinis(const Surface& s, int age, FinishPose* out) {
     const int lane = (i - kParadeMinis / 2) * 92 * s.width / 502, march = 16 * sin12(t * q(1.9)) / 4096;
     m.dx16 = (lane + march) * spread / 4096 * 16;
     const F phase = t * q(3.2) + q(.45) * i;
-    const int bounce = std::abs(scalar(sin(phase * pi)));
+    const int bounce = std::abs(scalar(lsin(phase * pi)));
     m.dy16 = -(38 * bounce / 4096 * spread / 4096 + 60 * (4096 - spread) / 4096) * 16;
     const int within = scalar(phase - F(int(phase.raw >> F::bits)));  // where in its hop, Q12
     if (within < 492) m.squash = squashFor(4096 - 1024 * sin12(F::ratio(within, 492) * pi) / 4096);
@@ -486,47 +613,96 @@ int finishMinis(const Surface& s, int age, FinishPose* out) {
   return kParadeMinis;
 }
 
+// Gold Rush's flood, px: out from behind it, and back at the end.
+int goldRadius(int age) { return keys({{300, 0}, {750, 430}, {3900, 430}, {4400, 0}}, age); }
+// The gold disk `radius16` round (cx16, cy16) and its rays, a row at a
+// time, each pixel written once: kRays deep wedges in the gold, the first
+// from `turn` (a turn's 4096ths). Each row's ray edges are where the lines
+// from the middle at their angles cross it; between them it's one gold or
+// the other, and the disk's own ends are blended by how much they cover.
+void goldBurst(Raster& r, int cx16, int cy16, int radius16, int turn) {
+  if (!r.s.pixels || radius16 <= 0) return;
+  constexpr int kRays = 18, kEdges = 2 * kRays, kStep = 4096 / kEdges;
+  // Edge j starts wedge j: deep when j is even.
+  auto ink = [](int j) { return ((j % kEdges) + kEdges) % 2 ? kGold : kGoldDeep; };
+  int sn[kEdges], cs[kEdges];
+  for (int j = 0; j < kEdges; ++j) sn[j] = sinTurn(turn + j * kStep), cs[j] = sinTurn(turn + j * kStep + 1024);
+  const int w = r.s.width, y0 = std::max(0, (cy16 - radius16) >> 4),
+            y1 = std::min(r.s.height * 4 / 5 - 1, (cy16 + radius16) >> 4);
+  const int64_t r2 = int64_t(radius16) * radius16;
+  for (int y = y0; y <= y1; ++y) {
+    int dy = y * 16 + 8 - cy16;
+    if (!dy) dy = 1;  // the middle row, as the one just under it
+    const int64_t room = r2 - int64_t(dy) * dy;
+    if (room <= 0) continue;
+    const int half = root(uint32_t(std::min<int64_t>(room, 0xffffffff))), left16 = cx16 - half, right16 = cx16 + half;
+    const int xl = std::max(0, left16 >> 4), xr = std::min(w - 1, (right16 - 1) >> 4);
+    if (xl > xr) continue;
+    // The edges this row's half of the disk has, by where they cross it.
+    int at[kEdges], edge[kEdges], n = 0;
+    for (int j = 0; j < kEdges; ++j) {
+      if ((sn[j] > 0) != (dy > 0) || !sn[j]) continue;
+      const int x = int(std::clamp<int64_t>(cx16 + int64_t(dy) * cs[j] / sn[j], -(1 << 24), 1 << 24));
+      int k = n++;
+      for (; k > 0 && at[k - 1] > x; --k) at[k] = at[k - 1], edge[k] = edge[k - 1];
+      at[k] = x, edge[k] = j;
+    }
+    // Below the middle, the angle grows leftward; above it, rightward:
+    // the wedge right of an edge is the one before it, or its own.
+    uint16_t* out = r.s.pixels + y * w;
+    const int before = dy > 0 ? -1 : 0;
+    int k = 0, x = xl;
+    uint16_t colour = n ? ink(edge[0] + (dy > 0 ? 0 : -1)) : kGold;
+    while (x <= xr) {
+      while (k < n && at[k] <= x * 16 + 8) colour = ink(edge[k] + before), ++k;
+      const int stop = std::min(xr, k < n ? ((at[k] - 8) >> 4) : xr);
+      std::fill(out + x, out + std::max(x, stop) + 1, colour);
+      x = std::max(x, stop) + 1;
+    }
+    // The disk's ends, by how much of each pixel they cover.
+    for (const int end : {xl, xr}) {
+      const int cover = std::clamp(std::min(right16, end * 16 + 16) - std::max(left16, end * 16), 0, 16) * 16;
+      if (cover < 256) out[end] = mix565(0, out[end], cover >= 253 ? 255 : cover);
+    }
+    r.touch(xl, y, xr + 1, y + 1);
+  }
+}
+int finishCovers(const Surface& s, Finish f, int age) {
+  if (f != Finish::kGoldRush) return 0;
+  // The farthest corner above the lane from the flood's middle.
+  const int bottom = s.height * 4 / 5, cx = s.width / 2, cy = s.height * 560 / 1000;
+  const int dx = std::max(cx, s.width - cx), dy = std::max(cy, bottom - cy);
+  const int reach = root(uint32_t(dx * dx + dy * dy)) + 2;
+  return goldRadius(age) >= reach ? bottom : 0;
+}
+
 void paintFinishBehind(Surface& s, Finish f, int age, int reveal) {
   (void)reveal;
   Raster r{s};
   if (f == Finish::kGoldRush) {
     // The gold floods out from behind it, its rays turning slowly, and
     // drains back at the end.
-    const int radius = keys({{300, 0}, {750, 430}, {3900, 430}, {4400, 0}}, age);
+    const int radius = goldRadius(age);
     if (radius <= 0) return;
     const int cx = s.width * 8, cy = s.height * 560 / 1000 * 16;
-    r.disk16(cx, cy, radius * 16, kGold);
-    const F turn = seconds(age) * q(.35);
-    constexpr int kRays = 18;
-    for (int i = 0; i < kRays; ++i) {
-      Point wedge[4] = {{cx, cy}};
-      for (int k = 0; k < 3; ++k) {
-        const F a = turn + pi * 2 * i / kRays + pi / kRays * k / 2;
-        wedge[k + 1] = {cx + radius * 16 * sin12(a + pi / 2) / 4096, cy + radius * 16 * sin12(a) / 4096};
-      }
-      r.polygon16(wedge, 4, kGoldDeep);
-    }
+    goldBurst(r, cx, cy, radius * 16, turnOf(seconds(age) * q(.35)));
   } else if (f == Finish::kSpotlight) {
     const int light = keys({{200, 0}, {550, 4096}, {4400, 4096}, {4900, 0}}, age);
     if (!light) return;
     const int w = s.width, base = floorY(s) + 10;
     const Point cone[] = {
         {w * 8 - 36 * 16, 0}, {w * 8 + 36 * 16, 0}, {w * 8 + 169 * 16, base * 16}, {w * 8 - 169 * 16, base * 16}};
-    r.alpha = 56 * light / 4096;
-    r.polygon16(cone, 4, kCream);
+    // Over the black it's drawn on, translucent cream is a colour of its
+    // own: filled whole, with no blend a pixel.
+    auto cream = [&](int a) { return rgb565(255 * a / 255, 244 * a / 255, 199 * a / 255); };
+    const int coneAlpha = 56 * light / 4096;
+    r.polygon16(cone, 4, cream(coneAlpha));
     Point pool[16];
     for (int k = 0; k < 16; ++k) {
       const F a = pi * 2 * k / 16;
       pool[k] = {w * 8 + 170 * 16 * sin12(a + pi / 2) / 4096, (base - 4) * 16 + 22 * 16 * sin12(a) / 4096};
     }
-    r.alpha = 90 * light / 4096;
-    r.polygon16(pool, 16, kCream);
-    r.alpha = 255;
-  } else if (f == Finish::kFireworks) {
-    for (int i = 0; i < int(std::size(kBursts)); ++i) {
-      const auto& b = kBursts[i];
-      firework(r, s, age, b.at, s.width * b.x / 1000, s.height * b.y / 1000, b.ink, b.sparks, b.reach, 11 + i);
-    }
+    r.polygon16(pool, 16, cream(coneAlpha + (255 - coneAlpha) * 90 / 255 * light / 4096));
   }
 }
 
@@ -579,25 +755,32 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
       // The trophy drops onto its head as it lands from its leap, and rides
       // it; confetti cannons from both corners, twice.
       if (age > 700 && age < 4300) {
-        const int drop = age < 1000 ? -150 + 150 * ease(age, 700, 1000) / 4096
-                                    : scalar(decay(seconds(age - 1000) * 6) * sin(seconds(age - 1000) * 20) * 6) / 4096;
+        const int drop = age < 1000
+                             ? -150 + 150 * ease(age, 700, 1000) / 4096
+                             : scalar(decay(seconds(age - 1000) * 6) * lsin(seconds(age - 1000) * 20) * 6) / 4096;
         const int shrink = 4096 - ease(age, 3900, 4300);
         trophy(r, turned(at.crown.x, at.crown.y + (8 + drop) * 16 * scale / 4096, 3700 * scale / 4096 * shrink / 4096,
-                         sin(seconds(age) * 6) / 16));
+                         lsin(seconds(age) * 6) / 16));
       }
-      confetti(r, age, 700, 0, h, 40, 3, -q(1.0), q(.7), 620);
-      confetti(r, age, 700, w, h, 40, 4, -pi + q(1.0), q(.7), 620);
-      confetti(r, age, 1600, 0, h, 16, 5, -q(1.15), q(.5), 470);
-      confetti(r, age, 1600, w, h, 16, 6, -pi + q(1.15), q(.5), 470);
-      twinkle(7, 40, 700, 3900, kWhite, 230);
+      confetti(r, age, 700, 0, h, 24, 3, -q(1.0), q(.7), 620);
+      confetti(r, age, 700, w, h, 24, 4, -pi + q(1.0), q(.7), 620);
+      confetti(r, age, 1600, 0, h, 8, 5, -q(1.15), q(.5), 470);
+      confetti(r, age, 1600, w, h, 8, 6, -pi + q(1.15), q(.5), 470);
+      twinkle(5, 40, 700, 3900, kWhite, 230);
       break;
     }
     case Finish::kFireworks:
+      // The bursts, over it where they reach it: drawn behind, they'd
+      // need the whole frame erased first, not band by band with the body.
+      for (int i = 0; i < int(std::size(kBursts)); ++i) {
+        const auto& b = kBursts[i];
+        firework(r, s, age, b.at, w * b.x / 1000, h * b.y / 1000, b.ink, b.sparks, b.reach, 11 + i);
+      }
       if (age >= 300 && age < 4300) {
         // Star eyes, pulsing, where its eyes are.
         const int pulse = 4096 + 491 * sin12(seconds(age) * 14) / 4096;
         for (const Point eye : {at.eyeL, at.eyeR}) {
-          const Frame fr = turned(eye.x, eye.y + 2 * 16, scale * pulse / 4096, sin(seconds(age) * 3) * q(.3));
+          const Frame fr = turned(eye.x, eye.y + 2 * 16, scale * pulse / 4096, lsin(seconds(age) * 3) * q(.3));
           star(r, fr, 24, 10, kGold, kOutline);
           sparkle(r, fr.at(14, -14).x, fr.at(14, -14).y, fr.size16(6), 230, kWhite);
         }
@@ -610,17 +793,17 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
         const F t = seconds(d), spread = (F(1) - decay(t * 2)) / 2;
         Random rnd(9);
         r.alpha = std::clamp((1600 - d) * 255 / 400, 0, 255);
-        for (int i = 0; i < 26; ++i) {
+        for (int i = 0; i < 18; ++i) {
           const F a = -pi * (rnd.unit() * q(1.1) - q(.05)), v = 260 + rnd.unit() * 260;
           const int radius = 7 + rnd.index(10);
-          const F x = w / 2 + cos(a) * v * spread * q(1.3), y = h * 512 / 1000 - sin(a) * v * spread + t * t * 230;
+          const F x = w / 2 + lcos(a) * v * spread * q(1.3), y = h * 512 / 1000 - lsin(a) * v * spread + t * t * 230;
           const int x16 = px16(x), y16 = px16(y);
-          r.disk16(x16, y16, radius * 16, kJelly);
-          r.disk16(x16 - radius * 6, y16 - radius * 6, radius * 5, kJellyShine);
+          dot16(r, x16, y16, radius * 16, kJelly);
+          dot16(r, x16 - radius * 6, y16 - radius * 6, radius * 5, kJellyShine);
         }
         r.alpha = 255;
       }
-      confetti(r, age, kPopMs, w / 2, h * 490 / 1000, 40, 11, -pi / 2, q(2.6), 560, 2100);
+      confetti(r, age, kPopMs, w / 2, h * 490 / 1000, 28, 11, -pi / 2, q(2.6), 560, 2100);
       twinkle(6, 70, 1000, 2450, kCream, 370);
       if (age > kPopMs + 50 && age < 4400) {
         // TA-DA!, popping up over it.
@@ -629,9 +812,7 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
         // Rising in sixteenths of a pixel, its corner on a whole one once it's up.
         const int cy16 = h * 150 / 1000 * 16 - 12 * 16 * (4096 - ease(age, kPopMs + 50, kPopMs + 250)) / 4096;
         const int left16 = (w / 2 - 6 * kSign.w / 2) * 16, top16 = cy16 - kSign.h / 2 * 16;
-        for (int dx = -2; dx <= 2; dx += 2)
-          for (int dy = -2; dy <= 2; dy += 2)
-            if (dx || dy) text16(r, kSign, left16 + dx * 16, top16 + dy * 16, "TA-DA!", rgb565(90, 51, 0));
+        text16(r, kSign, left16 + 3 * 16, top16 + 3 * 16, "TA-DA!", rgb565(90, 51, 0));
         text16(r, kSign, left16, top16, "TA-DA!", kGold);
         r.alpha = 255;
       }
@@ -658,8 +839,9 @@ void paintFinishFront(Surface& s, Finish f, int age, int reveal, const rig::Anch
         }
       }
       if (age > 1300 && age < 4800) {
-        const int fall = age < 1750 ? -140 + 140 * ease(age, 1300, 1750) / 4096
-                                    : scalar(decay(seconds(age - 1750) * 6) * sin(seconds(age - 1750) * 22) * 5) / 4096;
+        const int fall = age < 1750
+                             ? -140 + 140 * ease(age, 1300, 1750) / 4096
+                             : scalar(decay(seconds(age - 1750) * 6) * lsin(seconds(age - 1750) * 22) * 5) / 4096;
         const int out = 4096 - ease(age, 4400, 4800);
         // Its tilt: the body's lean, a little more, and a jaunty tip.
         const int lean = age > 1800 ? 2400 * sin12(seconds(age - 1800) * q(3.2)) / 4096 : 0;

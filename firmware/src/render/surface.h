@@ -137,6 +137,13 @@ struct Surface {
     }
     for (int y = from; y < std::min(to, kTrackedRows); ++y) written[y] = {};
   }
+  // Rows [from, to) that what's drawn next covers whole: their books are
+  // kept as erase keeps them, and nothing is erased, since it would only be
+  // painted over.
+  void forget(const Erasing& e, int from, int to) {
+    from = std::max(0, from), to = std::min(to, e.to);
+    for (int y = from; y < std::min(to, kTrackedRows); ++y) written[y] = {};
+  }
 };
 // The canvas, stretched to the whole surface (nearest pixel): the test
 // pattern under a native face. It writes past what drawing tracks, so it

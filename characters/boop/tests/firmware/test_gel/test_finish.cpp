@@ -224,6 +224,19 @@ void test_every_finish_moves_smoothly_and_settles() {
   TEST_ASSERT_EQUAL_INT(0, finishMinis(s, 400, minis));
 }
 
+// Only Gold Rush and the spotlight draw behind the body, so only they erase
+// the frame whole before it; Gold Rush's flood, once it reaches every
+// corner above the lane, covers those rows, and they aren't erased first.
+void test_only_what_draws_behind_erases_first() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  for (Finish fin : kBig) TEST_ASSERT_EQUAL(fin == Finish::kGoldRush || fin == Finish::kSpotlight, drawsBehind(fin));
+  TEST_ASSERT_FALSE(drawsBehind(Finish::kLittle));
+  TEST_ASSERT_EQUAL_INT(0, finishCovers(s, Finish::kGoldRush, 400));
+  TEST_ASSERT_EQUAL_INT(410 * 4 / 5, finishCovers(s, Finish::kGoldRush, 2000));
+  TEST_ASSERT_EQUAL_INT(0, finishCovers(s, Finish::kGoldRush, 4300));
+  TEST_ASSERT_EQUAL_INT(0, finishCovers(s, Finish::kSpotlight, 2000));
+}
 // Gold Rush floods the screen above the lane with gold, and drains it
 // again; Little Win draws its trophy in gold over its head.
 void test_gold_rush_floods_and_little_win_shows_its_trophy() {

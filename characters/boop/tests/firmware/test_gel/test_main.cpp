@@ -1443,6 +1443,7 @@ void test_a_big_finish_cheers_once_and_bounces();
 void test_a_takeover_puts_the_desk_away();
 void test_every_finish_moves_smoothly_and_settles();
 void test_gold_rush_floods_and_little_win_shows_its_trophy();
+void test_only_what_draws_behind_erases_first();
 // test_bridges.cpp
 void test_every_edge_bridges_as_authored();
 void test_a_bridge_follows_its_waveform();
@@ -2748,6 +2749,7 @@ int main() {
   RUN_TEST(test_a_takeover_puts_the_desk_away);
   RUN_TEST(test_every_finish_moves_smoothly_and_settles);
   RUN_TEST(test_gold_rush_floods_and_little_win_shows_its_trophy);
+  RUN_TEST(test_only_what_draws_behind_erases_first);
   // test_bridges.cpp
   RUN_TEST(test_every_edge_bridges_as_authored);
   RUN_TEST(test_a_bridge_follows_its_waveform);

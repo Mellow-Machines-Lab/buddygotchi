@@ -614,8 +614,13 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
       erasing = surface.beginClear(cards, kept, keepLane);
     }
     const bool scenery = pastimes && !bodyAlone && showsScenery(*pastimes);
-    const bool behind = scenery || finish.on || move.minis;
-    if (behind) surface.erase(erasing, 0, surface.height);
+    const bool behind = scenery || (finish.on && drawsBehind(finish.finish)) || move.minis;
+    if (behind) {
+      // Rows a finish covers whole aren't erased first.
+      const int covered = finish.on ? finishCovers(surface, finish.finish, finish.ageMs) : 0;
+      surface.forget(erasing, 0, covered);
+      surface.erase(erasing, covered, surface.height);
+    }
     if (scenery) {
       Measure measure(profile.props);
       paintScenery(surface, *pastimes);

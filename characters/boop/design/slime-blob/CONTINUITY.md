@@ -519,10 +519,21 @@ it is, so the board, the simulator and the mirror draw the same frame.
 Every finish moves under 16 px and a tenth of its size a frame, but where
 the parade's little ones take its place and give it back, and is back at
 rest by its end. A finish that covers the screen (all but Little Win and
-the confetti) puts the desk away while it plays. Its flood and rays, its
-spotlight and its fireworks are drawn behind the body; the trophy, the
-crown, the podium, confetti, sparkles, jelly drops, the star eyes and the
-words over it, all above the lane.
+the confetti) puts the desk away while it plays. Gold Rush's flood and
+rays and the spotlight are drawn behind the body, so the frame is erased
+whole before them, not band by band with the body (`drawsBehind`), less
+the rows the flood covers whole once it reaches every corner
+(`finishCovers`, `Surface::forget`); the fireworks, the trophy, the crown,
+the podium, confetti, sparkles, jelly drops, the star eyes and the words
+over it, all above the lane.
+
+**Its cost.** A finish draws dozens of small shapes a frame, so it fills
+them itself: confetti, sparkles and sparks as convex spans sampled four
+times a pixel, dots by their distance, Gold Rush's gold and rays a row at a
+time with each pixel written once, outlines as a second, larger fill, and
+its sines from a quarter wave's table. On the AMOLED's profiling build
+each big finish plays at about 23 to 29 frames a second, Little Win and
+the confetti at 33 to 37, where the look alone draws 40.
 
 **Its sound.** Little Win's reveal plays the fanfare (`complete`); a finish
 above small cheers at its reveal instead (`cheer`: two chord stabs, a held

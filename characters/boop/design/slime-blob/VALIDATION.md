@@ -63,7 +63,8 @@ ramps and springs can, and no jolt at an event. By file:
   once, its length and its `say`'s start; one cheer and its bounces, never
   the fanfare; the desk put away by a takeover and no card; every finish
   moving smoothly and settling by its end; Gold Rush's flood above the
-  lane and Little Win's trophy.
+  lane and Little Win's trophy; only what draws behind the body erasing the
+  frame whole first, less the rows the flood covers.
 - `test_bridges.cpp`: every directed edge in each of its three variants
   (the retarget changing no spring and nothing drawn, its primitive,
   windows, amplitude and direction, the controls between their ends, every

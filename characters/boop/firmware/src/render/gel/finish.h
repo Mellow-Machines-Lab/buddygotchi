@@ -80,6 +80,13 @@ struct FinishShow {
   int ageMs = 0, revealMs = 0;
   bool gift = false;
 };
+// Whether a finish draws behind the body (paintFinishBehind), so the
+// frame is erased whole before it, not band by band with the body.
+constexpr bool drawsBehind(Finish f) { return f == Finish::kGoldRush || f == Finish::kSpotlight; }
+// The rows from the top a finish covers whole at `ageMs` (Gold Rush's
+// flood, once it reaches every corner above the lane): erasing them first
+// would only be painted over.
+int finishCovers(const Surface& s, Finish f, int ageMs);
 // Whether a finish covers the screen, so the desk goes while it plays.
 constexpr bool takesOver(Finish f) { return f != Finish::kLittle && f != Finish::kConfetti; }
 }  // namespace render::gel
