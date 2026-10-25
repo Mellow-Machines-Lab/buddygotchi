@@ -5,11 +5,11 @@
 
 namespace render {
 
-void blit(const Canvas& canvas, Surface& surface, int fromRow) {
+void blit(const Canvas& canvas, Surface& surface) {
   if (!surface.pixels) return;
   const int width = surface.width, height = surface.height;
-  if (fromRow < height) surface.lane = std::max(0, fromRow);
-  for (int y = std::max(0, fromRow); y < height; ++y) {
+  surface.invalidate();
+  for (int y = 0; y < height; ++y) {
     const auto* src = canvas.pixels() + (y * kHeight / height) * kWidth;
     auto* dst = surface.pixels + y * width;
     // Integer remainder stepping: x * kWidth / width without a divide per pixel.

@@ -59,7 +59,7 @@ struct Board {
   void line(const char* s) {
     kit->handleLine(s, std::strlen(s), linkkit::Link::kUsb);
     kit->tick();
-    if (dev->takeFrame()) dev->frames()->present(dev->canvas());
+    if (dev->takeFrame()) dev->frames()->present();
   }
   // The clock on by `ms`, a tick every 20.
   void run(uint32_t ms) {

@@ -1973,7 +1973,7 @@ static void test_steady_frames_allocate_nothing() {
   auto line = [&](const char* text) {
     kit.handleLine(text, std::strlen(text), linkkit::Link::kUsb);
     kit.tick();
-    if (dev.takeFrame()) dev.frames()->present(dev.canvas());
+    if (dev.takeFrame()) dev.frames()->present();
   };
   const char* step = "{\"t\":\"dbg.clock\",\"step\":33}";
   for (const char* scene : scenes) {

@@ -49,14 +49,12 @@ bool SurfacePair::ready() const {
   return s_[0].pixels && s_[1].pixels && s_[0].height <= Surface::kTrackedRows && s_[0].width <= 0xffff;
 }
 
-// What may differ from front's frame. Above the lane, each
-// surface is black outside its written spans (Surface::clear), so only
-// the spans either frame wrote can differ. The lane's rows are the canvas,
-// stretched (blit), so only the columns of the canvas that changed since
-// the last present can. A lane the face drew itself under the same key in
-// both frames is the same pixels, so its rows can't differ at all.
-// Anything else sends the whole surface.
-const PushPlan& SurfacePair::present(const Canvas& canvas) {
+// What may differ from front's frame. Each surface is black outside its
+// written spans (Surface::clear), so only the spans either frame wrote can
+// differ. A lane the face drew itself under the same key in both frames is
+// the same pixels, so its rows can't differ at all. A surface written whole
+// (a test pattern) sends the whole surface.
+const PushPlan& SurfacePair::present() {
   plan_ = PushPlan{};
   if (!drawn_) return plan_;
   const Surface& next = s_[back_];
@@ -65,21 +63,7 @@ const PushPlan& SurfacePair::present(const Canvas& canvas) {
   plan_.width = width;
   plan_.height = height;
   plan_.bands = ceilDiv(height, PushPlan::kRows);
-  plan_.full = shown.invalid || next.invalid || shown.lane != next.lane;
-
-  // The lane's changed canvas columns, band by band, as surface columns:
-  // blit draws surface column x from canvas column x * kWidth / width.
-  // Asked at every present, so lane_ holds the canvas front's lane came
-  // from.
-  constexpr int kCanvasBands = kHeight / kBand;
-  const int lane = next.lane >= 0 && next.lane < height ? next.lane : height;
-  Span changed[kCanvasBands];
-  for (int b = lane < height ? lane * kHeight / height / kBand : kCanvasBands; b < kCanvasBands; ++b) {
-    const Span c = lane_.band(canvas, b);
-    changed[b] =
-        c.empty() ? Span{} : Span{ceilDiv(c.x0 * width, kWidth), std::min(width, ceilDiv(c.x1 * width, kWidth))};
-  }
-
+  plan_.full = shown.invalid || next.invalid;
   const int same = next.laneKey && next.laneKey == shown.laneKey && next.laneKeyFrom == shown.laneKeyFrom &&
                            next.laneKeyFrom >= 0
                        ? next.laneKeyFrom
@@ -88,8 +72,7 @@ const PushPlan& SurfacePair::present(const Canvas& canvas) {
     Span span = plan_.full ? Span{0, width} : Span{};
     if (!plan_.full)
       for (int y = band * PushPlan::kRows; y < std::min(same, band * PushPlan::kRows + plan_.rows(band)); ++y)
-        span = unite(span, y >= lane ? changed[y * kHeight / height / kBand]
-                                     : unite(written(shown.written[y]), written(next.written[y])));
+        span = unite(span, unite(written(shown.written[y]), written(next.written[y])));
     if (!span.empty()) span = {span.x0 & ~1, std::min(width, (span.x1 + 1) & ~1)};
     plan_.spans[band] = span;
   }

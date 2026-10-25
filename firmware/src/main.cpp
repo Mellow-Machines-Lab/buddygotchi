@@ -131,7 +131,7 @@ void loop() {
       // A native frame is sent by the board's push task while the loop
       // draws the next: this waits only for the frame
       // before, if it's still going, and the push is the last one sent.
-      board::displayPush(*frames, device->canvas());
+      board::displayPush(*frames);
       waited = micros() - t1;
       pushed = board::displayPushUs();
     } else {

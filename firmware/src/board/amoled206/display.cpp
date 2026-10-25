@@ -1,7 +1,7 @@
 // The screen on the Waveshare ESP32-S3-Touch-AMOLED-2.06:
-// the CO5300 through LovyanGFX on quad SPI. Gel uses native pixels, turned
-// a quarter during transfer by a task of its own on core 0 while the loop
-// draws the next frame; indexed diagnostics retain 1.5× (board/config.h).
+// the CO5300 through LovyanGFX on quad SPI. The gel draws native pixels,
+// turned a quarter as they're sent by a task of its own on core 0 while the
+// loop draws the next frame.
 #include "board/display.h"
 
 #define LGFX_USE_V1
@@ -16,7 +16,6 @@
 #include <atomic>
 
 #include "board/config.h"
-#include "render/palette.h"
 
 namespace board {
 namespace {
@@ -71,26 +70,18 @@ class Panel : public lgfx::LGFX_Device {
   lgfx::Panel_CO5300 panel_;
 };
 
-// Two bands of the canvas (12 rows) are 18 panel columns, even as the
-// CO5300 wants; one batch is at most 18 × 480 px, 17.3 KB.
-constexpr int kRows = 2 * render::kBand;
-constexpr int kCols = kRows * 3 / 2;
-static_assert(render::kBand * 3 % 2 == 0 && (render::kHeight / kRows) * kRows == render::kHeight,
-              "two bands must scale to whole, even panel columns");
+// A DMA buffer holds one band of a native frame: 16 rows of the surface,
+// turned into 16 panel columns 502 long, 16 KB.
+constexpr int kBufPixels = render::PushPlan::kRows * kNativeWidth;
 
 Panel lcd;
 uint16_t* buf[2] = {nullptr, nullptr};
-uint16_t swapped[256];   // palette in the panel's byte order
-uint16_t along[kPicH];   // panel step along the canvas's columns → canvas column
-uint16_t across[kPicW];  // panel step across → canvas row
-render::Changes changes;
 
 // The native frames' sender: a task on core 0 below the
 // voice task and Bluetooth's host, so it takes only time they leave. It
 // sends `job` while the loop, on core 1, draws the next frame. `idle` is
 // there to take while no frame is being sent: the loop takes it to hand
 // over the next one, or to use the panel itself.
-static_assert(render::PushPlan::kRows * kNativeWidth <= kCols * kPicH, "a native band fits a DMA buffer");
 constexpr UBaseType_t kPushPriority = 1;
 constexpr uint32_t kPushStack = 4096;
 struct Job {
@@ -135,8 +126,8 @@ void pushTask(void*) {
   }
 }
 
-// The panel to itself, once no frame is being sent: a canvas push or the
-// brightness waits for the native frame in flight, at most one push.
+// The panel to itself, once no frame is being sent: the brightness waits
+// for the native frame in flight, at most one push.
 struct PanelHeld {
   PanelHeld() {
     if (idle) xSemaphoreTake(idle, portMAX_DELAY);
@@ -167,15 +158,9 @@ void resetPanel() {
 
 bool displayBegin() {
   for (int i = 0; i < 2; ++i) {
-    buf[i] = static_cast<uint16_t*>(heap_caps_malloc(kCols * kPicH * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
+    buf[i] = static_cast<uint16_t*>(heap_caps_malloc(kBufPixels * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
     if (!buf[i]) return false;
   }
-  for (int i = 0; i < 256; ++i) {
-    uint16_t c = render::paletteAt(i);
-    swapped[i] = uint16_t((c << 8) | (c >> 8));
-  }
-  for (int i = 0; i < kPicH; ++i) along[i] = uint16_t(i * 2 / 3);
-  for (int j = 0; j < kPicW; ++j) across[j] = uint16_t(j * 2 / 3);
   resetPanel();
   if (!lcd.init()) return false;
   lcd.setRotation(0);
@@ -187,39 +172,14 @@ bool displayBegin() {
   return xTaskCreatePinnedToCore(pushTask, "push", kPushStack, nullptr, kPushPriority, &pusher, 0) == pdPASS;
 }
 
-void displayPush(const render::Canvas& canvas) {
-  PanelHeld held;
-  int cur = 0;
-  lcd.startWrite();
-  for (int p = 0; p < render::kHeight / kRows; ++p) {
-    render::Span a = changes.band(canvas, 2 * p), b = changes.band(canvas, 2 * p + 1);
-    if (a.empty() && b.empty()) continue;
-    int x0 = a.empty() ? b.x0 : b.empty() ? a.x0 : std::min(a.x0, b.x0);
-    int x1 = a.empty() ? b.x1 : b.empty() ? a.x1 : std::max(a.x1, b.x1);
-    // The canvas columns [x0, x1) cover panel steps [i0, i1), widened to even.
-    int i0 = (3 * x0 + 1) / 2 & ~1, i1 = std::min(kPicH, ((3 * x1 + 1) / 2 + 1) & ~1);
-    int px = kTopOnPanelLeft ? kPicX + kCols * p : kPicX + kPicW - kCols * (p + 1);
-    int py = kTopOnPanelLeft ? kPicY + kPicH - i1 : kPicY + i0;
-    uint16_t* dst = buf[cur];
-    for (int k = 0; k < i1 - i0; ++k) {
-      int i = kTopOnPanelLeft ? i1 - 1 - k : i0 + k;
-      const uint8_t* col = canvas.pixels() + along[i];
-      for (int c = 0; c < kCols; ++c) {
-        int j = kTopOnPanelLeft ? kCols * p + c : kCols * p + kCols - 1 - c;
-        *dst++ = swapped[col[across[j] * render::kWidth]];
-      }
-    }
-    lcd.setAddrWindow(px, py, kCols, i1 - i0);
-    lcd.writePixelsDMA(buf[cur], kCols * (i1 - i0), false);  // already in panel order
-    cur ^= 1;
-  }
-  lcd.endWrite();
-}
+// The gel, the only face this board draws, draws natively: frames go by
+// the other push, the test pattern included (render::blit).
+void displayPush(const render::Canvas&) {}
 
-bool displayPush(render::SurfacePair& frames, const render::Canvas& canvas) {
+bool displayPush(render::SurfacePair& frames) {
   if (!frames.ready() || frames.front().width != kNativeWidth || frames.front().height != kNativeHeight) return false;
   xSemaphoreTake(idle, portMAX_DELAY);  // the frame before has gone: its surface is the next back()
-  job.plan = frames.present(canvas);
+  job.plan = frames.present();
   job.surface = &frames.front();
   xTaskNotifyGive(pusher);
   return true;
