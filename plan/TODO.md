@@ -75,9 +75,10 @@ pacing and touch, the Mac app, the architecture) found what's below.
       (`raster.cpp` `polygon16`, a row's signed area summed along it),
       so a 3/16 px lid keeps its ink wherever it sits and a level edge
       moves a sixteenth at a time (test_gel). Cheaper than the 4
-      sub-rows: `perf --scenes` art_us frightened 8.0 → 6.6 ms, working
-      3.56 → 3.33, attention 3.92 → 3.75; the raster's scratch moved to
-      PSRAM, internal heap's least 51.5 → 56.8 KB.
+      sub-rows: `perf --scenes` art_us frightened 7.99 → 6.40 ms, working
+      3.56 → 3.21, attention 3.93 → 3.58, pokes 3.57 → 3.22, asleep
+      1.87 → 1.93; the rows every pixel reads stay in internal memory,
+      the rest is in PSRAM (internal heap's least 51.5 → 51.2 KB).
 - [ ] The body's material is 513 texels around the whole dome, about
       1.75 px a texel at its middle: bake it at 1025 wide (flash has
       room) and measure `body_us`.

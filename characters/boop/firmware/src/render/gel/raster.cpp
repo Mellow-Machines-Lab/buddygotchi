@@ -28,8 +28,8 @@ int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
 // Positions inside are 256ths of a pixel; a whole pixel's area is
 // 256 × 256 × 2, the 2 for an edge's middle taken as the sum of its ends.
 struct Area {
-  int cell[Raster::kMaxWidth + 2];  // zero between rows
-  int lo, hi;                       // the cells a row wrote
+  int* cell;   // a pixel's and one past the row's, zero between rows
+  int lo, hi;  // the cells a row wrote
   // Each edge's x a sixteenth further down, in 65536ths of a sixteenth:
   // the edge into point i is from point i - 1 (wrapping).
   int slope[128];
@@ -179,23 +179,28 @@ struct Segment {
   }
 };
 
-constexpr int kMaxSegments = 96;  // the longest art path
+// The longest stroke: the art's are 50 points at most, the pastimes'
+// blanket 48.
+constexpr int kMaxSegments = 64;
 // A blend's columns at a time (Raster::blend); 32768 is a whole pixel.
 constexpr int kBlendColumns = 128, kWholePixel = 32768;
 
 // What drawing works in. Drawing is single-threaded and each shape
-// finishes its rows before the next begins. It's one block made at start,
-// so it comes from PSRAM on the board, which has the room, and not from
-// its internal memory, which hasn't (`perf` keeps 50 KB of that free).
+// finishes its rows before the next begins. What every pixel of a shape
+// reads is in the board's internal memory, 6 KB of it: a row's coverage,
+// 0–256 a pixel, and its opacities for a recording (Raster::recording), a
+// stroke's segments and a polygon's row of cells.
+uint16_t coverage[Raster::kMaxWidth];
+uint8_t kept[Raster::kMaxWidth];
+Segment segments[kMaxSegments];
+int shapeCells[Raster::kMaxWidth + 2];
+// The rest is one block made at start, so it comes from PSRAM, which has
+// the room, and not from the internal memory, which hasn't (`perf` keeps
+// 50 KB of it free).
 struct Scratch {
-  // One row's coverage, 0–256 a pixel, and its opacities for a recording
-  // (Raster::recording).
-  uint16_t coverage[Raster::kMaxWidth];
-  uint8_t kept[Raster::kMaxWidth];
-  // A stroke's segments, prepared once.
-  Segment segments[kMaxSegments];
-  // A polygon's area and its clip's, and the clip's coverage.
-  Area shape, clip;
+  // A polygon's edges, its clip's, and the clip's cells and coverage.
+  int clipCells[Raster::kMaxWidth + 2]{};
+  Area shape{shapeCells}, clip{clipCells};
   uint16_t clipped[Raster::kMaxWidth];
   // A blend's: of each look, what its shapes leave of what's under them,
   // and the sum of each channel's ink so far.
@@ -203,9 +208,6 @@ struct Scratch {
   int underneath[kBlendColumns], red[kBlendColumns], green[kBlendColumns], blue[kBlendColumns];
 };
 Scratch& work = *new Scratch();
-uint16_t* const coverage = work.coverage;
-uint8_t* const kept = work.kept;
-Segment* const segments = work.segments;
 
 // A pixel's coverage by a shape whose edge is `inside` sixteenths from its
 // centre (negative outside): a box filter one pixel wide, 0–256.
