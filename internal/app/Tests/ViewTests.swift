@@ -53,10 +53,14 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(tests(failed: false, id: "t5"), [], "a pass with no failures before isn't notable")
 
         rig.wait(60_000)
-        let end = try XCTUnwrap(hook(.turnEnd, message: "All green now.").first)
-        XCTAssertEqual(end.name, "last_message", "the finish is heard in its message's reading")
-        XCTAssertEqual(end.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, saying it's done."#,
+        let finish = hook(.turnEnd, message: "All green now.")
+        XCTAssertEqual(finish.map(\.name), ["turn end", "last_message"])
+        XCTAssertEqual(finish.map(\.wakesBrain), [false, true], "the message's reading wakes the brain, not the turn end")
+        XCTAssertEqual(finish.first?.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls."#,
                        "4 min is long; failed calls count the same")
+        let end = try XCTUnwrap(finish.last)
+        XCTAssertEqual(end.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, saying it's done."#,
+                       "the finish's line, saying what its message said")
         XCTAssertEqual(end.notes, [], "a claim is no phrase")
         XCTAssertTrue(end.did.isEmpty, "no rule cheers")
         XCTAssertEqual(end.facts["comeback"], "tests", "the facts keep what the line leaves out")

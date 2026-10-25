@@ -185,8 +185,8 @@ public final class Pipeline {
     /// your prompt's, for the `reading` tag (`Core.promptRead`).
     /// Nil, logging nothing, once the session moved on (a slow labeler):
     /// your prompt's once its turn ended or another began, the agent's
-    /// last message's once the next turn began. The brain has heard that
-    /// instead.
+    /// last message's once the next turn began. The turn event's own line
+    /// stays, and the brain hears that in HISTORY instead.
     @discardableResult
     func read(_ heard: PromptIntake.Heard, about turn: Event, at now: Int64) -> Step? {
         let over = transcript.view(now: now).events(after: turn.seq).contains {

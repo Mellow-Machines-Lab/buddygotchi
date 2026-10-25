@@ -725,6 +725,7 @@ HISTORY (oldest first; indented lines add to the line above)
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Probe".
+just now: claude finished turn 1 on "landing": done, a long turn, 2 tool calls.
 Boop has been lazy for under a minute.
 
 NOW (14:02, Wednesday)
@@ -975,6 +976,7 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Probe".
+7 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls.
 7 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, saying it's done.
   Boop's mood changed: lazy → calm.
   Boop played a success in a happy face, held once, and said "Heh... Finish".
@@ -987,6 +989,7 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
   Boop made a happy face, held once, and said "Mm-hm Probe".
+9 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls.
 9 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, saying it's done.
   Boop's mood changed: lazy → calm.
   Boop played a success in a happy face, held once, and said "Heh... Finish".

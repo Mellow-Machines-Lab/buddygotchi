@@ -256,6 +256,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Tch".
 just now: claude is still working on "landing", a long turn.
   Boop made an engaged face, held once, and said "Hup".
+just now: claude finished turn 1 on "landing": done, a long turn, no tool calls.
 
 NOW (14:03, Wednesday)
 claude finished turn 1 on "landing": done, a long turn, no tool calls, giving up, saying it couldn't finish.

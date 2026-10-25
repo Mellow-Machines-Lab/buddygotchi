@@ -258,6 +258,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Tch".
 1 min ago: claude is still working on "landing", a long turn, running tests.
   Boop made an engaged face, held once, and said "Verify".
+just now: claude finished turn 1 on "landing": done, a long turn, 1 tool call.
 Boop has been engaged for 4 min.
 
 NOW (14:04, Wednesday)

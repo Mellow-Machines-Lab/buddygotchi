@@ -248,11 +248,12 @@ final class PromptTests: XCTestCase {
         XCTAssertNil(EventLine.itsWords([]))
     }
 
-    /// The agent's last message leaves the turn end, which then has no line
-    /// of its own: its reading's line is the finish, saying what the
-    /// message said, and wakes the brain. Neither the transcript, the line
-    /// nor the brain's prompt holds a word of it but "Its words". A finish
-    /// with no message wakes it as ever.
+    /// The agent's last message leaves the turn end, which keeps its own
+    /// line and waits, as a turn start does for its prompt's reading: its
+    /// reading's line is the finish, saying what the message said, and
+    /// wakes the brain. Neither the transcript, the line nor the brain's
+    /// prompt holds a word of it but "Its words". A finish with no message
+    /// wakes it as ever.
     func testOnlyTheMessagesReadingReachesTheBrain() throws {
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -262,8 +263,10 @@ final class PromptTests: XCTestCase {
         let lines = rig.pipeline.transcript.events.map(\.jsonLine).joined()
         for word in ["PRIVATE_CLOSING", "fix that", "sk-proj"] { XCTAssertFalse(lines.contains(word), "no \(word) in the transcript") }
         XCTAssertEqual(woke(fx), [#"claude finished turn 1 on "landing": done, a short turn, no tool calls, fawning."#])
-        XCTAssertEqual(events(fx).map(\.name), ["last_message"], "the turn end has no line of its own")
-        XCTAssertEqual(events(fx).first?.notes, [#"Its words: "absolutely right"."#])
+        XCTAssertEqual(events(fx).map(\.name), ["turn end", "last_message"])
+        XCTAssertEqual(events(fx).map(\.line).first, #"claude finished turn 1 on "landing": done, a short turn, no tool calls."#,
+                       "the turn end keeps its own line")
+        XCTAssertEqual(events(fx).last?.notes, [#"Its words: "absolutely right"."#])
         XCTAssertEqual(finished(fx), ["done"])
         let end = try XCTUnwrap(rig.pipeline.transcript.events.first { $0.kind == "turn_end" })
         XCTAssertEqual(end[PromptIntake.readingFollows], .bool(true))
@@ -279,8 +282,9 @@ final class PromptTests: XCTestCase {
 
     /// Pins the drop: a message's reading that comes once the next turn
     /// has started logs nothing and wakes nothing, as a prompt's that
-    /// comes once its turn is over; one that comes before is the finish's
-    /// line.
+    /// comes once its turn is over, and the finish is still heard, once:
+    /// its own line stays, in HISTORY. One that comes before adds to the
+    /// finish's line.
     func testAMessagesReadingAfterTheNextTurnStartedIsDropped() throws {
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -288,14 +292,19 @@ final class PromptTests: XCTestCase {
         func finish() throws -> (end: Event, text: PromptIntake.Text) {
             let (event, text) = PromptIntake.split(rig.event(.turnEnd, message: "All done: the tests pass."))
             let step = rig.pipeline.agent(event)
-            XCTAssertTrue(step.views.isEmpty, "the finish waits for its reading")
+            XCTAssertEqual(step.views.map(\.wakesBrain), [false], "the finish waits for its reading")
             return (try XCTUnwrap(step.recorded.first), try XCTUnwrap(text))
         }
         let late = try finish()
         rig.wait(1000)
-        rig.send(.turnStart)
+        XCTAssertEqual(woke(rig.send(.turnStart)), [#"claude started turn 2 on "landing"."#])
         XCTAssertNil(rig.pipeline.read(PromptIntake.heard(late.text, names: []), about: late.end, at: rig.now), "dropped")
         XCTAssertFalse(rig.pipeline.transcript.events.contains { $0.type == .lastMessage })
+        let plain = #"claude finished turn 1 on "landing": done, a short turn, no tool calls."#
+        XCTAssertEqual(rig.pipeline.harness.line(late.end.seq)?.text, plain, "the finish keeps its own line")
+        let start = try XCTUnwrap(rig.pipeline.transcript.events.last { $0.kind == "turn_start" })
+        XCTAssertEqual(rig.pipeline.harness.prompt(for: start).components(separatedBy: "\n").filter { $0.contains("finished turn 1") },
+                       ["just now: " + plain], "the next pass hears the finish once, in HISTORY")
         rig.wait(20_000)
         let inTime = try finish()
         rig.wait(1000)

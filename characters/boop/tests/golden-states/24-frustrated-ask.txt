@@ -245,6 +245,7 @@ HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 just now: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
+just now: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 
 NOW (14:00, Wednesday)
 claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
@@ -486,6 +487,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 3 min ago: You asked claude on "landing" for something new, in a sentence.
   Boop made an engaged face, held once, and said "Tch".
+2 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 2 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
   Boop's mood changed: calm → curious.
   Boop played a success in a happy face, held once, and said "Hehehe... Cleared".

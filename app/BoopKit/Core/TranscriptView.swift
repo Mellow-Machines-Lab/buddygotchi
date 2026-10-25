@@ -145,7 +145,7 @@ public final class TranscriptView {
         var at = 0
         var lastAgentLined = false
         /// The finishes whose last message's reading comes next, by
-        /// session: its line, for the reading's.
+        /// session: its line, which the reading's adds to.
         var unread: [String: Line] = [:]
 
         /// Its tracker never asks whether an agent's process runs: the core
@@ -232,8 +232,9 @@ public final class TranscriptView {
 
     /// Each kind's `wake`: what you said goes ahead
     /// of a finished turn, which goes ahead of the rest. A turn start
-    /// whose prompt is being read waits for its reading (`hold`), and a
-    /// finish whose last message is has its line in its reading's place.
+    /// whose prompt is being read, or a finish whose last message is,
+    /// keeps its line but waits for its reading to wake the brain
+    /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
         "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
@@ -349,12 +350,9 @@ public final class TranscriptView {
         if let a = AgentEvent(e) {
             let line = agentEvent(a)
             fold.lastAgentLined = line != nil
-            // A finish whose last message is being read is heard in its
-            // reading's line.
-            if let line, a.kind == .turn, a.phase == .end, e[PromptIntake.readingFollows]?.bool == true {
-                fold.unread[a.key] = line
-                return nil
-            }
+            // A finish whose last message is being read keeps its line, for
+            // its reading's to add to.
+            if let line, a.kind == .turn, a.phase == .end, e[PromptIntake.readingFollows]?.bool == true { fold.unread[a.key] = line }
             return line
         }
         advance(to: e.at)
@@ -422,7 +420,8 @@ public final class TranscriptView {
         case .turnStart:
             c.topic = nil
             resetCounts(&c)
-            // The last finish's reading came too late, if it's still to come.
+            // The last finish's reading, if it's still to come, is too late:
+            // the finish keeps its plain line.
             fold.unread[key] = nil
             return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
                         facts: ["thread": threadFacts(t)])
@@ -596,14 +595,14 @@ public final class TranscriptView {
 
     // MARK: The agent's last message
 
-    /// The agent's last message's reading, in its finish's place: the
-    /// finish's line, saying what the message claims and how it sounds,
-    /// and its words for a sign as a note. None for a finish the fold
-    /// didn't line.
+    /// The agent's last message's reading: its finish's line, saying what
+    /// the message claims and how it sounds, with its words for a sign
+    /// added to its notes. None for a finish the fold didn't line.
     func messageRead(_ e: Event) -> Line? {
         guard let key = Self.about(e, facts: nil), let finish = fold.unread.removeValue(forKey: key),
               let reading = MessageReading(facts: e.data) else { return nil }
-        return Line(EventLine.finished(finish.text, saying: reading), notes: EventLine.itsWords(reading.phrases).map { [$0] } ?? [],
+        return Line(EventLine.finished(finish.text, saying: reading),
+                    notes: finish.notes + (EventLine.itsWords(reading.phrases).map { [$0] } ?? []),
                     facts: finish.facts.merging(["message": .object(reading.facts)]) { _, b in b })
     }
 

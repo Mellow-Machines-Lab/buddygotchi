@@ -245,6 +245,7 @@ HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 just now: You asked claude on "landing" for a fix, in a few words.
   Boop made an engaged face, held once, and said "Tch".
+just now: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 
 NOW (14:00, Wednesday)
 claude finished turn 1 on "landing": done, a short turn, no tool calls, fawning.
