@@ -74,7 +74,20 @@ pacing and touch, the Mac app, the architecture) found what's below.
       `Raster::replay16`; the Zs fade in and out fully rather than pop.
       Checked by test_gel's `test_a_recording_replays_between_pixels`,
       `test_text_glides_between_pixels` and the outfit gliding half a
-      pixel, and the stream, states and layers goldens looked at.
+      pixel, and the stream, states and layers goldens looked at. On the
+      board (`perf --scenes`, its new `stream` and `night` scenes): stream
+      32.5 fps (33.3 before), night 26.0 (28.4 with the hat on whole
+      pixels: replay16 fills what's whole and samples only edges, 10.3 ms
+      of layers against 7.2), the rest unchanged, the internal heap's
+      least 52.0 KB.
+- [x] A lane's words fell on top of each other ("sed" over "sed"): two a
+      `state`, 140 ms apart at random speeds. Each now drops a line
+      (`kWordGapPx`) behind its lane's newest and never faster
+      (test_behaviour's `test_the_work_streams_words`).
+- [ ] On the real board: whether the hat and the falling words now look
+      smooth asleep and at work, and whether words entering behind the
+      panel's top corners (110 px radius) look like they come from above
+      or look cut off.
 - [x] The sleeper's Zs are drawn, not a font's: one rounded pen
       (`Raster::zee`) growing from 7 to 16 px and drifting by sixteenths,
       where the font's z jumped 40-47 px of ink between sizes (test_gel).
