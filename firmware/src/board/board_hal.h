@@ -28,6 +28,8 @@ class BoardHal : public app::Hal {
   // amoled206/imu.cpp); the CYD has none.
   bool motion(int& ax, int& ay, int& az) override;
   void touchRaw(int& x, int& y, int& z, bool& irq) override;
+  bool touchLifted() override;
+  uint32_t touchLifts() override;
   void setTouchCal(const app::TouchCal& c) override;
   app::TouchCal touchCal() override { return cal_; }
   void setLed(uint32_t rgb) override;

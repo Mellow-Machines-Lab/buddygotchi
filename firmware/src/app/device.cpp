@@ -410,11 +410,11 @@ void Device::readInputs(uint32_t t) {
   // number of the request the screen showed as the finger went down, so the
   // Mac dismisses that one or none, never one that took the screen during
   // the hold. Its release does nothing, as a touch's on a screen that has
-  // gone does. The press shows at once. The panel misses readings under a
-  // light press, so its touch ends only after kTouchReleaseMs without
+  // gone does. The press shows at once. The panel may miss readings under
+  // a light press, so its touch ends after kTouchReleaseMs without
   // contact, in real time so that it ends while a tool has the clock
-  // frozen; an injected one ends when it says. The debug pattern ignores
-  // touches.
+  // frozen, or at once when the panel says the finger lifted; an injected
+  // one ends when it says. The debug pattern ignores touches.
   if (live_.injTouch && !after(live_.injTouchUntil, t)) live_.injTouch = false, touchGone = letGo(live_.injTouchUntil);
   int x = 0, y = 0;
   bool contact = live_.injTouch ? (x = live_.injX, y = live_.injY, true) : hal_.touch(x, y);
@@ -424,7 +424,9 @@ void Device::readInputs(uint32_t t) {
     y = live_.injY + int((live_.injToY - live_.injY) * along / ms);
   }
   if (contact) live_.touchSeenReal = real, live_.touchInjected = live_.injTouch;
-  bool touching = contact || (live_.touchDown && !live_.touchInjected && real - live_.touchSeenReal < kTouchReleaseMs);
+  const bool lifted = hal_.touchLifted() && !contact;
+  bool touching = contact || (live_.touchDown && !live_.touchInjected && !lifted &&
+                              real - live_.touchSeenReal < kTouchReleaseMs);
   bool faced = !live_.pattern;
   if (touching && !live_.touchDown) {
     input("touch", t, x, y);

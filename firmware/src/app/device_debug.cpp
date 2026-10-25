@@ -285,6 +285,7 @@ void Device::state(JsonObject d, uint32_t t) {
   JsonObject touch = d["touch"].to<JsonObject>();
   touch["down"] = live_.touchDown;
   touch["irq"] = irq;
+  touch["lifts"] = hal_.touchLifts();
   JsonArray raw = touch["raw"].to<JsonArray>();
   raw.add(rx), raw.add(ry), raw.add(rz);
   if (live_.lastTouchWas) {
