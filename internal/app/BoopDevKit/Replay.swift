@@ -23,6 +23,9 @@ public struct Replay {
     public var agent: String
     /// Virtual time between payloads.
     public var gapMs: Int64 = 1000
+    /// Whether the core plays the work stream, as the app does unless
+    /// it's turned off.
+    public var workStream = true
 
     public init(agent: String) {
         self.agent = agent
@@ -49,12 +52,14 @@ public struct Replay {
     /// Runs the steps and returns one line per raw event, core effect and
     /// view event, each effect and view event prefixed with its virtual
     /// time. `statesOnly` keeps only what goes to the device: each `state`
-    /// and each rule reaction's `do`.
+    /// and each rule reaction's or the work stream's `do`.
     public func run(_ steps: [Step], statesOnly: Bool = false) -> [String] {
         let start = Replay.defaultStart
         var now = start
         let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
-        let core = Core(config: .init(time: time), lastActiveDay: time.day(now))
+        var config = Core.Config(time: time)
+        config.workStream = workStream
+        let core = Core(config: config, lastActiveDay: time.day(now))
         let pipeline = Pipeline(core: core, view: TranscriptView())
         var out: [String] = []
 
@@ -62,7 +67,7 @@ public struct Replay {
             let at = "+" + String(format: "%.1f", Double(now - start) / 1000) + "s "
             for effect in step.effects {
                 switch effect {
-                case .state, .reaction: break
+                case .state, .reaction, .call: break
                 default: if statesOnly { continue }
                 }
                 out.append(at + effect.summary)

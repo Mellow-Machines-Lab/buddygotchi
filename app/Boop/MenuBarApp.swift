@@ -439,6 +439,12 @@ final class AppModel: ObservableObject {
         runtime?.setVolume(volume)
     }
 
+    func setWorkStream(_ on: Bool) {
+        guard status?.workStream != on else { return }
+        status?.workStream = on
+        runtime?.setWorkStream(on)
+    }
+
     /// Takes effect from the next event.
     func setPersonality(_ personality: Personality) {
         guard personality != self.personality else { return }

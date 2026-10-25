@@ -185,14 +185,19 @@ The architecture's split, applied:
   first.
 - **The wire: `state` for the background, a `do` for the foreground.**
   The background rides `state`, which the Mac sends on every change
-  anyway: a `calls` key with each agent's newest few words and a
-  counter, so a board that reconnects catches up and four calls a
-  second don't each cost a `do` and its `ended`. A word that comes
-  forward is a `do` the board's queue times like any reaction:
-  `{"t":"do","id":51,"name":"call","play":"next","ttl":1500,"args":{"agent":1,"word":"exit 1","as":"bonk"}}`,
-  whose short `ttl` drops it if it can't play while it's news. The
-  `state` key and the `do` name are the app's, so LinkKit doesn't
-  change.
+  anyway: a `calls` key with a lane for each working session, `[slot,
+  calls, word, project]` (`"calls":[[0,1,"grep","landing"]]`, from
+  `WorkStreamTests`), so the board drops a word for each new call it
+  counts, a board that reconnects only picks up the count, and four
+  calls a second don't each cost a `do` and its `ended`. A `state` whose
+  only change is a new word waits 250 ms after the last. A word that
+  comes forward is a `do` the board's queue times like any reaction:
+  `{"t":"do","name":"call","play":"next","ttl":1500,"args":{"a":0,"w":"make","as":"bonk"}}`
+  (`n` with a combo's count), whose short `ttl` drops it if it can't
+  play while it's news. The `state` key and the `do` name are the
+  app's, so LinkKit doesn't change. The error reaction stays the
+  core's, for the brain's history; a board whose `hello` says `call`
+  gets the bonk in its place.
 - **The brain hears no more than it does today**, plus one clause
   (below, What the brain hears).
 
@@ -221,7 +226,7 @@ since the wait is the joke.
 
 | Priority | Calls | Comes forward |
 | --- | --- | --- |
-| P0, always | A failure (a bonk on the ladder; a lookup's shrug; a timeout; your NO); a check's result; compaction; a turn's error | Always: it cuts a P2 that's playing, and waits up to 1.5 s behind a P0 or P1, else is dropped |
+| P0, always | A failure (a bonk on the ladder; a lookup's shrug; a timeout; your NO); a check's result | Always: it cuts a P1 or P2 that's playing, and waits up to 1.5 s behind another P0, else is dropped |
 | P1, notable | A check's start; an edit of 100 lines or more; a helper's start and return; the first call of a turn; a combo reaching 5, 10 or 20 | When the slot is free, or frees within 1.5 s |
 | P2, ambient | Anything else | Only when the slot is free, 8 s since anything came forward, and 30 s since this word did |
 
@@ -325,12 +330,15 @@ The stream keeps that, and adds no wake and no line per call:
 - What comes forward is a `did` by the core's rule in the transcript,
   as the error reaction is today; the background words are derived
   from the calls already there and add nothing.
-- The view counts the P0 moments into the turn's counts, and the next
-  line that wakes the brain anyway, its heartbeat or the finish,
-  carries one clause about them, at most three moments: "codex's
-  commands failed 3 times and hit Boop each time; a helmet by the
-  third". So the brain can answer the run ("ow, three") at a pass it
-  was having anyway.
+- The view counts the moments that hit (bonks, a timeout, your NO; not
+  a check's failure, a line already) into the turn's counts, and the
+  next line that wakes the brain anyway, its working heartbeat or the
+  finish, carries one note about those since a line last did:
+  "Failed commands hit Boop in the face twice." So the brain can
+  answer the run ("ow, two") at a pass it was having anyway. Played
+  over every eval scenario, no prompt changed.
+- **A setting turns it off**: Settings, Sound, Work stream
+  (`settings.json`'s `workStream`, on unless false).
 
 ## Checking it reaches the board
 
@@ -362,12 +370,17 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
 1. [x] **A lookup that exits 1 no longer plays the error face**
    (`Core.fold`'s `.callEnded`: topic `inspect` with `exit_code`; in the
    owner's session four lookups that matched nothing played it).
-2. **AgentHooks** (its own repository, first): `program` from the
-   closed list and `words.json`, and the file extension.
-3. **The Mac:** the core's call rule (the word, the priorities and the
-   slot, the ladder, the combo), the `calls` key and the `call` `do`,
-   the one clause the brain hears, tests that pin each number above, and
-   the replay of the owner's session (Checking it reaches the board).
+2. [x] **AgentHooks** (its own repository, first): `program` from the
+   closed list and `words.json`, and the file extension. On its branch
+   `work-stream-program`, for the owner to push; Boop reads `program`
+   from the transcript, so it works before the bump and says `bash`
+   until then.
+3. [x] **The Mac:** the core's call rule (`WorkStream`: the word, the
+   priorities and the slot, the ladder, the combo), the `calls` key and
+   the `call` `do`, the note the brain hears, the setting, and
+   `WorkStreamTests`, which pin each number above. Still to do: the
+   replay of the owner's session to the simulator (Checking it reaches
+   the board), once the board plays it.
 4. **The board:** the background layer behind the body (pre-drawn
    words, one sprite per word, never typeset per frame), measured with
    `boopctl ping`'s `draw_us` (the gel with a hat already draws at 27

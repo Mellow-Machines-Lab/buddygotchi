@@ -10,10 +10,13 @@ final class ReplayTests: XCTestCase {
     /// Each snapshot as `+time base attn waiting`, e.g. `+3.0s idle claude/jetpack 1`,
     /// counting 1 + `attn.more` waiting, with `/act` after the base while
     /// there's one (`+2.0s working/terminal - 0`); each rule's reaction as
-    /// `+time name`, with its `ctx` (`+1.0s starting new_task`).
+    /// `+time name`, with its `ctx` (`+1.0s starting new_task`). The work
+    /// stream is off: its tests are `WorkStreamTests`.
     func summary(_ fixture: String, agent: String) throws -> [String] {
         let path = HookFixtures.agentHooks.appendingPathComponent(fixture).path
-        let lines = Replay(agent: agent).run(try Replay.steps(fromFile: path), statesOnly: true)
+        var replay = Replay(agent: agent)
+        replay.workStream = false
+        let lines = replay.run(try Replay.steps(fromFile: path), statesOnly: true)
         return try lines.map { line in
             let parts = line.split(separator: " ", maxSplits: 2).map(String.init)
             let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(parts[2].utf8)) as? [String: Any])
@@ -192,8 +195,12 @@ final class ReplayTests: XCTestCase {
         replay.gapMs = 5000
         let lines = replay.run(try Replay.steps(fromFile: path))
         let effects = lines.filter { $0.hasPrefix("+") }.map { $0.split(separator: " ", maxSplits: 1)[1] }
-        XCTAssertEqual(effects.filter { $0.hasPrefix("do ") }.map { $0.contains(#""name":"starting""#) }, [true, true],
+        let rules = effects.filter { $0.hasPrefix("do ") && !$0.contains(#""name":"call""#) }
+        XCTAssertEqual(rules.map { $0.contains(#""name":"starting""#) }, [true, true],
                        "the rules play the starts; the finish is the brain's")
+        // The work stream: each test run's start and result come forward.
+        let calls = effects.filter { $0.contains(#""name":"call""#) }
+        XCTAssertGreaterThanOrEqual(calls.filter { $0.contains(#""as":"cross""#) }.count, 1, "\(calls)")
         XCTAssertTrue(effects.contains(#"view last_message · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls."#), "\(effects)")
         let states = effects.filter { $0.hasPrefix("state") }
         XCTAssertEqual(states.filter { $0.contains(#""act":"testing""#) }.count, 10, "each of the ten test runs")

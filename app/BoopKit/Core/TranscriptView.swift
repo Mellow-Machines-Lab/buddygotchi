@@ -93,6 +93,10 @@ public final class TranscriptView {
         var wins: (run: Int, at: Int64)?
         /// This turn's working heartbeats.
         var checkIns = 0
+        /// The work stream's moments that hit Boop this turn
+        /// (`WorkStream.hits`), and how many of them a line has said.
+        var hits: [String] = []
+        var hitsSaid = 0
     }
 
     /// A thread as the lines name it: its session's agent, project and
@@ -347,6 +351,15 @@ public final class TranscriptView {
     /// them.
     func take(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
+        if e.kind == Event.did, e.action == WorkStream.action {
+            // A word of the work stream that came forward: no line, and
+            // counted for the turn's lines when it hit Boop.
+            if let gag = e["as"]?.string, WorkStream.hits.contains(gag), let key = e["session"]?.string,
+               fold.counts[key] != nil || fold.sessions.sessions[key] != nil {
+                fold.counts[key, default: Counts()].hits.append(gag)
+            }
+            return nil
+        }
         if let a = AgentEvent(e) {
             let line = agentEvent(a)
             fold.lastAgentLined = line != nil
@@ -464,7 +477,9 @@ public final class TranscriptView {
             }
             let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
             c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
-            return turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started))
+            var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started))
+            if let hits = newHits(&c, name: onlyName) { line.notes.append(hits) }
+            return line
         case .sessionStart:
             // The agent's context was compacted: it carries on from a
             // summary. Any other session start is no line.
@@ -488,6 +503,8 @@ public final class TranscriptView {
         c.check = nil
         c.checksFailed = 0
         c.checkIns = 0
+        c.hits = []
+        c.hitsSaid = 0
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
@@ -546,6 +563,15 @@ public final class TranscriptView {
         } else {
             c.topicStates.append((topic, state))
         }
+    }
+
+    /// The note on the moments of the work stream that hit Boop since a
+    /// line last said them, at most once a line: the brain hears of them
+    /// at a pass it has anyway, never one each.
+    func newHits(_ c: inout Counts, name: String) -> String? {
+        guard c.hits.count > c.hitsSaid else { return nil }
+        defer { c.hitsSaid = c.hits.count }
+        return EventLine.hits(Array(c.hits[c.hitsSaid...]), name: name)
     }
 
     /// A finish: what the turn did, never the agent's words, which only
@@ -787,9 +813,11 @@ public final class TranscriptView {
             // are: the line says which.
             var c = fold.counts[s.key] ?? Counts()
             c.checkIns += 1
+            let hits = newHits(&c, name: name(e))
             fold.counts[s.key] = c
             return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms, topic: c.topic),
-                        notes: EventLine.checkIn(EventLine.rung(c.checkIns, of: EventLine.round), name: name(e)).map { [$0] } ?? [],
+                        notes: (EventLine.checkIn(EventLine.rung(c.checkIns, of: EventLine.round), name: name(e)).map { [$0] } ?? [])
+                            + (hits.map { [$0] } ?? []),
                         facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
                                 "check_in": .int(Int64(c.checkIns))])
         }
@@ -918,6 +946,25 @@ public enum EventLine {
     public static func rung(_ n: Int, of size: Int) -> Int { n < 1 ? 0 : (n - 1) % size + 1 }
 
     static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
+
+    /// The note on the work stream's moments that hit Boop, by their gags
+    /// (`WorkStream.hits`): `Failed commands hit Boop in the face 3 times
+    /// (a helmet on by the last); a command timed out and landed on Boop's
+    /// head.`
+    public static func hits(_ gags: [String], name: String = CharacterPack.active.name) -> String? {
+        var parts: [String] = []
+        let bonks = gags.filter(WorkStream.ladder.contains)
+        if !bonks.isEmpty {
+            let times = bonks.count == 1 ? "once" : bonks.count == 2 ? "twice" : "\(bonks.count) times"
+            let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("helmet") ? " (a helmet on by the last)" : ""
+            parts.append("failed commands hit \(name) in the face \(times)\(top)")
+        }
+        if gags.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
+        if gags.contains("no") { parts.append("you said no to a request and \(name) flinched") }
+        guard !parts.isEmpty else { return nil }
+        let text = parts.joined(separator: "; ")
+        return text.prefix(1).uppercased() + text.dropFirst() + "."
+    }
 
     /// A working heartbeat's note for its rung of a round, from the second:
     /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.

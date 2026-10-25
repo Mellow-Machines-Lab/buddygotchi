@@ -17,6 +17,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// The onboarding act a quit left off at, after Boop was named; none
     /// once it's finished (`Onboarding.resume`).
     public var onboarding: Onboarding.Act?
+    /// Whether the board shows the agents' calls falling past Boop, and
+    /// the ones that hit it (`WorkStream`): on unless you turn it off.
+    public var workStream = true
 
     public init() {}
 
@@ -35,9 +38,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
+        workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume, buddies, board, onboarding }
+    enum CodingKeys: String, CodingKey { case personality, volume, buddies, board, onboarding, workStream }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -46,6 +50,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
+        if !workStream { try c.encode(workStream, forKey: .workStream) }
     }
 
     public static let file = "settings.json"

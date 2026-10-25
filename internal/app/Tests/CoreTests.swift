@@ -61,11 +61,15 @@ final class CoreRig {
 
     /// `isRunning` says whether an agent's process runs, for hooks that
     /// name one; the rig's hooks name none unless a test adds it.
+    /// The work stream is off unless a test turns it on (`workStream`):
+    /// the other rules' tests read whole `state`s.
     init(start: Int64 = CoreRig.start, newDay: Bool = false, seed: UInt64 = 1, rules: Personality.Rules = Personality.Rules(),
-         isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
+         workStream: Bool = false, isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning) {
         now = start
         let today = time.day(start)
-        let core = Core(config: .init(time: time), lastActiveDay: newDay ? nil : today, isRunning: isRunning)
+        var config = Core.Config(time: time)
+        config.workStream = workStream
+        let core = Core(config: config, lastActiveDay: newDay ? nil : today, isRunning: isRunning)
         pipeline = Pipeline(core: core, view: TranscriptView(rules: rules, seed: seed))
         if !newDay { core.tick(at: start) }  // the first snapshot has gone out
     }

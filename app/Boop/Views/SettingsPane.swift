@@ -51,19 +51,27 @@ struct SettingsPane: View {
     private var sound: some View {
         let s = model.status?.snapshot
         return Card(padding: 0) {
-            SettingRow(icon: s?.vol == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", title: "Volume",
-                       detail: "How loud \(model.name) talks.") {
-                HStack(spacing: 6) {
-                    Slider(value: Binding(get: { Double(s?.vol ?? 6) },
-                                          set: { model.setVolume(Int($0.rounded())) }),
-                           in: 0...10, step: 1)
-                        .controlSize(.small)
-                        .frame(width: 84)
-                        .accessibilityLabel("Volume")
-                    Text(s.map { $0.vol == 0 ? "Off" : "\($0.vol)" } ?? "–")
-                        .font(.system(size: 11, weight: .medium).monospacedDigit())
-                        .foregroundStyle(Theme.inkSoft)
-                        .frame(width: 22, alignment: .trailing)
+            VStack(spacing: 0) {
+                SettingRow(icon: s?.vol == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", title: "Volume",
+                           detail: "How loud \(model.name) talks.") {
+                    HStack(spacing: 6) {
+                        Slider(value: Binding(get: { Double(s?.vol ?? 6) },
+                                              set: { model.setVolume(Int($0.rounded())) }),
+                               in: 0...10, step: 1)
+                            .controlSize(.small)
+                            .frame(width: 84)
+                            .accessibilityLabel("Volume")
+                        Text(s.map { $0.vol == 0 ? "Off" : "\($0.vol)" } ?? "–")
+                            .font(.system(size: 11, weight: .medium).monospacedDigit())
+                            .foregroundStyle(Theme.inkSoft)
+                            .frame(width: 22, alignment: .trailing)
+                    }
+                }
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "text.line.first.and.arrowtriangle.forward", title: "Work stream",
+                           detail: "Your agents' tool calls fall past \(model.name), and failures hit it.") {
+                    Toggle("Work stream", isOn: Binding(get: { model.status?.workStream ?? true }, set: { model.setWorkStream($0) }))
+                        .toggleStyle(.boop).labelsHidden()
                 }
             }
         }
