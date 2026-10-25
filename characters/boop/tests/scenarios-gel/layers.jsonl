@@ -21,6 +21,21 @@
 {"t":"state","base":"asleep","mood":"happy","vol":0,"when":["night","winter"]}
 {"clock":3200}
 {"shot":"pyjamas"}
+// A morning: the sun coming up behind it and its coffee at its side,
+// steaming; lifted to its mouth for a sip (the last 1.8 s of every 9);
+// and on the desk beside the keyboard while it works.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["morning"]}
+{"clock":4200}
+{"shot":"coffee"}
+{"clock":7800}
+{"shot":"coffee-sip"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"determined","vol":0,"busy":1,"when":["morning"]}
+{"clock":1500}
+{"shot":"coffee-working"}
 // Reading glasses while the latest prompt was an essay or for docs, over
 // working's face; on a Friday they're worn in place of the shades, and at
 // Halloween under the witch hat.

@@ -16,11 +16,11 @@ namespace render::rig {
 
 // Back to front, as a face draws them.
 enum class Layer : uint8_t {
-  kScene,   // behind the body: the gel's night sky
+  kScene,   // behind the body: the gel's night sky or sunrise
   kWorn,    // over the eyes or on the body: glasses, pyjamas
   kHat,     // on the head's anchors
   kAir,     // snow, confetti, hearts: screen space
-  kBeside,  // beside the head: Zs while it sleeps at night
+  kBeside,  // beside it: Zs while it sleeps at night, the gel's morning coffee
   kCount
 };
 constexpr int kLayerCount = int(Layer::kCount);

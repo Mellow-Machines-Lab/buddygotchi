@@ -115,7 +115,8 @@ ramps and springs can, and no jolt at an event. By file:
   a night's drowse, frantic typing, in a nightcap and a party hat, and a
   marathon's stretch, the rig's clip that Pixel's face plays too), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
-  night, a sign under the nightcap), a reaction's sign (`sign.jsonl`), the
+  night, the morning's coffee at its side, at a sip and on the desk, a
+  sign under the nightcap), a reaction's sign (`sign.jsonl`), the
   work stream (`stream.jsonl`: two lanes' words falling, the to-do bar and
   the clock, a thought cloud, and every gag as it lands: arrive, bonk and
   its dizzy eyes, helmet, shrug, shatter, pass, hail's umbrella, look,

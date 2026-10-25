@@ -591,9 +591,14 @@ Day; a striped nightcap at night, flopping down its left side to a
 tassel by its cheek, with pyjamas to match but while it wears reading
 glasses; a bobble hat in winter), shades on a Friday's day, and the air
 (snow, confetti, hearts, Zs asleep at night), and last the sign a
-reaction holds up. At night a crescent moon and twinkling stars sit
-behind everything, drawn last of all onto only the background's black,
-so the body, its outfit, the stream's words and the sign stay in front. Each sits on anchors the painter takes from
+reaction holds up. In the morning, while it's idle or at work, it
+holds a mug of coffee at its side in a little gel hand, steam curling up
+off it, and now and then lifts it to its mouth for a sip
+(`OutfitLayer::kSipMs`). At night a
+crescent moon and twinkling stars sit behind everything, and in the
+morning the sun coming up over the lane on its left, drawn last of all
+onto only the background's black, so the body, its outfit, the stream's
+words and the sign stay in front. Each sits on anchors the painter takes from
 the very vertices it projects for the body (the rig's `Anchors`, both
 faces' one type: the dome's apex, ring 6's sides and front for a brim,
 ring 15's front for the hands) and the face art's eye centres, so a layer
@@ -603,8 +608,8 @@ night the lids hang a little lower (`kNightLids`) on the awake face,
 easing out as it squashes shut, gone by when it's a line, and back as it
 wakes. Each part comes and goes through the rig's layer stack
 ([CHARACTER.md](../../../CHARACTER.md) §15, The layer stack), which the
-face keeps: the night sky, what's worn over the eyes or on the body, the
-hat, the air and the Zs each fade in and out over 200 ms, a new one only once the old
+face keeps: the sky, what's worn over the eyes or on the body, the hat,
+the air and what's beside it (the Zs, the coffee) each fade in and out over 200 ms, a new one only once the old
 has gone (a winter evening's bobble fades out at night, then the
 nightcap in, while the sky and the pyjamas fade in at once), each on its own, so falling
 asleep on a winter night brings the Zs while the nightcap, the pyjamas

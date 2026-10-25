@@ -537,13 +537,15 @@ Besides drawing each mood and state, a face:
   and its pyjamas); reading glasses while `reading` is on, else shades on a
   Friday's day, neither while it sleeps (`render::eyewearFor`); snow in
   winter, confetti on a party day and New Year's Day, hearts on
-  Valentine's, Zs while it sleeps at night; and behind everything at
-  night, drawn last onto only the background's black, a crescent moon and
-  twinkling stars. Each comes and goes through
+  Valentine's, Zs while it sleeps at night; a mug of coffee, steaming,
+  held at its side while it's idle or at work in the morning and lifted
+  for a sip every 9 s (`OutfitLayer::kSipMs`); and behind everything,
+  drawn last onto only the background's black, a crescent moon and
+  twinkling stars at night and the sun coming up in the morning. Each comes and goes through
   the rig's layer stack (§15), fading over 200 ms, a new one after the
   old has gone. Peekaboo's gesture takes the
   outfit off. Pixel wears neither the pyjamas nor the glasses, nor has the
-  sky; the Mac's mirror
+  sky (its coffee is its morning designs'); the Mac's mirror
   is the board's own firmware, so it wears them as the board does.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
   long a reaction plays, and its voice window (`voiceMs`), when a take may
@@ -988,16 +990,16 @@ then, and the rig's stretch over its rig-drawn desks.
 **The layer stack.** What comes and goes around the body, each in its
 place among a face's own drawing, is a layer of the rig's stack
 (`render/rig/layers.h`), back to front: the scene behind the body (the
-gel's night sky), what's worn over the eyes or on the body (glasses,
-pyjamas), the hat, the air (snow,
-confetti, hearts) and what's beside the head (Zs). Each shows a content,
+gel's night sky or sunrise), what's worn over the eyes or on the body
+(glasses, pyjamas), the hat, the air (snow, confetti, hearts) and what's
+beside it (Zs, the gel's morning coffee). Each shows a content,
 the face's own number for what it draws there, at an opacity that eases
 in and out over the rig's fade (`kFadeMs`, 200 ms); a new content waits
 for the old to fade out, then fades in, so a hat changes at midnight
 without a pop and falling asleep on a winter night brings the Zs while
 the sky, the hat, the pyjamas and the snow stay. Each is a function of the time
 since it was shown, however often a face reads it. The gel draws its
-sky, its outfit, its air and its Zs from it (`render/gel/layers.h`); Pixel's
+sky, its outfit, its air, its Zs and its coffee from it (`render/gel/layers.h`); Pixel's
 overlays draw as its designs do and dissolve with them. The lane and a
 reaction's sign fade on Behaviour's ramps instead (§9), since what they
 show changes at once.

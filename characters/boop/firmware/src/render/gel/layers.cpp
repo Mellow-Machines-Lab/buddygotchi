@@ -8,6 +8,7 @@
 #include "render/gel/engine.h"
 #include "render/gel/lane.h"
 #include "render/gel/raster.h"
+#include "render/maths.h"
 #include "render/palette.h"
 #include "render/tags.h"
 
@@ -23,7 +24,9 @@ constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
 // The nightcap's and the pyjamas' flannel, its stripes and the cap's
 // cuff, the moon's light, and the reading glasses' wire.
 constexpr uint16_t kNightcloth = rgb565(62, 72, 168), kNightstripe = rgb565(176, 190, 238),
-                   kNightcuff = rgb565(112, 124, 210), kMoonlight = rgb565(250, 230, 160), kWire = rgb565(206, 164, 92);
+                   kNightcuff = rgb565(112, 124, 210), kMoonlight = rgb565(250, 230, 160),
+                   kSunlight = rgb565(255, 190, 84), kMug = rgb565(232, 112, 72), kCoffee = rgb565(92, 52, 30),
+                   kWire = rgb565(206, 164, 92);
 
 // The point `i` thirty-seconds of a turn round a circle, as cosine and
 // sine (Q12).
@@ -307,32 +310,45 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
   r.alpha = 255;
 }
 
-// The night sky: a crescent moon high on its left and stars about it,
-// each twinkling on a slow wave of its own, only onto the background's
-// black, at `fade`.
-void sky(Surface& s, int fade, int ms) {
-  const int bottom = s.height * 4 / 5;
-  int bx0 = s.width, by0 = bottom, bx1 = -1, by1 = -1;
-  auto dot = [&](int x, int y, uint16_t ink, int alpha) {
+// Drawing behind what's drawn: only onto the background's black, above
+// the lane, at a fade, and the pixels it drew marked for the next clear.
+struct Behind {
+  Surface& s;
+  int fade, bottom = s.height * 4 / 5;
+  int x0 = s.width, y0 = bottom, x1 = -1, y1 = -1;
+  void dot(int x, int y, uint16_t ink, int alpha) {
     if (x < 0 || y < 0 || x >= s.width || y >= bottom || alpha * fade < 255 * 3) return;
     uint16_t& p = s.pixels[y * s.width + x];
     if (p) return;
     p = mix565(0, ink, alpha * fade / 255);
-    bx0 = std::min(bx0, x), bx1 = std::max(bx1, x), by0 = std::min(by0, y), by1 = std::max(by1, y);
-  };
-  // The moon: a disk with a smaller one cut from its upper right, each
-  // edge's coverage from how far inside it a pixel's middle is (sixteenths).
+    x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);
+  }
+  // Each pixel in the box (sixteenths) at `cover`'s coverage of its middle,
+  // 0 … 256.
+  template <typename Cover>
+  void fill(int bx0, int by0, int bx1, int by1, uint16_t ink, Cover cover) {
+    for (int y = by0 / 16; y <= by1 / 16; ++y)
+      for (int x = bx0 / 16; x <= bx1 / 16; ++x)
+        if (const int a = cover(x * 16 + 8, y * 16 + 8)) dot(x, y, ink, a * 255 / 256);
+  }
+  ~Behind() {
+    if (x1 >= 0) s.touch(x0, y0, x1 + 1, y1 + 1);
+  }
+};
+// How far inside a circle about the origin a point is, as coverage: 0 … 16.
+int inside(int dx, int dy, int radius) {
+  return std::clamp((radius * radius - dx * dx - dy * dy) / (2 * radius) + 8, 0, 16);
+}
+
+// The night sky: a crescent moon high on its left and stars about it,
+// each twinkling on a slow wave of its own.
+void nightSky(Behind& b, int ms) {
+  const Surface& s = b.s;
+  // The moon: a disk with a smaller one cut from its upper right (sixteenths).
   const int mx = s.width * 13 * 16 / 100, my = s.height * 15 * 16 / 100, mr = s.width * 6 * 16 / 100;
   const int cx = mx + mr * 42 / 100, cy = my - mr * 25 / 100, cr = mr * 84 / 100;
-  auto inside = [](int dx, int dy, int radius) {  // 0 … 16
-    return std::clamp((radius * radius - dx * dx - dy * dy) / (2 * radius) + 8, 0, 16);
-  };
-  for (int y = (my - mr) / 16; y <= (my + mr) / 16; ++y)
-    for (int x = (mx - mr) / 16; x <= (mx + mr) / 16; ++x) {
-      const int px = x * 16 + 8, py = y * 16 + 8;
-      const int a = inside(px - mx, py - my, mr) * (16 - inside(px - cx, py - cy, cr));
-      if (a) dot(x, y, kMoonlight, a * 255 / 256);
-    }
+  b.fill(mx - mr, my - mr, mx + mr, my + mr, kMoonlight,
+         [&](int x, int y) { return inside(x - mx, y - my, mr) * (16 - inside(x - cx, y - cy, cr)); });
   // The stars: where each is (hundredths of the surface), how long its
   // rays reach, and a twinkle between dim and bright.
   static constexpr int8_t kStars[][3] = {{27, 7, 3},  {41, 3, 2}, {65, 6, 2}, {80, 13, 3}, {93, 29, 2},
@@ -341,14 +357,94 @@ void sky(Surface& s, int fade, int ms) {
   for (int i = 0; i < int(sizeof kStars / sizeof kStars[0]); ++i) {
     const int x = s.width * kStars[i][0] / 100, y = s.height * kStars[i][1] / 100, reach = kStars[i][2];
     const int glow = 110 + wave(ms + i * 737, 2600 + i * 190, 145);
-    dot(x, y, kStarlight, glow);
+    b.dot(x, y, kStarlight, glow);
     for (int d = 1; d <= reach; ++d) {
       const int a = glow * (reach + 1 - d) / (reach + 1);
-      dot(x - d, y, kStarlight, a), dot(x + d, y, kStarlight, a), dot(x, y - d, kStarlight, a),
-          dot(x, y + d, kStarlight, a);
+      b.dot(x - d, y, kStarlight, a), b.dot(x + d, y, kStarlight, a), b.dot(x, y - d, kStarlight, a),
+          b.dot(x, y + d, kStarlight, a);
     }
   }
-  if (bx1 >= 0) s.touch(bx0, by0, bx1 + 1, by1 + 1);
+}
+
+// The morning's: the sun coming up over the lane on its left, its rays
+// fanned above it breathing in and out every 3 s.
+void sunrise(Behind& b, int ms) {
+  const Surface& s = b.s;
+  const int sx = s.width * 15 * 16 / 100, sy = b.bottom * 16, sr = s.width * 8 * 16 / 100;
+  b.fill(sx - sr, sy - sr, sx + sr, sy, kSunlight, [&](int x, int y) { return inside(x - sx, y - sy, sr) * 16; });
+  // Seven rays from just off its rim, each a round-ended bar, the long and
+  // the short in turn.
+  const int reach = wave(ms, 3000, sr / 8), half = s.width * 16 / 160;
+  static constexpr int kRays[] = {17, 19, 22, 24, 26, 29, 31};  // thirty-seconds round the upper half
+  for (int i = 0; i < 7; ++i) {
+    const Point dir = turn(kRays[i]);
+    const int from = sr + sr / 5, to = from + (i % 2 ? sr / 3 : sr / 2) + reach;
+    const int ax = sx + from * dir.x / 4096, ay = sy + from * dir.y / 4096;
+    const int bx = sx + to * dir.x / 4096, by = sy + to * dir.y / 4096;
+    b.fill(std::min(ax, bx) - half, std::min(ay, by) - half, std::max(ax, bx) + half, std::max(ay, by) + half,
+           kSunlight, [&](int x, int y) {
+             // How far the pixel's middle is from the bar's spine.
+             const int64_t vx = bx - ax, vy = by - ay, wx = x - ax, wy = y - ay, len = vx * vx + vy * vy;
+             const int64_t k = std::clamp<int64_t>((wx * vx + wy * vy) * 4096 / std::max<int64_t>(1, len), 0, 4096);
+             const int64_t dx = wx - vx * k / 4096, dy = wy - vy * k / 4096;
+             return inside(int(dx), int(dy), half) * 16;
+           });
+  }
+}
+
+// Its morning coffee: a mug held in a little gel hand at its right side,
+// steam curling up off it, lifted to its mouth for a sip once every
+// OutfitLayer::kSipMs (`ms` into the engine's clock).
+void coffee(Raster& r, const rig::Anchors& at, int ms) {
+  const int d = std::max(16, at.eyeR.x - at.eyeL.x), mw = d * 36 / 100, mh = d * 39 / 100;
+  // Where it rests and where it's sipped from, the mug's middle, and how
+  // far up between them it is: up over 500 ms, held 800, down over 500.
+  const Point rest{at.handF.x + d * 70 / 100, at.handF.y - d * 8 / 100};
+  const Point sip{(at.eyeL.x + at.eyeR.x) / 2 + d * 16 / 100, (at.eyeL.y + at.eyeR.y) / 2 + d * 32 / 100};
+  const int into = ms % OutfitLayer::kSipMs - (OutfitLayer::kSipMs - 1800);
+  const int up = into < 0 ? 0 : into < 500 ? ease1000(into, 500) : into < 1300 ? 1000 : ease1000(1800 - into, 500);
+  const int mx = rest.x + (sip.x - rest.x) * up / 1000, my = rest.y + (sip.y - rest.y) * up / 1000;
+  const int top = my - mh / 2, bottom = my + mh / 2, l = mx - mw / 2, rt = mx + mw / 2, round = mw / 6;
+  // The steam: three wisps, each rising from the rim for 1.8 s, swaying
+  // as it goes and fading, none while it sips.
+  if (!up)
+    for (int i = 0; i < 3; ++i) {
+      const int age = (ms + i * 600) % 1800, rise = mh * 3 / 2 * age / 1800;
+      Point wisp[5];
+      for (int k = 0; k < 5; ++k) {
+        const int sway = (wave(ms + i * 400 + k * 260, 1200, mw / 5) - mw / 10) * (k + 1) / 5;
+        wisp[k] = {mx + (i - 1) * mw / 4 + sway, top - mh / 10 - rise - k * mh / 7};
+      }
+      r.alpha = 190 - age * 180 / 1800;
+      r.stroke16(wisp, 5, d / 20 + 8, kCream);
+    }
+  r.alpha = 255;
+  // The handle, a loop off its right side.
+  Point handle[9];
+  for (int k = 0; k <= 8; ++k)  // from its top round to its bottom
+    handle[k] = {rt + mw * 22 / 100 * turn((24 + k * 2) % 32).x / 4096,
+                 my - mh / 10 + mh * 24 / 100 * turn((24 + k * 2) % 32).y / 4096};
+  r.stroke16(handle, 9, mw / 7, kMug);
+  // The mug, narrowing a little to its foot, with round corners there,
+  // a cream band round it and the coffee in it.
+  const Point body[] = {{l, top},
+                        {rt, top},
+                        {rt - mw / 20, bottom - round},
+                        {rt - mw / 20 - round / 3, bottom - round / 4},
+                        {rt - mw / 20 - round, bottom},
+                        {l + mw / 20 + round, bottom},
+                        {l + mw / 20 + round / 3, bottom - round / 4},
+                        {l + mw / 20, bottom - round}};
+  r.polygon16(body, 8, kMug);
+  const int by0 = my - mh / 14, by1 = my + mh / 7;
+  const Point band[] = {{l - mw, by0}, {rt + mw, by0}, {rt + mw, by1}, {l - mw, by1}};
+  r.polygon16(band, 4, kCream, body, 8);
+  r.round(l / 16 + 2, top / 16 - mh / 160, mw / 16 - 4, mh / 80 + 2, mh / 160 + 1, kCoffee);
+  // The hand holding it, at its left side low down.
+  r.disk16(l + mw / 12, my + mh / 5, mw / 4, kGel);
+  r.alpha = 160;
+  r.disk16(l + mw / 12 - mw / 14, my + mh / 5 - mw / 10, mw / 14, kShine);
+  r.alpha = 255;
 }
 
 // What it wears besides where it sits: the hat, the party hat's colours,
@@ -522,8 +618,15 @@ int sleepyLids(const Engine& e) {
 
 Contents layerContents(const Engine& e) {
   const Look look = lookFor(e);
-  const bool night = hasTag(e.scenes.when, "night"), zs = night && e.scenes.route.state == SceneState::kAsleep;
-  return {night ? 1u : 0u, wornOf(look), hatOf(look), airFor(e.scenes.when), zs ? 1u : 0u};
+  const uint32_t when = e.scenes.when;
+  const SceneState state = e.scenes.route.state;
+  const bool night = hasTag(when, "night"), morning = hasTag(when, "morning");
+  const bool zs = night && state == SceneState::kAsleep;
+  // Coffee while it's idle or at work in the morning, so not asleep, nor
+  // in a gesture or a reaction's look.
+  const bool awake = state == SceneState::kIdle || state == SceneState::kWorking;
+  const uint32_t scene = night ? kNightSky : morning ? kSunrise : 0;
+  return {scene, wornOf(look), hatOf(look), airFor(when), zs ? kZs : morning && awake ? kCoffeeMug : 0};
 }
 
 void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig::Layers* layers, uint32_t t) {
@@ -544,15 +647,20 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig:
   if (air & kConfetti) confetti(r, s.width, bottom, ms);
   if (air & kHearts) hearts(r, s.width, bottom, ms);
   r.fade = fade(Layer::kBeside);
-  if (content(Layer::kBeside, now.beside)) zs(r, at, ms);
+  const uint32_t beside = content(Layer::kBeside, now.beside);
+  if (beside == kZs) zs(r, at, ms);
+  if (beside == kCoffeeMug) coffee(r, at, ms);
 }
 
 void paintSky(Surface& s, const Engine& e, const rig::Layers* layers, uint32_t t) {
   if (!s.pixels) return;
   using rig::Layer;
-  const uint32_t whole = layerContents(e).scene;
-  if (!(layers ? layers->content(Layer::kScene, t) : whole)) return;
-  sky(s, layers ? (layers->opacity(Layer::kScene, t) * 255 + 500) / 1000 : 255, int(e.elapsedMs % 3600000u));
+  const uint32_t scene = layers ? layers->content(Layer::kScene, t) : layerContents(e).scene;
+  if (!scene) return;
+  Behind behind{s, layers ? (layers->opacity(Layer::kScene, t) * 255 + 500) / 1000 : 255};
+  const int ms = int(e.elapsedMs % 3600000u);
+  if (scene == kNightSky) nightSky(behind, ms);
+  if (scene == kSunrise) sunrise(behind, ms);
 }
 
 void paintSign(Surface& s, const SignShow& sign, const rig::Anchors& at) {
