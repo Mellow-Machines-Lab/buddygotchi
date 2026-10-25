@@ -37,7 +37,7 @@ class GelFace final : public Face {
   void step(uint32_t t, linkkit::Rng&) override;
   // The engine picks the look's variations itself; the Mac's is ignored.
   uint8_t lookVariant() const override { return uint8_t(engine_->scenes.variant); }
-  // A successful finish is sized by its loops and its turn (render/gel/finish.h).
+  // A successful finish is sized by its turn, or its loops with none (render/gel/finish.h).
   uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&, int loops = 1,
                int turn = kNoTurn) const override;
   // A finish a size above small plays once.

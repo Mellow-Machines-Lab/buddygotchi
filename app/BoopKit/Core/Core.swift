@@ -74,6 +74,8 @@ public final class Core {
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
     var lastActiveDay: String?
+    /// The day `greetDay` last greeted, or found nothing to greet.
+    var greetedDay: String?
     var lastPublished: StateSnapshot?
     /// Onboarding's practice request (act 5's amber lesson): the needs-you
     /// screen, as an agent's request shows it, with no agent behind it,
@@ -199,6 +201,7 @@ public final class Core {
         let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
         if let reaction { play(reaction, for: event.seq, now, &fx) }
+        greetDay(now, &fx)
         let forward = streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
@@ -351,13 +354,15 @@ public final class Core {
     /// A rule's reaction, in Boop's mood with a
     /// variation at random, never the one it played last: not while
     /// something needs you or `listening` holds the screen. The device also skips
-    /// it while a brain reaction plays (`if_free`). Recorded as a
-    /// `did` named after it, for the event `seq` that played it, as the
-    /// poke's `wiggle` is, so the brain hears that Boop already reacted.
-    func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
+    /// it while a brain reaction plays (`if_free`), unless it holds up a
+    /// sign (`BoopDevice.play`). Recorded as a `did` named after it, for
+    /// the event `seq` that played it, as the poke's `wiggle` is, so the
+    /// brain hears that Boop already reacted: in the words `said`, or
+    /// `played`'s.
+    func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
         guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
-        let played = Core.played(rule, by: config.pack.name)
+        let played = said ?? Core.played(rule, by: config.pack.name)
         var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
                             facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
         if played == nil { did.data["message"] = nil }
@@ -440,13 +445,43 @@ public final class Core {
 
     /// Boop reached the growth stage `name` on `day` (today's at `now` by
     /// default): the rest of that day is a party, which a `state` carries
-    /// at once.
+    /// at once. Reached just now (`celebrate`), Boop celebrates it then,
+    /// with the confetti and a sign saying what it grew into, so the party
+    /// has a moment you can see.
     @discardableResult
-    public func reachedStage(_ name: String, day: String? = nil, at now: Int64) -> [CoreEffect] {
+    public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
         config.stageReached = (name, day ?? self.day(now))
         var fx: [CoreEffect] = []
         publish(now, &fx)
+        if celebrate, let sign = Occasions.greeting(occasions(at: now)) {
+            play(Core.celebration(sign: sign), for: nil, now, &fx,
+                 said: "\(config.pack.name) celebrated becoming a \(name), holding up a sign: \"\(sign)\".")
+        }
         return fx
+    }
+
+    /// Growing a stage: the finish's confetti, as a finish held twice with
+    /// no turn plays, and its sign.
+    static func celebration(sign: String) -> DeviceReaction {
+        DeviceReaction(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
+    }
+
+    /// Today's occasions at `now` (`Occasions.occasions`).
+    func occasions(at now: Int64) -> [Occasions.Occasion] {
+        Occasions.occasions(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
+    }
+
+    /// On a day with an occasion, the first agent's event Boop sees greets
+    /// it, once a launch: Boop wakes holding up its sign (`Happy
+    /// Halloween!`, `Day 50!`), so what it wears all day has a reason you
+    /// saw. It waits its turn after the event's own reaction.
+    func greetDay(_ now: Int64, _ fx: inout [CoreEffect]) {
+        let today = day(now)
+        guard greetedDay != today else { return }
+        greetedDay = today
+        guard let sign = Occasions.greeting(occasions(at: now)) else { return }
+        play(DeviceReaction(anim: "wake_up", sign: sign), for: nil, now, &fx,
+             said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
     }
 
     /// Your prompt's reading, for the turn the session `session` of

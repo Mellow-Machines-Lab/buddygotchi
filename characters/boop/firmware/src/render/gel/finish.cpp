@@ -483,11 +483,10 @@ FinishSize finishSize(int loops, int turn, int mood) {
   const bool sad = mood == slime::kDisappointed || mood == slime::kSad || mood == slime::kCrying ||
                    mood == slime::kWhiny || mood == slime::kWounded;
   if (sad) return FinishSize::kSmall;
-  int size = loops >= 4 ? 3 : std::max(0, loops - 1);
-  if (turn >= 0 && turn < kLongTier) size = std::min(size, int(FinishSize::kMedium));
-  if (turn >= kBigTier) size = std::max(size, int(FinishSize::kBig));
-  if (turn >= kBiggestTier) size = int(FinishSize::kBiggest);
-  return FinishSize(size);
+  if (turn < 0) return FinishSize(loops >= 4 ? 3 : std::max(0, loops - 1));
+  if (turn >= kBiggestTier) return FinishSize::kBiggest;
+  if (turn >= kBigTier) return FinishSize::kBig;
+  return turn >= kLongTier ? FinishSize::kMedium : FinishSize::kSmall;
 }
 
 void bigFinishes(int mood, Finish out[2]) {

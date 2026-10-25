@@ -47,6 +47,9 @@ extension Runtime {
         /// offers a choice: none when its steering has no talk file.
         public var talk = Talk.default
         public var talks = false
+        /// Why the board looks as it does: what Boop celebrates today, and
+        /// what it wears or shows for each.
+        public var dressing: [Dressing] = []
 
         /// A day's line, as the popover shows it.
         public struct DiaryLine: Sendable, Equatable, Identifiable {
@@ -119,6 +122,11 @@ extension Runtime {
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         status.diary = diary(today: options.time.day(wall))
+        let config = core.config
+        status.dressing = Dressing.now(when: status.snapshot.when,
+                                       occasions: Occasions.occasions(at: wall, hatched: config.hatched, name: name,
+                                                                      stage: config.stageReached, time: options.time),
+                                       asleep: status.snapshot.base == "asleep", gel: status.device?.face != .pixel)
         status.nature = memory.longTerm?.nature
         status.talk = talk
         status.talks = options.steering.talks

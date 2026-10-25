@@ -21,9 +21,13 @@ public enum BoopDevice {
     /// reply is coming.
     public static let listening = "listening", stopListening = "stop_listening"
     /// When a rule's reaction plays: push-to-talk's `listening` at once,
-    /// cutting what plays, and the rest only if nothing else plays: a late
-    /// rule reaction is worse than none.
-    public static func play(_ name: String) -> Wire.Play { name == listening ? .now : .ifFree }
+    /// cutting what plays; one holding up a sign (a greeting, growing a
+    /// stage) next, waiting its turn for up to `reactionTTL`, as a sign is
+    /// worth reading; and the rest only if nothing else plays: a late rule
+    /// reaction is worse than none.
+    public static func play(_ reaction: DeviceReaction) -> Wire.Play {
+        reaction.name == listening ? .now : reaction.sign != nil ? .next : .ifFree
+    }
     /// Why the device drops the reactions waiting when push-to-talk starts:
     /// a reaction would end `listening`.
     public static let micOn = "mic_on"

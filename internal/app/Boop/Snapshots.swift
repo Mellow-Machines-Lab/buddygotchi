@@ -520,6 +520,14 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
+            // The day it grew a stage, a Friday: why it wears a party hat and
+            // shades.
+            ("celebrating", {
+                var s = status(sessions: [["claude", "jetpack", "work"]])
+                s.dressing = [Dressing(kind: .occasion, why: "Mochi became a Buddy today", what: "a party hat and confetti"),
+                              Dressing(kind: .friday, why: "It's Friday", what: "shades")]
+                return model(installer, status: s)
+            }()),
             ("quiet", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], talk: .quiet))),
             ("offline", {
                 let m = model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],

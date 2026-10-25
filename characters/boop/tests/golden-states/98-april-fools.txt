@@ -279,6 +279,7 @@ Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "api" (landing).
+  Boop greeted the day, holding up a sign: "April Fools'!".
 
 NOW (11:00, Thursday, April Fools' Day)
 claude finished turn 1 on "api" (landing): done, a short turn, no tool calls.

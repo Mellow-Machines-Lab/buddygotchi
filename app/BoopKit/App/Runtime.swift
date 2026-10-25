@@ -414,9 +414,10 @@ public final class Runtime: @unchecked Sendable {
             let before = growth.growth.stage, now = options.clock()
             guard growth.count(e, day: options.time.day(options.wallClock())) else { return }
             grew = true
-            // A stage reached makes the rest of the day a party.
+            // A stage reached makes the rest of the day a party, and Boop
+            // celebrates it now.
             if growth.growth.stage > before {
-                for rig in rigs { run(core(rig).reachedStage(growth.growth.name, at: now), on: rig) }
+                for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
             }
         }
     }

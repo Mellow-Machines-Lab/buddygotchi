@@ -1436,7 +1436,7 @@ void test_held_and_interrupted_contacts();
 void test_card_reveal_trajectory();
 void test_asleep_rests_still_but_for_a_snore();
 // test_finish.cpp
-void test_a_finish_is_sized_by_its_hold_and_its_turn();
+void test_a_finish_is_sized_by_its_turn_or_else_its_hold();
 void test_each_mood_takes_turns_between_its_big_finishes();
 void test_the_face_picks_a_finish_and_plays_it_once();
 void test_a_big_finish_cheers_once_and_bounces();
@@ -2746,7 +2746,7 @@ int main() {
   RUN_TEST(test_card_reveal_trajectory);
   RUN_TEST(test_asleep_rests_still_but_for_a_snore);
   // test_finish.cpp
-  RUN_TEST(test_a_finish_is_sized_by_its_hold_and_its_turn);
+  RUN_TEST(test_a_finish_is_sized_by_its_turn_or_else_its_hold);
   RUN_TEST(test_each_mood_takes_turns_between_its_big_finishes);
   RUN_TEST(test_the_face_picks_a_finish_and_plays_it_once);
   RUN_TEST(test_a_big_finish_cheers_once_and_bounces);

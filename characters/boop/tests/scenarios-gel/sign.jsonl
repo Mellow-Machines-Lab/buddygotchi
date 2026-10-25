@@ -23,3 +23,24 @@
 {"expect":{"moment":{"anim":"task_complete"},"sign":"tests pass · ship!"}}
 {"clock":2800}
 {"shot":"over-finish"}
+// Growing a stage, as the Mac plays it: the confetti (a finish held twice
+// with no turn) on the party day it starts, holding up what it grew into.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day","party","sprout"]}
+{"clock":1000}
+{"t":"do","name":"task_complete","play":"now","args":{"outcome":"success","loops":2,"sign":"I'm a Sprout!"}}
+{"expect":{"moment":{"anim":"task_complete","variant":5},"sign":"I'm a Sprout!"}}
+{"clock":1800}
+{"shot":"grew"}
+{"clock":2600}
+{"shot":"grew-confetti"}
+// A special day's greeting: it wakes holding up the day's sign.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0,"when":["day","halloween"]}
+{"clock":1000}
+{"t":"do","name":"wake_up","play":"now","args":{"sign":"Happy Halloween!"}}
+{"expect":{"moment":{"anim":"wake_up"},"sign":"Happy Halloween!"}}
+{"clock":2200}
+{"shot":"greeting"}

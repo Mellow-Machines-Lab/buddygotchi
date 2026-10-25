@@ -476,16 +476,19 @@ of sleep only breaths, each fewer than half of its contacts.
 
 ## Finishes
 
-A successful finish comes in four sizes (`gel/finish.h`): how long the
-brain holds it (`loops`) and the tier its turn reached (the `do`'s
-`turn`, characters/CHARACTER.md §9, the tiers the tags count: `tier2` a
-minute, `tier4` 5 minutes, `tier5` 10) choose it as the board picks the
-variation (`GelFace::pick`), so the Mac never names a design. Held once
-it's small, twice medium, three times big, four times or more biggest. A
-turn short of `tier2` is at most medium however long it's held; one at
-`tier4` is at least big, and at `tier5` biggest. A success in a sad mood (disappointed, sad, crying, whiny,
-wounded) is small whatever else: tearful but valid. A failure never plays
-one: its row keeps its card and its three takes.
+A successful finish comes in four sizes (`gel/finish.h`), so the more
+work, the bigger the party: the tier its turn reached (the `do`'s `turn`,
+characters/CHARACTER.md §9, the tiers the tags count: `tier2` a minute,
+`tier4` 5 minutes, `tier5` 10) chooses it as the board picks the
+variation (`GelFace::pick`), so the Mac never names a design, and the
+brain decides only whether to celebrate and in which face. A turn short
+of `tier2` is small, to `tier4` medium, to `tier5` big, and from `tier5`
+biggest, however long it's held. A finish with no turn (growing a stage,
+onboarding's) is sized by how long it's held (`loops`) instead: once
+small, twice medium, three times big, four times or more biggest. A
+success in a sad mood (disappointed, sad, crying, whiny, wounded) is
+small whatever else: tearful but valid. A failure never plays one: its
+row keeps its card and its three takes.
 
 | Size | Finish | What it does |
 | --- | --- | --- |

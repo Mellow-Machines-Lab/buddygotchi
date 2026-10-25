@@ -49,29 +49,30 @@ std::unique_ptr<Engine> finishing(int variant, int mood = slime::kHappy) {
 
 }  // namespace
 
-// The size: the brain's hold, once small, twice medium, three times big,
-// four or more biggest; a turn short of tier2 (a minute) at most medium;
-// one at tier4 (5 minutes) at least big and at tier5 (10) biggest; a sad
-// mood's small whatever else.
-void test_a_finish_is_sized_by_its_hold_and_its_turn() {
+// A finish's size pins the rule in render/gel/finish.h: by the tier its
+// turn reached, whatever it's held (small short of a minute, medium to 5
+// minutes, big to 10, biggest from there); by its hold only with no turn;
+// a sad mood's small whatever else.
+void test_a_finish_is_sized_by_its_turn_or_else_its_hold() {
   const int happy = slime::kHappy;
-  TEST_ASSERT_TRUE(finishSize(1, kNoTurn, happy) == FinishSize::kSmall);
-  TEST_ASSERT_TRUE(finishSize(2, kNoTurn, happy) == FinishSize::kMedium);
-  TEST_ASSERT_TRUE(finishSize(3, 3, happy) == FinishSize::kBig);
-  TEST_ASSERT_TRUE(finishSize(4, 3, happy) == FinishSize::kBiggest);
-  TEST_ASSERT_TRUE(finishSize(6, kNoTurn, happy) == FinishSize::kBiggest);
   TEST_ASSERT_EQUAL_INT(2, kLongTier);
   TEST_ASSERT_EQUAL_INT(4, kBigTier);
   TEST_ASSERT_EQUAL_INT(5, kBiggestTier);
-  // A short turn never takes over the screen, however long it's held.
-  TEST_ASSERT_TRUE(finishSize(4, 1, happy) == FinishSize::kMedium);
-  TEST_ASSERT_TRUE(finishSize(3, 0, happy) == FinishSize::kMedium);
-  TEST_ASSERT_TRUE(finishSize(1, 1, happy) == FinishSize::kSmall);
-  TEST_ASSERT_TRUE(finishSize(3, 2, happy) == FinishSize::kBig);
-  // The long tiers are floors.
-  TEST_ASSERT_TRUE(finishSize(1, 4, happy) == FinishSize::kBig);
-  TEST_ASSERT_TRUE(finishSize(4, 4, happy) == FinishSize::kBiggest);
-  TEST_ASSERT_TRUE(finishSize(1, 5, happy) == FinishSize::kBiggest);
+  // With a turn, the work sizes it, however long it's held.
+  for (int loops : {1, 2, 3, 4}) {
+    TEST_ASSERT_TRUE(finishSize(loops, 0, happy) == FinishSize::kSmall);
+    TEST_ASSERT_TRUE(finishSize(loops, 1, happy) == FinishSize::kSmall);
+    TEST_ASSERT_TRUE(finishSize(loops, 2, happy) == FinishSize::kMedium);
+    TEST_ASSERT_TRUE(finishSize(loops, 3, happy) == FinishSize::kMedium);
+    TEST_ASSERT_TRUE(finishSize(loops, 4, happy) == FinishSize::kBig);
+    TEST_ASSERT_TRUE(finishSize(loops, 5, happy) == FinishSize::kBiggest);
+  }
+  // With none, the hold does.
+  TEST_ASSERT_TRUE(finishSize(1, kNoTurn, happy) == FinishSize::kSmall);
+  TEST_ASSERT_TRUE(finishSize(2, kNoTurn, happy) == FinishSize::kMedium);
+  TEST_ASSERT_TRUE(finishSize(3, kNoTurn, happy) == FinishSize::kBig);
+  TEST_ASSERT_TRUE(finishSize(4, kNoTurn, happy) == FinishSize::kBiggest);
+  TEST_ASSERT_TRUE(finishSize(6, kNoTurn, happy) == FinishSize::kBiggest);
   // A sad success is small, a camp's or held four times.
   for (int sad : {slime::kDisappointed, slime::kSad, slime::kCrying, slime::kWhiny, slime::kWounded}) {
     TEST_ASSERT_TRUE(finishSize(4, 5, sad) == FinishSize::kSmall);
@@ -118,16 +119,16 @@ void test_the_face_picks_a_finish_and_plays_it_once() {
                           f.pick(done, Mood::kHappy, 0, Outcome::kSuccess, StartCtx::kNone, rng, 2, 3));
   TEST_ASSERT_EQUAL_UINT8(finishVariant(Finish::kMegaBoop),
                           f.pick(done, Mood::kHappy, 0, Outcome::kSuccess, StartCtx::kNone, rng, 1, 5));
-  const uint8_t big = f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 3, 3);
+  const uint8_t big = f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 1, 4);
   TEST_ASSERT_EQUAL_UINT8(finishVariant(Finish::kFireworks), big);
-  TEST_ASSERT_EQUAL_UINT8(big, f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 3, 3));
+  TEST_ASSERT_EQUAL_UINT8(big, f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 1, 4));
   TEST_ASSERT_EQUAL_UINT32(before, f.engine().random.state);
   f.started(done, Mood::kExcited, big, Outcome::kSuccess, StartCtx::kNone);
   TEST_ASSERT_EQUAL_UINT32(before, f.engine().random.state);  // no bag deals a finish
   TEST_ASSERT_EQUAL_UINT8(finishVariant(Finish::kGoldRush),
-                          f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 3, 3));
+                          f.pick(done, Mood::kExcited, 0, Outcome::kSuccess, StartCtx::kNone, rng, 1, 4));
   // Small deals Little Win's takes from the bag.
-  TEST_ASSERT_TRUE(f.pick(done, Mood::kHappy, 0, Outcome::kSuccess, StartCtx::kNone, rng, 1, 3) < kFinishBase);
+  TEST_ASSERT_TRUE(f.pick(done, Mood::kHappy, 0, Outcome::kSuccess, StartCtx::kNone, rng, 4, 1) < kFinishBase);
   TEST_ASSERT_TRUE(f.pick(done, Mood::kSad, 0, Outcome::kSuccess, StartCtx::kNone, rng, 4, 5) < kFinishBase);
   TEST_ASSERT_TRUE(f.pick(done, Mood::kHappy, 0, Outcome::kFailure, StartCtx::kNone, rng, 4, 5) < 3);
   for (Finish fin : kBig) {

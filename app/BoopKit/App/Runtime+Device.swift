@@ -107,12 +107,14 @@ extension Runtime {
     /// `state` of the same input. It plays only if nothing plays on the
     /// device, or what plays is resting (`if_free`): a brain reaction's
     /// `say` playing would be cut, and a late rule reaction is worse than none, so the device
-    /// skips it then. The core has already left it out while something
+    /// skips it then. One holding up a sign waits its turn instead
+    /// (`BoopDevice.play`). The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: DeviceReaction, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
-        rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule, now: options.clock()) { _ in }
+        rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
+                    now: options.clock()) { _ in }
     }
 
     /// A word of the work stream that comes forward: it waits in the

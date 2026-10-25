@@ -1,11 +1,11 @@
-// A successful finish's sizes on the gel (render/gel/finish.h): Little Win
-// once, the confetti twice, the mood's big one three times, Mega Boop four
-// times; the tier its turn reached sizes it too, one short of tier2 (a
-// minute) at most medium, tier4's at least big, tier5's biggest; a sad one
-// is small, and a
-// failure keeps its card. Variants are counted from 1: Little Win's takes
-// 1-4, then the confetti 5, Gold Rush 6, Jelly Fireworks 7, Mega Boop 8,
-// the parade 9 and the spotlight 10.
+// A successful finish's sizes on the gel (render/gel/finish.h): with the
+// tier its turn reached, by it alone, short of tier2 (a minute) Little
+// Win, to tier4 (5 minutes) the confetti, tier4's the mood's big one,
+// tier5's Mega Boop; with no turn by its hold, Little Win once, the
+// confetti twice, the mood's big one three times, Mega Boop four times; a
+// sad one is small, and a failure keeps its card. Variants are counted
+// from 1: Little Win's takes 1-4, then the confetti 5, Gold Rush 6, Jelly
+// Fireworks 7, Mega Boop 8, the parade 9 and the spotlight 10.
 // Little Win: a hop, a small trophy over its head, sparkles.
 {"t":"dbg.reset"}
 {"clock":0}
@@ -83,7 +83,7 @@
 {"shot":"mega"}
 {"clock":3200}
 {"shot":"mega-pop"}
-// A turn at tier4 (5 minutes) is at least big, held once.
+// A turn at tier4 (5 minutes) is big, held once.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","vol":0}
@@ -99,12 +99,21 @@
 {"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1,"turn":5}}
 {"clock":216}
 {"expect":{"moment":{"anim":"task_complete","variant":8}}}
-// One at tier1, under a minute, is at most medium, held four times.
+// One at tier1, under a minute, is small, held four times: Little Win's
+// takes (1-4), the bag's after a reset.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"happy","vol":0}
 {"clock":200}
 {"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":4,"turn":1}}
+{"clock":216}
+{"expect":{"moment":{"anim":"task_complete","variant":2}}}
+// One at tier2, a minute, is the confetti, held once.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"happy","vol":0}
+{"clock":200}
+{"t":"do","id":1,"name":"task_complete","args":{"outcome":"success","mood":"happy","loops":1,"turn":2}}
 {"clock":216}
 {"expect":{"moment":{"anim":"task_complete","variant":5}}}
 // A proud board takes the spotlight, whatever the reaction's face.

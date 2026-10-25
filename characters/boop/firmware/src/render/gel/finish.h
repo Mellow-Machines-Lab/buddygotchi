@@ -1,5 +1,6 @@
-// The gel's finishes: what a successful task_complete plays, sized by how
-// long the brain holds it (`loops`) and the tier its turn reached (`turn`).
+// The gel's finishes: what a successful task_complete plays, sized by the
+// tier its turn reached (`turn`), or with none by how long it's held
+// (`loops`).
 //
 // - Small, Little Win: the row's own takes (slime::kRecipes, with hiccups
 //   for a fourth): a hop at the reveal, a little trophy over its head, a
@@ -32,11 +33,13 @@ constexpr bool isFinishVariant(int variant) { return variant >= kFinishBase && v
 constexpr Finish finishOf(int variant) {
   return isFinishVariant(variant) ? Finish(variant - kFinishBase + 1) : Finish::kLittle;
 }
-// The size: the brain's hold (once small, twice medium, three times big,
-// four or more biggest), at most medium for a turn short of kLongTier (a
-// minute), at least big from kBigTier (5 minutes) and biggest from
-// kBiggestTier (10); a sad mood's (`mood`, canonical) is small whatever
-// else. `turn` is the tier its turn reached (render::kNoTurn for none).
+// The size: by how long its turn ran (`turn`, the tier it reached), so
+// the more work, the bigger the party: small short of kLongTier (a
+// minute), medium to kBigTier (5 minutes), big to kBiggestTier (10) and
+// biggest from there. With no turn (render::kNoTurn: a finish that isn't
+// a turn's, such as growing a stage), by the hold instead: once small,
+// twice medium, three times big, four or more biggest. A sad mood's
+// (`mood`, canonical) is small whatever else.
 constexpr int kLongTier = 2, kBigTier = 4, kBiggestTier = 5;
 FinishSize finishSize(int loops, int turn, int mood);
 // The big finish for the reaction's mood (canonical): its first, or its

@@ -95,6 +95,100 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(Occasions.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
     }
 
+    /// Every occasion has a sign that fits the board's (`Signs.maxLength`
+    /// characters of printable ASCII), and the day's greeting holds up the
+    /// one most Boop's own: a stage reached, then a milestone, then the
+    /// calendar's.
+    func testEachOccasionHasASignThatFits() {
+        let hatched = "2026-09-01"
+        var signs = Occasions.holidays.map(\.sign) + ["Friday the 13th!", "Programmers' Day!", "Lunar New Year!"]
+        for (y, mo, d) in [(2026, 9, 11), (2027, 9, 1), (2028, 9, 1), (2029, 6, 7)] {
+            signs += Occasions.occasions(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc).map(\.sign)
+        }
+        signs += Growth.stages.map { Occasions.occasions(at: ms(2026, 10, 22), hatched: nil, name: "Pip", stage: ($0.name, "2026-10-22"),
+                                                         time: utc)[0].sign }
+        for sign in signs {
+            XCTAssertLessThanOrEqual(sign.count, Signs.maxLength, sign)
+            XCTAssertTrue(sign.unicodeScalars.allSatisfy { (0x20...0x7E).contains($0.value) }, sign)
+        }
+        func greeting(_ y: Int, _ mo: Int, _ d: Int, stage: String? = nil) -> String? {
+            Occasions.greeting(Occasions.occasions(at: ms(y, mo, d), hatched: hatched, name: "Pip",
+                                                   stage: stage.map { ($0, utc.day(ms(y, mo, d))) }, time: utc))
+        }
+        XCTAssertEqual(greeting(2026, 9, 11), "Day 10!")
+        XCTAssertEqual(greeting(2026, 10, 31), "Happy Halloween!")
+        XCTAssertEqual(greeting(2026, 10, 31, stage: "Sprout"), "I'm a Sprout!", "the stage over the holiday")
+        XCTAssertEqual(greeting(2027, 9, 1), "1 year old!")
+        XCTAssertEqual(greeting(2028, 9, 1), "2 years old!")
+        XCTAssertNil(greeting(2026, 10, 22), "an ordinary day")
+        XCTAssertEqual(Occasions.occasions(at: ms(2026, 10, 21), hatched: hatched, name: "Pip", time: utc).map(\.why),
+                       ["Pip is 50 days old today"])
+        XCTAssertEqual(Occasions.occasions(at: ms(2026, 10, 31), hatched: nil, name: "Pip", time: utc).map(\.why), ["It's Halloween"])
+    }
+
+    /// Growing a stage just now plays its moment: the confetti, holding up
+    /// a sign saying what Boop grew into, which waits its turn on the
+    /// device, recorded for the brain. Read back at launch, it doesn't.
+    func testGrowingAStageCelebratesThen() {
+        func core() -> Core {
+            let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+            core.setWallClock(now, at: now)
+            return core
+        }
+        let now = ms(2026, 10, 22, 10)
+        XCTAssertEqual(deviceReactions(core().reachedStage("Sprout", at: now)), [], "at launch")
+        let fx = core().reachedStage("Sprout", celebrate: true, at: now)
+        let cheer = DeviceReaction(anim: "task_complete", loops: 2, outcome: "success", sign: "I'm a Sprout!")
+        XCTAssertEqual(deviceReactions(fx), [cheer])
+        XCTAssertEqual(BoopDevice.play(cheer), .next, "a sign waits its turn")
+        XCTAssertTrue(fx.contains { if case .state(let s) = $0 { return s.when.contains("party") } else { return false } },
+                      "the party hat is on as it plays")
+        let did = fx.compactMap { if case .record(let e) = $0 { return e } else { return nil } }
+        XCTAssertEqual(did.map { $0["message"]?.string }, ["Boop celebrated becoming a Sprout, holding up a sign: \"I'm a Sprout!\"."])
+    }
+
+    /// On a day with an occasion, the first agent's event greets it once,
+    /// waking with its sign after the event's own reaction; an ordinary
+    /// day has none.
+    func testASpecialDayIsGreetedOnce() {
+        let rig = CoreRig(start: ms(2026, 10, 31, 14))
+        let first = rig.send(.turnStart)
+        XCTAssertEqual(deviceReactions(first).map(\.sign), [nil, "Happy Halloween!"])
+        XCTAssertEqual(deviceReactions(first).last?.anim, "wake_up")
+        XCTAssertEqual(deviceReactions(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
+        XCTAssertEqual(deviceReactions(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
+    }
+
+    /// The popover's reasons choose as the board does
+    /// (firmware/src/render/tags.cpp): one hat, the first that fits; on
+    /// the gel, glasses for your prompt over Friday's shades, neither
+    /// asleep, and pyjamas with the nightcap only bare-eyed; confetti at a
+    /// party or New Year.
+    func testTheReasonsAreTheBoards() {
+        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, reading: Bool = false, asleep: Bool = false,
+                     gel: Bool = true) -> [String] {
+            let at = ms(y, mo, d, h), day = utc.day(at)
+            let when = Occasions.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc) + (reading ? [Occasions.reading] : [])
+            let occasions = Occasions.occasions(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
+            return Dressing.now(when: when, occasions: occasions, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
+        }
+        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout"), ["Pip became a Sprout today: a party hat and confetti"])
+        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat and confetti"])
+        XCTAssertEqual(reasons(2026, 10, 31, stage: "Sprout"),
+                       ["It's Halloween: a witch hat", "Pip became a Sprout today: confetti"], "the witch hat wins")
+        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: snow", "It's night: a nightcap and pyjamas"])
+        XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
+        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat and snow"])
+        XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
+        XCTAssertEqual(reasons(2026, 10, 23), ["It's Friday: shades"])
+        XCTAssertEqual(reasons(2026, 10, 23, reading: true), ["Your prompt was an essay, or asked for docs: reading glasses"])
+        XCTAssertEqual(reasons(2026, 10, 22, 23, reading: true),
+                       ["It's night: a nightcap", "Your prompt was an essay, or asked for docs: reading glasses"])
+        XCTAssertEqual(reasons(2026, 10, 23, asleep: true), [])
+        XCTAssertEqual(reasons(2026, 10, 23, gel: false), [])
+        XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
+    }
+
     /// Pins `Occasions.tiers`: `tier1` from 30 seconds, `tier2` from a
     /// minute, `tier3` from 2, `tier4` from 5 and `tier5` from 10, the last.
     /// The last reached is sent; the board takes the ones below it as on.

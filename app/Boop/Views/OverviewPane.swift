@@ -61,6 +61,9 @@ struct OverviewPane: View {
                         PaneSection(status.sessions.isEmpty ? "Sessions" : "Sessions · \(status.sessions.count)") {
                             sessions(status)
                         }
+                        if !status.dressing.isEmpty {
+                            PaneSection("Why \(model.name) looks like this") { dressingCard(status.dressing) }
+                        }
                         if let growth = status.growth {
                             PaneSection("Growth") { growthCard(growth, daysOld: status.daysOld) }
                         }
@@ -288,6 +291,39 @@ struct OverviewPane: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Why it looks like this
+
+    /// What Boop is celebrating today, and the night, your prompt or the
+    /// Friday: each reason, and what the board wears or shows for it.
+    private func dressingCard(_ reasons: [Dressing]) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                ForEach(reasons) { reason in
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug + 2) {
+                        Image(systemName: symbol(reason.kind)).font(.system(size: 12)).foregroundStyle(Theme.inkSoft).frame(width: 18)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(reason.why).font(.system(size: 12, weight: .semibold))
+                            if let what = reason.what {
+                                Text(what.prefix(1).uppercased() + what.dropFirst()).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                            }
+                        }
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func symbol(_ kind: Dressing.Kind) -> String {
+        switch kind {
+        case .occasion: "party.popper"
+        case .night: "moon.stars"
+        case .reading: "eyeglasses"
+        case .friday: "sunglasses"
+        }
     }
 
     // MARK: Diary

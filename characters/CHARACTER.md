@@ -509,7 +509,9 @@ Besides drawing each mood and state, a face:
   `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
   (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
-  hatching, New Year's Day, a growth stage reached), the tiers
+  hatching, New Year's Day, the day a growth stage was reached; the Mac
+  greets a day with an occasion with its sign, and celebrates a stage the
+  moment it's reached, so a hat worn all day has a moment you saw), the tiers
   (`tier1` from 30 seconds, `tier2` from a minute, `tier3` from 2,
   `tier4` from 5 and `tier5` from 10, `Occasions.tiers`: how long the
   agents' working stretch has run, from the first turn of it, a rest of
@@ -561,7 +563,9 @@ Besides drawing each mood and state, a face:
   Programmers' Day, a witch hat at Halloween, a bobble hat in winter
   (`render::outfitFor`'s order, so Halloween's hat wins over the nightcap
   and its pyjamas); reading glasses while `reading` is on, else shades on a
-  Friday's day, neither while it sleeps (`render::eyewearFor`); snow in
+  Friday's day, neither while it sleeps (`render::eyewearFor`; the
+  Mac's popover says why each is on, choosing as the board does,
+  `Dressing`); snow in
   winter, confetti on a party day and New Year's Day, hearts on
   Valentine's, Zs while it sleeps at night; a mug of coffee, steaming,
   held at its side while it's idle or at work in the morning and lifted

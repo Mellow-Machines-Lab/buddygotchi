@@ -62,12 +62,27 @@ public enum Occasions {
     /// from 11, evening from 17, night from 22 until 5.
     public static let dayParts: [(tag: String, from: Int)] = [("morning", 5), ("day", 11), ("evening", 17), ("night", 22)]
 
-    /// The fixed holidays, by month and day.
-    static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String)] = [
-        ("newyear", 1, 1...1, "New Year's Day"), ("valentines", 2, 14...14, "Valentine's Day"), ("piday", 3, 14...14, "Pi Day"),
-        ("aprilfools", 4, 1...1, "April Fools' Day"), ("may4", 5, 4...4, "May the 4th"), ("halloween", 10, 31...31, "Halloween"),
-        ("winter", 12, 24...26, "the winter holidays"),
+    /// The fixed holidays, by month and day, each with its words and its
+    /// sign.
+    static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String, sign: String)] = [
+        ("newyear", 1, 1...1, "New Year's Day", "Happy New Year!"), ("valentines", 2, 14...14, "Valentine's Day", "Happy Valentine's"),
+        ("piday", 3, 14...14, "Pi Day", "Happy Pi Day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "April Fools'!"),
+        ("may4", 5, 4...4, "May the 4th", "May the 4th!"), ("halloween", 10, 31...31, "Halloween", "Happy Halloween!"),
+        ("winter", 12, 24...26, "the winter holidays", "Happy holidays!"),
     ]
+
+    /// One occasion today: its calendar tag (nil for one of Boop's own
+    /// days, each a party), its words for the prompt's heading, and the
+    /// sign Boop holds up for it, at most `Signs.maxLength` characters.
+    public struct Occasion: Equatable, Sendable {
+        public var tag: String? = nil
+        public var words: String
+        public var sign: String
+
+        /// Why it's on, as the popover says it: `It's Halloween`, `Boop is
+        /// 50 days old today`.
+        public var why: String { tag == nil ? words + " today" : "It's " + words }
+    }
 
     /// The days since hatching that are a party: the 10th and 50th, then
     /// every 100th, and each anniversary.
@@ -76,15 +91,16 @@ public enum Occasions {
         return days > 0 && hatched.dropFirst(5) == today.dropFirst(5)
     }
 
-    /// The calendar's own occasions at `ms`, each with its words for the
-    /// heading: Friday the 13th, the holidays, Programmers' Day and Lunar
-    /// New Year.
-    static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [(tag: String, words: String)] {
-        var on: [(tag: String, words: String)] = []
-        if c.weekday == 6, c.day == 13 { on.append(("friday13", "Friday the 13th")) }
-        for h in holidays where h.month == c.month && h.days.contains(c.day) { on.append((h.tag, h.words)) }
-        if c.dayOfYear == 256 { on.append(("programmers", "Programmers' Day")) }
-        if time.isLunarNewYear(ms) { on.append(("lunar", "Lunar New Year")) }
+    /// The calendar's own occasions at `ms`: Friday the 13th, the
+    /// holidays, Programmers' Day and Lunar New Year.
+    static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [Occasion] {
+        var on: [Occasion] = []
+        if c.weekday == 6, c.day == 13 { on.append(Occasion(tag: "friday13", words: "Friday the 13th", sign: "Friday the 13th!")) }
+        for h in holidays where h.month == c.month && h.days.contains(c.day) {
+            on.append(Occasion(tag: h.tag, words: h.words, sign: h.sign))
+        }
+        if c.dayOfYear == 256 { on.append(Occasion(tag: "programmers", words: "Programmers' Day", sign: "Programmers' Day!")) }
+        if time.isLunarNewYear(ms) { on.append(Occasion(tag: "lunar", words: "Lunar New Year", sign: "Lunar New Year!")) }
         return on
     }
 
@@ -96,11 +112,33 @@ public enum Occasions {
         var on = [dayParts.last { c.hour >= $0.from }?.tag ?? "night"]
         if c.weekday == 6 { on.append("friday") }
         if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
-        on += calendar(c, at: ms, time: time).map(\.tag)
+        on += calendar(c, at: ms, time: time).compactMap(\.tag)
         if party || on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: time.day(ms)) }) == true {
             on.append("party")
         }
         return all.filter(on.contains)
+    }
+
+    /// Today's occasions at `ms`: the calendar's, then Boop's own days, its
+    /// anniversary or a milestone day since it hatched (`hatched`), then
+    /// the growth stage it reached today (`stage`). Empty on an ordinary
+    /// day.
+    public static func occasions(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
+                                 time: LocalTime) -> [Occasion] {
+        var out = calendar(time.components(ms), at: ms, time: time)
+        let today = time.day(ms)
+        if let hatched {
+            let days = time.days(from: hatched, to: ms)
+            if days > 0, hatched.dropFirst(5) == today.dropFirst(5) {
+                let years = Int(today.prefix(4))! - Int(hatched.prefix(4))!
+                out.append(Occasion(words: "\(name)'s \(years == 1 ? "first" : "\(years)-year") anniversary",
+                                    sign: years == 1 ? "1 year old!" : "\(years) years old!"))
+            } else if isMilestone(days: days, hatched: hatched, today: today) {
+                out.append(Occasion(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
+            }
+        }
+        if let stage, stage.day == today { out.append(Occasion(words: "\(name) became a \(stage.name)", sign: "I'm a \(stage.name)!")) }
+        return out
     }
 
     /// The calendar's tags in words, for the prompt's heading: `Halloween`,
@@ -108,18 +146,11 @@ public enum Occasions {
     /// was reached. Empty on an ordinary day.
     public static func words(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
                              time: LocalTime) -> [String] {
-        var out = calendar(time.components(ms), at: ms, time: time).map(\.words)
-        let today = time.day(ms)
-        if let hatched {
-            let days = time.days(from: hatched, to: ms)
-            if days > 0, hatched.dropFirst(5) == today.dropFirst(5) {
-                let years = Int(today.prefix(4))! - Int(hatched.prefix(4))!
-                out.append("\(name)'s \(years == 1 ? "first" : "\(years)-year") anniversary")
-            } else if isMilestone(days: days, hatched: hatched, today: today) {
-                out.append("\(name) is \(days) days old")
-            }
-        }
-        if let stage, stage.day == today { out.append("\(name) became a \(stage.name)") }
-        return out
+        occasions(at: ms, hatched: hatched, name: name, stage: stage, time: time).map(\.words)
     }
+
+    /// The sign Boop greets a day of `occasions` with: the one most its
+    /// own, the last (a stage reached before a milestone before the
+    /// calendar's).
+    public static func greeting(_ occasions: [Occasion]) -> String? { occasions.last?.sign }
 }
