@@ -488,7 +488,8 @@ final class RuntimeTests: XCTestCase {
     /// Onboarding listens to the runtime: a tap on the board, saying
     /// whether it was the screen or BOOT, what push-to-talk heard, words
     /// or nothing, and the first agent hook that becomes an event; and it
-    /// greets on the board with a rule's reaction.
+    /// greets on the board with a rule's reaction: the found board's
+    /// beckon holding up "Tap me!", waking, and a celebration.
     func testOnboardingHearsTapsTalkAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
@@ -511,14 +512,18 @@ final class RuntimeTests: XCTestCase {
         eventually("the words") { heard.all == ["nothing", "hi Boop"] }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("the hook") { agents.all == ["claude"] }
+        runtime.greet(.beckon)
         runtime.greet(.wake)
         runtime.greet(.celebrate)
-        eventually("both greetings") { transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1 }
+        eventually("all three greetings") {
+            transport.dos("notice").count == 1 && transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1
+        }
+        XCTAssertTrue(transport.dos("notice")[0].contains(#""sign":"Tap me!""#), "the found board holds up the sign the window names")
         XCTAssertTrue(transport.dos("task_complete")[0].contains(#""outcome":"success""#))
         let greetings = runtime.home.sync {
             runtime.harness.log.events.filter { $0.kind == Event.did && $0["by"]?.string == "rule" && $0.about == nil }.map(\.action)
         }
-        XCTAssertEqual(greetings, ["wake_up", "task_complete"], "in the transcript, as the rules' reactions are")
+        XCTAssertEqual(greetings, ["notice", "wake_up", "task_complete"], "in the transcript, as the rules' reactions are")
     }
 
     /// settings.json has two writers: onboarding's window saves its act

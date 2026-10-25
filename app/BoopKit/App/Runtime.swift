@@ -493,16 +493,21 @@ public final class Runtime: @unchecked Sendable {
     /// Onboarding's greetings on the board, which it plays as a rule's
     /// reaction (only if nothing else plays, and never while something
     /// needs you), recorded in the transcript as the rules' others are, and
-    /// waking no brain: Boop waking into its body once it's paired, and a
-    /// celebration for the first hook and the finale.
+    /// waking no brain: the board found and not yet paired beckoning, a
+    /// look up holding a sign, so you know which board to tap; Boop waking
+    /// into its body once it's paired; and a celebration for the first hook
+    /// and the finale.
     public enum Greeting: Sendable {
-        case wake, celebrate
+        case beckon, wake, celebrate
         var reaction: DeviceReaction {
             switch self {
+            case .beckon: DeviceReaction(anim: "notice", loops: 2, sign: Self.tapMe)
             case .wake: DeviceReaction(anim: "wake_up")
             case .celebrate: DeviceReaction(anim: "task_complete", outcome: "success")
             }
         }
+        /// The beckon's sign, which onboarding's window points at.
+        public static let tapMe = "Tap me!"
     }
 
     public func greet(_ greeting: Greeting) {

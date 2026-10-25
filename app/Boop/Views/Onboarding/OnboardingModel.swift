@@ -172,6 +172,19 @@ final class OnboardingModel: ObservableObject {
         withAnimation(.boopEase(0.4)) { body = .looking }
     }
 
+    /// How often a found board beckons until it's tapped.
+    static let beckonEvery: Duration = .seconds(6)
+
+    /// While a board is found and not yet tapped, it beckons, holding up
+    /// its sign, so you know which board is the one. It stops once it's
+    /// tapped, lost, or the act moves on (the task is cancelled).
+    func beckon() async {
+        while !Task.isCancelled, case .found = board, body == .looking {
+            app.runtime?.greet(.beckon)
+            try? await Task.sleep(for: Self.beckonEvery)
+        }
+    }
+
     func skipBoard() {
         startRuntime()
         withAnimation(.boopEase(0.4)) { body = .skipped }

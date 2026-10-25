@@ -97,9 +97,10 @@ struct BodyAct: View {
                         .font(.system(size: 12, weight: .semibold)).tracking(0.6)
                         .foregroundStyle(Theme.sageInk)
                     ActTitle(title: "Tap my screen on your desk",
-                             detail: "So I know it's me. That's also how you poke me, any time.")
+                             detail: "I'm the one holding up “\(Runtime.Greeting.tapMe)”. A tap is also how you poke me, any time.")
                 }
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
+                .task { await model.beckon() }
             case .trouble(let device):
                 ActTitle(title: "I can't look for my body", detail: device.detail)
                 if case .system(let label, let url)? = device.fix {

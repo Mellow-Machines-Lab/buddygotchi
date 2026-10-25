@@ -26,16 +26,17 @@ on a Mac with no Boop state and both boards powered.
       promise, then each agent's file, its hooks, the ones that run only
       for some types, the command each runs, and Codex's switch. Checked
       in `6-agents-what-gets-added`.
-- [ ] With two boards powered, act 4 takes the first one it hears
-      (`ble: found Boop-54FE`, the CYD) and names it only in small print,
-      "FOUND BOOP-54FE", while the board itself gives no sign that it's
-      the one: the CYD's sleeping face holds still (0 fps), so it looks
-      frozen, and a tap on the AMOLED, the board in hand, did nothing,
-      since it wasn't connected. The found board should beckon, and the
-      window should say which board it is (its kind, not only its name).
-      Another board can't be heard until it's connected, so offering
-      each board found, or letting go of one nobody taps, is the way to
-      the other.
+- [x] With two boards powered, act 4 took the first one it heard
+      (`ble: found Boop-54FE`, the CYD) and named it only in small print,
+      while the board itself gave no sign that it was the one: the CYD's
+      sleeping face held still (0 fps), so it looked frozen, and a tap on
+      the AMOLED, the board in hand, did nothing. The owner's call (option
+      A): the found board beckons every 6 s until it's tapped, a `notice`
+      holding up "Tap me!" (`Runtime.Greeting.beckon`), and the window says
+      it's the one holding that up. Checked by RuntimeTests, a throwaway
+      simulator scenario on both faces (the napping slime and Pixel look up
+      holding the card), and `4-body-found`. Left until someone needs it:
+      a "Not this one?" that lets go of the found board for the next.
 - [x] Onboarding had no Dock icon: the app is `.accessory`, and there's
       no menu-bar icon until onboarding finishes, so the window, once
       behind others, had no Dock icon or Command-Tab entry to bring it
