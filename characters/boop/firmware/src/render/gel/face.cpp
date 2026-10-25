@@ -45,7 +45,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
   layers_ = {};
-  occasion_ = nullptr;
+  occasion_ = cueing_ = nullptr;
   passGeneration_ = passIteration_ = -1;
 }
 
@@ -74,6 +74,14 @@ void GelFace::advanceTo(uint32_t t) {
   const uint64_t scaled = uint64_t(t - lastTick_) * pace_ + engineFrac_;
   engineMs_ += uint32_t(scaled / 100);
   engineFrac_ = uint32_t(scaled % 100);
+  // The cues the clip playing crosses sound with this step's contacts.
+  if (cueing_) {
+    const char* names[Engine::kClipCues];
+    const int n = rig::crossed(*cueing_, cueAge_, cueAge_ + (t - lastTick_), names, Engine::kClipCues);
+    for (int i = 0; i < n; ++i) engine_->contact(names[i]);
+    cueAge_ += t - lastTick_;
+    if (cueAge_ >= cueing_->ms) cueing_ = nullptr;
+  }
   engine_->step(engineMs_);
   mixer_.advance(t - lastTick_);
   lastTick_ = t;
@@ -124,7 +132,13 @@ void GelFace::occasions(uint32_t t) {
   if (!fit || engine_->random.unit() >= F::ratio(rig::kOccasionPct, 100)) return;
   occasion_ = look->fitting(e.scenes.when, e.scenes.lookMs, engine_->random.index(fit));
   occasionEnds_ = t + occasion_->ms;
-  mixer_.play(*occasion_);
+  play(*occasion_);
+}
+
+void GelFace::play(const rig::Clip& clip) {
+  mixer_.play(clip);
+  cueing_ = &clip;
+  cueAge_ = 0;
 }
 
 // The finger in the engine's body units, where the dome stands: kPxPerUnit
@@ -212,6 +226,7 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     r.say = true;
     e.oneShot(r);
     restartCues();
+    if (const rig::Clip* clip = rig::kRig.clip(stateName(source.anim))) play(*clip);
   } else if (source.anim == SceneState::kNone && source_.anim != SceneState::kNone && !timeout) {
     e.clearTransient();
     restartCues();

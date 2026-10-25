@@ -99,14 +99,20 @@ struct Track {
   Channel channel;
   List<Key> keys;  // in order of time
 };
-// Keyframed curves on some channels, timed in ms. An additive clip's
-// values are offsets on what's there; an absolute one's, values to blend
-// toward.
+// A moment in a clip that the face sounds: the name of one of its sounds.
+struct Cue {
+  uint16_t ms;
+  const char* name;
+};
+// Keyframed curves on some channels, timed in ms, with cues. An additive
+// clip's values are offsets on what's there; an absolute one's, values to
+// blend toward.
 struct Clip {
   const char* id;
   uint16_t ms;
   bool loop, additive;
   List<Track> tracks;
+  List<Cue> cues{};  // in order of time, each before ms
   // Its own time t ms after it started: wrapped when it loops, else held
   // at its end.
   constexpr uint32_t local(uint32_t t) const { return loop ? t % ms : t < ms ? t : ms; }
@@ -114,6 +120,10 @@ struct Clip {
 // A track's value at its clip's own time: its first key's before that key,
 // its last's after the last.
 int sample(const Track& track, uint32_t local);
+// The cues a clip crosses from `from` to `to` ms after it started, in
+// [from, to) and on every loop: up to `max` names into `out`, in order.
+// How many.
+int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int max);
 
 // A look's occasion: a clip it plays now and then while every tag it needs
 // is on and the look has shown its wait (render::fits).

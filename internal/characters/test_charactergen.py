@@ -416,10 +416,11 @@ class RigRuleTests(unittest.TestCase):
 
     def test_the_tables_are_the_files(self):
         """Each file's rows as rig.h's types hold them: an expression's styles by name, eyeOpen both eyes, a key's
-        ease inout unless it says, clips in their files' order."""
+        ease inout unless it says, a clip's cues in order of time, clips in their files' order."""
         rig, problems = self.rig({
             "expressions.json": {"calm": {"eyes": "sad", "mouth": "happy"}},
-            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}},
+            "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]},
+                               "cues": [[300, "squish"], [50, "pop"]]},
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
                                 "tracks": {"lean": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
             "looks.json": {"idle": {"clip": "sway"},
@@ -432,7 +433,8 @@ class RigRuleTests(unittest.TestCase):
                     "{0, 0, Ease::kInOut},", "{100, 10, Ease::kOut},", "{400, 0, Ease::kInOut},", "{0, 100, Ease::kInOut},",
                     "{Channel::kLift, {kKeys + 0, 3}},", "{Channel::kLean, {kKeys + 3, 2}},",
                     "{Channel::kEyeOpenL, {kKeys + 5, 2}},", "{Channel::kEyeOpenR, {kKeys + 7, 2}},",
-                    '{"hop", 400, false, true, {kTracks + 0, 1}},',
+                    '{50, "pop"},', '{300, "squish"},',
+                    '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
                     # An occasion's tags as tags.h's bits (night 3, marathon 19), its wait in seconds.
                     f"{{kClips + 0, {(1 << 3) | (1 << 19)}u, 0}},", "{kClips + 0, 0u, 90},",
@@ -443,7 +445,7 @@ class RigRuleTests(unittest.TestCase):
     def test_a_bad_edit_fails_with_its_file_and_key(self):
         _, problems = self.rig({
             "expressions.json": {"happy": {"eyes": "Dot", "wiggle": 1}, "calm": {"mouth": "line"}, "giddy": {}},
-            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"]],
+            "clips/hop.json": {"id": "hop", "ms": 400, "cues": [[300, "pop"], [400, "pop"], [10, "Thud"]],
                                "tracks": {"nose": [[0, 0]], "squash": [[0, 0], [10, 2500]],
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 100]]}},
@@ -462,11 +464,12 @@ class RigRuleTests(unittest.TestCase):
             "rig/clips/Bad Name.json: its name, the clip's id, isn't lower case, digits, - and _",
             "rig/clips/Bad Name.json: ms: 0 isn't a whole number from 1 to 60000",
             "rig/clips/hop.json: id: unknown key",
-            "rig/clips/hop.json: cues: unknown key",
             "rig/clips/hop.json: tracks.nose: isn't a channel",
             "rig/clips/hop.json: tracks.squash[1]: its value, 2500, isn't a whole number from -2000 to 2000",
             "rig/clips/hop.json: tracks.lift[2]: its time, 100, isn't a whole ms after the key before's and at most 400",
             "rig/clips/hop.json: tracks.lift[3]: its ease, 'bouncy', isn't one of linear, in, out, inout",
+            "rig/clips/hop.json: cues[1]: isn't [ms before 400, a name] (at most 255 of them)",
+            "rig/clips/hop.json: cues[2]: isn't [ms before 400, a name] (at most 255 of them)",
             "rig/clips/sway.json: tracks.lean: loops, so it starts at 0 and ends at ms on the value it started on",
             "rig/looks.json: dancing: isn't a state the board has",
             "rig/looks.json: idle.scene: unknown key",

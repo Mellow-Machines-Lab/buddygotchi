@@ -1113,23 +1113,29 @@ static void test_each_gesture_plays_its_own_gag() {
   TEST_ASSERT_TRUE(most(Gesture::kStartle, 40, [](const Shot& s) { return s.life[0]; }) > q(.1));
   TEST_ASSERT_TRUE(at(Gesture::kPeekaboo, .4).squash < q(-.12) && at(Gesture::kPeekaboo, 1.1).life[0] > q(.08));
 }
-// The notice state's three takes, each a gag under a
-// face it borrows (kNoticeFaces), dealt by its bag; its scene is the start
-// family's with no card. Heard at work, each plays its take and its gag,
-// leans in toward you, and goes back to the work, the mood's face again.
-static void test_a_notice_looks_up_at_you() {
+// The notice state's three takes play the pack's rig clip for it
+// (rig/clips/notice.json) on the face's mixer, each under a face it
+// borrows (kNoticeFaces), dealt by its bag; its scene is the start
+// family's with no card, timed to the clip and 200 ms more, with no gag or
+// contact of its own. Heard at work, the clip moves what the painter
+// draws: it perks up tall, hops off the ground and lands flat; its eyes go
+// wide and up, then squeeze shut, and its mouth opens; its two cues sound
+// a body contact each, and it goes back to the work, the mood's face
+// again, the mixer at rest.
+static void test_a_notice_plays_its_rig_clip() {
   linkkit::Rng rng;
   GelFace f;
   f.reset(0, rng);
+  const rig::Clip* clip = rig::kRig.clip("notice");
+  TEST_ASSERT_NOT_NULL(clip);
   TEST_ASSERT_EQUAL_INT(3, f.variants(Mood::kHappy, SceneState::kNotice));
   TEST_ASSERT_EQUAL_INT(3, slime::kNoticeCount);
   TEST_ASSERT_TRUE(family(SceneState::kNotice) == Family::kStart);
   const int row = int(SceneState::kNotice);
-  const char* names[] = {"gesture:notice-perk", "gesture:notice-hop", "gesture:notice-tilt"};
   for (int v = 0; v < 3; ++v) {
     const auto& r = take(slime::kGrumpy, row, v);
-    TEST_ASSERT_TRUE(r.gag >= 0 && r.count > 0 && r.label == nullptr);
-    TEST_ASSERT_EQUAL_STRING(names[v], slime::kGags[r.gag].gesture.type);
+    TEST_ASSERT_TRUE(r.gag < 0 && r.count == 0 && r.label == nullptr);
+    TEST_ASSERT_EQUAL_INT(clip->ms + 200, F(r.duration).integer());
     TEST_ASSERT_TRUE(slime::kNoticeFaces[v] >= 0 && slime::kNoticeFaces[v] < slime::kProfiles);
   }
   for (int v = 0; v < 3; ++v) {
@@ -1149,22 +1155,39 @@ static void test_a_notice_looks_up_at_you() {
     const auto& e = face.engine();
     TEST_ASSERT_EQUAL_INT(slime::kNoticeFaces[v], e.expression);
     const auto& r = take(slime::kCalm, row, v);
-    F lean = 0;
+    // What the painter draws of the clip: its controls from rest.
+    int tallest = 0, flattest = 0, lift = 0, eyes = 0, up = 0, shut = 0, mouth = 0;
+    std::vector<uint32_t> sounded;
     uint32_t t = 496;
     for (; t < 496 + uint32_t(F(r.duration).integer()); t += 16) {
       face.sync(s, c, t + 16);
       face.step(t + 16, rng);
       TEST_ASSERT_TRUE(e.scenes.route.state == SceneState::kNotice && e.scenes.variant == v);
-      TEST_ASSERT_EQUAL_STRING(names[v], slime::kGags[e.acting.playing].gesture.type);
+      TEST_ASSERT_TRUE(e.acting.playing < 0);                                      // no gag: the clip moves it
       TEST_ASSERT_TRUE(e.scenes.visible(Scenes::kStartProp, e.timeMs()) == F(0));  // no card
-      lean = max(lean, e.life()[2]);
+      PaintControls p;
+      applyRig(p, face.mixer().channels());
+      tallest = std::max(tallest, p.squash), flattest = std::min(flattest, p.squash);
+      lift = std::max(lift, p.lift), eyes = std::max(eyes, p.eyeSize), up = std::max(up, p.gazeUp);
+      shut = std::max(shut, p.blink);
+      mouth = std::max<int>(mouth, face.mixer().channels()[rig::Channel::kMouthOpen]);
+      for (const auto& cue : e.cues) {
+        TEST_ASSERT_EQUAL_STRING("squish", cue.recipe);
+        sounded.push_back(t + 16 - 496);
+      }
     }
-    TEST_ASSERT_TRUE(lean > q(.04));
+    TEST_ASSERT_TRUE(tallest > 4096 * 8 / 100 && flattest < -4096 / 10);  // Q12 of the dome's squash
+    TEST_ASSERT_TRUE(lift > 4096 * 17 / kPxPerUnit);                      // most of its 20 px off the ground
+    TEST_ASSERT_TRUE(eyes > 4096 * 6 / 5 && up > kRigGaze / 2 && shut > 4096 * 3 / 5 && mouth >= kRigMouthOpen);
+    // Its cues, each in the step that crosses it: take-off and landing.
+    TEST_ASSERT_EQUAL_INT(2, int(sounded.size()));
+    TEST_ASSERT_TRUE(sounded[0] > 460 && sounded[0] <= 476 && sounded[1] > 760 && sounded[1] <= 776);
     s.anim = SceneState::kNone;
     face.sync(s, c, t += 16);
     face.step(t, rng);
     TEST_ASSERT_TRUE(e.scenes.route.state == SceneState::kTerminal);
     TEST_ASSERT_EQUAL_STRING("calm", slime::kProfile[e.expression].id);
+    TEST_ASSERT_EQUAL_MEMORY(&rig::kRest, &face.mixer().channels(), sizeof rig::kRest);
   }
 }
 // A look's takes for tags and waits, dealt only
@@ -2117,7 +2140,7 @@ int main() {
   RUN_TEST(test_timing_comes_from_the_recipe_table);
   RUN_TEST(test_comedy_plays_in_idle_and_asleep);
   RUN_TEST(test_each_gesture_plays_its_own_gag);
-  RUN_TEST(test_a_notice_looks_up_at_you);
+  RUN_TEST(test_a_notice_plays_its_rig_clip);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
   RUN_TEST(test_the_layers_come_and_go_through_the_stack);

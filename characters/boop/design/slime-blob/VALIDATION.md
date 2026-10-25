@@ -28,8 +28,8 @@ when:
   from every other; or an intensity ladder (`intensityLadders`) doesn't
   climb by ordinary edges;
 - a canonical mood has no expression of its own or no sound profile, an
-  expression hasn't three gestures, or a mood or idle names a gag there
-  isn't;
+  expression hasn't three gestures, a mood or idle names a gag there
+  isn't, or a notice take borrows an expression there isn't;
 - two occasions share an id, one needs neither a tag nor a wait, plays in
   a state the board hasn't, borrows a gag no occasion has, has neither a
   gag nor a recipe, or gives idle a recipe;
@@ -83,7 +83,10 @@ ramps and springs can, and no jolt at an event. By file:
   morph (the awake face squashing shut on its slow spring, to lines, the
   sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
   spring kept through a mood change), the night's lids, a finger moving the dome its own
-  way, every result card's mark, comedy, the ten gestures, the notice, the
+  way, every result card's mark, comedy, the ten gestures, the notice
+  playing the rig's clip (`test_a_notice_plays_its_rig_clip`: perking up
+  tall, off the ground and landing flat, its eyes and mouth, a sound at
+  each cue, no gag), the
   occasions, a clip of the rig's on both faces (the marathon's stretch,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
   the lane at the panel's size (fading whatever the draw cadence, blended

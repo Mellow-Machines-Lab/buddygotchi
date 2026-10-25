@@ -248,6 +248,8 @@ void applyRig(PaintControls& c, const rig::Channels& rig) {
   c.lift = std::clamp(c.lift + off(Channel::kLift) * 4096 / kPxPerUnit, 0, 983);
   const int open = std::min(rig[Channel::kEyeOpenL], rig[Channel::kEyeOpenR]);
   c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
+  c.eyeSize = rig[Channel::kEyeSize] * 4096 / 1000;
+  c.gazeUp = -off(Channel::kGazeY) * kRigGaze / 1000;
 }
 void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
            const rig::Channels& rig, const rig::Layers* layers, uint32_t t) {
@@ -278,7 +280,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   }
   {
     Measure measure(profile.art);
-    paintArt(surface, e, c, mouthOpen, anchors);
+    paintArt(surface, e, c, mouthOpen || rig[rig::Channel::kMouthOpen] >= kRigMouthOpen, anchors);
   }
   {
     Measure measure(profile.layers);

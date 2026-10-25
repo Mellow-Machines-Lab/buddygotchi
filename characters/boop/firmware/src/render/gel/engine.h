@@ -18,9 +18,12 @@ class Engine {
     postureWeights[slime::kCalm].x = 1;
     // A step's cues are its contacts, at most a recipe's and a gag's: room
     // for them now keeps every frame off the heap (test_gel).
-    cues.reserve(std::size(slime::Recipe{}.contacts) + std::size(slime::Gag{}.contacts));
+    cues.reserve(std::size(slime::Recipe{}.contacts) + std::size(slime::Gag{}.contacts) + kClipCues);
+    clipContacts_.reserve(kClipCues);
     sync();
   }
+  // The most cues a rig clip sounds in one step.
+  static constexpr int kClipCues = 4;
   Random random, soundRandom;
   Motion motion;
   SemanticFace face;
@@ -123,6 +126,9 @@ class Engine {
   // The mood posture's lean and squash, after the quiet blend.
   std::array<F, 2> posture() const;
   T timeMs() const { return motion.time * 1000; }
+  // A contact a rig clip's cue names (slime::kContactKindNames), sounded at
+  // the next step as the scene's are; a name it doesn't know, none.
+  void contact(const char* kind);
   // How closed the eyes are drawn: the idle blink or a gag's lids, whichever
   // is more.
   F blink() const { return max(motion.blink(), acting.closure()); }
@@ -130,6 +136,7 @@ class Engine {
  private:
   bool stamped_ = false;
   uint32_t previous_ = 0;
+  std::vector<ContactEvent> clipContacts_;
   int cueGeneration_ = -1, cueIteration_ = -1, cueCount_ = 0;
   History<uint64_t, 64> revealed_;
   void consumeCues();

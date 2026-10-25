@@ -172,9 +172,15 @@ export function gestureRecipe(gestures,variant) {
     contacts:gesture.contacts.map(([at,kind,strength,side])=>({at:Math.round(at*1000),kind,side,strength})),
     gag:gestureGagName(gesture)};
 }
-// The notice state's takes: it hears its name and looks up at you, each
-// take a gesture's shape, dealt as any state's are.
-export const noticeNames=Object.freeze(['notice-perk','notice-hop','notice-tilt']);
+// The notice state's takes: it hears its name and looks up at you. Each
+// is the pack's rig clip for it (rig/clips/notice.json), which moves the
+// body and sounds its cues, under a face of its own the board borrows,
+// dealt as any state's takes are. The scene times the clip and outlasts it
+// a little, so the body settles before it ends.
+export const noticeNames=Object.freeze(['notice-surprised','notice-happy','notice-pleased']);
+export function noticeRecipe(clip) {
+  return {duration:clip.ms+gestureTailMs,intent:'notice: the rig clip',lean:0,contacts:[]};
+}
 // A gesture's gag: its keys and impulses; its sounds are the scene's.
 export function gestureGag(gesture) {
   return {label:gesture.label,duration:gesture.duration,keys:gesture.keys,cues:gesture.cues,contacts:[]};
@@ -213,7 +219,7 @@ export function takesOf(state,outcome=null) {
 export function recipe(p,{state,outcome,ctx},v,design){
  let r,jitter=false;
  if(state==='gesture')r=gestureRecipe(design.gestures,v);
- else if(state==='notice')r=gestureRecipe(design.notices,v);
+ else if(state==='notice')r=noticeRecipe(design.noticeClip);
  else if(['working','planning','terminal','tool_use','searching','analyzing','testing','waiting'].includes(state)){r=deskRecipe(state,v,p);jitter=true;}
  else if(state==='needs_you')r=alertRecipe(v,p);
  else if(state==='task_complete')r=resultRecipe(outcome||null,v,p);

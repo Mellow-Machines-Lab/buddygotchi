@@ -171,10 +171,13 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       both faces; its expressions stay its own (character-engine.md,
       Checkpoint 5 as built). Checked by test_gel, test_rig,
       test_behaviour and Pixel's test_scene, the goldens (two new), the
-      mirror, internal/tools/fluid and a native frame's cost.
+      mirror, internal/tools/fluid and a native frame's cost. A reaction
+      plays its clip too: Boop's notice, from the approved reference
+      (character-engine.md, The slime's notice on the rig).
 - [ ] **The gel on the rig on the board**: its frame cost on the AMOLED
       with a hat, asleep at night and on a marathon (`boopctl perf
-      --scenes`), and a look at the stretch and the layers' fades.
+      --scenes`), and a look at the stretch, the layers' fades and the
+      notice.
 - [ ] **6. Retire what the engine replaces.**
 
 ## Waiting on the owner
@@ -193,10 +196,10 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       hour stops working, a day forgets any session, wrappers aren't the
       agent, `HookSocket.listed`), then bump `agent-hooks`: a1f6417 on
       AgentHooks' main, bumped in 9f34a2a.
-- [ ] Review the worked reference (Studio, Review: notice from the perk
-      reference). It keeps Boop's `notice` clip, which no face plays yet;
-      its reading still names beats for the rig's dropped `eyeCurve` and
-      `cheek`.
+- [x] Review the worked reference (Studio, Review: notice from the perk
+      reference): approved on 2026-10-24, in chat. The notice clip took
+      its beats, the gel plays it on the rig, and its reading names what
+      the rig has (character-engine.md, The slime's notice on the rig).
 - [x] Reference frames were committed, capped at 512 px a side: fine for
       sketches and GIFs, heavy for long videos. The owner's call
       (2026-10-24): the contact sheets, reading and media are committed,

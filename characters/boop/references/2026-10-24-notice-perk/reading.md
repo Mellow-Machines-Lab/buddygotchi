@@ -47,24 +47,19 @@ blob, no limbs, its outline reading as squash and stretch alone. Nothing
 here needs more than the rig has (no ears, no arms), so it isn't a rig
 extension.
 
-## What it becomes
+## What it became
 
 Boop's `notice`: the state the board plays, and on the rig the `notice`
-clip (`rig/clips/notice.json`, 900 ms, additive: `lift` up to 12 px,
-`gazeY` up, `eyeSize` a little bigger, then back). The clip has the
-look-up; this reference adds what's before and after it, in this order,
-as tracks the rig has:
+clip (`rig/clips/notice.json`, where its keys are). The owner approved
+these beats as its reference on 2026-10-24, and the clip took them in the
+tracks the rig has: the eyes wide and up at the name (`eyeSize`, `gazeY`)
+with the mouth's `o` (`mouthOpen`); the perk tall, the wind-up, the flat
+landing and the wobble (`squash`); the hop off the ground (`lift`) with
+the eyes squeezed (`eyeOpen`) and the smile; and a body contact cued at
+the take-off and the landing. The happy arcs and the cheeks are the face
+the board borrows for each take, since the rig has no `eyeCurve` or
+`cheek`: the hop's eyes are squeezed shut instead.
 
-| ms | `squash` | `lift` | Eyes and mouth |
-| --- | --- | --- | --- |
-| 0 | +200 | 0 | half shut, flat |
-| 200 | +200 | 0 | open wide (`eyeOpen`, `eyeSize` up), mouth `o` |
-| 280 | −220 | 6 | gaze up |
-| 400 | +280 | 0 | |
-| 560 | 0 | 46 | happy arcs (`eyeCurve` up, nearly shut), smile, `cheek` |
-| 760 | +320 | 0 | |
-| 1000 | 0 | 0 | open, looking at you, smile |
-
-The studio's References view plays it beside the board's `notice` over a
-calm idle, frame for frame; whether the clip should take these beats is
-the owner's call (review/queue.json, `notice-perk`).
+The gel plays it (CHARACTER.md §15, The gel on the rig), so
+the studio's References view shows it beside the reference, frame for
+frame. Pixel's face doesn't play it.

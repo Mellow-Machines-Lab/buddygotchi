@@ -28,7 +28,9 @@ lines, then the sleeping face, alone by about 1.3 s, and waking over
 180 ms; it plays the rig's clips through a mixer of its own, laid over
 its pose, and what it wears, the air and its Zs come and go through the
 rig's layer stack (checkpoint 5). A look's occasions are the rig's,
-clips both faces play: working's stretch on a long turn's marathon. The
+clips both faces play: working's stretch on a long turn's marathon; and
+a reaction plays its own, Boop's notice (The slime's notice on the rig,
+below). The
 Mac shows the gel as the board's firmware in WebAssembly, and both faces
 share the anchors and the fades of the lane and a reaction's sign. The
 checkpoint notes below are history, each as it landed: where a later one
@@ -818,6 +820,37 @@ The slime has one engine, the C++ port: the JavaScript reference
   at weight zero that shares a group's shape moves that group to its own
   turn in the draw order. The layers are unchanged, as the rule says;
   fixing the order would change frames.
+
+### The slime's notice on the rig (2026-10-24)
+
+The owner approved the notice-perk reference as notice's, and asked for
+the work that makes the board play it. Built on checkpoint 5's mixer:
+
+- **The clip took the reference's beats**: about a second, the eyes wide
+  and up with an `o` at the name, the perk tall, a wind-up, a hop off the
+  ground with the eyes squeezed and a smile, a flat landing and a wobble,
+  in the rig's channels (`rig/clips/notice.json`), scaled to what
+  `applyRig` draws: its hop the gel's whole lift (about 20 px).
+- **Clips' cues are back**, as the rig cut said the gel would grow back
+  what it needs: `[ms, name]`, `rig::crossed` (test_rig), charactergen's
+  schema and tables (CHARACTER.md §15). The gel's names are its contacts'
+  kinds, which slimegen now writes (`kContactKindNames`); the face sounds
+  a clip's cues as it crosses them through the engine's contacts
+  (`Engine::contact`), so they're sounded by the engine's rules.
+- **A reaction plays its clip on the face's mixer**: a moment whose
+  state names a clip of the rig plays it as it starts, beside the look's
+  occasions, and `applyRig` draws three channels more: `eyeSize`, `gazeY`
+  and, through `paint`, `mouthOpen`.
+- **Notice's takes are the clip under three faces** (surprised, happy,
+  pleased; `kNoticeFaces`); slimegen times its recipe from the clip and
+  gives it no gag or contact, and the three hand-made gags (perk, hop,
+  tilt) are gone. A row's takes differing in their bodies no longer holds
+  for notice (test_cells).
+- Checked: `test_a_notice_plays_its_rig_clip` (the perk, the hop, the
+  landing, the eyes and mouth, a sound at each cue, no gag, the mixer at
+  rest after); the gel goldens (only notice's changed); the mirror,
+  rebuilt, matching the simulator shot for shot; Pixel's scenarios
+  unchanged, and its pack's fw-test.
 
 ## Risks
 

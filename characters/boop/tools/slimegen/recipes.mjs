@@ -18,6 +18,8 @@ export function recipes(profiles,q,t,{design,gagIds,tagBits}){
  let out='struct Contact {T at;uint8_t kind;int8_t side;F strength;};\n'+
   'struct Recipe {T duration;F lean;const char* label;uint8_t count,focus,helpers;int8_t direction;bool jitter,gift;int8_t gag;Contact contacts[6];};\n';
  out+='constexpr int kContactKinds='+kinds.length+';\n';
+ // Their names, which a rig clip's cues name the contact they sound by.
+ out+='constexpr const char* kContactKindNames[kContactKinds]={'+kinds.map(k=>JSON.stringify(k)).join(',')+'};\n';
  out+='constexpr int kRecipeStates='+specs.length+';\nconstexpr Recipe kRecipes[kProfiles][kRecipeStates][3]={\n';
  for(const p of Object.values(profiles)){
   out+='{\n';

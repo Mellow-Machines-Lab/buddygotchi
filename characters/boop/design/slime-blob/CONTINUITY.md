@@ -521,14 +521,21 @@ finger's velocity as it lets go is over its last 80 ms. The board's
 ## Notice
 
 The brain's reaction when you name it in your prompt: it heard its name and
-looks up at you, surprised and pleased. Its three takes are `notices` in
-`expressions.json`, each a gesture's shape (a gag of keys and impulses
-under a face it borrows, the scene's contacts) and played as one, but
-dealt from its bag as any state's takes are: `notice-perk` perks up and
-leans in (surprised), `notice-hop` hops and beams (happy), `notice-tilt`
-tilts toward you and leans in (pleased). It is the start family with no
-card. The board borrows each take's face (`kNoticeFaces`) unless the Mac
-sends a mood with it.
+looks up at you. It plays the pack's rig clip for it,
+`characters/boop/rig/clips/notice.json`, from the notice-perk reference
+(CHARACTER.md §16): its eyes snap open wide and up and it perks up tall,
+winds up, hops off the ground with its eyes squeezed happy, lands flat with
+a squish and wobbles, looking at you. The face plays the clip on its
+mixer as the moment starts, the painter lays its channels over the
+engine's pose (CHARACTER.md §15, The gel on the rig), and its cues sound
+a body contact at the take-off and the landing through the engine's
+contacts. Its scene is the start
+family's with no card, timed to the clip and a little more, with no gag or
+contact of its own. Its three takes, `notices` in `expressions.json`, are
+the one clip under a face each, dealt from its bag as any state's takes
+are: `notice-surprised`, `notice-happy` and `notice-pleased`. The board
+borrows the take's face (`kNoticeFaces`) unless the Mac sends a mood with
+it.
 
 ## Occasions
 

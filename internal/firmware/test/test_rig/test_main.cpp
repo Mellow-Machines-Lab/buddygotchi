@@ -1,6 +1,6 @@
-// The rig core (render/rig/): clips sampled with their eases and loops; the
-// mixer's springs, reaction weights, blending and style cross-fades; the
-// ramp the fades ease on; and the staged pack's rig_tables.h.
+// The rig core (render/rig/): clips sampled with their eases, loops and
+// cues; the mixer's springs, reaction weights, blending and style
+// cross-fades; the ramp the fades ease on; and the staged pack's rig_tables.h.
 #include <unity.h>
 
 #include <algorithm>
@@ -49,6 +49,10 @@ constexpr Key kDip[] = {
     {0, 0, Ease::kLinear}, {60, -1000, Ease::kIn}, {100, -1000, Ease::kLinear}, {180, 0, Ease::kOut}};
 constexpr Track kDipTracks[] = {{Channel::kEyeOpenL, {kDip, 4}}};
 constexpr Clip kBlink = {"blink", 180, false, true, {kDipTracks, 1}};
+
+constexpr Cue kTicks[] = {{0, "tick"}, {400, "tock"}};
+constexpr Clip kTicking = {"ticking", 1000, true, true, {}, {kTicks, 2}};
+constexpr Clip kOnce = {"once", 1000, false, true, {}, {kTicks, 2}};
 
 // A channel's value each frame of `frames` frames, `ms` apart.
 std::vector<int> record(Mixer& m, Channel c, int frames, uint32_t ms = 16) {
@@ -110,6 +114,25 @@ static void test_a_clip_loops_or_holds_its_end() {
 
 // A reaction's weight eases in over kWeightMs as it starts and out as it
 // ends: half way at 75 ms, whole at 150.
+static void test_cues_crossed_on_every_loop() {
+  const char* out[8];
+  TEST_ASSERT_EQUAL_INT(1, crossed(kTicking, 0, 1, out, 8));
+  TEST_ASSERT_EQUAL_STRING("tick", out[0]);
+  TEST_ASSERT_EQUAL_INT(0, crossed(kTicking, 1, 400, out, 8));  // [from, to): 400 is the next one's
+  TEST_ASSERT_EQUAL_INT(1, crossed(kTicking, 1, 401, out, 8));
+  TEST_ASSERT_EQUAL_STRING("tock", out[0]);
+  TEST_ASSERT_EQUAL_INT(0, crossed(kTicking, 400, 400, out, 8));
+  // Across loops, in order: 1000, 1400, 2000.
+  TEST_ASSERT_EQUAL_INT(3, crossed(kTicking, 900, 2100, out, 8));
+  TEST_ASSERT_EQUAL_STRING("tick", out[0]);
+  TEST_ASSERT_EQUAL_STRING("tock", out[1]);
+  TEST_ASSERT_EQUAL_STRING("tick", out[2]);
+  TEST_ASSERT_EQUAL_INT(2, crossed(kTicking, 900, 2100, out, 2));  // at most max
+  // A clip that doesn't loop crosses its cues once.
+  TEST_ASSERT_EQUAL_INT(2, crossed(kOnce, 0, 5000, out, 8));
+  TEST_ASSERT_EQUAL_INT(0, crossed(kOnce, 900, 2100, out, 8));
+}
+
 static void test_a_reactions_weight_eases_in_and_out() {
   static_assert(Mixer::kWeightMs == 150, "a clip's weight eases over 150 ms");
   Mixer m = still();
@@ -452,6 +475,7 @@ int main() {
   RUN_TEST(test_eases_run_from_0_to_1024_in_their_shapes);
   RUN_TEST(test_a_track_eases_between_its_keys_and_holds_its_ends);
   RUN_TEST(test_a_clip_loops_or_holds_its_end);
+  RUN_TEST(test_cues_crossed_on_every_loop);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
   RUN_TEST(test_a_stopped_clip_fades_out);
   RUN_TEST(test_a_looks_occasions_fit_by_their_tags_and_wait);

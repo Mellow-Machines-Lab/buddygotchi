@@ -14,7 +14,7 @@ is as code, the one source of each:
 
 | Module | What it is | What it writes |
 | --- | --- | --- |
-| `scenes.mjs` | Every state's scene recipes, by mood and take (their contacts, timed in ms, leans and labels), the gestures', notices' and occasions' recipes and gags, and each expression's traits | `slime.h`'s recipes, gags and occasions (`recipes.mjs`, `catalog.mjs`) |
+| `scenes.mjs` | Every state's scene recipes, by mood and take (their contacts, timed in ms, leans and labels), the gestures' and occasions' recipes and gags, the notice's recipe, timed by the pack's rig clip for it (`rig/clips/notice.json`), and each expression's traits | `slime.h`'s recipes, gags and occasions (`recipes.mjs`, `catalog.mjs`) |
 | `face.mjs` | Each expression's face as the board's controls: where its eyes and mouth sit, and the sizes its art draws them at | `slime.h`'s profiles |
 | `painter.mjs` | Each expression's art at rest, as Canvas calls | `slime_art.h`: vector paths, and each art's groups' shapes (`art.mjs`) |
 | `mesh.mjs` | The dome and its studio material, from equations | `slime_mesh.h`: a mesh and a dense material lookup |
@@ -34,8 +34,8 @@ pacing is the steering's.
 expressions play them, the scene recipes with each row's takes and the two
 rows' fourth takes, the gesture state's ten takes, each with a gag of its
 own and the face it borrows, the notice state's three takes' faces, the
-looks' occasions with their tags as `firmware/src/render/tags.h` numbers
-them, the mood graph's edges (the bridges the gel draws), and the sound
+contact kinds' names (a rig clip's cues name them), the looks' occasions
+with their tags as `firmware/src/render/tags.h` numbers them, the mood graph's edges (the bridges the gel draws), and the sound
 effects, three takes of each sketch (`sound/sfx.js`) at 11,025 Hz.
 `slime_art.h` gives each art's groups (each eye, the mouth, the tears, the
 cheeks with the strain mark) a shape from their paths' point counts, fill

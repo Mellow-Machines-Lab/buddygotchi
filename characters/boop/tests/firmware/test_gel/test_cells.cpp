@@ -208,10 +208,14 @@ std::set<int> look(Run& r, int row, int ms) {
 // bounds, nothing drawn jumping.
 void test_every_cell_plays_truthfully() {
   // The takes of a row differ, but for the rests and idle, whose scene is
-  // one still rest (idle's takes are its acting's, which differ too).
+  // one still rest (idle's takes are its acting's, which differ too), and
+  // notice, whose takes are one rig clip, each under its own face.
+  for (int a = 0; a < slime::kNoticeCount; ++a)
+    for (int b = a + 1; b < slime::kNoticeCount; ++b)
+      TEST_ASSERT_TRUE(slime::kNoticeFaces[a] != slime::kNoticeFaces[b]);
   for (int p = 0; p < slime::kCanonical; ++p) {
     for (int row = 0; row < slime::kRecipeStates; ++row) {
-      if (row == int(SceneState::kIdle) || row == int(SceneState::kNoApp)) continue;
+      if (row == int(SceneState::kIdle) || row == int(SceneState::kNoApp) || row == int(SceneState::kNotice)) continue;
       for (int a = 0; a < takes(row); ++a)
         for (int b = a + 1; b < takes(row); ++b) {
           if (row == int(SceneState::kAsleep) && b < 3) continue;  // its still rests, then the snore
@@ -241,7 +245,8 @@ void test_every_cell_plays_truthfully() {
       if (isReaction(state) && state != SceneState::kListening) {
         std::vector<std::vector<F>> played;
         for (int v = 0; v < takes(row); ++v) played.push_back(play(mood, row, state, outcome, ctx, v, ++id));
-        // Each take moves the body its own way.
+        // Each take moves the body its own way, but notice's, its one clip's.
+        if (state == SceneState::kNotice) continue;
         for (size_t a = 0; a < played.size(); ++a)
           for (size_t b = a + 1; b < played.size(); ++b) {
             F most = 0;

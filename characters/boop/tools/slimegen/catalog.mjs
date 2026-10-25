@@ -19,10 +19,11 @@ export function firmwareCatalog(root){
  const base=path.join(root,'characters/boop/design/slime-blob');
  const read=name=>JSON.parse(fs.readFileSync(path.join(base,name)));
  const design=read('expressions.json'),profiles=design.expressions,graph=read('emotion-graph.json'),sound=read('sound/sound-plan.json');
+ // The notice state plays the pack's rig clip, which its recipe times.
+ design.noticeClip=JSON.parse(fs.readFileSync(path.join(root,'characters/boop/rig/clips/notice.json')));
  // Every gag the port plays: comedy's, then each gesture's, then the
- // occasions' (each once), then the notice state's takes'.
- const allGags=[...Object.entries(design.gags),...design.gestures.map(g=>[gestureGagName(g),gestureGag(g)]),...occasionGags(design.occasions),
-  ...design.notices.map(g=>[gestureGagName(g),gestureGag(g)])];
+ // occasions' (each once).
+ const allGags=[...Object.entries(design.gags),...design.gestures.map(g=>[gestureGagName(g),gestureGag(g)]),...occasionGags(design.occasions)];
  const ids=Object.keys(profiles),index=id=>ids.indexOf(id),gagIds=allGags.map(([id])=>id);
  // A tag's bit, in render::kTagNames' order (firmware/src/render/tags.h).
  const tagNames=[...fs.readFileSync(path.join(root,'firmware/src/render/tags.h'),'utf8').match(/kTagNames\[kTagCount\] = \{([\s\S]*?)\};/)[1].matchAll(/"(\w+)"/g)].map(m=>m[1]);

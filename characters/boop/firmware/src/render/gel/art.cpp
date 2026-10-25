@@ -87,8 +87,8 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
     int x = p.x, y = p.y;
     if (group == 1 || group == 2) {
       int side = group == 1 ? -1 : 1;
-      x = x - side * l.baseX + side * eyeX + c.gaze;
-      y = eyeY + int(int64_t(y - l.baseY) * l.eye * (4096 - c.blink) / (4096 * 4096));
+      x = side * eyeX + c.gaze + int(int64_t(x - side * l.baseX) * c.eyeSize / 4096);
+      y = eyeY + c.gazeUp + int(int64_t(y - l.baseY) * l.eye * (4096 - c.blink) / (4096 * 4096) * c.eyeSize / 4096);
     } else if (group == 3) {
       x = x * l.mouthWidth / 4096;
       y = mouthY + (y - l.baseM) * l.mouthHeight / 4096;
@@ -96,7 +96,8 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
     return Point{x, y};
   };
   if (anchors) {  // each eye's middle, where its art is centred
-    const Point l = projection.face(-eyeX + c.gaze, eyeY), r = projection.face(eyeX + c.gaze, eyeY);
+    const Point l = projection.face(-eyeX + c.gaze, eyeY + c.gazeUp),
+                r = projection.face(eyeX + c.gaze, eyeY + c.gazeUp);
     anchors->eyeL = l, anchors->eyeR = r;
   }
   Point vertices[kMaxPoints], clip[kMaxPoints];

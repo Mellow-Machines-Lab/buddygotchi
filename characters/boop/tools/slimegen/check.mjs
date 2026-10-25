@@ -25,7 +25,8 @@ function graphRules(graph) {
 }
 
 // The expressions: one for each mood, of that mood, with its three
-// gestures, its sound's pitch and gain, and only gags that exist.
+// gestures, its sound's pitch and gain, and only gags that exist; and the
+// notice takes' faces, each an expression.
 function expressionRules(graph,design,sound) {
   for(const id of Object.keys(graph.nodes)){
     const e=design.expressions[id];
@@ -37,6 +38,7 @@ function expressionRules(graph,design,sound) {
     for(const gag of e.gags||[])if(!design.gags[gag])fail(`${id} names no gag ${gag}`);
   }
   for(const gag of design.idleGags)if(!design.gags[gag])fail(`idle names no gag ${gag}`);
+  for(const n of design.notices)if(!design.expressions[n.face])fail(`${n.id} borrows no expression ${n.face}`);
 }
 
 // The occasions: each its own id, needing a tag or a wait, on looks the

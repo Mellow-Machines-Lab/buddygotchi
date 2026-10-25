@@ -323,11 +323,12 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
         rel = f"clips/{path.name}"
         if not NAME.fullmatch(path.stem):
             fail(rel, "", "its name, the clip's id, isn't lower case, digits, - and _")
-        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict}, required=("ms",))
+        clip = read(rel, {"about": str, "ms": (1, 60000), "loop": bool, "additive": bool, "tracks": dict, "cues": list},
+                    required=("ms",))
         if "ms" not in clip:
             continue
         ms, loop, additive = clip["ms"], clip.get("loop", False), clip.get("additive", True)
-        tracks = []
+        tracks, cues = [], []
         for name, keys in check(rel, clip.get("tracks", {}), {c: list for c in ranges}, at="tracks", unknown="isn't a channel").items():
             where = f"tracks.{name}"
             if any(c == done for c in named(name) for done, _ in tracks):
@@ -355,7 +356,13 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
             if loop and rows and (rows[0][0], rows[-1][0], rows[-1][1]) != (0, ms, rows[0][1]):
                 fail(rel, where, "loops, so it starts at 0 and ends at ms on the value it started on")
             tracks += [(c, rows) for c in named(name)]
-        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks})
+        for i, cue in enumerate(clip.get("cues", [])):
+            if i == MOST or not (isinstance(cue, list) and len(cue) == 2 and whole(cue[0], 0, ms - 1) and NAME.fullmatch(str(cue[1]))):
+                fail(rel, f"cues[{i}]", f"isn't [ms before {ms}, a name] (at most {MOST} of them)")
+            else:
+                cues.append((cue[0], cue[1]))
+        rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks,
+                             "cues": sorted(cues)})
 
     rel, ids, tags = "looks.json", [c["id"] for c in rig["clips"]], tag_names()
     a_clip = Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)
@@ -390,7 +397,7 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
 def rig_h(pack: Path, rig: dict) -> str:
     """The firmware's rig_tables.h, which staging writes from a pack's rig/,
     read_rig() having checked it: its rows, then kRig, which lists them."""
-    out, keys, tracks, clips = [], [], [], []
+    out, keys, tracks, cues, clips = [], [], [], [], []
 
     def table(kind, name, rows):
         if rows:
@@ -401,12 +408,14 @@ def rig_h(pack: Path, rig: dict) -> str:
         return f"{{{name} + {start}, {count}}}" if count else "{}"
 
     for c in rig["clips"]:
-        first = len(tracks)
+        first, cue = len(tracks), len(cues)
         for channel, rows in c["tracks"]:
             tracks.append(f"{{Channel::k{channel[0].upper()}{channel[1:]}, {run('kKeys', len(keys), len(rows))}}}")
             keys += [f"{{{t}, {v}, Ease::{EASES[e]}}}" for t, v, e in rows]
+        cues += [f"{{{t}, {json.dumps(name)}}}" for t, name in c["cues"]]
         clips.append(f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
-                     f"{run('kTracks', first, len(c['tracks']))}}}")
+                     f"{run('kTracks', first, len(c['tracks']))}" + (f", {run('kCues', cue, len(c['cues']))}" if c["cues"] else "")
+                     + "}")
     occasions, looks = [], []
     for l in rig["looks"]:
         first = len(occasions)
@@ -415,6 +424,7 @@ def rig_h(pack: Path, rig: dict) -> str:
                      f"{run('kOccasions', first, len(l['occasions']))}}}")
     table("Key", "kKeys", keys)
     table("Track", "kTracks", tracks)
+    table("Cue", "kCues", cues)
     lists = [table("Expression", "kExpressions", ["{" + ", ".join(json.dumps(e[k]) for k in ("mood", "eyes", "mouth")) + "}"
                                                   for e in rig["expressions"]]),
              table("Clip", "kClips", clips)]

@@ -789,15 +789,16 @@ types, the ramp its fades ease on and the anchors a face reports
 (`rig.h`), and the mixer that plays them (`mixer.h`). The pixel face
 draws its face from it wherever a design's face is its mood's resting
 face (below, Pixel's face on the rig), and the gel plays its clips over
-its own engine (below, The gel on the rig). A clip in a pack's `clips/`
-plays on every face the pack has. Beside them, the layer stack
-(`layers.h`, below, The layer stack) fades what comes and goes around
-the body.
+its own engine (below, The gel on the rig): a look's occasions, and a
+reaction's clip when its state names one (Boop's notice). A clip in a
+pack's `clips/` plays on every face the pack has. Beside them, the layer
+stack (`layers.h`, below, The layer stack) fades what comes and goes
+around the body.
 Pixel's rig has expressions for its 13 drawn moods, each wearing its own
 mood's eyes and mouth, the looks idle, working and asleep, a blink, and
 working's stretch on a long turn's marathon. Boop's is the same, since
-Boop wears Pixel's face on the CYD, with its notice besides (§16's
-reference became it).
+Boop wears Pixel's face on the CYD, with its notice besides, which the
+gel plays (§16's reference became it).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
@@ -825,17 +826,21 @@ A mood without one has none of its own, and the face decides what it
 wears (Pixel's borrows, §9).
 
 **`clips/<id>.json`**: a clip each, its id the file's name: keyframed
-curves on some channels, timed in ms. Boop's notice:
+curves on some channels, timed in ms, with cues. Boop's notice:
 
 ```json
 {
-  "about": "notice: it heard its name and looks up at you, eyes wide, then settles (Pixel's perk).",
-  "ms": 900,
+  "about": "notice: it heard its name, from the notice-perk reference. Its eyes snap open, wide and up, and it perks up tall; it winds up, hops beaming with its eyes squeezed happy, lands flat with a squish and wobbles, looking at you.",
+  "ms": 1000,
   "tracks": {
-    "lift": [[0, 0], [120, 10, "out"], [300, 12], [600, 10], [820, 0]],
-    "gazeY": [[0, 0], [120, -500, "out"], [700, -500], [900, 0]],
-    "eyeSize": [[0, 0], [120, 200, "out"], [600, 150], [900, 0]]
-  }
+    "squash": [[0, 0], [200, 60], [280, -220, "out"], [400, 280], [460, -240, "out"], [560, 0], [700, -100], [760, 320, "in"], [840, -110, "out"], [910, 50], [1000, 0]],
+    "lift": [[0, 0], [200, 0], [280, 6, "out"], [400, 0], [460, 2], [560, 30, "out"], [760, 0, "in"], [1000, 0]],
+    "eyeOpen": [[0, 0], [470, 0], [540, -650], [720, -650], [800, 0, "out"], [1000, 0]],
+    "eyeSize": [[0, 0], [190, 0], [230, 280, "out"], [400, 180], [480, 0], [860, 0], [920, 100, "out"], [1000, 0]],
+    "gazeY": [[0, 0], [190, 0], [230, -600, "out"], [420, -400], [520, 0], [1000, 0]],
+    "mouthOpen": [[0, 0], [190, 0], [230, 450, "out"], [380, 0], [520, 600], [720, 500], [860, 0], [1000, 0]]
+  },
+  "cues": [[460, "body_contact"], [760, "body_contact"]]
 }
 ```
 
@@ -845,6 +850,7 @@ curves on some channels, timed in ms. Boop's notice:
 | `loop` | no | Whether it loops, `false` without it. A looping clip's tracks start at 0 and end at `ms` on the value they started on |
 | `additive` | no | `true` without it: its values are offsets on what's there, so it plays in any mood, each up to the channel's whole span either way. `false`: values to blend toward, each in the channel's range |
 | `tracks` | no | For each channel, its keys in order of time, `[ms, value]` or `[ms, value, ease]`, the ease into the key from the one before: `linear`, `in`, `out` or `inout`, which a key without one has. Before its first key a track holds that key's value, and after its last the last's |
+| `cues` | no | `[ms, name]`, each before `ms`: a moment the face sounds, by one of its sounds' names, as it crosses it. The gel's are its contacts' kinds (`body_contact` and the rest, slimegen's `recipes.mjs`); Pixel's face sounds no clip's cues |
 | `about` | no | What it is, for people |
 
 **`looks.json`**: for each look (§9's Looks), the clip it loops under
@@ -872,8 +878,8 @@ Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
 clip or tag, a style that isn't a mood the pixel face the pack has or uses
 draws (its `faces.h`'s), a value out of its range, keys out of order, a
-loop that doesn't close and an occasion that loops or would always fit,
-each with its file and key
+loop that doesn't close, an occasion that loops or would always fit and a
+cue that isn't a name before `ms`, each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
 with a lookup by mood, clip and look. The app doesn't bundle `rig/`.
@@ -981,13 +987,21 @@ CONTINUITY.md). Its face (`render/gel/face.h`) holds a mixer of its own,
 which plays the staged rig's clips, and the painter lays the mixer's
 channels over the pose the engine gives (`applyRig`): `squash` (the
 rig's tall is the dome's up), `lean`, `lift` (canvas px, 85 a body unit,
-never into the floor) and `eyeOpen` (its lids, shut as far as the more
-shut eye). It draws no other channel yet, and its expressions aren't
-the rig's: a mood is the gel's own art. At rest the mixer adds nothing,
-so a frame with no clip playing is the engine's alone. The gel's look
-gives the rig look's occasions their chance at each pass of its scene's
-recipe (a desk's loop, asleep's breath, and the look's start), while the
-engine shows the look itself, with the engine's own randomness.
+never into the floor: the whole dome rises), `eyeOpen` (its lids, shut
+as far as the more shut eye), `eyeSize` (the eyes about their middles),
+`gazeY` (the eyes up and down) and `mouthOpen` (its one open mouth, once
+it's open enough). It draws no other channel yet, and its expressions
+aren't the rig's: a mood is the gel's own art. At rest the mixer adds
+nothing, so a frame with no clip playing is the engine's alone. The
+gel's look gives the rig look's occasions their chance at each pass of
+its scene's recipe (a desk's loop, asleep's breath, and the look's
+start), while the engine shows the look itself, with the engine's own
+randomness. A reaction whose state names a clip of the rig (Boop's
+`notice`) plays it once, as its moment starts, and the clip's cues sound
+the contacts they name (the slime's contact kinds). The gel's recipe for
+that state times it, the clip's length and a little more for the body to
+settle (slimegen), with no gag or contact of its own, and its takes are
+the one clip, each under a face the board borrows (`kNoticeFaces`).
 
 ## 16. References and review (optional)
 
@@ -1079,8 +1093,9 @@ pack staging. The app doesn't bundle either folder.
 - Pixel's rig face draws only the designs whose face is its mood's
   resting face (§15); a design whose face changes shape (curious's
   look-around, a yawn, a finish's face) is still baked, since the rig's
-  parts are one drawing of each eye. The gel doesn't draw from the rig
-  yet.
+  parts are one drawing of each eye. The gel plays the rig's clips (a
+  look's occasions, a reaction's) over its own engine; its expressions,
+  recipes, gags and springs are still its own.
 - The palette lives in the pixel face's `faces.h`; it moves out of the
   art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and

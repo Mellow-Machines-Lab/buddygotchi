@@ -7,6 +7,17 @@ int expressionFromName(const char* name) {
       if (!std::strcmp(name, slime::kProfile[i].id)) return i;
   return -1;
 }
+void Engine::contact(const char* kind) {
+  for (int i = 0; i < slime::kContactKinds; ++i)
+    if (!std::strcmp(kind, slime::kContactKindNames[i]) && int(clipContacts_.size()) < kClipCues) {
+      ContactEvent c;
+      c.kind = uint8_t(i);
+      c.timeMs = timeMs();
+      c.strength = q(.4);
+      clipContacts_.push_back(c);
+      return;
+    }
+}
 void Engine::sync(int forced) {
   const Route route = router.resolve();
   int next = route.expression < 0 ? emotion : route.expression;
@@ -61,6 +72,7 @@ void Engine::step(uint32_t ms) {
     }
   }
   consumeCues();
+  clipContacts_.clear();
 }
 std::array<F, 4> Engine::pose() const {
   auto out = motion.pose();
@@ -144,8 +156,8 @@ void Engine::consumeCues() {
   static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed", nullptr, "squish",
                                   "squish",   "squish", "failed", "squish", "sneeze",   "breath", "bounce"};
   static_assert(std::size(recipes) == slime::kContactKinds, "a recipe, or none, for every contact kind");
-  // The scene's contacts, then a gag's.
-  for (const auto* list : {&scenes.contacts, &acting.contacts})
+  // The scene's contacts, then a gag's, then a rig clip's cues'.
+  for (const auto* list : {&scenes.contacts, &acting.contacts, &clipContacts_})
     for (const auto& c : *list) {
       const char* recipe = recipes[c.kind];
       if (!recipe || !admits(c, state, quiet, protect)) continue;

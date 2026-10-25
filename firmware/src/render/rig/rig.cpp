@@ -25,6 +25,24 @@ int sample(const Track& track, uint32_t local) {
   return keys[keys.count - 1].value;
 }
 
+int crossed(const Clip& clip, uint32_t from, uint32_t to, const char** out, int max) {
+  int n = 0;
+  if (!clip.cues.count || !after(to, from)) return 0;
+  // Each loop's start from the one `from` is in; a clip that doesn't loop
+  // has only its first.
+  for (uint32_t start = clip.loop ? from - from % clip.ms : 0; after(to, start); start += clip.ms) {
+    for (const Cue& cue : clip.cues) {
+      const uint32_t at = start + cue.ms;
+      if (!after(from, at) && after(to, at)) {
+        if (n == max) return n;
+        out[n++] = cue.name;
+      }
+    }
+    if (!clip.loop) break;
+  }
+  return n;
+}
+
 namespace {
 template <class T, class Match>
 const T* find(const List<T>& list, Match match) {
