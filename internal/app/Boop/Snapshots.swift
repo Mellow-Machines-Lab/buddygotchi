@@ -551,6 +551,7 @@ enum Snapshots {
         let host = NSHostingView(rootView: view
             .environment(\.colorScheme, dark ? .dark : .light)
             .environment(\.stillMotion, true)
+            .environment(\.displayScale, scale)
             .environment(\.controlActiveState, .key))
         host.appearance = appearance
         window.appearance = appearance
@@ -570,13 +571,18 @@ enum Snapshots {
             fail("snapshots: \(name) exceeds its \(Int(heightLimit)) pt height limit: \(host.bounds.height)")
         }
         window.displayIfNeeded()
-        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { fail("snapshots: \(name) has no bitmap") }
+        // At Retina's 2 pixels a point, as most Macs show it, so blur and
+        // seams a 1× picture hides show.
+        let rep = bitmap(host.bounds.size, scale: scale)
         host.cacheDisplay(in: host.bounds, to: rep)
         guard let png = rep.representation(using: .png, properties: [:]) else { fail("snapshots: \(name) has no PNG") }
         let url = dir.appendingPathComponent("\(name).png")
         do { try png.write(to: url) } catch { fail("snapshots: can't write \(url.path): \(error)") }
-        print("\(name).png \(Int(host.bounds.width))×\(Int(host.bounds.height))")
+        print("\(name).png \(Int(host.bounds.width))×\(Int(host.bounds.height)) pt at \(Int(scale))×")
     }
+
+    /// Pixels a point in the panes' and onboarding's pictures.
+    static let scale: CGFloat = 2
 
     /// Every icon on a light and a dark menu bar, as the bar draws it: the
     /// top row at 1× and the bottom at 2×, each pixel blown up to 4×4 or 2×2

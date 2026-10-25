@@ -24,9 +24,10 @@
   // gesture), and BOOT, each held as long as a tap.
   const TAP = '{"t":"dbg.touch","x":80,"y":120,"ms":100}', PRESS = '{"t":"dbg.press","ms":100}';
   // The slime on the board's 502×410 screen, in its pixels: a square
-  // around it and the props beside it, its sign above it included, and
-  // the lane under it left out. What a small tile shows.
-  const SLIME = {x: 96, y: 32, w: 310, h: 310};
+  // around it as it rests (x 105–398, y 95–320), with most of the props
+  // beside it and the sign above it, and the lane under it (y 348) left
+  // out. What a small tile shows.
+  const SLIME = {x: 101, y: 44, w: 300, h: 300};
   // A drawing scaled down more than this many times skips pixels and
   // shimmers as the slime moves, so it's halved in steps until it isn't.
   const MOST_SHRINK = 2;

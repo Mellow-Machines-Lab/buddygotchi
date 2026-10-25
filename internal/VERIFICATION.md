@@ -442,7 +442,8 @@ gets at least one scenario. Their pictures are the golden images in
 - **The Mac app's look**, for Mac UI changes: run
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
-  look. The run fails by itself on low contrast.
+  look, and nothing blurred or seamed: the panes and acts are drawn at
+  2 pixels a point, as a Retina Mac shows them. The run fails by itself on low contrast.
   It also checks the name's character limits and validation, and that
   the views' status changes only while the popover or onboarding shows
   it, only when it changed, and never for the work stream's lanes, and

@@ -102,7 +102,7 @@ test('a small tile zooms on the slime, and shrinks in halves of at most 2×', as
   p.drawn.draws.length = 0;
   p.mirror.zoom(true);
   const zoomed = paint();
-  assert.deepEqual(zoomed.first, [96, 32, 310, 310], 'the square around the slime');
+  assert.deepEqual(zoomed.first, [101, 44, 300, 300], 'the square around the slime');
   assert.deepEqual(zoomed.to, [0, 0, 92, 92], 'filling the square tile');
   p.mirror.zoom(false);
   const whole = paint();
