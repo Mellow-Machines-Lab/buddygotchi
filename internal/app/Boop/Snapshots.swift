@@ -231,6 +231,20 @@ enum Snapshots {
                 $0.connected = true
                 $0.progress.heard = "claude"
             }),
+            // On a gel board, the tour: the words fell, and the turn finished.
+            ("6-agents-tour", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle", "Tidy the README"]],
+                                                         face: .gel)) {
+                $0.body = .joined
+                $0.connected = true
+                $0.progress.heard = "claude"
+                $0.progress.tour = [.words]
+            }),
+            ("6-agents-tour-done", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle"]], face: .gel)) {
+                $0.body = .joined
+                $0.connected = true
+                $0.progress.heard = "claude"
+                $0.progress.tour = Set(Onboarding.Progress.Tour.allCases)
+            }),
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
             // Act 5's push-to-talk had the mic allowed: no card for it.
@@ -241,6 +255,8 @@ enum Snapshots {
                 $0.app.refreshLoginItem()
             }),
             ("8-finale", at(.finale, status: status())),
+            // A gel board: the drawer's tip in the poke's place.
+            ("8-finale-gel", at(.finale, status: status(face: .gel))),
             // After "I don't have my Boop yet": the Mac's way of each tip.
             ("8-finale-no-board", at(.finale, status: status(connected: false))),
         ]
@@ -424,7 +440,7 @@ enum Snapshots {
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
-                       growth: Growth? = Growth(xp: 1_340)) -> Runtime.Status {
+                       growth: Growth? = Growth(xp: 1_340), face: DeviceInfo.Face = .pixel) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
         // Each waited, worked or rested a few minutes more than the one
@@ -457,7 +473,7 @@ enum Snapshots {
             },
             busy: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
-                              device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice) : nil,
+                              device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)

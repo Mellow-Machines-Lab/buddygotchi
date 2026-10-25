@@ -861,8 +861,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 }
             }
             // Onboarding listens for a tap on the board, what push-to-talk
-            // heard and an agent's first hook, while it's there.
-            runtime.onTap = { [weak self] button in Task { @MainActor in self?.onboarding?.tapped(button: button) } }
+            // heard, an agent's first hook and the agents' drawer, while
+            // it's there.
+            runtime.onTap = { [weak self] button, onFinish in
+                Task { @MainActor in self?.onboarding?.tapped(button: button, onFinish: onFinish) }
+            }
+            runtime.onDrawer = { [weak self] did in Task { @MainActor in self?.onboarding?.drawer(did) } }
             runtime.onHeard = { [weak self] words in Task { @MainActor in self?.onboarding?.talked(words) } }
             runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
             presenceSignals.start { runtime.presence($0) }

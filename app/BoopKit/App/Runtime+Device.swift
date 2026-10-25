@@ -59,10 +59,10 @@ extension Runtime {
             options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
             remember(on: rig)
             let opens = finish.flatMap { rig.reactions.opens(finish: $0) }
-            // Onboarding hears every tap and BOOT press, and which it was,
-            // after the core takes it (onTap is called on `home`, after
-            // this returns).
-            if rig === rigs[0] { home.async { [weak self] in self?.onTap?(button) } }
+            // Onboarding hears every tap and BOOT press, which it was, and
+            // whether it was on a finish, after the core takes it (onTap
+            // is called on `home`, after this returns).
+            if rig === rigs[0] { home.async { [weak self] in self?.onTap?(button, opens != nil) } }
             // BOOT: the core decides whether it hands you the next agent;
             // the board has played its guess (its hand-off, or a poke).
             if button { return run(pipeline.press(at: now, finish: opens, buddy: rig.tag)) }
@@ -78,6 +78,8 @@ extension Runtime {
             // The agents' drawer, the board's own: open, shut, or a row
             // picked in it, by its number.
             options.log("device\(Runtime.whose(rig)): drawer \(ev.did ?? "?")" + (BoopDevice.row(picked: ev).map { " \($0)" } ?? ""))
+            // Onboarding's tour hears it open, and a row picked.
+            if rig === rigs[0], let did = ev.did, did != "closed" { home.async { [weak self] in self?.onDrawer?(did) } }
             switch ev.did {
             case "open", "closed": run(pipeline.drawer(open: ev.did == "open", at: now, buddy: rig.tag))
             case "pick": if let row = BoopDevice.row(picked: ev) { run(pipeline.pick(row: row, at: now, buddy: rig.tag)) }

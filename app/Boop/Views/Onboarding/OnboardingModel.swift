@@ -28,6 +28,8 @@ final class OnboardingModel: ObservableObject {
         set { progress.connected = newValue }
     }
     var heard: String? { progress.heard }
+    var tour: Set<Onboarding.Progress.Tour> { progress.tour }
+    var tourDue: Onboarding.Progress.Tour? { progress.tourDue }
 
     // Act 3: why naming couldn't save, if it couldn't.
     @Published var nameError: String?
@@ -195,12 +197,14 @@ final class OnboardingModel: ObservableObject {
 
     // MARK: Taps and hooks, from the runtime
 
-    /// A tap on the board: its screen, or its button when `button`.
-    func tapped(button: Bool) {
+    /// A tap on the board: its screen, or its button when `button`, on a
+    /// finish that names whose turn it was when `onFinish`.
+    func tapped(button: Bool, onFinish: Bool) {
         var found = false
         if case .found = board { found = true }
         var next = progress
-        let tap = next.tapped(boardFound: found, button: button)
+        let tap = next.tapped(boardFound: found, button: button, onFinish: onFinish)
+        if case .toured(let step) = tap { return toured(step, next) }
         guard tap != .nothing else { return }
         OnboardingSound.play(.success)
         if tap == .lesson(.amber) {
@@ -256,6 +260,88 @@ final class OnboardingModel: ObservableObject {
         app.runtime?.greet(.hello)
         celebrate()
         log("onboarding: heard \(agent)'s first hook")
+    }
+
+    // MARK: Act 6's tour
+
+    /// Whether act 6 tours, once an agent says hi: Boop has its body, and
+    /// it draws the work stream and the agents' drawer (the gel's face).
+    var tours: Bool { hasBoard && app.status?.device?.face == .gel }
+
+    /// The window's Boop after the hello: the board's own state, live, so
+    /// your agent's words fall past it too. No sound.
+    var live: StateSnapshot {
+        guard var snapshot = app.status?.snapshot else { return .onboarding(mood: "excited") }
+        snapshot.vol = 0
+        return snapshot
+    }
+
+    /// The agent that said hi has a lane in the work stream: its words
+    /// are falling.
+    var wordsFalling: Bool {
+        guard let heard else { return false }
+        return app.status?.sessions.contains { $0.agent == heard && $0.word != nil } == true
+    }
+
+    /// The tour's first step, once the words fall.
+    func sawWords() {
+        var next = progress
+        if next.did(.words) { toured(.words, next) }
+    }
+
+    /// The board's agents' drawer opened (`open`), or a row in it was
+    /// picked (`pick`).
+    func drawer(_ did: String) {
+        guard did == "open" || did == "pick" else { return }
+        var next = progress
+        if next.drawer(picked: did == "pick") { toured(did == "pick" ? .row : .drawer, next) }
+    }
+
+    /// How long after a thread opens on the Mac the window comes back, so
+    /// you see it open first.
+    static let backAfter: Duration = .seconds(1.5)
+
+    /// A step of the tour is done, as `next` says. The steps that open a
+    /// thread bring the window back after it, and the last one celebrates.
+    private func toured(_ step: Onboarding.Progress.Tour, _ next: Onboarding.Progress) {
+        OnboardingSound.play(.success)
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.6)) { progress = next }
+        log("onboarding: the tour's \(step) step is done")
+        guard step == .cheer || step == .row else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.backAfter)
+            guard let self, self.act == .agents else { return }
+            self.bringForward()
+            if self.tourDue == nil { self.celebrate() }
+        }
+    }
+
+    /// The thread of the agent that said hi that last finished a turn,
+    /// whose name the cheer holds up and a tap on it opens.
+    var finishedThread: SessionSummary? {
+        app.status?.sessions.filter { $0.agent == heard && $0.status == .idle && $0.thread != nil }
+            .max { ($0.since ?? .distantPast) < ($1.since ?? .distantPast) }
+    }
+
+    /// How often Boop cheers for the finished turn until it's tapped: the
+    /// finish lingers a while after it plays.
+    static let cheerEvery: Duration = .seconds(8)
+
+    /// While the cheer is the tour's step, Boop cheers on the board and on
+    /// screen for the agent's finished turn, naming its thread, once the
+    /// turn has finished. It stops once it's tapped, or the act moves on
+    /// (the task is cancelled).
+    func cheer() async {
+        while !Task.isCancelled, tourDue == .cheer {
+            guard let session = finishedThread, let thread = session.thread else {
+                try? await Task.sleep(for: .seconds(1))
+                continue
+            }
+            let who = DeviceReaction.Who(agent: session.agent, thread: session.name ?? session.project, opens: thread)
+            app.runtime?.cheer(who)
+            feed.reaction(DeviceReaction(anim: "task_complete", loops: 2, who: who, outcome: "success"))
+            try? await Task.sleep(for: Self.cheerEvery)
+        }
     }
 
     // MARK: Act 6

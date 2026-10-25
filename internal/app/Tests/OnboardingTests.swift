@@ -189,4 +189,43 @@ final class OnboardingProgressTests: XCTestCase {
         var elsewhere = Onboarding.Progress(act: .finale)
         XCTAssertFalse(elsewhere.heard("claude"))
     }
+
+    /// Act 6's tour starts with the hello, and goes in order: the words,
+    /// a tap on the cheer, the drawer opened, a row picked. A step out of
+    /// turn doesn't count, nor does a tap that isn't on the cheer.
+    func testTheTourGoesInOrderAfterTheHello() {
+        var progress = Onboarding.Progress(act: .agents)
+        progress.connected = true
+        XCTAssertNil(progress.tourDue, "nothing before the hello")
+        XCTAssertFalse(progress.did(.words))
+        XCTAssertTrue(progress.heard("claude"))
+        XCTAssertEqual(progress.tourDue, .words)
+        XCTAssertFalse(progress.drawer(picked: false), "the drawer waits its turn")
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false, onFinish: true), .nothing, "so does the cheer")
+        XCTAssertTrue(progress.did(.words))
+        XCTAssertFalse(progress.did(.words), "once")
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false), .nothing, "a poke isn't the cheer")
+        XCTAssertEqual(progress.tapped(boardFound: true, button: true, onFinish: true), .toured(.cheer))
+        XCTAssertFalse(progress.drawer(picked: true), "a row needs the drawer first")
+        XCTAssertTrue(progress.drawer(picked: false))
+        XCTAssertTrue(progress.drawer(picked: true))
+        XCTAssertNil(progress.tourDue, "all done")
+        XCTAssertEqual(progress.tour, Set(Onboarding.Progress.Tour.allCases))
+        var elsewhere = Onboarding.Progress(act: .finale)
+        XCTAssertEqual(elsewhere.tapped(boardFound: true, button: false, onFinish: true), .nothing, "only in act 6")
+    }
+
+    /// The tour is required on a board that tours, once an agent has said
+    /// hi: act 6 lets you go on before the hello ("I'll try it later"),
+    /// without such a board, and once the tour is done.
+    func testActSixWaitsForTheTourOnlyOnABoardThatTours() {
+        var progress = Onboarding.Progress(act: .agents)
+        progress.connected = true
+        XCTAssertTrue(progress.mayLeaveAgents(tours: true), "before the hello")
+        _ = progress.heard("codex")
+        XCTAssertFalse(progress.mayLeaveAgents(tours: true))
+        XCTAssertTrue(progress.mayLeaveAgents(tours: false), "a board without the drawer, or none")
+        for step in Onboarding.Progress.Tour.allCases { _ = progress.did(step) }
+        XCTAssertTrue(progress.mayLeaveAgents(tours: true))
+    }
 }

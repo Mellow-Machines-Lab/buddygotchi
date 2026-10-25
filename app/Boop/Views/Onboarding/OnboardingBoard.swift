@@ -242,8 +242,8 @@ struct HowToAct: View {
                      detail: paired ? nil : "You'll try these on my body when we meet.")
             VStack(spacing: 8) {
                 lesson(1, "Tap my screen", "I poke back. Tap a lot and I get grumpy.", done: model.lessons.contains(.tap))
-                lesson(2, "Press my button", paired ? "The one on my side. A short press pokes me too. Try it now."
-                                                    : "The one on my side. A short press pokes me too.",
+                lesson(2, "Press my button", paired ? "The one on my side. It opens your next agent, or pokes me. Try it now."
+                                                    : "The one on my side. It opens your next agent, or pokes me when there's none.",
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
                 lesson(3, "Hold my button and talk", talkDetail, done: model.lessons.contains(.talk),
                        waiting: paired && model.lessons.contains(.button))
@@ -251,13 +251,15 @@ struct HowToAct: View {
                        waiting: paired && model.lessons.isSuperset(of: [.tap, .button, .talk]), amber: true)
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("WHAT MY FACES MEAN").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSoft)
+                Text("HOW I FEEL").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSoft)
                 HStack(spacing: 8) {
-                    face(.asleep, "Napping", "no agents open")
-                    face(.working, "Focused", "agents at work")
-                    face(.needsYou, "Needs you", "an agent waits")
-                    face(.idle, design: "proud", "Proud", "a big finish")
+                    face("happy", "Happy", "it's going well")
+                    face("grumpy", "Grumpy", "failures pile up")
+                    face("proud", "Proud", "a big finish")
+                    face("tired", "Tired", "a long day")
                 }
+                Text("My mood shifts with your day, and settles back when it's quiet.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
             }
             Spacer(minLength: 0)
             ActNav(model: model, next: "Got it")
@@ -281,16 +283,20 @@ struct HowToAct: View {
         return "I'm glowing amber now, as if an agent were waiting. Tap me to answer it."
     }
 
-    /// The talk lesson's words: how, what the Mac heard, or why it can't
-    /// hear. Without Jev's key, which act 7 asks for, nothing answers yet.
+    /// What talking to Boop is for: a chat, not orders for your agents.
+    static let talkFor = "Tell me how it's going, cheer me on, tease me. I answer with a face and a word."
+
+    /// The talk lesson's words: what it's for, what the Mac heard, or why
+    /// it can't hear. Without Jev's key, which act 7 asks for, nothing
+    /// answers yet.
     private var talkDetail: String {
-        guard paired else { return "I listen while you hold it, then answer. Or use Talk on the Mac." }
+        guard paired else { return Self.talkFor + " Or use Talk on the Mac." }
         if let why = app.status?.micTrouble { return why }
         let later = app.noKey ? " I'll answer once I have a brain, in a couple of steps." : ""
         switch model.talk {
         case .heard(let words): return "I heard “\(Self.quoted(words))”." + later
         case .nothing: return "I didn't catch that. Keep holding while you talk, then let go."
-        case nil: return "Hold it, say hi, then let go. macOS asks for the microphone the first time."
+        case nil: return "Tell me how it's going, or cheer me on. macOS asks for the microphone the first time."
         }
     }
 
@@ -301,48 +307,19 @@ struct HowToAct: View {
         return (cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)) + "…"
     }
 
-    /// A lesson; the one to do now is toned, and amber's, which is what
-    /// it means, has its dot.
     private func lesson(_ number: Int, _ title: String, _ detail: String, done: Bool = false, waiting: Bool = false,
                         amber: Bool = false) -> some View {
-        let now = waiting && !done
-        return Card(padding: 0, tone: now ? Theme.ink : nil) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(done ? Theme.sage : now ? Theme.ink : Theme.hairline)
-                    if done {
-                        Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.paper)
-                    } else {
-                        Text("\(number)").font(.boop(13, .bold)).foregroundStyle(now ? Theme.paper : Theme.ink)
-                    }
-                }
-                .frame(width: 28, height: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(title).font(.boop(15, .bold))
-                        if amber { StateDot(tone: Theme.amber) }
-                    }
-                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                }
-                Spacer()
-                if now {
-                    Text("waiting…").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                }
-            }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-        }
-        .animation(.boopPop, value: done)
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(done ? "done" : "")
+        StepRow(number: number, title: title, detail: detail, done: done, waiting: waiting, amber: amber)
     }
 
     /// The legend's tiles: the popover's still faces.
     static let faceTile: CGFloat = 44
 
-    /// One face of the legend, on the paper: something to read, not a card to pick.
-    private func face(_ mood: FaceMood, design: String = MoodOutput.initial, _ title: String, _ detail: String) -> some View {
+    /// One mood of the legend, its idle face, on the paper: something to
+    /// read, not a card to pick.
+    private func face(_ design: String, _ title: String, _ detail: String) -> some View {
         HStack(spacing: Theme.gapSnug) {
-            BoopFace(mood: mood, design: design, size: Self.faceTile)
+            BoopFace(mood: .idle, design: design, size: Self.faceTile)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.boop(13, .bold))
                 Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)

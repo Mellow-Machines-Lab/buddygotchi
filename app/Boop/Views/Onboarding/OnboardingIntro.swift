@@ -57,44 +57,64 @@ struct HelloAct: View {
     }
 }
 
-/// Act 2: a pretend agent session, and Boop following it live.
+/// Act 2: a pretend agent session, and Boop following it live: its
+/// commands falling past Boop as words, a failed test hitting it, a
+/// request for you, and a finish.
 struct WhatIDoAct: View {
     @ObservedObject var model: OnboardingModel
     @ViewState private var step = Step.asking
+    /// How many words have fallen: the board drops one for each new call.
+    @ViewState private var drops = 0
     @Environment(\.stillMotion) private var still
 
     /// The pretend session's beats, each with what's on the terminal by then,
     /// Boop's look, and how long it holds.
     enum Step: Int, CaseIterable {
-        case typing, reading, asking, testing, finished
+        case typing, reading, testing, failing, asking, finished
 
         var lines: [(String, Color)] {
             let all: [(String, Color)] = [
                 ("› fix the flaky login test", Color(hex: Palette.oat)),
                 ("Reading auth/session.ts", Color(hex: Palette.inkSoftDark)),
-                ("Allow edit to auth/session.ts? (y/n)", Color(hex: Palette.amberInkDark)),
                 ("Running npm test", Color(hex: Palette.inkSoftDark)),
+                ("✗ 2 tests fail", Color(hex: Palette.clayInkDark)),
+                ("Allow edit to auth/session.ts? (y/n)", Color(hex: Palette.amberInkDark)),
                 ("✓ 42 tests pass", Color(hex: Palette.sageInkDark)),
             ]
             return Array(all.prefix(rawValue + 1))
         }
 
-        var look: StateSnapshot {
+        /// The words its agent's calls drop past Boop, one each as the
+        /// beat goes on; none when it calls nothing.
+        var words: [String] {
             switch self {
+            case .reading: ["read", "grep", "read"]
+            case .testing, .failing: ["tests"]
+            case .typing, .asking, .finished: []
+            }
+        }
+
+        /// Boop's look, with `drops` words fallen so far.
+        func look(drops: Int) -> StateSnapshot {
+            var look: StateSnapshot = switch self {
             case .typing: .onboarding(base: "working", act: "planning", mood: "curious")
             case .reading: .onboarding(base: "working", act: "analyzing", mood: "engaged")
-            case .asking: .onboarding(base: "working", mood: "curious", waiting: "claude")
             case .testing: .onboarding(base: "working", act: "testing", mood: "determined")
+            case .failing: .onboarding(base: "working", act: "testing", mood: "grumpy")
+            case .asking: .onboarding(base: "working", mood: "curious", waiting: "claude")
             case .finished: .onboarding(base: "idle", mood: "proud")
             }
+            if let word = words.last, drops > 0 { look.calls = [.init(slot: 0, count: drops, word: word)] }
+            return look
         }
 
         var seconds: Double {
             switch self {
             case .typing: 2.2
             case .reading: 2.4
+            case .testing: 1.8
+            case .failing: 3.0
             case .asking: 3.4
-            case .testing: 2.2
             case .finished: 3.6
             }
         }
@@ -109,7 +129,7 @@ struct WhatIDoAct: View {
             HStack(spacing: 22) {
                 terminal
                 // 4:3, the engine's own shape, so the "needs you" sign fits.
-                OnboardingBuddy(model: model, snapshot: step.look, size: 236, height: 177)
+                OnboardingBuddy(model: model, snapshot: step.look(drops: drops), size: 236, height: 177)
                     .overlay {
                         RoundedRectangle(cornerRadius: 177 * 0.27 + 6)
                             .strokeBorder(Theme.amber, lineWidth: 5)
@@ -119,9 +139,9 @@ struct WhatIDoAct: View {
                     .animation(.boopSettle, value: step)
             }
             HStack(spacing: 10) {
-                card(0, "Working along", "Tests, the terminal, planning: I follow along.")
+                card(0, "Working along", "Every command your agent runs falls past me as a word. Some of them hit me.")
                 card(1, "Needs you", "I glow amber and knock, and say who's waiting.")
-                card(2, "A big finish", "I celebrate work that earns it. A failed test? I grumble.")
+                card(2, "A big finish", "I cheer work that earns it. My mood follows how it goes.")
             }
             Text("I only watch. I never approve, deny or block anything for you.")
                 .font(.system(size: 13))
@@ -159,16 +179,28 @@ struct WhatIDoAct: View {
         .animation(.boopSettle, value: step)
     }
 
-    /// Plays the session's beats over and over, the finish with Boop's own
-    /// celebration, until the act goes.
+    /// Plays the session's beats over and over, each beat's words falling
+    /// in turn, the failed test's FAIL raining on Boop and the finish with
+    /// Boop's own celebration, until the act goes.
     private func play() async {
         guard !still else { return }
         while !Task.isCancelled {
             for beat in Step.allCases {
                 withAnimation(.boopSettle) { step = beat }
-                if beat == .finished { model.feed.reaction(DeviceReaction(anim: "task_complete", outcome: "success")) }
-                if beat == .asking { OnboardingSound.play(.step) }
-                try? await Task.sleep(for: .seconds(beat.seconds))
+                switch beat {
+                case .failing: model.feed.call(BoopDevice.call("FAIL", gag: "hail", slot: 0))
+                case .asking: OnboardingSound.play(.step)
+                case .finished: model.feed.reaction(DeviceReaction(anim: "task_complete", outcome: "success"))
+                default: break
+                }
+                // The beat's words, spread over it; the rest of it held.
+                let gap = beat.seconds / Double(beat.words.count + 1)
+                for _ in beat.words {
+                    try? await Task.sleep(for: .seconds(gap))
+                    if Task.isCancelled { return }
+                    drops += 1
+                }
+                try? await Task.sleep(for: .seconds(beat.words.isEmpty ? beat.seconds : gap))
                 if Task.isCancelled { return }
             }
         }

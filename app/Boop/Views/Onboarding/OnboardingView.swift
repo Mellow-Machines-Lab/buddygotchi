@@ -94,7 +94,7 @@ extension StateSnapshot {
          ("looking", .onboarding(mood: "curious")),
          ("jumping", .onboarding(mood: "excited")),
          ("cheeky", .onboarding(mood: "proud"))]
-            + WhatIDoAct.Step.allCases.map { ("demo-\($0)", $0.look) }
+            + WhatIDoAct.Step.allCases.map { ("demo-\($0)", $0.look(drops: 3)) }
     }
 
     /// The on-screen Boop's look, for the mirror: no sound, one agent at most.
@@ -129,6 +129,53 @@ struct OnboardingBuddy: View {
         .contentShape(Rectangle())
         .onTapGesture { model.pokeOnScreen() }
         .help("Poke me")
+    }
+}
+
+/// A numbered step to do, done on the board: ticked once done, toned
+/// with "waiting…" while it's the one to do now; amber's, which is what
+/// it means, has its dot.
+struct StepRow: View {
+    let number: Int
+    let title: String
+    let detail: String
+    var done = false
+    var waiting = false
+    var amber = false
+    /// Tighter, for an act with more on it.
+    var compact = false
+
+    var body: some View {
+        let now = waiting && !done
+        Card(padding: 0, tone: now ? Theme.ink : nil) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(done ? Theme.sage : now ? Theme.ink : Theme.hairline)
+                    if done {
+                        Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.paper)
+                    } else {
+                        Text("\(number)").font(.boop(13, .bold)).foregroundStyle(now ? Theme.paper : Theme.ink)
+                    }
+                }
+                .frame(width: compact ? 24 : 28, height: compact ? 24 : 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(title).font(.boop(compact ? 14 : 15, .bold))
+                        if amber { StateDot(tone: Theme.amber) }
+                    }
+                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                if now {
+                    Text("waiting…").font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, compact ? 6 : 10)
+        }
+        .animation(.boopPop, value: done)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(done ? "done" : "")
     }
 }
 

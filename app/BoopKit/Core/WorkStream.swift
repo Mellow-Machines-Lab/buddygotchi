@@ -44,11 +44,7 @@ struct WorkStream {
         var count: Int?
 
         /// The `do`'s `args`.
-        var args: JSONObject {
-            var args: JSONObject = ["a": .int(slot), "w": .string(word), "as": .string(gag)]
-            if let count { args["n"] = .int(count) }
-            return args
-        }
+        var args: JSONObject { BoopDevice.call(word, gag: gag, slot: slot, count: count) }
     }
 
     /// The gags the board knows for a word that comes forward.
@@ -64,7 +60,7 @@ struct WorkStream {
     static let ladder = ["bonk", "bonk2", "helmet", "throw"]
 
     /// The `did`'s action for a word that came forward.
-    static let action = "call"
+    static let action = BoopDevice.call
 
     /// A word forward holds the board this long; a notable or a sure one
     /// may wait this long for it; an ambient one needs this long since

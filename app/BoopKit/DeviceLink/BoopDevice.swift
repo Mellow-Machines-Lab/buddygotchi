@@ -34,6 +34,16 @@ public enum BoopDevice {
     /// was news only just now.
     public static let callTTL = 1500
 
+    /// The work stream's word that comes forward, as the board plays it.
+    public static let call = "call"
+    /// A `call`'s `args`: `word`, in the colour of lane `slot`, playing
+    /// `gag` (one of `WorkStream.gags`), and a combo's `count`.
+    public static func call(_ word: String, gag: String, slot: Int, count: Int? = nil) -> JSONObject {
+        var args: JSONObject = ["a": .int(slot), "w": .string(word), "as": .string(gag)]
+        if let count { args["n"] = .int(count) }
+        return args
+    }
+
     /// The link to Boop's device over `transport`, or to none.
     public static func link(_ transport: Transport?, log: @escaping (String) -> Void = { _ in }) -> DeviceLink {
         DeviceLink(app: app, transport: transport, log: log)

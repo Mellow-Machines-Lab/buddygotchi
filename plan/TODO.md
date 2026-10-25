@@ -404,6 +404,12 @@ session, Bluetooth and the boards can show.
       shows, and the found board holding up "Tap me!".
 - [ ] Onboarding's window coming forward over the terminal at the
       agent's hello in act 6.
+- [ ] Act 6's tour on the AMOLED, with a fresh Claude Code session
+      asked to list its files: the words fall on the board and in the
+      window, Boop cheers once the turn ends and a tap on it opens the
+      thread, the drawer swiped up and its row tapped opens it again, the
+      window comes back after each, and Next unlocks only then. Act 2's
+      FAIL rain on the window's Boop.
 - [ ] Reopening Boop.app while it runs brings its window or popover.
 - [x] Pairing remembers the board you tap, not the first hello: on
       2026-10-24 the CYD said hello first, and the AMOLED, tapped, is the

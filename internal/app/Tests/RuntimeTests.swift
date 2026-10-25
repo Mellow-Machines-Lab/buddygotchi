@@ -494,7 +494,7 @@ final class RuntimeTests: XCTestCase {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
         let taps = Lines(), agents = Lines(), heard = Lines()
-        runtime.onTap = { taps.add($0 ? "button" : "screen") }
+        runtime.onTap = { button, _ in taps.add(button ? "button" : "screen") }
         runtime.onAgentHook = { agents.add($0) }
         runtime.onHeard = { heard.add($0 ?? "nothing") }
         try runtime.start()
@@ -1011,6 +1011,36 @@ final class RuntimeTests: XCTestCase {
         eventually("its thread opens") { opened.all == ["codex://threads/01a0e6fd-587d"] }
         transport.onLine?(#"{"t":"ev","kind":"drawer","did":"closed"}"#)
         eventually("the rows stop") { runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).list == nil } }
+    }
+
+    /// Onboarding's tour over the wire: its cheer is a finish naming the
+    /// thread, held twice, and a tap on it opens that thread and tells
+    /// onboarding it was on a finish; the drawer opening and a row picked
+    /// reach onboarding too, and shutting doesn't.
+    func testOnboardingsCheerOpensItsThreadAndHearsTheDrawer() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        let taps = Lines(), drawer = Lines()
+        runtime.onTap = { _, onFinish in taps.add(onFinish ? "finish" : "poke") }
+        runtime.onDrawer = { drawer.add($0) }
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        let thread = ThreadRef(agent: "claude", session: "s1", app: HostApp.claude, appSession: "local_7db5")
+        runtime.cheer(DeviceReaction.Who(agent: "claude", thread: "jetpack", opens: thread))
+        eventually("the cheer") { transport.dos("task_complete").count == 1 }
+        let cheer = transport.dos("task_complete")[0]
+        XCTAssertTrue(cheer.contains(#""who":{"agent":"claude","thread":"jetpack"}"#), cheer)
+        XCTAssertTrue(cheer.contains(#""loops":2"#), cheer)
+        transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(FakeTransport.id(cheer))}}"#)
+        eventually("its thread opened") { opened.all == ["claude://code/continue?session=local_7db5"] }
+        eventually("onboarding heard a tap on a finish") { taps.all == ["finish"] }
+        transport.onLine?(Self.tap)
+        eventually("then a poke") { taps.all == ["finish", "poke"] }
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"open"}"#)
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"closed"}"#)
+        transport.onLine?(#"{"t":"ev","kind":"drawer","did":"pick","data":{"id":7}}"#)
+        eventually("the drawer, open and a pick") { drawer.all == ["open", "pick"] }
     }
 
     /// Debug mode also writes the

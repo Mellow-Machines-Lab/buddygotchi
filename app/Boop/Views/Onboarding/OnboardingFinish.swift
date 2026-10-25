@@ -146,39 +146,84 @@ struct AgentsAct: View {
     private var hello: some View {
         let names = Agent.allCases.filter { app.setup.agents.contains($0) && app.installer.detected($0) }.map(\.displayName)
         let which = names.first ?? "Claude Code"
-        return VStack(spacing: 12) {
+        let heard = model.heard.map { Agent(rawValue: $0)?.displayName ?? which }
+        let touring = heard != nil && model.tours
+        return VStack(spacing: touring ? 8 : 12) {
             HStack(spacing: 18) {
-                OnboardingBuddy(model: model, snapshot: model.heard == nil ? .onboarding(mood: "curious") : .onboarding(mood: "excited"),
-                                size: 104)
+                // After the hello, the board's own state, so your agent's
+                // words fall past it here too.
+                OnboardingBuddy(model: model, snapshot: heard == nil ? .onboarding(mood: "curious") : model.live,
+                                size: touring ? 84 : 104)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(model.heard == nil ? "Open a new \(which) session and type anything" : "Heard you!")
+                    Text(heard == nil ? "Open a new \(which) session, and ask it to list the files here" : "Heard you!")
                         .font(.boop(17, .bold)).foregroundStyle(Color(hex: Palette.inkDark))
-                    Text(model.heard == nil ? "I'll wave when your agent's first hook reaches me."
-                                            : "\(Agent(rawValue: model.heard ?? "")?.displayName ?? which) is connected. I'll be watching.")
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(heard.map { "\($0) is connected." + (touring ? " Now let me show you around." : " I'll be watching.") }
+                        ?? "I'll wave when your agent's first hook reaches me.")
                         .font(.system(size: 13)).foregroundStyle(Color(hex: Palette.inkSoftDark))
-                    if model.heard != nil {
+                    if heard != nil {
                         Label("Connected", systemImage: "checkmark.circle.fill")
                             .font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(hex: Palette.sageInkDark))
                     }
                 }
                 Spacer(minLength: 0)
             }
-            .padding(18)
+            .padding(touring ? 14 : 18)
             .terminalCard()
             .animation(.boopPop, value: model.heard)
             ForEach(Agent.allCases.filter { app.hookErrors[$0] != nil }, id: \.self) { agent in
                 Text("Couldn't connect \(agent.displayName): \(app.hookErrors[agent] ?? "")")
                     .font(.system(size: 12)).foregroundStyle(Theme.clayInk)
             }
-            Text("Sessions already open need a restart to pick up my hooks.")
-                .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+            if touring {
+                tourSteps
+            } else if heard != nil {
+                Text("The words falling past me are your agent's commands. Once we're done, click any agent in my menu up top to jump to its thread.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Sessions already open need a restart to pick up my hooks.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+            }
+        }
+        // The tour's first step: your agent's words falling past Boop.
+        .onChange(of: model.wordsFalling, initial: true) { _, falling in
+            if falling, model.tours { model.sawWords() }
+        }
+        // Its second: Boop cheers for the finished turn until it's tapped.
+        .task(id: model.tours && model.tourDue == .cheer) {
+            if model.tours, model.tourDue == .cheer { await model.cheer() }
+        }
+    }
+
+    // MARK: The tour
+
+    /// What the tour asks of you on the board, a step at a time: each is
+    /// done there, and the window ticks it.
+    private var tourSteps: some View {
+        let due = model.tourDue
+        func step(_ step: Onboarding.Progress.Tour, _ title: String, _ detail: String) -> some View {
+            StepRow(number: step.rawValue + 1, title: title, detail: detail, done: model.tour.contains(step),
+                    waiting: due == step, compact: true)
+        }
+        return VStack(spacing: 6) {
+            step(.words, "Watch my screen", model.tour.contains(.words)
+                 ? "Those words are your agent's commands, as it runs them."
+                 : "Each command your agent runs falls past me as a word. Nothing yet? Ask it to list the files here.")
+            step(.cheer, "When I cheer, tap me", due == .cheer && model.finishedThread == nil
+                 ? "I cheer when your agent finishes its turn. A tap takes you to its thread."
+                 : "Your agent finished. A tap takes you to its thread.")
+            step(.drawer, "Swipe up from my bottom edge", "Every agent you have open is in there.")
+            step(.row, "Tap your thread", "It opens right where it runs. That's how you get back to any of them.")
         }
     }
 
     @ViewBuilder private var nav: some View {
         if model.connected {
-            // Until an agent says hi, moving on is "later".
-            ActNav(model: model, next: model.heard == nil ? "I'll try it later" : "Next")
+            // Until an agent says hi, moving on is "later"; after, on a board
+            // that tours, the tour comes first.
+            ActNav(model: model, next: model.heard == nil ? "I'll try it later" : "Next",
+                   enabled: model.progress.mayLeaveAgents(tours: model.tours))
         } else if model.detectedAgents.isEmpty || !app.installer.clientInPlace {
             ActNav(model: model)
         } else {
@@ -301,9 +346,9 @@ struct SmallThingsAct: View {
     }
 }
 
-/// Act 8: a celebration, on screen and on the board, the four things worth
-/// remembering, and off to the menu bar. Without a board, the Mac's way
-/// of each, and that the board is found once it's plugged in.
+/// Act 8: a celebration, on screen and on the board, the four ways to
+/// reach Boop worth remembering, and off to the menu bar. Without a board,
+/// the Mac's way of each, and that the board is found once it's plugged in.
 struct FinaleAct: View {
     @ObservedObject var model: OnboardingModel
 
@@ -315,9 +360,14 @@ struct FinaleAct: View {
             Text("\(model.name) is all set!").font(.boop(30, .heavy))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 if model.hasBoard {
-                    tip("hand.tap", "Tap my screen", "to poke me")
                     tip("mic", "Hold my button", "and talk")
-                    tip("bell", "Amber? Tap me", "to open who's waiting", amber: true)
+                    tip("bell", "Amber, or cheering?", "Tap me to open that thread", amber: true)
+                    // Everyone finds the poke; nobody finds the drawer.
+                    if model.tours {
+                        tip("rectangle.bottomhalf.inset.filled", "Swipe up from the bottom", "for every agent; tap one to open it")
+                    } else {
+                        tip("hand.tap", "Tap my screen", "to poke me")
+                    }
                 } else {
                     tip("powerplug", "Got my body?", "plug it in, and I'll find it")
                     tip("mic", "Click Talk", "in my menu, then speak")

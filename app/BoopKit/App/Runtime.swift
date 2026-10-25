@@ -201,10 +201,14 @@ public final class Runtime: @unchecked Sendable {
     public var onBoardTap: ((_ button: Bool) -> Void)?
     public var onBoardListening: (() -> Void)?
 
-    /// A tap on the board, after the core has taken it: true for its
-    /// button (BOOT), false for its screen. Onboarding's pairing and its
-    /// lessons listen. On `home`.
-    public var onTap: ((_ button: Bool) -> Void)?
+    /// A tap on the board, after the core has taken it: `button` for its
+    /// button (BOOT), else its screen, and `onFinish` when it landed on a
+    /// finish that names whose turn it was, which opens that thread.
+    /// Onboarding's pairing, its lessons and its tour listen. On `home`.
+    public var onTap: ((_ button: Bool, _ onFinish: Bool) -> Void)?
+    /// The board's agents' drawer opened (`open`), or a row in it was
+    /// picked (`pick`): onboarding's tour listens. On `home`.
+    public var onDrawer: ((String) -> Void)?
     /// An agent's hook that became an event, by the agent's name
     /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
     public var onAgentHook: ((String) -> Void)?
@@ -536,6 +540,20 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in
             options.log("onboarding: \(greeting.reaction.name) on the board")
             run(core(rigs[0]).greet(greeting.reaction, at: options.clock()), on: rigs[0])
+        }
+    }
+
+    /// Onboarding's cheer for `who`'s finished turn: a finish that names
+    /// it, sent as the brain's are, so a tap on it opens its thread
+    /// (`Reactions.sent`), as it will after any finished turn.
+    public func cheer(_ who: DeviceReaction.Who) {
+        home.async { [self] in
+            let rig = rigs[0], now = options.clock()
+            let reaction = DeviceReaction(anim: "task_complete", loops: 2, who: who, outcome: "success")
+            options.log("onboarding: a cheer for \(who.agent)'s \(who.thread) on the board")
+            let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+                                 now: now) { _ in }
+            if let id, let thread = who.opens { rig.reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
         }
     }
 

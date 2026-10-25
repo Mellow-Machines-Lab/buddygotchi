@@ -56,12 +56,21 @@ public enum Onboarding {
         /// are done (`practiceDue`).
         public enum Lesson: Hashable, Sendable { case tap, button, talk, amber }
 
+        /// Act 6's tour, once an agent has said hi, on a board that draws
+        /// the work stream and the agents' drawer (the gel's), in order:
+        /// its words falling past Boop, a tap on Boop's cheer for its
+        /// finished turn, which opens its thread, the drawer pulled up, and
+        /// a row in it tapped, which opens that one's.
+        public enum Tour: Int, CaseIterable, Hashable, Sendable { case words, cheer, drawer, row }
+
         /// What a tap on the board did.
         public enum Tap: Equatable, Sendable {
             /// It paired the board: Boop wakes up in it.
             case paired
             /// It did a lesson.
             case lesson(Lesson)
+            /// It did a step of act 6's tour.
+            case toured(Tour)
             case nothing
         }
 
@@ -72,6 +81,8 @@ public enum Onboarding {
         public var connected: Bool
         /// The agent whose first hook was heard in act 6.
         public var heard: String?
+        /// Act 6's tour steps done.
+        public var tour: Set<Tour> = []
 
         /// At `act`, as a launch starts there: past the board, it's
         /// skipped (a quit forgets whether it was paired; the board is
@@ -95,15 +106,18 @@ public enum Onboarding {
             act == .howTo && lessons.isSuperset(of: [.tap, .button, .talk]) && !lessons.contains(.amber)
         }
 
-        /// A tap on the board: its screen, or its button when `button`. In
-        /// act 4, while looking and with a board found, either pairs it,
-        /// and counts as its lesson; in act 5 each does its own lesson,
-        /// once, and once the first three are done either answers the
-        /// practice request, the amber lesson; anywhere else it's only a
-        /// poke.
-        public mutating func tapped(boardFound: Bool, button: Bool) -> Tap {
+        /// A tap on the board: its screen, or its button when `button`, on
+        /// a finish that names whose turn it was when `onFinish`. In act 4,
+        /// while looking and with a board found, either pairs it, and
+        /// counts as its lesson; in act 5 each does its own lesson, once,
+        /// and once the first three are done either answers the practice
+        /// request, the amber lesson; in act 6, one on the cheer does the
+        /// tour's step when it's due; anywhere else it's only a poke.
+        public mutating func tapped(boardFound: Bool, button: Bool, onFinish: Bool = false) -> Tap {
             let lesson: Lesson = button ? .button : .tap
             switch act {
+            case .agents where onFinish:
+                return did(.cheer) ? .toured(.cheer) : .nothing
             case .body where body == .looking && boardFound:
                 body = .joined
                 lessons.insert(lesson)
@@ -134,6 +148,34 @@ public enum Onboarding {
             guard act == .agents, connected, heard == nil else { return false }
             heard = agent
             return true
+        }
+
+        /// The tour's step to do now: in act 6, after the hello, the first
+        /// not done; nil before the hello and once it's all done.
+        public var tourDue: Tour? {
+            guard act == .agents, heard != nil else { return nil }
+            return Tour.allCases.first { !tour.contains($0) }
+        }
+
+        /// `step` happened: it counts only when it's the one due, so the
+        /// steps go in order. True when it's done now.
+        public mutating func did(_ step: Tour) -> Bool {
+            guard tourDue == step else { return false }
+            tour.insert(step)
+            return true
+        }
+
+        /// The board's agents' drawer opened, or a row in it was `picked`:
+        /// the tour's step when it's due. True when it's done now.
+        public mutating func drawer(picked: Bool) -> Bool {
+            did(picked ? .row : .drawer)
+        }
+
+        /// Whether act 6 lets you go on: with a board that `tours`, once an
+        /// agent has said hi, only when the tour is done. Before the hello,
+        /// and without such a board, it always does.
+        public func mayLeaveAgents(tours: Bool) -> Bool {
+            !(tours && tourDue != nil)
         }
     }
 

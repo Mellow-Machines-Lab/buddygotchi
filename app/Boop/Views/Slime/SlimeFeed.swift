@@ -179,6 +179,11 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     func listening() { play(DeviceReaction(anim: BoopDevice.listening), .now) }
     /// One of onboarding's reactions, as the brain's are sent.
     func reaction(_ reaction: DeviceReaction) { play(reaction, .next) }
+    /// One of onboarding's pretend agent's words come forward (a `call`'s
+    /// `args`), as the work stream sends one.
+    func call(_ args: JSONObject) {
+        post(Wire.do(id: 0, name: BoopDevice.call, play: .next, ttl: BoopDevice.callTTL, args: args))
+    }
 
     /// A `do` no link sent, with no id, since nothing it says comes back.
     private func play(_ reaction: DeviceReaction, _ play: Wire.Play) {
