@@ -398,10 +398,14 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    the monitor's pictures of what the agent is doing, its to-do bar and
    its turn clock; and a dizzy face of its own for the hit, which
    half-shuts the lids for now.
-6. **A demo** (`characters/boop/demo/work-stream.jsonl`: two agents, a
-   run of lookups, an edit, a failing then passing test run, an exit 1
-   twice, a big deletion) and the Studio's preview of each reaction in
-   every mood.
+6. [x] **A demo** (`characters/boop/demo/work-stream.jsonl`: two
+   sessions, lookups, a lookup that finds nothing, a failed script twice,
+   a big deletion, a failing then passing test run). Played headless, its
+   transcript's words forward are the script's: two arrivals, a shrug, a
+   bonk and a harder one, the deletion swallowed, crossed fingers, hail,
+   crossed fingers, a pass. Its commands say `bash` until the AgentHooks
+   bump, after which demos should name the program as agent-hook does.
+   Still to come: the Studio's preview of each gag in every mood.
 
 ## The mock
 

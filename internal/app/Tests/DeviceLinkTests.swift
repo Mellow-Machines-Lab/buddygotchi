@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","wake_up","listening","stop_listening","notice"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","wake_up","listening","stop_listening","notice","call"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -236,7 +236,7 @@ final class DeviceLinkTests: XCTestCase {
             .map { String(body[Range($0.range(at: 1), in: body)!]) }
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(hello.does, firmware, "the fake device plays what the firmware does")
-        let sent = DeviceReaction.anims + [DeviceReaction.react, BoopDevice.listening, BoopDevice.stopListening]
+        let sent = DeviceReaction.anims + [DeviceReaction.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
     }
 

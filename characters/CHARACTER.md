@@ -449,7 +449,6 @@ the brain's, a rule's, or the board's own.
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
-| `call` | A word of the work stream comes forward (plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag (`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It plays at once over the agents' work and holds nothing up; with no lane working or while something needs you it's skipped `hidden`. A face draws it if it draws the stream (`Face::watch`); a board that plays it gets it in place of `error` | the Mac |
 | `poked` | A tap on the screen | the board |
 | `tap_spam` | The third tap in a row, and each after | the board |
 | `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |
@@ -460,6 +459,14 @@ length (`loopMs` of 0) plays nothing.
 **A brain reaction with no animation** (`react`) is no state of its own:
 the face draws the look in another mood for a while, and the voice may
 speak.
+
+**A word of the work stream** (`call`) is no state of its own either
+(plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag
+(`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
+plays at once over the agents' work and holds nothing up; with no lane
+working, or while something needs you, it's skipped `hidden`. A face
+draws it if it draws the stream (`Face::watch`), and a board that plays
+it gets it in place of `error`.
 
 ### What else a face does
 

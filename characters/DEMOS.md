@@ -47,8 +47,8 @@ creature's brain.
 | --- | --- | --- |
 | `{"agent": "prompt"}` | You give the agent its task | `text`; `reading`, what Apple Intelligence would make of it (`kind`, `tone`, `phrases`), so it reads the same on any Mac |
 | `{"agent": "read"}` | The agent reads a file | `file` |
-| `{"agent": "edit"}` | The agent edits a file | `file`, `old`, `new` |
-| `{"agent": "run"}` | The agent runs a command | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds), `waits` (true: the step ends as it asks, and the steps after it play while it waits, such as a `hold`) |
+| `{"agent": "edit"}` | The agent edits a file: its size in lines, as agent-hook counts it from `old` and `new`, is the work stream's word (`edit +2 -140`) | `file`, `old`, `new` |
+| `{"agent": "run"}` | The agent runs a command, tagged as agent-hook tags it (a check's topic, or `inspect` for one that only looks) | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds), `waits` (true: the step ends as it asks, and the steps after it play while it waits, such as a `hold`) |
 | `{"agent": "todo"}` | The agent writes its to-do list (Claude's `TodoWrite`, Codex's `update_plan`): the line under the face counts it | `todos`, done of all (`"2/4"`) |
 | `{"agent": "review"}` | The agent sends a subagent: a helper at work, a mini under the face, until a `reply` `"by": "reviewer"` brings the first one still out back | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |

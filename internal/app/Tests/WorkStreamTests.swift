@@ -50,6 +50,7 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make")), "tests", "a check says its topic")
         XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 18, removed: 2)), "edit +18 -2")
         XCTAssertEqual(word(call(rig, "1", tool: "Write", added: 40)), "edit +40")
+        XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 0, removed: 140)), "edit -140")
         XCTAssertEqual(word(call(rig, "1", tool: "Edit", topic: "docs", added: 3)), "docs")
         XCTAssertEqual(word(call(rig, "1", tool: "Read")), "read")
         XCTAssertEqual(word(call(rig, "1", tool: "Grep")), "grep")

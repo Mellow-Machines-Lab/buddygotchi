@@ -113,7 +113,7 @@ struct WorkStream {
                 word = "docs"
             } else {
                 let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
-                word = added + removed == 0 ? "edit" : "edit +\(added)" + (removed > 0 ? " -\(removed)" : "")
+                word = (["edit"] + (added > 0 ? ["+\(added)"] : []) + (removed > 0 ? ["-\(removed)"] : [])).joined(separator: " ")
             }
         case .read: word = "read"
         case .search: word = (e.tool ?? "grep").lowercased()
