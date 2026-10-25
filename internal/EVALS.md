@@ -287,8 +287,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   no face ever contradicts what happened; talked to, it always answers
   with a face and a reply, even while it's still making one (`35`–`40`),
   and asked about the agents it holds up what they're really doing, how
-  long, a check's result, done, or all quiet, never a guessed yes or no
-  (`127`); each
+  long, a check's result, done, how many work and rest when asked about
+  them all, or all quiet, never a guessed yes or no (`127`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along
@@ -369,10 +369,12 @@ kinds, all with the `boop` personality unless the file says otherwise:
   and a topic (`124`). A turn that finally worked after its tests failed
   twice is a hard-won finish: a success, proud, held three or four times
   (`125`), which the gel plays big. And what you say gets the reply that
-  answers what you meant: a hello, yes to a question about Boop itself,
+  answers what you meant: a hello, to a greeting that asks how it's
+  going too, yes to a question about Boop itself,
   thanks at praise, love, ouch at an insult, comfort at bad news or
   tiredness, hehe at a joke, dunno at what it can't know, huh at
-  nonsense, bye, and status for a question about the agents (`126`).
+  nonsense, bye, and status for a question about the agents, how many
+  are running included (`126`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

@@ -213,6 +213,86 @@ void test_it_shuts_itself_and_says_its_open_till_then() {
   TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
 }
 
+// A reaction that asks for the drawer (`show`, a reply about every agent)
+// opens it kShowDrawerMs in, once its sign has been read, tells the Mac
+// as a pull does, and shuts itself kDrawerShutMs on.
+constexpr const char* kShowDo =
+    "{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"sign\":\"2 working, 1 "
+    "idle\",\"reply\":\"status\",\"show\":\"drawer\",\"say\":{},\"mood\":\"engaged\",\"loops\":1}}";
+
+void test_a_reaction_shows_the_drawer_once_its_sign_is_read() {
+  Board b;
+  b.usb.text.clear();
+  b.line(kShowDo);
+  b.run(app::Device::kShowDrawerMs - 100);
+  TEST_ASSERT_EQUAL_INT(0, b.count(kOpen));
+  TEST_ASSERT_EQUAL_INT(0, b.open());
+  b.usb.text.clear();
+  b.run(200);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kOpen));
+  b.line(Board::kListed);
+  b.run(app::Device::kDrawerMs + 100);
+  TEST_ASSERT_EQUAL_INT(1000, b.open());
+  b.usb.text.clear();
+  b.run(app::Device::kDrawerShutMs - app::Device::kDrawerMs - 500);
+  TEST_ASSERT_EQUAL_INT(0, b.count(kClosed));
+  b.run(800);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+}
+
+// A finger on the face, or BOOT, before it opens keeps it shut, and so
+// does a request that comes up meanwhile; a reaction that doesn't ask
+// never opens it.
+void test_a_finger_or_a_request_first_keeps_it_shut() {
+  Board b;
+  b.line(kShowDo);
+  b.touch(160, 100, 160, 100, 60);
+  b.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, b.open());
+
+  Board pressed;
+  pressed.line(kShowDo);
+  pressed.line("{\"t\":\"dbg.press\",\"ms\":100}");
+  pressed.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, pressed.open());
+
+  Board asked;
+  asked.line(kShowDo);
+  asked.run(500);
+  asked.line(
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"vol\":0,\"attn\":{\"agent\":\"codex\",\"project\":"
+      "\"landing\",\"name\":\"Hero copy\",\"more\":0,\"id\":7}}");
+  asked.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, asked.open());
+
+  Board plain;
+  plain.line("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"sign\":\"claude: done!\",\"reply\":"
+             "\"status\",\"say\":{},\"mood\":\"engaged\",\"loops\":1}}");
+  plain.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, plain.open());
+}
+
+// BOOT held to talk while it's open shuts it, and so does the Mac's
+// `listening` (its Talk button): Boop's face listens.
+void test_holding_boot_to_talk_shuts_it() {
+  Board b;
+  pullOpen(b);
+  b.usb.text.clear();
+  b.line("{\"t\":\"dbg.press\",\"ms\":900}");
+  b.run(600 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(1, b.count("\"kind\":\"talk_on\""));
+  TEST_ASSERT_EQUAL_INT(0, b.open());
+
+  Board mac;
+  pullOpen(mac);
+  mac.usb.text.clear();
+  mac.line("{\"t\":\"do\",\"name\":\"listening\",\"play\":\"now\"}");
+  mac.run(app::Device::kDrawerMs + 100);
+  TEST_ASSERT_EQUAL_INT(1, mac.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, mac.open());
+}
+
 // BOOT pressed while it's open shuts it, and does what BOOT does.
 void test_boot_shuts_it() {
   Board b;

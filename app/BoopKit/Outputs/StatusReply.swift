@@ -5,8 +5,25 @@ import Foundation
 /// never from the brain. Something waiting on you first, then the work
 /// going on and how it's going, then how the last of it came out, else
 /// nothing going on. Say an agent's name or a thread's place ("is codex
-/// done?", "how's the api going?") and only those sessions count.
+/// done?", "how's the api going?") and only those sessions count. Name
+/// none with several sessions open ("how many are running?") and the
+/// sign counts them, and the board shows them all in its agents' drawer.
 public enum StatusReply {
+    /// What a status reply holds up, and where the board shows the rest
+    /// of it: one of its own screens, or nil for the sign alone.
+    public struct Answer: Equatable, Sendable {
+        public var sign: String
+        public var show: String?
+
+        public init(sign: String, show: String? = nil) {
+            self.sign = sign
+            self.show = show
+        }
+    }
+
+    /// The board's agents' drawer, as a reaction's `show`.
+    public static let drawer = "drawer"
+
     /// One session as status reads it.
     public struct Agent: Equatable, Sendable {
         /// `claude` or `codex`.
@@ -65,26 +82,50 @@ public enum StatusReply {
     /// ("ui", "x") turn up in ordinary words.
     public static let shortestPlace = 3
 
-    /// The sign for `words`, what you said, about `sessions` at `now`: at
-    /// most `Signs.maxLength` characters, naming the agent when it fits.
-    public static func sign(_ sessions: [Agent], words: String, at now: Int64) -> String {
+    /// The answer to `words`, what you said, about `sessions` at `now`:
+    /// a sign of at most `Signs.maxLength` characters, naming the agent
+    /// when it fits; with nothing named and several sessions, their count
+    /// and the drawer.
+    public static func answer(_ sessions: [Agent], words: String, at now: Int64) -> Answer {
         let said = tokens(words)
         let named = agents.filter { said.contains($0) }
         let asked = sessions.filter { s in named.contains(s.agent) || s.places.contains { mentions(said, $0) } }
-        let these = asked.isEmpty ? sessions : asked
+        if named.isEmpty, asked.isEmpty, sessions.count > 1 { return Answer(sign: count(sessions), show: drawer) }
+        return Answer(sign: sign(asked.isEmpty ? sessions : asked, named: named, asked: !asked.isEmpty, at: now))
+    }
+
+    /// Several sessions, counted: who needs you, else how many work and
+    /// how many rest.
+    static func count(_ sessions: [Agent]) -> String {
+        let waiting = sessions.filter(\.needsYou)
+        if waiting.count == 1 { return "\(waiting[0].agent) needs you" }
+        if waiting.count > 1 { return "\(waiting.count) need you" }
+        let working = sessions.filter { $0.workingSince != nil }.count, resting = sessions.count - working
+        if working == 0 { return "\(resting) resting" }
+        let both = "\(working) working, \(resting) idle"
+        return resting == 0 || both.count > Signs.maxLength ? "\(working) working" : both
+    }
+
+    /// The one fact about `these`, the sessions you asked about (`asked`)
+    /// or every one, with `named` the agents you said.
+    static func sign(_ these: [Agent], named: [String], asked: Bool, at now: Int64) -> String {
         func about(_ s: Agent, _ fact: String) -> String {
             let full = "\(s.agent): \(fact)"
             return full.count <= Signs.maxLength ? full : String(fact.prefix(Signs.maxLength))
         }
         // An agent named that isn't here at all.
-        if asked.isEmpty, let missing = named.first { return "no \(missing) around" }
+        if !asked, let missing = named.first { return "no \(missing) around" }
 
         let waiting = these.filter(\.needsYou)
         if waiting.count == 1 { return "\(waiting[0].agent) needs you" }
         if waiting.count > 1 { return "\(waiting.count) need you" }
 
         let working = these.filter { $0.workingSince != nil }
-        if working.count > 1 { return "\(working.count) working" }
+        if working.count > 1 {
+            // One agent named, several of its sessions at work.
+            let theirs = named.count == 1 ? "\(working.count) \(named[0]) working" : ""
+            return !theirs.isEmpty && theirs.count <= Signs.maxLength ? theirs : "\(working.count) working"
+        }
         if let s = working.first, let since = s.workingSince {
             if let r = s.result, r.topic != nil, r.at >= since { return about(s, r.words) }
             if let todo = s.todo { return about(s, "\(todo.text) done") }
@@ -95,7 +136,7 @@ public enum StatusReply {
         let latest = these.compactMap { s in s.result.map { (s, $0) } }.filter { now - $0.1.at < recentMs }
             .max { $0.1.at < $1.1.at }
         if let (s, r) = latest { return about(s, r.words) }
-        if !asked.isEmpty, Set(asked.map(\.agent)).count == 1 { return about(asked[0], "resting") }
+        if asked, Set(these.map(\.agent)).count == 1 { return about(these[0], "resting") }
         return "all quiet"
     }
 

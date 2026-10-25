@@ -139,7 +139,7 @@ extension Runtime {
                 // each one's latest check or turn came out.
                 guard let h, let words = said["words"]?.string else { return nil }
                 let now = h.clock.now()
-                return StatusReply.sign(core.status(at: now, results: view.results(h.log.view(now: now))), words: words, at: now)
+                return StatusReply.answer(core.status(at: now, results: view.results(h.log.view(now: now))), words: words, at: now)
             })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)

@@ -147,7 +147,12 @@ class Device : public linkkit::App {
   // so a Mac that started since hears of it. A tap on a row sends "pick"
   // with the row's `id`, the Mac's number for the session, which the Mac
   // opens; the drawer shuts then, as Boop hands it over. A finger pulls it
-  // shut, and it shuts itself kDrawerShutMs after the last touch.
+  // shut, BOOT shuts it (pressed, or held to talk), so does the Mac's
+  // `listening`, and it shuts itself kDrawerShutMs after the last touch.
+  // A reaction that asks for it (`show` "drawer", an answer about every
+  // agent) opens it kShowDrawerMs after it starts, once its sign has been
+  // read, unless a finger or BOOT came first or a request shows; it shuts
+  // itself as after a touch.
   // With more sessions than the glass shows, a finger up or down the open
   // drawer scrolls its rows instead (down, only while the first row is
   // scrolled off: else it pulls the drawer shut), gliding on as it lets go, kDrawerGlideMs at
@@ -157,7 +162,7 @@ class Device : public linkkit::App {
   // kDrawerReaskMs while they haven't come.
   static constexpr const char* kDrawerEvent = "drawer";
   static constexpr uint32_t kDrawerShutMs = 15000, kDrawerSayMs = 10000, kDrawerAskMs = 2000;
-  static constexpr uint32_t kDrawerGlideMs = 600, kDrawerReaskMs = 1000;
+  static constexpr uint32_t kDrawerGlideMs = 600, kDrawerReaskMs = 1000, kShowDrawerMs = 1500;
   // How long it springs open or shut, past the end and back; and how far a
   // finger goes (canvas px) before it pulls the drawer rather than taps.
   static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
@@ -290,6 +295,9 @@ class Device : public linkkit::App {
     uint32_t drawerTouchedAt = 0, drawerSaidAt = 0;
     bool drawerInjected = false, drawerToldOpen = false;
     int drawerPicked = -1;
+    // A reaction asked for the drawer, to open at showDrawerAt.
+    bool showDrawer = false;
+    uint32_t showDrawerAt = 0;
     // Its rows' scroll, canvas px: under a finger (scrolling) at scrolled,
     // moved from scrollGrabbed; else gliding from scrollFrom to scrollTo
     // since scrollAt. A touch that stopped a glide (scrollCaught) picks

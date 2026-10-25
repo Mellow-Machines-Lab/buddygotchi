@@ -360,7 +360,7 @@ struct FinaleAct: View {
             Text("\(model.name) is all set!").font(.boop(30, .heavy))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 if model.hasBoard {
-                    tip("mic", "Hold my button", "and talk")
+                    tip("mic", "Hold my button", "and ask how your agents are doing")
                     tip("bell", "Amber, or cheering?", "Tap me to open that thread", amber: true)
                     // Everyone finds the poke; nobody finds the drawer.
                     if model.tours {
@@ -370,7 +370,7 @@ struct FinaleAct: View {
                     }
                 } else {
                     tip("powerplug", "Got my body?", "plug it in, and I'll find it")
-                    tip("mic", "Click Talk", "in my menu, then speak")
+                    tip("mic", "Click Talk", "in my menu, and ask how your agents are doing")
                     tip("bell", "Amber? Click me", "up top, to see who's waiting", amber: true)
                 }
                 tip("menubar.arrow.up.rectangle", "Find me", "in the menu bar, up top")

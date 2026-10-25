@@ -674,7 +674,9 @@ shake of the head for no, a shrug for dunno, a head tilt with one eye
 narrowed for huh, a little hop and a sway for hello, a slow sway for bye,
 puffing up tall for thanks, snuggling down with its eyes shut for love,
 a flinch for ouch, leaning in low for comfort, giggling bounces for
-hehe, and looking down at its sign and back up for status. The clips
+hehe, and looking down at its sign and back up for status, after which a
+status reply about every agent (`show`) has the board bring up the
+agents' drawer. The clips
 move only the body, eyes and mouth: there's no new drawing, and the face
 and its sign are the reaction's. A reply the pack has no clip for plays
 the face alone. `tests/scenarios-gel/replies.jsonl` catches each partway

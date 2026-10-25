@@ -400,7 +400,10 @@ What the brain reads, in plain Markdown:
   waiting on you, the work going on (the latest check of its turn, else
   its to-do list, else how long), how the last of it came out within 10
   minutes, else all quiet, counting only the agents or places you named.
-  Whatever the reply, the board plays its clip (§15) and Voice says the
+  Name none with several sessions open ("how many are running?") and it
+  counts them instead, who needs you, else how many work and how many
+  rest (`2 working, 1 idle`), and asks the board to show every one in its
+  agents' drawer (the `do`'s `show`). Whatever the reply, the board plays its clip (§15) and Voice says the
   feeling or topic it borrows, since no take is recorded for a reply. A
   pack without the file holds up nothing for a reply but the facts.
 
@@ -630,8 +633,11 @@ Besides drawing each mood and state, a face:
   the board asks the Mac for the rows it comes to (the Mac sends a
   window of them, `skip` before and `unlisted` after). A tap on a row has
   the Mac open that thread and the board hand it over as the drawer
-  shuts; a finger pulls it shut, and it shuts itself 15 s after the last
-  touch. The device keeps the finger, the spring, the scroll and the
+  shuts; a finger, BOOT or push-to-talk's `listening` shuts it, and it
+  shuts itself 15 s after the last touch. A reaction can ask for it (the `do`'s `"show": "drawer"`, a
+  status reply about every agent): the board opens it by itself 1.5 s
+  in, once the sign has been read, unless a finger or BOOT came first or
+  a request shows, and tells the Mac as a pull does. The device keeps the finger, the spring, the scroll and the
   clock, and hands the face the drawer before each frame
   (`Face::drawer`); the face lays it out and says where its rows are and
   how far they scroll (`drawerTravel`, `drawerRow`, `drawerScrollMax`,

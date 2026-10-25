@@ -49,10 +49,10 @@ public final class ReactOutput: Output {
     let signs: [TaggedLine]
     let calendar: (Event) -> [String]
     /// What a reply holds up (`replies.md`), and for a `status` one about
-    /// what you said, the agents' facts that answer it (`StatusReply`), or
-    /// nil for none.
+    /// what you said, the agents' facts that answer it and where the board
+    /// shows the rest (`StatusReply`), or nil for none.
     let replies: [TaggedLine]
-    let status: (Event) -> String?
+    let status: (Event) -> StatusReply.Answer?
     /// Picks among the takes that fit, and remembers the last `say`'s
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
@@ -67,7 +67,7 @@ public final class ReactOutput: Output {
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
                 pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
-                status: @escaping (Event) -> String? = { _ in nil }) {
+                status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -165,7 +165,8 @@ public final class ReactOutput: Output {
                   notFor: agents + " Words that make no sense, which is huh.", about: "looking"),
             reply("huh", "Huh: what it heard makes no sense, is cut off, or isn't meant for \(name). It tilts its head.",
                   notFor: "Anything it can answer, a question it can't included, which is dunno.", about: "looking"),
-            reply("hello", "Hello: a greeting, or you saying you're back. It waves.", notFor: "Goodbye or good night, which is bye.",
+            reply("hello", "Hello: a greeting, even one that asks how it's going (\"hey, how's it going?\", \"what's up?\"), or you saying you're back. It waves.",
+                  notFor: "Goodbye or good night, which is bye; a question about the agents' work, which is status.",
                   about: "hello"),
             reply("bye", "Bye: goodbye, good night, or you saying you're off for a while. It waves you off.",
                   notFor: "A greeting, which is hello.", feeling: "glad"),
@@ -180,8 +181,8 @@ public final class ReactOutput: Output {
                   notFor: "Rude words to \(name), which is ouch."),
             reply("hehe", "Hehe: a joke, teasing or something silly. It giggles.", notFor: "Rude words meant to hurt, which is ouch.",
                   feeling: "tickled"),
-            reply("status", "Status: a question about the agents or their work: done yet, how long, anyone need me, how's it going, did it work. It holds up the answer on a sign, from what it knows.",
-                  notFor: "A question about \(name) itself, which is yes, no or dunno.", about: "work"),
+            reply("status", "Status: a question about the agents or their work: done yet, how long, how many are running, anyone need me, how's the work going, did it work. It holds up the answer on a sign, from what it knows.",
+                  notFor: "A question about \(name) itself, which is yes, no or dunno; a greeting, which is hello.", about: "work"),
         ]
     }
 
@@ -399,14 +400,16 @@ public final class ReactOutput: Output {
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)
         let sign: String?
+        var show: String?
         if let reply, let about {
-            sign = replySign(reply, about)
+            (sign, show) = replySign(reply, about)
         } else {
             let picked = answers[Signs.questionKey]?.choice
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
         var reaction = DeviceReaction(say: say, mood: choice, loops: loops, sign: sign)
         reaction.reply = reply?.name
+        reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device
@@ -428,19 +431,22 @@ public final class ReactOutput: Output {
         let did = (pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
             ?? "\(pack.name) made \(Self.article(choice)) \(choice) face") + (reply.map { ", replying \($0.name)" } ?? "")
         // The takes' ids in order, for the tools to say what it said.
-        let held: String = sign.map { ", holding up a sign: \"\($0)\"" } ?? ""
+        let held: String = (sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
+            + (show == StatusReply.drawer ? " and showing every agent" : "")
         let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
         return .started(did + ", held \(Self.holds[loops - 1].name)" + held + spoke, pending,
                         facts: ["takes": .array(said.map { .string($0.id) })])
     }
 
-    /// What a reply holds up about `said`, what you said: for `status`
-    /// the agents' facts, else the pack's line for the reply, and
-    /// not the last reply's sign while another fits.
-    func replySign(_ reply: Reply, _ said: Event) -> String? {
-        let sign = reply.name == "status" ? status(said)
+    /// What a reply holds up about `said`, what you said, and where the
+    /// board shows the rest: for `status` the agents' facts, else the
+    /// pack's line for the reply, and not the last reply's sign while
+    /// another fits.
+    func replySign(_ reply: Reply, _ said: Event) -> (sign: String?, show: String?) {
+        let answer = reply.name == "status" ? status(said) : nil
+        let sign = reply.name == "status" ? answer?.sign
             : Signs.reply(replies, reply.name, calendar: calendar(said), avoiding: lastReplySign, rng: &takes)
         if sign != nil { lastReplySign = sign }
-        return sign
+        return (sign, answer?.show)
     }
 }

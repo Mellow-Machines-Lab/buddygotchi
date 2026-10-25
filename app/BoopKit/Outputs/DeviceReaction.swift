@@ -87,6 +87,11 @@ public struct DeviceReaction: Equatable, Sendable {
     /// (`ReactOutput.Reply`): the board plays its pack's clip for it
     /// over the face. Nil sends none.
     public var reply: String?
+    /// With a reply, one of the board's own screens that shows the rest of
+    /// the answer once its sign has been read: `drawer`, the agents'
+    /// drawer, for a question about all of them (`StatusReply`). Nil sends
+    /// none.
+    public var show: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -134,6 +139,7 @@ public struct DeviceReaction: Equatable, Sendable {
         if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
         if let reply { args["reply"] = .string(reply) }
+        if let show { args["show"] = .string(show) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

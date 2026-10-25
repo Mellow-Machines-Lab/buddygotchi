@@ -258,6 +258,7 @@ ReactionIn Device::parse(const Do& c) {
   render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
+  mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
   return mo;
 }
 
@@ -304,6 +305,7 @@ void Device::onDo(const Do& c, uint32_t t) {
   // window. Any other reaction drops one still waiting.
   const bool say = b_.play(mo, t);
   if (!say) live_.saidSeq = b_.reactionSeq();
+  if (mo.showDrawer && b_.face().hasDrawer()) live_.showDrawer = true, live_.showDrawerAt = t + kShowDrawerMs;
   if (!startSay(t) && b_.reactionSeq() != seq) hush();  // a new reaction replaces the `say`
   dirty_ = true;
   live_.restKey = 0;
@@ -320,6 +322,7 @@ void Device::onDo(const Do& c, uint32_t t) {
       break;
     case kListening:
       kit().dropWaiting("mic_on", c.from);  // the mic went on: the reactions waiting would end it
+      if (drawerOpen(t) > 0) moveDrawer(0, t, false);  // its face listens, out from under the drawer
       kit().rest(c.key);
       break;
     case kStopListening:
@@ -380,6 +383,7 @@ void Device::readInputs(uint32_t t) {
   if (live_.injPress && !after(live_.injPressUntil, t)) live_.injPress = false, pressGone = letGo(live_.injPressUntil);
   switch (live_.boot.update(hal_.bootDown() || live_.injPress, t)) {
     case ButtonGesture::kDown:
+      live_.showDrawer = false;  // BOOT first: the drawer a reaction asked for stays shut
       live_.bootInjected = !hal_.bootDown();
       b_.pressDown(t);
       dirty_ = true;
@@ -393,6 +397,7 @@ void Device::readInputs(uint32_t t) {
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
+      if (drawerOpen(t) > 0) moveDrawer(0, t, live_.bootInjected);  // its face listens, out from under the drawer
       // The reactions waiting would end it: dropped for every Mac that
       // hears talk_on, which for a tool's dbg.press is only USB's.
       kit().dropWaiting("mic_on", live_.bootInjected ? Link::kUsb : Link::kNone);
@@ -436,6 +441,7 @@ void Device::readInputs(uint32_t t) {
   bool faced = !live_.pattern;
   if (touching && !live_.touchDown) {
     input("touch", t, x, y);
+    live_.showDrawer = false;  // a finger first: the drawer a reaction asked for stays shut
     live_.touchPath.down(x, y, t);
     // A touch on the open drawer is the drawer's, and so is one that
     // starts on the strip, should it go up; neither moves the face.
@@ -672,6 +678,15 @@ void Device::tapDrawer(int x, int y, uint32_t t) {
 // for the rows that show when the Mac's don't start with them and leave
 // some out.
 void Device::tendDrawer(uint32_t t) {
+  // The drawer a reaction asked for, once its sign has been read: not over
+  // a request that shows, nor under a finger.
+  if (live_.showDrawer && !after(live_.showDrawerAt, t)) {
+    live_.showDrawer = false;
+    if (!live_.pattern && !b_.noApp(t) && !needsYouShows(t) && !live_.touchDown && live_.drawerTo <= 0) {
+      live_.drawerTouchedAt = t;  // and shuts kDrawerShutMs on, as after a touch
+      moveDrawer(1000, t, false);
+    }
+  }
   const int open = drawerOpen(t);
   if (live_.drawerTo > 0 && !live_.drawerPulling && !live_.touchDown &&
       int32_t(t - live_.drawerTouchedAt) >= int32_t(kDrawerShutMs))

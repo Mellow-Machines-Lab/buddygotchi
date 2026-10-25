@@ -243,7 +243,7 @@ struct OverviewPane: View {
         .fixedSize()
         .help(on ? "Stop listening and send what \(model.name) heard"
                  : model.noKey ? "Talk to \(model.name) with the Mac's microphone. Only Jev answers, so this needs a Jev API key"
-                 : "Talk to \(model.name) with the Mac's microphone. It stops by itself after 30 seconds")
+                 : "Talk to \(model.name) with the Mac's microphone: try “how many agents are running?” It stops by itself after 30 seconds")
         .accessibilityLabel(on ? "Stop listening and send" : "Talk to \(model.name)")
         .animation(.boopSettle, value: on)
     }

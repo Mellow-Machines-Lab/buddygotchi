@@ -1,8 +1,8 @@
 {
   "name": "Asked about the agents, Boop holds up what it knows",
-  "case": "Claude works on the landing page while the person asks Boop about it: is it done, did the tests pass, how's it going, is codex done. Each question about the agents gets the status reply, never a yes or no Boop would have to guess, and its sign says how it really stands: how long claude has worked, the tests that just failed, done once they pass and it's finished, codex's own time when they name codex, and all quiet once everything has been over a while.",
+  "case": "Claude works on the landing page while the person asks Boop about it: is it done, did the tests pass, how's it going, is codex done. Each question about the agents gets the status reply, never a yes or no Boop would have to guess, and its sign says how it really stands: how long claude has worked, the tests that just failed, done once they pass and it's finished, codex's own time when they name codex, how many work and rest when they ask about them all (the board shows every one in its drawer), and both resting once everything has been over a while.",
   "always": true,
-  "why": "ReactOutput's replies: yes and no are never about the agents, which is status; StatusReply: the work going on first, with the latest check of its turn, then how the last of it came out within 10 minutes, else all quiet; naming an agent or a place counts only those sessions",
+  "why": "ReactOutput's replies: yes and no are never about the agents, which is status; StatusReply: the work going on first, with the latest check of its turn, then how the last of it came out within 10 minutes, else all quiet; naming an agent or a place counts only those sessions, and naming none with several open counts them and shows the drawer",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "said", "at": "4m10s", "words": "is claude done yet?", "expect": {"reply": "status", "sign": "4 min in"}},
@@ -13,7 +13,8 @@
     {"event": "said", "at": "7m", "words": "so, is it finished?", "expect": {"reply": "status", "sign": "done!"}},
     {"event": "turn started", "at": "7m30s", "agent": "codex", "session": "s2"},
     {"event": "said", "at": "9m40s", "words": "is codex done?", "expect": {"reply": "status", "sign": "codex: 2 min in"}},
+    {"event": "said", "at": "9m50s", "words": "how many agents are running?", "expect": {"reply": "status", "sign": "1 working, 1 idle"}},
     {"event": "turn finished", "at": "10m", "agent": "codex", "session": "s2"},
-    {"event": "said", "at": "25m", "words": "anything going on?", "expect": {"reply": "status", "sign": "all quiet"}}
+    {"event": "said", "at": "25m", "words": "anything going on?", "expect": {"reply": "status", "sign": "2 resting"}}
   ]
 }

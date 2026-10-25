@@ -247,6 +247,7 @@ struct HowToAct: View {
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
                 lesson(3, "Hold my button and talk", talkDetail, done: model.lessons.contains(.talk),
                        waiting: paired && model.lessons.contains(.button))
+                trySaying
                 lesson(4, "When I glow amber, tap me", amberDetail, done: model.lessons.contains(.amber),
                        waiting: paired && model.lessons.isSuperset(of: [.tap, .button, .talk]), amber: true)
             }
@@ -284,7 +285,26 @@ struct HowToAct: View {
     }
 
     /// What talking to Boop is for: a chat, not orders for your agents.
-    static let talkFor = "Tell me how it's going, cheer me on, tease me. I answer with a face and a word."
+    static let talkFor = "Say hi, cheer me on, tease me, or ask about your agents. I answer with a face, a word and a sign."
+
+    /// Things to say, one of each kind Boop answers: a greeting, praise,
+    /// and a question about every agent, which opens the board's drawer.
+    static let examples = ["hi Boop!", "good job!", "how many agents are running?"]
+
+    /// The examples, as chips under the talk lesson.
+    private var trySaying: some View {
+        HStack(spacing: Theme.gapSnug) {
+            Text("TRY").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint)
+            ForEach(Self.examples, id: \.self) { words in
+                Text("“\(words)”").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().strokeBorder(Theme.hairlineStrong))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, 56)
+        .accessibilityElement(children: .combine)
+    }
 
     /// The talk lesson's words: what it's for, what the Mac heard, or why
     /// it can't hear. Without Jev's key, which act 7 asks for, nothing
@@ -296,7 +316,7 @@ struct HowToAct: View {
         switch model.talk {
         case .heard(let words): return "I heard “\(Self.quoted(words))”." + later
         case .nothing: return "I didn't catch that. Keep holding while you talk, then let go."
-        case nil: return "Tell me how it's going, or cheer me on. macOS asks for the microphone the first time."
+        case nil: return Self.talkFor + " macOS asks for the microphone the first time."
         }
     }
 

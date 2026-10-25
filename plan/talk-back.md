@@ -70,14 +70,14 @@ don't change.
 | `no` | Disagreeing, refusing, or no to such a question | a shake of the head | upset |
 | `dunno` | A question Boop can't know (the weather, dinner) | a shrug | looking (`Eh?`, `Hm?`) |
 | `huh` | Nonsense, or words cut off | a head tilt, one eye narrowed | looking |
-| `hello` | A greeting | a hop and a sway | the `hello` topic |
+| `hello` | A greeting, one asking how it's going included | a hop and a sway | the `hello` topic |
 | `bye` | Goodbye, good night, "I'm off" | a slow sway | glad |
 | `thanks` | Praise or thanks | puffing up tall | glad |
 | `love` | Affection | snuggling down, eyes shut | glad |
 | `ouch` | Rude words | a flinch | upset |
 | `comfort` | You sound tired, sad or stressed, or bring bad news | leaning in low | nothing: the upset takes are as often cross as kind |
 | `hehe` | A joke or teasing | giggling bounces | tickled |
-| `status` | Any question about the agents or the work | looking down at its sign | work |
+| `status` | Any question about the agents or the work, how many are running included | looking down at its sign | work |
 
 - **Yes and no are never about the agents.** Their options say so:
   "Is claude done?" is `status`, whose sign carries the answer.
@@ -131,8 +131,42 @@ failed or stopped; the transcript keeps each session's latest
 (`TranscriptView.results`). Say an agent ("is codex done?") or a place,
 its project, workspace or thread's name, matched as you'd say it ("the
 landing page", "landingpage"), and only those sessions count; an agent
-that isn't there is `no codex around`, one resting `codex: resting`. The
-agent's name is left off a fact it won't fit beside in 18 characters.
+that isn't there is `no codex around`, one resting `codex: resting`, and
+several of its sessions at work `2 claude working`. The agent's name is
+left off a fact it won't fit beside in 18 characters.
+
+## 4. Asked about them all: the drawer
+
+Added the same day, after "how many agents are running?" got
+`claude: done!`: one fact can't answer a question about every agent,
+and 18 characters can't list them. So a reply has three parts, each
+decided in one place: **what you meant** (Jev, `react.reply`), **what's
+true** (the Mac, the sign) and **where to look** (the Mac, `show`, one of
+the board's own screens). Jev's questions didn't change.
+
+- **Name no agent or place with two or more sessions open** and the
+  sign counts them (`StatusReply.count`): who needs you, else
+  `2 working, 1 idle`, else `3 resting`. The `do` carries
+  `"show": "drawer"`.
+- **The board opens the drawer itself** 1.5 s in (`kShowDrawerMs`), once
+  the sign has been read, and says `open` as a pull does, so the Mac
+  sends the rows; it shuts after 15 s untouched, as after a touch. A
+  finger or BOOT first keeps it shut, and so does a request that shows.
+  Push-to-talk (BOOT held, or the Mac's `listening`) shuts an open
+  drawer, so Boop's face listens.
+- **One session, or a name**, gets one fact and no drawer: the sign is
+  the whole answer.
+- **A greeting is `hello`**, one asking how it's going included: "hey,
+  how's it going?" had been read as `status`, which would now slide the
+  drawer up at a hello.
+- **Onboarding shows what to say**: the talk lesson's chips ("hi Boop!",
+  "good job!", "how many agents are running?"), the brain key's card
+  once saved ("Now I can answer you…"), the finale's tip and the Talk
+  button's.
+
+A pack whose face has no drawer (Pixel) shows the count alone. Later
+screens (today's to-dos, the diary) would be more values of `show`,
+never more questions for Jev.
 
 ## What it got rid of
 
@@ -151,6 +185,16 @@ prompt's signs and several buddies hearing the app's button stay as
 they were.
 
 ## How it was checked
+
+Section 4: `ReplyTests` (the count, the drawer only with nothing named
+and several sessions, a named agent's sessions counted, `show` on the
+`do`); the gel's firmware tests (`test_a_reaction_shows_the_drawer_once_its_sign_is_read`,
+`test_a_finger_or_a_request_first_keeps_it_shut`,
+`test_holding_boot_to_talk_shuts_it`) and the drawer scenario's `asked`
+and `shown`; the mirror rebuilt; evals `126` and `127` with a greeting
+and the count question added.
+
+The first three sections:
 
 Swift unit tests (`ReplyTests`: the questions, `huh`, the reply's clip,
 takes and sign, a forced pass after what you said, the facts' order, the

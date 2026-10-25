@@ -136,6 +136,9 @@ struct ReactionIn {
   // With an expression, the Mac's reply to what you said (`reply`): the
   // face plays its pack's clip for it as the expression starts. "" for none.
   char reply[kReplyBytes] = "";
+  // It asks for the agents' drawer (`show` "drawer"), the rest of its
+  // answer: Device opens it once the sign has been read.
+  bool showDrawer = false;
 };
 
 class Behaviour {

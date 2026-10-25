@@ -25,7 +25,8 @@ struct OnboardingBrainKey: View {
                         }
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                     }
-                    Text("A Jev API key lets TypeSafe's AI pick how I react and what mood I'm in. "
+                    Text(saved ? "Now I can answer you. Hold my button and ask me “how many agents are running?”"
+                         : "A Jev API key lets TypeSafe's AI pick how I react and what mood I'm in. "
                          + "Without one I still show what your agents do and when you're needed.")
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)

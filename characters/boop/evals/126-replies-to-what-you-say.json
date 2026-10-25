@@ -1,10 +1,11 @@
 {
   "name": "Talking to Boop gets the reply that answers what you meant",
-  "case": "The person chats to Boop on push-to-talk while nothing's working, one thing at a time: a hello, yes-or-no questions about Boop itself, praise, affection, an insult, bad news and tiredness, a joke, questions Boop can't know the answer to, nonsense, a goodbye, and a question about the agents. Each gets the reply that answers what they meant: a wave for hello and bye, a nod for yes, puffing up at praise, snuggling at love, a flinch at rudeness, leaning in at sad news, a giggle at a joke, a shrug at what it can't know, a head tilt at nonsense, and for the agents the facts on a sign, never a guessed yes or no.",
+  "case": "The person chats to Boop on push-to-talk while nothing's working, one thing at a time: a hello (one that asks how it's going included), yes-or-no questions about Boop itself, praise, affection, an insult, bad news and tiredness, a joke, questions Boop can't know the answer to, nonsense, a goodbye, and questions about the agents. Each gets the reply that answers what they meant: a wave for hello and bye, a nod for yes, puffing up at praise, snuggling at love, a flinch at rudeness, leaning in at sad news, a giggle at a joke, a shrug at what it can't know, a head tilt at nonsense, and for the agents the facts on a sign, never a guessed yes or no.",
   "why": "ReactOutput's replies, each option saying what it's for and what it isn't; PERSONALITY: talked to, it always answers with a face and a reply, and its Examples give one for each kind of thing said",
   "steps": [
     {"event": "session started", "at": "0s"},
     {"event": "said", "at": "10s", "words": "hi boop", "expect": {"reply": "hello"}},
+    {"event": "said", "at": "25s", "words": "hey, how's it going?", "expect": {"reply": "hello"}},
     {"event": "said", "at": "40s", "words": "are you awake?", "expect": {"reply": "yes"}},
     {"event": "said", "at": "1m10s", "words": "can you hear me?", "expect": {"reply": "yes"}},
     {"event": "said", "at": "1m40s", "words": "great work today", "expect": {"reply": "thanks"}},
@@ -18,6 +19,7 @@
     {"event": "said", "at": "5m40s", "words": "glorp fizzle banana sprocket", "expect": {"reply": "huh"}},
     {"event": "said", "at": "6m10s", "words": "is claude done yet?", "expect": {"reply": "status"}},
     {"event": "said", "at": "6m40s", "words": "are the agents working?", "expect": {"reply": "status"}},
+    {"event": "said", "at": "6m55s", "words": "how many agents are running?", "expect": {"reply": "status"}},
     {"event": "said", "at": "7m10s", "words": "okay, see you later", "expect": {"reply": "bye"}},
     {"event": "said", "at": "7m40s", "words": "good night boop", "expect": {"reply": "bye"}}
   ]

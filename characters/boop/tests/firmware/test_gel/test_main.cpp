@@ -1636,6 +1636,9 @@ void test_the_drawers_rows_on_the_panel();
 void test_a_long_drawers_rows_scroll();
 void test_a_finger_scrolls_a_long_drawer();
 void test_the_body_under_the_drawer();
+void test_a_reaction_shows_the_drawer_once_its_sign_is_read();
+void test_a_finger_or_a_request_first_keeps_it_shut();
+void test_holding_boot_to_talk_shuts_it();
 void test_drawer_frames_allocate_nothing();
 // test_requests.cpp
 void test_requests_route_by_priority();
@@ -2968,6 +2971,9 @@ int main() {
   RUN_TEST(test_a_long_drawers_rows_scroll);
   RUN_TEST(test_a_finger_scrolls_a_long_drawer);
   RUN_TEST(test_the_body_under_the_drawer);
+  RUN_TEST(test_a_reaction_shows_the_drawer_once_its_sign_is_read);
+  RUN_TEST(test_a_finger_or_a_request_first_keeps_it_shut);
+  RUN_TEST(test_holding_boot_to_talk_shuts_it);
   RUN_TEST(test_drawer_frames_allocate_nothing);
   return UNITY_END();
 }

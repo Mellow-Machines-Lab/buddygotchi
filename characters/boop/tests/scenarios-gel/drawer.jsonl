@@ -7,7 +7,9 @@
 // over. Pulled open again with seven sessions, a screenful of them and
 // the sixth peeking; a finger up the rows scrolls them, the board asks for
 // the rows from where it has scrolled (`from`), and they come to rest on a
-// whole row; it shuts itself 15 s after the last touch.
+// whole row; it shuts itself 15 s after the last touch. Asked how many
+// agents are running, Boop holds up the count, and 1.5 s on the drawer
+// comes up by itself (`show`), the Mac's rows in it.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"calm","busy":2,"idle":1,"vol":0,"attn":{"agent":"codex","project":"landing","name":"Hero copy","more":0,"id":7}}
@@ -75,3 +77,21 @@
 {"clock":25500}
 {"clock":25800}
 {"expect":{"drawer":{"open":0}}}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","mood":"calm","busy":1,"idle":2,"vol":0}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"1 working, 2 idle","reply":"status","show":"drawer","say":{},"mood":"engaged","loops":1}}
+{"clock":1400}
+{"shot":"asked"}
+{"expect":{"drawer":{"open":0}}}
+{"clock":2400}
+{"clock":2500}
+{"clock":2600}
+{"t":"state","base":"working","mood":"calm","busy":1,"idle":2,"vol":0,"list":[[12,"w",0,"claude","Fix the lane colours","buddygotchi"],[14,"i",-1,"claude","harness",""],[15,"i",-1,"codex","dotfiles",""]]}
+{"clock":2700}
+{"clock":2800}
+{"clock":3000}
+{"clock":3200}
+{"shot":"shown"}
+{"expect":{"drawer":{"open":1000,"rows":3}}}
