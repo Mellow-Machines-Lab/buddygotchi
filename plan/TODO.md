@@ -184,11 +184,10 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       and 13, 39 and 40 take the faces the character makes. The whole
       `--always` set ran once against Jev: 26 of 27, and 40, whose faces
       predated the puzzled ones, passed once it took them.
-- [ ] Two left from the always evals: 38's second thing said gets its
+- [ ] One left from the always evals: 38's second thing said gets its
       face narrowly (curious about 0.5 against none about 0.4, three runs
-      of three), and Pixel's five evals haven't run against Jev since
-      the mood and react questions changed (`make -C internal
-      eval-pixel`, about 18 requests).
+      of three). Pixel's five pass against Jev with the new mood and
+      react questions (2026-10-24).
 - [x] The agent's last message through the same reader as your prompt.
 - [x] A first `boopctl sim` or `run` straight after a merge sometimes
       reported changed pictures and a second run passed (three times on
