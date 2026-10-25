@@ -254,8 +254,11 @@ struct Confetti: View {
         }
         .onChange(of: bursts) {
             guard !reduced, !still else { return }
-            started = Date()
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.duration) { started = nil }
+            // A burst while one plays starts again; the first's end
+            // mustn't cut the second short.
+            let burst = Date()
+            started = burst
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.duration) { if started == burst { started = nil } }
         }
     }
 }
