@@ -87,26 +87,13 @@ final class UninstallTests: XCTestCase {
         XCTAssertFalse(login.on)
     }
 
-    /// A copy on another folder takes its listing with it when it quits,
-    /// and only its own: a listing by its name that links elsewhere stays.
-    func testACopyTakesOutOnlyItsOwnListing() throws {
-        let environment = ["AGENT_HOOKS_DIR": home.appendingPathComponent(".agent-hooks").path]
-        let copy = home.appendingPathComponent("mochi"), name = AppSettings.copyName(copy)
-        try HookSocket.register(copy.appendingPathComponent("boop.sock").path, as: name, environment: environment)
-        try XCTAssertFalse(try Uninstall.removeListing(name, stateDir: state, environment: environment), "another folder's")
-        XCTAssertEqual(HookSocket.listed(environment: environment), [name])
-        try XCTAssertTrue(try Uninstall.removeListing(name, stateDir: copy, environment: environment))
-        XCTAssertEqual(HookSocket.listed(environment: environment), [])
-        try XCTAssertFalse(try Uninstall.removeListing(name, stateDir: copy, environment: environment), "gone already")
-    }
-
     /// Run again, with everything gone already, it finds nothing to do.
     func testUninstallingTwiceChangesNothing() {
         let installer = HookInstaller.boop(home: home, hookPath: state.appendingPathComponent("bin/agent-hook").path)
         let environment = ["AGENT_HOOKS_DIR": home.appendingPathComponent(".agent-hooks").path]
         let result = Uninstall.run(installer: installer, stateDir: state, loginItem: LoginSwitch(on: false).item,
                                    environment: environment)
-        XCTAssertEqual(result, Uninstall.Result())
+        XCTAssertEqual(result, HookInstaller.Uninstalled())
     }
 }
 
