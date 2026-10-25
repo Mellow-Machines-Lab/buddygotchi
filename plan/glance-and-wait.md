@@ -69,7 +69,7 @@ CONTINUITY.md, Pastimes, has the whole table).
 | `tier2` | 1 min | An idea, the tongue out, nodding along | A bubble, a fly, a heart on the glass |
 | `tier3` | 2 min | Headphones; bopping, drumming, a sticky note | A plant; a book, a game, watering it |
 | `tier4` | 5 min | A sweatband; the stretch, a refill, a cookie, a second wind | A "brb" sign, a tower of blocks, a dance, a paper plane |
-| `tier5` | 10 min, the last | The camp, mugs stacking up; a marshmallow, a pizza, the stars, a blanket | Snoozing, counting sheep, a nap under a blanket, nodding off |
+| `tier5` | 10 min, the last | The camp, mugs stacking up; a marshmallow, a pizza, the stars | Snoozing, counting sheep, a nap under a blanket, nodding off |
 
 The working tiers count from the start of the agents' working stretch:
 a rest of under 30 seconds (a quick reply) carries it on. Idle's count

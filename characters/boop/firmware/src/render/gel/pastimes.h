@@ -54,7 +54,6 @@ enum class Pastime : uint8_t {
   kMarshmallow,
   kPizza,
   kStargaze,
-  kBlanket,
   // Idle.
   kLookAround,
   kHopeful,

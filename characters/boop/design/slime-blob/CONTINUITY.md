@@ -727,12 +727,12 @@ fades out when the look gives way.
 | working | tier2 | | Wondering, a "?" cloud, then a lightbulb and a hop; the tip of its tongue out, concentrating; nodding along as ticks pop from the monitor |
 | working | tier3 | Headphones over its ears, cups side-on, a note floating up from each in turn every 3 s | Bopping to the music, eyes shut, the notes off the cups; drumming on the desk; a sticky note slapped on the monitor |
 | working | tier4 | A sweatband, a drop of sweat now and then | The rig's stretch; a coffee pot pouring a refill; a cookie in three bites; a second wind, sparkling |
-| working | tier5 | A camp beside the desk, a tent and its fire; a mug more on the stack every 10 minutes, up to 4 | A marshmallow toasted on the fire; a pizza; the stars and a shooting star; a plaid blanket over its head |
+| working | tier5 | A camp beside the desk, a tent and its fire; a mug more on the stack every 10 minutes, up to 4 | A marshmallow toasted on the fire; a pizza; the stars and a shooting star |
 | idle | tier1 | | Looking round; looking up at you, "...?"; three hops |
 | idle | tier2 | | A bubble blown and popped; a fly it follows round and snaps at; a heart drawn on the glass |
 | idle | tier3 | A plant that grows, a sprout | A book, its page turning; a handheld game, WIN; watering the plant |
 | idle | tier4 | The plant in leaf | A "brb" sign, peeking over it; a tower of blocks that topples; a dance under a disco ball; a paper plane that bonks its head |
-| idle | tier5 | The plant in flower | Snoozing, a snore bubble; counting sheep; a nap under the blanket; and the engine's nod-off |
+| idle | tier5 | The plant in flower | Snoozing, a snore bubble; counting sheep; a nap tucked in, a plaid blanket pulled up from the floor to near the top of its head, a sheet turned down over it, never over its head, where it reads as a hat; and the engine's nod-off |
 | needs you | 30 s, 2, 5, 10 minutes | | A wave; tapping on the glass; checking its watch and sighing; nodding off and jerking awake |
 | asleep | 1, 2, 4 minutes | | Rolling over, mumbling; counting sheep; a snore bubble |
 

@@ -179,8 +179,7 @@ struct Segment {
   }
 };
 
-// The longest stroke: the art's are 50 points at most, the pastimes'
-// blanket 48.
+// The longest stroke: the art's are 50 points at most.
 constexpr int kMaxSegments = 64;
 // A blend's columns at a time (Raster::blend); 32768 is a whole pixel.
 constexpr int kBlendColumns = 128, kWholePixel = 32768;

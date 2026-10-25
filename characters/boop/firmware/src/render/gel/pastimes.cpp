@@ -30,7 +30,6 @@ const PastimeInfo kPastimes[kPastimeCount] = {
     {Pastime::kMarshmallow, "marshmallow", SceneState::kWorking, 5, 0},
     {Pastime::kPizza, "pizza", SceneState::kWorking, 5, 0},
     {Pastime::kStargaze, "stargaze", SceneState::kWorking, 5, 0},
-    {Pastime::kBlanket, "blanket", SceneState::kWorking, 5, 0},
     {Pastime::kLookAround, "look-around", SceneState::kIdle, 1, 0},
     {Pastime::kHopeful, "hopeful", SceneState::kIdle, 1, 0},
     {Pastime::kHop, "hop", SceneState::kIdle, 1, 0},
@@ -87,7 +86,8 @@ constexpr uint16_t kMug = rgb565(214, 92, 84), kMugDark = rgb565(150, 56, 52), k
                    kTongue = rgb565(240, 110, 130), kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
                    kGlass = rgb565(170, 196, 206), kPizzaBox = rgb565(222, 190, 140), kCrust = rgb565(232, 172, 90),
                    kCheese = rgb565(255, 214, 96), kPepperoni = rgb565(200, 60, 50), kStar = rgb565(255, 240, 170),
-                   kBlanket = rgb565(150, 104, 200), kPlaid = rgb565(214, 186, 240), kFly = rgb565(30, 30, 36),
+                   kBlanket = rgb565(150, 104, 200), kBlanketDark = rgb565(104, 66, 150),
+                   kPlaid = rgb565(214, 186, 240), kFly = rgb565(30, 30, 36),
                    kWing = rgb565(200, 230, 250), kBubbleRim = rgb565(190, 236, 255), kBook = rgb565(206, 72, 88),
                    kPage = rgb565(250, 246, 232), kLine = rgb565(170, 170, 190), kConsole = rgb565(124, 104, 210),
                    kScreen = rgb565(150, 230, 170), kCan = rgb565(90, 180, 120), kWater = rgb565(110, 190, 255),
@@ -785,58 +785,105 @@ void stargaze(const Stage& s, const PastimeShow& p) {
   }
 }
 
-// A blanket over its head and down its sides, a hood with its face peeping
-// out: drawn up over it as it starts, slipping off as it ends. Plaid,
-// with a cream hem round the face.
+// A blanket tucked in round it as it naps: pulled up from the floor to
+// just under its eyes as it starts, slipping back down as it ends. Wider
+// than the body and pooled in folds on the floor, plaid, its top a cream
+// sheet turned down over it. Nothing of it goes over its head, so it never
+// reads as a hat.
 void blanket(const Stage& s, const PastimeShow& p) {
   Raster& r = s.r;
   const int age = int(p.age);
-  const int up = eased(age, 0, 700) - eased(age, int(p.ms) - 700, int(p.ms));
-  const int drop = -s.Y(90) * (1024 - up) / 1024 * 16;
+  const int up = eased(age, 0, 900) - eased(age, int(p.ms) - 700, int(p.ms));
+  if (!up) return;
   constexpr int kEnd = rig::Anchors::kRingPoints - 1;
   const auto& at = s.at;
-  const int w = std::max(16, at.lap[kEnd].x - at.lap[0].x), out = w / 30;
-  // Its outer edge from the left side's foot, up over the crown and down
-  // the right: a curve through the lap's ends, the brim's and the crown.
-  const Point key[] = {{at.lap[0].x - out, at.lap[0].y},
-                       {at.brimL.x - out, at.brimL.y},
-                       {at.crown.x, at.crown.y - out},
-                       {at.brimR.x + out, at.brimR.y},
-                       {at.lap[kEnd].x + out, at.lap[kEnd].y}};
+  const int w = std::max(16, at.lap[kEnd].x - at.lap[0].x), out = w / 24;
+  // The floor it pools on, under the hem, and how far up it comes: over
+  // its face, the top of its head left out.
+  int floor = 0;
+  for (const Point& h : at.hem) floor = std::max(floor, h.y);
+  floor += s.Y(4) * 16;
+  const int top = at.crown.y + (floor - at.crown.y) * 2 / 5, sag = s.Y(14) * 16, fold = s.Y(18) * 16,
+            tilt = s.Y(8) * 16;
+  // Each point `up` of the way from the floor to where it reaches.
+  auto lift = [&](int x, int y) { return Point{x, floor - int(int64_t(floor - y) * up / 1024)}; };
+  // Where it meets the body's side at its top edge: the dome's outline
+  // between where the brim and the lap are, widening quickly and then
+  // slowly.
+  auto onSide = [&](const Point& brim, const Point& lap) {
+    const int span = std::max(16, lap.y - brim.y), t = std::clamp(top - brim.y, 0, span) * 1024 / span;
+    return brim.x + (lap.x - brim.x) * (1024 - (1024 - t) * (1024 - t) / 1024) / 1024;
+  };
+  const int left = onSide(at.brimL, at.lap[0]) - out, right = onSide(at.brimR, at.lap[kEnd]) + out;
+  // Its side hanging from there to the floor, bulging over the body's
+  // widest and flaring where it lands: a quadratic curve, `i` sixths down.
+  auto hang = [&](int x0, const Point& lap, const Point& hem, int dir, int i, int y0) {
+    const int x1 = lap.x + dir * out * 2, y1 = lap.y, x2 = hem.x + dir * out * 3, y2 = floor - s.Y(6) * 16;
+    const int t = i * 1024 / 6, a = (1024 - t) * (1024 - t) / 1024, b = 2 * (1024 - t) * t / 1024, c = t * t / 1024;
+    return Point{(a * x0 + b * x1 + c * x2) / 1024, (a * (top + y0) + b * y1 + c * y2) / 1024};
+  };
+  // Its top edge, the front of a ring round the body: lowest in the
+  // middle, nearest you, and pulled up higher on its left. `u` from 0, its
+  // left end, to 16, its right.
+  auto edge = [&](int u, int below) {
+    const int m = u - 8;
+    return Point{left + (right - left) * u / 16, top + below + sag * (64 - m * m) / 64 + tilt * m / 8};
+  };
+  // Down its left side, along the floor in folds, up its right, and back
+  // along the top.
   Point v[48];
   int n = 0;
-  for (int k = 0; k < 4; ++k)
-    for (int i = 0; i < 4; ++i) {
-      // Catmull-Rom between key[k] and key[k + 1].
-      const Point &p0 = key[std::max(0, k - 1)], &p1 = key[k], &p2 = key[k + 1], &p3 = key[std::min(4, k + 2)];
-      const int64_t t = i * 256, t2 = t * t / 1024, t3 = t2 * t / 1024;
-      auto cr = [&](int a, int b, int c, int d) {
-        return int(
-            (2 * 1024 * int64_t(b) + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3) /
-            2048);
-      };
-      v[n++] = {cr(p0.x, p1.x, p2.x, p3.x), cr(p0.y, p1.y, p2.y, p3.y) + drop};
-    }
-  v[n++] = {key[4].x, key[4].y + drop};
-  // Its inner edge back, round the face: half an ellipse from the right
-  // foot over the eyes to the left.
-  const int cx = (at.eyeL.x + at.eyeR.x) / 2, foot = (at.lap[0].y + at.lap[kEnd].y) / 2;
-  const int rx = (at.eyeR.x - at.eyeL.x) * 4 / 5, ry = foot - (at.eyeL.y + at.eyeR.y) / 2 + s.Y(40) * 16;
-  const int inner = n;
-  for (int i = 0; i <= 16; ++i)
-    v[n++] = {cx + rx * cosT(i * 500 / 16) / 1000, foot - ry * sinT(i * 500 / 16) / 1000 + drop};
+  for (int i = 0; i < 6; ++i) {
+    const Point d = hang(left, at.lap[0], at.hem[0], -1, i, -tilt);
+    v[n++] = lift(d.x, d.y);
+  }
+  for (int i = 0; i <= kEnd; ++i) {
+    const int flare = out * 3 * (2 * i - kEnd) / kEnd, ripple = s.Y(2) * 16 * (1000 + cosT(i * 1000 / 8)) / 1000;
+    v[n++] = lift(at.hem[i].x + flare, std::max(at.hem[i].y + s.Y(4) * 16, floor - s.Y(6) * 16) + ripple);
+  }
+  for (int i = 5; i >= 0; --i) {
+    const Point d = hang(right, at.lap[kEnd], at.hem[kEnd], 1, i, tilt);
+    v[n++] = lift(d.x, d.y);
+  }
+  for (int u = 16; u >= 0; --u) {
+    const Point e = edge(u, 0);
+    v[n++] = lift(e.x, e.y);
+  }
   r.polygon16(v, n, kBlanket);
-  // The plaid, cut to it, and the hem round the face.
+  // The plaid, cut to it, and its creases running down from the fold.
+  const int cx = (left + right) / 2;
   r.alpha = 90;
-  for (int k = -3; k <= 3; ++k) {
-    const int x = cx + k * w / 7, y = foot - (k + 4) * w / 16 + drop;
+  for (int k = -4; k <= 4; ++k) {
+    const int x = cx + k * w / 8, y = lift(0, floor - (k + 5) * w / 18).y;
     const Point down[] = {{x - 24, -100 * 16}, {x + 24, -100 * 16}, {x + 24, 600 * 16}, {x - 24, 600 * 16}};
     r.polygon16(down, 4, kPlaid, v, n);
     const Point across[] = {{-100 * 16, y - 24}, {900 * 16, y - 24}, {900 * 16, y + 24}, {-100 * 16, y + 24}};
     r.polygon16(across, 4, kPlaid, v, n);
   }
+  r.alpha = 110;
+  for (int k : {-1, 1}) {
+    const Point from = edge(8 + k * 4, fold), to = {from.x + k * out, floor - s.Y(4) * 16};
+    const Point crease[] = {lift(from.x, from.y), lift((from.x + to.x) / 2 + k * out / 2, (from.y + to.y) / 2),
+                            lift(to.x, to.y)};
+    r.stroke16(crease, 3, w / 80 + 16, kBlanketDark);
+  }
+  // The sheet turned down over its top, a wave along its lower edge.
+  Point f[34];
+  int m = 0;
+  for (int u = 0; u <= 16; ++u) {
+    const Point e = edge(u, 0);
+    f[m++] = lift(e.x, e.y);
+  }
+  for (int u = 16; u >= 0; --u) {
+    const int d = u - 8;
+    const Point e = edge(u, fold * (128 - d * d) / 128 + s.Y(2) * 16 * sinT(u * 1000 / 6) / 1000);
+    f[m++] = lift(e.x, e.y);
+  }
   r.alpha = 255;
-  r.stroke16(v + inner, n - inner, w / 50 + 16, kCream);
+  r.polygon16(f, m, kCream, v, n);
+  r.alpha = 120;
+  r.stroke16(f + m / 2, m / 2, w / 90 + 12, kBlanketDark);
+  r.alpha = 255;
 }
 
 void lookAround(const Stage& s, const PastimeShow& p) {
@@ -1271,7 +1318,6 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
     case Pastime::kSecondWind: secondWind(s, show); break;
     case Pastime::kMarshmallow: marshmallow(s, show); break;
     case Pastime::kPizza: pizza(s, show); break;
-    case Pastime::kBlanket: blanket(s, show); break;
     case Pastime::kLookAround: lookAround(s, show); break;
     case Pastime::kHopeful: hopeful(s, show); break;
     case Pastime::kHop: hop(s, show); break;

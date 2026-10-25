@@ -11,7 +11,9 @@
 {"shot":"work-kit"}
 {"clock":20000}
 {"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","tier5"]}
-{"clock":32000}
+{"clock":40000}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","tier5"]}
+{"clock":48000}
 {"shot":"work-pizza"}
 {"t":"dbg.reset"}
 {"clock":0}

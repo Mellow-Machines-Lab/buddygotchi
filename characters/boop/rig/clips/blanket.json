@@ -1,9 +1,0 @@
-{
-  "about": "A pastime at the camp: it snuggles into a blanket, eyes shut, rocking a little, cosy.",
-  "ms": 5600,
-  "tracks": {
-    "squash": [[0, 0], [700, 90], [4800, 90], [5600, 0]],
-    "eyeOpen": [[0, 0], [600, -800], [4800, -800], [5300, 0], [5600, 0]],
-    "lean": [[0, 0], [600, 0], [1100, 70], [2100, -70], [3100, 70], [4100, -70], [4600, 0], [5600, 0]]
-  }
-}
