@@ -294,7 +294,13 @@ enum Snapshots {
         guard feed.webView === page, page.superview == nil, feed.holder == nil else {
             fail("snapshots: the mirror's page stayed in a view that went")
         }
-        print("slime: one page, handed from view to view")
+        // Below SlimeFace.zoomBelow (80 pt) a tile zooms on the slime: the
+        // popover's 46 pt one does, onboarding's (108 pt and up) don't.
+        let tile = { (size: CGFloat, height: CGFloat?) in SlimeFace(feed: feed, snapshot: .onboarding(), live: false, size: size, height: height) }
+        guard tile(46, nil).zoomed, !tile(108, nil).zoomed, !tile(236, 177).zoomed else {
+            fail("snapshots: the popover's tile doesn't zoom on the slime, or onboarding's does")
+        }
+        print("slime: one page, handed from view to view; the popover's tile zooms")
     }
 
     /// The setup field uses the memory name's
