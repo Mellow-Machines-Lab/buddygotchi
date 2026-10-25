@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import filecmp
 import json
+import math
 import os
 import re
 import shutil
@@ -63,6 +64,10 @@ FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
 EVERYDAY = ROOT / "internal" / "tools" / "fluid" / "transitions.jsonl"
+# What wakes the brain (the transcript view's wakes and quiet kinds), and
+# the personality settings the app reads, for the studio's behaviour map.
+WAKES = ROOT / "app" / "BoopKit" / "Core" / "TranscriptView.swift"
+SETTINGS = ROOT / "app" / "BoopKit" / "Core" / "Personality.swift"
 # The universal moods' one list, which the app's pack loader holds too.
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
@@ -723,6 +728,111 @@ def everyday(source: Path = EVERYDAY) -> list[dict]:
     return out
 
 
+DECLARED = r"\b{}\b\s*(?::[^=\n]*)?=\s*([0-9][0-9_]*(?:\.[0-9]+)?(?:\s*[*+]\s*[0-9][0-9_]*)*)"
+
+
+def code_number(ref: dict, root: Path = ROOT) -> float | None:
+    """A number the code keeps: the value `ref["name"]` is declared with in
+    `ref["in"]` (`static let x: Int64 = 30_000`, `constexpr int kX = 3;`),
+    or the first group of `ref["find"]` there, a literal or a product or
+    sum of literals; None when it isn't found."""
+    path = root / ref["in"]
+    if not path.is_file():
+        return None
+    match = re.search(ref.get("find") or DECLARED.format(re.escape(ref.get("name", ""))), path.read_text())
+    if not match:
+        return None
+    try:
+        terms = [[float(f.replace("_", "")) for f in term.split("*")] for term in match.group(1).split("+")]
+    except ValueError:
+        return None
+    value = sum(math.prod(t) for t in terms)
+    return int(value) if value == int(value) else value
+
+
+def brain_wakes(source: Path = WAKES) -> tuple[dict[str, int], list[str]]:
+    """The kinds of event that wake the brain, each with its wake (the
+    higher goes first), and the quiet ones, which have a line but never
+    wake it: the transcript view's `wakes` and `quiet`."""
+    text = source.read_text()
+    table = re.search(r"static let wakes: \[String: Int\] = \[(.*?)\]", text, re.S)
+    quiet = re.search(r"static let quiet = \[(.*?)\]", text, re.S)
+    if not table or not quiet:
+        raise SystemExit(f"charactergen: no wakes or quiet in {source}")
+    return ({k: int(v) for k, v in re.findall(r'"([a-z_]+)": (\d+)', table.group(1))}, re.findall(r'"([a-z_]+)"', quiet.group(1)))
+
+
+def personality_settings(source: Path = SETTINGS) -> list[str]:
+    """The front-matter keys of a personality the app reads."""
+    return re.findall(r'case "([a-z_]+)":', source.read_text())
+
+
+def behavior(studio: Path = STUDIO, root: Path = ROOT) -> tuple[dict | None, list[str]]:
+    """The studio's behaviour map (behavior.json), each number with the
+    value its code declares and each brain's kinds with their wake, and
+    what's wrong with it: a decider, state, other row, kind of event or
+    setting that isn't one, a number its code doesn't declare, and a state
+    of the board's that nothing plays. None for a studio without one."""
+    path = studio / "behavior.json"
+    if not path.is_file():
+        return None, []
+    data, problems = json.loads(path.read_text()), []
+    table = states(studio)
+    ids, facts = state_ids(table), table["facts"]
+    deciders = {d["id"] for d in data["deciders"]}
+    wakes, quiet = brain_wakes(root / WAKES.relative_to(ROOT))
+    settings = personality_settings(root / SETTINGS.relative_to(ROOT))
+    rows = [r for g in data["groups"] for r in g["rows"]]
+    names = [r["id"] for r in rows]
+    if len(names) != len(set(names)):
+        problems.append(f"{path.name}: each row needs an id of its own")
+    played = set()
+
+    def check_states(at: str, cells: list[str]) -> None:
+        for cell in cells:
+            state, *fact = cell.split("/")
+            options = [o["id"] for o in facts.get(state, {}).get("options", [])]
+            if state not in ids or len(fact) > 1 or (fact and fact[0] not in options):
+                problems.append(f"{path.name}: {at} plays {cell}, which isn't a state of the board's (or a fact of one)")
+            else:
+                played.add(state)
+
+    def check_numbers(at: str, numbers: list[dict]) -> None:
+        for n in numbers:
+            n["value"] = code_number(n, root)
+            if n["value"] is None:
+                problems.append(f"{path.name}: {at}'s number \"{n.get('what')}\" isn't declared in {n.get('in')} ({n.get('name') or n.get('find')})")
+
+    check_numbers("brain", data.get("brain", {}).get("numbers", []))
+    for layer in data["layers"]:
+        check_states(layer["id"], layer["states"])
+        check_numbers(layer["id"], layer.get("numbers", []))
+        if layer["decides"] not in deciders:
+            problems.append(f"{path.name}: layer {layer['id']} is decided by {layer['decides']}, which isn't one of {sorted(deciders)}")
+    for row in rows:
+        at = row["id"]
+        check_states(at, row.get("plays", []))
+        check_numbers(at, row.get("numbers", []))
+        for who in row["decides"]:
+            if who not in deciders:
+                problems.append(f"{path.name}: {at} is decided by {who}, which isn't one of {sorted(deciders)}")
+        for other in row.get("also", []):
+            if other not in names:
+                problems.append(f"{path.name}: {at} names {other}, which isn't a row")
+        brain = row.get("brain")
+        if brain:
+            unknown = [k for k in brain["kinds"] if k not in wakes and k not in quiet]
+            problems += [f"{path.name}: {at}'s brain hears {k}, which the transcript view neither wakes on nor keeps quiet" for k in unknown]
+            woken = [wakes[k] for k in brain["kinds"] if k in wakes]
+            brain["wake"] = max(woken) if woken else None
+        if row.get("setting") and row["setting"] not in settings:
+            problems.append(f"{path.name}: {at}'s setting {row['setting']} isn't one a personality has ({', '.join(settings)})")
+    for state in ids:
+        if state not in played:
+            problems.append(f"{path.name}: nothing plays {state}: no row or layer names it")
+    return data, problems
+
+
 def wears(pack: Path, entry: dict) -> dict[str, str]:
     """The moods a studio preview has no art of its own for, each with the
     mood whose art it shows instead: its `wears` file's `borrows` table
@@ -1058,7 +1168,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     last, reads = staged(), reads or Reads()
     data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None,
             "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "everyday": everyday(),
-            "voices": {}, "packs": {}}
+            "behavior": behavior(studio)[0], "voices": {}, "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -1101,7 +1211,7 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
     """Checks the studio's data and writes characters/studio/packs.js, which
     opens on `pack`. Problems fail --check and only warn otherwise."""
     packs, reads = local_packs(pack), reads or Reads()
-    problems = studio_problems(packs, reads=reads) + state_problems(packs)
+    problems = studio_problems(packs, reads=reads) + state_problems(packs) + behavior()[1]
     for problem in problems:
         print(("CHARACTERGEN FAIL: " if check else "charactergen: warning: ") + problem, file=sys.stderr)
     data = json.dumps(studio_data(packs, pack, reads=reads), indent=1)

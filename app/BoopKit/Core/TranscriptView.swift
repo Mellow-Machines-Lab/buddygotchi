@@ -792,7 +792,9 @@ public final class TranscriptView {
         guard !working, let last = fold.lastActivityAt else { return nil }
         // An idle check-in, at the personality's pace: a session is open,
         // you're at the Mac, and it's within `idleWindowMs` of the last
-        // activity. Nights and weekends stay hourly.
+        // activity. Once you're away, or it's been quiet longer than that,
+        // as over a night or a weekend, only the hourly heartbeat comes;
+        // nothing reads the time of day.
         if let gap = rules.idleBeatMs, fold.awaySince == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
             if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
             guard let beat = idleBeat, now >= beat.due else { return nil }

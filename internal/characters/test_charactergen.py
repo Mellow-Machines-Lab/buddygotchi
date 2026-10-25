@@ -708,5 +708,68 @@ class ReferenceRuleTests(unittest.TestCase):
         self.assertEqual(gen.review(self.pack)[2][0][:24], "queue.json: isn't JSON (")
 
 
+class BehaviorRuleTests(unittest.TestCase):
+    """The studio's behaviour map (behavior.json): its numbers read from their code, the brain's wakes from the
+    transcript view's table, and what's wrong with one."""
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.root)
+        self.studio = self.root / "studio"
+        write(self.studio / "states.json", {"groups": [{"label": "All", "states": [{"id": "idle", "about": ""}, {"id": "task_complete", "about": ""}]}],
+                                            "facts": {"task_complete": {"name": "outcome", "label": "", "options": [{"id": "success", "label": ""}]}}})
+        write(self.root / gen.WAKES.relative_to(gen.ROOT), 'static let wakes: [String: Int] = [\n  "talk": 2, "poke": 0,\n]\nstatic let quiet = ["press"]')
+        write(self.root / gen.SETTINGS.relative_to(gen.ROOT), 'case "tool_uses": x\ncase "working_heartbeat": y')
+        write(self.root / "a.swift", "public static let everyMs: Int64 = 5 * 60_000\nstatic let tiers = [(\"camp\", 15 * 60_000)]")
+        write(self.root / "b.h", "constexpr int kBusyFrom = 2, kFranticFrom = 4;\nstatic constexpr uint32_t kTapRunMs = 3000;  // a run")
+
+    def behavior(self, rows, layers=()):
+        write(self.studio / "behavior.json", {"about": "", "deciders": [{"id": "rule", "label": "", "about": ""}], "layers": list(layers),
+                                              "groups": [{"id": "g", "label": "", "about": "", "rows": rows}]})
+        return gen.behavior(self.studio, self.root)
+
+    def test_numbers_are_read_from_their_code(self):
+        """A Swift or C++ declaration, a product of literals, one of several on a line, or a `find`'s group."""
+        number = lambda **ref: gen.code_number(ref, self.root)
+        self.assertEqual(number(**{"in": "a.swift", "name": "everyMs"}), 300_000)
+        self.assertEqual(number(**{"in": "b.h", "name": "kFranticFrom"}), 4)
+        self.assertEqual(number(**{"in": "b.h", "name": "kTapRunMs"}), 3000)
+        self.assertEqual(number(**{"in": "a.swift", "find": r'\("camp", ([0-9_ *]+)\)'}), 900_000)
+        self.assertIsNone(number(**{"in": "a.swift", "name": "gone"}))
+        self.assertIsNone(number(**{"in": "nowhere.swift", "name": "everyMs"}))
+
+    def test_a_clean_map_fills_in_values_and_wakes(self):
+        data, problems = self.behavior([
+            {"id": "a", "when": "", "decides": ["rule"], "plays": ["idle", "task_complete/success"], "does": "",
+             "brain": {"kinds": ["talk", "poke"]}, "numbers": [{"what": "", "in": "a.swift", "name": "everyMs", "unit": "ms"}],
+             "setting": "tool_uses"},
+            {"id": "b", "when": "", "decides": ["rule"], "plays": [], "does": "", "brain": {"kinds": ["press"]}, "also": ["a"]}])
+        self.assertEqual(problems, [])
+        a, b = data["groups"][0]["rows"]
+        self.assertEqual(a["numbers"][0]["value"], 300_000)
+        self.assertEqual(a["brain"]["wake"], 2, "the highest of its kinds")
+        self.assertIsNone(b["brain"]["wake"], "a quiet kind never wakes it")
+
+    def test_a_bad_map_says_what_is_wrong(self):
+        _, problems = self.behavior([
+            {"id": "a", "when": "", "decides": ["mind"], "plays": ["idle", "task_complete/maybe", "dancing"], "does": "",
+             "brain": {"kinds": ["sneeze"]}, "numbers": [{"what": "gap", "in": "a.swift", "name": "gapMs", "unit": "ms"}],
+             "setting": "mood_swings", "also": ["z"]}])
+        text = "\n".join(problems)
+        for part in ("decided by mind", "plays task_complete/maybe", "plays dancing", "hears sneeze", '"gap" isn\'t declared',
+                     "setting mood_swings", "names z", "nothing plays task_complete"):
+            self.assertIn(part, text)
+        self.assertNotIn("nothing plays idle", text)
+
+    def test_a_studio_without_a_map_has_none(self):
+        self.assertEqual(gen.behavior(self.studio, self.root), (None, []))
+
+    def test_the_repos_map_is_clean(self):
+        """Every state of the board's has something that plays it, and every number and wake is the code's."""
+        data, problems = gen.behavior()
+        self.assertEqual(problems, [])
+        self.assertTrue(all(n["value"] is not None for g in data["groups"] for r in g["rows"] for n in r.get("numbers", [])))
+
+
 if __name__ == "__main__":
     unittest.main()

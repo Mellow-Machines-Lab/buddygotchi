@@ -134,6 +134,29 @@ final class BuddiesTests: XCTestCase {
         XCTAssertTrue(right.sent.contains { $0.hasPrefix(#"{"t":"do""#) })
     }
 
+    /// Each tick sets every buddy's core to the Mac's clock, not only the
+    /// first's, so each one's day and time of day move when the clock does.
+    func testEveryBuddyFollowsTheMacsClock() throws {
+        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+        let settings = try XCTUnwrap(BuddySetting.parse("left:pixel,right:boop"))
+        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
+                                      steering: RuntimeTests.steering)
+        options.buddies = try settings.map { setting in
+            let buddy = try setting.buddy(bundled: nil, among: settings)
+            return Runtime.BuddyOptions(buddy: buddy, link: nil,
+                                        steering: try Steering(directory: buddy.pack.directory.appendingPathComponent("steering"), pack: buddy.pack))
+        }
+        let clock = VirtualClock(harnessT0), wall = VirtualClock(harnessT0)
+        options.clock = { clock.now }
+        options.wallClock = { wall.now }
+        let runtime = try Runtime(options)
+        wall.now += 86_400_000  // the Mac's clock set a day on
+        runtime.home.sync { runtime.tick() }
+        for id in ["left", "right"] {
+            XCTAssertEqual(runtime.home.sync { runtime.pipeline.core(id).wall(clock.now) }, wall.now, id)
+        }
+    }
+
     /// A tap on one board pokes that buddy alone, and its line names it.
     func testATapPokesItsOwnBuddy() throws {
         try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)

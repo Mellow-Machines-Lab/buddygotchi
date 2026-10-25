@@ -616,6 +616,9 @@ public struct Eval {
     /// Reads each prompt and last message in place of its `reading`: Apple
     /// Intelligence for `--labeler apple`, so a run checks it too.
     public var labeler: (any PromptLabeler)?
+    /// Hears each pass of a run with the step it came on (from 1), a
+    /// heartbeat's on the way to the step included: `boopdev prompts`.
+    public var onPass: ((_ step: Int, _ pass: Harness.Pass) -> Void)?
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -710,6 +713,7 @@ public struct Eval {
                     lastTakes = ending.takes
                     lastSign = ending.sign
                     last = record
+                    onPass?(i + 1, record)
                     if record.outputs.contains(where: { $0.name == DiaryOutput.outputName && $0.result.ok }) { wroteDiary = true }
                     let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
                     let answers = record.answers

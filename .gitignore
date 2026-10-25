@@ -68,8 +68,10 @@ internal/app/Tests/GeneratedTestRunner.swift
 .character-build/
 .character
 
-# The studio page's data, which characters/charactergen.py writes for the packs here
+# The studio page's data, which characters/charactergen.py writes for the packs here,
+# and what the brain reads in each eval, which boopdev prompts writes
 characters/studio/packs.js
+characters/studio/prompts.js
 
 # The simulator, built for a browser (simulator/web/build.sh)
 simulator/web/dist/

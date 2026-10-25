@@ -197,6 +197,39 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     const shown=await page.$$eval('[data-view="evals"] [data-eval]',e=>e.length);
     assert.ok(shown>0&&shown<(await page.evaluate(()=>window.StudioData.packs.boop.evals.length)),`the evals that expect grumpy, not ${shown}`);
     await shoot('character');
+    // Behavior: the map, a row for each of behavior.json's, filtered by who
+    // decides; a state opening its scene; a row naming another opening it,
+    // the address keeping it. The brain: an eval's passes (prompts.js), each
+    // its prompt and every question asked, opened from the eval.
+    await page.goto(`${url}#pack=boop&view=behavior`);await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    const behaviors=await page.evaluate(()=>window.StudioData.behavior.groups.flatMap(g=>g.rows));
+    assert.equal(await page.locator('[data-view="behavior"] [data-row]').count(),behaviors.length,'a row for each');
+    await page.click('[data-view="behavior"] [data-only="brain"]');
+    assert.equal(await page.locator('[data-view="behavior"] [data-row]').count(),behaviors.filter(r=>r.decides.includes('brain')).length,'the brain\'s rows');
+    assert.ok(await page.$$eval('[data-view="behavior"] .pill',p=>p.some(e=>/working heartbeat.*boop 1½–3 min/.test(e.textContent))),'a personality\'s setting, in words');
+    await page.click('[data-view="behavior"] [data-only=""]');
+    const also=behaviors.find(r=>r.also);
+    await page.click(`[data-view="behavior"] [data-row="${also.id}"] [data-row-link]`);
+    assert.equal(await page.getAttribute(`[data-view="behavior"] [data-row="${also.also[0]}"]`,'aria-current'),'true','a row it names');
+    assert.match(await page.evaluate(()=>location.hash),new RegExp(`row=${also.also[0]}`),'the address keeps it');
+    await page.click('[data-view="behavior"] [data-row="turn-end"] [data-open-state="task_complete/failure"]');await page.waitForTimeout(300);
+    m=await studio(page);
+    assert.deepEqual([m.view,m.sel.state,m.sel.outcome],['scene','task_complete','failure'],'a state opens its scene');
+    assert.ok(await page.evaluate(()=>Boolean(window.StudioPrompts)),'prompts.js: run .build/debug/boopdev prompts first');
+    await page.goto(`${url}#pack=boop&view=evals`);await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    const scenario=await page.$eval('[data-view="evals"] [data-eval]',e=>e.dataset.eval);
+    await page.click(`[data-view="evals"] [data-eval="${scenario}"] summary`);
+    await page.click(`[data-view="evals"] [data-prompts="${scenario}"]`);await page.waitForTimeout(300);
+    const brain=await view('brain');
+    assert.deepEqual([(await studio(page)).view,brain.scenario,brain.pass],['brain',scenario,0],'an eval opens what its brain reads');
+    const passes=await page.evaluate(s=>window.StudioPrompts.scenarios[s],scenario);
+    assert.equal(await page.locator('[data-view="brain"] [data-pass]').count(),passes.length,'a button for each pass');
+    const last=passes.length-1;
+    await page.click(`[data-view="brain"] [data-pass="${last}"]`);
+    assert.equal(await page.textContent('[data-view="brain"] .prompt-now'),passes[last].rest,'its HISTORY and NOW');
+    assert.equal(await page.locator('[data-view="brain"] [data-question]').count(),passes[last].questions.length,'every question asked');
+    assert.match(await page.evaluate(()=>location.hash),new RegExp(`scenario=${scenario}&pass=${passes.length}`),'the address keeps the pass');
+    await shoot('behavior');
     // Boop's gel board's drawer: its two review sets, a clip of the first case
     // recorded from the board (stopped after it), and its sound sketches.
     await page.goto(`${url}#pack=boop&c=board-gel&view=scene`);

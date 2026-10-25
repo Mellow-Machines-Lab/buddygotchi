@@ -1,9 +1,11 @@
 # Character Studio
 
-Updated 2026-10-24. One page for everything a character pack makes its
-character: who it is, how it feels, how it looks, what it says, and the
-tests that hold it to all that. Pick a pack, and its tabs show what's its
-own: its personality, its moods and what moves them, every mood and state
+Updated 2026-10-25. One page for everything a character pack makes its
+character: who it is, how it feels, what it does and why, how it looks,
+what it says, and the tests that hold it to all that. Pick a pack, and its
+tabs show what's its own: its personality, its moods and what moves them,
+what sets each thing it does off and who decides it, what its brain reads
+and answers, every mood and state
 as the device plays them, its signs, diary and voice, its evals and
 demos. The page belongs to the engine and names no character: the
 engine's lists (the states, the tags) only order what the pack fills in,
@@ -22,6 +24,14 @@ ignores it. From the repository root:
 
 ```sh
 python3 characters/charactergen.py --check
+```
+
+The Behavior tab's Brain view also reads `prompts.js`, what the brain
+reads and answers at every pass of the evals, which `boopdev prompts`
+writes (`make dev` does it for you). Git ignores it too:
+
+```sh
+make -C internal app && .build/debug/boopdev prompts
 ```
 
 Then open [index.html](index.html) in a browser. It works from `file://`
@@ -45,7 +55,7 @@ saves no verdicts.
 ## What's on the page
 
 The character first (**Boop** | **Pixel**, when there's more than one
-pack here), then seven tabs, each opening on its first view; a tab with
+pack here), then eight tabs, each opening on its first view; a tab with
 more than one has a button for each, and leaves out a view the pack has
 nothing for (Stills, for a pack with no golden frames):
 
@@ -72,6 +82,21 @@ nothing for (Stills, for a pack with no golden frames):
   faces, what it says, how it acts, what it stays through, each mood it
   leaves for and when, and when it fades. Its links open every state in
   it (Animations), its voice takes and the evals that expect it.
+- **Behavior**: the engine's, not the pack's, so every pack shows the
+  same, with its own personalities' settings and scenarios. **Map**: the
+  screen's layers, top first (no Mac, listening, needs you, a reaction,
+  the look), then everything that puts something on the screen, by what
+  sets it off (your agents, you at the Mac, your hand on the board, time
+  passing): who decides it, a rule on the Mac, the brain or the board,
+  each state it plays (opening it in Animations), what the brain makes of
+  it (its wake, from the transcript view's own table), its numbers, read
+  from the code that keeps them, and what else the same moment sets off.
+  Filtered by who decides, or to where several do. The map's words are
+  `behavior.json`'s. **Brain**: when it's asked, its pacing and what wakes
+  it, and an eval scenario's passes (`prompts.js`, above), each the prompt
+  as Jev read it, in its sections, and every question asked with its
+  options, the answer the expect brain gave marked. An eval in Tests
+  links to its passes.
 - **Animations**: **Scene**, **Matrix**, **Transitions** and
   **Stills**, below, with the pack's previews' cards over them: each
   preview the pack declares or uses (Boop's pack shows its gel board,
@@ -166,7 +191,9 @@ The scene's own parts:
 The address keeps the selection
 (`#pack=boop&c=pixel&mood=grumpy&state=working&v=2`), so a link opens the
 same scene, and `&view=` any view by its name (`scene`, `matrix`,
-`moods`, `voice`…; none is the overview), and a view's own choice with it:
+`moods`, `behavior`, `brain`, `voice`…; none is the overview), and a view's own choice with it:
+the map's row (`&view=behavior&row=tool-failed`), a scenario's pass
+(`&view=brain&scenario=03-turn-failed&pass=2`),
 Voice's mood and kind (`&view=voice&takes=grumpy&kind=word`), the evals
 expecting a mood (`&view=evals&expects=grumpy`), a still's group
 (`&view=stills&group=gel/occasions`), a transition with its pair
@@ -223,7 +250,10 @@ demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
 reference's too) and the everyday transitions Rank records (those
-`internal/tools/fluid/transitions.jsonl` records, `everyday()`), and
+`internal/tools/fluid/transitions.jsonl` records, `everyday()`), the
+behaviour map (`behavior.json`, the engine's, with each number's value
+from its code, each brain's wake from the transcript view's `wakes` and
+`quiet`, and the personality settings Personality reads), and
 `python3 characters/charactergen.py --check`
 fails when:
 
@@ -233,7 +263,13 @@ fails when:
   another's (a board's is `board-<face>`);
 - a character's `wears` file lends or borrows a mood the pack doesn't
   have. Without one, a character has art for every mood;
-- a reference, review item or note breaks CHARACTER.md §16's rules.
+- a reference, review item or note breaks CHARACTER.md §16's rules;
+- `behavior.json` names a decider, state (or a fact of one), row, kind
+  of event or personality setting that isn't one, or a number its code
+  doesn't declare (a number names its file and its constant, or a
+  `find` pattern for one in a table, and charactergen reads the value
+  there, so the page never says one the code doesn't); or a state of the
+  board's has nothing that plays it.
 
 The other forms only warn. The rules' tests are in
 `internal/characters/` (`make -C internal tools-test`).
@@ -302,7 +338,10 @@ both packs: the page opening on the overview, each tab opening its first
 view with its buttons (Stills only for a pack with golden frames), each
 view drawing, a mood's map opening another, its links opening its voice
 takes, the address keeping them, and a take played from the voice file,
-and the evals that expect it. Then the matrix, for every
+and the evals that expect it; the behaviour map's rows, all and the
+brain's, a personality's setting in words, a row naming another opening
+it, a state opening its scene, and an eval opening its passes in Brain,
+each pass's HISTORY and NOW and every question it asked. Then the matrix, for every
 character of every pack here, the boards included: a cell for each mood
 and state, only cells on screen playing and never more than the limit,
 the playing cells following the scroll and a hovered one, no page
@@ -323,8 +362,8 @@ again under it, and Boop's three characters' cards two to a row, its gel
 board first. And Boop's gel board's drawer: its two review sets, one clip
 recorded from the board and stopped after it, and its eleven sound
 sketches. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points at another
-copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above) and
-the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
+copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above),
+`boopdev prompts` run (above) and the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
 
 ```sh
 node characters/studio/serve.cjs --port 4190

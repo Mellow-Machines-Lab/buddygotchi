@@ -2,7 +2,8 @@
 # `make dev`: the debug app on a folder of its own, with everything that
 # watches it. Builds the app, starts the simulator in the background (the
 # board in a browser, Settings' Simulator row), opens its page and the
-# studio's matrix, and the live dashboard in a Terminal window of its own,
+# studio's matrix, with what the brain reads in each eval written for the
+# studio's Brain view, and the live dashboard in a Terminal window of its own,
 # then runs the app here, printing everything. Ctrl-C quits the app and
 # stops the simulator and the dashboard with it.
 #
@@ -34,6 +35,7 @@ if pgrep -x Boop >/dev/null; then
 fi
 
 make -s -C internal app
+.build/debug/boopdev prompts >/dev/null || echo "dev: no prompts for the studio's Brain view"
 
 # The simulator: built again only when something it's built from changed,
 # and left alone when one is already running (make demo's, or another

@@ -102,6 +102,11 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(read("ok pip, watch this").named, ["Pip"], "the name as the buddy's called")
         XCTAssertEqual(read("pipe the logs to a file").named, [], "a word, not part of one")
         XCTAssertEqual(read("bo and PIP, both of you").named, ["Pip", "Bo"])
+        // Two buddies of one pack are called by their pack and place.
+        let twins = { PromptReading(counting: $0, names: ["Pixel Left", "Pixel Right"]).named }
+        XCTAssertEqual(twins("pixel left, look at this"), ["Pixel Left"], "a name of two words, as words")
+        XCTAssertEqual(twins("the pixel on the left"), [], "its words, but not together")
+        XCTAssertEqual(twins("PIXEL RIGHT and pixel left"), ["Pixel Left", "Pixel Right"])
         XCTAssertEqual(read("WHY IS THE LOGIN STILL BROKEN").tone, .shouting)
         XCTAssertNil(read("fix the API").tone, "a capitalised word isn't shouting")
         XCTAssertEqual(read("please add a retry").tone, .polite)

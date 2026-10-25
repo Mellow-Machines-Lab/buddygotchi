@@ -579,8 +579,9 @@ public final class Runtime: @unchecked Sendable {
     }
 
     func tick() {
-        let now = options.clock()
-        core.setWallClock(options.wallClock(), at: now)
+        // Every buddy's core follows the Mac's clock, set or moved.
+        let now = options.clock(), wall = options.wallClock()
+        for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
