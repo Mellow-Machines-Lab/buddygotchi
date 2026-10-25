@@ -30,6 +30,7 @@ enum Snapshots {
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hook.path)
             let installer = HookInstaller.boop(home: home, hookPath: hook.path)
             let unbuilt = HookInstaller.boop(home: home, hookPath: home.appendingPathComponent("bin/missing").path)
+            checkStatusPublishing(installer)
 
             // The pack's mirror of the board, when it has one (Boop's).
             let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
@@ -238,6 +239,38 @@ enum Snapshots {
             // After "I don't have my Boop yet": the Mac's way of each tip.
             ("8-finale-no-board", at(.finale, status: status(connected: false))),
         ]
+    }
+
+    /// The views' status changes only while the popover or onboarding
+    /// shows it, only when something they show changed, and never for the
+    /// work stream's lanes, which change every few hundred milliseconds
+    /// while an agent works. The menu-bar icon reads the latest all along.
+    static func checkStatusPublishing(_ installer: HookInstaller) {
+        let model = model(installer, status: nil)
+        var published = 0
+        let watch = model.$status.dropFirst().sink { _ in published += 1 }
+        defer { watch.cancel() }
+        func lanes(_ count: Int) -> Runtime.Status {
+            var working = status(sessions: [["claude", "jetpack", "work"]])
+            working.snapshot.calls = [.init(slot: 0, count: count, word: "Read")]
+            return working
+        }
+        model.take(lanes(1))
+        guard published == 0, model.latest?.snapshot.calls == [], FaceMood(model.latest) == .working else {
+            fail("snapshots: a closed popover's status changed, or kept the lanes")
+        }
+        model.shown = true
+        guard published == 1, model.status == model.latest else { fail("snapshots: the popover opened on a stale status") }
+        model.take(lanes(2))
+        guard published == 1 else { fail("snapshots: the work stream's lanes changed the popover's status") }
+        model.take(status(base: "asleep"))
+        guard published == 2 else { fail("snapshots: the popover missed a change") }
+        model.shown = false
+        model.take(lanes(3))
+        guard published == 2 else { fail("snapshots: a closed popover's status changed") }
+        model.onboardingShown = true
+        guard published == 3, model.status == model.latest else { fail("snapshots: onboarding showed a stale status") }
+        print("status: published only when shown and changed, without the lanes")
     }
 
     /// The setup field uses the memory name's
