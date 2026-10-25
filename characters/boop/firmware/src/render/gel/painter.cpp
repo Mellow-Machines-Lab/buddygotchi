@@ -14,17 +14,22 @@
 namespace render::gel {
 namespace {
 using render::helper;
-static_assert(slime::kMaterialWidth == 513 && slime::kMaterialHeight == 257,
+// UVs span [0, 2^20] × [0, 2^19], a grid of 2^n + 1 texels each way: a
+// texel is 2^kUShift of u and 2^kVShift of v.
+constexpr int bits(int n) { return n > 1 ? 1 + bits(n / 2) : 0; }
+constexpr int kUShift = 20 - bits(slime::kMaterialWidth - 1), kVShift = 19 - bits(slime::kMaterialHeight - 1);
+static_assert((slime::kMaterialWidth - 1) << kUShift == 1 << 20 && (slime::kMaterialHeight - 1) << kVShift == 1 << 19,
               "UV rounding matches the generated material grid");
 struct Vertex {
   int x, y, u, v;
 };
 int edge(const Vertex& a, const Vertex& b, int x, int y) { return (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x); }
 int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
-// UVs span [0, 2^20] × [0, 2^19]; each rounds to the dense material grid.
-int texelAt(int t) { return (t + 1024) >> 11; }
+// Each UV rounds to the dense material grid.
+int texelU(int t) { return (t + (1 << (kUShift - 1))) >> kUShift; }
+int texelV(int t) { return (t + (1 << (kVShift - 1))) >> kVShift; }
 uint16_t texel(int ut, int vt) {
-  int tx = std::clamp(texelAt(ut), 0, slime::kMaterialWidth - 1), ty = std::clamp(texelAt(vt), 0, slime::kMaterialHeight - 1);
+  int tx = std::clamp(texelU(ut), 0, slime::kMaterialWidth - 1), ty = std::clamp(texelV(vt), 0, slime::kMaterialHeight - 1);
   return slime::kMaterial[ty * slime::kMaterialWidth + tx];
 }
 // `n` pixels of the material from (ut, vt), a step of (ux, vx) a pixel.
@@ -32,14 +37,35 @@ uint16_t texel(int ut, int vt) {
 // between does: the loop that takes most of the body's time needs no clamp.
 void texture(uint16_t* row, int ut, int vt, int ux, int vx, int n) {
   if (n <= 0) return;
-  const auto on = [](int t, int size) { return unsigned(texelAt(t)) < unsigned(size); };
-  if (!on(ut, slime::kMaterialWidth) || !on(ut + ux * (n - 1), slime::kMaterialWidth) ||
-      !on(vt, slime::kMaterialHeight) || !on(vt + vx * (n - 1), slime::kMaterialHeight)) {
+  const auto onU = [](int t) { return unsigned(texelU(t)) < unsigned(slime::kMaterialWidth); };
+  const auto onV = [](int t) { return unsigned(texelV(t)) < unsigned(slime::kMaterialHeight); };
+  if (!onU(ut) || !onU(ut + ux * (n - 1)) || !onV(vt) || !onV(vt + vx * (n - 1))) {
     for (int x = 0; x < n; ++x, ut += ux, vt += vx) row[x] = texel(ut, vt);
     return;
   }
-  ut += 1024, vt += 1024;
-  for (int x = 0; x < n; ++x, ut += ux, vt += vx) row[x] = slime::kMaterial[(vt >> 11) * slime::kMaterialWidth + (ut >> 11)];
+  ut += 1 << (kUShift - 1), vt += 1 << (kVShift - 1);
+  for (int x = 0; x < n; ++x, ut += ux, vt += vx)
+    row[x] = slime::kMaterial[(vt >> kVShift) * slime::kMaterialWidth + (ut >> kUShift)];
+}
+// A triangle's UVs as a plane: at pixel (x, y)'s centre, and their steps
+// a pixel right and down. Each is its first corner's plus the others'
+// differences from it, weighed by the edge functions over the triangle's
+// `area` (edge's, twice its area) to 30 bits, so two triangles' UVs meet
+// where they do (materialSeam). Whole UVs over 24 bits were a texel apart
+// there, a dozen on a finish's body three times the size.
+struct Plane {
+  int tu, tv, ux, vx, uy, vy;
+};
+Plane uvPlane(const Vertex& a, const Vertex& b, const Vertex& c, int area, int x, int y) {
+  const int e1 = edge(c, a, x * 16 + 8, y * 16 + 8), e2 = edge(a, b, x * 16 + 8, y * 16 + 8);
+  const int dx1 = (c.y - a.y) * 16, dx2 = (a.y - b.y) * 16, dy1 = (a.x - c.x) * 16, dy2 = (b.x - a.x) * 16;
+  const int64_t reciprocal = ((1u << 30) + unsigned(area) / 2) / unsigned(area);
+  auto weigh = [&](int from, int to1, int to2, int w1, int w2) {
+    return int(((int64_t(to1 - from) * w1 + int64_t(to2 - from) * w2) * reciprocal) >> 22);
+  };
+  return {a.u * 256 + weigh(a.u, b.u, c.u, e1, e2), a.v * 256 + weigh(a.v, b.v, c.v, e1, e2),
+          weigh(a.u, b.u, c.u, dx1, dx2),           weigh(a.v, b.v, c.v, dx1, dx2),
+          weigh(a.u, b.u, c.u, dy1, dy2),           weigh(a.v, b.v, c.v, dy1, dy2)};
 }
 // An inner triangle, by pixel centre: most of the body, kept to the
 // tightest loop.
@@ -57,13 +83,9 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, int from, int to) {
   int dy0 = (c.x - b.x) * 16, dy1 = (a.x - c.x) * 16, dy2 = (b.x - a.x) * 16;
   int e0 = edge(b, c, x0 * 16 + 8, y0 * 16 + 8), e1 = edge(c, a, x0 * 16 + 8, y0 * 16 + 8),
       e2 = edge(a, b, x0 * 16 + 8, y0 * 16 + 8);
-  const int reciprocal = (1 << 24) / area;
-  auto color = [&](int ar, int br, int cr, int u, int v, int w) {
-    return int((int64_t(ar) * u + int64_t(br) * v + int64_t(cr) * w) * reciprocal / 65536);
-  };
-  int tu = color(a.u, b.u, c.u, e0, e1, e2), tv = color(a.v, b.v, c.v, e0, e1, e2);
-  int ux = color(a.u, b.u, c.u, dx0, dx1, dx2), vx = color(a.v, b.v, c.v, dx0, dx1, dx2);
-  int uy = color(a.u, b.u, c.u, dy0, dy1, dy2), vy = color(a.v, b.v, c.v, dy0, dy1, dy2);
+  const Plane uv = uvPlane(a, b, c, area, x0, y0);
+  int tu = uv.tu, tv = uv.tv;
+  const int ux = uv.ux, vx = uv.vx, uy = uv.uy, vy = uv.vy;
   // Set up at the triangle's own first row and stepped to `from`: the same
   // numbers as stepping row by row, so rows split between cores match.
   const int skip = start - y0;
@@ -113,10 +135,10 @@ int16_t ringTop[kRings + 1], ringLow[kRings + 1];
 // it has no area left, and neither has its share of the outline.
 struct Rim {
   int16_t x0, y0, x1, y1;  // sixteenths of a pixel, its top end first
-  int16_t ox, oy;          // the plane's origin, in pixels
+  int16_t ox, oy;          // its UVs' plane's origin, in pixels
   int sign;                // 1 if the triangle winds it downward, else -1
   int dxdy, dydx;          // its slopes, 16.16
-  int tu, tv, ux, vx, uy, vy;
+  Plane uv;
 };
 // 9 KB; the most a pose has drawn is 138.
 constexpr int kMaxRims = 192;
@@ -232,21 +254,10 @@ struct Outline {
   }
 };
 Outline outlines[2];
-// Each rim's plane, as `fill` steps its triangle's UVs.
+// Each rim's UVs: its triangle's, from the pixel holding its first corner.
 void plane(Rim& rim, Vertex a, Vertex b, Vertex c) {
-  const int area = edge(a, b, c.x, c.y), ox = floor16(a.x), oy = floor16(a.y);
-  const int reciprocal = (1 << 24) / area;
-  auto color = [&](int ar, int br, int cr, int u, int v, int w) {
-    return int((int64_t(ar) * u + int64_t(br) * v + int64_t(cr) * w) * reciprocal / 65536);
-  };
-  const int e0 = edge(b, c, ox * 16 + 8, oy * 16 + 8), e1 = edge(c, a, ox * 16 + 8, oy * 16 + 8),
-            e2 = edge(a, b, ox * 16 + 8, oy * 16 + 8);
-  const int dx0 = (b.y - c.y) * 16, dx1 = (c.y - a.y) * 16, dx2 = (a.y - b.y) * 16;
-  const int dy0 = (c.x - b.x) * 16, dy1 = (a.x - c.x) * 16, dy2 = (b.x - a.x) * 16;
-  rim.ox = int16_t(ox), rim.oy = int16_t(oy);
-  rim.tu = color(a.u, b.u, c.u, e0, e1, e2), rim.tv = color(a.v, b.v, c.v, e0, e1, e2);
-  rim.ux = color(a.u, b.u, c.u, dx0, dx1, dx2), rim.vx = color(a.v, b.v, c.v, dx0, dx1, dx2);
-  rim.uy = color(a.u, b.u, c.u, dy0, dy1, dy2), rim.vy = color(a.v, b.v, c.v, dy0, dy1, dy2);
+  rim.ox = int16_t(floor16(a.x)), rim.oy = int16_t(floor16(a.y));
+  rim.uv = uvPlane(a, b, c, edge(a, b, c.x, c.y), rim.ox, rim.oy);
 }
 // The body's rows [from, to), a band at most: the outline's pixels found
 // and what's under them kept, every front-facing triangle filled by pixel
@@ -293,7 +304,8 @@ void body(Surface& s, Outline& o, int from, int to) {
         }
         const Rim& rim = rims[cell.rim];
         const int dx = cell.x - rim.ox, dy = row - rim.oy;
-        const uint16_t ink = texel(rim.tu + rim.ux * dx + rim.uy * dy, rim.tv + rim.vx * dx + rim.vy * dy);
+        const Plane& uv = rim.uv;
+        const uint16_t ink = texel(uv.tu + uv.ux * dx + uv.uy * dy, uv.tv + uv.vx * dx + uv.vy * dy);
         pixels[cell.x] = mix565(cell.under, ink, cell.alpha);
         lo = std::min<int>(lo, cell.x), hi = std::max<int>(hi, cell.x);
       }
@@ -455,6 +467,35 @@ void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const 
   const uint32_t mine = helper.micros() - start;
   helper.join();
   share = std::clamp(share + (lower.us > mine ? 8 : -8), 128, 896);
+}
+int materialSeam(Surface& s, const PaintControls& c) {
+  paintBody(s, c);
+  int worst = 0;
+  // Two triangles meeting on edge pq, each its UVs' plane at both of the
+  // edge's ends (from the pixels holding them); each a pixel in size at
+  // least (at the poles, where u has no one value, they're slivers).
+  auto meet = [&](Vertex a0, Vertex b0, Vertex c0, Vertex a1, Vertex b1, Vertex c1, Vertex p, Vertex q) {
+    const int area0 = edge(a0, b0, c0.x, c0.y), area1 = edge(a1, b1, c1.x, c1.y);
+    if (area0 < 2 * 256 || area1 < 2 * 256) return;
+    for (const Vertex& at : {p, q}) {
+      const int x = floor16(at.x), y = floor16(at.y), dx = at.x - x * 16 - 8, dy = at.y - y * 16 - 8;
+      const Plane one = uvPlane(a0, b0, c0, area0, x, y), other = uvPlane(a1, b1, c1, area1, x, y);
+      const int du = one.tu - other.tu + ((one.ux - other.ux) * dx + (one.uy - other.uy) * dy) / 16,
+                dv = one.tv - other.tv + ((one.vx - other.vx) * dx + (one.vy - other.vy) * dy) / 16;
+      worst = std::max({worst, (std::abs(du) << 8) >> kUShift, (std::abs(dv) << 8) >> kVShift});
+    }
+  };
+  for (int ring = 1; ring <= kRings; ++ring)
+    for (int col = 0; col < kSectors; ++col) {
+      const Vertex above = vertex(ring - 1, col), here = vertex(ring, col), next = vertex(ring - 1, col + 1),
+                   below = vertex(ring, col + 1);
+      meet(above, here, next, next, here, below, here, next);  // the quad's diagonal
+      if (col + 1 < kSectors)                                   // the next quad's
+        meet(next, here, below, next, below, vertex(ring - 1, col + 2), next, below);
+      if (ring < kRings)  // the quad below's
+        meet(next, here, below, here, vertex(ring + 1, col), below, here, below);
+    }
+  return worst;
 }
 void applyRig(PaintControls& c, const rig::Channels& rig) {
   using rig::Channel;

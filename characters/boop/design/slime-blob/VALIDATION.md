@@ -166,6 +166,10 @@ ramps and springs can, and no jolt at an event. By file:
   and checks no pixel's coverage moves more than a half in a step and the
   outline, along 36 rays from the body's middle, no more than half a
   pixel.
+- `test_gel`'s `test_the_material_meets_across_the_mesh` checks that
+  where two of the body's triangles meet, their material UVs are within
+  1/32 of a texel (`materialSeam`), at rest, leaning, squashed and drawn
+  three times the size, as a finish draws it.
 - On the AMOLED, `internal/tools/boopctl perf --scenes` with the
   `amoled206_profile` build: each scene's frames a second against its
   budget, and the body's time (`body_us`, the erase included).

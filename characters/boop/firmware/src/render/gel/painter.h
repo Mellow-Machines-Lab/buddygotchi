@@ -45,6 +45,10 @@ void paint(Surface& surface, const PaintControls& controls, const Box* keep = nu
 // drawing there, every row of the surface.
 void paintBody(Surface& surface, const PaintControls& controls, rig::Anchors* anchors = nullptr,
                const Surface::Erasing* erase = nullptr);
+// For tests: the body drawn for `controls`, then how far apart, at most,
+// two front-facing triangles' material UVs are where they meet, in 256ths
+// of a texel: the material runs on across the mesh's edges when it's near 0.
+int materialSeam(Surface& surface, const PaintControls& controls);
 // The dome on the canvas: canvas pixels a body unit at its middle.
 constexpr int kPxPerUnit = 85;
 // The rig's gazeX and gazeY at their whole (1000) move the eyes this far,
