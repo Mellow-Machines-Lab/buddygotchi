@@ -10,7 +10,7 @@ namespace {
 constexpr const char* kGagNames[] = {"land",  "arrive", "look",  "stir",    "stamp", "launch", "poof",
                                      "plane", "phone",  "page",  "helper",  "back",  "shatter", "cross",
                                      "stack", "pass",   "built", "hail",    "bonk",  "bonk2",  "helmet",
-                                     "throw", "shrug",  "timeout", "no",    "combo"};
+                                     "throw", "shrug",  "timeout", "no",    "combo", "topple"};
 static_assert(sizeof(kGagNames) / sizeof(kGagNames[0]) == int(CallGag::kCount), "a name for every gag");
 
 // The same few bits for the same word, slot and count on every board, so a
@@ -33,6 +33,17 @@ CallGag callGagFromName(const char* name) {
 
 CallMove callMove(CallGag gag) {
   switch (gag) {
+    case CallGag::kArrive: return CallMove::kArrive;
+    case CallGag::kLook: return CallMove::kLook;
+    case CallGag::kStir: return CallMove::kStir;
+    case CallGag::kStamp: return CallMove::kStamp;
+    case CallGag::kLaunch: return CallMove::kRocket;
+    case CallGag::kPoof: return CallMove::kPoof;
+    case CallGag::kPlane: return CallMove::kPlane;
+    case CallGag::kPhone: return CallMove::kPhone;
+    case CallGag::kPage: return CallMove::kPage;
+    case CallGag::kHelper: return CallMove::kHelper;
+    case CallGag::kBack: return CallMove::kBack;
     case CallGag::kBonk:
     case CallGag::kBonk2:
     case CallGag::kHelmet:
@@ -43,11 +54,11 @@ CallMove callMove(CallGag gag) {
     case CallGag::kShatter: return CallMove::kShatter;
     case CallGag::kHail: return CallMove::kHail;
     case CallGag::kPass:
-    case CallGag::kBuilt:
-    case CallGag::kCombo: return CallMove::kCheer;
+    case CallGag::kBuilt: return CallMove::kCheer;
+    case CallGag::kCombo: return CallMove::kCombo;
     case CallGag::kCross:
-    case CallGag::kStack:
-    case CallGag::kLaunch: return CallMove::kDesk;
+    case CallGag::kStack: return CallMove::kDesk;
+    case CallGag::kTopple: return CallMove::kTopple;
     default: return CallMove::kSink;
   }
 }
@@ -56,9 +67,14 @@ uint32_t callFlightMs(CallGag gag) {
   if (gag == CallGag::kTimeout) return 1400;
   switch (callMove(gag)) {
     case CallMove::kHit: return 380;
-    case CallMove::kSink: return 520;
-    case CallMove::kHail: return 300;
-    case CallMove::kCheer: return 300;
+    case CallMove::kSink:
+    case CallMove::kArrive: return 520;
+    case CallMove::kHail:
+    case CallMove::kCheer:
+    case CallMove::kCombo: return 300;
+    case CallMove::kPlane: return 700;
+    case CallMove::kBack: return 650;
+    case CallMove::kTopple: return 1000;  // its wobble, then the fall
     default: return 450;
   }
 }
@@ -93,6 +109,7 @@ void Stream::drop(const Lane& lane, uint32_t t) {
 }
 
 void Stream::setLanes(const Lane* in, int n, bool showing, uint32_t t) {
+  if (showing && !on) since = movedAt = t;
   on = showing;
   if (n > kLanes) n = kLanes;
   for (int i = 0; i < n; ++i) {
@@ -100,10 +117,12 @@ void Stream::setLanes(const Lane* in, int n, bool showing, uint32_t t) {
     const int was = column(next.slot);
     if (was < 0) {
       drop(next, t);
+      movedAt = t;
       continue;
     }
     // Counts go round at 1000.
     const int moved = (next.count - lanes[was].count + 1000) % 1000;
+    if (moved) movedAt = t;
     for (int k = 0; k < moved && k < kDropsPerState; ++k) {
       Lane l = next;
       l.count = uint16_t(next.count + 1000 - k);

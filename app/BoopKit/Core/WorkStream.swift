@@ -55,7 +55,7 @@ struct WorkStream {
     static let gags = [
         "arrive", "look", "land", "stir", "stamp", "launch", "poof", "plane", "phone", "page", "helper", "back",
         "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet", "throw", "shrug",
-        "timeout", "no", "combo",
+        "timeout", "no", "combo", "topple",
     ]
     /// The gags of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
@@ -219,8 +219,11 @@ struct WorkStream {
             case ToolError.denied:
                 return offer(Forward(slot: slot, word: "NO", gag: "no", priority: .always), at: now)
             default:
-                if check != nil {
-                    return offer(Forward(slot: slot, word: "FAIL", gag: "hail", priority: .always), at: now)
+                if let check {
+                    // A failing build's tower falls on it; failing tests or a
+                    // deploy rain on it.
+                    return offer(Forward(slot: slot, word: "FAIL", gag: check == "build" ? "topple" : "hail",
+                                         priority: .always), at: now)
                 }
                 let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
                 failures[key] = recent

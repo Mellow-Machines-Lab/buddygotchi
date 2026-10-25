@@ -6,15 +6,21 @@
 // device's time, so a word falls at the same speed however busy the engine.
 #pragma once
 #include "render/rig/rig.h"
+#include "render/screens.h"
 #include "render/stream.h"
 #include "render/surface.h"
 
 namespace render::gel {
 
 class Engine;
-// The lanes' names along the top and their falling words: behind the body,
-// drawn after the clear and before it.
+// The lanes' names along the top and their falling words, behind the body:
+// drawn after it, onto the background only, so the body, its props and
+// what it wears cover them.
 void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t);
+// What the desk shows while they work: the to-do list's progress along the
+// monitor's foot, the turn's clock in its corner (amber from 8 minutes),
+// and a thought cloud while no call has come for Stream::kThinkMs.
+void paintStreamDesk(Surface& surface, const Stream& stream, const Engine& e, const Strip& strip, uint32_t t);
 // The word forward and what it does, over the body and its props, aimed at
 // `at`, the body's anchors this frame.
 void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors& at, const Engine& e, uint32_t t);

@@ -380,23 +380,25 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    `WorkStreamTests`, which pin each number above. Still to do: the
    replay of the owner's session to the simulator (Checking it reaches
    the board), once the board plays it.
-4. [x] **The board** (first version, on the gel's own engine): the
-   lanes' names and their words behind the body, the word forward flying
-   at the body's anchors in front of it, and `Engine::jolt` for the
-   body's answer (slime-blob/CONTINUITY.md, The work stream). Words are
-   typeset per frame from the fonts, not pre-drawn: still to measure on
-   the AMOLED board (`boopctl ping`'s `draw_us`), and to cache as sprites
-   if they cost.
-5. [x] **The gags, first version**, by seven moves (`render::CallMove`):
-   a hit (stars, five up the ladder, a helmet, thrown back), sinking in,
-   a shrug's bubble, a deletion swallowed, hail, a cheer's confetti, and
-   to the monitor, which answers a check (spinner, crawling bar, count,
-   tick, cross) and a failure up the ladder (a crack). Still to come: the
-   families' own gags, which sink in for now (stir, stamp, paper plane,
-   phone, page, poof, a helper running off); the umbrella and the tower;
-   the monitor's pictures of what the agent is doing, its to-do bar and
-   its turn clock; and a dizzy face of its own for the hit, which
-   half-shuts the lids for now.
+4. [x] **The board**, on the gel's own engine: the lanes' names and
+   their words behind the body (drawn after it onto the background only,
+   at most eight at once), the word forward flying at the body's
+   anchors, and `Engine::jolt` for the body's answer (slime-blob/
+   CONTINUITY.md, The work stream). Measured on the AMOLED board: 35 fps
+   off, 31.8 with one busy agent, 28.5 at three lanes' worst.
+5. [x] **The gags**, a move each (`render::CallMove`): the families'
+   own (the magnifier, the pot, the stamp, the rocket, the puff, the
+   paper plane, the phone, the page, the little ones), the hit's dizzy
+   eyes, stars, helmet and throw, the shrug, the deletion swallowed, the
+   hail and its late umbrella, confetti, the combo, the build's tower
+   (stacking, its flag, its fall on a failed build, `topple`), and the
+   monitor answering (spinner, count, tick, cross, crack, the page,
+   an edit's bars, the globe), its to-do bar, the turn's clock and a
+   thought cloud after 20 s with no call. Checked on the board:
+   `boopctl run` draws all 27 of `stream.jsonl`'s shots as the
+   simulator does. Still to come: the whole turn's moments (compaction's
+   cube, buried by a full context, frozen by a rate limit, an interrupt,
+   the finish gathering the pile), which need the Mac to send them.
 6. [x] **A demo** (`characters/boop/demo/work-stream.jsonl`: two
    sessions, lookups, a lookup that finds nothing, a failed script twice,
    a big deletion, a failing then passing test run). Played headless, its

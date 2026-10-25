@@ -259,18 +259,13 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
   rig::Anchors at;
-  struct Behind {
-    const Stream* stream;
-    uint32_t t;
-  } behind{stream, t};
-  paint(surface, e, mouthOpen, dy, key, &at,
-        stream ? +[](Surface& to, const void* b) {
-          auto* x = static_cast<const Behind*>(b);
-          paintStreamBehind(to, *x->stream, x->t);
-        }
-               : nullptr,
-        &behind);
-  if (stream) paintStreamFront(surface, *stream, at, e, t);
+  paint(surface, e, mouthOpen, dy, key, &at);
+  if (stream) {
+    Measure measure(profile.stream);
+    paintStreamBehind(surface, *stream, t);
+    paintStreamDesk(surface, *stream, e, s, t);
+    paintStreamFront(surface, *stream, at, e, t);
+  }
   if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);

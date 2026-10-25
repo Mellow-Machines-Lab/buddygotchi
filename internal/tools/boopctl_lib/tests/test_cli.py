@@ -175,7 +175,7 @@ class PlayTests(unittest.TestCase):
                                end="\n}\n")
         self.assertEqual(cli.ANIMS + ["poked", "tap_spam", "gesture", "listening"], [states[s] for s in plays])
         self.assertTrue(set(cli.ANIMS + ["listening"]) <= set(common.DOES))
-        self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening"})
+        self.assertEqual(set(common.DOES) - set(cli.ANIMS), {"react", "listening", "stop_listening", "call"})
         self.assertTrue(set(cli.OLD_ANIMS.values()) <= set(cli.ANIMS))
 
     def test_the_do_names_are_the_devices(self):

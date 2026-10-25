@@ -116,6 +116,7 @@ final class WorkStreamTests: XCTestCase {
         for (i, (topic, program, error, expected)) in [
             ("inspect", "grep", "exit_code", "grep shrug"), (nil, "curl", "timeout", "timeout timeout"),
             (nil, "rm", "denied", "NO no"), ("tests", "pytest", "exit_code", "FAIL hail"),
+            ("build", "make", "exit_code", "FAIL topple"),
         ].enumerated() {
             rig.now += 3000
             XCTAssertEqual(run(rig, "\(i + 1)", ms: 4000, topic: topic, program: program, failed: true, error: error).last, expected)

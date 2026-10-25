@@ -324,7 +324,7 @@ def perf_scenes(args: argparse.Namespace) -> int:
                      "fps_mean": round(sum(x["fps_milli"] for x in samples) / len(samples) / 1000, 1),
                      "fps_min": round(min(x["fps_milli"] for x in samples) / 1000, 1),
                      **{k: mean(k) for k in ("draw_us", "push_us", "wait_us", "push_px", "engine_us", "sync_us",
-                                             "body_us", "art_us", "layers_us", "props_us", "clear_us", "lane_us")},
+                                             "body_us", "art_us", "layers_us", "props_us", "clear_us", "lane_us", "stream_us")},
                      "frame_ms_max": max(x.get("frame_ms", 0) for x in samples),
                      "internal_min": min(x["internal_min"] for x in samples),
                      "psram_free_min": min(x["psram_free"] for x in samples),

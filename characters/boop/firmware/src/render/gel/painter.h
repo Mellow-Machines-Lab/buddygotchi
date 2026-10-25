@@ -17,19 +17,14 @@ struct PaintControls {
 constexpr int kBrimRing = 6, kHandRing = 15, kLapRing = 14, kHemRing = 17;
 // The body; the surface's clear first keeps what this frame covers again
 // (Surface::clear). Its anchors into `anchors`, when given.
-// `behind`, when given, draws after the clear and before the body, with
-// `context`: what shows behind it.
-using Behind = void (*)(Surface&, const void* context);
 void paint(Surface& surface, const PaintControls& controls, const Box* keep = nullptr, int keepCount = 0,
-           uint32_t keepLane = 0, rig::Anchors* anchors = nullptr, Behind behind = nullptr,
-           const void* context = nullptr);
+           uint32_t keepLane = 0, rig::Anchors* anchors = nullptr);
 class Engine;
 // The body, the face art, what it wears and the air around it
 // (render/gel/layers.h), then the props; a lane that shows `keepLane` is
-// kept from this surface's last frame. Its anchors into `anchors`;
-// `behind` draws behind the body.
+// kept from this surface's last frame. Its anchors into `anchors`.
 void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t keepLane = 0,
-           rig::Anchors* anchors = nullptr, Behind behind = nullptr, const void* context = nullptr);
+           rig::Anchors* anchors = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
 void paintProps(Surface&, const Engine&);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels

@@ -131,17 +131,35 @@ void GelFace::step(uint32_t t, linkkit::Rng&) {
 // word sinks in or a bit of hail lands; stretched up by a shrug or a cheer.
 void GelFace::land(CallGag gag) {
   auto& e = *engine_;
+  // Toward the word's side: its lane's half of the screen.
+  const int column = stream_ ? stream_->column(stream_->call.slot) : 0;
+  const F side = stream_ && 2 * column + 1 >= stream_->laneCount ? F(1) : F(-1);
   switch (callMove(gag)) {
-    case CallMove::kHit: {
-      const uint32_t daze = gag == CallGag::kBonk2 ? 1300 : gag == CallGag::kNo ? 500 : gag == CallGag::kThrow ? 600 : 900;
-      const F lids = gag == CallGag::kTimeout ? q(.9) : q(.75);
-      e.jolt(gag == CallGag::kNo ? q(-1.5) : q(1.2), q(3.2), q(-3), lids, daze);
+    case CallMove::kHit:
+      // A failure's knock; its dizzy eyes are the stream's to draw. Your
+      // no makes it flinch and squeeze its eyes; a timeout lands on it
+      // half asleep.
+      if (gag == CallGag::kNo) e.jolt(q(-1.5), q(2.4), q(-2), q(.6), 450);
+      else if (gag == CallGag::kTimeout) e.jolt(q(.6), q(2.8), q(-2), q(.9), 700);
+      else e.jolt(q(1.2), q(3.2), q(-3));
       break;
-    }
-    case CallMove::kSink: e.jolt(0, q(1.8), 0); break;
+    case CallMove::kTopple: e.jolt(q(-1.4), q(3.4), q(-2.6)); break;
+    case CallMove::kSink:
+    case CallMove::kArrive: e.jolt(0, q(1.8), 0); break;
+    case CallMove::kBack: e.jolt(0, q(1.6), 0); break;
+    case CallMove::kStamp: e.jolt(side * q(.4), q(1.2), 0); break;
+    case CallMove::kPlane: e.jolt(side * q(.9), q(1.2), 0); break;
+    case CallMove::kLook:
+    case CallMove::kPhone:
+    case CallMove::kPage: e.jolt(side * q(.8), q(-.4), q(.6)); break;
+    case CallMove::kStir: e.jolt(q(.9), 0, q(.6)); break;
+    case CallMove::kHelper: e.jolt(side * q(-.6), q(-.6), 0); break;
     case CallMove::kShatter: e.jolt(0, q(1.4), 0); break;
     case CallMove::kHail: e.jolt(q(.4), q(1.2), 0); break;
-    case CallMove::kShrug: e.jolt(0, q(-1.6), 0); break;
+    case CallMove::kShrug:
+    case CallMove::kPoof: e.jolt(0, q(-1.6), 0); break;
+    case CallMove::kRocket:
+    case CallMove::kCombo: e.jolt(0, q(-1.8), 0); break;
     case CallMove::kCheer: e.jolt(0, q(-2.6), 0); break;
     case CallMove::kDesk: e.jolt(q(-.6), 0, q(1)); break;
   }
@@ -280,10 +298,10 @@ int GelFace::profile(char* out, size_t n, uint32_t frames) {
   int written = std::snprintf(
       out, n,
       "gel_parts engine_us=%lu sync_us=%lu body_us=%lu art_us=%lu layers_us=%lu props_us=%lu clear_us=%lu "
-      "lane_us=%lu\n",
+      "lane_us=%lu stream_us=%lu\n",
       (unsigned long)(p.engine / frames), (unsigned long)(p.sync / frames), (unsigned long)(p.body / frames),
       (unsigned long)(p.art / frames), (unsigned long)(p.layers / frames), (unsigned long)(p.props / frames),
-      (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames));
+      (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames), (unsigned long)(p.stream / frames));
   p = Profile{};
   return written > 0 && size_t(written) < n ? written : 0;
 }
