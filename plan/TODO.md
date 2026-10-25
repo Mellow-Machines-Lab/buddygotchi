@@ -23,6 +23,18 @@ pacing and touch, the Mac app, the architecture) found what's below.
       one page handed between views (onboarding no longer reloads it per
       act); the popover keeps the slime with no board; the still face has
       no seams; snapshots are 2x.
+- [x] The Mac, again (the popover in a real NSPopover from fixtures,
+      on a 144 Hz display): open, the app took 8.7% of a core, now 2.3%,
+      since the live dot's ring is Core Animation's, not a SwiftUI
+      animation redrawing the popover every frame; the slime's page loads
+      and the views lay out 1.5 s after launch, so the first open takes
+      71 ms, not 130 ms and a black tile for 280 ms; the page fades in on
+      its first frame; panes that fit don't scroll (with scroll bars
+      always shown they were cut off); the volume is a slider of our own.
+- [ ] The mirror draws 36 fps on a 144 Hz display: WebKit runs its
+      `requestAnimationFrame` at 72 Hz there, and the board draws only
+      when 16 ms have passed (`kFrameMs`, `device.cpp`), so every other
+      pass. A few ms' slack, or the mirror's own frame gate, gives 72.
 - [x] Simpler: no canvas lane under the gel or 8-bit AMOLED push;
       FaceLoops and faces.json's designs gone; EventLine, Core+Talk and
       device_debug.cpp in files of their own.

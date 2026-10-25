@@ -446,8 +446,11 @@ gets at least one scenario. Their pictures are the golden images in
   2 pixels a point, as a Retina Mac shows them. The run fails by itself on low contrast.
   It also checks the name's character limits and validation, and that
   the views' status changes only while the popover or onboarding shows
-  it, only when it changed, and never for the work stream's lanes, and
-  that the mirror's one page goes from view to view. It includes
+  it, only when it changed, and never for the work stream's lanes,
+  that the mirror's one page goes from view to view and fades in only
+  once the board has drawn, that the live dot's ring breathes in Core
+  Animation only while live, and that no pane drawn whole is cut off in
+  a scroll view (as scroll bars that always show would cut it). It includes
   Unicode names, invalid names, every onboarding act (`onboarding-*`) and
   a crowded Overview at a bounded height.
   There are no goldens.
