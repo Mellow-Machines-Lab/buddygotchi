@@ -75,13 +75,25 @@ class CheckoutTmpTests(unittest.TestCase):
         named for it, even two of the same name in different places, and the same one every run."""
         self.assertEqual(cli.SIM_OUT.parent, Path("/tmp/boop-sim"))
         self.assertEqual(cli.RUN_OUT.parent, Path("/tmp/boop-run"))
-        self.assertTrue(cli.SIM_OUT.name.startswith(cli.REPO.name + "-"))
+        self.assertTrue(cli.SIM_OUT.name.startswith(cli.REPO.name[:32] + "-"))
         folders = []
         for repo in ["/src/a/buddygotchi", "/src/b/buddygotchi", "/src/a/buddygotchi"]:
             with mock.patch.object(common, "REPO", Path(repo)):
                 folders.append(common.checkout_tmp("boop-sim"))
         self.assertNotEqual(folders[0], folders[1])
         self.assertEqual(folders[0], folders[2])
+
+    def test_every_tools_output_is_the_checkouts(self):
+        """e2e's and the soak's sockets and state, their results, a shot and the camera's work are each this
+        checkout's, and a socket there fits a Unix socket's 103 bytes however long the checkout's name."""
+        from boopctl_lib import cam
+
+        for path in (cli.E2E_OUT, Path(cli.build_parser().parse_args(["shot"]).out).parent, cam.WORK):
+            self.assertEqual(path.name, cli.SIM_OUT.name, path)
+        self.assertEqual(Path(cli.build_parser().parse_args(["e2e"]).out), cli.E2E_OUT)
+        with mock.patch.object(common, "REPO", Path("/src/" + "a-very-long-worktree-name" * 8)):
+            for name in ("boop-e2e", "boop-soak", "boop-media"):
+                self.assertLess(len(str(common.checkout_tmp(name) / "beacon.sock").encode()), 104, name)
 
 
 class PlayTests(unittest.TestCase):

@@ -24,6 +24,7 @@ REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "internal" / "tools"))
 
 from boopctl_lib.cli import SIM_PROGRAM, build_sim  # noqa: E402
+from boopctl_lib.common import checkout_tmp  # noqa: E402
 from boopctl_lib.device import Sim  # noqa: E402
 from boopctl_lib.image import to_image  # noqa: E402
 
@@ -280,15 +281,18 @@ def watch_gif() -> None:
 def beacon_gif() -> None:
     """Beacon listening, and three builds sent to it with mellowharness-emit."""
     bin_dir = swift_build("mellowharness")
-    sock = "/tmp/beacon-media.sock"
+    # The socket in this checkout's own folder, named from there, as the
+    # terminal shows it.
+    here, sock = checkout_tmp("boop-media"), "beacon.sock"
+    here.mkdir(parents=True, exist_ok=True)
     beacon = subprocess.Popen([str(bin_dir / "beacon"), "listen", "--socket", sock], stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, text=True, bufsize=1)
+                              stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=here)
     first = beacon.stdout.readline().rstrip()
     builds = ["build_failed", "build_failed", "build_passed"]
     outputs = []
     for kind in builds:
         subprocess.run([str(bin_dir / "mellowharness-emit"), "--socket", sock, "ci", kind, "branch=main"],
-                       check=True)
+                       check=True, cwd=here)
         time.sleep(1.5)
         out = []
         while True:  # this event's lines, up to its pass

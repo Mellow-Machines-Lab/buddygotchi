@@ -15,7 +15,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageStat
 
-from boopctl_lib.common import REPO, do
+from boopctl_lib.common import REPO, checkout_tmp, do
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.image import sheet
 
@@ -23,7 +23,7 @@ WEBCAM = REPO / "internal" / "tools" / "webcam" / "webcam.sh"
 BUILT_IN = "6C707041-05AC-0010-000D-000000000001"  # the MacBook Air's own camera
 # The camera when `--camera ID` doesn't pick one.
 CAMERA = os.environ.get("BOOP_CAMERA") or BUILT_IN
-WORK = Path("/tmp/boop-cam")
+WORK = checkout_tmp("boop-cam")
 CROP = WORK / "crop.json"
 
 

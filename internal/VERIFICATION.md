@@ -193,7 +193,11 @@ a hash of its path, so no other checkout's run writes over them. An
 incremental native build is the clean one, after a checkout or a merge
 too: PlatformIO follows every header through the staged pack and decides
 by contents, not dates. The board is one process's at a time (below), and
-so is `boopctl e2e`'s `/tmp/boop-e2e`.
+so is `boopctl e2e`'s. Every tool's output is the checkout's alone the
+same way (`checkout_tmp`): `e2e`'s sockets and state in
+`/tmp/boop-e2e/<checkout>/` and its results in `/tmp/boop-e2e-out/<checkout>/`,
+`soak --pipeline`'s in `/tmp/boop-soak/<checkout>/`, `shot`'s picture, `cam`'s
+crop and clips, and `mediagen`'s Beacon socket.
 
 **Sharing the port.** Only one process can open the serial port, so
 LinkKit's bridge owns it and shares it on a Unix socket, by the rules in
@@ -489,7 +493,7 @@ if authorised (§6):
 
 1. **Framing:** `internal/tools/boopctl cam frame` finds the screen by
    lighting it white and then turning the backlight off, and saves the
-   crop to `/tmp/boop-cam/crop.json`, turned so USB-C is on the left
+   crop to `/tmp/boop-cam/<checkout>/crop.json`, turned so USB-C is on the left
    (`--usb` says where it is otherwise). If it finds no screen, skip L3
    and say so.
 2. **Pattern:** `internal/tools/boopctl cam pattern` samples the test
@@ -514,10 +518,10 @@ This checks the whole path, hook → app → board, without Bluetooth, which
 an agent can't use. `make -C internal e2e` (`internal/tools/boopctl e2e`)
 does all of it:
 
-1. `linkkit-bridge` owns the serial port on `/tmp/boop-e2e/usb.sock`.
+1. `linkkit-bridge` owns the serial port on `/tmp/boop-e2e/<checkout>/usb.sock`.
 2. The app runs headless with its own state and sockets, never the
    everyday ones:
-   `.build/debug/Boop --headless --state-dir /tmp/boop-e2e/state --link usb:/tmp/boop-e2e/usb.sock --socket /tmp/boop-e2e/boop.sock --brain scripted --name Pip --no-open --debug`.
+   `.build/debug/Boop --headless --state-dir /tmp/boop-e2e/<checkout>/state --link usb:/tmp/boop-e2e/<checkout>/usb.sock --socket /tmp/boop-e2e/<checkout>/boop.sock --brain scripted --name Pip --no-open --debug`.
    The scripted brain makes runs repeatable; `boopctl e2e --brain jev`
    asks Jev, with `BOOP_JEV_KEY`. The state's `settings.json` sets the
    volume to 0 first, so a run is silent on the board.

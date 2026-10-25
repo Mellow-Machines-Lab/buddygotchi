@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from boopctl_lib.common import REPO, call, restarted
+from boopctl_lib.common import REPO, call, checkout_tmp, restarted
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.headless import BIN, Headless, stop_proc
 from boopctl_lib.image import save_shot
@@ -319,7 +319,7 @@ def check_order(run: Any) -> dict[str, Any]:
 
 def main(out: Path, brain: str, port: str | None, fixtures: list[str] | None, clip: bool = False,
          camera: str | None = None) -> int:
-    root = Path("/tmp/boop-e2e")
+    root = checkout_tmp("boop-e2e")
     run = Run(root, out, brain, port)
     expected = json.loads((FIXTURES / "expect.json").read_text())
     paths = [FIXTURES / f for f in (fixtures or RUN_ORDER)]
@@ -378,7 +378,7 @@ def soak(out: Path, brain: str, port: str | None, minutes: float) -> int:
     (resets, heap, audio errors) and the app (alive, memory), counts
     checkpoint misses, and at the end checks that calm brings back the plain
     face with nothing stuck."""
-    root = Path("/tmp/boop-soak")
+    root = checkout_tmp("boop-soak")
     run = Run(root, out, brain, port)
     samples: list[dict[str, Any]] = []
     rounds, misses = 0, 0

@@ -22,8 +22,10 @@ REPO = Path(__file__).resolve().parents[3]
 def checkout_tmp(name: str) -> Path:
     """/tmp/NAME/ for this checkout alone, by its folder's name and a hash
     of its path: worktrees run their scenarios side by side, and in one
-    folder for all of them one checkout's pictures stood in for another's."""
-    return Path("/tmp") / name / f"{REPO.name}-{hashlib.sha1(str(REPO).encode()).hexdigest()[:6]}"
+    folder for all of them one checkout's pictures stood in for another's.
+    Every tool's output goes in one. The name is cut to its first 32
+    characters, so a socket in it fits a Unix socket's 103 bytes."""
+    return Path("/tmp") / name / f"{REPO.name[:32]}-{hashlib.sha1(str(REPO).encode()).hexdigest()[:6]}"
 
 
 # The moods the pixel face draws, as `state` carries them, in the device's

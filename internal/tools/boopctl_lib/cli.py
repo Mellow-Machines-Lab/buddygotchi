@@ -23,6 +23,7 @@ PIO = REPO / "firmware" / "tools" / "pio.sh"
 SIM_PROGRAM = REPO / "firmware" / ".pio" / "build" / "native" / "program"
 SIM_OUT = checkout_tmp("boop-sim")
 RUN_OUT = checkout_tmp("boop-run")
+E2E_OUT = checkout_tmp("boop-e2e-out")
 # The everyday app's state directory (AppSettings.defaultStateDir).
 EVERYDAY_STATE = Path.home() / "Library" / "Application Support" / "Boop"
 
@@ -620,7 +621,7 @@ def cmd_soak(args: argparse.Namespace) -> int:
     if args.pipeline:
         from boopctl_lib import e2e
 
-        return e2e.soak(Path(args.out or "/tmp/boop-e2e-out"), args.brain, args.port, args.minutes)
+        return e2e.soak(Path(args.out or E2E_OUT), args.brain, args.port, args.minutes)
     rng = random.Random(args.seed)
     samples, glitches, ends, ids = [], [], [], []
     torn = [0]
@@ -1011,7 +1012,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--auto", action="store_true", help="only what a machine can check; ask nothing")
     p.set_defaults(func=cmd_factory)
     p = sub.add_parser("shot", help="screenshot the device's canvas")
-    p.add_argument("--out", default="/tmp/boop-shot.png")
+    p.add_argument("--out", default=str(checkout_tmp("boop-shot") / "shot.png"),
+                   help="where the PNG goes (default: this checkout's /tmp/boop-shot/<checkout>/shot.png)")
     p.set_defaults(func=cmd_shot)
     p = sub.add_parser("send", help="send one protocol message; a dbg.* request prints the reply")
     p.add_argument("message", help="""JSON, e.g. '{"t":"dbg.press","ms":100}' or '{"t":"dbg.clock","run":true}'""")
@@ -1091,7 +1093,8 @@ def build_parser() -> argparse.ArgumentParser:
                                     "(--pipeline: the e2e fixtures on a loop)")
     p.add_argument("--minutes", type=float, default=20)
     p.add_argument("--seed", type=int, default=1)
-    p.add_argument("--out", help="write the result as JSON here (--pipeline: a directory, default /tmp/boop-e2e-out)")
+    p.add_argument("--out", help="write the result as JSON here (--pipeline: a directory, default this checkout's "
+                                 "/tmp/boop-e2e-out/<checkout>)")
     p.add_argument("--pipeline", action="store_true",
                    help="through the headless app: hooks, a tap between rounds, then a quiet minute (J2)")
     p.add_argument("--brain", default="scripted", choices=["scripted", "jev"],
@@ -1103,7 +1106,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--brain", default="scripted", choices=["scripted", "jev"],
                    help="the headless app's brain: scripted answers every pass the same way; jev needs BOOP_JEV_KEY "
                         "(default: scripted)")
-    p.add_argument("--out", default="/tmp/boop-e2e-out", help="results, logs and screenshots")
+    p.add_argument("--out", default=str(E2E_OUT),
+                   help="results, logs and screenshots (default: this checkout's /tmp/boop-e2e-out/<checkout>)")
     p.add_argument("fixture", nargs="*", help="paths under internal/app/Tests/Fixtures/hooks/e2e (default: all three)")
     p.add_argument("--clip", action="store_true",
                    help="first film a 10 s Claude session on the webcam (authorised runs only; §6)")
