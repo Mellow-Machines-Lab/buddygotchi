@@ -29,7 +29,8 @@ int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
 int texelU(int t) { return (t + (1 << (kUShift - 1))) >> kUShift; }
 int texelV(int t) { return (t + (1 << (kVShift - 1))) >> kVShift; }
 uint16_t texel(int ut, int vt) {
-  int tx = std::clamp(texelU(ut), 0, slime::kMaterialWidth - 1), ty = std::clamp(texelV(vt), 0, slime::kMaterialHeight - 1);
+  int tx = std::clamp(texelU(ut), 0, slime::kMaterialWidth - 1),
+      ty = std::clamp(texelV(vt), 0, slime::kMaterialHeight - 1);
   return slime::kMaterial[ty * slime::kMaterialWidth + tx];
 }
 // `n` pixels of the material from (ut, vt), a step of (ux, vx) a pixel.
@@ -489,11 +490,10 @@ int materialSeam(Surface& s, const PaintControls& c) {
     for (int col = 0; col < kSectors; ++col) {
       const Vertex above = vertex(ring - 1, col), here = vertex(ring, col), next = vertex(ring - 1, col + 1),
                    below = vertex(ring, col + 1);
-      meet(above, here, next, next, here, below, here, next);  // the quad's diagonal
-      if (col + 1 < kSectors)                                   // the next quad's
-        meet(next, here, below, next, below, vertex(ring - 1, col + 2), next, below);
-      if (ring < kRings)  // the quad below's
-        meet(next, here, below, here, vertex(ring + 1, col), below, here, below);
+      // The quad's diagonal, then its edges with the next quad and the one below.
+      meet(above, here, next, next, here, below, here, next);
+      if (col + 1 < kSectors) meet(next, here, below, next, below, vertex(ring - 1, col + 2), next, below);
+      if (ring < kRings) meet(next, here, below, here, vertex(ring + 1, col), below, here, below);
     }
   return worst;
 }
