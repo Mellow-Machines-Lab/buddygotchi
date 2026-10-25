@@ -305,9 +305,10 @@ public final class Core {
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
             let failed = event.failed == true
-            if !late, failed, event.error.map(Core.errorClasses.contains) == true {
+            if !late, failed, event.error.map(Core.errorClasses.contains) == true,
+               !(event.topic == Topic.inspect && event.error == ToolError.exitCode) {
                 // A command that failed or timed out, not a request you
-                // denied.
+                // denied, nor a lookup that exited 1: it found nothing.
                 return DeviceReaction(anim: Core.error)
             }
             if !late, !failed, let call, Core.act(call) == .delegating, !call.sawSubagent {

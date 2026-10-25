@@ -360,6 +360,7 @@ final class CoreRuleReactionTests: XCTestCase {
     /// A command that fails with an exit
     /// code or times out plays error, at most once every 30 s
     /// (`Core.errorEveryMs`). A denied call or another failure never does,
+    /// nor a lookup (topic `inspect`) that exits 1, which found nothing,
     /// nor a result that landed after its turn stopped, nor Codex, which
     /// reports no failures.
     func testAFailedCommandPlaysErrorAtMostEveryThirtySeconds() {
@@ -378,6 +379,9 @@ final class CoreRuleReactionTests: XCTestCase {
         rig.wait(31_000)
         XCTAssertEqual(fail("denied", "4"), [], "you said no")
         XCTAssertEqual(fail("other", "5"), [])
+        rig.send(.activity, tool: "Bash", topic: "inspect", id: "8")
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", topic: "inspect", failed: true, id: "8", error: "exit_code")),
+                       [], "a lookup that exits 1 found nothing")
         rig.send(.activity, tool: "Bash", id: "6")
         XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Bash", failed: false, id: "6")), [])
         rig.send(.activity, tool: "Bash", id: "7")

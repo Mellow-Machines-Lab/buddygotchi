@@ -359,10 +359,9 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
 
 ## The order
 
-1. **Now, small and apart from the rest:** a lookup that exits 1 no
-   longer plays the error face (`Core.fold`'s `.callEnded` plays
-   `Core.error` for any `exit_code` today; in the owner's session four
-   lookups that matched nothing played it).
+1. [x] **A lookup that exits 1 no longer plays the error face**
+   (`Core.fold`'s `.callEnded`: topic `inspect` with `exit_code`; in the
+   owner's session four lookups that matched nothing played it).
 2. **AgentHooks** (its own repository, first): `program` from the
    closed list and `words.json`, and the file extension.
 3. **The Mac:** the core's call rule (the word, the priorities and the
