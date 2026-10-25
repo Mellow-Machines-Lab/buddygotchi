@@ -190,11 +190,10 @@ public final class Runtime: @unchecked Sendable {
 
     /// A tap on the board, after the core has taken it: true for its
     /// button (BOOT), false for its screen. Onboarding's pairing and its
-    /// lessons listen, until `setOnboarding(nil)`. On `home`.
+    /// lessons listen. On `home`.
     public var onTap: ((_ button: Bool) -> Void)?
     /// An agent's hook that became an event, by the agent's name
-    /// (`claude`, `codex`): onboarding's live hello listens, until
-    /// `setOnboarding(nil)`. On `home`.
+    /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
     public var onAgentHook: ((String) -> Void)?
 
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
@@ -498,17 +497,6 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// Saves where onboarding stands (`AppSettings.onboarding`), or that
-    /// it's done (nil), which lets go of `onTap` and `onAgentHook`.
-    public func setOnboarding(_ act: Onboarding.Act?) {
-        home.async { [self] in
-            if act == nil { (onTap, onAgentHook) = (nil, nil) }
-            guard settings.onboarding != act else { return }
-            saveSettings { $0.onboarding = act }
-            if act == nil { options.log("onboarding: done") }
-        }
-    }
-
     /// Lets go of the remembered board: Boop takes any over Bluetooth
     /// again, and remembers the next one tapped.
     public func forgetBoard() {
@@ -626,9 +614,13 @@ public final class Runtime: @unchecked Sendable {
         if stateChanged || grew { changed() }
     }
 
+    /// Changes the settings here and in `settings.json`, keeping what
+    /// onboarding saved there since (`AppSettings.update`).
     func saveSettings(_ change: (inout AppSettings) -> Void) {
-        change(&settings)
-        do { try settings.save(to: options.stateDir) } catch { options.log("settings: can't save: \(error)") }
+        do { settings = try AppSettings.update(in: options.stateDir, change) } catch {
+            change(&settings)
+            options.log("settings: can't save: \(error)")
+        }
     }
 
     // MARK: From the menu bar (any thread)

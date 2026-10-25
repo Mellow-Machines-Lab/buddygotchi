@@ -94,7 +94,7 @@ final class OnboardingModel: ObservableObject {
     /// when it can't.
     private func save(_ act: Onboarding.Act?) {
         do {
-            try Onboarding.save(act, runtime: app.runtime, stateDir: stateDir)
+            try Onboarding.save(act, stateDir: stateDir)
         } catch {
             log("onboarding: can't save where it stands: \(error)")
         }
@@ -131,7 +131,7 @@ final class OnboardingModel: ObservableObject {
         guard draft.canContinueName else { return }
         do {
             try Runtime.setUp(stateDir: stateDir, name: draft.trimmedName, nature: draft.nature)
-            try Onboarding.save(.body, runtime: app.runtime, stateDir: stateDir)
+            try Onboarding.save(.body, stateDir: stateDir)
             nameError = nil
             log("onboarding: named \(draft.trimmedName), \(draft.nature.rawValue)")
             show(.body)

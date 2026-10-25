@@ -475,9 +475,7 @@ final class RuntimeTests: XCTestCase {
 
     /// Onboarding listens to the runtime: a tap on the board, saying
     /// whether it was the screen or BOOT, and the first agent hook that
-    /// becomes an event; it greets on the board with a rule's reaction; and
-    /// it saves its act in settings.json. Once it's done, the runtime lets
-    /// go of both listeners, so later taps and hooks call nothing.
+    /// becomes an event; and it greets on the board with a rule's reaction.
     func testOnboardingHearsTapsAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
@@ -501,13 +499,24 @@ final class RuntimeTests: XCTestCase {
             runtime.harness.log.events.filter { $0.kind == Event.did && $0["by"]?.string == "rule" && $0.about == nil }.map(\.action)
         }
         XCTAssertEqual(greetings, ["wake_up", "task_complete"], "in the transcript, as the rules' reactions are")
-        runtime.setOnboarding(.agents)
+    }
+
+    /// settings.json has two writers: onboarding's window saves its act
+    /// straight there while the runtime runs, and the runtime saves its
+    /// own settings on its queue. Each reads the file, changes its part
+    /// and writes it back, so neither undoes the other's change.
+    func testOnboardingsSaveAndTheRuntimesKeepEachOther() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        try runtime.start()
+        defer { runtime.stop() }
+        try Onboarding.save(.agents, stateDir: dir)
+        runtime.setVolume(3)
         runtime.home.sync {}
-        XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
-        runtime.setOnboarding(nil)
-        runtime.home.sync {}
+        XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents, "the runtime's save keeps onboarding's")
+        XCTAssertEqual(AppSettings.load(from: dir).volume, 3)
+        try Onboarding.save(nil, stateDir: dir)
         XCTAssertNil(AppSettings.load(from: dir).onboarding)
-        XCTAssertTrue(runtime.home.sync { runtime.onTap == nil && runtime.onAgentHook == nil })
+        XCTAssertEqual(AppSettings.load(from: dir).volume, 3, "and onboarding's keeps the runtime's")
     }
 
     /// A device that doesn't see the link drop still counts the app as

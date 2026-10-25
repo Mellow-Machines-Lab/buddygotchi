@@ -42,22 +42,21 @@ final class OnboardingTests: XCTestCase {
         XCTAssertNil(unknown.onboarding, "an act this version doesn't know is none")
     }
 
-    /// With no runtime (before the board, or one that couldn't start),
-    /// where onboarding stands is saved straight into settings.json, with
+    /// Where onboarding stands is saved straight into settings.json, with
     /// the rest of the settings kept, so a launch comes back to the act,
     /// and a finish stays finished.
-    func testWithNoRuntimeTheActIsSavedStraightToSettings() throws {
+    func testTheActIsSavedStraightToSettings() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("onboarding-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: dir) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         var settings = AppSettings()
         settings.board = "b00p-54fe"
         try settings.save(to: dir)
-        try Onboarding.save(.agents, runtime: nil, stateDir: dir)
+        try Onboarding.save(.agents, stateDir: dir)
         XCTAssertEqual(AppSettings.load(from: dir).onboarding, .agents)
         XCTAssertEqual(AppSettings.load(from: dir).board, "b00p-54fe")
         XCTAssertEqual(Onboarding.resume(isSetUp: true, saved: AppSettings.load(from: dir).onboarding), .agents)
-        try Onboarding.save(nil, runtime: nil, stateDir: dir)
+        try Onboarding.save(nil, stateDir: dir)
         XCTAssertNil(Onboarding.resume(isSetUp: true, saved: AppSettings.load(from: dir).onboarding), "finished")
     }
 }
