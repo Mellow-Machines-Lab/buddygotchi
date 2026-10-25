@@ -74,18 +74,18 @@
     paint();
   }
 
-  // The board's screen as tall as the canvas, centred: a tile wider than
-  // the panel has glass either side, as black as the panel, and a square
-  // one loses a little of the panel's sides, beyond the slime.
+  // The board's whole screen, as big as fits and centred: a tile of
+  // another shape has glass beside it, as black as the panel, and never
+  // loses any of the panel, its lane included.
   function paint() {
     const ratio = devicePixelRatio || 1;
     const w = Math.max(1, Math.round(canvas.clientWidth * ratio)), h = Math.max(1, Math.round(canvas.clientHeight * ratio));
     if (canvas.width !== w || canvas.height !== h) canvas.width = w, canvas.height = h;
     if (!image) return;
-    const dw = panel.width * h / panel.height;
+    const fit = Math.min(w / panel.width, h / panel.height), dw = panel.width * fit, dh = panel.height * fit;
     context.clearRect(0, 0, w, h);
     context.imageSmoothingQuality = 'high';
-    context.drawImage(panel, (w - dw) / 2, 0, dw, h);
+    context.drawImage(panel, (w - dw) / 2, (h - dh) / 2, dw, dh);
   }
   new ResizeObserver(paint).observe(canvas);
 

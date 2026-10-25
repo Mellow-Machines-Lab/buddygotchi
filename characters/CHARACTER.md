@@ -640,7 +640,7 @@ in its tiles and its demo. Boop's has one:
   keepalive included, and a tap on the board as a tap on the mirror's
   screen or BOOT, which it takes as its own (`SlimeFeed`); onboarding's,
   with no board behind it, is handed what its views show. The page
-  draws the board's whole screen as tall as its tile, centred, at most
+  draws the board's whole screen as big as its tile fits, centred, at most
   30 frames a second, and only while it's shown. It makes no sound, and
   nothing the board says leaves the page, so it can't answer the Mac.
 - `tests/mirror/` holds the page's own tests (`node --test`), and
