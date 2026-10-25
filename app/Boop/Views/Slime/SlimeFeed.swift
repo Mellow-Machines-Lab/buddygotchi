@@ -26,6 +26,9 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     /// The view showing the page now; the only one whose updates count.
     private(set) weak var holder: NSView?
     private var ready = false
+    /// The page has drawn the board's first frame, and faded in over the
+    /// glass: until then it's clear, so the slime never pops in.
+    private var drawn = false
     private var visible = false
     private var zoomed = false
     /// The latest `state` sent, the page's first message when it loads.
@@ -74,6 +77,8 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
         let view = Self.makeWebView()
         webView = view
         ready = false
+        drawn = false
+        view.alphaValue = 0
         view.navigationDelegate = self
         if let folder = Self.folder, let document = Self.document { view.loadFileURL(document, allowingReadAccessTo: folder) }
         return view
@@ -119,9 +124,27 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     }
 
     private func post(_ line: String) {
-        if line.hasPrefix(#"{"t":"state""#) { state = line }
-        call("window.BoopMirror.send(line)", ["line": line])
+        let isState = line.hasPrefix(#"{"t":"state""#)
+        if isState { state = line }
+        // The first state powers the board, which draws its frame before
+        // the promise settles.
+        call(isState && !drawn ? "await window.BoopMirror.send(line)" : "window.BoopMirror.send(line)", ["line": line],
+             then: isState && !drawn ? { [weak self] in self?.reveal() } : nil)
     }
+
+    /// The board's first frame is drawn: the page fades in over the glass.
+    private func reveal() {
+        guard !drawn, let view = webView else { return }
+        drawn = true
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Self.fadeIn
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            view.animator().alphaValue = 1
+        }
+    }
+
+    /// How long the page takes to fade in once it has drawn.
+    static let fadeIn: TimeInterval = 0.25
 
     /// What `container`'s view shows, whether it's on screen, and whether
     /// it frames the slime alone, for a small tile. A board's mirror shows
@@ -162,10 +185,14 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
         post(Wire.do(id: 0, name: reaction.name, play: play, ttl: BoopDevice.reactionTTL, args: reaction.args))
     }
 
-    private func call(_ script: String, _ arguments: [String: Any] = [:]) {
+    private func call(_ script: String, _ arguments: [String: Any] = [:], then: (() -> Void)? = nil) {
         guard ready, let target = webView else { return }
         target.callAsyncJavaScript(script, arguments: arguments, in: nil, in: .page) { [weak self] result in
-            if case .failure(let error) = result, target === self?.webView { self?.didFail?(error.localizedDescription) }
+            guard target === self?.webView else { return }
+            switch result {
+            case .failure(let error): self?.didFail?(error.localizedDescription)
+            case .success: then?()
+            }
         }
     }
 

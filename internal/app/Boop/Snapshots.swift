@@ -31,6 +31,7 @@ enum Snapshots {
             let installer = HookInstaller.boop(home: home, hookPath: hook.path)
             let unbuilt = HookInstaller.boop(home: home, hookPath: home.appendingPathComponent("bin/missing").path)
             checkStatusPublishing(installer)
+            checkPulse()
 
             // The pack's mirror of the board, when it has one (Boop's).
             let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
@@ -38,6 +39,7 @@ enum Snapshots {
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
                 checkSlimeHandOver()
+                try checkSlimeFadesIn()
                 onboardingGel = try SlimeSnapshots.image(.onboarding(mood: "happy"), to: out.appendingPathComponent("slime-onboarding.png"))
                 // Every look onboarding uses, through the board's engine:
                 // one it doesn't show as asked fails here.
@@ -57,7 +59,7 @@ enum Snapshots {
                 /// The popover on `pane`, tall enough for all of it.
                 func shot(_ name: String, _ model: AppModel, pane: Pane) {
                     model.pane = pane
-                    render(PopoverView(model: model, maxHeight: 2000), "\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
+                    render(PopoverView(model: model, maxHeight: 2000), "\(name)-\(dark ? "dark" : "light")", dark: dark, to: out, whole: true)
                 }
                 for (name, model) in overviews(installer) { shot("overview-\(name)", model, pane: .overview) }
                 if gelImage != nil {
@@ -253,8 +255,10 @@ enum Snapshots {
         var published = 0
         let watch = model.$status.dropFirst().sink { _ in published += 1 }
         defer { watch.cancel() }
+        // One session, the same each time, as the runtime keeps it: only the lanes move.
+        let session = status(sessions: [["claude", "jetpack", "work"]])
         func lanes(_ count: Int) -> Runtime.Status {
-            var working = status(sessions: [["claude", "jetpack", "work"]])
+            var working = session
             working.snapshot.calls = [.init(slot: 0, count: count, word: "Read")]
             return working
         }
@@ -302,6 +306,61 @@ enum Snapshots {
         }
         print("slime: one page, handed from view to view; the popover's tile zooms")
     }
+
+    /// The mirror's page is clear on its glass until the board has drawn
+    /// its first frame, then fades in over `SlimeFeed.fadeIn` (0.25 s), so
+    /// the slime never pops in over a black tile.
+    static func checkSlimeFadesIn() throws {
+        guard SlimeFeed.fadeIn == 0.25 else { fail("snapshots: the mirror's fade-in isn't 0.25 s") }
+        let feed = SlimeFeed(), container = NSView(frame: NSRect(x: 0, y: 0, width: 46, height: 46))
+        let window = NSWindow(contentRect: NSRect(x: -2000, y: 0, width: 46, height: 46), styleMask: .borderless,
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = container
+        defer { feed.close(); window.close() }
+        var loaded = false
+        feed.didLoad = { loaded = true }
+        feed.place(in: container)
+        guard let page = feed.webView, page.alphaValue == 0 else { fail("snapshots: the mirror's page shows before it has drawn") }
+        let deadline = Date().addingTimeInterval(SlimeSnapshots.timeout)
+        while !loaded, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.01)) }
+        guard loaded, page.alphaValue == 0 else { fail("snapshots: the mirror's page showed with no frame to show") }
+        feed.update(.onboarding(), visible: true, zoomed: true, from: container)
+        let shown = Date().addingTimeInterval(SlimeSnapshots.timeout)
+        while page.alphaValue < 1, Date() < shown { RunLoop.current.run(until: Date().addingTimeInterval(0.01)) }
+        guard page.alphaValue == 1 else { fail("snapshots: the mirror's page never faded in after its first frame") }
+        print("slime: clear until the board's first frame, then fades in")
+    }
+
+    /// The live dot's ring: 2.2 times the dot, gone in 1.6 s, again and
+    /// again, run by Core Animation; none while still.
+    static func checkPulse() {
+        let view = PulseRingView(frame: NSRect(x: 0, y: 0, width: 16, height: 16))
+        view.set(.systemOrange, live: true)
+        guard let breath = view.ring.animation(forKey: "breath") as? CAAnimationGroup, breath.duration == 1.6,
+              breath.repeatCount == .infinity,
+              let grow = breath.animations?.first as? CABasicAnimation, grow.toValue as? CGFloat == 2.2 else {
+            fail("snapshots: the live dot's ring doesn't spread to 2.2 times in 1.6 s, again and again")
+        }
+        view.set(.systemOrange, live: false)
+        guard view.ring.animation(forKey: "breath") == nil, view.ring.opacity == 0 else {
+            fail("snapshots: a still dot's ring still moves or shows")
+        }
+        print("dot: its ring breathes in Core Animation only while live")
+    }
+
+    /// A pane drawn whole has no scroll view cut short: with scroll bars
+    /// always shown, one would take their width and cut off its last lines.
+    static func checkNothingScrolls(_ view: NSView, _ name: String) {
+        for scroll in descendants(view).compactMap({ $0 as? NSScrollView }) {
+            let content = scroll.documentView?.frame.height ?? 0
+            if content > scroll.contentView.bounds.height + 1 {
+                fail("snapshots: \(name) is cut off in a scroll view: \(Int(content)) pt in \(Int(scroll.contentView.bounds.height))")
+            }
+        }
+    }
+
+    static func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendants) }
 
     /// The setup field uses the memory name's
     /// character limit and catches its forbidden separators before save.
@@ -552,7 +611,8 @@ enum Snapshots {
 
     private static let window = NSWindow(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
 
-    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil) {
+    /// `whole`: tall enough for all of it, so nothing in it may scroll.
+    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil, whole: Bool = false) {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: view
             .environment(\.colorScheme, dark ? .dark : .light)
@@ -577,6 +637,7 @@ enum Snapshots {
             fail("snapshots: \(name) exceeds its \(Int(heightLimit)) pt height limit: \(host.bounds.height)")
         }
         window.displayIfNeeded()
+        if whole { checkNothingScrolls(host, name) }
         // At Retina's 2 pixels a point, as most Macs show it, so blur and
         // seams a 1× picture hides show.
         let rep = bitmap(host.bounds.size, scale: scale)

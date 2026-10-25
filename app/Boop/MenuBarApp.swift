@@ -664,6 +664,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         statusItem = item
         iconMood = nil
         updateIcon()
+        warmPopover()
+    }
+
+    /// The popover's first open as quick as the ones after it: a moment
+    /// after the icon appears, while nothing waits on it, its slime's page
+    /// loads and its views are laid out, so it opens without a black tile
+    /// that fills in. The first open would make both anyway, and keep them.
+    func warmPopover() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self, !popover.isShown else { return }
+            if SlimeFeed.folder != nil { model.slime.preload() }
+            popover.contentViewController?.view.layoutSubtreeIfNeeded()
+        }
     }
 
     // MARK: Onboarding

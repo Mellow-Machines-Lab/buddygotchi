@@ -94,8 +94,15 @@ struct FittedScroll<Content: View>: View {
             // pane's header needs room; only the visible overlay scrolls.
             .frame(minHeight: 0, maxHeight: maxHeight, alignment: .top)
             .overlay(alignment: .top) {
-                ScrollView { content }
-                    .scrollBounceBehavior(.basedOnSize)
+                // A pane that fits doesn't scroll: with scroll bars always
+                // shown (a mouse, or System Settings), a scroll view takes
+                // their width from its content, which then wraps taller than
+                // its measure and is cut off at the bottom behind a bar.
+                ViewThatFits(in: .vertical) {
+                    content.fixedSize(horizontal: false, vertical: true)
+                    ScrollView { content }
+                        .scrollBounceBehavior(.basedOnSize)
+                }
             }
     }
 }
