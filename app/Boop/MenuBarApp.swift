@@ -679,6 +679,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         onboarding.log = { [log] in log.write($0) }
         self.onboarding = onboarding
         model.onboardingShown = true
+        // Its slime's page loads with the window, and every act shows it.
+        if SlimeFeed.folder != nil { onboarding.feed.preload() }
         let window = NSWindow(contentViewController: NSHostingController(rootView: OnboardingView(model: onboarding)))
         // No close button: it ends at the finale; ⌘Q quits, and the next
         // launch picks up where it left off.
@@ -719,11 +721,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Onboarding's last button: the menu-bar icon appears, the window
     /// shrinks into it, and it blinks twice so you see where Boop went.
     func finishOnboarding() {
-        // Gone, so the runtime's taps and hooks reach it no more.
+        // Gone, so the runtime's taps and hooks reach it no more. Its
+        // slime stops once the window has gone.
+        let feed = onboarding?.feed
         onboarding = nil
         startRuntime()
         makeStatusItem()
-        guard let window = onboardingWindow else { return }
+        guard let window = onboardingWindow else {
+            feed?.close()
+            return
+        }
         let still = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         // A turn of the run loop, so the menu bar has placed the new icon.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -738,6 +745,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             }, completionHandler: { [weak self] in
                 Task { @MainActor in
                     window.orderOut(nil)
+                    feed?.close()
                     self?.onboardingWindow = nil
                     self?.model.onboardingShown = false
                     // The menu-bar app from now on: no Dock icon.
@@ -902,15 +910,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.runtime?.refresh()
     }
 
-    /// Before it's on screen, the views catch up with the runtime's latest
-    /// status.
+    /// Before it's on screen: the mirror draws where the board is now, not
+    /// the pose it had when the popover last closed, and the views catch
+    /// up with the runtime's latest status.
     func popoverWillShow(_ notification: Notification) {
+        model.slime.show(true)
         model.shown = true
     }
 
     /// Settings closes back to the overview; setup stays where it was.
     func popoverDidClose(_ notification: Notification) {
         model.shown = false
+        model.slime.show(false)
         // A finished update's word has been seen; one going on keeps going.
         if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
         if model.pane == .settings { model.pane = .overview }

@@ -84,8 +84,8 @@ struct OverviewPane: View {
         VStack(alignment: .leading, spacing: Theme.gapSnug) {
             HStack(spacing: Theme.gap) {
                 HStack(spacing: Theme.gap) {
-                    if let status = model.status, status.connected, status.device?.face == .gel, SlimeFeed.folder != nil {
-                        SlimeFace(feed: model.slime, snapshot: status.snapshot, live: model.shown, size: faceSize)
+                    if showsSlime {
+                        SlimeFace(feed: model.slime, snapshot: model.status?.snapshot ?? Self.waking, live: model.shown, size: faceSize)
                     } else {
                         BoopFace(mood: FaceMood(model.status), design: model.status?.snapshot.mood ?? MoodOutput.initial,
                                  size: faceSize)
@@ -130,6 +130,18 @@ struct OverviewPane: View {
     }
 
     private let faceSize: CGFloat = 46
+
+    /// The pack's slime whenever it has a mirror, connected or not, so the
+    /// face never changes creature: unless the board connected draws the
+    /// pixel face, or Boop couldn't start, which the still face's crossed
+    /// eyes say.
+    private var showsSlime: Bool {
+        guard SlimeFeed.folder != nil, model.startError == nil else { return false }
+        return !(model.status?.connected == true && model.status?.device?.face == .pixel)
+    }
+
+    /// The slime while the runtime starts, before its first status.
+    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, busy: 0, vol: 0)
 
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
     /// faces apart. The face already draws in the mood's designs.
