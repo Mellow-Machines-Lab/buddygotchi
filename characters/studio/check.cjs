@@ -1,4 +1,6 @@
-// The studio in a browser. The matrix: every mood and state for each
+// The studio in a browser. The character's own views, for each pack: the
+// tabs and their buttons, each view drawn, a mood's map and links, and a
+// voice take played from the voice file. The matrix: every mood and state for each
 // character, the boards' among them, only the cells on screen playing, at
 // most a clip character's 60 or a live one's 12, following the scroll and a
 // hovered cell, with no page errors (WebGL contexts let go as cells leave),
@@ -64,7 +66,7 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     await cell.scrollIntoViewIfNeeded();await cell.click();await page.waitForTimeout(400);
     let m=await studio(page);
     assert.deepEqual([m.view,m.sel.mood,m.sel.state,m.playing],['scene','grumpy','testing',0],'a click opens its scene and stops the cells');
-    assert.ok(!(await page.evaluate(()=>location.hash)).includes('view='),'the scene has no view= in its URL');
+    assert.ok((await page.evaluate(()=>location.hash)).includes('view=scene'),'the scene\'s URL says so');
     await page.keyboard.press('m');await page.waitForTimeout(800);
     m=await studio(page);
     assert.equal(m.view,'matrix','M opens the matrix');
@@ -155,15 +157,56 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.match(await page.locator('[data-view="review"] [data-item]').first().textContent(),/Change asked.*Hop higher at 560 ms\./);
     await shoot('review');
     await page.unroute(u=>new URL(u).pathname==='/review');
+    // The character's own views, for each pack: the page opens on its
+    // overview; each tab opens its first view, and a tab with several shows
+    // their buttons, leaving out a view the pack has nothing for; each view
+    // draws something of the pack's own.
+    for(const pack of ['boop','pixel']){
+      await page.goto(`${url}#pack=${pack}`);await page.evaluate(()=>document.getElementById('studio').studio.ready);
+      const tabs=await page.evaluate(()=>document.getElementById('studio').studio.tabs);
+      assert.equal((await studio(page)).view,'overview',`${pack}: the page opens on the overview`);
+      assert.equal(await page.isVisible('[data-cards]'),false,`${pack}: the cards are the Animations tab's`);
+      for(const tab of tabs){
+        await page.click(`[data-tabs] [data-tab="${tab.id}"]`);await page.waitForTimeout(300);
+        assert.equal((await studio(page)).view,tab.views[0],`${pack}: ${tab.id} opens on ${tab.views[0]}`);
+        const buttons=await page.$$eval('[data-view-choice] button',b=>b.map(e=>e.dataset.value));
+        if(tab.views.length>1)assert.deepEqual(buttons,tab.shown,`${pack}: ${tab.id}'s buttons`);
+        for(const name of tab.shown){
+          if(['scene','matrix','transitions','references','review'].includes(name))continue;
+          await page.evaluate(n=>document.getElementById('studio').studio.setView(n),name);await page.waitForTimeout(200);
+          assert.ok(await page.$eval(`[data-view="${name}"]`,e=>e.textContent.trim().length>40),`${pack}: ${name} draws something`);
+        }
+      }
+      assert.equal(tabs.find(t=>t.id==='animations').shown.includes('stills'),pack==='boop',`${pack}: Stills shows only for a pack with golden frames`);
+    }
+    // Moods: a mood's map opens a mood it moves to, and its links open its voice takes and the evals that expect it.
+    await page.goto(`${url}#pack=boop&view=moods&mood=calm`);await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    const moves=await page.$$eval('[data-view="moods"] .map .node:not(.here)',n=>n.map(e=>e.dataset.gotoMood));
+    await page.click(`[data-view="moods"] .map .node[data-goto-mood="${moves[0]}"]`);await page.waitForTimeout(300);
+    assert.equal((await studio(page)).sel.mood,moves[0],'a node on the map opens its mood');
+    assert.match(await page.textContent('[data-view="moods"] .mood-head h2'),new RegExp(moves[0],'i'));
+    await page.click('[data-view="moods"] [data-voice]');await page.waitForTimeout(300);
+    let v=await view('voice');
+    assert.deepEqual([(await studio(page)).view,v.mood,v.kind],['voice',moves[0],null],'its voice takes, every kind');
+    assert.match(await page.evaluate(()=>location.hash),new RegExp(`takes=${moves[0]}`),'the address keeps the mood');
+    await page.click('[data-view="voice"] [data-play]');
+    v=await until('voice',x=>x.playing||x.said,'a take played');
+    assert.equal(v.said,'','a take plays from the voice file, read in part');
+    await page.goto(`${url}#pack=boop&view=moods&mood=grumpy`);await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    await page.click('[data-view="moods"] [data-evals]');await page.waitForTimeout(300);
+    const shown=await page.$$eval('[data-view="evals"] [data-eval]',e=>e.length);
+    assert.ok(shown>0&&shown<(await page.evaluate(()=>window.StudioData.packs.boop.evals.length)),`the evals that expect grumpy, not ${shown}`);
+    await shoot('character');
     // Boop's gel board's drawer: its two review sets, a clip of the first case
     // recorded from the board (stopped after it), and its sound sketches.
-    await page.goto(`${url}#pack=boop&c=board-gel`);
+    await page.goto(`${url}#pack=boop&c=board-gel&view=scene`);
     await page.evaluate(()=>document.getElementById('studio').studio.ready);
     await page.click('[data-tools] summary');
     assert.deepEqual(await page.$$eval('[data-review-set] option',o=>o.map(e=>e.value)),['activities','bridges'],'the review sets');
     assert.equal(await page.locator('[data-sketches] button').count(),12,'eleven sketches and a stop');
     await page.selectOption('[data-review-set]','bridges');
     await page.click('[data-record]');
+    await page.waitForFunction(()=>/^Recording 1\//.test(document.querySelector('[data-record-status]').textContent));
     await page.click('[data-record]');  // stop: after the clip being recorded
     await page.waitForFunction(()=>/clips, from the board/.test(document.querySelector('[data-record-status]').textContent),null,{timeout:120000});
     assert.equal(await page.textContent('[data-record-status]'),'1 of 13 clips, from the board. Art review is pending.');
@@ -182,7 +225,10 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.ok(await page.isVisible('[data-view="references"] .screen .board-note'),'the board says in its pane that it needs the server');
     assert.match(await page.textContent('[data-view="references"] .screen .board-note'),/serve\.cjs/);
     assert.equal(await page.textContent('[data-view="references"] [data-board-caption]'),'','and not again under it');
-    await page.goto(`${file}#pack=boop&c=board-gel`);
+    await page.goto(`${file}#pack=boop&view=signs`);
+    await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    assert.ok(await page.locator('[data-view="signs"] .sign').count()>10,'the character\'s own views, from packs.js');
+    await page.goto(`${file}#pack=boop&c=board-gel&view=scene`);
     await page.evaluate(()=>document.getElementById('studio').studio.ready);
     await page.waitForTimeout(500);
     assert.match(await page.textContent('#stage .board-note'),/serve\.cjs/,'the stage\'s board says so in its pane too');
@@ -193,6 +239,6 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.equal(await page.getAttribute('[data-cards] .character','data-character'),'board-gel','Boop opens on its gel board');
     await shoot('file');
     assert.deepEqual(errors,[],'no page errors');
-    console.log('STUDIO VIEWS PASS: transitions, references, review, file://');
+    console.log('STUDIO VIEWS PASS: the character\'s views, transitions, references, review, file://');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1);});

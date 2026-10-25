@@ -4,7 +4,9 @@
 // scripts that call Studio.register(id, adapter) with the entry's id
 // (README.md, "Writing an adapter"); each face its boards have gets the
 // board's own (board.js). The views beyond the scene and the matrix are
-// views.js's.
+// views.js's (the board's and the workbench's) and character.js's (the
+// character's own: its overview, personality, moods, words and tests), in
+// the tabs below.
 // charactergen.py writes the pack data this reads, window.StudioData (packs.js).
 (() => {
   const root=document.getElementById('studio');
@@ -71,8 +73,8 @@
   function renderCards(){
     const ids=Object.keys(packs);
     $('[data-pack-choice]').hidden=ids.length<2;
-    $('[data-pack]').replaceChildren(...ids.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=packs[id].name;return o;}));
-    $('[data-pack]').value=sel.pack;
+    $('[data-pack-choice]').replaceChildren(...ids.map(id=>{const b=document.createElement('button');b.type='button';b.dataset.value=id;b.textContent=packs[id].name;return b;}));
+    setSegment($('[data-pack-choice]'),sel.pack);
     $('[data-cards]').replaceChildren(...cardsOf(sel.pack).map(id=>{
       const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.className='character';b.dataset.character=id;
       b.setAttribute('aria-selected',String(id===sel.card));
@@ -178,15 +180,16 @@
     instance=adapter?adapter.create(ctx):null;
     instance?.setSound();
     rested=false;
-    if(view!=='scene'&&adapter?.transport==='live'){instance.setPaused(true);rested=true;}
+    if((view||opening)!=='scene'&&adapter?.transport==='live'){instance.setPaused(true);rested=true;}
     if(view==='matrix'){clearMatrix();buildMatrix();fillSoon();}
-    render({autoplay:view==='scene'});
+    render({autoplay:(view||opening)==='scene'});
     views[view]?.card?.();
+    if(view)renderTabs();
   }
   function change(patch,{resetVariant=false}={}){
     if(busyNow())return;
     Object.assign(sel,patch);if(resetVariant)sel.variant=0;
-    render({autoplay:true});
+    render({autoplay:view==='scene'});
   }
 
   // ── Matrix ─────────────────────────────────────────────────────────────
@@ -197,7 +200,9 @@
   // screen: a live character's each holds a WebGL context, and a page gets
   // about 16. A cell opens its scene.
   const LIMIT={clip:60,live:12};
-  let view='scene';
+  // The view shown: none until the first setView(), which shows the address's,
+  // `opening` until then.
+  let view='',opening='';
   const matrix={table:$('[data-matrix-table]'),key:'',cells:[],playing:new Map(),seen:new Map(),hovered:null,observer:null,timer:0};
   function buildMatrix(){
     const key=sel.pack+'/'+sel.card+'/'+Boolean(adapter);
@@ -237,6 +242,12 @@
       ?`${label(sel.card)}: ${n} moods × ${stateIds.length} states. The cells on screen play, silently, up to ${LIMIT[adapter.transport]||LIMIT.clip} at once; hover one to play it. Click one to open it.`
       :`${label(sel.card)} has no preview, so the matrix is empty.`;
   }
+  // The matrix fills the window under the tabs and cards, so all of it is on screen; a narrow window lets it run on.
+  function fitMatrix(){
+    const box=$('[data-matrix-scroll]');
+    box.style.maxHeight=innerWidth>880?Math.max(360,innerHeight-box.getBoundingClientRect().top-16)+'px':'';
+  }
+  addEventListener('resize',()=>{if(view==='matrix')fitMatrix();});
   function fillSoon(){if(!matrix.timer)matrix.timer=setTimeout(()=>{matrix.timer=0;fill();},80);}
   function fill(){
     if(view!=='matrix'||!adapter)return;
@@ -245,27 +256,36 @@
     for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
     for(const c of want)if(!matrix.playing.has(c))mount(c);
   }
-  function mount(cell){
-    const thumb=cell.querySelector('.thumb'),note=cell.querySelector('small');
-    const s={mood:shows(sel.card,moodOf(cell.dataset.mood)),face:null,state:cell.dataset.state,outcome:'success',context:'new_task',variant:0};
-    // A cell's own context: no sound, no drawer, nothing to redraw.
+  // A silent, looping preview of one mood and state in `thumb`, by the card's
+  // adapter, as a matrix cell and the character's views show one: its
+  // instance and what it selected, or why it couldn't.
+  function preview(thumb,{mood,state='idle',outcome='success',context='new_task',variant=0}){
+    if(!adapter)return {error:`${label(sel.card)} has no preview.`};
+    const s={mood:shows(sel.card,moodOf(mood)),face:null,state,outcome,context,variant};
+    // Its own context: no sound, no drawer, nothing to redraw.
     const own={root,stage:thumb,tools:document.createElement('div'),sound:false,volume:0,loop:true,selection:s,onChange(){},setSound(){}};
     thumb.classList.remove('idle');
-    try{
-      const instance=adapter.create(own);matrix.playing.set(cell,instance);
-      const got=instance.select(s);
-      note.textContent=got?.variants?.length>1?got.variants[0]:got?.caption||'\u00a0';
-      instance.preview?.();
-    }catch(error){note.textContent=error.message;}
+    let instance=null;
+    try{instance=adapter.create(own);const got=instance.select(s);instance.preview?.();return {instance,got};}
+    catch(error){return {instance,error:error.message};}
   }
-  function unmount(cell){
-    const instance=matrix.playing.get(cell),thumb=cell.querySelector('.thumb');matrix.playing.delete(cell);
+  function unpreview(thumb,instance){
     const canvases=[...thumb.querySelectorAll('canvas')];
     try{instance?.destroy();}catch{}
     // A destroyed preview's WebGL context lives on until it's collected, and
     // the page's few run out as the matrix scrolls: let each go now.
     for(const c of canvases)for(const kind of ['webgl2','webgl'])c.getContext(kind)?.getExtension('WEBGL_lose_context')?.loseContext();
     thumb.replaceChildren();thumb.classList.add('idle');
+  }
+  function mount(cell){
+    const note=cell.querySelector('small');
+    const {instance,got,error}=preview(cell.querySelector('.thumb'),{mood:cell.dataset.mood,state:cell.dataset.state});
+    if(instance)matrix.playing.set(cell,instance);
+    note.textContent=error||(got?.variants?.length>1?got.variants[0]:got?.caption||'\u00a0');
+  }
+  function unmount(cell){
+    const instance=matrix.playing.get(cell);matrix.playing.delete(cell);
+    unpreview(cell.querySelector('.thumb'),instance);
   }
   function clearMatrix(){
     for(const c of [...matrix.playing.keys()])unmount(c);
@@ -311,14 +331,48 @@
   // ── Views ──────────────────────────────────────────────────────────────
   // The scene, the matrix, and views.js's, each made with what it needs of the page.
   // A board view records on the stage's board (board.js), which rests while it's shown.
-  const api={root,data,packs,sel,title,stateInfo,stateIds,stateGroups,families,writeHash,
+  const api={root,data,packs,sel,title,stateInfo,stateIds,stateGroups,families,writeHash,colourOf,preview,unpreview,
     entry:()=>entryOf(sel.pack,sel.card),
+    cards:()=>cardsOf(sel.pack).map(id=>({id,label:label(id)})),
+    shows:mood=>shows(sel.card,moodOf(mood)),
+    // To a view, with the selection patched first and the view's own params (its address's).
+    go(next,patch,params){if(patch)change(patch);if(next===view)views[view]?.enter?.(params);else setView(next,params);},
     boardCards:()=>cardsOf(sel.pack).filter(c=>entryOf(sel.pack,c)?.board),
     switchCard:card=>switchCard(sel.pack,card),
     record:options=>instance?.record?instance.record(options):Promise.reject(Error(`${label(sel.card)} isn't a board.`)),
     open(patch){setView('scene');change({face:null,...patch});}};
-  const views=Object.fromEntries(Object.entries(window.StudioViews||{}).map(([name,make])=>[name,make(api)]));
-  const VIEWS=['scene','matrix',...Object.keys(views)];
+  const views=Object.fromEntries(Object.entries({...window.StudioCharacterViews,...window.StudioViews}).map(([name,make])=>[name,make(api)]));
+  // The tabs, each its views in the order its own buttons show them: a
+  // tab's first view is where it opens. A view a pack has nothing for
+  // (`views[name].empty()`) leaves its tab's buttons.
+  const TABS=[
+    {id:'overview',label:'Overview',views:{overview:'Overview'}},
+    {id:'personality',label:'Personality',views:{personality:'Personality'}},
+    {id:'moods',label:'Moods',views:{moods:'Moods'}},
+    {id:'animations',label:'Animations',views:{scene:'Scene',matrix:'Matrix',transitions:'Transitions',stills:'Stills'},
+      about:'How it looks: one mood and state, all of them at once, the board between two, and the frames its tests hold it to.'},
+    {id:'words',label:'Words',views:{signs:'Signs',diary:'Diary',voice:'Voice'},
+      about:'What it says: the captions it holds up, its diary, and its recorded voice.'},
+    {id:'tests',label:'Tests',views:{evals:'Evals',demos:'Demos'},
+      about:'What holds it to all this: the brain\'s eval scenarios, and the scripted demos it lives through.'},
+    {id:'workbench',label:'Workbench',views:{references:'References',review:'Review'},
+      about:'What it\'s being made from, and what\'s up for review.'},
+  ];
+  const tabOf=name=>TABS.find(t=>name in t.views);
+  const VIEWS=TABS.flatMap(t=>Object.keys(t.views)).filter(name=>name==='scene'||name==='matrix'||views[name]);
+  function renderTabs(){
+    const tab=tabOf(view);
+    root.dataset.tab=tab?.id||'';root.dataset.shown=view;
+    $('[data-tabs]').replaceChildren(...TABS.map(t=>{
+      const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.dataset.tab=t.id;b.textContent=t.label;
+      b.setAttribute('aria-selected',String(t===tab));return b;
+    }));
+    const shown=tab?Object.entries(tab.views).filter(([name])=>VIEWS.includes(name)&&!views[name]?.empty?.()):[];
+    $('[data-subnav]').hidden=shown.length<2;
+    $('[data-subnav-about]').textContent=tab?.about||'';
+    $('[data-view-choice]').replaceChildren(...shown.map(([name,text])=>{const b=document.createElement('button');b.type='button';b.dataset.value=name;b.textContent=text;return b;}));
+    setSegment($('[data-view-choice]'),view);
+  }
   // The stage's own preview rests in every other view: a live one is one of the page's WebGL contexts.
   let rested=false;
   // `params` (the address's) re-enter the view shown, as a link to it does.
@@ -327,14 +381,14 @@
     if(next===view){if(params)views[view]?.enter(params);return;}
     const was=view;view=next;
     for(const el of $$('[data-view]'))el.hidden=el.dataset.view!==view;
-    setSegment($('[data-view-choice]'),view);
+    renderTabs();
     if(was==='matrix'){clearTimeout(board.timer);board.timer=0;for(const c of [...matrix.playing.keys()])unmount(c);}
     views[was]?.leave?.();
     // Back in the scene, the stage takes its board back from the views: playing again if it rested, else paused as it was.
     if(view==='scene'){if(adapter?.transport==='live')instance.setPaused(instance.paused&&!rested);rested=false;}
     else if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
     else if(instance?.playing)instance.stop();
-    if(view==='matrix'){buildMatrix();fillSoon();if(!board.timer)askBoard();}
+    if(view==='matrix'){fitMatrix();buildMatrix();fillSoon();if(!board.timer)askBoard();}
     views[view]?.enter(params);
     writeHash();
   }
@@ -344,7 +398,7 @@
     const p=new URLSearchParams({pack:sel.pack,c:sel.card,mood:sel.face||sel.mood,state:sel.state});
     const fact=facts[sel.state];if(fact)p.set(fact.name,sel[fact.name]);
     if(sel.variant)p.set('v',String(sel.variant+1));
-    if(view!=='scene')p.set('view',view);
+    if(view!=='overview')p.set('view',view);
     views[view]?.hash?.(p);
     if(board.url)p.set('board',board.url);
     const hash='#'+p.toString().replaceAll('%3A',':').replaceAll('%2F','/');
@@ -357,7 +411,7 @@
     if(mood.includes(':')){face=mood;mood=mood.split(':')[0];}
     const out={pack,card:cardsOf(pack).includes(p.get('c'))?p.get('c'):cardsOf(pack)[0],mood,face,
       state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1),
-      view:VIEWS.includes(p.get('view'))?p.get('view'):'scene',params:p,board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
+      view:VIEWS.includes(p.get('view'))?p.get('view'):'overview',params:p,board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
     for(const fact of Object.values(facts)){const v=p.get(fact.name);out[fact.name]=fact.options.some(o=>o.id===v)?v:fact.options[0].id;}
     return out;
   }
@@ -368,7 +422,8 @@
   // Any press counts as the gesture browsers need before sound; the Start button plays itself.
   root.addEventListener('pointerdown',e=>{if(!e.target.closest('[data-start]'))start();},{capture:true});
   $('[data-cards]').addEventListener('click',e=>{const b=e.target.closest('[data-character]');if(b)switchCard(sel.pack,b.dataset.character);});
-  $('[data-pack]').addEventListener('change',e=>switchCard(e.target.value,''));
+  $('[data-pack-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchCard(b.dataset.value,'');});
+  $('[data-tabs]').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)setView(Object.keys(TABS.find(t=>t.id===b.dataset.tab).views).find(name=>VIEWS.includes(name)));});
   $('[data-moods]').addEventListener('click',e=>{const b=e.target.closest('[data-mood]');if(b)change({mood:b.dataset.mood,face:null},{resetVariant:!resetOnState()});});
   $('[data-states]').addEventListener('click',e=>{const b=e.target.closest('[data-state]');if(b){if(b.dataset.state===sel.state)instance?.replay?.();change({state:b.dataset.state},{resetVariant:resetOnState()});}});
   $('[data-facts]').addEventListener('click',e=>{const b=e.target.closest('button'),seg=e.target.closest('[data-fact]');if(b&&seg)change({[seg.dataset.fact]:b.dataset.value},{resetVariant:true});});
@@ -397,7 +452,7 @@
 
   document.addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey||busyNow()||e.target.closest?.('input,select,textarea'))return;
-    if(e.key==='m'||e.key==='M'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
+    if((e.key==='m'||e.key==='M')&&tabOf(view)?.id==='animations'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
     if(view!=='scene')return;
     const i=stateIds.indexOf(sel.state);
     if(e.key==='ArrowLeft')step(-1);
@@ -417,9 +472,14 @@
   });
 
   // For browser checks and the console: select by fields, or by a scene id the adapter knows.
-  const ready=(async()=>{const {view:firstView,board:url,params,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});await switchCard(first.pack,first.card,first.variant);setView(firstView,params);})();
+  // The first character loads as its view will show it (the stage playing for the scene, resting for any other), and then the view shows.
+  const ready=(async()=>{const {view:firstView,board:url,params,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});
+    opening=firstView;await switchCard(first.pack,first.card,first.variant);opening='';setView(firstView,params);})();
   root.studio={sel,ready,packs,get adapter(){return instance;},get view(){return view;},setView,
     views:Object.fromEntries(Object.entries(views).map(([name,v])=>[name,v.state])),
+    // Each tab's views, and those its buttons show for the pack shown.
+    get tabs(){return TABS.map(t=>({id:t.id,views:Object.keys(t.views).filter(n=>VIEWS.includes(n)),
+      shown:Object.keys(t.views).filter(n=>VIEWS.includes(n)&&!views[n]?.empty?.())}));},
     get matrix(){return {cells:matrix.cells.length,playing:matrix.playing.size,transport:adapter?.transport||null,board:board.shows};},
     boardCell,
     async select({pack,character,...patch}){if(pack||character)await switchCard(pack||sel.pack,character||sel.card);change(patch);},

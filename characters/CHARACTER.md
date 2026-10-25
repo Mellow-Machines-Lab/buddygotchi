@@ -759,7 +759,12 @@ WebAssembly, which the studio's Transitions and References run on too
 (§16). So Boop's shows three: its gel board (`board-gel`, the entry above
 adds its families, its icon, and the slime's review sets and sound
 sketches in its drawer), Pixel's `pixel`, which comes with the pixel face,
-and its pixel board. `charactergen.py` writes the page's data
+and its pixel board. Beside the previews, the studio shows each pack's own character with no
+entry at all: its personalities, natures and guide (§7), each mood's
+steering in parts and the moods it moves to (§5), its signs and diary,
+its voice's takes (§8, its own or the one it uses), its demos (§13), its
+evals and its golden frames (`tests/golden-*/`).
+`charactergen.py` writes the page's data
 (`characters/studio/packs.js`) from the packs, and `--check` fails when
 a declared file is missing, a preview wears a mood the pack doesn't
 have, or a board's entry isn't `board-<face>` for one of its faces.

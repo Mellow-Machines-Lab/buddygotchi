@@ -1,14 +1,18 @@
 # Character Studio
 
-Updated 2026-10-24. One page for looking at and listening to any
-character pack: pick a pack, a mood and a state, and the stage plays what
-the device would. The page belongs to the engine and names no character.
-Each pack that wants a preview declares one in its `character.json`
-([CHARACTER.md](../CHARACTER.md) §12), and a pack without one still gets
-its moods, their meanings and the states, and the board's own preview of
-each face its boards have. Beside the scene and the matrix it's where
-the character is worked on: transitions measured on the board, the
-references people gave (§16), and what's up for review.
+Updated 2026-10-24. One page for everything a character pack makes its
+character: who it is, how it feels, how it looks, what it says, and the
+tests that hold it to all that. Pick a pack, and its tabs show what's its
+own: its personality, its moods and what moves them, every mood and state
+as the device plays them, its signs, diary and voice, its evals and
+demos. The page belongs to the engine and names no character: the
+engine's lists (the states, the tags) only order what the pack fills in,
+so another pack fills the same page. Each pack that wants a preview
+declares one in its `character.json` ([CHARACTER.md](../CHARACTER.md)
+§12), and a pack without one still gets everything else, and the board's
+own preview of each face its boards have. It's also where the character
+is worked on: transitions measured on the board, the references people
+gave (§16), and what's up for review.
 
 ## Open it
 
@@ -40,12 +44,59 @@ saves no verdicts.
 
 ## What's on the page
 
-- **Pack**, when there's more than one here, and the **characters** for
-  it, two a row: each preview the pack declares or uses (Boop's pack
-  shows its gel board, with the slime's tools, and Pixel's pixel face),
-  and then a board for each face its boards have that it hasn't declared
-  (On the board, below). Switching keeps the mood and state, so the same
-  moment can be compared on all of them.
+The character first (**Boop** | **Pixel**, when there's more than one
+pack here), then seven tabs, each opening on its first view; a tab with
+more than one has a button for each, and leaves out a view the pack has
+nothing for (Stills, for a pack with no golden frames):
+
+- **Overview**: the character's card. Its face, in its resting mood,
+  idle, on any of its previews; its name, version and what its first
+  personality says it is; the mood it wakes up in and rests in, the face
+  each board wears and what it borrows (§6). Then how much it has of
+  each part, in rows by tab, each opening it, and **Worth a look**: what
+  it's missing (moods a preview has no art for, moods with no steering
+  file or no voice takes, one nature only, no signs or diary) or waiting
+  on you (review).
+- **Personality**: each personality (`steering/personality/`), its
+  settings in plain words (`working_heartbeat` 90-180 is "checks in on a
+  turn every 1½–3 min"), its words, a paragraph's first sentence and the
+  rest as points, and its Examples as cards, what happened and after the
+  arrow what it does, six at first. Then the natures, side by side, and
+  the guide, folded.
+- **Moods**: the moods in their families, and the one picked: its
+  meaning and face, its preview idle in it, and its map, the moods it can
+  move to (`moves`), ordinary ones on the inner ring and dramatic ones,
+  dashed, on the outer, each opening its mood, with the moods it's
+  reached from under it. Then its steering file in parts, by how each
+  sentence starts (charactergen's `mood_steering()`): what it is, its
+  faces, what it says, how it acts, what it stays through, each mood it
+  leaves for and when, and when it fades. Its links open every state in
+  it (Animations), its voice takes and the evals that expect it.
+- **Animations**: **Scene**, **Matrix**, **Transitions** and
+  **Stills**, below, with the pack's previews' cards over them: each
+  preview the pack declares or uses (Boop's pack shows its gel board,
+  with the slime's tools, and Pixel's pixel face), and then a board for
+  each face its boards have that it hasn't declared (On the board,
+  below). Switching keeps the mood and state, so the same moment can be
+  compared on all of them.
+- **Words**: **Signs**, each caption drawn as a sign with your words
+  filled in (`{words}`, `{WORDS}`), filtered by a tag; **Diary**, each
+  line filled in for a sample day; and **Voice**, how many takes the
+  voice has in each mood, of each kind, a cell's takes (or those a
+  search finds) each with its words, what it answers and the finish it
+  needs, and a Play that reads the take from the voice file in part
+  (`voice.bin`, by its index, with HTTP ranges), so it needs the
+  studio's own server (the simulator's, `simulator/web/serve.py`,
+  reads no ranges). A pack that uses another's voice (§6) shows that one.
+- **Tests**: **Evals**, each scenario (`evals/`) with its case, why,
+  and each step's event and what it expects, filtered by always or a
+  search, or from Moods by the mood its steps expect; and **Demos**, each
+  script (`demo/`) told step by step, the agent, you and what the brain
+  answers, with the command that plays it.
+- **Workbench**: **References** and **Review**, below.
+
+The scene's own parts:
+
 - **Mood**: the pack's moods in their families, each with the colour its
   studio entry gives the family. When a character has no art of its own
   for a mood, its chip is dashed with an arrow, and the stage plays the
@@ -59,7 +110,7 @@ saves no verdicts.
   frame scrubber; a `live` one has Pause, Replay state, Poke and Shake.
 - **Sound**: off until you turn it on.
 - **Tools** (closed by default), when the character has any.
-- **Matrix**, the other view (or <kbd>M</kbd>): every mood and state at
+- **Matrix**, the other view (or <kbd>M</kbd> in Animations): every mood and state at
   once for the character shown, a cell each, made by its adapter as the
   stage is, silent, with a borrowed mood's cells dashed. Only the cells on
   screen play, at most 60 at once for a `clip` character and 12 for a
@@ -92,6 +143,9 @@ saves no verdicts.
   lists them as each comes, the **jumpiest** first: by the ratio of the
   largest frame to the median, the same rule as `measure.py`'s; clicking
   one records it here.
+- **Stills**: the frames the pack's tests hold its faces to
+  (`tests/golden-*/<group>/`), a group at a time: what each face draws,
+  occasions and gestures among them.
 - **References**: each of the pack's references (CHARACTER.md §16), its
   status, kind and note, the agent's reading (its `reading.md`, rendered
   by `markdown.js`: headings, paragraphs, lists, tables and code) and
@@ -111,8 +165,11 @@ saves no verdicts.
 
 The address keeps the selection
 (`#pack=boop&c=pixel&mood=grumpy&state=working&v=2`), so a link opens the
-same scene, and `&view=matrix`, `transitions`, `references` or `review`
-that view: a transition with its pair
+same scene, and `&view=` any view by its name (`scene`, `matrix`,
+`moods`, `voice`…; none is the overview), and a view's own choice with it:
+Voice's mood and kind (`&view=voice&takes=grumpy&kind=word`), the evals
+expecting a mood (`&view=evals&expects=grumpy`), a still's group
+(`&view=stills&group=gel/occasions`), a transition with its pair
 (`&view=transitions&from=calm/working&to=excited/task_complete/failure`,
 mood/state and a fact for a state with one) and a reference by its
 folder (`&view=references&ref=2026-10-24-notice-perk`). The board's views
@@ -159,7 +216,10 @@ own.
 ## Kept in sync
 
 Nothing about a character is written here. `packs.js` comes from the
-packs' `character.json` files, references, review queues and notes,
+packs' `character.json` files, their steering (the personalities,
+natures, guide, each mood's file, signs and diary), the voice each has or
+uses (its `mac/takes.tsv`, once for every pack that uses it), their
+demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
 reference's too) and the everyday transitions Rank records (those
@@ -237,7 +297,12 @@ far.
 
 ## Checking it
 
-`check.cjs` drives the matrix in a headless browser, for every
+`check.cjs` drives the character's own views in a headless browser, for
+both packs: the page opening on the overview, each tab opening its first
+view with its buttons (Stills only for a pack with golden frames), each
+view drawing, a mood's map opening another, its links opening its voice
+takes, the address keeping them, and a take played from the voice file,
+and the evals that expect it. Then the matrix, for every
 character of every pack here, the boards included: a cell for each mood
 and state, only cells on screen playing and never more than the limit,
 the playing cells following the scroll and a hovered one, no page

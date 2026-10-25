@@ -9,6 +9,7 @@
 <script src="board.js" defer></script>
 <script src="markdown.js" defer></script>
 <script src="views.js" defer></script>
+<script src="character.js" defer></script>
 <script src="studio.js" defer></script>
 </head>
 <body>
@@ -17,22 +18,28 @@
 <header class="top">
   <div class="brand">
     <h1>Character Studio</h1>
-    <p>Pick a mood and a state to see what the character does.</p>
-    <label class="pack-choice" data-pack-choice hidden><span>Pack</span><select data-pack></select></label>
-    <div class="segmented views" data-view-choice role="group" aria-label="View">
-      <button type="button" data-value="scene" aria-pressed="true">Scene</button>
-      <button type="button" data-value="matrix" aria-pressed="false">Matrix</button>
-      <button type="button" data-value="transitions" aria-pressed="false">Transitions</button>
-      <button type="button" data-value="references" aria-pressed="false">References</button>
-      <button type="button" data-value="review" aria-pressed="false">Review</button>
-    </div>
+    <p>Everything one character is: who it is, how it feels, how it looks, what it says, and the tests that hold it to it.</p>
   </div>
-  <div class="characters" role="tablist" aria-label="Character" data-cards></div>
+  <div class="segmented packs" data-pack-choice role="group" aria-label="Character"></div>
 </header>
+
+<nav class="tabs" data-tabs role="tablist" aria-label="Section"></nav>
+<div class="subnav" data-subnav hidden><div class="segmented views" data-view-choice role="group" aria-label="View"></div><p data-subnav-about></p></div>
+<div class="characters" role="tablist" aria-label="Preview" data-cards></div>
 
 <p class="missing" data-missing hidden>No pack data yet. From the repository root, run <code>python3 characters/charactergen.py</code>, then reload.</p>
 
-<main class="layout" data-view="scene">
+<section class="sheet" data-view="overview" aria-label="Overview" hidden></section>
+<section class="sheet" data-view="personality" aria-label="Personality" hidden></section>
+<section class="sheet" data-view="moods" aria-label="Moods" hidden></section>
+<section class="sheet" data-view="signs" aria-label="Signs" hidden></section>
+<section class="sheet" data-view="diary" aria-label="Diary" hidden></section>
+<section class="sheet" data-view="voice" aria-label="Voice" hidden></section>
+<section class="sheet" data-view="evals" aria-label="Evals" hidden></section>
+<section class="sheet" data-view="demos" aria-label="Demos" hidden></section>
+<section class="sheet" data-view="stills" aria-label="Stills" hidden></section>
+
+<main class="layout" data-view="scene" hidden>
   <section class="stage-column" aria-label="Preview">
     <div class="stage-frame">
       <div class="stage" id="stage"></div>
@@ -164,7 +171,7 @@
 </details>
 
 <footer class="foot">
-  <p><kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke · <kbd>M</kbd> matrix</p>
+  <p class="keys"><kbd>←</kbd><kbd>→</kbd> variation · <kbd>↑</kbd><kbd>↓</kbd> state · <kbd>Space</kbd> play or pause · <kbd>S</kbd> sound · <kbd>P</kbd> poke · <kbd>M</kbd> matrix, in Animations</p>
   <p>Works offline. Nothing here talks to the app or the network. Each character's preview comes from its own pack, and each board's is its firmware, which runs from the studio's server (or the simulator's, which <code>make dev</code> starts, where the matrix also marks what the simulated board shows), as does saving a verdict.</p>
 </footer>
 

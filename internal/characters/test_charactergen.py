@@ -202,8 +202,14 @@ class StudioRuleTests(unittest.TestCase):
                          {"id": "art", "scripts": ["../art/studio/a.js"], "styles": [], "wears": {"sad": "calm"}})
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
                  "board": "face", "scripts": [], "styles": [], "wears": {}}
-        self.assertEqual(data["packs"]["plain"], {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
-                                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}})
+        shown = {k: v for k, v in data["packs"]["plain"].items() if k in ("name", "default_mood", "moods", "studio", "references", "review")}
+        self.assertEqual(shown, {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
+                                 "studio": [board], "references": [], "review": {"queue": [], "notes": []}})
+        # A pack with nothing of its own beside its moods: none of each part, and no voice.
+        about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
+        self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"}, "uses": {},
+                                 "personalities": [], "natures": [], "guide": None, "steering": {}, "signs": [], "diary": [],
+                                 "voice": None, "demos": [], "evals": [], "stills": []})
 
     def test_a_board_for_each_face(self):
         """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
@@ -376,6 +382,84 @@ class StudioRuleTests(unittest.TestCase):
             self.assertEqual(gen.in_use(), other.resolve())
             os.environ["BOOP_CHARACTER"] = str(view)
             self.assertEqual(gen.chosen(), staged.resolve())  # a staged pack's folder chooses its own
+
+
+class CharacterViewTests(unittest.TestCase):
+    """What the studio shows of the character itself (§12): its steering in parts, its signs and diary, and its
+    voice, demos, evals and stills. Small packs as StudioRuleTests makes them."""
+
+    setUp, pack = StudioRuleTests.setUp, StudioRuleTests.pack
+
+    MOOD = """<!-- The grumpy mood. -->
+MOOD
+Grumpy. Boop is fed up: turns failed.
+Its faces lean grumpy.
+It flares up and soon blows over.
+Grumbles: a swear at a failed turn.
+Stays grumpy through pokes.
+Leaves for irritated or annoyed when the person says sorry; calm when the person thanks the agent; a big win can lift it to proud.
+Fades to annoyed once Boop has been grumpy for 2 min.
+"""
+
+    def test_a_mood_file_in_parts(self):
+        """Each sentence goes to its part by how it starts; the mood's own name is left out; each "Leaves for" clause
+        is its moods and when, or, when it doesn't start with moods, its words whole with the moods it names."""
+        moods = ["grumpy", "irritated", "annoyed", "calm", "proud"]
+        self.assertEqual(gen.mood_steering(gen.steering(self.file(self.MOOD))[1], moods), {
+            "about": "Boop is fed up: turns failed.",
+            "faces": "Its faces lean grumpy.",
+            "acts": "It flares up and soon blows over.",
+            "says": "Grumbles: a swear at a failed turn.",
+            "stays": "Stays grumpy through pokes.",
+            "fades": "Fades to annoyed once Boop has been grumpy for 2 min.",
+            "leaves": [{"to": ["irritated", "annoyed"], "when": "when the person says sorry"},
+                       {"to": ["calm"], "when": "when the person thanks the agent"},
+                       {"to": ["proud"], "when": "a big win can lift it to proud"}]})
+
+    def test_settings_words_and_examples(self):
+        """A personality's front matter is its settings; comments and the section's heading are left out; each
+        example's lines are joined, with what the character does after → on a line of its own."""
+        settings, text = gen.steering(self.file("---\nworking_heartbeat: 90-180\ntool_uses: notable\n---\n<!-- A comment. -->\n"
+                                                "PERSONALITY\nBoop is loyal.\nExamples:\n- NOW: You poked Boop.\n  → curious, once\n- A long\n  turn: proud.\n"))
+        self.assertEqual(settings, {"working_heartbeat": "90-180", "tool_uses": "notable"})
+        self.assertEqual(gen.with_examples(text), {"text": "Boop is loyal.", "examples": ["NOW: You poked Boop.\n→ curious, once", "A long turn: proud."]})
+
+    def test_signs_and_diary_lines(self):
+        """`- [tags] words`: each line's tags, none without brackets, and its words."""
+        self.assertEqual(gen.tagged(self.file("<!-- Signs. -->\n- [fix night] bugs at night?\n- {words}\nnot a line\n")),
+                         [{"tags": ["fix", "night"], "text": "bugs at night?"}, {"tags": [], "text": "{words}"}])
+
+    def test_a_used_voice_is_shown_once_with_the_pack_whose_it_is(self):
+        """A pack that uses another's voice names it; the voice's table is in the page's data once, under the pack
+        that has it, each take [id, text, part, meaning, kind, moods, finish, ms]."""
+        table = "# The voice's takes.\nv1\nhi.go\tGo\tabout\tstart\tword\tcalm happy\t\t638\nhi.yay\tYay\tfeeling\tglad\tword\thappy\tsuccess\t900\n"
+        self.pack("lender", [{"id": "calm"}], files=[("mac/takes.tsv", table), ("voice/voice.bin", "")],
+                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}})
+        user = self.pack("user", [{"id": "calm"}], uses={"voice": "lender"})
+        data = gen.studio_data([user], user, self.studio)
+        self.assertEqual(data["packs"]["user"]["voice"], "lender")
+        self.assertEqual(data["voices"], {"lender": {"version": "v1", "file": "../lender/voice/voice.bin", "takes": [
+            ["hi.go", "Go", "about", "start", "word", ["calm", "happy"], None, 638],
+            ["hi.yay", "Yay", "feeling", "glad", "word", ["happy"], "success", 900]]}})
+
+    def test_demos_evals_and_stills(self):
+        """A demo's title, first comment and steps; evals by their number, 2 before 10; the golden frames by group."""
+        pack = self.pack("boop", [{"id": "calm"}], files=[
+            ("demo/hello.jsonl", '// Half a minute.\n// A quick check.\n{"demo": 1, "title": "Run the tests"}\n{"you": "poke"}\n'),
+            ("evals/10-ten.json", '{"name": "Ten", "case": "c", "why": "w", "steps": []}'),
+            ("evals/2-two.json", '{"name": "Two", "case": "c", "why": "w", "always": true, "steps": [{"event": "poke", "at": "0s"}]}'),
+            ("tests/golden-gel/moods/calm.png", ""), ("tests/golden-gel/moods/happy.png", "")])
+        about, _ = gen.character_data(pack, gen.load(pack), lambda p: p.relative_to(self.dir).as_posix())
+        self.assertEqual(about["demos"], [{"id": "hello", "title": "Run the tests", "about": "Half a minute. A quick check.", "steps": [{"you": "poke"}]}])
+        self.assertEqual([e["id"] for e in about["evals"]], ["2-two", "10-ten"])
+        self.assertEqual(about["evals"][0]["always"], True)
+        self.assertEqual(about["stills"], [{"set": "gel", "group": "moods", "stills": [
+            {"name": "calm", "path": "boop/tests/golden-gel/moods/calm.png"}, {"name": "happy", "path": "boop/tests/golden-gel/moods/happy.png"}]}])
+
+    def file(self, text):
+        path = self.dir / "steering.md"
+        write(path, text)
+        return path
 
 
 class RigRuleTests(unittest.TestCase):

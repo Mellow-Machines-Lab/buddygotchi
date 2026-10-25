@@ -847,6 +847,207 @@ def references_data(pack: Path, here) -> list[dict]:
     return out
 
 
+# ── What the studio shows of the character itself ──────────────────────
+# Its steering (§7), voice (§8), demos (§13) and evals, read as the page
+# shows them: the files' own words, comments and section headings left out.
+
+COMMENT = re.compile(r"<!--.*?-->", re.S)
+# A steering file's section heading (MOOD, PERSONALITY), which the page leaves out.
+HEADING = re.compile(r"^[A-Z][A-Z ]+$")
+
+
+def front_matter(text: str) -> tuple[dict[str, str], str]:
+    """A steering file's settings between --- lines at its top, and the rest."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---" or "---" not in [l.strip() for l in lines[1:]]:
+        return {}, text
+    end = 1 + [l.strip() for l in lines[1:]].index("---")
+    settings = dict(l.split(":", 1) for l in lines[1:end] if ":" in l)
+    return {k.strip(): v.strip() for k, v in settings.items()}, "\n".join(lines[end + 1:])
+
+
+def steering(path: Path) -> tuple[dict[str, str], str] | None:
+    """A steering file's settings and words, or None when there's no file."""
+    if not path.is_file():
+        return None
+    settings, text = front_matter(path.read_text())
+    lines = [l.rstrip() for l in COMMENT.sub("", text).splitlines()]
+    lines = [l for l in lines if not HEADING.match(l.strip())]
+    return settings, "\n".join(lines).strip()
+
+
+def with_examples(text: str) -> dict:
+    """Words that may end with Examples (§7): the words before them, and each
+    example, its lines joined, a line that starts with → kept on its own."""
+    body, _, rest = text.partition("\nExamples:")
+    examples: list[str] = []
+    for line in rest.splitlines():
+        if line.startswith("- "):
+            examples.append(line[2:].strip())
+        elif line.strip() and examples:
+            examples[-1] += ("\n" if line.strip().startswith("→") else " ") + line.strip()
+    return {"text": body.strip(), "examples": examples}
+
+
+def tagged(path: Path) -> list[dict]:
+    """A list of `- [tags] words` lines (signs.md, diary.md): each line's tags and words."""
+    found = steering(path)
+    out = []
+    for line in (found[1].splitlines() if found else []):
+        m = re.match(r"^- (?:\[([^\]]*)\]\s*)?(.*)$", line.strip())
+        if m:
+            out.append({"tags": (m.group(1) or "").split(), "text": m.group(2)})
+    return out
+
+
+# What a mood file's sentences say, by how they start, in the order the page shows them.
+MOOD_PARTS = [("faces", ("Its faces",)), ("says", ("Says", "Grumbles", "Speaks", "Mumbles")),
+              ("stays", ("Stays",)), ("leaves", ("Leaves for",)), ("fades", ("Fades",))]
+
+
+def mood_steering(text: str, moods: list[str]) -> dict:
+    """A mood file (§7) in parts: what the mood is, which faces it leans to,
+    what it says, the rest of how it acts, what it stays through, each mood
+    it leaves for and when, and when it fades. A part the file doesn't
+    have is left out."""
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", " ".join(text.split()))
+    parts: dict[str, list[str]] = {}
+    for i, sentence in enumerate(sentences):
+        key = next((k for k, starts in MOOD_PARTS if sentence.startswith(starts)), None)
+        if key is None:
+            if i == 0 and len(sentence.split()) == 1:
+                continue  # the mood's own name, "Calm."
+            key = "acts" if parts else "about"
+        parts.setdefault(key, []).append(sentence)
+    out: dict = {k: " ".join(v) for k, v in parts.items() if k != "leaves"}
+    if "leaves" in parts:
+        out["leaves"] = [leave for s in parts["leaves"] for leave in leaves(s, moods)]
+    return out
+
+
+def leaves(sentence: str, moods: list[str]) -> list[dict]:
+    """"Leaves for X when…; Y at…": each clause's moods and when. A clause
+    that doesn't start with moods keeps its words whole, with the moods it names."""
+    out = []
+    for clause in sentence.removeprefix("Leaves for ").rstrip(".").split(";"):
+        words, to = clause.split(), []
+        while words and (words[0].strip(",") in moods or words[0] in ("or", "and")):
+            word = words.pop(0).strip(",")
+            if word in moods:
+                to.append(word)
+        if to:
+            out.append({"to": to, "when": " ".join(words)})
+        elif clause.strip():
+            out.append({"to": [w for w in re.findall(r"[a-z]+", clause) if w in moods], "when": clause.strip()})
+    return out
+
+
+def voice_table(path: Path) -> dict:
+    """A voice's table (mac/takes.tsv, §8): its version, and each take as
+    [id, text, part, meaning, kind, moods, finish, ms]."""
+    rows = [l.split("\t") for l in path.read_text().splitlines() if l and not l.startswith("#")]
+    version, takes = rows[0][0], []
+    for row in rows[1:]:
+        if len(row) == 8:
+            take = row[:5] + [row[5].split(), row[6] or None, int(row[7]) if row[7].isdigit() else 0]
+            takes.append(take)
+    return {"version": version, "takes": takes}
+
+
+def demo_script(path: Path) -> dict:
+    """A demo (§13): its title, what its first comment says it is, and its steps."""
+    about, title, steps = [], path.stem.replace("-", " "), []
+    for line in path.read_text().splitlines():
+        if line.startswith("//"):
+            if not steps:
+                about.append(line[2:].strip())
+            continue
+        if not line.strip():
+            continue
+        try:
+            step = json.loads(line)
+        except ValueError:
+            continue  # boopdev check says why
+        if "demo" in step:
+            title = step.get("title", title)
+        else:
+            steps.append(step)
+    return {"id": path.stem, "title": title, "about": " ".join(about), "steps": steps}
+
+
+def eval_scenario(path: Path) -> dict | None:
+    """An eval scenario (internal/EVALS.md): what the page shows of it."""
+    try:
+        scenario = json.loads(path.read_text())
+    except ValueError:
+        return None  # EvalTests says why
+    keys = ("name", "case", "why", "always", "gap", "personality", "nature", "mood", "checks", "steps")
+    return {"id": path.stem, **{k: scenario[k] for k in keys if k in scenario}}
+
+
+def stills(pack: Path, here) -> list[dict]:
+    """The pack's golden frames (tests/golden-*/<group>/<name>.png), each
+    group with its pictures: the frames its tests hold its faces to."""
+    out = []
+    for golden in sorted(pack.glob("tests/golden-*")):
+        for group in sorted(p for p in golden.iterdir() if p.is_dir()):
+            pictures = sorted(group.glob("*.png"))
+            if pictures:
+                out.append({"set": golden.name.removeprefix("golden-"), "group": group.name,
+                            "stills": [{"name": p.stem, "path": here(p)} for p in pictures]})
+    return out
+
+
+def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, dict] | None]:
+    """What the studio shows of a pack's character: its personalities and
+    natures, each mood's steering in parts, its signs and diary, its
+    voice's table (with the pack that has it, which may be another, §6),
+    its demos, evals and stills. The voice comes back on its own, with the
+    name of the pack whose it is, so the page holds a shared one once."""
+    ids = [m["id"] for m in character["moods"]]
+    folder = pack / "steering"
+    personalities = []
+    for p in character.get("personalities", []):
+        settings, text = steering(folder / "personality" / f"{p['id']}.md") or ({}, "")
+        personalities.append({**p, "settings": settings, **with_examples(text)})
+    natures = [{"id": f.stem, **with_examples(steering(f)[1])} for f in sorted((folder / "nature").glob("*.md"))]
+    mood_files = {}
+    for mood in ids:
+        found = steering(folder / "mood" / f"{mood}.md")
+        if found:
+            mood_files[mood] = mood_steering(found[1], ids)
+    paths, _ = used(pack, character)
+    table = paths.get("mac/takes.tsv", pack / "mac" / "takes.tsv")
+    voice = None
+    if table.is_file():
+        owner = table.parent.parent
+        voice = (owner.name, {**voice_table(table), "file": here(owner / "voice" / "voice.bin")})
+    guide = steering(folder / "guide.md")
+    return {
+        "id": character["id"],
+        "version": character.get("version"),
+        "startup_mood": character.get("startup_mood"),
+        "faces": character.get("faces", {}),
+        "uses": character.get("uses", {}),
+        "personalities": personalities,
+        "natures": natures,
+        "guide": guide[1] if guide else None,
+        "steering": mood_files,
+        "signs": tagged(folder / "signs.md"),
+        "diary": tagged(folder / "diary.md"),
+        "voice": voice[0] if voice else None,
+        "demos": [demo_script(p) for p in sorted(pack.glob("demo/*.jsonl"))],
+        "evals": [e for e in (eval_scenario(p) for p in sorted(pack.glob("evals/*.json"), key=eval_order)) if e],
+        "stills": stills(pack, here),
+    }, voice
+
+
+def eval_order(path: Path) -> tuple:
+    """Scenarios by their number, 2 before 10."""
+    number = re.match(r"\d+", path.stem)
+    return (int(number.group()) if number else 1 << 30, path.stem)
+
+
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, reads: Reads | None = None) -> dict:
     """The studio page's data: the engine's states, with the acts the board
     draws while working; the frames' interval; the everyday transitions
@@ -857,7 +1058,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     last, reads = staged(), reads or Reads()
     data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None,
             "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "everyday": everyday(),
-            "packs": {}}
+            "voices": {}, "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -873,10 +1074,14 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
             if entry.get("board"):  # its board's card, with what the pack adds
                 entries[i] = (home, {**board(entry["board"]), **entry})
         queue, notes, _ = reads.review(pack)
+        about, voice = character_data(pack, character, page)
+        if voice:
+            data["voices"][voice[0]] = voice[1]
         data["packs"][pack.name] = {
+            **about,
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "moods": [{k: m[k] for k in ("id", "meaning", "family") if k in m} for m in character["moods"]],
+            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries] + boards(character),
             "references": references_data(pack, page),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
