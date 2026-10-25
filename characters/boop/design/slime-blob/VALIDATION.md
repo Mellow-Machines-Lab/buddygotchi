@@ -85,10 +85,13 @@ ramps and springs can, and no jolt at an event. By file:
   spring kept through a mood change), the night's lids, a finger moving the dome its own
   way, every result card's mark, comedy, the ten gestures, the notice, the
   occasions, a clip of the rig's on both faces (the marathon's stretch,
-  over the gel's pose and on Pixel's rig face, faded out by a reaction), the lane at the panel's size (fading whatever the draw
-  cadence, blended once, cut and marked as the canvas does), the layers on
-  the body's anchors, drawing by coverage, tracked clearing and kept cards
-  matching a fresh frame, and steady frames allocating nothing.
+  over the gel's pose and on Pixel's rig face, faded out by a reaction),
+  the lane at the panel's size (fading whatever the draw cadence, blended
+  once, cut and marked as the canvas does), the layers on the body's
+  anchors, coming and going through the rig's layer stack, each at its
+  opacity, the sign fading out at its own, drawing by coverage, tracked
+  clearing and kept cards matching a fresh frame, and steady frames
+  allocating nothing.
 
 ## The board's frames
 

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "render/maths.h"
+#include "render/rig/layers.h"
 #include "render/rig/mixer.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 
@@ -347,6 +348,51 @@ static void test_a_ramp_eases_over_200_ms_and_turns_back_smoothly() {
   TEST_ASSERT_EQUAL_INT(1000, back.back());
 }
 
+// ---- The layer stack ----------------------------------------------------------
+
+// A layer fades in over the rig's fade from when it's shown, on the ramp;
+// a new content waits for the old to fade out, then fades in from the
+// instant that ended, however often it's read; asked back mid-way, the
+// old turns back up; and each layer is its own.
+static void test_a_layer_fades_and_a_new_content_waits_its_turn() {
+  Layers l;
+  TEST_ASSERT_EQUAL_UINT32(0, l.content(Layer::kHat, 0));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kHat, 0));
+  l.show(Layer::kHat, 3, 1000);
+  TEST_ASSERT_EQUAL_UINT32(3, l.content(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_INT(500, l.opacity(Layer::kHat, 1100));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1200));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kAir, 1200));  // its own
+  l.show(Layer::kHat, 3, 1300);                            // the same: no change
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1300));
+  l.show(Layer::kHat, 4, 2000);  // the old fades out first, then the new comes in
+  for (uint32_t t = 2000; t < 2000 + kFadeMs; t += 10) {
+    TEST_ASSERT_EQUAL_UINT32(3, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000 - ease1000(int(t - 2000), int(kFadeMs)), l.opacity(Layer::kHat, t));
+  }
+  for (uint32_t t = 2200; t <= 2400 + 50; t += 10) {
+    TEST_ASSERT_EQUAL_UINT32(4, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(ease1000(int(t - 2200), int(kFadeMs)), l.opacity(Layer::kHat, t));
+  }
+  l.show(Layer::kHat, 5, 3000);
+  l.show(Layer::kHat, 4, 3100);  // back mid-way: turns back up, no jump
+  TEST_ASSERT_EQUAL_UINT32(4, l.content(Layer::kHat, 3100));
+  TEST_ASSERT_EQUAL_INT(500, l.opacity(Layer::kHat, 3100));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 3300));
+  // Read once, after the fade out and in, it's as if read every frame.
+  Layers once;
+  once.show(Layer::kAir, 1, 0);
+  once.show(Layer::kAir, 2, 500);
+  TEST_ASSERT_EQUAL_UINT32(2, once.content(Layer::kAir, 800));
+  TEST_ASSERT_EQUAL_INT(ease1000(100, int(kFadeMs)), once.opacity(Layer::kAir, 800));
+  // Nothing again: it fades out, its content kept until it's gone.
+  once.show(Layer::kAir, 0, 2000);
+  TEST_ASSERT_EQUAL_UINT32(2, once.content(Layer::kAir, 2100));
+  TEST_ASSERT_EQUAL_INT(500, once.opacity(Layer::kAir, 2100));
+  TEST_ASSERT_EQUAL_UINT32(0, once.content(Layer::kAir, 2200));
+  TEST_ASSERT_EQUAL_INT(0, once.opacity(Layer::kAir, 2200));
+}
+
 // ---- The pack's rig_tables.h ------------------------------------------------------
 
 // Every row as charactergen.py checked it: keys in order within their clip,
@@ -418,6 +464,7 @@ int main() {
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
   RUN_TEST(test_a_full_mixer_keeps_its_look);
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
+  RUN_TEST(test_a_layer_fades_and_a_new_content_waits_its_turn);
   RUN_TEST(test_the_staged_rig_is_whole);
   RUN_TEST(test_the_staged_rig_is_the_packs_files);
   return UNITY_END();

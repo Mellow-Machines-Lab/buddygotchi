@@ -26,10 +26,11 @@ on the board's engine, below), for its expressions, recipes, gags and
 springs, falling asleep as a morph, the awake face squashing shut to
 lines, then the sleeping face, alone by about 1.3 s, and waking over
 180 ms; it plays the rig's clips through a mixer of its own, laid over
-its pose (checkpoint 5). A look's occasions are the rig's, clips both
-faces play: working's stretch on a long turn's marathon. The Mac shows
-the gel as the board's firmware in WebAssembly, and both faces share
-the anchors and the lane's fade. The
+its pose, and what it wears, the air and its Zs come and go through the
+rig's layer stack (checkpoint 5). A look's occasions are the rig's,
+clips both faces play: working's stretch on a long turn's marathon. The
+Mac shows the gel as the board's firmware in WebAssembly, and both faces
+share the anchors and the fades of the lane and a reaction's sign. The
 checkpoint notes below are history, each as it landed: where a later one
 changed an earlier (checkpoint 1's 180 ms to sleep and checkpoint 5's 480, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
@@ -428,8 +429,8 @@ retired the twin (The gel on the rig, after them).
   type; no picture or trace changed.
 
 **The gel on the rig.** The gel's face on the rig's contract (the rig,
-its clips, the anchors), through an adapter, rather than its insides on
-the mixer. Where it differs from the sketch above, and why:
+its clips, the layers, the anchors), through an adapter, rather than its
+insides on the mixer. Where it differs from the sketch above, and why:
 
 - **The gel keeps its own expressions** (the simplicity fallback). A mood
   on the gel is up to four arts crossing over on each edge's own windows,
@@ -469,10 +470,61 @@ the mixer. Where it differs from the sketch above, and why:
   poke; two new goldens show it, `occasions/marathon` on each face. On a
   marathon Pixel still turns in its drawn stretch (its yawn) now and
   then, an occasion of its own; checkpoint 6 can retire it.
-- **Found, not changed:** Pixel's blinks fall differently with how often
-  the simulator stops (a shot every 200 ms, or one jump to the time):
-  working, one frame in fifteen differed at its eyes with no occasion at
-  all. The goldens are each one scenario, so they're the same every run.
+- **The gel's layers go through the rig's layer stack**
+  (`render/rig/layers.h`: 11ca4f0's `Layers` grown back on the timestamped
+  `Ramp`, CHARACTER.md §15). A slot shows a content at an opacity on the
+  rig's 200 ms fade, a new content once the old has faded out, each a
+  function of the time since its show. The gel's face keeps one and
+  feeds it what the engine's tags and state call for (`layerContents`)
+  at each step and sync, so a fade starts at its own instant; the
+  raster's `fade` scales every blend onto the surface (a recording keeps
+  its shapes whole, and a replay blends them at it). What's worn and the
+  hat are layers of their own, as the gown comes when it falls asleep
+  while the nightcap stays, and the Zs ride beside the head rather than
+  in the air, or falling asleep on a winter night would dip the snow.
+  Peekaboo's gesture now fades the outfit out and back.
+- **The scene layer is room only:** first in the stack, and drawn after
+  the clear and before the body, where the board's state will put the
+  tier gags' scenery and the activity stream; nothing feeds it yet, so
+  nothing draws there.
+- **The lane and the sign are Behaviour's**, on its ramps, for both
+  faces: the lane as before, and now the sign, which once down (its end,
+  a newer reaction, being put face down) fades out over 200 ms with its
+  words kept (`SignShow::opacity`: the gel blends it, Pixel dithers it);
+  needs you takes it at once. A slot's rule would hold a new reaction's
+  sign back from its start.
+- **Pixel keeps its overlays:** its hats and air draw with its designs
+  and dissolve with them at a switch (checkpoint 4b), but a tag change
+  still swaps them at once; the stack is there for it.
+- **Measured** (internal/tools/fluid, largest 40 ms frame's changed
+  pixels; a scratch recording of each layer's change, a shot every 40 ms;
+  `transitions.jsonl`, `idle-swipes.jsonl` and `transitions-pixel.jsonl`
+  are the same as before, frame for frame, and every golden of both
+  faces too):
+
+  | Transition | Gel before | Gel after | Pixel before | Pixel after |
+  | --- | --- | --- | --- | --- |
+  | a nightcap at night | 21153 in one frame | five, the largest 17548 | 5191 | 5191 |
+  | falling asleep at night | 10847 | 4961 | 4953 | 4953 |
+  | shades on a Friday, a mood change with it | 38214 | 22860 | 2762 | 2762 |
+  | snow in winter | 28131 | 25740 | 284 | 284 |
+  | a sign coming down | 9856 in one frame | four, 2271 to 3128 | 3313 in one | four, at most 1033 |
+
+  A dark hat on black still crosses the measure's 24 levels in its
+  fade's middle frame: the contact sheet shows it fading in over five.
+  A native frame on the Mac (a scratch harness, the median of five
+  interleaved runs against the commit before) costs the same within 0
+  to 2.5% in every scene, the layers' own share 2 to 8 µs more; with the
+  stretch, the AMOLED's firmware grew 3.3 KB and the CYD's 0.5 KB (42.0%
+  and 66.5% of their flash). The board's `draw_us` is still to measure.
+- **Found, not changed:** what a face plays follows how often the
+  simulator stops it (a shot every 40 or 200 ms, against one jump to the
+  time), as each face steps at every stop: Pixel's blinks fall
+  differently (working, one shot in fifteen differed at its eyes, with
+  no occasion), and the gel takes another path (the old work-stretch,
+  dealt at 3.7 s, showed in a jump to 4.5 s but not with a shot every
+  40 ms). The goldens are each one scenario, the same every run; a
+  recording compares like for like only shot for shot.
 
 ### The rig cut to what a face uses (2026-10-24)
 

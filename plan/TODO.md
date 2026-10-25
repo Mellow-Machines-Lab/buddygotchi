@@ -164,12 +164,17 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       built).
 - [ ] **Pixel's rig face on the board**: its frame cost on the CYD
       (`boopctl ping`'s `draw_us`), and a look at the working day on it.
-- [ ] **5. The slime on the rig**: the mixer drives the gel face. Done
-      so far (character-engine.md, Checkpoint 5 as built): the lane's
-      fade decided once for both faces, the gel's remaining cuts, one
-      anchors type. The Mac's mirror now runs the board's engine
-      (character-engine.md, The Mac's slime on the board's engine); the
-      rest waits for phase 2 there, retiring the slime's JavaScript twin.
+- [x] **5. The slime on the rig**: the gel plays the rig's clips over
+      its engine's pose, a look's occasions are the rig's (working's
+      stretch on a marathon, on both faces), and its outfit, air and Zs
+      come and go through the rig's layer stack, the sign fading out on
+      both faces; its expressions stay its own (character-engine.md,
+      Checkpoint 5 as built). Checked by test_gel, test_rig,
+      test_behaviour and Pixel's test_scene, the goldens (two new), the
+      mirror, internal/tools/fluid and a native frame's cost.
+- [ ] **The gel on the rig on the board**: its frame cost on the AMOLED
+      with a hat, asleep at night and on a marathon (`boopctl perf
+      --scenes`), and a look at the stretch and the layers' fades.
 - [ ] **6. Retire what the engine replaces.**
 
 ## Waiting on the owner

@@ -169,6 +169,8 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     Measure measure(profile.clear);
     s.clear(keep, keepCount, keepLane);
   }
+  // The layer stack's scene (rig::Layer::kScene) is drawn here, behind the
+  // body, once the board's state puts something there.
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the
@@ -248,7 +250,7 @@ void applyRig(PaintControls& c, const rig::Channels& rig) {
   c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
 }
 void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
-           const rig::Channels& rig) {
+           const rig::Channels& rig, const rig::Layers* layers, uint32_t t) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -280,7 +282,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   }
   {
     Measure measure(profile.layers);
-    paintLayers(surface, e, *anchors);
+    paintLayers(surface, e, *anchors, layers, t);
   }
   {
     Measure measure(profile.props);

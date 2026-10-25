@@ -1521,6 +1521,94 @@ static void test_layers_follow_the_bodys_anchors() {
   TEST_ASSERT_EQUAL_INT(0, allocCount);
 }
 
+// What the gel wears, the air and the Zs come and go through the rig's
+// layer stack (the face's), on the rig's 200 ms fade: a winter evening's
+// bobble fades out at night and the nightcap in after it; falling asleep,
+// the gown and the Zs fade in while the hat and the snow stay whole,
+// each layer its own; a sign fades out at its opacity, as Behaviour gives
+// it. Each is drawn at its layer's opacity.
+static void test_the_layers_come_and_go_through_the_stack() {
+  using rig::Layer;
+  static_assert(rig::kFadeMs == 200, "a layer fades over the rig's 200 ms");
+  linkkit::Rng rng;
+  app::Behaviour b(std::make_unique<GelFace>());
+  b.reset(0, rng);
+  const auto& face = static_cast<GelFace&>(b.face());
+  const rig::Layers& l = face.layers();
+  auto state = [&](SceneState base, std::initializer_list<const char*> names, uint32_t t) {
+    app::Model m;
+    m.base = base, m.mood = Mood::kCalm;
+    for (const char* n : names) m.when |= tagBit(n);
+    b.advance(t, rng);
+    b.onState(m, t);
+    b.advance(t, rng);
+  };
+  const uint32_t bobble = uint32_t(Outfit::kBobble), nightcap = uint32_t(Outfit::kNightcap);
+  state(SceneState::kIdle, {"evening", "winter"}, 0);
+  b.advance(1000, rng);
+  TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_UINT32(kSnow, l.content(Layer::kAir, 1000));
+  state(SceneState::kIdle, {"night", "winter"}, 1008);
+  for (uint32_t t = 1008; t <= 1500; t += 16) {
+    b.advance(t, rng);
+    const uint32_t into = t - 1008;
+    if (into < rig::kFadeMs) {
+      TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, t));
+      TEST_ASSERT_EQUAL_INT(1000 - ease1000(int(into), 200), l.opacity(Layer::kHat, t));
+    } else {
+      TEST_ASSERT_EQUAL_UINT32(nightcap, l.content(Layer::kHat, t));
+      TEST_ASSERT_EQUAL_INT(ease1000(std::min(int(into) - 200, 200), 200), l.opacity(Layer::kHat, t));
+    }
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));  // the snow stays
+  }
+  state(SceneState::kAsleep, {"night", "winter"}, 2000);
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kWorn, 2000));
+  for (uint32_t t = 2016; t <= 2400; t += 16) {
+    b.advance(t, rng);
+    const int in = ease1000(std::min(int(t - 2000), 200), 200);
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kWorn, t));    // the gown
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kBeside, t));  // the Zs
+    TEST_ASSERT_EQUAL_UINT32(nightcap, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));
+  }
+  TEST_ASSERT_TRUE(l.content(Layer::kWorn, 2400) != 0 && l.content(Layer::kBeside, 2400) == 1);
+  // Drawn at the opacity: a hat half in is about half as bright as whole.
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  e->setOccasion(tagBit("night"), 0);
+  rig::Anchors at;
+  paint(s, *e, false, 0, 0, &at);
+  rig::Layers hat;
+  hat.show(Layer::kHat, nightcap, 0);
+  auto lit = [&](const rig::Layers& layers, uint32_t t) {
+    std::fill(px.begin(), px.end(), 0);
+    paintLayers(s, *e, at, &layers, t);
+    long n = 0;
+    for (uint16_t p : px) n += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+    return n;
+  };
+  const long whole = lit(hat, 400), half = lit(hat, 100);
+  TEST_ASSERT_TRUE(whole > 10000);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, half);
+  TEST_ASSERT_EQUAL_INT(0, lit(rig::Layers{}, 400));
+  // The sign, at its opacity.
+  auto sign = [&](int opacity) {
+    std::fill(px.begin(), px.end(), 0);
+    paintSign(s, {"bye bye code", 1000, opacity}, at);
+    long n = 0;
+    for (uint16_t p : px) n += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+    return n;
+  };
+  const long up = sign(1000);
+  TEST_ASSERT_TRUE(up > 10000);
+  TEST_ASSERT_INT_WITHIN(up / 10, up / 2, sign(500));
+  TEST_ASSERT_EQUAL_INT(0, sign(0));
+}
+
 // The gown comes with the nightcap while it sleeps, and with no other
 // hat; the reading glasses are on its eyes but while it sleeps.
 static void test_it_sleeps_in_a_gown_and_reads_in_glasses() {
@@ -2032,6 +2120,7 @@ int main() {
   RUN_TEST(test_a_notice_looks_up_at_you);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
+  RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);
   RUN_TEST(test_tracked_clear_matches_full_clear);

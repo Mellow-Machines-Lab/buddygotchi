@@ -148,7 +148,8 @@ struct Rig {
 };
 
 // How long what comes and goes takes to: a style's cross-fade, the lane's
-// strip, a switch from one design to another.
+// strip and a reaction's sign, a layer's content (render/rig/layers.h), a
+// switch from one design to another.
 constexpr uint32_t kFadeMs = 200;
 
 // An opacity, 0 … 1000, easing to its target over kFadeMs from when it was
@@ -160,6 +161,8 @@ class Ramp {
   void retarget(int to, uint32_t t);
   int value(uint32_t t) const { return at(t).value; }
   int target() const { return to_; }
+  // When it was last retargeted: it's there kFadeMs later.
+  uint32_t since() const { return start_; }
 
  private:
   Hermite at(uint32_t t) const;

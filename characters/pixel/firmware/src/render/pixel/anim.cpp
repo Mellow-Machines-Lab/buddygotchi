@@ -289,6 +289,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     // and the sign ride its anchors.
     p.design = sceneFrame(show, rig);
     p.held = sign.text != nullptr, p.heldAt = int16_t(sign.text ? heldOffset(sign.ms, show.dy) : 0);
+    p.heldIn = sign.text ? Dither::fade(sign.opacity, true).hi : 0;
     if (rig) {
       rig::Anchors now;
       p.face = rig_.frame(show.dy, show.mouthOpen, stays ? Dither{} : p.in, move, &now);
@@ -356,6 +357,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   Overlays over;
   over.dressed = p.dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
   over.hatX = p.hatX, over.hatY = p.hatY, over.held = sign.text, over.heldOffset = p.heldAt;
+  over.heldOpacity = sign.opacity;
   // Over both faces of a dissolve, whole; out of the needs-you screen,
   // coming in with the face.
   c.setMask(p.from == Drew::kNeedsYou ? p.in : Dither{});

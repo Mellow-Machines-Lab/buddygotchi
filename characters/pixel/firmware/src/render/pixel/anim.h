@@ -109,15 +109,16 @@ class PixelFace final : public Face {
   // Everything a frame's pixels depend on but the words it shows: what it
   // draws, what a switch dissolves it from (kNone for nothing) and the
   // pixels of it that come in, the lane's dither level and whether the
-  // bubble shows, the held sign's place, the hat's, the outfit's look, and
-  // the needs-you screen's pose or the frames laid out. Two equal pictures draw the
-  // same pixels, so a frame whose picture hashes as the last one's isn't
-  // drawn again. Each is laid out once, into picture_: off the stack, which
-  // a dissolve's outgoing frame needs.
+  // bubble shows, the held sign's place and dither level, the hat's, the
+  // outfit's look, and the needs-you screen's pose or the frames laid out.
+  // Two equal pictures draw the same pixels, so a frame whose picture
+  // hashes as the last one's isn't drawn again. Each is laid out once,
+  // into picture_: off the stack, which a dissolve's outgoing frame needs.
   struct Picture {
     Drew kind, from;
     bool bubble, held;
     Dither in;
+    uint8_t heldIn;  // the held sign's dither level
     int16_t lane, heldAt, hatX, hatY;
     uint32_t dress;
     NeedsYouPose needsYou;

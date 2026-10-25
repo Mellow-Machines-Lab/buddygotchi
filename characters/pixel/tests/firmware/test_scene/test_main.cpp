@@ -394,6 +394,26 @@ static void test_a_fade_changes_the_frame() {
   TEST_ASSERT_TRUE(changed);
 }
 
+// The sign a reaction holds up is dithered at its opacity as it fades out
+// (render::SignShow::opacity): half of it draws about half its pixels.
+static void test_a_held_sign_fades_at_its_opacity() {
+  std::vector<uint8_t> px(size_t(kWidth) * kHeight);
+  Canvas c{px.data()};
+  auto drawn = [&](int opacity) {
+    std::fill(px.begin(), px.end(), kBlack);
+    Overlays over;
+    over.held = "bye bye code", over.heldOpacity = opacity;
+    drawOverlays(c, nullptr, Strip{}, over);
+    int n = 0;
+    for (uint8_t p : px) n += p != kBlack;
+    return n;
+  };
+  const int whole = drawn(1000);
+  TEST_ASSERT_TRUE(whole > 500);
+  TEST_ASSERT_INT_WITHIN(whole / 8, whole / 2, drawn(500));
+  TEST_ASSERT_EQUAL_INT(0, drawn(0));
+}
+
 // What Pixel wears (render/pixel/outfit.h): only over idle's and asleep's
 // variations that aren't occasions, which have their own; nothing without
 // a tag for it; the air moves a step every 400 ms, and the hat is drawn
@@ -439,6 +459,7 @@ int main(int, char**) {
   RUN_TEST(test_needs_you_leaves_the_bottom_lane);
   RUN_TEST(test_frames_change_only_when_the_picture_can);
   RUN_TEST(test_a_fade_changes_the_frame);
+  RUN_TEST(test_a_held_sign_fades_at_its_opacity);
   RUN_TEST(test_it_dresses_for_the_tags_over_its_plain_looks);
   return UNITY_END();
 }

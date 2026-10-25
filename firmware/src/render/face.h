@@ -37,11 +37,13 @@ struct FaceSource {
   uint8_t variant() const { return anim != SceneState::kNone ? animVariant : lookVariant; }
 };
 // The sign a reaction holds up while it plays (its `sign`): the words, at
-// most Behaviour::kSignGlyphs glyphs of the fonts, and how long it has
-// shown. No text for none.
+// most Behaviour::kSignGlyphs glyphs of the fonts, how long it has shown,
+// and how much of it, 0 … 1000: whole while it's up, then fading out over
+// the rig's fade once it goes (app/behaviour.h). No text for none.
 struct SignShow {
   const char* text = nullptr;
   uint32_t ms = 0;
+  int opacity = 1000;
 };
 // How far a sign sits below its place `ms` after it went up, the same on
 // every face: sliding up from `rise` px below, easing out, then lifting

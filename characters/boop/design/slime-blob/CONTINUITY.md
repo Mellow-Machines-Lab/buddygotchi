@@ -585,8 +585,15 @@ leans, squashes, dips under a finger and slides off the screen with the
 body and is cut off there with it. Peekaboo's gesture hides the hat. At
 night the lids hang a little lower (`kNightLids`) on the awake face,
 easing out as it squashes shut, gone by when it's a line, and back as it
-wakes. The
-layers read the engine and never change it.
+wakes. Each part comes and goes through the rig's layer stack
+([CHARACTER.md](../../../CHARACTER.md) §15, The layer stack), which the
+face keeps: what's worn over the eyes or on the body, the hat, the air
+and the Zs each fade in and out over 200 ms, a new one only once the old
+has gone (a winter evening's bobble fades out at night, then the
+nightcap in), each on its own, so falling asleep on a winter night
+brings the gown and the Zs while the nightcap and the snow stay. The
+sign fades out over 200 ms once it's down, at the opacity Behaviour
+gives it. The layers read the engine and never change it.
 
 ## States share one scene
 

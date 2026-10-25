@@ -315,7 +315,12 @@ void drawScene(Canvas& c, const SceneFrame& f, Dither d, int from, int to) {
 
 void drawOverlays(Canvas& c, const char* bubble, const Strip& s, const Overlays& over) {
   if (over.dressed) drawOutfit(c, over.when, over.mood, over.ms, over.hatX, over.hatY);
-  if (over.held) drawHeld(c, over.held, over.heldOffset);
+  if (over.held) {
+    const Dither under = c.mask();
+    c.setMask(Dither::fade(over.heldOpacity, true).both(under));
+    drawHeld(c, over.held, over.heldOffset);
+    c.setMask(under);
+  }
   drawLane(c, bubble, s);
 }
 

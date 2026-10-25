@@ -294,7 +294,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kReact:
       live_.restKey = c.key;
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
-      if (mo.sign[0] && b_.sign(t).text && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      if (mo.sign[0] && b_.signUp(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -497,8 +497,7 @@ void Device::state(JsonObject d, uint32_t t) {
   render::Mood expr;
   if (b_.expression(t, expr)) d["expr"] = render::moodName(expr);
   else d["expr"] = nullptr;
-  const render::SignShow sign = b_.sign(t);
-  if (sign.text) d["sign"] = sign.text;
+  if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;

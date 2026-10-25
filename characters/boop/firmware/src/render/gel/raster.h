@@ -49,6 +49,10 @@ struct Raster {
   static constexpr int kMaxWidth = 512;
   Surface& s;
   int alpha = 255;  // the shape's opacity, 0–255, times each pixel's coverage
+  // How much of everything drawn on the surface shows, 0–255: a layer's
+  // opacity (render/rig/layers.h), times each shape's. A recording keeps
+  // its shapes whole, and a replay blends them at it.
+  int fade = 255;
   // The first row not drawn: 0 for the face and its props, which stop
   // above the host's lane, the bottom fifth; the lane's own drawing sets
   // the surface's height (render/gel/lane.cpp).
@@ -72,10 +76,11 @@ struct Raster {
     if (x >= std::max(0, bounds.x0) && x < std::min(s.width, bounds.x1) && y >= std::max(0, bounds.y0) &&
         y < std::min(bottom(), bounds.y1)) {
       auto& out = s.pixels[y * s.width + x];
-      if (alpha >= 253)
+      const int a = shown(alpha);
+      if (a >= 253)
         out = ink;
-      else if (alpha > 2)
-        out = mix565(out, ink, alpha);
+      else if (a > 2)
+        out = mix565(out, ink, a);
     }
   }
 
@@ -133,7 +138,7 @@ struct Raster {
           const uint8_t* cells = src + yy * rowBytes;
           uint16_t* out = s.pixels + (y + yy) * s.width + x;
           for (int xx = colFrom; xx < colTo; ++xx) {
-            const int b = cells[xx >> 1], a = alphaOf[xx & 1 ? b & 15 : b >> 4];
+            const int b = cells[xx >> 1], a = shown(alphaOf[xx & 1 ? b & 15 : b >> 4]);
             if (a >= 253)
               out[xx] = ink;
             else if (a > 2)
@@ -162,6 +167,8 @@ struct Raster {
 
  private:
   int bottom() const { return limit ? limit : s.height * 4 / 5; }
+  // An opacity as the surface takes it, at the fade.
+  int shown(int a) const { return fade >= 255 ? a : a * fade / 255; }
   // Nowhere to draw a shape: no pixels, and no recording.
   bool off() const { return !s.pixels && !recording; }
   // Composites the row's coverage where it was written, and zeroes it.

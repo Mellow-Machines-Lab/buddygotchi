@@ -6,6 +6,7 @@
 #include "render/gel/profile.h"
 #include "render/maths.h"
 #include "render/palette.h"
+#include "render/gel/layers.h"
 #include "render/gel/sounds.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 
@@ -43,6 +44,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
+  layers_ = {};
   occasion_ = nullptr;
   passGeneration_ = passIteration_ = -1;
 }
@@ -76,6 +78,7 @@ void GelFace::advanceTo(uint32_t t) {
   mixer_.advance(t - lastTick_);
   lastTick_ = t;
   occasions(t);
+  showLayers(t);
   int kept = 0;
   for (int i = 0; i < pendingCount_; ++i)
     if (t - pendingAt_[i] <= kCueWaitMs) {
@@ -94,6 +97,14 @@ void GelFace::advanceTo(uint32_t t) {
     e.pitch = uint16_t((cue.pitch * 1000).integer());
     e.duck = !cue.protectedCue;  // needs you's, a finish's and an error's stay up under a line
   }
+}
+
+void GelFace::showLayers(uint32_t t) {
+  const Contents now = layerContents(*engine_);
+  layers_.show(rig::Layer::kWorn, now.worn, t);
+  layers_.show(rig::Layer::kHat, now.hat, t);
+  layers_.show(rig::Layer::kAir, now.air, t);
+  layers_.show(rig::Layer::kBeside, now.beside, t);
 }
 
 void GelFace::occasions(uint32_t t) {
@@ -211,6 +222,7 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     restartCues();
   }
   source_ = source;
+  showLayers(t);
 }
 
 // The engine's shuffle bag for the moment, drawn from copies: a call
@@ -266,7 +278,7 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels());
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_);
   return true;
 }
 

@@ -5,7 +5,9 @@
 // pack's rig (render/rig/) plays its clips on the gel through a mixer of
 // the face's own, whose channels the painter lays over the engine's pose
 // (applyRig): the look's occasions, a chance at each pass of the look's
-// scene. The engine keeps its expressions, recipes, gags and springs.
+// scene. The engine keeps its expressions, recipes, gags and springs. What
+// it wears and the air around it come and go through the rig's layer
+// stack, the face's own too.
 #pragma once
 #include "render/face.h"
 #include "render/gel/engine.h"
@@ -56,6 +58,7 @@ class GelFace final : public Face {
   int profile(char* out, size_t n, uint32_t frames) override;
   const Engine& engine() const { return *engine_; }
   const rig::Mixer& mixer() const { return mixer_; }
+  const rig::Layers& layers() const { return layers_; }
 
  private:
   // A cue waits at most this long for Device to take it (one tick is 16 ms).
@@ -66,6 +69,9 @@ class GelFace final : public Face {
   static constexpr int kMidX = 160, kMidY = 129;
   std::unique_ptr<Engine> engine_;
   rig::Mixer mixer_;
+  // What it wears, the air and the Zs, as the engine's tags and state call
+  // for them (layerContents), each fading in and out.
+  rig::Layers layers_;
   // The look's occasion playing, until it ends; and the scene's pass that
   // last had its chance.
   const rig::Clip* occasion_ = nullptr;
@@ -87,6 +93,8 @@ class GelFace final : public Face {
   // the engine shows the look itself; the one playing fades out when the
   // look gives way.
   void occasions(uint32_t t);
+  // The layers what the engine's tags and state call for now, from t.
+  void showLayers(uint32_t t);
   // A new revision: the sounds already queued belong to what came before.
   void restartCues();
   bool factsChanged(const FaceContext& context) const;

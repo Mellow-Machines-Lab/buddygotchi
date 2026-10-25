@@ -131,7 +131,8 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
 // face doesn't change.
 void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
-  if (sign_.text[0] && !signOn(t)) sign_ = Sign{};
+  if (sign_.text[0] && !signOn(t)) signGoes(signEnd());
+  if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms)) {
@@ -218,7 +219,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       lingering_ = Reaction{};
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
       say_ = Say{};  // no `say` or sign while something needs you
-      sign_ = Sign{};
+      sign_ = gone_ = Sign{};
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
@@ -353,6 +354,7 @@ void Behaviour::endSay(uint32_t t, CutBy by) {
   if (by != CutBy::kNone && sayDue(t)) cut(say_.key, by);
   say_ = Say{};
   expr_ = false;
+  if (signOn(t)) signGoes(t);
   sign_ = Sign{};
   ++reactionSeq_;
 }
@@ -532,6 +534,7 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
   change(t, [&] {
     faceDown_ = down;
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
+    if (down && signOn(t)) signGoes(t);
     if (down) sign_ = Sign{};
   });
 }
@@ -603,9 +606,20 @@ render::Strip Behaviour::strip(uint32_t t) const {
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
 
+void Behaviour::signGoes(uint32_t at) {
+  gone_ = sign_;
+  goneAt_ = at;
+}
+
 render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
-  if (signOn(t) && !noApp(t) && !model_.attn) s.text = sign_.text, s.ms = t - sign_.at;
+  if (noApp(t) || model_.attn) return s;
+  if (signOn(t)) {
+    s.text = sign_.text, s.ms = t - sign_.at;
+  } else if (gone_.text[0] && within(t, goneAt_, render::rig::kFadeMs)) {
+    s.text = gone_.text, s.ms = t - gone_.at;
+    s.opacity = 1000 - render::ease1000(int(t - goneAt_), int(render::rig::kFadeMs));
+  }
   return s;
 }
 
