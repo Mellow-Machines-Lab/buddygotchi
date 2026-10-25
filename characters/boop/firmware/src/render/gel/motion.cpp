@@ -84,7 +84,7 @@ void SemanticFace::weigh(F s) {
   }
   for (int i = 0; i < count; ++i) layers[i].weight = layers[i].weight / sum;
 }
-void SemanticFace::retarget(T ms) {
+void SemanticFace::aim() {
   const int art = targetSleeping ? slime::kTired : targetId;
   for (int i = 0; i < 8; ++i) target[i] = slime::kProfile[art].face[i];
   if (targetSleeping) {
@@ -93,6 +93,12 @@ void SemanticFace::retarget(T ms) {
     target[5] = kSleep[2];
     target[6] = target[7] = 0;
   }
+  from = controls;
+  to = target;
+}
+void SemanticFace::retarget(T ms) {
+  aim();
+  const int art = targetSleeping ? slime::kTired : targetId;
   // Every layer starts again from its value and slope now, toward zero; the
   // new art, last, toward one (one still fading comes back from its value).
   const F s = elapsedMs / durationMs;
@@ -124,8 +130,6 @@ void SemanticFace::retarget(T ms) {
              layers.begin()));
   layers[count++] = top;
   weigh(0);
-  from = controls;
-  to = target;
   elapsedMs = 0;
   durationMs = ms;
 }
@@ -134,10 +138,16 @@ void SemanticFace::setMood(int id, T ms) {
   targetId = id;
   if (!targetSleeping) retarget(ms);
 }
+// Falling asleep squashes the awake face shut first (advance swaps in the
+// sleeping face once it's a line); waking crosses to the mood's art, unless
+// the awake one is still drawn, which then opens again.
 void SemanticFace::setSleeping(bool value) {
   if (value == targetSleeping) return;
   targetSleeping = value;
-  retarget(value ? kSleepMs : kFaceMs);
+  if (!value && (current().sleeping || current().art != targetId))
+    retarget(kFaceMs);
+  else
+    aim();
 }
 void SemanticFace::advance(T dt) {
   // The controls' spring: the face's, or sleep's while it sleeps.
@@ -154,6 +164,8 @@ void SemanticFace::advance(T dt) {
     velocity[i] = v;
     controls[i] = scaled[i] / kScale;
   }
+  integrate(shut, dt, targetSleeping ? 1 : 0, w, 2 * w, 1, 100);
+  shut.x = max(shut.x, 0);
   if (count > 1) {
     elapsedMs = min(durationMs, elapsedMs + dt * 1000);
     if (elapsedMs >= durationMs) {
@@ -162,12 +174,24 @@ void SemanticFace::advance(T dt) {
     }
     weigh(elapsedMs / durationMs);
   }
+  if (targetSleeping && !current().sleeping && shut.x >= kShutLine) retarget(kSwapMs);
 }
 // Each layer at the live control over its own size: the arts crossing over
-// are drawn near one size while the controls move.
+// are drawn near one size while the controls move. An awake art smaller
+// than its own is drawn as far toward the control itself as the face is
+// shut, its eyes no thinner than a line as thick as the sleeping face's
+// lids (kLineHalf, half their pen, over the eye's own half height).
 std::array<F, 3> SemanticFace::ratios(const Layer& l) const {
   std::array<F, 3> out;
-  for (int k = 0; k < 3; ++k) out[k] = softRatio(l.size[k].divide(scaled[kSized[k]]));
+  for (int k = 0; k < 3; ++k) {
+    const F r = l.size[k].divide(scaled[kSized[k]]), soft = softRatio(r);
+    if (l.sleeping || r >= F(1)) {
+      out[k] = soft;
+      continue;
+    }
+    const F shut_to = k ? r : max(r, min(1, kLineHalf / slime::kProfile[l.art].face[2]));
+    out[k] = soft - (soft - shut_to) * shut.x;
+  }
   return out;
 }
 std::array<F, 3> drawnScale(const SemanticFace& face, const SemanticFace::Layer& l) {

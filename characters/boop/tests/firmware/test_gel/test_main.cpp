@@ -413,38 +413,94 @@ static void test_face_and_props_move_without_jumps() {
   }
   TEST_ASSERT_TRUE(seen);
 }
-// CONTINUITY.md, Phase 1 channel bounds: falling asleep crosses over in its
-// own window, and the controls keep sleep's spring until the face wakes, a
-// mood changing meanwhile changing nothing drawn; waking takes the face's
-// own window again, to the mood it has then.
-static void test_the_face_keeps_sleeps_spring_until_it_wakes() {
+// Falling asleep, the awake face squashes shut on sleep's slow spring
+// (frequency 4): its eyes to lines and its mouth to the sleeping one's
+// size, the same art, no other drawn; once it's 0.9 shut, about a second
+// on, the sleeping face crosses in over 360 ms, and it's alone by 1.35 s.
+// The controls keep sleep's spring until it wakes, a mood changing
+// meanwhile changing nothing drawn. Waking is quick: the face's own window
+// and spring (180 ms, frequency 20), its eyes opening from lines, to the
+// mood it has then; woken before it's a line, the same art opens again.
+static void test_it_falls_asleep_squashing_shut() {
   static_assert(SemanticFace::kFaceMs == 180 && SemanticFace::kFaceFrequency == 20, "the face's window and spring");
-  static_assert(SemanticFace::kSleepMs == 480 && SemanticFace::kSleepFrequency == 8, "falling asleep's");
+  static_assert(SemanticFace::kSleepFrequency == 4 && SemanticFace::kSwapMs == 360, "falling asleep's spring and swap");
+  static_assert(SemanticFace::kShutLine == q(.9), "the sleeping face comes in once it's a line");
   const T frame = T::ratio(16, 1000);
-  SemanticFace still, moved;
-  for (SemanticFace* f : {&still, &moved}) {
-    f->setSleeping(true);
-    TEST_ASSERT_TRUE(f->durationMs == T(SemanticFace::kSleepMs));
-    for (int i = 0; i < 5; ++i) f->advance(frame);
+  SemanticFace f;
+  f.setMood(slime::kHappy);
+  for (int i = 0; i < 30; ++i) f.advance(frame);
+  TEST_ASSERT_EQUAL_INT(1, f.count);
+  f.setSleeping(true);
+  TEST_ASSERT_EQUAL_INT(1, f.count);  // nothing drawn changes at once
+  double x = 0, v = 0;                // the shut spring, in doubles
+  F lastEye = 1, lastMouth = 1;
+  SemanticFace still;
+  int swapped = -1, alone = -1;
+  for (int i = 1; i <= 160; ++i) {
+    f.advance(frame);
+    for (double left = .016; left > 1e-12;) {
+      const double h = std::min(left, 1.0 / 240);
+      v += (16 * (1 - x) - 8 * v) * h;
+      x += v * h;
+      left -= h;
+    }
+    TEST_ASSERT_TRUE(std::abs(x - double(f.shut.x.raw) / F::scale) < 1e-4);
+    if (swapped < 0 && f.current().sleeping) swapped = i;
+    if (swapped < 0) {
+      // Still the happy art alone, squashing: each frame no larger than the last.
+      TEST_ASSERT_TRUE(f.count == 1 && f.current().art == slime::kHappy);
+      const auto r = f.ratios(f.current());
+      TEST_ASSERT_TRUE(r[0] <= lastEye && r[1] <= lastMouth && r[2] <= q(1));
+      lastEye = r[0], lastMouth = r[1];
+    }
+    if (alone < 0 && swapped > 0 && f.count == 1) alone = i;
+    if (i > 15) {
+      still.advance(frame);
+      TEST_ASSERT_TRUE(still.controls == f.controls && still.velocity == f.velocity && still.shut.x == f.shut.x);
+    }
+    if (i == 15) {  // 240 ms in, a mood changing changes nothing drawn
+      still = f;
+      f.setMood(slime::kSad);
+    }
   }
-  moved.setMood(slime::kHappy);
+  // The line by 0.95 to 1 s: the eyes no thinner than the sleeping lids'
+  // pen and near it, the mouth under two fifths of its size and going to the
+  // sleeping one's; the sleeping face alone 360 ms on.
+  TEST_ASSERT_TRUE(swapped * 16 >= 950 && swapped * 16 <= 1000);
+  const F line = SemanticFace::kLineHalf / slime::kProfile[slime::kHappy].face[2];
+  TEST_ASSERT_TRUE(lastEye >= line && lastEye < line + q(.06) && lastMouth < q(.4));
+  TEST_ASSERT_TRUE(alone - swapped >= 360 / 16 && alone - swapped <= 360 / 16 + 1);
+  TEST_ASSERT_TRUE(f.current().sleeping);
+  f.setSleeping(false);
+  TEST_ASSERT_TRUE(f.durationMs == T(SemanticFace::kFaceMs));
+  TEST_ASSERT_EQUAL_INT(slime::kSad, f.current().art);
+  const auto opening = f.ratios(f.current());
+  // Its eyes come in as lines, and open within a quarter of a second.
+  TEST_ASSERT_TRUE(opening[0] < SemanticFace::kLineHalf / slime::kProfile[slime::kSad].face[2] + q(.01));
+  for (int i = 0; i < 16; ++i) f.advance(frame);
+  TEST_ASSERT_TRUE(f.count == 1 && !f.current().sleeping && f.shut.x < q(.05));
+  // Woken before it's a line, the same art opens again, nothing crossing.
+  SemanticFace early;
+  for (int i = 0; i < 30; ++i) early.advance(frame);
+  early.setSleeping(true);
+  for (int i = 0; i < 40; ++i) early.advance(frame);
+  TEST_ASSERT_TRUE(early.count == 1 && !early.current().sleeping);
+  early.setSleeping(false);
   for (int i = 0; i < 30; ++i) {
-    for (SemanticFace* f : {&still, &moved}) f->advance(frame);
-    TEST_ASSERT_TRUE(moved.controls == still.controls && moved.velocity == still.velocity);
+    early.advance(frame);
+    TEST_ASSERT_TRUE(early.count == 1 && early.current().art == slime::kCalm);
   }
-  moved.setSleeping(false);
-  TEST_ASSERT_TRUE(moved.durationMs == T(SemanticFace::kFaceMs));
-  TEST_ASSERT_EQUAL_INT(slime::kHappy, moved.current().art);
+  TEST_ASSERT_TRUE(early.shut.x < q(.01));
 }
 // A weight held at zero is flat there (the Hermite's): an art going out
-// fast, into falling asleep's longer window, dips below zero and comes back
-// up toward it, and a retarget then (waking) doesn't bring it back.
+// fast, into a longer window (a bridge's 460 ms), dips below zero and comes
+// back up toward it, and a retarget then doesn't bring it back.
 static void test_a_faded_art_never_comes_back() {
   const T frame = T::ratio(16, 1000);
   SemanticFace f;
   f.setMood(slime::kHappy);
   for (int i = 0; i < 6; ++i) f.advance(frame);
-  f.setSleeping(true);
+  f.setMood(slime::kSad, 460);
   for (int i = 0; i < 24; ++i) f.advance(frame);
   auto calm = [&] {
     for (int i = 0; i < f.count; ++i)
@@ -453,7 +509,7 @@ static void test_a_faded_art_never_comes_back() {
   };
   TEST_ASSERT_NOT_NULL(calm());
   TEST_ASSERT_TRUE(calm()->weight == F(0));
-  f.setSleeping(false);
+  f.setMood(slime::kAngry);
   for (int i = 0; i < 12; ++i) {
     f.advance(frame);
     TEST_ASSERT_NULL(calm());
@@ -481,10 +537,12 @@ static int faceInk(const Engine& e, Surface& drawn, Surface& bare) {
   }
   return count;
 }
-// CONTINUITY.md, Continuity of what is drawn: the face never fades. Through
-// a cross-fade between differently shaped arts, in frames 40 ms apart, the
-// eyes and the mouth keep at least 85% of the visible ink of the fainter of
-// the two faces settled. The least now is 87%, falling asleep.
+// The face never fades. Through a cross-fade between differently shaped
+// arts, in frames 40 ms apart, the eyes and the mouth keep at least 85% of
+// the visible ink of the fainter of the two faces settled; falling asleep,
+// that's its swap from the lines the awake face squashed to into the
+// sleeping face's lids. The least now is 90%, waking (falling asleep's
+// swap keeps 96% of its line, happy to sad 99%).
 static void test_the_face_never_fades_while_arts_cross_over() {
   std::vector<uint16_t> a(502 * 410), b(a.size());
   Surface drawn{502, 410, a.data()}, bare{502, 410, b.data()};
@@ -504,24 +562,28 @@ static void test_the_face_never_fades_while_arts_cross_over() {
     f.base = c.base;
     e->setFacts(f);
     e->setMood(c.from);
+    // Asleep settles once its face is the sleeping one, alone.
     uint32_t t = 0;
-    for (; t <= 640; t += 40) e->step(t);
-    const int start = faceInk(*e, drawn, bare);
+    for (; t <= (c.base == SceneState::kAsleep ? 2000u : 640u); t += 40) e->step(t);
+    int start = faceInk(*e, drawn, bare);
     f.base = c.then;
     e->setFacts(f);
     e->setMood(c.to);
-    TEST_ASSERT_EQUAL_INT(2, e->face.count);
     int least = 1 << 30;
     bool crossed = false;
-    for (int frame = 0; frame < 16; ++frame) {
+    for (int frame = 0; frame < 60 && !(crossed && e->face.count == 1); ++frame) {
       e->step(t += 40);
+      if (e->face.count == 1) {
+        if (!crossed) start = faceInk(*e, drawn, bare);  // the face it crosses from: the line, falling asleep
+        continue;
+      }
       TEST_ASSERT_TRUE(e->blink() == F(0));  // the eyes open throughout: no blink comes before 2.8 s
-      if (e->face.count > 1) least = std::min(least, faceInk(*e, drawn, bare)), crossed = true;
+      least = std::min(least, faceInk(*e, drawn, bare)), crossed = true;
     }
     TEST_ASSERT_TRUE(crossed);
     TEST_ASSERT_EQUAL_INT(1, e->face.count);
     const int fainter = std::min(start, faceInk(*e, drawn, bare));
-    TEST_ASSERT_TRUE(fainter > 400);
+    TEST_ASSERT_TRUE(fainter > 200);  // the line, falling asleep; else over 400
     TEST_ASSERT_TRUE(least * 100 >= fainter * 85);
   }
 }
@@ -673,9 +735,9 @@ static void test_a_power_on_seeds_the_engine_and_a_reset_restores_53() {
   TEST_ASSERT_EQUAL_UINT32(fresh.random.state, f.engine().random.state);
 }
 // At night the lids hang lower, and they go with the face falling asleep:
-// as the sleeping face crosses in over its 480 ms they ease out, an eighth
-// of their hang in a 16 ms frame at the most, where they went in one; and
-// waking, they come back over the face's 180 ms.
+// as it squashes shut they ease out, gone by when it's a line (1 s), a
+// sixteenth of their hang in a 16 ms frame at the most, where they went in
+// one; and waking, they come back on the face's quick spring.
 static void test_the_night_lids_ease_out_as_it_falls_asleep() {
   auto e = std::make_unique<Engine>();
   e->setOccasion(tagBit("night"), 0);
@@ -689,7 +751,7 @@ static void test_the_night_lids_ease_out_as_it_falls_asleep() {
     int last = sleepyLids(*e), steepest = 0;
     f.base = then;
     e->setFacts(f);
-    for (int frame = 0; frame < 40; ++frame) {
+    for (int frame = 0; frame < (then == SceneState::kAsleep ? 100 : 40); ++frame) {
       e->step(t += 16);
       const int now = sleepyLids(*e);
       TEST_ASSERT_TRUE(then == SceneState::kAsleep ? now <= last : now >= last);
@@ -697,7 +759,7 @@ static void test_the_night_lids_ease_out_as_it_falls_asleep() {
       last = now;
     }
     TEST_ASSERT_EQUAL_INT(then == SceneState::kAsleep ? 0 : kNightLids, last);
-    TEST_ASSERT_TRUE(steepest * (then == SceneState::kAsleep ? 8 : 4) <= kNightLids);
+    TEST_ASSERT_TRUE(steepest * (then == SceneState::kAsleep ? 16 : 4) <= kNightLids);
   }
 }
 // A reset lets go of the finger with the engine: a finger still down
@@ -1861,7 +1923,7 @@ int main() {
   RUN_TEST(test_every_result_card_has_a_mark);
   RUN_TEST(test_interrupted_alert_signals_exactly_once);
   RUN_TEST(test_face_and_props_move_without_jumps);
-  RUN_TEST(test_the_face_keeps_sleeps_spring_until_it_wakes);
+  RUN_TEST(test_it_falls_asleep_squashing_shut);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
   RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);

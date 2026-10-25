@@ -95,12 +95,12 @@ below). Gesture cadence is the authored duration plus 7 to 15 seconds,
 starting after one second, or 0.4 seconds after a retarget; a release
 defers the next gesture three seconds.
 
-The face's own window is 180 ms (falling asleep takes 480, below);
-directed edge variants select the face windows below, over which one art
-crosses over another. Each semantic control is a critically damped spring,
-`a = ω²(target − x) − 2ωv`, with ω = 20 (8 while it sleeps, from falling
-asleep until it wakes, a mood changing meanwhile), in the same 1/240 s
-substeps: it starts from rest without a jump in velocity, and a retarget
+The face's own window is 180 ms (falling asleep swaps faces over 360,
+below); directed edge variants select the face windows below, over which
+one art crosses over another. Each semantic control is a critically
+damped spring, `a = ω²(target − x) − 2ωv`, with ω = 20 (4 while it sleeps,
+from falling asleep until it wakes, a mood changing meanwhile), in the
+same 1/240 s substeps: it starts from rest without a jump in velocity, and a retarget
 keeps both its position and its velocity. Cheek and tear opacity stay in
 [0, 1]. The controls' endpoints are each face's (slimegen's `face.mjs`,
 read off the painter's primitives); the board draws each of the face's
@@ -177,13 +177,20 @@ A drag consumes elapsed physical keyboard/knock contacts without emitting
 them. Factual alert/result reveals still happen while held, so dragging
 cannot hide a real completion or its outcome. Release never plays an
 elapsed contact again. Rest keeps the stored mood, cancels acting and
-contacts immediately, and lets residual springs settle. The shared sleepy
-art crosses over the awake one in a window of its own, 480 ms, its
-controls on the slower spring, so the lids droop shut rather than snap;
-waking takes the face's own 180 ms (`gel/motion.cpp` `SemanticFace`). Its
-semantic targets are eye openness 0.004, mouth width 0.018, curve 0.008,
-and zero cheek/tear opacity; changing the stored mood during rest leaves
-this face quiet.
+contacts immediately, and lets residual springs settle. **Falling asleep
+is a morph** (`gel/motion.cpp` `SemanticFace`): the awake face squashes
+shut on sleep's slow spring, ω = 4, the same art all the while, its eyes
+to lines (no thinner than the sleeping lids' pen, 0.030) and its mouth to
+the sleeping one's size, the cheeks and tears fading; once it's 0.9 shut,
+about a second on, the shared sleeping face crosses in over 360 ms, its
+lids easing in over the lines, alone by about 1.3 s. How shut it is,
+`shut`, springs on the controls' spring, and an awake art's drawn sizes
+follow the controls below their saturation that far (Directed edge
+bridges, Drawn ratios). Waking stays quick: the face's own 180 ms and
+spring, ω = 20, the eyes opening from lines; woken before it's a line, the
+same art simply opens again. The sleeping face's semantic targets are eye
+openness 0.004, mouth width 0.018, curve 0.008, and zero cheek/tear
+opacity; changing the stored mood during rest leaves this face quiet.
 
 A scene's timings (`gel/scenes.cpp`, its recipes slimegen's `scenes.mjs`):
 240 ms entry, 480 ms recovery, 120 ms contact envelopes; cycles of 3,200,
@@ -574,7 +581,8 @@ ring 15's front for the hands) and the face art's eye centres, so a layer
 leans, squashes, dips under a finger and slides off the screen with the
 body and is cut off there with it. Peekaboo's gesture hides the hat. At
 night the lids hang a little lower (`kNightLids`) on the awake face,
-easing out as the sleeping face crosses in and back as it wakes. The
+easing out as it squashes shut, gone by when it's a line, and back as it
+wakes. The
 layers read the engine and never change it.
 
 ## States share one scene
@@ -672,8 +680,8 @@ retarget mid-window keeps every weight's velocity. The window is counted in
 milliseconds. A layer's weight is its share of them all, so the weights sum
 to one. An art still fading comes back from the weight it has; a layer at
 zero that can only stay there is dropped (one the Hermite held at zero
-among them: going out fast into falling asleep's longer window, a weight
-dips below zero, and is flat there); a fifth art drops the faintest of the
+among them: going out fast into a longer window, a weight dips below zero,
+and is flat there); a fifth art drops the faintest of the
 four, the others' shares growing to fill what it leaves: the one step there
 is, and only when more than four arts change within one window. When the
 window ends, only the current art is left. Natural blinks and a gag's lids
@@ -698,7 +706,10 @@ pairs of arts' features; the board's is the one rule now.)
 own dimension, passed through a smooth saturation `1 + x·r / (r + |x|)`
 (with `x = ratio − 1`, `r = 1/3` above one and `1/4` below), so it has
 slope one at rest and never leaves (0.75, 4/3), and at rest is one: the
-arts crossing over are drawn near one size as the controls move. The
+arts crossing over are drawn near one size as the controls move. Falling
+asleep, an awake art below one is drawn as far toward the control itself
+as the face is shut, `soft − (soft − r) × shut`, its eyes' `r` no smaller
+than the line (half the lids' pen, 0.015, over the eye's half height). The
 shared sleeping face is the tired art drawn at its own squashed size (eye
 0.004, mouth 0.018 × 0.008), so its ratios also settle at one. Pen widths
 never stretch with a feature's scale. The board draws a second art only
@@ -733,9 +744,11 @@ while the card is drawn):
   (about 1.1×). Every art's weight counts as one channel, and a drawn size
   as its control's.
 - **Sizes follow their controls.** Each layer's drawn ratios stay in
-  [0.75, 4/3], and a drawn size (a ratio times its art's own) moves no
-  further in a frame than the control it follows, the saturation's slope
-  being at most one.
+  [0.75, 4/3] (an awake one shutting, down to 0.75 × (1 − shut)), and a
+  drawn size (a ratio times its art's own) moves no further in a frame
+  than the control it follows, the saturation's slope being at most one,
+  and what shutting moves it: its own size times the frame's step of
+  `shut`.
 - **Arts cross over without pops.** A layer's weight moves at most a 16 ms
   slice of the Hermite over the shortest face window, the face's own 180 ms
   (waking), reversals included (sampled, with 2% margin: about 0.149 per
@@ -753,19 +766,17 @@ while the card is drawn):
   and a hole (the working mark's open half, a mini's eyes) stays one.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling
-  eyes, falling asleep and waking), the board's frames, 40 ms apart, keep
-  at least 85% of the visible ink of the fainter of the two faces settled:
-  the pixels the face takes at least a quarter of the way from the body's
-  luminance to the ink's, eyes and mouth (a water eye's fill, the cheeks
-  and the tears are paler than the body and don't count). The least is
-  87%, falling asleep (waking 88%, happy to sad 97%; calm to happy and to
+  eyes, falling asleep's swap and waking), the board's frames, 40 ms apart,
+  keep at least 85% of the visible ink of the fainter of the two faces it
+  crosses between: the pixels the face takes at least a quarter of the way
+  from the body's luminance to the ink's, eyes and mouth (a water eye's
+  fill, the cheeks and the tears are paler than the body and don't count).
+  Falling asleep, those are the lines it squashed to and the sleeping face:
+  the eyes closing is the morph, not a fade. The least is 90%, waking
+  (falling asleep's swap 96%, happy to sad 99%; calm to happy and to
   frightened show more than the fainter end, both arts showing). Where two
-  shapes don't overlap, the frames half way are dimmer by a stricter count:
-  of the pixels taken at least half way to the ink, calm to frightened
-  keeps 48% of the fainter face's, scared to frightened 50% and falling
-  asleep, over its longer window, 76%; of those three quarters of the way,
-  13%, 12% and 31%. Each shape is at about half its strength there, which
-  is the cross-fade.
+  shapes don't overlap, the frames half way are dimmer by a stricter count,
+  each shape at about half its strength, which is the cross-fade.
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).

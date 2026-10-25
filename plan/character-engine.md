@@ -22,12 +22,13 @@ picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
 gets no other blink. The gel stays on its own engine, the C++ one, its
 only one since phase 2 retired the JavaScript reference (The Mac's slime
-on the board's engine, below), falling asleep over 480 ms and waking over
-180; the Mac shows it as the board's firmware in WebAssembly, and both
+on the board's engine, below), falling asleep as a morph, the awake face
+squashing shut to lines, then the sleeping face, alone by about 1.3 s,
+and waking over 180 ms; the Mac shows it as the board's firmware in WebAssembly, and both
 faces share the anchors and the lane's fade. The gel's move onto the
 mixer is next. The
 checkpoint notes below are history, each as it landed: where a later one
-changed an earlier (checkpoint 1's 180 ms to sleep, checkpoint 4's
+changed an earlier (checkpoint 1's 180 ms to sleep and checkpoint 5's 480, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
 later note say what holds.
 
@@ -685,6 +686,30 @@ The slime has one engine, the C++ port: the JavaScript reference
   VALIDATION.md, STATES.md and sound/README.md name the C++ that keeps
   each rule and the test that pins it. Checkpoint 1's two rules for "the
   same shape" are one: slimegen's group shape ids.
+- **Falling asleep is a morph** (the owner's design call), the C++ alone:
+  the awake face squashes shut on a slow spring, ω 4 (from checkpoint 5's
+  8), the same art all the while, its eyes to lines no thinner than the
+  sleeping lids' pen and its mouth to the sleeping one's size, as `shut`
+  (a spring on the controls' own) lets an awake art's drawn sizes follow
+  the controls under their saturation; once it's 0.9 shut, at 976 ms, the
+  sleeping face crosses in over 360 ms, the lids easing in over the lines,
+  and it's alone by 1.34 s. The length was picked to feel sleepy, a slow
+  droop about three times the old cross-fade's 480 ms, and short enough
+  that the 1.5 s a new board's first state is drawn at (the goldens', the
+  Mac's tiles') shows the sleeping face settled; ω 3 (1.7 s) felt as
+  sleepy but caught the swap at 1.5 s. Waking stays the face's 180 ms on
+  its quick spring, the eyes opening from lines (woken before the line,
+  the same art opens again). The night's lids go as it shuts, gone at the
+  line. The ink check now holds the swap to the faces it crosses between,
+  the line and the sleeping face (96%), since the eyes closing is the
+  morph, not a fade; waking keeps 90%. Measured (internal/tools/fluid):
+  idle happy to asleep, its largest 40 ms frame 476 changed pixels (11.9×
+  the median) before, at the cross-fade's first frame, and 350 (8.0×) now,
+  its first frame too, the swap well under it; `transitions.jsonl`'s
+  to-asleep, over the stroke's end, 640 (4.1×) to 711 (3.9×), its frames
+  moving more evenly. Three gel goldens changed, each the sleeping face a
+  few pixels along its slower spring: `states/asleep`, `states/no_app` and
+  `layers/asleep-night`. `test_it_falls_asleep_squashing_shut` pins it.
 - **Found, not changed:** at a retarget, nine edges (shy→affectionate,
   sad→wounded, crying→wounded, wounded→sad, wounded→crying,
   frightened→wounded, frightened→sad, frightened→crying,

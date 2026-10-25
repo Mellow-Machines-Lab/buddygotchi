@@ -79,8 +79,10 @@ ramps and springs can, and no jolt at an event. By file:
   deterministic pixels, request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
-  fading (its visible ink through five cross-fades), sleep's spring kept
-  through a mood change, the night's lids, a finger moving the dome its own
+  fading (its visible ink through five cross-fades), falling asleep as a
+  morph (the awake face squashing shut on its slow spring, to lines, the
+  sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
+  spring kept through a mood change), the night's lids, a finger moving the dome its own
   way, every result card's mark, comedy, the ten gestures, the notice, the
   occasions, the lane at the panel's size (fading whatever the draw
   cadence, blended once, cut and marked as the canvas does), the layers on

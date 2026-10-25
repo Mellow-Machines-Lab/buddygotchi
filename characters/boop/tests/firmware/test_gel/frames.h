@@ -49,6 +49,7 @@ struct Frame {
   std::array<F, 8> controls;
   std::array<Layer, SemanticFace::kMaxLayers> layers;
   int count = 0;
+  F shut;
   F props[Scenes::kProps], desk;
 };
 
@@ -56,6 +57,7 @@ inline Frame capture(const Engine& e) {
   Frame f;
   f.controls = e.face.controls;
   f.count = e.face.count;
+  f.shut = e.face.shut.x;
   for (int i = 0; i < e.face.count; ++i) {
     const auto& l = e.face.layers[i];
     f.layers[i] = {l.art, l.sleeping, l.weight, e.face.ratios(l)};
@@ -98,7 +100,8 @@ inline void check(const Engine& e, const Frame* before = nullptr) {
   TEST_ASSERT_TRUE(e.blink() >= F(0) && e.blink() <= F(1) && within(e.motion.gaze, q(.014)));
   // The face: the cheeks' and tears' strengths in [0, 1]; at most four
   // arts, each once, their weights shares of one, each drawn within
-  // (3/4, 4/3) of its own size.
+  // (3/4, 4/3) of its own size, but an awake one as far smaller as the face
+  // has squashed shut, falling asleep.
   const auto& f = e.face;
   TEST_ASSERT_TRUE(f.controls[6] >= F(0) && f.controls[6] <= F(1) && f.controls[7] >= F(0) && f.controls[7] <= F(1));
   TEST_ASSERT_TRUE(f.count >= 1 && f.count <= SemanticFace::kMaxLayers);
@@ -108,13 +111,17 @@ inline void check(const Engine& e, const Frame* before = nullptr) {
     TEST_ASSERT_TRUE(l.weight >= F(0) && l.weight <= F(1));
     sum += l.weight;
     for (int j = 0; j < i; ++j) TEST_ASSERT_FALSE(f.layers[j].art == l.art && f.layers[j].sleeping == l.sleeping);
-    for (const F r : f.ratios(l)) TEST_ASSERT_TRUE(r > q(.75) - q(.0001) && r < q(4.0 / 3) + q(.0001));
+    const F low = l.sleeping ? q(.75) : q(.75) * (1 - f.shut.x);
+    TEST_ASSERT_TRUE(f.shut.x >= F(0) && f.shut.x <= F(1));
+    for (const F r : f.ratios(l)) TEST_ASSERT_TRUE(r > low - q(.0001) && r < q(4.0 / 3) + q(.0001));
   }
   TEST_ASSERT_TRUE(abs(sum - 1) <= q(.0001));
   if (!before) return;
   // Since the frame before: each art's weight by at most a Hermite's step,
-  // its drawn size by no more than the control it follows, each prop by at
-  // most its ramp's step, and the desk by at most its spring's.
+  // its drawn size by no more than the control it follows (and, an awake
+  // art, what squashing shut moves it: its own size times the shut's step),
+  // each prop by at most its ramp's step, and the desk by at most its
+  // spring's.
   const int sized[] = {2, 4, 5};
   for (int i = 0; i < f.count; ++i) {
     const auto& l = f.layers[i];
@@ -124,9 +131,11 @@ inline void check(const Engine& e, const Frame* before = nullptr) {
       if (was.art != l.art || was.sleeping != l.sleeping) continue;
       TEST_ASSERT_TRUE(abs(l.weight - was.weight) <= kWeightStep);
       if (l.sleeping) continue;
-      for (int r = 0; r < 3; ++r)
-        TEST_ASSERT_TRUE(abs(ratio[r] - was.ratio[r]) * slime::kProfile[l.art].face[sized[r]] <=
-                         abs(f.controls[sized[r]] - before->controls[sized[r]]) + q(.00001));
+      for (int r = 0; r < 3; ++r) {
+        const F size = slime::kProfile[l.art].face[sized[r]];
+        TEST_ASSERT_TRUE(abs(ratio[r] - was.ratio[r]) * size <= abs(f.controls[sized[r]] - before->controls[sized[r]]) +
+                                                                    abs(f.shut.x - before->shut) * size + q(.00001));
+      }
     }
   }
   for (int p = 0; p < Scenes::kProps; ++p)
@@ -142,7 +151,15 @@ inline void check(const Engine& e, const Frame* before = nullptr) {
 // the props and a card's reveal while it shows. Jolts keeps the runs'
 // largest changes; each run's Track feeds it.
 struct Jolts {
-  enum { kControls = 0, kPosture = 8, kProps = 10, kDesk = kProps + Scenes::kProps, kReveal, kWeight = kReveal + 2, kFamilies };
+  enum {
+    kControls = 0,
+    kPosture = 8,
+    kProps = 10,
+    kDesk = kProps + Scenes::kProps,
+    kReveal,
+    kWeight = kReveal + 2,
+    kFamilies
+  };
   double event[kFamilies]{}, steady[kFamilies]{};
   void finish(double factor = 2) const {
     for (int f = 0; f < kFamilies; ++f) {
@@ -172,9 +189,8 @@ struct Track {
   };
   static Said said(const Engine& e) {
     const auto& r = e.router;
-    return {r.facts.base,  r.facts.act,           r.facts.attention.on,  r.hasMoment,           r.timedOut,
-            r.listening,   r.hasOverlay,          e.grab,                r.facts.attention.id,  r.moment.requestId,
-            r.overlayExpression, e.emotion};
+    return {r.facts.base, r.facts.act, r.facts.attention.on, r.hasMoment,        r.timedOut,          r.listening,
+            r.hasOverlay, e.grab,      r.facts.attention.id, r.moment.requestId, r.overlayExpression, e.emotion};
   }
   Said last{};
   Frame frames[2];
@@ -197,9 +213,11 @@ struct Track {
       auto d2 = [&](int family, F a, F b, F c) {
         out[family] = std::max(out[family], std::abs(double((c - b * 2 + a).raw) / F::scale));
       };
-      for (int k = 0; k < 8; ++k) d2(Jolts::kControls + k, frames[0].controls[k], frames[1].controls[k], now.controls[k]);
+      for (int k = 0; k < 8; ++k)
+        d2(Jolts::kControls + k, frames[0].controls[k], frames[1].controls[k], now.controls[k]);
       for (int k = 0; k < 2; ++k) d2(Jolts::kPosture + k, posture[0][k], posture[1][k], nowPosture[k]);
-      for (int k = 0; k < Scenes::kProps; ++k) d2(Jolts::kProps + k, frames[0].props[k], frames[1].props[k], now.props[k]);
+      for (int k = 0; k < Scenes::kProps; ++k)
+        d2(Jolts::kProps + k, frames[0].props[k], frames[1].props[k], now.props[k]);
       d2(Jolts::kDesk, frames[0].desk, frames[1].desk, now.desk);
       for (int k = 0; k < 2; ++k)
         if (shown[0][k] && shown[1][k] && nowShown[k]) d2(Jolts::kReveal + k, reveal[0][k], reveal[1][k], nowReveal[k]);

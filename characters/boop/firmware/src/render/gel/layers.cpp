@@ -427,10 +427,10 @@ void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look
 
 int sleepyLids(const Engine& e) {
   if (!hasTag(e.scenes.when, "night")) return 0;
-  F awake = 1;  // the awake faces' share: the lids go as the sleeping face crosses in, and come back as it wakes
-  for (int i = 0; i < e.face.count; ++i)
-    if (e.face.layers[i].sleeping) awake -= e.face.layers[i].weight;
-  return kNightLids * scalar(awake) / 4096;
+  // They go as the face squashes shut, gone by when it's a line, and come
+  // back as it wakes.
+  const F open = max(0, 1 - e.face.shut.x / SemanticFace::kShutLine);
+  return int((open.raw * kNightLids + F::scale / 2) / F::scale);
 }
 
 void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {

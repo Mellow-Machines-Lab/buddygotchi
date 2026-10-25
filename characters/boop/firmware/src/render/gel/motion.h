@@ -25,10 +25,18 @@ struct SemanticFace {
   static constexpr int kScale = 256;
   // At most this many arts at once.
   static constexpr int kMaxLayers = 4;
-  // The face's own window and its controls' spring (face.mjs
-  // faceTransition), and falling asleep's (sleepTransition): the lids droop
-  // shut, and the controls keep sleep's spring until the face wakes.
-  static constexpr int kFaceMs = 180, kFaceFrequency = 20, kSleepMs = 480, kSleepFrequency = 8;
+  // The face's own window and its controls' spring, and falling asleep's
+  // spring, a slow one, which the controls keep until the face wakes.
+  static constexpr int kFaceMs = 180, kFaceFrequency = 20, kSleepFrequency = 4;
+  // Falling asleep, the awake face squashes shut: `shut` springs to one on
+  // sleep's spring (back to nothing on the face's, waking), and the awake
+  // arts' drawn sizes follow the controls under their saturation that far,
+  // down to the sleeping face's sizes: the eyes to lines, the mouth to the
+  // sleeping one's. Once it's kShutLine shut, about a second from awake,
+  // the sleeping face crosses in over kSwapMs, the lines easing into its
+  // lids: asleep, alone, by about 1.3 s.
+  static constexpr F kShutLine = q(.9), kLineHalf = q(.015);
+  static constexpr int kSwapMs = 360;
   struct Layer {
     int art = slime::kCalm;
     bool sleeping = false;
@@ -43,6 +51,7 @@ struct SemanticFace {
   std::array<Layer, kMaxLayers> layers{};
   int count = 1, targetId = slime::kCalm;
   bool targetSleeping = false;
+  Spring shut;
   // The window the arts cross over in, and how far into it they are.
   T elapsedMs, durationMs = kFaceMs;
   SemanticFace();
@@ -50,6 +59,8 @@ struct SemanticFace {
   // A layer's drawn size ratios, the eye's and the mouth's width and
   // height: the live controls over its own size.
   std::array<F, 3> ratios(const Layer& layer) const;
+  // To the target's art (the sleeping face's while it sleeps), crossing
+  // over in `ms`.
   void retarget(T ms = kFaceMs);
   void setMood(int id, T ms = kFaceMs);
   void setSleeping(bool value);
@@ -57,6 +68,9 @@ struct SemanticFace {
 
  private:
   void weigh(F s);
+  // The controls toward the target's face (the sleeping face's sizes while
+  // it sleeps), from where they are, its art unchanged.
+  void aim();
   // Takes layer i out, the ones after it moving down.
   void drop(int i);
 };

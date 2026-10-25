@@ -167,10 +167,11 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [ ] Reference frames are committed, capped at 512 px a side: fine for
       sketches and GIFs, heavy for long videos. Keep, or commit only the
       contact sheets?
-- [ ] Design calls the final review left, each a change to how it looks:
-      - The gel: falling asleep cross-fades two arts in 480 ms (the
-        longest that keeps the ink check's 85%); a morph that squashes the
-        face shut would let the length be a choice.
+- [x] Design calls the final review left, each a change to how it looks:
+      - The gel: falling asleep is a morph now, the awake face squashing
+        shut on a slow spring (ω 4) to lines and swapping to the sleeping
+        face over 360 ms once it's one, alone by about 1.3 s; waking
+        stays the face's 180 ms.
 - [ ] On the AMOLED board: turn it over once to confirm the motion
       sensor's z (flipped on 2026-10-22: resting on the desk it read
       -1 g and thought it was face down; now +1 g), and try a stroke, a
