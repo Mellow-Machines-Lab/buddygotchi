@@ -1455,6 +1455,8 @@ void test_a_request_keeps_its_identity();
 void test_cues_stay_sparse_and_quiet();
 void test_a_request_sounds_once_whatever_changes();
 void test_sound_draws_change_nothing_drawn();
+// test_smooth.cpp
+void test_a_falling_word_falls_in_sixteenths();
 static void test_gel_draws_natively() {
   // Full-panel RGB565. The gel asks for native surfaces;
   // Device allocates them at the board's size, which the simulator's Hal
@@ -2481,5 +2483,7 @@ int main() {
   RUN_TEST(test_the_drawers_rows_on_the_panel);
   RUN_TEST(test_the_body_under_the_drawer);
   RUN_TEST(test_drawer_frames_allocate_nothing);
+  // test_smooth.cpp
+  RUN_TEST(test_a_falling_word_falls_in_sixteenths);
   return UNITY_END();
 }

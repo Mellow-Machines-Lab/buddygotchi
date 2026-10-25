@@ -741,7 +741,8 @@ its colour (teal, amber, lilac, lime by slot), with no name: the colours
 tell the agents apart, and the screen has no room to say whose is whose.
 Lanes sit clear of the head and its hat (`render::laneX`: one lane on the
 left, two either side, three or four along both sides). A word falls, in
-the large font at most 43% opaque, for each new call a `state` counts
+the large font at most 43% opaque, a sixteenth of a pixel at a time
+(between whole pixels each row blends the glyph's two rows over it), for each new call a `state` counts
 (at most two a `state`, eight at once), easing in over 200 ms and out
 over its last 600 ms of 3.2 s. They're drawn after the body, onto the
 background's black only, so the body, its props and what it wears cover

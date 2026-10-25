@@ -21,6 +21,8 @@ struct Layout {
   int w, h;
   int x(int p) const { return w * p / 502; }
   int y(int p) const { return h * p / 410; }
+  // The same, from and to sixteenths of a pixel.
+  int y16(int p16) const { return int(int64_t(h) * p16 / 410); }
   // A lane's name's middle, by its place among the lanes showing
   // (render::laneX): clear of the head and its hat.
   int column(const Stream& s, uint8_t slot) const { return x(laneX(s.column(slot), s.laneCount)); }
@@ -75,26 +77,42 @@ void centred(Raster& r, const Font& f, int cx, int cy, const char* s, uint16_t i
   text(r, f, cx - glyphCount(s) * f.w / 2, cy - f.h / 2, s, ink);
 }
 
-// Text centred on (cx, cy) behind what's drawn: only onto the background's
-// black, each pixel the ink at its coverage times `alpha` over black, so a
-// word behind the body costs nothing to draw, clear or push.
-void behind(Surface& s, const Font& f, int cx, int cy, const char* str, uint16_t ink, int alpha, int bottom) {
-  uint16_t shade[16];
-  for (int c = 0; c < 16; ++c) shade[c] = mix565(0, ink, alpha * c / 15);
-  const int rowBytes = (f.w + 1) / 2;
+// Text centred on (cx, cy16), cy16 in sixteenths of a pixel, behind
+// what's drawn: only onto the background's black, each pixel the ink at
+// its coverage times `alpha` over black, so a word behind the body costs
+// nothing to draw, clear or push. Between whole pixels each row takes the
+// glyph's two rows over it, each by how much of the row it covers, so a
+// falling word moves a sixteenth at a time rather than a whole pixel every
+// few frames (it falls straight down: only rows blend); on a whole pixel
+// it's the glyph as drawn.
+void behind(Surface& s, const Font& f, int cx, int cy16, const char* str, uint16_t ink, int alpha, int bottom) {
+  // The ink at each of 63 steps of coverage (0–240, two rows' 0–15 by
+  // their sixteenths): finer than RGB565 at the most a word shows.
+  uint16_t shade[63];
+  for (int c = 0; c < 63; ++c) shade[c] = mix565(0, ink, alpha * c / 62);
+  static constexpr uint8_t kNone[128] = {};  // no glyph row: none of a row's cells
+  const int rowBytes = (f.w + 1) / 2, top16 = cy16 - f.h / 2 * 16;
+  const int y0 = top16 >= 0 ? top16 / 16 : -((15 - top16) / 16), into = top16 - y0 * 16, rows = f.h + (into > 0);
   int x = cx - glyphCount(str) * f.w / 2;
-  const int y0 = cy - f.h / 2, from = std::max(0, -y0), to = std::min(int(f.h), bottom - y0);
+  const int from = std::max(0, -y0), to = std::min(rows, bottom - y0);
   int bx0 = 1 << 30, by0 = 1 << 30, bx1 = -1, by1 = -1;
   for (int g; (g = nextGlyph(str)) >= 0; x += f.w) {
     const uint8_t* src = f.data + size_t(g) * rowBytes * f.h;
     const int c0 = std::max(0, -x), c1 = std::min(int(f.w), s.width - x);
     for (int yy = from; yy < to; ++yy) {
       uint16_t* row = s.pixels + (y0 + yy) * s.width + x;
-      const uint8_t* cells = src + yy * rowBytes;
+      // The glyph's row here, and the one above, coming down into it.
+      const uint8_t* here = yy < f.h ? src + yy * rowBytes : kNone;
+      const uint8_t* above = into && yy > 0 ? src + (yy - 1) * rowBytes : kNone;
       for (int xx = c0; xx < c1; ++xx) {
-        const int b = cells[xx >> 1], c = xx & 1 ? b & 15 : b >> 4;
+        if (!(here[xx >> 1] | above[xx >> 1])) {  // two blank cells, mostly
+          xx |= 1;
+          continue;
+        }
+        const int shift = xx & 1 ? 0 : 4;
+        const int c = (here[xx >> 1] >> shift & 15) * (16 - into) + (above[xx >> 1] >> shift & 15) * into;  // 0–240
         if (!c || row[xx]) continue;
-        row[xx] = shade[c];
+        row[xx] = shade[c * 67 >> 8];
         bx0 = std::min(bx0, x + xx), bx1 = std::max(bx1, x + xx);
         by0 = std::min(by0, y0 + yy), by1 = std::max(by1, y0 + yy);
       }
@@ -325,11 +343,11 @@ void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t) {
     const bool held = stream.frozen() && int32_t(w.born - stream.call.at) <= 0;
     const int age = int(int32_t((held ? stream.call.at : t) - w.born));
     if (age < 0 || age >= int(Stream::kFallMs)) continue;
-    const int y = l.y(kTop) + l.y(int(int64_t(age) * w.speed / 1000));
+    const int y16 = l.y16(kTop * 16 + int(int64_t(age) * w.speed * 16 / 1000));
     const int in = std::min(255, age * 255 / 200), out = std::min(255, (int(Stream::kFallMs) - age) * 255 / 600);
     const int alpha = held ? 170 : std::min(in, out) * 110 / 255;
     if (alpha < 3) continue;
-    behind(surface, kLarge, l.x(w.x), y, w.text, held ? kIce : laneInk(w.slot), alpha, bottom);
+    behind(surface, kLarge, l.x(w.x), y16, w.text, held ? kIce : laneInk(w.slot), alpha, bottom);
   }
 }
 
