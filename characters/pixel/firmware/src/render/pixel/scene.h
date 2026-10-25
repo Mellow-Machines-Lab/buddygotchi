@@ -31,8 +31,7 @@ Outcome variantOutcome(Mood m, SceneState s, int variant);  // the first's for o
 StartCtx variantCtx(Mood m, SceneState s, int variant);
 // The variations (from 0) of m's design for s that fit an outcome and a
 // context, kNone fitting any, in order into `out` (room for kMaxVariants),
-// and how many; every variation when none fits, as the Mac's
-// FaceLoops.variants does.
+// and how many; every variation when none fits.
 int fitting(Mood m, SceneState s, Outcome o, StartCtx c, uint8_t* out);
 // Whether a variation may show now: every tag it needs is on in `when`
 // (render/tags.h) and its look has shown its wait (`lookMs`). And whether
