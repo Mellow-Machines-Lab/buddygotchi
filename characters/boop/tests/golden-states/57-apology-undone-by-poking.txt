@@ -221,7 +221,8 @@ Examples:
 MOOD
 Grumpy. Boop is fed up: turns failed, or pokes kept coming.
 It flares up and soon blows over: once Boop has been grumpy for 2
-min, anything but a poke in NOW cools it to annoyed.
+min, anything but a poke in NOW cools it to annoyed. A stroke or a
+sorry cools it at once, even inside those 2 min.
 Its faces lean grumpy at failures and pokes. A win gets a grudging
 proud, never grumpy or excited.
 Grumbles: work in a grunt, upset in a phrase at failures and pokes,
