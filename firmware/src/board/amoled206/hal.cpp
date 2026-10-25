@@ -1,5 +1,6 @@
 // The AMOLED board's own part of BoardHal: the shared
-// I2C bus, touch and card, the touch map from panel pixels, and no LED.
+// I2C bus, touch and card, the touch map from panel pixels, the drawing
+// helper on the other core, and no LED.
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -30,12 +31,15 @@ app::TouchCal panelToCanvas() {
 
 }  // namespace
 
+void startHelper();  // amoled206/helper.cpp
+
 void BoardHal::beginBoard() {
   pinMode(pins::kMainButton, INPUT_PULLUP);
   Wire.begin(pins::kI2cSda, pins::kI2cScl, 400000);  // touch now, the codec in audioBegin
   touchBegin();
   cardBegin();  // the voice file; dbg.ping's `card` says whether it's there
   defaultCal_ = panelToCanvas();
+  startHelper();  // the other core draws part of each native frame
 }
 
 void BoardHal::setLed(uint32_t) {}  // no LED on this board

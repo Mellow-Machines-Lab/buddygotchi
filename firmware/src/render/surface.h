@@ -89,41 +89,63 @@ struct Surface {
   // writes them whole again; until it does, they count as written, so a
   // frame that skips blit erases them next time.
   void clear(const Box* keep = nullptr, int keepCount = 0, uint32_t keepLane = 0) {
-    if (!pixels) return;
+    const Erasing e = beginClear(keep, keepCount, keepLane);
+    erase(e, 0, height);
+  }
+  // The same clear in parts, for drawing that erases its rows just before
+  // it draws them, while they're still in the cache, or on two cores:
+  // beginClear says what to erase and keeps the surface's books, then
+  // erase does rows [from, to), each row once, before anything is drawn in
+  // it.
+  struct Erasing {
+    int to = 0;          // the rows from here down aren't erased
+    bool whole = false;  // every pixel, not just the written spans
+    const Box* keep = nullptr;
+    int keepCount = 0;
+  };
+  Erasing beginClear(const Box* keep = nullptr, int keepCount = 0, uint32_t keepLane = 0) {
+    Erasing e;
+    if (!pixels) return e;
     const int canvasFrom = lane >= 0 && lane < height && height <= kTrackedRows ? lane : height;
     if (invalid || height > kTrackedRows || keepCount <= 0) cardKey = 0;
     const bool laneKept = !invalid && height <= kTrackedRows && keepLane && keepLane == laneKey && laneKeyFrom >= 0 &&
                           laneKeyFrom <= canvasFrom;
-    const int erasedTo = laneKept ? laneKeyFrom : canvasFrom;
-    if (invalid || height > kTrackedRows) {
-      std::memset(pixels, 0, bytes());
-    } else {
-      keepCount = std::clamp(keepCount, 0, kMaxKeep);
-      for (int y = 0; y < erasedTo; ++y) {
-        const auto& row = written[y];
-        if (!row.last) continue;
-        // The kept stretches of this row, in order, then the gaps erased.
-        int from[kMaxKeep], to[kMaxKeep], n = 0;
-        for (int k = 0; k < keepCount; ++k) {
-          const Box& b = keep[k];
-          if (y < b.y0 || y >= b.y1 || b.x1 <= b.x0) continue;
-          int i = n++;
-          for (; i > 0 && from[i - 1] > b.x0; --i) from[i] = from[i - 1], to[i] = to[i - 1];
-          from[i] = b.x0, to[i] = b.x1;
-        }
-        int x = row.first;
-        for (int i = 0; i <= n && x < row.last; ++i) {
-          const int end = i < n ? std::min<int>(from[i], row.last) : row.last;
-          if (end > x) std::memset(pixels + y * width + x, 0, (end - x) * sizeof(uint16_t));
-          if (i < n) x = std::max(x, to[i]);
-        }
-      }
-    }
-    for (int y = 0; y < erasedTo; ++y) written[y] = {};
-    for (int y = canvasFrom; y < height; ++y) written[y] = invalid ? Span{} : Span{0, uint16_t(width)};
+    e.whole = invalid || height > kTrackedRows;
+    e.to = e.whole ? height : laneKept ? laneKeyFrom : canvasFrom;
+    e.keep = keep, e.keepCount = e.whole ? 0 : std::clamp(keepCount, 0, kMaxKeep);
+    for (int y = canvasFrom; y < std::min(height, kTrackedRows); ++y) written[y] = invalid ? Span{} : Span{0, uint16_t(width)};
     invalid = false;
     lane = -1;
     if (!laneKept) laneKey = 0, laneKeyFrom = -1;
+    return e;
+  }
+  void erase(const Erasing& e, int from, int to) {
+    if (!pixels) return;
+    from = std::max(0, from), to = std::min(to, e.to);
+    if (e.whole) {
+      if (from < to) std::memset(pixels + size_t(from) * width, 0, size_t(to - from) * width * sizeof(uint16_t));
+    } else {
+      for (int y = from; y < to; ++y) {
+        const auto& row = written[y];
+        if (!row.last) continue;
+        // The kept stretches of this row, in order, then the gaps erased.
+        int starts[kMaxKeep], ends[kMaxKeep], n = 0;
+        for (int k = 0; k < e.keepCount; ++k) {
+          const Box& b = e.keep[k];
+          if (y < b.y0 || y >= b.y1 || b.x1 <= b.x0) continue;
+          int i = n++;
+          for (; i > 0 && starts[i - 1] > b.x0; --i) starts[i] = starts[i - 1], ends[i] = ends[i - 1];
+          starts[i] = b.x0, ends[i] = b.x1;
+        }
+        int x = row.first;
+        for (int i = 0; i <= n && x < row.last; ++i) {
+          const int end = i < n ? std::min<int>(starts[i], row.last) : row.last;
+          if (end > x) std::memset(pixels + y * width + x, 0, (end - x) * sizeof(uint16_t));
+          if (i < n) x = std::max(x, ends[i]);
+        }
+      }
+    }
+    for (int y = from; y < std::min(to, kTrackedRows); ++y) written[y] = {};
   }
 };
 // The canvas, stretched to the surface's size (nearest pixel), into its

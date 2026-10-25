@@ -1131,8 +1131,12 @@ void rollOver(const Stage& s, const PastimeShow& p) {
 
 }  // namespace
 
+bool showsScenery(const PastimeShow& show) {
+  return show.camp || show.plant || (show.fade && show.playing == Pastime::kStargaze);
+}
+
 void paintScenery(Surface& surface, const PastimeShow& show) {
-  if (!surface.pixels) return;
+  if (!surface.pixels || !showsScenery(show)) return;
   Raster r{surface};
   rig::Anchors none;
   const Stage s{r, surface.width, surface.height, none};

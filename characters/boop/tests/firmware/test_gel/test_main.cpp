@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include "render/gel/painter.h"
+#include "render/helper.h"
 #include "render/gel/geometry.h"
 #include "render/gel/face.h"
 #include "render/pixel/anim.h"
@@ -76,6 +77,44 @@ static void test_frame_replay_is_byte_identical() {
   e->face.scaled[2] = e->face.scaled[2] * q(.8);  // the eyes drawn less open
   paint(sb, *e);
   TEST_ASSERT_NOT_EQUAL(0, std::memcmp(a.data(), b.data(), sa.bytes()));
+}
+// The AMOLED's other core draws the body's lower rows (render/helper.h):
+// however the rows are shared out, the frame is the same pixels as one
+// core's. The stand-in runs each job at once, on a clock that makes the
+// share move every frame.
+static uint32_t helperClock = 0;
+static void test_a_helper_draws_the_same_body() {
+  std::vector<uint16_t> a(502 * 410), b(a.size());
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  auto e = std::make_unique<Engine>();
+  e->setMood(slime::kFrightened);
+  e->motion.impulse(false);
+  {
+    PaintControls c;
+    c.lean = 900;
+    render::helper = {};
+    paint(sa, c);
+    render::helper = {[](void (*job)(void*), void* arg) { job(arg); }, [] {},
+                      [] { return helperClock += helperClock % 3 ? 7 : 1; }};
+    paint(sb, c);
+    render::helper = {};
+    int diffs = 0, first = -1;
+    for (size_t i = 0; i < a.size(); ++i)
+      if (a[i] != b[i]) first = first < 0 ? int(i) : first, ++diffs;
+    char msg[96];
+    snprintf(msg, sizeof msg, "body-only diffs=%d first=(%d,%d)", diffs, first % 502, first / 502);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, diffs, msg);
+  }
+  for (int t = 0; t <= 640; t += 16) {
+    e->step(t);
+    render::helper = {};
+    paint(sa, *e);
+    render::helper = {[](void (*job)(void*), void* arg) { job(arg); }, [] {},
+                      [] { return helperClock += helperClock % 3 ? 7 : 1; }};
+    paint(sb, *e);
+    TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), sa.bytes());
+  }
+  render::helper = {};
 }
 static void test_one_face_vocabulary_and_latest_facts() {
   linkkit::Rng rng;
@@ -2346,6 +2385,7 @@ int main() {
   RUN_TEST(test_a_divisor_divides_exactly);
   RUN_TEST(test_all_expressions_draw_inside_native_surface);
   RUN_TEST(test_frame_replay_is_byte_identical);
+  RUN_TEST(test_a_helper_draws_the_same_body);
   RUN_TEST(test_one_face_vocabulary_and_latest_facts);
   RUN_TEST(test_request_identity_and_cache_bounds);
   RUN_TEST(test_grid_voice_lead_and_late_cues);

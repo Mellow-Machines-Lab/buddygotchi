@@ -1,5 +1,6 @@
 #include "voice/player.h"
 
+#include <cstdlib>
 #include <cstring>
 
 namespace voice {
@@ -26,8 +27,15 @@ struct VoiceFile {
   Source* source = nullptr;
   char version[17] = "none";
   uint32_t count = 0, indexAt = 0;
+  // Every record's id, read once as the file opens, so a lookup on the
+  // main loop searches memory and reads the card once, for its take's
+  // mouth, not a dozen times. Null where there's no room for them (the
+  // CYD: 2722 takes' ids are 196 KB), which searches the card instead.
+  char* ids = nullptr;
 };
 VoiceFile file;
+// The index is read this many records at a time as the file opens.
+constexpr uint32_t kIdsChunk = 32;
 
 // The takes looked up lately, each by the handle it was given.
 struct Loaded {
@@ -67,10 +75,26 @@ bool openFile(Source* source) {
   file.version[16] = 0;
   file.count = u32(h + 24);
   file.indexAt = u32(h + 32);
+  file.ids = static_cast<char*>(std::malloc(size_t(file.count) * kIdMax));
+  auto* chunk = static_cast<uint8_t*>(std::malloc(kIdsChunk * kRecord));
+  for (uint32_t i = 0; file.ids && i < file.count; i += kIdsChunk) {
+    const uint32_t n = file.count - i < kIdsChunk ? file.count - i : kIdsChunk;
+    if (!chunk || !source->read(file.indexAt + i * kRecord, chunk, n * kRecord)) {
+      std::free(file.ids);
+      file.ids = nullptr;
+      break;
+    }
+    for (uint32_t k = 0; k < n; ++k) {
+      std::memcpy(file.ids + (i + k) * kIdMax, chunk + k * kRecord, kIdMax);
+      file.ids[(i + k) * kIdMax + kIdMax - 1] = 0;
+    }
+  }
+  std::free(chunk);
   return true;
 }
 
 void closeFile() {
+  std::free(file.ids);
   file = VoiceFile{};
   for (Loaded& s : slots) s.handle = -1;
 }
@@ -88,9 +112,10 @@ int takeIndex(const char* id) {
   uint32_t lo = 0, hi = file.count;
   while (lo < hi) {
     uint32_t mid = (lo + hi) / 2;
-    if (!record(mid, r)) return -1;
-    int c = std::strcmp(reinterpret_cast<const char*>(r), id);
+    if (!file.ids && !record(mid, r)) return -1;
+    int c = std::strcmp(file.ids ? file.ids + mid * kIdMax : reinterpret_cast<const char*>(r), id);
     if (c == 0) {
+      if (file.ids && !record(mid, r)) return -1;
       const uint8_t* f = r + kIdMax + kTextMax;
       uint32_t frames = u32(f + 12);
       uint8_t bytes[kMaxFrames];

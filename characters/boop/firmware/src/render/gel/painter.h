@@ -40,8 +40,11 @@ struct PastimeShow;
 // given.
 void paint(Surface& surface, const PaintControls& controls, const Box* keep = nullptr, int keepCount = 0,
            uint32_t keepLane = 0, rig::Anchors* anchors = nullptr, const PastimeShow* scenery = nullptr);
-// The body alone, over what the surface holds.
-void paintBody(Surface& surface, const PaintControls& controls, rig::Anchors* anchors = nullptr);
+// The body alone, over what the surface holds; with `erase`, a clear begun
+// (Surface::beginClear) whose rows it erases a band at a time just before
+// drawing there, every row of the surface.
+void paintBody(Surface& surface, const PaintControls& controls, rig::Anchors* anchors = nullptr,
+               const Surface::Erasing* erase = nullptr);
 // The dome on the canvas: canvas pixels a body unit at its middle.
 constexpr int kPxPerUnit = 85;
 // The rig's gazeX and gazeY at their whole (1000) move the eyes this far,

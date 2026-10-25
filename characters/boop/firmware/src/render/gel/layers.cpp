@@ -72,6 +72,8 @@ int wave(int ms, int period, int amp) {
   const int p = ms % period;
   return (p < period / 2 ? p : period - p) * 2 * amp / period;
 }
+// The same, in sixteenths of a pixel.
+int wave16(int ms, int period, int amp) { return wave(ms, period, amp * 16); }
 
 // A long sleeping cap in striped flannel: up from a soft cuff, over the
 // crown and flopping down its left side, its tassel hanging by its cheek
@@ -258,12 +260,18 @@ int spread(int i, int salt, int range) {
   return int(((uint32_t(i) + 1) * 2654435761u ^ uint32_t(salt) * 40503u) % uint32_t(range));
 }
 
+// How far something falling at `speed` px/s has gone by `ms`, from
+// `start`, wrapped at `range`: in sixteenths of a pixel, so a slow flake
+// drifts smoothly rather than stepping a whole pixel every other frame.
+int fallen16(int start, int speed, int ms, int range) {
+  return int((int64_t(start) * 16 + int64_t(ms) * speed * 16 / 1000) % (int64_t(range) * 16));
+}
+
 void snow(Raster& r, int w, int bottom, int ms) {
   r.alpha = 220;
   for (int i = 0; i < 22; ++i) {
-    const int speed = 20 + spread(i, 1, 18),
-              y = (spread(i, 2, bottom) + ms / 1000 * speed + ms % 1000 * speed / 1000) % bottom;
-    r.disk(spread(i, 3, w) + wave(ms + i * 370, 3000, 8), y, 3 + i % 2, kCream);
+    const int speed = 20 + spread(i, 1, 18), y16 = fallen16(spread(i, 2, bottom), speed, ms, bottom);
+    r.disk16(spread(i, 3, w) * 16 + wave16(ms + i * 370, 3000, 8) + 8, y16 + 8, (3 + i % 2) * 16 + 8, kCream);
   }
   r.alpha = 255;
 }
@@ -278,21 +286,25 @@ void confetti(Raster& r, int w, int bottom, int ms) {
   }
 }
 
-void heart(Raster& r, int x, int y, int s, uint16_t ink) {  // whole pixels, `s` its half-width
-  r.disk(x - s / 2, y, s / 2, ink);
-  r.disk(x + s / 2, y, s / 2, ink);
-  const Point v[] = {{x - s, y + 1}, {x + s, y + 1}, {x, y + s + s / 2}};
-  r.polygon(v, 3, ink);
+// A heart about (x16, y16), sixteenths of a pixel, `s` whole pixels its
+// half-width.
+void heart(Raster& r, int x16, int y16, int s, uint16_t ink) {
+  const int half = s / 2 * 16, lobe = std::max(1, s / 2) * 16 + 8;
+  r.disk16(x16 - half + 8, y16 + 8, lobe, ink);
+  r.disk16(x16 + half + 8, y16 + 8, lobe, ink);
+  const Point v[] = {{x16 - s * 16 + 8, y16 + 24}, {x16 + s * 16 + 8, y16 + 24}, {x16 + 8, y16 + (s + s / 2) * 16 + 8}};
+  r.polygon16(v, 3, ink);
 }
 
 // Hearts floating up either side of it.
 void hearts(Raster& r, int w, int bottom, int ms) {
   for (int i = 0; i < 6; ++i) {
     const int speed = 25 + spread(i, 7, 15);
-    const int y = bottom - 12 - (spread(i, 8, bottom) + ms / 1000 * speed + ms % 1000 * speed / 1000) % (bottom - 12);
+    const int y16 = (bottom - 12) * 16 - fallen16(spread(i, 8, bottom), speed, ms, bottom - 12);
     const int x = i % 2 ? w - 30 - spread(i, 9, w / 5) : 30 + spread(i, 9, w / 5);
-    r.alpha = std::min(255, y * 3);
-    heart(r, x + wave(ms + i * 500, 2400, 8), y, 7 + i % 3 * 2, i % 2 ? rgb565(240, 110, 150) : rgb565(220, 50, 80));
+    r.alpha = std::min(255, y16 * 3 / 16);
+    heart(r, x * 16 + wave16(ms + i * 500, 2400, 8), y16, 7 + i % 3 * 2,
+          i % 2 ? rgb565(240, 110, 150) : rgb565(220, 50, 80));
   }
   r.alpha = 255;
 }
