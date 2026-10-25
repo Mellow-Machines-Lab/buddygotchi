@@ -1083,6 +1083,12 @@ static void test_occasions_play_only_while_they_fit() {
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
 void test_a_divisor_divides_exactly();
+// test_motion.cpp
+void test_the_motion_v1_numbers();
+void test_the_finger_numbers();
+void test_acting_timing_and_springs();
+void test_setters_keep_springs_and_replay();
+void test_the_scenes_formulas();
 static void test_gel_draws_natively() {
   // Full-panel RGB565. The gel asks for native surfaces;
   // Device allocates them at the board's size, which the simulator's Hal
@@ -1768,5 +1774,11 @@ int main() {
   RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
+  // test_motion.cpp
+  RUN_TEST(test_the_motion_v1_numbers);
+  RUN_TEST(test_the_finger_numbers);
+  RUN_TEST(test_acting_timing_and_springs);
+  RUN_TEST(test_setters_keep_springs_and_replay);
+  RUN_TEST(test_the_scenes_formulas);
   return UNITY_END();
 }
