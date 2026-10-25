@@ -14,19 +14,11 @@
   const time = ms => `${ms > 0 ? '+' : ''}${ms} ms`;
   // The everyday transitions, which Transitions' Rank records on the board
   // and lists by their ratio, the jumpiest first: internal/tools/fluid/
-  // transitions.jsonl's, so the two measures compare. Each a name, a start
-  // and an end, as the address has them (mood/state, and /fact for a state
-  // with one); a finish over working is asked in its own mood, as the
-  // recording's is.
-  const EVERYDAY = [
-    ['to working', 'calm/idle', 'calm/working'],
-    ['a mood change', 'calm/working', 'happy/working'],
-    ['a finish', 'happy/working', 'excited/task_complete/success'],
-    ['back to idle', 'excited/task_complete/success', 'happy/idle'],
-    ['a poke', 'happy/idle', 'happy/poked'],
-    ['a stroke', 'happy/idle', 'happy/gesture'],
-    ['to asleep', 'happy/idle', 'happy/asleep'],
-  ];
+  // transitions.jsonl's, so the two measures compare, as charactergen reads
+  // them. Each a name, a start and an end, as the address has them
+  // (mood/state, and /fact for a state with one); a finish over working is
+  // asked in its own mood, as the recording's is.
+  const EVERYDAY = window.StudioData?.everyday || [];
 
   // A transport: Play steps `show(i)` through n frames, 40 ms apart, looping; the range scrubs.
   function transport(root, show) {
@@ -182,7 +174,7 @@
     async function rank() {
       const face = onBoard(api, status);
       if (!face) return;
-      const live = ranking = ranks.start(), list = EVERYDAY.map(([name, a, b]) => ({name, from: cellFrom(api, a), to: cellFrom(api, b)}));
+      const live = ranking = ranks.start(), list = EVERYDAY.map(({name, from, to}) => ({name, from: cellFrom(api, from), to: cellFrom(api, to)}));
       const done = said => { Object.assign(s, {ranking: false, rankSaid: said}); ranked(); };
       Object.assign(s, {ranked: [], ranking: true, face});
       for (const [i, t] of list.entries()) {

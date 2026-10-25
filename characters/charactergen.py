@@ -61,6 +61,7 @@ FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
 FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 # The rig's channels, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
+EVERYDAY = ROOT / "internal" / "tools" / "fluid" / "transitions.jsonl"
 # The universal moods' one list, which the app's pack loader holds too.
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
@@ -582,14 +583,22 @@ def files_in(folder: Path) -> dict[str, Path]:
             if p.is_file() and ".git" not in p.relative_to(folder).parts}
 
 
+# What makes a pack that nothing staged reads (§2): its art's sources, its
+# references and its review queue, which the tools and the studio read
+# from the pack itself.
+UNSTAGED = ("design", "references", "review")
+
+
 def overlay(dest: Path, own: Path, extra: dict[str, Path]) -> None:
     """Lays dest out as own's files plus extra's (path: its file or folder),
     each file a link to its source in folders of their own: Foundation
-    won't list a folder through a link to it."""
+    won't list a folder through a link to it. UNSTAGED stays out."""
     files = files_in(own)
     for rel, src in extra.items():
         files.update({f"{rel}/{inner}".rstrip("/"): path for inner, path in files_in(src).items()})
     for rel, src in files.items():
+        if rel.split("/", 1)[0] in UNSTAGED:
+            continue
         (dest / rel).parent.mkdir(parents=True, exist_ok=True)
         (dest / rel).symlink_to(src.resolve())
 
@@ -623,6 +632,46 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
     if not match:
         raise SystemExit(f"charactergen: no actFromName in {source}")
     return [re.sub(r"(?<!^)(?=[A-Z])", "_", e).lower() for e in re.findall(r"case SceneState::k(\w+):", match.group(1))]
+
+
+def everyday(source: Path = EVERYDAY) -> list[dict]:
+    """The everyday transitions, which the studio's Rank records on the
+    board so that its measure and internal/tools/fluid/measure.py's
+    compare: those transitions.jsonl records. Each run of its shots with
+    one name (`<ms>-<name>`) after the first is one, named so, from what
+    showed before the messages that start it to what they ask for, each a
+    cell as the studio's address has it (mood/state, and /fact for a state
+    with one): a `state` its look (working's design for what the agent
+    does, if the board draws one), a `do` its reaction in its own mood, and
+    a touch the board's own, a tap's poke or a stroke's gesture, which plays
+    over the look and leaves it to the next."""
+    acts, out = set(firmware_acts()), []
+    look, mood, name, asked = None, None, None, None  # asked: (from, to) since the last shot
+    for line in source.read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith("//"):
+            continue
+        step = json.loads(line)
+        if "shot" in step:
+            shot = step["shot"].partition("-")[2]
+            if asked and asked[0] and shot != name:
+                out.append({"name": shot.replace("-", " "), "from": asked[0], "to": asked[1]})
+            name, asked = shot, None
+            continue
+        kind = step.get("t")
+        if kind == "state":
+            mood, act = step["mood"], step.get("act")
+            cell = f"{mood}/{act if step['base'] == 'working' and act in acts else step['base']}"
+        elif kind == "do":
+            args = step.get("args", {})
+            cell = "/".join([args.get("mood", mood), step["name"]] + [f for f in (args.get("outcome") or args.get("ctx"),) if f])
+        elif kind == "dbg.touch":
+            cell = f"{mood}/{'gesture' if 'to_x' in step else 'poked'}"
+        else:
+            continue
+        asked = (asked[0] if asked else look, cell)
+        if kind != "dbg.touch":
+            look = cell
+    return out
 
 
 def wears(pack: Path, entry: dict) -> dict[str, str]:
@@ -741,13 +790,15 @@ def references_data(pack: Path, here) -> list[dict]:
 
 def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, reads: Reads | None = None) -> dict:
     """The studio page's data: the engine's states, with the acts the board
-    draws while working; the frames' interval; the staged pack; and, for
+    draws while working; the frames' interval; the everyday transitions
+    (everyday()); the staged pack; and, for
     each pack, its moods, its studio entries (its own, those it uses and a
     board for each face), its references, and its review queue and notes,
     with paths from the page."""
     last, reads = staged(), reads or Reads()
     data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None,
-            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "packs": {}}
+            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "everyday": everyday(),
+            "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)

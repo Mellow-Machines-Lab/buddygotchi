@@ -30,6 +30,43 @@ class RepoTests(unittest.TestCase):
         self.assertEqual(gen.firmware_acts(), ["planning", "terminal", "tool_use", "searching", "analyzing", "testing", "delegating", "waiting"])
         self.assertLess(set(gen.firmware_acts()), set(gen.firmware_states()))
 
+    def test_the_everyday_transitions_are_cells_of_the_studios(self):
+        """The studio's Rank records transitions.jsonl's transitions, each from and to a cell its address has: a
+        universal mood, a state of the board's and, for a state with one, a fact it has."""
+        table, moods = gen.states(), set(gen.universal_moods())
+        transitions = gen.everyday()
+        self.assertGreaterEqual(len(transitions), 5)
+        for t in transitions:
+            for cell in (t["from"], t["to"]):
+                mood, state, *fact = cell.split("/")
+                self.assertIn(mood, moods, cell)
+                self.assertIn(state, gen.state_ids(table), cell)
+                options = [o["id"] for o in table["facts"].get(state, {}).get("options", [])]
+                self.assertEqual(len(fact), bool(options), cell)
+                self.assertTrue(set(fact) <= set(options), cell)
+
+    def test_the_everyday_transitions_are_the_recordings(self):
+        """Each run of shots with one name after the first is a transition, named so, from what showed before its
+        messages to what they ask for: a look (an act the board draws, else working), a reaction in its own mood, or
+        a touch's, which leaves the look to the next."""
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "t.jsonl"
+            steps = [{"t": "dbg.reset"}, {"clock": 0}, {"t": "state", "base": "idle", "mood": "calm"}, {"shot": "000040-idle"},
+                     {"t": "state", "base": "working", "mood": "calm", "act": "testing"}, {"shot": "000080-to-tests"},
+                     {"t": "state", "base": "working", "mood": "calm", "act": "typing"}, {"shot": "000120-typing"},
+                     {"t": "do", "name": "task_complete", "args": {"outcome": "failure", "mood": "sad"}},
+                     {"shot": "000160-a-finish"}, {"shot": "000200-a-finish"},
+                     {"t": "dbg.touch", "x": 60, "y": 120, "ms": 60}, {"shot": "000240-a-poke"},
+                     {"t": "dbg.touch", "x": 60, "y": 120, "to_x": 220, "to_y": 120, "ms": 500}, {"shot": "000280-a-stroke"}]
+            source.write_text("// A recording.\n" + "\n".join(json.dumps(s) for s in steps) + "\n")
+            self.assertEqual(gen.everyday(source), [
+                {"name": "to tests", "from": "calm/idle", "to": "calm/testing"},
+                {"name": "typing", "from": "calm/testing", "to": "calm/working"},
+                {"name": "a finish", "from": "calm/working", "to": "sad/task_complete/failure"},
+                {"name": "a poke", "from": "sad/task_complete/failure", "to": "calm/poked"},
+                {"name": "a stroke", "from": "sad/task_complete/failure", "to": "calm/gesture"},
+            ])
+
     def test_every_pack_here_is_clean(self):
         self.assertEqual(gen.studio_problems(gen.local_packs()), [])
         self.assertEqual(gen.state_problems(gen.local_packs()), [])
@@ -176,10 +213,11 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(self.problems(clash), ["clash: each of its studio entries needs an id of its own"])
 
     def test_staging_takes_the_packs_own_files_only(self):
-        """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources."""
+        """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources. What makes the pack isn't staged at all."""
         pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
                          files=[("firmware/include/face.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
-                                ("steering/guide.md", ""), ("design/art.txt", ""), ("rig/looks.json", {})])
+                                ("steering/guide.md", ""), ("design/art.txt", ""), ("rig/looks.json", {}),
+                                ("references/2026-10-24-art/reference.json", {}), ("review/queue.json", [])])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
@@ -188,6 +226,11 @@ class StudioRuleTests(unittest.TestCase):
                          ["firmware/include/face.h", "firmware/include/moods.h", "firmware/include/rig_tables.h",
                           "firmware/src/render/face/face.cpp", "pack", "packs/chosen", "packs/solo/character.json",
                           "packs/solo/mac/takes.tsv", "packs/solo/steering/guide.md"])
+        self.assertEqual(sorted(n for n in staged if n.startswith("staged/")),
+                         ["staged/solo/character.json", "staged/solo/firmware/include/face.h",
+                          "staged/solo/firmware/src/render/face/face.cpp", "staged/solo/mac/takes.tsv",
+                          "staged/solo/rig/looks.json", "staged/solo/steering/guide.md", "staged/solo/voice/voice.bin"],
+                         "what makes the pack, its design/, references/ and review/, isn't staged")
         moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
         self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
         self.assertIn('kPackId = "solo"', moods)

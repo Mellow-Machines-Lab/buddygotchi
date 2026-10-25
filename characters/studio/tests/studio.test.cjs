@@ -22,6 +22,19 @@ test('a pixel changed when its difference\'s luma is over 24 levels, and a summa
   for(const {changes,...expected} of summaries)assert.deepEqual(summary(changes),expected,`${changes}: the median, the first largest and their ratio`);
 });
 
+test('Rank\'s everyday transitions are transitions.jsonl\'s, by its shots\' names, and the board is asked for each', async () => {
+  const {TAP}=await import(path.join(repo,'simulator/web/boop-simulator.js'));
+  const wire=wiring({acts,tap:TAP}),everyday=python('print(json.dumps(gen.everyday()))');
+  const shots=fs.readFileSync(path.join(repo,'internal/tools/fluid/transitions.jsonl'),'utf8').match(/"shot": "\d+-[a-z-]+"/g)
+    .map(s=>s.slice(s.indexOf('-')+1,-1).replace(/-/g,' '));
+  assert.deepEqual(everyday.map(t=>t.name),[...new Set(shots)].slice(1),'each run of shots after the first');
+  const facts=JSON.parse(fs.readFileSync(path.join(studio,'states.json'),'utf8')).facts;
+  for(const {from,to} of everyday)for(const cell of [from,to]){
+    const [mood,state,fact]=cell.split('/');
+    assert.ok(wire({mood,state,...(fact?{[facts[state].name]:fact}:{})}).steps.length,cell);
+  }
+});
+
 test('the board is asked for each state as the Mac asks for it', async () => {
   const {TAP}=await import(path.join(repo,'simulator/web/boop-simulator.js'));
   const wire=wiring({acts,tap:TAP});

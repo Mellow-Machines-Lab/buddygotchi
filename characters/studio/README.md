@@ -86,7 +86,8 @@ saves no verdicts.
   the everyday transitions, `internal/tools/fluid/transitions.jsonl`'s
   so that the two measures compare (to working, a mood change, a finish
   in its own mood, back to idle from it, a poke, a stroke, to asleep:
-  `EVERYDAY` in `views.js`), on the same board, their changes only, and
+  its shots' names, which charactergen reads for the page,
+  `everyday()`), on the same board, their changes only, and
   lists them as each comes, the **jumpiest** first: by the ratio of the
   largest frame to the median, the same rule as `measure.py`'s; clicking
   one records it here.
@@ -148,8 +149,10 @@ picture kept as an `ImageBitmap`.
 Nothing about a character is written here. `packs.js` comes from the
 packs' `character.json` files, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
-`actFromName`) and the frames' 40 ms (charactergen's `FRAME_MS`, a
-reference's too), and `python3 characters/charactergen.py --check`
+`actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
+reference's too) and the everyday transitions Rank records (those
+`internal/tools/fluid/transitions.jsonl` records, `everyday()`), and
+`python3 characters/charactergen.py --check`
 fails when:
 
 - `states.json` doesn't list the board's states (the firmware's

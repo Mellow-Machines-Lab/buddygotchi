@@ -100,7 +100,9 @@ The first of these wins:
 `python3 characters/charactergen.py --stage` lays the chosen pack out in
 `.character-build/` at the repo root (also ignored): `staged/<name>/`,
 the staged pack, its own files and those it uses from another pack (§6),
-each a link to the file in its pack; `pack`, the one pointer to it; and
+each a link to the file in its pack, but for what makes it, which no
+build reads (`design/`, `references/` and `review/`); `pack`, the one
+pointer to it; and
 from it, the pack's `firmware/`, with the two headers staging makes
 (`moods.h`, §9, and `rig_tables.h`, §15), and the folder the app bundles
 (`packs/`). The builds read only from there. `firmware/tools/pio.sh` stages before every PlatformIO run,
