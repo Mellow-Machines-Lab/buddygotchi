@@ -101,8 +101,8 @@ public final class ReactOutput: Output {
         Option("tool", "A tool: the web, an MCP tool, something fetched or looked up."),
         Option("looking", "Searching or reading: the agent looking through files, or something puzzling."),
         Option("planning", "Planning: the agent in plan mode, or thinking before it acts."),
-        Option("done", "A turn finished, done and working.", notFor: "Anything but a success."),
-        Option("answer", "A turn that only answered something or asked something back.", notFor: "Work done, or a failure."),
+        Option("done", "A long turn finished, done and working.", notFor: "Anything but a success, or a short turn's finish, whose feeling says it."),
+        Option("answer", "A turn that only answered something or asked something back.", notFor: "Work done, a failure, or a quick answer, whose feeling says it."),
         Option("stopped", "A turn stopped: interrupted, or the agent giving up.", notFor: "A turn that finished done."),
         Option("waiting", "Waiting: a long command, or the agent waiting on something slow.",
                notFor: "Something that needs the person: the ding says that."),
@@ -217,7 +217,7 @@ public final class ReactOutput: Output {
         guard !captions.isEmpty else { return asked }
         return asked + [Question(key: Signs.questionKey,
                                  text: "If \(pack.name) reacts, does it hold up a sign about your prompt, as PERSONALITY says? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
-                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, and how the person sounds",
+                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and TALK if there is one",
                                  options: [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")]
                                      + captions.map { Option($0, "A sign that says this.") })]
     }
@@ -241,6 +241,8 @@ public final class ReactOutput: Output {
     static func questions(in pack: CharacterPack = .active) -> [Question] {
         let name = pack.name
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
+        // What it says is TALK's to size, when the pack has one.
+        let bySay = "PERSONALITY's Examples, each made smaller or bigger as TALK says if there is one, then MOOD"
         return [
             Question(key: "react.mood", text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
@@ -256,13 +258,13 @@ public final class ReactOutput: Output {
             Question(key: "react.loops", text: "If \(name) reacts, how long does it hold the face?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactOutput.holds),
             Question(key: "say.feeling", text: "If \(name) reacts, how does it feel about NOW? It says so first, in its face's mood.",
-                     about: "the NOW section", judgeBy: byBoth,
+                     about: "the NOW section", judgeBy: bySay,
                      options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactOutput.feelings(of: name)),
-            Question(key: "say.about", text: "If \(name) reacts, what is NOW about? It names it after the feeling, in its face's mood.",
-                     about: "the NOW section", judgeBy: "NOW's line",
-                     options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactOutput.topics(of: name)),
+            Question(key: "say.about", text: "If \(name) reacts, does it say a second word after its feeling, naming what NOW is about, and which? Most reactions say one thing, not two: add one only where PERSONALITY's Example for a moment like NOW pairs a feeling with a topic (\"glad, then done\"), or TALK asks for one.",
+                     about: "the NOW section", judgeBy: bySay,
+                     options: [Option("none", "No second word: the feeling says enough, as it mostly does, or NOW's line isn't about any of these.")] + ReactOutput.topics(of: name)),
             Question(key: "say.kind", text: "If \(name) reacts, how big is what it says, if anything?", about: "the NOW section",
-                     judgeBy: byBoth, options: ReactOutput.kinds(of: name)),
+                     judgeBy: bySay, options: ReactOutput.kinds(of: name)),
         ]
     }
 

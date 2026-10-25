@@ -3,7 +3,7 @@ MOOD
 Calm. Boop is settled and content, at rest: nothing much is going on.
 Its faces lean calm and happy; a failure gets an annoyed face, a very
 long turn failing a sad one.
-Says little: a word to begin a turn.
+Says little: a sound or a word, seldom both.
 Stays calm through routine turns (requests that don't sound fed up,
 shipping too, their commands and plain finishes), questions and a
 streak of quick wins, whatever faces they get.

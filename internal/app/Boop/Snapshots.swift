@@ -72,10 +72,10 @@ enum Snapshots {
                 settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
                 try? installer.remove(.claude)
-                // The other personality, over the other nature.
-                var chatter = status(personality: Personality.other)
-                chatter.nature = .cheeky
-                shot("settings-chatter", model(installer, status: chatter), pane: .settings)
+                // Chatty, over the other nature.
+                var chatty = status(talk: .chatty)
+                chatty.nature = .cheeky
+                shot("settings-chatty", model(installer, status: chatty), pane: .settings)
                 shot("settings-no-hook", model(unbuilt, status: status()), pane: .settings)
                 // A copy on another folder tried to connect Claude, and the
                 // Overview's notice was closed: the row still says why.
@@ -132,7 +132,7 @@ enum Snapshots {
                 }
                 if let crowded = overviews(installer).first(where: { $0.0 == "crowded" })?.1 {
                     crowded.status?.snapshot.vol = 0
-                    crowded.status?.personality = Personality.other
+                    crowded.status?.talk = .quiet
                     render(PopoverView(model: crowded, maxHeight: 560),
                            "overview-bounded-\(dark ? "dark" : "light")", dark: dark, to: out, heightLimit: 560)
                 }
@@ -281,7 +281,7 @@ enum Snapshots {
     /// `sessions` are agent, project, `wait`, `work` or `idle`, and
     /// optionally the thread's name and its workspace.
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
-                       connected: Bool = true, personality: Personality = .default,
+                       connected: Bool = true, personality: Personality = .default, talk: Talk = .default,
                        name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
@@ -312,6 +312,8 @@ enum Snapshots {
                               listening: listening, micTrouble: micTrouble, growth: growth)
         // Its nature, its age and the diary's last days, read the day after.
         status.nature = .sweet
+        status.talk = talk
+        status.talks = true
         status.daysOld = 47
         status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave.",
                               today: "2026-10-22"),
@@ -351,7 +353,7 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
-            ("chatter", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], personality: Personality.other))),
+            ("quiet", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], talk: .quiet))),
             ("offline", {
                 let m = model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                         vol: 0, connected: false))
@@ -387,9 +389,9 @@ enum Snapshots {
                                                              connected: false, linkTrouble: bluetooth(.unauthorized)))),
             ("no-device", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           connected: false), link: .none)),
-            // Every chip at once (Chatter and Muted), under the longest kind of name.
+            // Every chip at once (Chatty and Muted), under the longest kind of name.
             ("all-chips", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], vol: 0,
-                                                          personality: Personality.other, name: "Wobblebottom McSnugs"))),
+                                                          talk: .chatty, name: "Wobblebottom McSnugs"))),
             // Many sessions, a long project, two in one project told apart
             // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [
@@ -568,8 +570,3 @@ enum Snapshots {
     }
 }
 
-extension Personality {
-    /// A personality other than the pack's default, to show one in the
-    /// snapshots: Boop's chatter. The default when the pack has one only.
-    static var other: Personality { allCases.dropFirst().first ?? .default }
-}

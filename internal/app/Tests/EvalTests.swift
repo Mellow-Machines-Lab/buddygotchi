@@ -214,6 +214,30 @@ final class EvalTests: XCTestCase {
         }
     }
 
+    /// EVALS.md §1: a run's prompt has the TALK the scenario says, after
+    /// MOOD, as the app's does: normal unless it says.
+    func testAScenarioRunsWithItsTalk() async throws {
+        try requirePack("boop")  // its talk files
+        for (talk, words) in [(nil, "TALK\nNormal:"), ("quiet", "TALK\nQuiet:"), ("chatty", "TALK\nChatty:")] {
+            let states = Lines()
+            let brain = ScriptedBrain { state, _ in
+                states.add(state)
+                return [:]
+            }
+            let field = talk.map { #","talk":"\#($0)""# } ?? ""
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("talk-\(UUID().uuidString).json")
+            try Data(#"{"name":"t","case":"c","why":"w"\#(field),"steps":[{"event":"poke","at":"0s","expect":{"mood":"calm"}}]}"#.utf8).write(to: file)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let scenario = try Scenario(file: file)
+            XCTAssertEqual(scenario.talk.rawValue, talk ?? "normal")
+            _ = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
+            let state = try XCTUnwrap(states.all.first)
+            let mood = try XCTUnwrap(state.range(of: "\nMOOD\n"), state)
+            let section = try XCTUnwrap(state.range(of: words), state)
+            XCTAssertLessThan(mood.lowerBound, section.lowerBound, "TALK follows MOOD")
+        }
+    }
+
     /// EVALS.md §2: an always scenario runs 3 times, the rest once, unless
     /// the file says; and what a run costs is its passes, counted with the
     /// scripted brain before Jev is asked anything.

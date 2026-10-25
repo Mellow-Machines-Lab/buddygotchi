@@ -20,6 +20,8 @@ public final class Runtime: @unchecked Sendable {
         public var steering: Steering
         /// Override the personality in `settings.json` for this run only.
         public var personality: Personality?
+        /// Override how much it says in `settings.json` for this run only.
+        public var talk: Talk?
         /// Builds the brain from Jev's key; nil for no brain. Tests pass
         /// their own.
         public var brain: @Sendable (String?) -> (any Brain)? = { key in key.map { JevBrain(key: $0) } }
@@ -121,6 +123,9 @@ public final class Runtime: @unchecked Sendable {
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
     public private(set) var personality: Personality
+    /// How much it says now (`Talk`), touched only on `home`, as the
+    /// personality is.
+    public private(set) var talk: Talk
     /// The first buddy's core.
     var core: Core { pipeline.core }
     let view: TranscriptView
@@ -274,7 +279,8 @@ public final class Runtime: @unchecked Sendable {
 
         let now = options.clock()
         personality = options.personality ?? settings.personality
-        let rules = options.steering.personality(personality).rules
+        talk = options.talk ?? settings.talk
+        let rules = options.steering.rules(personality, talk: talk)
         let places = self.places
         // The only buddy goes by the name you gave it, in what it hears and
         // what it counts as its name.
@@ -322,6 +328,7 @@ public final class Runtime: @unchecked Sendable {
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var personalityNow: () -> Personality = { .default }
+        var talkNow: () -> Talk = { .default }
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
         let rigs = self.rigs
         let moods = Runtime.brain(pipeline, rigs.map { rig in
@@ -332,7 +339,7 @@ public final class Runtime: @unchecked Sendable {
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        nature: rig === rigs[0] ? longTerm.nature : nil,
+                        nature: rig === rigs[0] ? longTerm.nature : nil, talk: { talkNow() },
                         diary: rig === rigs[0] ? { day, line in
                             // The pass that wrote it changes the popover.
                             do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
@@ -369,6 +376,7 @@ public final class Runtime: @unchecked Sendable {
         for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
+        talkNow = { [weak self] in self?.talk ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
         for rig in rigs {
@@ -416,9 +424,10 @@ public final class Runtime: @unchecked Sendable {
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil,
+                               talk: @escaping () -> Talk = { .default },
                                diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, nature: nature, diary: diary)
+                        queue: queue, speaks: speaks, nature: nature, talk: talk, diary: diary)
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -473,7 +482,7 @@ public final class Runtime: @unchecked Sendable {
             changed()
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
                         + "link \(rigs.map { ($0.tag.map { "\($0) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
-                        + "personality \(personality.rawValue), "
+                        + "personality \(personality.rawValue), talk \(talk.rawValue), "
                         + "mood \(moodNow), brain \(harness.brain?.id ?? "none (reading Jev's key)")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
         }
@@ -713,8 +722,20 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in
             self.personality = personality
             saveSettings { $0.personality = personality }
-            view.setRules(options.steering.personality(personality).rules)
+            view.setRules(options.steering.rules(personality, talk: talk))
             options.log("personality \(personality.rawValue)")
+            changed()
+        }
+    }
+
+    /// How much it says: the view's rules and Jev's state from the next
+    /// event, kept in `settings.json`.
+    public func setTalk(_ talk: Talk) {
+        home.async { [self] in
+            self.talk = talk
+            saveSettings { $0.talk = talk }
+            view.setRules(options.steering.rules(personality, talk: talk))
+            options.log("talk \(talk.rawValue)")
             changed()
         }
     }

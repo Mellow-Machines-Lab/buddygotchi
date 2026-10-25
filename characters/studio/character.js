@@ -161,7 +161,7 @@
   // ── Personality ─────────────────────────────────────────────────────────
   // Who it is: each personality with its settings in plain words, its words
   // and its examples; the natures the person picks between at setup, side
-  // by side; and the guide.
+  // by side; how much it says, picked in Settings; and the guide.
   function personality(api) {
     const root = sheet(api, 'personality'), s = {id: null, all: {}};
     shared(api, root);
@@ -205,6 +205,15 @@
           heading('Nature', 'The person picks one at setup, and it goes on top of whichever personality is on.'),
           h('div', {className: 'natures'}, pack.natures.map(n => h('article', {className: 'nature'},
             h('h4', {}, api.title(n.id)), h('div', {className: 'prose'}, readable(n.text)), examples('nature/' + n.id, n.examples, 3))))),
+        (pack.talks || []).length > 0 && panel({},
+          heading('Talk', 'How much it says, picked in Settings: normal is the personality as written, and each of these goes on top of it.'),
+          h('div', {className: 'natures'}, pack.talks.map(t => h('article', {className: 'nature'},
+            h('h4', {}, api.title(t.id)),
+            Object.keys(t.settings).length > 0 && h('div', {className: 'settings'}, Object.entries(t.settings).map(([k, v]) => {
+              const [label, say] = SETTINGS[k] || [api.title(k), x => x];
+              return h('div', {className: 'setting'}, h('small', {}, label), h('strong', {}, say(v)));
+            })),
+            h('div', {className: 'prose'}, readable(t.text)), examples('talk/' + t.id, t.examples, 3))))),
         pack.guide && h('details', {className: 'panel guide'},
           h('summary', {}, 'The guide', h('small', {}, ' · how it reads what happens, on every pass of the brain')),
           h('div', {className: 'prose'}, StudioMarkdown.render(pack.guide, h))));
@@ -511,6 +520,7 @@
               e.gap && badge('known gap', 'in review'),
               e.personality && badge(e.personality),
               e.nature && badge(e.nature),
+              e.talk && badge(e.talk),
               e.mood && badge(`starts ${e.mood}`),
               h('small', {}, count((e.steps || []).length, 'step'))),
             h('div', {className: 'eval-body'},

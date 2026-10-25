@@ -56,9 +56,10 @@
     const root = sheet(api, 'behavior'), s = {only: '', find: '', row: null};
     function setting(name) {
       const pack = packOf(api), span = window.StudioSpan || (x => x);
-      const values = pack.personalities.filter(p => p.settings?.[name] != null);
+      // Each personality's, then each talk level's laid over it.
+      const values = [...pack.personalities, ...(pack.talks || [])].filter(p => p.settings?.[name] != null);
       if (!values.length) return null;
-      return h('span', {className: 'pill', title: `Each personality's ${name}`}, h('small', {}, name.replace(/_/g, ' ')), ' ',
+      return h('span', {className: 'pill', title: `Each personality's ${name}, and each talk level's over it`}, h('small', {}, name.replace(/_/g, ' ')), ' ',
         values.map(p => `${p.id} ${/^\d+-\d+$/.test(p.settings[name]) ? span(p.settings[name]) : p.settings[name]}`).join(' · '));
     }
     function row(api, r, names) {

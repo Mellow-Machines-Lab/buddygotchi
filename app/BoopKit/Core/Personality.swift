@@ -4,8 +4,7 @@ import Foundation
 /// pack's `steering/personality/`, chosen in Settings
 /// (characters/CHARACTER.md §4). Its settings
 /// drive the view's rules; its text is the PERSONALITY section of Jev's
-/// state. Boop's are `boop` and `chatter`, which reacts to everything for
-/// debugging.
+/// state. Boop's pack has one, `boop`; how much it says is `Talk`'s.
 public struct Personality: RawRepresentable, Hashable, Sendable {
     public let rawValue: String
 

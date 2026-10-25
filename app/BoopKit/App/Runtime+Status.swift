@@ -43,6 +43,10 @@ extension Runtime {
         public var diary: [DiaryLine] = []
         /// Sweet or cheeky, chosen at setup for keeps.
         public var nature: LongTerm.Nature?
+        /// How much it says, chosen in Settings, and whether the pack
+        /// offers a choice: none when its steering has no talk file.
+        public var talk = Talk.default
+        public var talks = false
 
         /// A day's line, as the popover shows it.
         public struct DiaryLine: Sendable, Equatable, Identifiable {
@@ -116,6 +120,8 @@ extension Runtime {
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         status.diary = diary(today: options.time.day(wall))
         status.nature = memory.longTerm?.nature
+        status.talk = talk
+        status.talks = options.steering.talks
         status.uncleanExit = uncleanExit
         status.board = settings.board
         status.workStream = settings.workStream

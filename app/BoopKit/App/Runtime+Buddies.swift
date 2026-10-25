@@ -74,13 +74,15 @@ extension Runtime {
         public var queue: (DeviceReaction, Pending) -> Void
         public var speaks: () -> Bool
         public var nature: LongTerm.Nature?
+        /// How much it says, chosen in Settings.
+        public var talk: () -> Talk
         /// Writes a day's diary line, for the buddy that keeps one (the
         /// first, the one long-term.md set up); nil for none.
         public var diary: ((_ day: String, _ line: String) -> Void)?
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool, nature: LongTerm.Nature?,
-                    diary: ((_ day: String, _ line: String) -> Void)? = nil) {
+                    talk: @escaping () -> Talk = { .default }, diary: ((_ day: String, _ line: String) -> Void)? = nil) {
             self.diary = diary
             self.buddy = buddy
             self.steering = steering
@@ -89,6 +91,7 @@ extension Runtime {
             self.queue = queue
             self.speaks = speaks
             self.nature = nature
+            self.talk = talk
         }
     }
 
@@ -96,7 +99,8 @@ extension Runtime {
     /// the two can't drift apart: for each buddy its outputs, mood then
     /// react, and the sections of Jev's state: the guide with how to read
     /// the rest, PERSONALITY, what the `nature` chosen at setup adds to it
-    /// (the pack's `nature/` file, if any), and MOOD; then HISTORY, closed
+    /// (the pack's `nature/` file, if any), MOOD, and what how much it
+    /// says adds (its `talk/` file, if any); then HISTORY, closed
     /// by how long the buddy has been in its mood and reaching back to the
     /// oldest working turn. With several buddies each is a voice: its own
     /// outputs and sections, and a prompt that opens with whom it answers
@@ -143,6 +147,8 @@ extension Runtime {
             h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
             h.section { _, v in mine(v) ? m.nature.flatMap(m.steering.nature) : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
+            // Last, so it outranks what PERSONALITY and MOOD say of words.
+            h.section { _, v in mine(v) ? m.steering.talk(m.talk()) : nil }
             return mood
         }
         h.closing { _, now, log, v in

@@ -155,7 +155,7 @@ func eval(_ raw: [String]) async {
     if args.has("--list") {
         for p in plan {
             let s = p.scenario
-            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")\(s.nature == Scenario.defaultNature ? "" : "  [\(s.nature.rawValue)]")  \(s.name)")
+            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")\(s.nature == Scenario.defaultNature ? "" : "  [\(s.nature.rawValue)]")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
             print("    \(p.runs) run\(p.runs == 1 ? "" : "s") × about \(p.requests) requests")
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }

@@ -30,7 +30,7 @@ public struct PackCheck {
         func has(_ path: String) -> Bool { FileManager.default.fileExists(atPath: file(path).path) }
 
         // Steering: the guide and each personality, within the budgets, and
-        // the natures both or neither.
+        // the natures both or neither, and the talk files too.
         do {
             let steering = try Steering(directory: directory.appendingPathComponent("steering"), pack: pack)
             for mood in pack.moods.map(\.id) where steering.files["mood/\(mood)"] == nil {
@@ -39,12 +39,19 @@ public struct PackCheck {
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
                     : path.hasPrefix("personality/") ? Steering.Budget.personality
-                    : path.hasPrefix("nature/") ? Steering.Budget.nature : Steering.Budget.mood
+                    : path.hasPrefix("nature/") ? Steering.Budget.nature
+                    : path.hasPrefix("talk/") ? Steering.Budget.talk : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
             let natures = [LongTerm.Nature.sweet, .cheeky]
             for n in natures where steering.nature(n) == nil && natures.contains(where: { steering.nature($0) != nil }) {
                 notes.append("steering/nature/\(n.rawValue).md is missing: a \(n.rawValue) creature gets no nature")
+            }
+            for t in Talk.allCases where steering.talk(t) == nil && steering.talks {
+                notes.append("steering/talk/\(t.rawValue).md is missing: \(t.rawValue) talks as the personality is written")
+            }
+            for path in steering.files.keys.sorted() where path.hasPrefix("talk/") && Talk(rawValue: String(path.dropFirst(5))) == nil {
+                notes.append("steering/\(path).md isn't quiet, normal or chatty: nothing reads it")
             }
         } catch {
             problems.append("\(error)")

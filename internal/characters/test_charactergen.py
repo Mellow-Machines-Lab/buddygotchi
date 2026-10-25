@@ -208,7 +208,7 @@ class StudioRuleTests(unittest.TestCase):
         # A pack with nothing of its own beside its moods: none of each part, and no voice.
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
         self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"}, "uses": {},
-                                 "personalities": [], "natures": [], "guide": None, "steering": {}, "signs": [], "diary": [],
+                                 "personalities": [], "natures": [], "talks": [], "guide": None, "steering": {}, "signs": [], "diary": [],
                                  "voice": None, "demos": [], "evals": [], "stills": []})
 
     def test_a_board_for_each_face(self):

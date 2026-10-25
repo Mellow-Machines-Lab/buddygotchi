@@ -426,12 +426,12 @@ class FakeDevice:
 
 
 class Run:
-    def __init__(self, state: Path, brain: str, personality: str | None, verbose: bool) -> None:
+    def __init__(self, state: Path, brain: str, talk: str | None, verbose: bool) -> None:
         self.state = state
         self.verbose = verbose
         self.dev_sock = str(state / "d.sock")
         self.app = Headless(state, str(state / "b.sock"), f"usb:{self.dev_sock}", brain,
-                            ["--personality", personality] if personality else [])
+                            ["--talk", talk] if talk else [])
         self.device: FakeDevice | None = None
         self.log_pos = 0
         self.debug_pos = 0
@@ -597,9 +597,9 @@ class Run:
             self.settle()
 
 
-def run(state: Path, seed: int, brain: str, personality: str | None, out: Path | None, verbose: bool) -> int:
+def run(state: Path, seed: int, brain: str, talk: str | None, out: Path | None, verbose: bool) -> int:
     steps = build_day(seed).steps()
-    r = Run(state, brain, personality, verbose)
+    r = Run(state, brain, talk, verbose)
     print(plan(seed).splitlines()[0])
     try:
         r.start()
@@ -957,7 +957,7 @@ def add_parser(sub: Any) -> None:
     q.add_argument("--seed", type=int, default=1)
     q.add_argument("--brain", choices=["jev", "scripted"], default="jev",
                    help="jev (the default) needs BOOP_JEV_KEY; scripted needs nothing")
-    q.add_argument("--personality", choices=["boop", "chatter"])
+    q.add_argument("--talk", choices=["quiet", "normal", "chatty"], help="how much Boop says (normal unless given)")
     q.add_argument("--out", help="copy debug.jsonl and boop.log here")
     q.add_argument("--verbose", action="store_true", help="print every event and action")
     q = days.add_parser("report", help="sum up one or more runs' debug.jsonl, hour by hour")
@@ -972,7 +972,7 @@ def main(args: Any) -> int:
     if args.workday == "plan":
         print(plan(args.seed))
     elif args.workday == "run":
-        return run(Path(args.state), args.seed, args.brain, args.personality, Path(args.out) if args.out else None,
+        return run(Path(args.state), args.seed, args.brain, args.talk, Path(args.out) if args.out else None,
                    args.verbose)
     elif args.workday == "check":
         text, ok = check([Path(f) for f in args.files])

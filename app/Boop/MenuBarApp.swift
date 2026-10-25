@@ -237,6 +237,8 @@ final class AppModel: ObservableObject {
     }
     /// Who Boop is, chosen in settings.
     var personality: Personality { status?.personality ?? .default }
+    /// How much it says, chosen in settings.
+    var talk: Talk { status?.talk ?? .default }
 
     /// Hooks that changed since the last look, however they changed, make
     /// a failed change's reason stale, so it goes.
@@ -450,6 +452,13 @@ final class AppModel: ObservableObject {
         guard personality != self.personality else { return }
         status?.personality = personality
         runtime?.setPersonality(personality)
+    }
+
+    /// Takes effect from the next event.
+    func setTalk(_ talk: Talk) {
+        guard talk != self.talk else { return }
+        status?.talk = talk
+        runtime?.setTalk(talk)
     }
 
     /// Saves a bug report, shows it in Finder and

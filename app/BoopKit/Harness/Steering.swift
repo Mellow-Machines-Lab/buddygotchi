@@ -4,8 +4,9 @@ import MellowHarness
 /// Boop's steering: MellowHarness's
 /// folder of Markdown files, a copy of
 /// `characters/boop/steering/`: `guide.md`, which opens the state with no heading,
-/// `personality/*.md`, `nature/*.md` (optional) and `mood/*.md`. A
-/// personality's front matter goes to the core, not to Jev.
+/// `personality/*.md`, `nature/*.md` and `talk/*.md` (optional) and
+/// `mood/*.md`. A personality's front matter, and a talk file's over it,
+/// go to the core, not to Jev.
 extension Steering {
     public struct PersonalityFile: Equatable, Sendable {
         public var rules: Personality.Rules
@@ -38,6 +39,22 @@ extension Steering {
     /// file for it.
     public func nature(_ nature: LongTerm.Nature) -> String? { files["nature/\(nature.rawValue)"] }
 
+    /// What how much it says adds, after MOOD: `talk/quiet.md`,
+    /// `talk/normal.md` or `talk/chatty.md`, or nil for a level the pack
+    /// has no file for, which leaves the personality as written.
+    public func talk(_ talk: Talk) -> String? { files["talk/\(talk.rawValue)"] }
+
+    /// Whether the pack has a talk file at all: without one, Settings
+    /// offers no choice.
+    public var talks: Bool { Talk.allCases.contains { talk($0) != nil } }
+
+    /// The view's rules for a personality and how much it says: the
+    /// personality's front matter, with the talk file's laid over it.
+    public func rules(_ p: Personality, talk: Talk) -> Personality.Rules {
+        let own = frontMatter["personality/\(p.rawValue)"] ?? ""
+        return Personality.Rules(frontMatter: own + "\n" + (frontMatter["talk/\(talk.rawValue)"] ?? ""))
+    }
+
     /// The diary's lines (`diary.md`, optional): none for a pack with no
     /// file, which keeps no diary.
     public var diary: [TaggedLine] { files["diary"].map(TaggedLine.parse) ?? [] }
@@ -57,6 +74,7 @@ extension Steering {
         public static let guide = 400
         public static let personality = 2300
         public static let nature = 250
+        public static let talk = 250
         public static let mood = 225
     }
 
@@ -71,6 +89,9 @@ extension Steering {
         }
         for n in [LongTerm.Nature.sweet, .cheeky] {
             if let text = nature(n) { parts.append(("nature/\(n.rawValue)", Steering.tokens(text), Budget.nature)) }
+        }
+        for t in Talk.allCases {
+            if let text = talk(t) { parts.append(("talk/\(t.rawValue)", Steering.tokens(text), Budget.talk)) }
         }
         for name in pack.moods.map(\.id).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))

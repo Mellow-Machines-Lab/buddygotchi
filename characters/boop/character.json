@@ -16,10 +16,6 @@
     {
       "id": "boop",
       "about": "Reacts to anything that stands out, and now and then to routine work."
-    },
-    {
-      "id": "chatter",
-      "about": "For debugging: reacts to everything, over the top, and chatters while agents work."
     }
   ],
   "moods": [

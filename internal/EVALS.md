@@ -15,9 +15,10 @@ A scenario is a few hook-level steps on a virtual clock. Each run starts
 fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
-say how long Boop has been in it, and its nature (cheeky unless the file
+say how long Boop has been in it, its nature (cheeky unless the file
 says sweet), whose NATURE section follows PERSONALITY as the app's
-always does. The runner (`Eval` in
+always does, and how much it says (normal unless the file says quiet
+or chatty), whose TALK section comes last, after MOOD. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a reaction goes to a fake device, which answers at once with the
@@ -194,7 +195,8 @@ at all when it didn't happen, a scenario starts in its `mood` and a
 step's `offered` is what its pass offered, and each whole-run check
 catches what it should, `moves_on_graph` an answer that wasn't offered.
 Every scenario passes with the expect brain and plays as a demo the pack
-can play, and a scenario's `start` shows in the prompt's heading.
+can play, a scenario's `start` shows in the prompt's heading, and its
+`talk` puts that level's TALK after MOOD.
 
 ## 3. The scenario file
 
@@ -231,8 +233,9 @@ file-name order:
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
-| `personality` | `boop` (the default) or `chatter` |
+| `personality` | One of the pack's personalities: Boop's has only `boop`, the default |
 | `nature` | `cheeky` (the default) or `sweet`: the nature chosen at setup |
+| `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
@@ -288,8 +291,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   the graph, a step at a time (`47`, `49`, `53`); and coming back to the
   Mac, after ten minutes or hours, it cheers, glad to see you (`63`,
   `64`; a shorter break never reaches it).
-- **Tuning** (`01`, `07`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
-  `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`–`52`, `54`–`60`,
+- **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
+  `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
   `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
@@ -309,7 +312,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   answer is a reply (`44`, `45`), and a finish is judged by its words
   whatever the mood (`46`). And the graph's moves: a small failure from
   calm is a small step and a big one may jump (`48`), thanks bring a
-  whiny or wounded Boop back (`50`), routine work holds calm (`52`), an
+  whiny or wounded Boop back (`50`), an
   irritated Boop answers as irritated, not grumpy (`54`), and hours of
   nothing fade excited through happy to calm (`55`). And talk moves
   the mood at once: one apology
@@ -354,7 +357,12 @@ kinds, all with the `boop` personality unless the file says otherwise:
   quickly still gets its failure (`120`); in a busy stretch of several
   agents, plain prompts each a paragraph with a few of your words under
   it get at most a small face, with nothing said and no sign, while the
-  polite and playful ones around them still get theirs (`121`).
+  polite and playful ones around them still get theirs (`121`). And
+  how much it says, chosen in Settings: on Quiet routine work goes by
+  in silence and only big moments get a sound or a word (`122`), on
+  Chatty almost every face comes with words and every prompt gets one
+  (`123`), and on Normal a routine moment gets a feeling, not a feeling
+  and a topic (`124`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
@@ -412,8 +420,8 @@ heartbeat comes when it would), and waits for every pass and the brain's
 reactions to end before the next step, so no view event waits behind
 Jev (a rule's needs-you, which lasts until the day answers the request
 steps later, isn't waited for). `--brain
-scripted` runs it without a key, and `--personality chatter` with the
-other text.
+scripted` runs it without a key, and `--talk quiet` or `--talk chatty`
+with that level of talk.
 
 **The report** reads `debug.jsonl` as `boopctl day` and the dashboard
 do: a mood change's new mood and a reaction's face, finish and hold from

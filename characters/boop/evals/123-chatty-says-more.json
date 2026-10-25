@@ -1,0 +1,17 @@
+{
+  "name": "Chatty: almost every face comes with words, and every prompt gets one",
+  "case": "The person has set Boop to Chatty. They ask an agent for something new, plainly, and Boop answers with a face and words, holding up a sign. The short turn finishes well and Boop cheers it with words. Twenty seconds later they ask the agent, plainly again, to run the tests: even though Boop only just reacted, it gets a face and a word. That turn finishes too, and Boop says something about it.",
+  "why": "talk/chatty.md: almost every face comes with words, a word or a phrase sooner than a sound; every prompt gets a face and a word however recently Boop reacted, and a sign when there's one to hold up",
+  "talk": "chatty",
+  "checks": {"words_said": "0.75-", "reactions": "4-"},
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "add a dark mode toggle to the settings page", "reading": {"kind": "feature", "phrases": ["dark mode"]},
+     "expect": {"said": "some", "sign": "some"}},
+    {"event": "turn finished", "at": "40s", "message": "Added a dark mode toggle to the settings page.", "reading": {"kind": "done"},
+     "expect": {"animation": "success", "said": "some"}},
+    {"event": "turn started", "at": "1m", "prompt": "now run the tests for the settings page", "reading": {"kind": "tests"},
+     "expect": {"animation": "none", "said": "some", "kind": "word|phrase|sound"}},
+    {"event": "turn finished", "at": "1m40s", "message": "The settings page's tests pass.", "reading": {"kind": "done"},
+     "expect": {"animation": "success", "said": "some"}}
+  ]
+}

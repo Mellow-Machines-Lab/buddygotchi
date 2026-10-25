@@ -209,6 +209,9 @@ public struct Scenario: Sendable {
     /// The nature the person chose at setup, whose NATURE section follows
     /// PERSONALITY as in the app: cheeky unless the file says sweet.
     public var nature: LongTerm.Nature
+    /// How much it says, chosen in Settings, whose TALK section follows
+    /// the nature as in the app: normal unless the file says.
+    public var talk: Talk
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
@@ -247,7 +250,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "mood", "checks", "steps", "start", "hatched"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "nature", "talk", "mood", "checks", "steps", "start", "hatched"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -308,6 +311,10 @@ public struct Scenario: Sendable {
             guard let n = LongTerm.Nature(rawValue: $0) else { throw bad("nature is sweet or cheeky") }
             return n
         } ?? Scenario.defaultNature
+        talk = try (o["talk"] as? String).map {
+            guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet, normal or chatty") }
+            return t
+        } ?? .default
         let graphMoods = MoodGraph.moods
         mood = try (o["mood"] as? String).map {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
@@ -643,7 +650,7 @@ public struct Eval {
         let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
-        let rules = steering.personality(scenario.personality).rules
+        let rules = steering.rules(scenario.personality, talk: scenario.talk)
         // Its agents are made up, and run all through it.
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
                         isRunning: { _ in true })
@@ -672,7 +679,7 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            }, nature: scenario.nature)
+            }, nature: scenario.nature, talk: { scenario.talk })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }

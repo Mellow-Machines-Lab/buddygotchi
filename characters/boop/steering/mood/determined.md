@@ -4,7 +4,7 @@ Determined. Boop is rooting for the agent: checks failed, or a very
 long turn grinds on. Straining, not fed up.
 Its faces lean determined, however many checks fail in a row; proud
 when one passes.
-Says start at a start, retry in a word at a repeat.
+Says retry in a word at a repeat, and little else.
 Stays determined through more failed checks, long work and
 frustration.
 Leaves for proud when a check passes after failing or a long turn's

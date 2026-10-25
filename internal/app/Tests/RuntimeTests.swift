@@ -1298,20 +1298,27 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood, both natures, the two
-    /// personalities, the diary's lines and the signs' captions. The static parts stay within their budgets, and the
-    /// personalities' settings are the ones below.
+    /// characters/boop/steering/ has the guide, a file per mood, both natures, the personality, a talk file
+    /// for each level, the diary's lines and the signs' captions. The static parts stay within their budgets, and the
+    /// personality's settings, with each talk's laid over them, are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
-        try requirePack("boop")  // its two personalities and its steering
+        try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "personality/chatter.md", "signs.md"]).sorted())
+                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "signs.md",
+                                  "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
-        XCTAssertEqual(Self.steering.personality(.default).rules,
-                       Personality.Rules(workBeatMs: 90_000...180_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable))
-        XCTAssertEqual(Self.steering.personality(.chatter).rules,
-                       Personality.Rules(workBeatMs: 30_000...60_000, idleBeatMs: 300_000...600_000, toolUses: .all))
+        let boop = Personality.Rules(workBeatMs: 90_000...180_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
+        XCTAssertEqual(Self.steering.personality(.default).rules, boop)
+        XCTAssertEqual(Self.steering.rules(.default, talk: .normal), boop, "normal keeps the personality's pace")
+        // Quiet looks in less often, chatty more; neither hears every tool use.
+        XCTAssertEqual(Self.steering.rules(.default, talk: .quiet),
+                       Personality.Rules(workBeatMs: 180_000...300_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
+        XCTAssertEqual(Self.steering.rules(.default, talk: .chatty),
+                       Personality.Rules(workBeatMs: 45_000...90_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
+        XCTAssertTrue(Self.steering.talk(.quiet)?.hasPrefix("TALK\nQuiet") ?? false)
+        XCTAssertTrue(Self.steering.talks)
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
@@ -1346,37 +1353,40 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// The personality is saved; a missing or unknown one
-    /// is boop.
-    func testSettingsKeepThePersonality() throws {
-        try requirePack("boop")  // its two personalities and its steering
+    /// The personality and how much it says are saved; a missing or
+    /// unknown one is the default. Chatter, the debugging personality
+    /// before Talk, comes back as boop, chatty.
+    func testSettingsKeepThePersonalityAndTalk() throws {
+        try requirePack("boop")  // its personality and its steering
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let cases: [(String, Personality)] = [(#"{"personality":"chatter"}"#, .chatter), (#"{"personality":"loud"}"#, .default),
-                                              (#"{}"#, .default)]
-        for (json, p) in cases {
+        let cases: [(String, Personality, Talk)] = [(#"{"personality":"chatter"}"#, .default, .chatty),
+                                                    (#"{"personality":"loud","talk":"loud"}"#, .default, .normal),
+                                                    (#"{"talk":"quiet"}"#, .default, .quiet), (#"{}"#, .default, .normal)]
+        for (json, p, t) in cases {
             try Data(json.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
             XCTAssertEqual(AppSettings.load(from: dir).personality, p, json)
+            XCTAssertEqual(AppSettings.load(from: dir).talk, t, json)
         }
         var saved = AppSettings()
-        saved.personality = .chatter
+        saved.talk = .quiet
         try saved.save(to: dir)
         XCTAssertEqual(AppSettings.load(from: dir), saved)
     }
 
-    /// A new personality takes effect from the next event,
-    /// its rules included, and is saved.
-    func testANewPersonalityTakesEffectAtOnce() throws {
-        try requirePack("boop")  // its two personalities and its steering
+    /// How much it says takes effect from the next event, its check-ins'
+    /// pace included, and is saved.
+    func testANewTalkTakesEffectAtOnce() throws {
+        try requirePack("boop")  // its talk files
         let runtime = try makeRuntime(FakeTransport())
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("started as boop") { runtime.home.sync { statuses.last?.personality == .default } }
-        runtime.setPersonality(.chatter)
-        eventually("chatter now") { runtime.home.sync { statuses.last?.personality == .chatter } }
-        XCTAssertEqual(runtime.home.sync { runtime.view.rules.toolUses }, .all)
-        XCTAssertEqual(AppSettings.load(from: dir).personality, .chatter)
+        eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal && statuses.last?.talks == true } }
+        runtime.setTalk(.chatty)
+        eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
+        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 45_000...90_000)
+        XCTAssertEqual(AppSettings.load(from: dir).talk, .chatty)
     }
 
     /// A long turn, finished after `{"dev":"advance"}`: no rule plays its

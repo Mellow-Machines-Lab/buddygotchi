@@ -15,11 +15,13 @@ let usage = """
                ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
                onboarding (make dev FRESH=1).
-           Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality boop|chatter]
-                [--brain jev|scripted|none] [--labeler apple|none] [--name NAME] [--nature sweet|cheeky] [--no-open] [--debug]
-                [--demo FILE|pack|pack:NAME [--live] [--record FILE]] [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
+           Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality NAME]
+                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--labeler apple|none] [--name NAME]
+                [--nature sweet|cheeky] [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
+                [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
-               is set up with --name (default Boop). --personality overrides the saved one for this run only.
+               is set up with --name (default Boop). --personality (one of the pack's) and --talk override the
+               saved ones for this run only.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
@@ -181,7 +183,7 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--brain", "--labeler", "--name", "--nature", "--demo", "--record",
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--talk", "--brain", "--labeler", "--name", "--nature", "--demo", "--record",
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])

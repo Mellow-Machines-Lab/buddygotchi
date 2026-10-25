@@ -254,7 +254,15 @@ struct SettingsPane: View {
         Card(padding: 0) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
-                    PersonalityPicker(personality: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
+                    // A pack with one personality has nothing to choose.
+                    if Personality.allCases.count > 1 {
+                        RowPicker(label: "Personality", rows: Personality.allCases.map { .init(value: $0, title: $0.rawValue.capitalized, about: $0.about) },
+                                  chosen: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
+                    }
+                    if model.status?.talks == true {
+                        RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
+                                  chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
+                    }
                     if let note = brainNote {
                         Text(note)
                             .font(.system(size: 11)).foregroundStyle(Theme.ink)
@@ -312,25 +320,33 @@ struct SettingsPane: View {
     }
 }
 
-/// The pack's personalities, each with what it does (its `about`), so a
-/// name like "Boop" reads as a choice: rows on a well, the chosen one
-/// raised on paper and ticked. Drawn here rather than the system's
-/// segmented control, which doesn't stretch, and draws grey in the
-/// popover's inactive window.
-struct PersonalityPicker: View {
-    @Binding var personality: Personality
-    @Namespace private var chosen
+/// A choice in rows, each with what it does, so a name like "Boop" or
+/// "Quiet" reads as a choice: rows on a well, the chosen one raised on
+/// paper and ticked. Drawn here rather than the system's segmented
+/// control, which doesn't stretch, and draws grey in the popover's
+/// inactive window.
+struct RowPicker<Value: Hashable>: View {
+    struct Row {
+        var value: Value
+        var title: String
+        var about: String?
+    }
+
+    let label: String
+    let rows: [Row]
+    @Binding var chosen: Value
+    @Namespace private var raised
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Personality.allCases, id: \.self) { p in
-                let on = p == personality
+            ForEach(rows, id: \.value) { p in
+                let on = p.value == chosen
                 Button {
-                    withAnimation(.boopSettle) { personality = p }
+                    withAnimation(.boopSettle) { chosen = p.value }
                 } label: {
                     HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(p.rawValue.capitalized)
+                            Text(p.title)
                                 .font(.system(size: 12, weight: on ? .semibold : .medium))
                                 .foregroundStyle(on ? Theme.ink : Theme.inkSoft)
                             if let about = p.about {
@@ -348,7 +364,7 @@ struct PersonalityPicker: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(Theme.paper)
                                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
-                                .matchedGeometryEffect(id: "chosen", in: chosen)
+                                .matchedGeometryEffect(id: "chosen", in: raised)
                         }
                     }
                     .contentShape(Rectangle())
@@ -360,7 +376,7 @@ struct PersonalityPicker: View {
         .padding(2)
         .background(Theme.well, in: RoundedRectangle(cornerRadius: Theme.wellRadius))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Personality")
+        .accessibilityLabel(label)
     }
 }
 

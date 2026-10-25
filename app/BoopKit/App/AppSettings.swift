@@ -6,6 +6,8 @@ import Foundation
 public struct AppSettings: Codable, Equatable, Sendable {
     /// Who Boop is: the personality file it reads.
     public var personality = Personality.default
+    /// How much it says (`Talk`).
+    public var talk = Talk.default
     public var volume = 6
     /// Several buddies side by side, each its own board and pack: empty, or
     /// one, for the one Boop.
@@ -31,9 +33,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
         // `projects` from before 2026-09-26. A personality the pack doesn't have is its default.
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        if let raw = try? c.decodeIfPresent(String.self, forKey: .personality), let p = Personality(rawValue: raw) {
+        let saved = try? c.decodeIfPresent(String.self, forKey: .personality)
+        if let raw = saved, let p = Personality(rawValue: raw) {
             personality = p
         }
+        // Chatter, the debugging personality before Talk (2026-10-25), was
+        // the chatty one.
+        talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? (saved == "chatter" ? .chatty : .default)
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
@@ -41,11 +47,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
     }
 
-    enum CodingKeys: String, CodingKey { case personality, volume, buddies, board, onboarding, workStream }
+    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(personality.rawValue, forKey: .personality)
+        try c.encode(talk, forKey: .talk)
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)
