@@ -4,7 +4,8 @@
 // moves, squashes and leaves the screen, and is cut off there with it:
 //
 // - the sky behind it: at night a crescent moon and twinkling stars, in
-//   the morning the sun coming up, only where nothing else is drawn;
+//   the morning the sun up on its left, glowing, its rays turning, only
+//   where nothing else is drawn;
 // - the outfit, by the tags on now (state.when): a striped nightcap at
 //   night, and its pyjamas on the body's lower rings but while it wears
 //   reading glasses, a party hat on a party day, New Year's Day, Lunar New
@@ -73,11 +74,11 @@ int sleepyLids(const Engine& e);
 
 // What the layer stack's layers (render/rig/layers.h) show for the
 // engine's tags and state now: the sky behind it (the night's, or the
-// morning's sunrise), what it wears over its eyes or on its body (worn)
+// morning's sun), what it wears over its eyes or on its body (worn)
 // and its hat, each a content of its own (0 for none), the air's bits, and
 // beside it the Zs while it sleeps at night, or its coffee while it's idle
 // or at work in the morning.
-enum : uint32_t { kNightSky = 1, kSunrise = 2 };
+enum : uint32_t { kNightSky = 1, kSun = 2 };
 enum : uint32_t { kZs = 1, kCoffeeMug = 2 };
 struct Contents {
   uint32_t scene, worn, hat, air, beside;

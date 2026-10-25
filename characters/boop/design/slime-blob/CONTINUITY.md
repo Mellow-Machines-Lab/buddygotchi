@@ -727,7 +727,8 @@ holds a mug of coffee at its side in a little gel hand, steam curling up
 off it, and now and then lifts it to its mouth for a sip
 (`OutfitLayer::kSipMs`). At night a
 crescent moon and twinkling stars sit behind everything, and in the
-morning the sun coming up over the lane on its left, drawn last of all
+morning the sun up in the sky on its left where the moon is, glowing,
+its rays turning and breathing, drawn last of all
 onto only the background's black, so the body, its outfit, the stream's
 words and the sign stay in front. Each sits on anchors the painter takes from
 the very vertices it projects for the body (the rig's `Anchors`, both

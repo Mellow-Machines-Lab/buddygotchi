@@ -567,7 +567,7 @@ Besides drawing each mood and state, a face:
   held at its side while it's idle or at work in the morning and lifted
   for a sip every 9 s (`OutfitLayer::kSipMs`); and behind everything,
   drawn last onto only the background's black, a crescent moon and
-  twinkling stars at night and the sun coming up in the morning. Each comes and goes through
+  twinkling stars at night and the sun, glowing, its rays turning, in the morning. Each comes and goes through
   the rig's layer stack (§15), fading over 200 ms, a new one after the
   old has gone. Peekaboo's gesture takes the
   outfit off. Pixel wears neither the pyjamas nor the glasses, nor has the
@@ -1038,7 +1038,7 @@ then, and the rig's stretch over its rig-drawn desks.
 **The layer stack.** What comes and goes around the body, each in its
 place among a face's own drawing, is a layer of the rig's stack
 (`render/rig/layers.h`), back to front: the scene behind the body (the
-gel's night sky or sunrise), what's worn over the eyes or on the body
+gel's night sky or morning sun), what's worn over the eyes or on the body
 (glasses, pyjamas), the hat, the air (snow, confetti, hearts) and what's
 beside it (Zs, the gel's morning coffee). Each shows a content,
 the face's own number for what it draws there, at an opacity that eases

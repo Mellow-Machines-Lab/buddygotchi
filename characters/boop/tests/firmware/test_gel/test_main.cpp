@@ -1969,8 +1969,8 @@ static void test_the_outfit_is_kept_while_the_body_moves() {
   TEST_ASSERT_TRUE(glide > 0.4 && glide < 0.6);
 }
 
-// The sky (the stack's scene) is the night's at night and the sunrise in
-// the morning, and none by day; behind everything: drawn only onto the
+// The sky (the stack's scene) is the night's at night and the sun in the
+// morning, and none by day; behind everything: drawn only onto the
 // background's black, so not a pixel of what's drawn changes, at its
 // layer's opacity.
 static void test_the_sky_is_behind_the_body() {
@@ -1988,7 +1988,7 @@ static void test_the_sky_is_behind_the_body() {
   TEST_ASSERT_EQUAL_UINT32(0, layerContents(*e).scene);
   e->setOccasion(tagBit("evening"), 0);
   TEST_ASSERT_EQUAL_UINT32(0, layerContents(*e).scene);
-  for (const auto& [tag, scene] : {std::pair<const char*, uint32_t>{"night", kNightSky}, {"morning", kSunrise}}) {
+  for (const auto& [tag, scene] : {std::pair<const char*, uint32_t>{"night", kNightSky}, {"morning", kSun}}) {
     e->setOccasion(tagBit(tag), 0);
     TEST_ASSERT_EQUAL_UINT32(scene, layerContents(*e).scene);
     rig::Layers sky;

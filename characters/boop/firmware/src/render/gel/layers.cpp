@@ -25,7 +25,7 @@ constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
 // cuff, the moon's light, and the reading glasses' wire.
 constexpr uint16_t kNightcloth = rgb565(62, 72, 168), kNightstripe = rgb565(176, 190, 238),
                    kNightcuff = rgb565(112, 124, 210), kMoonlight = rgb565(250, 230, 160),
-                   kSunlight = rgb565(255, 190, 84), kMug = rgb565(232, 112, 72), kCoffee = rgb565(92, 52, 30),
+                   kMug = rgb565(232, 112, 72), kCoffee = rgb565(92, 52, 30),
                    kWire = rgb565(206, 164, 92);
 
 // The point `i` thirty-seconds of a turn round a circle, as cosine and
@@ -379,30 +379,77 @@ void nightSky(Behind& b, int ms) {
   }
 }
 
-// The morning's: the sun coming up over the lane on its left, its rays
-// fanned above it breathing in and out every 3 s.
-void sunrise(Behind& b, int ms) {
+// The morning's sun, up in the sky on its left where night's moon is: a
+// pale core warming to an amber rim in a soft glow, and eight rounded rays
+// off its rim, the long and the short in turn, breathing out and in
+// against each other every 3 s as the ring of them turns once in 24 s.
+void sun(Behind& b, int ms) {
   const Surface& s = b.s;
-  const int sx = s.width * 15 * 16 / 100, sy = b.bottom * 16, sr = s.width * 8 * 16 / 100;
-  b.fill(sx - sr, sy - sr, sx + sr, sy, kSunlight, [&](int x, int y) { return inside(x - sx, y - sy, sr) * 16; });
-  // Seven rays from just off its rim, each a round-ended bar, the long and
-  // the short in turn.
-  const int reach = wave(ms, 3000, sr / 8), half = s.width * 16 / 160;
-  static constexpr int kRays[] = {17, 19, 22, 24, 26, 29, 31};  // thirty-seconds round the upper half
-  for (int i = 0; i < 7; ++i) {
-    const Point dir = turn(kRays[i]);
-    const int from = sr + sr / 5, to = from + (i % 2 ? sr / 3 : sr / 2) + reach;
-    const int ax = sx + from * dir.x / 4096, ay = sy + from * dir.y / 4096;
-    const int bx = sx + to * dir.x / 4096, by = sy + to * dir.y / 4096;
-    b.fill(std::min(ax, bx) - half, std::min(ay, by) - half, std::max(ax, bx) + half, std::max(ay, by) + half,
-           kSunlight, [&](int x, int y) {
-             // How far the pixel's middle is from the bar's spine.
-             const int64_t vx = bx - ax, vy = by - ay, wx = x - ax, wy = y - ay, len = vx * vx + vy * vy;
-             const int64_t k = std::clamp<int64_t>((wx * vx + wy * vy) * 4096 / std::max<int64_t>(1, len), 0, 4096);
-             const int64_t dx = wx - vx * k / 4096, dy = wy - vy * k / 4096;
-             return inside(int(dx), int(dy), half) * 16;
-           });
+  // Its middle, its radius and the glow's reach (sixteenths).
+  const int sx = s.width * 14 * 16 / 100, sy = s.height * 19 * 16 / 100, sr = s.width * 5 * 16 / 100;
+  const int reach = sr * 9 / 5;
+  const int64_t reach2 = int64_t(reach) * reach;
+  constexpr uint16_t kCore = rgb565(255, 248, 220), kMid = rgb565(255, 208, 100), kRim = rgb565(255, 150, 64),
+                     kGlow = rgb565(255, 160, 70);
+  // The disk and its glow by the square of the distance from its middle,
+  // worked out once for its radius: a lookup a pixel after that.
+  constexpr int kSteps = 512;
+  static uint16_t shade[kSteps];
+  static int shadeFor = 0;
+  if (shadeFor != sr) {
+    for (int i = 0; i < kSteps; ++i) {
+      // Its distance (sixteenths), the square root of the step's square, a bit at a time.
+      uint32_t n = uint32_t(i * reach2 / (kSteps - 1)), root = 0;
+      for (uint32_t bit = 1u << 30; bit; bit >>= 2)
+        if (n >= root + bit)
+          n -= root + bit, root = (root >> 1) + bit;
+        else
+          root >>= 1;
+      const int d = int(root);
+      // The glow: whole under the disk, falling off past its rim, at most 55%.
+      const int g = d <= sr ? 256 : std::max(0, 256 - (d - sr) * 256 / (reach - sr));
+      uint16_t c = mix565(0, kGlow, g * g / 256 * 140 / 256);
+      // The disk over it, its edge smoothed: core to amber out to its rim.
+      if (const int cover = std::clamp((sr - d + 8) * 16, 0, 256)) {
+        const int t = std::min(256, d * 256 / sr);
+        const uint16_t disk = t < 141 ? mix565(kCore, kMid, t * 255 / 141) : mix565(kMid, kRim, (t - 141) * 255 / 115);
+        c = mix565(c, disk, cover * 255 / 256);
+      }
+      shade[i] = c;
+    }
+    shadeFor = sr;
   }
+  const uint64_t perStep = (uint64_t(kSteps - 1) << 32) / uint64_t(reach2);
+  auto shadeAt = [&](int x, int y) -> uint16_t {
+    const int dx = x - sx, dy = y - sy;
+    const int64_t d2 = int64_t(dx) * dx + int64_t(dy) * dy;
+    return d2 < reach2 ? shade[uint64_t(d2) * perStep >> 32] : 0;
+  };
+  // The rays first, each a round-ended bar over the glow, from amber to
+  // orange along it; the disk and glow then fill in about them.
+  const int spin = ms % 24000 * 4096 / 24000, breath = sinTurn(ms % 3000 * 4096 / 3000);
+  const int from = sr * 135 / 100, half = sr * 85 / 1000;
+  for (int i = 0; i < 8; ++i) {
+    const int angle = spin + i * 512, out = i % 2 ? -breath : breath;  // Q12
+    const int len = sr * (i % 2 ? 42 : 70) / 100 * (4096 + out * 12 / 100) / 4096;
+    const int cx = sinTurn(angle + 1024), cy = sinTurn(angle);
+    const int ax = sx + from * cx / 4096, ay = sy + from * cy / 4096;
+    const int bx = sx + (from + len) * cx / 4096, by = sy + (from + len) * cy / 4096;
+    for (int y = (std::min(ay, by) - half) / 16; y <= (std::max(ay, by) + half) / 16; ++y)
+      for (int x = (std::min(ax, bx) - half) / 16; x <= (std::max(ax, bx) + half) / 16; ++x) {
+        // How far the pixel's middle is along the bar and from its spine.
+        const int64_t vx = bx - ax, vy = by - ay, wx = x * 16 + 8 - ax, wy = y * 16 + 8 - ay;
+        const int64_t k =
+            std::clamp<int64_t>((wx * vx + wy * vy) * 4096 / std::max<int64_t>(1, vx * vx + vy * vy), 0, 4096);
+        if (const int cover = inside(int(wx - vx * k / 4096), int(wy - vy * k / 4096), half) * 16)
+          b.dot(x, y,
+                mix565(shadeAt(x * 16 + 8, y * 16 + 8), mix565(kMid, kRim, int(k) * 255 / 4096), cover * 255 / 256),
+                255);
+      }
+  }
+  for (int y = (sy - reach) / 16; y <= (sy + reach) / 16; ++y)
+    for (int x = (sx - reach) / 16; x <= (sx + reach) / 16; ++x)
+      if (const uint16_t c = shadeAt(x * 16 + 8, y * 16 + 8)) b.dot(x, y, c, 255);
 }
 
 // Its morning coffee: a mug held in a little gel hand at its right side,
@@ -641,7 +688,7 @@ Contents layerContents(const Engine& e) {
   // Coffee while it's idle or at work in the morning, so not asleep, nor
   // in a gesture or a reaction's look.
   const bool awake = state == SceneState::kIdle || state == SceneState::kWorking;
-  const uint32_t scene = night ? kNightSky : morning ? kSunrise : 0;
+  const uint32_t scene = night ? kNightSky : morning ? kSun : 0;
   return {scene, wornOf(look), hatOf(look), airFor(when), zs ? kZs : morning && awake ? kCoffeeMug : 0};
 }
 
@@ -676,7 +723,7 @@ void paintSky(Surface& s, const Engine& e, const rig::Layers* layers, uint32_t t
   Behind behind{s, layers ? (layers->opacity(Layer::kScene, t) * 255 + 500) / 1000 : 255};
   const int ms = int(e.elapsedMs % 3600000u);
   if (scene == kNightSky) nightSky(behind, ms);
-  if (scene == kSunrise) sunrise(behind, ms);
+  if (scene == kSun) sun(behind, ms);
 }
 
 void paintSign(Surface& s, const SignShow& sign, const rig::Anchors& at) {

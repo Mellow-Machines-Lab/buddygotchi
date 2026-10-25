@@ -21,7 +21,7 @@
 {"t":"state","base":"asleep","mood":"happy","vol":0,"when":["night","winter"]}
 {"clock":3200}
 {"shot":"pyjamas"}
-// A morning: the sun coming up behind it and its coffee at its side,
+// A morning: the sun up on its left and its coffee at its side,
 // steaming; lifted to its mouth for a sip (the last 1.8 s of every 9);
 // and on the desk beside the keyboard while it works.
 {"t":"dbg.reset"}
