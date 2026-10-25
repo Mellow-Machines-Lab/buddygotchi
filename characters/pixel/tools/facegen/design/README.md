@@ -7,7 +7,7 @@ its generator makes every design's SVG, and `facegen` turns them into
 mood's first idle at rest, and where that face sits in each design that draws it,
 both read off the tags the bank puts on the resting face's parts:
 [the package guide](../../../design/README.md), The resting face's tags),
-the popover's tiles and the Mac's loop lengths.
+and the popover's tiles.
 Nothing here is drawn
 by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
 `../build/` (ignored) each time.
@@ -18,7 +18,7 @@ by hand, and no SVG is checked in: `facegen` runs `../bank.mjs` into
   for (`outcome`, success or failure, for task_complete; `ctx`, new_task,
   session or continuation, for starting), its voice window (`voiceMs`,
   when a line that comes with its animation starts, which `sfxgen` puts in
-  `sfx.h` and `facegen` in the Mac's `FaceLoops`), and its SVG dialect
+  `sfx.h`), and its SVG dialect
   (`v2`, the first pack's; `v3`, the older moods' newer states; `v4`, the
   new moods' flip-books, and every mood's wake_up and comedy).
 
