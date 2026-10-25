@@ -5,6 +5,8 @@
 #include <memory>
 #include <cstring>
 #include <cstdlib>
+#include <set>
+#include <string>
 #include "render/gel/painter.h"
 #include "render/gel/geometry.h"
 #include "render/gel/face.h"
@@ -266,9 +268,10 @@ static void test_every_result_card_has_a_mark() {
 }
 // CONTINUITY.md, Alerts, taps and interruption: an alert interrupted before
 // its knocks and ding resumes where it stopped, so each plays exactly once;
-// one interrupted after them returns to its silent hold.
+// one interrupted after them returns to its silent hold. Interrupted by
+// listening or by a lost link, at any point from its start to well after.
 static void test_interrupted_alert_signals_exactly_once() {
-  for (int after : {0, 160, 320, 640, 2000}) {
+  for (int after : {0, 160, 320, 480, 640, 800, 1200, 2000}) {
     for (bool timeout : {false, true}) {
       auto e = std::make_unique<Engine>();
       e->step(0);
@@ -846,9 +849,12 @@ static void test_timing_comes_from_the_recipe_table() {
 }
 // CONTINUITY.md, Comedy: idle's takes are an expression's three gestures,
 // its own gags and the three idle gags, and its bag deals the gags from its
-// second round. A doze droops the lids and sinks the dome, the zoomies slide
-// it edge to edge, a sneeze is a contact that may sound, all off the heap;
-// asleep snores only after a round of still rests, and a lost link never.
+// second round. A yawn stretches up with its eyes squeezed; a doze droops
+// the lids and sinks the dome, then snaps open with a blink; the zoomies
+// slide it edge to edge and back; a sneeze is a contact a second in that
+// may sound, lurching it forward, all off the heap; the long yawn ends
+// heavy-lidded, then wakes. Asleep snores only after a round of still
+// rests, and a lost link never.
 static void test_comedy_plays_in_idle_and_asleep() {
   TEST_ASSERT_EQUAL_INT(7, slime::kMaxGestures);
   TEST_ASSERT_EQUAL_INT(6, Acting::takes(slime::kCalm));
@@ -878,13 +884,20 @@ static void test_comedy_plays_in_idle_and_asleep() {
     e->step(0);
     e->step(16);
     e->acting.perform(e->motion.time, e->random, take);
-    std::vector<std::array<F, 3>> frames;  // closure, slide, squash
+    std::vector<std::array<F, 6>> frames;  // closure, slide, squash, lift, forward, the eyes' closing
     for (uint32_t t = 32; t <= 32 + ms; t += 16) {
       e->step(t);
-      frames.push_back({e->acting.closure(), e->acting.slide.x, e->pose()[1]});
+      const auto life = e->life();
+      frames.push_back({e->acting.closure(), e->acting.slide.x, e->pose()[1], life[0], life[2], e->blink()});
     }
     return frames;
   };
+  // A frame `s` seconds after the take began.
+  auto at = [](const std::vector<std::array<F, 6>>& frames, double s) {
+    return frames[size_t(std::lround(s * 1000 / 16)) - 1];
+  };
+  const auto yawn = play(slime::kCalm, 3, 3000);
+  TEST_ASSERT_TRUE(at(yawn, 1.2)[3] > q(.04) && at(yawn, 1.2)[5] > q(.7));
   const auto doze = play(slime::kCalm, 4, 3600);
   for (int at : {75, 100, 125, 150}) TEST_ASSERT_TRUE(doze[at][0] > q(.55));  // 1.2 to 2.4 s
   TEST_ASSERT_TRUE(doze[112][2] < doze[0][2] - q(.03));                       // it sinks
@@ -895,6 +908,9 @@ static void test_comedy_plays_in_idle_and_asleep() {
   F most = 0, least = 0;
   for (const auto& f : zoom) most = max(most, f[1]), least = min(least, f[1]);
   TEST_ASSERT_TRUE(most > q(.45) && least < q(-.45) && abs(zoom.back()[1]) < q(.02));
+  TEST_ASSERT_TRUE(at(play(slime::kCalm, 5, 2800), 1.15)[4] > q(.08));  // the sneeze lurches forward
+  const auto longYawn = play(slime::kTired, 3, 5400);
+  TEST_ASSERT_TRUE(at(longYawn, 3.2)[5] > q(.35) && at(longYawn, 5)[5] < q(.05));
   // A sneeze is one contact, a second in, and allocates nothing.
   auto e = std::make_unique<Engine>();
   e->step(0);
@@ -941,8 +957,13 @@ static void test_comedy_plays_in_idle_and_asleep() {
 }
 // CONTINUITY.md, Gestures: the gesture state has a take for each of
 // render::Gesture, each its own gag under the face it borrows; the board
-// names the take, and no bag deals it. A shake wobbles the dome both ways
-// under baffled eyes, then the mood's face comes back.
+// names the take, and no bag deals it. Each plays held, under its face with
+// its gag, the mood kept, each contact once, and gives the face back; each
+// does what it says (a hand-off lifts and leans in, a stroke melts with its
+// eyes shut, a ruffle bristles, a boop on the nose squishes, a tickle
+// jiggles both ways, dizzy wobbles side to side, a pick-up stretches up, a
+// put-down lands squashed, a startle jumps, peekaboo rises from below), and
+// every one comes back to the middle.
 static void test_each_gesture_plays_its_own_gag() {
   linkkit::Rng rng;
   GelFace f;
@@ -964,35 +985,77 @@ static void test_each_gesture_plays_its_own_gag() {
   const uint32_t random = f.engine().random.state;
   f.started(SceneState::kGesture, Mood::kHappy, 5, Outcome::kNone, StartCtx::kNone);
   TEST_ASSERT_EQUAL_UINT32(random, f.engine().random.state);
-  FaceSource s;
-  FaceContext c;
-  c.mood = s.mood = Mood::kHappy;
-  f.sync(s, c, 0);
-  for (uint32_t t = 16; t <= 480; t += 16) f.step(t, rng);
-  s.anim = SceneState::kGesture;
-  s.animVariant = uint8_t(Gesture::kDizzy);
-  s.at = 496;
-  f.sync(s, c, 496);
-  const auto& e = f.engine();
-  TEST_ASSERT_EQUAL_STRING("baffled", slime::kProfile[e.expression].id);
-  TEST_ASSERT_EQUAL_INT(int(Gesture::kDizzy), e.scenes.variant);
-  TEST_ASSERT_EQUAL_STRING("gesture:dizzy", slime::kGags[e.acting.playing].gesture.type);
-  F most = 0, least = 0;
-  for (uint32_t t = 512; t <= 496 + 3400; t += 16) {
-    f.sync(s, c, t);
-    f.step(t, rng);
-    most = max(most, e.acting.slide.x), least = min(least, e.acting.slide.x);
-  }
-  TEST_ASSERT_TRUE(most > q(.05) && least < q(-.05));
-  s.anim = SceneState::kNone;
-  f.sync(s, c, 4000);
-  f.step(4000, rng);
-  TEST_ASSERT_EQUAL_STRING("happy", slime::kProfile[e.expression].id);
-  TEST_ASSERT_FALSE(e.acting.holding);
+  struct Shot {
+    std::array<F, 4> pose;
+    std::array<F, 3> life;
+    F blink, slide, squash, ripple;  // the eyes' closing, a gag's slide, the gesture springs' squash and ripple
+  };
+  // A gesture played from calm idle as the board plays it, a frame every 16
+  // ms from its start; then let go.
+  auto play = [&](int g) {
+    GelFace face;
+    face.reset(0, rng);
+    FaceSource s;
+    FaceContext c;
+    c.mood = s.mood = Mood::kCalm;
+    face.sync(s, c, 0);
+    for (uint32_t t = 16; t <= 480; t += 16) face.step(t, rng);
+    s.anim = SceneState::kGesture;
+    s.animVariant = uint8_t(g);
+    s.at = 496;
+    face.sync(s, c, 496);
+    const auto& e = face.engine();
+    const auto& r = take(slime::kCalm, row, g);
+    std::vector<Shot> shots;
+    int contacts = 0;
+    uint32_t t = 496;
+    for (; t < 496 + uint32_t(F(r.duration).integer()); t += 16) {
+      face.sync(s, c, t + 16);
+      face.step(t + 16, rng);
+      TEST_ASSERT_TRUE(e.scenes.route.state == SceneState::kGesture && e.scenes.variant == g);
+      TEST_ASSERT_EQUAL_INT(slime::kGestureFaces[g], e.expression);
+      TEST_ASSERT_EQUAL_INT(slime::kCalm, e.emotion);
+      TEST_ASSERT_EQUAL_INT(r.gag, e.acting.playing);
+      contacts += int(e.scenes.contacts.size());
+      shots.push_back(
+          {e.pose(), e.life(), e.blink(), e.acting.slide.x, e.acting.channels[1].x, e.acting.channels[2].x});
+    }
+    TEST_ASSERT_EQUAL_INT(r.count, contacts);
+    s.anim = SceneState::kNone;
+    face.sync(s, c, t += 16);
+    face.step(t, rng);
+    TEST_ASSERT_EQUAL_INT(slime::kCalm, e.expression);
+    TEST_ASSERT_FALSE(e.acting.holding);
+    TEST_ASSERT_TRUE(abs(shots.back().slide) < q(.02));  // back in the middle
+    return shots;
+  };
+  std::vector<std::vector<Shot>> played;
+  for (int g = 0; g < int(Gesture::kCount); ++g) played.push_back(play(g));
+  auto at = [&](Gesture g, double s) { return played[int(g)][size_t(std::lround(s * 1000 / 16)) - 1]; };
+  auto most = [&](Gesture g, int frames, auto read) {
+    F m = read(played[int(g)][0]);
+    for (int i = 0; i < std::min<int>(frames, int(played[int(g)].size())); ++i) m = max(m, read(played[int(g)][i]));
+    return m;
+  };
+  const int all = 1 << 20;
+  TEST_ASSERT_TRUE(at(Gesture::kHandoff, 1).life[0] > q(.04) && at(Gesture::kHandoff, 1).life[2] > q(.08));
+  TEST_ASSERT_TRUE(at(Gesture::kStroke, 1.5).blink > q(.8) &&
+                   at(Gesture::kStroke, 1.5).pose[1] < at(Gesture::kHandoff, .1).pose[1]);
+  TEST_ASSERT_TRUE(most(Gesture::kRuffle, 40, [](const Shot& s) { return abs(s.ripple); }) > q(.05));
+  TEST_ASSERT_TRUE(at(Gesture::kNose, .2).squash < q(-.05));
+  TEST_ASSERT_TRUE(most(Gesture::kTickle, all, [](const Shot& s) { return s.pose[0]; }) > q(.05) &&
+                   most(Gesture::kTickle, all, [](const Shot& s) { return -s.pose[0]; }) > q(.05));
+  TEST_ASSERT_TRUE(most(Gesture::kDizzy, all, [](const Shot& s) { return s.slide; }) > q(.05) &&
+                   most(Gesture::kDizzy, all, [](const Shot& s) { return -s.slide; }) > q(.05));
+  TEST_ASSERT_TRUE(at(Gesture::kPickup, .8).life[0] > q(.12));
+  TEST_ASSERT_TRUE(at(Gesture::kPutdown, .2).squash < q(-.06));
+  TEST_ASSERT_TRUE(most(Gesture::kStartle, 40, [](const Shot& s) { return s.life[0]; }) > q(.1));
+  TEST_ASSERT_TRUE(at(Gesture::kPeekaboo, .4).squash < q(-.12) && at(Gesture::kPeekaboo, 1.1).life[0] > q(.08));
 }
 // CONTINUITY.md, Notice: the notice state's three takes, each a gag under a
 // face it borrows (kNoticeFaces), dealt by its bag; its scene is the start
-// family's with no card.
+// family's with no card. Heard at work, each plays its take and its gag,
+// leans in toward you, and goes back to the work, the mood's face again.
 static void test_a_notice_looks_up_at_you() {
   linkkit::Rng rng;
   GelFace f;
@@ -1001,88 +1064,134 @@ static void test_a_notice_looks_up_at_you() {
   TEST_ASSERT_EQUAL_INT(3, slime::kNoticeCount);
   TEST_ASSERT_TRUE(family(SceneState::kNotice) == Family::kStart);
   const int row = int(SceneState::kNotice);
+  const char* names[] = {"gesture:notice-perk", "gesture:notice-hop", "gesture:notice-tilt"};
   for (int v = 0; v < 3; ++v) {
     const auto& r = take(slime::kGrumpy, row, v);
     TEST_ASSERT_TRUE(r.gag >= 0 && r.count > 0 && r.label == nullptr);
-    TEST_ASSERT_EQUAL_INT(0, std::strncmp(slime::kGags[r.gag].gesture.type, "gesture:notice-", 15));
+    TEST_ASSERT_EQUAL_STRING(names[v], slime::kGags[r.gag].gesture.type);
     TEST_ASSERT_TRUE(slime::kNoticeFaces[v] >= 0 && slime::kNoticeFaces[v] < slime::kProfiles);
   }
-  FaceSource s;
-  FaceContext c;
-  c.mood = s.mood = Mood::kCalm;
-  f.sync(s, c, 0);
-  for (uint32_t t = 16; t <= 480; t += 16) f.step(t, rng);
-  s.anim = SceneState::kNotice;
-  s.animVariant = 1;
-  s.at = 496;
-  f.sync(s, c, 496);
-  const auto& e = f.engine();
-  TEST_ASSERT_EQUAL_INT(slime::kNoticeFaces[1], e.expression);
-  TEST_ASSERT_EQUAL_INT(1, e.scenes.variant);
-  TEST_ASSERT_EQUAL_STRING("gesture:notice-hop", slime::kGags[e.acting.playing].gesture.type);
-  s.anim = SceneState::kNone;
-  f.sync(s, c, 3000);
-  f.step(3000, rng);
-  TEST_ASSERT_EQUAL_STRING("calm", slime::kProfile[e.expression].id);
+  for (int v = 0; v < 3; ++v) {
+    GelFace face;
+    face.reset(0, rng);
+    FaceSource s;
+    FaceContext c;
+    c.mood = s.mood = Mood::kCalm;
+    c.base = SceneState::kWorking, c.act = SceneState::kTerminal;
+    s.look = SceneState::kTerminal;
+    face.sync(s, c, 0);
+    for (uint32_t t = 16; t <= 480; t += 16) face.step(t, rng);
+    s.anim = SceneState::kNotice;
+    s.animVariant = uint8_t(v);
+    s.at = 496;
+    face.sync(s, c, 496);
+    const auto& e = face.engine();
+    TEST_ASSERT_EQUAL_INT(slime::kNoticeFaces[v], e.expression);
+    const auto& r = take(slime::kCalm, row, v);
+    F lean = 0;
+    uint32_t t = 496;
+    for (; t < 496 + uint32_t(F(r.duration).integer()); t += 16) {
+      face.sync(s, c, t + 16);
+      face.step(t + 16, rng);
+      TEST_ASSERT_TRUE(e.scenes.route.state == SceneState::kNotice && e.scenes.variant == v);
+      TEST_ASSERT_EQUAL_STRING(names[v], slime::kGags[e.acting.playing].gesture.type);
+      TEST_ASSERT_TRUE(e.scenes.visible(Scenes::kStartProp, e.timeMs()) == F(0));  // no card
+      lean = max(lean, e.life()[2]);
+    }
+    TEST_ASSERT_TRUE(lean > q(.04));
+    s.anim = SceneState::kNone;
+    face.sync(s, c, t += 16);
+    face.step(t, rng);
+    TEST_ASSERT_TRUE(e.scenes.route.state == SceneState::kTerminal);
+    TEST_ASSERT_EQUAL_STRING("calm", slime::kProfile[e.expression].id);
+  }
 }
 // CONTINUITY.md, Occasions: a look's takes for tags and waits, dealt only
-// while they fit. Idle at night drowses; with no tag on it never plays an
-// occasion; frantic work types frantically; idle's doze nods off and a
-// long turn's marathon stretches, each by its tag alone, however long the
-// look has shown.
+// while they fit, and only the one that fits. Idle drowses at night,
+// stretches in the morning, bounces at a party and at New Year's (the
+// party's own bounce), and nods off once it dozes, by that tag alone however
+// long it has shown; with no tag on, or tags none needs, it plays none.
+// Work types busier while busy and frantically while frantic, and stretches
+// on a long turn's marathon; asleep snores deeper at night and dreams after
+// half an hour.
 static void test_occasions_play_only_while_they_fit() {
+  // The occasions idle played, by their gags.
   auto idle = [](uint32_t when, uint32_t lookMs) {
     auto e = std::make_unique<Engine>();
     e->setOccasion(when, lookMs);
-    int occasions = 0, last = -1;
+    std::set<std::string> played;
+    int last = -1;
     for (uint32_t t = 0; t <= 120000; t += 16) {
       e->step(t);
       if (e->acting.performance != last && e->acting.performance >= Acting::takes(e->emotion)) {
         const auto& o = slime::kIdleOccasions[e->acting.performance - Acting::takes(e->emotion)];
         TEST_ASSERT_TRUE(fits(o.when, o.after, when, lookMs));
-        ++occasions;
+        played.insert(slime::kGags[o.gag].gesture.type);
       }
       last = e->acting.performance;
     }
-    return occasions;
+    return played;
   };
-  TEST_ASSERT_EQUAL_INT(0, idle(0, 0));
-  TEST_ASSERT_EQUAL_INT(0, idle(tagBit("day") | tagBit("weekend"), 0));
-  TEST_ASSERT_TRUE(idle(tagBit("night"), 0) > 0);
-  TEST_ASSERT_TRUE(idle(tagBit("party"), 0) > 0);
-  TEST_ASSERT_EQUAL_INT(0, idle(0, 7200000));
-  TEST_ASSERT_TRUE(idle(tagBit("doze"), 0) > 0);
-  // Work: an occasion's take is numbered after the row's three.
+  using Played = std::set<std::string>;
+  TEST_ASSERT_TRUE(idle(0, 0).empty());
+  TEST_ASSERT_TRUE(idle(tagBit("day") | tagBit("weekend"), 0).empty());
+  TEST_ASSERT_TRUE((idle(tagBit("night"), 0) == Played{"occasion:night-drowse"}));
+  TEST_ASSERT_TRUE((idle(tagBit("morning"), 0) == Played{"occasion:morning-stretch"}));
+  TEST_ASSERT_TRUE((idle(tagBit("party"), 0) == Played{"occasion:party-bounce"}));
+  TEST_ASSERT_TRUE((idle(tagBit("newyear"), 0) == Played{"occasion:party-bounce"}));
+  TEST_ASSERT_TRUE(idle(0, 7200000).empty());
+  TEST_ASSERT_TRUE((idle(tagBit("doze"), 0) == Played{"occasion:nod-off"}));
+  // Work: an occasion's take is numbered after the row's own; the ones
+  // played, as kLookOccasions numbers them.
   auto work = [](SceneState base, uint32_t when, uint32_t lookMs) {
     auto e = std::make_unique<Engine>();
     Facts facts;
     facts.base = base;
     e->setFacts(facts);
     e->setOccasion(when, lookMs);
-    int occasions = 0;
+    std::set<int> played;
     for (uint32_t t = 0; t <= 60000; t += 16) {
       e->step(t);
       if (e->scenes.variant >= takes(int(base))) {
-        const auto& o = slime::kLookOccasions[e->scenes.variant - takes(int(base))];
+        const int i = e->scenes.variant - takes(int(base));
+        const auto& o = slime::kLookOccasions[i];
         TEST_ASSERT_EQUAL_INT(int(base), o.row);
         TEST_ASSERT_TRUE(fits(o.when, o.after, when, lookMs));
-        ++occasions;
+        played.insert(i);
       }
     }
-    return occasions;
+    return played;
   };
-  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kWorking, 0, 0));
-  TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(5), 0) > 0);
-  TEST_ASSERT_TRUE(work(SceneState::kWorking, busyTags(2), 0) > 0);
-  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kWorking, 0, 7200000));
-  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("marathon"), 0) > 0);
-  TEST_ASSERT_TRUE(work(SceneState::kAsleep, tagBit("night"), 0) > 0);
-  TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1800000) > 0);
-  TEST_ASSERT_EQUAL_INT(0, work(SceneState::kAsleep, 0, 1799000));
+  // Exactly one occasion played: the one that needs these tags and this
+  // wait, with this gag (or none).
+  auto only = [](const std::set<int>& played, uint32_t when, uint16_t after, const char* gag) {
+    TEST_ASSERT_EQUAL_INT(1, int(played.size()));
+    const auto& o = slime::kLookOccasions[*played.begin()];
+    TEST_ASSERT_TRUE(o.when == when && o.after == after);
+    if (gag)
+      TEST_ASSERT_EQUAL_STRING(gag, slime::kGags[o.recipe.gag].gesture.type);
+    else
+      TEST_ASSERT_EQUAL_INT(-1, o.recipe.gag);
+  };
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, 0, 0).empty());
+  TEST_ASSERT_TRUE(busyTags(2) == tagBit("busy") && busyTags(5) == tagBit("frantic"));
+  only(work(SceneState::kWorking, busyTags(2), 0), tagBit("busy"), 0, nullptr);
+  only(work(SceneState::kWorking, busyTags(5), 0), tagBit("frantic"), 0, nullptr);
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, 0, 7200000).empty());
+  only(work(SceneState::kWorking, tagBit("marathon"), 0), tagBit("marathon"), 0, "occasion:work-stretch");
+  only(work(SceneState::kAsleep, tagBit("night"), 0), tagBit("night"), 0, nullptr);
+  only(work(SceneState::kAsleep, 0, 1800000), 0, 1800, "occasion:dream");
+  TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1799000).empty());
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
 void test_a_divisor_divides_exactly();
+// test_requests.cpp
+void test_requests_route_by_priority();
+void test_a_request_keeps_its_identity();
+void test_cues_stay_sparse_and_quiet();
+void test_a_request_sounds_once_whatever_changes();
+void test_sound_draws_change_nothing_drawn();
 static void test_gel_draws_natively() {
   // Full-panel RGB565. The gel asks for native surfaces;
   // Device allocates them at the board's size, which the simulator's Hal
@@ -1768,5 +1877,11 @@ int main() {
   RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
+  // test_requests.cpp
+  RUN_TEST(test_requests_route_by_priority);
+  RUN_TEST(test_a_request_keeps_its_identity);
+  RUN_TEST(test_cues_stay_sparse_and_quiet);
+  RUN_TEST(test_a_request_sounds_once_whatever_changes);
+  RUN_TEST(test_sound_draws_change_nothing_drawn);
   return UNITY_END();
 }
