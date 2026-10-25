@@ -100,9 +100,9 @@ struct BodyAct: View {
                              detail: "So I know it's me. That's also how you poke me, any time.")
                 }
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
-            case .trouble(let why):
-                ActTitle(title: "I can't look for my body", detail: why)
-                if case .system(let label, let url)? = AppModel.bluetoothFix(why) {
+            case .trouble(let device):
+                ActTitle(title: "I can't look for my body", detail: device.detail)
+                if case .system(let label, let url)? = device.fix {
                     Button(label) { NSWorkspace.shared.open(url) }.buttonStyle(.row)
                 }
             case .none:

@@ -51,7 +51,7 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     private var current: Transport { lock.withLock { simulator ?? board } }
 
     public var name: String { current.name }
-    public var trouble: String? { current.trouble }
+    public var trouble: TransportTrouble? { current.trouble }
 
     public func start(onLine: @escaping @Sendable (String) -> Void, onConnection: @escaping @Sendable (Bool) -> Void) {
         let turn = lock.withLock {

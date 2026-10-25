@@ -1,6 +1,7 @@
 import AgentHooks
 import AppKit
 import BoopKit
+import CoreBluetooth
 import LinkKit
 import SwiftUI
 
@@ -110,7 +111,7 @@ enum Snapshots {
                 shot("settings-firmware-writing", behind, pane: .settings)
                 behind.firmwareWrite = .failed("plug Mochi's body into this Mac with a USB cable that carries data, then try again.")
                 shot("settings-firmware-failed", behind, pane: .settings)
-                shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))),
+                shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))),
                      pane: .settings)
                 // A simulator running on this Mac: a body to choose, and chosen.
                 let offered = model(installer, status: status())
@@ -167,11 +168,11 @@ enum Snapshots {
             ("3-name-unicode", at(.makeMeYours) { $0.app.setup.editName("우리의작은친구말랑이") }),
             ("4-body-intro", at(.body)),
             ("4-body-looking", at(.body, status: status(connected: false)) { $0.body = .looking }),
-            ("4-body-bluetooth-off", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.poweredOff, appName: "Boop"))) {
+            ("4-body-bluetooth-off", at(.body, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))) {
                 $0.body = .looking
             }),
             // Refused at macOS's prompt: Privacy & Security, not Bluetooth's own settings.
-            ("4-body-bluetooth-refused", at(.body, status: status(connected: false, linkTrouble: BLETransport.trouble(.unauthorized, appName: "Boop"))) {
+            ("4-body-bluetooth-refused", at(.body, status: status(connected: false, linkTrouble: bluetooth(.unauthorized))) {
                 $0.body = .looking
             }),
             ("4-body-found", at(.body, status: status()) { $0.body = .looking }),
@@ -239,6 +240,10 @@ enum Snapshots {
         return model
     }
 
+    /// Bluetooth's trouble as the app's transport says it: it's named for
+    /// the board's prefix.
+    static func bluetooth(_ state: CBManagerState) -> TransportTrouble? { BLETransport.trouble(state, appName: BoopDevice.blePrefix) }
+
     /// `sessions` are agent, project, `wait`, `work` or `idle`, and
     /// optionally the thread's name and its workspace.
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
@@ -246,7 +251,7 @@ enum Snapshots {
                        name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
-                       linkTrouble: String? = nil, deviceTrouble: String? = nil,
+                       linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
                        growth: Growth? = Growth(xp: 1_340)) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
@@ -345,7 +350,7 @@ enum Snapshots {
             ("no-voice", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]], voice: "none"))),
             // Bluetooth refused at the first launch's prompt.
             ("no-bluetooth", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
-                                                             connected: false, linkTrouble: BLETransport.trouble(.unauthorized, appName: "Boop")))),
+                                                             connected: false, linkTrouble: bluetooth(.unauthorized)))),
             ("no-device", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           connected: false), link: .none)),
             // Every chip at once (Chatter and Muted), under the longest kind of name.

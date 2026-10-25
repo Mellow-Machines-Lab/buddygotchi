@@ -35,9 +35,9 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     /// The app's name in the words `trouble` says: `Lamp isn't allowed to use Bluetooth.`
     public let appName: String
     /// Read from any thread, so it's kept apart from `peripheral`.
-    public var trouble: String? { troubleLock.withLock { stateTrouble } }
+    public var trouble: TransportTrouble? { troubleLock.withLock { stateTrouble } }
     let troubleLock = NSLock()
-    var stateTrouble: String?
+    var stateTrouble: TransportTrouble?
 
     let log: @Sendable (String) -> Void
     // Touched only on `queue`, which is also CoreBluetooth's delegate queue.
@@ -269,14 +269,16 @@ extension BLETransport: CBCentralManagerDelegate, CBPeripheralDelegate {
         }
     }
 
-    /// What the app says while Bluetooth can't be used: off, not allowed
-    /// at the first launch's prompt or later, or missing. Nil while it's on
-    /// or on its way.
-    public static func trouble(_ state: CBManagerState, appName: String) -> String? {
+    /// Why Bluetooth can't be used, and what the app says of it: off, not
+    /// allowed at the first launch's prompt or later, or missing. Nil
+    /// while it's on or on its way.
+    public static func trouble(_ state: CBManagerState, appName: String) -> TransportTrouble? {
         switch state {
-        case .poweredOff: "Bluetooth is off. Turn it on in Control Center."
-        case .unauthorized: "\(appName) isn't allowed to use Bluetooth. Allow it in System Settings → Privacy & Security → Bluetooth."
-        case .unsupported: "This Mac has no Bluetooth that \(appName) can use."
+        case .poweredOff: TransportTrouble(.off, "Bluetooth is off. Turn it on in Control Center.")
+        case .unauthorized:
+            TransportTrouble(.notAllowed,
+                             "\(appName) isn't allowed to use Bluetooth. Allow it in System Settings → Privacy & Security → Bluetooth.")
+        case .unsupported: TransportTrouble(.unsupported, "This Mac has no Bluetooth that \(appName) can use.")
         default: nil
         }
     }

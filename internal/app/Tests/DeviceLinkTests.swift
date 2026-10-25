@@ -23,8 +23,8 @@ final class FakeTransport: Transport, @unchecked Sendable {
     var onConnection: (@Sendable (Bool) -> Void)?
     /// `ble` plays the Bluetooth transport for the app.
     var name = "fake"
-    var why: String?
-    var trouble: String? { lock.withLock { why } }
+    var why: TransportTrouble?
+    var trouble: TransportTrouble? { lock.withLock { why } }
     /// What the device says when the app first speaks on a link; nil says
     /// nothing. A `hello` also answers the app's ask; firmware from before
     /// the kit, which says `status`, ignores the ask.
@@ -244,8 +244,8 @@ final class DeviceLinkTests: XCTestCase {
     /// to do, in Boop's name. Only the words: nothing here may start
     /// Bluetooth (CLAUDE.md).
     func testBluetoothThatCantBeUsedSaysWhy() {
-        XCTAssertEqual(BLETransport.trouble(.poweredOff, appName: "Boop"), "Bluetooth is off. Turn it on in Control Center.")
-        XCTAssertEqual(BLETransport.trouble(.unauthorized, appName: "Boop"),
+        XCTAssertEqual(BLETransport.trouble(.poweredOff, appName: "Boop")?.words, "Bluetooth is off. Turn it on in Control Center.")
+        XCTAssertEqual(BLETransport.trouble(.unauthorized, appName: "Boop")?.words,
                        "Boop isn't allowed to use Bluetooth. Allow it in System Settings → Privacy & Security → Bluetooth.")
         for state in [CBManagerState.poweredOn, .resetting, .unknown] { XCTAssertNil(BLETransport.trouble(state, appName: "Boop")) }
     }

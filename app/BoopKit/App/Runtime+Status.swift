@@ -14,9 +14,9 @@ extension Runtime {
         public var connected: Bool
         /// What the device said of itself in its `hello`.
         public var device: DeviceInfo?
-        /// Why the link can't look for the device (Bluetooth off), in the
-        /// transport's words, for the popover.
-        public var linkTrouble: String?
+        /// Why the link can't look for the device (Bluetooth off): the
+        /// transport's cause and words, for the popover.
+        public var linkTrouble: TransportTrouble?
         /// Why the device connected gets no reactions: its firmware doesn't
         /// fit the app (linkkit/SPEC.md §6), in the link's words.
         public var deviceTrouble: String?
@@ -80,7 +80,7 @@ extension Runtime {
         }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
-                    device: DeviceInfo?, linkTrouble: String? = nil, deviceTrouble: String? = nil, personality: Personality,
+                    device: DeviceInfo?, linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil, personality: Personality,
                     brain: String, keyRead: Bool = true, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
                     micTrouble: String? = nil, growth: Growth? = nil) {
             self.name = name

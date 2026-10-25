@@ -146,16 +146,16 @@ final class OnboardingModel: ObservableObject {
     /// The board as the runtime sees it, once looking.
     enum Board: Equatable {
         case none
-        /// Bluetooth is off, refused or missing: the link's words.
-        case trouble(String)
+        /// Bluetooth is off, refused or missing: the app's device line,
+        /// which says why and where it's fixed.
+        case trouble(AppModel.DeviceState)
         case found(String)
     }
 
     var board: Board {
-        guard let status = app.status else { return .none }
-        if let why = status.linkTrouble { return .trouble(why) }
-        if status.connected, let device = status.device { return .found(BoopDevice.advertised(device.id) ?? device.id) }
-        return .none
+        let device = app.device
+        guard device.connected else { return device.trouble == nil ? .none : .trouble(device) }
+        return app.status?.device.map { .found(BoopDevice.advertised($0.id) ?? $0.id) } ?? .none
     }
 
     /// Whether the app talks to a board at all (not `--link none`).
