@@ -527,7 +527,7 @@ void Device::state(JsonObject d, uint32_t t) {
   // The work stream: how many lanes show, and the word forward's gag.
   const render::Stream& stream = b_.stream();
   d["calls"] = stream.on ? stream.laneCount : 0;
-  if (stream.on && stream.call.live) d["call"] = render::callGagName(stream.call.gag);
+  if (stream.drawn(t) && stream.call.live) d["call"] = render::callGagName(stream.call.gag);
   else d["call"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;

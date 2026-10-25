@@ -290,7 +290,7 @@ class Behaviour {
   // the word a `call` brings forward, which plays at once while the
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
-  bool callShows(uint32_t t) const { return stream_.on && !model_.attn && !noApp(t); }
+  bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
   void call(const char* word, uint8_t slot, render::CallGag gag, uint16_t count, uint32_t t) {
     stream_.startCall(word, slot, gag, count, t);
   }

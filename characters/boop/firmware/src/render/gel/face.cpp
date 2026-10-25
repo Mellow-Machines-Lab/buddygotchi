@@ -168,7 +168,7 @@ void GelFace::letGo(int vx, int vy) {
 // At every stop of Behaviour's, on the grid or not.
 void GelFace::step(uint32_t t, linkkit::Rng&) {
   advanceTo(t);
-  if (!stream_ || !stream_->on || !stream_->call.live) return;
+  if (!stream_ || !stream_->drawn(t) || !stream_->call.live) return;
   const auto& c = stream_->call;
   if (c.at != landedAt_) landed_ = false, landedAt_ = c.at;
   if (!landed_ && int32_t(t - c.at) >= int32_t(callFlightMs(c.gag))) {
@@ -213,6 +213,13 @@ void GelFace::land(CallGag gag) {
     case CallMove::kCombo: e.jolt(0, q(-1.8), 0); break;
     case CallMove::kCheer: e.jolt(0, q(-2.6), 0); break;
     case CallMove::kDesk: e.jolt(q(-.6), 0, q(1)); break;
+    // The whole turn's: a gulp at its end; the cube's thud; buried, its
+    // lids heavy; leaning in to poke a frozen word; a blink as all goes off.
+    case CallMove::kGather: e.jolt(0, q(1.6), q(.6)); break;
+    case CallMove::kCompact: e.jolt(q(.6), q(1.2), 0); break;
+    case CallMove::kBuried: e.jolt(0, q(1.8), 0, q(.5), 900); break;
+    case CallMove::kFreeze: e.jolt(side * q(.8), 0, q(.8)); break;
+    case CallMove::kDrop: e.jolt(0, q(.6), 0, q(.6), 300); break;
   }
 }
 

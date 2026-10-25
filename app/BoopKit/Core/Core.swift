@@ -248,6 +248,11 @@ public final class Core {
             return stream.ended(e, program: program, at: now)
         case (.subagent, .end):
             return stream.helperBack(e.key, at: now)
+        case (.turn, .end) where e.notice == nil && e.hook != Core.agentGone:
+            // Not Claude's idle notice, nor an agent that's gone: nobody did anything.
+            return stream.turnEnded(e, at: now)
+        case (.session, .start) where e.source == Mapping.compacted:
+            return stream.compacted(e.key, at: now)
         default:
             return nil
         }

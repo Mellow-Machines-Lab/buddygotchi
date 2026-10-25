@@ -119,7 +119,9 @@ ramps and springs can, and no jolt at an event. By file:
   the clock, a thought cloud, and every gag as it lands: arrive, bonk and
   its dizzy eyes, helmet, shrug, shatter, pass, hail's umbrella, look,
   stir, stamp, launch, poof, plane, phone, page, helper, back, combo, the
-  tower's stack, flag and topple, and an edit's bars), and
+  tower's stack, flag and topple, an edit's bars, and the whole turn's
+  moments: a compaction's cube, a freeze, a drop, buried, and a turn's
+  end gathering its words after the stream goes), and
   a finger in idle (`swipes.jsonl`). `--accept` updates only the gel
   goldens, after looking at them.
 - `boopctl mirror` (in `make -C internal mirror`) plays the same scenarios

@@ -3129,26 +3129,29 @@ static void test_the_work_streams_words() {
     for (const auto& w : s.words) n += w.live;
     return n;
   };
-  s.setLanes(lanes, 1, true, 0);
+  s.setLanes(lanes, 1, true, false, 0);
   TEST_ASSERT_EQUAL_INT(1, live());
   lanes[0].count = 5;
-  s.setLanes(lanes, 1, true, 100);
+  s.setLanes(lanes, 1, true, false, 100);
   TEST_ASSERT_EQUAL_INT(2, live());
-  lanes[0].count = 15;  // ten calls in one state: two words
-  s.setLanes(lanes, 1, true, 200);
+  lanes[0].count = 15;  // ten calls in one state: two words, at 200 and 340
+  s.setLanes(lanes, 1, true, false, 200);
   TEST_ASSERT_EQUAL_INT(4, live());
-  s.setLanes(lanes, 1, true, 300);  // the same count: none
+  s.setLanes(lanes, 1, true, false, 300);  // the same count: none
   TEST_ASSERT_EQUAL_INT(4, live());
   lanes[1].slot = 2, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
-  s.setLanes(lanes, 2, true, 300);
+  s.setLanes(lanes, 2, true, false, 300);
   TEST_ASSERT_EQUAL_INT(5, live());
   TEST_ASSERT_EQUAL_INT(1, s.column(2));
-  s.setLanes(&lanes[1], 1, true, 400);  // the first lane's session rests
-  TEST_ASSERT_EQUAL_INT(1, live());
+  // The first lane's session rests: its words fall on where they dropped.
+  const int16_t x = s.words[0].x;
+  s.setLanes(&lanes[1], 1, true, false, 400);
+  TEST_ASSERT_EQUAL_INT(5, live());
   TEST_ASSERT_EQUAL_INT(-1, s.column(0));
-  s.prune(300 + render::Stream::kFallMs - 1);
+  TEST_ASSERT_EQUAL_INT(x, s.words[0].x);
+  s.prune(340 + render::Stream::kFallMs - 1);
   TEST_ASSERT_EQUAL_INT(1, live());
-  s.prune(300 + render::Stream::kFallMs);
+  s.prune(340 + render::Stream::kFallMs);
   TEST_ASSERT_EQUAL_INT(0, live());
   s.startCall("make", 2, render::callGagFromName("bonk"), 0, 5000);
   TEST_ASSERT_TRUE(s.call.live && s.call.gag == render::CallGag::kBonk);
@@ -3156,10 +3159,49 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_TRUE(render::callGagFromName("nonsense") == render::CallGag::kLand);
   s.prune(5000 + render::Stream::kCallMs);
   TEST_ASSERT_FALSE(s.call.live);
-  s.startCall("make", 2, render::CallGag::kBonk, 0, 6000);
-  s.setLanes(&lanes[1], 1, false, 6100);  // something needs you
+
+  // The agents done: the stream off, its words linger kEndMs, and a word
+  // forward may still come in that time.
+  TEST_ASSERT_EQUAL_UINT32(1500, render::Stream::kEndMs);
+  TEST_ASSERT_EQUAL_UINT32(700, render::Stream::kTakeMs);
+  lanes[0].count = 16;
+  s.setLanes(lanes, 1, true, false, 10000);
+  TEST_ASSERT_EQUAL_INT(1, live());
+  s.setLanes(nullptr, 0, false, false, 10100);
+  TEST_ASSERT_TRUE(s.ending && s.accepts(10100 + render::Stream::kEndMs - 1));
+  TEST_ASSERT_FALSE(s.accepts(10100 + render::Stream::kEndMs));
+  TEST_ASSERT_EQUAL_INT(1, live());
+  // A turn's end gathers its lane's words: they're its for kTakeMs, then gone.
+  s.startCall("done", 0, render::callGagFromName("gather"), 0, 10200);
+  int taken = 0;
+  for (const auto& w : s.words) taken += s.taken(w);
+  TEST_ASSERT_EQUAL_INT(1, taken);
+  s.prune(10200 + render::Stream::kTakeMs - 1);
+  TEST_ASSERT_EQUAL_INT(1, live());
+  s.prune(10200 + render::Stream::kTakeMs);
+  TEST_ASSERT_EQUAL_INT(0, live());
+  TEST_ASSERT_TRUE(s.drawn(10200 + render::Stream::kTakeMs));
+
+  // A freeze holds the words falling where they are; after it they fall on
+  // from there.
+  s.setLanes(lanes, 1, true, false, 20000);
+  TEST_ASSERT_EQUAL_INT(1, live());
+  s.startCall("rate limit", 0, render::CallGag::kFreeze, 0, 21000);
+  TEST_ASSERT_TRUE(s.frozen());
+  s.prune(21000 + render::Stream::kCallMs - 1);
+  TEST_ASSERT_EQUAL_INT(1, live());  // 3.5 s old, held
+  s.prune(21000 + render::Stream::kCallMs);
+  TEST_ASSERT_FALSE(s.frozen());
+  TEST_ASSERT_EQUAL_INT(1, live());
+  for (const auto& w : s.words)
+    if (w.live) TEST_ASSERT_EQUAL_UINT32(20000 + render::Stream::kCallMs, w.born);
+
+  // Something needs you: everything goes at once.
+  s.startCall("make", 0, render::CallGag::kBonk, 0, 24000);
+  s.setLanes(nullptr, 0, false, true, 24100);
   TEST_ASSERT_FALSE(s.call.live);
   TEST_ASSERT_EQUAL_INT(0, live());
+  TEST_ASSERT_FALSE(s.accepts(24100));
 }
 
 int main() {

@@ -258,6 +258,36 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(BoopDevice.callTTL, 1500)
     }
 
+    /// A turn's end comes forward by how it went, if the turn called a
+    /// tool: done gathers its words; a full context buries it; a rate limit
+    /// or an overload freezes them; another failure, or you stopping it,
+    /// drops them. A compaction squashes them into a cube. A turn with no
+    /// call brings nothing.
+    func testTheWholeTurnsMoments() {
+        let rig = CoreRig(workStream: true)
+        func turn(_ end: () -> Fx) -> [String] {
+            rig.now += 10_000
+            rig.send(.turnStart)
+            run(rig, "c\(rig.now)", program: "ls")
+            rig.now += 3000
+            return calls(end())
+        }
+        XCTAssertEqual(turn { rig.send(.turnEnd) }, ["done gather"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "context_limit") }, ["context full buried"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "rate_limit") }, ["rate limit freeze"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "overloaded") }, ["overloaded freeze"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "api_error") }, ["failed drop"])
+        XCTAssertEqual(turn { rig.send(.turnStopped) }, ["stopped drop"])
+        rig.now += 10_000
+        rig.send(.turnStart)
+        XCTAssertEqual(calls(rig.send(.turnEnd)), [], "no call this turn")
+        rig.now += 10_000
+        rig.send(.turnStart)
+        run(rig, "x", program: "ls")
+        rig.now += 3000
+        XCTAssertEqual(calls(rig.send(.sessionStart, source: Mapping.compacted)), ["context compact"])
+    }
+
     /// Turned off, the stream sends nothing.
     func testTurnedOff() {
         let rig = CoreRig(workStream: false)

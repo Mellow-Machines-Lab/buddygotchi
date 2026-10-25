@@ -55,7 +55,7 @@ struct WorkStream {
     static let gags = [
         "arrive", "look", "land", "stir", "stamp", "launch", "poof", "plane", "phone", "page", "helper", "back",
         "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet", "throw", "shrug",
-        "timeout", "no", "combo", "topple",
+        "timeout", "no", "combo", "topple", "compact", "buried", "freeze", "drop", "gather",
     ]
     /// The gags of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
@@ -256,6 +256,39 @@ struct WorkStream {
     mutating func helperBack(_ key: String, at now: Int64) -> Forward? {
         guard let lane = lanes[key] else { return nil }
         return offer(Forward(slot: lane.slot, word: "done", gag: "back", priority: .notable), at: now)
+    }
+
+    /// A turn of session `e.key` ending, if it called a tool: done, it
+    /// gathers its words up; failed, by why (a full context buries it, a rate
+    /// limit or an overload freezes them, anything else drops them); stopped,
+    /// they drop. Always forward: the turn's end is news.
+    mutating func turnEnded(_ e: AgentEvent, at now: Int64) -> Forward? {
+        let key = e.key
+        guard called.contains(key) else { return nil }
+        called.remove(key)
+        combo[key] = nil
+        let shown: (word: String, gag: String)
+        switch e.outcome {
+        case .done?: shown = ("done", "gather")
+        case .failed?:
+            switch e.error {
+            case "context_limit": shown = ("context full", "buried")
+            case "rate_limit": shown = ("rate limit", "freeze")
+            case "overloaded": shown = ("overloaded", "freeze")
+            default: shown = ("failed", "drop")
+            }
+        case .stopped?: shown = ("stopped", "drop")
+        case nil: return nil
+        }
+        return offer(Forward(slot: lanes[key]?.slot ?? freeSlot(), word: shown.word, gag: shown.gag, priority: .always),
+                     at: now)
+    }
+
+    /// The context of session `key` compacted while it works: its words
+    /// squashed into a cube.
+    mutating func compacted(_ key: String, at now: Int64) -> Forward? {
+        guard let lane = lanes[key] else { return nil }
+        return offer(Forward(slot: lane.slot, word: "context", gag: "compact", priority: .always), at: now)
     }
 
     /// A turn starting in `key`: its next call is its first.

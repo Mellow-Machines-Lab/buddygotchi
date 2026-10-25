@@ -228,7 +228,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     // Answered on the Mac (`attn` leaves), or back after no app: the face
     // shows what the state says.
   });
-  stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, t);
+  stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;

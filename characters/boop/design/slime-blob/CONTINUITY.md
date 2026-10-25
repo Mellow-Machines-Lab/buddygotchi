@@ -616,7 +616,10 @@ them, and a word hidden behind it costs nothing to draw, clear or push.
 On the desk, while the Mac sends lanes: the to-do list's progress along
 the monitor's foot, the turn's clock in its corner from the first
 minute (amber from the marathon's 8), and, in the working look with no
-call for 20 s, a thought cloud.
+call for 20 s, a thought cloud. When the agents stop, the words on
+screen linger 1.5 s (`Stream::kEndMs`), falling where they dropped, and a
+word may still come forward in that time, as a turn's end does to gather
+them; something needing you clears everything at once.
 
 In front, after the props and before the sign: the word a `call` brings
 forward flies from its lane's name (a paper plane or a little one from
@@ -642,6 +645,11 @@ everything gone by 2.5 s:
 | Cheer, combo | pass, built, combo | Over its head with confetti, a tick on the monitor; built raises a flag on the tower; a combo's count twinkles |
 | Desk | cross, stack | The monitor's spinner; a build's bricks stacking up at the desk's right end |
 | Topple | topple | The tower wobbles a second and falls on its head: dizzy eyes, a cross on the monitor |
+| Gather | gather | A turn done: its lane's words, from where they were, gathered into its mouth, and "mm!" |
+| Compact | compact | Its context compacted: the words squashed together over its head into a cube that thuds onto the desk |
+| Drop | drop | Stopped, or failed: the words fall away grey, switched off |
+| Freeze | freeze | A rate limit or an overload: the words falling held where they are, icy, a snowflake turning, and it leans in to poke one; they fall on after |
+| Buried | buried | Its context full: bricks of its words piling up to its eyes |
 
 As it lands the body answers through the engine (`Engine::jolt`): a push
 on the finger's pull springs, as a fling let go (knocked back and

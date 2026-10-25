@@ -2125,7 +2125,7 @@ static void test_the_work_stream_falls_behind_and_hits_in_front() {
   Stream::Lane lanes[2];
   lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep"), std::strcpy(lanes[0].label, "app");
   lanes[1].slot = 1, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed"), std::strcpy(lanes[1].label, "web");
-  stream.setLanes(lanes, 2, true, 0);
+  stream.setLanes(lanes, 2, true, false, 0);
   const SignShow none;
   const Strip strip;
   paintFrame(s, *e, false, 0, nullptr, none, strip);

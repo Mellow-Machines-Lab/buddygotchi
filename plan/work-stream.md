@@ -396,9 +396,13 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    an edit's bars, the globe), its to-do bar, the turn's clock and a
    thought cloud after 20 s with no call. Checked on the board:
    `boopctl run` draws all 27 of `stream.jsonl`'s shots as the
-   simulator does. Still to come: the whole turn's moments (compaction's
-   cube, buried by a full context, frozen by a rate limit, an interrupt,
-   the finish gathering the pile), which need the Mac to send them.
+   simulator does. The whole turn's moments too: a turn done gathers its
+   words into its mouth (the words lingering 1.5 s after the stream
+   ends), a compaction squashes them into a cube, a rate limit or an
+   overload freezes them, a full context buries it in bricks of them,
+   and an interrupt or another failure drops them; the Mac sends each
+   (`WorkStream.turnEnded`, `compacted`) only for a turn that called a
+   tool.
 6. [x] **A demo** (`characters/boop/demo/work-stream.jsonl`: two
    sessions, lookups, a lookup that finds nothing, a failed script twice,
    a big deletion, a failing then passing test run). Played headless, its

@@ -2349,6 +2349,15 @@ static void test_a_call_comes_forward_over_the_work() {
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"attn\":{\"agent\":\"claude\",\"project\":\"x\",\"more\":0}}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"calls\":0"));
   TEST_ASSERT_TRUE(has(stateOf(r), "\"call\":null"));
+  // The agents done (the state idle), a word may still come forward for
+  // Stream::kEndMs, as a turn's end gathers its words up; not after.
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"calls\":[[0,4,\"grep\",\"app\"]]}");
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"idle\":1}");
+  doLine(r, 4, "call", "now", "{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"call\":\"gather\""));
+  clockAt(r, r.kit.now() + render::Stream::kEndMs);
+  doLine(r, 5, "call", "now", "{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "hidden")));
 }
 
 int main() {

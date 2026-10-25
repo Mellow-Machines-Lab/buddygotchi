@@ -37,6 +37,12 @@ enum class CallGag : uint8_t {
   kNo,
   kCombo,
   kTopple,  // a build's tower falls on it
+  // The whole turn's moments.
+  kCompact,  // its context compacted
+  kBuried,   // its context ran out
+  kFreeze,   // a rate limit or an overload
+  kDrop,     // you stopped it, or it failed
+  kGather,   // its turn is done
   kCount
 };
 CallGag callGagFromName(const char* name);
@@ -65,6 +71,11 @@ enum class CallMove : uint8_t {
   kCombo,    // its count popping over the head
   kDesk,     // to the desk: the monitor's spinner, count, or a tower of bricks
   kTopple,   // the tower wobbles and falls on its head
+  kCompact,  // the words falling squashed into a cube that thuds onto the desk
+  kBuried,   // words piling up as bricks, to its eyes
+  kFreeze,   // the words falling stop where they are, icy, and it pokes one
+  kDrop,     // the words falling drop, switched off
+  kGather,   // its lane's words gathered into its mouth
 };
 CallMove callMove(CallGag gag);
 // How long its word flies before it lands, when the body answers: a
@@ -86,6 +97,12 @@ struct Stream {
   static constexpr uint32_t kCallMs = 2500;
   // With no new call this long while they work, it's thinking.
   static constexpr uint32_t kThinkMs = 20000;
+  // When the agents stop, the words on screen stay this long, and a word
+  // forward may still come (a turn's end gathers them); then they go.
+  static constexpr uint32_t kEndMs = 1500;
+  // A word forward that takes the words falling (a gather, a compaction, a
+  // drop) has them for this long, and then they're gone.
+  static constexpr uint32_t kTakeMs = 700;
 
   // A working session's lane, as the Mac's `state` says it.
   struct Lane {
@@ -97,7 +114,7 @@ struct Stream {
   struct Word {
     char text[kWordBytes] = "";
     uint8_t slot = 0;
-    int16_t dx = 0;      // from its column's middle, px on a 502-wide surface
+    int16_t x = 0;       // its middle, px on a 502-wide surface: its column's as it dropped, a little off
     uint16_t speed = 0;  // px a second
     uint32_t born = 0;
     bool live = false;
@@ -120,11 +137,24 @@ struct Stream {
   // When the agents started working (the stream came on), for the
   // monitor's clock, and when a lane last counted a new call.
   uint32_t since = 0, movedAt = 0;
+  // The stream went off at endedAt, the agents done, its words lingering.
+  bool ending = false;
+  uint32_t endedAt = 0;
 
   // The lanes from a `state`: a lane whose count moved drops words, up to
-  // kDropsPerState; a new lane drops its latest; a lane gone takes its
-  // words with it.
-  void setLanes(const Lane* in, int n, bool showing, uint32_t t);
+  // kDropsPerState; a new lane drops its latest. A word keeps falling where
+  // it dropped, its lane gone or not. The stream off lets its words linger
+  // kEndMs, unless something needs you (`cleared`): then all goes at once.
+  void setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t);
+  // Whether a word may come forward at t: the stream on, or just ended.
+  bool accepts(uint32_t t) const;
+  // Whether anything of it is drawn at t.
+  bool drawn(uint32_t t) const;
+  // Whether the word forward is freezing the words, and whether it takes
+  // `w` (a gather its lane's, a compaction or a drop all of them falling
+  // as it came).
+  bool frozen() const { return call.live && call.gag == CallGag::kFreeze; }
+  bool taken(const Word& w) const;
   // A word comes forward at t (the `call` do).
   void startCall(const char* text, uint8_t slot, CallGag gag, uint16_t count, uint32_t t);
   // Forgets what has finished by t.
@@ -136,7 +166,7 @@ struct Stream {
   bool moving(uint32_t t) const;
 
  private:
-  void drop(const Lane& lane, uint32_t t);
+  void drop(const Lane& lane, int column, int columns, uint32_t t);
 };
 
 // The lanes' colours by slot, RGB565, the same on the board, its mirror

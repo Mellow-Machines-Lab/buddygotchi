@@ -139,7 +139,50 @@
 // No new call for 20 s: a thought cloud. The clock says how long they've worked.
 {"clock": 67500}
 {"shot": "thinking"}
-// Something needs you: the stream goes.
+// The whole turn's moments, each over the words falling as it comes.
+// A compaction: the words squashed into a cube that drops onto the desk.
 {"clock": 68000}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 6, "python", "buddygotchi"], [1, 5, "rg", "landing"]]}
+{"clock": 68600}
+{"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "context", "as": "compact"}}
+{"clock": 68900}
+{"shot": "compact-squash"}
+{"clock": 69700}
+{"shot": "compact-cube"}
+// A rate limit: the words freeze where they are, icy.
+{"clock": 71500}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 8, "python", "buddygotchi"], [1, 7, "rg", "landing"]]}
+{"clock": 71900}
+{"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "rate limit", "as": "freeze"}}
+{"clock": 72800}
+{"shot": "freeze"}
+// You stopped it: the words drop, switched off.
+{"clock": 74500}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 10, "python", "buddygotchi"], [1, 9, "rg", "landing"]]}
+{"clock": 74800}
+{"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "stopped", "as": "drop"}}
+{"clock": 75100}
+{"shot": "drop"}
+// Its context ran out: buried in bricks of its words, to its eyes.
+{"clock": 77500}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 12, "python", "buddygotchi"], [1, 11, "rg", "landing"]]}
+{"clock": 77800}
+{"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "context full", "as": "buried"}}
+{"clock": 79200}
+{"shot": "buried"}
+// The turn's done: the stream goes, its words linger, and it gathers them up.
+{"clock": 81000}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 14, "python", "buddygotchi"], [1, 13, "rg", "landing"]]}
+{"clock": 81300}
+{"t": "state", "base": "idle", "mood": "engaged", "busy": 0, "idle": 2, "vol": 0, "when": ["day"]}
+{"clock": 81350}
+{"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "done", "as": "gather"}}
+{"expect": {"call": "gather", "calls": 0}}
+{"clock": 81750}
+{"shot": "gather"}
+{"clock": 82300}
+{"shot": "gather-mm"}
+// Something needs you: the stream goes.
+{"clock": 84000}
 {"t": "state", "base": "working", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "attn": {"agent": "claude", "project": "landing", "more": 0, "id": 7}}
 {"expect": {"calls": 0, "call": null}}
