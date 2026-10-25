@@ -7,7 +7,6 @@
 namespace render::gel {
 enum class Family { kRest, kIdle, kListen, kStart, kDesk, kHelpers, kAlert, kResult, kTouch };
 Family family(SceneState state);
-const char* familyName(Family value);
 bool isDesk(SceneState state);
 struct Attention {
   bool on = false;
@@ -24,7 +23,7 @@ struct Request {
   bool hasId = false, stop = false, say = false;
   SceneState anim = SceneState::kNone;  // the moment's animation (isReaction); kNone for a face alone
   int expression = -1, loops = 1, variant = -1;
-  bool hold = false;  // the host times it: held until cleared (router.mjs)
+  bool hold = false;  // the host times it: held until cleared
   Outcome outcome = Outcome::kNone;
   StartCtx ctx = StartCtx::kNone;
 };

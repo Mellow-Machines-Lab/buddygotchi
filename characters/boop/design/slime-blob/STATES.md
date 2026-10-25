@@ -1,12 +1,13 @@
 # State coverage and event mapping
 
-Updated 2026-10-24. The exact 25 state IDs, trigger descriptions, authored
-variations (three each; idle's six and asleep's four, with their comedy,
-and a gesture's ten)
-and nine visual scene families are in [state-plan.json](state-plan.json). The router and reference scene modules
-cover this vocabulary. The owner approved the representative set before the
-remaining matrix was implemented and exercised. Production integration and
-synchronized sound remain separate work.
+Updated 2026-10-24. The board's 25 states (the firmware's `kStateNames`,
+`firmware/src/render/types.cpp`) fall into nine visual scene families, below.
+Each state's takes (three each; idle's six or seven and asleep's four,
+with their comedy, a successful finish's four and a gesture's ten) are
+slimegen's `scenes.mjs` recipes, baked into `slime.h`; the gel engine's
+router (`render/gel/router.cpp`) picks the state from the facts and
+moments it's given. The owner approved the representative set before the
+remaining matrix was implemented and exercised.
 
 ## Compact scenes, complete semantic coverage
 
@@ -22,12 +23,10 @@ synchronized sound remain separate work.
 | Result | reply_ready, task_complete, error, stopped | Reply vs whole-task success/failure vs tool error vs interruption |
 | Touch | poked, tap_spam, gesture | Ordinary local response vs repeated-tap response vs the board's own gesture (a stroke, a shake, BOOT's hand-off: a gag each, under a borrowed face) |
 
-The generated [coverage.json](coverage.json) enumerates every mood and
-state pairing. Each row has the expression, scene, its variation IDs,
-state/mood sound profile and required host facts. All 1,050 mood/state cells have engineering coverage. The two completion outcomes and four start contexts are exercised
-separately. Shared rest rows explicitly alias one quiet
-family; they still preserve the mood in host storage. Active cells are
-compositions, not isolated exported assets.
+`test_gel` plays every one of the 1,050 mood/state cells, each of its
+takes, the two completion outcomes and four start contexts apart. Shared
+rest rows alias one quiet family; they still keep the mood. Active cells
+are compositions, not isolated exported assets.
 
 `starting` expands each variant for all three ctx values. `task_complete`
 expands each for both success and failure. Do not count these as new
@@ -39,7 +38,7 @@ Comedy adds takes, never states or moods ([CONTINUITY.md](CONTINUITY.md),
 Comedy). Idle's variations 4 to 6 are its gags (yawn and settle, doze off
 and snap awake, sneeze and shake it off), after an expression's own gag:
 excited's zoomies, the low moods' long yawn. Asleep's fourth is a snore
-(`variationAudio`: only it sounds). A successful finish's fourth is the
+(only it sounds). A successful finish's fourth is the
 trophy, then hiccups; failure keeps its three. Proud's lifted success
 shows a gift, a small bug beside its card. Each joins its bag's second
 round, so a fresh state opens as it always has.
@@ -126,7 +125,7 @@ not replay an old alert. See [sound/README.md](sound/README.md).
 
 ## Production integration is not flat `state` JSON
 
-The 23 design IDs correspond to existing visuals, but on the wire the
+The 25 state IDs correspond to existing visuals, but on the wire the
 repo sends base/act/attn and named do requests, not a single state field.
 Follow LinkKit's [spec](../../../../linkkit/SPEC.md) and its
 turn. `no_app` is device timeout, needs_you is attn, activities are act,

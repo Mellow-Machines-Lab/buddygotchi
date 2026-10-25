@@ -76,7 +76,7 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
 | `make -C internal test` | `make build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
 | `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
-| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/`, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
+| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/` (Boop's `test_gel` holds the gel slime's engine to every rule of its design, [its VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md)), then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario played on it and on the native simulator, each shot the same on both pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and checked to be the one checked in, byte for byte (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
@@ -141,7 +141,8 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   `characters/pixel/tools/facegen/facegen.py` (what `make -C internal faces` runs),
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
-  assets, [its README](../characters/boop/tools/slimegen/README.md)), and
+  tables and the pack's moods, from its design, which it checks first;
+  [its README](../characters/boop/tools/slimegen/README.md)), and
   the engine's `firmware/tools/mirror.sh` (the Mac's mirror of the
   board, `characters/boop/mac/mirror/board.js`, with Emscripten;
   `--check` builds it again and compares), on `firmware/tools/wasm.sh`,

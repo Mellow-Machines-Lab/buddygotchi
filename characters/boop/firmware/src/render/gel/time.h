@@ -1,5 +1,5 @@
-// Software binary64 timing, using integer operations only. It reproduces the
-// reference clock's rounding at exact cue boundaries without an ESP32 FPU.
+// Software binary64 timing, using integer operations only: the clock rounds
+// at exact cue boundaries the same on every board, with no ESP32 FPU.
 // Body, shading and spring arithmetic remain Q24. No host floating point leaks
 // into board/native timing. Only compile-time decimal literals use double.
 #pragma once

@@ -2,11 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {faceTarget} from '../../design/slime-blob/engine/face.mjs';
-import {profileTraits} from '../../design/slime-blob/engine/scenes/profile.mjs';
-import {sceneMoodTraits} from '../../design/slime-blob/engine/scenes/mood.mjs';
-import {gestureGagName,gestureGag,gestureNames,noticeNames} from '../../design/slime-blob/engine/scenes/gesture.mjs';
-import {idleOccasions,occasionGags,occasionShare} from '../../design/slime-blob/engine/scenes/occasion.mjs';
+import {faceTarget} from './face.mjs';
+import {profileTraits,sceneMoodTraits,gestureGagName,gestureGag,gestureNames,noticeNames,idleOccasions,occasionGags,occasionShare} from './scenes.mjs';
 import {recipes,kinds} from './recipes.mjs';
 const require=createRequire(import.meta.url);
 // The acting springs a cue or a gag's key names: the six gestures', then a

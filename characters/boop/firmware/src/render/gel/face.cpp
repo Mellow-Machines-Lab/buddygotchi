@@ -49,7 +49,7 @@ void GelFace::seed(uint32_t s) {
   engine_->step(0);
 }
 
-// The engine steps on the reference's 16 ms grid from the last reset.
+// The engine steps on a 16 ms grid from the last reset.
 bool GelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   uint32_t next = origin_ + ((from - origin_) / 16 + 1) * 16;
   if (after(next, to)) return false;

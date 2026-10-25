@@ -1,7 +1,7 @@
 // The engine's bounded histories: the latest N records, the
 // oldest dropped first, in a fixed table inside the engine, so remembering
 // never touches the heap. An identity is kept as the 64-bit FNV-1a key of
-// the reference's string for it, since it's only ever compared: the board
+// its string, since it's only ever compared: the board
 // kept 64 of each as heap strings, about 25 KB of internal RAM once full.
 #pragma once
 #include <array>

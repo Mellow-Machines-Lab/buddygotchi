@@ -1,42 +1,38 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-24. The pure reference engine and all activity scene
-families are implemented, idle, sleep and a finish have their comedy
+Updated 2026-10-24. The slime's one engine is the C++ in
+`characters/boop/firmware/src/render/gel/` (below, `gel/`): the board runs
+it, and so do the simulator and the Mac's mirror of the board, the
+firmware built to WebAssembly (characters/CHARACTER.md §9). Every activity
+scene family is implemented; idle, sleep and a finish have their comedy
 (Comedy, below), the board's gestures have a take each (Gestures), the
 looks have occasions (Occasions), and one face flows into the next
-(Directed edge bridges: its arts morph or cross-fade, never closing). Q1 representative art review was approved on
-2026-10-02. Full scene coverage is engineering evidence; the opt-in host graph and native integer port are implemented, and the Mac shows the port itself (the board's firmware as WebAssembly, characters/CHARACTER.md §9). Contact-synchronized
-reference sound is implemented; timbres remain sketches.
+(Directed edge bridges: its arts morph or cross-fade, never closing). Q1
+representative art review was approved on 2026-10-02. Each rule below
+names the code that keeps it; [VALIDATION.md](VALIDATION.md) names the
+test that pins it. Contact-synchronized sound is implemented; timbres
+remain sketches.
 
 ## Keep the object; change its targets
 
-The current [renderer](render/webgl.mjs) generates a dome mesh and
-deforms it analytically. It shades blue translucent gel and a soft rim,
-then applies low-resolution bloom. There is no inner jellyfish cap or
-model asset. `paintFace` draws pupil-free rounded eyes/mouth/cheeks/tears
-to a scratch Canvas texture; the renderer attaches it to the body using
-rest-surface coordinates. Do not make the face slide independently during
-a grab or body deformation.
+The board draws the dome from a mesh slimegen samples once (`mesh.mjs`,
+into `slime_mesh.h`): its vertices and a dense lookup of the blue
+translucent gel's studio lighting, rim and bloom. Every frame
+`gel/painter.cpp` deforms and projects the mesh by the body's pose and
+rasterizes it, and `gel/art.cpp` draws the face's art (slimegen's
+`painter.mjs`, baked as vector paths into `slime_art.h`) on the body, moved
+and sized by the face's controls. There is no inner jellyfish cap or model
+asset. The face rides the body: it never slides on its own during a grab
+or a deformation.
 
-Source areas to inspect:
-
-| Area | Current responsibility | How to extend |
+| Area | What it does | How to extend |
 | --- | --- | --- |
-| `profiles`, `paintFace` | Face designs from expressions.json | Edit catalogue + a matching painter primitive; rebuild catalog.js |
-| `advance`, `pose`, `impulse` | Accepted V1 springs/blink/gaze | Preserve seven locked blocks; add channels outside them |
-| `perform`, `actorChannels`, `composePose`, `posture` | Additive authored emotion acting | Add bounded activity layer without replacing base pose |
-| `createGL`, `shape`, material fragment and bloom | Persistent body + gel appearance | Keep silhouette/material identity; don't change them per mood |
-| `startGrab`, `moveGrab`, `releaseGrab` | Local pull, pointer capture, rebound | Retain bounded spring state; explicitly handle host termination |
-| `createFallback` | Lower-cost Canvas approximation | Preserve expression/interaction semantics; not identical 3D material |
-
-The seven accepted source blocks are executed from
-[engine/motion-v1.mjs](engine/motion-v1.mjs), including the exported GLSL
-deformation and injected frame driver. Their hashes remain unchanged in
-[contracts/motion-v1.json](contracts/motion-v1.json). The hash validator
-protects their exact JS/GLSL code, not all mutable art around it. Changed
-physics require an explicitly named reviewed motion revision. The
-surface-drag/acting extensions are later review candidates, not silently
-part of the accepted V1 lock.
+| `expressions.json`, slimegen's `painter.mjs`, `face.mjs` | Face designs and the controls they're drawn at | Edit the catalogue and a matching painter primitive; run slimegen |
+| `gel/motion.cpp` `Motion` | The accepted V1 springs, blink, breath and gaze | A change is a named motion revision: edit `test_the_motion_v1_numbers` with it |
+| `gel/acting.cpp`, `gel/engine.cpp` `pose`, `posture` | Additive authored emotion acting, the mood posture | Add bounded layers without replacing the base pose |
+| `gel/painter.cpp`, `slime_mesh.h` | The persistent body and gel appearance | Keep silhouette and material identity; never change them per mood |
+| `gel/engine.h` `dragStart`, `dragMove`, `dragEnd` | Local pull and rebound | Keep the bounded spring state |
+| `gel/scenes.cpp`, slimegen's `scenes.mjs` | Each state's scene, its recipes and props | Edit the recipe in `scenes.mjs`; the engine plays it |
 
 ## Proposed layer ownership
 
@@ -52,99 +48,89 @@ actual contact/card-reveal cues ──> sparse procedural SFX ──────
 
 Preserve current displacement and velocity when changing any target.
 Eye and mouth geometry, cheek opacity and tear amount move on springs
-outside the locked code. While one face gives way to another, the painters
-draw both arts, features of the same shape morphing and the others
-cross-fading (Directed edge bridges, below), so the face never closes or
-fades. The original face weights remain only for the locked timing; the
-mood posture reads its own critically damped weights.
+(`gel/motion.cpp` `SemanticFace`). While one face gives way to another,
+the board draws both arts, features of the same shape morphing and the
+others cross-fading (Directed edge bridges, below), so the face never
+closes or fades. The mood posture reads its own critically damped weights.
 
-## Headless reference traces
+## One engine, driven as the board drives it
 
-`createSlime({seed, catalog, reducedMotion})` returns `setFacts`, `setMood`,
-`poke`, `shake`, `perform`, `dragStart`, `dragMove`, `dragEnd` (with the
-finger's velocity as it let go, if it was moving), `step` and
-`inspect`. Only `step(ms)` advances the monotonic presentation clock;
-retarget calls preserve displacement and velocity. The engine uses no
-DOM, wall clock or global random source. The browser adapter freezes its
-presentation clock while hidden or paused and terminates grabs on pointer
-cancel, lost capture, focus/visibility loss and host boundary exit.
-The scene router adds `oneShot({id,name,args})`, `setLinkTimedOut(bool)`,
-`clearTransient()` and `holdExpression(mood|null)`. `setFacts` now takes a complete host snapshot:
-an omitted attention object clears attention. The explicit timeout is an
-adapter input; elapsed time alone never invents `no_app`. These are local
-engine calls, not new wire fields. The browser script player uses the same
-event operations and clock; its pause/hidden gaps do not skip script time.
+`gel/engine.h`'s `Engine(seed)` takes `setFacts` (a complete host
+snapshot: an omitted attention clears it), `setMood`, `oneShot`,
+`linkTimedOut`, `clearTransient`, `holdExpression`, `setOccasion`,
+`dragStart`, `dragMove` and `dragEnd` (with the finger's velocity as it let
+go, if it was moving), and `step(ms)`, the only call that advances its
+clock; every other call keeps every spring's displacement and velocity. It
+has no wall clock and no global random source: its `Random`s are its own,
+seeded (53 after a reset, so a reset board replays the same). The explicit
+timeout is the board's input; elapsed time alone never invents `no_app`.
 
-`tools/trace.mjs --script scripts/idle-60s.jsonl --seed 53` emits every frame
-at a 16 ms cadence, beginning with `step(0)`. Events apply at the first
-frame at or after their timestamp. JSON stores scalars to six decimal
-places (at most 0.5e-6 rounding error); deterministic full-precision replay
-is checked separately. Traces omit repeated static art/prose, labels, input
-facts and internal posture weights; dynamic face controls, physics and
-presentation channels remain in every frame. Golden traces are checked, never refreshed by
-`check.cjs`. The builder checks the module bundle separately from traces.
+The board's `GelFace` (`gel/face.cpp`) turns what Behaviour follows into
+these calls, and steps the engine on a 16 ms grid from its last reset: a
+frame advances at most 45 ms, and a repeated time doesn't advance it. The
+board times every moment itself: it sends each one held (below), and
+clears it when it ends.
 
 ## Phase 1 channel bounds
 
-The accepted springs, frame cap, contact bounds, breathing, blink and gaze
-values remain in the motion contract. The imported additive gesture
-springs retain frequencies 11 (lift), 10 (roll), 9 (other channels), damping
-6.4 and the same 1/240 s substeps. Displacement limits are 0.24 for lift,
-0.12 for roll, 0.18 for forward and 0.42 otherwise, velocity limit 5.
-Grab spring stiffness is 256 and damping 20 while held (100 and 13 once
-let go, so the dome settles back with a small wobble rather than snapping
-or bouncing past where it stood), displacement limit 0.72 and velocity
-limit 6; the target is the finger's displacement up to 0.32 and gives less
-and less past it, never reaching 0.64, reduced to 35% with reduced motion
-(`grabConstants`, `grabReach`; A finger on the body, below). Reduced
-gesture impulses are 18%. Gesture cadence retains
-the authored duration plus 7–15 seconds, starting after one second, or
-0.4 seconds after retarget; release defers the next gesture three seconds.
-These are the imported audition constants, not approved production pacing.
-The face's own window defaults to 180 ms (falling asleep takes 480,
-below); directed edge variants select
-the face windows below, over which one art crosses over another. Each
-semantic control is a critically damped spring,
+The accepted V1 springs (`gel/motion.cpp`) are the body's four modes, lean,
+squash, ripple and dent, at frequency 11, 13, 18 and 16 and damping 4.6,
+4.5, 5.3 and 6, in 1/240 s substeps, within 0.72 and velocity 9; a poke
+adds velocity (lean ±2.6 away from where it's poked, squash −3.5, ripple
+3.5, dent 4.8) and a shake (lean 4.5, squash −2.6, ripple 5), never
+position, each mode's velocity within ±8 after it; breathing adds 0.011 ×
+sin(1.65 t) to the squash; a blink is sin² over 0.24 s, the first at 2.8 s,
+then every 3 to 7 s; the gaze looks within ±0.014, every 3.2 to 7.2 s,
+easing at rate 3.
+
+The additive gesture springs (`gel/acting.cpp`) are frequency 11 (lift),
+10 (roll) and 9 (the other channels), damping 6.4, in the same substeps,
+within 0.24 for lift, 0.12 for roll, 0.18 for forward and 0.42 otherwise,
+velocity 5. The grab spring is stiffness 256 and damping 20 while held (100
+and 13 once let go, so the dome settles back with a small wobble rather
+than snapping or bouncing past where it stood), within 0.72 and velocity 6;
+its target is the finger's displacement up to 0.32, giving less and less
+past it and never reaching 0.64 (`gel/engine.h`; A finger on the body,
+below). Gesture cadence is the authored duration plus 7 to 15 seconds,
+starting after one second, or 0.4 seconds after a retarget; a release
+defers the next gesture three seconds.
+
+The face's own window is 180 ms (falling asleep takes 480, below);
+directed edge variants select the face windows below, over which one art
+crosses over another. Each semantic control is a critically damped spring,
 `a = ω²(target − x) − 2ωv`, with ω = 20 (8 while it sleeps, from falling
-asleep until it wakes, a mood changing meanwhile; 30 with reduced motion),
-in the
-same 1/240 s substeps: it starts from rest without a jump in velocity, and a
-retarget keeps both its position and its velocity. Cheek and tear opacity
-stay in [0, 1]. Dimensional endpoints come from the original face
-primitives; the painters draw each of the engine's `face.layers` at its
-ratios (Directed edge bridges, below), so settled faces retain their
-authored proportions.
+asleep until it wakes, a mood changing meanwhile), in the same 1/240 s
+substeps: it starts from rest without a jump in velocity, and a retarget
+keeps both its position and its velocity. Cheek and tear opacity stay in
+[0, 1]. The controls' endpoints are each face's (slimegen's `face.mjs`,
+read off the painter's primitives); the board draws each of the face's
+layers at its ratios (Directed edge bridges, below), so settled faces keep
+their authored proportions.
 
 The mood posture (the per-mood squash, and the excited, scared, frightened,
-crying and irritated oscillations) is weighted by one critically damped
-spring per expression, ω = 10 (25 with reduced motion), whose target is one
+crying and irritated oscillations, `gel/engine.cpp` `posture`) is weighted
+by one critically damped spring per expression, ω = 10, whose target is one
 for the current expression and zero for the others. The weights sum to one,
-so the posture eases between moods with no step in velocity; the locked V1
-weights keep timing the motion blocks. `posture` reports its lean and
-squash after the quiet blend.
+so the posture eases between moods with no step in velocity, and it reads
+after the quiet blend.
 
 ## Representative activity scenes
 
 The first owner review covered working, terminal, needs-you,
 task-complete success/failure and the quiet rest alias. Q1 approved that
 representative art on 2026-10-02, allowing the rest of the matrix to be
-implemented. The review matrix exercises happy, grumpy, sad and frightened in six cases
-each (success and failure separately): 24 cases, 20 mood/state cells.
-[scripts/representative-matrix.jsonl](scripts/representative-matrix.jsonl)
-gives each case an eight-second window. `tools/check-scenes.mjs --coverage`
-validates those windows and the full matrix described below before the
-builder marks cells implemented or quiet-alias. Sleeping is a justified
+implemented: happy, grumpy, sad and frightened in six cases each (success
+and failure separately), 24 cases in 20 mood/state cells, the Studio's
+**Representative activities** review set
+(`characters/boop/studio/review-sets.json`). Sleeping is a justified
 shared alias, not three newly authored sleep animations; its one addition
-is a snore (Comedy, below). The 24 clips
-record the approved representative set; they do not claim separate owner
-review of every cell in the expanded matrix.
+is a snore (Comedy, below).
 
 Priority is explicit no-app, listening, needs-you, the admitted moment,
-then the latest base/activity. An activity applies only to working;
-unknown activity falls back to working and unknown base to idle. A flat
-`state` property does not select a scene.
-Attention identity follows the device: a new activation or changed id,
-agent or project; changing mood, display name, more or variant leaves the
+then the latest base/activity (`gel/router.cpp`). An activity applies only
+to working; unknown activity falls back to working and unknown base to
+idle. Attention identity follows the device: a new activation or changed
+id, agent or project; changing mood, display name or more leaves the
 request's reveal consumed. Attention cuts future decorative contacts
 immediately. Clearing and showing the same request id again creates a new
 activation. Leaving an alert for a higher-priority state (listening, an
@@ -152,97 +138,83 @@ explicit link timeout) saves how far it got: its age and its next contact.
 Returning to one that had already confirmed restores its silent hold;
 returning to one that had not resumes at that age, so only the knocks and
 confirmation not yet reached follow. Each request's knocks and ding play
-exactly once, never twice and never not at all
-([scripts/alert-interrupted.jsonl](scripts/alert-interrupted.jsonl) pins
-it). Returning from a moment resolves the latest snapshot. Only an explicit
-successful outcome permits a trophy; failure, missing outcome and unknown
-outcome never do.
+exactly once, never twice and never not at all. Returning from a moment
+resolves the latest snapshot. Only an explicit successful outcome permits a
+trophy; failure, missing outcome and unknown outcome never do.
 
-The local `oneShot` adapter mirrors visual lifecycle, not LinkKit's queue,
-TTL, acknowledgments or audio playback. A host that times its own moments,
-as the board's Behaviour does, sends `hold:true`: the moment never expires
-or finishes on its own and rests after its loops until `clearTransient()`;
-`args.variant` (0–2) then names the take the host has already timed, and
-`holdExpression` holds its borrowed expression with no expiry. The port
-runs this path too ([scripts/host-held.jsonl](scripts/host-held.jsonl)). Unknown names are refused. Repeated
-moment id/name pairs do not replay. `args.loops` uses the existing
-protocol range, defaults to one, and repeats the same selected recipe; only a new request
-chooses the next variation. `react` with a known mood overlays the active
-animation without changing its outcome, request identity or lasting mood.
-This prototype's expression hold is the first cycle duration below per
-requested loop. Bare `react` has nothing to play; a speech-only request
-adds no visual animation. A non-null `say`, including `{}`, ends listening
-before visual admission. Repeated `listening` keeps its existing lifetime;
-`stop_listening` ends only listening.
+A moment (`oneShot`) mirrors visual lifecycle, not LinkKit's queue, TTL,
+acknowledgments or audio playback. The board times its own moments, so it
+sends them `hold`: the moment never expires or finishes on its own and
+rests after its loops until `clearTransient()`; its `variant` names the
+take the board has already timed, and `holdExpression` holds its borrowed
+expression with no expiry. Unknown names are refused. Repeated moment
+id/name pairs do not replay. `loops` uses the protocol's range, 1 to 6,
+defaults to one, and repeats the same selected recipe; only a new request
+chooses the next variation. A react with a known mood overlays the active
+animation without changing its outcome, request identity or lasting mood;
+a bare react has nothing to play, and a speech-only request adds no visual
+animation. A non-null `say` ends listening before visual admission.
+Repeated `listening` keeps its lifetime; `stop_listening` ends only
+listening.
 
-Every one-shot now has a finite authored recipe, then returns to current
-facts. Listening has its own visual recipe and waits for explicit
-stop/reply input: this reference engine has no autonomous microphone/listen
-deadline and no Voice-duration hold. The production device's timeout,
-voice playback and turn lifecycle remain its responsibility. Explicit
-no-app masks current activity and suppresses contacts; presentation time
+Every one-shot has a finite authored recipe, then returns to current
+facts. Listening has its own recipe and waits for an explicit stop or
+reply: the engine has no microphone deadline of its own. Explicit no-app
+masks current activity and suppresses contacts; presentation time
 continues, so elapsed moments are not replayed when the link returns.
 
-One desk, id `desk-1` with normalized anchor (0.5, 0.64), persists across
-work modes. Three shuffle-bag recipes per mood/state/factual outcome or context differ
-in rhythm, with no adjacent repeats; asleep and a successful finish have a
-fourth (Comedy, below). Routine work changes variation after
-recovery; alert/result requests choose once at entry. Mood retargeting does
-not restart an existing recipe or alert. Original emotion gesture recipes
-run only in idle without a grab; the activity scene owns the choreography
-elsewhere. A state change cancels future recipe contacts but retains every
-spring position and velocity, including the composed body pose.
+One desk persists across work modes. Three shuffle-bag recipes per
+mood/state/factual outcome or context differ in rhythm, with no adjacent
+repeats; asleep and a successful finish have a fourth (Comedy, below).
+Routine work changes variation after recovery; alert/result requests choose
+once at entry. Mood retargeting does not restart an existing recipe or
+alert. The expression's gesture recipes play only in idle without a grab;
+the activity scene owns the choreography elsewhere. A state change cancels
+future recipe contacts but keeps every spring's position and velocity,
+including the composed body pose.
 
 A drag consumes elapsed physical keyboard/knock contacts without emitting
 them. Factual alert/result reveals still happen while held, so dragging
 cannot hide a real completion or its outcome. Release never plays an
-elapsed contact again. Rest retains the stored mood, cancels acting and
+elapsed contact again. Rest keeps the stored mood, cancels acting and
 contacts immediately, and lets residual springs settle. The shared sleepy
 art crosses over the awake one in a window of its own, 480 ms, its
 controls on the slower spring, so the lids droop shut rather than snap;
-waking takes the face's own 180 ms (`sleepTransition`,
-[engine/face.mjs](engine/face.mjs)). Its semantic
-targets are eye openness 0.004, mouth width 0.018, curve 0.008, and zero
-cheek/tear opacity; changing the stored mood during rest leaves this face
-quiet.
+waking takes the face's own 180 ms (`gel/motion.cpp` `SemanticFace`). Its
+semantic targets are eye openness 0.004, mouth width 0.018, curve 0.008,
+and zero cheek/tear opacity; changing the stored mood during rest leaves
+this face quiet.
 
-The candidate art timings live in
-[engine/scenes/constants.mjs](engine/scenes/constants.mjs): 240 ms
-entry, 480 ms recovery, 120 ms contact envelopes; cycles of 3,200, 3,700 and
-4,200 ms. Contact jitter is at most 40 ms and gain jitter 10%. Activity
-springs use frequency 12, damping 10, velocity limit 1.2 and displacement
-limits 0.08 lean, 0.06 squash, 0.05 forward. The desk's visibility uses
-frequency 10 and damping 14; these springs retain the motion contract's
-integration substep. Activity target magnitudes use the existing
-reduced-gesture multiplier. The quiet posture blend uses the activity spring
-coefficients and remains in [0, 1]. Final pose bounds are
-[1.25, 1.32, 1.14, 0.72], life bounds [0.24, 0.12, 0.23], with no edit to
-V1's own springs. These values are pinned by scene checks and remain art
-candidates, not host mood pacing. Decorative props are clipped above
-normalized y=0.8; the lower 20% belongs to host status. Both browser
-renderers use the same prop painter, and the board's props draw from the
-same channels.
+A scene's timings (`gel/scenes.cpp`, its recipes slimegen's `scenes.mjs`):
+240 ms entry, 480 ms recovery, 120 ms contact envelopes; cycles of 3,200,
+3,700 and 4,200 ms. A desk's contacts are jittered at most 40 ms and their
+strength 10%. Activity springs use frequency 12, damping 10, velocity
+limit 1.2 and displacement limits 0.08 lean, 0.06 squash, 0.05 forward. The
+desk's visibility uses frequency 10 and damping 14; these springs use the
+same integration substep. The quiet posture blend uses the activity spring
+coefficients and stays in [0, 1]. Final pose bounds are [1.25, 1.32, 1.14,
+0.72], life bounds [0.24, 0.12, 0.23], with no edit to V1's own springs.
+These values are art candidates, not host mood pacing. Props stay above
+y = 0.8 of the screen; the lower 20% belongs to the host's lane.
 
-Every other prop (the alert, result and start cards, the helpers,
-the listening cue and the touch marks) has a **200 ms visibility ramp** for
-entry and exit ([engine/scenes/ramp.mjs](engine/scenes/ramp.mjs)): a cubic
-Hermite from its current value and slope to the target, so from rest it is a
-smoothstep and a reversal keeps its velocity; it ends exactly. Held within
-zero and one, it's flat where it's held, so a retarget never brings back
-what it held at zero. Each prop's
-`visible` is its drawn opacity: the ramp, times a card's reveal or the
-helpers' recovery. When its route ends, a prop fades out still carrying the
-content it last showed (the alert's request, agent, project, name and count;
-a card's state, label and outcome; the helpers' mode, count and progress;
-the listening pulse; the touch kind). New content (another request, or the
-helpers' next cycle) waits until nothing of the old is drawn, then fades in
-from zero; the alert's content follows the current request at once. Contact
-envelopes (the knock, the confirmation, the key and touch pulses) stay
-deliberate impacts.
+Every other prop (the alert, result and start cards, the helpers, the
+listening cue and the touch marks) has a **200 ms visibility ramp** for
+entry and exit (`gel/scenes.h` `Ramp`): a cubic Hermite from its current
+value and slope to the target, so from rest it is a smoothstep and a
+reversal keeps its velocity; it ends exactly. Held within zero and one,
+it's flat where it's held, so a retarget never brings back what it held at
+zero. Each prop's visibility is its drawn opacity: the ramp, times a
+card's reveal or the helpers' recovery. When its route ends, a prop fades
+out still carrying the content it last showed (the alert's request, agent,
+project, name and count; a card's state, label and outcome; the helpers'
+mode, count and progress; the listening pulse; the touch kind). New content
+(another request, or the helpers' next cycle) waits until nothing of the
+old is drawn, then fades in from zero; the alert's content follows the
+current request at once. Contact envelopes (the knock, the key and touch
+pulses) stay deliberate impacts.
 
 The authored keyboard contact times, in milliseconds before jitter, are
-specified by [engine/scenes/desk.mjs](engine/scenes/desk.mjs) and pinned in
-the scene tests:
+slimegen's `scenes.mjs`:
 
 | Rhythm | Variant 0 | Variant 1 | Variant 2 |
 | --- | --- | --- | --- |
@@ -251,19 +223,17 @@ the scene tests:
 | Frightened working/terminal | 800, 1700, 2040 | 740, 1800, 2240, 2480 | 1080, 2380 |
 | Grumpy terminal | 640, 800, 960 | 800, 960, 1120, 2100 | 660, 820, 980, 1140, 2120 |
 
-Sad work retains every other contact of its ordinary rhythm, starting with
+Sad work keeps every other contact of its ordinary rhythm, starting with
 the first, for longer pauses. Keyboard strength/lean are 1.05/0.018 for
 happy, 1.12/0.032 for grumpy terminal, 0.62/−0.016 for sad and 0.68/−0.018
 for frightened; other work uses 1/0.018. Contact side alternates. The body
 uses the contact envelope and strength for side lean 0.024, squash −0.052
 and forward 0.045. A successful reveal targets squash/forward 0.036/0.025;
-a failed reveal −0.048/−0.035, before the activity bounds and reduced-motion
-multiplier. These candidate motions are covered by the full channel traces.
+a failed reveal −0.048/−0.035, before the activity bounds.
 
 Alert entry has one, two or three knocks at [420], [420, 740] or
 [420, 690, 960] ms. Result reveal is at [680, 960, 1240] ms. The alert and
-result recipes shape those times and forces using
-[engine/scenes/mood.mjs](engine/scenes/mood.mjs):
+result recipes shape those times and forces by the mood:
 
 | Mood | Delay (ms) | Knock spacing multiplier | Strength | Lean |
 | --- | ---: | ---: | ---: | ---: |
@@ -276,27 +246,17 @@ result recipes shape those times and forces using
 The first knock receives the delay, subsequent spacing is multiplied, and
 the alert reveal follows the last knock by 240 ms. Its card ramps in from
 the request's arrival, with no opacity floor, and ramps out when attention
-clears; `props.alert.confirmation` uses the contact envelope to brighten it
-once at the reveal, then returns to zero. Its reveal strength is invariant
-at 1. A result receives the mood's delay and strength while its success or
-failure remains factual. A card's reveal is its own, a second ramp of its
-prop's: up over 400 ms from its reveal contact (`cardRevealMs`, twice the
-prop ramp, so it rises in rather than appears) and down over the recovery's
-480 ms, each from its time on the route's clock, but not down before it's
-up: one revealed in the recovery rises whole, then falls; it is cleared before an
-explicitly repeated loop. A route that ends while its card rises or falls
-leaves the reveal going as it was while the card's ramp fades it out, so it
-never stops dead. Contacts carry unique request,
-generation, iteration and index identity; the `cues` audio output is consumed once per contact by the synchronized
-scheduler (sound/README.md).
-
-The studio's **Record review set** captures 24 activity or 13 directed-edge
-silent 6.4-second clips, selected by **Review set**,
-from the composed canvases, with their case labels, at up to 30 fps. It
-does not use the camera, microphone or desktop capture. Clips remain local
-until downloaded or saved through the opt-in loopback server; the page exposes
-a save link for each. This is visual
-evidence only; audio is independently enabled; the captured videos remain silent.
+clears. Its reveal strength is invariant at 1. A result receives the mood's
+delay and strength while its success or failure remains factual. A card's
+reveal is its own, a second ramp of its prop's: up over 400 ms from its
+reveal contact (`kCardRevealMs`, twice the prop ramp, so it rises in rather
+than appears) and down over the recovery's 480 ms, each from its time on
+the route's clock, but not down before it's up: one revealed in the
+recovery rises whole, then falls; it is cleared before an explicitly
+repeated loop. A route that ends while its card rises or falls leaves the
+reveal going as it was while the card's ramp fades it out, so it never
+stops dead. Contacts carry unique request, generation, iteration and index
+identity; the sound cues take each once (sound/README.md).
 
 Suggested composition order: base shape → mood posture → activity pose →
 gesture impulses → local grab → final bounds. There must be one owner of
@@ -308,44 +268,32 @@ safe envelope or produce competing repeated impacts.
 
 ## Full activity scene matrix
 
-The reference engine implements all 25 factual states in the nine scene
-families from [state-plan.json](state-plan.json). The full check executes
-all 42 canonical moods × 25 states: 1,050 cells, including 84 quiet aliases
-for asleep/no-app. Starting is exercised with each of its four contexts,
-and task-complete with success and failure, giving 1,218 factual test
-cases. Every active case exercises all its variants: three, a successful
-finish's four, a gesture's ten (each asked for, as the board does), and
-idle's takes (an expression's three gestures and its comedy, six or
-seven); quiet aliases retain mood and use the shared
-sleeping face without acting, and without contacts but a snore's breaths.
-The two optional face alternates are outside this canonical matrix.
+The engine implements all 25 factual states in the nine scene families of
+[STATES.md](STATES.md): 42 canonical moods × 25 states, 1,050 cells,
+including 84 quiet aliases for asleep/no-app, starting in each of its four
+contexts and task-complete with success and failure. Every active cell has
+all its takes: three, a successful finish's four, a gesture's ten (each
+asked for, as the board does), and idle's (an expression's three gestures
+and its comedy, six or seven); quiet aliases keep the mood and use the
+shared sleeping face without acting, and without contacts but a snore's
+breaths. The two face alternates are outside this canonical matrix.
 
-Coverage requires actual execution, bounded physical channels, factual
-labels, a distinct motion/contact signature and visible props for each
-variant. Signatures use the same number of normalized phase samples
-so duration or metadata alone cannot make identical acting pass. The
-builder consumes the checked cells; declaring a state implemented is
-insufficient. These tests establish engineering coverage, not separate
-owner art approval for every cell.
-
-The activity scene selects a shuffle bag keyed by mood, state and factual
+The scene selects a shuffle bag keyed by mood, state and factual
 outcome/context. Desk modes, delegating and listening select again only
 after recovery. A one-shot selects once per request and keeps that recipe
 across explicit loops; an attention entry selects once and then holds.
-Idle uses its expression's three original gesture recipes, then its comedy,
-with a separate automatic shuffle bag per expression and the quiet interval
-specified above. A bag's first round deals its first three entries; every
-later round deals all of them (Comedy, below). Each round is exhausted
-before the next and no entry repeats across a refill. Explicit review `perform(index)` remains
-an exact selection. Changing targets never replaces the body or its
-springs. The intentional idle scheduler change updates seeded reference
-traces; the seven V1 source locks remain unchanged.
+Idle uses its expression's three gesture recipes, then its comedy, with a
+separate automatic shuffle bag per expression and the quiet interval
+above. A bag's first round deals its first three entries; every later round
+deals all of them (Comedy, below). Each round is exhausted before the next
+and no entry repeats across a refill. Changing targets never replaces the
+body or its springs.
 
-For the other canonical moods, [engine/scenes/profile.mjs](engine/scenes/profile.mjs)
-derives bounded traits from the expression's authored performances. Let
-`D` be their mean duration in seconds, `E` the mean absolute cue velocity,
-and `L` the sum of signed lean/forward cue velocities divided by the total
-cue count. Empty cue lists use a denominator of one. The traits are:
+For the other canonical moods, slimegen's `scenes.mjs` derives bounded
+traits from the expression's authored performances. Let `D` be their mean
+duration in seconds, `E` the mean absolute cue velocity, and `L` the sum
+of signed lean/forward cue velocities divided by the total cue count.
+Empty cue lists use a denominator of one. The traits are:
 
 | Trait | Formula and bound |
 | --- | --- |
@@ -354,24 +302,23 @@ cue count. Empty cue lists use a denominator of one. The traits are:
 | Contact strength | `clamp(0.6 + E × 0.32, 0.68, 1.12)` |
 | Lean | `clamp(L × 0.045, −0.022, 0.022)` |
 
-The four reviewed moods retain the explicit table above. Their existing
-working/terminal rhythms remain unchanged. For other desk moods, the
-first contact receives the delay and later offsets from that first
-contact receive the spacing multiplier; lean adds the trait to the
-ordinary desk target. Crying+working has an authored exception: contact
-times [760, 1780], [640, 2120] or [1020, 2300] ms, strength 0.55 and lean
-−0.024. All keyboard contacts then receive the existing bounded jitter.
+The four reviewed moods keep the explicit table above. Their
+working/terminal rhythms stay as they are. For other desk moods, the first
+contact receives the delay and later offsets from that first contact
+receive the spacing multiplier; lean adds the trait to the ordinary desk
+target. Crying+working has an authored exception: contact times [760,
+1780], [640, 2120] or [1020, 2300] ms, strength 0.55 and lean −0.024. All
+keyboard contacts then receive the bounded jitter.
 
 Outside the four reviewed moods, the selected expression performance also
-contributes a bounded recovery gesture. Recovery progress maps the entire
-authored performance duration into the scene's recovery window. Each cue
-contributes `velocity × gain × sin²(π × cueAge / 0.48)` only while its
-authored age is between zero and 0.48 seconds. Roll maps to lean, lift to
-squash, and ripple to forward; the corresponding gains are 0.025, 0.018
-and 0.015. Existing lean/squash/forward cues retain their channel. The
-result passes through the activity spring and final bounds above. A grab
-or quiet state suppresses these contributions. No new physical body,
-face silhouette, mood decision or factual outcome is introduced.
+contributes a bounded recovery gesture (`gel/scenes.cpp`). Recovery
+progress maps the entire authored performance duration into the scene's
+recovery window. Each cue contributes `velocity × gain × sin²(π × cueAge /
+0.48)` only while its authored age is between zero and 0.48 seconds. Roll
+maps to lean, lift to squash, and ripple to forward; the corresponding
+gains are 0.025, 0.018 and 0.015. Lean, squash and forward cues keep their
+channel. The result passes through the activity spring and final bounds
+above. A grab or quiet state suppresses these contributions.
 
 The additional desk rhythms before mood shaping and jitter are:
 
@@ -385,17 +332,16 @@ The additional desk rhythms before mood shaping and jitter are:
 | Waiting | None | None | None |
 
 The frightened contact-bearing desk modes share its hesitant rhythm;
-sad desk modes retain every other ordinary contact, beginning with the
+sad desk modes keep every other ordinary contact, beginning with the
 first. Waiting overrides contacts to an empty list and uses lean targets
 [0.006, 0.014, −0.010]. Its focus cycles are [1, 2, 3] per recipe. Listening
 also has no contacts, uses lean [0.022, −0.012, 0.008] and pulse cycles
 [2, 1, 3]. For both, lean is modulated by
 `0.65 + 0.35 × sin(2π × progress × cycles)`, in addition to entry/recovery
-envelopes. The visual focus/pulse is
-`0.5 + 0.5 × sin(2π × progress × cycles)`, held at 0.5 with reduced motion.
-The same desk stays in place; its screen shows a list, link, magnifier,
-inspection cards, neutral test dots or a quiet waiting cue. Testing never
-claims PASS/FAIL before the host sends a result.
+envelopes. The listening pulse is `0.5 + 0.5 × sin(2π × progress ×
+cycles)`. The same desk stays in place; its screen shows a list, link,
+magnifier, inspection cards, neutral test dots or a quiet waiting cue.
+Testing never claims PASS/FAIL before the host sends a result.
 
 The remaining scene recipes use the shared cycle, entry and recovery
 timings above:
@@ -410,43 +356,29 @@ timings above:
 | Poked | [160], [200, 480], [160, 520] ms | Bounded local dent/wobble/bounce |
 | Tap spam | [160, 400], [160, 340, 520], [220, 620] ms | Bounded wobble/squash/dodge complaint |
 
-Start, wake-up, helper and status-result contacts receive the mood/profile delay;
-their reveals take its strength. Helper contact sides alternate; variant 2 reverses travel
-direction. Their travel progress is smoothstep of age divided by the last
-contact time, clamped to [0, 1], so arrival coincides with the factual
-report reveal. Helper visibility multiplies the entry and recovery
-envelopes. Touch contacts have strength 0.6 for poked and 0.9 for tap spam,
-alternating sides and lean targets [0.008, −0.018, 0.012]; they have no
-timing jitter or mood-derived delay. Their mood face remains the current
-expression, with the bounded recovery profile where applicable.
-An admitted `poked` moment also applies the existing locked V1 poke input;
-an admitted `tap_spam` applies its shake input. These intentional touch
-impulses can change velocity, but never reset displacement or layer state.
-Duplicate/refused requests apply no impulse. Fact and mood retargets still
-preserve every spring's position and velocity exactly.
+Start, wake-up, helper and status-result contacts receive the mood/profile
+delay; their reveals take its strength. Helper contact sides alternate;
+variant 2 reverses travel direction. Their travel progress is smoothstep
+of age divided by the last contact time, clamped to [0, 1], so arrival
+coincides with the factual report reveal. Helper visibility multiplies the
+entry and recovery envelopes. Touch contacts have strength 0.6 for poked
+and 0.9 for tap spam, alternating sides and lean targets [0.008, −0.018,
+0.012]; they have no timing jitter or mood-derived delay. Their mood face
+stays the current expression, with the bounded recovery profile where it
+applies. An admitted `poked` moment also applies the V1 poke and an
+admitted `tap_spam` its shake: they can change velocity, but never reset
+displacement or layer state. Duplicate or refused requests apply no
+impulse.
 
 The start/helper/status reveal envelope adds squash 0.018 and forward
-0.018; a tool-error reveal instead adds forward −0.025. These additions
-use contact strength, the existing reduced-motion multiplier and bounds.
-All factual cards reveal while dragging; body contacts are consumed
-silently during the grab. Return and stop remain neutral, error means a
-tool warning, and only explicit task success permits the trophy. Every
-result card has a mark over its label: the trophy, a cross for a failure
-or a tool error, a soft stop square when stopped, and three calm dots for
-the other neutral results (READY, FINISHED). Both painters draw the cards
-and their text at the board's proportions, the text its fonts' size
-against the panel's width and never stretched, so a card holds its text
-on any stage as it does on the board. A state change cancels pending
-contacts at once and resolves the latest facts.
-
-The browser state/context/outcome controls exercise these same calls.
-Playing a script or recording the review set explicitly starts a fresh
-seed-53 run with a fresh presentation clock and released grabs. Within a
-run, every retarget and scene uses the same continuous actor. The capture
-controls do not allow a second script to reset a running recording. The
-preview remains a local visual reference: LinkKit admission, actual
-microphone deadlines, Voice playback, finish-thread taps and production
-ports remain their existing owners' responsibilities.
+0.018; a tool-error reveal instead adds forward −0.025. All factual cards
+reveal while dragging; body contacts are consumed silently during the
+grab. Return and stop stay neutral, error means a tool warning, and only
+explicit task success permits the trophy. Every result card has a mark
+over its label: the trophy, a cross for a failure or a tool error, a soft
+stop square when stopped, and three calm dots for the other neutral
+results (READY, FINISHED). A state change cancels pending contacts at once
+and resolves the latest facts.
 
 ## Comedy
 
@@ -464,21 +396,20 @@ asset.
 | A gift: a small bug beside the card | Proud's successful finish | Its second take, lifted | As that take |
 
 **Idle's comedy is gags, beside the gestures.** Idle's variations are an
-expression's performances, so its comedy is more of them, dealt by acting's
-bag: an expression's three gestures, its own `gags` (expressions.json), then
-everyone's `idleGags`. A gag is in `gags` once, shared. It is a performance
-(its `cues`, impulses on the gesture springs) with `keys`, which set a
-channel's target (from (0, 0) at its start, a smoothstep to each of the
-channel's keys in turn, then its last value), and `contacts`, which sound
-and move nothing. The six gesture springs follow their keys under-damped,
-as gel does; a gag has two springs of its own, its `slide` (frequency 10,
-damping 9, at most 0.7) and its `lids` (critically damped, frequency 24).
-The lids close the eyes as a blink does: the drawn blink is the largest of
-the natural one, the bridge's and the lids'. The slide carries the whole
-dome sideways, its face and its shadow with it, and leaves its shape as it
-is. Reduced motion scales a gag's body keys as it scales impulses (0.18),
-not its lids. The three gestures stay as they were, so the traits the scene
-recipes take from them, and every existing recipe, are unchanged.
+expression's performances, so its comedy is more of them, dealt by
+acting's bag (`gel/acting.cpp`): an expression's three gestures, its own
+`gags` (expressions.json), then everyone's `idleGags`. A gag is in `gags`
+once, shared. It is a performance (its `cues`, impulses on the gesture
+springs) with `keys`, which set a channel's target (from (0, 0) at its
+start, a smoothstep to each of the channel's keys in turn, then its last
+value), and `contacts`, which sound and move nothing. Every channel's keys
+lie inside its bound and come back to rest. The six gesture springs follow
+their keys under-damped, as gel does; a gag has two springs of its own,
+its `slide` (frequency 10, damping 9, at most 0.7) and its `lids`
+(critically damped, frequency 24). The lids close the eyes as a blink
+does: the drawn blink is the larger of the natural one and the lids'. The
+slide carries the whole dome sideways, its face and its shadow with it,
+and leaves its shape as it is.
 
 **A scene's fourth take is a table of its own.** Every row of
 `slime::kRecipes` keeps its three takes; asleep and a successful finish
@@ -510,36 +441,27 @@ never snores.
 **The hiccups** reveal the first take's card at 680 ms (plus the mood's
 delay), then three body contacts at 1,640, 2,060 and 2,480 ms, strength
 0.45, in a 3.7 s take. **The gift** is a flag on proud's second success
-take: the result card's content carries it (`props.result.gift`, present
-only with one), and both painters draw an amber bug beside the card.
+take: the result card's content carries it, and the board draws an amber
+bug beside the card.
 
 **Comedy's contacts sound in any state**, each with the routine chance (a
 quarter): a sneeze's (`sneeze`), a zoomies landing (`bounce`), a snore's
-breath (`breath`). They are routine sounds, ducked under a line. The
-reference sounds 4 of 14 sneezes over twenty minutes of idle, and 11 of 40
-snore breaths over five minutes of sleep.
-
-**Traces keep their columns.** A gag's channels (`actorChannels.slide`,
-`actorChannels.lids` and the drawn `slide`) join the inspection once a gag
-has played, and `gift` appears only with one, so a trace with no comedy
-keeps its columns. Of the twelve earlier reference traces only two changed:
-`idle-60s` from its second round (40 s), and `representative-matrix` from
-asleep's first pick again (3.2 s into each sleep). `scripts/comedy.jsonl`
-plays every gag, the hiccups, the gift and a snore, sounds included, and
-the port replays it frame for frame.
+breath (`breath`). They are routine sounds, ducked under a line, and
+sparse: over twenty minutes of idle only sneezes sound, over five minutes
+of sleep only breaths, each fewer than half of its contacts.
 
 ## Gestures
 
 `gesture` is the board's own reaction to what you do to it, a one-shot
 in the touch family. Its takes are the board's gestures, in its order
-(`render::Gesture`, [engine/scenes/gesture.mjs](engine/scenes/gesture.mjs)):
-the board names one (`args.variant`, 0 to 9), no bag deals them, and a
-gesture asked for without one plays the first. Each is the same in every
-mood: a scene recipe whose body contacts dent the dome, pulse the touch
-mark and sound a squish on its first loop, and a gag of its own
-(`expressions.json` `gestures`, keyed as Comedy's are) that acting plays
-with it. The board borrows a face for each while it plays, as a react's
-expression is borrowed, and the mood stays.
+(`render::Gesture`, slimegen's `scenes.mjs` `gestureNames`): the board
+names one (its variant, 0 to 9), no bag deals them, and a gesture asked
+for without one plays the first. Each is the same in every mood: a scene
+recipe whose body contacts dent the dome, pulse the touch mark and sound a
+squish on its first loop, and a gag of its own (`expressions.json`
+`gestures`, keyed as Comedy's are) that acting plays with it. The board
+borrows a face for each while it plays, as a react's expression is
+borrowed, and the mood stays.
 
 | Gesture | What the body does | Face it borrows | Gag |
 | --- | --- | --- | --- |
@@ -560,40 +482,32 @@ recipe (its generation and iteration), in any state, then waits: its own
 next gesture comes three seconds after the gag ends, and none is dealt
 while one is held. Acting is suppressed outside idle only while the
 recipe has no gag. A recipe with a gag recovers with the gag, not with the
-expression's recovery gesture. `scripts/gestures.jsonl` plays all ten as
-the board does (held, with their faces), one from work and one with no
-take named, and the port replays it frame for frame.
+expression's recovery gesture.
 
 ## A finger on the body
 
 A finger grabs the body and the body goes its way, on its springs: no
 take plays while it's down. `dragMove` is the finger's displacement since
 it went down, in body units with y up; the pull follows it (Phase 1 channel
-bounds), and the whole body draws the pull as its own lean and squash
-(`grabConstants.lean` 2 and `squash` 1 per unit, added to the pose before
-its bounds): down squashes it and spreads it on the floor, up stretches
-it, sideways leans its top that way, and its base stays where it stands.
-The renderers carry only the top a little further after it (0.13 h²,
-front and back alike); the WebGL dome also leads with the patch under the
-finger (0.3 of it), which the board's port leaves out, so its outline
-never shears. Let go, the pull settles back on the softer spring, and
-`dragEnd(velocity)` flings it on first: 0.3 of the finger's velocity (in
-body units a second) joins the pull's, less as it nears its limit going
-that way and never past its velocity bound, so a swipe pushes the body
+bounds), and the whole body draws the pull as its own lean and squash (2
+and 1 per unit, `kGrabLean` and `kGrabSquash`, added to the pose before its
+bounds): down squashes it and spreads it on the floor, up stretches it,
+sideways leans its top that way, and its base stays where it stands. Let
+go, the pull settles back on the softer spring, and `dragEnd(velocity)`
+flings it on first: 0.3 of the finger's velocity (in body units a second)
+joins the pull's, less as it nears its limit going that way (times 1 −
+|x| / 0.72) and never past its velocity bound, so a swipe pushes the body
 its way and then lets it settle, and quick swipes in a row carry on from
 wherever the last left it instead of piling up.
 
-The board feeds it (`render/gel/face.cpp`): the canvas's pixels are 85
-to a body unit at the dome (128 of the panel's, which draws the canvas
-half as large again), its middle at (160, 129), y flipped. It tells a
-touch that travels 40 px or more by its speed (`app/touch_gesture.h`):
-faster than 600 px a second on average, from going down to its last
-reading, it's a swipe, the face's alone, with no tap or gesture and
-nothing to the Mac; slower, a stroke (upward, a ruffle), and the gesture
-above plays as it lets go. The finger's velocity as it lets go is over
-its last 80 ms. `scripts/swipes.jsonl` swipes down, across and up, twice
-down in a row, holds still before letting go, and flings at and past the
-limit and back, and the port replays it frame for frame; the board's
+The board feeds it (`gel/face.cpp`): the canvas's pixels are 85 to a body
+unit at the dome (128 of the panel's, which draws the canvas half as large
+again), its middle at (160, 129), y flipped. It tells a touch that travels
+40 px or more by its speed (`app/touch_gesture.h`): faster than 600 px a
+second on average, from going down to its last reading, it's a swipe, the
+face's alone, with no tap or gesture and nothing to the Mac; slower, a
+stroke (upward, a ruffle), and the gesture above plays as it lets go. The
+finger's velocity as it lets go is over its last 80 ms. The board's
 `tests/scenarios-gel/swipes.jsonl` and
 `internal/tools/fluid/idle-swipes.jsonl` swipe on the board itself.
 
@@ -602,25 +516,23 @@ limit and back, and the port replays it frame for frame; the board's
 The brain's reaction when you name it in your prompt: it heard its name and
 looks up at you, surprised and pleased. Its three takes are `notices` in
 `expressions.json`, each a gesture's shape (a gag of keys and impulses
-under a face it borrows, the scene's contacts) and played as one
-(`gestureRecipe`), but dealt from its bag as any state's takes are:
-`notice-perk` perks up and leans in (surprised), `notice-hop` hops and
-beams (happy), `notice-tilt` tilts toward you and leans in (pleased). It
-is the start family with no card. The board borrows each take's face
-(`kNoticeFaces`) unless the Mac sends a mood with it.
+under a face it borrows, the scene's contacts) and played as one, but
+dealt from its bag as any state's takes are: `notice-perk` perks up and
+leans in (surprised), `notice-hop` hops and beams (happy), `notice-tilt`
+tilts toward you and leans in (pleased). It is the start family with no
+card. The board borrows each take's face (`kNoticeFaces`) unless the Mac
+sends a mood with it.
 
 ## Occasions
 
 A look may have takes that need tags (`when`, every one on: the board's
 `render/tags.h`, the part of the day, the holidays, `party`, `busy` and
 `frantic`) or a wait (`after`, seconds the look has shown), as Pixel's
-designs do (characters/CHARACTER.md §9). The host says them with
-`setOccasion({when, lookMs})`; the board does on every sync (and so does
-the Mac's mirror of it, the board's own firmware). While one fits, a pick goes to one
-of those that fit 67% of the time (`occasionShare`), any one alike;
-otherwise, and while none fits, the look deals as it always has, drawing
-no randomness of its own, so no trace without occasions changed.
-`expressions.json` `occasions` holds them ([engine/scenes/occasion.mjs](engine/scenes/occasion.mjs)):
+designs do (characters/CHARACTER.md §9). The board says them with
+`setOccasion(when, lookMs)` on every sync. While one fits, a pick goes to
+one of those that fit 67% of the time (`kOccasionShare`), any one alike;
+otherwise, and while none fits, the look deals as it always has, drawing no
+randomness of its own. `expressions.json` `occasions` holds them:
 
 | Look | Occasion | Needs | What plays |
 | --- | --- | --- | --- |
@@ -645,29 +557,25 @@ jittered one takes the desk's jitter. A gesture or a host's moment never
 takes one. An occasion whose tags go off simply isn't picked again. The
 engine has no colour channel, so no occasion tints the gel. The working
 looks' quicker pace while the agents are busy is the board's
-(`render::workPace`), not an occasion. `scripts/occasions.jsonl` plays a
-night, a party, idle dozing, frantic and busy work, a long turn's
-marathon, a night asleep and half an hour asleep, and the port replays it.
+(`render::workPace`), not an occasion.
 
 ### Layers over the body (the board's)
 
-The engine draws no costume, but the board's port draws layers over the
-body by the same tags, after the face art and before the props
-(`firmware/src/render/gel/layers.h`): a hat by the first tag that has one
-(Halloween's witch hat; a party hat for party, New Year's, Lunar New Year
-and Programmers' Day; a nightcap at night; a bobble hat in winter),
-shades on a Friday's day, and the air (snow, confetti, hearts, Zs asleep
-at night), and last the sign a reaction holds up. Each sits on anchors
-the painter takes from the very vertices it projects for the body
-(the rig's `Anchors`, both faces' one type: the dome's apex, ring 6's
-sides and front for a brim, ring 15's front for the hands) and the face art's
-eye centres, so a layer leans,
-squashes, dips under a finger and slides off the screen with the body
-and is cut off there with it. Peekaboo's gesture hides the hat. At night
-the lids hang a little lower (`kNightLids`) on the awake face, easing out
-as the sleeping face crosses in and back as it wakes. The layers read
-the engine and never change it, so the traces don't see them. The Mac's
-mirror of the board draws them, as the board's own code.
+The engine draws no costume, but the board draws layers over the body by
+the same tags, after the face art and before the props
+(`gel/layers.h`): a hat by the first tag that has one (Halloween's witch
+hat; a party hat for party, New Year's, Lunar New Year and Programmers'
+Day; a nightcap at night; a bobble hat in winter), shades on a Friday's
+day, and the air (snow, confetti, hearts, Zs asleep at night), and last
+the sign a reaction holds up. Each sits on anchors the painter takes from
+the very vertices it projects for the body (the rig's `Anchors`, both
+faces' one type: the dome's apex, ring 6's sides and front for a brim,
+ring 15's front for the hands) and the face art's eye centres, so a layer
+leans, squashes, dips under a finger and slides off the screen with the
+body and is cut off there with it. Peekaboo's gesture hides the hat. At
+night the lids hang a little lower (`kNightLids`) on the awake face,
+easing out as the sleeping face crosses in and back as it wakes. The
+layers read the engine and never change it.
 
 ## States share one scene
 
@@ -676,8 +584,8 @@ analyzing, testing, planning and generic tool use are activity submodes,
 not swaps to unrelated sets. Keep desk positions and parent transforms
 stable, change screen cue/cards and contact choreography. Waiting simply
 pauses the work action. Helper blobs enter alongside the hero, never
-replace it. Every state in [state-plan.json](state-plan.json) still has
-its own meaning, variations and audio policy.
+replace it. Every state ([STATES.md](STATES.md)) still has its own
+meaning, variations and audio policy.
 
 An action recipe has phases `enter → act → recover → sustain`. Start
 from the current pose, blend in, perform its contacts, recover toward the
@@ -694,15 +602,12 @@ host snapshot, not a stale state saved before the animation.
 
 ## Directed edge bridges
 
-[engine/bridges.mjs](engine/bridges.mjs) derives the 295 directed edges
-from `catalog.graph`, with three variants per edge. The generated
-[transitions.json](transitions.json) records the same category and primitive
-mapping. A shuffle bag per directed edge selects variants without an
-adjacent repeat. Tests exercise each variant from a moving body before
-the builder marks the edge implemented. This is an animation catalogue,
-not host graph gating: the host still decides whether a transition is
-justified. A direct review retarget outside the graph uses the soft
-primitive and does not create a new graph edge.
+The engine's `Bridge` (`gel/acting.cpp`) plays each of the graph's 295
+directed edges (slimegen's `kEdges`, from emotion-graph.json) in three
+variants. A shuffle bag per directed edge selects variants without an
+adjacent repeat. This is an animation catalogue, not host graph gating: the
+host still decides whether a transition is justified. A retarget outside
+the graph uses the soft primitive and does not create a new graph edge.
 
 | Category | Variant 0 | Variant 1 | Variant 2 |
 | --- | --- | --- | --- |
@@ -716,9 +621,8 @@ primitive and does not create a new graph edge.
 The blink retarget keeps its name from when the face closed behind a
 blink to swap its art; now its face window crosses over as the others do,
 and the name is its body's hold. Direction follows the authored source and
-destination profiles. Using
-their lean `L`, strength `G`, delay `D`, eye openness `E` and mouth width
-`M`, the directional score is
+destination profiles. Using their lean `L`, strength `G`, delay `D`, eye
+openness `E` and mouth width `M`, the directional score is
 `(Lto − Lfrom) + (Gto − Gfrom) × 0.025 + (Dfrom − Dto) / 10000 + (Eto − Efrom) × 0.01 + (Mto − Mfrom) × 0.005`.
 Direction is its sign and amplitude is `clamp(0.8 + abs(score) × 4, 0.8, 1.2)`.
 Reversing an edge reverses its directional lean; it does not reuse an
@@ -742,16 +646,14 @@ Targets multiply the directional amplitude, limited per primitive so that
 no target leaves its channel's displacement bound: the amplitude is at most
 each bound over the primitive's largest coefficient on that channel. Only
 the dramatic compression is affected; its squash limits it to
-0.05 / 0.048 ≈ 1.042. Reduced motion further
-multiplies them by 0.18. The bridge owns three additive springs with
+0.05 / 0.048 ≈ 1.042. The bridge owns three additive springs with
 frequency 14, damping 12, velocity bound 1, displacement bounds 0.06
 lean, 0.05 squash and 0.04 forward, integrated in at most 1/240 s substeps.
 These channels compose with the current activity, mood posture and
-gesture channels before the existing aggregate pose/life clamps. A
-retarget preserves every spring's position and velocity. The short hold
-is part of the additive target; it never pauses or resets the V1 body.
-The inspector labels body progress below 0.35 as gather and the remaining
-active part as release; this label adds no new timing behavior.
+gesture channels before the aggregate pose/life clamps. A retarget keeps
+every spring's position and velocity, and changes nothing drawn at that
+instant. The short hold is part of the additive target; it never pauses or
+resets the V1 body.
 
 Face controls retarget immediately from their actual current values and
 velocities. From rest, their critically damped springs stay between those
@@ -761,38 +663,36 @@ briefly past its captured value but stays within the span of every value it
 started from or was asked for. Sleeping continues to use the shared quiet
 face.
 
-**The face's layers.** `face.layers` are the arts drawn, oldest first and
-the current one (`face.artId`) last, at most four. At a retarget every
-layer's weight starts again from its value and slope then, a cubic Hermite
-over the transition's face window toward one for the new art and zero for
-the others (`hermite` in [engine/scenes/ramp.mjs](engine/scenes/ramp.mjs),
-the props' ramp): from rest a smoothstep, and a retarget mid-window keeps
-every weight's velocity. The window is counted in milliseconds,
-`face.transition`'s `elapsedMs` of its `durationMs`, the one clock both
-engines keep. A layer's weight is its share of them all, so the weights sum
+**The face's layers** (`gel/motion.cpp` `SemanticFace`) are the arts
+drawn, oldest first and the current one last, at most four. At a retarget
+every layer's weight starts again from its value and slope then, a cubic
+Hermite over the transition's face window toward one for the new art and
+zero for the others (the props' ramp): from rest a smoothstep, and a
+retarget mid-window keeps every weight's velocity. The window is counted in
+milliseconds. A layer's weight is its share of them all, so the weights sum
 to one. An art still fading comes back from the weight it has; a layer at
 zero that can only stay there is dropped (one the Hermite held at zero
 among them: going out fast into falling asleep's longer window, a weight
-dips below zero, and is flat there); a fifth art drops the faintest of
-the four, the others' shares growing to fill what it leaves: the one step
-there is, and only when more than four arts change within one window (a
-rapid chain, moods 48 ms apart, drops the art that came 48 ms before, at 5
-to 11%). When the window ends, only the current art is left. Natural blinks
-and a gag's lids close the eyes; nothing else does.
+dips below zero, and is flat there); a fifth art drops the faintest of the
+four, the others' shares growing to fill what it leaves: the one step there
+is, and only when more than four arts change within one window. When the
+window ends, only the current art is left. Natural blinks and a gag's lids
+close the eyes; nothing else does.
 
-**Morph or cross-fade, feature by feature.** The painters draw each layer's
-features: each eye, the mouth, the tears and the cheeks. Where layers draw
-a feature in the same shape, the same calls, colours and styles with only
-their numbers differing (the reference painter records each feature's
-drawing to compare them; the port's `slime_art.h` names each group's
-`shape`, the same paths with the same point counts and colours), it is
-drawn once, its numbers averaged by weight (positions, sizes, curves,
-angles, pen widths, opacities), at their summed weight: two bean eyes ease
-into each other, a closed arc eases into a droop. Different shapes
-cross-fade, each at its weight, the newer over the older, so the eyes' and
-the mouth's opacity, summed over the arts, stays one: a ring of a mouth
-gives way to an open U. The cheeks and tears are drawn at their opacity
-controls.
+**Morph or cross-fade, feature by feature, by one rule.** The board
+draws each layer's features: each eye, the mouth, the tears, and the
+cheeks with the strain mark (`gel/art.cpp`). slimegen gives each art's
+features a shape (`slime_art.h`'s `ArtRange::shape`, from their paths'
+point counts, fill or stroke and colour); where layers draw a feature in
+the same shape, it is drawn once, its points, pen widths and opacities
+averaged by weight, at their summed weight: two bean eyes ease into each
+other, a closed arc eases into a droop. Different shapes cross-fade, each
+at its weight, the newer over the older, so the eyes' and the mouth's
+opacity, summed over the arts, stays one: a ring of a mouth gives way to an
+open U. The cheeks and tears are drawn at their opacity controls. (While
+the JavaScript reference drew the face, it compared each feature's
+recorded drawing instead, and the two rules disagreed on 80 of the 4,730
+pairs of arts' features; the board's is the one rule now.)
 
 **Drawn ratios.** Each layer's art is drawn at the live control over its
 own dimension, passed through a smooth saturation `1 + x·r / (r + |x|)`
@@ -801,54 +701,46 @@ slope one at rest and never leaves (0.75, 4/3), and at rest is one: the
 arts crossing over are drawn near one size as the controls move. The
 shared sleeping face is the tired art drawn at its own squashed size (eye
 0.004, mouth 0.018 × 0.008), so its ratios also settle at one. Pen widths
-never stretch with a feature's scale. The port draws a second art only
+never stretch with a feature's scale. The board draws a second art only
 while one crosses over.
 
 Quiet rest and active attention permanently suppress the current bridge's
-body gesture, with existing bridge springs settling toward zero. Clearing
-an alert or waking does not replay it. The face still retargets, and the
-attention request, card and consumed reveal retain their identity. A grab
-defers the current body bridge while the face continues: progress may be
-held for at most 320 ms of accumulated grab time. Releasing sooner lets
-the current bridge continue from its retained springs; reaching the limit
-expires its body gesture permanently. There is only one current bridge,
-so a newer retarget replaces deferred work and release never drains a
-gesture backlog. Bridges emit no new contacts or sound cues.
-
-The locked V1 motion source and material hashes remain unchanged. Directed
-bridge coverage is verified engineering behavior; the selected visual
-review clips support owner spot-checking rather than claiming separate
-art approval for all 885 edge/variant combinations. The opt-in host policy and native port are implemented; hardware performance
-and owner appearance review remain pending. Contact sound is implemented;
-timbres remain sketches pending speaker review.
+body gesture, with its springs settling toward zero. Clearing an alert or
+waking does not replay it. The face still retargets, and the attention
+request, card and consumed reveal keep their identity. A grab defers the
+current body bridge while the face continues: progress may be held for at
+most 320 ms of accumulated grab time. Releasing sooner lets the current
+bridge continue from its springs; reaching the limit expires its body
+gesture permanently. There is only one current bridge, so a newer retarget
+replaces deferred work and release never drains a gesture backlog. Bridges
+emit no contacts or sound cues.
 
 ## Continuity of what is drawn
 
-[tools/smooth.mjs](tools/smooth.mjs) bounds every frame of every script
-(check-engine), every directed edge in all three variants with its rapid,
-rest, drag and attention runs (check-bridges), and the full scene matrix
-with its routing and interruption runs (check-scenes). For each channel the
-painters draw (the eight face controls, each layer's weight and drawn
-sizes, the mood posture's lean and squash, every prop's `visible` and a
-card's reveal while the card is drawn):
+Every frame `test_gel` drives is held to these (`tests/firmware/test_gel/frames.h`),
+over every mood in every state and take, every directed edge in all three
+variants, and the interruptions: for each channel the board draws (the
+eight face controls, each layer's weight and drawn sizes, the mood
+posture's lean and squash, every prop's visibility and a card's reveal
+while the card is drawn):
 
 - **No jolt at an event.** Let `Δ²` be a frame's change in per-frame
-  velocity, `x[n+1] − 2x[n] + x[n−1]`. Where an event (a mood, fact,
-  one-shot or input) lands in a frame, its `Δ²` is at most **2×** the largest
-  `Δ²` the same channel makes anywhere else in that corpus. A first-order
-  filter fails this (about 5×: its velocity jumps from rest to its maximum
-  in one frame); a critically damped spring passes (about 1.1×). Every
-  art's weight counts as one channel, and a drawn size as its control's.
+  velocity, `x[n+1] − 2x[n] + x[n−1]`. In the frame after the host says
+  something (a mood, the facts, a request, a lost link, a finger), `Δ²` is
+  at most **2×** the largest `Δ²` the same channel makes anywhere else in
+  those runs. A first-order filter fails this (about 5×: its velocity jumps
+  from rest to its maximum in one frame); a critically damped spring passes
+  (about 1.1×). Every art's weight counts as one channel, and a drawn size
+  as its control's.
 - **Sizes follow their controls.** Each layer's drawn ratios stay in
   [0.75, 4/3], and a drawn size (a ratio times its art's own) moves no
   further in a frame than the control it follows, the saturation's slope
   being at most one.
 - **Arts cross over without pops.** A layer's weight moves at most a 16 ms
   slice of the Hermite over the shortest face window, the face's own 180 ms
-  (waking), reversals
-  included (sampled, with 2% margin: about 0.149 per frame), a new art's
-  first frame included; the weights sum to one.
-- **No prop pops.** A prop's `visible` moves at most a 16 ms slice of its
+  (waking), reversals included (sampled, with 2% margin: about 0.149 per
+  frame), a new art's first frame included; the weights sum to one.
+- **No prop pops.** A prop's visibility moves at most a 16 ms slice of its
   ramp: the Hermite's steepest slope over its 200 ms, reversals included
   (sampled, with 2% margin: about 0.134 per frame). The desk moves at most
   its own spring's steepest frame from rest (about 0.074). The board's lane
@@ -858,109 +750,70 @@ card's reveal while the card is drawn):
   often frames are drawn doesn't change one. The gel draws the strip whole
   and blends it once at that opacity: its rows hold nothing else, over
   black, so that is scaling the pixels it wrote, in place, with no buffer,
-  and a hole (the working mark's open half, a mini's eyes) stays one. The
-  preview's lane fades who needs you with the alert's card.
+  and a hole (the working mark's open half, a mini's eyes) stays one.
 - **The face never fades.** Through a cross-fade between differently
   shaped arts (calm to happy, happy to sad, calm to frightened's welling
-  eyes, falling asleep and waking), the port's painter's frames, 40 ms
-  apart, keep at least 85% of the visible ink of the fainter of the two
-  faces settled: the pixels the face takes at least a quarter of the way
-  from the body's luminance to the ink's, eyes and mouth (a water eye's
-  fill, the cheeks and the tears are paler than the body and don't count).
-  The least is 87%, falling asleep (waking 88%, happy to sad 97%; calm to
-  happy and to frightened show more than the fainter end, both arts
-  showing). Where two shapes don't overlap, the frames half way are dimmer
-  by a stricter count: of the pixels taken at least half way to the ink,
-  calm to frightened keeps 48% of the fainter face's, scared to frightened
-  50% and falling asleep, over its longer window, 76%; of those three
-  quarters of the way, 13%, 12% and 31%. Each shape is at about half its
-  strength there, which is the cross-fade.
+  eyes, falling asleep and waking), the board's frames, 40 ms apart, keep
+  at least 85% of the visible ink of the fainter of the two faces settled:
+  the pixels the face takes at least a quarter of the way from the body's
+  luminance to the ink's, eyes and mouth (a water eye's fill, the cheeks
+  and the tears are paler than the body and don't count). The least is
+  87%, falling asleep (waking 88%, happy to sad 97%; calm to happy and to
+  frightened show more than the fainter end, both arts showing). Where two
+  shapes don't overlap, the frames half way are dimmer by a stricter count:
+  of the pixels taken at least half way to the ink, calm to frightened
+  keeps 48% of the fainter face's, scared to frightened 50% and falling
+  asleep, over its longer window, 76%; of those three quarters of the way,
+  13%, 12% and 31%. Each shape is at about half its strength there, which
+  is the cross-fade.
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).
 
-The scene check also replays [scripts/alert-interrupted.jsonl](scripts/alert-interrupted.jsonl)
-and interrupts alerts with listening and with a link timeout at eight points
-from 0 to 2,000 ms: every request knocks and confirms exactly once. The
-native port's `test_gel` repeats the interruption cases, the weights' and
-sizes' bounds and the alert's ramp over every directed edge, a fifth art's
-drop, sleep's spring kept through a mood change, and the lane's fade (the
-same whatever the draw cadence, the strip blended once), and checks that
-the face never fades.
-
 ## Variability, without chaos
 
-Use a deterministic seed for replay/tests and a per-actor seeded PRNG in
-normal runs. First pick an authored variation compatible with state/mood
-and host outcome/context, excluding the most recently used. Then choose
-bounded microparameters: a small gaze offset, pause length, number of
-typing contacts or side of a lean. Make variability visible in action
-rhythm, not only random tint/volume. Clamp inputs; an LLM cannot add a
-limb, change physics, execute JS or invent a successful result.
+The engine is seeded (53 after a reset; the board's own seed at power-on).
+First pick an authored variation compatible with state/mood and host
+outcome/context, excluding the most recently used. Then choose bounded
+microparameters: a desk contact's time and strength. Make variability
+visible in action rhythm, not only random tint/volume. Clamp inputs; an LLM
+cannot add a limb, change physics or invent a successful result. Sound has
+a random source of its own, so what sounds never changes what's drawn.
 
-The audition has authored recipe cues and quiet auto intervals. The full
-activity matrix uses the shuffle bags described above, preserving
-recovery-boundary changes and no immediate repeats.
-Ten minutes of work can vary silently without ten minutes of sound.
-Whole-state completion and alerts are event-gated one-shots, not periodic
-random surprises. No per-frame LLM/API call is required.
+The full activity matrix uses the shuffle bags described above, keeping
+recovery-boundary changes and no immediate repeats. Ten minutes of work
+can vary silently without ten minutes of sound. Whole-state completion and
+alerts are event-gated one-shots, not periodic random surprises. No
+per-frame LLM/API call is required.
 
 ## Alerts, taps and interruption
 
-Use the repo's existing LinkKit turn/attention semantics, not an invented
-priority scheduler that delays needs_you. A new request starts the upper
-alert once, with broad surface knocks followed by the visible confirmation;
+Use the repo's LinkKit turn/attention semantics, not an invented priority
+scheduler that delays needs_you. A new request starts the upper alert
+once, with broad surface knocks followed by the visible confirmation;
 then its card holds silently. An alert that listening or a link timeout
 interrupts before its confirmation resumes where it stopped, so no request
-loses its knocks or ding. Synchronized sound will attach the invariant
-ding to that reveal; it is not played by the current scene engine. Mood may
-change expression/knock character but must not restart an already-consumed
-notification sound once that layer is added. Preserve the
-bottom text lane and do not obscure the prompt with long acting.
+loses its knocks or ding. Mood may change expression/knock character but
+never restarts an already-consumed notification sound. Preserve the bottom
+text lane and do not obscure the prompt with long acting.
 
-Poke can add an impulse immediately while the engine retains factual
-state. If the current alert/finish tap opens a thread, honor that existing
-behavior; it still never grants permission. Surface drag is a separate
-interaction. A poke preserves the mood. The explicit face selector is only a review
-control, outside production graph logic.
+Poke can add an impulse immediately while the engine keeps factual state.
+If the current alert/finish tap opens a thread, honor that behavior; it
+still never grants permission. Surface drag is a separate interaction. A
+poke keeps the mood.
 
-A production desktop container must terminate grabs on pointerup,
-pointercancel, lost capture, visibility/focus loss and host boundary exit.
-The embedded-preview guards cannot guarantee delivery of events outside
-a browser iframe. The standalone preview removes that embedding boundary,
-but OS/window-boundary and hardware-touch behavior still need testing.
+## One face per board
 
-## Proposed renderer adapter, not a new wire schema
+The owner selected one face per board at build time: the CYD keeps its
+pixel bank; the AMOLED uses the integer gel renderer behind the common
+face interface. There is no runtime character switcher and no frame
+streaming over the link. The Mac's popover and onboarding show the
+board's own firmware built to WebAssembly (characters/CHARACTER.md §9),
+which `boopctl mirror` checks draws every gel scenario as the native
+simulator does, pixel for pixel. Facegen does not convert the gel.
 
-Keep the existing primary controls. A future desktop adapter can translate
-Boop's validated snapshots/moments to target mood/state, plus factual
-outcome/context, then advance locally each frame. State and motion data
-never need to be generated by Jev. Queued one-shots must retain request
-identity and lifecycle so played/cut/skipped is logged correctly.
-
-Before integrating, implement and test this adapter in Boop-specific code;
-do not place slime or mood logic in the generic agent-hooks/MellowHarness/
-LinkKit packages. No adapter is provided by the audition API. The preview's
-`setEmotion`, `poke`, `shake`, `perform` and `getState` are local tools for
-review; they are not permission to send unsupported 42-mood wire IDs.
-
-## Desktop first; the selected embedded renderer still needs measurement
-
-Disk size is not device runtime cost. The WebGL mesh, scratch RGBA face
-texture, full scene targets and bloom require capabilities/memory the
-original ESP32 does not have. The owner has selected one face per board at
-build time: the CYD keeps its pixel bank; the AMOLED uses the integer gel renderer behind the common face interface. There
-is no runtime character switcher and no frame streaming over the link.
-The Mac's popover no longer bundles this engine: it shows the integer
-port, the board's own firmware built to WebAssembly (characters/CHARACTER.md
-§9), which `boopctl mirror` checks draws every gel scenario as the native
-simulator does, pixel for pixel. Facegen does not convert the gel shader.
-
-The original handoff called for hardware review before the full port. The
-owner subsequently asked to continue through the rendered buddy without routine
-stops; engineering continued without inferring physical approval. The native
-port passes every saved reference trace at its tolerance. The owner then authorized flashing. The first full-panel run missed the
-provisional frame-rate target, so the renderer briefly used the handoff's
-lower internal-resolution fallback; it has since returned to native panel
-pixels with a smaller mesh and tracked clearing.
-Appearance, speaker quality and physical audio latency remain separate reviews.
+The first full-panel run on the board missed the provisional frame-rate
+target, so the renderer briefly used a lower internal resolution; it has
+since returned to native panel pixels with a smaller mesh and tracked
+clearing. Appearance, speaker quality and physical audio latency remain
+separate reviews.

@@ -10,8 +10,9 @@
 // beside the board on one scrubber, its reading rendered from Markdown; a
 // review item with a verdict (the server's answer stood in for, so nothing
 // is saved); and the page from file://, where what needs no server works,
-// a board saying in its pane that it needs the server, and four
-// characters' cards two by two.
+// a board saying in its pane that it needs the server, and Boop's three
+// characters' cards two to a row. And Boop's gel board's drawer: its
+// review sets, one clip recorded from the board, and its sound sketches.
 // Run `node characters/studio/serve.cjs --port 4190`, then
 // `node characters/studio/check.cjs`. BOOP_PLAYWRIGHT_MODULE, BOOP_QA_BROWSER
 // and BOOP_QA_URL override Playwright, the browser and the page;
@@ -142,7 +143,7 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     await page.route(u=>new URL(u).pathname==='/review',route=>route.request().method()==='POST'
       ?route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({at:new Date().toISOString(),...JSON.parse(route.request().postData()),pack:undefined})})
       :route.continue());
-    await page.goto(`${url}#pack=boop&c=boop&view=review`);
+    await page.goto(`${url}#pack=boop&c=board-gel&view=review`);
     await page.waitForTimeout(800);
     const item=page.locator('[data-view="review"] [data-item]').first();
     assert.ok(await item.evaluate(a=>[...a.querySelectorAll('img')].every(i=>i.naturalWidth>0)),'before and after shown');
@@ -154,6 +155,21 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     assert.match(await page.locator('[data-view="review"] [data-item]').first().textContent(),/Change asked.*Hop higher at 560 ms\./);
     await shoot('review');
     await page.unroute(u=>new URL(u).pathname==='/review');
+    // Boop's gel board's drawer: its two review sets, a clip of the first case
+    // recorded from the board (stopped after it), and its sound sketches.
+    await page.goto(`${url}#pack=boop&c=board-gel`);
+    await page.evaluate(()=>document.getElementById('studio').studio.ready);
+    await page.click('[data-tools] summary');
+    assert.deepEqual(await page.$$eval('[data-review-set] option',o=>o.map(e=>e.value)),['activities','bridges'],'the review sets');
+    assert.equal(await page.locator('[data-sketches] button').count(),12,'eleven sketches and a stop');
+    await page.selectOption('[data-review-set]','bridges');
+    await page.click('[data-record]');
+    await page.click('[data-record]');  // stop: after the clip being recorded
+    await page.waitForFunction(()=>/clips, from the board/.test(document.querySelector('[data-record-status]').textContent),null,{timeout:120000});
+    assert.equal(await page.textContent('[data-record-status]'),'1 of 13 clips, from the board. Art review is pending.');
+    assert.equal(await page.textContent('[data-review-gallery] article p'),'edge.calm-to-curious');
+    assert.ok(await page.$eval('[data-review-gallery] video',v=>new Promise(ok=>v.readyState>=1?ok(v.videoWidth):v.addEventListener('loadedmetadata',()=>ok(v.videoWidth))))===960,'a 960-wide clip');
+    await shoot('review-clips');
     // From a file, with no server: what needs none works, and the rest says how.
     const file=pathToFileURL(path.join(__dirname,'index.html')).href;
     await page.goto(`${file}#pack=boop&c=board-gel&view=review`);
@@ -171,9 +187,10 @@ const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').
     await page.waitForTimeout(500);
     assert.match(await page.textContent('#stage .board-note'),/serve\.cjs/,'the stage\'s board says so in its pane too');
     assert.doesNotMatch(await page.textContent('[data-status]'),/serve\.cjs/,'and not again under it');
-    // Four characters' cards sit two by two.
+    // Boop's three characters' cards sit two to a row: its gel board first.
     const rows=await page.evaluate(()=>[...document.querySelectorAll('[data-cards] .character')].map(c=>Math.round(c.getBoundingClientRect().top)));
-    assert.deepEqual([rows.length,new Set(rows).size,rows[0]===rows[1],rows[2]===rows[3]],[4,2,true,true],`the cards two by two, not ${rows}`);
+    assert.deepEqual([rows.length,new Set(rows).size,rows[0]===rows[1]],[3,2,true],`the cards two to a row, not ${rows}`);
+    assert.equal(await page.getAttribute('[data-cards] .character','data-character'),'board-gel','Boop opens on its gel board');
     await shoot('file');
     assert.deepEqual(errors,[],'no page errors');
     console.log('STUDIO VIEWS PASS: transitions, references, review, file://');

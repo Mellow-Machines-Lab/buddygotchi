@@ -42,9 +42,10 @@ saves no verdicts.
 
 - **Pack**, when there's more than one here, and the **characters** for
   it, two a row: each preview the pack declares or uses (Boop's pack
-  shows its gel slime and Pixel's pixel face), and then a board for each
-  face its boards have (On the board, below). Switching keeps the mood
-  and state, so the same moment can be compared on all of them.
+  shows its gel board, with the slime's tools, and Pixel's pixel face),
+  and then a board for each face its boards have that it hasn't declared
+  (On the board, below). Switching keeps the mood and state, so the same
+  moment can be compared on all of them.
 - **Mood**: the pack's moods in their families, each with the colour its
   studio entry gives the family. When a character has no art of its own
   for a mood, its chip is dashed with an arrow, and the stage plays the
@@ -144,6 +145,16 @@ simulator's scenarios do, so a recording is
 the same every time; each frame's change is counted as it comes, and its
 picture kept as an `ImageBitmap`.
 
+A pack may add to one of its boards' cards with an entry of its own for
+that board (`"board": FACE`, its id `board-FACE`, [CHARACTER.md](../CHARACTER.md)
+§12): its label, icon, families and the clips the server may save for it,
+and scripts whose adapter, registered under the board's id, takes the
+board's (`StudioBoard.adapter(pack, face)`) and adds to it. Boop's
+(`characters/boop/studio/adapter.js`) fills the drawer with the slime's
+review sets, recorded from the board on its frozen clock (`record`) and
+played into silent WebM clips, and its sound sketches, each played on its
+own.
+
 ## Kept in sync
 
 Nothing about a character is written here. `packs.js` comes from the
@@ -242,7 +253,10 @@ table for each of its own, no marks left); a review item's images and a
 verdict through the page (the server's answer stood in for, so nothing
 is saved); and the page from `file://`, the reading shown, the comment
 box saying to use the server, the board saying so in its pane and not
-again under it, and Boop's four characters' cards two by two. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points at another
+again under it, and Boop's three characters' cards two to a row, its gel
+board first. And Boop's gel board's drawer: its two review sets, one clip
+recorded from the board and stopped after it, and its eleven sound
+sketches. It needs Playwright (`BOOP_PLAYWRIGHT_MODULE` points at another
 copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above) and
 the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
 
@@ -255,7 +269,10 @@ The logic needs no browser: the change measure and its summary, held to
 the rule `measure.py`'s test is (`internal/tools/fluid/tests/changed.json`),
 how each state is asked of the board, the server, in a copy of it
 beside a pack of its own (its verdicts, which charactergen's review
-check then takes, and its files in part), and `markdown.js`'s rendering
+check then takes, its files in part, and the review clips it saves: only
+with `--capture-dir`, only those a pack names, from its own page with its
+token, a WebM by its header, at most 8 MiB, never over a file, and an
+upload gone quiet closed at 15 s), and `markdown.js`'s rendering
 (`make -C internal tools-test` runs it):
 
 ```sh

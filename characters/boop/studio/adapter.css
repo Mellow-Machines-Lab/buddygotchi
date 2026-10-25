@@ -1,4 +1,0 @@
-/* The gel slime's stage in the Character Studio. */
-.stage canvas.slime-props{position:absolute;inset:0;pointer-events:none}
-.stage[data-kind="boop"]{cursor:grab}
-.stage[data-kind="boop"]:active{cursor:grabbing}

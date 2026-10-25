@@ -212,6 +212,21 @@ class StudioRuleTests(unittest.TestCase):
         clash = self.pack("clash", [{"id": "calm"}], [{"id": "board-face"}])
         self.assertEqual(self.problems(clash), ["clash: each of its studio entries needs an id of its own"])
 
+    def test_a_pack_adds_to_its_own_board(self):
+        """A pack's entry for one of its faces' boards is that board's card, in the entry's place, with what it adds."""
+        pack = self.pack("own", [{"id": "calm"}], [{"id": "board-gel", "board": "gel", "scripts": ["studio/a.js"]}],
+                         files=[("studio/a.js", "")], faces={"cyd24": "pixel", "amoled206": "gel"})
+        self.assertEqual(self.problems(pack), [])
+        cards = gen.studio_data([pack], pack, self.studio)["packs"]["own"]["studio"]
+        self.assertEqual([e["id"] for e in cards], ["board-gel", "board-pixel"])
+        self.assertEqual(cards[0], {"id": "board-gel", "label": "Gel on the board", "about": "its firmware, in WebAssembly",
+                                    "icon": "board.svg", "board": "gel", "scripts": ["../own/studio/a.js"], "styles": [], "wears": {}})
+        stray = self.pack("stray", [{"id": "calm"}], [{"id": "gel", "board": "gel"}, {"id": "board-lcd", "board": "lcd"}],
+                          faces={"amoled206": "gel"})
+        self.assertEqual(self.problems(stray), [
+            "stray: studio entry gel is for a board, so its id is board-<face> for one of its faces (gel)",
+            "stray: studio entry board-lcd is for a board, so its id is board-<face> for one of its faces (gel)"])
+
     def test_staging_takes_the_packs_own_files_only(self):
         """The firmware's files are the pack's alone, with moods.h made from character.json, and the app's copy leaves out what it doesn't read: the voice file and the pack's sources. What makes the pack isn't staged at all."""
         pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],

@@ -1,8 +1,8 @@
-// Capture the existing Canvas painter as compact vector paths. This preserves
-// all authored silhouettes; firmware transforms the eyes/mouth by live semantic
+// Captures the face painter's art as compact vector paths. This keeps every
+// authored silhouette; the firmware moves and sizes the eyes and mouth by its
 // controls. No frames or rendering are sent across the device link.
-import {paintFace} from '../../design/slime-blob/render/face-painter.mjs';
-import {faceTarget} from '../../design/slime-blob/engine/face.mjs';
+import {paintArt} from './painter.mjs';
+import {faceTarget} from './face.mjs';
 const identity=()=>[1,0,0,1,0,0];
 const mul=(a,b)=>[a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
 function color(value){
@@ -38,9 +38,8 @@ class Capture {
 export function artCatalog(profiles){
  const vertices=[],paths=[],ranges=[],shapes=[1,2,3,4,5].map(()=>[]);const point=p=>p.map(x=>Math.round(x*4096));
  for(const [id,profile] of Object.entries(profiles)){
-  const target=faceTarget(profile),ctx=new Capture(profile);
-  const face={...target,blink:0,layers:[{artId:id,sleeping:false,weight:1,eye:1,mouthWidth:1,mouthHeight:1}]};
-  paintFace(ctx,{time:0,gaze:0,performance:null,face,reducedMotion:true},{expressions:profiles});const first=paths.length;
+  const ctx=new Capture(profile);
+  paintArt(ctx,profile,faceTarget(profile));const first=paths.length;
   for(const p of ctx.paths){const at=vertices.length;vertices.push(...p.points.map(point));const clip=vertices.length;vertices.push(...p.clip.map(point));const [r,g,b,alpha]=p.rgba;paths.push([at,p.points.length,clip,p.clip.length,Math.round(p.width*4096),p.group,Math.round(alpha*255),(r>>3)<<11|(g>>2)<<5|b>>3]);}
   // Each group's shape: its paths' point counts, fill or stroke and colour,
   // so two arts of one shape morph, path by path and point by point.

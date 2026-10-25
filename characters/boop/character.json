@@ -877,21 +877,14 @@
   ],
   "studio": [
     {
-      "id": "boop",
-      "label": "Gel slime",
-      "about": "The design's reference engine",
+      "id": "board-gel",
+      "board": "gel",
       "icon": "studio/icon.svg",
       "scripts": [
-        "design/slime-blob/preview/catalog.js",
-        "design/slime-blob/preview/script-catalog.js",
         "design/slime-blob/sound/sfx.js",
-        "design/slime-blob/preview/slime.bundle.js",
         "studio/adapter.js"
       ],
-      "styles": [
-        "studio/adapter.css"
-      ],
-      "captures": "design/slime-blob/preview/review-cases.json",
+      "captures": "studio/review-sets.json",
       "families": {
         "settled": {
           "label": "Settled · low stimulation",

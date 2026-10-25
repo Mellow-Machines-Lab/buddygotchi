@@ -8,7 +8,7 @@ namespace render::gel {
 // A profile's gestures, as slimegen sizes them: the first takes of idle and
 // of every scene row.
 constexpr int kGestures = int(std::size(slime::kProfile[0].performances));
-// A shuffle bag of a key's takes (variation.mjs). Its first round deals the
+// A shuffle bag of a key's takes. Its first round deals the
 // first three, the ones every state has always had; from its second round on
 // it deals every take, the comedy ones too. Never the take it dealt last.
 template <int Capacity>
@@ -29,11 +29,10 @@ struct Bag {
     return last;
   }
 };
-// A contact as it fires: a scene's, or a gag's (requestId "gag"). The
-// reference's id for it is "requestId:generation:iteration:index", which
-// nothing on the device reads, so only the trace check spells it out
-// (gel-trace): building it on every contact cost the board's heap a few
-// allocations each.
+// A contact as it fires: a scene's, or a gag's (requestId "gag"), named by
+// its request, generation, iteration and index, never as one string:
+// building one on every contact cost the board's heap a few allocations
+// each.
 struct ContactEvent {
   std::string requestId;
   int generation = 0, iteration = 0, index = 0;
@@ -42,11 +41,11 @@ struct ContactEvent {
   T timeMs;
   F strength;
 };
-// acting.mjs keyed: a gag's target for a channel at its age, from (0, 0) at
+// A gag's target for a channel at its age, from (0, 0) at
 // its start, a smoothstep to each of the channel's keys, then its last value.
 F keyed(const slime::Gag& gag, int channel, T age);
 // An occasion fits while every tag it needs is on and its look has shown
-// its wait (render/tags.h; the reference's scenes/occasion.mjs).
+// its wait (render/tags.h).
 constexpr bool fits(uint32_t needs, uint16_t afterS, uint32_t when, uint32_t lookMs) {
   return (needs & ~when) == 0 && uint32_t(afterS) * 1000 <= lookMs;
 }
@@ -67,9 +66,6 @@ struct Acting {
   int heldGeneration = 0, heldIteration = 0;
   // The tags on and how long the look has shown (Engine::setOccasion).
   uint32_t when = 0, lookMs = 0;
-  // A gag has played: its channels join the trace (gel-trace), as they do
-  // the reference's inspection.
-  bool gagged = false;
   // This step's gag contacts, the sounds of a sneeze or the zoomies.
   std::vector<ContactEvent> contacts;
   Acting() { contacts.reserve(4); }
@@ -111,7 +107,7 @@ struct Acting {
     performance = playing = -1;
     if (!value) nextPerformance = max(nextPerformance, time + T::literal(.4));
   }
-  void advance(T dt, T time, bool grab, bool reduced, Random& random);
+  void advance(T dt, T time, bool grab, Random& random);
 };
 enum class Primitive { kSoft, kGather, kBlink, kRecoil };
 struct Bridge {
@@ -121,7 +117,7 @@ struct Bridge {
   int from = -1, to = -1, edge = -1, variant = 0, category = -1, direction = 0;
   Primitive primitive = Primitive::kSoft;
   F amplitude;
-  T elapsedMs, durationMs, startedAtMs, deferredMs;
+  T elapsedMs, durationMs, deferredMs;
   void context(bool isQuiet, bool isGrab, bool isAttention) {
     quiet = isQuiet;
     grab = isGrab;
@@ -129,9 +125,7 @@ struct Bridge {
     if (active && (quiet || attention)) suppressed = true;
   }
   T retarget(int source, int target, T time, Random& random, int forced = -1);
-  void advance(T dt, bool reduced);
+  void advance(T dt);
   F progress() const { return active ? elapsedMs / durationMs : F(1); }
-  bool deferred() const { return active && elapsedMs < durationMs && grab && !suppressed && !expired; }
-  const char* phase() const;
 };
 }  // namespace render::gel

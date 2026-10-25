@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 namespace render::gel {
-// Q12 world coordinates; the camera and dome are the reference renderer's.
+// Q12 world coordinates; the camera and dome are slimegen's mesh's.
 inline int root(uint32_t n) {
   if (!n) return 0;
   uint32_t r = 1u << ((33 - __builtin_clz(n)) / 2);

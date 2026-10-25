@@ -1,273 +1,136 @@
-# Slime export validation
+# Slime validation
 
-Updated 2026-10-24. Package-only checks; no production/hook/firmware/device
-integration is claimed. Historical face audition QA is recorded separately
-in [contracts/historical-face-qa.json](contracts/historical-face-qa.json).
-
-From the repository root, Node 18+:
-
-```sh
-node characters/boop/design/slime-blob/tools/build.cjs
-node characters/boop/design/slime-blob/tools/check.cjs
-```
-
-The offline check covers retained IDs, all mood/state/edge checklist
-entries, ordinary-graph connectivity, canonical catalogue export, seven
-accepted motion hashes, unchanged blue gel material, deterministic finite
-bounded procedural sound output/mute, and local Markdown links.
-It also checks that `preview/slime.bundle.js` matches the source modules,
-that fixed-step traces reproduce, and that fact/mood retargets preserve
-the actor's displacement and velocity. The engine, bridge and scene checks
-also bound what is drawn in every frame they run
-([CONTINUITY.md](CONTINUITY.md), Continuity of what is drawn): no jolt at an
-event, drawn sizes that follow their controls, arts that cross over and
-props that come and go without pops, and body modes that move only by their
-springs; that the face never fades is checked on the port's painter
-(`test_gel`, below). The engine check also pins the crossing itself: a new
-art fading in on a smoothstep over the window, the weights summing to one, a
-retarget mid-window keeping every weight, at most four arts at once, a fifth
-dropping the faintest, a faded art held at zero never coming back, and
-falling asleep's own longer window and slower spring, kept through a mood
-change until it wakes to the face's own again. It pins a finger's grab
-(CONTINUITY.md, A finger on the body): its springs held and let go, a
-reach that follows the finger to the knee and rises after it without
-reaching 0.64, the pose leaning and squashing by the pull, and a release's
-fling from rest, at its bound, outward with the room left and back.
-Trace generation is explicit:
+Updated 2026-10-24. What checks the gel slime, and which rule each check
+holds it to. The slime has one engine, the C++ one
+(`characters/boop/firmware/src/render/gel/`), so every rule
+[CONTINUITY.md](CONTINUITY.md) states is checked on it, from the
+repository root:
 
 ```sh
-node characters/boop/design/slime-blob/tools/trace.mjs --script characters/boop/design/slime-blob/scripts/idle-60s.jsonl --seed 53
-node characters/boop/design/slime-blob/tools/check-engine.mjs
-node characters/boop/design/slime-blob/tools/check-scenes.mjs
-node characters/boop/design/slime-blob/tools/check-bridges.mjs
-node characters/boop/design/slime-blob/tools/check-cues.mjs
-```
-
-These engine checks establish deterministic control output, not artistic
-approval or equivalence of the C++ port.
-
-The scene check exercises all routing IDs separately from choreography
-coverage. Its representative script covers 24 cases in 20 distinct cells;
-full-matrix checks execute every canonical mood/state cell, all its active
-variants (idle's gags and a success's hiccups among them), all start contexts
-and completion outcomes, a wake-up with no
-start card, plus a
-ten-minute work run, attention identity, alerts interrupted at every stage
-(each request knocks and confirms exactly once), drag interruption, quiet rest
-(a minute asleep snores, two breaths at a time, and a lost link never does),
-latest-facts recovery and truthful success/failure, and a card's reveal on
-its own ramp (rising from its contact, falling over the recovery, going on
-as it was when its route ends mid-way). Its comedy checks pin the
-gags' catalogue and durations, their springs and keys, the bag that deals them
-from its second round, the hiccups' timings, the gift on proud's lifted success
-alone, each gag's look (the yawn stretches with squeezed eyes, the doze droops
-and sinks then blinks awake, the sneeze is one contact a second in, the zoomies
-reach both edges, small under reduced motion) and sleep's still first 12.8 s.
-Its gesture checks pin the ten gestures in the board's order, each gag's
-shape, the face each borrows and gives back, a contact apiece and what each
-does (the hand-off lifts and leans in, the stroke melts with eyes shut, the
-ruffle bristles, the nose squishes, the tickle and the shake go both ways,
-the pick-up stretches up, the put-down lands squashed, the startle jumps,
-peekaboo rises from below). Its occasion checks play two minutes of each
-look with tags on and off: none plays with no tag or with tags none needs,
-night drowses, morning stretches, a party and New Year bounce, the nod-off
-waits for idle's `doze`, busy and frantic work type faster, a long
-turn's `marathon` stretches, and asleep snores deeper at night and dreams
-after half an hour.
-The cue check plays twenty minutes of idle and five of sleep: only the sneeze
-and the snore's breaths sound, sparsely. The builder runs the
-full coverage check before updating `coverage.json`; no cell earns a
-status merely from a scene name or counter. `preview/script-catalog.js` must match the scripts
-and verified review manifest.
-
-The bridge check walks all 295 directed edges from mid-gesture in each of
-their three variants, verifies that face controls stay between their current
-values and the target (within the span of every target in a rapid chain),
-that a retarget changes nothing drawn at once (but that a fifth art drops
-the faintest of four, the others' shares growing to fill what it leaves),
-and that the arts cross over: the new one fading in from nothing and drawn
-last, each art once, at most four (a rapid chain reaches four, drops four
-times and settles on its last). It checks that every primitive's targets
-fit inside their bounds. It also covers every edge during rest, drag and pending attention,
-rapid interrupted retargets, reduced motion, direction, bounded springs and
-the drag expiry boundary. Its 13-case script includes ordinary and dramatic
-edges. Passing earns `transitions.json` status; visual approval is separate.
-
-For visual review, choose **Representative activities** or **Directed mood bridges** in **Review set**,
-then **Record review set** in the studio's **Tools**. It records
-each case from the rendered body and prop canvases to a silent local WebM,
-then exposes a video player and download link. It never requests camera,
-microphone or desktop capture. Recording is art evidence, not a substitute
-for deterministic engine traces or owner approval.
-Starting a script or recording explicitly starts a fresh seed-53 actor and
-clock, so earlier grabs or moments cannot contaminate it. The actor then
-persists through every event in that run. Manual controls are disabled
-during recording; stopping retains a clearly identified partial last clip.
-The studio server's optional `--capture-dir DIR` endpoint (`characters/studio/serve.cjs`) saves only the named
-WebM files in generated `preview/review-cases.json` (24 activity and 13 edge
-cases). It requires the exact loopback Host and Origin plus a per-server
-token, a WebM content type and header, at most 8 MiB per clip, and a 15-second
-request inactivity limit. Exclusive file creation refuses existing files
-and symlinks. The directory comes only from the CLI; no client path is used.
-Without the flag all capture writes are disabled. `tools/check-server.cjs`
-exercises this local endpoint separately because it needs a loopback socket:
-
-```sh
-node characters/boop/design/slime-blob/tools/check-server.cjs
-```
-
-Optional real-browser QA requires Playwright and Chromium. Use existing
-dependencies through `BOOP_PLAYWRIGHT_MODULE` (path to the Playwright module)
-and `BOOP_QA_BROWSER` (Chromium executable). Otherwise it resolves the
-installed `playwright` package and its managed Chromium. These are test-only
-dependencies, not required by the studio, builder or offline validator.
-
-With the studio server running from the README, from the repo root:
-
-```sh
-node characters/boop/design/slime-blob/tools/browser.cjs
-```
-
-`BOOP_QA_URL` overrides the local URL; defaults to http://127.0.0.1:4190/studio/#pack=boop&c=boop.
-`BOOP_QA_OUTPUT` chooses a screenshot output directory; by default a fresh
-temporary directory is used. `BOOP_CAPTURE_FACES=0` skips per-face screenshots,
-not the expression-selection checks. `--help` is supported by all package
-scripts. QA images are review evidence, not packaged runtime assets.
-
-## The firmware port
-
-The C++ gel face (`characters/boop/firmware/src/render/gel/`) is checked
-against this package's reference engine, from the repository root:
-
-```sh
-make -C internal fw-test      # first: it fetches the ArduinoJson check-port.py compiles against, and stages the pack
-python3 characters/boop/tools/slimegen/check-port.py --output /tmp/boop-gel-port
+node characters/boop/tools/slimegen/slimegen.mjs --check
+make -C internal fw-test
 internal/tools/boopctl sim --face gel
+make -C internal mirror
 ```
 
-- `check-port.py` builds the native trace adapter (with `BOOP_GEL_TRACE`,
-  the one build that keeps the recipes' `intent`) and replays every
-  `scripts/*.jsonl` against the saved traces, `comedy.jsonl`'s gags,
-  hiccups, gift and snore, `gestures.jsonl`'s ten,
-  `occasions.jsonl`'s picks and `swipes.jsonl`'s flings included. It checks every scalar,
-  categorical field, cue and frame count within its tolerance, and fails
-  on unexpected extra fields too. It reads the staged pack's `moods.h`
-  (`.character-build/`, which `fw-test` stages) after the pack's own headers.
-- `test_gel` (in the pack's `tests/firmware/`, run by `fw-test`) checks
-  arithmetic (a `Divisor`'s quotients exactly `/`'s), reference clock
-  rounding, every expression buffer's bounds, deterministic pixels,
-  request identity, bounded caches, alerts interrupted by listening or a
-  link timeout signalling exactly once, the face's two arts crossing over
-  (weights summing to one and stepping no more than a slice of the face
-  window's ramp, drawn sizes following their controls) and the alert's
-  ramp moving without jumps across every directed edge, a fifth art
-  dropping the faintest, a faded art held at zero never coming back, a
-  card revealed late still rising whole, every result card marked over
-  its label, the lane's text cut as the canvas cuts it and its marks, the
-  night's lids easing out as
-  it falls asleep, a reset letting go of the finger, a finger moving
-  the dome its own way (a swipe down bringing its crown down and up
-  raising it, across leaning it, the base on the floor, and let go
-  carrying on its way, then settling back without bouncing far past),
-  a face that never
-  fades (its visible ink through five cross-fades, rendered:
-  CONTINUITY.md, Continuity of what is drawn), the lane's strip fading
-  in and out at the opacity the app gives it, the same at a frame every
-  16 ms as every 200 ms, and
-  blended once (each pixel the whole strip's at that opacity), sleep's
-  spring kept through a mood change until the face wakes, voice
-  lead, stale cues, return to the latest
-  facts, projected face anchors against the reference camera,
-  extreme-pose buffer bounds, drawing by coverage (a shape's ink is its
-  area wherever it sits between pixels, a stroke keeps its width and
-  blends once, the body's outline is soft with no seam inside), and
-  tracked-clear parity with full clearing across pose and prop changes.
-  RGB565 opacity rounding is checked against an independent scalar
-  reference across every channel value and all 256 opacity levels. Its
-  comedy test pins each row's takes, the hiccups' and the snore's
-  recipes, the one gift, idle's takes per expression, the bag's rounds,
-  the doze's lids and sink, the zoomies' reach, a sneeze that allocates
-  nothing, and sleep that snores after its still start (never with the
-  link lost); the extreme pose includes the slide at its bound. Its
-  gesture test pins a take for each of `render::Gesture` (ten, the same in
-  every mood, each its own gag and a face there is), the take the board
-  names, a start that draws no randomness, and a shake played through the
-  face: baffled, sliding both ways, then the mood's face back. Its
-  occasion test plays two minutes of idle and one of work and sleep with
-  tags on and off: an occasion plays only while it fits, and does.
-- `boopctl sim --face gel` plays the pack's `tests/scenarios-gel/`
-  against its `tests/golden-gel/`: every canonical mood and factual
-  state, failure and neutral-finish frames, the host lane at the
-  panel's size (`lane.jsonl`: the working count, a long name that needs
-  you, the finish's marks and the bubble in each of its fonts), and the
+None of them contacts Jev, a paid API or a device.
+
+## The design's data (slimegen)
+
+`slimegen.mjs` checks the design before it bakes it (`check.mjs`), and
+`--check` fails unless every generated file is the one checked in:
+`slime.h`, `slime_art.h`, `slime_mesh.h`, the pack's moods in
+`character.json` and [MOODS.md](MOODS.md). It fails, naming what's wrong,
+when:
+
+- an edge goes to a mood that isn't one, or to itself, or twice, or a mood
+  has more than eight; the ordinary edges alone don't reach every mood
+  from every other; or an intensity ladder (`intensityLadders`) doesn't
+  climb by ordinary edges;
+- a canonical mood has no expression of its own or no sound profile, an
+  expression hasn't three gestures, or a mood or idle names a gag there
+  isn't;
+- two occasions share an id, one needs neither a tag nor a wait, plays in
+  a state the board hasn't, borrows a gag no occasion has, has neither a
+  gag nor a recipe, or gives idle a recipe;
+- a sound sketch renders differently from one seed, doesn't start from
+  silence, isn't finite, is louder than 0.8, longer than 3 s, or isn't
+  silent at no gain;
+- the gestures or the notices are out of `render::Gesture`'s order, or an
+  occasion needs a tag `render/tags.h` hasn't.
+
+## The engine (`test_gel`)
+
+`make -C internal fw-test` runs the pack's `tests/firmware/test_gel/` on
+the Mac (env `native`). Every frame its tests drive is held to the bounds
+of what may be drawn (`frames.h`, CONTINUITY.md, Continuity of what is
+drawn): every spring and channel inside its bounds, each art's weight and
+drawn size, each prop and the desk moving no more in a frame than their
+ramps and springs can, and no jolt at an event. By file:
+
+- `test_cells.cpp`: every canonical mood in every state, each of its
+  takes, driven as the board drives it (`test_every_cell_plays_truthfully`):
+  the mood held, one reveal for each of a request's, the prop it needs
+  shown, only a successful finish's trophy and proud's gift, quiet states
+  silent but for comedy and still but for a snore, each take moving the
+  body its own way; ten minutes at work; contacts a finger or an alert
+  interrupts; a card's reveal on its own ramp; asleep's stillness.
+- `test_bridges.cpp`: every directed edge in each of its three variants
+  (the retarget changing no spring and nothing drawn, its primitive,
+  windows, amplitude and direction, the controls between their ends, every
+  sixteenth of its window passed through, the variants moving differently);
+  each primitive's waveform and spring; a grab deferring then expiring the
+  bridge; a quiet or alerting body holding it; a rapid chain settling on
+  its last; each edge's own bag; the semantic face's spring, windows and
+  saturation.
+- `test_motion.cpp`: the accepted V1 springs, impulses, breath, blink,
+  gaze and clock (the motion contract: changing the motion means editing
+  this test); a finger's springs, reach and fling; acting's timing and
+  springs; every setter keeping every spring, and an engine replaying the
+  same from the same seed; the scenes' formulas (the waiting wave, the
+  cards' and the error's, the recovery gesture, the desk's jitter, a gag's
+  keys inside their bounds).
+- `test_requests.cpp`: what routes when (no app, listening, needs you, a
+  moment, the look), a request's identity, cues sparse and quiet, a
+  request sounding once whatever changes, and sound's randomness changing
+  nothing drawn.
+- `test_main.cpp`: the rest: arithmetic (a `Divisor`'s quotients exactly
+  `/`'s), the binary64 clock's rounding, every expression's bounds,
+  deterministic pixels, request identity and bounded caches, alerts
+  interrupted by listening or a link timeout at eight points signalling
+  exactly once, the face's arts crossing over without jumps and never
+  fading (its visible ink through five cross-fades), sleep's spring kept
+  through a mood change, the night's lids, a finger moving the dome its own
+  way, every result card's mark, comedy, the ten gestures, the notice, the
+  occasions, the lane at the panel's size (fading whatever the draw
+  cadence, blended once, cut and marked as the canvas does), the layers on
+  the body's anchors, drawing by coverage, tracked clearing and kept cards
+  matching a fresh frame, and steady frames allocating nothing.
+
+## The board's frames
+
+- `internal/tools/boopctl sim --face gel` plays the pack's
+  `tests/scenarios-gel/` against its `tests/golden-gel/`: every canonical
+  mood and factual state, failure and neutral-finish frames, the host lane
+  at the panel's size (`lane.jsonl`: the working count, a long name that
+  needs you, the finish's marks and the bubble in each of its fonts), the
   comedy (`comedy.jsonl`: the yawn, the sneeze's wind-up, the doze, the
   long yawn, the zoomies at either edge, a snore, the hiccups and the
   gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
   on the nose, a shake and peekaboo, each by the board's own input, its
-  variation expected), the occasions (`occasions.jsonl`: a party's
-  bounce, a night's drowse, frantic typing, in a nightcap and a party
-  hat), the layers (`layers.jsonl`: each outfit and air by its tags, Zs
-  asleep at night, a sign under the nightcap) and a reaction's sign
-  (`sign.jsonl`: the card held up over idle and over a finish, with how
-  long it stays), and a finger in idle (`swipes.jsonl`: a swipe down
-  part way and just after it let go, up, across each way, the second
-  of two swipes down, a slow stroke down part way and its reaction).
-  `--accept` updates only the gel goldens, after looking at them.
-  `boopctl run` reads the board's `hello` to pick the matching face.
-- `boopctl mirror` plays the same scenarios on the Mac's mirror of the
-  board (`characters/boop/mac/mirror/board.js`, the firmware built to
-  WebAssembly, which the popover and onboarding show) and on the native
-  simulator, both with no card, and checks every shot is the same, pixel
-  for pixel: the Mac draws what the board draws. `make -C internal
-  mirror` runs it, the mirror page's tests, and
-  `firmware/tools/mirror.sh --check`, which builds the mirror again and
-  checks it's the one checked in.
+  variation expected), the occasions (`occasions.jsonl`: a party's bounce,
+  a night's drowse, frantic typing, in a nightcap and a party hat), the
+  layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
+  night, a sign under the nightcap), a reaction's sign (`sign.jsonl`), and
+  a finger in idle (`swipes.jsonl`). `--accept` updates only the gel
+  goldens, after looking at them.
+- `boopctl mirror` (in `make -C internal mirror`) plays the same scenarios
+  on the Mac's mirror of the board (`characters/boop/mac/mirror/board.js`)
+  and on the native simulator, both with no card, and checks every shot is
+  the same, pixel for pixel; `firmware/tools/mirror.sh --check` builds the
+  mirror again and checks it's the one checked in.
+- `internal/tools/fluid/measure.py` measures how fluid the everyday
+  transitions are on the board (`transitions.jsonl`, `idle-swipes.jsonl`),
+  and the Character Studio's Transitions view ranks them in the page.
 
-These are simulator and host checks. Display throughput on the board
-and speaker review are separate.
+## For the eye
 
-## Imported export's recorded result
-
-The colleague's imported validation report recorded these passes on
-2026-10-02. They describe the original audition before the engine split;
-they were not all rerun for the current scene implementation. Current
-executed checks and browser captures are in the phase evidence above.
-
-- Deterministic builder and offline validator: 42 moods, 44 expressions,
-  22 states, 924 explicit coverage cells; 295 directed edges (224 ordinary,
-  71 dramatic), ordinary graph strongly connected and retained IDs intact.
-- All seven accepted V1 source hashes and the original blue gel fragment
-  shader hash match; catalogue export and local Markdown links pass.
-- 27 seeded procedural sound renders (nine recipes × three variants)
-  are deterministic/finite/bounded; mute is silent. Peak at the default
-  audition gain was 0.28533. This is numeric QA, not physical listening QA.
-- Real headless Chrome: shader compilation, all expression selections and
-  normalized weights, three happy gestures, mouse/touch drag, bounded
-  pull, release settling, mobile width, reduced-motion path, manual sound
-  button/play/stop UI, and a separate genuinely WebGL-disabled Canvas
-  fallback all passed. No browser console/page errors remained.
-- Every package script's `--help` ran; Git whitespace checks and the
-  repository's identical CLAUDE.md/AGENTS.md check passed.
-
-The browser run used installed Playwright/Chrome overrides and
-`BOOP_CAPTURE_FACES=0`: all faces were selected/checked, but this export
-did not generate a new full contact sheet or individually replay every
-gesture. Temporary drag/mobile/fallback screenshots were inspected locally
-and are not committed. No runtime assets depend on those pictures.
+The Character Studio's **Gel on the board** card is the board's firmware:
+its **Tools** record the review sets (24 representative activities, 13
+directed mood bridges, `characters/boop/studio/review-sets.json`) from the
+board as silent WebM clips, and play the sound sketches each on its own.
+The studio's server saves the clips only with `--capture-dir DIR`, only
+those the pack names, from its own page with its token, at most 8 MiB
+each, never over a file (`characters/studio/tests/`). `node
+characters/studio/check.cjs` records one in a headless browser
+([the studio's README](../../../studio/README.md), Checking it). Clips are
+art evidence, not owner approval.
 
 ## Limits that remain
 
-- V3 artwork and the new SFX sketches need owner artistic/listening review.
-- The full reference scene matrix and host-fact router are implemented.
-  The owner approved the representative set. Directed bridges are implemented
-  and checked; the selected clips require the owner's spot-check. The opt-in host
-  graph is implemented; the native port passes the separate `check-port.py` gate, and the Mac shows the port itself (`boopctl mirror`). Contact audio is implemented;
-  timbres remain sketches pending speaker review.
-- All expressions are browser-selectable. Prior recipe execution checked
-  three happy gestures; it did not exhaustively play every recipe.
-- Drag checks concern browser-local releases. Cross-container termination,
-  real touch hardware and physical audio latency are separate tests.
-- WebGL and Canvas do not have identical materials. The integer firmware renderer is separate; its builds, native trace checks
-  and screenshots are recorded in the integration evidence. Physical performance
-  and speaker checks are pending. These package checks require no hooks, Jev
-  key or paid API calls.
+- V3 artwork and the SFX sketches need the owner's art and listening
+  review on the board.
+- The owner approved the representative set; the directed bridges' clips
+  are for the owner's spot-check.
+- Real touch hardware and physical audio latency are separate tests, and
+  so is the board's frame time (`boopctl ping`'s `draw_us`).

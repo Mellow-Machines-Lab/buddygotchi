@@ -1,28 +1,62 @@
-// The gel slime in the Character Studio (characters/studio/). The slime's
-// preview, design/slime-blob/preview/character.mjs (window.SlimeStudio),
-// owns the engine, renderer, sound and pointer input; this maps the studio's
-// selection onto it and fills the drawer with the slime's own tools.
-Studio.register('boop',{
-  transport:'live',
-  variantLabel:'Gesture',
-  create(ctx){
-    const profiles=window.SlimeCatalog.expressions,title=id=>id.replaceAll('_',' ').replace(/^\w/,c=>c.toUpperCase());
-    ctx.tools.insertAdjacentHTML('beforeend',`
-    <section>
-      <h4>Event scripts</h4>
-      <p>A scripted stretch of a working day: the facts, moods and taps the device would receive.</p>
-      <div class="row">
-        <label class="grow"><span class="visually-hidden">Event script</span><select data-script></select></label>
-        <button type="button" data-play-script>Play script</button>
-        <button type="button" data-stop-script>Stop</button>
-      </div>
-      <p class="hint" data-script-status>Each run starts a fresh seeded slime.</p>
-    </section>
+// Boop's gel board in the Character Studio (characters/studio/): the board's
+// own card (StudioBoard, the firmware as WebAssembly), with the slime's tools
+// in its drawer. Review clips: each case of a set (review-sets.json, which
+// the studio's server also takes as the clip names it may save) recorded
+// from the board on its frozen clock, then played into a silent WebM. Sound
+// sketches: each of the sounds the board's effects are cut from
+// (design/slime-blob/sound/sfx.js), on its own.
+(() => {
+  const board = StudioBoard.adapter('boop', 'gel');
+  const SETS = {activities: 'Representative activities', bridges: 'Directed mood bridges'};
+  const SKETCHES = {squish: 'Gel squish', bounce: 'Soft landing', wobble: 'Elastic wobble', poke: 'Tiny poke',
+    keyboard: 'Crisp key', tear: 'Tear plip', knock_ding: 'Knock → ding', complete: 'Success swell',
+    failed: 'Failure cue', sneeze: 'Little sneeze', breath: 'Snore breath'};
+  const here = document.currentScript.src;
+  let cases = null;
+  const loadCases = () => cases ??= fetch(new URL('review-sets.json', here))
+    .then(r => r.ok ? r.json() : Promise.reject(Error('No review sets'))).then(j => j.cases);
+
+  // A case's frames: an activity from a reset, 6.4 s; a bridge 1.6 s in its
+  // first mood, then 4.8 s after the change.
+  const framesOf = (instance, c) => instance.record(c.to ? {from: c.from, to: c.to, before: 40, after: 120}
+                                                         : {from: c.from, before: 50, after: 110});
+  // Recorded frames, played at their own pace into a silent WebM, the case's
+  // id over them.
+  async function webm(frames, id) {
+    const canvas = document.createElement('canvas'), first = frames[0].image;
+    canvas.width = 960;
+    canvas.height = Math.round(960 * first.height / first.width) + 48;
+    const ctx = canvas.getContext('2d'), stream = canvas.captureStream(25);
+    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
+    const recorder = new MediaRecorder(stream, {...(type ? {mimeType: type} : {}), videoBitsPerSecond: 1400000});
+    const chunks = [];
+    recorder.addEventListener('dataavailable', e => { if (e.data.size) chunks.push(e.data); });
+    const done = new Promise(ok => recorder.addEventListener('stop', ok));
+    recorder.start();
+    for (const frame of frames) {
+      ctx.fillStyle = '#080b10';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(frame.image, 0, 48, canvas.width, canvas.height - 48);
+      ctx.font = '20px ui-monospace, monospace';
+      ctx.fillStyle = '#dceefa';
+      ctx.fillText(`${id} · ${frame.ms} ms`, 22, 31);
+      await new Promise(ok => setTimeout(ok, StudioBoard.FRAME_MS));
+    }
+    recorder.stop();
+    stream.getTracks().forEach(track => track.stop());
+    await done;
+    return new Blob(chunks, {type: recorder.mimeType || 'video/webm'});
+  }
+
+  Studio.register('board-gel', {...board, create(ctx) {
+    const instance = board.create(ctx);
+    ctx.tools.insertAdjacentHTML('beforeend', `
     <section>
       <h4>Review clips</h4>
-      <p>Records silent clips of the representative scenes or the mood-to-mood bridges, straight from the canvas.</p>
+      <p>Records each case of a set from the board, on its frozen clock, as a silent clip to look at or save.</p>
       <div class="row">
-        <label class="grow"><span class="visually-hidden">Review set</span><select data-review-set><option value="activities">Representative activities</option><option value="bridges">Directed mood bridges</option></select></label>
+        <label class="grow"><span class="visually-hidden">Review set</span><select data-review-set>${
+          Object.entries(SETS).map(([id, label]) => `<option value="${id}">${label}</option>`).join('')}</select></label>
         <button type="button" data-record>Record review set</button>
         <button type="button" data-save-review disabled>Save review clips locally</button>
       </div>
@@ -31,65 +65,105 @@ Studio.register('boop',{
     </section>
     <section>
       <h4>Sound sketches</h4>
-      <p>Each of the slime's sounds on its own. Playing one mutes the animation's sound.</p>
+      <p>Each of the sounds the board's effects are cut from, on its own. Playing one mutes the board.</p>
       <div class="row wrap" data-sketches></div>
       <p class="hint" data-sketch-status aria-live="polite">Silent until you pick one.</p>
     </section>`);
-    const $=selector=>ctx.tools.querySelector(selector);
-    const slime=window.SlimeStudio.create({root:ctx.root,stage:ctx.stage,onChange:ctx.onChange});
-    let face=null,fact='',choice=null,run=slime.runs;
+    const $ = selector => ctx.tools.querySelector(selector);
+    let recording = false, stopped = false, clips = [], save = null, sketches = 0;
+    const status = text => { $('[data-record-status]').textContent = text; };
+    const saveReady = () => { $('[data-save-review]').disabled = recording || !clips.length || !save?.enabled; };
 
-    for(const name of Object.keys(window.SlimeScripts||{})){const o=document.createElement('option');o.value=name;o.textContent=name.replace('.jsonl','').replaceAll('-',' ');$('[data-script]').append(o);}
-    $('[data-play-script]').addEventListener('click',()=>slime.playScript($('[data-script]').value));
-    $('[data-stop-script]').addEventListener('click',()=>{slime.stopScript();$('[data-script-status]').textContent='Script stopped. The slime keeps its last facts.';});
-    const sketches={squish:'Gel squish',bounce:'Soft landing',wobble:'Elastic wobble',poke:'Tiny poke',keyboard:'Crisp key',tear:'Tear plip',knock_ding:'Knock → ding',complete:'Success swell',failed:'Failure cue',sneeze:'Little sneeze',breath:'Snore breath'};
-    let sketchCount=0;
-    for(const [name,label] of Object.entries(sketches)){
-      const b=document.createElement('button');b.type='button';b.textContent=label;
-      b.addEventListener('click',async()=>{
-        try{ctx.setSound(false);const result=await SlimeSFX.play(name,{variant:sketchCount++%3,seed:1729+sketchCount});$('[data-sketch-status]').textContent=`${label} · sketch ${result.variant+1} · ${result.duration.toFixed(2)} s`;}
-        catch(error){$('[data-sketch-status]').textContent=error.message;}
+    $('[data-record]').addEventListener('click', async () => {
+      if (recording) { stopped = true; return; }
+      if (typeof MediaRecorder === 'undefined') return status('Recording needs a browser with MediaRecorder.');
+      recording = true, stopped = false;
+      $('[data-record]').textContent = 'Stop recording';
+      for (const link of $('[data-review-gallery]').querySelectorAll('a')) URL.revokeObjectURL(link.href);
+      $('[data-review-gallery]').replaceChildren();
+      clips = [];
+      saveReady();
+      const set = $('[data-review-set]').value;
+      let list = [];
+      try {
+        if (location.protocol === 'http:' && !save)
+          save = await fetch('/review-capture-config').then(r => r.ok ? r.json() : null).catch(() => null);
+        list = (await loadCases()).filter(c => c.set === set);
+        for (const [i, c] of list.entries()) {
+          if (stopped) break;
+          status(`Recording ${i + 1}/${list.length}: ${c.id}`);
+          const frames = await framesOf(instance, c);
+          if (!frames) break;
+          const blob = await webm(frames, c.id), url = URL.createObjectURL(blob);
+          frames.forEach(f => f.image?.close());
+          const card = document.createElement('article'), title = document.createElement('p'),
+                video = document.createElement('video'), link = document.createElement('a');
+          title.textContent = c.id;
+          Object.assign(video, {controls: true, muted: true, preload: 'metadata', src: url});
+          Object.assign(link, {href: url, download: `${c.id}.webm`, textContent: `Save ${c.id}`});
+          card.append(title, video, link);
+          $('[data-review-gallery]').append(card);
+          clips.push({name: `${c.id}.webm`, blob});
+        }
+        status(`${clips.length} of ${list.length} clips, from the board. Art review is pending.`);
+      } catch (error) {
+        status(`Recording stopped: ${error.message}`);
+      } finally {
+        recording = false;
+        $('[data-record]').textContent = 'Record review set';
+        instance.setPaused(instance.paused);  // the stage takes its board back
+        saveReady();
+      }
+    });
+    $('[data-save-review]').addEventListener('click', async () => {
+      $('[data-save-review]').disabled = true;
+      try {
+        for (const [i, clip] of clips.entries()) {
+          status(`Saving ${i + 1}/${clips.length}: ${clip.name}`);
+          const r = await fetch(`/review-captures/${encodeURIComponent(clip.name)}`, {method: 'POST', body: clip.blob,
+            headers: {'Content-Type': 'video/webm', 'X-Boop-Review-Token': save.token}});
+          if (!r.ok) throw Error(`${clip.name}: ${r.status === 409 ? 'it exists already; choose a fresh capture directory' : `not saved (${r.status})`}`);
+        }
+        status(`Saved ${clips.length} clips in ${save.directory}.`);
+      } catch (error) {
+        status(error.message);
+      } finally {
+        saveReady();
+      }
+    });
+
+    for (const [name, label] of Object.entries(SKETCHES)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.addEventListener('click', async () => {
+        try {
+          ctx.setSound(false);
+          const r = await SlimeSFX.play(name, {variant: sketches++ % 3, seed: 1729 + sketches});
+          $('[data-sketch-status]').textContent = `${label} · sketch ${r.variant + 1} · ${r.duration.toFixed(2)} s`;
+        } catch (error) {
+          $('[data-sketch-status]').textContent = error.message;
+        }
       });
       $('[data-sketches]').append(b);
     }
-    const stopSketch=document.createElement('button');stopSketch.type='button';stopSketch.textContent='Stop sound';
-    stopSketch.addEventListener('click',()=>{SlimeSFX.stop();$('[data-sketch-status]').textContent='Sound stopped.';});$('[data-sketches]').append(stopSketch);
-    const onHidden=()=>{if(document.hidden)SlimeSFX.stop();};document.addEventListener('visibilitychange',onHidden);
+    const quiet = document.createElement('button');
+    quiet.type = 'button';
+    quiet.textContent = 'Stop sound';
+    quiet.addEventListener('click', () => { SlimeSFX.stop(); $('[data-sketch-status]').textContent = 'Sound stopped.'; });
+    $('[data-sketches]').append(quiet);
+    const hidden = () => { if (document.hidden) SlimeSFX.stop(); };
+    document.addEventListener('visibilitychange', hidden);
 
-    return {
-      slime,
-      select(s){
-        const want=s.face||s.mood;
-        // A script or review run rebuilt the slime; apply the whole selection again.
-        if(run!==slime.runs){run=slime.runs;face=fact=choice=null;}
-        if(want!==face){face=want;slime.setFace(want);choice='auto';}
-        const key=[s.state,s.outcome,s.context].join('/');
-        if(key!==fact){fact=key;slime.setState(s.state,{outcome:s.outcome,context:s.context});}
-        // Idle's takes: the mood's three gestures, then its comedy (its own
-        // gags and every mood's idle gags), as the engine deals them.
-        const catalog=window.SlimeCatalog,gags=[...(profiles[want].gags||[]),...(catalog.idleGags||[])].map(name=>catalog.gags[name]);
-        const takes=[...profiles[want].performances,...gags];
-        const next=s.variant===0?'auto':String(Math.min(s.variant,takes.length)-1);
-        if(next!==choice){choice=next;slime.perform(next);}
-        return {variants:['Any gesture, at its own pace',...takes.map((p,i)=>`${i<3?'Gesture':'Comedy'} ${i+1} · ${p.label}`)],caption:''};
-      },
-      faces(mood){
-        const ids=Object.keys(profiles).filter(id=>id.includes(':')&&profiles[id].mood===mood);
-        return [{id:mood,label:'Standard'},...ids.map(id=>({id,label:title(id.split(':')[1])}))];
-      },
-      get paused(){return slime.paused;},
-      setPaused(on){slime.setPaused(on);},
-      replay(){const s=ctx.selection;slime.setState(s.state,{outcome:s.outcome,context:s.context});},
-      poke(){slime.poke();},
-      shake(){slime.shake();},
-      busy(){return slime.review.active;},
-      setSound(){slime.setVolume(ctx.volume);if(ctx.sound)slime.enableSound().catch(()=>{});else slime.muteSound();},
-      status(){
-        const script=slime.script;
-        if(script)$('[data-script-status]').textContent=`Playing ${script.name.replace('.jsonl','')} · ${script.seconds.toFixed(1)} s`;
-        return `${profiles[slime.expression]?.label||''} · ${slime.activity()} · ${slime.sceneText()}`+(script?` · script ${script.name} ${script.seconds.toFixed(1)} s`:'');
-      },
-      destroy(){slime.destroy();SlimeSFX.stop();document.removeEventListener('visibilitychange',onHidden);ctx.tools.replaceChildren();}
+    const destroy = instance.destroy;
+    instance.busy = () => recording;
+    instance.destroy = () => {
+      stopped = true;
+      SlimeSFX.stop();
+      document.removeEventListener('visibilitychange', hidden);
+      ctx.tools.replaceChildren();
+      destroy();
     };
-  }
-});
+    return instance;
+  }});
+})();

@@ -1,6 +1,6 @@
 #include "render/gel/motion.h"
 namespace render::gel {
-void Motion::advance(T dt, T now, Random& random, bool reduced) {
+void Motion::advance(T dt, T now, Random& random) {
   time = now;
   constexpr F frequency[] = {q(11), q(13), q(18), q(16)}, damping[] = {q(4.6), q(4.5), q(5.3), q(6)};
   for (int i = 0; i < 4; ++i) integrate(modes[i], dt, 0, frequency[i], damping[i], q(.72), 9);
@@ -13,24 +13,19 @@ void Motion::advance(T dt, T now, Random& random, bool reduced) {
     nextLook = time + q(3.2) + random.unit() * 4;
   }
   gaze += (gazeTarget - gaze) * (F(1) - exp(-dt * 3));
-  F smoothing = F(1) - exp(-dt * (reduced ? 35 : 14));
-  for (int i = 0; i < slime::kProfiles; ++i) weights[i] += (F(i == emotion ? 1 : 0) - weights[i]) * smoothing;
 }
-void Motion::impulse(bool shake, bool reduced, F x, F y) {
-  contactX = clamp(x, q(-.85), q(.85));
-  contactY = clamp(y, q(-.25), q(.65));
-  F strength = reduced ? q(.25) : F(1);
-  modes[0].v = clamp(modes[0].v + (shake ? q(4.5) : x >= F(0) ? q(-2.6) : q(2.6)) * strength, -8, 8);
-  modes[1].v = clamp(modes[1].v - (shake ? q(2.6) : q(3.5)) * strength, -8, 8);
-  modes[2].v = clamp(modes[2].v + (shake ? F(5) : q(3.5)) * strength, -8, 8);
-  modes[3].v = clamp(modes[3].v + (shake ? F(0) : q(4.8)) * strength, -8, 8);
+void Motion::impulse(bool shake, F x) {
+  modes[0].v = clamp(modes[0].v + (shake ? q(4.5) : x >= F(0) ? q(-2.6) : q(2.6)), -8, 8);
+  modes[1].v = clamp(modes[1].v - (shake ? q(2.6) : q(3.5)), -8, 8);
+  modes[2].v = clamp(modes[2].v + (shake ? F(5) : q(3.5)), -8, 8);
+  modes[3].v = clamp(modes[3].v + (shake ? F(0) : q(4.8)), -8, 8);
 }
 F Motion::blink() const {
   T age = time - blinkAt;
   return age >= F(0) && age < T::literal(.24) ? square(sin(pi * age / T::literal(.24))) : F(0);
 }
-std::array<F, 4> Motion::pose(bool reduced) const {
-  return {modes[0].x, modes[1].x + (reduced ? F(0) : sin(time * q(1.65)) * q(.011)), modes[2].x, modes[3].x};
+std::array<F, 4> Motion::pose() const {
+  return {modes[0].x, modes[1].x + sin(time * q(1.65)) * q(.011), modes[2].x, modes[3].x};
 }
 namespace {
 // The controls a layer's ratios follow (the eye's openness, the mouth's
@@ -144,9 +139,9 @@ void SemanticFace::setSleeping(bool value) {
   targetSleeping = value;
   retarget(value ? kSleepMs : kFaceMs);
 }
-void SemanticFace::advance(T dt, bool reduced) {
+void SemanticFace::advance(T dt) {
   // The controls' spring: the face's, or sleep's while it sleeps.
-  const F w = reduced ? F(30) : targetSleeping ? F(kSleepFrequency) : F(kFaceFrequency);
+  const F w = targetSleeping ? F(kSleepFrequency) : F(kFaceFrequency);
   for (int i = 0; i < 8; ++i) {
     F x = scaled[i], v = velocity[i], goal = target[i] * kScale;
     for (F left = dt; left > F(0);) {

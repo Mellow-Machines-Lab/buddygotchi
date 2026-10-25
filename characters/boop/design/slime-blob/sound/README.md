@@ -1,10 +1,10 @@
 # Nonverbal slime sound handover
 
-Updated 2026-10-21. Scope: basic material/emotion/attention SFX, **not**
+Updated 2026-10-24. Scope: basic material/emotion/attention SFX, **not**
 ElevenLabs, recorded speech/mumbles or background music. The executable
-[sfx.js](sfx.js) provides procedural timbre sketches. The pure cue scheduler and browser
-player synchronize them to visible contacts. Animation sound starts muted
-and is enabled only by the preview button. No new speech is synthesized.
+[sfx.js](sfx.js) provides procedural timbre sketches; slimegen cuts the
+board's effects from them, and the gel engine's cues sound them at
+visible contacts (The board's cues, below). No new speech is synthesized.
 
 ## Sound identity
 
@@ -20,8 +20,9 @@ parameters. Profiles are tuning plans, not all individually reviewed audio.
 The original nine sketch recipes are squish, bounce, wobble, poke, keyboard, tear,
 knock_ding, complete and failed. They generate PCM in memory at playback;
 two isolated stems, knock and ding, now support contact timing, and two
-comedy sketches, a little sneeze and a snore's soft breath. Listen with the sound sketches in the
-[Character Studio](../../../../studio/README.md)'s **Tools**.
+comedy sketches, a little sneeze and a snore's soft breath. Listen to each
+with the sound sketches in the [Character Studio](../../../../studio/README.md)
+**Gel on the board** card's **Tools**, or in context with its sound on.
 
 Three variant indices are supported; short material effects vary pitch,
 texture seed and resonance slightly. The alert changes knock count but
@@ -80,8 +81,9 @@ steadily, sad lightly/slowly, excited at several surface positions. Taps
 are broad soft body/surface contacts—not detailed hands or cursor points.
 Every variation ends in the same recognizable ding family, with one new
 request identity authorizing one alert. It must not sound again simply
-because the mood changed or the sign loop repeats. The integrated player uses separate contact-timed knock and ding stems;
-the combined sketch remains available for manual audition.
+because the mood changed or the sign loop repeats. The board sounds
+separate contact-timed knock and ding stems; the combined sketch remains
+for the studio's audition.
 
 ## Quiet policy and future voice space
 
@@ -101,13 +103,12 @@ separate reviewed behavior change explicitly revises it.
 
 ## Script storage is not the shipping audio format
 
-Desktop Web Audio can synthesize the sketches live. The current firmware
-bakes procedural recipes into small shared PCM effects plus event scores
-via sfxgen; it does not execute JS. A native oscillator/noise port is an
-alternative requiring CPU/audio-driver tests. Choose this explicitly;
-code-sized design inputs do not imply zero runtime buffers or zero flash.
-Do not replace the shipping synthesizer or regenerate firmware assets
-just by adding these sketches. No device audio has been tested here.
+The studio's audition synthesizes the sketches live. The board doesn't
+run JavaScript: slimegen renders each sketch's three takes at 11,025 Hz,
+8-bit, into `slime.h` (`kClip`, `kSamples`, about 230 KB), and the board's
+effects mixer plays them. A native oscillator/noise port is an alternative
+requiring CPU/audio-driver tests. Choose this explicitly; code-sized
+design inputs do not imply zero runtime buffers or zero flash.
 
 ## Definition of done
 
@@ -118,23 +119,25 @@ work/alert/success/failure scenes in context. Mark sound-plan/coverage
 status only after hearing the integrated result. No paid generation or
 voice-bank additions belong to this milestone.
 
-## Synchronized reference cues
+## The board's cues
 
-`engine/cues.mjs` consumes the scene's actual contact IDs after each frame.
-It deduplicates repeated frame inspections and emits no separate timed events.
-Audio uses its own seeded PRNG (actor seed XOR 0xa511e9b3), leaving motion
-unchanged. Cue IDs include request, generation, iteration and contact identity.
+The gel engine (`render/gel/engine.cpp`) takes the scene's actual contacts
+each frame, a gag's after the scene's, and makes a cue of those that may
+sound; a frame stepped again makes none, and it emits no separate timed
+events. Sound uses its own seeded random source (the engine's seed XOR
+0xa511e9b3), leaving motion unchanged. A cue keeps its contact's request,
+generation, iteration and index.
 All seven routine work states use the plan's probability 0.25 and cap of four
 contacts per cycle; loops under 3.5 seconds sound only on even iterations.
 Other active states sound on their first iteration. Rest, idle, no app,
 listening and waiting remain silent, but for comedy: an idle sneeze, excited's
 zoomies landing at each edge and a snore's breath while asleep sound in any
 state, each contact with the routine chance (a quarter), ducked as routine
-sounds are ([CONTINUITY.md](../CONTINUITY.md), Comedy). This quarter-contact prototype policy is
-more conservative than the pixel bank's roughly 30% policy; it is not a claim
-of identical choreography. Reveal guards retain request identity across mood
-retargets and repeated result loops. Notification history currently has the
-same actor-lifetime scope as the reference router's request history.
+sounds are ([CONTINUITY.md](../CONTINUITY.md), Comedy). This quarter-contact
+policy is more conservative than the pixel bank's roughly 30% policy; it is
+not a claim of identical choreography. Reveal guards keep request identity
+across mood retargets and repeated result loops, in a bounded history of
+the last 64 requests.
 
 `key_contact` maps to keyboard, `body_contact` to squish, `screen_knock` to
 knock, and `alert_reveal` to ding. Only explicit success maps to complete;
@@ -146,23 +149,25 @@ is no tear/landing/rebound sound without an authored visible contact.
 The ding uses fixed variant 0, seed 53, pitch 1 and gain 0.45, with its existing
 880 and 1318.51 Hz notes; mood never retunes it.
 
-`sound/player.mjs` consumes even muted, suspended and stale cues. More than
-150 ms late is dropped; there is no backlog at unmute. Four sources play at
-most; a fifth replaces the oldest immediately. Scene interruption uses a 4 ms fade for
-all tails; an expression retarget fades routine tails while preserving a
-protected notification. Mute or zero volume stops all immediately. Volume is
-bounded to [0,1]. Voice activity reduces routine levels to 0.25 and leaves
-protected attention/result/error cues whole. The player adds no voice; the
-plan's future voice windows (0.45 s routine and 0.12 s after protected audio)
-remain metadata for the device integration. Desktop latency compensation is
-zero until measured; the pixel device's 70 ms lead is not assumed for Web Audio.
+The board's face hands its cues to the device (`render/gel/face.cpp`):
+one more than 150 ms late for the device is dropped, and a new request, a
+state change or a fresh needs-you silences what the last left. The
+device's effects mixer (`firmware/src/voice/effects.h`) plays at most four
+at once, a fifth replacing the oldest, fades each out over 4 ms, ducks
+routine ones to a quarter under a line and leaves needs you's, a finish's
+and an error's whole. Volume zero is silence. The plan's future voice
+windows (0.45 s routine and 0.12 s after protected audio) stay metadata.
 
-`tools/check-cues.mjs` checks contact alignment, duplicate consumption, unchanged
-motion, deterministic cue lists, the 60-second attention hold with three mood
-changes and one ding, repeated completion loops, sparse routine cycles, comedy
-that alone sounds in quiet states and stays sparse over twenty minutes of idle
-and five of sleep, and the player's limits/mute/suspension/ducking using a fake audio backend. Timbres remain
-sketches; mathematical checks do not establish listening quality on a speaker.
+`test_gel` (`test_requests.cpp`) checks that cues stay sparse (at most
+four a pass at work, short loops silent on odd passes, under 0.4 of the
+contacts over ten minutes), that quiet states sound only comedy, sparsely,
+over twenty minutes of idle and five of sleep, that a request dings once
+whatever changes (a mood, a name, a lost link), each ding variant 0, seed
+53, pitch 1 and gain 0.45, that a finish loops six times with one fanfare,
+and that sound's randomness changes nothing drawn. The device mixer's
+limits are `internal/firmware/test/test_effects`'s. Timbres remain
+sketches; mathematical checks do not establish listening quality on a
+speaker.
 
-Choosing a manual sound sketch or **Stop sound** mutes integrated animation
-audio, so an isolated timbre audition cannot layer over the scene mixer.
+Choosing a sound sketch in the studio, or **Stop sound**, turns the board's
+sound off, so an isolated timbre audition cannot layer over the scene.

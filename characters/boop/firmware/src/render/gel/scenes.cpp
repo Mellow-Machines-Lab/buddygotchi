@@ -77,7 +77,7 @@ bool Scenes::wants(Prop prop) const {
       return route.group == Family::kTouch;
   }
 }
-void Scenes::refresh(Prop prop, bool reduced) {
+void Scenes::refresh(Prop prop) {
   auto copy = [](std::string& to, const std::string& from) {
     if (to != from) to = from;
   };
@@ -105,7 +105,6 @@ void Scenes::refresh(Prop prop, bool reduced) {
       break;
     case kStartProp:
       startProp.label = recipe.label;
-      startProp.ctx = route.ctx;
       break;
     case kHelpersProp:
       helpersProp.returning = route.state == SceneState::kHelperReturn;
@@ -116,11 +115,10 @@ void Scenes::refresh(Prop prop, bool reduced) {
       helpersProp.presence = recovery();
       break;
     case kListeningProp:
-      listeningPulse = focus(reduced);
+      listeningPulse = focus();
       break;
     default:
       touchKind = route.state;
-      touchKnown = true;
   }
 }
 // A card's reveal is its slot's own ramp: up over kCardRevealMs from its
@@ -143,7 +141,7 @@ void Scenes::cardReveal(Ramp& reveal) const {
 // going on as it was), so it never stops dead. New content (a new request,
 // or the helpers' next cycle) waits until nothing of the old is drawn, then
 // fades in from zero.
-void Scenes::updateProps(T time, bool reduced) {
+void Scenes::updateProps(T time) {
   for (int p = 0; p < kProps; ++p) {
     const Prop prop = Prop(p);
     auto& slot = slots[p];
@@ -159,7 +157,7 @@ void Scenes::updateProps(T time, bool reduced) {
       same = true;
     }
     if (want && same) {
-      refresh(prop, reduced);
+      refresh(prop);
       slot.ramp.retarget(1, time);
       if (card(prop)) cardReveal(slot.reveal);
     } else {
@@ -271,7 +269,7 @@ F Scenes::envelope(T time, int kind) const {
   T age = time - last.timeMs;
   return age >= 0 && age < 120 ? square(cos(age / 120 * pi / 2)) : F(0);
 }
-std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& random) {
+std::string Scenes::advance(T dt, T time, bool grab, Random& random) {
   contacts.clear();
   if (!generation) return {};
   if (completed) {
@@ -369,12 +367,11 @@ std::string Scenes::advance(T dt, T time, bool grab, bool reduced, Random& rando
   F swell = 0;
   if (route.quiet && hasLast && last.kind == kBreath && time - last.timeMs < T(slime::kSnoreSwellMs))
     swell = square(sin((time - last.timeMs) / slime::kSnoreSwellMs * pi)) * last.strength * slime::kSnoreSwell;
-  const F limits[] = {q(.08), q(.06), q(.05)}, scale = reduced ? q(.18) : F(1);
-  for (int i = 0; i < 3; ++i)
-    integrate(activity[i], dt, active ? target[i] * scale : i == 1 ? swell * scale : F(0), 12, 10, limits[i], q(1.2));
+  const F limits[] = {q(.08), q(.06), q(.05)};
+  for (int i = 0; i < 3; ++i) integrate(activity[i], dt, active ? target[i] : i == 1 ? swell : F(0), 12, 10, limits[i], q(1.2));
   prop(desk, dt, isDesk(route.state) || isDesk(route.baseState) ? 1 : 0, 10, 14);
   prop(quietMix, dt, route.quiet ? 1 : 0, 12, 10);
-  updateProps(time, reduced);
+  updateProps(time);
   return {};
 }
 }  // namespace render::gel

@@ -92,8 +92,7 @@ void paintProps(Surface& surface, const Engine& e) {
   auto round = [&](int a, int b, int c, int d, int radius, uint16_t ink) {
     r.round(x(a), y(b), x(c), y(d), x(radius), ink);
   };
-  // A card, filled, and its one-pixel rim, a step lighter, as the design
-  // source strokes it (render/props.mjs).
+  // A card, filled, and its one-pixel rim, a step lighter.
   auto fillCard = [&](const Card& c, uint16_t ink, uint16_t rim) {
     round(c.x, c.y, c.w, c.h, c.radius, ink);
     r.ring(x(c.x), y(c.y), x(c.w), y(c.h), x(c.radius), 1, rim);
@@ -180,7 +179,7 @@ void paintProps(Surface& surface, const Engine& e) {
     }
   }
   // Each prop's alpha is its ramped visibility; one fading out still draws
-  // the content it last showed (CONTINUITY.md, Representative activity scenes).
+  // the content it last showed.
   const T now = e.timeMs();
   r.alpha = 255;
   if (F helpers = s.visible(Scenes::kHelpersProp, now); helpers > F(0)) {
@@ -231,7 +230,7 @@ void paintProps(Surface& surface, const Engine& e) {
     drawCard(
         kAlertCard, amber, rgb565(0xf8, 0xd2, 0x94),
         [&] {
-          // Sized to read at arm's length on the 2.06" panel (render/props.mjs).
+          // Sized to read at arm's length on the 2.06" panel.
           text("NEEDS YOU", 500, 133, rgb565(44, 37, 29), kSign);
           text("Continue on your Mac", 500, 227, rgb565(0x3d, 0x2f, 0x1f), kLarge);
         },
@@ -263,8 +262,7 @@ void paintProps(Surface& surface, const Engine& e) {
         r.line({x(522), y(111)}, {x(478), y(157)}, 4, rgb565(232, 169, 180));
       } else {
         // A neutral result's mark, square on the panel: a soft stop square
-        // when stopped, else three calm dots (ready, finished), as
-        // render/props.mjs draws them.
+        // when stopped, else three calm dots (ready, finished).
         const uint16_t soft = rgb565(0xac, 0xc8, 0xd9);
         if (card.state == SceneState::kStopped)
           r.round(x(478), y(134) - x(22), x(44), x(44), x(10), soft);
@@ -278,8 +276,7 @@ void paintProps(Surface& surface, const Engine& e) {
            kLarge);
     });
     if (card.gift) {
-      // A gift beside the card: the small bug Boop caught, held up proudly
-      // (render/props.mjs draws the same).
+      // A gift beside the card: the small bug Boop caught, held up proudly.
       const int bx = 795, by = 180;
       const uint16_t ink = rgb565(44, 37, 29);
       for (int side : {-1, 1}) {

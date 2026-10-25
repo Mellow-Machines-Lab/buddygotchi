@@ -14,7 +14,7 @@ inline int recipeState(SceneState state, Outcome outcome, StartCtx ctx) {
 }
 static_assert(int(SceneState::kCount) + 2 + 4 == slime::kRecipeStates, "recipe rows: states, outcomes, contexts");
 // A row's takes: three, and a fourth for two rows, asleep's snore and a
-// successful finish's hiccups (scenes/index.mjs takesOf). The fourths are a
+// successful finish's hiccups. The fourths are a
 // table of their own, so the other rows stay three.
 static_assert(slime::kMaxTakes == 4 && slime::kFourthRows == 2, "two rows have a fourth take");
 static_assert(slime::kRecipeTakes[int(SceneState::kAsleep)] == 4 && slime::kRecipeTakes[int(SceneState::kCount)] == 4 &&
@@ -58,11 +58,11 @@ static_assert(kZoom + 1 == slime::kContactKinds, "contact kinds as slimegen numb
 constexpr bool reveals(int kind) { return kind >= kAlert && kind <= kStopped; }
 // Comedy's contacts sound even in a quiet state, with the routine chance.
 constexpr bool comedy(int kind) { return kind >= kSneeze; }
-// scenes/ramp.mjs: a prop's visibility over kPropRampMs. A cubic Hermite from
+// A prop's visibility over kPropRampMs: a cubic Hermite from
 // the current value and slope: a smoothstep from rest, continuous in value and
 // velocity on a reversal, exact at its end.
 constexpr int kPropRampMs = 200;
-// constants.mjs cardRevealMs: a card's reveal, from its reveal contact.
+// A card's reveal, from its reveal contact.
 constexpr int kCardRevealMs = 400;
 struct Ramp {
   F from, to, tangent;
@@ -103,8 +103,7 @@ struct Scenes {
     int cursor = 0;
   };
   History<Saved, 64> alerts, moments;
-  // Each prop keeps the content it last showed while its ramp fades it out
-  // (CONTINUITY.md, Representative activity scenes).
+  // Each prop keeps the content it last showed while its ramp fades it out.
   enum Prop { kAlertProp, kResultProp, kStartProp, kHelpersProp, kListeningProp, kTouchProp, kProps };
   struct Slot {
     bool on = false;
@@ -126,7 +125,6 @@ struct Scenes {
   } resultProp;
   struct {
     const char* label = "START";
-    StartCtx ctx = StartCtx::kNone;
   } startProp;
   struct {
     bool returning = false, report = false;
@@ -135,7 +133,6 @@ struct Scenes {
   } helpersProp;
   F listeningPulse = q(.5);
   SceneState touchKind = SceneState::kIdle;
-  bool touchKnown = false;
   // The tags on and how long the look has shown (Engine::setOccasion): a
   // look's occasion (kLookOccasions) is dealt by them, numbered after the
   // row's takes.
@@ -145,7 +142,7 @@ struct Scenes {
   int gag() const { return generation ? recipe.gag : -1; }
   void setRoute(const Route&, T time, int expression, Random&);
   void pickRecipe(T time, Random&);
-  std::string advance(T dt, T time, bool grab, bool reduced, Random&);
+  std::string advance(T dt, T time, bool grab, Random&);
   F envelope(T time, int kind) const;
   F recovery() const {
     return !std::strcmp(phase, "recover")   ? smooth((recipe.duration - ageMs) / 480)
@@ -153,9 +150,7 @@ struct Scenes {
                                              : F(1);
   }
   F entry() const { return smooth(ageMs / 240); }
-  F focus(bool reduced) const {
-    return reduced ? q(.5) : q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus);
-  }
+  F focus() const { return q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus); }
   // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
   F visible(Prop prop, T time) const {
     const auto& slot = slots[prop];
@@ -169,7 +164,7 @@ struct Scenes {
   const char* phaseAt(T age) const;
   void cardReveal(Ramp& reveal) const;
   bool wants(Prop prop) const;
-  void refresh(Prop prop, bool reduced);
-  void updateProps(T time, bool reduced);
+  void refresh(Prop prop);
+  void updateProps(T time);
 };
 }  // namespace render::gel

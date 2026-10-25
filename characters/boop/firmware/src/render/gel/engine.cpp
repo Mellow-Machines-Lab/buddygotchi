@@ -31,25 +31,24 @@ void Engine::step(uint32_t ms) {
   previous_ = ms;
   stamped_ = true;
   cues.clear();
-  if (hidden || paused) return;
   elapsedMs += delta;
   T dt = T::ratio(delta, 1000);
-  motion.advance(dt, motion.time + dt, random, reduced);
+  motion.advance(dt, motion.time + dt, random);
   router.advance(timeMs());
   sync();
-  bridge.advance(dt, reduced);
-  auto ended = scenes.advance(dt, timeMs(), grab, reduced, random);
+  bridge.advance(dt);
+  auto ended = scenes.advance(dt, timeMs(), grab, random);
   if (!ended.empty()) {
     router.finish(ended);
     sync();
   }
-  acting.advance(dt, motion.time, grab, reduced, random);
+  acting.advance(dt, motion.time, grab, random);
   // Held, the pull follows the finger quickly; let go, it settles back on a
   // softer spring, a wobble rather than a snap.
   const int* spring = grab ? kGrabHeld : kGrabReleased;
   for (int i = 0; i < 3; ++i) integrate(pull[i], dt, target[i], spring[0], spring[1], kGrabLimit, kGrabVelocity);
-  face.advance(dt, reduced);
-  const F w = reduced ? 25 : 10;
+  face.advance(dt);
+  const F w = 10;
   for (int i = 0; i < slime::kProfiles; ++i) {
     auto& m = postureWeights[i];
     const F goal = i == expression ? 1 : 0;
@@ -64,7 +63,7 @@ void Engine::step(uint32_t ms) {
   consumeCues();
 }
 std::array<F, 4> Engine::pose() const {
-  auto out = motion.pose(reduced);
+  auto out = motion.pose();
   const auto mood = posture();
   out[0] += acting.channels[0].x + mood[0] + scenes.activity[0].x + bridge.channels[0].x;
   out[1] += acting.channels[1].x + mood[1] + scenes.activity[1].x + bridge.channels[1].x;
@@ -101,14 +100,11 @@ std::array<F, 2> Engine::posture() const {
     }
     squash += w * s;
     F t = motion.time;
-    if (!reduced) {
-      if (m == slime::kExcited) squash += w * q(.012) * sin(t * q(4.3));
-      if (m == slime::kScared || m == slime::kFrightened)
-        lean +=
-            w * (m == slime::kScared ? q(.014) : q(.026)) * sin(t * 13) * (q(.35) + q(.65) * square(sin(t * q(.75))));
-      if (m == slime::kCrying) squash += w * q(.01) * sin(t * q(3.1));
-      if (m == slime::kIrritated) lean += w * q(.008) * sin(t * q(6.1)) * square(square(max(0, sin(t * q(.7)))));
-    }
+    if (m == slime::kExcited) squash += w * q(.012) * sin(t * q(4.3));
+    if (m == slime::kScared || m == slime::kFrightened)
+      lean += w * (m == slime::kScared ? q(.014) : q(.026)) * sin(t * 13) * (q(.35) + q(.65) * square(sin(t * q(.75))));
+    if (m == slime::kCrying) squash += w * q(.01) * sin(t * q(3.1));
+    if (m == slime::kIrritated) lean += w * q(.008) * sin(t * q(6.1)) * square(square(max(0, sin(t * q(.7)))));
   }
   return {lean * (1 - scenes.quietMix.x), squash * (1 - scenes.quietMix.x)};
 }
@@ -121,7 +117,7 @@ bool Engine::admits(const ContactEvent& c, SceneState state, bool quiet, bool pr
   if (comedy(c.kind)) return soundRandom.unit() < slime::kRoutineProbability;
   if (quiet) return false;
   if (protect && reveals(c.kind)) {
-    // The reference's "requestId:kind", as its key.
+    // The request and the contact's kind, as its key.
     const uint64_t identity = identityKey(":" + std::to_string(c.kind), identityKey(c.requestId));
     if (revealed_.find([&](uint64_t k) { return k == identity; })) return false;
     revealed_.add(identity);
@@ -148,7 +144,7 @@ void Engine::consumeCues() {
   static const char* recipes[] = {"keyboard", "knock",  "squish", "ding",   "complete", "failed", nullptr, "squish",
                                   "squish",   "squish", "failed", "squish", "sneeze",   "breath", "bounce"};
   static_assert(std::size(recipes) == slime::kContactKinds, "a recipe, or none, for every contact kind");
-  // The scene's contacts, then a gag's (cues.mjs reads them in this order).
+  // The scene's contacts, then a gag's.
   for (const auto* list : {&scenes.contacts, &acting.contacts})
     for (const auto& c : *list) {
       const char* recipe = recipes[c.kind];

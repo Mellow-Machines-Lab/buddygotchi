@@ -1,7 +1,8 @@
-// Sample the reference dome and its studio material as a lit mesh, not frames.
-// The board projects/deforms these vertices and rasterizes them every frame.
-// The material lookup is sampled from equations, not a reference screenshot.
-import {eye} from '../../design/slime-blob/render/camera.mjs';
+// Samples the slime's dome and its studio material as a lit mesh, not frames.
+// The board projects and deforms these vertices and rasterizes them every
+// frame. The material lookup is sampled from equations, not a screenshot.
+// Where the camera looks from, as the board's projection has it.
+const eye=[0,1.45,3.3];
 const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]);
 const mul=(a,b)=>a.map(v=>v*b),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const unit=a=>mul(a,1/Math.hypot(...a));

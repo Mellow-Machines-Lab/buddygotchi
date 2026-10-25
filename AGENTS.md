@@ -327,7 +327,7 @@ unpushed local `main`.
 | `internal/app/BoopDevKit/Eval/`, `internal/app/Evals/`, `internal/tools/boopctl_lib/workday.py` | `internal/EVALS.md` |
 | `Package.swift`, a package's `Package.swift`, what goes in `internal/` | `internal/README.md`, `documentation/architecture.html`, this file |
 | `characters/studio/`, a pack's `studio` entry or `studio/` adapter | `characters/studio/README.md`, `characters/CHARACTER.md` §12 |
-| `characters/boop/design/slime-blob/engine/`, `render/`, its preview and trace tools | The slime package's `CONTINUITY.md` and `VALIDATION.md` |
+| The gel slime: its design (`characters/boop/design/slime-blob/`), `characters/boop/tools/slimegen/`, its engine (`characters/boop/firmware/src/render/gel/`) or `test_gel` | The slime package's `CONTINUITY.md` and `VALIDATION.md`, slimegen's `README.md` |
 
 **Rules that keep them from drifting:**
 

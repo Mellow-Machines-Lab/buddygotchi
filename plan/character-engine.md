@@ -20,13 +20,12 @@ Pixel's designs, into and out of the needs-you screen too, dissolves over
 the rig's 200 ms with no blink, one mid-way through another from the
 picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
-gets no other blink. The gel stays on its own engine, the JavaScript
-reference and the C++ port matched frame for frame, falling asleep over
-480 ms and waking over 180; both faces share the anchors and the lane's
-fade. The Mac now shows the port itself, the board's firmware as
-WebAssembly (The Mac's slime on the board's engine, below), so the
-reference ships nowhere; the gel's move onto the mixer follows phase 2
-there, retiring the reference. The
+gets no other blink. The gel stays on its own engine, the C++ one, its
+only one since phase 2 retired the JavaScript reference (The Mac's slime
+on the board's engine, below), falling asleep over 480 ms and waking over
+180; the Mac shows it as the board's firmware in WebAssembly, and both
+faces share the anchors and the lane's fade. The gel's move onto the
+mixer is next. The
 checkpoint notes below are history, each as it landed: where a later one
 changed an earlier (checkpoint 1's 180 ms to sleep, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
@@ -615,40 +614,85 @@ so wasm32 and arm64 agree).
   frames a second, and 25 now. It still draws the board's whole 502 ×
   410 screen: at a tile's size the lane wouldn't fit (plan/TODO.md, Later).
 
-**Phase 2, retiring the JavaScript engine** (`design/slime-blob/engine/`,
-`render/`, `preview/`): nothing ships it now. What still reads it:
+**Phase 2, retiring the JavaScript engine.** As the list had it, each
+step was what still read the reference: slimegen's sources, the continuity
+checks, the traces and check-port, the Studio's gel card, and the twin's
+docs.
 
-1. **slimegen's sources.** `catalog.mjs` and `recipes.mjs` build
-   `slime.h` from the engine's own scene recipes, face targets, profiles,
-   gestures and occasions (`engine/scenes/*.mjs`, `engine/face.mjs`);
-   `art.mjs` paints each art through `render/face-painter.mjs` into
-   `slime_art.h`; `mesh.mjs` samples `render/camera.mjs`'s dome into
-   `slime_mesh.h`. Either make the generated headers' inputs data
-   (`expressions.json` and new recipe and art JSON, or the C++ itself as
-   the source, with slimegen kept only for what's truly derived), or
-   keep those modules as the generator's own and delete the rest.
-2. **The continuity checks** that run on the reference: `tools/check.cjs`,
-   `check-engine.mjs`, `check-bridges.mjs`, `check-scenes.mjs`,
-   `check-cues.mjs`, `check-motion.cjs` (the V1 motion contract's source
-   hashes, `contracts/motion-v1.json`) and `smooth.mjs`'s per-frame
-   bounds. Move what they pin onto the port, in `test_gel`
-   (characters/boop/tests/firmware/), which already checks the face never
-   fades and the arts cross over, or onto the board's frames
-   (`boopctl sim`, the fluidity measure), then delete them.
-3. **The traces** (`traces/*.json`, recorded from the reference by
-   `tools/trace.mjs` from `scripts/*.jsonl`) and **check-port.py**,
-   which holds the port to them: record the traces from the port
-   (`characters/boop/tools/gel-trace/`) as its own goldens and keep
-   check-port as their regression check, or retire both for
-   `test_gel` and the gel goldens.
-4. **The Studio's "Gel slime" card** (`characters/boop/studio/adapter.js`
-   and `character.json`'s `studio` entry, on `preview/slime.bundle.js`,
-   which `tools/build.cjs` bundles with `bundle.cjs`): move its review
-   sets and sound sketches onto the board's card the Studio already has
-   (the WebAssembly simulator), then drop the bundle and the build.
-5. Then the twin's docs: this package's README, CONTINUITY.md and
-   VALIDATION.md as the port's, and checkpoint 1's two rules for "the
-   same shape" become one.
+### Phase 2, as built (2026-10-24)
+
+The slime has one engine, the C++ port: the JavaScript reference
+(`design/slime-blob/engine/`, `render/`, `preview/`, `tools/`,
+`scripts/`, `traces/`, `contracts/`, and the manifests `coverage.json`,
+`transitions.json` and `state-plan.json` it earned) is gone, and so are
+`gel-trace` and `check-port.py`. What each step chose, and why:
+
+- **slimegen keeps the modules it needs as its own code** (the third of
+  the three ways). `scenes.mjs` is every state's recipes, the gestures',
+  notices' and occasions' and each expression's traits; `face.mjs` each
+  face's controls; `painter.mjs` each face's art at rest; `mesh.mjs` the
+  dome, with the camera's eye inlined. Each is the one source of what it
+  bakes, in the form it's authored in: a desk's rhythm as a function of
+  mood and take, a face as the Canvas calls that draw it, the dome as
+  equations. Data (the first way) would have been the baked tables again
+  as JSON, 42 profiles × 31 rows × three takes of numbers that are today
+  a few lines of rule each, and an agent editing them would edit the
+  output; the C++ headers as source (the second) would mean editing 1.7 MB
+  of tables and losing the painter and the dome's equations they're
+  sampled from. Trimmed to what generation runs (one still art, no jitter,
+  no runtime), the modules are about 30 KB of the reference's 148, and the
+  headers came out byte for byte as before (`slimegen --check`, and `cmp`
+  against today's). Only then did `slime.h` lose the recipes' `intent`
+  strings, which only the trace build read, and `kContactNames`.
+  slimegen also checks the design's data before baking it (`check.mjs`:
+  the graph's edges and connectivity, the ladders, every mood's
+  expression, gestures, gags and sound profile, the occasions, the sound
+  sketches), and writes `MOODS.md`, which the reference's builder did.
+- **The continuity checks moved onto the port, in `test_gel`.** Four new
+  files (`test_cells.cpp`, `test_bridges.cpp`, `test_motion.cpp`,
+  `test_requests.cpp`) and `frames.h`, which holds every frame a test
+  drives to the bounds `smooth.mjs` held the reference's to, the jolt rule
+  included. The motion contract's source hashes became its numbers, in
+  `test_the_motion_v1_numbers`: changing the motion means editing that
+  test. The engine lost what nothing turns on: reduced motion, pause and
+  hidden (no caller sets them on the board or the Mac), `Motion::weights`,
+  the poke's contact point, the bridge's phase and the trace-only fields;
+  no picture changed. The slime's VALIDATION.md names what checks each
+  rule now. The few dropped: the manifests' and the
+  bundle's freshness, the WebGL shader's hash, the JavaScript module
+  boundaries (by construction in C++), the design's metadata no code
+  reads (its counts, flags, fallbacks and pacing drafts), the alert's
+  confirmation pulse (the board never drew one), an out-of-range forced
+  bridge variant (only tests force one), and reduced motion's rules with
+  its code.
+- **The traces retired with check-port**, rather than being recorded from
+  the port as its own goldens. Recorded from the port, check-port would
+  have compared the engine with itself, 54 MB of JSON every change to the
+  engine re-records, while `test_gel` pins the rules the traces only
+  implied and the gel goldens the pictures; what the traces alone held
+  (frame-by-frame bounds over the scripts) runs over far more frames now.
+  The studio server's capture rules, which the reference's `check-server`
+  pinned, are in the studio's own tests.
+- **The Studio's gel card is the board's.** A pack may add to its own
+  board's card (`"board": "gel"`, CHARACTER.md §12): Boop's carries the
+  families' colours, the slime's icon, and in the drawer the two review
+  sets (`studio/review-sets.json`, recorded from the board on its frozen
+  clock and played into silent WebM clips the server may save) and the
+  sound sketches (`sfx.js`, the sounds the board's effects are cut from).
+  The reference's event scripts didn't come: they were its own API, not
+  the board's wire. Boop's pack now opens on its gel board.
+- **The docs are the port's**: the package's README, CONTINUITY.md,
+  VALIDATION.md, STATES.md and sound/README.md name the C++ that keeps
+  each rule and the test that pins it. Checkpoint 1's two rules for "the
+  same shape" are one: slimegen's group shape ids.
+- **Found, not changed:** at a retarget, nine edges (shy→affectionate,
+  sad→wounded, crying→wounded, wounded→sad, wounded→crying,
+  frightened→wounded, frightened→sad, frightened→crying,
+  exhausted→overwhelmed) draw a different picture for the one frame at
+  the change, 32 to 630 pixels in the mouth and tears: an art coming in
+  at weight zero that shares a group's shape moves that group to its own
+  turn in the draw order. The layers are unchanged, as the rule says;
+  fixing the order would change frames.
 
 ## Risks
 
@@ -660,4 +704,5 @@ so wasm32 and arm64 agree).
   (plan/TODO.md). Cross-fades draw two faces for ~200 ms; the rig adds a
   little per frame. Measure on the board at each checkpoint (`boopctl
   ping`'s `draw_us`).
-- **The slime's two engines** must stay matched until checkpoint 6.
+- **The slime's two engines** stayed matched until phase 2 retired the
+  JavaScript one; there's one now.

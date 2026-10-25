@@ -1,5 +1,4 @@
-// Fixed-point port of the locked V1 motion blocks and semantic face interpolator.
-// Source locks remain in the JS reference; equivalence is checked by traces.
+// The body's motion, on the accepted V1 springs, and the semantic face.
 #pragma once
 #include <array>
 #include "render/gel/fixed.h"
@@ -7,26 +6,24 @@
 namespace render::gel {
 struct Motion {
   Spring modes[4];  // lean, squash, ripple, dent
-  F weights[slime::kProfiles]{};
   int emotion = slime::kCalm;
   T time, nextBlink = T::literal(2.8), blinkAt = -10, nextLook = T::literal(4.5);
-  F contactX, contactY = q(.2), gaze, gazeTarget;
-  Motion() { weights[slime::kCalm] = 1; }
-  void advance(T dt, T now, Random& random, bool reduced);
-  void impulse(bool shake, bool reduced, F x = 0, F y = q(.2));
+  F gaze, gazeTarget;
+  void advance(T dt, T now, Random& random);
+  // A poke (at x across the dome: it leans away from where it's poked) or a shake.
+  void impulse(bool shake, F x = 0);
   F blink() const;
-  std::array<F, 4> pose(bool reduced) const;
+  std::array<F, 4> pose() const;
 };
-// face.mjs: each control is a critically damped spring that keeps its velocity
+// Each control is a critically damped spring that keeps its velocity
 // across retargets. The arts drawn are layers, oldest first and the current
-// one last, which art.cpp morphs or cross-fades by their weights
-// (CONTINUITY.md, Directed edge bridges).
+// one last, which art.cpp morphs or cross-fades by their weights.
 struct SemanticFace {
   // The springs run at kScale times the controls, so Q24 resolves them to
   // 2^-32: a size ratio over the smallest authored dimension (0.002) then
-  // stays within the port tolerance. velocity is at the same scale.
+  // stays well inside a ten-thousandth. velocity is at the same scale.
   static constexpr int kScale = 256;
-  // At most this many arts at once (face.mjs faceRender.layers).
+  // At most this many arts at once.
   static constexpr int kMaxLayers = 4;
   // The face's own window and its controls' spring (face.mjs
   // faceTransition), and falling asleep's (sleepTransition): the lids droop
@@ -56,7 +53,7 @@ struct SemanticFace {
   void retarget(T ms = kFaceMs);
   void setMood(int id, T ms = kFaceMs);
   void setSleeping(bool value);
-  void advance(T dt, bool reduced);
+  void advance(T dt);
 
  private:
   void weigh(F s);
@@ -66,6 +63,6 @@ struct SemanticFace {
 // How a layer's art is drawn, from its ratios: the sleeping face is the
 // tired art squashed to its own size.
 std::array<F, 3> drawnScale(const SemanticFace& face, const SemanticFace::Layer& layer);
-// face.mjs softRatio: slope one at one, saturating inside (0.75, 4/3).
+// Slope one at one, saturating inside (0.75, 4/3).
 F softRatio(F value);
 }  // namespace render::gel

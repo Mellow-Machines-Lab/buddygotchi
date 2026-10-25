@@ -3,7 +3,7 @@
   "status": "review-candidate",
   "moodGraph": "emotion-graph.json",
   "material": "Accepted simple blue translucent glowing gel; unchanged",
-  "baseMotion": "contracts/motion-v1.json",
+  "baseMotion": "The accepted V1 springs, in the gel engine's render/gel/motion.cpp",
   "boundaries": [
     "All 42 canonical mood IDs retained; no graph edge or state schema changes.",
     "Two named face alternates are preview expression IDs, not new moods.",

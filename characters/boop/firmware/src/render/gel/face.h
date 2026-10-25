@@ -1,5 +1,4 @@
-// The gel face: the slime engine (render/gel/engine.h), the
-// port of characters/boop/design/slime-blob/engine/, painted natively. This
+// The gel face: the slime engine (render/gel/engine.h), painted natively. This
 // adapter turns what Behaviour follows into the engine's facts, mood and
 // one-shots; Behaviour keeps timing every moment (the engine holds each
 // one until told), and the engine's contact cues become sounds.
@@ -55,7 +54,7 @@ class GelFace final : public Face {
  private:
   // A cue waits at most this long for Device to take it (one tick is 16 ms).
   static constexpr uint32_t kCueWaitMs = 150;
-  // The engine's seed after a reset: the reference traces' (check-port.py).
+  // The engine's seed after a reset, so a reset board replays the same.
   static constexpr uint32_t kSeed = 53;
   // The dome on the canvas (finger): canvas pixels a body unit, its middle.
   static constexpr int kPxPerUnit = 85, kMidX = 160, kMidY = 129;

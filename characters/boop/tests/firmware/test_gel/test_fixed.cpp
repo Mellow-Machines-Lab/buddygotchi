@@ -16,7 +16,7 @@ void test_fixed_math_and_motion() {
   }
   Random random{53};
   Motion motion;
-  motion.impulse(false, false, q(.4), q(.2));
+  motion.impulse(false, q(.4));
   double x = 0, v = -2.6;
   for (int frame = 1; frame <= 180; ++frame) {
     double left = .016;
@@ -26,7 +26,7 @@ void test_fixed_math_and_motion() {
       x += v * h;
       left -= h;
     }
-    motion.advance(q(.016), F::ratio(frame * 16, 1000), random, false);
+    motion.advance(q(.016), F::ratio(frame * 16, 1000), random);
     TEST_ASSERT_TRUE(std::abs(x - number(motion.modes[0].x)) <= .0002);
     TEST_ASSERT_TRUE(std::abs(v - number(motion.modes[0].v)) <= .0005);
   }
@@ -48,7 +48,7 @@ void test_a_divisor_divides_exactly() {
     }
   }
 }
-// Integer software timing retains JS double boundary decisions.
+// Integer software timing decides boundaries as binary64 doubles do.
 void test_software_clock_matches_binary64() {
   T time = 0;
   double expected = 0;

@@ -59,7 +59,7 @@ const Pairing& pairing(const SemanticFace& f) {
   return p;
 }
 }  // namespace
-// The engine's face layers (CONTINUITY.md, Directed edge bridges): settled,
+// The engine's face layers: settled,
 // one art as authored. While arts cross over, a group (an eye, the mouth,
 // the tears, the cheeks) that has one shape in several layers is drawn once,
 // their points, widths and opacities averaged by weight, at their summed

@@ -1,4 +1,5 @@
-// Deterministic integer engine shared by the board and native trace checks.
+// The gel slime's engine: deterministic and integer, the same on the board,
+// the simulator and the Mac's mirror of the board.
 #pragma once
 #include "render/gel/scenes.h"
 namespace render::gel {
@@ -28,10 +29,10 @@ class Engine {
   Router router;
   Scenes scenes;
   int emotion = slime::kCalm, expression = slime::kCalm;
-  bool reduced = false, paused = false, hidden = false, grab = false;
+  bool grab = false;
   F point[2]{0, q(.2)}, target[3]{};
   Spring pull[3];
-  // compose.mjs: the mood posture's weights, critically damped outside the
+  // The mood posture's weights, critically damped outside the
   // locked blocks (Motion's weights still time those).
   Spring postureWeights[slime::kProfiles];
   std::vector<SoundCue> cues;
@@ -58,7 +59,7 @@ class Engine {
     bool ok = router.oneShot(value, timeMs());
     sync();
     if (ok && (value.anim == SceneState::kPoked || value.anim == SceneState::kTapSpam))
-      motion.impulse(value.anim == SceneState::kTapSpam, reduced);
+      motion.impulse(value.anim == SceneState::kTapSpam);
     return ok;
   }
   void linkTimedOut(bool value) {
@@ -73,13 +74,13 @@ class Engine {
     router.clearTransient();
     sync();
   }
-  // A finger's pull (actor.mjs grabConstants): held, it follows the finger;
+  // A finger's pull: held, it follows the finger;
   // let go, a softer spring settles it. Its target gives less and less past
   // kGrabKnee and never reaches kGrabReach; the body draws it as its lean
   // and squash (pose), and a finger let go while moving flings it on.
   // Each spring's frequency (its stiffness's root) and damping.
   static constexpr int kGrabHeld[2] = {16, 20}, kGrabReleased[2] = {10, 13};
-  static constexpr F kGrabKnee = q(.32), kGrabReach = q(.64), kGrabLimit = q(.72), kGrabReduced = q(.35);
+  static constexpr F kGrabKnee = q(.32), kGrabReach = q(.64), kGrabLimit = q(.72);
   static constexpr F kGrabLean = 2, kGrabSquash = 1, kGrabFling = q(.3);
   static constexpr int kGrabVelocity = 6;
   void dragStart(F x, F y) {
@@ -93,7 +94,7 @@ class Engine {
   // The finger's displacement since it went down, in body units (y up).
   void dragMove(F x, F y, F z) {
     if (!grab) return;
-    F len = sqrt(square(x) + square(y) + square(z)), gain = reduced ? kGrabReduced : F(1);
+    F len = sqrt(square(x) + square(y) + square(z)), gain = 1;
     if (len > kGrabKnee) {
       const F past = len - kGrabKnee, room = kGrabReach - kGrabKnee;
       gain = gain * (kGrabKnee + past * room / (past + room)) / len;
@@ -105,7 +106,7 @@ class Engine {
   // Let go, moving at (vx, vy, vz) body units a second; at rest, none.
   void dragEnd(F vx = 0, F vy = 0, F vz = 0) {
     if (!grab) return;
-    const F velocity[3] = {vx, vy, vz}, gain = kGrabFling * (reduced ? kGrabReduced : F(1));
+    const F velocity[3] = {vx, vy, vz}, gain = kGrabFling;
     for (int i = 0; i < 3; ++i) {
       const F add = clamp(velocity[i] * gain, -kGrabVelocity, kGrabVelocity);
       const bool outward = (add > F(0) && pull[i].x > F(0)) || (add < F(0) && pull[i].x < F(0));

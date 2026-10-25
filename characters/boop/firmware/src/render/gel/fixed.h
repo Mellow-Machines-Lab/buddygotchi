@@ -1,4 +1,4 @@
-// Signed Q24 arithmetic for the reference engine port. Runtime calculations
+// Signed Q24 arithmetic for the gel engine. Runtime calculations
 // use integers on both native and ESP32; decimal constants fold at compile time.
 #pragma once
 #include <algorithm>
@@ -137,7 +137,7 @@ inline F smooth(F x) {
   x = clamp(x, 0, 1);
   return x * x * (F(3) - x * 2);
 }
-// scenes/ramp.mjs hermite: the cubic from (from, tangent) to `to` at s, its
+// A Hermite: the cubic from (from, tangent) to `to` at s, its
 // value held within [0, 1] and its slope per unit of s, flat where it's held
 // (so a retarget never brings back what it held at zero); at its end,
 // exactly to.

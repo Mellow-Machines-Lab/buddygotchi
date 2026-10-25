@@ -1,7 +1,7 @@
 # Slime mood inventory and directed traversal
 
-Generated from [emotion-graph.json](emotion-graph.json) and [expressions.json](expressions.json).
-Edit those inputs and run tools/build.cjs; do not edit this export by hand.
+Generated from [emotion-graph.json](emotion-graph.json) and [expressions.json](expressions.json)
+by `node characters/boop/tools/slimegen/slimegen.mjs`; edit those, not this.
 
 Ordinary neighbors still require context/pacing. Dramatic neighbors require fresh
 strong edge-specific evidence. Staying is implicit at every node. Families and

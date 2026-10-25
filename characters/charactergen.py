@@ -707,7 +707,10 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
         if None in names or len(names) != len(set(names)):
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
+        faces = set(character.get("faces", {}).values())
         for entry in entries:
+            if entry.get("board") and (entry["board"] not in faces or entry.get("id") != f"board-{entry['board']}"):
+                problems.append(f"{pack.name}: studio entry {entry.get('id')} is for a board, so its id is board-<face> for one of its faces ({', '.join(sorted(faces))})")
             absent = [n for n in files(entry) + [entry.get("wears")] if n and not (pack / n).is_file()]
             problems += [f"{pack.name}: studio file {name} doesn't exist" for name in absent]
             if absent:
@@ -765,10 +768,17 @@ def shared_previews(pack: Path, character: dict) -> list[tuple[Path, dict]]:
 
 def boards(character: dict) -> list[dict]:
     """The studio's own preview of each face the pack's boards have (§9):
-    the board's firmware itself, built to WebAssembly (simulator/README.md)."""
+    the board's firmware itself, built to WebAssembly (simulator/README.md).
+    A face's board the pack gives an entry of its own (`board`) is that
+    entry's, which the page shows in its place."""
     faces = list(dict.fromkeys(character.get("faces", {}).values()))
-    return [{"id": f"board-{face}", "label": f"{face.title()} on the board", "about": "its firmware, in WebAssembly",
-             "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}} for face in faces]
+    own = {e.get("board") for e in previews(character)}
+    return [board(face) for face in faces if face not in own]
+
+
+def board(face: str) -> dict:
+    return {"id": f"board-{face}", "label": f"{face.title()} on the board", "about": "its firmware, in WebAssembly",
+            "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}}
 
 
 def references_data(pack: Path, here) -> list[dict]:
@@ -803,7 +813,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     for pack in packs:
         character = load(pack)
         entries = [(pack, e) for e in previews(character)] + shared_previews(pack, character)
-        for home, entry in entries:
+        for i, (home, entry) in enumerate(entries):
             borrows = wears(home, entry)
             for key in ("scripts", "styles"):
                 entry[key] = [page(home / name) for name in entry.get(key, [])]
@@ -811,6 +821,8 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
                 entry["icon"] = page(home / entry["icon"])
             entry["wears"] = dict(sorted(borrows.items()))
             entry.pop("captures", None)
+            if entry.get("board"):  # its board's card, with what the pack adds
+                entries[i] = (home, {**board(entry["board"]), **entry})
         queue, notes, _ = reads.review(pack)
         data["packs"][pack.name] = {
             "name": character["name"],

@@ -5,7 +5,22 @@ Updated 2026-10-24.
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
 
-The slime design's `emotion-graph.json` is the source for Boop's moods
+It reads the slime's design (`characters/boop/design/slime-blob/`:
+`emotion-graph.json`, `expressions.json` and `sound/`), checks it
+(`check.mjs`: what fails is in the design's
+[VALIDATION.md](../../design/slime-blob/VALIDATION.md)), and writes the gel
+engine's tables and the pack's moods. Its own modules hold what the design
+is as code, the one source of each:
+
+| Module | What it is | What it writes |
+| --- | --- | --- |
+| `scenes.mjs` | Every state's scene recipes, by mood and take (their contacts, timed in ms, leans and labels), the gestures', notices' and occasions' recipes and gags, and each expression's traits | `slime.h`'s recipes, gags and occasions (`recipes.mjs`, `catalog.mjs`) |
+| `face.mjs` | Each expression's face as the board's controls: where its eyes and mouth sit, and the sizes its art draws them at | `slime.h`'s profiles |
+| `painter.mjs` | Each expression's art at rest, as Canvas calls | `slime_art.h`: vector paths, and each art's groups' shapes (`art.mjs`) |
+| `mesh.mjs` | The dome and its studio material, from equations | `slime_mesh.h`: a mesh and a dense material lookup |
+| `moods.mjs` | The moods to read | the design's `MOODS.md` |
+
+The design's `emotion-graph.json` is the source for Boop's moods
 in its character pack, `characters/boop/character.json`
 ([CHARACTER.md](../../../CHARACTER.md) §5): the `moods` key, each mood's
 id, meaning and family, in the design's order. It keeps every other key,
@@ -14,31 +29,34 @@ mood's `moves` are the pack's own, and the design's edges seed only a
 mood the pack doesn't have yet. The design's pixel `fallback`s, `brief`
 markers and `hostPolicy` aren't written: every pack has every mood, and
 pacing is the steering's.
-The Mac's popover and onboarding show the board's own firmware, not this
-engine: the pack's `mac/mirror/` is the firmware built to WebAssembly
-(`firmware/tools/mirror.sh`, [CHARACTER.md](../../../CHARACTER.md) §9),
-so a change here that changes what the board draws builds it again.
-`check-headless.py --output FILE` exercises the real scripted
-app against an isolated synthetic gel USB peer. Add `--native` to connect it
-to the real gel firmware simulator and check hello, mood/attention updates
-and device completion events. Both modes use temporary HOME/state directories.
+
+`slime.h` holds the expression profiles, the idle gags and which
+expressions play them, the scene recipes with each row's takes and the two
+rows' fourth takes, the gesture state's ten takes, each with a gag of its
+own and the face it borrows, the notice state's three takes' faces, the
+looks' occasions with their tags as `firmware/src/render/tags.h` numbers
+them, the mood graph's edges (the bridges the gel draws), and the sound
+effects, three takes of each sketch (`sound/sfx.js`) at 11,025 Hz.
+`slime_art.h` gives each art's groups (each eye, the mouth, the tears, the
+cheeks with the strain mark) a shape from their paths' point counts, fill
+or stroke and colour: two arts of one shape there morph, path by path and
+point by point, and others cross-fade. `slime_mesh.h` samples the dome's
+geometry and analytic studio lighting. None of these are animation frames:
+the board deforms and projects geometry on every draw.
+
+The Mac's popover and onboarding show the board's own firmware: the pack's
+`mac/mirror/` is the firmware built to WebAssembly
+(`firmware/tools/mirror.sh`, [CHARACTER.md](../../../CHARACTER.md) §9), so
+a change here that changes what the board draws builds it again, in the
+same commit.
+
+`check-headless.py --output FILE` exercises the real scripted app against
+an isolated synthetic gel USB peer. Add `--native` to connect it to the
+real gel firmware simulator and check hello, mood/attention updates and
+device completion events. Both modes use temporary HOME/state directories.
 See [verification](../../../../internal/VERIFICATION.md).
 
-The generator also writes `characters/boop/firmware/include/slime.h` (expression profiles,
-the idle gags and which expressions play them, scene recipes with each row's
-takes and the two rows' fourth takes, the gesture state's ten takes, each
-with a gag of its own and the face it borrows, the notice state's three
-takes' faces, the looks' occasions with
-their tags as `firmware/src/render/tags.h` numbers them, bridges and baked
-cue clips) and `slime_art.h` (authored vector
-face paths, and each art's groups' shapes: two arts of one shape there
-morph, path by path and point by point). `slime_mesh.h` samples the reference dome geometry and analytic
-studio lighting into a mesh and a dense material lookup. These are not animation
-frames: the board deforms and projects geometry on every draw.
-`check-port.py --output /tmp/boop-gel-port` builds the native
-trace adapter and compares every saved script/trace against the C++ engine;
-it needs `firmware/tools/pio.sh run -e native` first, for ArduinoJson and
-the staged pack's `moods.h`.
-After `firmware/tools/pio.sh run -e native`, `internal/tools/boopctl sim --face
-gel` checks native RGB565 screenshots against the gel goldens. These checks
-do not measure physical display throughput or speaker quality.
+After `firmware/tools/pio.sh run -e native`, `internal/tools/boopctl sim
+--face gel` checks native RGB565 screenshots against the gel goldens, and
+`make -C internal fw-test` runs `test_gel`, the engine's rules. These
+checks do not measure physical display throughput or speaker quality.

@@ -727,16 +727,23 @@ Pixel's:
   card.
 - `captures`: optional, a JSON file of `{"cases": [{"id": ...}]}`, the
   only clip names the studio's server will save for the pack.
+- `board`: optional, one of the pack's faces (§9): the entry is that
+  face's board's card, its id `board-<face>`, and adds to it, in its own
+  place among the entries. Its adapter, registered under that id, takes
+  the board's (`StudioBoard.adapter`) and adds to it; with none, the card
+  is the board's own.
 
-A pack also shows the previews of each share it uses (§6). So Boop's
-shows two: its own, `boop`, its gel slime, and Pixel's, `pixel`, which
-comes with the pixel face. And every pack gets, with no entry, the
-board's own preview of each face its boards have (`faces`, §9), its id
-`board-<face>`: the firmware itself, built to WebAssembly, which the
-studio's Transitions and References run on too (§16). `charactergen.py` writes the page's data
+A pack also shows the previews of each share it uses (§6). And every
+pack gets, with no entry, the board's own preview of each face its boards
+have (`faces`, §9), its id `board-<face>`: the firmware itself, built to
+WebAssembly, which the studio's Transitions and References run on too
+(§16). So Boop's shows three: its gel board (`board-gel`, the entry above
+adds its families, its icon, and the slime's review sets and sound
+sketches in its drawer), Pixel's `pixel`, which comes with the pixel face,
+and its pixel board. `charactergen.py` writes the page's data
 (`characters/studio/packs.js`) from the packs, and `--check` fails when
-a declared file is missing or a preview wears a mood the pack doesn't
-have.
+a declared file is missing, a preview wears a mood the pack doesn't
+have, or a board's entry isn't `board-<face>` for one of its faces.
 
 ## 13. Demos (optional)
 

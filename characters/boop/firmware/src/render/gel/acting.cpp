@@ -38,7 +38,6 @@ bool Acting::perform(T time, Random& random, int index) {
   start = time;
   cursor = contactCursor = 0;
   ++count;
-  if (gag(emotion, selected)) gagged = true;
   nextPerformance = time + gesture(emotion, selected).duration + 7 + random.unit() * 8;
   return true;
 }
@@ -57,27 +56,23 @@ void Acting::hold(int g, int generation, int iteration, T time) {
   start = time;
   cursor = contactCursor = 0;
   ++count;
-  gagged = true;
   nextPerformance = max(nextPerformance, time + slime::kGags[g].gesture.duration + 3);
 }
-void Acting::advance(T dt, T time, bool grab, bool reduced, Random& random) {
+void Acting::advance(T dt, T time, bool grab, Random& random) {
   contacts.clear();
   if (!suppressed && !grab && !holding && time >= nextPerformance) perform(time, random);
   F target[kChannels]{};
-  const F scale = reduced ? q(.18) : F(1);
   if (!suppressed && (performance >= 0 || playing >= 0) && expression == emotion) {
     const auto* g = current();
     const auto& p = g ? g->gesture : slime::kProfile[emotion].performances[performance];
     T age = time - start;
     while (cursor < p.count && age >= p.cues[cursor].at) {
       const auto& cue = p.cues[cursor++];
-      (cue.channel == kSlide ? slide : channels[cue.channel]).v += cue.velocity * scale;
+      (cue.channel == kSlide ? slide : channels[cue.channel]).v += cue.velocity;
     }
     if (g) {
-      // A gag's keys set its channels' targets; the lids aren't the body's,
-      // so reduced motion leaves them be.
-      for (int c = 0; c < kChannels; ++c)
-        if (F value = keyed(*g, c, age); value.raw) target[c] = c == kLids ? value : value * scale;
+      // A gag's keys set its channels' targets.
+      for (int c = 0; c < kChannels; ++c) target[c] = keyed(*g, c, age);
       // Its contacts are its sounds; they move nothing themselves.
       while (contactCursor < g->contactCount && age >= g->contacts[contactCursor].at) {
         const int index = contactCursor++;
@@ -114,7 +109,7 @@ T Bridge::retarget(int source, int target, T time, Random& random, int forced) {
             (b.face[2] - a.face[2]) * q(.01) + (b.face[4] - a.face[4]) * q(.005);
   direction = score > F(0) ? 1 : score < F(0) ? -1 : 0;
   amplitude = clamp(q(.8) + abs(score) * 4, q(.8), q(1.2));
-  // bridges.mjs amplitudeLimit: each channel's bound over the primitive's
+  // Each channel's bound over the primitive's
   // largest coefficient on it, so no target leaves its bound.
   constexpr F limits[] = {
       q(std::min({.06 / .009, .05 / .004, .04 / .003})),  // soft retarget
@@ -133,13 +128,12 @@ T Bridge::retarget(int source, int target, T time, Random& random, int forced) {
   active = true;
   elapsedMs = 0;
   durationMs = durations[category == 1 ? 1 : 0][variant];
-  startedAtMs = time;
   deferredMs = 0;
   expired = false;
   suppressed = quiet || attention;
   return faces[category == 1 ? 1 : 0][variant];
 }
-void Bridge::advance(T dt, bool reduced) {
+void Bridge::advance(T dt) {
   F target[3]{};
   if (active) {
     if (grab && elapsedMs < durationMs && !suppressed && !expired) {
@@ -176,16 +170,6 @@ void Bridge::advance(T dt, bool reduced) {
     }
   }
   constexpr F bounds[] = {q(.06), q(.05), q(.04)};
-  for (int i = 0; i < 3; ++i) integrate(channels[i], dt, target[i] * (reduced ? q(.18) : F(1)), 14, 12, bounds[i], 1);
-}
-const char* Bridge::phase() const {
-  F p = progress();
-  return !active      ? "idle"
-         : expired    ? "expired"
-         : suppressed ? "suppressed"
-         : deferred() ? "deferred"
-         : p >= F(1)  ? "settled"
-         : p < q(.35) ? "gather"
-                      : "release";
+  for (int i = 0; i < 3; ++i) integrate(channels[i], dt, target[i], 14, 12, bounds[i], 1);
 }
 }  // namespace render::gel

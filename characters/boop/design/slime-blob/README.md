@@ -1,11 +1,16 @@
-# VideoG Slime Blob — colleague handover
+# VideoG Slime Blob — the gel slime's design
 
-Updated 2026-10-24. Imported from `VideoG-Slime-Blob` and integrated on
-`main`: this engine is the reference the AMOLED's gel face ports, and
-what slimegen renders the board's face art from. The Mac's popover shows
-the port itself, the board's firmware as WebAssembly
-([CHARACTER.md](../../../CHARACTER.md) §9). This is a separate, code-rendered character series, not
-a replacement of the shipping pixel animation bank (the CYD keeps that).
+Updated 2026-10-24. Imported from `VideoG-Slime-Blob` on 2026-10-02, this
+is the design of Boop's gel slime: its moods, faces, acting, scenes and
+sounds as data. The slime has one engine, the C++ one the AMOLED runs
+(`characters/boop/firmware/src/render/gel/`), which the simulator and the
+Mac's mirror of the board run too ([CHARACTER.md](../../../CHARACTER.md)
+§9). [slimegen](../../tools/slimegen/README.md) bakes this design into the
+engine's tables. The JavaScript reference engine it was first written in,
+with its WebGL preview, traces and checks, retired once the engine was the
+C++ one alone; git keeps it. This is a separate, code-rendered character
+series, not a replacement of the shipping pixel animation bank (the CYD
+keeps that).
 
 ## Start here
 
@@ -24,116 +29,75 @@ not human-looking rage, accusation, coercion, guilt or tool misbehavior.
 Reference images inform the simple rounded facial language—not copied
 Rimuru/Pokémon accessories, exact character identity or licensed artwork.
 
-Review it in the [Character Studio](../../../studio/README.md) as **Gel slime**: open
-`characters/studio/index.html` directly in a modern browser. It uses local JS/CSS
-only, including the manual sound sketches. WebGL is
-preferred; a simpler Canvas fallback is included. No backend, model file,
-saved face image, video, recording, API key or LLM is needed to run it.
-
-From the repository root:
+Review it on the board: the [Character Studio](../../../studio/README.md)'s
+**Gel on the board** card is the firmware itself, every mood and state on
+its matrix, transitions measured frame by frame, and in its **Tools** the
+review sets (recorded from the board as silent clips) and the sound
+sketches. From the repository root:
 
 ```sh
-node characters/boop/design/slime-blob/tools/check.cjs
 node characters/studio/serve.cjs --port 4190
 ```
 
-Then open `http://127.0.0.1:4190/`. Stop the server with Ctrl-C. Rebuild
-derived catalogues after editing the JSON design inputs:
+Then open `http://127.0.0.1:4190/`. To save the review clips, start the
+server with `--capture-dir DIR` (an empty folder); it saves only the clips
+the pack's [review-sets.json](../../studio/review-sets.json) names, and
+never over a file. After editing this design, bake it and check it:
 
 ```sh
-node characters/boop/design/slime-blob/tools/build.cjs
+node characters/boop/tools/slimegen/slimegen.mjs
+make -C internal fw-test
+internal/tools/boopctl sim --face gel
 ```
 
-If browser downloads of the recorded clips are unavailable, opt into local
-saving when starting the server (choose an empty output folder):
-
-```sh
-node characters/studio/serve.cjs --port 4190 --capture-dir /tmp/slime-review-clips
-```
-
-After **Record review set** (in the studio's **Tools**) finishes, **Save review clips locally** writes
-the reviewed set there. The server accepts only the named review clips,
-requires its local page's request token and never overwrites existing files.
-Without `--capture-dir`, it remains a read-only static server.
-
-The builder is a deterministic mechanical export, not AI generation. Node
-18+ is sufficient. Browser QA is optional; instructions and actual checks
-are in [VALIDATION.md](VALIDATION.md). No command here launches Boop,
-installs agent hooks, accesses Bluetooth/Keychain, calls Jev/ElevenLabs or
-consumes credits.
+None of these launches Boop, installs agent hooks, touches Bluetooth or
+the Keychain, or calls Jev, ElevenLabs or anything paid. What checks what is
+in [VALIDATION.md](VALIDATION.md).
 
 ## What exists, and what you must still build
 
 | Component | Included now | Remaining work |
 | --- | --- | --- |
-| Body/material | Procedural gel dome, blue glow, black stage, WebGL + Canvas fallback | Art review, production renderer/board budget |
-| Baseline motion | Accepted V1 springs and timing, source-hash protected | Ports require equivalence tests, not just matching names |
-| Faces | V3 candidate faces for every canonical mood, plus two face alternates | Owner review of cuteness/readability at target size |
-| Acting | Three authored gesture recipes per expression; recipes share primitives. Idle comedy: a yawn, a doze and a sneeze for every mood, a long yawn for the low moods, zoomies for excited | Tune every recipe in motion, layer activity choreography; owner review of the comedy on the board |
-| Drag | Bounded local surface pull, face follows body, release wobble | Host-boundary termination and real touchscreen QA |
-| Mood topology | Complete design graph and 295 tested directed bridges, three variants each | Host eligibility/pacing, Jev choices, production enum migration |
-| Activity/state | All 25 routed scenes, persistent desk/helpers/cards, full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures and the notice's three takes; occasions for idle, typing and sleep (the part of the day, holidays, a party, busy and frantic work, long idle, work and sleep) | Physical board measurements/review |
-| Sounds | Contact-synchronized scheduler, sparse voice-first browser player and procedural sketch library, a sneeze and a snore's breath among them | Speaker review and physical audio latency; the snore's level |
+| Body/material | The gel dome, sampled with its blue glow and studio material into a mesh the board deforms and projects every frame (slimegen's `mesh.mjs`) | Art review on the panel |
+| Baseline motion | Accepted V1 springs and timing, their numbers held by `test_gel` | Any change is a named motion revision |
+| Faces | V3 candidate faces for every canonical mood, plus two face alternates (slimegen's `painter.mjs`, baked as vector paths) | Owner review of cuteness/readability at target size |
+| Acting | Three authored gesture recipes per expression; idle comedy: a yawn, a doze and a sneeze for every mood, a long yawn for the low moods, zoomies for excited | Owner review of the comedy on the board |
+| Drag | Bounded local surface pull, face follows body, release wobble | Real touchscreen QA |
+| Mood topology | Complete design graph and 295 directed bridges, three variants each | Host eligibility/pacing, Jev choices |
+| Activity/state | All 25 states in nine scene families, persistent desk/helpers/cards, the full mood matrix and factual contexts/outcomes; asleep's snore, a success's hiccups, proud's gift; a gag and a borrowed face for each of the board's ten gestures and the notice's three takes; occasions for idle, typing and sleep | Physical board measurements/review |
+| Sounds | Contact-synchronized cues, sparse and voice-first, cut from procedural sketches (a sneeze and a snore's breath among them) | Speaker review and physical audio latency; the snore's level |
 
-**Coverage is earned by execution.** The preview has all scene families, an
-event-script player and local clip recording. Its direct mood selector
-bypasses graph traversal; pokes preserve mood. Full-matrix tests exercise
-every active cell and all its variations (idle's comedy and a success's
-hiccups included), each start context and completion
-outcome, plus the explicit quiet aliases. The owner approved the initial
-24-clip representative set before expansion. All directed bridges are exercised
-from mid-gesture, with rest, drag and alert interruption checks. Production
-graph gating remains planned. Contact-synchronized sound is implemented with
-sketch timbres and an opt-in browser player.
+**Coverage is earned by execution.** `test_gel` plays every canonical mood
+in every state and each of its takes, every directed edge in each of its
+variants, the interruptions, a finger, and every frame against the bounds
+of what may be drawn ([VALIDATION.md](VALIDATION.md)). The owner approved
+the initial 24-clip representative set before the matrix was filled out.
 
 ### Folder map
 
 - [emotion-graph.json](emotion-graph.json): canonical mood IDs, meanings,
-  edges, evidence and provisional pacing. Source of graph truth here.
-- [MOODS.md](MOODS.md): generated readable inventory, face descriptions,
-  body behavior and every outgoing ordinary/dramatic edge.
+  edges, evidence and provisional pacing. Source of graph truth here; slimegen
+  writes the pack's moods and the bridges' edges from it.
+- [MOODS.md](MOODS.md): the moods to read (faces, bodies, gestures, comedy,
+  edges), which slimegen writes from the graph and the expressions.
 - [expressions.json](expressions.json): V3 art profiles, reference mapping,
   three gesture recipes per expression, the comedy gags idle plays
   (`gags`, `idleGags`, an expression's own `gags`), the board's gestures
-  (`gestures`) and the looks' occasions (`occasions`). Edit this, then rebuild.
-- [state-plan.json](state-plan.json) and [STATES.md](STATES.md): activity
-  coverage, scene reuse, events and outcome/context distinctions.
-- [coverage.json](coverage.json): generated checklist for every mood×state;
-  quiet aliases are explicit, not missing rows.
-- [transitions.json](transitions.json): every graph edge with tested reusable
-  primitives and three implemented variants.
-- [CONTINUITY.md](CONTINUITY.md): persistent actor, layer ownership,
-  transition/variation authoring and renderer integration plan.
+  (`gestures`), the notice's takes (`notices`) and the looks' occasions
+  (`occasions`). Edit this, then run slimegen.
+- [STATES.md](STATES.md): the 25 states in their nine scene families, and
+  how the host's events reach them.
+- [CONTINUITY.md](CONTINUITY.md): the persistent actor, layer ownership,
+  the scenes, comedy, gestures, occasions, bridges and the rules of what is
+  drawn, each with the C++ that keeps it.
+- [VALIDATION.md](VALIDATION.md): what checks each rule.
 - [sound/sound-plan.json](sound/sound-plan.json), [sound/README.md](sound/README.md)
-  and [sound/sfx.js](sound/sfx.js): sound specification and executable sketches.
-- [contracts/motion-v1.json](contracts/motion-v1.json): accepted source
-  blocks; [tools/check-motion.cjs](tools/check-motion.cjs) protects them.
-- [engine/index.mjs](engine/index.mjs): pure seeded reference engine, with
-  an injected presentation clock and persistent springs.
-- [render/webgl.mjs](render/webgl.mjs), [render/canvas2d.mjs](render/canvas2d.mjs)
-and [render/face-painter.mjs](render/face-painter.mjs): draw engine controls.
-  [render/props.mjs](render/props.mjs) draws the shared desk, cards and host lane.
-- [preview/character.mjs](preview/character.mjs): the slime as a studio
-  character: engine, renderer, sound and pointer input behind
-  `window.SlimeStudio`, a local audition API, not a device protocol.
-  `tools/build.cjs` bundles these modules into `preview/slime.bundle.js`
-  without dependencies, so opening the studio with `file://` still works.
-- [tools/trace.mjs](tools/trace.mjs): headless fixed-step channel traces,
-  from [scripts](scripts/) into [traces](traces/).
-- [tools/check-scenes.mjs](tools/check-scenes.mjs): full-matrix scene
-  checks and the earned coverage manifest. **Record review set** in the
-  studio captures the verified cases as silent, local WebM clips. Download
-  them from the review gallery; no camera or desktop capture is involved.
-- [tools/check-bridges.mjs](tools/check-bridges.mjs): every directed edge and
-  variation, face continuity, context suppression and the 13-case edge review.
-  Choose **Directed mood bridges** in the studio's **Review set** selector to record
-  that set. The generated [preview/review-cases.json](preview/review-cases.json)
-  limits the server's capture filenames to these two verified sets.
-- [tools/smooth.mjs](tools/smooth.mjs): the per-frame bounds on what is
-  drawn (no jolt at an event, drawn sizes that follow their controls, arts
-  that cross over and props without pops) that the engine, bridge and scene
-  checks apply. That the face never fades is checked on the port's painter,
-  in `test_gel`.
+  and [sound/sfx.js](sound/sfx.js): the sound specification and the
+  procedural sketches slimegen cuts the board's effects from.
+- The scenes, faces and dome as slimegen bakes them are its own code:
+  `characters/boop/tools/slimegen/scenes.mjs` (every state's recipes),
+  `face.mjs` (each face's controls), `painter.mjs` (each face's art) and
+  `mesh.mjs` (the dome and its material).
 
 ## 1. Mood, state, personality and variation are different things
 
@@ -233,16 +197,15 @@ retained in its `source` block; no source validates our exact topology.
 ## 3. Use the state system, without multiplying scene designs
 
 Preserve every existing semantic state ID and its event meaning. Simplify
-**visual scenes**, not event coverage: the state plan groups the IDs into
+**visual scenes**, not event coverage: [STATES.md](STATES.md) groups the IDs into
 nine reusable scene families. Most work states share one persistent
 computer/keyboard, with small overlays and state-specific behavior.
 There is no need for hundreds of unrelated professions or props.
 
-Every mood/state cell has three variants in [coverage.json](coverage.json)
-(idle six, asleep four, a successful finish four: the comedy of
-[CONTINUITY.md](CONTINUITY.md); a gesture ten, one for each), with implementation status earned by full-matrix tests. All are implemented
-in the reference engine or justified quiet aliases; this does not establish
-production integration or port equivalence.
+Every mood/state cell has three takes (idle six or seven, asleep four, a
+successful finish four: the comedy of [CONTINUITY.md](CONTINUITY.md); a
+gesture ten, one for each), each played by `test_gel`. Every one is
+implemented on the board or a justified quiet alias.
 For normal active states, compose its mood face/acting profile with the
 shared state scene and bounded variations. For asleep/no_app, reuse quiet
 resting choreography and suppress dramatic acting/SFX while retaining the
@@ -260,14 +223,13 @@ tool failure, not automatically a failed whole task. `reply_ready` is a
 ready reply, not an accomplishment. `starting` has new_task/session/
 continuation/compacted variants with truthful card wording. See [STATES.md](STATES.md).
 
-The bottom 20% is reserved for host text/status in the **future device
-composition**. Use softly rounded, readable gel-compatible text bubbles.
-The reference scenes reserve this lane for host status. Do not
+The bottom 20% is the host's lane: the board's strip and bubble, softly
+rounded and readable. The scenes keep their props above it. Do not
 shrink an outer frame: there should be no decorative screen frame.
 
 ## 4. Continuous animation and variation
 
-See [CONTINUITY.md](CONTINUITY.md) for the implementation plan. The core
+See [CONTINUITY.md](CONTINUITY.md) for how it's built. The core
 rule: keep one actor alive, blend target controls, add bounded impulses
 to its current state, and let its residual wobble settle. Never recreate
 the mesh/clock/springs when mood, state or variation changes.
@@ -279,11 +241,10 @@ boundaries, with bounded timing/pose jitter. No LLM generates intermediate
 frames or decides each tap. Code owns physical continuity and small
 randomness; Jev only chooses a permissible emotional step.
 
-Every graph edge has an entry in [transitions.json](transitions.json).
-They reference implemented **composable bridges**, with execution earning each
-entry's status. Semantic face controls retarget from the current interpolated
+Every graph edge has three **composable bridges** (CONTINUITY.md,
+Directed edge bridges), each played by `test_gel`. Semantic face controls retarget from the current interpolated
 pose; body springs retain their motion through gather/release or recoil beats.
-The 13 edge clips are for the owner's visual spot-check. State
+The 13 edge clips (the Studio's review set) are for the owner's visual spot-check. State
 transitions use common enter/exit phases while preserving desk props.
 Attention must interrupt decorative actions promptly without destroying
 the body's motion state. Quiet states use minimal bridges.
@@ -293,8 +254,8 @@ the body's motion state. Quiet states use minimal bridges.
 Follow [sound/README.md](sound/README.md). Design wet-but-clean gel squish,
 elastic rebound, soft plop, touch and occasional crisp keyboard contact.
 Do not use background music, robotic mumble, a human sob/laugh recording
-or ElevenLabs in this phase. The audition sketches are synthesized from
-code and generated samples in memory, not stored audio assets.
+or ElevenLabs in this phase. The sketches are synthesized from code;
+slimegen cuts the board's effects from them.
 
 Synchronize a sound to a **visible physical cue** on the animation clock,
 not a parallel evenly spaced metronome. Select sparse contacts, vary
@@ -309,15 +270,15 @@ but speech selection/recording is outside this package.
 
 ## 6. Current repository integration — read before changing production
 
-This package is **nonshipping design code** under `characters/boop/design/`, in Boop's pack.
+This package is **nonshipping design data** under `characters/boop/design/`, in Boop's pack.
 CYD ships [boop-sound-bank-v4](../../../pixel/design/boop-sound-bank-v4/README.md); AMOLED ships the generated native gel catalogs.
 The host graph, the one mood graph Boop runs, with its pacing, is
 generated into Boop's `character.json` by
 `characters/boop/tools/slimegen`. The design's `fallback`s stay design
 data: the engine has none, and Pixel's art lends its 13 moods to the
-others by a temporary table of its own (`characters/pixel/tools/borrowed.json`). The native face port now passes complete
-reference-trace equivalence, and has been checked on the board for
-performance. Owner appearance/listening review remains separate.
+others by a temporary table of its own (`characters/pixel/tools/borrowed.json`).
+The gel engine has been checked on the board for performance. Owner
+appearance/listening review remains separate.
 
 The repository evolved after the earlier transcript examples:
 
@@ -334,10 +295,12 @@ The repository evolved after the earlier transcript examples:
   vocabulary over LinkKit. Existing `state.base` is asleep/idle/working;
   `act`, `attn` and `do` select the other visuals. The design's `state`
   parameter is not a new wire field.
-- `firmware/src/render/` and `firmware/src/app/` currently render the
-  selected board face. `facegen`/`sfxgen` build the pixel bank; `slimegen`
-  builds the gel catalogs and authored vector face paths. The native renderer
-  uses an integer ellipse approximation, with no WebGL on the board.
+- `firmware/src/render/` and `firmware/src/app/` render the selected board
+  face; the gel's is `characters/boop/firmware/src/render/gel/`, whose
+  `face.cpp` turns what the board's Behaviour follows into the engine's
+  facts, mood and moments. `facegen`/`sfxgen` build the pixel bank;
+  `slimegen` builds the gel catalogs and authored vector face paths. The
+  native renderer uses an integer mesh and rasterizer, with no GPU.
 
 The old log's `ts/type/phase` shape is accepted as legacy; current logs
 use `at/kind/data` and MellowHarness self `did`/`ended`. Current events also
@@ -348,53 +311,39 @@ copied schema. Coverage of both forms is in [STATES.md](STATES.md).
 Gel firmware recognizes every canonical mood; pixel retains its compatibility
 vocabulary. Sending a new
 ID such as `frightened` to old firmware does **not** enable its face;
-unknown moods fall back. The Mac maps outgoing IDs using `hello.face`;
-the v3 host graph remains opt-in and v2 remains unchanged.
+unknown moods fall back. The Mac maps outgoing IDs using `hello.face`.
 
-The desktop WebGL renderer uses a mipmapped runtime face texture, a
-supersampled scene buffer (the body is drawn offscreen, where the context's
-antialiasing never reaches) and bloom buffers;
-compact disk code does not imply tiny RAM/GPU cost. The original device
-has no WebGL GPU and tight RAM. The owner chose one face per board:
-pixel on CYD, integer gel on AMOLED, selected behind a shared face interface.
-The completed native port has been measured on a flashed board. Never stream
-frames over the control link or claim ESP32 performance without actual board
-measurements. This desktop renderer remains the reference implementation.
+The owner chose one face per board: pixel on the CYD, integer gel on the
+AMOLED, behind a shared face interface. Never stream frames over the
+control link or claim ESP32 performance without actual board measurements
+(`boopctl ping`'s `draw_us`).
 
 ## 7. Handover prompt for the next engineer
 
-> Read this README, MOODS, STATES, CONTINUITY and sound/README plus the
-> repository AGENTS.md before editing. Continue the VideoG Slime Blob
-> series from the supplied procedural preview. Keep the same original
-> blue translucent glowing body and accepted V1 motion. Build the shared
-> activity layers for every state, compose them with every mood, and
-> implement three genuinely different bounded variants per active cell
-> with explicit quiet aliases. Cover every directed mood transition with
-> continuous retargeting, not asset switching. Add reviewed procedural
-> nonverbal gel/keyboard/attention SFX at visible contact cues, using the
-> quiet voice-first policy. Implement host-side graph gating separately
-> from rendering and preserve factual needs-you priority. Start with
-> desktop preview; do not assume ESP32 WebGL support or change LinkKit.
-> Update coverage and QA status honestly as work becomes real. Review a
-> small representative set of positive/negative work and alert scenes
-> with the owner before filling out the rest. Do not generate voices,
-> spend credits, flash hardware, push further work, open a PR or merge
-> without the owner's consent.
+> Read this README, MOODS, STATES, CONTINUITY, VALIDATION and
+> sound/README plus the repository AGENTS.md before editing. The slime's
+> design is this package's data and slimegen's scenes, faces and mesh;
+> its one engine is the C++ in characters/boop/firmware/src/render/gel/,
+> held to its rules by test_gel and the gel goldens. Keep the same
+> original blue translucent glowing body and accepted V1 motion. Change a
+> mood's face or acting in expressions.json, a state's choreography in
+> slimegen's scenes.mjs, behaviour in the C++ engine, and pin each rule
+> you change in test_gel. Look at what you changed on the board, in the
+> Character Studio or with boopctl sim, and rebuild the Mac's mirror of
+> the board (firmware/tools/mirror.sh) when what the board draws changes.
+> Do not generate voices, spend credits, flash hardware, push, open a PR
+> or merge without the owner's consent.
 
 ### Acceptance before production integration
 
 - All canonical moods and reference alternates are cute/readable at the
   real viewport, including angry/hurt/crying/frightened; owner art review.
-- Every coverage cell is implemented/tested or an explicit justified
-  quiet alias; every completion outcome and starting context is covered.
-- Every directed mood edge has a tested bridge; state changes preserve
+- Every mood/state cell plays truthfully (`test_gel`); every completion
+  outcome and starting context is covered.
+- Every directed mood edge bridges continuously; state changes preserve
   mood and springs. Ten-minute working runs contain no reset/flash.
 - Interruptions and rapid event bursts cannot hide attention, replay old
   dings, claim false success, produce a stuck grab or approve a tool.
-- Sound events follow physical cues; silence/mute/reduced motion and
-  future voice headroom work. Listen on the actual output device.
-- Production architecture/specs, enums and validation are updated only
-  when integration is implemented; package QA is not hardware approval.
-
-This branch push was requested on 2026-10-02. It authorizes this package
-publication, not a merge, pull request, future pushes or paid generation.
+- Sound events follow physical cues; silence/mute and future voice
+  headroom work. Listen on the actual output device.
+- Package QA is not hardware approval.

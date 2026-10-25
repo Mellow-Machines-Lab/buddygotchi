@@ -61,10 +61,6 @@ Family family(SceneState s) {
     default: return Family::kDesk;
   }
 }
-const char* familyName(Family value) {
-  static const char* names[] = {"rest", "idle", "listen", "start", "desk", "helpers", "alert", "result", "touch"};
-  return names[int(value)];
-}
 void Router::setFacts(const Facts& value) {
   const auto& a = value.attention;
   const auto& previous = facts.attention;
