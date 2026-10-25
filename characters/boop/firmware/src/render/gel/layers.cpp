@@ -545,10 +545,11 @@ int floor16(int v) { return v >= 0 ? v / 16 : -((15 - v) / 16); }
 // `draw` at `at`, which looks like `look` and rides the `n` anchors `now`:
 // blended from what `kept` holds while that fits, else drawn into its
 // recording first; drawn straight on the surface when it doesn't fit the
-// recording's frame or its room.
+// recording's frame or its room. With `down16` it follows the anchor it
+// rides down in sixteenths, else to the nearest pixel.
 template <typename Draw>
 void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const Point* now, int n, uint32_t look,
-          Draw draw) {
+          bool down16, Draw draw) {
   // Moving: a frame of the same body just before, and its anchors moved
   // within kStillMs.
   const uint32_t t = e.elapsedMs;
@@ -558,16 +559,21 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
                       t - kept.movedAt < OutfitLayer::kStillMs;
   kept.engine = &e, kept.ms = t;
   std::copy(now, now + n, kept.last);
-  // How far the body has moved it since it was kept, to the nearest pixel,
-  // by the anchor it rides, and the most any is off once it's moved that far.
+  // How far the body has moved it since it was kept, by the anchor it
+  // rides: across to the nearest pixel, down in sixteenths or to the
+  // nearest pixel (oy, in sixteenths); and the most any is off once it's
+  // moved that far.
   int ox = 0, oy = 0, off = INT_MAX;
   if (kept.valid && kept.look == look) {
-    ox = floor16(now[0].x - kept.at[0].x + 8), oy = floor16(now[0].y - kept.at[0].y + 8);
+    ox = floor16(now[0].x - kept.at[0].x + 8), oy = now[0].y - kept.at[0].y;
+    if (!down16) oy = floor16(oy + 8) * 16;
     off = 0;
     for (int i = 0; i < n; ++i)
-      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy * 16)});
+      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy)});
   }
-  if (off != 0 && !(moving && off <= OutfitLayer::kSlack)) {
+  // Still, only the same shapes a whole number of pixels down are as drawn
+  // afresh.
+  if (moving ? off > OutfitLayer::kSlack : off != 0 || oy & 15) {
     // Kept in a frame as wide as the surface and taller, the anchor it rides
     // a whole number of pixels from its middle, as far into its pixel as it
     // is.
@@ -583,7 +589,7 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
     kept.look = look, kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
     std::copy(now, now + n, kept.at);
   }
-  r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
+  r.replay16(kept.shapes, kept.dx + ox, kept.dy * 16 + oy);
 }
 
 // The worn and hat layers' contents for a look, and the look a pair of
@@ -598,22 +604,25 @@ Look lookOf(uint32_t hat, uint32_t worn, const Engine& e) {
 }
 
 // The pyjamas or what's over its eyes, then the hat, each at its layer's
-// fade.
+// fade. The hat and what's over its eyes rise and fall with its head as it
+// breathes, so they follow it in sixteenths; the pyjamas ride the hem,
+// which stays on the ground.
 void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look, int wornFade, int hatFade) {
   constexpr int kEnd = rig::Anchors::kRingPoints - 1;
   r.fade = wornFade;
   if (look.pyjamas) {
     const Point now[] = {at.hem[kEnd / 2], at.hem[0], at.hem[kEnd], at.lap[0], at.lap[kEnd / 2], at.lap[kEnd]};
-    wear(r, keptWorn, e, at, now, 6, 1u << 8, pyjamas);  // a look no eyewear has
+    wear(r, keptWorn, e, at, now, 6, 1u << 8, false, pyjamas);  // a look no eyewear has
   } else if (look.eyes != Eyewear::kNone) {
     const Point now[] = {at.eyeL, at.eyeR};
-    wear(r, keptWorn, e, at, now, 2, uint32_t(look.eyes),
+    wear(r, keptWorn, e, at, now, 2, uint32_t(look.eyes), true,
          [&look](Raster& r, const rig::Anchors& at) { eyewear(r, at, look.eyes); });
   }
   r.fade = hatFade;
   if (look.hat != Outfit::kNone) {
     const Point now[] = {at.brimF, at.crown, at.brimL, at.brimR};
-    wear(r, keptHat, e, at, now, 4, look.hatKey(), [&look](Raster& r, const rig::Anchors& at) { hat(r, at, look); });
+    wear(r, keptHat, e, at, now, 4, look.hatKey(), true,
+         [&look](Raster& r, const rig::Anchors& at) { hat(r, at, look); });
   }
   r.fade = 255;
 }

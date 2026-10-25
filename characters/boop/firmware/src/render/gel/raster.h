@@ -68,6 +68,12 @@ struct Raster {
   // it was kept, inside the bounds: pixel for pixel what its shapes would
   // have drawn there, had they been drawn that far over.
   void replay(const Recording& r, int dx, int dy);
+  // The same `dx` pixels across and `dy16` sixteenths of a pixel down:
+  // between whole rows each pixel takes each shape's opacities in the two
+  // rows it now straddles, by how much of each it covers, so what's kept
+  // follows something rising and falling in sixteenths. On a whole row
+  // it's replay's.
+  void replay16(const Recording& r, int dx, int dy16);
 
   void touch(int x0, int y0, int x1, int y1) {
     if (!recording) s.touch(x0, y0, x1, std::min(y1, bottom()));

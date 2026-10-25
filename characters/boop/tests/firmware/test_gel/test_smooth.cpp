@@ -13,6 +13,8 @@
 #include "render/gel/engine.h"
 #include "render/gel/layers.h"
 #include "render/gel/painter.h"
+#include "render/gel/raster.h"
+#include "render/palette.h"
 #include "render/gel/stream.h"
 #include "render/tags.h"
 
@@ -100,4 +102,70 @@ void test_a_falling_word_falls_in_sixteenths() {
     return last;
   };
   TEST_ASSERT_EQUAL_INT(lowest(uint32_t(whole)) + 1, lowest(uint32_t(whole) + 1));
+}
+
+// A recording replayed between rows (Raster::replay16) is what its shapes
+// drew there, near enough: at every sixteenth of two pixels down, its
+// ink's middle within 0.03 px of theirs and its ink within 1% of theirs,
+// and on a whole row exactly theirs.
+void test_a_recording_replays_between_rows() {
+  std::vector<uint16_t> px(502 * 410), black(502 * 410, 0);
+  Surface s{502, 410, px.data()};
+  static uint8_t room[16 * 1024];
+  Recording kept{room, int(sizeof room)};
+  kept.clear();
+  // A disk and a stroke over it, as a hat's shapes overlap.
+  auto shapes = [](Raster& r, int dy16) {
+    r.disk16(200 * 16 + 5, 150 * 16 + 3 + dy16, 30 * 16 + 7, rgb565(240, 80, 40));
+    const Point v[] = {{170 * 16, 140 * 16 + dy16}, {230 * 16 + 9, 160 * 16 + 4 + dy16}};
+    r.stroke16(v, 2, 6 * 16, rgb565(40, 200, 120));
+  };
+  Raster record{s};
+  record.recording = &kept;
+  shapes(record, 0);
+  TEST_ASSERT_FALSE(kept.full);
+  Raster r{s};
+  const Box all{0, 0, 502, 328};
+  for (int dy16 = 0; dy16 <= 32; ++dy16) {
+    std::fill(px.begin(), px.end(), 0);
+    shapes(r, dy16);
+    const std::vector<uint16_t> fresh(px);
+    std::fill(px.begin(), px.end(), 0);
+    r.replay16(kept, 0, dy16);
+    const Middle a = middle(px, black, 502, all), b = middle(fresh, black, 502, all);
+    TEST_ASSERT_TRUE(std::abs(a.y - b.y) < 0.03 && std::abs(a.x - b.x) < 0.03);
+    TEST_ASSERT_TRUE(std::abs(a.weight - b.weight) < b.weight / 100);
+    if (dy16 % 16 == 0) TEST_ASSERT_TRUE(px == fresh);
+  }
+}
+
+// The hat, kept (OutfitLayer), follows the body down in sixteenths while
+// it moves: brought down a sixteenth every 10 ms, its ink's middle goes
+// down with it in a straight line, never 0.1 px off it (a whole pixel at a
+// time it was up to half a pixel off).
+void test_the_hat_follows_the_body_in_sixteenths() {
+  std::vector<uint16_t> px(502 * 410), black(502 * 410, 0);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  rig::Anchors home;
+  paint(s, *e, false, 0, 0, &home);
+  e->setOccasion(tagBit("night"), 0);
+  rig::Layers cap;
+  cap.show(rig::Layer::kHat, uint32_t(Outfit::kNightcap), 0);
+  std::vector<double> at, ys;
+  // Within one step of the cap's swing (OutfitLayer::kSwingMs).
+  for (int i = 0; i < 40; ++i) {
+    rig::Anchors down = home;
+    for (rig::Point* p : {&down.crown, &down.brimL, &down.brimF, &down.brimR}) p->y += i;
+    std::fill(px.begin(), px.end(), 0);
+    s.invalidate();
+    e->elapsedMs = 1200 + 10 * i;
+    paintLayers(s, *e, down, &cap, 1000);
+    const Middle m = middle(px, black, 502, {0, 0, 502, 328});
+    TEST_ASSERT_TRUE(m.weight > 100);
+    at.push_back(i), ys.push_back(m.y);
+  }
+  TEST_ASSERT_TRUE(std::abs(ys.back() - ys.front() - 39 / 16.0) < 0.1);
+  TEST_ASSERT_TRUE(offLine(at, ys) < 0.1);
 }

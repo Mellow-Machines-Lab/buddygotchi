@@ -401,4 +401,156 @@ void Raster::replay(const Recording& r, int dx, int dy) {
   }
 }
 
+namespace {
+// Stretches of a row, [lo, hi) in order, as many as kMost; one that meets
+// the last joins it, and past kMost one's left out, or with `into`, taken
+// into the last.
+struct Stretches {
+  static constexpr int kMost = 16;
+  int n = 0, lo[kMost], hi[kMost];
+  void add(int x0, int x1, bool into) {
+    if (n && x0 <= hi[n - 1])
+      hi[n - 1] = std::max(hi[n - 1], x1);
+    else if (n < kMost)
+      lo[n] = x0, hi[n] = x1, ++n;
+    else if (into)
+      hi[n - 1] = x1;
+  }
+};
+
+// One row of a kept shape as replay16 reads it back: each pixel's opacity
+// at its recorded x, 0 where it has none; where it has any (the last
+// stretch taking in any past the most), and where it's wholly opaque.
+struct KeptRow {
+  uint8_t a[Raster::kMaxWidth];
+  bool live = false;  // a row of the shape, whatever it holds
+  int y = 0, end = 0;
+  Stretches any, solid;
+  void clear() {
+    for (int i = 0; i < any.n; ++i) std::memset(a + any.lo[i], 0, size_t(any.hi[i] - any.lo[i]));
+    live = false, any.n = solid.n = 0;
+  }
+};
+KeptRow keptRows[2];                           // a shape's row and the one above it
+const uint8_t kNoRow[Raster::kMaxWidth] = {};  // a row it hasn't
+
+// A recorded span's opacities into `row`, past its codes: `code` after it.
+void readSpan(KeptRow& row, const Span& span, const uint8_t*& code) {
+  const bool fits = span.x0 >= 0 && span.x0 + span.n <= Raster::kMaxWidth;
+  for (int x = span.x0, end = x + span.n; x < end;) {
+    const int c = *code++;
+    const bool run = c & kRun;
+    const int length = run ? (c & (kRun - 1)) + 1 : c + 1;
+    if (fits && run && *code) {  // the row is 0 where it isn't written
+      std::memset(row.a + x, *code, size_t(length));
+      row.any.add(x, x + length, true);
+      if (*code == 255) row.solid.add(x, x + length, false);
+    } else if (fits && !run) {
+      std::memcpy(row.a + x, code, size_t(length));
+      row.any.add(x, x + length, true);
+    }
+    code += run ? 1 : length, x += length;
+  }
+  row.end = span.x0 + span.n;
+}
+}  // namespace
+
+void Raster::replay16(const Recording& r, int dx, int dy16) {
+  const int iy = floor16(dy16), fy = dy16 - iy * 16;
+  if (!fy) return replay(r, dx, iy);
+  if (!s.pixels) return;
+  const int top = std::max(0, bounds.y0), under = std::min(bottom(), bounds.y1);
+  const int left = std::max(0, bounds.x0) - dx, right = std::min({s.width, kMaxWidth, bounds.x1}) - dx;
+  // Output row y + iy of a shape: its recorded row y (`here`) and the one
+  // above it (`above`), either missing, each pixel taking the two rows by
+  // their sixteenths: the ink where both are wholly opaque, nothing where
+  // neither has any.
+  auto draw = [&](const KeptRow* here, const KeptRow* above, int y, uint16_t ink) {
+    y += iy;
+    if (y < top || y >= under) return;
+    uint16_t* line = s.pixels + y * s.width;
+    const uint8_t *h = here ? here->a : kNoRow, *u = above ? above->a : kNoRow;
+    const int wHere = 16 - fy, wAbove = fy, ox = dx, faded = fade;
+    auto blend = [=](int x0, int x1) {
+      for (int x = x0; x < x1; ++x) {
+        int a = (h[x] * wHere + u[x] * wAbove + 8) >> 4;
+        if (faded < 255) a = a * faded / 255;
+        if (a >= 253)
+          line[x + ox] = ink;
+        else if (a > 2)
+          line[x + ox] = mix565(line[x + ox], ink, a);
+      }
+    };
+    const int full = shown(255);
+    auto fill = [&](int x0, int x1) {
+      if (full >= 253)
+        std::fill(line + x0 + dx, line + x1 + dx, ink);
+      else if (full > 2)
+        for (int x = x0 + dx; x < x1 + dx; ++x) line[x] = mix565(line[x], ink, full);
+    };
+    // Wholly opaque where both rows are.
+    Stretches solid;
+    if (here && above)
+      for (int i = 0, j = 0; i < here->solid.n && j < above->solid.n;) {
+        const int x0 = std::max(here->solid.lo[i], above->solid.lo[j]),
+                  x1 = std::min(here->solid.hi[i], above->solid.hi[j]);
+        if (x0 < x1) solid.add(x0, x1, false);
+        (here->solid.hi[i] < above->solid.hi[j] ? i : j) += 1;
+      }
+    // Where either has any, in order, each part blended but what's solid.
+    const Stretches none{};
+    const Stretches &a = here ? here->any : none, &b = above ? above->any : none;
+    int i = 0, j = 0, k = 0, first = INT_MAX, last = INT_MIN;
+    while (i < a.n || j < b.n) {
+      const bool fromA = j >= b.n || (i < a.n && a.lo[i] <= b.lo[j]);
+      const int x0 = fromA ? a.lo[i] : b.lo[j];
+      int x1 = fromA ? a.hi[i++] : b.hi[j++];
+      for (bool more = true; more;) {  // and whatever overlaps it
+        more = false;
+        if (i < a.n && a.lo[i] <= x1) x1 = std::max(x1, a.hi[i++]), more = true;
+        if (j < b.n && b.lo[j] <= x1) x1 = std::max(x1, b.hi[j++]), more = true;
+      }
+      const int from = std::max(left, x0), to = std::min(right, x1);
+      if (from >= to) continue;
+      first = std::min(first, from), last = std::max(last, to);
+      int at = from;
+      for (; k < solid.n && solid.lo[k] < to; ++k) {
+        const int s0 = std::clamp(solid.lo[k], at, to), s1 = std::clamp(solid.hi[k], s0, to);
+        blend(at, s0);
+        fill(s0, s1);
+        at = s1;
+      }
+      blend(at, to);
+    }
+    if (first < last) touch(first + dx, y, last + dx, y + 1);
+  };
+  // The spans of a shape come a row at a time, top down, each row's left to
+  // right, all in its ink: one that doesn't go on from the last starts
+  // another shape.
+  KeptRow* here = &keptRows[0];
+  KeptRow* above = &keptRows[1];
+  here->clear(), above->clear();
+  uint16_t ink = 0;
+  // `here` is whole: drawn, with the row above it; then it's the row above,
+  // or, when the shape ends, its last row is drawn below it too.
+  auto rowDone = [&](bool goesOn) {
+    draw(here, above->live && above->y == here->y - 1 ? above : nullptr, here->y, ink);
+    above->clear();
+    std::swap(here, above);
+    if (goesOn) return;
+    draw(nullptr, above, above->y + 1, ink);
+    above->clear();
+  };
+  for (const uint8_t* code = r.data; code + sizeof(Span) <= r.data + r.used;) {
+    Span span;
+    std::memcpy(&span, code, sizeof span);
+    code += sizeof span;
+    if (here->live && !(span.ink == ink && span.y == here->y && span.x0 >= here->end))
+      rowDone(span.ink == ink && span.y == here->y + 1);
+    if (!here->live) here->live = true, here->y = span.y, ink = span.ink;
+    readSpan(*here, span, code);
+  }
+  if (here->live) rowDone(false);
+}
+
 }  // namespace render::gel

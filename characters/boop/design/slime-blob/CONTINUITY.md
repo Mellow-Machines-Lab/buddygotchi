@@ -718,7 +718,9 @@ the very vertices it projects for the body (the rig's `Anchors`, both
 faces' one type: the dome's apex, ring 6's sides and front for a brim,
 ring 15's front for the hands) and the face art's eye centres, so a layer
 leans, squashes, dips under a finger and slides off the screen with the
-body and is cut off there with it. Peekaboo's gesture hides the hat. At
+body and is cut off there with it. Its hat and what's over its eyes
+rise and fall with its breath a sixteenth of a pixel at a time, as the
+body does (`OutfitLayer`, kept and blended between rows). Peekaboo's gesture hides the hat. At
 night the lids hang a little lower (`kNightLids`) on the awake face,
 easing out as it squashes shut, gone by when it's a line, and back as it
 wakes. Each part comes and goes through the rig's layer stack

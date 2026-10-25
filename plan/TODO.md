@@ -48,9 +48,15 @@ pacing and touch, the Mac app, the architecture) found what's below.
 - [x] The work stream's falling words fall in sixteenths of a pixel
       (`stream.cpp`'s `behind`; `test_smooth.cpp`), at the same native
       cost.
-- [ ] Still whole-pixel: the hat's replay (`OutfitLayer::kSlack`), Zs
-      switching fonts, the listening ring and the helper minis
-      (`props.cpp`).
+- [x] Its hat and what's over its eyes follow its breath in sixteenths:
+      their recording is replayed between rows (`Raster::replay16`),
+      across still to the nearest pixel (it hardly moves across while it
+      breathes), the pyjamas too (their hem stays on the ground). Natively
+      the layers cost more while it moves: night 36 -> 46 us a frame (the
+      striped cap), winter 17 -> 20, Halloween 12.5 -> 15; `layers_us`
+      on the board is owed.
+- [ ] Still whole-pixel: Zs switching fonts, the listening ring and the
+      helper minis (`props.cpp`).
 - [ ] The face art's edges take 4 sub-rows a pixel (`raster.cpp`
       `polygon16`): near-horizontal edges step and a lid under 1/4 px
       flickers. Exact area coverage, about today's cost.

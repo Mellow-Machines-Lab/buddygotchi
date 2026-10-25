@@ -85,8 +85,10 @@ ramps and springs can, and no jolt at an event. By file:
   nothing drawn.
 - `test_smooth.cpp`: what moves slowly moves in sixteenths of a pixel,
   as the body does: a falling word's ink goes down in a straight line
-  with the time, never 0.1 px off it (whole pixels were up to half a
-  pixel off).
+  with the time, and a kept hat's with the body, never 0.1 px off it
+  (whole pixels were up to half a pixel off); a recording replayed
+  between rows is its shapes drawn there, its ink's middle within 0.03
+  px and its ink within 1%, and exactly on a whole row.
 - `test_main.cpp`: the rest: arithmetic (a `Divisor`'s quotients exactly
   `/`'s), the binary64 clock's rounding, every expression's bounds,
   deterministic pixels, request identity and bounded caches, alerts

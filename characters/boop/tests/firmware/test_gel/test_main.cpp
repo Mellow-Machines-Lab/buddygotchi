@@ -1457,6 +1457,8 @@ void test_a_request_sounds_once_whatever_changes();
 void test_sound_draws_change_nothing_drawn();
 // test_smooth.cpp
 void test_a_falling_word_falls_in_sixteenths();
+void test_a_recording_replays_between_rows();
+void test_the_hat_follows_the_body_in_sixteenths();
 static void test_gel_draws_natively() {
   // Full-panel RGB565. The gel asks for native surfaces;
   // Device allocates them at the board's size, which the simulator's Hal
@@ -1806,8 +1808,9 @@ static void test_a_recording_replays_as_drawn() {
 }
 
 // The outfit is drawn into a recording and blended from it
-// (OutfitLayer): while the body moves, a frame shows it as kept within
-// kSlack (12 sixteenths) of where it is; once it's still (the same time,
+// (OutfitLayer): while the body moves, a frame shows it as kept, moved with
+// the anchor it rides, each anchor within kSlack (12 sixteenths) of where
+// it is (test_smooth.cpp: down in sixteenths); once it's still (the same time,
 // a frame over kMovingMs (100 ms) after the last, or anchors unmoved for
 // kStillMs (200 ms)), it's drawn where it is, the same as afresh. The
 // nightcap's swing steps every kSwingMs (400 ms).
@@ -2485,5 +2488,7 @@ int main() {
   RUN_TEST(test_drawer_frames_allocate_nothing);
   // test_smooth.cpp
   RUN_TEST(test_a_falling_word_falls_in_sixteenths);
+  RUN_TEST(test_a_recording_replays_between_rows);
+  RUN_TEST(test_the_hat_follows_the_body_in_sixteenths);
   return UNITY_END();
 }

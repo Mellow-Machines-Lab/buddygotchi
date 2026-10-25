@@ -38,13 +38,16 @@ namespace render::gel {
 // riding the hem's front, or else what's over its eyes, riding the left
 // eye, since it sleeps with its eyes bare) is drawn into a recording of
 // its own (render/gel/raster.h) when its look changes or the body has
-// moved it more than kSlack sixteenths of a pixel past a whole number of
-// pixels, and blended from it in every other frame: their filled area is
-// most of what the layers cost. While the body moves (a
-// frame of the same body up to kMovingMs before, and its anchors moved
-// within kStillMs), a frame may show a part as it was kept, within kSlack
-// of where it is; still, it's drawn where it is, so a still frame is the
-// same as drawing it afresh. The nightcap's swing steps every kSwingMs, as
+// moved its anchors more than kSlack sixteenths of a pixel apart, and
+// blended from it in every other frame, moved with the anchor it rides,
+// across to the nearest pixel, and the hat and what's over its eyes down
+// in sixteenths (Raster::replay16), so they rise and fall with its head as
+// it breathes (the pyjamas' hem stays on the ground): their filled area is
+// most of what the layers cost. While the body moves (a frame of the same
+// body up to kMovingMs before, and its anchors moved within kStillMs), a
+// frame may show a part as it was kept, each anchor within kSlack of where
+// it is; still, it's drawn where it is, so a still frame is the same as
+// drawing it afresh. The nightcap's swing steps every kSwingMs, as
 // Pixel's pompom does. A part is kept in a frame as wide as the surface
 // and kFrameHeight tall, with the anchor it rides kFrameY down its middle:
 // room around for any of them. Past its edges, or the recording's room,
