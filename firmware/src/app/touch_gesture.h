@@ -1,9 +1,9 @@
-// What a touch on the screen was, from its path: a tap, a swipe (a quick
-// one that travels), a stroke (a slow one; one the wrong way, upward,
-// ruffles), a tickle (a finger wiggling in one spot), a boop on the nose (a
-// tap on the face's middle), or a hold (a finger kept still). Pure C++, fed
-// the touch's canvas positions as they come; the canvas is 320 × 240 on
-// both boards (the AMOLED's panel is mapped onto it).
+// What a touch on the screen was, from its path: a tap, a swipe (one that
+// travels and lets go quickly), a stroke (a slower one; one the wrong way,
+// upward, ruffles), a tickle (a finger wiggling in one spot), a boop on the
+// nose (a tap on the face's middle), or a hold (a finger kept still). Pure
+// C++, fed the touch's canvas positions as they come; the canvas is
+// 320 × 240 on both boards (the AMOLED's panel is mapped onto it).
 #pragma once
 #include <cstdint>
 
@@ -16,9 +16,9 @@ class TouchGesture {
   // A stroke or a swipe travels this far from where it began; a stroke
   // that goes up more than sideways is a ruffle.
   static constexpr int kStrokePx = 40;
-  // A touch that travels faster than this on average, from going down to
-  // its last reading, is a swipe: the face only feels it go by. A slower one
-  // is a deliberate stroke, which the board reacts to.
+  // A touch that travels a stroke's way and lets go faster than this (its
+  // velocity, which the face carries on) is a swipe; a slower one is the
+  // deliberate stroke.
   static constexpr int kSwipePxPerS = 600;
   // A tickle wiggles this far in all, inside a spot this wide.
   static constexpr int kTicklePathPx = 90, kTickleSpotPx = 36;
@@ -48,12 +48,12 @@ class TouchGesture {
   // down and never outside its spot.
   bool held(uint32_t t) const;
   // What it was, on release: a gesture names the board's own reaction to it
-  // in g.
+  // in g, and a swipe the stroke (or the ruffle) it would be, slower.
   Kind up(render::Gesture& g) const;
   // How fast the finger moved over its last kFlingMs, in px a second; none
   // for a finger that was still.
   void velocity(int& vx, int& vy) const;
-  Path path() const { return {x0_, y0_, x_, y_, t_ - t0_}; }
+  Path path() const;
 
  private:
   static constexpr int kSamples = 8;  // the latest readings, for the velocity
@@ -61,11 +61,12 @@ class TouchGesture {
     int x, y;
     uint32_t t;
   };
-  int x0_ = 0, y0_ = 0, x_ = 0, y_ = 0, minX_ = 0, maxX_ = 0, minY_ = 0, maxY_ = 0;
+  int x0_ = 0, y0_ = 0, minX_ = 0, maxX_ = 0, minY_ = 0, maxY_ = 0;
   int path_ = 0;
-  uint32_t t0_ = 0, t_ = 0;
+  uint32_t t0_ = 0;
   Sample samples_[kSamples] = {};
   int count_ = 0;  // readings so far; the newest is at (count_ - 1) % kSamples
+  const Sample& last() const { return samples_[(count_ + kSamples - 1) % kSamples]; }
   void sample(int x, int y, uint32_t t);
 };
 

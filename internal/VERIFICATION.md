@@ -354,7 +354,7 @@ gets at least one scenario. Their pictures are the golden images in
   screenshot encoding and the clock (`test_helpers`), each test naming
   its [linkkit/SPEC.md](../linkkit/SPEC.md) section.
 - **Firmware (`make -C internal fw-test`):** BOOT's, the touch's and
-  the motion sensor's gestures, a quick swipe told from a slow stroke and
+  the motion sensor's gestures, a quick swipe told from a slow stroke by
   the finger's speed as it lets go (`test_gesture`); Boop's vocabulary message in and message out, its
   rules for the queue, the debug channel and inputs (`test_device`),
   including unchanged heartbeats causing no redraw while changed state,

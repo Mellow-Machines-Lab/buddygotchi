@@ -1718,6 +1718,15 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(woke(rig.send(.turnEnd)).count, 1, "face up again")
     }
 
+    /// A quick swipe across the board is a stroke to the brain: the board's
+    /// `swipe` has a line that says so, and wakes it as a stroke's does.
+    func testASwipeWakesTheBrainAsAStrokeDoes() {
+        let rig = CoreRig()
+        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))), ["You stroked \(creature)."])
+        rig.wait(60_000)
+        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("swipe", at: rig.now)))), ["You swiped \(creature), a quick stroke."])
+    }
+
     /// A poke is the rules' alone to react to: they
     /// record the device's wiggle as an action under it, and the brain
     /// hears of it. While something needs you, the device only squashes,

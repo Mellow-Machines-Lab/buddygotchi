@@ -187,9 +187,9 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   Check inversion, colour order and the SPI pins first.
 - **Touch does nothing:** wrong pins, no calibration, or touch sharing the
   screen's bus.
-- **A stroke plays nothing:** it was too quick, a swipe, which the face
-  only feels go by (`app/touch_gesture.h`'s `kSwipePxPerS`); stroke
-  slower. `touch.last` in `internal/tools/boopctl state` says what the
+- **A stroke plays nothing on the gel:** it let go too quickly, a swipe,
+  which the dome only flings on (`app/touch_gesture.h`'s `kSwipePxPerS`,
+  of its speed as it lets go); stroke slower. `touch.last` in `internal/tools/boopctl state` says what the
   last touch was and how long it took.
 - **A hold doesn't dismiss the needs-you screen:** the finger must stay
   down a second inside a spot 24 px wide each way

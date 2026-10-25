@@ -1034,6 +1034,7 @@ public enum EventLine {
         switch kind {
         case "stroke": "You stroked \(name)."
         case "ruffle": "You stroked \(name) the wrong way."
+        case "swipe": "You swiped \(name), a quick stroke."
         case "nose": "You booped \(name)'s nose."
         case "tickle": "You tickled \(name)."
         case "dizzy": "You shook \(name)."

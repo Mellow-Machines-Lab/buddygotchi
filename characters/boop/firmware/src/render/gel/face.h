@@ -28,6 +28,8 @@ class GelFace final : public Face {
   // when it lets go, carried on a little by the finger's own speed.
   void finger(bool down, int x, int y) override;
   void letGo(int vx, int vy) override;
+  // A swipe flings the dome on, and plays nothing else.
+  bool playsSwipe() const override { return false; }
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;

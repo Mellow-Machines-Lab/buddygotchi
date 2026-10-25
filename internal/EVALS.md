@@ -50,7 +50,7 @@ a step's `at` jumps, up to a silent day.
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
-| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
+| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
@@ -337,7 +337,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   warms it (`94`), capitals make it flinch (`95`), an agent's "You're
   absolutely right!" gets an eye-roll (`96`). Once the day is over it
   writes one diary line about it, and only one (`97`). Touched like a
-  pet: a stroke calms a fed-up Boop, a shake makes it dizzy (`99`). And the screen with no pass: BOOT
+  pet: a stroke calms a fed-up Boop, a shake makes it dizzy, and a
+  swipe, a quick stroke, is a stroke too (`99`). And the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`); a
   request still shows after a two-hour lunch, since its agent still

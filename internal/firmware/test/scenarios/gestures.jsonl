@@ -1,7 +1,8 @@
 // The board's own gestures (gesture-art.mjs), each on a frozen clock part
 // way through: BOOT handing over an idle agent, a stroke, a boop on the
 // nose, a shake (dbg.imu standing in for the motion sensor), then face
-// down (dim, every reaction refused) and turned back up (peekaboo).
+// down (dim, every reaction refused) and turned back up (peekaboo); last a
+// quick swipe, which plays the stroke's design and goes as a gesture.
 {"clock":0}
 {"t":"state","base":"idle","idle":1}
 {"t":"dbg.press","ms":60}
@@ -49,3 +50,10 @@
 {"clock":22600}
 {"clock":23400}
 {"shot":"peekaboo"}
+{"clock":27000}
+{"t":"dbg.touch","x":60,"y":120,"to_x":200,"to_y":120,"ms":120}
+{"clock":27040}
+{"clock":27080}
+{"clock":27120}
+{"clock":27160}
+{"expect":{"moment":{"anim":"gesture","variant":2},"last_input":{"k":"gesture"},"touch":{"last":{"was":"swipe"}}}}

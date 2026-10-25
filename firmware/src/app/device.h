@@ -127,6 +127,9 @@ class Device : public linkkit::App {
   // (`data.attn`, the state's `attn.id`): the Mac stops showing that
   // request if it still shows, and the board plays nothing.
   static constexpr const char* kDismissGesture = "dismiss";
+  // A quick stroke (TouchGesture::kSwipe), sent as the gesture it is
+  // whatever the face plays for it (Face::playsSwipe).
+  static constexpr const char* kSwipeGesture = "swipe";
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -249,8 +252,9 @@ class Device : public linkkit::App {
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   void tapped(uint32_t t, bool injected, bool button);  // a tap, from BOOT or the panel
   // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
-  // `did` its name); `facedown` plays nothing.
-  void gestured(render::Gesture g, uint32_t t, bool injected);
+  // `did` its name); `facedown` plays nothing. A quick swipe goes as
+  // kSwipeGesture, and plays the stroke g if the face plays one for it.
+  void gestured(render::Gesture g, uint32_t t, bool injected, bool swipe = false);
   void readMotion(uint32_t t);
   // Whether the needs-you screen shows: something needs you, and the
   // app is there to say so.

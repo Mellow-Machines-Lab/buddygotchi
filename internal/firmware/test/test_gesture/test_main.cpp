@@ -106,10 +106,10 @@ static void test_a_touchs_path() {
   TEST_ASSERT_EQUAL(kTouchTap, path({{160, 100}}));  // the face, but not its nose
 }
 
-// Pins the swipe: a touch that travels a stroke's 40 px faster than 600 px
-// a second on average, from going down to its last reading, is a swipe,
-// whichever way it goes; as slow or slower it's the stroke (or the ruffle),
-// the board's deliberate one.
+// Pins the swipe: a touch that travels a stroke's 40 px and lets go faster
+// than 600 px a second (its velocity, which the face carries on) is a swipe,
+// whichever way it goes, and names the stroke (or the ruffle) it would be;
+// as slow or slower it's that stroke, the board's deliberate one.
 static void test_a_quick_stroke_is_a_swipe() {
   using render::Gesture;
   TEST_ASSERT_EQUAL_INT(600, TouchGesture::kSwipePxPerS);
@@ -119,10 +119,24 @@ static void test_a_quick_stroke_is_a_swipe() {
   TEST_ASSERT_EQUAL(kTouchSwipe, path({{60, 120}, {100, 120}}, 66));                          // 40 px in 66 ms
   TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {100, 120}}, 67));                // and in 67
   TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {120, 120}}, 100));               // 600 px a second
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{60, 120}, {100, 80}}, 80));  // 500 px a second across and up: 707 in all
   TEST_ASSERT_EQUAL(int(Gesture::kRuffle), path({{160, 200}, {160, 60}}, 900));
   TEST_ASSERT_EQUAL(kTouchTap, path({{60, 120}, {90, 120}}, 10));  // quick, but short of a stroke
-  // A finger that waits before it moves strokes, however quick the move.
-  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {60, 120}, {60, 120}, {200, 120}}, 100));
+  // What counts is how fast it lets go: a finger that waits, then flicks,
+  // swipes; one that swipes, then stops before it lets go, strokes.
+  TEST_ASSERT_EQUAL(kTouchSwipe, path({{60, 120}, {60, 120}, {60, 120}, {200, 120}}, 100));
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {200, 120}, {200, 120}}, 80));
+  // A swipe names the stroke it would be: up, the ruffle.
+  TouchGesture g;
+  g.down(160, 200, 0);
+  g.move(160, 60, 100);
+  render::Gesture what = Gesture::kHandoff;
+  TEST_ASSERT_EQUAL(TouchGesture::kSwipe, g.up(what));
+  TEST_ASSERT_EQUAL(int(Gesture::kRuffle), int(what));
+  g.down(60, 120, 0);
+  g.move(200, 120, 100);
+  TEST_ASSERT_EQUAL(TouchGesture::kSwipe, g.up(what));
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), int(what));
 }
 
 // Pins the finger's speed as it lets go: over its last 80 ms of readings

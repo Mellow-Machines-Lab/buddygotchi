@@ -1255,3 +1255,29 @@ HISTORY (oldest first; indented lines add to the line above)
 NOW (14:03, Wednesday)
 You shook Boop.
 Boop did nothing on its own.
+=== pass 7
+HISTORY (oldest first; indented lines add to the line above)
+6 min ago: You poked Boop while it slept.
+  Boop wiggled on its own.
+  Boop's mood changed: calm → comfy.
+  Boop made a curious face, held once, and said "Whoa Piano".
+6 min ago: You poked Boop 2 times in a row.
+  Boop wiggled on its own.
+  Boop's mood changed: comfy → calm.
+  Boop made a curious face, held once, and said "Oh Busy".
+6 min ago: You poked Boop 3 times in a row.
+  Boop wiggled on its own.
+  Boop's mood changed: calm → comfy.
+  Boop made a curious face, held once, and said "Tickles Piano".
+6 min ago: You poked Boop 4 times in a row.
+  Boop wiggled on its own.
+  Boop's mood changed: comfy → calm.
+  Boop made a curious face, held once, and said "Oh Steady".
+5 min ago: You stroked Boop.
+  Boop made an engaged face, held once, and said "Hup".
+3 min ago: You shook Boop.
+  Boop made an engaged face, held once, and said "Rrr...".
+
+NOW (14:06, Wednesday)
+You swiped Boop, a quick stroke.
+Boop did nothing on its own.

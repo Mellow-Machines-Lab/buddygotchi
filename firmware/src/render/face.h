@@ -119,6 +119,10 @@ class Face {
   // The finger let go moving at vx, vy (canvas px a second, y down): a face
   // may carry the motion on, as the gel's dome does after a swipe.
   virtual void letGo(int vx, int vy) { (void)vx, (void)vy, finger(false, 0, 0); }
+  // Whether a quick swipe plays the stroke (or the ruffle) it would be,
+  // slower, as it does on a face that doesn't follow the finger; one that
+  // carries it on as it lets go may only feel it go by.
+  virtual bool playsSwipe() const { return true; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played.

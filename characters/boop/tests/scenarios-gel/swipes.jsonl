@@ -1,5 +1,6 @@
 // A finger in idle (CONTINUITY.md, A finger on the body): the dome goes its
-// way and a quick swipe plays nothing of its own. A swipe down part way
+// way and a quick swipe plays nothing of its own, a gesture the Mac hears
+// all the same. A swipe down part way
 // (squashed under it, the base on the floor) and just after it let go
 // (carried on down), a swipe up (stretched), across each way (leaning that
 // way), the second of two quick swipes down (from the first's rebound),
@@ -18,7 +19,7 @@
 {"clock":4160}
 {"clock":4200}
 {"shot":"swipe-down-let-go"}
-{"expect":{"moment":null,"last_input":{"k":"swipe"},"touch":{"last":{"from":[160,60],"was":"swipe"}}}}
+{"expect":{"moment":null,"last_input":{"k":"gesture"},"touch":{"last":{"from":[160,60],"was":"swipe"}}}}
 {"clock":7000}
 {"t":"dbg.touch","x":160,"y":200,"to_x":160,"to_y":60,"ms":160}
 {"clock":7040}

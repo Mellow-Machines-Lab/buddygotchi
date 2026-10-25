@@ -2146,30 +2146,55 @@ static void test_a_stroke_is_a_gesture() {
   TEST_ASSERT_TRUE(has(r.usb.text, "\"was\":\"stroke\"}"));
 }
 
-// A quick touch that travels is a swipe: the face feels it go by, and
-// nothing plays or goes to the Mac, neither a tap nor a gesture. dbg.state's
+// The board's own reaction as dbg.state says: its animation and variation,
+// "none" for none.
+static std::string momentOf(Rig& r) {
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  JsonDocument d;
+  deserializeJson(d, r.usb.text);
+  if (d["moment"].isNull()) return "none";
+  return d["moment"]["anim"].as<std::string>() + " " + std::to_string(d["moment"]["variant"].as<int>());
+}
+
+// A touch from (160, 60) straight down to (160, 200) over `ms`, on a frozen
+// clock from 1000 ms, a reading every `stepMs`, until `until`.
+static void strokeDown(Rig& r, uint32_t ms, uint32_t stepMs, uint32_t until) {
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+  char line[96];
+  std::snprintf(line, sizeof(line), "{\"t\":\"dbg.touch\",\"x\":160,\"y\":60,\"to_x\":160,\"to_y\":200,\"ms\":%u}",
+                unsigned(ms));
+  r.usbLine(line);
+  for (uint32_t t = 1000 + stepMs; t <= until; t += stepMs) {
+    std::snprintf(line, sizeof(line), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(t));
+    r.usbLine(line);
+  }
+}
+
+// A quick touch that travels is a swipe, which the Mac hears as one
+// (`ev gesture`, did `swipe`), and no tap. Pixel's face plays the stroke
+// it would be, slower: its stroke's design, as for a slow one. dbg.state's
 // touch.last says where the last touch went down and was last, how long
 // that took and what it was, to check a panel's axes and speeds by; there
 // is none before the first.
-static void test_a_swipe_is_the_faces_alone() {
+static void test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac() {
   Rig r;
-  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":null"));
-  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
-  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":60,\"to_x\":160,\"to_y\":200,\"ms\":160}");
-  for (uint32_t t = 1040; t <= 1400; t += 40) {
-    char step[64];
-    std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(t));
-    r.usbLine(step);
-  }
-  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+  strokeDown(r, 160, 40, 1400);
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"swipe\"}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
-  r.usb.text.clear();
-  r.usbLine("{\"t\":\"dbg.state\"}");
+  const std::string swiped = momentOf(r);
   // Let go at 1160: its last reading was at 1120, three quarters of the way.
   TEST_ASSERT_TRUE(has(r.usb.text, "\"last\":{\"from\":[160,60],\"to\":[160,165],\"ms\":120,\"was\":\"swipe\"}"));
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"k\":\"swipe\""));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"k\":\"gesture\""));
+  TEST_ASSERT_EQUAL_STRING("gesture 2", swiped.c_str());  // gesture's second variation, the stroke
+  // The same stroke, slowly: the same design.
+  Rig slow;
+  strokeDown(slow, 900, 100, 2000);
+  TEST_ASSERT_TRUE(has(slow.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+  TEST_ASSERT_EQUAL_STRING(swiped.c_str(), momentOf(slow).c_str());
 }
 
 // A finger held still on the needs-you screen for TouchGesture::kHoldMs
@@ -2319,7 +2344,7 @@ int main() {
   RUN_TEST(test_a_hold_off_the_needs_you_screen_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
-  RUN_TEST(test_a_swipe_is_the_faces_alone);
+  RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
   RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_reset_reads_motion_from_0);
   RUN_TEST(test_reactions_read_their_facts);
