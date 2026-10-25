@@ -346,13 +346,15 @@ session, Bluetooth and the boards can show.
       and 13, 39 and 40 take the faces the character makes. The whole
       `--always` set ran once against Jev: 26 of 27, and 40, whose faces
       predated the puzzled ones, passed once it took them.
-- [ ] The gel's draw order flickers for one frame at nine mood changes
+- [x] The gel's draw order jumped at nine mood changes
       (shy→affectionate, sad→wounded, crying→wounded, wounded→sad,
       wounded→crying, frightened→wounded, frightened→sad,
       frightened→crying, exhausted→overwhelmed): an incoming face added at
-      weight zero that shares a feature's shape moves that feature to its
-      turn in the draw order, 32 to 630 pixels of the mouth and tears for a
-      frame. Found retiring the JavaScript engine (2026-10-24).
+      weight zero that shared a feature's shape moved that feature to its
+      turn in the draw order (74 pixels at shy→affectionate). The arts'
+      paths are drawn in one order that keeps each art's own now, and
+      `test_nothing_changes_places_while_arts_cross_over` holds an art at
+      weight zero to changing no pixel, coming in and going out.
 - [ ] Apologies don't soften a grumpy Boop's mood against Jev: 56
       (one apology softens it) passes 0 or 1 of 3 and 57 (undone by
       poking) 0 of 3, before and after 2026-10-24's grumpy wording. The

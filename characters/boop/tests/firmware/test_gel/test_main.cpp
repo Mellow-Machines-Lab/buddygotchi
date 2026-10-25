@@ -673,6 +673,61 @@ static void test_overlapping_shapes_keep_their_ink_while_arts_cross_over() {
   TEST_ASSERT_TRUE_MESSAGE(frames >= 8 && least < q(.1) && most > q(.9), "the whole cross-fade");
   TEST_ASSERT_TRUE_MESSAGE(inside > 200 * frames && worst * 100 <= 255 * 3, message);
 }
+// Nothing changes places as an art comes in or goes out. At the nine mood
+// changes whose arts share a feature's shape and differ in others, the
+// frame an art comes in and the last frame before the older goes, drawn
+// with the one coming or going at weight zero, are the same pixels as with
+// it gone: its paths change nothing's turn, so the frames on either side
+// differ only by the blend. The order holds through the cross-fade, as it
+// depends only on the arts. Drawn at the newest art's turn, a shared
+// feature moved in front of the older art's others for the cross-fade.
+static void test_nothing_changes_places_while_arts_cross_over() {
+  const int changes[][2] = {{slime::kShy, slime::kAffectionate},       {slime::kSad, slime::kWounded},
+                            {slime::kCrying, slime::kWounded},         {slime::kWounded, slime::kSad},
+                            {slime::kWounded, slime::kCrying},         {slime::kFrightened, slime::kWounded},
+                            {slime::kFrightened, slime::kSad},         {slime::kFrightened, slime::kCrying},
+                            {slime::kExhausted, slime::kOverwhelmed}};
+  std::vector<uint16_t> a(502 * 410), b(a.size());
+  Surface with{502, 410, a.data()}, without{502, 410, b.data()};
+  // The pixels that differ between the frame with layer `keep` alone at its
+  // whole weight, the other at none, and the frame without the other.
+  auto moved = [&](const Engine& e, int keep) {
+    auto both = std::make_unique<Engine>(e);
+    for (int k = 0; k < 2; ++k) both->face.layers[k].weight = k == keep ? F(1) : F(0);
+    paint(with, *both);
+    auto one = std::make_unique<Engine>(*both);
+    one->face.layers[0] = both->face.layers[keep];
+    one->face.count = 1;
+    paint(without, *one);
+    int count = 0;
+    for (size_t p = 0; p < a.size(); ++p) count += a[p] != b[p];
+    return count;
+  };
+  for (const auto& change : changes) {
+    auto e = std::make_unique<Engine>();
+    e->setMood(change[0]);
+    uint32_t t = 0;
+    for (; t <= 640; t += 16) e->step(t);
+    e->setMood(change[1]);
+    std::unique_ptr<Engine> last;
+    int crossing = 0;
+    char message[64];
+    for (int i = 0; i < 40 && (!crossing || e->face.count == 2); ++i) {
+      e->step(t += 16);
+      if (e->face.count != 2) continue;
+      if (!crossing++) {
+        const int in = moved(*e, 0);
+        snprintf(message, sizeof message, "%d to %d coming in: %d pixels moved", change[0], change[1], in);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, in, message);
+      }
+      last = std::make_unique<Engine>(*e);
+    }
+    TEST_ASSERT_TRUE(crossing >= 8 && e->face.count == 1);
+    const int out = moved(*last, 1);
+    snprintf(message, sizeof message, "%d to %d going out: %d pixels moved", change[0], change[1], out);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, out, message);
+  }
+}
 // No prop pops: the lane's strip eases in as it comes and out
 // as it goes, at the opacity Behaviour gives it on the rig's ramp, which is
 // the props' (app/behaviour.h, pinned in test_behaviour), and the same
@@ -2442,6 +2497,7 @@ int main() {
   RUN_TEST(test_it_falls_asleep_squashing_shut);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
   RUN_TEST(test_overlapping_shapes_keep_their_ink_while_arts_cross_over);
+  RUN_TEST(test_nothing_changes_places_while_arts_cross_over);
   RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);
