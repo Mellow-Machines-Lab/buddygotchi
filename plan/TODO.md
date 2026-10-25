@@ -41,7 +41,7 @@ on a Mac with no Boop state and both boards powered.
       no menu-bar icon until onboarding finishes, so the window, once
       behind others, had no Dock icon or Command-Tab entry to bring it
       back. It runs as `.regular` while onboarding shows, and `.accessory`
-      once it's done. Only a real launch shows it (owner's to try).
+      once it's done. Only a real launch shows it (On a real Mac, later).
 
 ## Now: the prompt, read on the Mac
 
@@ -189,37 +189,57 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       bump `agent-hooks` and merge `boop-terminal-tab` (the exact
       terminal tab and "lines gone"): 03fad1a on AgentHooks' main,
       bumped in db97abb.
-- [ ] Try the exact terminal tab in iTerm2 and Terminal.
 - [x] Push AgentHooks' `lifecycle-fixes` and merge it (a turn silent an
       hour stops working, a day forgets any session, wrappers aren't the
       agent, `HookSocket.listed`), then bump `agent-hooks`: a1f6417 on
       AgentHooks' main, bumped in 9f34a2a.
-- [ ] Try what only a real Mac session and Bluetooth can show (the review
-      of 2026-10-24's fixes): onboarding's window coming forward over the
-      terminal at the agent's hello, and reopening Boop.app; pairing
-      pinning the board you tap, not the first hello, and "I don't have
-      my Boop yet" pinning none; in act 5, BOOT ticking only the button's
-      lesson; an update with both boards plugged in (a refusal for the
-      wrong board, the chip's image, a restart after a cut-off write);
-      opening an agent's tab from the bundled app (the Automation
-      prompt); `make onboarding` keeping its own Keychain entry and
-      leaving no socket behind.
 - [ ] Review the worked reference (Studio, Review: notice from the perk
       reference). It keeps Boop's `notice` clip, which no face plays yet;
       its reading still names beats for the rig's dropped `eyeCurve` and
       `cheek`.
-- [ ] Reference frames are committed, capped at 512 px a side: fine for
-      sketches and GIFs, heavy for long videos. Keep, or commit only the
-      contact sheets?
+- [x] Reference frames were committed, capped at 512 px a side: fine for
+      sketches and GIFs, heavy for long videos. The owner's call
+      (2026-10-24): the contact sheets, reading and media are committed,
+      the frames stay where `boopctl reference read` cut them, and
+      `charactergen.py --check` asks for them only where they're cut.
 - [x] Design calls the final review left, each a change to how it looks:
       - The gel: falling asleep is a morph now, the awake face squashing
         shut on a slow spring (ω 4) to lines and swapping to the sleeping
         face over 360 ms once it's one, alone by about 1.3 s; waking
         stays the face's 180 ms.
-- [ ] On the AMOLED board: turn it over once to confirm the motion
-      sensor's z (flipped on 2026-10-22: resting on the desk it read
-      -1 g and thought it was face down; now +1 g), and try a stroke, a
-      tickle and the nose under a finger.
+- [x] On the AMOLED board: turn it over once to confirm the motion
+      sensor's z (flipped on 2026-10-22), and try a stroke, a tickle and
+      the nose under a finger: the owner says it works (2026-10-24).
+
+## On a real Mac, later
+
+The owner's checks, when they're at the desk: what only a real Mac
+session, Bluetooth and the boards can show.
+
+- [ ] The exact terminal tab: a tap on the board brings forward the tab
+      the agent runs in, in iTerm2 and in Terminal, with macOS's
+      Automation prompt the first time.
+- [ ] 2026-10-24's setup fixes on a real launch: act 5's talk lesson
+      ticking with what the Mac heard, act 6's plain words, act 7 without
+      the mic card once act 5 had it allowed, the Dock icon while setup
+      shows, and the found board holding up "Tap me!".
+- [ ] Onboarding's window coming forward over the terminal at the
+      agent's hello in act 6.
+- [ ] Reopening Boop.app while it runs brings its window or popover.
+- [x] Pairing remembers the board you tap, not the first hello: on
+      2026-10-24 the CYD said hello first, and the AMOLED, tapped, is the
+      one remembered.
+- [ ] "I don't have my Boop yet" remembers no board.
+- [ ] In act 5, BOOT ticks only the button's lesson.
+- [ ] An update with both boards plugged in: a refusal for the wrong
+      board, the chip's image, a restart after a cut-off write. It needs
+      a board on older firmware than the app carries.
+- [ ] Opening an agent's tab from the bundled app (the Automation
+      prompt).
+- [ ] `make onboarding` keeping its own Keychain entry and leaving no
+      socket behind.
+- [ ] An SD card for the CYD's voice (`boop/voice.bin`); the CYD isn't
+      a priority.
 
 ## Later
 

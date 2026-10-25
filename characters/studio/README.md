@@ -99,8 +99,9 @@ saves no verdicts.
   side, the reference's media and the board playing its `show`, recorded
   on the frozen clock over as many frames as the reference has, 25 (a
   second) at the least, with one scrubber and one Play for both, frame
-  for frame: the reference's frames (`frames/<file>/`), or before it's
-  read the file itself, a video seeking to the frame's time.
+  for frame: the reference's frames (`frames/<file>/`), or, before it's
+  read or where its frames aren't cut (they aren't committed), the file
+  itself, a video seeking to the frame's time.
 - **Review**: the pack's `review/queue.json`, each item with its before
   and after, its verdicts so far and a comment box: Approve, or Ask for a
   change, which needs a comment. The server appends each to

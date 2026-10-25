@@ -242,8 +242,10 @@ the sketch above, and why:
   beside the JavaScript previews, with no entry in the pack: it's the
   firmware, so it's the engine's. The views run on it, on its frozen
   clock a frame every 40 ms, so a recording is the same every time.
-- **A reference's frames and sheets are committed** with it, no bigger
-  than 512 px a side: the reading cites them and the Studio scrubs them.
+- **A reference's sheets are committed** with it, its frames no bigger
+  than 512 px a side: the reading cites the sheets, and the Studio scrubs
+  the frames where they're cut. The frames were committed too until the
+  owner chose the sheets alone on 2026-10-24, since a video's are heavy.
 - **`show` is a start and, as `anim`, the state asked for at the
   reference's 0 ms**: the Transitions view's pair, so one recorder serves
   both views.

@@ -442,7 +442,8 @@ inline constexpr Rig kRig = {{{', '.join(lists)}}};
 # person gave (a still is one frame; a GIF or a video is cut a frame every
 # FRAME_MS), reference.json, the agent's reading.md, and what `boopctl
 # reference read` makes of each file, frames/<file>/NNNN.png and
-# sheets/<file>.png.
+# sheets/<file>.png. The sheets are committed; the frames, heavy for a
+# video, stay where they were cut, so a checkout may have none.
 FRAME_MS = 40  # 25 fps: a reference's frames, and the board's that the studio records beside them, frame for frame
 MEDIA = {".png": "still", ".jpg": "still", ".jpeg": "still", ".webp": "still", ".gif": "gif",
          ".mp4": "video", ".mov": "video", ".m4v": "video", ".webm": "video"}
@@ -474,9 +475,9 @@ def frame_count(folder: Path, name: str) -> int:
 def reference_problems(folder: Path, moods: set[str], states: list[str], rig: dict) -> list[str]:
     """What's wrong with one reference: reference.json's keys and values,
     what it became against the pack's rig (read_rig's), its files, and
-    what its status says is there: the tool's frames and sheets once it's
-    read, and the agent's reading.md and what it became once it's
-    translated."""
+    what its status says is there: the tool's sheets once it's read, with
+    frames and ms that count its frames where this checkout has cut them,
+    and the agent's reading.md and what it became once it's translated."""
     rel = "reference.json"
     try:
         raw = json.loads((folder / rel).read_text())
@@ -504,12 +505,15 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
         problems.append("it has no media")
     status = STATUSES.index(ref.get("status", "new"))
     if status >= STATUSES.index("read"):
-        unread = [p.name for p in files if not frame_count(folder, p.name) or not (folder / "sheets" / f"{p.name}.png").is_file()]
-        cut = sum(frame_count(folder, p.name) for p in files)
+        unread = [p.name for p in files if not (folder / "sheets" / f"{p.name}.png").is_file()]
+        cut = all(frame_count(folder, p.name) for p in files)
+        count = sum(frame_count(folder, p.name) for p in files)
         if unread:
-            problems.append(f"it's {ref['status']}, and {', '.join(unread)} has no frames or sheet (boopctl reference read)")
-        elif ref.get("frames") != cut or "ms" not in ref:
-            problems.append(f"it's {ref['status']}, and its frames and ms aren't what frames/ holds ({cut} frames; boopctl reference read)")
+            problems.append(f"it's {ref['status']}, and {', '.join(unread)} has no sheet (boopctl reference read)")
+        elif "frames" not in ref or "ms" not in ref:
+            problems.append(f"it's {ref['status']}, and reference.json has no frames or ms (boopctl reference read)")
+        elif cut and ref["frames"] != count:
+            problems.append(f"it's {ref['status']}, and its frames aren't what frames/ holds ({count} frames; boopctl reference read)")
     if status >= STATUSES.index("translated"):
         if not (folder / "reading.md").is_file():
             problems.append(f"it's {ref['status']}, and has no reading.md")

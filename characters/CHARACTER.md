@@ -1001,8 +1001,8 @@ worked one:
 references/2026-10-24-notice-perk/
   perk.gif              what was given: stills (.png .jpg .jpeg .webp), GIFs, videos (.mp4 .mov .m4v .webm)
   reference.json        what it is, and what became of it
-  frames/perk.gif/      0000.png on, a frame every 40 ms (a still is one)
-  sheets/perk.gif.png   the frames on one sheet, 8 a row, each with its ms
+  frames/perk.gif/      0000.png on, a frame every 40 ms (a still is one); kept where they're cut, not committed
+  sheets/perk.gif.png   the frames on one sheet, 8 a row, each with its ms; committed
   reading.md            the agent's reading of it
 ```
 
@@ -1037,7 +1037,9 @@ internal/tools/boopctl reference read characters/boop/references/2026-10-24-noti
 1. **Intake.** `reference new` makes the folder, with today's date, and
    copies the files in.
 2. **Read.** `reference read` cuts each file into frames (ffmpeg) and a
-   sheet, and moves the status to `read`. The agent looks at the sheets
+   sheet, and moves the status to `read`. The sheets are committed and the
+   frames aren't, since a video's are heavy: in another checkout, run it
+   again for the studio to play the reference frame by frame. The agent looks at the sheets
    and writes `reading.md`: the beats and their timing, the poses, squash
    and stretch, the eyes' and mouth's shapes, the colours and the
    silhouette. A reference that needs more than the character has (arms,
@@ -1058,7 +1060,8 @@ internal/tools/boopctl reference read characters/boop/references/2026-10-24-noti
 so, whose `reference.json` has a key or a value it doesn't take, whose
 `show` names a mood the pack hasn't or a state the board hasn't, that has
 no media or a file that isn't media or its own; that's read without the
-frames and sheet of every file, or with `frames` that don't count them;
+sheet of every file or without `frames` and `ms`, or, where this checkout
+has cut the frames, with `frames` that don't count them;
 or that's translated or later without `reading.md` or a `became`, or
 became something the rig hasn't. It checks the queue's items and their
 images, and the notes, each as the studio's server writes them, the

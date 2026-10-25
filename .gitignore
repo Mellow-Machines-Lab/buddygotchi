@@ -31,6 +31,10 @@ Package.resolved.bak
 # The landing page is a repo of its own, cloned here
 /landing/
 
+# A reference's frames, which `boopctl reference read` cuts from its media
+# where it's read; its contact sheets are committed
+characters/*/references/*/frames/
+
 # JavaScript
 node_modules/
 

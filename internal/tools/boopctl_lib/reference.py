@@ -3,7 +3,8 @@ gave, taken in and cut up to be read. `new` makes a pack's
 references/<today>-<topic>/ with the files and a reference.json; `read`
 cuts each GIF or video into a frame every 40 ms (ffmpeg), copies a still
 as one frame, makes a contact sheet of each, and says where they are, for
-an agent to look at them and write reading.md."""
+an agent to look at them and write reading.md. Git keeps the sheets, not
+the frames, so `read` again in another checkout cuts them there."""
 from __future__ import annotations
 
 import datetime

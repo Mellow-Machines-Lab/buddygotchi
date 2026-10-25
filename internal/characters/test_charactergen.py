@@ -511,6 +511,10 @@ class ReferenceRuleTests(unittest.TestCase):
             write(self.ref / "frames" / "perk.gif" / f"{i:04d}.png", "")
         write(self.ref / "sheets" / "perk.gif.png", "")
 
+    def uncut(self):
+        """A checkout that hasn't cut the frames: git doesn't keep them."""
+        shutil.rmtree(self.ref / "frames")
+
     def test_a_new_reference(self):
         self.assertEqual(self.reference(), [])
         self.assertEqual(self.reference(became=[], show={"mood": "happy", "state": "idle", "anim": "notice"}), [])
@@ -545,13 +549,18 @@ class ReferenceRuleTests(unittest.TestCase):
         self.assertIn("reference.json: isn't JSON", gen.reference_problems(self.ref, set(), [], self.rig)[0])
 
     def test_what_its_status_says_is_there(self):
-        """Read: the tool's frames and sheet for each file, and frames and ms that count them. Translated and on: a reading, and what it became."""
+        """Read: the tool's sheet for each file, frames and ms, and, where this checkout has cut the frames, frames that
+        count them. Translated and on: a reading, and what it became."""
         self.assertEqual(self.reference(status="read"),
-                         ["it's read, and perk.gif has no frames or sheet (boopctl reference read)"])
+                         ["it's read, and perk.gif has no sheet (boopctl reference read)"])
         self.read(3)
+        self.assertEqual(self.reference(status="read"),
+                         ["it's read, and reference.json has no frames or ms (boopctl reference read)"])
         self.assertEqual(self.reference(status="read", frames=2, ms=80),
-                         ["it's read, and its frames and ms aren't what frames/ holds (3 frames; boopctl reference read)"])
+                         ["it's read, and its frames aren't what frames/ holds (3 frames; boopctl reference read)"])
         self.assertEqual(self.reference(status="read", frames=3, ms=80), [])
+        self.uncut()
+        self.assertEqual(self.reference(status="read", frames=3, ms=80), [], "a checkout without the frames: the sheet is enough")
         self.assertEqual(self.reference(status="in review", frames=3, ms=80),
                          ["it's in review, and has no reading.md", "it's in review, and became nothing"])
         write(self.ref / "reading.md", "Beats.")
